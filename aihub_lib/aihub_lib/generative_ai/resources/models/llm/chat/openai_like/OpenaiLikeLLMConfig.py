@@ -1,4 +1,5 @@
-from typing import Annotated, Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
+from typing import Annotated
 
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.llms.openai_like import OpenAILike
@@ -19,10 +20,8 @@ class OpenaiLikeLLMParameter(ChatLLMParameter):
     This parameter set allows specifying local logprob settings, biases, or other local backend features.
     """
 
-    logprobs: Annotated[Optional[int], Field(None, description="Number of top tokens to return log probs for.")]
-    logit_bias: Annotated[
-        Optional[Dict[str, float]], Field(None, description="Adjust probabilities of specific tokens.")
-    ]
+    logprobs: Annotated[int | None, Field(None, description="Number of top tokens to return log probs for.")]
+    logit_bias: Annotated[dict[str, float] | None, Field(None, description="Adjust probabilities of specific tokens.")]
 
 
 class OpenaiLikeLLMConfig(ChatLLMConfig):
@@ -38,7 +37,6 @@ class OpenaiLikeLLMConfig(ChatLLMConfig):
     This config ensures we can integrate a locally hosted LLM into llama_index with cost tracking and parameter merging.
     """
 
-    api_key: Annotated[Optional[str], Field(None, description="API key if required by the local endpoint.")]
     context_size: Annotated[int, Field(..., description="Context window size (max tokens) supported by the model.")]
     is_function_calling_model: Annotated[bool, Field(..., description="True if the model supports function calling.")]
     is_chat_model: Annotated[bool, Field(True, description="True if the model uses a chat-based interface.")]
@@ -52,13 +50,13 @@ class OpenaiLikeLLMConfig(ChatLLMConfig):
     ]
 
     @property
-    def tokenizer(self) -> Callable[[str], List[int]]:
+    def tokenizer(self) -> Callable[[str], list[int]]:
         base_llm_name: str = self.name.replace("-GGUF", "").replace("-AWQ", "").replace("-bnb", "").replace("-4bit", "")
         return AutoTokenizer.from_pretrained(base_llm_name).encode
 
     def to_llama_index(
-        self, model_parameter: Optional[OpenaiLikeLLMParameter] = None
-    ) -> Tuple[OpenAILike, LLMCostTracker]:
+        self, model_parameter: OpenaiLikeLLMParameter | None = None
+    ) -> tuple[OpenAILike, LLMCostTracker]:
         """
         Instantiate an OpenAILike model with local endpoint logic and a LLMCostTracker.
 

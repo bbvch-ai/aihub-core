@@ -1,10 +1,9 @@
 import json
-from typing import Optional
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 
 
-async def _parse_sse_chunk(line: str) -> Optional[str | dict]:
+async def _parse_sse_chunk(line: str) -> str | dict | None:
     """Parse a single Server-Side Event (SSE) line and extract content if available."""
     # Skip empty lines
     if not line.strip() or not line.startswith("data: "):

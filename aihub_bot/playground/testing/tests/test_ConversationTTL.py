@@ -2,21 +2,26 @@ import asyncio
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Dict
 
 import pytest
 import pytest_asyncio
 import requests
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+    DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
+from aihub_lib.infrastructure.ApiConfig import ApiConfig
+from aihub_lib.routes.health.HealthController import HealthController
+from aihub_lib.testing.route_adapter.ASGIAdapter import ASGIAdapter
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
 
-from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity, ConversationTracker, Message, Content
+from aihub_bot.persistence.entities.ConversationEntity import Content, ConversationEntity, ConversationTracker, Message
 from aihub_bot.routes.agent.AgentChatController import AgentChatController
 from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
-from aihub_lib.routes.health.HealthController import HealthController
-from aihub_lib.testing.route_adapter.ASGIAdapter import ASGIAdapter
 
 # Constants
 BASE_URL = "http://test/api/v1"
@@ -61,7 +66,8 @@ async def test_runner():
     """Create a test runner with a very short TTL"""
     runner = SimulatedAgentBotTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID, conversation_ttl_days=TTL_DAYS)
     runner.with_simple_chunk_events()
-    runner.mount(HealthController().get_health(), AgentChatController().completions_json())
+    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    runner.mount(HealthController(auth=auth).get_health(), AgentChatController(auth=auth).completions_json())
     await runner.start_simulation()
     return runner
 
@@ -180,7 +186,7 @@ async def test_conversation_ttl_with_bot(
     """Test creation of a conversation via the bot and verify TTL tracking"""
     # Load the user message template
     with open(Path(__file__).parent / "user_message.json") as file:
-        payload: Dict = json.loads(file.read())
+        payload: dict = json.loads(file.read())
 
     # Use a unique conversation ID
     conversation_id = f"ttl_test_{datetime.now().timestamp()}"

@@ -1,12 +1,12 @@
-from typing import Optional
+from typing import Annotated
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class PhoenixConfig(BaseSettings):
-    PHOENIX_ENDPOINT: str = Field("http://localhost:6006", pattern=r"^https?://.*$")
-    PHOENIX_AUTH_TOKEN: Optional[str] = Field(None, description="Phoenix API Token")
+    PHOENIX_ENDPOINT: Annotated[str, Field(pattern=r"^https?://.*$")] = "http://localhost:6006"
+    PHOENIX_AUTH_TOKEN: Annotated[str | None, Field(description="Phoenix API Token")] = None
 
     model_config = SettingsConfigDict(
         env_file=".env",

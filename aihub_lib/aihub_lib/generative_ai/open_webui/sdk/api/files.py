@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, BinaryIO, Dict, List, Optional, Union
+from typing import Any, BinaryIO
 
 import httpx
 
@@ -40,8 +40,8 @@ class FilesClient(BaseClient):
 
     async def upload_file(
         self,
-        file: Union[BinaryIO, bytes, str, Path],
-        filename: Optional[str] = None,
+        file: BinaryIO | bytes | str | Path,
+        filename: str | None = None,
         process: bool = True,
     ) -> FileModelResponse:
         """Upload a file to OpenWebUI storage"""
@@ -54,7 +54,7 @@ class FilesClient(BaseClient):
         params = {"process": "true" if process else "false"}
 
         # Handle different file input types
-        if isinstance(file, (str, Path)):
+        if isinstance(file, str | Path):
             path = Path(file)
             if not path.exists():
                 raise FileNotFoundError(f"File not found: {path}")
@@ -82,13 +82,13 @@ class FilesClient(BaseClient):
             response.raise_for_status()
             return FileModelResponse.model_validate(response.json())
 
-    async def list_files(self, include_content: bool = True) -> List[FileModelResponse]:
+    async def list_files(self, include_content: bool = True) -> list[FileModelResponse]:
         """List all files accessible to the authenticated user"""
         params = {"content": "true" if include_content else "false"}
         response = await self.get("/api/v1/files/", params=params)
         return [FileModelResponse.model_validate(file) for file in response.json()]
 
-    async def delete_all_files(self) -> Dict[str, Any]:
+    async def delete_all_files(self) -> dict[str, Any]:
         """Delete all files (admin only)"""
         response = await self.delete("/api/v1/files/all")
         return response.json()
@@ -103,15 +103,15 @@ class FilesClient(BaseClient):
         response = await self.get(f"/api/v1/files/{file_id}/data/content")
         return response.json().get("content", "")
 
-    async def update_file_content(self, file_id: str, content: str) -> Dict[str, Any]:
+    async def update_file_content(self, file_id: str, content: str) -> dict[str, Any]:
         """Update the text content of a file by ID"""
         form_data = ContentForm(content=content)
         response = await self.post(f"/api/v1/files/{file_id}/data/content/update", json_data=form_data.model_dump())
         return response.json()
 
     async def get_file_content(
-        self, file_id: str, output_path: Optional[Union[str, Path]] = None, as_attachment: bool = False
-    ) -> Optional[bytes]:
+        self, file_id: str, output_path: str | Path | None = None, as_attachment: bool = False
+    ) -> bytes | None:
         """
         Get the raw content of a file by ID
 
@@ -143,14 +143,14 @@ class FilesClient(BaseClient):
             response.raise_for_status()
             return response.content
 
-    async def process_file(self, file_id: str, content: Optional[str] = None) -> Dict[str, Any]:
+    async def process_file(self, file_id: str, content: str | None = None) -> dict[str, Any]:
         """Process a file with optional content override"""
         form_data = ProcessFileForm(file_id=file_id, content=content)
         # This endpoint is not directly exposed in the router, but is used internally
         response = await self.post("/api/v1/retrieval/process", json_data=form_data.model_dump())
         return response.json()
 
-    async def delete_file(self, file_id: str) -> Dict[str, Any]:
+    async def delete_file(self, file_id: str) -> dict[str, Any]:
         """Delete a file by ID"""
         response = await self.delete(f"/api/v1/files/{file_id}")
         return response.json()

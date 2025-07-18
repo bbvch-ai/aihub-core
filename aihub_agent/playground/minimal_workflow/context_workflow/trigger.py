@@ -1,7 +1,8 @@
 import asyncio
 
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
+
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from playground.minimal_workflow.context_workflow.ContextAgent import ContextAgent
 from playground.minimal_workflow.context_workflow.ContextAgentConfig import (
     ContextAgentConfig,

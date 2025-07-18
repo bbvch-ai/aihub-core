@@ -46,10 +46,19 @@ jobs:
             docker_compose_files: "docker-compose.yml,milvus-standalone-docker-compose.yml"
           - module: aihub_bot
             docker_compose_files: "docker-compose.yml"
+          - module: aihub_process
+            docker_compose_files: "docker-compose.yml"
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
 
       - name: Run Tests
         uses: ./aihub_action/test_backend
@@ -61,6 +70,11 @@ jobs:
           docker_compose_paths: ${{ matrix.docker_compose_files }}
           use_local_core: "true"
           install_ffmpeg: ${{ matrix.module == 'aihub_api' }}
+
+      - name: Clean up SSH keys
+        run: |
+          rm -rf ~/.ssh
+          git config --global --unset url."git@github.com:".insteadOf
 
   pytest-coverage-comment:
     name: Pytest Coverage Comment
@@ -76,7 +90,7 @@ jobs:
 
     strategy:
       matrix:
-        module: [ aihub_lib, aihub_api, aihub_agent, aihub_pipeline, aihub_bot ]
+        module: [ aihub_lib, aihub_api, aihub_agent, aihub_pipeline, aihub_bot, aihub_process ]
 
     steps:
       - name: Coverage comment
@@ -111,6 +125,9 @@ jobs:
             report_coverage: 'true'
           - folder: aihub_bot
             sonar_project_key: aihub-core_bot-core
+            report_coverage: 'true'
+          - folder: aihub_process
+            sonar_project_key: aihub-core_process-core
             report_coverage: 'true'
           - folder: aihub_web
             sonar_project_key: aihub-core_aihub-web

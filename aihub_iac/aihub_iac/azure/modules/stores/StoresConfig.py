@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import Annotated, ClassVar
 
 from pydantic import Field
 
@@ -17,14 +17,20 @@ class StoresConfig(BaseConfig):
     PG_SUBNET_CIDR: ClassVar[str] = "10.0.4.0/24"
     COSMOS_SUBNET_CIDR: ClassVar[str] = "10.0.33.0/24"
 
-    postgres_username: str = Field(
-        default_factory=lambda: StoresConfig._postgres_settings.POSTGRES_USERNAME,
-        description="Username for the PostgreSQL database",
-    )
-    postgres_password: str = Field(
-        default_factory=lambda: StoresConfig._postgres_settings.POSTGRES_PASSWORD,
-        description="Password for the PostgreSQL database",
-    )
+    postgres_username: Annotated[
+        str,
+        Field(
+            default_factory=lambda: StoresConfig._postgres_settings.POSTGRES_USERNAME,
+            description="Username for the PostgreSQL database",
+        ),
+    ]
+    postgres_password: Annotated[
+        str,
+        Field(
+            default_factory=lambda: StoresConfig._postgres_settings.POSTGRES_PASSWORD,
+            description="Password for the PostgreSQL database",
+        ),
+    ]
 
     @property
     def ai_search_service_name(self) -> str:

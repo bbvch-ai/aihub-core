@@ -1,6 +1,8 @@
 import {
-  type EventTimeseries, getEventTimeseries,
+  type EventTimeseries,
+  getAgentEventTimeseries,
 } from '@core/sdk/client'
+import { minutesToMilliseconds } from 'date-fns'
 import { useRoute } from 'vue-router'
 
 export const useEventTimeseries = ({ eventName, timeRange, agentClass, agentId }: { eventName?: string, timeRange: Ref<string>, agentClass?: string, agentId?: string }) => {
@@ -13,11 +15,11 @@ export const useEventTimeseries = ({ eventName, timeRange, agentClass, agentId }
     event_name: eventName,
   }
   const { data: timeseries, isPending: timeseriesIsLoading } = useQuery<EventTimeseries>({
-    key: () => ['events', 'timeseries', timeRange.value, query],
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    key: () => ['events', 'agents', 'timeseries', timeRange.value, query],
+    staleTime: minutesToMilliseconds(5),
     enabled: true,
     query: async () => {
-      return await getEventTimeseries({
+      return await getAgentEventTimeseries({
         composable: '$fetch',
         path: {
           time_range: timeRange.value,

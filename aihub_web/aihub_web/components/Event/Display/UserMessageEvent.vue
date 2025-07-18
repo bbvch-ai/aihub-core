@@ -14,7 +14,7 @@
         <ChatMessage
           :message="message"
           :name="message.role == 'user' ? event.event.user.name : message.role"
-          :preferred-username="message.role == 'user' ? event.event.user.preferred_username : ''"
+          :preferred-username="message.role == 'user' ? event.event.user.email : ''"
           :date="new Date(event.event.created_at / 1_000_000)"
           :icon="agentIcon"
         />
@@ -24,10 +24,10 @@
 </template>
 
 <script setup lang="ts">
-import type { ThreadDto, UserMessageEvent, WsServerEvent } from '@core/sdk/client'
+import type { ThreadDto, UserMessageEvent, WsServerAgentEventReadable } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: WsServerEvent & { event: UserMessageEvent }
+  event: WsServerAgentEventReadable & { event: UserMessageEvent }
   thread: ThreadDto
 }>()
 

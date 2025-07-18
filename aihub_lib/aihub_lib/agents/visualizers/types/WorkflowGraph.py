@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Dict, List
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
 
@@ -11,6 +11,6 @@ class WorkflowGraph(BaseModel):
 
     directed: Annotated[bool, Field(description="Whether the graph is directed")]
     multigraph: Annotated[bool, Field(description="Whether the graph is a multigraph")]
-    graph: Annotated[Dict[str, Any], Field(description="Graph-level attributes")]
-    nodes: Annotated[List[NodeData], Field(description="List of nodes in the graph")]
-    links: Annotated[List[EdgeData], Field(description="List of edges in the graph")]
+    graph: Annotated[dict[str, Any], Field(description="Graph-level attributes")]
+    nodes: Annotated[list[NodeData], Field(description="List of nodes in the graph")]
+    links: Annotated[list[EdgeData], Field(description="List of edges in the graph")]

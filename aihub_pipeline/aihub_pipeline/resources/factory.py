@@ -1,5 +1,3 @@
-from typing import Dict
-
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
@@ -26,14 +24,18 @@ from aihub_pipeline.resources.vector_store.AzureAISearchVectorStoreResource impo
 from aihub_pipeline.resources.vector_store.MilvusVectorStoreResource import MilvusVectorStoreResource
 
 
-def azure_data_lake_resources(container_name: str, directory_name: str) -> Dict[str, ConfigurableResourceFactory]:
+def azure_data_lake_resources(
+    container_name: str, directory_name: str, figures_directory_name: str
+) -> dict[str, ConfigurableResourceFactory]:
     data_lake_client = DataLakeClientResource(container_name=container_name)
     data_lake_file_system = DataLakeFileSystemResource()
     data_lake_io_manager = AzureDataLakeIOManager(
         data_lake_client=data_lake_client,
         data_lake_file_system=data_lake_file_system,
     )
-    data_lake_resource = DataLakeResource(container_name=container_name, directory_name=directory_name)
+    data_lake_resource = DataLakeResource(
+        container_name=container_name, directory_name=directory_name, figures_directory_name=figures_directory_name
+    )
     return {
         "data_lake_client": data_lake_client,
         "data_lake_file_system": data_lake_file_system,
@@ -45,7 +47,7 @@ def azure_data_lake_resources(container_name: str, directory_name: str) -> Dict[
 def mongo_document_store_resource(
     document_store_name: str,
     namespace_name: str,
-) -> Dict[str, ConfigurableResourceFactory]:
+) -> dict[str, ConfigurableResourceFactory]:
     doc_store = MongoDocumentStoreResource(document_store_name=document_store_name)
     doc_store_io_manager = DocStoreIOManager(doc_store=doc_store)
     doc_store_resource = DocStoreResource(document_store_name=document_store_name, namespace_name=namespace_name)
@@ -59,7 +61,7 @@ def mongo_document_store_resource(
 def aisearch_vector_store_resource(
     vector_store_name: str,
     dimensions: int = 3072,
-) -> Dict[str, ConfigurableResourceFactory]:
+) -> dict[str, ConfigurableResourceFactory]:
     vector_store = AzureAISearchVectorStoreResource(vector_store_name=vector_store_name, dimensions=dimensions)
     vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store)
     return {
@@ -72,7 +74,7 @@ def milvus_vector_store_resource(
     vector_store_uri: str,
     vector_store_name: str,
     dimensions: int = 3072,
-) -> Dict[str, ConfigurableResourceFactory]:
+) -> dict[str, ConfigurableResourceFactory]:
     vector_store = MilvusVectorStoreResource(
         uri=vector_store_uri, collection_name=vector_store_name, embedding_vector_dimension=dimensions
     )
@@ -87,7 +89,7 @@ def mongo_aisearch_storage_context_resources(
     store_name: str,
     namespace_name: str,
     dimensions: int = 3072,
-) -> Dict[str, ConfigurableResourceFactory]:
+) -> dict[str, ConfigurableResourceFactory]:
     return {
         **mongo_document_store_resource(document_store_name=store_name, namespace_name=namespace_name),
         **aisearch_vector_store_resource(vector_store_name=store_name, dimensions=dimensions),
@@ -99,7 +101,7 @@ def local_mongo_milvus_storage_context_resource(
     store_name: str,
     namespace_name: str,
     dimensions: int = 3072,
-) -> Dict[str, ConfigurableResourceFactory]:
+) -> dict[str, ConfigurableResourceFactory]:
     return {
         **mongo_document_store_resource(document_store_name=store_name, namespace_name=namespace_name),
         **milvus_vector_store_resource(
@@ -110,7 +112,7 @@ def local_mongo_milvus_storage_context_resource(
 
 def default_io_manager_azure_datalake_resources(
     container_name: str, directory_name: str
-) -> Dict[str, ConfigurableResourceFactory]:
+) -> dict[str, ConfigurableResourceFactory]:
     adls2 = ADLS2Resource(
         storage_account=DataLakeAccess().get_storage_account_name(),
         credential=ADLS2DefaultAzureCredential(kwargs={}),
@@ -127,7 +129,7 @@ def default_io_manager_azure_datalake_resources(
     }
 
 
-def default_llm_resources() -> Dict[str, ConfigurableResourceFactory]:
+def default_llm_resources() -> dict[str, ConfigurableResourceFactory]:
     embedding_model_resource = EmbeddingModelResource(
         embedding_config=AzureOpenAIEmbeddingConfig(
             name="text-embedding-ada-002",

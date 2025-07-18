@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated, Any, Dict, List, Optional
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
 
@@ -13,9 +13,7 @@ class IntermediateDisplayStats(BaseModel):
     """
 
     display_id: Annotated[str, Field(..., description="Unique identifier for the display")]
-    runs: Annotated[
-        List[RunStatistics], Field(default_factory=list, description="List of run statistics for this display")
-    ] = []
+    runs: Annotated[list[RunStatistics], Field(description="List of run statistics for this display")] = []
 
     # Raw counts
     n_events: Annotated[int, Field(..., description="Total number of events in this display")] = 0
@@ -31,13 +29,13 @@ class IntermediateDisplayStats(BaseModel):
     llm_cost: Annotated[float, Field(..., description="Total cost incurred by LLM operations")] = 0.0
 
     first_event_time: Annotated[
-        Optional[datetime], Field(None, description="Timestamp of the first event in this display")
+        datetime | None, Field(None, description="Timestamp of the first event in this display")
     ] = None
     latest_event_time: Annotated[
-        Optional[datetime], Field(None, description="Timestamp of the most recent event in this display")
+        datetime | None, Field(None, description="Timestamp of the most recent event in this display")
     ] = None
 
-    def update_from_run_data(self, run_data: Dict[str, Any]):
+    def update_from_run_data(self, run_data: dict[str, Any]):
         """Updates counts and times based on raw data dictionary from aggregation."""
         self.n_events += run_data.get("n_events", 0)
         self.start_events += run_data.get("start_events", 0)

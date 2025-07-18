@@ -7,9 +7,41 @@ languages:
   it: "Italienisch"
   fr: "Französisch"
 
+http_error:
+  code:
+    # 4xx Client Errors
+    400: "Ungültige Anfrage. Bitte überprüfen Sie die Adresse und versuchen Sie es erneut."
+    401: "Bitte melden Sie sich an, um auf diese Seite zuzugreifen."
+    403: "Sie haben keine Berechtigung, dies anzuzeigen."
+    404: "Entschuldigung, wir konnten diese Seite nicht finden."
+    405: "Diese Aktion ist hier nicht erlaubt."
+    408: "Die Anfrage hat das Zeitlimit überschritten. Bitte versuchen Sie es erneut."
+    429: "Zu viele Anfragen. Bitte warten Sie einen Moment."
+
+    # 5xx Server Errors
+    500: "Auf unseren Servern ist ein Fehler aufgetreten."
+    502: "Ein Serverfehler ist aufgetreten. Bitte versuchen Sie es erneut."
+    503: "Unser Dienst ist vorübergehend nicht verfügbar."
+    504: "Ein Server antwortet nicht. Bitte versuchen Sie es erneut."
+
 user:
+  title: "Benutzer"
   logout: "Abmelden"
   language: "Sprache"
+  list:
+    name: "Name"
+    email: "E-Mail"
+    avatar: "Profilbild"
+    roles: "Rollen"
+    last_accessed: "Zuletzt zugegriffen"
+
+time_ago:
+  last_hour: "Letzte Stunde"
+  last_day: "Letzter Tag"
+  last_week: "Letzte Woche"
+  last_month: "Letzter Monat"
+  last_year: "Letztes Jahr"
+  long_time_ago: "Vor langer Zeit"
 
 
 thread:
@@ -141,8 +173,10 @@ document:
     title: "Dokumenttitel"
     created: "Erstellt"
     updated_at: "Zuletzt aktualisiert"
+    language: "Sprache"
     document_type: "Dokumenttyp"
     number_of_pages: "Anzahl der Seiten"
+    download: "Download"
 
 knowledge:
   title: "Wissensdatenbanken"
@@ -204,19 +238,19 @@ dashboard:
   create_widget: "Neues Widget erstellen"
   events:
     StartEvent:
-      label: 'Gestartete Agentenläufe'
+      label: "Gestartete Agentenläufe"
     StopEvent:
-      label: 'Erfolgreiche Läufe'
+      label: "Erfolgreiche Läufe"
     UserMessageEvent:
-      label: 'Benutzer-Chat-Nachrichten'
+      label: "Benutzer-Chat-Nachrichten"
     ExceptionEvent:
-      label: 'Fehler'
+      label: "Fehler"
     HumanInTheLoopRequestEvent:
-      label: 'Mensch in der Schleife'
+      label: "Mensch in der Schleife"
     BotInTheLoopRequestEvent:
-      label: 'In Slack/Teams fragen'
+      label: "In Slack/Teams fragen"
     AgentInTheLoopRequestEvent:
-      label: 'Delegierte Aufgaben'
+      label: "Delegierte Aufgaben"
 
 evaluation:
   dataset:
@@ -273,3 +307,28 @@ evaluation:
       conciseness: "Prägnanz"
       correctness: "Korrektheit"
       completeness: "Vollständigkeit"
+
+role:
+  title: "Zugriffsrollen"
+  name: "Name"
+  description: "Beschreibung"
+  edit: "Rolle bearbeiten"
+  create_new: "Neue Rolle"
+  add_access_role: "Zugriffsrolle hinzufügen"
+  add_button: "Hinzufügen"
+  is_new: "Neu"
+  save_button: "Speichern"
+  access_rules: "Zugriffsregeln"
+  create_dialog:
+    description: "Erstellen Sie eine neue Rolle mit Zugriffsregeln. Um die neue Rolle Benutzern zuzuweisen, verwenden Sie bitte Ihr AD."
+  remove_dialog:
+    confirm: "Sind Sie sicher?"
+    explanation: "Wenn Sie diese Rolle entfernen, verlieren Benutzer möglicherweise den Zugriff auf bestimmte Funktionen des AI-Hubs."
+    cancel: "Abbrechen"
+    proceed: "Trotzdem löschen"
+  role_deleted:
+    summary: "Rolle gelöscht"
+    detail: "Die Rolle wurde gelöscht. Benutzer mit dieser Rolle haben möglicherweise den Zugriff auf bestimmte Funktionen verloren."
+  role_saved:
+    summary: "Rolle gespeichert"
+    detail: "Rolle erfolgreich gespeichert, die neuen Zugriffsregeln treten sofort in Kraft."

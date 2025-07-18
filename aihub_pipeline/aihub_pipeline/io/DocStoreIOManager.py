@@ -1,5 +1,3 @@
-from typing import List
-
 from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 from llama_index.core.storage.docstore.keyval_docstore import KVDocumentStore
 
@@ -66,7 +64,7 @@ class DocStoreIOManager(ConfigurableIOManager):
 
     doc_store: ResourceDependency[KVDocumentStore]
 
-    def handle_output(self, context: OutputContext, obj: RefDocDocument | List[RefDocDocument]) -> None:
+    def handle_output(self, context: OutputContext, obj: RefDocDocument | list[RefDocDocument]) -> None:
         if isinstance(obj, RefDocDocument):
             documents = [obj]
         elif isinstance(obj, list):
@@ -86,7 +84,7 @@ class DocStoreIOManager(ConfigurableIOManager):
         document = self.doc_store.get_document(doc_id)
         return RefDocDocument(**document.to_dict())
 
-    def load_input(self, context: InputContext) -> RefDocDocument | List[RefDocDocument]:
+    def load_input(self, context: InputContext) -> RefDocDocument | list[RefDocDocument]:
         # Check if a partition key is available
         if context.has_partition_key:
             # If partition key is present, use it to load the document

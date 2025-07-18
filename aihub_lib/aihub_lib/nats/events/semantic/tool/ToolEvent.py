@@ -1,5 +1,5 @@
 import json
-from typing import Any, ClassVar, Dict, Optional
+from typing import Annotated, Any, ClassVar
 
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes, ToolAttributes
 from pydantic import Field
@@ -14,12 +14,14 @@ class ToolEvent(SemanticEvent):
         "lib.events.semantic_tool_event.description"
     )
 
-    name: Optional[str] = Field(None, description="The name of the tool being utilized")
-    description: Optional[str] = Field(None, description="Description of the tool's purpose and functionality")
-    json_schema: Optional[Dict[str, Any]] = Field(None, description="The json schema of a tool input")
-    parameters: Optional[Dict[str, Any]] = Field(None, description="The parameters definition for invoking the tool")
+    name: Annotated[str | None, Field(description="The name of the tool being utilized")] = None
+    description: Annotated[str | None, Field(description="Description of the tool's purpose and functionality")] = None
+    json_schema: Annotated[dict[str, Any] | None, Field(description="The json schema of a tool input")] = None
+    parameters: Annotated[
+        dict[str, Any] | None, Field(description="The parameters definition for invoking the tool")
+    ] = None
 
-    def to_semantic_convention(self) -> Dict[str, str]:
+    def to_semantic_convention(self) -> dict[str, str]:
         attributes = {
             SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.TOOL.value,
             SpanAttributes.TOOL_NAME: self.name,

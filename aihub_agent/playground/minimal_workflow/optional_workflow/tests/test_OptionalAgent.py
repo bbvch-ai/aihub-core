@@ -5,20 +5,20 @@ from unittest.mock import patch
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from pytest_bdd import scenarios, given, when, then
+from pytest_bdd import given, scenarios, then, when
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from playground.minimal_workflow.optional_workflow.OptionalAgent import OptionalAgent
-from playground.minimal_workflow.optional_workflow.OptionalAgentConfig import (
-    OptionalAgentConfig,
-)
 from playground.minimal_workflow.optional_workflow.events.EventOptionalA import EventOptionalA
 from playground.minimal_workflow.optional_workflow.events.EventOptionalB import EventOptionalB
 from playground.minimal_workflow.optional_workflow.events.EventOptionalC import EventOptionalC
 from playground.minimal_workflow.optional_workflow.events.EventOptionalD import EventOptionalD
+from playground.minimal_workflow.optional_workflow.OptionalAgent import OptionalAgent
+from playground.minimal_workflow.optional_workflow.OptionalAgentConfig import (
+    OptionalAgentConfig,
+)
 
 # Load scenarios from your feature file
-scenarios("../tests/features/optional_agent.feature")
+scenarios("./features/optional_agent.feature")
 
 
 @given("an OptionalAgent runner", target_fixture="agent_runner")

@@ -1,16 +1,15 @@
-from pytest_bdd import scenarios, given, when, then, parsers
-
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
+from pytest_bdd import given, parsers, scenarios, then, when
+
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from playground.minimal_workflow.configured_workflow.ConfiguredAgent import ConfiguredAgent
-from playground.minimal_workflow.configured_workflow.ConfiguredAgentConfig import ConfiguredAgentConfig
-from playground.minimal_workflow.configured_workflow.ConfiguredAgentConfig import StartStepConfig
+from playground.minimal_workflow.configured_workflow.ConfiguredAgentConfig import ConfiguredAgentConfig, StartStepConfig
 from playground.minimal_workflow.configured_workflow.events.EventConfiguredA import EventConfiguredA
 from playground.minimal_workflow.configured_workflow.events.EventConfiguredB import EventConfiguredB
 
-scenarios("../tests/features/configured_agent.feature")
+scenarios("./features/configured_agent.feature")
 
 
 @given(

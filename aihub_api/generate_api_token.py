@@ -1,13 +1,14 @@
 import subprocess
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.infrastructure.ApiConfig import ApiConfig
+from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
+from aihub_lib.persistence.user.UserEntity import UserEntity
 from mongoengine import connect, disconnect
 
 from aihub_api.routes.token.TokenService import TokenService
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
-from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
-from aihub_lib.persistence.user.UserEntity import UserEntity
 
 
 def get_azure_cli_user_info():
@@ -67,24 +68,33 @@ connect(db=ApiConfig().DB_NAME, host=host)
 
 user_name = cli_user_name
 token_name = f"{cli_user_name} Token"
-expiry = datetime.now(timezone.utc) + timedelta(days=365)
-roles = ["AllAgents"]
+expiry = datetime.now(UTC) + timedelta(days=365)
+roles = ["TestOnlyFullAdminAccess"]
 
-user = AuthenticatedUser(
-    oid=cli_user_oid,
+user = UserIdentity(
+    id=cli_user_oid,
     name=cli_user_name,
-    preferred_username=cli_user_preferred_username,
+    email=cli_user_preferred_username,
     roles=roles,
 )
 UserEntity.ensure_user_exists(
-    oid=user.oid,
+    oid=user.id,
     name=user.name,
-    email=user.preferred_username,
+    email=user.email,
     roles=user.roles,
 )
 
 token = TokenService.create_token(token_name, expiry, user)
-print(f"Generated token for user {user.name} ({user.preferred_username}):")
+
+if RoleEntity.get_role_by_name(roles[0]) is None:
+    role = RoleEntity(
+        name=roles[0],
+        description=f"Role for {token_name}",
+        access_rules=["aihub.admin.>"],
+    )
+    role.save()
+
+print(f"Generated token for user {user.name} ({user.email}):")
 print(token.token)
 
 disconnect()

@@ -1,6 +1,6 @@
 import re
 import secrets
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from bson import ObjectId
 from mongoengine import DateTimeField, Document, IntField, StringField
@@ -47,9 +47,9 @@ class BearerToken(Document):
         # Ensure expiry_date is timezone-aware before comparing
         expiry_date = token_obj.expiry_date
         if expiry_date.tzinfo is None:
-            expiry_date = expiry_date.replace(tzinfo=timezone.utc)
+            expiry_date = expiry_date.replace(tzinfo=UTC)
 
-        if expiry_date < datetime.now(timezone.utc):
+        if expiry_date < datetime.now(UTC):
             raise ValueError("Token expired")
 
         return token_obj

@@ -9,7 +9,7 @@
         is-clickable
         :message="message"
         :name="message.name"
-        :preferred-username="message.preferredUsername"
+        :preferred-username="message.email"
         :date="message.date"
         :image="message.userImage"
         :icon="message.icon"
@@ -24,12 +24,12 @@ import type {
   ChatMessageInput,
   MinimalAgentDto,
   ThreadDto,
-  UserDto,
-  WsServerEvent,
+  MinimalUserDto,
+  WsServerAgentEventReadable,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  events: WsServerEvent[]
+  events: WsServerAgentEventReadable[]
   thread: ThreadDto
 }>()
 
@@ -39,14 +39,14 @@ const { t } = useI18n()
 
 type ExtendedChatMessage = ChatMessageInput & {
   name: string
-  preferredUsername: string
+  email: string
   date: Date
   userImage?: string
   icon?: string
   displayId: string
 }
 
-const user = computed<UserDto>(() => props.thread.users.at(-1)!)
+const user = computed<MinimalUserDto>(() => props.thread.users.at(-1)!)
 
 const getAgentDto = (agent_class: string, agent_id: string) =>
   props.thread.participating_agents.find(
@@ -55,26 +55,26 @@ const getAgentDto = (agent_class: string, agent_id: string) =>
   )
 
 const toDisplay = (msg: ExtendedChatMessage) => {
-  router.push(localeRoute(`/admin/threads/${props.thread.id}/display/${msg.displayId}`))
+  router.push(localeRoute(`/service/threads/${props.thread.id}/display/${msg.displayId}`))
 }
 
 const createUserMessage = (
   blocks: ChatMessageInput['blocks'],
   timestamp: number,
-  event: WsServerEvent,
+  event: WsServerAgentEventReadable,
 ): ExtendedChatMessage => ({
   role: 'user',
   blocks,
   displayId: event.display_id,
   name: user.value.name,
-  preferredUsername: user.value.email,
+  email: user.value.email,
   userImage: user.value.profile_image,
   date: new Date(timestamp / 1_000_000),
 })
 
 const createAssistantMessage = (
   text: string,
-  event: WsServerEvent,
+  event: WsServerAgentEventReadable,
   timestamp: number,
 ): ExtendedChatMessage => {
   const agentDto = getAgentDto(event.agent_class, event.agent_id)
@@ -83,7 +83,7 @@ const createAssistantMessage = (
     blocks: [{ block_type: 'text', text }],
     displayId: event.display_id,
     name: agentDto?.agent_config?.name ?? t('chat.assistant'),
-    preferredUsername: `${event.agent_class}/${event.agent_id}`,
+    email: `${event.agent_class}/${event.agent_id}`,
     icon: agentDto?.agent_config?.icon,
     date: new Date(timestamp / 1_000_000),
   }
@@ -110,7 +110,7 @@ const messages = computed<ExtendedChatMessage[]>(() => {
 
     else if (types.includes('ChunkEvent') && event.event.content) {
       const lastMsg = msgs.at(-1)
-      const isSameAgent = lastMsg?.preferredUsername === `${event.agent_class}/${event.agent_id}`
+      const isSameAgent = lastMsg?.email === `${event.agent_class}/${event.agent_id}`
 
       if (isSameAgent && lastMsg?.role === 'assistant') {
         lastMsg.blocks.push({ block_type: 'text', text: event.event.content })

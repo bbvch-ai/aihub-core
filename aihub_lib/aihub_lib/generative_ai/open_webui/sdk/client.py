@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 from urllib.parse import urljoin
 
 import httpx
@@ -37,7 +37,7 @@ class BaseClient:
     def __init__(
         self,
         base_url: str = "http://localhost:8080",
-        token: Optional[str] = None,
+        token: str | None = None,
         timeout: int = 30,
         debug: bool = False,
     ):
@@ -53,7 +53,7 @@ class BaseClient:
         else:
             logger.setLevel(logging.INFO)
 
-    def _get_headers(self) -> Dict[str, str]:
+    def _get_headers(self) -> dict[str, str]:
         """Prepare request headers with authentication if token is provided"""
         headers = {"Content-Type": "application/json"}
         if self.token:
@@ -107,8 +107,8 @@ class BaseClient:
         self,
         method: str,
         endpoint: str,
-        params: Optional[Dict[str, Any]] = None,
-        json_data: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
+        params: dict[str, Any] | None = None,
+        json_data: dict[str, Any] | list[dict[str, Any]] | None = None,
     ) -> httpx.Response:
         """Send HTTP request and handle connection errors"""
         url = self._get_url(endpoint)
@@ -135,21 +135,21 @@ class BaseClient:
             logger.exception(f"Unexpected error: {str(e)}")
             raise
 
-    async def get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> httpx.Response:
+    async def get(self, endpoint: str, params: dict[str, Any] | None = None) -> httpx.Response:
         """Make a GET request to the API"""
         return await self._request("GET", endpoint, params=params)
 
     async def post(
         self,
         endpoint: str,
-        json_data: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
-        params: Optional[Dict[str, Any]] = None,
+        json_data: dict[str, Any] | list[dict[str, Any]] | None = None,
+        params: dict[str, Any] | None = None,
     ) -> httpx.Response:
         """Make a POST request to the API with JSON body"""
         return await self._request("POST", endpoint, params=params, json_data=json_data)
 
     async def put(
-        self, endpoint: str, json_data: Dict[str, Any], params: Optional[Dict[str, Any]] = None
+        self, endpoint: str, json_data: dict[str, Any], params: dict[str, Any] | None = None
     ) -> httpx.Response:
         """Make a PUT request to the API with JSON body"""
         return await self._request("PUT", endpoint, params=params, json_data=json_data)
@@ -157,8 +157,8 @@ class BaseClient:
     async def delete(
         self,
         endpoint: str,
-        json_data: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
-        params: Optional[Dict[str, Any]] = None,
+        json_data: dict[str, Any] | list[dict[str, Any]] | None = None,
+        params: dict[str, Any] | None = None,
     ) -> httpx.Response:
         """Make a DELETE request to the API"""
         return await self._request("DELETE", endpoint, params=params, json_data=json_data)

@@ -1,5 +1,3 @@
-from typing import List
-
 from dagster import OpExecutionContext, ResourceParam, op
 from llama_index.core.storage.docstore.keyval_docstore import KVDocumentStore
 
@@ -10,8 +8,8 @@ from aihub_pipeline.types.RefDocDocument import RefDocDocument
 def delete_many_ref_doc_from_docstore(
     context: OpExecutionContext,
     doc_store: ResourceParam[KVDocumentStore],
-    ref_docs: List[RefDocDocument],
-) -> List[RefDocDocument]:
+    ref_docs: list[RefDocDocument],
+) -> list[RefDocDocument]:
     """Deletes a list of Ref Docs from the docstore."""
     for ref_doc in ref_docs:
         context.log.info(f"Deleting ref doc {ref_doc.id_} from docstore")

@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -17,16 +17,17 @@ class IngestedBase(BaseModel):
     source: Annotated[str, Field(description="Source URI of original document.")]
     namespace: Annotated[str, Field(description="The namespace of the document within its metadata.")]
     version: Annotated[int, Field(description="Document version.")] = 1
-    content_hash: Optional[str] = Field(
-        None, description="Hash of the document/node, helpful to track whether file changed."
-    )
+    content_hash: Annotated[
+        str | None, Field(description="Hash of the document/node, helpful to track whether file changed.")
+    ] = None
 
-    number_of_pages: Annotated[Optional[int], Field(description="Number of Pages in the Document.")] = None
-    document_title: Annotated[Optional[str], Field(description="Document title.")] = None
-    language: Annotated[Optional[LanguageValue], Field(description="Document language.")] = None
+    number_of_pages: Annotated[int | None, Field(description="Number of Pages in the Document.")] = None
+    document_title: Annotated[str | None, Field(description="Document title.")] = None
+    language: Annotated[LanguageValue | None, Field(description="Document language.")] = None
 
     created_at: Annotated[str, Field(description="Date source document was created (ISO format string)")]
     updated_at: Annotated[str, Field(description="Date source document was last updated (ISO format string)")]
     inserted_at: Annotated[
         str, Field(description="Date source document was inserted into document store (ISO format string)")
     ]
+    metadata: Annotated[dict | None, Field(description="Additional metadata for the document.")] = None

@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Annotated, List, Optional
+from typing import Annotated
 
 from flatdict import FlatterDict
 from llama_index.core.base.llms.types import ChatMessage
@@ -45,7 +45,7 @@ class EventDisplayer:
 
     def __init__(
         self,
-        publisher: Annotated[JSPublisher, "Publisher for sending events to JetStream"],
+        publisher: Annotated[JSPublisher, "JSPublisher for sending events to JetStream"],
         topic_manager: Annotated[AgentThreadTopicManager, "Manages event subjects for a thread"],
     ):
         self.publisher = publisher
@@ -54,7 +54,7 @@ class EventDisplayer:
     async def display_event(
         self,
         event: Annotated[DisplayEvent, "The display event to publish."],
-        content: Annotated[Optional[str], "Optional human-readable content for tracing."] = None,
+        content: Annotated[str | None, "Optional human-readable content for tracing."] = None,
     ):
         """
         Publish a display event, optionally logging its content to the current trace span.
@@ -111,7 +111,7 @@ class EventDisplayer:
         llm_config: Annotated[LLMConfig, "Configuration for the LLM (model name, parameters)."],
         llm: Annotated[LLM, "The LLM instance providing stream_chat functionality."],
         messages: Annotated[
-            List[ChatMessage],
+            list[ChatMessage],
             "The chat messages (prompt + context) to send to the LLM.",
         ],
         as_stop_step: Annotated[bool, "Stop Agent after response finished streaming"] = False,
@@ -127,8 +127,8 @@ class EventDisplayer:
         - Returns an LLMEvent summarizing the entire conversation (inputs + full output).
 
         ### Example
-        If the LLM returns a three-line answer, `display_llm_stream` will publish three `ChunkEvent`s as the lines appear,
-        then produce a final LLMEvent with the aggregate content.
+        If the LLM returns a three-line answer, `display_llm_stream` will publish
+        three `ChunkEvent`s as the lines appear, then produce a final LLMEvent with the aggregate content.
         """
 
         aggregate = ""

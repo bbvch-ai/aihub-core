@@ -1,12 +1,13 @@
+import abc
 import logging
-from typing import Any, ClassVar, Dict, Type
+from typing import Any, ClassVar
 
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
 
-class Topic(BaseModel):
+class Topic(BaseModel, abc.ABC):
     """
     Base class for representing structured topics.
 
@@ -31,7 +32,16 @@ class Topic(BaseModel):
       affecting others.
     """
 
-    _topic_registry: ClassVar[Dict[str, Type["Topic"]]] = {}
+    _topic_registry: ClassVar[dict[str, type["Topic"]]] = {}
+
+    @property
+    @abc.abstractmethod
+    def execution_context_id(self) -> str:
+        """
+        The execution context ID of a topic is usually the most narrow ID that groups events logically together.
+        For example, in Agents, the most narrow grouping is the run_id. For Processes, it is the walkthrough_id.
+        """
+        pass
 
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
@@ -47,6 +57,7 @@ class Topic(BaseModel):
             Topic._topic_registry[cls.__name__] = cls
 
     @classmethod
+    @abc.abstractmethod
     def from_subject(cls, subject: str) -> "Topic":
         """
         Attempts to parse a subject string using all known `Topic` subclasses in the registry.
@@ -57,6 +68,11 @@ class Topic(BaseModel):
         Use this method when you need to handle arbitrary subjects, letting the topic classes
         themselves decide if the subject matches their pattern.
         """
+        if cls is not Topic:
+            # If this method is called on a subclass, it means the subclass has not
+            # overridden it. In this case, we should indicate failure to prevent recursion.
+            raise ValueError(f"'{cls.__name__}' does not implement 'from_subject' and cannot parse subject '{subject}'")
+
         for topic_type, topic_class in Topic._topic_registry.items():
             try:
                 return topic_class.from_subject(subject)

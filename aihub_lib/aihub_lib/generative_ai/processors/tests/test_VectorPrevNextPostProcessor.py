@@ -106,12 +106,13 @@ def test_context():
 
 @when(
     parsers.parse(
-        'I postprocess nodes from the starting node using the VectorPrevNextPostProcessor with mode "{mode}" and num_nodes set to {num_nodes:d}'
+        "I postprocess nodes from the starting node using the VectorPrevNextPostProcessor "
+        'with mode "{mode}" and num_nodes set to {num_nodes:d}'
     )
 )
 def postprocess_nodes(starting_node, vector_store, test_context, mode, num_nodes):
     processor = VectorPrevNextPostProcessor(vectorstore=vector_store, num_nodes=num_nodes, mode=mode)
-    result = processor._postprocess_nodes([starting_node])
+    result = processor.postprocess_nodes([starting_node])
     test_context["result"] = result
 
 

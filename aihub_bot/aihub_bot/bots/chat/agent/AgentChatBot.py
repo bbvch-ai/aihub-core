@@ -1,4 +1,4 @@
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from nats.aio.client import Client as NATS
 
 from aihub_bot.bots.chat.agent.AgentCompletionHandler import AgentCompletionHandler
@@ -9,7 +9,7 @@ class AgentChatBot(BaseChatBot):
     def __init__(
         self,
         nc: NATS,
-        external_event_distributor: ExternalEventDistributor,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
         agent_class: str,
         agent_id: str,
         path: str,
@@ -22,7 +22,7 @@ class AgentChatBot(BaseChatBot):
                 "agent_class": agent_class,
                 "agent_id": agent_id,
                 "nc": nc,
-                "external_event_distributor": external_event_distributor,
+                "external_agent_event_distributor": external_agent_event_distributor,
             },
             typing_timeout_seconds=typing_timeout_seconds,
         )

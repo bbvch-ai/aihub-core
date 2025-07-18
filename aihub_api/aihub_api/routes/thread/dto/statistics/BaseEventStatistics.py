@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -17,6 +17,6 @@ class BaseEventStatistics(BaseModel):
     open_bitl: Annotated[bool, Field(description="Has open BITL requests")] = False
     is_aitl: Annotated[bool, Field(description="Has AITL events")] = False
     open_aitl: Annotated[bool, Field(description="Has open AITL requests")] = False
-    started_at: Annotated[Optional[str], Field(description="Start time (ISO format string)")] = None
-    ended_at: Annotated[Optional[str], Field(description="End time (ISO format string)")] = None
-    duration: Annotated[Optional[float], Field(description="Duration in seconds")] = None
+    started_at: Annotated[str | None, Field(description="Start time (ISO format string)")] = None
+    ended_at: Annotated[str | None, Field(description="End time (ISO format string)")] = None
+    duration: Annotated[float | None, Field(description="Duration in seconds")] = None

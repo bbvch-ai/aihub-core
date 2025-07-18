@@ -1,7 +1,9 @@
 import logging
-from typing import AsyncContextManager, List, Optional
+from collections.abc import Callable
+from contextlib import AbstractAsyncContextManager
 
 from aihub_lib.runners.Runner import Runner
+from fastapi import FastAPI
 
 from aihub_bot.runners.lifetime.lifetime_manager import lifetime_manager
 
@@ -42,7 +44,7 @@ class BotRunner(Runner):
         api_path: str = "/api/v1",
         title: str = "AI Hub Bot Service",
         description: str = "AI Hub Bots",
-        origins: Optional[List[str]] = None,
+        origins: list[str] | None = None,
         debug: bool = False,
         conversation_ttl_days: float = 30,
     ):
@@ -52,5 +54,5 @@ class BotRunner(Runner):
         self._base_app.state.conversation_ttl_days = conversation_ttl_days
 
     @property
-    def lifetime_manager(self) -> AsyncContextManager:
+    def lifetime_manager(self) -> Callable[[FastAPI], AbstractAsyncContextManager]:
         return lifetime_manager

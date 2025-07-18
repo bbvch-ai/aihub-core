@@ -1,8 +1,9 @@
-import pytest
 import io
+
+import pytest
 from fastapi import UploadFile
-from pydub.generators import Sine
 from pydub import AudioSegment
+from pydub.generators import Sine
 
 from aihub_api.audio.AudioChunkingService import AudioChunkingService
 

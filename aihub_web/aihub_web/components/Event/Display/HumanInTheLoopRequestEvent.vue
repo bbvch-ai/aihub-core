@@ -22,11 +22,11 @@ import type {
   AssistantChatMessageOutput,
   HumanInTheLoopRequestEvent,
   ThreadDto,
-  WsServerEvent,
+  WsServerAgentEventReadable,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: WsServerEvent & { event: HumanInTheLoopRequestEvent }
+  event: WsServerAgentEventReadable & { event: HumanInTheLoopRequestEvent }
   thread: ThreadDto
 }>()
 

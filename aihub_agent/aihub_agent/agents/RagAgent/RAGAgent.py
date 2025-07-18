@@ -6,13 +6,12 @@ from aihub_lib.generative_ai.utils.condense_standalone_question import condense_
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
 from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
+from aihub_lib.generative_ai.utils.retrieve_parent_summary_nodes import retrieve_parent_summary_nodes
 from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev_next_nodes
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.context.run.RunContext import RunContext
 from aihub_lib.nats.events import LimitChatHistoryEvent, StandaloneQuestionCondenserEvent
-from aihub_lib.nats.events.control.stop import StopEvent
-from aihub_lib.nats.events.semantic.llm import LLMEvent
+from aihub_lib.nats.events.semantic.llm import LLMStopEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
 from llama_index.core import PromptTemplate
@@ -28,6 +27,7 @@ from aihub_agent.agents.RagAgent.events.FewShotAcceptEvent import FewShotAcceptE
 from aihub_agent.agents.RagAgent.events.FewShotRejectEvent import FewShotRejectEvent
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
+from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.workflow.decorators.step import step
 
 
@@ -56,7 +56,6 @@ class RAGAgent(Agent):
         self,
         event: UserMessageEvent,
         agent_config: RAGAgentConfig,
-        run_context: RunContext,
     ) -> LimitChatHistoryEvent:
         """
         Truncates incoming chat messages to fit within the configured token limit
@@ -67,7 +66,10 @@ class RAGAgent(Agent):
         )
         return LimitChatHistoryEvent(limited_history=limited_chat_history)
 
-    @step()
+    @step(
+        name=LocaleString(en="Condense Standalone Question"),
+        description=LocaleString(en="Condenses the chat history and user query into a standalone question."),
+    )
     async def condense_standalone_question_step(
         self,
         event: LimitChatHistoryEvent,
@@ -91,7 +93,10 @@ class RAGAgent(Agent):
             )
             return StandaloneQuestionCondenserEvent(condensed_chat_message=condensed_question)
 
-    @step()
+    @step(
+        name=LocaleString(en="Few Shot Guard"),
+        description=LocaleString(en="Guards the question to ensure it is appropriate for the agent to answer."),
+    )
     async def few_shot_guard_step(
         self,
         event: StandaloneQuestionCondenserEvent,
@@ -115,7 +120,10 @@ class RAGAgent(Agent):
 
         return FewShotAcceptEvent(reasoning=guard_result.reasoning)
 
-    @step()
+    @step(
+        name=LocaleString(en="Retrieve Nodes"),
+        description=LocaleString(en="Retrieves relevant nodes from the knowledge base."),
+    )
     async def retrieve_step(
         self,
         event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
@@ -151,9 +159,18 @@ class RAGAgent(Agent):
                 num_nodes=retrieve_step_config.retrieve_prev_next.num_nodes,
                 prev_next_mode=retrieve_step_config.retrieve_prev_next.mode,
             )
+        if retrieve_step_config.retrieve_summaries:
+            nodes = retrieve_parent_summary_nodes(
+                vector_store=retrieve_step_config.vector_store,
+                nodes=nodes,
+                max_levels=retrieve_step_config.retrieve_summaries.max_parent_levels,
+            )
         return RetrieverEvent.from_nodes(nodes)
 
-    @step()
+    @step(
+        name=LocaleString(en="Order Nodes by Documents"),
+        description=LocaleString(en="Orders the retrieved nodes by their source documents."),
+    )
     async def order_nodes_by_documents_step(
         self,
         event: RetrieverEvent,
@@ -164,15 +181,19 @@ class RAGAgent(Agent):
         """
         Orders the retrieved nodes based on their source documents.
         """
+
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
         ordered_nodes = combine_nodes_in_order(
             context_nodes=event.nodes,
-            locale_handler=t,
+            t=t,
             context_prompt=agent_config.context_prompt,
         )
         return InOrderNodeCombinerEvent(context_message=ordered_nodes)
 
-    @step()
+    @step(
+        name=LocaleString(en="Context Sufficient Guard"),
+        description=LocaleString(en="Guards the context to ensure it is sufficient for generating a response."),
+    )
     async def context_sufficient_guard_step(
         self,
         agent_config: RAGAgentConfig,
@@ -218,7 +239,10 @@ class RAGAgent(Agent):
         await displayer.display_thought(t("agent.thought.trying_another_retrieval_hop"))
         return ContextInsufficientWithQueryEvent(reasoning=guard_result.reasoning, new_query=new_query)
 
-    @step()
+    @step(
+        name=LocaleString(en="Limit Chat History with Context"),
+        description=LocaleString(en="Includes the combined context and truncates chat history again."),
+    )
     async def limit_chat_history_with_context_step(
         self,
         nodes_event: InOrderNodeCombinerEvent,
@@ -242,7 +266,10 @@ class RAGAgent(Agent):
         )
         return LimitChatHistoryWithContextEvent(limited_history_with_context=limited_chat_history)
 
-    @step()
+    @step(
+        name=LocaleString(en="Respond with LLM"),
+        description=LocaleString(en="Generates a response using the configured LLM."),
+    )
     async def respond_with_llm_step(
         self,
         event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ContextInsufficientEvent,
@@ -250,7 +277,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> LLMEvent:
+    ) -> LLMStopEvent:
         """
         Generates a response using the configured LLM.
         """
@@ -265,11 +292,4 @@ class RAGAgent(Agent):
             messages = event.limited_history_with_context
         await displayer.display_thought(t("agent.thought.write_answer_based_on_information"))
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            return await displayer.display_llm_stream(agent_config.llm, llm, messages)
-
-    @step()
-    async def stop_step(self, event: LLMEvent) -> StopEvent:
-        """
-        Signals the completion of the workflow.
-        """
-        return StopEvent()
+            return await displayer.display_llm_stream(agent_config.llm, llm, messages, as_stop_step=True)

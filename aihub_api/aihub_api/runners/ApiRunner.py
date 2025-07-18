@@ -1,5 +1,6 @@
 import logging
-from typing import AsyncContextManager, List, Optional
+from collections.abc import Callable
+from contextlib import AbstractAsyncContextManager
 
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.routes.Controller import Controller
@@ -9,6 +10,8 @@ from starlette.middleware.cors import CORSMiddleware
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.i18n.middleware.I18nMiddleware import I18nMiddleware
+from aihub_api.routes.agent.AgentController import AgentController
+from aihub_api.routes.process.ProcessController import ProcessController
 from aihub_api.runners.lifetime.lifetime_manager import lifetime_manager
 
 logger = logging.getLogger(__name__)
@@ -49,13 +52,13 @@ class ApiRunner(Runner):
         api_path: str = "/api/v1",
         title: str = "AI Hub",
         description: str = "AI Hub Backend",
-        origins: Optional[List[str]] = None,
+        origins: list[str] | None = None,
         debug: bool = False,
     ):
         super().__init__(api_path, title, description, origins, debug)
 
     @property
-    def lifetime_manager(self) -> AsyncContextManager:
+    def lifetime_manager(self) -> Callable[[FastAPI], AbstractAsyncContextManager]:
         return lifetime_manager
 
     def _get_api_app(self) -> FastAPI:
@@ -89,6 +92,13 @@ class ApiRunner(Runner):
         This attaches the controller’s routes under the prefix defined in the controller itself.
         """
         super().mount(*controllers)
+
+        for controller in controllers:
+            if isinstance(controller, AgentController):
+                self._api_app.state.agent_controller = controller
+
+            if isinstance(controller, ProcessController):
+                self._api_app.state.process_controller = controller
 
         self._api_app.openapi_tags = [
             {

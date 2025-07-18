@@ -1,21 +1,22 @@
 import logging
-from typing import List, Optional
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import BaseEvent, ChunkEvent, ControlEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
-from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
+from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent, EventSpecs
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
+from aihub_lib.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
-from aihub_lib.nats.topics import DiscoveryTopic
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics.discovery.agent.AgentDiscoveryTopic import AgentDiscoveryTopic
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
@@ -64,7 +65,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         self,
         agent_class: str,
         agent_id: str,
-        simulated_events: Optional[List[BaseEvent]] = None,
+        simulated_events: list[BaseEvent] | None = None,
         conversation_ttl_days: float = 30,
     ):
         super().__init__(conversation_ttl_days=conversation_ttl_days)
@@ -72,16 +73,16 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         self.agent_id = agent_id
         self.topic_manager = AgentInstanceTopicManager(agent_class, agent_id)
 
-        self.nc: Optional[NATS] = None
-        self.js: Optional[JetStreamContext] = None
+        self.nc: NATS | None = None
+        self.js: JetStreamContext | None = None
 
-        self.agent_control_event_subscriber: Optional[JSSubscriber[ControlEvent]] = None
-        self.js_publisher: Optional[JSPublisher] = None
+        self.agent_control_event_subscriber: JSSubscriber[ControlEvent] | None = None
+        self.js_publisher: JSPublisher | None = None
 
-        self.nc_publisher: Optional[NCPublisher[AgentDiscoveryResponseEvent]] = None
-        self.discovery_subscriber: Optional[NCSubscriber[DiscoveryRequestEvent]] = None
+        self.nc_publisher: NCPublisher[AgentDiscoveryResponseEvent] | None = None
+        self.discovery_subscriber: NCSubscriber[DiscoveryRequestEvent] | None = None
 
-        self.simulated_events: List[BaseEvent] = simulated_events or []
+        self.simulated_events: list[BaseEvent] = simulated_events or []
 
     async def simulate_agent(self, event: ControlEvent, topic: AgentTopic):
         """
@@ -96,18 +97,14 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
                 await self.publish_event(sim_event, topic)
             await self.publish_event(StopEvent(), topic)
 
-    async def discovery_handler(self, event: DiscoveryRequestEvent, topic: DiscoveryTopic):
+    async def discovery_handler(self, event: DiscoveryRequestEvent, topic: AgentDiscoveryTopic):
         """
         Responds to a discovery request by publishing an `AgentDiscoveryResponseEvent`.
         This simulates the agent being discoverable by clients, providing metadata and start events.
         """
         subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
-        start_events = [
-            EventSpecs(event_name=StartEvent.event_name_from_class(), event_schema=StartEvent.model_json_schema())
-        ]
-        stop_events = [
-            EventSpecs(event_name=StopEvent.event_name_from_class(), event_schema=StopEvent.model_json_schema())
-        ]
+        start_events = [EventSpecs.from_event_class(StartEvent)]
+        stop_events = [EventSpecs.from_event_class(StopEvent)]
         agent_discovery_response_event = AgentDiscoveryResponseEvent(
             agent_class=self.agent_class,
             agent_id=self.agent_id,
@@ -160,13 +157,13 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         await self.nc.connect(servers=["nats://localhost:4222"])
 
         self.nc_publisher = NCPublisher(self.nc)
-        self.discovery_subscriber = NCSubscriber.for_agent_discovery_request_events(
-            self.nc, TopicManager(), self.discovery_handler
+        self.discovery_subscriber = AgentNCSubscriber.for_agent_discovery_request_events(
+            self.nc, AgentTopicManager(), self.discovery_handler
         )
         await self.discovery_subscriber.start()
 
         self.js = self.nc.jetstream()
-        self.agent_control_event_subscriber = JSSubscriber.for_agent_instance_control_events(
+        self.agent_control_event_subscriber = AgentJSSubscriber.for_agent_instance_control_events(
             self.nc,
             self.topic_manager,
             js=self.js,

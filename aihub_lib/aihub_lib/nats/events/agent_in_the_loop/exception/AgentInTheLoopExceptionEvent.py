@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import Annotated, ClassVar
 
 from pydantic import Field
 
@@ -23,6 +23,7 @@ class AgentInTheLoopExceptionEvent(ControlAndDisplayEvent):
         "lib.events.aitl_exception_event.description"
     )
 
-    exception_event: ExceptionEvent = Field(
-        ..., description="The exception event from the delegated agent containing error details and failure context."
-    )
+    exception_event: Annotated[
+        ExceptionEvent,
+        Field(description="The exception event from the delegated agent containing error details and failure context."),
+    ]

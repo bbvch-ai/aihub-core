@@ -1,8 +1,8 @@
-from typing import List, Optional
+from typing import Annotated
 
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import EventSpecs
+from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from pydantic import BaseModel, Field
 
@@ -15,12 +15,15 @@ class MinimalAgentDTO(BaseModel):
     Only contains minimal information about the agent.
     """
 
-    agent_class: str = Field(..., description="The agent's class identifier (e.g., 'my_agent_class').")
-    agent_id: str = Field(..., description="Unique identifier for the agent instance (e.g., 'agent_123').")
-    agent_config: AgentConfigDTO = Field(
-        ..., description="Configuration details of the agent, including name, description, and prompts."
-    )
-    is_conversational: bool = Field(..., description="Whether the agent can participate in a chat-based conversation")
+    agent_class: Annotated[str, Field(description="The agent's class identifier (e.g., 'my_agent_class').")]
+    agent_id: Annotated[str, Field(description="Unique identifier for the agent instance (e.g., 'agent_123').")]
+    agent_config: Annotated[
+        AgentConfigDTO,
+        Field(description="Configuration details of the agent, including name, description, and prompts."),
+    ]
+    is_conversational: Annotated[
+        bool, Field(description="Whether the agent can participate in a chat-based conversation")
+    ]
 
     @classmethod
     def from_entity(cls, entity: AgentEntity, t: LocaleHandler) -> "MinimalAgentDTO":
@@ -37,38 +40,49 @@ class MinimalAgentDTO(BaseModel):
 class AgentDTO(MinimalAgentDTO):
     """
     A data transfer object for representing agent information in responses.
-
-    ### Why AgentDTO?
     This DTO standardizes how agent data is returned from the service layer to the controller,
     and subsequently to the API response. It helps maintain a clean separation between the internal
     event models and the publicly exposed fields in HTTP responses.
-
     By using `AgentDTO`, the API can evolve independently from the internal event representations.
     """
 
-    start_events: List[EventSpecs] = Field(
-        ..., description="A list of `EventSpecs` representing events that can start this agent's workflow."
-    )
-    stop_events: List[EventSpecs] = Field(
-        ..., description="A list of `EventSpecs` representing events that can stop this agent's workflow."
-    )
-    network_graph: WorkflowGraph = Field(
-        ...,
-        description="A network graph of the agent, showing how different components are connected and interact.",
-    )
-    is_online: Optional[bool] = Field(..., description="Indicates whether the agent is online and reachable.")
+    start_events: Annotated[
+        list[EventSpecs],
+        Field(description="A list of `EventSpecs` representing events that can start this agent's workflow."),
+    ]
+    stop_events: Annotated[
+        list[EventSpecs],
+        Field(description="A list of `EventSpecs` representing events that can stop this agent's workflow."),
+    ]
+    network_graph: Annotated[
+        WorkflowGraph,
+        Field(
+            description="A network graph of the agent, showing how different components are connected and interact.",
+        ),
+    ]
+    is_online: Annotated[bool | None, Field(description="Indicates whether the agent is online and reachable.")] = None
 
     @classmethod
-    def from_entity(cls, entity: AgentEntity, t: LocaleHandler, is_online: Optional[bool] = None) -> "AgentDTO":
+    def from_entity(cls, entity: AgentEntity, t: LocaleHandler, is_online: bool | None = None) -> "AgentDTO":
         """Converts an AgentEntity to an AgentDTO."""
         agent_config_dto = AgentConfigDTO.from_agent_config(entity.agent_config, t)
 
         start_events = [
-            EventSpecs(event_name=event.event_name, event_schema=event.event_schema) for event in entity.start_events
+            EventSpecs(
+                event_name=event.event_name,
+                event_schema=event.event_schema,
+                event_parents=event.event_parents,
+            )
+            for event in entity.start_events
         ]
 
         stop_events = [
-            EventSpecs(event_name=event.event_name, event_schema=event.event_schema) for event in entity.stop_events
+            EventSpecs(
+                event_name=event.event_name,
+                event_schema=event.event_schema,
+                event_parents=event.event_parents,
+            )
+            for event in entity.stop_events
         ]
 
         network_graph = WorkflowGraph.model_validate(entity.network_graph)

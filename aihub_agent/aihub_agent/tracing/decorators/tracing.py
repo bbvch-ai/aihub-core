@@ -1,6 +1,7 @@
 import inspect
 import json
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from openinference.semconv.trace import OpenInferenceMimeTypeValues, SpanAttributes
 from opentelemetry import trace

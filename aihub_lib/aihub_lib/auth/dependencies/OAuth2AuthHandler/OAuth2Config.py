@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi.security import OAuth2AuthorizationCodeBearer
 from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -17,7 +19,8 @@ class OAuth2Config(BaseSettings):
     `OAuth2Config`:
     - Loads these from environment variables or a `.env` file.
     - Provides computed properties to construct full URLs for authorization, token retrieval, and JWKS keys.
-    - Returns an `OAuth2AuthorizationCodeBearer` schema, simplifying the integration with FastAPI's dependency injection.
+    - Returns an `OAuth2AuthorizationCodeBearer` schema, simplifying
+      the integration with FastAPI's dependency injection.
 
     ### Example
     ```python
@@ -26,9 +29,9 @@ class OAuth2Config(BaseSettings):
     ```
     """
 
-    TENANT_ID: str = Field(..., description="The tenant ID of the Azure AD tenant.")
-    CLIENT_ID: str = Field(..., description="The client ID of the application.")
-    AUTHORITY_URL: str = Field(..., description="The authority URL of the Azure AD tenant.")
+    TENANT_ID: Annotated[str, Field(description="The tenant ID of the Azure AD tenant.")]
+    CLIENT_ID: Annotated[str, Field(description="The client ID of the application.")]
+    AUTHORITY_URL: Annotated[str, Field(description="The authority URL of the Azure AD tenant.")]
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -1,7 +1,8 @@
-from typing import ClassVar
+from typing import Annotated, ClassVar
 
 from pydantic import Field
 
+from aihub_iac.azure.constants.suffix import DEFAULT_PHOENIX_SUFFIX
 from aihub_iac.azure.resources.BaseConfig import BaseConfig
 from aihub_iac.azure.settings.PostgresAuthSettings import PostgresAuthSettings
 from aihub_iac.azure.settings.RegistrySettings import RegistrySettings
@@ -13,55 +14,69 @@ class PhoenixConfig(BaseConfig):
     _registry_settings: ClassVar[RegistrySettings] = RegistrySettings()
     _postgres_settings: ClassVar[PostgresAuthSettings] = PostgresAuthSettings()
 
-    DEFAULT_PHOENIX_SUFFIX: ClassVar[str] = "phoenix"
     PHOENIX_SUBNET_CIDR: ClassVar[str] = "10.0.36.0/24"
 
     # Docker Image settings
-    repo_image_url: str = Field(
-        default="ghcr.io/bbvch-ai/aihub-core/phoenix", description="URL of the Docker repository"
+    repo_image_url: Annotated[str, Field(description="URL of the Docker repository")] = (
+        "ghcr.io/bbvch-ai/aihub-core/phoenix"
     )
-    docker_image_tag: str = Field(description="Tag of the Docker image")
+    docker_image_tag: Annotated[str, Field(description="Tag of the Docker image")]
 
     # Azure settings
-    app_service_plan_name: str = Field(description="Name of the Azure App Service Plan")
+    app_service_plan_name: Annotated[str, Field(description="Name of the Azure App Service Plan")]
 
     # Registry settings
-    registry_user: str = Field(
-        default_factory=lambda: PhoenixConfig._registry_settings.REGISTRY_USER,
-        description="Registry username for authentication",
-    )
-    registry_pat: str = Field(
-        default_factory=lambda: PhoenixConfig._registry_settings.REGISTRY_PAT,
-        description="Registry personal access token for authentication",
-    )
-    registry_url: str = Field(
-        default_factory=lambda: PhoenixConfig._registry_settings.REGISTRY_URL,
-        description="Registry URL for authentication",
-    )
+    registry_user: Annotated[
+        str,
+        Field(
+            default_factory=lambda: PhoenixConfig._registry_settings.REGISTRY_USER,
+            description="Registry username for authentication",
+        ),
+    ]
+    registry_pat: Annotated[
+        str,
+        Field(
+            default_factory=lambda: PhoenixConfig._registry_settings.REGISTRY_PAT,
+            description="Registry personal access token for authentication",
+        ),
+    ]
+    registry_url: Annotated[
+        str,
+        Field(
+            default_factory=lambda: PhoenixConfig._registry_settings.REGISTRY_URL,
+            description="Registry URL for authentication",
+        ),
+    ]
 
     # OAuth2 settings
-    client_id: str = Field(description="Client ID for OAuth2 authentication")
-    client_secret: str = Field(description="Client secret for OAuth2 authentication")
-    oidc_config_url: str = Field(description="OIDC configuration URL for OAuth2 authentication")
+    client_id: Annotated[str, Field(description="Client ID for OAuth2 authentication")]
+    client_secret: Annotated[str, Field(description="Client secret for OAuth2 authentication")]
+    oidc_config_url: Annotated[str, Field(description="OIDC configuration URL for OAuth2 authentication")]
 
-    phoenix_secret: str = Field(description="Secret for Phoenix authentication")
+    phoenix_secret: Annotated[str, Field(description="Secret for Phoenix authentication")]
 
-    version: str = Field(description="Version of the Phoenix service")
+    version: Annotated[str, Field(description="Version of the Phoenix service")]
 
-    postgres_username: str = Field(
-        default_factory=lambda: PhoenixConfig._postgres_settings.POSTGRES_USERNAME,
-        description="Username for the PostgreSQL database",
-    )
-    postgres_password: str = Field(
-        default_factory=lambda: PhoenixConfig._postgres_settings.POSTGRES_PASSWORD,
-        description="Password for the PostgreSQL database",
-    )
+    postgres_username: Annotated[
+        str,
+        Field(
+            default_factory=lambda: PhoenixConfig._postgres_settings.POSTGRES_USERNAME,
+            description="Username for the PostgreSQL database",
+        ),
+    ]
+    postgres_password: Annotated[
+        str,
+        Field(
+            default_factory=lambda: PhoenixConfig._postgres_settings.POSTGRES_PASSWORD,
+            description="Password for the PostgreSQL database",
+        ),
+    ]
 
     database_name: str = "phoenix"
 
     @property
     def service_name(self) -> str:
-        return self.resource_namer.app_service_name(PhoenixConfig.DEFAULT_PHOENIX_SUFFIX)
+        return self.resource_namer.app_service_name(DEFAULT_PHOENIX_SUFFIX)
 
     @property
     def effective_docker_image(self) -> str:

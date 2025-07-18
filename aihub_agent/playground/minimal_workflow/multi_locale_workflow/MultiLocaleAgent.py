@@ -1,10 +1,10 @@
-from aihub_agent.agents.Agent import Agent
-from aihub_agent.workflow.decorators.step import step
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import StopEvent, UserMessageEvent
-from playground.minimal_workflow.multi_locale_workflow.MultiLocaleAgentConfig import MultiLocaleAgentConfig
 
+from aihub_agent.agents.Agent import Agent
+from aihub_agent.workflow.decorators.step import step
 from playground.minimal_workflow.multi_locale_workflow.events.MultiLocaleEvent import MultiLocaleEvent
+from playground.minimal_workflow.multi_locale_workflow.MultiLocaleAgentConfig import MultiLocaleAgentConfig
 
 
 class MultiLocaleAgent(Agent):

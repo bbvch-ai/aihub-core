@@ -1,5 +1,5 @@
 import json
-from typing import Any, ClassVar, Dict, Optional
+from typing import Annotated, Any, ClassVar
 
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 from pydantic import Field
@@ -14,13 +14,15 @@ class ChainEvent(SemanticEvent):
         "lib.events.semantic_chain_event.description"
     )
 
-    metadata: Optional[Dict[str, Any]] = Field(
-        None,
-        description="Metadata associated with the chain as a dictionary JSON string. "
-        "For example, LangChain uses metadata to store user-defined attributes for a chain.",
-    )
+    metadata: Annotated[
+        dict[str, Any] | None,
+        Field(
+            description="Metadata associated with the chain as a dictionary JSON string. "
+            "For example, LangChain uses metadata to store user-defined attributes for a chain.",
+        ),
+    ] = None
 
-    def to_semantic_convention(self) -> Dict[str, str]:
+    def to_semantic_convention(self) -> dict[str, str]:
         attributes = {
             SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.CHAIN.value,
             SpanAttributes.METADATA: json.dumps(self.metadata),

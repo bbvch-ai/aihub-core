@@ -1,16 +1,18 @@
 from asyncio import sleep
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Annotated, AsyncGenerator, List, Optional, Type
+from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.infrastructure.RedisConfig import RedisConfig
 from aihub_lib.nats.events import AgentDiscoveryResponseEvent, BaseEvent, DiscoveryRequestEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.NatsConfig import NatsConfig
+from aihub_lib.nats.publishers.JSPublisher import JSPublisher
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
@@ -39,34 +41,13 @@ class AgentTestRunner(AgentRunner):
       event subscriptions and automatic cleanup after a delay.
     - Utilities to quickly check if certain event classes (Start/Stop/Exception) have been emitted,
       and to retrieve all events of a particular type.
-
-    ### Why AgentTestRunner?
-    In a test scenario, you may want to:
-    - Start an agent runner in a controlled environment.
-    - Send initial events (like StartEvent) to initiate a workflow.
-    - Observe what events the agent produces in response.
-    - After a delay (e.g., after the workflow finishes), stop the runner and inspect the observed events.
-
-    AgentTestRunner simplifies this by integrating the lifecycle of the runner and event observation into
-    a single context manager. This pattern makes writing tests more straightforward and ensures proper
-    cleanup after tests.
-
-    ### Usage
-    ```python
-    async with AgentTestRunner(...).test_run() as partial_topic:
-        # send events using partial_topic (which contains thread_id, display_id, run_id)
-        # await test_runner.send_event_from_topic(some_start_event, partial_topic)
-        # ... run your scenario ...
-
-    # After exiting the context block, test_runner.observed_events contains all captured events.
-    ```
     """
 
     def __init__(
         self,
-        agent_type: Type[Agent],
+        agent_type: type[Agent],
         agent_config: AgentConfig,
-        locale_paths: Optional[List[str]] = None,
+        locale_paths: list[str] | None = None,
     ):
         super().__init__(
             servers=[NatsConfig().NATS_ENDPOINT],
@@ -75,9 +56,35 @@ class AgentTestRunner(AgentRunner):
             agent_config=agent_config,
             locale_paths=locale_paths,
         )
-        self.test_event_subscriber: Optional[JSSubscriber] = None
-        self.observed_events: List[ObservedEvent] = []
-        self.topic: Optional[PartialAgentTopic] = None
+        self.test_event_subscriber: JSSubscriber | None = None
+        self.observed_events: list[ObservedEvent] = []
+        self.topic: PartialAgentTopic | None = None
+
+        self.observe_discovery_event_subscriber: AgentNCSubscriber | None = None
+        self.observe_discovery_response_event_subscriber: AgentNCSubscriber | None = None
+
+    async def send_event(
+        self,
+        start_event: StartEvent,
+        thread_id: str,
+        display_id: str,
+        run_id: str,
+    ):
+        """
+        Sends an initial event (like a StartEvent) to initiate a run.
+        This allows external code to trigger a new run by injecting a start event.
+        """
+        publisher = JSPublisher(self.js)
+        thread_topic_manager = AgentThreadTopicManager.from_agent_instance_topic_manager(
+            self.topic_manager,
+            thread_id,
+            display_id,
+            run_id,
+        )
+        subject = thread_topic_manager.get_subject_for_control_event_in_thread(
+            start_event.event_name, event_id=start_event.event_id
+        )
+        await publisher.publish_event(start_event, subject)
 
     async def send_event_from_topic(self, start_event: StartEvent, topic: PartialAgentTopic):
         """
@@ -95,7 +102,7 @@ class AgentTestRunner(AgentRunner):
 
     @asynccontextmanager
     async def test_run(
-        self, delay_before_stop: int = 1, thread_id: Optional[str] = None
+        self, delay_before_stop: int = 1, thread_id: str | None = None
     ) -> AsyncGenerator[PartialAgentTopic, None]:
         """
         A context manager that:
@@ -115,14 +122,14 @@ class AgentTestRunner(AgentRunner):
         await sleep(delay_before_stop)
         await self.test_run_stop()
 
-    async def test_run_start(self, thread_id: Optional[str] = None) -> PartialAgentTopic:
+    async def test_run_start(self, thread_id: str | None = None) -> PartialAgentTopic:
         await self.start()
         if thread_id is None:
             thread_id = str(ObjectId())
         display_id = str(ObjectId())
         run_id = str(ObjectId())
 
-        self.test_event_subscriber = NCSubscriber.for_all_thread_events(
+        self.test_event_subscriber = AgentNCSubscriber.for_all_thread_events(
             nc=self.nc,
             topic_manager=AgentThreadTopicManager.from_agent_instance_topic_manager(
                 self.topic_manager,
@@ -134,16 +141,16 @@ class AgentTestRunner(AgentRunner):
         )
         await self.test_event_subscriber.start()
 
-        self.observe_discovery_event_subscriber = NCSubscriber.for_agent_discovery_request_events(
+        self.observe_discovery_event_subscriber = AgentNCSubscriber.for_agent_discovery_request_events(
             nc=self.nc,
-            topic_manager=TopicManager(),
+            topic_manager=AgentTopicManager(),
             handler=self.observe_event,
         )
         await self.observe_discovery_event_subscriber.start()
 
-        self.observe_discovery_response_event_subscriber = NCSubscriber.for_agent_discovery_response_events(
+        self.observe_discovery_response_event_subscriber = AgentNCSubscriber.for_agent_discovery_response_events(
             nc=self.nc,
-            topic_manager=TopicManager(),
+            topic_manager=AgentTopicManager(),
             handler=self.observe_event,
         )
         await self.observe_discovery_response_event_subscriber.start()
@@ -201,9 +208,9 @@ class AgentTestRunner(AgentRunner):
 
     def get_topics(
         self,
-        event_class: Type[BaseEvent],
+        event_class: type[BaseEvent],
         exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
-    ) -> List[AgentTopic]:
+    ) -> list[AgentTopic]:
         """Returns the topics of all observed events of the specified class, if any are AgentTopic."""
         return [
             ev.topic
@@ -215,9 +222,9 @@ class AgentTestRunner(AgentRunner):
 
     def get_events_of_class(
         self,
-        event_class: Type[BaseEvent],
+        event_class: type[BaseEvent],
         exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
-    ) -> List[BaseEvent]:
+    ) -> list[BaseEvent]:
         """Returns all observed events of the specified class."""
         return [
             ev.event
@@ -228,7 +235,7 @@ class AgentTestRunner(AgentRunner):
 
     def has_event_of_class(
         self,
-        event_class: Type[BaseEvent],
+        event_class: type[BaseEvent],
         exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
     ) -> bool:
         """Check if any event of the specified class was observed."""
@@ -236,7 +243,7 @@ class AgentTestRunner(AgentRunner):
 
     def get_event_of_class(
         self,
-        event_class: Type[BaseEvent],
+        event_class: type[BaseEvent],
         exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
     ) -> BaseEvent:
         """
@@ -250,7 +257,7 @@ class AgentTestRunner(AgentRunner):
 
     async def wait_for_event(
         self,
-        event_class: Type[BaseEvent],
+        event_class: type[BaseEvent],
         timeout: float = 60.0,
         interval: float = 0.1,
     ) -> BaseEvent:

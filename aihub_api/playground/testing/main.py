@@ -1,14 +1,12 @@
 import asyncio
-from os.path import abspath, join, dirname
+from os.path import abspath, dirname, join
 
-from aihub_api.routes.agent.AgentController import AgentController
-from aihub_api.routes.event.EventController import EventController
-from aihub_api.routes.i18n.I18nController import I18nController
-from aihub_api.routes.openai.OpenaiController import OpenaiController
-from aihub_api.routes.thread.ThreadController import ThreadController
-from aihub_api.routes.user.UserController import UserController
-from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
-from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+    DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
@@ -23,6 +21,14 @@ from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import Az
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
 
+from aihub_api.routes.agent.AgentController import AgentController
+from aihub_api.routes.event.EventController import EventController
+from aihub_api.routes.i18n.I18nController import I18nController
+from aihub_api.routes.openai.OpenaiController import OpenaiController
+from aihub_api.routes.thread.ThreadController import ThreadController
+from aihub_api.routes.user.UserController import UserController
+from aihub_api.runners.simulation.agent.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
+
 enable_logging()
 
 
@@ -34,7 +40,7 @@ async def main():
 
     runner.mount_frontend(join(dirname(abspath(__file__)), "frontend"))
 
-    auth = NoAuthHandler()
+    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
 
     OPENAI_URL = "https://aihub-dev-openai-swe-whisper.openai.azure.com"
 
@@ -42,7 +48,7 @@ async def main():
         HealthController(auth=auth).get_health(),
         UserController(auth=auth).get_my_user().get_my_dashboard().update_my_dashboard(),
         I18nController(auth=auth).get_my_locale(),
-        EventController(auth=auth).ws().get_events(),
+        EventController(auth=auth).ws().get_agent_events_in_thread(),
         ThreadController(auth=auth)
         .get_user_threads()
         .create_thread()
@@ -50,8 +56,7 @@ async def main():
         .add_agent_to_thread()
         .remove_agent_from_thread()
         .add_user_to_thread()
-        .remove_user_from_thread()
-        .get_thread_event_timeseries(),
+        .remove_user_from_thread(),
         AgentController(auth=auth).get_agent().discover_agents(),
         OpenaiController(
             auth=auth,

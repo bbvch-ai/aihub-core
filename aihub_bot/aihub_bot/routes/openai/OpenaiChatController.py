@@ -1,6 +1,7 @@
 import logging
-from typing import Annotated, Any, Callable, List
+from typing import Annotated
 
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
@@ -23,12 +24,13 @@ class OpenaiChatController(Controller):
 
     def __init__(
         self,
+        *,
+        auth: AuthHandler,
         route: str = "/openai/chat",
-        is_admin_only=False,
-        auth: Callable[..., Any] = None,
-        chat_models: List[ChatLLMConfig] = None,
+        additionally_required_permission: str | None = None,
+        chat_models: list[ChatLLMConfig] = None,
     ):
-        super().__init__(route, auth, is_admin_only=is_admin_only)
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
         self.chat_models = chat_models or []
 
         for chat_model in self.chat_models:
@@ -84,7 +86,7 @@ class OpenaiChatController(Controller):
 
     @staticmethod
     def get_client(
-        models: List[ChatLLMConfig],
+        models: list[ChatLLMConfig],
         model_name: str,
     ) -> AsyncOpenAI | AsyncAzureOpenAI:
         """

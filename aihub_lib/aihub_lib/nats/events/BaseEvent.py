@@ -4,15 +4,27 @@ import os
 import threading
 import time
 from datetime import datetime
-from typing import Any, ClassVar, Dict, List, Optional, Type, Union
+from typing import Any, ClassVar
 
 from bson import ObjectId
+from llama_index.core.base.llms.types import ChatMessage
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, computed_field
 from typing_extensions import override
 
 from aihub_lib.nats.events.utils import get_inheritance_depth, get_parent_classes_until_base
 
 logger = logging.getLogger(__name__)
+
+
+def serialize_chat_message_blocks(chat_message: ChatMessage, **kwargs: Any) -> dict:
+    msg_dict = chat_message.model_dump(**kwargs)
+    for block in msg_dict["blocks"]:
+        if block["block_type"] in ["audio", "image"] and block.get("url") is not None:
+            block["url"] = str(block["url"])
+            if block.get("path") is not None:
+                block["path"] = str(block["path"])
+
+    return msg_dict
 
 
 class BaseEvent(BaseModel):
@@ -37,7 +49,7 @@ class BaseEvent(BaseModel):
       (PID, thread ID) for better observability in logs or traces.
     """
 
-    _event_registry: ClassVar[Dict[str, Type["BaseEvent"]]] = {}
+    _event_registry: ClassVar[dict[str, type["BaseEvent"]]] = {}
     event_id: str = Field(default_factory=lambda: str(ObjectId()))
     created_at: int = Field(
         default_factory=time.time_ns,
@@ -45,11 +57,11 @@ class BaseEvent(BaseModel):
     )
 
     # Private attributes to handle unknown event types
-    _unknown_event_name: Optional[str] = PrivateAttr(None)
-    _unknown_data: Optional[Dict[str, Any]] = PrivateAttr(None)
-    _unknown_parent_classes: Optional[List[str]] = PrivateAttr(None)
+    _unknown_event_name: str | None = PrivateAttr(None)
+    _unknown_data: dict[str, Any] | None = PrivateAttr(None)
+    _unknown_parent_classes: list[str] | None = PrivateAttr(None)
 
-    _jetstream_sequence: Optional[int] = PrivateAttr(None)
+    _jetstream_sequence: int | None = PrivateAttr(None)
 
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
 
@@ -79,10 +91,24 @@ class BaseEvent(BaseModel):
     def event_name(self):
         return self._event_name
 
+    @classmethod
+    def parent_event_names_from_class(cls) -> list[str]:
+        result = [cls.event_name_from_class()]
+        parent_classes = get_parent_classes_until_base(cls, BaseEvent)
+        class_dict = {cls.__name__: cls for cls in cls.__mro__ if cls.__name__ in parent_classes}
+        sorted_parent_classes = sorted(
+            list(parent_classes), key=lambda name: get_inheritance_depth(class_dict[name], BaseEvent), reverse=True
+        )
+
+        result.extend(sorted_parent_classes)
+        return result
+
     @computed_field
     @property
-    def _parent_event_names(self) -> List[str]:
-        """Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance."""
+    def _parent_event_names(self) -> list[str]:
+        """
+        Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+        """
         if self._unknown_parent_classes is not None:
             return self._unknown_parent_classes
 
@@ -103,6 +129,38 @@ class BaseEvent(BaseModel):
     @property
     def is_control_event(self) -> bool:
         return "ControlEvent" in self._parent_event_names
+
+    @property
+    def is_process_event(self) -> bool:
+        return "ProcessEvent" in self._parent_event_names
+
+    @property
+    def is_process_start_event(self) -> bool:
+        return "ProcessStartEvent" in self._parent_event_names
+
+    @property
+    def is_process_stop_event(self) -> bool:
+        return "ProcessStopEvent" in self._parent_event_names
+
+    @property
+    def is_process_exception_event(self) -> bool:
+        return "ProcessExceptionEvent" in self._parent_event_names
+
+    @property
+    def is_work_event(self) -> bool:
+        return "WorkEvent" in self._parent_event_names
+
+    @property
+    def is_work_request_event(self) -> bool:
+        return "WorkRequestEvent" in self._parent_event_names
+
+    @property
+    def is_human_work_event(self) -> bool:
+        return "HumanWorkEvent" in self._parent_event_names
+
+    @property
+    def is_program_work_event(self) -> bool:
+        return "ProgramWorkEvent" in self._parent_event_names
 
     @property
     def is_exception_event(self) -> bool:
@@ -177,7 +235,7 @@ class BaseEvent(BaseModel):
         BaseEvent._event_registry[cls.__name__] = cls
 
     @classmethod
-    def deserialize_event(cls, data: Union[bytes, str, Dict[str, Any]]) -> "BaseEvent":
+    def deserialize_event(cls, data: bytes | str | dict[str, Any]) -> "BaseEvent":
         """
         Given raw event data, deserializes it into the most specific event class possible
         based on inheritance hierarchy, while preserving original type information.
@@ -204,7 +262,7 @@ class BaseEvent(BaseModel):
 
         # Get event type and parent classes
         event_name: str = json_data.get("_event_name")
-        parent_classes: List[str] = json_data.get("_parent_event_names", [])
+        parent_classes: list[str] = json_data.get("_parent_event_names", [])
 
         # If the exact class is registered, try to instantiate it and propagate any validation errors
         if event_name and isinstance(event_name, str):
@@ -257,7 +315,7 @@ class BaseEvent(BaseModel):
 
         return event
 
-    def to_trace_dict(self) -> Dict[str, Any]:
+    def to_trace_dict(self) -> dict[str, Any]:
         """
         Prepares a dictionary suitable for tracing and logging:
         - Human-readable timestamps.
@@ -277,18 +335,21 @@ class BaseEvent(BaseModel):
         return event_dict
 
     @override
-    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
         """
         Serializes the event into a dictionary. If this event was originally unknown,
         merges the original data with the known fields so nothing is lost.
         """
+        kwargs["serialize_as_any"] = True
+
         data = super().model_dump(**kwargs)
-        for field_name, value in self.__dict__.items():
-            if isinstance(value, BaseModel):
-                data[field_name] = value.model_dump()
-            # Handle lists containing events
-            elif isinstance(value, list):
-                data[field_name] = [item.model_dump() if isinstance(item, BaseModel) else item for item in value]
+        for field_name, value in data.items():
+            if isinstance(value, ChatMessage):
+                data[field_name] = serialize_chat_message_blocks(value, **kwargs)
+            elif isinstance(value, BaseModel):
+                data[field_name] = value.model_dump(**kwargs)
+            elif isinstance(value, list | tuple):
+                data[field_name] = [self._item_dump(item, **kwargs) for item in value]
 
         if not self._unknown_data:
             return data
@@ -297,6 +358,15 @@ class BaseEvent(BaseModel):
             **self._unknown_data,
             **data,
         }
+
+    @staticmethod
+    def _item_dump(item: Any, **kwargs: Any):
+        if isinstance(item, ChatMessage):
+            return serialize_chat_message_blocks(item, **kwargs)
+        elif isinstance(item, BaseModel):
+            return item.model_dump(**kwargs)
+        else:
+            return item
 
     @override
     def model_dump_json(self, **kwargs: Any) -> str:

@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import Annotated, ClassVar
 
 from pydantic import Field
 
@@ -22,8 +22,11 @@ class HumanInTheLoopResponseEvent(ControlAndDisplayEvent):
         "lib.events.hitl_response_event.description"
     )
 
-    response: str = Field(..., description="The human operator's answer or decision.")
-    request_event: HumanInTheLoopRequestEvent = Field(
-        ...,
-        description="The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.",
-    )
+    response: Annotated[str, Field(description="The human operator's answer or decision.")]
+    request_event: Annotated[
+        HumanInTheLoopRequestEvent,
+        Field(
+            description="The original `HumanInTheLoopRequestEvent` that led to this response, providing context "
+            "for where and why the workflow paused.",
+        ),
+    ]

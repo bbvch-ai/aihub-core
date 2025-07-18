@@ -1,16 +1,18 @@
 import base64
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock
 
-import httpx
 import jwt
 import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
-    DummyResponse,
     base64url_encode,
     generate_rsa_keypair,
     public_key_to_jwk,
@@ -38,16 +40,6 @@ def fake_jwks_response(rsa_keys: dict) -> dict:
     return {"keys": [rsa_keys["jwk"]]}
 
 
-@pytest.fixture(autouse=True)
-def monkeypatch_httpx(monkeypatch, fake_jwks_response: dict) -> None:
-    """Monkeypatch httpx.AsyncClient.get to return a fake JWKS response."""
-
-    async def fake_get(self, url, **kwargs):
-        return DummyResponse(fake_jwks_response, status_code=200)
-
-    monkeypatch.setattr(httpx.AsyncClient, "get", fake_get)
-
-
 @pytest.fixture
 def oauth2_context() -> dict:
     """Container for storing OAuth2-related data across steps."""
@@ -59,7 +51,8 @@ def oauth2_context() -> dict:
 
 @given(
     parsers.parse(
-        'an OAuth2 configuration with tenant_id "{tenant_id}", client_id "{client_id}", and authority_url "{authority_url}"'
+        'an OAuth2 configuration with tenant_id "{tenant_id}", '
+        'client_id "{client_id}", and authority_url "{authority_url}"'
     ),
     target_fixture="oauth2_config",
 )
@@ -75,10 +68,16 @@ def oauth2_config(monkeypatch, tenant_id: str, client_id: str, authority_url: st
     parsers.parse('a valid OAuth2 token is generated with name "{name}", email "{email}", and roles "{roles}"'),
     target_fixture="generated_token",
 )
-def generated_token(oauth2_config: OAuth2Config, rsa_keys: dict, name: str, email: str, roles: str) -> str:
+def generated_token(monkeypatch, oauth2_config: OAuth2Config, rsa_keys: dict, name: str, email: str, roles: str) -> str:
     """Generate a valid OAuth2 JWT with the specified claims."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     exp = now + timedelta(minutes=10)
+
+    monkeypatch.setenv("NAME", name)
+    monkeypatch.setenv("EMAIL", email)
+    monkeypatch.setenv("OID", "test-oid")
+    monkeypatch.setenv("ROLES", roles)
+
     payload = {
         "name": name,
         "preferred_username": email,
@@ -104,11 +103,17 @@ def given_invalid_token(oauth2_context: dict, token: str) -> None:
     target_fixture="generated_token",
 )
 def generated_expired_token(
-    oauth2_config: OAuth2Config, rsa_keys: dict, oauth2_context: dict, name: str, email: str, roles: str
+    monkeypatch, oauth2_config: OAuth2Config, rsa_keys: dict, oauth2_context: dict, name: str, email: str, roles: str
 ) -> str:
     """Generate an expired OAuth2 JWT and store it in the context."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     exp = now - timedelta(minutes=10)
+
+    monkeypatch.setenv("NAME", name)
+    monkeypatch.setenv("EMAIL", email)
+    monkeypatch.setenv("OID", "test-oid")
+    monkeypatch.setenv("ROLES", roles)
+
     payload = {
         "name": name,
         "preferred_username": email,
@@ -160,30 +165,36 @@ def store_generated_token(oauth2_context: dict, generated_token: str) -> None:
 
 @when("I invoke the OAuth2AuthHandler with the token")
 @async_test
-async def invoke_oauth2_handler(oauth2_context: dict) -> None:
+async def invoke_oauth2_handler(monkeypatch, oauth2_context: dict, fake_jwks_response: dict) -> None:
     """Invoke the OAuth2AuthHandler with the stored token and store the authenticated user."""
     from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
+
+    # Mock the method responsible for the external call
+    monkeypatch.setattr(OAuth2AuthHandler, "_get_jwks", AsyncMock(return_value=fake_jwks_response))
 
     token = oauth2_context.get("token")
     if token is None:
         pytest.fail("No token found in context")
     token_bytes = token if isinstance(token, bytes) else token.encode("utf-8")
-    handler = OAuth2AuthHandler()
+    handler = OAuth2AuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     user = await handler(token_bytes)
     oauth2_context["user"] = user
 
 
 @when("I invoke the OAuth2AuthHandler with the token expecting error")
 @async_test
-async def invoke_oauth2_handler_expect_error(oauth2_context: dict) -> None:
+async def invoke_oauth2_handler_expect_error(monkeypatch, oauth2_context: dict, fake_jwks_response: dict) -> None:
     """Invoke the OAuth2AuthHandler with the stored token and capture the error."""
     from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
+
+    # Mock the method responsible for the external call
+    monkeypatch.setattr(OAuth2AuthHandler, "_get_jwks", AsyncMock(return_value=fake_jwks_response))
 
     token = oauth2_context.get("token")
     if token is None:
         pytest.fail("No token found in context")
     token_bytes = token if isinstance(token, bytes) else token.encode("utf-8")
-    handler = OAuth2AuthHandler()
+    handler = OAuth2AuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     try:
         await handler(token_bytes)
         pytest.fail("OAuth2AuthHandler did not raise an exception")
@@ -207,9 +218,7 @@ def check_oauth2_user_email(oauth2_context: dict, expected_email: str) -> None:
     """Check that the authenticated user has the expected preferred username."""
     user = oauth2_context.get("user")
     assert user is not None, "No user was returned by OAuth2AuthHandler"
-    assert (
-        user.preferred_username == expected_email
-    ), f'Expected email "{expected_email}", got "{user.preferred_username}"'
+    assert user.email == expected_email, f'Expected email "{expected_email}", got "{user.email}"'
 
 
 @then(parsers.parse('the returned user should have roles "{role1}" and "{role2}"'))

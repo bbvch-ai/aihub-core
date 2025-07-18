@@ -1,6 +1,6 @@
 import json
-from datetime import datetime, timezone
-from typing import Annotated, Dict, Optional
+from datetime import UTC, datetime
+from typing import Annotated
 
 from llama_index.core.schema import BaseNode, NodeWithScore, TextNode
 from openinference.semconv.trace import DocumentAttributes
@@ -22,6 +22,9 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     INSERTED_AT,
     LANGUAGE,
     NAMESPACE,
+    NODE_CONTENT,
+    NODE_CONTENT_TYPE,
+    NODE_CONTENT_TYPE_TEXT,
     NODE_TYPE_CONTENT,
     NUMBER_OF_PAGES,
     SECTION_END_LINE,
@@ -31,6 +34,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     UPDATED_AT,
     VERSION,
     HeadingLevelValue,
+    NodeContentType,
     NodeTypeValue,
 )
 
@@ -47,66 +51,73 @@ class IngestedNode(IngestedBase):
 
     id: Annotated[str, Field(description="The unique identifier of the Node.")]
     content: Annotated[str, Field(description="The textual content of the Node.")]
-    content_type: Annotated[NodeTypeValue, Field(description="Content type (content or summary).")] = "content"
+    type: Annotated[NodeTypeValue, Field(description="Type (content or summary).")] = NODE_CONTENT
+    content_type: Annotated[NodeContentType, Field(description="Content type (text, figure or table).")] = (
+        NODE_CONTENT_TYPE_TEXT
+    )
     document_id: Annotated[str, Field(description="ID of original ref_doc.")]
 
-    start_char_idx: Annotated[Optional[int], Field(description="The start character index of the Node.")] = None
-    end_char_idx: Annotated[Optional[int], Field(description="The end character index of the Node.")] = None
+    start_char_idx: Annotated[int | None, Field(description="The start character index of the Node.")] = None
+    end_char_idx: Annotated[int | None, Field(description="The end character index of the Node.")] = None
 
-    index: Annotated[Optional[int], Field(description="Index counting position of node in document")] = None
-    section_start_line: Annotated[Optional[int], Field(description="Start line of the node in document")] = None
-    section_end_line: Annotated[Optional[int], Field(description="End line of the node in document")] = None
+    index: Annotated[int | None, Field(description="Index counting position of node in document")] = None
+    section_start_line: Annotated[int | None, Field(description="Start line of the node in document")] = None
+    section_end_line: Annotated[int | None, Field(description="End line of the node in document")] = None
 
-    h1: Annotated[Optional[str], Field(description="H1 of the node in document")] = None
-    h2: Annotated[Optional[str], Field(description="H2 of the node in document")] = None
-    h3: Annotated[Optional[str], Field(description="H3 of the node in document")] = None
-    h4: Annotated[Optional[str], Field(description="H4 of the node in document")] = None
-    h5: Annotated[Optional[str], Field(description="H5 of the node in document")] = None
-    h6: Annotated[Optional[str], Field(description="H6 of the node in document")] = None
+    h1: Annotated[str | None, Field(description="H1 of the node in document")] = None
+    h2: Annotated[str | None, Field(description="H2 of the node in document")] = None
+    h3: Annotated[str | None, Field(description="H3 of the node in document")] = None
+    h4: Annotated[str | None, Field(description="H4 of the node in document")] = None
+    h5: Annotated[str | None, Field(description="H5 of the node in document")] = None
+    h6: Annotated[str | None, Field(description="H6 of the node in document")] = None
 
-    heading_level: Annotated[
-        Optional[HeadingLevelValue], Field(description="Heading level of the node in document")
-    ] = None
+    heading_level: Annotated[HeadingLevelValue | None, Field(description="Heading level of the node in document")] = (
+        None
+    )
 
-    score: Annotated[Optional[float], Field(description="Score representing the relevance of the document.")] = None
+    score: Annotated[float | None, Field(description="Score representing the relevance of the document.")] = None
 
     @classmethod
     def from_llama_index_node(cls, node: TextNode | BaseNode):
         def to_iso(timestamp: int):
-            dt_utc = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+            dt_utc = datetime.fromtimestamp(timestamp, tz=UTC)
             return dt_utc.isoformat().replace("+00:00", "Z")
 
         document_id = node.ref_doc_id or node.metadata.get(
             DOCUMENT_ID, node.metadata.get("doc_id", node.metadata.get("ref_doc_id"))
         )
-        return cls(
+
+        metadata = node.metadata.copy() if node.metadata else {}
+        inst = cls(
             id=node.node_id,
             content=node.text,
             start_char_idx=getattr(node, "start_char_idx", None),
             end_char_idx=getattr(node, "end_char_idx", None),
             document_id=document_id,
-            source=node.metadata.get(SOURCE),
-            namespace=node.metadata.get(NAMESPACE),
-            content_type=node.metadata.get(TYPE, NODE_TYPE_CONTENT),
-            document_title=node.metadata.get(DOCUMENT_TITLE, ""),
-            language=node.metadata.get(LANGUAGE),
-            version=node.metadata.get(VERSION, 1),
-            index=node.metadata.get(INDEX, 0),
-            section_start_line=node.metadata.get(SECTION_START_LINE),
-            section_end_line=node.metadata.get(SECTION_END_LINE),
-            h1=node.metadata.get(H1),
-            h2=node.metadata.get(H2),
-            h3=node.metadata.get(H3),
-            h4=node.metadata.get(H4),
-            h5=node.metadata.get(H5),
-            h6=node.metadata.get(H6),
-            heading_level=node.metadata.get(
-                HEADING_LEVEL,
-            ),
-            created_at=to_iso(node.metadata.get(CREATED_AT, 0)),
-            updated_at=to_iso(node.metadata.get(UPDATED_AT, 0)),
-            inserted_at=to_iso(node.metadata.get(INSERTED_AT, 0)),
+            source=metadata.pop(SOURCE),
+            namespace=metadata.pop(NAMESPACE),
+            type=metadata.pop(TYPE, NODE_TYPE_CONTENT),
+            content_type=metadata.pop(NODE_CONTENT_TYPE, NODE_CONTENT_TYPE_TEXT),
+            document_title=metadata.pop(DOCUMENT_TITLE, ""),
+            language=metadata.pop(LANGUAGE, "en"),
+            version=metadata.pop(VERSION, 1),
+            index=metadata.pop(INDEX, 0),
+            section_start_line=metadata.pop(SECTION_START_LINE, None),
+            section_end_line=metadata.pop(SECTION_END_LINE, None),
+            h1=metadata.pop(H1, None),
+            h2=metadata.pop(H2, None),
+            h3=metadata.pop(H3, None),
+            h4=metadata.pop(H4, None),
+            h5=metadata.pop(H5, None),
+            h6=metadata.pop(H6, None),
+            heading_level=metadata.pop(HEADING_LEVEL, None),
+            created_at=to_iso(metadata.pop(CREATED_AT, 0)),
+            updated_at=to_iso(metadata.pop(UPDATED_AT, 0)),
+            inserted_at=to_iso(metadata.pop(INSERTED_AT, 0)),
+            metadata=metadata,
         )
+
+        return inst
 
     @classmethod
     def from_llama_index_node_with_score(cls, node_with_score: NodeWithScore):
@@ -114,7 +125,7 @@ class IngestedNode(IngestedBase):
         node.score = node_with_score.score
         return node
 
-    def to_semantic_convention(self, key: str, i: int) -> Dict[str, str]:
+    def to_semantic_convention(self, key: str, i: int) -> dict[str, str]:
         return {
             f"{key}.{i}.{DocumentAttributes.DOCUMENT_ID}": self.id,
             f"{key}.{i}.{DocumentAttributes.DOCUMENT_SCORE}": self.score,

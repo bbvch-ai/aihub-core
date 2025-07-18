@@ -1,6 +1,5 @@
 import json
 from datetime import datetime
-from typing import List, Optional
 
 from bson import ObjectId
 from mongoengine import (
@@ -30,7 +29,7 @@ class EventInfo(EmbeddedDocument):
     full_name = StringField(required=True)
     is_start_event = BooleanField(required=True)
     is_stop_event = BooleanField(required=True)
-    payload = DictField(required=True)  # Dict[str, EventPayloadField]
+    payload = DictField(required=True)  # dict[str, EventPayloadField]
 
 
 class InputEventInfo(EmbeddedDocument):
@@ -49,7 +48,7 @@ class NodeData(EmbeddedDocument):
     label = StringField(required=True)
     description = StringField()
     icon = StringField()
-    input_events = DictField(field=EmbeddedDocumentField(InputEventInfo))  # Dict[str, InputEventInfo]
+    input_events = DictField(field=EmbeddedDocumentField(InputEventInfo))  # dict[str, InputEventInfo]
     output_events = ListField(EmbeddedDocumentField(EventInfo))
     max_executions = IntField()
     stop_on_error = BooleanField()
@@ -65,7 +64,7 @@ class EdgeData(EmbeddedDocument):
     event_full_name = StringField(required=True)
     is_start_event = BooleanField(required=True)
     is_stop_event = BooleanField(required=True)
-    payload = DictField(required=True)  # Dict[str, EventPayloadField]
+    payload = DictField(required=True)  # dict[str, EventPayloadField]
 
 
 class EventSpec(EmbeddedDocument):
@@ -73,6 +72,7 @@ class EventSpec(EmbeddedDocument):
 
     event_name = StringField(required=True)
     event_schema_json = StringField(required=True)  # Store as JSON string to avoid issues with $ in keys
+    event_parents = ListField(StringField(), default=list)
 
     @property
     def event_schema(self):
@@ -82,10 +82,14 @@ class EventSpec(EmbeddedDocument):
     @classmethod
     def from_dto(cls, event_dto):
         """Create an EventSpec from a DTO object."""
-        return cls(event_name=event_dto.event_name, event_schema_json=json.dumps(event_dto.event_schema))
+        return cls(
+            event_name=event_dto.event_name,
+            event_schema_json=json.dumps(event_dto.event_schema),
+            event_parents=event_dto.event_parents,
+        )
 
 
-class AgentConfig(EmbeddedDocument):
+class AgentConfigEntity(EmbeddedDocument):
     agent_id = StringField(required=True)
     name = StringField(required=True)
     description = StringField(required=True)
@@ -103,11 +107,11 @@ class AgentEntity(Document):
     }
     agent_class = StringField(required=True)
     agent_id = StringField(required=True)
-    agent_config = EmbeddedDocumentField(AgentConfig, required=True)
+    agent_config = EmbeddedDocumentField(AgentConfigEntity, required=True)
     is_conversational = BooleanField(required=True)
     start_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
     stop_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
-    network_graph = DictField(required=True)  # Store as a dictionary instead of embedded document
+    network_graph = DictField(required=True)
     first_discovered = DateTimeField(required=True, default=datetime.now)
     last_discovered = DateTimeField(required=True, default=datetime.now)
 
@@ -116,12 +120,12 @@ class AgentEntity(Document):
         cls,
         agent_class: str,
         agent_id: str,
-        agent_config: AgentConfig,
+        agent_config: AgentConfigEntity,
         is_conversational: bool,
-        start_events: List[EventSpec],
-        stop_events: List[EventSpec],
+        start_events: list[EventSpec],
+        stop_events: list[EventSpec],
         network_graph: dict,
-        agent_entity_id: Optional[ObjectId] = None,
+        agent_entity_id: ObjectId | None = None,
     ) -> "AgentEntity":
         agent = cls(
             id=agent_entity_id or ObjectId(),
@@ -147,7 +151,7 @@ class AgentEntity(Document):
         # Check if an agent with the same agent_class and agent_id already exists
         existing_agent = cls.objects(agent_class=agent_dto.agent_class, agent_id=agent_dto.agent_id).first()
 
-        agent_config = AgentConfig(
+        agent_config = AgentConfigEntity(
             agent_id=agent_dto.agent_config.agent_id,
             name=agent_dto.agent_config.name,
             description=agent_dto.agent_config.description,
@@ -195,4 +199,4 @@ class AgentEntity(Document):
 
     @classmethod
     def get_agent(cls, agent_class: str, agent_id: str) -> "AgentEntity":
-        return cls.objects().get(agent_class=agent_class, agent_id=agent_id)
+        return cls.objects(agent_class=agent_class, agent_id=agent_id).first()

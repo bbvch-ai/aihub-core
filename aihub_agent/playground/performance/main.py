@@ -1,39 +1,39 @@
+# ruff: noqa: E501
 import asyncio
 import gc
 import json
 import random
 import time
 import uuid
-from typing import Dict, Any
-
-from bson import ObjectId
-from tabulate import tabulate
-from tqdm import tqdm
+from typing import Any
 
 # For NATS JS benchmarking
 import nats
-from nats.js.api import StreamConfig
-from nats.aio.client import Client as NATS
-
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.RedisConfig import RedisConfig
-from aihub_agent.runners.MultiprocessAgentRunner import MultiprocessAgentRunner
+from aihub_lib.nats.events import BaseEvent, StartEvent, StopEvent
 from aihub_lib.nats.NatsConfig import NatsConfig
-from aihub_lib.nats.events import BaseEvent, StopEvent, StartEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics import Topic
+from bson import ObjectId
+from nats.aio.client import Client as NATS
+from nats.js.api import StreamConfig
+from tabulate import tabulate
+from tqdm import tqdm
+
+from aihub_agent.runners.MultiprocessAgentRunner import MultiprocessAgentRunner
+from playground.performance.PerformanceTestingAgent.events.ParallelEvent import ParallelEvent
 from playground.performance.PerformanceTestingAgent.PerformanceTestingAgent import PerformanceTestingAgent
 from playground.performance.PerformanceTestingAgent.PerformanceTestingAgentConfig import (
     PerformanceTestingAgentConfig,
 )
-from playground.performance.PerformanceTestingAgent.events.ParallelEvent import ParallelEvent
 
 
 # ====== NATS JetStream Benchmark ======
-async def benchmark_jetstream(n_events: int, payload_kb: int) -> Dict[str, Any]:
+async def benchmark_jetstream(n_events: int, payload_kb: int) -> dict[str, Any]:
     """
     Benchmark NATS JetStream performance.
     """
@@ -126,7 +126,7 @@ async def purge_jetstream(nc: NATS):
         print(f"Error purging JetStream: {e}")
 
 
-async def run_system_test(process_count: int, n_events: int, payload_kb: int) -> Dict[str, any]:
+async def run_system_test(process_count: int, n_events: int, payload_kb: int) -> dict[str, any]:
     """
     Run a performance test with the specified parameters.
 
@@ -196,7 +196,7 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
                 _stop_signal.set()
 
         # Subscribe to events
-        event_subscriber = NCSubscriber.for_all_thread_events(
+        event_subscriber = AgentNCSubscriber.for_all_thread_events(
             nc=nc,
             topic_manager=thread_topic_manager,
             handler=observe_event,
@@ -222,7 +222,7 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
         try:
             await asyncio.wait_for(_stop_signal.wait(), timeout=timeout_duration)
             await asyncio.sleep(1)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             timed_out = True
 
         # Record timing
@@ -353,7 +353,8 @@ async def benchmark_theoretical_limits(config_list):
             print(f"\nRunning NATS benchmark: {n_events} events, {payload_kb} KB")
             nats_results = await benchmark_jetstream(n_events, payload_kb)
             print(
-                f"NATS throughput: {nats_results['events_per_second']:.2f} evt/s, {nats_results['throughput_kb_per_second']:.2f} KB/s"
+                f"NATS throughput: {nats_results['events_per_second']:.2f} "
+                f"evt/s, {nats_results['throughput_kb_per_second']:.2f} KB/s"
             )
         except Exception as e:
             print(f"NATS benchmark failed: {e}")

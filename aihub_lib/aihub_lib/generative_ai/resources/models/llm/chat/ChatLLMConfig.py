@@ -1,6 +1,7 @@
 from abc import abstractmethod
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, Callable, List, Optional, Tuple
+from typing import Annotated
 
 from llama_index.core.llms import LLM
 from pydantic import Field
@@ -19,12 +20,12 @@ class ChatLLMParameter(LLMModelParameter):
     By defining them here, we standardize parameter handling and ensure easy customization.
     """
 
-    temperature: float = Field(0.0, description="Controls randomness of the model output.")
-    top_p: float = Field(1.0, description="Nucleus sampling threshold.")
-    frequency_penalty: float = Field(0.0, description="Penalizes frequent tokens to reduce repetition.")
-    max_tokens: Optional[int] = Field(None, description="Maximum number of tokens generated in the response.")
-    presence_penalty: float = Field(0.0, description="Encourages new topics by penalizing repeated topics.")
-    seed: int = Field(0, description="Seed for reproducibility, if supported by the model.")
+    temperature: Annotated[float, Field(description="Controls randomness of the model output.")] = 0.0
+    top_p: Annotated[float, Field(description="Nucleus sampling threshold.")] = 1.0
+    frequency_penalty: Annotated[float, Field(description="Penalizes frequent tokens to reduce repetition.")] = 0.0
+    max_tokens: Annotated[int | None, Field(description="Maximum number of tokens generated in the response.")] = None
+    presence_penalty: Annotated[float, Field(description="Encourages new topics by penalizing repeated topics.")] = 0.0
+    seed: Annotated[int, Field(description="Seed for reproducibility, if supported by the model.")] = 0
 
 
 class ChatLLMConfig(LLMConfig):
@@ -37,26 +38,26 @@ class ChatLLMConfig(LLMConfig):
     With ChatLLMConfig, we integrate these parameters and the cost tracking mechanism in one place.
     """
 
-    timeout: float = Field(30.0, description="Timeout for the model request in seconds (default: 30.0s).")
-    default_parameter: ChatLLMParameter = Field(
-        ..., description="Default parameters for the chat-based LLM.", default_factory=lambda: ChatLLMParameter()
+    timeout: Annotated[float, Field(description="Timeout for the model request in seconds (default: 30.0s).")] = 30.0
+    default_parameter: Annotated[ChatLLMParameter, Field(description="Default parameters for the chat-based LLM.")] = (
+        ChatLLMParameter()
     )
 
     @property
     @abstractmethod
-    def tokenizer(self) -> Callable[[str], List[int]]:
+    def tokenizer(self) -> Callable[[str], list[int]]:
         pass
 
     @abstractmethod
-    def to_llama_index(self, model_parameter: Optional[ChatLLMParameter] = None) -> Tuple[LLM, LLMCostTracker]:
+    def to_llama_index(self, model_parameter: ChatLLMParameter | None = None) -> tuple[LLM, LLMCostTracker]:
         pass
 
     @asynccontextmanager
     async def cost_reporting_llm(
         self,
         displayer: EventDisplayer,
-        model_parameter: Optional[ChatLLMParameter] = None,
-        system_prompt: Optional[str] = None,
+        model_parameter: ChatLLMParameter | None = None,
+        system_prompt: str | None = None,
     ) -> AsyncIterator[LLM]:
         """
         Async context manager that yields an LLM configured with merged parameters and a system prompt.

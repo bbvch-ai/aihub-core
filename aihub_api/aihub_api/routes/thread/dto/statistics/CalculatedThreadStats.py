@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated, Optional
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -23,17 +23,17 @@ class CalculatedThreadStats(BaseModel):
     open_aitl: Annotated[bool, Field(..., description="Indicates if there is an open AI-In-The-Loop request")] = False
     llm_cost: Annotated[float, Field(..., description="Total cost incurred by LLM operations in this thread")] = 0.0
     first_interaction_dt: Annotated[
-        Optional[datetime], Field(None, description="Timestamp of the first interaction in this thread")
+        datetime | None, Field(None, description="Timestamp of the first interaction in this thread")
     ] = None
     latest_interaction_dt: Annotated[
-        Optional[datetime], Field(None, description="Timestamp of the most recent interaction in this thread")
+        datetime | None, Field(None, description="Timestamp of the most recent interaction in this thread")
     ] = None
-    duration: Annotated[Optional[float], Field(None, description="Response duration in seconds")] = None
+    duration: Annotated[float | None, Field(None, description="Response duration in seconds")] = None
 
     @property
-    def first_interaction(self) -> Optional[str]:
+    def first_interaction(self) -> str | None:
         return self.first_interaction_dt.isoformat().replace("+00:00", "Z") if self.first_interaction_dt else None
 
     @property
-    def latest_interaction(self) -> Optional[str]:
+    def latest_interaction(self) -> str | None:
         return self.latest_interaction_dt.isoformat().replace("+00:00", "Z") if self.latest_interaction_dt else None

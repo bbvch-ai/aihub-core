@@ -2,7 +2,6 @@ import argparse
 import json
 import subprocess
 import sys
-from typing import Optional
 
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.cosmosdb import CosmosDBManagementClient
@@ -19,9 +18,7 @@ def run_command(cmd, parse_json=True):
 
     # Use shell=False for security when passing command as a list
     shell_mode = isinstance(cmd, str)
-    result = subprocess.run(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=shell_mode, check=True
-    )
+    result = subprocess.run(cmd, capture_output=True, text=True, shell=shell_mode, check=True)
 
     output = result.stdout
 
@@ -44,7 +41,7 @@ def run_command(cmd, parse_json=True):
     return output
 
 
-def create_app_registration(bot_name: str, tenant_id: Optional[str]) -> str:
+def create_app_registration(bot_name: str, tenant_id: str | None) -> str:
     print(f"Creating Azure AD app registration for bot '{bot_name}'...")
 
     sign_in_audience = "AzureADMyOrg" if tenant_id is not None else "AzureADandPersonalMicrosoftAccount"
@@ -107,7 +104,7 @@ def reset_app_credentials(app_id: str) -> str:
     return app_password
 
 
-def get_app_type(tenant_id: Optional[str]) -> str:
+def get_app_type(tenant_id: str | None) -> str:
     return "SingleTenant" if tenant_id is not None else "MultiTenant"
 
 
@@ -118,7 +115,7 @@ def create_bot_resource(
     api_url: str,
     api_path: str,
     location: str,
-    tenant_id: Optional[str],
+    tenant_id: str | None,
     sku: str,
 ):
     print(f"Deleting existing Azure Bot resource '{bot_name}' if it exists...")
@@ -164,9 +161,9 @@ def save_credentials_in_mongo(
     api_path: str,
     app_id: str,
     app_password: str,
-    tenant_id: Optional[str],
-    system_message: Optional[str] = None,
-    slack_token: Optional[str] = None,
+    tenant_id: str | None,
+    system_message: str | None = None,
+    slack_token: str | None = None,
 ):
     print("Saving credentials in MongoDB...")
     client = MongoClient(connection_string)
@@ -198,9 +195,9 @@ def save_credentials_in_cosmos(
     app_password: str,
     subscription_id: str,
     resource_group: str,
-    tenant_id: Optional[str],
-    system_message: Optional[str] = None,
-    slack_token: Optional[str] = None,
+    tenant_id: str | None,
+    system_message: str | None = None,
+    slack_token: str | None = None,
 ):
     print("Saving credentials in Cosmos DB...")
     credential = DefaultAzureCredential()
@@ -216,14 +213,15 @@ def save_credentials_in_cosmos(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Set up an Azure Bot using the Azure CLI by creating an Azure AD app registration and saving its credentials to Cosmos DB."
+        description="Set up an Azure Bot using the Azure CLI by creating an Azure AD app "
+        "registration and saving its credentials to Cosmos DB."
     )
     parser.add_argument("--resource-group", "-rg", required=True, help="Name of the Azure resource group.")
     parser.add_argument("--bot-name", "-bot", required=True, help="Name for the Azure Bot.")
     parser.add_argument(
-        "--api-path", "-path", required=True, help="API endpoint path for the bot (e.g. '/api/messages')."
+        "--token-path", "-path", required=True, help="API endpoint path for the bot (e.g. '/token/messages')."
     )
-    parser.add_argument("--api-url", "-url", required=True, help="API URL for the bot (e.g. 'https://example.com').")
+    parser.add_argument("--token-url", "-url", required=True, help="API URL for the bot (e.g. 'https://example.com').")
     parser.add_argument(
         "--location", "-loc", default="westeurope", help="Azure location for the bot (default: 'westeurope')."
     )
@@ -255,7 +253,7 @@ def main():
     if args.system_message:
         system_message = args.system_message
     elif args.system_message_file:
-        with open(args.system_message_file, "r") as f:
+        with open(args.system_message_file) as f:
             system_message = f.read()
 
     if args.mongo_connection_string:

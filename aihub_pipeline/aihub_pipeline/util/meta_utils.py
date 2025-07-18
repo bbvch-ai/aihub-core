@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List
 
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
@@ -14,6 +13,8 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     INSERTED_AT,
     LANGUAGE,
     NAMESPACE,
+    NODE_CONTENT_TYPE,
+    PAGE,
     REFERENCE_NAME,
     REFERENCE_URL,
     SECTION_END_LINE,
@@ -28,6 +29,7 @@ from llama_index.core.schema import TextNode
 
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
+from aihub_pipeline.types.SharePointFile import MinimalSharePointFile
 
 
 def readable_date(timestamp: int):
@@ -113,7 +115,7 @@ def ref_doc_metadata(ref_doc: RefDocDocument):
     }
 
 
-def nodes_metadata_table(nodes: List[TextNode]):
+def nodes_metadata_table(nodes: list[TextNode]):
     columns = [
         TableColumn("id", "string"),
         TableColumn("text", "string"),
@@ -122,12 +124,14 @@ def nodes_metadata_table(nodes: List[TextNode]):
         TableColumn(SOURCE, "string"),
         TableColumn(HASH, "string"),
         TableColumn(TYPE, "string"),
+        TableColumn(NODE_CONTENT_TYPE, "string"),
         TableColumn(LANGUAGE, "string"),
         TableColumn(VERSION, "int"),
         TableColumn(CREATED_AT, "int"),
         TableColumn(UPDATED_AT, "int"),
         TableColumn(INSERTED_AT, "int"),
         TableColumn(INDEX, "int"),
+        TableColumn(PAGE, "int"),
         TableColumn(SECTION_START_LINE, "int"),
         TableColumn(SECTION_END_LINE, "int"),
         TableColumn(H1, "string"),
@@ -144,7 +148,7 @@ def nodes_metadata_table(nodes: List[TextNode]):
     return MetadataValue.table(records=records, schema=table_schema)
 
 
-def data_lake_metadata_table(data_lake_files: List[DataLakeFile]):
+def data_lake_metadata_table(data_lake_files: list[DataLakeFile]):
     columns = [
         TableColumn("name", "string"),
         TableColumn("updated", "string"),
@@ -158,7 +162,7 @@ def data_lake_metadata_table(data_lake_files: List[DataLakeFile]):
     return MetadataValue.table(records=records, schema=table_schema)
 
 
-def ref_doc_metadata_table(ref_docs: List[RefDocDocument]):
+def ref_doc_metadata_table(ref_docs: list[RefDocDocument]):
     columns = [
         TableColumn("id", "string"),
         TableColumn("text", "string"),
@@ -167,6 +171,7 @@ def ref_doc_metadata_table(ref_docs: List[RefDocDocument]):
         TableColumn(SOURCE, "string"),
         TableColumn(HASH, "string"),
         TableColumn(TYPE, "string"),
+        TableColumn(NODE_CONTENT_TYPE, "string"),
         TableColumn(LANGUAGE, "string"),
         TableColumn(VERSION, "int"),
         TableColumn(CREATED_AT, "int"),
@@ -174,5 +179,30 @@ def ref_doc_metadata_table(ref_docs: List[RefDocDocument]):
         TableColumn(INSERTED_AT, "int"),
     ]
     records = [TableRecord(ref_doc_table_row(ref_doc)) for ref_doc in ref_docs]
+    table_schema = TableSchema(columns=columns)
+    return MetadataValue.table(records=records, schema=table_schema)
+
+
+def share_point_file_table_row(share_point_file: MinimalSharePointFile) -> dict:
+    return {
+        "name": share_point_file.name,
+        "modified": share_point_file.modified,
+        "size": str(share_point_file.size),
+        "id": share_point_file.id,
+        "etag": share_point_file.etag or "",
+        "content_type": share_point_file.content_type or "",
+    }
+
+
+def share_point_metadata_table(share_point_files: list[MinimalSharePointFile]):
+    columns = [
+        TableColumn("name", "string"),
+        TableColumn("modified", "string"),
+        TableColumn("size", "string"),
+        TableColumn("id", "string"),
+        TableColumn("etag", "string"),
+        TableColumn("content_type", "string"),
+    ]
+    records = [TableRecord(share_point_file_table_row(share_point_file)) for share_point_file in share_point_files]
     table_schema = TableSchema(columns=columns)
     return MetadataValue.table(records=records, schema=table_schema)

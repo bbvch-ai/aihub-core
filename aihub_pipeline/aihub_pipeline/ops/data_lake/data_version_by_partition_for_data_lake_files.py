@@ -1,5 +1,3 @@
-from typing import List
-
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -17,7 +15,7 @@ def data_version_by_partition_for_data_lake_files_no_op(
     context: OpExecutionContext,
     asset_key: AssetKey,
     partition: DynamicPartitionsDefinition,
-    data_lake_files: List[DataLakeFile],
+    data_lake_files: list[DataLakeFile],
 ) -> DataVersionsByPartition:
     """Generates a dynamic partition key for each file in the data lake, reports the data lake materialization
     and returns a DataVersion for each partition key.

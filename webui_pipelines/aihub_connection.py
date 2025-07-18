@@ -9,7 +9,7 @@ import requests
 import hashlib
 import uuid
 import json
-from typing import Optional, List, Dict, Any, Generator, AsyncGenerator, Union
+from typing import Optional, Any, Generator, AsyncGenerator, Union, Annotated
 from bson import ObjectId
 import asyncio
 import logging
@@ -18,7 +18,7 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-def str_to_object_id(context_id: Optional[str]) -> str:
+def str_to_object_id(context_id: str | None) -> str:
     if not context_id:
         return str(ObjectId())
     hashed = hashlib.md5(context_id.encode()).digest()[:12]
@@ -46,7 +46,7 @@ def user_header(__user__: dict):
         "X-OpenWebUI-User-Email-Hashed": email_hash,
     }
 
-def transform_events_to_sources(events: List[Dict]) -> Dict[str, Any]:
+def transform_events_to_sources(events: list[dict]) -> dict[str, Any]:
     """Transform retriever events into the sources format expected by the UI."""
     result = {
         "type": "chat:completion",
@@ -122,22 +122,18 @@ def transform_events_to_sources(events: List[Dict]) -> Dict[str, Any]:
 
 class Pipe:
     class Valves(BaseModel):
-        NAME_PREFIX: str = Field(
-            default="aihub/",
+        NAME_PREFIX: Annotated[str, Field(
             description="Prefix to be added before model names.",
-        )
-        AIHUB_API_BASE_URL: str = Field(
-            default="http://localhost:8000/api/v1/openai",
+        )] = "aihub/"
+        AIHUB_API_BASE_URL: Annotated[str, Field(
             description="Base URL for accessing OpenAI API compatible AI-Hub endpoints.",
-        )
-        AIHUB_API_KEY: str = Field(
-            default="",
+        )] = "http://localhost:8000/api/v1/openai"
+        AIHUB_API_KEY: Annotated[str, Field(
             description="API key for authenticating requests to the OpenAI API.",
-        )
-        EVENT_API_BASE_URL: str = Field(
-            default="http://localhost:8000/api/v1/event",
+        )] = ""
+        EVENT_API_BASE_URL: Annotated[str, Field(
             description="Base URL for accessing event API endpoints.",
-        )
+        )] = "http://localhost:8000/api/v1/event"
 
     def __init__(self):
         self.valves = self.Valves()
@@ -168,7 +164,7 @@ class Pipe:
             logger.exception(f"Error fetching models: {e}")
             return [{"id": "error", "name": f"Error fetching models: {e}"}]
 
-    async def get_retriever_events(self, thread_id: str, display_id: str, headers: dict) -> List[Dict]:
+    async def get_retriever_events(self, thread_id: str, display_id: str, headers: dict) -> list[dict]:
         """Query the event API for RetrieverEvents asynchronously"""
         params = {
             "thread_id": thread_id,

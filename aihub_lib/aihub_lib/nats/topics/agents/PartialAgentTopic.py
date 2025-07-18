@@ -1,8 +1,8 @@
-from typing import Optional
+from typing import Annotated
 
 from pydantic import Field
 
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.Topic import Topic
 
 
@@ -26,14 +26,18 @@ class PartialAgentTopic(Topic):
       unknowns as flexible conditions.
     """
 
-    agent_class: Optional[str] = Field(None, description="Agent class or None if unspecified.")
-    agent_id: Optional[str] = Field(None, description="Agent ID or None if unspecified.")
-    run_id: Optional[str] = Field(None, description="Run ID or None if unspecified.")
-    thread_id: Optional[str] = Field(None, description="Thread ID or None if unspecified.")
-    display_id: Optional[str] = Field(None, description="Display ID or None if unspecified.")
-    event_type: Optional[str] = Field(None, description="Event type or None if unspecified.")
-    event_name: Optional[str] = Field(None, description="Event name or None if unspecified.")
-    event_id: Optional[str] = Field(None, description="Event ID or None if unspecified.")
+    agent_class: Annotated[str | None, Field(description="Agent class or None if unspecified.")] = None
+    agent_id: Annotated[str | None, Field(description="Agent ID or None if unspecified.")] = None
+    run_id: Annotated[str | None, Field(description="Run ID or None if unspecified.")] = None
+    thread_id: Annotated[str | None, Field(description="Thread ID or None if unspecified.")] = None
+    display_id: Annotated[str | None, Field(description="Display ID or None if unspecified.")] = None
+    event_type: Annotated[str | None, Field(description="Event type or None if unspecified.")] = None
+    event_name: Annotated[str | None, Field(description="Event name or None if unspecified.")] = None
+    event_id: Annotated[str | None, Field(description="Event ID or None if unspecified.")] = None
+
+    @property
+    def execution_context_id(self) -> str:
+        return self.run_id
 
     @classmethod
     def from_subject(cls, subject: str) -> "PartialAgentTopic":
@@ -55,9 +59,9 @@ class PartialAgentTopic(Topic):
             event_name,
             event_id,
         ) = subject.split(".")
-        assert topic_type == TopicManager.AGENT_TOPIC, f"Unexpected topic type in subject: {subject}"
+        assert topic_type == AgentTopicManager.AGENT_TOPIC, f"Unexpected topic type in subject: {subject}"
 
-        def none_if_wildcard(value: str) -> Optional[str]:
+        def none_if_wildcard(value: str) -> str | None:
             return value if value != "*" else None
 
         return cls(
@@ -73,7 +77,7 @@ class PartialAgentTopic(Topic):
 
     def to_subject(self):
         return (
-            f"{TopicManager.AGENT_TOPIC}."
+            f"{AgentTopicManager.AGENT_TOPIC}."
             f"{self.agent_class or '*'}."
             f"{self.agent_id or '*'}."
             f"{self.thread_id or '*'}."

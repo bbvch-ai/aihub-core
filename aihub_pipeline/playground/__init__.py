@@ -8,11 +8,15 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmb
 )
 from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
 
-from aihub_pipeline.assets.factories.documents_factory import documents_factory
-from aihub_pipeline.assets.factories.nodes_factory import nodes_factory
-from aihub_pipeline.assets.factories.observable_data_lake_factory import observable_data_lake_factory
-from aihub_pipeline.assets.factories.removed_documents_factory import removed_documents_factory
-from aihub_pipeline.assets.factories.summary_nodes_factory import summary_nodes_factory
+from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
+from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
+from aihub_pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
+    observable_data_lake_factory,
+)
+from aihub_pipeline.assets.factories.data_lake_to_vector_store.removed_documents_factory import (
+    removed_documents_factory,
+)
+from aihub_pipeline.assets.factories.data_lake_to_vector_store.summary_nodes_factory import summary_nodes_factory
 from aihub_pipeline.executors.factory import default_process_executor
 from aihub_pipeline.resources.factory import (
     azure_data_lake_resources,
@@ -21,7 +25,7 @@ from aihub_pipeline.resources.factory import (
 )
 from aihub_pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelResource
 from aihub_pipeline.resources.llm.LanguageModelResource import LanguageModelResource
-from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource
+from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource, LoaderType
 from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
 from aihub_pipeline.sensors.factory import default_automation_sensor
@@ -32,11 +36,11 @@ NODES_KEY = AssetKey(["playground", "nodes"])
 REMOVED_DOCUMENTS_KEY = AssetKey(["playground", "removed_documents"])
 SUMMARY_NODES_KEY = AssetKey(["playground", "summary_nodes"])
 
-DATALAKE_CONTAINER_NAME = "uitest"
-DATALAKE_DIRECTORY_NAME = "papers"
-
-NAMESPACE_NAME = "papers"
-STORE_NAME = "papers"
+DATALAKE_CONTAINER_NAME = "playground"
+DATALAKE_DIRECTORY_NAME = "test"
+FIGURES_DIRECTORY_NAME = "__figures__"
+NAMESPACE_NAME = "test"
+STORE_NAME = "test"
 
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
@@ -58,7 +62,7 @@ defs = Definitions(
         **default_io_manager_azure_datalake_resources(
             container_name=DATALAKE_CONTAINER_NAME, directory_name=DATALAKE_DIRECTORY_NAME
         ),
-        "document_parser": DocumentParserResource(),
+        "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
         "node_parser": MarkdownStructuralNodeParserResource(),
         "summary_parser": RecursiveSummaryParserResource(),
         **local_mongo_milvus_storage_context_resource(
@@ -66,7 +70,11 @@ defs = Definitions(
             store_name=STORE_NAME,
             namespace_name=NAMESPACE_NAME,
         ),
-        **azure_data_lake_resources(container_name=DATALAKE_CONTAINER_NAME, directory_name=DATALAKE_DIRECTORY_NAME),
+        **azure_data_lake_resources(
+            container_name=DATALAKE_CONTAINER_NAME,
+            directory_name=DATALAKE_DIRECTORY_NAME,
+            figures_directory_name=FIGURES_DIRECTORY_NAME,
+        ),
         "embedding_model": EmbeddingModelResource(
             embedding_config=AzureOpenAIEmbeddingConfig(
                 name="text-embedding-3-large",

@@ -1,5 +1,4 @@
 import logging
-from typing import Dict, List, Tuple
 
 import mongoengine
 from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
@@ -35,7 +34,7 @@ class KnowledgeService:
     @staticmethod
     def get_paginated_documents(
         db: str, namespace: str, page: int = 1, page_size: int = 20
-    ) -> Tuple[int, List[IngestedDocument]]:
+    ) -> tuple[int, list[IngestedDocument]]:
         """
         Retrieves paginated documents for a given namespace.
         """
@@ -60,7 +59,7 @@ class KnowledgeService:
         return IngestedDocument.from_entity(ref_doc)
 
     @staticmethod
-    def get_databases(mongo_client: MongoClient) -> List[DatabaseDTO]:
+    def get_databases(mongo_client: MongoClient) -> list[DatabaseDTO]:
         """
         Retrieves all databases with their available namespaces with the number of documents in each.
         Uses a MongoDB aggregation pipeline to get this information in a single query.
@@ -68,7 +67,7 @@ class KnowledgeService:
         database_names = mongo_client.list_database_names()
         user_dbs = [db_name for db_name in database_names if db_name not in ["admin", "local", "config"]]
 
-        database_dtos: List[DatabaseDTO] = []
+        database_dtos: list[DatabaseDTO] = []
         for db_name in user_dbs:
             KnowledgeService._ensure_db_exists(db_name)
             namespace_data = RefDoc.get_namespaces(db_alias=db_name)
@@ -90,7 +89,7 @@ class KnowledgeService:
         document_id: str,
         vector_store_factory: VectorStoreFactory,
         node_type: NodeTypeValue = NODE_TYPE_CONTENT,
-    ) -> List[IngestedNode]:
+    ) -> list[IngestedNode]:
         filters = MetadataFilters(
             filters=[
                 MetadataFilter(key=DOCUMENT_ID, value=document_id),
@@ -107,11 +106,11 @@ class KnowledgeService:
     @staticmethod
     def get_summary_nodes(
         db: str, namespace: str, document_id: str, vector_store_factory: VectorStoreFactory
-    ) -> List[NodeSummaryDTO]:
+    ) -> list[NodeSummaryDTO]:
         nodes = KnowledgeService.get_nodes(
             db, namespace, document_id, vector_store_factory, node_type=NODE_TYPE_SUMMARY
         )
-        summaries: Dict[int, NodeSummaryDTO] = {i: NodeSummaryDTO(level=i, nodes=[]) for i in range(0, 7)}
+        summaries: dict[int, NodeSummaryDTO] = {i: NodeSummaryDTO(level=i, nodes=[]) for i in range(0, 7)}
         for node in nodes:
             summaries[node.heading_level].nodes.append(node)
         for level in range(0, 7):

@@ -3,8 +3,9 @@ import logging
 import re
 import unicodedata
 from asyncio import Event, Task
-from typing import AsyncGenerator, List
+from collections.abc import AsyncGenerator
 
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from botbuilder.core import TurnContext
 from openai import APIStatusError, AsyncAzureOpenAI, AsyncOpenAI, AsyncStream
 from openai.types.chat import (
@@ -20,7 +21,7 @@ from openai.types.chat import (
 from openai.types.chat.chat_completion_content_part_image_param import ChatCompletionContentPartImageParam, ImageURL
 from typing_extensions import override
 
-from aihub_bot.bots.chat.BaseChatBot import CompletionHandler
+from aihub_bot.bots.chat.CompletionHandler import CompletionHandler
 from aihub_bot.persistence.entities.ConversationEntity import Content, Message
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,11 @@ class OpenaiCompletionHandler(CompletionHandler):
 
     @staticmethod
     async def get_completion(
-        turn_context: TurnContext, path: str, model_name: str, client: AsyncOpenAI | AsyncAzureOpenAI, **kwargs
+        turn_context: TurnContext,
+        path: str,
+        model_name: str,
+        client: AsyncOpenAI | AsyncAzureOpenAI,
+        **kwargs,
     ) -> str:
         chat_completion: ChatCompletion = await OpenaiCompletionHandler.chat_completion(
             turn_context=turn_context,
@@ -50,6 +55,7 @@ class OpenaiCompletionHandler(CompletionHandler):
         path: str,
         model_name: str,
         client: AsyncOpenAI | AsyncAzureOpenAI,
+        **kwargs,
     ) -> AsyncGenerator[str, None]:
         """Get a streaming OpenAI completion."""
         chat_completion: AsyncStream[ChatCompletionChunk] = await OpenaiCompletionHandler.chat_completion(
@@ -90,7 +96,7 @@ class OpenaiCompletionHandler(CompletionHandler):
         - The messages must be converted to the correct format to send them to the OpenAI API.
         - The context is needed to generate the completion.
         """
-        persisted_messages: List[Message] = CompletionHandler.get_messages_by_conversation_id(
+        persisted_messages: list[Message] = CompletionHandler.get_messages_by_conversation_id(
             conversation_id=turn_context.activity.conversation.id
         )
         system_message: Message = CompletionHandler.get_system_message(
@@ -99,7 +105,7 @@ class OpenaiCompletionHandler(CompletionHandler):
         )
         if system_message is not None:
             persisted_messages.insert(0, system_message)
-        chat_messages: List[ChatCompletionMessageParam] = [
+        chat_messages: list[ChatCompletionMessageParam] = [
             OpenaiCompletionHandler._message_to_chat_completion_message_param(message) for message in persisted_messages
         ]
         return await client.chat.completions.create(
@@ -168,7 +174,11 @@ class OpenaiCompletionHandler(CompletionHandler):
     @staticmethod
     @override
     async def handle_exception(
-        turn_context: TurnContext, exception: Exception, typing_task: Task, typing_stop_signal: Event
+        turn_context: TurnContext,
+        exception: Exception,
+        typing_task: Task,
+        typing_stop_signal: Event,
+        t: LocaleHandler,
     ) -> str:
         if isinstance(exception, APIStatusError):
             logger.warning(f"APIStatusError: {exception}\nTurnContext: {turn_context}")
@@ -185,4 +195,5 @@ class OpenaiCompletionHandler(CompletionHandler):
                 exception=exception,
                 typing_task=typing_task,
                 typing_stop_signal=typing_stop_signal,
+                t=t,
             )

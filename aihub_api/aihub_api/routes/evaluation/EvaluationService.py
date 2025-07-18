@@ -1,17 +1,17 @@
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import httpx
 import pandas as pd
 import phoenix as px
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.evaluation.PhoenixExperimentEvaluator import PhoenixExperimentEvaluator
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.phoenix.PhoenixConfig import PhoenixConfig
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from nats.aio.client import Client as NATS
 from phoenix.experiments.types import Dataset as PhoenixInternalDataset
 from phoenix.experiments.types import RanExperiment
@@ -44,24 +44,19 @@ OUTPUT_KEY_ANSWER = "answer"
 @dataclass
 class DataFrameCreationResult:
     dataframe: pd.DataFrame
-    input_keys: List[str]
-    output_keys: List[str]
+    input_keys: list[str]
+    output_keys: list[str]
 
 
 class EvaluationService:
     """
     Handles business logic for interacting with Arize Phoenix for LLM evaluations.
 
-    ### Why EvaluationService?
     This service abstracts the complexities of interacting with the Phoenix client and its API.
     It separates the data transformation (Pandas DataFrames), HTTP requests, and experiment execution
     logic from the API controller, ensuring a clean and maintainable architecture. It provides
     methods for managing evaluation datasets and running/retrieving experiments.
     """
-
-    # --------------------------------------------------------------------------
-    # Phoenix Client and Configuration Helpers
-    # --------------------------------------------------------------------------
 
     @staticmethod
     def _get_phoenix_client() -> px.Client:
@@ -69,18 +64,14 @@ class EvaluationService:
         return px.Client(warn_if_server_not_running=False)
 
     @staticmethod
-    def _get_phoenix_request_config() -> Tuple[str, Dict[str, str]]:
+    def _get_phoenix_request_config() -> tuple[str, dict[str, str]]:
         """Resolves the Phoenix base endpoint and authentication headers."""
         config = PhoenixConfig()
         headers = {"authorization": f"Bearer {config.PHOENIX_AUTH_TOKEN}"} if config.PHOENIX_AUTH_TOKEN else {}
         return config.PHOENIX_ENDPOINT, headers
 
-    # --------------------------------------------------------------------------
-    # Phoenix API Fetching Helpers
-    # --------------------------------------------------------------------------
-
     @staticmethod
-    async def _fetch_datasets_from_phoenix() -> List[PhoenixDataset]:
+    async def _fetch_datasets_from_phoenix() -> list[PhoenixDataset]:
         """Fetches the list of all datasets directly from the Phoenix API."""
         base_url, headers = EvaluationService._get_phoenix_request_config()
         url = f"{base_url}/v1/datasets"
@@ -106,7 +97,7 @@ class EvaluationService:
             return DatasetWithExampleCount(**response_json.get("data", response_json))
 
     @staticmethod
-    async def _fetch_experiments_for_dataset_from_phoenix(dataset_id: str) -> List[PhoenixExperiment]:
+    async def _fetch_experiments_for_dataset_from_phoenix(dataset_id: str) -> list[PhoenixExperiment]:
         """Fetches all experiments associated with a specific dataset ID."""
         base_url, headers = EvaluationService._get_phoenix_request_config()
         url = f"{base_url}/v1/datasets/{dataset_id}/experiments"
@@ -127,7 +118,7 @@ class EvaluationService:
             return PhoenixExperiment(**response.json().get("data"))
 
     @staticmethod
-    async def _fetch_experiment_json_from_phoenix(experiment_id: str) -> List[Dict[str, Any]]:
+    async def _fetch_experiment_json_from_phoenix(experiment_id: str) -> list[dict[str, Any]]:
         """Fetches the detailed run records (JSON output) for a specific experiment ID."""
         base_url, headers = EvaluationService._get_phoenix_request_config()
         url = f"{base_url}/v1/experiments/{experiment_id}/json"
@@ -136,12 +127,8 @@ class EvaluationService:
             response.raise_for_status()
             return response.json()
 
-    # --------------------------------------------------------------------------
-    # Data Preparation Helpers
-    # --------------------------------------------------------------------------
-
     @staticmethod
-    def _prepare_dataframe_for_upload(items: List[DatasetItemCreate]) -> DataFrameCreationResult:
+    def _prepare_dataframe_for_upload(items: list[DatasetItemCreate]) -> DataFrameCreationResult:
         """
         Converts DatasetItemCreate DTOs to a Pandas DataFrame.
         # Why Pandas? The Phoenix client library primarily uses Pandas DataFrames
@@ -163,10 +150,6 @@ class EvaluationService:
             if key not in df.columns:
                 df[key] = None
         return DataFrameCreationResult(dataframe=df, input_keys=input_keys, output_keys=output_keys)
-
-    # --------------------------------------------------------------------------
-    # Public Service Methods - Datasets
-    # --------------------------------------------------------------------------
 
     @staticmethod
     async def create_dataset(create_dto: DatasetCreate) -> Dataset:
@@ -260,7 +243,7 @@ class EvaluationService:
         )
 
     @staticmethod
-    async def get_datasets() -> List[MinimalDataset]:
+    async def get_datasets() -> list[MinimalDataset]:
         """Retrieves a list of summary information for all datasets from Arize Phoenix."""
         datasets = await EvaluationService._fetch_datasets_from_phoenix()
         return [
@@ -274,12 +257,8 @@ class EvaluationService:
             for dataset in datasets
         ]
 
-    # --------------------------------------------------------------------------
-    # Public Service Methods - Experiments
-    # --------------------------------------------------------------------------
-
     @staticmethod
-    async def get_experiments(t: LocaleHandler) -> List[MinimalExperiment]:
+    async def get_experiments(t: LocaleHandler) -> list[MinimalExperiment]:
         """Retrieves a list of summary information for all experiments from Arize Phoenix."""
         experiments_list = []
         datasets = await EvaluationService.get_datasets()
@@ -313,8 +292,8 @@ class EvaluationService:
         dataset = await EvaluationService.get_dataset(experiment_meta.dataset_id)
         raw_run_records = await EvaluationService._fetch_experiment_json_from_phoenix(experiment_id)
 
-        all_run_records: List[ExperimentRunRecord] = []
-        eval_runs_for_summary: List[Dict[str, Any]] = []
+        all_run_records: list[ExperimentRunRecord] = []
+        eval_runs_for_summary: list[dict[str, Any]] = []
 
         # The JSON output provides the richest data, including all
         # annotations and I/O, requiring manual processing to fit our DTOs.
@@ -344,7 +323,7 @@ class EvaluationService:
             eval_runs_for_summary.extend(annotations)
 
         # Calculate summary statistics for each evaluator.
-        eval_summary: Dict[str, EvaluationSummaryData] = {}
+        eval_summary: dict[str, EvaluationSummaryData] = {}
         evaluator_names = set(e.get("name") for e in eval_runs_for_summary if e.get("name"))
 
         for name in evaluator_names:
@@ -379,15 +358,15 @@ class EvaluationService:
     async def run_experiment_evaluation(
         create_dto: ExperimentCreate,
         nats_client: NATS,
-        external_event_distributor: ExternalEventDistributor,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
         judge: ChatLLMConfig,
-        authenticated_user: AuthenticatedUser,
+        authenticated_user: UserIdentity,
         t: LocaleHandler,
     ) -> Experiment:
         """Runs a new evaluation experiment using the PhoenixExperimentEvaluator."""
         evaluator = PhoenixExperimentEvaluator(
             nats_client=nats_client,
-            external_event_distributor=external_event_distributor,
+            external_agent_event_distributor=external_agent_event_distributor,
             judge=judge,
             authenticated_user=authenticated_user,
             t=t,

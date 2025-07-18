@@ -1,4 +1,4 @@
-from typing import ClassVar, Dict, List, Optional
+from typing import Annotated, ClassVar
 
 from llama_index.core.schema import NodeWithScore
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
@@ -15,12 +15,14 @@ class RetrieverEvent(SemanticEvent):
         "lib.events.semantic_retriever_event.description"
     )
 
-    nodes: Optional[List[IngestedNode]] = Field(
-        None,
-        description="List of nodes retrieved by the retriever, including document IDs, scores, and content.",
-    )
+    nodes: Annotated[
+        list[IngestedNode] | None,
+        Field(
+            description="List of nodes retrieved by the retriever, including document IDs, scores, and content.",
+        ),
+    ] = None
 
-    def to_semantic_convention(self) -> Dict[str, str]:
+    def to_semantic_convention(self) -> dict[str, str]:
         attributes = {
             SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.RETRIEVER.value,
         }
@@ -36,6 +38,6 @@ class RetrieverEvent(SemanticEvent):
         return {k: v for k, v in attributes.items() if v is not None}
 
     @classmethod
-    def from_nodes(cls, nodes: List[NodeWithScore]) -> "RetrieverEvent":
+    def from_nodes(cls, nodes: list[NodeWithScore]) -> "RetrieverEvent":
         nodes = [IngestedNode.from_llama_index_node_with_score(node) for node in nodes]
         return cls(nodes=nodes)

@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pulumi
 from pulumi_azure_native import network, privatedns, storage
 
@@ -22,10 +20,10 @@ class StorageResourceFactory:
         sku_name: str = "Standard_LRS",
         access_tier: storage.AccessTier = storage.AccessTier.HOT,
         is_hns_enabled: bool = True,
-        network_rule_set: Optional[storage.NetworkRuleSetArgs] = None,
+        network_rule_set: storage.NetworkRuleSetArgs | None = None,
         blob_only: bool = False,
-        existing_blob_dns_zone: Optional[privatedns.GetPrivateZoneResult] = None,
-        existing_file_dns_zone: Optional[privatedns.GetPrivateZoneResult] = None,
+        existing_blob_dns_zone: privatedns.GetPrivateZoneResult | None = None,
+        existing_file_dns_zone: privatedns.GetPrivateZoneResult | None = None,
     ) -> storage.StorageAccount:
         """
         Create a storage account resource
@@ -105,7 +103,7 @@ class StorageResourceFactory:
         account_name: str,
         storage_account: storage.StorageAccount,
         subnet_id: str,
-        dns_zone_id: Optional[pulumi.Input[str]] = None,
+        dns_zone_id: pulumi.Input[str] | None = None,
         group_id: str = "blob",
     ) -> network.PrivateEndpoint:
         """
@@ -200,7 +198,7 @@ class StorageResourceFactory:
         name: str,
         storage_account: storage.StorageAccount,
         quota: int = 100,
-        enabled_protocols: Optional[str] = None,
+        enabled_protocols: str | None = None,
     ) -> storage.FileShare:
         """
         Create a file share resource
@@ -234,7 +232,7 @@ class StorageResourceFactory:
         return storage.FileShare(**file_share_args)
 
     def create_blob_container(
-        self, name: str, storage_account: storage.StorageAccount, public_access: Optional[storage.PublicAccess] = None
+        self, name: str, storage_account: storage.StorageAccount, public_access: storage.PublicAccess | None = None
     ) -> storage.BlobContainer:
         """
         Create a blob container

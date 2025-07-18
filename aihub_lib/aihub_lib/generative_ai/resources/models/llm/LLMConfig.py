@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Dict, Optional, Tuple, Union
+from typing import Annotated
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.llms import LLM
@@ -26,12 +26,10 @@ class LLMModelParameter(ResourceParameter):
 
 
 class LLMConfig(ResourceConfig):
-    default_parameter: LLMModelParameter = Field(..., description="The default parameters for the model.")
+    default_parameter: Annotated[LLMModelParameter, Field(description="The default parameters for the model.")]
 
     @abstractmethod
-    def to_llama_index(
-        self, model_parameter: Optional[LLMModelParameter]
-    ) -> Tuple[Union[LLM, BaseEmbedding], LLMCostTracker]:
+    def to_llama_index(self, model_parameter: LLMModelParameter | None) -> tuple[LLM | BaseEmbedding, LLMCostTracker]:
         """
         Instantiate an LLM or embedding along with a cost tracker for llama_index.
 
@@ -41,7 +39,7 @@ class LLMConfig(ResourceConfig):
         """
         pass
 
-    def merge_model_params(self, model_parameter: Optional[LLMModelParameter] = None) -> Dict:
+    def merge_model_params(self, model_parameter: LLMModelParameter | None = None) -> dict:
         """
         Merge default model parameters with provided ones. The merged dictionary excludes any
         fields starting with '_'.

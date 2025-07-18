@@ -1,18 +1,23 @@
+import asyncio
 import json
 from pathlib import Path
-from typing import Dict
 
+import pytest
 import pytest_asyncio
 import requests
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+    DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
+from aihub_lib.routes.health.HealthController import HealthController
+from aihub_lib.testing.route_adapter.ASGIAdapter import ASGIAdapter
 from asgi_lifespan import LifespanManager
-from httpx import AsyncClient, ASGITransport
-import asyncio
-import pytest
+from httpx import ASGITransport, AsyncClient
 
 from aihub_bot.routes.agent.AgentChatController import AgentChatController
 from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
-from aihub_lib.routes.health.HealthController import HealthController
-from aihub_lib.testing.route_adapter.ASGIAdapter import ASGIAdapter
 
 BASE_URL = "http://test/api/v1"
 PORT = 8001
@@ -48,7 +53,10 @@ def patch_requests_adapter(monkeypatch, test_runner):
 async def test_runner():
     runner = SimulatedAgentBotTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID)
     runner.with_simple_chunk_events()
-    runner.mount(HealthController().get_health(), AgentChatController().completions_json().completions_stream())
+    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    runner.mount(
+        HealthController(auth=auth).get_health(), AgentChatController(auth=auth).completions_json().completions_stream()
+    )
     await runner.start_simulation()
     return runner
 
@@ -64,7 +72,7 @@ async def client(test_runner: SimulatedAgentBotTestRunner):
 @pytest.mark.asyncio(loop_scope="module")
 async def test_send_message(test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter):
     with open(Path(__file__).parent / "user_message.json") as file:
-        payload: Dict = json.loads(file.read())
+        payload: dict = json.loads(file.read())
 
     payload["serviceUrl"] = SERVICE_ENDPOINT
     payload["conversation"]["id"] = CONVERSATION_ID
@@ -89,7 +97,7 @@ async def test_send_message(test_runner: SimulatedAgentBotTestRunner, client: As
 @pytest.mark.asyncio(loop_scope="module")
 async def test_stream_response(test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter):
     with open(Path(__file__).parent / "user_message.json") as file:
-        payload: Dict = json.loads(file.read())
+        payload: dict = json.loads(file.read())
 
     payload["serviceUrl"] = SERVICE_ENDPOINT
     payload["conversation"]["id"] = CONVERSATION_ID

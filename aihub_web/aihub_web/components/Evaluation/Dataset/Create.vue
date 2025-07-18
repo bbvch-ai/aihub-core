@@ -73,8 +73,8 @@ const emit = defineEmits<{
 const close = () => {
   emit('close')
 }
-const save = () => {
-  createDataset({ dataset: dataset.value })
+const save = async () => {
+  await createDataset({ dataset: dataset.value })
   emit('close')
 }
 </script>

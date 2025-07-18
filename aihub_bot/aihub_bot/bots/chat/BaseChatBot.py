@@ -1,6 +1,6 @@
 import asyncio
 from asyncio import Event, Task
-from typing import Any, Dict
+from typing import Any
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.utils import str_to_object_id
@@ -29,7 +29,7 @@ class BaseChatBot(ActivityHandler):
         self,
         path: str,
         completion_handler: CompletionHandler,
-        handler_kwargs: Dict[str, Any],
+        handler_kwargs: dict[str, Any],
         typing_timeout_seconds: int = 60,
     ):
         self.path = path
@@ -64,25 +64,17 @@ class BaseChatBot(ActivityHandler):
         await self._process_message(turn_context, is_streaming=False)
 
     def _get_locale_handler(self, turn_context: TurnContext) -> LocaleHandler:
-        locale = self.locale_handler.get_locale(turn_context.activity.locale.split("-")[0])
+        if turn_context.activity.locale:
+            locale = self.locale_handler.get_locale(turn_context.activity.locale.split("-")[0])
+        else:
+            locale = self.locale_handler.DEFAULT_LOCALE
         return self.locale_handler.in_locale(locale)
 
     async def _process_message(self, turn_context: TurnContext, is_streaming: bool = False):
         locale_handler = self._get_locale_handler(turn_context)
         conversation_id = turn_context.activity.conversation.id
 
-        # Start typing indicator
-        typing_stop_signal = Event()
-        typing_task: Task = asyncio.create_task(
-            self.completion_handler.send_typing_activity(
-                turn_context=turn_context,
-                signal=typing_stop_signal,
-                t=locale_handler,
-                timeout_seconds=self.typing_timeout_seconds,
-            )
-        )
-
-        # Check if we should show expiration message
+        # Check if we should show an expiration message
         if (
             ConversationTracker.should_show_expiration_message(conversation_id)
             and turn_context.activity.type == "message"
@@ -90,7 +82,8 @@ class BaseChatBot(ActivityHandler):
             await turn_context.send_activity(
                 Activity(
                     type=ActivityTypes.message,
-                    text="This conversation has expired after 1 month of inactivity. Your previous messages are no longer available.",
+                    text="This conversation has expired after 1 month of inactivity. "
+                    "Your previous messages are no longer available.",
                 )
             )
 
@@ -108,6 +101,18 @@ class BaseChatBot(ActivityHandler):
             turn_context = self.completion_handler.handle_slack_message(turn_context)
             if turn_context is None:
                 return
+
+        # Typing must be sent after the Slack message is processed such that no typing indicator is sent
+        # when the bot should not respond to the message.
+        typing_stop_signal = Event()
+        typing_task: Task = asyncio.create_task(
+            self.completion_handler.send_typing_activity(
+                turn_context=turn_context,
+                signal=typing_stop_signal,
+                t=locale_handler,
+                timeout_seconds=self.typing_timeout_seconds,
+            )
+        )
 
         # Get response from completion handler
         try:
@@ -145,7 +150,6 @@ class BaseChatBot(ActivityHandler):
         if is_streaming:
             # Get streaming response
             response_generator = await self.completion_handler.get_stream_completion(
-                service=self.completion_handler,
                 turn_context=turn_context,
                 path=self.path,
                 thread_id=str_to_object_id(turn_context.activity.conversation.id),
@@ -165,7 +169,6 @@ class BaseChatBot(ActivityHandler):
         else:
             # Get json response
             response = await self.completion_handler.get_completion(
-                service=self.completion_handler,
                 turn_context=turn_context,
                 path=self.path,
                 thread_id=str_to_object_id(turn_context.activity.conversation.id),

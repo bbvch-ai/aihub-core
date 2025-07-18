@@ -1,14 +1,23 @@
-import os
 import pytest
-from fastapi.testclient import TestClient
-from mongoengine import connect, disconnect
-
-from aihub_api.runners.ApiTestRunner import ApiTestRunner
-from aihub_api.routes.user.UserController import UserController
-from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
+import pytest_asyncio
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+    DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
+from aihub_lib.testing.auth_utils.user_mocks import get_expected_user_data, mock_user_entity_autouse  # noqa: F401
+from asgi_lifespan import LifespanManager
+from httpx import ASGITransport, AsyncClient
+from mongoengine import connect, disconnect
 
+from aihub_api.routes.user.UserController import UserController
+from aihub_api.runners.ApiTestRunner import ApiTestRunner
+
+BASE_URL = "http://test"
 USER_ENDPOINT = "/api/v1/users/me"
 EXPECTED_USER_FIELDS = ["id", "name", "email"]
 
@@ -21,79 +30,41 @@ def mongo_db():
     disconnect()
 
 
-@pytest.fixture
-def api_client():
+@pytest_asyncio.fixture(scope="module")
+async def api_client():
     """Create a test client for the API with UserController mounted."""
     runner = ApiTestRunner()
-    auth = NoAuthHandler()
+    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     runner.mount(UserController(auth=auth).get_my_user())
-    return TestClient(runner.get_app())
+    app = runner.get_app()
+    async with LifespanManager(app) as lifespan:
+        async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
+            yield client
 
 
-@pytest.fixture
-def expected_user_data():
-    """Expected user data from environment variables."""
-    return {
-        "id": os.getenv("OID", "1234567890"),
-        "name": os.getenv("NAME", "Melanie Musterfrau"),
-        "email": os.getenv("EMAIL", "melanie.musterfrau@bbv.ch"),
-        "profile_image": None,
-        "favorite_modules": [],
-        "roles": ["AllAgents"],
-        "dashboard": {
-            "cellHeight": 350,
-            "children": [
-                {
-                    "component": "DashboardComponentNumber",
-                    "event": "StartEvent",
-                    "noResize": True,
-                    "timeRange": "30d",
-                    "w": 1,
-                    "x": 0,
-                    "y": 0,
-                },
-                {
-                    "component": "DashboardComponentLineChart",
-                    "event": "StartEvent",
-                    "noResize": True,
-                    "timeRange": "30d",
-                    "w": 2,
-                    "x": 1,
-                    "y": 0,
-                },
-                {
-                    "component": "DashboardComponentNumber",
-                    "event": "ExceptionEvent",
-                    "noResize": True,
-                    "timeRange": "30d",
-                    "w": 1,
-                    "x": 3,
-                    "y": 0,
-                },
-            ],
-            "column": 4,
-            "margin": 24,
-            "minRow": 1,
-        },
-    }
-
-
-def test_get_user_endpoint(api_client, expected_user_data):
+@pytest.mark.asyncio
+async def test_get_user_endpoint(api_client):
     """Test GET /user/me returns expected user data."""
     headers = {"Content-Type": "application/json"}
-    response = api_client.get(USER_ENDPOINT, headers=headers)
+    response = await api_client.get(USER_ENDPOINT, headers=headers)
     assert response.status_code == 200, f"Expected status code 200, got {response.status_code}"
     user_data = response.json()
+    user_data["access"]["agents"] = []
+    user_data["access"]["processes"] = []
     for child in user_data["dashboard"]["children"]:
         del child["id"]
     assert isinstance(user_data, dict)
     assert all(key in user_data for key in EXPECTED_USER_FIELDS)
-    assert user_data == expected_user_data
+
+    # Get expected user data from the shared function
+    expected_data = get_expected_user_data()
+    assert user_data == expected_data
 
 
-def test_user_dto_structure(api_client):
+@pytest.mark.asyncio
+async def test_user_dto_structure(api_client):
     """Test that user DTO has the expected structure."""
-    response = api_client.get(USER_ENDPOINT)
+    response = await api_client.get(USER_ENDPOINT)
     user_data = response.json()
     assert isinstance(user_data["id"], str)
     assert isinstance(user_data["name"], str)
@@ -101,6 +72,7 @@ def test_user_dto_structure(api_client):
     assert "@" in user_data["email"]
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "headers",
     [
@@ -109,8 +81,8 @@ def test_user_dto_structure(api_client):
         {},
     ],
 )
-def test_user_endpoint_different_headers(api_client, headers):
+async def test_user_endpoint_different_headers(api_client, headers):
     """Test GET /user/me with various headers."""
-    response = api_client.get(USER_ENDPOINT, headers=headers)
+    response = await api_client.get(USER_ENDPOINT, headers=headers)
     assert response.status_code == 200
     assert "id" in response.json()

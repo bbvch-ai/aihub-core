@@ -1,9 +1,12 @@
 from typing import Annotated
 
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
+    use_external_agent_event_distributor,
+)
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.Controller import Controller
 from botbuilder.integration.aiohttp import CloudAdapter
 from fastapi import Body, Depends, Path, Request, Response
@@ -34,8 +37,10 @@ class AgentChatController(Controller):
     description = LocaleString(en="Chat with agents")
     icon = "mage:we-chat"
 
-    def __init__(self, route: str = "/agent/chat", is_admin_only=False):
-        super().__init__(route, is_admin_only=is_admin_only)
+    def __init__(
+        self, *, auth: AuthHandler, route: str = "/agent/chat", additionally_required_permission: str | None = None
+    ):
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def completions_json(
         self,
@@ -75,12 +80,14 @@ class AgentChatController(Controller):
             agent_class: Annotated[str, Path(title="Agent class")],
             agent_id: Annotated[str, Path(title="Agent ID")],
             nc: Annotated[NATS, Depends(use_nats)],
-            external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor)],
+            external_agent_event_distributor: Annotated[
+                ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
+            ],
         ) -> Response:
             path: str = RoutesService.get_path(request)
             chat_bot: AgentChatBot = AgentChatBot(
                 nc,
-                external_event_distributor,
+                external_agent_event_distributor,
                 agent_class,
                 agent_id,
                 path,
@@ -128,12 +135,14 @@ class AgentChatController(Controller):
             agent_class: Annotated[str, Path(title="Agent class")],
             agent_id: Annotated[str, Path(title="Agent ID")],
             nc: Annotated[NATS, Depends(use_nats)],
-            external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor)],
+            external_agent_event_distributor: Annotated[
+                ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
+            ],
         ) -> Response:
             path: str = RoutesService.get_path(request)
             chat_bot: StreamAgentChatBot = StreamAgentChatBot(
                 nc,
-                external_event_distributor,
+                external_agent_event_distributor,
                 agent_class,
                 agent_id,
                 path,

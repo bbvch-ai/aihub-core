@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Optional, Tuple
+from typing import Annotated
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from pydantic import Field
@@ -31,13 +31,15 @@ class EmbeddingLLMConfig(LLMConfig):
     """
 
     # Keeping Field() explicitly for default_factory
-    default_parameter: EmbeddingLLMParameter = Field(
-        default_factory=lambda: EmbeddingLLMParameter(),
-        description="Default parameters for the embedding model.",
-    )
+    default_parameter: Annotated[
+        EmbeddingLLMParameter,
+        Field(
+            description="Default parameters for the embedding model.",
+        ),
+    ] = EmbeddingLLMParameter()
 
     @abstractmethod
     def to_llama_index(
-        self, model_parameter: Optional[EmbeddingLLMParameter] = None
-    ) -> Tuple[BaseEmbedding, LLMCostTracker]:
+        self, model_parameter: EmbeddingLLMParameter | None = None
+    ) -> tuple[BaseEmbedding, LLMCostTracker]:
         pass

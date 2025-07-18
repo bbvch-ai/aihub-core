@@ -1,21 +1,20 @@
 import asyncio
 from asyncio import sleep
-from typing import List, Optional
 
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.distributor.events.ExternalEvent import ExternalEvent
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
-from aihub_lib.nats.events import ExceptionEvent, StartEvent, StopEvent
-from aihub_lib.nats.events.discovery.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent
+from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
+from aihub_lib.nats.events import BaseEvent, ExceptionEvent, StopEvent
+from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topic_managers.TopicManager import TopicManager
-from aihub_lib.nats.topics import DiscoveryTopic
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from aihub_lib.nats.topics.discovery.agent.AgentDiscoveryTopic import AgentDiscoveryTopic
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources
@@ -30,28 +29,15 @@ from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
 
 # In-memory caches to avoid repeatedly querying NATS for agent info
-DISCOVER_AGENTS_CACHE = TTLCache(maxsize=1, ttl=60)  # Cache the entire agent list for 60s
+DISCOVER_AGENTS_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache the entire agent list for 60s
 GET_AGENT_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache individual agents for 60s
 
 
 class AgentService:
     """
     Provides functionality to discover and retrieve agent information via NATS-based discovery events.
-
-    ### Why AgentService?
     `AgentService` acts as the business logic layer for agent operations,
     isolating NATS-based discovery requests from the HTTP layer.
-
-    ### Key Operations
-    - `discover_agents`: Broadcasts a DiscoveryRequestEvent and collects all AgentDiscoveryResponseEvents,
-      returning a list of discovered agents.
-    - `get_agent`: Sends a targeted discovery request to identify a specific agent.
-
-    ### Caching
-    - Entire agent lists are cached for 60 seconds to reduce NATS load.
-    - Individual agent details are also cached for 60 seconds.
-
-    If the agent or agent list isn't found in cache, a new NATS discovery request is performed.
     """
 
     @staticmethod
@@ -72,16 +58,16 @@ class AgentService:
             agent = AgentEntity.get_agent(agent_class, agent_id)
             if agent is None:
                 raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
-            return AgentDTO.from_entity(agent, t)
+            return AgentDTO.from_entity(agent, t, is_online=False)
 
     @staticmethod
-    async def get_agents(nc: NATS, t: LocaleHandler) -> List[AgentDTO]:
+    async def get_agents(nc: NATS, t: LocaleHandler) -> list[AgentDTO]:
         """
         Returns both agents that are online (answer to a discovery broadcast) and agents
         that are saved in the database.
         """
         discovered_agents = await AgentService.discover_agents(nc, t)
-        saved_agents = [AgentDTO.from_entity(agent, t) for agent in AgentEntity.get_agents()]
+        saved_agents = [AgentDTO.from_entity(agent, t, is_online=False) for agent in AgentEntity.get_agents()]
 
         all_agents = discovered_agents.copy()
         for saved_agent in saved_agents:
@@ -112,10 +98,10 @@ class AgentService:
             return GET_AGENT_CACHE[cache_key]
 
         call_id = str(ObjectId())
-        agent_dto: Optional[AgentDTO] = None
+        agent_dto: AgentDTO | None = None
         agent_found_event = asyncio.Event()
 
-        async def discovery_handler(event: AgentDiscoveryResponseEvent, topic: DiscoveryTopic):
+        async def discovery_handler(event: AgentDiscoveryResponseEvent, topic: AgentDiscoveryTopic):
             nonlocal agent_dto
             # Found the agent, stop subscriber and signal event
             await nc_subscriber.stop()
@@ -134,7 +120,7 @@ class AgentService:
 
         topic_manager = AgentInstanceTopicManager(agent_class=agent_class, agent_id=agent_id)
         nc_publisher = NCPublisher(nc)
-        nc_subscriber = NCSubscriber.for_agent_discovery_response_events(
+        nc_subscriber = AgentNCSubscriber.for_agent_discovery_response_events(
             nc, topic_manager, discovery_handler, call_id=call_id
         )
         await nc_subscriber.start()
@@ -147,7 +133,7 @@ class AgentService:
         # Wait up to 1 second for response
         try:
             await asyncio.wait_for(agent_found_event.wait(), timeout=1.0)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             await nc_subscriber.stop()
             raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
 
@@ -158,7 +144,7 @@ class AgentService:
         raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
 
     @staticmethod
-    async def discover_agents(nc: NATS, t: LocaleHandler) -> List[AgentDTO]:
+    async def discover_agents(nc: NATS, t: LocaleHandler) -> list[AgentDTO]:
         """
         Discovers all agents by broadcasting a discovery request and waiting for responses.
         Returns a cached result if available.
@@ -171,12 +157,12 @@ class AgentService:
         call_id = str(ObjectId())
         discovery_responses = []
 
-        async def discovery_handler(event: AgentDiscoveryResponseEvent, topic: DiscoveryTopic):
+        async def discovery_handler(event: AgentDiscoveryResponseEvent, topic: AgentDiscoveryTopic):
             discovery_responses.append(event)
 
-        topic_manager = TopicManager()
+        topic_manager = AgentTopicManager()
         nc_publisher = NCPublisher(nc)
-        nc_subscriber = NCSubscriber.for_agent_discovery_response_events(
+        nc_subscriber = AgentNCSubscriber.for_agent_discovery_response_events(
             nc, topic_manager, discovery_handler, call_id=call_id
         )
         await nc_subscriber.start()
@@ -219,13 +205,13 @@ class AgentService:
     @staticmethod
     async def send_event(
         nc: NATS,
-        external_event_distributor: ExternalEventDistributor,
-        user: AuthenticatedUser,
-        start_event: StartEvent,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
+        user: UserIdentity,
+        start_event: BaseEvent,
         agent_class: str,
         agent_id: str,
-        thread_id: Optional[ObjectId] = None,
-        display_id: Optional[ObjectId] = None,
+        thread_id: ObjectId | None = None,
+        display_id: ObjectId | None = None,
     ) -> StopEvent | ExceptionEvent:
         """Sends an event to a specific agent."""
         if thread_id:
@@ -233,7 +219,7 @@ class AgentService:
         else:
             thread = ThreadEntity.create_thread(
                 "chat",
-                users=[User(user_id=user.oid)],
+                users=[User(user_id=user.id)],
                 agents=[Agent(agent_class=agent_class, agent_id=agent_id)],
             )
 
@@ -244,7 +230,7 @@ class AgentService:
             display_id=display_id or str(ObjectId()),
             run_id="*",
         )
-        external_event = ExternalEvent(
+        external_event = ExternalAgentEvent(
             thread_id=topic_manager.thread_id,
             display_id=topic_manager.display_id,
             event=start_event,
@@ -256,7 +242,7 @@ class AgentService:
             external_event=external_event,
             topic_manager=topic_manager,
             nc=nc,
-            external_event_distributor=external_event_distributor,
+            external_agent_event_distributor=external_agent_event_distributor,
         )
 
         await resources.stop_signal.wait()
@@ -266,13 +252,23 @@ class AgentService:
 
     @staticmethod
     async def get_paginated_agent_threads(
-        agent_class: str, agent_id: str, t: LocaleHandler, page: int = 1, page_size: int = 20
-    ) -> tuple[int, List[ThreadDTO]]:
+        agent_class: str,
+        agent_id: str,
+        t: LocaleHandler,
+        page: int = 1,
+        page_size: int = 20,
+        user_id: str | None = None,
+    ) -> tuple[int, list[ThreadDTO]]:
         """
         Retrieves a paginated list of threads that a specific agent is part of.
         """
         return await ThreadService.get_paginated_threads_for_agent(
-            agent_class, agent_id, t, page=page, page_size=page_size
+            agent_class,
+            agent_id,
+            t=t,
+            page=page,
+            page_size=page_size,
+            user_id=user_id,
         )
 
     @staticmethod

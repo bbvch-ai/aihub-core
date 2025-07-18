@@ -1,10 +1,9 @@
 import logging
 import os
-from typing import Any, Dict, List
+from typing import Any
 
 import i18n
 import yaml
-from typing_extensions import Optional
 
 from aihub_lib.i18n.LocaleString import LocaleString
 
@@ -15,7 +14,7 @@ class LocaleHandler:
     DEFAULT_LOCALE = "de"
     LOCALE_WHITE_LIST = ["de", "en", "fr", "it"]
 
-    def __init__(self, locale: Optional[str] = None, locale_paths: Optional[List[str]] = None):
+    def __init__(self, locale: str | None = None, locale_paths: list[str] | None = None):
         self._locale = locale or self.DEFAULT_LOCALE
 
         i18n.set("skip_locale_root_data", True)
@@ -32,7 +31,7 @@ class LocaleHandler:
     def locale(self):
         return self._locale
 
-    def get_locale_paths(self) -> List[str]:
+    def get_locale_paths(self) -> list[str]:
         current_file_directory = os.path.dirname(os.path.abspath(__file__))
         relative_path = os.path.join(current_file_directory, "translations")
         return [relative_path]
@@ -42,7 +41,7 @@ class LocaleHandler:
             return locale
         return self._locale or self.DEFAULT_LOCALE
 
-    def extract(self, locale_data: Dict[str, Any] | LocaleString, locale: str | None = None) -> Any:
+    def extract(self, locale_data: dict[str, Any] | LocaleString, locale: str | None = None) -> Any:
         """
         Some database properties are multi-lingual. This function returns the property in the user's locale.
         Example:
@@ -63,7 +62,7 @@ class LocaleHandler:
             return self.extract_multi_locale(locale_data, locale)
         return locale_data
 
-    def extract_dict(self, locale_data: Dict[str, Any] | LocaleString, locale: str) -> Any:
+    def extract_dict(self, locale_data: dict[str, Any] | LocaleString, locale: str) -> Any:
         locale = self.get_locale(locale)
         value = locale_data.get(locale, None)
         if value:
@@ -76,7 +75,7 @@ class LocaleHandler:
             return locale_data[available_locales[0]]
         raise ValueError("No language keys available")
 
-    def extract_multi_locale(self, locale_data: Dict[str, Any] | LocaleString, locale: str | None = None) -> Any:
+    def extract_multi_locale(self, locale_data: dict[str, Any] | LocaleString, locale: str | None = None) -> Any:
         locale = self.get_locale(locale)
         value = getattr(locale_data, locale, None)
         if value:
@@ -97,7 +96,7 @@ class LocaleHandler:
             potential_file_path = os.path.join(folder_path, folder, f"{filename}.{locale}.yml")
             if not os.path.isfile(potential_file_path):
                 continue
-            with open(potential_file_path, "r") as file:
+            with open(potential_file_path) as file:
                 data = yaml.safe_load(file)
                 for key in path:
                     data = data[key]
@@ -110,5 +109,5 @@ class LocaleHandler:
             locale=locale,
         )
 
-    def __call__(self, key: str, locale: Optional[str] = None, **kwargs) -> str:
+    def __call__(self, key: str, locale: str | None = None, **kwargs) -> str:
         return i18n.t(key, locale=self.get_locale(locale), **kwargs)

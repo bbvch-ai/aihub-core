@@ -1,9 +1,10 @@
 import asyncio
 
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
 from aihub_lib.testing.logging.logger import enable_logging
+
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from playground.minimal_workflow.fan_out_workflow.FanOutAgent import FanOutAgent
 from playground.minimal_workflow.fan_out_workflow.FanOutAgentConfig import (
     FanOutAgentConfig,

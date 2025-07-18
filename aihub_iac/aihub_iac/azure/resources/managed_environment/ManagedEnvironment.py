@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pulumi
 from pulumi_azure_native import app, operationalinsights
 
@@ -15,7 +13,7 @@ class ManagedEnvironment(pulumi.ComponentResource):
         name: str,
         config: ManagedEnvironmentConfig,
         infrastructure_subnet_id: pulumi.Output[str],
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
     ):
         super().__init__(f"{stack}:{name}", name, None, opts)
 
@@ -71,6 +69,18 @@ class ManagedEnvironment(pulumi.ComponentResource):
             vnet_configuration=app.VnetConfigurationArgs(
                 infrastructure_subnet_id=infrastructure_subnet_id,
             ),
+            workload_profiles=[
+                app.WorkloadProfileArgs(
+                    name="Consumption",
+                    workload_profile_type="Consumption",
+                ),
+                app.WorkloadProfileArgs(
+                    name="general-D4",
+                    workload_profile_type="D4",
+                    minimum_count=1,
+                    maximum_count=3,
+                ),
+            ],
             opts=pulumi.ResourceOptions(parent=self),
             tags={
                 "Stack": self.stack,

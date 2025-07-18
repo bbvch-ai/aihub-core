@@ -1,15 +1,21 @@
 import pytest
 import pytest_asyncio
-from asgi_lifespan import LifespanManager
-from httpx import AsyncClient, ASGITransport
-
-from aihub_api.runners.ApiTestRunner import ApiTestRunner
-from aihub_api.routes.openai.OpenaiController import OpenaiController
-from aihub_lib.auth.dependencies.NoAuthHandler.NoAuthHandler import NoAuthHandler
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+    DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
 from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
 from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
     SelfHostedEmbeddingConfig,
 )
+from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
+from asgi_lifespan import LifespanManager
+from httpx import ASGITransport, AsyncClient
+
+from aihub_api.routes.openai.OpenaiController import OpenaiController
+from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
 MODELS_ENDPOINT = "/api/v1/openai/models"
@@ -20,7 +26,7 @@ EMBEDDING_MODEL = "Alibaba-NLP/gte-base-en-v1.5"
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def api_client():
     """Create an API client with OpenaiController endpoints mounted."""
-    auth = NoAuthHandler()
+    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     controller = (
         OpenaiController(
             auth=auth,

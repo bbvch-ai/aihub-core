@@ -24,10 +24,10 @@
 </template>
 
 <script setup lang="ts">
-import type { RerankerEvent, ThreadDto, WsServerEvent } from '@core/sdk/client'
+import type { RerankerEvent, ThreadDto, WsServerAgentEventReadable } from '@core/sdk/client'
 
 defineProps<{
-  event: WsServerEvent & { event: RerankerEvent }
+  event: WsServerAgentEventReadable & { event: RerankerEvent }
   thread: ThreadDto
 }>()
 </script>

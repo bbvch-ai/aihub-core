@@ -1,5 +1,7 @@
-from typing import Any, Dict, Iterable, List, Optional, Union
+from collections.abc import Iterable
+from typing import Annotated, Any, Literal
 
+from aihub_lib.nats.events.user.UserUploadedFile import UserUploadedFile
 from llama_index.core.base.llms.types import ChatMessage, ContentBlock, ImageBlock, MessageRole, TextBlock
 from openai.types import ChatModel
 from openai.types.chat import (
@@ -14,10 +16,9 @@ from openai.types.chat import (
     completion_create_params,
 )
 from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import Annotated, Literal
 
 
-def resolve_message_content(message: Dict[str, Any]) -> Dict[str, Any]:
+def resolve_message_content(message: dict[str, Any]) -> dict[str, Any]:
     """
     Resolves the content field in a message, handling ValidatorIterator instances.
     Returns a new message dict with properly resolved content.
@@ -62,7 +63,7 @@ def resolve_message_content(message: Dict[str, Any]) -> Dict[str, Any]:
     return message
 
 
-def openai_message_to_llama_index(message: Dict[str, Any]) -> ChatMessage:
+def openai_message_to_llama_index(message: dict[str, Any]) -> ChatMessage:
     """
     Converts an OpenAI message dict to a llama-index ChatMessage.
     Handles both simple string content and complex multimodal content.
@@ -72,12 +73,12 @@ def openai_message_to_llama_index(message: Dict[str, Any]) -> ChatMessage:
 
     role = message.get("role", "user")
     content = message.get("content")
-    blocks: List[ContentBlock] = []
+    blocks: list[ContentBlock] = []
 
     # Process content based on its type
     if isinstance(content, str):
         blocks.append(TextBlock(text=content))
-    elif isinstance(content, Iterable) and not isinstance(content, (str, bytes)):
+    elif isinstance(content, Iterable) and not isinstance(content, str | bytes):
         for part in content:
             if isinstance(part, dict):
                 part_type = part.get("type")
@@ -96,53 +97,58 @@ def openai_message_to_llama_index(message: Dict[str, Any]) -> ChatMessage:
 
 class Metadata(BaseModel):
     thread_id: Annotated[
-        Optional[str], Field(description="Provide thread ID to continue conversation in an existing thread.")
+        str | None, Field(description="Provide thread ID to continue conversation in an existing thread.")
     ] = None
-    display_id: Annotated[Optional[str], Field(description="Gives control over display ID used for this run.")] = None
+    display_id: Annotated[str | None, Field(description="Gives control over display ID used for this run.")] = None
     reconstruct_history: Annotated[
-        Optional[bool],
+        bool | None,
         Field(
-            description="When set to True, message set on UserMessageEvent will be calculated based on thread event history"
+            description="When set to True, message set on UserMessageEvent "
+            "will be calculated based on thread event history"
         ),
+    ] = None
+    files: Annotated[
+        list[UserUploadedFile] | None,
+        Field(description="List of files to attach to the request, if supported by the model."),
     ] = None
 
 
 class ChatCompletionRequest(BaseModel):
     model_config = ConfigDict(extra="allow")
     messages: Annotated[
-        Optional[List[ChatCompletionMessageParam]], Field(description="Messages to complete the chat with.")
+        list[ChatCompletionMessageParam] | None, Field(description="Messages to complete the chat with.")
     ]
-    model: Annotated[Union[str, ChatModel], Field(description="ID of the model to use for the chat completion.")]
+    model: Annotated[str | ChatModel, Field(description="ID of the model to use for the chat completion.")]
     stream: Annotated[bool, Field(description="Enable streaming response.")] = False
 
-    user: Optional[str] = None
+    user: str | None = None
 
-    audio: Optional[ChatCompletionAudioParam] = None
-    frequency_penalty: Optional[float] = None
-    function_call: Optional[completion_create_params.FunctionCall] = None
-    functions: Optional[Iterable[completion_create_params.Function]] = None
-    logit_bias: Optional[Dict[str, int]] = None
-    logprobs: Optional[bool] = None
-    max_completion_tokens: Optional[int] = None
-    max_tokens: Optional[int] = None
-    metadata: Optional[Metadata] = None
-    modalities: Optional[List[ChatCompletionModality]] = None
-    n: Optional[int] = None
-    parallel_tool_calls: Optional[bool] = None
-    prediction: Optional[ChatCompletionPredictionContentParam] = None
-    presence_penalty: Optional[float] = None
-    reasoning_effort: Optional[ChatCompletionReasoningEffort] = None
-    response_format: Optional[completion_create_params.ResponseFormat] = None
-    seed: Optional[int] = None
-    service_tier: Optional[Literal["auto", "default"]] = None
-    stop: Union[Optional[str], List[str]] = None
-    store: Optional[bool] = None
-    stream_options: Optional[ChatCompletionStreamOptionsParam] = None
-    temperature: Optional[float] = None
-    tool_choice: Optional[ChatCompletionToolChoiceOptionParam] = None
-    tools: Optional[Iterable[ChatCompletionToolParam]] = None
-    top_logprobs: Optional[int] = None
-    top_p: Optional[float] = None
+    audio: ChatCompletionAudioParam | None = None
+    frequency_penalty: float | None = None
+    function_call: completion_create_params.FunctionCall | None = None
+    functions: Iterable[completion_create_params.Function] | None = None
+    logit_bias: dict[str, int] | None = None
+    logprobs: bool | None = None
+    max_completion_tokens: int | None = None
+    max_tokens: int | None = None
+    metadata: Metadata | None = None
+    modalities: list[ChatCompletionModality] | None = None
+    n: int | None = None
+    parallel_tool_calls: bool | None = None
+    prediction: ChatCompletionPredictionContentParam | None = None
+    presence_penalty: float | None = None
+    reasoning_effort: ChatCompletionReasoningEffort | None = None
+    response_format: completion_create_params.ResponseFormat | None = None
+    seed: int | None = None
+    service_tier: Literal["auto", "default"] | None = None
+    stop: str | None | list[str] = None
+    store: bool | None = None
+    stream_options: ChatCompletionStreamOptionsParam | None = None
+    temperature: float | None = None
+    tool_choice: ChatCompletionToolChoiceOptionParam | None = None
+    tools: Iterable[ChatCompletionToolParam] | None = None
+    top_logprobs: int | None = None
+    top_p: float | None = None
 
     @property
     def llama_index_messages(self):

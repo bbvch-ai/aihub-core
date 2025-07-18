@@ -1,6 +1,6 @@
 from aihub_lib.generative_ai.document.parsers.MarkdownStructuralNodeParser import MarkdownStructuralNodeParser
+from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_STORE_NAME
 from dagster import ConfigurableResource
-from llama_index.core.node_parser import NodeParser
 
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
 
@@ -34,7 +34,11 @@ class MarkdownStructuralNodeParserResource(ConfigurableResource):
                 "node_parser": MarkdownStructuralNodeParserResource(),
             }
         )
-    """
+    """  # noqa: E501
 
-    def get_node_parser_for_ref_doc(self, ref_doc: RefDocDocument) -> NodeParser:
-        return MarkdownStructuralNodeParser(metadata=ref_doc.metadata)
+    def get_node_parser_for_ref_doc(
+        self, ref_doc: RefDocDocument, document_store_name: str
+    ) -> MarkdownStructuralNodeParser:
+        metadata = ref_doc.metadata
+        metadata[DOCUMENT_STORE_NAME] = document_store_name
+        return MarkdownStructuralNodeParser(metadata=metadata)

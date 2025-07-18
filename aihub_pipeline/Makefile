@@ -12,14 +12,9 @@ typecheck:
 	@echo "Running type checks for pipelines..."
 	poetry run mypy .
 
-# Sort imports with isort
-sort-imports:
-	@echo "Sorting imports for pipelines..."
-	poetry run isort .
-
-# Run format, sort-imports, type-check, and test in sequence
-pr-ready: sort-imports format lint
-	@echo "Running full check (format, sort)..."
+# Run format, type-check, and test in sequence
+pr-ready: format lint
+	@echo "Running full check (format, lint)..."
 
 test-cov:
 	@echo "Running tests in aihub_pipeline with coverage..."

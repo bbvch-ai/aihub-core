@@ -1,9 +1,12 @@
-from typing import Annotated, Any, Callable
+from typing import Annotated
 
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
+    use_external_agent_event_distributor,
+)
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.Controller import Controller
 from botbuilder.integration.aiohttp import CloudAdapter
 from fastapi import Body, Depends, Request, Response
@@ -21,11 +24,12 @@ class BotInTheLoopController(Controller):
 
     def __init__(
         self,
+        *,
+        auth: AuthHandler,
         route: str = BotInTheLoopHandler.CONTROLLER_PATH,
-        is_admin_only=False,
-        auth: Callable[..., Any] = None,
+        additionally_required_permission: str | None = None,
     ):
-        super().__init__(route, auth, is_admin_only=is_admin_only)
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def bot_in_the_loop_response(self, route: str = BotInTheLoopHandler.ENDPOINT_PATH) -> "BotInTheLoopController":
         @self.router.post(route, tags=self.tags)
@@ -33,7 +37,9 @@ class BotInTheLoopController(Controller):
             request: Request,
             _: Annotated[ActivityModel, Body],  # openapi request body
             nc: Annotated[NATS, Depends(use_nats)],
-            external_event_distributor: Annotated[ExternalEventDistributor, Depends(use_external_event_distributor)],
+            external_agent_event_distributor: Annotated[
+                ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
+            ],
             bot_in_the_loop_handler: Annotated[
                 BotInTheLoopHandler, Depends(BotInTheLoopHandler.use_bot_in_the_loop_handler)
             ],
@@ -42,7 +48,7 @@ class BotInTheLoopController(Controller):
             bot_in_the_loop_handler.path = path
             chat_bot: BotInTheLoopBot = BotInTheLoopBot(
                 nc=nc,
-                external_event_distributor=external_event_distributor,
+                external_agent_event_distributor=external_agent_event_distributor,
                 bot_in_the_loop_handler=bot_in_the_loop_handler,
             )
             adapter: CloudAdapter = RoutesService.get_adapter(path)

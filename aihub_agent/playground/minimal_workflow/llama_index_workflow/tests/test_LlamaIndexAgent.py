@@ -1,19 +1,19 @@
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from pytest_bdd import scenarios, given, when, then, parsers
-
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import (
     OpenaiLikeLLMConfig,
     OpenaiLikeLLMParameter,
 )
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import LLMEvent, ChunkEvent, UserMessageEvent
+from aihub_lib.nats.events import ChunkEvent, LLMEvent, UserMessageEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.fake_user import fake_user
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from pytest_bdd import given, parsers, scenarios, then, when
+
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgent import LlamaIndexAgent
 from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgentConfig import LlamaIndexAgentConfig
 
-scenarios("../tests/features/llama_index_agent.feature")
+scenarios("./features/llama_index_agent.feature")
 
 
 @given("a LlamaIndexAgent is initialized and configured with a language model", target_fixture="agent_runner")

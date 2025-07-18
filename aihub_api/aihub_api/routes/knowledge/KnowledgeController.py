@@ -1,8 +1,8 @@
 from pathlib import Path
-from typing import Annotated, List
+from typing import Annotated
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -28,12 +28,13 @@ class KnowledgeController(Controller):
 
     def __init__(
         self,
+        *,
+        auth: AuthHandler,
         vector_store_factory: VectorStoreFactory,
         route: str = "/knowledge",
-        auth: AuthHandler | None = None,
-        is_admin_only=True,
+        additionally_required_permission: str | None = None,
     ):
-        super().__init__(route, auth, is_admin_only=is_admin_only)
+        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
         self.docstore_client: MongoClient = connect(
             host=CosmosDocstoreAccess().get_connection_string(), alias="docstore"
         )
@@ -43,8 +44,8 @@ class KnowledgeController(Controller):
     def get_databases(self, route: str = "/databases") -> "KnowledgeController":
         @self.router.get(route, tags=self.tags)
         async def get_databases(
-            user: AuthenticatedUser = Security(self.auth),
-        ) -> List[DatabaseDTO]:
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+        ) -> list[DatabaseDTO]:
             """
             Returns all available knowledge namespaces with the number of documents in each.
             """
@@ -59,7 +60,7 @@ class KnowledgeController(Controller):
         async def get_documents_for_namespace(
             database: Annotated[str, Path(title="Database name")],
             namespace: Annotated[str, Path(title="Namespace")],
-            user: AuthenticatedUser = Security(self.auth),
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
             page: PageNumber = 1,
             page_size: PageSize = 20,
         ) -> PaginatedDocumentsResponse:
@@ -88,7 +89,7 @@ class KnowledgeController(Controller):
             database: Annotated[str, Path(title="Database name")],
             namespace: Annotated[str, Path(title="Namespace")],
             document_id: Annotated[str, Path(title="Document ID")],
-            user: AuthenticatedUser = Security(self.auth),
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
         ) -> IngestedDocument:
             """
             Returns a single document by its ID.
@@ -107,8 +108,8 @@ class KnowledgeController(Controller):
             database: Annotated[str, Path(title="Database name")],
             namespace: Annotated[str, Path(title="Namespace")],
             document_id: Annotated[str, Path(title="Document ID")],
-            user: AuthenticatedUser = Security(self.auth),
-        ) -> List[IngestedNode]:
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+        ) -> list[IngestedNode]:
             """
             Returns nodes for a given document.
             """
@@ -131,8 +132,8 @@ class KnowledgeController(Controller):
             database: Annotated[str, Path(title="Database name")],
             namespace: Annotated[str, Path(title="Namespace")],
             document_id: Annotated[str, Path(title="Document ID")],
-            user: AuthenticatedUser = Security(self.auth),
-        ) -> List[NodeSummaryDTO]:
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+        ) -> list[NodeSummaryDTO]:
             """
             Returns nodes for a given document.
             """

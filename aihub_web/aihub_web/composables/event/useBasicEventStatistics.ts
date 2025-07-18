@@ -1,12 +1,14 @@
-import { useRouteQuery } from '@vueuse/router'
-
 import type { EventChartInput } from '@core/types/EventChartInput'
 
 import { useI18n } from '#imports'
 
 export const useBasicEventStatistics = () => {
   const { t } = useI18n()
-  const timeRange = useRouteQuery<'1h' | '24h' | '30d' | '365d'>('range', '30d')
+
+  const router = useRouter()
+  const route = useRoute()
+  const timeRange = useRouteQuery<'1h' | '24h' | '30d' | '365d'>('range', '30d', { route, router })
+
   const { timeseries: startSeries, timeseriesIsLoading: startIsLoading } = useEventTimeseries({
     eventName: 'StartEvent',
     timeRange,

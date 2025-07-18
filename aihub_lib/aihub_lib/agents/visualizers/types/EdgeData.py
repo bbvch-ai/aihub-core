@@ -1,4 +1,4 @@
-from typing import Annotated, Dict
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -15,4 +15,4 @@ class EdgeData(BaseModel):
     event_full_name: Annotated[str, Field(description="Fully qualified name of the event")]
     is_start_event: Annotated[bool, Field(description="Whether this edge represents a start event")]
     is_stop_event: Annotated[bool, Field(description="Whether this edge represents a stop event")]
-    payload: Annotated[Dict[str, EventPayloadField], Field(description="Payload information for the event")]
+    payload: Annotated[dict[str, EventPayloadField], Field(description="Payload information for the event")]

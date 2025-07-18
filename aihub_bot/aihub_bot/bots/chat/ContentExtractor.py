@@ -1,7 +1,7 @@
 import base64
 import logging
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Annotated
 
 import httpx
 from botbuilder.schema import Activity, Attachment
@@ -23,19 +23,21 @@ class FileSource(Enum):
 class FileInfo(BaseModel):
     """Normalized file information across different platforms."""
 
-    name: str = Field(..., description="Name of the file")
-    content_type: Optional[str] = Field(None, description="MIME type of the file")
-    url: str = Field(..., description="URL of the file")
-    content_bytes: Optional[bytes] = Field(None, description="Content of the file in bytes")
-    headers: Dict[str, str] = Field(default_factory=dict, description="HTTP headers for the file")
-    source: FileSource = Field(FileSource.GENERIC, description="Source of the file (e.g., Slack, Teams, etc.)")
+    name: Annotated[str, Field(description="Name of the file")]
+    content_type: Annotated[str | None, Field(description="MIME type of the file")] = None
+    url: Annotated[str, Field(description="URL of the file")]
+    content_bytes: Annotated[bytes | None, Field(description="Content of the file in bytes")] = None
+    headers: Annotated[dict[str, str], Field(description="HTTP headers for the file")] = {}
+    source: Annotated[FileSource, Field(description="Source of the file (e.g., Slack, Teams, etc.)")] = (
+        FileSource.GENERIC
+    )
 
 
 class ContentExtractor:
     """Unified handler for file processing from various sources."""
 
     @staticmethod
-    def extract_content_from_activity(path: str, activity: Activity) -> List[Content]:
+    def extract_content_from_activity(path: str, activity: Activity) -> list[Content]:
         """Extract all content (text and files) from an activity."""
         content = []
 
@@ -52,14 +54,14 @@ class ContentExtractor:
         return content
 
     @staticmethod
-    def _extract_text_content(activity: Activity) -> List[Content]:
+    def _extract_text_content(activity: Activity) -> list[Content]:
         """Extract text content from activity."""
         if activity.text:
             return [Content(text=activity.text, type="text")]
         return []
 
     @staticmethod
-    def _extract_slack_files(path: str, activity: Activity) -> List[Content]:
+    def _extract_slack_files(path: str, activity: Activity) -> list[Content]:
         """Extract files from Slack channel data."""
         content = []
 
@@ -84,7 +86,7 @@ class ContentExtractor:
         return content
 
     @staticmethod
-    def _extract_attachments(activity: Activity) -> List[Content]:
+    def _extract_attachments(activity: Activity) -> list[Content]:
         """Extract files from activity attachments."""
         content = []
 
@@ -182,7 +184,7 @@ class ContentExtractor:
         file_info = ContentExtractor._fetch_file(file_info)
 
         # Process by content type
-        if file_info.content_type.startswith("image/"):
+        if file_info.content_type and file_info.content_type.startswith("image/"):
             data_url = ContentExtractor._to_base64_data_url(file_info)
             return Content(text=data_url, type="image_url")
 
@@ -190,7 +192,9 @@ class ContentExtractor:
             # PDF files are not supported, return a placeholder
             return Content(text=f"<file name='{file_info.name}'>PDF files are not supported yet</file>", type="text")
 
-        elif file_info.content_type.startswith("text/") or file_info.content_type.startswith("application/"):
+        elif file_info.content_type and (
+            file_info.content_type.startswith("text/") or file_info.content_type.startswith("application/")
+        ):
             try:
                 text = file_info.content_bytes.decode("utf-8", errors="replace")
                 return Content(text=f"<file name='{file_info.name}'>{text}</file>", type="text")

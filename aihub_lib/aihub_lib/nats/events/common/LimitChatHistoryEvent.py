@@ -1,4 +1,4 @@
-from typing import ClassVar, List
+from typing import Annotated, ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage
 from pydantic import Field
@@ -17,4 +17,6 @@ class LimitChatHistoryEvent(ControlAndDisplayEvent):
         "lib.events.limit_chat_history_event.description"
     )
 
-    limited_history: List[ChatMessage] = Field(..., description="Limited chat history based on number of input tokens.")
+    limited_history: Annotated[
+        list[ChatMessage], Field(description="Limited chat history based on number of input tokens.")
+    ]

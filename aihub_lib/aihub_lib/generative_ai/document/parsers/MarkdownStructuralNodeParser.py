@@ -1,7 +1,9 @@
 import html
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Annotated, Any
 
+import bs4
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.node_parser.interface import NodeParser
@@ -11,13 +13,20 @@ from llama_index.core.utils import get_tqdm_iterable
 from pydantic import ConfigDict, Field, model_validator
 
 from aihub_lib.generative_ai.document.extractors import MetadataExtractor
+from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import PAGE_BREAK
 from aihub_lib.generative_ai.document.parsers.Split import Split
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     DEFAULT_METADATA,
     HEADING_LEVEL,
     INDEX,
+    NODE_CONTENT_TYPE,
+    NODE_CONTENT_TYPE_FIGURE,
+    NODE_CONTENT_TYPE_TABLE,
+    NODE_CONTENT_TYPE_TEXT,
+    PAGE,
     SECTION_END_LINE,
     SECTION_START_LINE,
+    NodeContentType,
 )
 
 
@@ -32,7 +41,13 @@ class MarkdownHeader:
         return len(self.hashes)
 
 
-def find_markdown_headers(content: str) -> List[MarkdownHeader]:
+@dataclass(frozen=True)
+class TextChunk:
+    content: str
+    content_type: NodeContentType
+
+
+def find_markdown_headers(content: str) -> list[MarkdownHeader]:
     headers = []
     for line_number, line in enumerate(content.splitlines(), 0):
         stripped_line = line.lstrip()
@@ -57,15 +72,17 @@ class MarkdownContentSplitter:
 
     def __init__(self):
         self.metadata = {}
-        self.current_headers: Dict[str, any] = {f"h{i}": None for i in range(1, 7)}  # Track current header levels
+        self.current_headers: dict[str, any] = {f"h{i}": None for i in range(1, 7)}  # Track current header levels
 
-    def split_content(self, content: str, metadata: Dict[str, any] = None) -> List[Split]:
+    def split_content(self, content: str, metadata: dict[str, any] = None) -> list[Split]:
         if metadata:
             self.metadata = {**DEFAULT_METADATA, **metadata}
         else:
             self.metadata = DEFAULT_METADATA.copy()
 
         content = content.strip()
+        if not content:
+            return []
         splits = []
         headers = find_markdown_headers(content)
 
@@ -121,7 +138,6 @@ class MarkdownContentSplitter:
         return splits
 
     def _update_metadata(self, new_header: str, new_header_level: int) -> None:
-        # Update the current header levels
         if new_header_level > 0:
             self.current_headers[f"h{new_header_level}"] = new_header
 
@@ -129,7 +145,6 @@ class MarkdownContentSplitter:
         for i in range(new_header_level + 1, 7):
             self.current_headers[f"h{i}"] = None
 
-        # Update the metadata with the current header levels
         self.metadata.update(self.current_headers)
         self.metadata[HEADING_LEVEL] = new_header_level or 0
 
@@ -149,37 +164,73 @@ class NodeCreatorFromSplits:
 
     def create_nodes_from_splits(
         self,
-        splits: List[Split],
+        splits: list[Split],
         node: BaseNode,
         include_metadata: bool = True,
-        metadata: Dict[str, any] = None,
-        id_func: Optional[Callable] = None,
-    ) -> List[TextNode]:
+        metadata: dict[str, any] = None,
+        id_func: Callable | None = None,
+    ) -> list[TextNode]:
         self.include_metadata = include_metadata
         self.metadata = {**DEFAULT_METADATA, **metadata} if metadata else DEFAULT_METADATA.copy()
         self.id_func = id_func
 
-        nodes = []
+        nodes: list[TextNode] = []
         last_nodes_stack = []
 
+        page = 1
         for split in splits:
-            split_texts = self.sentence_splitter.split_text(split.content)
-            split_nodes = [self._build_node_from_split(text, node, split.metadata) for text in split_texts]
+            split.metadata.update({PAGE: page})
+
+            text_chunks: list[TextChunk] = []
+            soup = bs4.BeautifulSoup(split.content, "html.parser")
+            buffer = ""
+
+            for child in soup.children:
+                if isinstance(child, bs4.element.Tag) and child.name in [
+                    NODE_CONTENT_TYPE_TABLE,
+                    NODE_CONTENT_TYPE_FIGURE,
+                ]:
+                    if buffer.strip():
+                        text_chunks.extend(
+                            [
+                                TextChunk(text_split, NODE_CONTENT_TYPE_TEXT)
+                                for text_split in self.sentence_splitter.split_text(buffer)
+                            ]
+                        )
+                        buffer = ""
+                    text_chunks.append(TextChunk(child.text, child.name))
+                else:
+                    buffer += str(child)
+
+            if buffer.strip():
+                text_chunks.extend(
+                    [
+                        TextChunk(text_split, NODE_CONTENT_TYPE_TEXT)
+                        for text_split in self.sentence_splitter.split_text(buffer)
+                    ]
+                )
+
+            split_nodes = [self._build_node_from_split(text_chunk, node, split.metadata) for text_chunk in text_chunks]
             self._set_relationships_within_split(split_nodes)
             self._set_relationships_between_splits(split_nodes, split.level, last_nodes_stack)
             nodes.extend(split_nodes)
+
+            if PAGE_BREAK in split.content:
+                page += 1
+
         return nodes
 
-    def _build_node_from_split(self, text_split: str, node: BaseNode, metadata: dict) -> TextNode:
-        node = build_nodes_from_splits([text_split], node, id_func=self.id_func)[0]
+    def _build_node_from_split(self, text_chunk: TextChunk, node: BaseNode, metadata: dict) -> TextNode:
+        node = build_nodes_from_splits([text_chunk.content], node, id_func=self.id_func)[0]
         if self.include_metadata:
-            metadata[INDEX] = self.current_index  # Set the index in the metadata
+            metadata[INDEX] = self.current_index
             node.metadata = {**self.metadata, **metadata}
-        self.current_index += 1  # Increment the index counter
+            node.metadata.update({NODE_CONTENT_TYPE: text_chunk.content_type})
+        self.current_index += 1
         return node
 
     @staticmethod
-    def _set_relationships_within_split(nodes: List[TextNode]) -> None:
+    def _set_relationships_within_split(nodes: list[TextNode]) -> None:
         """
         Set relationships between the nodes within a split. The first node is linked to the second node and so on.
         NEXT relationships are only set between nodes that share the same heading.
@@ -198,7 +249,7 @@ class NodeCreatorFromSplits:
                 prev_node.relationships[NodeRelationship.NEXT] = RelatedNodeInfo(node_id=curr_node.node_id)
 
     def _set_relationships_between_splits(
-        self, nodes: List[TextNode], header_level: int, last_nodes_stack: List
+        self, nodes: list[TextNode], header_level: int, last_nodes_stack: list
     ) -> None:
         """
         Set relationships between the nodes of the current split and the nodes of the previous split.
@@ -254,24 +305,29 @@ class MarkdownStructuralNodeParser(NodeParser):
     Node H (Prev: G, Next: None)
     """
 
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Metadata to include in the nodes.")
-    chunk_size: int = Field(default=512, description="Maximum number of tokens in a chunk.")
-    chunk_overlap: int = Field(default=20, description="Number of overlapping tokens between chunks.")
-    include_prev_next_rel: bool = Field(default=False, description="Include prev/next node relationships.")
+    metadata: Annotated[dict[str, Any], Field(description="Metadata to include in the nodes.")] = {}
+    chunk_size: Annotated[int, Field(description="Maximum number of tokens in a chunk.")] = 512
+    chunk_overlap: Annotated[int, Field(description="Number of overlapping tokens between chunks.")] = 20
+    include_prev_next_rel: Annotated[bool, Field(description="Include prev/next node relationships.")] = False
 
-    metadata_extractor: Optional[MetadataExtractor] = Field(
-        default=None, description="MetadataExtractor used to extract metadata."
-    )
+    metadata_extractor: Annotated[
+        MetadataExtractor | None, Field(description="MetadataExtractor used to extract metadata.")
+    ] = None
 
-    markdown_splitter: MarkdownContentSplitter = Field(
-        default_factory=MarkdownContentSplitter,
-        description="Markdown content splitter to use for splitting content into smaller nodes.",
-    )
+    markdown_splitter: Annotated[
+        MarkdownContentSplitter,
+        Field(
+            default_factory=MarkdownContentSplitter,
+            description="Markdown content splitter to use for splitting content into smaller nodes.",
+        ),
+    ]
 
-    node_builder_from_splits: Optional[NodeCreatorFromSplits] = Field(
-        default=None,
-        description="Node creator from splits.",
-    )
+    node_builder_from_splits: Annotated[
+        NodeCreatorFromSplits | None,
+        Field(
+            description="Node creator from splits.",
+        ),
+    ] = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -288,10 +344,10 @@ class MarkdownStructuralNodeParser(NodeParser):
     def from_defaults(
         cls,
         include_metadata: bool = True,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
         chunk_size: int = 512,
         chunk_overlap: int = 0,
-        callback_manager: Optional[CallbackManager] = None,
+        callback_manager: CallbackManager | None = None,
     ) -> "MarkdownStructuralNodeParser":
         return cls(
             include_metadata=include_metadata,
@@ -310,7 +366,7 @@ class MarkdownStructuralNodeParser(NodeParser):
         nodes: Sequence[BaseNode],
         show_progress: bool = False,
         **kwargs: Any,
-    ) -> List[BaseNode]:
+    ) -> list[BaseNode]:
         result = []
 
         for node in get_tqdm_iterable(nodes, show_progress, "Parsing nodes"):

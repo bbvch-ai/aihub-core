@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated
 
 from pydantic import Field
 
@@ -7,4 +7,4 @@ from .MinimalDataset import MinimalDataset
 
 
 class Dataset(MinimalDataset):
-    items: Annotated[List[DatasetItem], Field(description="The list of question-answer items in the dataset.")]
+    items: Annotated[list[DatasetItem], Field(description="The list of question-answer items in the dataset.")]

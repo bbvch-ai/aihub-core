@@ -1,5 +1,5 @@
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
+from typing import Annotated
 
 from llama_index.core import Document
 from pydantic import Field
@@ -26,8 +26,8 @@ class IngestedDocument(IngestedBase):
     we also have an ID and content that was parsed from the original file.
     """
 
-    id: str = Field(..., description="Unique identifier for the document.")
-    content: str = Field(None, description="Content of the document.")
+    id: Annotated[str, Field(description="Unique identifier for the document.")]
+    content: Annotated[str, Field(description="Content of the document.")] = None
 
     @classmethod
     def from_ref_doc(
@@ -35,7 +35,7 @@ class IngestedDocument(IngestedBase):
         ref_doc: Document,
     ) -> "IngestedDocument":
         def to_iso(timestamp: int):
-            dt_utc = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+            dt_utc = datetime.fromtimestamp(timestamp, tz=UTC)
             return dt_utc.isoformat().replace("+00:00", "Z")
 
         return cls(
@@ -55,8 +55,8 @@ class IngestedDocument(IngestedBase):
     def from_node(
         cls,
         node: IngestedNode,
-        document_id: Optional[str] = None,
-        content: Optional[str] = None,
+        document_id: str | None = None,
+        content: str | None = None,
     ) -> "IngestedDocument":
         return cls(
             id=document_id or node.document_id,
@@ -75,7 +75,7 @@ class IngestedDocument(IngestedBase):
     @classmethod
     def from_entity(cls, entity: RefDoc) -> "IngestedDocument":
         def to_iso(timestamp: int):
-            dt_utc = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+            dt_utc = datetime.fromtimestamp(timestamp, tz=UTC)
             return dt_utc.isoformat().replace("+00:00", "Z")
 
         return cls(
@@ -83,6 +83,7 @@ class IngestedDocument(IngestedBase):
             content=entity.data.text,
             source=entity.data.metadata.source,
             namespace=entity.data.metadata.namespace,
+            number_of_pages=entity.data.metadata.number_of_pages,
             document_title=entity.data.metadata.document_title,
             language=entity.data.metadata.language,
             version=entity.data.metadata.version or 1,

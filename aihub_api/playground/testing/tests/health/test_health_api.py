@@ -1,8 +1,14 @@
 import pytest
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+    DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
+from aihub_lib.routes.health.HealthController import HealthController
 from fastapi.testclient import TestClient
 
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
-from aihub_lib.routes.health.HealthController import HealthController
 
 BASE_ENDPOINT = "/api/v1/health"
 EXPECTED_STATUS = "ok"
@@ -11,8 +17,9 @@ EXPECTED_STATUS = "ok"
 @pytest.fixture
 def api_client():
     """Fixture to create a test client for the API."""
+    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     runner = ApiTestRunner()
-    runner.mount(HealthController().get_health())
+    runner.mount(HealthController(auth=auth).get_health())
     return TestClient(runner.get_app())
 
 

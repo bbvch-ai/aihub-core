@@ -1,15 +1,14 @@
-from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoop
-from pytest_bdd import scenarios, given, when, then, parsers
-
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
 from aihub_lib.nats.events.human_in_the_loop import (
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
 )
+from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoop
 from aihub_lib.testing.asyncio_utils.bdd import async_test
+from pytest_bdd import given, parsers, scenarios, then, when
 
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgent import (
     HumanInTheLoopAgent,
 )
@@ -18,7 +17,7 @@ from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgentC
 )
 
 # Link this test file to your .feature file:
-scenarios("../tests/features/human_in_the_loop_agent.feature")
+scenarios("./features/human_in_the_loop_agent.feature")
 
 
 @given("a HumanInTheLoopAgent runner", target_fixture="agent_runner")

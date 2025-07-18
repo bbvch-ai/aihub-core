@@ -4,7 +4,6 @@ import multiprocessing
 import os
 import signal
 from multiprocessing import Process
-from typing import List, Optional, Type
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 
@@ -46,11 +45,11 @@ class MultiprocessAgentRunner:
 
     def __init__(
         self,
-        servers: List[str],
+        servers: list[str],
         redis_url: str,
-        agent_type: Type[Agent],
+        agent_type: type[Agent],
         agent_config: AgentConfig,
-        locale_paths: Optional[List[str]] = None,
+        locale_paths: list[str] | None = None,
         process_count: int = 10,
     ):
         self.servers = servers
@@ -60,7 +59,7 @@ class MultiprocessAgentRunner:
         self.process_count = process_count
         self.locale_paths = locale_paths
 
-        self.processes: List[Process] = []
+        self.processes: list[Process] = []
 
         # Set the multiprocessing start method
         if not multiprocessing.get_start_method(allow_none=True):
@@ -69,11 +68,11 @@ class MultiprocessAgentRunner:
     @staticmethod
     def _process_runner(
         process_index: int,
-        servers: List[str],
+        servers: list[str],
         redis_url: str,
-        agent_type: Type[Agent],
+        agent_type: type[Agent],
         agent_config: AgentConfig,
-        locale_paths: Optional[List[str]],
+        locale_paths: list[str] | None,
     ):
         """Static method that runs in each process to initialize and run an agent."""
 

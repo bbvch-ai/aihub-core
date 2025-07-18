@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.vector_stores import MetadataFilter
@@ -19,11 +17,11 @@ def retrieve_nodes(
     message: str,
     embed_model: BaseEmbedding,
     retrieve_k: int,
-    index_namespaces: List[str],
+    index_namespaces: list[str],
     query_mode: VectorStoreQueryMode,
-    node_types: List[str],
+    node_types: list[str],
     vector_store: BasePydanticVectorStore,
-) -> Optional[List[NodeWithScore]]:
+) -> list[NodeWithScore] | None:
     if retrieve_k <= 0:
         raise ValueError("retrieve_k must be a positive integer")
 

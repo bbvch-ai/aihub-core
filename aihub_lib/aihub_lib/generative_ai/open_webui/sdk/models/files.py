@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Dict, Optional
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
 
@@ -6,10 +6,10 @@ from pydantic import BaseModel, Field
 class FileMeta(BaseModel):
     """Metadata about a file including format, size, and optional custom data."""
 
-    name: Annotated[Optional[str], Field(default=None, description="Display name of the file")] = None
-    content_type: Annotated[Optional[str], Field(default=None, description="MIME type of the file")] = None
-    size: Annotated[Optional[int], Field(default=None, description="File size in bytes")] = None
-    data: Annotated[Optional[Dict[str, Any]], Field(default=None, description="Custom metadata")] = None
+    name: Annotated[str | None, Field(description="Display name of the file")] = None
+    content_type: Annotated[str | None, Field(description="MIME type of the file")] = None
+    size: Annotated[int | None, Field(description="File size in bytes")] = None
+    data: Annotated[dict[str, Any] | None, Field(description="Custom metadata")] = None
 
     model_config = {"extra": "allow"}
 
@@ -22,17 +22,15 @@ class FileModel(BaseModel):
 
     id: Annotated[str, Field(description="Unique file identifier")]
     user_id: Annotated[str, Field(description="ID of the user who owns the file")]
-    hash: Annotated[Optional[str], Field(default=None, description="File content hash")] = None
+    hash: Annotated[str | None, Field(description="File content hash")] = None
 
     filename: Annotated[str, Field(description="Original filename")]
-    path: Annotated[Optional[str], Field(default=None, description="Storage path")] = None
+    path: Annotated[str | None, Field(description="Storage path")] = None
 
-    data: Annotated[Optional[Dict[str, Any]], Field(default=None, description="File content data")] = None
-    meta: Annotated[Optional[Dict[str, Any]], Field(default=None, description="File metadata")] = None
+    data: Annotated[dict[str, Any] | None, Field(description="File content data")] = None
+    meta: Annotated[dict[str, Any] | None, Field(description="File metadata")] = None
 
-    access_control: Annotated[Optional[Dict[str, Any]], Field(default=None, description="Access control settings")] = (
-        None
-    )
+    access_control: Annotated[dict[str, Any] | None, Field(description="Access control settings")] = None
 
     created_at: Annotated[int, Field(description="Creation timestamp (epoch)")]
     updated_at: Annotated[int, Field(description="Last update timestamp (epoch)")]
@@ -43,16 +41,16 @@ class FileModelResponse(BaseModel):
 
     id: Annotated[str, Field(description="Unique file identifier")]
     user_id: Annotated[str, Field(description="ID of the user who owns the file")]
-    hash: Annotated[Optional[str], Field(default=None, description="File content hash")] = None
+    hash: Annotated[str | None, Field(description="File content hash")] = None
 
     filename: Annotated[str, Field(description="Original filename")]
-    data: Annotated[Optional[Dict[str, Any]], Field(default=None, description="File content data")] = None
+    data: Annotated[dict[str, Any] | None, Field(description="File content data")] = None
     meta: Annotated[FileMeta, Field(description="File metadata")]
 
     created_at: Annotated[int, Field(description="Creation timestamp (epoch)")]
     updated_at: Annotated[int, Field(description="Last update timestamp (epoch)")]
 
-    error: Annotated[Optional[str], Field(default=None, description="Error message if processing failed")] = None
+    error: Annotated[str | None, Field(description="Error message if processing failed")] = None
 
     model_config = {"extra": "allow"}
 
@@ -61,7 +59,7 @@ class FileMetadataResponse(BaseModel):
     """Response model with only file metadata, used for lightweight queries."""
 
     id: Annotated[str, Field(description="Unique file identifier")]
-    meta: Annotated[Dict[str, Any], Field(description="File metadata")]
+    meta: Annotated[dict[str, Any], Field(description="File metadata")]
     created_at: Annotated[int, Field(description="Creation timestamp (epoch)")]
     updated_at: Annotated[int, Field(description="Last update timestamp (epoch)")]
 
@@ -70,14 +68,12 @@ class FileForm(BaseModel):
     """Form data for creating a new file."""
 
     id: Annotated[str, Field(description="Unique file identifier")]
-    hash: Annotated[Optional[str], Field(default=None, description="File content hash")] = None
+    hash: Annotated[str | None, Field(description="File content hash")] = None
     filename: Annotated[str, Field(description="Original filename")]
     path: Annotated[str, Field(description="Storage path")]
-    data: Annotated[Dict[str, Any], Field(default_factory=dict, description="File content data")] = {}
-    meta: Annotated[Dict[str, Any], Field(default_factory=dict, description="File metadata")] = {}
-    access_control: Annotated[Optional[Dict[str, Any]], Field(default=None, description="Access control settings")] = (
-        None
-    )
+    data: Annotated[dict[str, Any], Field(description="File content data")] = {}
+    meta: Annotated[dict[str, Any], Field(description="File metadata")] = {}
+    access_control: Annotated[dict[str, Any] | None, Field(description="Access control settings")] = None
 
 
 class ContentForm(BaseModel):
@@ -90,6 +86,4 @@ class ProcessFileForm(BaseModel):
     """Form data for processing a file."""
 
     file_id: Annotated[str, Field(description="ID of the file to process")]
-    content: Annotated[
-        Optional[str], Field(default=None, description="Optional content to use instead of file content")
-    ] = None
+    content: Annotated[str | None, Field(description="Optional content to use instead of file content")] = None

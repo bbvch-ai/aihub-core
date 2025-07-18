@@ -1,6 +1,5 @@
 import logging
 import re
-from typing import Dict
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from starlette.datastructures import Headers, QueryParams
@@ -20,7 +19,7 @@ class I18nMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
     @staticmethod
-    def extract_locale(headers: Headers, path_params: Dict[str, str], query_params: QueryParams) -> str:
+    def extract_locale(headers: Headers, path_params: dict[str, str], query_params: QueryParams) -> str:
         locale = I18nMiddleware.get_preferred_locale(
             headers.get("lang", None)
             or headers.get("locale", None)

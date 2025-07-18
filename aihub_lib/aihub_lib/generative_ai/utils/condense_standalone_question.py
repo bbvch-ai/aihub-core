@@ -1,5 +1,3 @@
-from typing import List
-
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
@@ -8,7 +6,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 
 
-def _messages_to_history_str(messages: List[ChatMessage]) -> str:
+def _messages_to_history_str(messages: list[ChatMessage]) -> str:
     """Convert messages to a history string."""
     string_messages = []
     for message in messages:
@@ -25,7 +23,7 @@ def _messages_to_history_str(messages: List[ChatMessage]) -> str:
 
 def condense_standalone_question(
     message: str,
-    chat_history: List[ChatMessage],
+    chat_history: list[ChatMessage],
     t: LocaleHandler,
     llm: LLM,
     condense_prompt: LocaleString = None,

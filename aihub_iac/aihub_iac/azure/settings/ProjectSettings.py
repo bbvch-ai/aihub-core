@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -5,11 +7,11 @@ from aihub_iac.azure.settings.utils import find_shared_env_file
 
 
 class ProjectSettings(BaseSettings):
-    APP_NAME: str = Field(..., description="name of the app")
-    LOCATION: str = Field(..., description="location full name (e.g. Switzerland North)")
-    LOCATION_SHORT: str = Field(..., description="location short name (e.g. sui)")
-    RESOURCE_GROUP: str = Field(..., description="resource group name")
-    ARM_SUBSCRIPTION_ID: str = Field(..., description="subscription id")
+    APP_NAME: Annotated[str, Field(description="name of the app")]
+    LOCATION: Annotated[str, Field(description="location full name (e.g. Switzerland North)")]
+    LOCATION_SHORT: Annotated[str, Field(description="location short name (e.g. sui)")]
+    RESOURCE_GROUP: Annotated[str, Field(description="resource group name")]
+    ARM_SUBSCRIPTION_ID: Annotated[str, Field(description="subscription id")]
 
     model_config = SettingsConfigDict(
         env_file=[find_shared_env_file(), ".env"],

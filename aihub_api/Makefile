@@ -10,12 +10,7 @@ format:
 # Type-check with MyPy
 typecheck:
 	@echo "Running type checks..."
-	poetry run mypy aihub_agent
-
-# Sort imports with isort
-sort-imports:
-	@echo "Sorting imports..."
-	poetry run isort aihub_api
+	poetry run mypy aihub_api
 
 clean-jupyter:
 	@echo "Cleaning up notebooks..."
@@ -29,8 +24,8 @@ test-cov:
 	                  --junitxml=pytest.xml \
 	                   || echo "No tests found. Skipping..."
 
-pr-ready: sort-imports format lint
-	@echo "Running full check (format, sort)..."
+pr-ready: format lint
+	@echo "Running full check (format, lint)..."
 
 
 install-ffmpeg:

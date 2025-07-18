@@ -1,9 +1,12 @@
 import asyncio
-from os.path import abspath, join, dirname
+from os.path import abspath, dirname, join
 
-from aihub_bot.routes.agent.AgentChatController import AgentChatController
-from aihub_bot.routes.openai.OpenaiChatController import OpenaiChatController
-from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+    DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
+    DangerousDevelopmentOnlyIdentityProvider,
+)
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
 )
@@ -11,17 +14,23 @@ from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLM
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
 
+from aihub_bot.routes.agent.AgentChatController import AgentChatController
+from aihub_bot.routes.openai.OpenaiChatController import OpenaiChatController
+from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
+
 enable_logging()
 
 
 async def main():
     runner = SimulatedAgentBotTestRunner(agent_class="my_agent_class", agent_id="my_agent_id")
     runner.with_simple_chunk_events()
+    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
 
     runner.mount(
-        HealthController().get_health(),
-        AgentChatController().completions_json().completions_stream(),
+        HealthController(auth=auth).get_health(),
+        AgentChatController(auth=auth).completions_json().completions_stream(),
         OpenaiChatController(
+            auth=auth,
             chat_models=[
                 AzureOpenAILLMConfig(
                     name="gpt-4o-mini",
@@ -36,7 +45,7 @@ async def main():
                     is_function_calling_model=False,
                     context_size=512,
                 ),
-            ]
+            ],
         )
         .json_chat_completion()
         .stream_chat_completion(),

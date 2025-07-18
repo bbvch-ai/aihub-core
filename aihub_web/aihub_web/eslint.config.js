@@ -50,6 +50,7 @@ export default withNuxt(
           'pi-check',
           'pi-spinner',
           'pi-times',
+          'pi-lock-open',
           'grid-stack-item',
         ],
       },

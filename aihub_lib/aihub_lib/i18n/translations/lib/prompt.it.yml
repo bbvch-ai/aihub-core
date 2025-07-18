@@ -15,6 +15,7 @@ condenser:
 
 rag:
   context_prompt: |
+    {% chat role="user" %}
     Ti vengono fornite informazioni di contesto aggiuntive sotto forma di documenti strutturati. Ogni documento segue 
     un formato coerente, iniziando con `<REFERENCE_DOCUMENT [metadata]>` e terminando con `</REFERENCE_DOCUMENT>`. Questi documenti 
     contengono dettagli essenziali che devono essere utilizzati per comprendere e rispondere con precisione alla domanda dell'utente.
@@ -25,11 +26,19 @@ rag:
     Di seguito sono riportati i documenti rilevanti:
 
     <context_documents>
-    {context_str}
+    {% for block in context_blocks %}
+    {% if block.block_type == 'text' %}
+    {{ block.text }}
+    {% endif %}
+    {% if block.block_type == 'image' %}
+    {{ block.url.__str__() | image}}
+    {% endif %}
+    {% endfor %}
     </context_documents>
 
     Istruzione: Utilizza le informazioni dai documenti forniti per generare una risposta dettagliata e ben strutturata 
     alla domanda dell'utente.
+    {% endchat %}
 
 router:
   selection_option_index: Index of the selected option (0-based)
@@ -143,12 +152,42 @@ router:
       Analizza attentamente la cronologia della chat in relazione alla domanda dell'utente. Determina se l'esperto ha già risposto sufficientemente alla domanda in base ai criteri sopra indicati. Fornisci una decisione chiara con un ragionamento dettagliato.
 summarizer:
   summarize: |
-    Si prega di fornire un riassunto conciso del seguente testo.
-    Raccogli le idee principali e i punti chiave, assicurandoti che il riassunto sia coerente e mantenga il contesto originale e le relazioni tra le idee.
-    Testo per il sommario:
-
-    <Testo>
-    {text}
-    </Testo>
-
-    Sommario:
+    Compito: Riassumi il testo seguente come TL;DR:  
+    
+    Linee guida:  
+      - Inizia direttamente con i punti o le idee più importanti, senza frasi introduttive come "Il testo spiega...".  
+      - Usa frasi brevi, chiare e dirette.  
+      - Concentrati solo sulle informazioni essenziali, evitando dettagli inutili o commenti.  
+      - Presenta le idee principali in modo diretto, senza descrivere il testo.
+      - Assicuratevi di scrivere il riassunto nella STESSA lingua del <Testo>.
+    
+    Testo di input: 
+    <Text> 
+      {text} 
+    </Text>  
+    
+    Riassunto TL;DR:
+figure_description_generator:
+  stringa_contesto: |
+    {% chat role="system" %}
+    Siete esperti nella creazione di descrizioni di immagini di alta qualità per l'accessibilità dei documenti.
+    Il vostro compito è generare un testo alt dettagliato per le figure nei documenti che:
+    
+    1. Descriva in modo conciso il contenuto visivo (immagini, grafici, diagrammi, ecc.).
+    2. Catturi le informazioni chiave trasmesse dalla figura.
+    3. Per i grafici e i diagrammi: descrive la struttura, identifica gli assi, i punti di dati e le tendenze.
+    4. Per le tabelle: descrive la struttura e riassume i punti chiave dei dati.
+    5. Estrae il testo visibile nell'immagine, se pertinente.
+    6. Utilizza un linguaggio tecnico appropriato, pur rimanendo accessibile
+    7. Utilizza il testo circostante fornito per comprendere il ruolo dell'immagine, senza lasciare che il contesto alteri la descrizione fattuale e visiva.
+    8. Evita inutili verbosità o speculazioni.
+    
+    Formattate le descrizioni come paragrafi concisi e fattuali che possano essere utilizzati direttamente come testo alt.
+    Concentratevi sull'aspetto informativo e aiutate il lettore a capire ciò che non può vedere.
+    Non inventate informazioni, ma fate riferimento solo a ciò che potete vedere nell'immagine.
+    Scrivete la vostra risposta nella STESSA lingua del testo contestuale e del testo dell'immagine.
+    {% endchat %}
+    
+    {% chat role="user" %}
+    Si prega di fornire una descrizione dettagliata e accurata di questa immagine che possa servire come testo alternativo efficace.
+    {% endchat %}

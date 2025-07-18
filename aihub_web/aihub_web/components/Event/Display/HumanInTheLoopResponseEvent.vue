@@ -18,11 +18,11 @@
 <script setup lang="ts">
 import type {
   HumanInTheLoopResponseEvent, ThreadDto, UserChatMessageInput,
-  WsServerEvent,
+  WsServerAgentEventReadable,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: WsServerEvent & { event: HumanInTheLoopResponseEvent }
+  event: WsServerAgentEventReadable & { event: HumanInTheLoopResponseEvent }
   thread: ThreadDto
 }>()
 

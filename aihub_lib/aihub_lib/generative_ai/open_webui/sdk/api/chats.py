@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..client import BaseClient
 from ..models.chats import (
@@ -57,7 +57,7 @@ class ChatsClient(BaseClient):
         ```
     """
 
-    async def get_chats_list(self, page: Optional[int] = None) -> List[ChatTitleIdResponse]:
+    async def get_chats_list(self, page: int | None = None) -> list[ChatTitleIdResponse]:
         """Get list of all user's chats with basic information"""
         params = {"page": page} if page is not None else None
         response = await self.get("/api/v1/chats/", params=params)
@@ -71,7 +71,7 @@ class ChatsClient(BaseClient):
     async def create_chat(
         self,
         title: str,
-        messages: List[ChatMessageType],
+        messages: list[ChatMessageType],
         model: str,
     ) -> ChatResponse:
         """Create a new chat with optional initial messages"""
@@ -88,9 +88,9 @@ class ChatsClient(BaseClient):
     async def import_chat(
         self,
         chat_data: ChatData,
-        meta: Optional[Dict[str, Any]] = None,
+        meta: dict[str, Any] | None = None,
         pinned: bool = False,
-        folder_id: Optional[str] = None,
+        folder_id: str | None = None,
     ) -> ChatResponse:
         """Import an existing chat with full data structure"""
         form_data = ChatImportForm(chat=chat_data, meta=meta, pinned=pinned, folder_id=folder_id)
@@ -98,7 +98,7 @@ class ChatsClient(BaseClient):
         response = await self.post("/api/v1/chats/import", json_data=form_data.model_dump())
         return ChatResponse.model_validate(response.json())
 
-    async def search_chats(self, query: str, page: Optional[int] = None) -> List[ChatTitleIdResponse]:
+    async def search_chats(self, query: str, page: int | None = None) -> list[ChatTitleIdResponse]:
         """Search chats by text or tags (use 'tag:tagname' format for tags)"""
         params = {"text": query}
         if page is not None:
@@ -107,32 +107,32 @@ class ChatsClient(BaseClient):
         response = await self.get("/api/v1/chats/search", params=params)
         return [ChatTitleIdResponse.model_validate(chat) for chat in response.json()]
 
-    async def get_chats_by_folder(self, folder_id: str) -> List[ChatResponse]:
+    async def get_chats_by_folder(self, folder_id: str) -> list[ChatResponse]:
         """Get all chats in a specific folder"""
         response = await self.get(f"/api/v1/chats/folder/{folder_id}")
         return [ChatResponse.model_validate(chat) for chat in response.json()]
 
-    async def get_pinned_chats(self) -> List[ChatResponse]:
+    async def get_pinned_chats(self) -> list[ChatResponse]:
         """Get all pinned chats"""
         response = await self.get("/api/v1/chats/pinned")
         return [ChatResponse.model_validate(chat) for chat in response.json()]
 
-    async def get_all_chats(self) -> List[ChatResponse]:
+    async def get_all_chats(self) -> list[ChatResponse]:
         """Get all chats with full details"""
         response = await self.get("/api/v1/chats/all")
         return [ChatResponse.model_validate(chat) for chat in response.json()]
 
-    async def get_archived_chats(self) -> List[ChatResponse]:
+    async def get_archived_chats(self) -> list[ChatResponse]:
         """Get all archived chats"""
         response = await self.get("/api/v1/chats/all/archived")
         return [ChatResponse.model_validate(chat) for chat in response.json()]
 
-    async def get_all_tags(self) -> List[TagModel]:
+    async def get_all_tags(self) -> list[TagModel]:
         """Get all tags created by the user"""
         response = await self.get("/api/v1/chats/all/tags")
         return [TagModel.model_validate(tag) for tag in response.json()]
 
-    async def get_archived_chat_list(self, skip: int = 0, limit: int = 50) -> List[ChatTitleIdResponse]:
+    async def get_archived_chat_list(self, skip: int = 0, limit: int = 50) -> list[ChatTitleIdResponse]:
         """Get list of archived chats with pagination"""
         params = {"skip": skip, "limit": limit}
         response = await self.get("/api/v1/chats/archived", params=params)
@@ -148,7 +148,7 @@ class ChatsClient(BaseClient):
         response = await self.get(f"/api/v1/chats/share/{share_id}")
         return ChatResponse.model_validate(response.json())
 
-    async def get_chats_by_tag(self, tag_name: str, skip: int = 0, limit: int = 50) -> List[ChatTitleIdResponse]:
+    async def get_chats_by_tag(self, tag_name: str, skip: int = 0, limit: int = 50) -> list[ChatTitleIdResponse]:
         """Get chats filtered by tag name"""
         form_data = TagFilterForm(name=tag_name, skip=skip, limit=limit)
         response = await self.post("/api/v1/chats/tags", json_data=form_data.model_dump())
@@ -172,7 +172,7 @@ class ChatsClient(BaseClient):
         return ChatResponse.model_validate(response.json())
 
     async def send_message_event(
-        self, chat_id: str, message_id: str, event_type: str, event_data: Dict[str, Any]
+        self, chat_id: str, message_id: str, event_type: str, event_data: dict[str, Any]
     ) -> bool:
         """Send an event for a specific message"""
         form_data = EventForm(type=event_type, data=event_data)
@@ -196,7 +196,7 @@ class ChatsClient(BaseClient):
         response = await self.post(f"/api/v1/chats/{chat_id}/pin")
         return ChatResponse.model_validate(response.json())
 
-    async def clone_chat(self, chat_id: str, title: Optional[str] = None) -> ChatResponse:
+    async def clone_chat(self, chat_id: str, title: str | None = None) -> ChatResponse:
         """Clone an existing chat with optional new title"""
         form_data = CloneForm(title=title)
         response = await self.post(f"/api/v1/chats/{chat_id}/clone", json_data=form_data.model_dump())
@@ -222,24 +222,24 @@ class ChatsClient(BaseClient):
         response = await self.delete(f"/api/v1/chats/{chat_id}/share")
         return response.json()
 
-    async def update_chat_folder(self, chat_id: str, folder_id: Optional[str] = None) -> ChatResponse:
+    async def update_chat_folder(self, chat_id: str, folder_id: str | None = None) -> ChatResponse:
         """Move a chat to a different folder"""
         form_data = ChatFolderIdForm(folder_id=folder_id)
         response = await self.post(f"/api/v1/chats/{chat_id}/folder", json_data=form_data.model_dump())
         return ChatResponse.model_validate(response.json())
 
-    async def get_chat_tags(self, chat_id: str) -> List[TagModel]:
+    async def get_chat_tags(self, chat_id: str) -> list[TagModel]:
         """Get all tags associated with a chat"""
         response = await self.get(f"/api/v1/chats/{chat_id}/tags")
         return [TagModel.model_validate(tag) for tag in response.json()]
 
-    async def add_tag(self, chat_id: str, tag_name: str) -> List[TagModel]:
+    async def add_tag(self, chat_id: str, tag_name: str) -> list[TagModel]:
         """Add a tag to a chat"""
         form_data = TagForm(name=tag_name)
         response = await self.post(f"/api/v1/chats/{chat_id}/tags", json_data=form_data.model_dump())
         return [TagModel.model_validate(tag) for tag in response.json()]
 
-    async def remove_tag(self, chat_id: str, tag_name: str) -> List[TagModel]:
+    async def remove_tag(self, chat_id: str, tag_name: str) -> list[TagModel]:
         """Remove a tag from a chat"""
         form_data = TagForm(name=tag_name)
         response = await self.delete(f"/api/v1/chats/{chat_id}/tags", json_data=form_data.model_dump())
@@ -253,7 +253,7 @@ class ChatsClient(BaseClient):
     def create_chat_data(
         self,
         title: str,
-        messages: List[ChatMessageType],
+        messages: list[ChatMessageType],
         model: str,
     ) -> ChatData:
         """Create a properly structured chat data object for API requests"""
@@ -317,7 +317,7 @@ class ChatsClient(BaseClient):
 
     # Helper methods for creating chat messages
 
-    def create_user_message(self, content: str, models: Optional[List[str]] = None) -> UserMessage:
+    def create_user_message(self, content: str, models: list[str] | None = None) -> UserMessage:
         """Create a properly structured user message"""
         return UserMessage(
             id=str(uuid.uuid4()), content=content, timestamp=int(datetime.now().timestamp()), models=models
@@ -326,10 +326,10 @@ class ChatsClient(BaseClient):
     def create_assistant_message(
         self,
         content: str,
-        model: Optional[str] = None,
-        model_name: Optional[str] = None,
-        parent_id: Optional[str] = None,
-        tool_calls: Optional[List[Dict[str, Any]]] = None,
+        model: str | None = None,
+        model_name: str | None = None,
+        parent_id: str | None = None,
+        tool_calls: list[dict[str, Any]] | None = None,
     ) -> AssistantMessage:
         """Create a properly structured assistant message"""
         return AssistantMessage(

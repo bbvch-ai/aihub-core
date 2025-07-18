@@ -6,7 +6,7 @@ required_open_webui_version: 0.6.0
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional, Union, Generator, Iterator
+from typing import Optional, Union, Generator, Iterator, Annotated
 
 import json
 import os
@@ -19,7 +19,7 @@ from bson import ObjectId
 
 logger = logging.getLogger(__name__)
 
-def str_to_object_id(context_id: Optional[str]) -> ObjectId:
+def str_to_object_id(context_id: str | None) -> ObjectId:
     if not context_id:
         return ObjectId()
     hashed = hashlib.md5(context_id.encode()).digest()[:12]
@@ -28,10 +28,9 @@ def str_to_object_id(context_id: Optional[str]) -> ObjectId:
 
 class Action:
     class Valves(BaseModel):
-        AIHUB_FRONTEND_BASE_URL: str = Field(
-            default="http://localhost:3000",
+        AIHUB_FRONTEND_BASE_URL: Annotated[str, Field(
             description="Base URL for accessing AI-Hub Suite Frontend.",
-        )
+        )] = "http://localhost:3000"
 
     def __init__(self):
         self.valves = self.Valves()
@@ -43,7 +42,7 @@ class Action:
         __user__=None,
         __event_emitter__=None,
         __event_call__=None,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         try:
             code = f"""
             window.parent.postMessage({{

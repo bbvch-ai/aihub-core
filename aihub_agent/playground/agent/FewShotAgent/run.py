@@ -1,16 +1,17 @@
 import asyncio
 
-from aihub_agent.agents.FewShotAgent import FewShotAgent
-from aihub_agent.agents.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_agent.steps.prompting.few_shot_step.FewShotStepConfig import FewShotStepConfig
+from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
 )
-from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.testing.logging.logger import enable_logging
+
+from aihub_agent.agents.FewShotAgent import FewShotAgent
+from aihub_agent.agents.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from aihub_agent.steps.prompting.few_shot_step.FewShotStepConfig import FewShotStepConfig
 
 enable_logging()
 
@@ -36,7 +37,8 @@ async def main():
             number_of_input_tokens=100000,
             condense_question_prompt=LocaleString(
                 en="""
-                    Given the following conversation between a user and an AI assistant and a follow-up question from the user,
+                    Given the following conversation between a user and an AI assistant and 
+                    a follow-up question from the user,
                     rephrase the follow-up question to be a standalone question.
 
                     Chat history:

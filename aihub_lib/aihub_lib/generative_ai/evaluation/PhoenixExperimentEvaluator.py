@@ -1,6 +1,7 @@
+import copy
 import logging
 from datetime import UTC, datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 import phoenix as px
 from bson import ObjectId
@@ -14,11 +15,11 @@ from phoenix.experiments.types import EvaluationResult as PhoenixEvaluationResul
 from phoenix.experiments.types import Example as PhoenixExample
 from phoenix.experiments.types import RanExperiment
 
-from aihub_lib.auth.AuthenticatedUser import AuthenticatedUser
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.evaluation.JudgeOutput import JudgeOutput
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.distributor.ExternalEventDistributor import ExternalEventDistributor
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.chat.ChatService import ChatContent, ChatService, JsonResources
 
 logger = logging.getLogger(__name__)
@@ -43,9 +44,9 @@ class PhoenixExperimentEvaluator:
     def __init__(
         self,
         nats_client: NATS,
-        external_event_distributor: ExternalEventDistributor,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
         judge: ChatLLMConfig,
-        authenticated_user: AuthenticatedUser,
+        authenticated_user: UserIdentity,
         t: LocaleHandler,
     ):
         """
@@ -53,7 +54,7 @@ class PhoenixExperimentEvaluator:
         """
         self.phoenix_client = px.Client(warn_if_server_not_running=False)
         self.nats_client = nats_client
-        self.external_event_distributor = external_event_distributor
+        self.external_agent_event_distributor = external_agent_event_distributor
         self.user = authenticated_user
         self.judge = judge
         self.t = t
@@ -61,10 +62,10 @@ class PhoenixExperimentEvaluator:
 
     async def _agent_interaction_task(
         self,
-        example_input: Dict[str, Any],
+        example_input: dict[str, Any],
         agent_class: str,
         agent_id: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Task function for Phoenix: sends a question to the agent and returns its response.
         Encapsulates the complex NATS-based communication, needed to interact with our agents,
@@ -85,7 +86,7 @@ class PhoenixExperimentEvaluator:
             agent_id=agent_id,
             messages=messages,
             nc=self.nats_client,
-            external_event_distributor=self.external_event_distributor,
+            external_agent_event_distributor=self.external_agent_event_distributor,
             thread_id=thread_id,
             display_id=display_id,
             locale=self.t.locale,
@@ -131,20 +132,20 @@ class PhoenixExperimentEvaluator:
         return ChatPromptTemplate(message_templates=chat_messages)
 
     async def _evaluate_with_judge(
-        self, prompt_template: ChatPromptTemplate, prompt_vars: Dict[str, Any]
+        self, prompt_template: ChatPromptTemplate, prompt_vars: dict[str, Any]
     ) -> JudgeOutput:
         """
         Calls the judge LLM with a constructed prompt and parses the structured output.
         Directly parses the LLM's JSON output into our Pydantic `JudgeOutput` model, handling validation and structure.
         """
         llm, _ = self.judge.to_llama_index()
-        prompt_vars["output_schema"] = JudgeOutput.model_json_schema()
+        prompt_vars["output_schema"] = copy.deepcopy(JudgeOutput.model_json_schema())
         return await llm.astructured_predict(
             output_cls=JudgeOutput, prompt=prompt_template, llm_kwargs=self.llm_judge_kwargs, **prompt_vars
         )
 
     async def _run_single_evaluation(
-        self, evaluator_type: str, task_output: Dict[str, Any], **kwargs
+        self, evaluator_type: str, task_output: dict[str, Any], **kwargs
     ) -> PhoenixEvaluationResult:
         """
         Generic function to run a single evaluation type (Correctness, Completeness, etc.).
@@ -169,9 +170,9 @@ class PhoenixExperimentEvaluator:
         agent_class: str,
         agent_id: str,
         dataset_id: str,
-        experiment_name: Optional[str] = None,
-        experiment_description: Optional[str] = None,
-        experiment_metadata: Optional[Dict[str, Any]] = None,
+        experiment_name: str | None = None,
+        experiment_description: str | None = None,
+        experiment_metadata: dict[str, Any] | None = None,
     ) -> RanExperiment:
         """
         Runs a full evaluation experiment using Arize Phoenix.
@@ -192,7 +193,7 @@ class PhoenixExperimentEvaluator:
             raise ValueError(message)
 
         # Wrapper function to match Phoenix's expected task signature.
-        async def task_for_phoenix(example: PhoenixExample) -> Dict[str, Any]:
+        async def task_for_phoenix(example: PhoenixExample) -> dict[str, Any]:
             return await self._agent_interaction_task(
                 example_input=example.input,
                 agent_class=agent_class,
@@ -201,7 +202,7 @@ class PhoenixExperimentEvaluator:
 
         @create_evaluator(name="Correctness", kind="LLM")
         async def correctness_phoenix_eval(
-            output: Dict[str, Any], reference: Dict[str, Any], input: Dict[str, Any]
+            output: dict[str, Any], reference: dict[str, Any], input: dict[str, Any]
         ) -> PhoenixEvaluationResult:
             """Evaluates correctness and returns a PhoenixEvaluationResult."""
             reference_answer = reference.get("answer")
@@ -213,7 +214,7 @@ class PhoenixExperimentEvaluator:
             )
 
         @create_evaluator(name="Completeness", kind="LLM")
-        async def completeness_phoenix_eval(output: Dict[str, Any], input: Dict[str, Any]) -> PhoenixEvaluationResult:
+        async def completeness_phoenix_eval(output: dict[str, Any], input: dict[str, Any]) -> PhoenixEvaluationResult:
             """Evaluates completeness and returns a PhoenixEvaluationResult."""
             return await self._run_single_evaluation(
                 "completeness",
@@ -222,7 +223,7 @@ class PhoenixExperimentEvaluator:
             )
 
         @create_evaluator(name="Conciseness", kind="LLM")
-        async def conciseness_phoenix_eval(output: Dict[str, Any], input: Dict[str, Any]) -> PhoenixEvaluationResult:
+        async def conciseness_phoenix_eval(output: dict[str, Any], input: dict[str, Any]) -> PhoenixEvaluationResult:
             """Evaluates conciseness and returns a PhoenixEvaluationResult."""
             return await self._run_single_evaluation(
                 "conciseness",

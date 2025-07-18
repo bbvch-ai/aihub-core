@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import Annotated, ClassVar
 
 from pydantic import Field
 
@@ -22,6 +22,9 @@ class AgentInTheLoopResponseEvent(ControlAndDisplayEvent):
         "lib.events.aitl_response_event.description"
     )
 
-    stop_event: StopEvent = Field(
-        ..., description="The stop event from the delegated agent containing the task results and marks the completion."
-    )
+    stop_event: Annotated[
+        StopEvent,
+        Field(
+            description="The stop event from the delegated agent containing the task results and marks the completion."
+        ),
+    ]

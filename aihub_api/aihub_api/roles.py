@@ -1,2 +1,2 @@
-ALL_ACCESS = "AllAgents"
+ALL_ACCESS = "TestOnlyFullAdminAccess"
 COMMAND_EXECUTION = "CommandExecution"

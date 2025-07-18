@@ -1,0 +1,76 @@
+from typing import Annotated
+
+from aihub_lib.nats.topic_managers.TopicManager import TopicManager
+
+
+class ProcessTopicManager(TopicManager):
+    PROCESS_TOPIC = "process"
+
+    WORK_REQUEST_EVENT = "work_request"
+    WORK_EVENT = "work"
+
+    def get_process_discovery_subject_request(
+        self,
+        call_id: Annotated[str, "Unique identifier linking request and response"],
+        process_class: Annotated[str, "Process class filter or '*'"] = "*",
+        process_id: Annotated[str, "Process ID filter or or '*'"] = "*",
+    ) -> str:
+        """Returns a subject for requesting process discovery information."""
+        return f"{self.DISCOVERY_TOPIC}.{self.PROCESS_TOPIC}.{process_class}.{process_id}.request.{call_id}"
+
+    def get_process_discovery_subject_response(
+        self,
+        call_id: Annotated[str, "Unique identifier linking request and response"],
+        process_class: Annotated[str, "Process class filter or '*'"] = "*",
+        process_id: Annotated[str, "Process ID filter or or '*'"] = "*",
+    ) -> str:
+        """Returns a subject for receiving process discovery information."""
+        return f"{self.DISCOVERY_TOPIC}.{self.PROCESS_TOPIC}.{process_class}.{process_id}.response.{call_id}"
+
+    def get_subject_for_specific_event_in_process(
+        self,
+        process_class: str,
+        process_id: str,
+        process_walkthrough_id: str,
+        event_type: str,
+        event_name: str,
+        event_id: str,
+    ) -> str:
+        """Returns a subject pinpointing a specific event in a given process run."""
+        return (
+            f"{self.PROCESS_TOPIC}.{process_class}.{process_id}."
+            f"{process_walkthrough_id}.{event_type}.{event_name}.{event_id}"
+        )
+
+    def get_subject_for_all_events_in_process(self) -> str:
+        """Returns a subject pattern matching all events from all processes."""
+        return self.get_subject_for_specific_event_in_process(
+            process_class="*",
+            process_id="*",
+            process_walkthrough_id="*",
+            event_type="*",
+            event_name="*",
+            event_id="*",
+        )
+
+    def get_subject_for_all_work_request_events_in_process(self) -> str:
+        """Returns a subject pattern matching all control events from all processes."""
+        return self.get_subject_for_specific_event_in_process(
+            process_class="*",
+            process_id="*",
+            process_walkthrough_id="*",
+            event_type=self.WORK_REQUEST_EVENT,
+            event_name="*",
+            event_id="*",
+        )
+
+    def get_subject_for_all_work_events_in_process(self) -> str:
+        """Returns a subject pattern matching all control events from all processes."""
+        return self.get_subject_for_specific_event_in_process(
+            process_class="*",
+            process_id="*",
+            process_walkthrough_id="*",
+            event_type=self.WORK_EVENT,
+            event_name="*",
+            event_id="*",
+        )

@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated
 
 from pydantic import Field
 
@@ -7,4 +7,4 @@ from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 
 
 class PaginatedThreadsResponse(PageDTO):
-    threads: Annotated[List[ThreadDTO], Field(description="List of ThreadDTO objects for the current page")]
+    threads: Annotated[list[ThreadDTO], Field(description="List of ThreadDTO objects for the current page")]

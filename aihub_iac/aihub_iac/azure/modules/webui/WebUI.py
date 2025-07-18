@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 import pulumi
 from pulumi_azure_native import app, containerinstance, dbforpostgresql, network, privatedns
 
@@ -25,7 +23,7 @@ class WebUI(pulumi.ComponentResource):
         stack: str,
         name: str,
         config: WebUIConfig,
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
     ):
         super().__init__(f"{stack}:{name}", name, None, opts)
 
@@ -75,6 +73,12 @@ class WebUI(pulumi.ComponentResource):
             resource_group_name=self.config.resource_group,
             virtual_network_name=self.vnet.name,
             address_prefix=self.config.WEBUI_SUBNET_CIDR,
+            delegations=[
+                network.DelegationArgs(
+                    name="env-delegation",
+                    service_name="Microsoft.App/environments",
+                )
+            ],
             network_security_group=network.NetworkSecurityGroupArgs(id=nsg.id),
         )
 
@@ -224,8 +228,10 @@ class WebUI(pulumi.ComponentResource):
             "DO_NOT_TRACK": "true",
             "ANONYMIZED_TELEMETRY": "true",
             # Websocket support
+            "WEBUI_SECRET_KEY": self.config.openwebui_config.webui_secret_key,
             "ENABLE_WEBSOCKET_SUPPORT": "true",
             "WEBSOCKET_MANAGER": "redis",
+            "REDIS_URL": f"redis://{nats_ip}:6379/1",
             "WEBSOCKET_REDIS_URL": f"redis://{nats_ip}:6379/1",
             "WEB_CONCURRENCY": "4",
             # UI and Security
@@ -309,6 +315,8 @@ class WebUI(pulumi.ComponentResource):
             "RAG_FULL_CONTEXT": "false",
             "RAG_WEB_SEARCH_FULL_CONTEXT": "true",
             "ENABLE_DIRECT_CONNECTIONS": "false",
+            "UVICORN_WORKERS": f"{self.config.cpu}",
+            "THREAD_POOL_SIZE": f"{self.config.cpu * 20}",
         }
 
         # Apply any additional/override environment variables from config
@@ -339,7 +347,7 @@ class WebUI(pulumi.ComponentResource):
         else:
             raise ValueError(f"No private IP found for container group {container_group.name}")
 
-    def _additional_secrets_from_additional_env_vars(self) -> List[app.SecretArgs]:
+    def _additional_secrets_from_additional_env_vars(self) -> list[app.SecretArgs]:
         additional_secrets = []
         for name, value in self.config.openwebui_config.additional_env_vars.items():
             if isinstance(value, dict) and "secret_ref" in value and "secret_value" in value:
@@ -379,7 +387,8 @@ class WebUI(pulumi.ComponentResource):
                 containers=container_list,
                 volumes=self.app_volumes,
                 scale=app.ScaleArgs(
-                    min_replicas=1,
+                    min_replicas=self.config.min_replicas,
+                    max_replicas=self.config.max_replicas,
                 ),
             ),
             tags={

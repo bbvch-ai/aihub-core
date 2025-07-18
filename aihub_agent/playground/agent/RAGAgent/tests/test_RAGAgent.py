@@ -2,21 +2,8 @@ import asyncio
 from pathlib import Path
 
 import pytest
-from dotenv import load_dotenv
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.vector_stores.types import VectorStoreQueryMode
-from pytest_bdd import scenarios, given, when, then, parsers
-
-from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
-from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.RagAgent.events.FewShotAcceptEvent import FewShotAcceptEvent
-from aihub_agent.agents.RagAgent.events.FewShotRejectEvent import FewShotRejectEvent
-from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
-from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
+from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
@@ -45,7 +32,20 @@ from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import cr
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.logging.logger import enable_logging
-from aihub_lib.testing.milvus_vector_store_content import fill_collection, drop_collection
+from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection
+from dotenv import load_dotenv
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.vector_stores.types import VectorStoreQueryMode
+from pytest_bdd import given, parsers, scenarios, then, when
+
+from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.RagAgent.events.FewShotAcceptEvent import FewShotAcceptEvent
+from aihub_agent.agents.RagAgent.events.FewShotRejectEvent import FewShotRejectEvent
+from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
+from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
+from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
 
@@ -59,7 +59,7 @@ def event_loop():
     loop.close()
 
 
-scenarios("../tests/features/rag_agent.feature")
+scenarios("./features/rag_agent.feature")
 load_dotenv(Path(__file__).parent / ".env")
 
 

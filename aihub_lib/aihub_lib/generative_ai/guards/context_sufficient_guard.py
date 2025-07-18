@@ -1,4 +1,4 @@
-from typing import List, Optional, Type
+from typing import Annotated
 
 from llama_index.core import PromptTemplate
 from llama_index.core.llms import LLM
@@ -11,24 +11,24 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 class ContextGuardResult(BaseModel):
     reasoning: str
     success: bool
-    new_query: Optional[str] = None
+    new_query: str | None = None
 
 
-def context_guard_result_factory(t: LocaleHandler, more_hops_available: bool) -> Type[ContextGuardResult]:
+def context_guard_result_factory(t: LocaleHandler, more_hops_available: bool) -> type[ContextGuardResult]:
     if more_hops_available:
 
         class LocalizedContextGuardResult(ContextGuardResult):
-            reasoning: str = Field(description=t("lib.guards.context_sufficient_guard.reason"))
-            success: bool = Field(description=t("lib.guards.context_sufficient_guard.success"))
-            new_query: str = Field(description=t("lib.guards.context_sufficient_guard.new_query"))
+            reasoning: Annotated[str, Field(description=t("lib.guards.context_sufficient_guard.reason"))]
+            success: Annotated[bool, Field(description=t("lib.guards.context_sufficient_guard.success"))]
+            new_query: Annotated[str, Field(description=t("lib.guards.context_sufficient_guard.new_query"))]
 
         LocalizedContextGuardResult.__doc__ = t("lib.guards.context_sufficient_guard.docstring")
         return LocalizedContextGuardResult
     else:
 
         class LocalizedContextGuardResult(ContextGuardResult):
-            reasoning: str = Field(description=t("lib.guards.context_sufficient_guard.reason_no_hops"))
-            success: bool = Field(description=t("lib.guards.context_sufficient_guard.success_no_hops"))
+            reasoning: Annotated[str, Field(description=t("lib.guards.context_sufficient_guard.reason_no_hops"))]
+            success: Annotated[bool, Field(description=t("lib.guards.context_sufficient_guard.success_no_hops"))]
 
         LocalizedContextGuardResult.__doc__ = t("lib.guards.context_sufficient_guard.docstring_no_hops")
         return LocalizedContextGuardResult
@@ -39,7 +39,7 @@ async def context_sufficient_guard(
     t: LocaleHandler,
     user_query: str,
     context: str,
-    prev_queries: List[str],
+    prev_queries: list[str],
     more_hops_available: bool,
 ) -> ContextGuardResult:
     sufficiency_prompt = PromptTemplate(t("lib.guards.context_sufficient_guard.prompt"))

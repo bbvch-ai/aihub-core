@@ -7,9 +7,41 @@ languages:
   it: "Italian"
   fr: "French"
 
+http_error:
+  code:
+    # 4xx Client Errors
+    400: "Invalid request. Please check the address and try again."
+    401: "Please sign in to access this page."
+    403: "You don't have permission to view this."
+    404: "Sorry, we couldn't find that page."
+    405: "That action is not allowed here."
+    408: "The request timed out. Please try again."
+    429: "Too many requests. Please wait a moment."
+
+    # 5xx Server Errors
+    500: "Something went wrong on our servers."
+    502: "A server error occurred. Please try again."
+    503: "Our service is temporarily unavailable."
+    504: "A server is not responding. Please try again."
+
 user:
+  title: "User"
   logout: "Logout"
   language: "Language"
+  list:
+    name: "Name"
+    email: "E-Mail"
+    avatar: "Profile image"
+    roles: "Roles"
+    last_accessed: "Last active"
+
+time_ago:
+  last_hour: "Last hour"
+  last_day: "Last day"
+  last_week: "Last week"
+  last_month: "Last month"
+  last_year: "Last year"
+  long_time_ago: "Long time ago"
 
 
 thread:
@@ -141,8 +173,10 @@ document:
     title: "Document Titel"
     created: "Created"
     updated_at: "Last updated"
+    language: "Language"
     document_type: "Document Type"
     number_of_pages: "Number of Pages"
+    download: "Download"
 
 knowledge:
   title: "Knowledge Databases"
@@ -204,19 +238,19 @@ dashboard:
   create_widget: "Create new Widget"
   events:
     StartEvent:
-      label: 'Started Agent Runs'
+      label: "Started Agent Runs"
     StopEvent:
-      label: 'Successful Runs'
+      label: "Successful Runs"
     UserMessageEvent:
-      label: 'User Chat Messages'
+      label: "User Chat Messages"
     ExceptionEvent:
-      label: 'Errors'
+      label: "Errors"
     HumanInTheLoopRequestEvent:
-      label: 'Human in the Loop'
+      label: "Human in the Loop"
     BotInTheLoopRequestEvent:
-      label: 'Ask in Slack/Teams'
+      label: "Ask in Slack/Teams"
     AgentInTheLoopRequestEvent:
-      label: 'Tasks Delegated'
+      label: "Tasks Delegated"
 
 evaluation:
   dataset:
@@ -273,3 +307,28 @@ evaluation:
       conciseness: "Conciseness"
       correctness: "Correctness"
       completeness: "Completeness"
+
+role:
+  title: "Access Roles"
+  name: "Name"
+  description: "Description"
+  edit: "Edit Role"
+  create_new: "New Role"
+  add_access_role: "Add access role"
+  add_button: "Add"
+  is_new: "New"
+  save_button: "Save"
+  access_rules: "Access Rules"
+  create_dialog:
+    description: "Create a new role with access rules. To assigne the new role to users, please use your AD."
+  remove_dialog:
+    confirm: "Are you sure?"
+    explanation: "If you remove this role, users might loose access to certain features of the ai-hub."
+    cancel: "Cancel"
+    proceed: "Delete anyways"
+  role_deleted:
+    summary: "Role deleted"
+    detail: "Role was deleted. Users with this role might have lost access to certain features."
+  role_saved:
+    summary: "Role saved"
+    detail: "Role saved successfully, the new access rules take effect immediately."

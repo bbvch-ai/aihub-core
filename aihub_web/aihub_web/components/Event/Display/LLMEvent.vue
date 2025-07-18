@@ -44,11 +44,11 @@ import type {
   LlmEvent,
   TextContent,
   ThreadDto,
-  WsServerEvent,
+  WsServerAgentEventReadable,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: WsServerEvent & { event: LlmEvent }
+  event: WsServerAgentEventReadable & { event: LlmEvent }
   thread: ThreadDto
 }>()
 
