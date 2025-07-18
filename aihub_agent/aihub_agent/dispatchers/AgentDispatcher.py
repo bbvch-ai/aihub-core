@@ -60,7 +60,7 @@ class AgentDispatcher(BaseDispatcher):
         topic_manager: Annotated[AgentClassTopicManager, "Manages event subjects for this agent instance."],
         locale_handler: Annotated[AgentLocaleHandler, "Manages localization for the agent."],
     ):
-        super().__init__(nc, js, redis, topic_manager, PartialAgentTopic)
+        super().__init__(nc, js, redis, topic_manager, PartialAgentTopic, default_config=default_agent_config)
         self.agent = agent
         self.default_agent_config = default_agent_config
         self.locale_handler = locale_handler

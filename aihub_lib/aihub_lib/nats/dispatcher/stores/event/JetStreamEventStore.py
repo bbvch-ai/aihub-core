@@ -8,6 +8,7 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from nats.js.api import AckPolicy, ConsumerConfig, DeliverPolicy
 
+from aihub_lib.config.BaseConfig import BaseConfig
 from aihub_lib.nats.dispatcher.stores.event.ExecutionContextEventStore import ExecutionContextEventStore
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.streams.StreamManager import StreamManager
@@ -60,8 +61,9 @@ class JetStreamEventStore:
         js: Annotated[JetStreamContext, "JetStream context for persistent storage"],
         topic_manager: Annotated[AbstractStreamTopicManager, "Topic manager with stream capabilities"],
         topic: Annotated[type[Topic], "Topic under which these events were published"],
-        ttl_seconds: Annotated[int, "Time-to-live for cached execution context data in seconds"] = 60 * 60 * 24 * 30,
         # 30 days default TTL
+        ttl_seconds: Annotated[int, "Time-to-live for cached execution context data in seconds"] = 60 * 60 * 24 * 30,
+        config_type: Annotated[type[BaseConfig], "Configuration type for the store"] = BaseConfig,
     ):
         self.nc = nc
         self.js = js
@@ -70,6 +72,8 @@ class JetStreamEventStore:
 
         # TTLCache for storing execution context events - entire execution contexts expire together after ttl_seconds
         self.execution_context_stores = TTLCache(maxsize=100_000, ttl=ttl_seconds)
+
+        self.config_type = config_type
 
         # Synchronization for events being processed
         self.pending_events: set[str] = set()
@@ -154,7 +158,7 @@ class JetStreamEventStore:
                         for msg in messages:
                             try:
                                 topic = self.topic.from_subject(msg.subject)
-                                event = BaseEvent.deserialize_event(msg.data)
+                                event = BaseEvent.deserialize_event(msg.data, config_type=self.config_type)
                                 event._jetstream_sequence = msg.metadata.sequence.stream
                                 self._add_event_to_store(topic.execution_context_id, event)
                                 msg_count += 1
@@ -230,7 +234,7 @@ class JetStreamEventStore:
         try:
             topic = self.topic.from_subject(msg.subject)
             store_execution_context_id = topic.execution_context_id
-            event = BaseEvent.deserialize_event(msg.data)
+            event = BaseEvent.deserialize_event(msg.data, config_type=self.config_type)
             event._jetstream_sequence = msg.metadata.sequence.stream
 
             # Add the event to the store
