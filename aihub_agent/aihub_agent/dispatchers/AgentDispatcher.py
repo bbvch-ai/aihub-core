@@ -369,7 +369,7 @@ class AgentDispatcher(BaseDispatcher):
             # Handle AgentConfig if requested
             if inspect.isclass(param.annotation) and issubclass(param.annotation, AgentConfig):
                 # Ensure the AgentConfig typing is consistent with the agent class
-                if not param.annotation == self.agent_config_type:
+                if param.annotation != self.agent_config_type:
                     raise ValueError(
                         f"Expected AgentConfig type '{self.agent_config_type.__name__}', "
                         f"but got '{param.annotation.__name__}' for parameter '{param.name}'."
