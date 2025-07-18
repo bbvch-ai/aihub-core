@@ -1,6 +1,6 @@
 ---
 title: Agent Philosophy
-index: 2
+index: 3
 ---
 
 # Agent Philosophy and Best Practices

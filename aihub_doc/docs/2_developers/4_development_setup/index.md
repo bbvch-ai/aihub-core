@@ -1,6 +1,6 @@
 ---
 title: Development Setup
-index: 3
+index: 4
 ---
 
 # Developer Setup Guide
