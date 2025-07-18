@@ -3,7 +3,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from aihub_api.routes.agent.dto.AgentDTO import MinimalAgentDTO
+from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
 from aihub_api.routes.thread.dto.statistics.DisplayStatistics import DisplayStatistics
 from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
 
@@ -50,9 +50,9 @@ class ThreadDTO(BaseModel):
     duration: Annotated[float | None, Field(description="Overall duration of interactions in seconds")] = None
 
     # Enhanced statistics / Contents
-    displays: Annotated[
-        list[DisplayStatistics], Field(description="Displays in this thread, sorted by start time")
-    ] = []
+    displays: Annotated[list[DisplayStatistics], Field(description="Displays in this thread, sorted by start time")] = (
+        []
+    )
     participating_agents: Annotated[
         list[MinimalAgentDTO], Field(description="All unique agents that participated in the thread's events")
     ] = []

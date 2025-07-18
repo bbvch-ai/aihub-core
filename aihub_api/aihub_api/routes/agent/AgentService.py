@@ -1,6 +1,8 @@
 import asyncio
 from asyncio import sleep
 
+from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
+from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -25,7 +27,7 @@ from cachetools import TTLCache
 from fastapi import HTTPException
 from nats.aio.client import Client as NATS
 
-from aihub_api.routes.agent.dto.AgentDTO import AgentClassDTO, AgentDTO, MinimalAgentDTO
+from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
 
