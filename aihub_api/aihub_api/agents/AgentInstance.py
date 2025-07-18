@@ -3,10 +3,10 @@ from typing import Annotated
 from aihub_lib.agents.AgentConfig import AgentConfig
 from pydantic import Field
 
-from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
+from aihub_api.agents.AgentClass import AgentClass
 
 
-class AgentInstanceDTO(AgentClassDTO):
+class AgentInstance(AgentClass):
     """
     Encapsulates the data transfer object (DTO) for an agent class.
     Contains information about the agent class, including its name and configuration specifications.
@@ -19,7 +19,7 @@ class AgentInstanceDTO(AgentClassDTO):
     ]
 
     @classmethod
-    def from_class_and_config(cls, class_dto: AgentClassDTO, agent_config: AgentConfig) -> "AgentInstanceDTO":
+    def from_class_and_config(cls, class_dto: AgentClass, agent_config: AgentConfig) -> "AgentInstance":
         """Creates an AgentDTO from an AgentClassDTO and an AgentConfig."""
         return cls(
             agent_class=class_dto.agent_class,

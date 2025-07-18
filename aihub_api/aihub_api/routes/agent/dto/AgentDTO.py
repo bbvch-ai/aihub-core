@@ -8,7 +8,7 @@ from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from pydantic import Field
 
 from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
-from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
+from aihub_api.agents.AgentInstance import AgentInstance
 from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
 
 
@@ -38,7 +38,7 @@ class AgentDTO(MinimalAgentDTO):
     is_online: Annotated[bool | None, Field(description="Indicates whether the agent is online and reachable.")] = None
 
     @classmethod
-    def from_instance(cls, instance: AgentInstanceDTO, t: LocaleHandler, is_online: bool | None = None) -> "AgentDTO":
+    def from_instance(cls, instance: AgentInstance, t: LocaleHandler, is_online: bool | None = None) -> "AgentDTO":
         """Creates an AgentDTO from an AgentInstanceDTO."""
         return cls(
             agent_class=instance.agent_class,
