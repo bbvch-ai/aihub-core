@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from aihub_lib.config.BaseConfig import BaseConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 
 if TYPE_CHECKING:
@@ -28,7 +29,7 @@ class StepConfig(BaseModel):
     pass
 
 
-class AgentConfig(BaseModel):
+class AgentConfig(BaseConfig):
     """
     The agent config is a flexible way to configure the runtime behavior of an agent. It can ensure that two agents
     that follow the same workflow can still be configured to achieve different outcomes through a different
@@ -57,9 +58,6 @@ class AgentConfig(BaseModel):
 
     agent_class: Annotated[str, Field(description="The class name of the agent, used for identification.")]
     agent_id: Annotated[str, Field(description="Uniquely identifies the agent instance.", pattern=r"^[a-z0-9_-]+$")]
-    name: Annotated[LocaleString, Field(description="The name of the agent.")]
-    description: Annotated[LocaleString, Field(description="The description of the agent.")]
-    icon: Annotated[str, Field(description="The icon representing the agent.")] = "meteor-icons:robot"
 
     color: Annotated[
         str | None,

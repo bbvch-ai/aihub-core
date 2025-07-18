@@ -59,7 +59,7 @@ class AgentJSSubscriber(JSSubscriber):
             event_cls=ControlEvent,
             handler=handler,
             js=js,
-            agent_config_type=agent_config_type,
+            config_type=agent_config_type,
         )
 
     @classmethod
