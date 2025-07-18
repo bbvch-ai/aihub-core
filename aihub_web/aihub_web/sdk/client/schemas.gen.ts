@@ -855,6 +855,18 @@ export const Body_create_transcription_openai_audio_transcriptions_postSchema = 
     title: 'Body_create_transcription_openai_audio_transcriptions_post'
 } as const;
 
+export const BulkUpdateResponseSchema = {
+    properties: {
+        modified_count: {
+            type: 'integer',
+            title: 'Modified Count'
+        }
+    },
+    type: 'object',
+    required: ['modified_count'],
+    title: 'BulkUpdateResponse'
+} as const;
+
 export const ChainEventSchema = {
     properties: {
         event_id: {
@@ -6632,7 +6644,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1752581125
+            default: 1752766241
         },
         owned_by: {
             type: 'string',
@@ -6858,6 +6870,69 @@ export const NodeSummaryDTOSchema = {
     title: 'NodeSummaryDTO'
 } as const;
 
+export const NotificationDTOSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the notification.'
+        },
+        title: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'The internationalized title of the notification.'
+        },
+        message: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'The internationalized content of the notification.'
+        },
+        read: {
+            type: 'boolean',
+            title: 'Read',
+            description: 'Indicates if the notification has been read by the user.'
+        },
+        done: {
+            type: 'boolean',
+            title: 'Done',
+            description: 'Indicates if the task associated with the notification has been completed.'
+        },
+        type: {
+            type: 'string',
+            enum: ['success', 'info', 'warning', 'danger'],
+            title: 'Type',
+            description: 'Categorizes the notification for visual representation (e.g., icon and color).'
+        },
+        severity: {
+            type: 'string',
+            enum: ['low', 'medium', 'high'],
+            title: 'Severity',
+            description: 'The priority level of the notification.'
+        },
+        link: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^/.*$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Link',
+            description: 'An optional internal link to navigate to the relevant resource.'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At',
+            description: 'The timestamp when the notification was created.'
+        }
+    },
+    type: 'object',
+    required: ['id', 'title', 'message', 'read', 'done', 'type', 'severity', 'created_at'],
+    title: 'NotificationDTO',
+    description: 'Data Transfer Object for a notification.'
+} as const;
+
 export const PaginatedDocumentsResponseSchema = {
     properties: {
         total: {
@@ -6892,6 +6967,43 @@ export const PaginatedDocumentsResponseSchema = {
     type: 'object',
     required: ['total', 'page', 'page_size', 'total_pages', 'documents'],
     title: 'PaginatedDocumentsResponse'
+} as const;
+
+export const PaginatedNotificationsResponseSchema = {
+    properties: {
+        total: {
+            type: 'integer',
+            title: 'Total',
+            description: 'The total number of notifications matching the filter criteria.'
+        },
+        page: {
+            type: 'integer',
+            title: 'Page',
+            description: 'The current page number (1-indexed).'
+        },
+        page_size: {
+            type: 'integer',
+            title: 'Page Size',
+            description: 'The number of notifications requested per page.'
+        },
+        total_pages: {
+            type: 'integer',
+            title: 'Total Pages',
+            description: 'The total number of pages available based on the page size.'
+        },
+        notifications: {
+            items: {
+                '$ref': '#/components/schemas/NotificationDTO'
+            },
+            type: 'array',
+            title: 'Notifications',
+            description: 'The list of notifications for the current page.'
+        }
+    },
+    type: 'object',
+    required: ['total', 'page', 'page_size', 'total_pages', 'notifications'],
+    title: 'PaginatedNotificationsResponse',
+    description: 'A paginated response container for notifications.'
 } as const;
 
 export const PaginatedThreadsResponseSchema = {
@@ -7166,7 +7278,7 @@ export const ProcessDTOSchema = {
                 }
             ],
             title: 'Is Online',
-            description: 'Indicates whether the processis online and reachable.'
+            description: 'Indicates whether the process is online and reachable.'
         }
     },
     type: 'object',
@@ -8920,6 +9032,38 @@ export const TranscriptionWordSchema = {
     type: 'object',
     required: ['end', 'start', 'word'],
     title: 'TranscriptionWord'
+} as const;
+
+export const UpdateNotificationRequestSchema = {
+    properties: {
+        read: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Read',
+            description: "The new 'read' status of the notification."
+        },
+        done: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Done',
+            description: "The new 'done' status for the notification's task."
+        }
+    },
+    type: 'object',
+    title: 'UpdateNotificationRequest',
+    description: 'Request model for partially updating a notification.'
 } as const;
 
 export const UpdateRoleRequestSchema = {

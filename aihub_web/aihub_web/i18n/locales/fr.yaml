@@ -331,3 +331,16 @@ role:
   role_saved:
     summary: "Rôle enregistré"
     detail: "Rôle enregistré avec succès, les nouvelles règles d'accès prennent effet immédiatement."
+
+notification:
+  title: "Notifications"
+  empty: "Aucune notification pour le moment."
+  mark_all_as_read: "Marquer tout comme lu"
+  mark_as_read: "Marquer comme lu"
+  mark_as_unread: "Marquer comme non lu"
+  delete: "Supprimer"
+  delete_all: "Supprimer tout"
+  delete_confirmation: "Êtes-vous sûr de vouloir supprimer cette notification ? Cette action est irréversible."
+  read: "Lu"
+  unread: "Non lu"
+  view_all: "Voir toutes les notifications"

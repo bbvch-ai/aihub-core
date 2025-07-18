@@ -4,9 +4,11 @@
       :icon="isDark ? 'pi pi-sun' : 'pi pi-moon'"
       variant="text"
       rounded
-      aria-label="Filter"
+      aria-label="Toggle Dark Mode"
       @click="toggleDarkMode()"
     />
+
+    <NotificationNotifications/>
     <div
       v-if="myUserIsLoading"
       class="flex flex-row gap-2"
@@ -50,19 +52,19 @@
 </template>
 
 <script setup lang="ts">
-import { useDark } from '@vueuse/core'
-import { computed } from 'vue'
+import {useDark} from '@vueuse/core';
+import {computed} from 'vue';
 
-const { myUser, myUserIsLoading } = useMyUser()
+const {myUser, myUserIsLoading} = useMyUser();
 
 const userInitials = computed(() =>
   myUser.value?.name?.split(' ').map(n => n[0]).join(''),
-)
+);
 
 // Initialize the dark mode reactive state with persistence
-const isDark = useDark({ storageKey: 'dark' })
+const isDark = useDark({storageKey: 'dark'});
 
 function toggleDarkMode() {
-  isDark.value = !isDark.value
+  isDark.value = !isDark.value;
 }
 </script>

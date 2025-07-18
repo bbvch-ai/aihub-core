@@ -746,6 +746,16 @@ export type BodyCreateTranscriptionOpenaiAudioTranscriptionsPost = {
 };
 
 /**
+ * BulkUpdateResponse
+ */
+export type BulkUpdateResponse = {
+    /**
+     * Modified Count
+     */
+    modified_count: number;
+};
+
+/**
  * ChainEvent
  */
 export type ChainEventReadable = {
@@ -5053,6 +5063,56 @@ export type NodeSummaryDto = {
 };
 
 /**
+ * NotificationDTO
+ * Data Transfer Object for a notification.
+ */
+export type NotificationDto = {
+    /**
+     * Id
+     * The unique identifier of the notification.
+     */
+    id: string;
+    /**
+     * The internationalized title of the notification.
+     */
+    title: LocaleString;
+    /**
+     * The internationalized content of the notification.
+     */
+    message: LocaleString;
+    /**
+     * Read
+     * Indicates if the notification has been read by the user.
+     */
+    read: boolean;
+    /**
+     * Done
+     * Indicates if the task associated with the notification has been completed.
+     */
+    done: boolean;
+    /**
+     * Type
+     * Categorizes the notification for visual representation (e.g., icon and color).
+     */
+    type: 'success' | 'info' | 'warning' | 'danger';
+    /**
+     * Severity
+     * The priority level of the notification.
+     */
+    severity: 'low' | 'medium' | 'high';
+    /**
+     * Link
+     * An optional internal link to navigate to the relevant resource.
+     */
+    link?: string | null;
+    /**
+     * Created At
+     * The timestamp when the notification was created.
+     */
+    created_at: Date;
+};
+
+/**
  * PaginatedDocumentsResponse
  */
 export type PaginatedDocumentsResponse = {
@@ -5081,6 +5141,38 @@ export type PaginatedDocumentsResponse = {
      * List of Document DTOs objects for the current page
      */
     documents: Array<IngestedDocument>;
+};
+
+/**
+ * PaginatedNotificationsResponse
+ * A paginated response container for notifications.
+ */
+export type PaginatedNotificationsResponse = {
+    /**
+     * Total
+     * The total number of notifications matching the filter criteria.
+     */
+    total: number;
+    /**
+     * Page
+     * The current page number (1-indexed).
+     */
+    page: number;
+    /**
+     * Page Size
+     * The number of notifications requested per page.
+     */
+    page_size: number;
+    /**
+     * Total Pages
+     * The total number of pages available based on the page size.
+     */
+    total_pages: number;
+    /**
+     * Notifications
+     * The list of notifications for the current page.
+     */
+    notifications: Array<NotificationDto>;
 };
 
 /**
@@ -5274,7 +5366,7 @@ export type ProcessDto = {
     agent_inputs: Array<AgentInSpecs>;
     /**
      * Is Online
-     * Indicates whether the processis online and reachable.
+     * Indicates whether the process is online and reachable.
      */
     is_online?: boolean | null;
 };
@@ -6898,6 +6990,23 @@ export type TranscriptionWord = {
      */
     word: string;
     [key: string]: unknown | number | string;
+};
+
+/**
+ * UpdateNotificationRequest
+ * Request model for partially updating a notification.
+ */
+export type UpdateNotificationRequest = {
+    /**
+     * Read
+     * The new 'read' status of the notification.
+     */
+    read?: boolean | null;
+    /**
+     * Done
+     * The new 'done' status for the notification's task.
+     */
+    done?: boolean | null;
 };
 
 /**
@@ -9094,6 +9203,119 @@ export type GetAnonymousFileRedirectResponses = {
      */
     200: unknown;
 };
+
+export type GetNotificationsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Page
+         */
+        page?: number;
+        /**
+         * Page Size
+         */
+        page_size?: number;
+        /**
+         * Types
+         */
+        types?: Array<string> | null;
+        /**
+         * Severities
+         */
+        severities?: Array<string> | null;
+        /**
+         * Read
+         */
+        read?: boolean | null;
+        /**
+         * Done
+         */
+        done?: boolean | null;
+    };
+    url: '/notifications/';
+};
+
+export type GetNotificationsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetNotificationsError = GetNotificationsErrors[keyof GetNotificationsErrors];
+
+export type GetNotificationsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PaginatedNotificationsResponse;
+};
+
+export type GetNotificationsResponse = GetNotificationsResponses[keyof GetNotificationsResponses];
+
+export type MarkAllDoneData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/notifications/done-all';
+};
+
+export type MarkAllDoneResponses = {
+    /**
+     * Successful Response
+     */
+    200: BulkUpdateResponse;
+};
+
+export type MarkAllDoneResponse = MarkAllDoneResponses[keyof MarkAllDoneResponses];
+
+export type MarkAllReadData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/notifications/read-all';
+};
+
+export type MarkAllReadResponses = {
+    /**
+     * Successful Response
+     */
+    200: BulkUpdateResponse;
+};
+
+export type MarkAllReadResponse = MarkAllReadResponses[keyof MarkAllReadResponses];
+
+export type UpdateNotificationData = {
+    body: UpdateNotificationRequest;
+    path: {
+        /**
+         * Notification Id
+         * The ID of the notification to update.
+         */
+        notification_id: string;
+    };
+    query?: never;
+    url: '/notifications/{notification_id}';
+};
+
+export type UpdateNotificationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateNotificationError = UpdateNotificationErrors[keyof UpdateNotificationErrors];
+
+export type UpdateNotificationResponses = {
+    /**
+     * Successful Response
+     */
+    200: NotificationDto;
+};
+
+export type UpdateNotificationResponse = UpdateNotificationResponses[keyof UpdateNotificationResponses];
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});

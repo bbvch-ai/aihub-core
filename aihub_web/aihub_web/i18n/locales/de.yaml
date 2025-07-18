@@ -332,3 +332,13 @@ role:
   role_saved:
     summary: "Rolle gespeichert"
     detail: "Rolle erfolgreich gespeichert, die neuen Zugriffsregeln treten sofort in Kraft."
+
+notification:
+  title: "Benachrichtigungen"
+  no_notifications: "Keine Benachrichtigungen"
+  read: "Gelesen"
+  unread: "Ungelesen"
+  mark_all_as_read: "Alle als gelesen markieren"
+  mark_all_as_unread: "Alle als ungelesen markieren"
+  delete_all: "Alle löschen"
+  view_all: "Alle anzeigen"

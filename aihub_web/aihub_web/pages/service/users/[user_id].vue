@@ -82,7 +82,7 @@
         </div>
         <div class="flex flex-col gap-3">
           <h3 class="text-2xl">
-            Processes
+            {{ t('process.title') }}}
           </h3>
           <div class="flex flex-wrap gap-2">
             <Tag
@@ -100,9 +100,9 @@
 </template>
 
 <script setup lang="ts">
-const { user, userIsLoading } = useUser()
-const { t } = useI18n()
-const { getTimeAgo } = useTimeAgo()
+const {user, userIsLoading} = useUser()
+const {t} = useI18n()
+const {getTimeAgo} = useTimeAgo()
 </script>
 
 <style scoped>

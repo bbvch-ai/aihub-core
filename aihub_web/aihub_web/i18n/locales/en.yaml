@@ -332,3 +332,16 @@ role:
   role_saved:
     summary: "Role saved"
     detail: "Role saved successfully, the new access rules take effect immediately."
+
+notification:
+  title: "Notifications"
+  no_notifications: "No notifications available"
+  read: "Read"
+  unread: "Unread"
+  mark_all_as_read: "Mark all as read"
+  mark_all_as_unread: "Mark all as unread"
+  delete_all: "Delete all notifications"
+  view_all: "View all notifications"
+
+process:
+  title: "Processes"

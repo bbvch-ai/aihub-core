@@ -243,7 +243,7 @@ dashboard:
     UserMessageEvent:
       label: "Messaggi chat utente"
     ExceptionEvent:
-
+      label: "Errori"
     HumanInTheLoopRequestEvent:
       label: "Umano nel loop"
     BotInTheLoopRequestEvent:
@@ -331,3 +331,16 @@ role:
   role_saved:
     summary: "Ruolo salvato"
     detail: "Ruolo salvato con successo, le nuove regole di accesso hanno effetto immediato."
+
+notification:
+  title: "Notifiche"
+  description: "Qui puoi vedere le notifiche recenti"
+  empty: "Nessuna notifica recente"
+  mark_all_as_read: "Segna tutte come lette"
+  mark_as_read: "Segna come letto"
+  mark_as_unread: "Segna come non letto"
+  delete: "Elimina"
+  delete_all: "Elimina tutte le notifiche"
+  delete_confirmation: "Sei sicuro di voler eliminare questa notifica?"
+  delete_all_confirmation: "Sei sicuro di voler eliminare tutte le notifiche?"
+  view_all: "Visualizza tutte le notifiche"

@@ -19,6 +19,7 @@ def get_azure_cli_user_info():
             capture_output=True,
             text=True,
             check=True,
+            shell=True,
         )
         user_oid = oid_process.stdout.strip()
 
@@ -27,6 +28,7 @@ def get_azure_cli_user_info():
             capture_output=True,
             text=True,
             check=True,
+            shell=True,
         )
         user_name_cli = name_process.stdout.strip()
 
@@ -35,6 +37,7 @@ def get_azure_cli_user_info():
             capture_output=True,
             text=True,
             check=True,
+            shell=True,
         )
         user_preferred_username = preferred_username_process.stdout.strip()
 
