@@ -23,10 +23,7 @@ Start by exploring the target location:
 cd $FOLDER
 
 # Get an overview of the structure
-ls -la
-
-# If it's a single file, examine its location
-ls -la $(dirname $FOLDER)
+tree .
 ```
 
 ### Step 2: Read the Documentation Hierarchy
@@ -68,13 +65,19 @@ As you examine the code and documentation, ask yourself:
 
 ### Step 5: Create Missing Documentation
 
-If you find gaps in documentation, create the missing README files:
+If you find gaps in documentation, create the missing README files
 
 #### When to create a new README:
 - Folder with multiple Python files but no README
 - Complex component that needs dedicated explanation
 - Standalone functionality within a scope
 - Configuration or setup requirements not documented elsewhere
+- Information from multiple files is worth aggregating and explaining on a higher level
+
+### When to NOT create a new README:
+- When the folder contains only very few files or just one file
+- When the code is so easy to read that the developer should just read it themselves 
+- When the docstrings are so good that there is simply not much of value to add
 
 #### README Creation Process:
 
@@ -82,114 +85,34 @@ Create a new README in the appropriate location
 Follow these documentation standards:
 
 #### 📝 Writing Style for READMEs
-- **Be concise but complete**: Every word should add value
-- **Use examples liberally**: Show, don't just tell
+- **Be VERY concise but complete**: Every word should add value
 - **Write for your future self**: Assume you'll forget everything
 - **Include "why" not just "what"**: Context matters
-
-#### 🏗️ Standard README Structure
-Keep it consistent across the codebase:
-
-1. **Title and Brief Description**
-   ```markdown
-   # Component Name
-   Brief one-line description of what this component does.
-   ```
-
-2. **Purpose/Overview** (if needed)
-   ```markdown
-   ## Overview
-   Explain the broader context and why this component exists.
-   ```
-
-3. **Usage/API** (if applicable)
-   ```markdown
-   ## Usage
-   Show how to use this component with concrete examples.
-   ```
-
-4. **Configuration** (if any)
-   ```markdown
-   ## Configuration
-   Document any configuration options or environment variables.
-   ```
-
-5. **Examples** (always helpful)
-   ```markdown
-   ## Examples
-   Provide real-world usage examples.
-   ```
-
-6. **Troubleshooting** (if relevant)
-   ```markdown
-   ## Troubleshooting
-   Common issues and their solutions.
-   ```
 
 #### 🎯 Scope Rules for Documentation
 - **Root README**: Platform-wide information only
 - **Scope-level README**: Broad overview of the entire package
 - **Subdirectory README**: Specific to that component
 - **Deep folder README**: Very specific functionality
+- 
+#### DOs and DONTs
+
+- **DO** keep it as brief as possible. Documentation is hard to maintain, so we should keep it useful but minimal
+- **DO** assume developers can just write the code themselves if they want to go into more details
+- **DO** aggregate information from multiple files within a README
+- **DO** Talk on a high-level: What are we trying to achieve here, why do we need that, what's the general philosophy and idea
+
+- **DO NOT** Copy over code, as this is guaranteed to fall out of sync very quickly
+- **DO NOT** include ANY markdown code blocks that show how this code can be imported or used. That is an indication that your documentation is too low-level
+- **DO NOT** Talk on a low level about specific code files
+- **DO NOT** simply state what is going on in the code - add higher level info and context
+- **DO NOT** state the obvious or repeat what the docstring say
+- **DO NOT** create a README just for one file. Documentation should live within the docstrings of the code itself!
 
 ### Step 6: Write Your Comprehensive Explanation
 
-After analyzing and documenting, provide a thorough explanation covering:
-
-#### Technical Overview
-- What the code does at a high level
-- How it fits into the overall system architecture
-- Key dependencies and relationships
-
-#### Implementation Details
-- Main classes, functions, and their responsibilities
-- Important algorithms or patterns used
-- Data structures and their purposes
-
-#### Usage Patterns
-- How developers typically interact with this code
-- Common use cases and workflows
-- Integration points with other components
-
-#### Notable Design Decisions
-- Why certain approaches were chosen
-- Trade-offs that were made
-- Any constraints or limitations
-
-#### Development Context
-- How to work with this code
-- Testing approaches
-- Common pitfalls to avoid
-
-### Documentation Quality Standards
-
-Follow these rules religiously:
-
-#### 📚 Content Guidelines
-- **Accuracy**: Documentation must match the code exactly
-- **Completeness**: Cover all public APIs and main concepts
-- **Clarity**: Use simple language and clear examples
-- **Maintenance**: Update docs when code changes
-
-#### 🔄 Consistency Rules
-- Use the same terminology across all documentation
-- Follow the established README structure
-- Maintain consistent formatting and style
-- Link related documentation where appropriate
-
-#### 🎯 Audience Considerations
-- Write for developers familiar with the tech stack
-- Assume basic knowledge of the domain
-- Explain complex concepts with examples
-- Provide context for architectural decisions
-
-## The Golden Rules
-
-1. **README-first approach** - Documentation should exist before confusion
-2. **Code is the source of truth** - When docs conflict with code, fix the docs
-3. **Hierarchical documentation** - Each level serves a specific purpose
-4. **No documentation debt** - Create missing docs now, not later
-5. **Examples are king** - Show concrete usage over abstract descriptions
+When you are done writing your README.md or decide that nor README.md must be edited or written, provide an in-depth
+explanation to the user.
 
 ## You're Done When...
 
@@ -201,4 +124,4 @@ Follow these rules religiously:
 ✅ A new developer could understand the component from your explanation  
 ✅ You've documented any gotchas or important context you discovered
 
-Remember: Good documentation is an investment in the future of the codebase! 📖
+Remember: Good documentation is an investment in the future of the codebase and should smartly extend the code, not explain it! 📖

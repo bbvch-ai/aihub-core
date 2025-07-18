@@ -132,6 +132,31 @@ What warrants a new README?
 - Complex features that need dedicated explanation
 - Standalone components within a scope
 
+#### 📝 Writing Style for READMEs
+- **Be VERY concise but complete**: Every word should add value
+- **Write for your future self**: Assume you'll forget everything
+- **Include "why" not just "what"**: Context matters
+
+#### 🎯 Scope Rules for Documentation
+- **Root README**: Platform-wide information only
+- **Scope-level README**: Broad overview of the entire package
+- **Subdirectory README**: Specific to that component
+- **Deep folder README**: Very specific functionality
+- 
+#### DOs and DONTs
+
+- **DO** keep it as brief as possible. Documentation is hard to maintain, so we should keep it useful but minimal
+- **DO** assume developers can just write the code themselves if they want to go into more details
+- **DO** aggregate information from multiple files within a README
+- **DO** Talk on a high-level: What are we trying to achieve here, why do we need that, what's the general philosophy and idea
+
+- **DO NOT** Copy over code, as this is guaranteed to fall out of sync very quickly
+- **DO NOT** include ANY markdown code blocks that show how this code can be imported or used. That is an indication that your documentation is too low-level
+- **DO NOT** Talk on a low level about specific code files
+- **DO NOT** simply state what is going on in the code - add higher level info and context
+- **DO NOT** state the obvious or repeat what the docstring say
+- **DO NOT** create a README just for one file. Documentation should live within the docstrings of the code itself!
+
 ### Documentation Standards
 
 Follow these rules religiously:
@@ -142,14 +167,6 @@ Follow these rules religiously:
 - Write for your future self who forgot everything
 - Include "why" not just "what"
 
-#### 🏗️ README Structure
-Keep it consistent:
-1. **Title and brief description**
-2. **Purpose/Overview** (if needed)
-3. **Usage/API** (if applicable)
-4. **Configuration** (if any)
-5. **Examples** (always helpful)
-6. **Troubleshooting** (if relevant)
 
 #### 🎯 Scope Rules
 - **Scope-level README**: Broad overview of the entire package
@@ -162,6 +179,7 @@ Keep it consistent:
 2. **Code is truth** - When in doubt, the code wins
 3. **Future you will thank current you** - Document what you wish you had known
 4. **No documentation debt** - Fix it now, not "later"
+5. **Respect scope** - Edit the smallest possible README.md, only edit the root level README.md if your change is large enough to justify it
 
 ## You're Done When...
 

@@ -10,7 +10,6 @@ Here's your feedback implementation roadmap:
 3. Prioritize and implement human feedback first
 4. Critically evaluate automated feedback
 5. Test your changes thoroughly
-6. Prepare for the next review round
 
 ## Your Feedback Implementation Cookbook
 
@@ -146,50 +145,6 @@ exit
 # Check that you haven't broken anything new
 git diff
 ```
-
-### Step 7: Respond to Comments (But Don't Commit Yet!)
-
-For each comment you've addressed, prepare your response:
-
-**For implemented suggestions:**
-- "Fixed in the latest changes"
-- "Implemented as suggested"
-- "Added the requested error handling"
-
-**For suggestions you didn't implement:**
-- Explain why: "I considered this, but X because Y"
-- Propose alternatives: "Instead of X, I did Y because..."
-
-**For questions:**
-- Provide clear answers
-- Add clarifying comments to code if needed
-
-### Step 8: Final Review Before Committing
-
-Before you commit (which you won't do yet!), ensure:
-
-```bash
-# All human feedback is addressed or responded to
-# Bot feedback is either fixed or consciously ignored
-# All tests still pass
-# Code quality checks pass
-# Documentation is updated if needed
-```
-
-## Critical Rules
-
-- **PRIORITIZE** human feedback - it's more valuable than automated suggestions
-- **THINK** before implementing bot suggestions - they lack context
-- **TEST** after each change - don't let fixes break other things
-- **DOCUMENT** your decisions - especially when not following suggestions
-- **DON'T COMMIT YET** - this cookbook is just for implementing changes
-
-## Red Flags to Watch For
-
-- **Conflicting feedback** - Ask for clarification  
-- **Massive refactoring requests** - Discuss before implementing  
-- **Security warnings from bots** - Never ignore these  
-- **"Just a suggestion" comments** - Still worth considering  
 
 ## You're Done When...
 

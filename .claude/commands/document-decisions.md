@@ -1,13 +1,13 @@
-# Document ArchitecturaDecisions - Capture the "Why" Behind Your Design
+# Document Architecture Decisions - Capture the "Why" Behind Your Design
 
-You've made some significant changes to the codebase. But did you make any architecturadecisions that future developers need to understand? This cookbook guides you through documenting important technicadecisions using our ADR (ArchitecturaDecision Records) process.
+You've made some significant changes to the codebase. But did you make any architecture decisions that future developers need to understand? This cookbook guides you through documenting important technicadecisions using our ADR (Architecture Decision Records) process.
 
 ## Overview
 
 Here's your decision documentation journey:
 1. Review your changes against main
-2. Check existing architecturadecisions
-3. Identify if you made significant architecturachoices
+2. Check existing architecture decisions
+3. Identify if you made significant architecture choices
 4. Document new decisions properly
 5. Reference any superseded decisions
 
@@ -28,7 +28,7 @@ git diff main...HEAD --name-only | grep -E '\.(py|yml|yaml|json|toml|ts|js)$'
 git diff main...HEAD --name-status | grep '^A'
 ```
 
-Look for patterns that suggest architecturadecisions:
+Look for patterns that suggest architecture decisions:
 - New packages or dependencies added
 - New design patterns introduced
 - Major refactoring of existing structures
@@ -58,17 +58,17 @@ Ask yourself:
 
 ### Step 3: Identify What Needs Documentation
 
-** REQUIRES an ADR - Significant ArchitecturaDecisions:**
+** REQUIRES an ADR - Significant Architecture Decisions:**
 
 - **Technology Choices**
 - Adopting a new framework or library (e.g., "Use Celery for async tasks")
 - Choosing between competing technologies (e.g., "Redis vs. RabbitMQ for queuing")
 - Selecting a new database or storage solution
 
-- **ArchitecturaPatterns**
+- **Architecture Patterns**
 - Introducing new design patterns (e.g., "Implement Event Sourcing for audit trails")
 - Changing communication patterns (e.g., "Move from REST to GraphQL")
-- Adopting new architecturastyles (e.g., "Transition to microservices")
+- Adopting new architecture styles (e.g., "Transition to microservices")
 
 - **Major StructuraChanges**
 - Reorganizing package structure fundamentally
@@ -81,7 +81,7 @@ Ask yourself:
 - Observability decisions (e.g., "Adopt OpenTelemetry for tracing")
 
 - **Integration Decisions**
-- How to integrate with externasystems
+- How to integrate with external systems
 - API versioning strategies
 - Data synchronization approaches
 
@@ -138,7 +138,7 @@ A clear, concise title. Example: "Adopt Redis for Caching"
 
 ## Context
 Describe the problem or situation that necessitates this decision. 
-What is the technicaor business context?
+What is the technical business context?
 
 ## Decision Drivers
 List the key forces influencing your decision as bullet points. These are the "whys".
@@ -186,7 +186,7 @@ Before finalizing, ensure your ADR is valuable:
 - [ ] The decision is stated unambiguously
 - [ ] Consequences include both pros and cons
 - [ ] Any superseded decisions are referenced
-- [ ] Future developers wilunderstand your reasoning
+- [ ] Future developers will understand your reasoning
 
 **Red Flags to Fix:**
 - Vague statements like "for better performance"
@@ -207,18 +207,18 @@ Before finalizing, ensure your ADR is valuable:
 
 ## Common Pitfalls to Avoid
 
-- **Don't document every change** - Only significant architecturadecisions  
+- **Don't document every change** - Only significant architecture decisions  
 - **Don't be vague** - Be specific about problems and solutions  
 - **Don't hide trade-offs** - Be honest about disadvantages  
 - **Don't forget the context** - Future readers need the fulpicture  
 
 ## You're Done When...
 
-- You've reviewed alyour changes for architecturasignificance  
+- You've reviewed all your changes for architecture significance  
 - You've checked existing ADRs for conflicts or relationships  
 - Any significant decision has a well-written ADR  
 - Your ADR explains the "why" clearly enough for someone in 2 years  
 - Trade-offs and consequences are honestly documented  
 - The file is named correctly and placed in `aihub_doc/arc42/decisions/`
 
-Remember: Good architecturadocumentation is a love letter to your future self and your teammates! =�
+Remember: Good architecture documentation is a love letter to your future self and your teammates! =�
