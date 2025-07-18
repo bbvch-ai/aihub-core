@@ -65,7 +65,7 @@ class Action:
                 await __event_emitter__(
                     {
                         "type": "message",
-                        "data": {"content": f"\n\nSie sind an folgendem GTO interessiert:\n{r.json()}"},
+                        "data": {"content": f"<GTO_DEFINITION>{r.json()}</GTO_DEFINITION>"},
                     }
                 )
 
