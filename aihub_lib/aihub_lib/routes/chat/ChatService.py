@@ -135,11 +135,10 @@ class ChatService:
         else:
             agent_config_entity = AgentConfigEntity.find_for_class_and_id(agent_class, agent_id)
             if agent_config_entity is None:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Agent config not found for class {agent_class} and id {agent_id}",
-                )
-            agent_config = AgentConfig.from_entity(agent_config_entity)
+                logger.info(f"Agent config not found for class {agent_class} and id {agent_id}. Using default config.")
+                agent_config = None
+            else:
+                agent_config = AgentConfig.from_entity(agent_config_entity)
             event = UserMessageEvent(
                 messages=messages,
                 user=user,
