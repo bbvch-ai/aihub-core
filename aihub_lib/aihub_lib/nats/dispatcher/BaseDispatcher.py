@@ -82,7 +82,13 @@ class BaseDispatcher(abc.ABC):
         self.nc_publisher = NCPublisher(self.nc)
         self.js_publisher = JSPublisher(self.js)
 
-        self.event_store = JetStreamEventStore(self.nc, self.js, self.topic_manager, self.topic, default_config)
+        self.event_store = JetStreamEventStore(
+            self.nc,
+            self.js,
+            self.topic_manager,
+            self.topic,
+            config_type=default_config.__class__ if default_config else None,
+        )
         self.step_store = StepStore(redis)
 
         # Initialization flag
