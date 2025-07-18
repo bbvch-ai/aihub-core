@@ -8,6 +8,7 @@ from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
 from nats.errors import BadSubscriptionError, ConnectionDrainingError
 
+from aihub_lib.config.BaseConfig import BaseConfig
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.subscribers.AbstractSubscriber import AbstractSubscriber
 from aihub_lib.nats.topics import Topic
@@ -43,8 +44,9 @@ class NCSubscriber(AbstractSubscriber):
         subject: str,
         event_cls: type[TEvent],
         handler: Callable[[TEvent, Topic], Awaitable[None]],
+        config_type: type[BaseConfig] = BaseConfig,
     ):
-        super().__init__(nc, subject, event_cls, handler)
+        super().__init__(nc, subject, event_cls, handler, config_type=config_type)
         self.subscription: Subscription | None = None
 
     async def start(self) -> None:
@@ -70,7 +72,7 @@ class NCSubscriber(AbstractSubscriber):
             logger.debug(f"Received message: {msg.subject} with event data: {msg.data!r}")
             topic = Topic.from_subject(msg.subject)
             event_data = msg.data
-            event = self.event_cls.deserialize_event(event_data)
+            event = self.event_cls.deserialize_event(event_data, config_type=self.config_type)
             logger.debug(f"Deserialized event: {event}")
             task = asyncio.create_task(self._run_handler_with_error_handling(event, topic, msg.subject))
             self._background_tasks.add(task)

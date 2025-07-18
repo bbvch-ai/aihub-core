@@ -20,6 +20,7 @@ class AgentJSSubscriber(JSSubscriber):
         handler: Callable[[ControlEvent, AgentTopic], Awaitable[None]],
         queue_group: str,
         js: JetStreamContext | None = None,
+        config_type: type[AgentConfig] = AgentConfig,
     ):
         """Subscribe to all control events within a specific agent instance."""
         subject = topic_manager.get_subject_for_all_control_events_within_agent_instance()
@@ -34,6 +35,7 @@ class AgentJSSubscriber(JSSubscriber):
             event_cls=ControlEvent,
             handler=handler,
             js=js,
+            config_type=config_type,
         )
 
     @classmethod
@@ -44,7 +46,7 @@ class AgentJSSubscriber(JSSubscriber):
         handler: Callable[[ControlEvent, AgentTopic], Awaitable[None]],
         queue_group: str,
         js: JetStreamContext | None = None,
-        agent_config_type: type[AgentConfig] = AgentConfig,
+        config_type: type[AgentConfig] = AgentConfig,
     ):
         """Subscribe to all control events for a specific agent class."""
         subject = topic_manager.get_subject_for_all_control_events_within_agent_class()
@@ -59,7 +61,7 @@ class AgentJSSubscriber(JSSubscriber):
             event_cls=ControlEvent,
             handler=handler,
             js=js,
-            config_type=agent_config_type,
+            config_type=config_type,
         )
 
     @classmethod
@@ -70,6 +72,7 @@ class AgentJSSubscriber(JSSubscriber):
         handler: Callable[[BaseEvent, AgentTopic], Awaitable[None]],
         queue_group: str,
         js: JetStreamContext | None = None,
+        config_type: type[AgentConfig] = AgentConfig,
     ):
         """Subscribe to all events within a specific agent instance."""
         subject = topic_manager.get_subject_for_everything_within_agent_instance()
@@ -84,4 +87,5 @@ class AgentJSSubscriber(JSSubscriber):
             event_cls=ControlEvent,
             handler=handler,
             js=js,
+            config_type=config_type,
         )

@@ -48,12 +48,11 @@ class JSSubscriber(AbstractSubscriber):
         js: JetStreamContext | None = None,
         config_type: type[BaseConfig] = BaseConfig,
     ):
-        super().__init__(nc, subject, event_cls, handler)
+        super().__init__(nc, subject, event_cls, handler, config_type=config_type)
         self.js = js or nc.jetstream()
         self.queue_group = queue_group
         self.stream_manager = StreamManager(self.js, stream_name, stream_subject)
         self.js_subscription: JetStreamContext.PushSubscription | None = None
-        self.config_type = config_type
 
     async def start(self):
         """

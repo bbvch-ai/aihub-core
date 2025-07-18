@@ -6,10 +6,13 @@ from bson import ObjectId
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from aihub_lib.testing.logging.logger import enable_logging
 from playground.minimal_workflow.discoverable_workflow.DiscoverableAgent import DiscoverableAgent
 from playground.minimal_workflow.discoverable_workflow.DiscoverableAgentConfig import (
     DiscoverableAgentConfig,
 )
+
+enable_logging()
 
 scenarios("./features/discoverable_agent.feature")
 
@@ -30,7 +33,7 @@ def _():
 @when(parsers.parse("a DiscoveryRequestEvent is sent"))
 @async_test
 async def _(agent_runner: AgentTestRunner):
-    async with agent_runner.test_run():
+    async with agent_runner.test_run(delay_before_stop=10):
         call_id = str(ObjectId())
         await agent_runner.nc_publisher.publish_event(
             event=ClassDiscoveryRequestEvent(),

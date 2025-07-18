@@ -82,7 +82,9 @@ class AgentRunner:
             return
 
         logger.debug(f"Received discovery request for {topic.agent_class}.")
-        subject = self.topic_manager.get_agent_class_discovery_subject_response(topic.call_id)
+        subject = self.topic_manager.get_agent_class_discovery_subject_response(
+            topic.call_id, agent_class=self.agent_class
+        )
 
         start_events = self.agent_type.get_start_events()
         start_event_specs = [EventSpecs.from_event_class(e) for e in start_events]
@@ -149,7 +151,7 @@ class AgentRunner:
             handler=self.dispatcher.handle_event,
             js=self.js,
             queue_group=f"agent_runner_{self.agent_class}",
-            agent_config_type=self.agent_config_type,
+            config_type=self.agent_config_type,
         )
         await self.control_event_subscriber.start()
 

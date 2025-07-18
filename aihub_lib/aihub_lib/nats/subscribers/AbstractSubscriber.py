@@ -5,6 +5,7 @@ from typing import Generic, TypeVar
 
 from nats.aio.client import Client as NATS
 
+from aihub_lib.config.BaseConfig import BaseConfig
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.topics import Topic
 
@@ -12,17 +13,20 @@ TEvent = TypeVar("TEvent", bound=BaseEvent)
 
 
 class AbstractSubscriber(Generic[TEvent], abc.ABC):
+
     def __init__(
         self,
         nc: NATS,
         subject: str,
         event_cls: type[TEvent],
         handler: Callable[[TEvent, Topic], Awaitable[None]],
+        config_type: type[BaseConfig],
     ):
         self.nc = nc
         self.subject = subject
         self.event_cls = event_cls
         self.handler = handler
+        self.config_type = config_type
 
         self._background_tasks: set[asyncio.Task] = set()
 
