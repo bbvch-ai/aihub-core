@@ -230,12 +230,12 @@ services:
       ENABLE_DIRECT_CONNECTIONS: false
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.webui.rule=Host(`openwebui.{{ acme_domains[0] }}`)"
+      - "traefik.http.routers.webui.rule=Host(`openwebui.${DOMAIN}`)"
       - "traefik.http.routers.webui.entrypoints=websecure"
       - "traefik.http.routers.webui.tls.certresolver=letsencrypt"
       - "traefik.http.routers.webui.middlewares=security-headers"
       - "traefik.http.services.webui.loadbalancer.server.port=8080"
-      - "traefik.http.middlewares.allow-iframe.headers.customResponseHeaders.Content-Security-Policy=frame-ancestors 'self' https://{{ acme_domains[0] }}"
+      - "traefik.http.middlewares.allow-iframe.headers.customResponseHeaders.Content-Security-Policy=frame-ancestors 'self' https://${DOMAIN}"
 
   # </editor-fold>
 
@@ -257,7 +257,7 @@ services:
         max-file: "2"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.phoenix.rule=Host(`{{ acme_domains[0] }}`) && PathPrefix(`/phoenix`)"
+      - "traefik.http.routers.phoenix.rule=Host(`${DOMAIN}`) && PathPrefix(`/phoenix`)"
       - "traefik.http.routers.phoenix.entrypoints=websecure"
       - "traefik.http.routers.phoenix.tls.certresolver=letsencrypt"
       - "traefik.http.routers.phoenix.middlewares=security-headers,strip-phoenix"
@@ -341,7 +341,7 @@ services:
         max-file: "2"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=Host(`{{ acme_domains[0] }}`) && PathPrefix(`/api/v1`)"
+      - "traefik.http.routers.api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/v1`)"
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.api.middlewares=security-headers,strip-api"
@@ -418,7 +418,7 @@ services:
       - "traefik.http.middlewares.security-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
 
       # Dashboard
-      - "traefik.http.routers.traefik.rule=Host(`traefik.{{ acme_domains[0] }}`)"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:{{ 'yourpassword' | password_hash('bcrypt') }}"
       - "traefik.http.routers.traefik.middlewares=security-headers,traefik-auth"
