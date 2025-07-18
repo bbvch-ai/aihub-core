@@ -24,7 +24,6 @@ async def main():
             agent_class=HumanInTheLoopAgent.__name__,
             name=LocaleString(en="Human in the Loop Agent"),
             description=LocaleString(en="This is an agent with the Human in the Loop"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
 

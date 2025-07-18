@@ -21,7 +21,6 @@ async def main():
             agent_class=OptionalAgent.__name__,
             name=LocaleString(en="Optional Agent"),
             description=LocaleString(en="This is an agent with optional input"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
 

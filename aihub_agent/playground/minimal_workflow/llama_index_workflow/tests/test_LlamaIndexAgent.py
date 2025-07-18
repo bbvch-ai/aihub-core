@@ -25,7 +25,6 @@ def _():
             agent_class=LlamaIndexAgent.__name__,
             name=LocaleString(en="Llama Index Agent"),
             description=LocaleString(en="This is an agent that uses a llama index llm"),
-            system_prompt=LocaleString(en="You are an agent"),
             llm=OpenaiLikeLLMConfig(
                 name="unsloth/Llama-3.2-1B-Instruct",
                 base_url="http://localhost:8182/v1",

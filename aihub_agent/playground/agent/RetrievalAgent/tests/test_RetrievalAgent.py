@@ -59,9 +59,6 @@ def build_retrieval_agent_config(
         agent_class=RetrievalAgent.__name__,
         name=LocaleString(en="Retrieval Agent"),
         description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
-        system_prompt=LocaleString(
-            en="You're an agent answering user requests. Only use the context information provided."
-        ),
         color="#00FF00",
         voice="",
         icon="robot",

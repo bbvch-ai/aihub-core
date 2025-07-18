@@ -27,7 +27,6 @@ async def main():
             agent_class=LLMWrappingAgent.__name__,
             name=LocaleString(en="Dev Agent"),
             description=LocaleString(en="This is an agent that can be used to develop the frontend"),
-            system_prompt=LocaleString(en="You are an agent"),
             llm=AzureOpenAILLMConfig(
                 name="gpt-4o",
                 base_url="https://aihub-dev-openai-che.openai.azure.com/",

@@ -19,7 +19,6 @@ async def main():
             agent_class=PerformanceTestingAgent.__name__,
             name=LocaleString(en="Performance Testing Agent"),
             description=LocaleString(en=""),
-            system_prompt=LocaleString(en=""),
             number_of_events=10,
             payload_kb=0,
         ),

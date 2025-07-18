@@ -23,9 +23,6 @@ async def main():
             agent_class=FewShotAgent.__name__,
             name=LocaleString(en="RAG Agent"),
             description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
-            system_prompt=LocaleString(
-                en="You're an agent answering user requests. Only use the context information provided."
-            ),
             llm=AzureOpenAILLMConfig(
                 name="gpt-4o",
                 base_url="https://aihub-dev-openai-che.openai.azure.com/",

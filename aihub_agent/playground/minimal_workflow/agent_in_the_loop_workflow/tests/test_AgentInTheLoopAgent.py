@@ -37,7 +37,6 @@ def orchestrator_config():
         agent_class=OrchestratorAgent.__name__,
         name=LocaleString(en="Orchestrator Agent"),
         description=LocaleString(en="This is an orchestrator agent"),
-        system_prompt=LocaleString(en="You are an orchestrator agent"),
     )
 
 
@@ -48,7 +47,6 @@ def worker_config():
         agent_class=WorkerAgent.__name__,
         name=LocaleString(en="Worker Agent"),
         description=LocaleString(en="This is a worker agent"),
-        system_prompt=LocaleString(en="You are a worker agent"),
     )
 
 

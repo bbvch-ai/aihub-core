@@ -1,4 +1,3 @@
-import logging
 from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig

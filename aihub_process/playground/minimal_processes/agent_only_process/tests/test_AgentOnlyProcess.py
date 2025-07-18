@@ -24,7 +24,6 @@ def agent_a_runner_fixture():
             agent_class=AgentA.__name__,
             name=LocaleString(en="Agent A"),
             description=LocaleString(en="Test Agent A for AgentOnlyProcess"),
-            system_prompt=LocaleString(en="You are Agent A"),
         ),
     )
 
@@ -38,7 +37,6 @@ def agent_b_runner_fixture():
             agent_class=AgentB.__name__,
             name=LocaleString(en="Agent B"),
             description=LocaleString(en="Test Agent B for AgentOnlyProcess"),
-            system_prompt=LocaleString(en="You are Agent B"),
         ),
     )
 

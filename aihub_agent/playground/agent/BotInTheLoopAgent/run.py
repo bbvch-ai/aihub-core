@@ -18,7 +18,6 @@ async def main():
             agent_class=BotInTheLoopAgent.__name__,
             name=LocaleString(en="Bot in the Loop Agent"),
             description=LocaleString(en="This is an agent with the Bot in the Loop"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
 

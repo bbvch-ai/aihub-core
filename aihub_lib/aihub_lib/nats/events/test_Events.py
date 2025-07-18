@@ -56,7 +56,6 @@ def agent_config() -> AgentConfig:
         agent_id="test_agent",
         name=LocaleString(en="Test Agent"),
         description=LocaleString(en="This is a test agent."),
-        system_prompt=LocaleString(en="What is your name?"),
     )
 
 

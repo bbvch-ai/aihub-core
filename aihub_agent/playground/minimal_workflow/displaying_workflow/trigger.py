@@ -21,7 +21,6 @@ async def main():
             agent_class=DisplayingAgent.__name__,
             name=LocaleString(en="Displaying Agent"),
             description=LocaleString(en="This is a very simple agent that displays stuff to the user"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
     async with runner.test_run() as topic:

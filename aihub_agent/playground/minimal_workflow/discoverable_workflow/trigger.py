@@ -25,7 +25,6 @@ async def main():
             agent_class=DiscoverableAgent.__name__,
             name=LocaleString(en="Discoverable Agent"),
             description=LocaleString(en="This is a very simple discoverable agent"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
 

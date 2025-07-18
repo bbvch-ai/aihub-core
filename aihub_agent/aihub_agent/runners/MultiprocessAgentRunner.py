@@ -81,6 +81,7 @@ class MultiprocessAgentRunner:
         shutdown_task: asyncio.Task | None = None
 
         def signal_handler(sig, frame):
+            nonlocal shutdown_task
             # Create an asyncio task to stop the runner when SIGTERM is received
             if asyncio.get_event_loop().is_running():
                 shutdown_task = asyncio.create_task(shutdown_runner())
@@ -125,12 +126,12 @@ class MultiprocessAgentRunner:
                 logger.exception(f"Process {process_index}: Error while running: {e}")
             finally:
                 # Ensure proper cleanup
-                if runner and hasattr(runner, "stop") and not stop_loop.is_set():
-                    logger.info(f"Process {process_index}: Stopping runner in finally block")
-                    await runner.stop()
                 if shutdown_task is not None:
                     logger.info(f"Process {process_index}: Waiting for shutdown task to complete")
                     await shutdown_task
+                if runner and hasattr(runner, "stop") and not stop_loop.is_set():
+                    logger.info(f"Process {process_index}: Stopping runner in finally block")
+                    await runner.stop()
 
         # Run the async function
         try:

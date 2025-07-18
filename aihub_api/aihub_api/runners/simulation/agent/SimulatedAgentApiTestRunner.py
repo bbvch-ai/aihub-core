@@ -112,7 +112,6 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             agent_id=self.agent_id,
             name=LocaleString(de="Test Agent"),
             description=LocaleString(de="Test Agent Description"),
-            system_prompt=LocaleString(de="Test Agent System Prompt"),
         )
 
     async def simulate_agent(self, event: ControlEvent, topic: AgentTopic):

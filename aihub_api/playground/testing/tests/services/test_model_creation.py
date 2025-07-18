@@ -580,7 +580,6 @@ class TestSchemaValidation:
             agent_class="TestAgent",
             name=LocaleString(en="Test Agent"),
             description=LocaleString(en="Test agent description"),
-            system_prompt=LocaleString(en="Test system prompt"),
         )
         discovery_event = AgentInstanceDiscoveryResponseEvent(
             agent_class="TestAgent",

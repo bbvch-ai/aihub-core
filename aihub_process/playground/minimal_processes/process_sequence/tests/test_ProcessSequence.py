@@ -24,7 +24,6 @@ def agent_a_runner_fixture():
             agent_class=AgentA.__name__,
             name=LocaleString(en="Agent A for Sequence"),
             description=LocaleString(en="Test Agent A"),
-            system_prompt=LocaleString(en="You are Agent A"),
         ),
     )
 

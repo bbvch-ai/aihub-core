@@ -22,7 +22,6 @@ async def main():
             agent_class=SemanticEventAgent.__name__,
             name=LocaleString(en="Semantic Event Agent"),
             description=LocaleString(en="This is an agent with semantic events"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
 

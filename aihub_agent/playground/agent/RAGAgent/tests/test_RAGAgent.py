@@ -80,9 +80,6 @@ def build_rag_agent_config(
         agent_class=RAGAgent.__name__,
         name=LocaleString(en="RAG Agent"),
         description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
-        system_prompt=LocaleString(
-            en="You're an agent answering user requests. Only use the context information provided."
-        ),
         llm=llm_config,
         retrieve_step_config=RetrieveStepConfig(
             embed_model=embedding_config,

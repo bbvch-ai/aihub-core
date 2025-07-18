@@ -19,7 +19,6 @@ async def main():
             agent_class=PreconditionAgent.__name__,
             name=LocaleString(en="Agent with preconditions"),
             description=LocaleString(en="This is an agent that has preconditions"),
-            system_prompt=LocaleString(en="You are an agent"),
             number_of_events=10,
         ),
     )

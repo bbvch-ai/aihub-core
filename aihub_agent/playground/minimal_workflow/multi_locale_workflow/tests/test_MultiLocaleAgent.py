@@ -24,7 +24,6 @@ def _(locale_path: str):
             agent_class=MultiLocaleAgent.__name__,
             name=LocaleString(en="Simple Agent"),
             description=LocaleString(en="This is a very simple agent"),
-            system_prompt=LocaleString(en="You are an agent"),
             locale_path=locale_path,
         ),
         locale_paths=[os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../translations"))],

@@ -25,7 +25,6 @@ async def main():
             agent_class=OrchestratorAgent.__name__,
             name=LocaleString(en="Orchestrator Agent"),
             description=LocaleString(en="This is an orchestrator agent"),
-            system_prompt=LocaleString(en="You are an orchestrator agent"),
         ),
     )
 
@@ -36,7 +35,6 @@ async def main():
             agent_class=WorkerAgent.__name__,
             name=LocaleString(en="Worker Agent"),
             description=LocaleString(en="This is a worker agent"),
-            system_prompt=LocaleString(en="You are a worker agent"),
         ),
     )
 

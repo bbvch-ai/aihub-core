@@ -22,7 +22,6 @@ def _():
             agent_class=SimpleAgent.__name__,
             name=LocaleString(en="Simple Agent"),
             description=LocaleString(en="This is a very simple agent"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
 

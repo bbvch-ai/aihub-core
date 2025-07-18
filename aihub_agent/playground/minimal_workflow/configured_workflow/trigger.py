@@ -23,7 +23,6 @@ async def main():
             agent_class=ConfiguredAgent.__name__,
             name=LocaleString(en="Configured Agent"),
             description=LocaleString(en="This is a configured agent"),
-            system_prompt=LocaleString(en="You are an agent"),
             some_agent_value="Value on agent config",
             start_step_config=StartStepConfig(some_step_value="Value on step config"),
         ),

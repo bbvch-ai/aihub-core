@@ -126,7 +126,6 @@ def _(agent_config_data, azure_llm_config):
         agent_class=FewShotAgent.__name__,
         name=LocaleString(en="FewShotAgent"),
         description=LocaleString(en=agent_config_data["description"]),
-        system_prompt=LocaleString(en="You're an agent..."),
         llm=azure_llm_config,
         number_of_input_tokens=100000,
         condense_question_prompt=LocaleString(
@@ -164,7 +163,6 @@ def _(agent_config_data, self_hosted_llm_config):
         agent_class=FewShotAgent.__name__,
         name=LocaleString(en="FewShotAgent"),
         description=LocaleString(en=agent_config_data["description"]),
-        system_prompt=LocaleString(en="You're an agent..."),
         llm=self_hosted_llm_config,
         number_of_input_tokens=100000,
         condense_question_prompt=LocaleString(

@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Annotated
 from pydantic import BaseModel, ConfigDict, Field
 
 from aihub_lib.config.BaseConfig import BaseConfig
-from aihub_lib.i18n.LocaleString import LocaleString
 
 if TYPE_CHECKING:
     from aihub_lib.persistence.agents import AgentConfigEntity
@@ -75,14 +74,6 @@ class AgentConfig(BaseConfig):
             "If you need a voice, please define it yourself in a subclass of AgentConfig.",
         ),
     ] = "de-DE-ChristophNeural"
-    system_prompt: Annotated[
-        LocaleString,
-        Field(
-            description="The system prompt of the agent.",
-            deprecated="This field is deprecated. It will be removed in a future release."
-            "If you need a system prompt, please define it yourself in a subclass of AgentConfig.",
-        ),
-    ]
 
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
 
@@ -96,7 +87,6 @@ class AgentConfig(BaseConfig):
             "icon": entity.icon,
             "color": entity.color or "#10A37F",  # Default color if not set
             "voice": entity.voice or "de-DE-ChristophNeural",  # Default voice if not set
-            "system_prompt": entity.system_prompt.to_locale_string(),
             **entity.config_data,
         }
         config = cls(**data)

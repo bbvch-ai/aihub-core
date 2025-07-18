@@ -27,7 +27,6 @@ def _(loop_max: int):
             agent_class=BoundedLoopAgent.__name__,
             name=LocaleString(en="Bounded Iterative Agent"),
             description=LocaleString(en="This is an agent that loops"),
-            system_prompt=LocaleString(en="You are an agent"),
             loop_max=2,
         ),
     )

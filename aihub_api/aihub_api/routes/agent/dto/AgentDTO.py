@@ -8,6 +8,9 @@ from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from pydantic import Field
 
+from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
+from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
+
 logger = logging.getLogger(__name__)
 
 

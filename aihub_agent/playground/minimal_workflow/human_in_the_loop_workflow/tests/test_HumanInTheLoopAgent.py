@@ -29,7 +29,6 @@ def _():
             agent_class=HumanInTheLoopAgent.__name__,
             name=LocaleString(en="Human In The Loop Agent"),
             description=LocaleString(en="This is a very human in the loop agent"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
 

@@ -23,7 +23,6 @@ def _():
             agent_class=FanOutAgent.__name__,
             name=LocaleString(en="Fan Out Agent"),
             description=LocaleString(en="This agent demonstrates fan-out processing"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
 

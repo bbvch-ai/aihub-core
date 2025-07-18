@@ -25,7 +25,6 @@ def _():
             agent_class=CustomStartStopEventAgent.__name__,
             name=LocaleString(en="Custom Start Stop Agent"),
             description=LocaleString(en="This is a very custom agent"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
 

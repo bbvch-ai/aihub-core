@@ -22,7 +22,6 @@ async def main():
             agent_class=ExpertGroundedAgent.__name__,
             name=LocaleString(en="Grounded Agent"),
             description=LocaleString(en="This is an agent that can be used to develop the frontend"),
-            system_prompt=LocaleString(en="You are an agent"),
             expert_asking_agent_class="ExpertAskingAgent",
             expert_asking_agent_id="expert_agent",
             llm=AzureOpenAILLMConfig(

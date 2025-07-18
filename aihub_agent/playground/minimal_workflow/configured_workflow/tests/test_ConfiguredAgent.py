@@ -26,7 +26,6 @@ def _(start_step_value: str, agent_value: str):
             agent_class=ConfiguredAgent.__name__,
             name=LocaleString(en="Configured Agent"),
             description=LocaleString(en="This is a very configured agent"),
-            system_prompt=LocaleString(en="You are an agent"),
             some_agent_value=agent_value,
             start_step_config=StartStepConfig(some_step_value=start_step_value),
         ),

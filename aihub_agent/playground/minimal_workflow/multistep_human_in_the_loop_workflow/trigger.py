@@ -29,7 +29,6 @@ async def main():
             agent_class=MultistepHumanInTheLoopAgent.__name__,
             name=LocaleString(en="Multistep Human in the Loop Agent"),
             description=LocaleString(en="This is an agent with the Human in the Loop over multiple steps"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
 

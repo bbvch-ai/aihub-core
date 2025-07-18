@@ -30,7 +30,6 @@ async def agent_runner():
             agent_class=MultistepHumanInTheLoopAgent.__name__,
             name=LocaleString(en="Multistep Human In The Loop Agent"),
             description=LocaleString(en="This is a multistep human in the loop agent"),
-            system_prompt=LocaleString(en="You are a multistep agent"),
         ),
     )
     await agent_runner.test_run_start()

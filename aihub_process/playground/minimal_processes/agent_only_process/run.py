@@ -19,9 +19,9 @@ async def main():
         agent_type=AgentA,
         default_agent_config=AgentConfig(
             agent_id="agent_a",
+            agent_class=AgentA.__name__,
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
-            system_prompt=LocaleString(en="..."),
         ),
     )
 
@@ -29,9 +29,9 @@ async def main():
         agent_type=AgentB,
         default_agent_config=AgentConfig(
             agent_id="agent_b",
+            agent_class=AgentB.__name__,
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
-            system_prompt=LocaleString(en="..."),
         ),
     )
 
