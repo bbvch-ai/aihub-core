@@ -84,7 +84,9 @@ class JSSubscriber(AbstractSubscriber):
             event._jetstream_sequence = msg.metadata.sequence.stream
             logger.debug(f"Deserialized event: {event}")
             await msg.ack()
-            asyncio.create_task(self._process(event, topic, msg))
+            task = asyncio.create_task(self._process(event, topic, msg))
+            self._background_tasks.add(task)
+            task.add_done_callback(self._background_tasks.discard)
         except MsgAlreadyAckdError:
             pass
         except Exception as e:

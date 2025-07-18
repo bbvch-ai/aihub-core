@@ -74,6 +74,7 @@ class JetStreamEventStore:
         # Synchronization for events being processed
         self.pending_events: set[str] = set()
         self.event_sync_conditions: dict[str, asyncio.Condition] = {}
+        self._background_tasks: set[asyncio.Task] = set()
 
         # Subscription
         self.subscription = None
@@ -213,7 +214,9 @@ class JetStreamEventStore:
 
             if event_key in self.event_sync_conditions:
                 condition = self.event_sync_conditions[event_key]
-                asyncio.create_task(self._notify_condition(condition))
+                task = asyncio.create_task(self._notify_condition(condition))
+                self._background_tasks.add(task)
+                task.add_done_callback(self._background_tasks.discard)
 
     async def _notify_condition(self, condition):
         """Helper to notify a condition and clean it up."""

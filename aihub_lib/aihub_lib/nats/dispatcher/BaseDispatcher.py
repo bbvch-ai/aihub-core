@@ -87,6 +87,8 @@ class BaseDispatcher(abc.ABC):
         self._initialized = False
         self._init_lock = asyncio.Lock()
 
+        self._background_tasks: set[asyncio.Task] = set()
+
     @abc.abstractmethod
     async def handle_event(
         self,

@@ -62,6 +62,7 @@ class ProcessRunner:
 
         self.running = False
         self._stop_signal = asyncio.Event()
+        self._loop_task: asyncio.Task | None = None
 
         self.process_class = self.process_type.__name__
         self.topic_manager = ProcessInstanceTopicManager(self.process_class, self.process_config.process_id)
@@ -214,7 +215,7 @@ class ProcessRunner:
         await self.work_event_subscriber.start()
 
         logger.debug(f"{self.process_class} is now running and subscribed to incoming messages.")
-        asyncio.create_task(self._run_loop())
+        self._loop_task = asyncio.create_task(self._run_loop())
 
     async def stop(self):
         """
@@ -227,6 +228,15 @@ class ProcessRunner:
 
         logger.debug(f"Shutting down {self.process_class}...")
         self._stop_signal.set()
+
+        if self._loop_task is not None:
+            try:
+                await self._loop_task
+            except asyncio.CancelledError:
+                pass
+        else:
+            logger.exception(f"Loop task was not running for {self.process_class}.")
+
         self.running = False
 
         await self.work_event_subscriber.stop()

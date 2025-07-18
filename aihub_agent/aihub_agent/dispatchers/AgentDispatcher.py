@@ -156,11 +156,13 @@ class AgentDispatcher(BaseDispatcher):
                 event, step_method, events, run_context, thread_context, topic, run_agent_config
             ):
                 logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.event_name}'")
-                asyncio.create_task(
+                task = asyncio.create_task(
                     self.execute_step(
                         event, step_method, events, run_context, thread_context, topic, run_agent_config, tracer
                     )
                 )
+                self._background_tasks.add(task)
+                task.add_done_callback(self._background_tasks.discard)
 
     @override
     async def is_step_ready(
