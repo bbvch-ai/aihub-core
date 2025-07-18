@@ -96,10 +96,6 @@ class AgentDispatcher(BaseDispatcher):
         if run_agent_config is None:
             # Get dynamic configuration data from run context
             agent_config_dict: dict[str, Any] = await run_context.get("_agent_config")
-            if agent_config_dict is None:
-                raise ValueError(
-                    "AgentConfig must be set at this point. Something went wrong in the StartEvent handling."
-                )
 
             run_agent_config = self.agent_config_type.model_validate(agent_config_dict)
         topic = AgentTopic.from_partial_topic(
