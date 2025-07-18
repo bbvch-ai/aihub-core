@@ -3,17 +3,21 @@ title: "AI-Hub API"
 index: 2
 ---
 
-# AI-Hub API Developer's Guide
+# 🚀 AI-Hub API Developer's Guide
 
-## 1. Foundational Knowledge of API Development
+## 1. 🎯 Foundational Knowledge of API Development
 
 This section covers the foundational architecture, patterns, and terminology you need to know before building API endpoints.
 
-### Introduction to `aihub_api`
+::: info
+This documentation assumes you have completed the general AI-Hub setup as described in the main README.md. Make sure you have the required infrastructure running before proceeding.
+:::
+
+### 📚 Introduction to `aihub_api`
 
 You are contributing to the **aihub_api** scope, which contains the main user-facing REST API (FastAPI) and WebSocket gateway within the AI-Hub platform. This scope implements HTTP endpoints and real-time communication that connect frontend applications to the underlying AI-Hub services.
 
-### Project Structure
+### 📁 Project Structure
 
 The `aihub_api` scope is organized as follows:
 
@@ -38,7 +42,7 @@ aihub_api/
     └── development/           # Development utilities
 ```
 
-### Glossary of API-Specific Terms
+### 📖 Glossary of API-Specific Terms
 
 This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_api` scope, building upon the core AI-Hub terminology.
 
@@ -63,9 +67,11 @@ This glossary defines terms, concepts, and technologies that have specific meani
 | **Cache Management** | In-memory caching system (TTLCache) for reducing load on external services and improving API response times. |
 | **Playground** | Directory containing test servers, example configurations, and development tools for API testing and experimentation. |
 
-### The Controller-Service-DTO Pattern
+### 🏗️ The Controller-Service-DTO Pattern
 
+::: info Architecture Pattern
 The API follows a layered architecture with clear separation of concerns:
+:::
 
 ```python
 # Controller - HTTP endpoint definition using factory pattern
@@ -96,15 +102,18 @@ class AgentDTO(BaseModel):
     agent_config: Annotated[AgentConfigDTO, Field(description="Configuration details of the agent")]
 ```
 
-**Key Principles:**
+::: tip Key Principles
 - **Controllers** handle HTTP concerns (routing, authentication, validation)
 - **Services** contain business logic and external system integration
 - **DTOs** define data structures with validation and documentation
 - **Clear boundaries** between layers for maintainability and testing
+:::
 
-### FastAPI Integration
+### ⚡ FastAPI Integration
 
+::: info FastAPI Benefits
 The API is built on FastAPI, providing:
+:::
 
 **Automatic Documentation:**
 - OpenAPI/Swagger UI at `/docs`
@@ -123,29 +132,33 @@ The API is built on FastAPI, providing:
 
 ---
 
-## 2. The Step-by-Step Development Workflow
+## 2. 🚀 The Step-by-Step Development Workflow
 
 This section provides a practical, step-by-step guide to building, testing, and debugging API endpoints.
 
-### Prerequisites: Infrastructure and Environment
+### ⚙️ Prerequisites: Infrastructure and Environment
 
 Before you begin, ensure you have completed the infrastructure setup from the root project documentation.
+
+::: warning
+Always activate the Poetry environment before working. All subsequent commands must be run from within this activated shell.
+:::
 
 ```bash
 # Start required services from the project root
 docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml -f docker-compose-webui.yml up -d
 ```
 
-**Critical: Always activate the Poetry environment before working.** All subsequent commands must be run from within this activated shell.
-
 ```bash
 cd aihub_api
 poetry shell
 ```
 
-### Step 1: Create Controller, Service, and DTOs
+### 🛠️ Step 1: Create Controller, Service, and DTOs
 
-Follow this three-part process to define a new API endpoint domain.
+::: info
+Follow this three-part process to define a new API endpoint domain. Each part builds on the previous one to create a complete API implementation.
+:::
 
 1. **Create the DTO Models**: Define the data structures for requests and responses.
    ```python
@@ -227,9 +240,11 @@ Follow this three-part process to define a new API endpoint domain.
            return self
    ```
 
-### Step 2: Write and Run Tests
+### 🧪 Step 2: Write and Run Tests
 
+::: tip API Testing
 API testing uses pytest with FastAPI's test client and the `ApiTestRunner` or `SimulatedAgentApiTestRunner`.
+:::
 
 1. **Create Test Files**: Write comprehensive tests for your endpoints.
    ```python
@@ -308,9 +323,11 @@ API testing uses pytest with FastAPI's test client and the `ApiTestRunner` or `S
    make test-cov
    ```
 
-### Step 3: Test with Playground
+### 🎮 Step 3: Test with Playground
 
+::: info
 The playground provides a full API server with frontend for interactive testing.
+:::
 
 1. **Update Playground Configuration**: Add your controller to the test server.
    ```python
@@ -362,11 +379,15 @@ The playground provides a full API server with frontend for interactive testing.
    curl http://localhost:8000/api/v1/agents/my_agent_class/my_agent_id
    ```
 
-   **Important**: For curl/wget testing to work, you **MUST** set the auth in `main.py` to `DangerousDevelopmentOnlyAuthHandler` and `DangerousDevelopmentOnlyIdentityProvider` to bypass oauth2 authentication (this is already configured in the playground).
+::: warning Authentication for Testing
+For curl/wget testing to work, you **MUST** set the auth in `main.py` to `DangerousDevelopmentOnlyAuthHandler` and `DangerousDevelopmentOnlyIdentityProvider` to bypass oauth2 authentication (this is already configured in the playground).
+:::
 
-### Step 4: Debug and Observe Your API
+### 🔍 Step 4: Debug and Observe Your API
 
-**Enable Logging**: Add logging to your API development.
+::: tip Enable Logging
+Add logging to your API development.
+:::
 
 ```python
 # Add to your main.py or test files
@@ -374,20 +395,24 @@ from aihub_lib.testing.logging.logger import enable_logging
 enable_logging()
 ```
 
-**Key Debugging Tools:**
+::: tip Key Debugging Tools
 - **FastAPI Docs**: Interactive API testing at `/docs`
 - **Network Tab**: Browser developer tools for HTTP requests
 - **Logs**: Structured logging for request/response debugging
 - **Phoenix Traces**: Agent interaction visualization
+:::
 
-**Common Debugging Patterns:**
+::: warning Common Debugging Patterns
 - Check NATS connection status and message flow
 - Verify authentication and permission issues
 - Test with different user roles and permissions
+:::
 
-### Step 5: Ensure Code Quality
+### ✅ Step 5: Ensure Code Quality
 
+::: warning
 Before committing your changes, use the provided Makefile commands.
+:::
 
 ```bash
 # Run this before creating a pull request
@@ -398,19 +423,23 @@ make format      # Ruff formatting
 make lint        # Ruff linting
 ```
 
-All API code must use strict Python type annotations and follow the Controller-Service-DTO pattern.
+::: danger
+All API code must use strict Python type annotations and follow the Controller-Service-DTO pattern. This is enforced by CI/CD.
+:::
 
 ---
 
-## 3. API Design Patterns and Best Practices
+## 3. 🎨 API Design Patterns and Best Practices
 
 This section covers common patterns and best practices for building robust API endpoints.
 
-### Authentication and Authorization Patterns
+### 🔐 Authentication and Authorization Patterns
 
+::: info Permission System
 The AI-Hub uses a sophisticated hierarchical permission system with wildcards and implicit checks. All permissions follow the format: `aihub.[user|admin].<resource_type>.<resource_subtype>.<resource_id>.[...]`
+:::
 
-#### Permission-Based Access Control
+#### 🔐 Permission-Based Access Control
 ```python
 class SecureController(Controller):
     def protected_endpoint(self, route: str = "/protected") -> "SecureController":
@@ -443,7 +472,7 @@ class SecureController(Controller):
         return self
 ```
 
-#### Common Permission Patterns
+#### 📝 Common Permission Patterns
 ```python
 # General user access (most common)
 "aihub.user.?>"  # User has access to any user-level resource
@@ -461,9 +490,11 @@ class SecureController(Controller):
 # User access rule: "aihub.user.agent.>" matches any agent resource at any level
 ```
 
-#### Dynamic Permission Checking with AccessChecker
+#### 🔄 Dynamic Permission Checking with AccessChecker
 
+::: tip Dynamic Permission Checks
 While controller endpoints handle most permission checks via the `@Security` decorator, sometimes you need to perform dynamic permission checks within service methods. The `AccessChecker` class provides programmatic access to the permission system, allowing you to check permissions based on runtime values or implement more complex authorization logic.
+:::
 
 ```python
 from aihub_lib.auth.access.AccessChecker import AccessChecker
@@ -489,11 +520,13 @@ class ResourceService:
             return await retrieve_user_filtered_resource(agent_class, agent_id, user.id)
 ```
 
-### Pagination Patterns
+### 📊 Pagination Patterns
 
+::: info Pagination System
 The API uses a consistent pagination approach across all endpoints that return lists of resources. The pagination system uses `PageNumber` and `PageSize` types to ensure type safety and validation, with reasonable defaults and limits to prevent abuse.
+:::
 
-#### Standard Pagination
+#### 📊 Standard Pagination
 ```python
 class ListController(Controller):
     def get_resources(self, route: str = "/") -> "ListController":
@@ -522,11 +555,13 @@ class ListController(Controller):
         return self
 ```
 
-### Error Handling Patterns
+### 🚨 Error Handling Patterns
 
+::: warning Error Handling Philosophy
 The AI-Hub API follows a "fail fast" philosophy - we don't wrap everything in try-except blocks but rather let errors propagate naturally. Controllers and Services always raise `HTTPException` for client errors and let unexpected exceptions bubble up to FastAPI's error handling middleware.
+:::
 
-#### Structured Error Responses
+#### 📝 Structured Error Responses
 ```python
 from fastapi import HTTPException
 
@@ -552,11 +587,13 @@ class ErrorHandlingService:
         # Let unexpected errors bubble up - FastAPI will handle them
 ```
 
-### Caching Patterns
+### 💾 Caching Patterns
 
+::: tip Caching Strategy
 The API uses in-memory caching to reduce load on external services like NATS and databases. The `TTLCache` from `cachetools` is the standard choice, providing automatic expiration and memory management. Caching is typically implemented at the service layer to benefit all endpoints.
+:::
 
-#### TTL-Based Caching
+#### ⏰ TTL-Based Caching
 ```python
 from cachetools import TTLCache
 
@@ -583,11 +620,13 @@ class CachedService:
         RESOURCE_CACHE.clear()
 ```
 
-### WebSocket Integration Patterns
+### 🔌 WebSocket Integration Patterns
 
+::: info WebSocket Usage
 WebSockets provide real-time communication between the frontend and backend, primarily used for streaming events and live updates. The WebSocket manager handles connection lifecycle, message broadcasting, and maintains client subscriptions to specific threads or topics.
+:::
 
-#### Real-time Event Streaming
+#### 🔴 Real-time Event Streaming
 ```python
 class EventController(Controller):
     def websocket_endpoint(self, route: str = "/ws") -> "EventController":
@@ -610,11 +649,13 @@ class EventController(Controller):
         return self
 ```
 
-### NATS Integration Patterns
+### 📶 NATS Integration Patterns
 
+::: info NATS Integration
 NATS serves as the message bus connecting the API to agents and other services. The API uses NATS for agent discovery, sending events to agents, and subscribing to responses. Topic managers handle the complex routing and naming conventions for different types of agent communication.
+:::
 
-#### Agent Communication
+#### 🤖 Agent Communication
 ```python
 class AgentIntegrationService:
     @staticmethod
@@ -647,11 +688,13 @@ class AgentIntegrationService:
         return await AgentService.discover_agents(nc, locale_handler)
 ```
 
-### Testing Patterns
+### 🧪 Testing Patterns
 
-#### Controller Testing
+#### 🎮 Controller Testing
 
+::: info Controller Testing Focus
 Controller tests focus on HTTP-level concerns: request/response handling, authentication, authorization, and proper error status codes. These tests use the full FastAPI test client to simulate real HTTP requests and verify the complete request flow from endpoint to response.
+:::
 
 ```python
 @pytest.mark.asyncio
@@ -677,9 +720,11 @@ async def test_controller_endpoint(client: AsyncClient):
     assert response.status_code == 403  # User lacks admin permission
 ```
 
-#### Service Testing
+#### 💼 Service Testing
 
+::: info Service Testing Focus
 Service tests focus on business logic, data processing, and integration with external systems like NATS and databases. These tests use mocks to isolate the service logic from external dependencies, allowing for fast, reliable unit testing of core functionality.
+:::
 
 ```python
 @pytest.mark.asyncio

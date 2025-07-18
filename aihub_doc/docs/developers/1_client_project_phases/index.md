@@ -3,9 +3,9 @@ title: Client-Project Phases
 index: 1
 ---
 
-# Project Phases and Client Engagement
+# :handshake: Project Phases and Client Engagement
 
-## Engagement Steps
+## :ladder: Engagement Steps
 
 > tldr; The engagement steps—workshops, PoC, and MVP—form a deliberate path from initial ideation to tangible results. Each stage builds upon the previous, ensuring that by the time an MVP is delivered, the solution is:
 > 

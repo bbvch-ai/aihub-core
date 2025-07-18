@@ -628,20 +628,24 @@ pattern as well.
 
 ### Step 4: Create Components
 
-Now that you have the page, start extracting fitting sections as re-usable components. 
+::: info Component Creation
+Now that you have the page, start extracting fitting sections as re-usable components.
+:::
 
+::: tip Do's
 - **Do** check our components to see whather we have a component that already fulfils your needs
 - **Do** re-use components or make them more flexible with additional props if you need to
 - **Do** copy-paste components if you need something that is similar by design, but is a completely different domain / service
 - **Do** check the primevue page regularly and find components that fit your needs
 - **Do** find inspiration in their component library or their [PrimeBlocks](https://primeblocks.org/) website
+:::
 
----
-
+::: warning Don'ts
 - **Don't** build low-level components like buttons. Instead, use the ones offered by PrimeVue. 
 - **Don't** write inline css, use tailwind
 - **Don't** like custom css classes, use tailwind
 - **Don't** overabstract components - we don't want to build a super complex data table ourselves. If we have one table for service X and a duplicate for service Y, that's fine.
+:::
 
 ### Step 5: Add Internationalization
 

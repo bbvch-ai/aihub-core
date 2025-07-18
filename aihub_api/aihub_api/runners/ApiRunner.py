@@ -2,17 +2,16 @@ import logging
 from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 
-from fastmcp import FastMCP
-from fastmcp.server.openapi import RouteMap, MCPType
-from starlette.applications import Starlette
-from starlette.routing import Mount
-from typing_extensions import override
-
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.routes.Controller import Controller
 from aihub_lib.runners.Runner import Runner
 from fastapi import FastAPI
+from fastmcp import FastMCP
+from fastmcp.server.openapi import MCPType, RouteMap
+from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
+from starlette.routing import Mount
+from typing_extensions import override
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.i18n.middleware.I18nMiddleware import I18nMiddleware
@@ -80,7 +79,7 @@ class ApiRunner(Runner):
                 RouteMap(methods=["DELETE"], pattern=r".*", mcp_type=MCPType.EXCLUDE),
             ],
         )
-        mcp_app = mcp.http_app(path='/')
+        mcp_app = mcp.http_app(path="/")
 
         @asynccontextmanager
         async def combined_lifespan(app):
@@ -94,10 +93,7 @@ class ApiRunner(Runner):
                     yield
 
         app = Starlette(
-            routes=[
-                Mount(self.api_path, app=self._api_app),
-                Mount("/mcp", app=mcp_app)
-            ],
+            routes=[Mount(self.api_path, app=self._api_app), Mount("/mcp", app=mcp_app)],
             lifespan=combined_lifespan,
         )
 
@@ -113,7 +109,6 @@ class ApiRunner(Runner):
         mcp_app.state = app.state
 
         return app
-
 
     def _get_api_app(self) -> FastAPI:
         """

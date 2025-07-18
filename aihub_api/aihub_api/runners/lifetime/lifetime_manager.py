@@ -130,7 +130,6 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         else:
             logger.warning("Unable to start AgentEndpointsDiscoveryService due to missing state.agent_controller")
 
-
         # Create and start the process discovery service
         if hasattr(api_app.state, "process_controller"):
             process_discovery_service = ProcessEndpointsDiscoveryService(
@@ -144,7 +143,6 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             app.state.process_discovery_service = process_discovery_service
         else:
             logger.warning("Unable to start ProcessEndpointsDiscoveryService due to missing state.process_controller")
-
 
         # Yield control back to FastAPI to start serving requests
         yield

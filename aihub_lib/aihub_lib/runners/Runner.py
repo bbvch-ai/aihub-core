@@ -1,16 +1,12 @@
 import abc
-import os
 from abc import abstractmethod
 from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from starlette.applications import Starlette
-from starlette.requests import Request
-from starlette.responses import FileResponse
 from starlette.routing import Mount
-from starlette.staticfiles import StaticFiles
 
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.routes.Controller import Controller
@@ -83,10 +79,10 @@ class Runner(abc.ABC):
         Returns the main FastAPI application instance, which can be run using an ASGI server.
         """
         return Starlette(
-              routes=[
-                    Mount(self.api_path, app=self._api_app),
-             ],
-             lifespan=self.lifetime_manager,
+            routes=[
+                Mount(self.api_path, app=self._api_app),
+            ],
+            lifespan=self.lifetime_manager,
         )
 
     def _get_api_app(self) -> FastAPI:

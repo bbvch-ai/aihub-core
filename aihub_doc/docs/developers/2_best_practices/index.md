@@ -3,9 +3,9 @@ title: Best Practices
 index: 2
 ---
 
-# Best Practices and Guidelines
+# :star: Best Practices and Guidelines
 
-## Workflow Design
+## :gear: Workflow Design
 
 > tldr; Effective workflow design balances the need for control and transparency with the desire for autonomy and flexibility. By starting with rigid, well-defined steps and gradually relaxing constraints as trust and understanding grow, teams can evolve their agents into powerful, intelligent assistants that operate reliably, explainably, and efficiently. This approach ensures that the AI-Hub continues delivering value as complexity scales and requirements shift.
 

@@ -3,19 +3,25 @@ title: "AI-Hub Library"
 index: 0
 ---
 
-# AI-Hub Library Developer's Guide
+# 📚 AI-Hub Library Developer's Guide
 
-## 1. Foundational Knowledge of Library Development
+## 1. 🎯 Foundational Knowledge of Library Development
 
 This section covers the foundational architecture, patterns, and terminology you need to know before contributing to the shared library.
 
-### Introduction to `aihub_lib`
+::: info
+This documentation assumes you have completed the general AI-Hub setup as described in the main README.md. Make sure you have the required infrastructure running before proceeding.
+:::
 
+### 📚 Introduction to `aihub_lib`
+
+::: tip Core Principle
 You are contributing to the **aihub_lib** scope, which serves as the foundational shared library within the AI-Hub platform. This scope implements core infrastructure and utilities used across all other services. The guiding principle is simple: **if code is used by more than one other service, it belongs here**.
+:::
 
 The library provides essential building blocks including event-driven architecture, authentication/authorization systems, internationalization support, generative AI utilities, and comprehensive testing frameworks.
 
-### Project Structure
+### 📁 Project Structure
 
 The `aihub_lib` scope is organized as follows:
 
@@ -59,7 +65,7 @@ aihub_lib/
 └── tests/                      # Comprehensive test suite
 ```
 
-### Glossary of Library-Specific Terms
+### 📖 Glossary of Library-Specific Terms
 
 This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_lib` scope, building upon the core AI-Hub terminology.
 
@@ -85,70 +91,80 @@ This glossary defines terms, concepts, and technologies that have specific meani
 | **Vector Store** | Abstraction for vector database operations supporting multiple backends (Milvus, Azure AI Search) for RAG implementations. |
 | **Workflow Orchestration** | Event-driven workflow execution system enabling complex business processes through distributed state management. |
 
-### Core Architectural Principles
+### 🏗️ Core Architectural Principles
 
+::: info
 The library is built on these foundational principles:
+:::
 
-#### 1. Event-Driven Architecture
+#### 📶 1. Event-Driven Architecture
 All communication happens via events, enabling loose coupling and scalability. Events are strongly typed Pydantic models with automatic registration and serialization.
 
-#### 2. Configuration-Driven Development
+#### ⚙️ 2. Configuration-Driven Development
 Pydantic-based configuration management with environment variable integration, validation, and hierarchical inheritance.
 
-#### 3. Internationalization by Design
+#### 🌍 3. Internationalization by Design
 Built-in multi-language support with YAML-based translations, dynamic locale switching, and comprehensive fallback mechanisms.
 
 ---
 
-## 2. The Step-by-Step Development Workflow
+## 2. 🚀 The Step-by-Step Development Workflow
 
 This section provides a practical, step-by-step guide to contributing to the shared library.
 
-### Prerequisites: Infrastructure and Environment
+### ⚙️ Prerequisites: Infrastructure and Environment
 
 Before you begin, ensure you have completed the infrastructure setup from the root project documentation.
+
+::: warning
+Always activate the Poetry environment before working. All subsequent commands must be run from within this activated shell.
+:::
 
 ```bash
 # Start required services from the project root
 docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml -f docker-compose-webui.yml up -d
 ```
 
-**Critical: Always activate the Poetry environment before working.** All subsequent commands must be run from within this activated shell.
-
 ```bash
 cd aihub_lib
 poetry shell
 ```
 
-### Step 1: Understanding the Domain and Scope
+### 🔍 Step 1: Understanding the Domain and Scope
 
+::: info
 Before implementing any functionality, determine if it belongs in the library.
+:::
 
-#### When to Add to `aihub_lib`
+#### ✅ When to Add to `aihub_lib`
 - **Shared Utilities**: Code used by multiple services (agent, api, process, etc.)
 - **Core Infrastructure**: Authentication, messaging, configuration management
 - **Common Patterns**: Event definitions, base classes, shared abstractions
 - **Testing Utilities**: Fixtures, mocks, and helpers used across services
 
-#### When NOT to Add to `aihub_lib`
+#### ❌ When NOT to Add to `aihub_lib`
 - **Service-Specific Logic**: Business logic specific to one service
 - **Implementation Details**: Concrete implementations that don't need sharing
 - **Service Dependencies**: Code that depends on specific service requirements
 
-#### Integration Assessment
+#### 📊 Integration Assessment
 1. **Identify Dependencies**: What other services will use this code?
 2. **Review Existing Patterns**: Are there similar utilities already implemented?
 3. **Consider Breaking Changes**: How will changes affect existing consumers?
 
-### Step 2: Implement Core Components
+### 🛠️ Step 2: Implement Core Components
 
+::: info
 Follow these patterns for implementing different types of library components.
+:::
 
-#### Authentication and Authorization Components
+#### 🔐 Authentication and Authorization Components
 
+::: tip AuthHandlers and IdentityProviders
 **AuthHandlers** are responsible for extracting authentication credentials from HTTP requests and validating them to produce a `UserIdentity`. They serve as the bridge between different authentication mechanisms (OAuth2, token-based, etc.) and the AI-Hub's internal user representation.
 
 **IdentityProviders** are responsible for retrieving detailed user information from identity systems (like Microsoft Graph, LDAP, or custom user databases) given a user identifier. They separate the concerns of authentication (validating credentials) from user information retrieval.
+:::
 
 **When to Create New AuthHandlers:**
 - Supporting a new authentication protocol (e.g., SAML, custom JWT format)
@@ -222,9 +238,11 @@ Follow these patterns for implementing different types of library components.
            return await self.fetch_profile_image(user_oid)
    ```
 
-#### Event System Extensions
+#### 📶 Event System Extensions
 
+::: info Event System Architecture
 The AI-Hub event system is a sophisticated event-driven architecture that powers all communication between components. Understanding the event hierarchy and when to create new event types is crucial for extending the system effectively.
+:::
 
 **Event Directory Structure:**
 ```
@@ -251,7 +269,9 @@ aihub_lib/nats/events/
 └── work_request/                  # Work delegation events
 ```
 
-**Event Type Categories:**
+::: details Event Type Categories
+Click to expand detailed information about each event type category.
+:::
 
 **1. Control Events** (`ControlEvent`)
 Control events are system-level signals that influence workflow execution. **Only ControlEvent types can drive workflow steps and control system flow.**
@@ -321,7 +341,7 @@ Key characteristics:
 - Helper classes with `invoke()` methods for easy integration
 - Examples: `HumanInTheLoop`, `AgentInTheLoop`, `BotInTheLoop`
 
-**Event Architecture Principles:**
+::: tip Event Architecture Principles
 
 1. **Automatic Registration**: Events auto-register when imported, enabling dynamic deserialization
 2. **Type Safety**: Strong typing with Pydantic validation and comprehensive type annotations
@@ -331,11 +351,13 @@ Key characteristics:
 6. **Internationalization**: Display events support multi-language interfaces
 7. **Resilience**: Unknown event fallback preserves system functionality
 
-### Step 3: Write Comprehensive Tests
+### 🧪 Step 3: Write Comprehensive Tests
 
+::: info
 The library uses both BDD and unit testing approaches depending on the component complexity.
+:::
 
-#### BDD Testing for Complex Logic
+#### 📝 BDD Testing for Complex Logic
 
 1. **Create Feature Files**: Describe behavior in Gherkin syntax.
    ```gherkin
@@ -369,7 +391,7 @@ The library uses both BDD and unit testing approaches depending on the component
        assert expected in component.result
    ```
 
-#### Unit Testing for Individual Components
+#### 🧪 Unit Testing for Individual Components
 
 1. **Create Unit Tests**: For specific functionality.
    ```python
@@ -389,9 +411,9 @@ The library uses both BDD and unit testing approaches depending on the component
            utility.process_invalid_input("invalid")
    ```
 
-### Step 4: Debug and Validate
+### 🔍 Step 4: Debug and Validate
 
-#### Enable Comprehensive Logging
+#### 📝 Enable Comprehensive Logging
 
 ```python
 # Add to test files or debugging scripts
@@ -399,9 +421,11 @@ from aihub_lib.testing.logging.logger import enable_logging
 enable_logging()
 ```
 
-### Step 5: Ensure Code Quality
+### ✅ Step 5: Ensure Code Quality
 
+::: warning
 Before committing changes, use the provided Makefile commands.
+:::
 
 ```bash
 # Run this before creating a pull request
@@ -414,23 +438,26 @@ make test        # Run tests (excluding cloud dependencies)
 make test-cov    # Run tests with coverage reporting
 ```
 
-**Critical Requirements:**
+::: danger Critical Requirements
 - All library code must use strict Python type annotations
 - All public classes and methods must have comprehensive docstrings
 - Breaking changes must be documented and communicated
 - Tests must cover both success and failure scenarios
+:::
 
 ---
 
-## 3. Core Library Patterns and Best Practices
+## 3. 🎨 Core Library Patterns and Best Practices
 
 This section covers established patterns and best practices for building robust library components.
 
-### Configuration Management Patterns
+### ⚙️ Configuration Management Patterns
 
-#### Pydantic-Based Configuration
+#### 📝 Pydantic-Based Configuration
 
+::: tip Configuration Management
 The AI-Hub uses Pydantic's `BaseSettings` for configuration management rather than `python-dotenv`. This approach provides automatic type validation, environment variable parsing, and comprehensive configuration management without requiring explicit dotenv loading.
+:::
 
 Pydantic's `BaseSettings` automatically:
 - Loads values from environment variables
@@ -458,11 +485,13 @@ class ServiceConfig(BaseSettings):
 config = ServiceConfig()
 ```
 
-### Persistence Patterns
+### 💾 Persistence Patterns
 
-#### Entity Design
+#### 📊 Entity Design
 
+::: info Entity Pattern
 In the AI-Hub, entity classes serve a dual purpose: they define the database schema using MongoEngine's `Document` class, and they also function as repositories by implementing business logic and data access methods as `@classmethod` methods. This pattern combines the Active Record and Repository patterns, providing both data structure definition and data access logic in a single class.
+:::
 
 **Repository Pattern via Class Methods:**
 Entity classes use `@classmethod` methods to implement repository-like functionality for data access, creation, and business operations. This approach:
@@ -486,11 +515,13 @@ class ResourceEntity(Document):
         return cls.objects.get(name=name)
 ```
 
-### Internationalization Patterns
+### 🌍 Internationalization Patterns
 
-#### Multi-Language Support
+#### 🌍 Multi-Language Support
 
+::: warning Multi-Language Requirement
 The AI-Hub provides comprehensive internationalization (i18n) support with a **mandatory minimum of four languages**: English (en), German (de), French (fr), and Italian (it). German serves as the default locale, reflecting the primary development region. All user-facing content must support these four languages at minimum.
+:::
 
 **Key Characteristics:**
 - **Default Locale**: German (`de`) - used as fallback when requested locale is unavailable
@@ -499,7 +530,7 @@ The AI-Hub provides comprehensive internationalization (i18n) support with a **m
 - **Translation Files**: YAML-based, organized by domain (e.g., `common.de.yml`, `errors.en.yml`)
 - **Dynamic Loading**: Translations loaded from multiple paths with automatic discovery
 
-#### Translation File Management
+#### 📁 Translation File Management
 
 ```yaml
 # translations/lib/common.en.yml

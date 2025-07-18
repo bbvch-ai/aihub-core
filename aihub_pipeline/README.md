@@ -3,17 +3,21 @@ title: "AI-Hub Pipelines"
 index: 3
 ---
 
-# AI-Hub Pipeline Developer's Guide
+# 🚰 AI-Hub Pipeline Developer's Guide
 
-## 1. Foundational Knowledge of Pipeline Development
+## 1. 🎯 Foundational Knowledge of Pipeline Development
 
 This section covers the foundational architecture, patterns, and terminology you need to know before building data ingestion and processing pipelines.
 
-### Introduction to `aihub_pipeline`
+::: info
+This documentation assumes you have completed the general AI-Hub setup as described in the main README.md. Make sure you have the required infrastructure running before proceeding.
+:::
+
+### 📚 Introduction to `aihub_pipeline`
 
 You are contributing to the **aihub_pipeline** scope, which contains definitions for data ingestion and processing pipelines within the AI-Hub platform. This scope implements robust, scalable data processing workflows using Dagster, handling the complete lifecycle from document ingestion to vector embedding generation for RAG (Retrieval-Augmented Generation) systems.
 
-### Project Structure
+### 📁 Project Structure
 
 The `aihub_pipeline` scope is organized as follows:
 
@@ -52,7 +56,7 @@ aihub_pipeline/
     └── __init__.py             # Complete pipeline example
 ```
 
-### Glossary of Pipeline-Specific Terms
+### 📖 Glossary of Pipeline-Specific Terms
 
 This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_pipeline` scope, building upon the core AI-Hub terminology.
 
@@ -82,9 +86,11 @@ This glossary defines terms, concepts, and technologies that have specific meani
 | **Summary Node** | A processed document chunk that contains summarized information, created using recursive summarization techniques for better context preservation. |
 | **Vector Store** | A database optimized for storing and searching high-dimensional vectors, supporting similarity search operations for RAG applications. |
 
-### The Data Processing Pipeline Architecture
+### 🏗️ The Data Processing Pipeline Architecture
 
+::: info Pipeline Purpose
 The AI-Hub pipeline follows a structured approach to document processing and knowledge extraction. Before agents can reason intelligently about a domain, the underlying data must be readily available in a structured, searchable form. Pipelines handle this critical preparatory stage by ingesting raw data from various sources, parsing and transforming it, and storing it in a format that agents can easily consume.
+:::
 
 **Key Stages:**
 
@@ -100,9 +106,11 @@ Each partition is assigned **DataVersions** that reflect the current state of th
 - You can always trace which version of the data was used to produce a given agent response
 - Historical runs can be audited and reproduced, supporting debugging and compliance requirements
 
-### Observable Assets and Automation Policies
+### 👁️ Observable Assets and Automation Policies
 
+::: tip Observable Assets
 **Observable Assets** are a core feature of the AI-Hub pipeline architecture. Instead of running pipelines blindly on a fixed schedule, the system can observe whether new documents have appeared in the data lake or if existing content has changed.
+:::
 
 ```python
 @observable_source_asset(
@@ -124,9 +132,11 @@ def data_lake_observer(context):
 **Dynamic Partitions for Scalability:**
 Dagster's **Dynamic Partitions** allow pipelines to treat each file or document as a separate partition. The pipeline scales as documents grow - when a new file is detected, only that partition's logic runs, avoiding unnecessary reprocessing.
 
-### The Asset-Based Architecture
+### 🏗️ The Asset-Based Architecture
 
+::: info
 Pipelines are built using Dagster's asset-based approach where each stage produces concrete data artifacts:
+:::
 
 ```python
 @graph_asset(
@@ -147,31 +157,35 @@ def documents_asset(data_lake_file: DataLakeFile) -> RefDoc:
 
 ---
 
-## 2. The Step-by-Step Development Workflow
+## 2. 🚀 The Step-by-Step Development Workflow
 
 This section provides a practical, step-by-step guide to building, testing, and debugging data processing pipelines.
 
-### Prerequisites: Infrastructure and Environment
+### ⚙️ Prerequisites: Infrastructure and Environment
 
 Before you begin, ensure you have completed the infrastructure setup from the root project documentation.
+
+::: warning
+Always activate the Poetry environment before working. All subsequent commands must be run from within this activated shell.
+:::
 
 ```bash
 # Start required services from the project root
 docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml -f docker-compose-webui.yml up -d
 ```
 
-**Critical: Always activate the Poetry environment before working.** All subsequent commands must be run from within this activated shell.
-
 ```bash
 cd aihub_pipeline
 poetry shell
 ```
 
-### Step 1: Understanding the Pipeline Architecture
+### 🔍 Step 1: Understanding the Pipeline Architecture
 
+::: info
 Before implementing new pipeline components, understand the existing data flow and architecture patterns.
+:::
 
-#### Core Pipeline Components
+#### 🧩 Core Pipeline Components
 
 1. **Asset Factories**: Create reusable asset definitions
    ```python
@@ -206,11 +220,13 @@ Before implementing new pipeline components, understand the existing data flow a
            pass
    ```
 
-### Step 2: Create Pipeline Assets
+### 🛠️ Step 2: Create Pipeline Assets
 
+::: info
 Follow this pattern to create new pipeline assets that integrate with the existing architecture.
+:::
 
-#### Asset Factory Pattern
+#### 🏭 Asset Factory Pattern
 
 1. **Create Asset Factory**: Define a factory function that creates your asset.
    ```python
@@ -267,11 +283,13 @@ Follow this pattern to create new pipeline assets that integrate with the existi
            pass
    ```
 
-### Step 3: Testing Pipeline Components
+### 🧪 Step 3: Testing Pipeline Components
 
+::: tip
 Use Dagster's testing utilities to validate your pipeline components.
+:::
 
-#### Unit Testing Operations
+#### 🧪 Unit Testing Operations
 
 ```python
 # tests/ops/test_my_operations.py
@@ -290,7 +308,7 @@ def test_process_my_data():
     assert result.processed_content == "processed: test data"
 ```
 
-#### Integration Testing Assets
+#### 🔗 Integration Testing Assets
 
 ```python
 # tests/assets/test_my_assets.py
@@ -314,9 +332,9 @@ def test_my_asset():
     assert result.success
 ```
 
-### Step 4: Run and Debug the Pipeline
+### 🔍 Step 4: Run and Debug the Pipeline
 
-#### Start the Dagster Development Server
+#### 🚀 Start the Dagster Development Server
 
 ```bash
 # Run the playground example
@@ -326,22 +344,26 @@ make playground
 poetry run dagster dev -m playground --use-legacy-code-server-behavior
 ```
 
+::: info Dagster Web Interface
 This starts the Dagster web interface at `http://localhost:3000` where you can:
 - View asset lineage and dependencies
 - Materialize assets manually
 - Monitor pipeline runs
 - Debug failures and inspect outputs
+:::
 
-#### Interactive Development Workflow
+#### 🔄 Interactive Development Workflow
 
 1. **Asset Materialization**: Click "Materialize" on individual assets to test them
 2. **Pipeline Monitoring**: View real-time logs and execution progress
 3. **Data Inspection**: Examine asset outputs and intermediate results
 4. **Error Debugging**: Access detailed error logs and stack traces
 
-### Step 5: Ensure Code Quality
+### ✅ Step 5: Ensure Code Quality
 
+::: warning
 Before committing your changes, use the provided Makefile commands.
+:::
 
 ```bash
 # Run this before creating a pull request
@@ -354,28 +376,38 @@ make test        # Run tests
 make test-cov    # Run tests with coverage
 ```
 
-All pipeline code must use strict Python type annotations and follow Dagster best practices.
+::: danger
+All pipeline code must use strict Python type annotations and follow Dagster best practices. This is enforced by CI/CD.
+:::
 
 ---
 
-## 3. Customization and Reuse
+## 3. 🔧 Customization and Reuse
 
+::: info
 While the AI-Hub pipelines provide a robust foundation for data ingestion, each client project may have unique requirements. The AI-Hub's architecture for customization and reuse ensures that developers can adapt pipelines to meet varying needs without reinventing the wheel.
+:::
 
-### Common Pipeline Assets
+### 🧩 Common Pipeline Assets
 
+::: tip Ready-to-Use Assets
 The AI-Hub includes a set of ready-to-use pipeline assets designed for frequent tasks:
+:::
 
 1. **Data Lake Observers**: Monitor a data lake for new or updated files
 2. **Document Converters**: Convert raw files (PDF, Markdown, Word) into RefDocs with consistent metadata
 3. **Node Chunkers**: Break down large documents into nodes suitable for embedding
 4. **Embedders & Indexers**: Generate vector embeddings and insert them into vector stores or document databases
 
+::: info Benefits of Reusable Assets
 By using these predefined assets, developers compose existing building blocks to create client-specific workflows. This accelerates development, reduces errors, and ensures consistency across projects.
+:::
 
-### Typical Data Ingestion Scenario
+### 📈 Typical Data Ingestion Scenario
 
+::: info Data Ingestion Flow
 A typical data ingestion scenario demonstrates how observable assets and automation policies work together:
+:::
 
 1. **Detect Change**: A new Markdown file is uploaded to the data lake
 2. **Observable Asset Triggers Run**: Dagster notices the change and triggers a pipeline run for that specific file (a dynamic partition)
@@ -383,19 +415,23 @@ A typical data ingestion scenario demonstrates how observable assets and automat
 4. **Chunking & Embedding**: The pipeline splits the RefDoc into nodes, embeds them into vector form, and inserts those embeddings into the vector database
 5. **Agent-Ready Data**: When an agent receives a user query requiring that document, it can semantically retrieve the relevant chunks, confident that the data is up-to-date and well-structured
 
+::: tip Pipeline Benefits
 This approach ensures that data ingestion pipelines reduce manual effort, maintain higher data quality, and create a more reliable end-to-end AI solution that adapts gracefully as client needs and data environments evolve.
+:::
 
 ---
 
-## 4. Pipeline Patterns and Best Practices
+## 4. 🎨 Pipeline Patterns and Best Practices
 
 This section covers common patterns and best practices for building robust data processing pipelines.
 
-### Asset Factory Patterns
+### 🏭 Asset Factory Patterns
 
-#### Dynamic Asset Creation
+#### 🔄 Dynamic Asset Creation
 
+::: tip
 Use asset factories to create configurable, reusable asset definitions:
+:::
 
 ```python
 def document_processing_factory(
@@ -423,11 +459,13 @@ def document_processing_factory(
     return [documents, nodes]
 ```
 
-### Resource Management Patterns
+### 🎛️ Resource Management Patterns
 
-#### Resource Factory Pattern
+#### 🏭 Resource Factory Pattern
 
+::: tip
 Create resource factories for different environments:
+:::
 
 ```python
 def development_resources() -> dict[str, ConfigurableResource]:
@@ -457,9 +495,9 @@ def production_resources() -> dict[str, ConfigurableResource]:
     }
 ```
 
-### Monitoring and Observability Patterns
+### 👁️ Monitoring and Observability Patterns
 
-#### Custom Metadata and Logging
+#### 📊 Custom Metadata and Logging
 
 ```python
 @op

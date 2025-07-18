@@ -5,16 +5,18 @@ index: 3
 
 # Extensibility and Licensing
 
-## The AI Hub Developer License
+## 🔓 The AI Hub Developer License
 
-> tldr; The AI-Hub Developer License transforms the platform from a bbv-delivered solution into a strategic asset that clients can own, adapt, and evolve independently. By granting access to the core code and pairing it with training, support, and a flexible architecture, clients can build internal AI expertise, respond quickly to changing market conditions, and maintain the confidence that their private data and custom logic remain under their control.
-> 
-> This combination of openness, support, and privacy safeguards ensures that the AI-Hub continues to deliver value long after the initial deployment, becoming a cornerstone of the client’s AI strategy.
+::: tip TL;DR
+The AI-Hub Developer License transforms the platform from a bbv-delivered solution into a strategic asset that clients can own, adapt, and evolve independently. By granting access to the core code and pairing it with training, support, and a flexible architecture, clients can build internal AI expertise, respond quickly to changing market conditions, and maintain the confidence that their private data and custom logic remain under their control.
+
+This combination of openness, support, and privacy safeguards ensures that the AI-Hub continues to deliver value long after the initial deployment, becoming a cornerstone of the client's AI strategy.
+:::
 
 
 As the AI-Hub grows and matures, it becomes increasingly valuable as a foundational platform for clients looking to build their own AI capabilities. Rather than treating the AI-Hub as a closed solution, bbv offers a **Developer License**, allowing clients to use the AI-Hub as a base for their internal AI teams. This approach promotes self-sufficiency, reduces long-term dependency on external consultancies, and enables clients to tailor the solution to their evolving business needs.
 
-### What the Developer License Provides
+### 🎁 What the Developer License Provides
 
 **Access to the AI-Hub Core:**
 - Clients gain direct access to the AI-Hub’s core repositories, including the common libraries, infrastructure as code templates, agent codebases, and pipelines.  
@@ -28,7 +30,7 @@ As the AI-Hub grows and matures, it becomes increasingly valuable as a foundatio
 - The Developer License ensures that clients benefit from the AI-Hub’s layered approach, as there is a dedicated section in this documentation that talks more about it, enabling them to override or extend functionalities without losing the ability to merge upstream updates.
 - As bbv continues to improve the AI-Hub’s core, clients can pull in these updates to stay current with new best practices, improvements, or efficiency gains.
 
-### Support and Training from bbv
+### 🎓 Support and Training from bbv
 
 **Initial Onboarding:**
 - bbv assists client teams in understanding the AI-Hub’s architecture, guiding them through the concepts of agents, workflows, pipelines, and event-driven communication.
@@ -42,7 +44,7 @@ As the AI-Hub grows and matures, it becomes increasingly valuable as a foundatio
 - If a key internal developer leaves the client’s organization, the presence of a stable codebase and ongoing support from bbv reduces the risk of knowledge loss.
 - bbv can step in to maintain or extend the solution temporarily, bridging any resource gaps and preserving business continuity.
 
-### Protecting Client Privacy and Custom Code
+### 🔒 Protecting Client Privacy and Custom Code
 
 **Project Separation and Architectural Integrity:**
 - The AI-Hub architecture enforces a clear separation between the common core and client-specific code. This ensures that sensitive client logic and data handling remain in the client’s private repositories.
@@ -57,13 +59,15 @@ As the AI-Hub grows and matures, it becomes increasingly valuable as a foundatio
 - While clients gain the freedom to modify or extend the AI-Hub code, licensing terms ensure that the original intellectual property (like the AI-Hub’s core architecture and common components) is respected.
 
 
-## 10.2 Adding New Components
+## 🔧 Adding New Components
 
-> tldr; The AI-Hub was designed to be extensible, ensuring that as AI technologies evolve, the platform can evolve too. By following established guidelines, maintaining consistency, and testing thoroughly, you can add new components, steps, or models without disruption. This approach empowers teams and clients to continuously improve their AI capabilities, adapt to changing requirements, and remain competitive in a rapidly evolving AI landscape.
+::: tip TL;DR
+The AI-Hub was designed to be extensible, ensuring that as AI technologies evolve, the platform can evolve too. By following established guidelines, maintaining consistency, and testing thoroughly, you can add new components, steps, or models without disruption. This approach empowers teams and clients to continuously improve their AI capabilities, adapt to changing requirements, and remain competitive in a rapidly evolving AI landscape.
+:::
 
 The AI-Hub’s modular architecture and well-defined interfaces make it straightforward to extend its capabilities. As clients and internal teams gain confidence in the platform, they may want to add new components—be it additional steps in agent workflows, custom I/O managers for pipelines, or support for different AI models. This section outlines guidelines and best practices for introducing these changes without compromising the stability or integrity of the system.
 
-### Extensions to Core Libraries
+### 📚 Extensions to Core Libraries
 
 **Why Extend the Core?**  
 - Over time, you might identify common tasks not covered by existing steps or develop specialized logic that could benefit multiple workflows.
@@ -90,7 +94,7 @@ The AI-Hub’s modular architecture and well-defined interfaces make it straight
 - **Additional I/O Managers:** A custom manager for handling a different type of vector store or document storage system.
 - **Specialized Event Types:** Introducing a new semantic event type to represent domain-specific data structures, improving clarity and reusability.
 
-### Balancing Control and Innovation
+### ⚖️ Balancing Control and Innovation
 
 When extending the AI-Hub with new components or models, the guiding principle is to preserve the platform’s integrity while encouraging innovation:
 - **Keep Changes Modular:** Avoid mixing unrelated changes in one pull request. Focus on one new feature at a time.

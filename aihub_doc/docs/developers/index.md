@@ -3,4 +3,4 @@ title: For Techies
 index: 1
 ---
 
-Getting Started
+# :computer: Getting Started

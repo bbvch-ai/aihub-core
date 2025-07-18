@@ -151,8 +151,16 @@ function generateSidebar() {
 export default withMermaid({
   title: "Swiss AI-Hub",
   description: "Developer focused documentation of the Swiss AI-Hub Agentic Platform",
+  lastUpdated: true,
   themeConfig: {
     logo: './media/logo.png',
+    footer: {
+      message: 'Released under the Business Source License (BSL) 1.1',
+      copyright: 'Copyright © 2025-bbv Software Services AG.'
+    },
+    search: {
+      provider: 'local'
+    },
     nav: [
       { text: 'Home', link: '/' },
       { text: 'AI-Hub Website', link: 'https://ai-hub.bbv.ch/' },
