@@ -1,8 +1,6 @@
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-
-from aihub_agent.workflow.decorators.precondition import precondition
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import BaseEvent, ControlEvent, ExceptionEvent, StartEvent, StopEvent
@@ -16,6 +14,7 @@ from aihub_agent.context.thread.ThreadContext import ThreadContext
 from aihub_agent.dispatchers.AgentDispatcher import AgentDispatcher
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 from aihub_agent.tracing.coordinators.RunTraceCoordinator import RunTraceCoordinator
+from aihub_agent.workflow.decorators.precondition import precondition
 from aihub_agent.workflow.decorators.step import step
 
 enable_logging()
@@ -50,8 +49,6 @@ def mock_agent_config():
         name=LocaleString(en="Test Agent"),
         description=LocaleString(en="Test agent for dispatcher testing"),
         icon="test-icon",
-        color="#000000",
-        voice="test-voice",
     )
 
 
@@ -127,6 +124,8 @@ def agent_dispatcher(mock_agent_config, mock_nc, mock_js, mock_redis, mock_topic
         dispatcher.step_store = Mock()
         dispatcher.step_store.mark_execution_context_as_crashed = AsyncMock()
         dispatcher.step_store.delete_all = AsyncMock()
+        dispatcher.step_store.get_execution_count = AsyncMock(return_value=0)
+        dispatcher._step_meets_basic_execution_requirements = AsyncMock(return_value=True)
         dispatcher.js_publisher = Mock()
         dispatcher.nc_publisher = Mock()
 
@@ -146,8 +145,6 @@ class TestAgentDispatcherHandleEvent:
             name=LocaleString(en="Custom Agent"),
             description=LocaleString(en="Custom test agent"),
             icon="custom-icon",
-            color="#FF0000",
-            voice="custom-voice",
         )
 
         start_event = StartEvent(agent_config=custom_config.model_dump())
@@ -280,11 +277,8 @@ class TestAgentDispatcherHandleEvent:
 
         mock_thread_context = Mock(spec=ThreadContext)
 
-        # Mock step methods
-        mock_step_method = Mock()
-        mock_step_method.__name__ = "test_step"
-        # Mock the INPUT_EVENTS_ANNOTATION that AgentDispatcher looks for
-        setattr(mock_step_method, Agent.INPUT_EVENTS_ANNOTATION, {StartEvent})
+        # Use the actual MockAgent step method
+        mock_step_method = MockAgent.start_step
         agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[mock_step_method])
 
         # Mock step readiness is already set up in the fixture
@@ -408,15 +402,86 @@ class TestAgentDispatcherStepExecution:
     @pytest.mark.asyncio
     async def test_step_execution_with_max_executions_limit(self, agent_dispatcher, agent_topic):
         """Test that steps respect max_executions_per_run limit."""
-        # This test would need more detailed mocking of the step execution flow
-        # For now, we'll test the concept with a simplified approach
-        pass
+        # Arrange
+        start_event = StartEvent()
+
+        mock_run_context = Mock(spec=RunContext)
+        mock_run_context.get = AsyncMock(return_value=agent_dispatcher.default_agent_config.model_dump())
+
+        mock_thread_context = Mock(spec=ThreadContext)
+
+        # Use the actual MockAgent limited_step method (max_executions_per_run=1)
+        mock_step_method = MockAgent.limited_step
+        agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[mock_step_method])
+
+        # Override the default step store mock to return execution count at max (1 for limited_step)
+        agent_dispatcher.step_store.get_execution_count = AsyncMock(return_value=1)  # Already at max
+
+        with (
+            patch("aihub_agent.dispatchers.AgentDispatcher.RunContext", return_value=mock_run_context),
+            patch("aihub_agent.dispatchers.AgentDispatcher.ThreadContext", return_value=mock_thread_context),
+            patch("aihub_agent.dispatchers.AgentDispatcher.RunTraceCoordinator"),
+        ):
+            with patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle:
+                mock_base_handle.return_value = None
+
+                # Act
+                await agent_dispatcher.handle_event(start_event, agent_topic)
+
+                # Assert - step should not be executed because max executions reached
+                agent_dispatcher.step_store.get_execution_count.assert_called_once_with(
+                    agent_topic.execution_context_id, "limited_step"
+                )
 
     @pytest.mark.asyncio
     async def test_step_execution_with_precondition(self, agent_dispatcher, agent_topic):
         """Test that steps with preconditions are evaluated correctly."""
-        # This would test the precondition evaluation logic
-        pass
+        # Arrange
+        start_event = StartEvent()
+        start_event.condition = True  # Set condition for precondition to check
+
+        mock_run_context = Mock(spec=RunContext)
+        mock_run_context.get = AsyncMock(return_value=agent_dispatcher.default_agent_config.model_dump())
+
+        mock_thread_context = Mock(spec=ThreadContext)
+
+        # For this test, we need more control over precondition behavior, so use a mock
+        mock_step_method = Mock()
+        mock_step_method.__name__ = "conditional_step"
+        setattr(mock_step_method, Agent.INPUT_EVENTS_ANNOTATION, {StartEvent})
+        
+        # Mock precondition function that returns True when event has condition=True
+        mock_precondition = AsyncMock(return_value=True)
+        setattr(mock_step_method, Agent.PRECONDITION_FUNCTION_ANNOTATION, mock_precondition)
+        setattr(mock_step_method, Agent.MAX_EXECUTION_PER_RUN_ANNOTATION, None)  # Ensure this is None, not Mock
+        
+        agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[mock_step_method])
+
+        # Mock _build_method_kwargs to return proper EventsAndKwargs
+        from aihub_lib.nats.dispatcher.BaseDispatcher import EventsAndKwargs
+
+        mock_events_and_kwargs = EventsAndKwargs(events=[start_event], kwargs={"start_event": start_event})
+        agent_dispatcher._build_method_kwargs = AsyncMock(return_value=mock_events_and_kwargs)
+
+        with (
+            patch("aihub_agent.dispatchers.AgentDispatcher.RunContext", return_value=mock_run_context),
+            patch("aihub_agent.dispatchers.AgentDispatcher.ThreadContext", return_value=mock_thread_context),
+            patch("aihub_agent.dispatchers.AgentDispatcher.RunTraceCoordinator"),
+            patch.object(agent_dispatcher, "execute_step"),
+        ):
+            with patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle:
+                mock_base_handle.return_value = None
+
+                # Mock asyncio task creation
+                mock_task = Mock()
+                mock_task.add_done_callback = Mock()
+
+                with patch("asyncio.create_task", return_value=mock_task):
+                    # Act
+                    await agent_dispatcher.handle_event(start_event, agent_topic)
+
+                    # Assert - step should be executed (background task created)
+                    assert len(agent_dispatcher._background_tasks) == 1
 
 
 class TestAgentDispatcherErrorHandling:
@@ -444,8 +509,22 @@ class TestAgentDispatcherErrorHandling:
     @pytest.mark.asyncio
     async def test_handle_event_with_context_setup_failure(self, agent_dispatcher, agent_topic):
         """Test handling of context setup failures."""
-        # This would test error handling when context setup fails
-        pass
+        # Arrange
+        start_event = StartEvent()
+
+        # Mock RunContext to raise an exception during initialization
+        mock_run_context = Mock(spec=RunContext)
+        mock_run_context.set = AsyncMock(side_effect=RuntimeError("Context setup failed"))
+
+        with (
+            patch("aihub_agent.dispatchers.AgentDispatcher.RunContext", return_value=mock_run_context),
+            patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+        ):
+            mock_base_handle.return_value = None
+
+            # Act & Assert
+            with pytest.raises(RuntimeError, match="Context setup failed"):
+                await agent_dispatcher.handle_event(start_event, agent_topic)
 
 
 class TestAgentDispatcherIntegration:
@@ -454,5 +533,73 @@ class TestAgentDispatcherIntegration:
     @pytest.mark.asyncio
     async def test_full_event_processing_flow(self, agent_dispatcher, agent_topic):
         """Test the complete flow from event receipt to step execution."""
-        # This would be a comprehensive integration test
-        pass
+        # Arrange
+        custom_config = AgentConfig(
+            agent_class="MockAgent",
+            agent_id="integration_test_agent",
+            name=LocaleString(en="Integration Test Agent"),
+            description=LocaleString(en="Agent for testing complete flow"),
+            icon="integration-icon",
+        )
+
+        start_event = StartEvent(agent_config=custom_config.model_dump())
+
+        mock_run_context = Mock(spec=RunContext)
+        mock_run_context.set = AsyncMock()
+        mock_run_context.get = AsyncMock()
+
+        mock_thread_context = Mock(spec=ThreadContext)
+
+        # Use the actual MockAgent start_step method
+        mock_step_method = MockAgent.start_step
+        agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[mock_step_method])
+
+        # Mock _build_method_kwargs to return proper EventsAndKwargs
+        from aihub_lib.nats.dispatcher.BaseDispatcher import EventsAndKwargs
+
+        mock_events_and_kwargs = EventsAndKwargs(events=[start_event], kwargs={"start_event": start_event})
+        agent_dispatcher._build_method_kwargs = AsyncMock(return_value=mock_events_and_kwargs)
+
+        # Mock execute_step to verify it gets called
+        agent_dispatcher.execute_step = AsyncMock()
+
+        with (
+            patch("aihub_agent.dispatchers.AgentDispatcher.RunContext", return_value=mock_run_context),
+            patch("aihub_agent.dispatchers.AgentDispatcher.ThreadContext", return_value=mock_thread_context),
+            patch("aihub_agent.dispatchers.AgentDispatcher.RunTraceCoordinator") as mock_tracer_class,
+            patch.object(agent_dispatcher, "is_step_ready", return_value=True),
+        ):
+            mock_tracer = Mock()
+            mock_tracer.trace_run_start.return_value = {"integration": "headers"}
+            mock_tracer_class.return_value = mock_tracer
+
+            with patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle:
+                mock_base_handle.return_value = None
+
+                # Mock asyncio task creation
+                mock_task = Mock()
+                mock_task.add_done_callback = Mock()
+
+                with patch("asyncio.create_task", return_value=mock_task):
+                    # Act
+                    await agent_dispatcher.handle_event(start_event, agent_topic)
+
+                    # Assert - verify complete flow
+                    # 1. Config should be stored
+                    mock_run_context.set.assert_any_call("_agent_config", custom_config.model_dump())
+
+                    # 2. Tracing should be initialized
+                    mock_tracer.trace_run_start.assert_called_once()
+                    mock_run_context.set.assert_any_call("telemetry_headers", {"integration": "headers"})
+
+                    # 3. Context data should be stored
+                    event_data = start_event.to_context_dict()
+                    for key, value in event_data.items():
+                        mock_run_context.set.assert_any_call(key, value)
+
+                    # 4. Step should be checked for readiness
+                    agent_dispatcher.is_step_ready.assert_called_once()
+
+                    # 5. Background task should be created for step execution
+                    assert len(agent_dispatcher._background_tasks) == 1
+                    mock_task.add_done_callback.assert_called_once()
