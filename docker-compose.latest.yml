@@ -400,7 +400,7 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
-      - "./traefik/acme.json:/letsencrypt/acme.json"
+      - "/srv/app/traefik/acme.json:/srv/app/traefik/acme.json"
     labels:
       # Redirect HTTP to HTTPS
       - "traefik.http.routers.http-catch.rule=HostRegexp(`{host:.+}`)"
