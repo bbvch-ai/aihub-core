@@ -32,4 +32,4 @@ class ProcessConfig(BaseModel):
     ]
     name: Annotated[LocaleString, Field(description="The name of the process.")]
     description: Annotated[LocaleString, Field(description="The description of the process.")]
-    icon: Annotated[str, Field(description="The icon representing the agent.")] = "meteor-icons:robot"
+    icon: Annotated[str, Field(description="The icon representing the agent.")] = "carbon:ibm-event-processing"

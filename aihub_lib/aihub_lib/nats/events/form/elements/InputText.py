@@ -7,7 +7,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.form.base.PrimeVueElement import PrimeVueElement
 
 
-class InputTextElement(PrimeVueElement):
+class InputText(PrimeVueElement):
     """https://formkit-primevue.netlify.app/inputs/InputText"""
 
     formkit: Annotated[Literal["primeInputText"], Field(description="PrimeVue InputText element.")] = "primeInputText"

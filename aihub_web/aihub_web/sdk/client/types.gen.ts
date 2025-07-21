@@ -222,13 +222,9 @@ export type AgentEventWritable = {
 };
 
 /**
- * AgentInSpecs
- * Defines the specifications of a piece of work that can be submitted by an agent.
- * It is limited to an exact agent by class and id and holds the event specs of the
- * agents stop events, as these stop events are translated to work events and submitted
- * to the agentic process as inputs.
+ * AgentInDTO
  */
-export type AgentInSpecs = {
+export type AgentInDto = {
     /**
      * Agent Class
      * The class or category of the agent.
@@ -768,6 +764,118 @@ export type AudioContent = {
 };
 
 /**
+ * AutoComplete
+ * https://formkit-primevue.netlify.app/inputs/AutoComplete
+ */
+export type AutoComplete = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue AutoComplete element.
+     */
+    formkit?: 'primeAutoComplete';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Options
+     * Array of suggestion objects
+     */
+    options: Array<{
+        [key: string]: string | LocaleString;
+    }>;
+    /**
+     * Optionlabel
+     * Property name to use as the label of an option
+     */
+    optionLabel: string;
+    /**
+     * Optionvalue
+     * Property name to use as the label of an option
+     */
+    optionValue: string;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Placeholder
+     * Placeholder text
+     */
+    placeholder?: LocaleString | string | null;
+    /**
+     * Dropdown
+     * Whether to display a dropdown button
+     */
+    dropdown?: boolean;
+    /**
+     * Multiple
+     * Whether to allow multiple selections
+     */
+    multiple?: boolean;
+    /**
+     * Typeahead
+     * Whether to enable typeahead mode
+     */
+    typeahead?: boolean;
+    /**
+     * Size
+     * Size of the component ('small', 'large')
+     */
+    size?: string | null;
+    /**
+     * Minlength
+     * Minimum number of characters to trigger suggestions
+     */
+    minLength?: number | null;
+    /**
+     * Fluid
+     * Whether the component should span the full width
+     */
+    fluid?: boolean;
+    /**
+     * Separators
+     * Characters to use as separators for multiple mode
+     */
+    separators?: Array<string> | null;
+    [key: string]: unknown | true | (string | null) | 'primeAutoComplete' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | Array<{
+        [key: string]: string | LocaleString;
+    }> | string | boolean | (LocaleString | string | null) | (string | null) | (number | null) | (Array<string> | null) | undefined;
+};
+
+/**
  * Body_create_transcription_openai_audio_transcriptions_post
  */
 export type BodyCreateTranscriptionOpenaiAudioTranscriptionsPost = {
@@ -806,6 +914,103 @@ export type BodyCreateTranscriptionOpenaiAudioTranscriptionsPost = {
      * Timestamp granularities (e.g. 'word' or 'segment'); only used with verbose_json response_format
      */
     timestamp_granularities?: Array<'word' | 'segment'> | null;
+};
+
+/**
+ * CascadeSelect
+ * https://formkit-primevue.netlify.app/inputs/CascadeSelect
+ */
+export type CascadeSelect = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue CascadeSelect element.
+     */
+    formkit?: 'primeCascadeSelect';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Placeholder
+     * Placeholder text
+     */
+    placeholder?: LocaleString | string | null;
+    /**
+     * Options
+     * Array of hierarchical option objects
+     */
+    options: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Optionlabel
+     * Property name to use as the label of an option
+     */
+    optionLabel?: string | null;
+    /**
+     * Optionvalue
+     * Property name to use as the value of an option
+     */
+    optionValue?: string | null;
+    /**
+     * Optiongrouplabel
+     * Property name to use as the label of an option group
+     */
+    optionGroupLabel?: string | null;
+    /**
+     * Optiongroupchildren
+     * Property names that define the children of option groups
+     */
+    optionGroupChildren?: Array<string> | null;
+    /**
+     * Filter
+     * Whether to enable filtering
+     */
+    filter?: boolean;
+    /**
+     * Multiple
+     * Whether to allow multiple selections
+     */
+    multiple?: boolean;
+    [key: string]: unknown | true | (string | null) | 'primeCascadeSelect' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | (LocaleString | string | null) | Array<{
+        [key: string]: unknown;
+    }> | (string | null) | (string | null) | (string | null) | (Array<string> | null) | undefined;
 };
 
 /**
@@ -1428,6 +1633,89 @@ export type ChatMessageOutput = {
 };
 
 /**
+ * Checkbox
+ * https://formkit-primevue.netlify.app/inputs/Checkbox
+ */
+export type Checkbox = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue Checkbox element.
+     */
+    formkit?: 'primeCheckbox';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Binary
+     * Whether the checkbox works in binary mode
+     */
+    binary?: boolean;
+    /**
+     * Indeterminate
+     * Whether the checkbox is in indeterminate state
+     */
+    indeterminate?: boolean;
+    /**
+     * Truevalue
+     * Value to emit when checked
+     */
+    trueValue?: unknown;
+    /**
+     * Falsevalue
+     * Value to emit when unchecked
+     */
+    falseValue?: unknown;
+    /**
+     * Prefix
+     * Prefix text
+     */
+    prefix?: LocaleString | string | null;
+    /**
+     * Suffix
+     * Suffix text
+     */
+    suffix?: LocaleString | string | null;
+    [key: string]: unknown | true | (string | null) | 'primeCheckbox' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | (LocaleString | string | null) | (LocaleString | string | null) | undefined;
+};
+
+/**
  * Choice
  */
 export type Choice = {
@@ -1564,6 +1852,69 @@ export type ChunkEventWritable = {
      */
     reasoning_content?: string | null;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | null) | undefined;
+};
+
+/**
+ * ColorPicker
+ * https://formkit-primevue.netlify.app/inputs/ColorPicker
+ */
+export type ColorPicker = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue ColorPicker element.
+     */
+    formkit?: 'primeColorPicker';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Inline
+     * Whether to display the picker inline
+     */
+    inline?: boolean;
+    /**
+     * Format
+     * Format of the color value (hex, rgb, hsl)
+     */
+    format?: string | null;
+    [key: string]: unknown | true | (string | null) | 'primeColorPicker' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | (string | null) | undefined;
 };
 
 /**
@@ -2100,6 +2451,89 @@ export type DatasetUpdate = {
 };
 
 /**
+ * DatePicker
+ * https://formkit-primevue.netlify.app/inputs/DatePicker
+ */
+export type DatePicker = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue DatePicker element.
+     */
+    formkit?: 'primeDatePicker';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Placeholder
+     * Placeholder text
+     */
+    placeholder?: LocaleString | string | null;
+    /**
+     * Dateformat
+     * Format of the date display
+     */
+    dateFormat?: string | null;
+    /**
+     * Showicon
+     * Whether to show the calendar icon
+     */
+    showIcon?: boolean;
+    /**
+     * Icon
+     * Custom icon class
+     */
+    icon?: string | null;
+    /**
+     * Selectionmode
+     * Selection mode for dates
+     */
+    selectionMode?: ('single' | 'range' | 'multiple') | null;
+    /**
+     * Manualinput
+     * Whether to allow manual input
+     */
+    manualInput?: boolean;
+    [key: string]: unknown | true | (string | null) | 'primeDatePicker' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | (LocaleString | string | null) | (string | null) | (string | null) | (('single' | 'range' | 'multiple') | null) | undefined;
+};
+
+/**
  * DeleteRoleResponse
  * Confirmation response for a successful deletion.
  */
@@ -2320,6 +2754,64 @@ export type EdgeData = {
     payload: {
         [key: string]: EventPayloadField;
     };
+};
+
+/**
+ * Editor
+ * https://formkit-primevue.netlify.app/inputs/Editor
+ */
+export type Editor = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue Editor element.
+     */
+    formkit?: 'primeEditor';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Placeholder
+     * Placeholder text
+     */
+    placeholder?: LocaleString | string | null;
+    [key: string]: unknown | true | (string | null) | 'primeEditor' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | (LocaleString | string | null) | undefined;
 };
 
 /**
@@ -3285,22 +3777,19 @@ export type HtmlElement = {
 };
 
 /**
- * HumanInSpecs
- * Defines a piece of work that can be submitted by a human.
- * It holds information about the form that the user must fill in in order to generate the exact
- * data structure defined in the event specs of the work event.
- * It also holds the route and http method that must be used to finally post that work event data
- * to the API, which will forward it to the appropriate process.
+ * HumanInDTO
  */
-export type HumanInSpecs = {
+export type HumanInDto = {
     /**
+     * Name
      * The name of the work event.
      */
-    name: LocaleString;
+    name: string;
     /**
+     * Description
      * A description of the work event, providing details about its purpose.
      */
-    description: LocaleString;
+    description: string;
     /**
      * Route
      * The route of the work event.
@@ -3324,7 +3813,7 @@ export type HumanInSpecs = {
      * Form
      * Formkit elements of the work event.
      */
-    form?: Array<HtmlElement | InputTextElement>;
+    form?: Array<HtmlElement | InputText | AutoComplete | CascadeSelect | Checkbox | ColorPicker | DatePicker | Editor | InputMask | InputNumber | InputOtp | Knob | Listbox | MultiSelect | Password | RadioButton | Rating | Select | SelectButton | Slider | Textarea | ToggleButton | ToggleSwitch>;
 };
 
 /**
@@ -3936,10 +4425,294 @@ export type InputEventInfo = {
 };
 
 /**
- * InputTextElement
+ * InputMask
+ * https://formkit-primevue.netlify.app/inputs/InputMask
+ */
+export type InputMask = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue InputMask element.
+     */
+    formkit?: 'primeInputMask';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Placeholder
+     * Placeholder text
+     */
+    placeholder?: LocaleString | string | null;
+    /**
+     * Mask
+     * Input mask pattern
+     */
+    mask?: string | null;
+    /**
+     * Slotchar
+     * Placeholder character for mask slots
+     */
+    slotChar?: string | null;
+    /**
+     * Autoclear
+     * Whether to clear incomplete values on blur
+     */
+    autoClear?: boolean;
+    /**
+     * Unmask
+     * Whether to return unmasked value
+     */
+    unmask?: boolean;
+    /**
+     * Iconprefix
+     * Icon prefix
+     */
+    iconPrefix?: string | null;
+    /**
+     * Iconsuffix
+     * Icon suffix
+     */
+    iconSuffix?: string | null;
+    [key: string]: unknown | true | (string | null) | 'primeInputMask' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | (LocaleString | string | null) | (string | null) | (string | null) | (string | null) | (string | null) | undefined;
+};
+
+/**
+ * InputNumber
+ * https://formkit-primevue.netlify.app/inputs/InputNumber
+ */
+export type InputNumber = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue InputNumber element.
+     */
+    formkit?: 'primeInputNumber';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Placeholder
+     * Placeholder text
+     */
+    placeholder?: LocaleString | string | null;
+    /**
+     * Min
+     * Minimum value
+     */
+    min?: number | null;
+    /**
+     * Max
+     * Maximum value
+     */
+    max?: number | null;
+    /**
+     * Step
+     * Step factor for increment/decrement
+     */
+    step?: number | null;
+    /**
+     * Usegrouping
+     * Whether to use grouping separators
+     */
+    useGrouping?: boolean;
+    /**
+     * Minfractiondigits
+     * Minimum number of fraction digits
+     */
+    minFractionDigits?: number | null;
+    /**
+     * Maxfractiondigits
+     * Maximum number of fraction digits
+     */
+    maxFractionDigits?: number | null;
+    /**
+     * Locale
+     * Locale to use for number formatting
+     */
+    locale?: string | null;
+    /**
+     * Mode
+     * Input mode
+     */
+    mode?: ('decimal' | 'currency') | null;
+    /**
+     * Currency
+     * Currency code for currency mode
+     */
+    currency?: string | null;
+    /**
+     * Prefix
+     * Prefix text
+     */
+    prefix?: LocaleString | string | null;
+    /**
+     * Suffix
+     * Suffix text
+     */
+    suffix?: LocaleString | string | null;
+    /**
+     * Showbuttons
+     * Whether to show increment/decrement buttons
+     */
+    showButtons?: boolean;
+    /**
+     * Buttonlayout
+     * Layout of increment/decrement buttons
+     */
+    buttonLayout?: ('stacked' | 'horizontal') | null;
+    [key: string]: unknown | true | (string | null) | 'primeInputNumber' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | (LocaleString | string | null) | (number | null) | (number | null) | (number | null) | (number | null) | (number | null) | (string | null) | (('decimal' | 'currency') | null) | (string | null) | (LocaleString | string | null) | (LocaleString | string | null) | (('stacked' | 'horizontal') | null) | undefined;
+};
+
+/**
+ * InputOtp
+ * https://formkit-primevue.netlify.app/inputs/InputOtp
+ */
+export type InputOtp = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue InputOtp element.
+     */
+    formkit?: 'primeInputOtp';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Length
+     * Number of characters in the OTP
+     */
+    length?: number;
+    /**
+     * Integeronly
+     * Whether to allow only integers
+     */
+    integerOnly?: boolean;
+    /**
+     * Mask
+     * Whether to mask the input characters
+     */
+    mask?: boolean;
+    /**
+     * Variant
+     * Styling variant of the component
+     */
+    variant?: string | null;
+    [key: string]: unknown | true | (string | null) | 'primeInputOtp' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | number | (string | null) | undefined;
+};
+
+/**
+ * InputText
  * https://formkit-primevue.netlify.app/inputs/InputText
  */
-export type InputTextElement = {
+export type InputText = {
     /**
      * Is Formkit Element
      * Indicates that this element is a FormKit element
@@ -3961,13 +4734,15 @@ export type InputTextElement = {
      */
     name?: string | null;
     /**
+     * Label
      * Label of this field
      */
-    label: LocaleString;
+    label: LocaleString | string;
     /**
+     * Help
      * Help text of this field
      */
-    help?: LocaleString | null;
+    help?: LocaleString | string | null;
     /**
      * Validation
      * Validation expression
@@ -4005,7 +4780,7 @@ export type InputTextElement = {
      * Icon suffix
      */
     iconSuffix?: string | null;
-    [key: string]: unknown | true | (string | null) | 'primeInputText' | (string | null) | LocaleString | (LocaleString | null) | (string | null) | boolean | (LocaleString | null) | (LocaleString | null) | (LocaleString | null) | (string | null) | (string | null) | undefined;
+    [key: string]: unknown | true | (string | null) | 'primeInputText' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | (LocaleString | null) | (LocaleString | null) | (LocaleString | null) | (string | null) | (string | null) | undefined;
 };
 
 /**
@@ -4030,6 +4805,109 @@ export type JsonSchema = {
      * Strict
      */
     strict?: boolean | null;
+};
+
+/**
+ * Knob
+ * https://formkit-primevue.netlify.app/inputs/Knob
+ */
+export type Knob = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue Knob element.
+     */
+    formkit?: 'primeKnob';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Min
+     * Minimum value
+     */
+    min?: number | null;
+    /**
+     * Max
+     * Maximum value
+     */
+    max?: number | null;
+    /**
+     * Step
+     * Step factor for increment/decrement
+     */
+    step?: number | null;
+    /**
+     * Size
+     * Size of the knob in pixels
+     */
+    size?: number | null;
+    /**
+     * Strokewidth
+     * Width of the knob stroke
+     */
+    strokeWidth?: number | null;
+    /**
+     * Showvalue
+     * Whether to show the value in the center
+     */
+    showValue?: boolean;
+    /**
+     * Valuecolor
+     * Color of the value arc
+     */
+    valueColor?: string | null;
+    /**
+     * Rangecolor
+     * Color of the range arc
+     */
+    rangeColor?: string | null;
+    /**
+     * Textcolor
+     * Color of the value text
+     */
+    textColor?: string | null;
+    /**
+     * Valuetemplate
+     * Template string for value display
+     */
+    valueTemplate?: string | null;
+    [key: string]: unknown | true | (string | null) | 'primeKnob' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | (number | null) | (number | null) | (number | null) | (number | null) | (number | null) | (string | null) | (string | null) | (string | null) | (string | null) | undefined;
 };
 
 /**
@@ -4752,6 +5630,93 @@ export type LimitChatHistoryEventWritable = {
 };
 
 /**
+ * Listbox
+ * https://formkit-primevue.netlify.app/inputs/Listbox
+ */
+export type Listbox = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue Listbox element.
+     */
+    formkit?: 'primeListbox';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Placeholder
+     * Placeholder text
+     */
+    placeholder?: LocaleString | string | null;
+    /**
+     * Options
+     * Array of selectable option objects
+     */
+    options: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Optionlabel
+     * Property name to use as the label of an option
+     */
+    optionLabel?: string | null;
+    /**
+     * Optionvalue
+     * Property name to use as the value of an option
+     */
+    optionValue?: string | null;
+    /**
+     * Multiple
+     * Whether to allow multiple selections
+     */
+    multiple?: boolean;
+    /**
+     * Filter
+     * Whether to enable filtering
+     */
+    filter?: boolean;
+    [key: string]: unknown | true | (string | null) | 'primeListbox' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | (LocaleString | string | null) | Array<{
+        [key: string]: unknown;
+    }> | (string | null) | (string | null) | undefined;
+};
+
+/**
  * LocaleResponse
  * Represents language and test information for a locale.
  */
@@ -5055,6 +6020,88 @@ export type ModelResponse = {
 };
 
 /**
+ * MultiSelect
+ * https://formkit-primevue.netlify.app/inputs/MultiSelect
+ */
+export type MultiSelect = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue MultiSelect element.
+     */
+    formkit?: 'primeMultiSelect';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Placeholder
+     * Placeholder text
+     */
+    placeholder?: LocaleString | string | null;
+    /**
+     * Options
+     * Array of selectable option objects
+     */
+    options: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Optionlabel
+     * Property name to use as the label of an option
+     */
+    optionLabel?: string | null;
+    /**
+     * Optionvalue
+     * Property name to use as the value of an option
+     */
+    optionValue?: string | null;
+    /**
+     * Filter
+     * Whether to enable filtering
+     */
+    filter?: boolean;
+    [key: string]: unknown | true | (string | null) | 'primeMultiSelect' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | (LocaleString | string | null) | Array<{
+        [key: string]: unknown;
+    }> | (string | null) | (string | null) | undefined;
+};
+
+/**
  * Namespace
  */
 export type Namespace = {
@@ -5322,6 +6369,104 @@ export type PartialAgentTopic = {
 };
 
 /**
+ * Password
+ * https://formkit-primevue.netlify.app/inputs/Password
+ */
+export type Password = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue Password element.
+     */
+    formkit?: 'primePassword';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Placeholder
+     * Placeholder text
+     */
+    placeholder?: LocaleString | string | null;
+    /**
+     * Feedback
+     * Whether to show password strength feedback
+     */
+    feedback?: boolean;
+    /**
+     * Togglemask
+     * Whether to show toggle button to reveal/hide password
+     */
+    toggleMask?: boolean;
+    /**
+     * Mediumregex
+     * Regex pattern for medium strength validation
+     */
+    mediumRegex?: string | null;
+    /**
+     * Strongregex
+     * Regex pattern for strong strength validation
+     */
+    strongRegex?: string | null;
+    /**
+     * Promptlabel
+     * Label for password prompt
+     */
+    promptLabel?: LocaleString | string | null;
+    /**
+     * Weaklabel
+     * Label for weak password strength
+     */
+    weakLabel?: LocaleString | string | null;
+    /**
+     * Mediumlabel
+     * Label for medium password strength
+     */
+    mediumLabel?: LocaleString | string | null;
+    /**
+     * Stronglabel
+     * Label for strong password strength
+     */
+    strongLabel?: LocaleString | string | null;
+    [key: string]: unknown | true | (string | null) | 'primePassword' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | (LocaleString | string | null) | (string | null) | (string | null) | (LocaleString | string | null) | (LocaleString | string | null) | (LocaleString | string | null) | (LocaleString | string | null) | undefined;
+};
+
+/**
  * ProcessConfigDTO
  */
 export type ProcessConfigDto = {
@@ -5374,17 +6519,17 @@ export type ProcessDto = {
      * Human Inputs
      * List of human work events that the process can receive.
      */
-    human_inputs: Array<HumanInSpecs>;
+    human_inputs: Array<HumanInDto>;
     /**
      * Program Inputs
      * List of program work events that the process can receive.
      */
-    program_inputs: Array<ProgramInSpecs>;
+    program_inputs: Array<ProgramInDto>;
     /**
      * Agent Inputs
      * List of agent work events that the process can receive. Agent work events are used to trigger the execution of an agent.
      */
-    agent_inputs: Array<AgentInSpecs>;
+    agent_inputs: Array<AgentInDto>;
     /**
      * Is Online
      * Indicates whether the process is online and reachable.
@@ -5393,50 +6538,9 @@ export type ProcessDto = {
 };
 
 /**
- * ProcessHumanInDto
- * Defines what and how a piece of work must be submitted by a user to a process.
- * As humans usually submit their data by filling in forms in the frontend, this event holds
- * a list of formkit form fields that can be used to generate a formkit form in the frontend.
- * Submitting the form will lead to the required data structure that can be submitted
- * to the <route> using the http-method <method>.
+ * ProgramInDTO
  */
-export type ProcessHumanInDto = {
-    /**
-     * Name
-     * The name of the work event.
-     */
-    name: string;
-    /**
-     * Description
-     * A description of the work event, providing details about its purpose.
-     */
-    description: string;
-    /**
-     * Route
-     * The route of the work event.
-     */
-    route: string;
-    /**
-     * Method
-     * The HTTP method of the work event.
-     */
-    method: string;
-    /**
-     * Form
-     * Formkit fields to render the UI
-     */
-    form: Array<HtmlElement | InputTextElement>;
-};
-
-/**
- * ProgramInSpecs
- * Defines a piece of work that can be submitted by a program.
- * It holds the information about the exact data that must be submitted as a work event
- * in the event specs. It also holds the information about where that work event data
- * must be submitted, aka to which route and using which http method.
- * The API will then forward the data to the appropriate process.
- */
-export type ProgramInSpecs = {
+export type ProgramInDto = {
     /**
      * Route
      * The route of the work event.
@@ -5471,6 +6575,161 @@ export type PromptTokensDetails = {
      */
     cached_tokens?: number | null;
     [key: string]: unknown | (number | null) | (number | null) | undefined;
+};
+
+/**
+ * RadioButton
+ * https://formkit-primevue.netlify.app/inputs/RadioButton
+ */
+export type RadioButton = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue RadioButton element.
+     */
+    formkit?: 'primeRadioButton';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Options
+     * Array of selectable option objects
+     */
+    options: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Optionlabel
+     * Property name to use as the label of an option
+     */
+    optionLabel?: string | null;
+    /**
+     * Optionvalue
+     * Property name to use as the value of an option
+     */
+    optionValue?: string | null;
+    /**
+     * Optionclass
+     * CSS class to apply to each option
+     */
+    optionClass?: string | null;
+    [key: string]: unknown | true | (string | null) | 'primeRadioButton' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | Array<{
+        [key: string]: unknown;
+    }> | (string | null) | (string | null) | (string | null) | undefined;
+};
+
+/**
+ * Rating
+ * https://formkit-primevue.netlify.app/inputs/Rating
+ */
+export type Rating = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue Rating element.
+     */
+    formkit?: 'primeRating';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Stars
+     * Number of stars to display
+     */
+    stars?: number;
+    /**
+     * Cancel
+     * Whether to show cancel button to clear rating
+     */
+    cancel?: boolean;
+    /**
+     * Onicon
+     * Icon for selected state
+     */
+    onIcon?: string | null;
+    /**
+     * Officon
+     * Icon for unselected state
+     */
+    offIcon?: string | null;
+    /**
+     * Cancelicon
+     * Icon for cancel button
+     */
+    cancelIcon?: string | null;
+    [key: string]: unknown | true | (string | null) | 'primeRating' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | number | (string | null) | (string | null) | (string | null) | undefined;
 };
 
 /**
@@ -6009,6 +7268,185 @@ export type RunStatistics = {
 };
 
 /**
+ * Select
+ * https://formkit-primevue.netlify.app/inputs/Select
+ */
+export type Select = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue Select element.
+     */
+    formkit?: 'primeSelect';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Placeholder
+     * Placeholder text
+     */
+    placeholder?: LocaleString | string | null;
+    /**
+     * Options
+     * Array of selectable options (objects or strings)
+     */
+    options: Array<{
+        [key: string]: unknown;
+    }> | Array<string>;
+    /**
+     * Optionlabel
+     * Property name to use as the label of an option
+     */
+    optionLabel?: string | null;
+    /**
+     * Optionvalue
+     * Property name to use as the value of an option
+     */
+    optionValue?: string | null;
+    /**
+     * Showclear
+     * Whether to show clear button
+     */
+    showClear?: boolean;
+    /**
+     * Filter
+     * Whether to enable filtering
+     */
+    filter?: boolean;
+    [key: string]: unknown | true | (string | null) | 'primeSelect' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | (LocaleString | string | null) | (Array<{
+        [key: string]: unknown;
+    }> | Array<string>) | (string | null) | (string | null) | undefined;
+};
+
+/**
+ * SelectButton
+ * https://formkit-primevue.netlify.app/inputs/SelectButton
+ */
+export type SelectButton = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue SelectButton element.
+     */
+    formkit?: 'primeSelectButton';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Options
+     * Array of selectable option objects
+     */
+    options: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Optionlabel
+     * Property name to use as the label of an option
+     */
+    optionLabel?: string | null;
+    /**
+     * Optionvalue
+     * Property name to use as the value of an option
+     */
+    optionValue?: string | null;
+    /**
+     * Optiondisabled
+     * Property name to use as the disabled flag of an option
+     */
+    optionDisabled?: string | null;
+    /**
+     * Multiple
+     * Whether to allow multiple selections
+     */
+    multiple?: boolean;
+    /**
+     * Unselectable
+     * Whether selection can be cleared
+     */
+    unselectable?: boolean;
+    /**
+     * Datakey
+     * Property name for unique option identification
+     */
+    dataKey?: string | null;
+    [key: string]: unknown | true | (string | null) | 'primeSelectButton' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | Array<{
+        [key: string]: unknown;
+    }> | (string | null) | (string | null) | (string | null) | (string | null) | undefined;
+};
+
+/**
  * SemanticEvent
  * A base class for events that must report their data to an OpenInference-compatible tracing system,
  * such as Arize Phoenix. By inheriting from both `ControlEvent` and `DisplayEvent`, `SemanticEvent`:
@@ -6159,6 +7597,84 @@ export type SignedUrlDto = {
      * The signed URL of the file
      */
     url: string;
+};
+
+/**
+ * Slider
+ * https://formkit-primevue.netlify.app/inputs/Slider
+ */
+export type Slider = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue Slider element.
+     */
+    formkit?: 'primeSlider';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Min
+     * Minimum value
+     */
+    min?: number | null;
+    /**
+     * Max
+     * Maximum value
+     */
+    max?: number | null;
+    /**
+     * Step
+     * Step factor for increment/decrement
+     */
+    step?: number | null;
+    /**
+     * Range
+     * Whether to enable range selection
+     */
+    range?: boolean;
+    /**
+     * Orientation
+     * Orientation of the slider
+     */
+    orientation?: ('horizontal' | 'vertical') | null;
+    [key: string]: unknown | true | (string | null) | 'primeSlider' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | (number | null) | (number | null) | (number | null) | (('horizontal' | 'vertical') | null) | undefined;
 };
 
 /**
@@ -6409,6 +7925,11 @@ export type SubmittedCvInput = {
      * Name of the applicant
      */
     name: string;
+    /**
+     * Profession
+     * Profession of the applicant
+     */
+    profession: string;
 };
 
 /**
@@ -6504,6 +8025,74 @@ export type TextToSpeechRequest = {
      */
     speed?: number | null;
     [key: string]: unknown | ('tts-1' | 'tts-1-hd') | string | ('alloy' | 'ash' | 'coral' | 'echo' | 'fable' | 'onyx' | 'nova' | 'sage' | 'shimmer') | (('mp3' | 'opus' | 'aac' | 'flac' | 'wav' | 'pcm') | null) | (number | null) | undefined;
+};
+
+/**
+ * Textarea
+ * https://formkit-primevue.netlify.app/inputs/Textarea
+ */
+export type Textarea = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue Textarea element.
+     */
+    formkit?: 'primeTextarea';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Placeholder
+     * Placeholder text
+     */
+    placeholder?: LocaleString | string | null;
+    /**
+     * Rows
+     * Number of rows to display
+     */
+    rows?: number | null;
+    /**
+     * Autoresize
+     * Whether to automatically resize based on content
+     */
+    autoResize?: boolean;
+    [key: string]: unknown | true | (string | null) | 'primeTextarea' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | (LocaleString | string | null) | (number | null) | undefined;
 };
 
 /**
@@ -6766,6 +8355,157 @@ export const TimeRange = {
     '30D': '30d',
     '365D': '365d'
 } as const;
+
+/**
+ * ToggleButton
+ * https://formkit-primevue.netlify.app/inputs/ToggleButton
+ */
+export type ToggleButton = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue ToggleButton element.
+     */
+    formkit?: 'primeToggleButton';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Onlabel
+     * Label for the on state
+     */
+    onLabel?: LocaleString | string | null;
+    /**
+     * Offlabel
+     * Label for the off state
+     */
+    offLabel?: LocaleString | string | null;
+    /**
+     * Onicon
+     * Icon for the on state
+     */
+    onIcon?: string | null;
+    /**
+     * Officon
+     * Icon for the off state
+     */
+    offIcon?: string | null;
+    /**
+     * Iconpos
+     * Position of the icon
+     */
+    iconPos?: ('left' | 'right') | null;
+    [key: string]: unknown | true | (string | null) | 'primeToggleButton' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | (LocaleString | string | null) | (LocaleString | string | null) | (string | null) | (string | null) | (('left' | 'right') | null) | undefined;
+};
+
+/**
+ * ToggleSwitch
+ * https://formkit-primevue.netlify.app/inputs/ToggleSwitch
+ */
+export type ToggleSwitch = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Formkit
+     * PrimeVue ToggleSwitch element.
+     */
+    formkit?: 'primeToggleSwitch';
+    /**
+     * Name
+     * Name of this field
+     */
+    name?: string | null;
+    /**
+     * Label
+     * Label of this field
+     */
+    label: LocaleString | string;
+    /**
+     * Help
+     * Help text of this field
+     */
+    help?: LocaleString | string | null;
+    /**
+     * Validation
+     * Validation expression
+     */
+    validation?: string | null;
+    /**
+     * Disabled
+     * Whether the input is disabled
+     */
+    disabled?: boolean;
+    /**
+     * Readonly
+     * Whether the input is readonly
+     */
+    readonly?: boolean;
+    /**
+     * Truevalue
+     * Value to emit when toggled on
+     */
+    trueValue?: unknown;
+    /**
+     * Falsevalue
+     * Value to emit when toggled off
+     */
+    falseValue?: unknown;
+    /**
+     * Prefix
+     * Prefix text
+     */
+    prefix?: LocaleString | string | null;
+    /**
+     * Suffix
+     * Suffix text
+     */
+    suffix?: LocaleString | string | null;
+    [key: string]: unknown | true | (string | null) | 'primeToggleSwitch' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | (string | null) | boolean | (LocaleString | string | null) | (LocaleString | string | null) | undefined;
+};
 
 /**
  * TokenResponse
@@ -8461,7 +10201,7 @@ export type GetProcessStartFormsResponses = {
      * Response Get Process Start Forms Processes  Process Class   Process Id  Start Forms Get
      * Successful Response
      */
-    200: Array<ProcessHumanInDto>;
+    200: Array<HumanInDto>;
 };
 
 export type GetProcessStartFormsResponse = GetProcessStartFormsResponses[keyof GetProcessStartFormsResponses];
@@ -8500,7 +10240,7 @@ export type GetProcessOpenFormsResponses = {
      * Response Get Process Open Forms Processes  Process Class   Process Id   Process Walkthrough Id  Open Forms Get
      * Successful Response
      */
-    200: Array<ProcessHumanInDto>;
+    200: Array<HumanInDto>;
 };
 
 export type GetProcessOpenFormsResponse = GetProcessOpenFormsResponses[keyof GetProcessOpenFormsResponses];
@@ -9486,6 +11226,40 @@ export type GetAnonymousFileRedirectResponses = {
     200: unknown;
 };
 
+export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostData = {
+    body: UserMessageEventInput;
+    path?: never;
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/LLMWrappingAgent/dev_agent/user_message_event';
+};
+
+export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostError = SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostErrors[keyof SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostErrors];
+
+export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: LlmStopEventOutput;
+};
+
+export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponse = SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses[keyof SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses];
+
 export type GetFormForAgenticCvProcessAgenticCvProcessCvAcceptProcessesAgenticCvProcessAgenticCvProcessProcessWalkthroughIdCvAcceptGetData = {
     body?: never;
     path: {
@@ -9511,7 +11285,7 @@ export type GetFormForAgenticCvProcessAgenticCvProcessCvAcceptProcessesAgenticCv
     /**
      * Successful Response
      */
-    200: ProcessHumanInDto;
+    200: HumanInDto;
 };
 
 export type GetFormForAgenticCvProcessAgenticCvProcessCvAcceptProcessesAgenticCvProcessAgenticCvProcessProcessWalkthroughIdCvAcceptGetResponse = GetFormForAgenticCvProcessAgenticCvProcessCvAcceptProcessesAgenticCvProcessAgenticCvProcessProcessWalkthroughIdCvAcceptGetResponses[keyof GetFormForAgenticCvProcessAgenticCvProcessCvAcceptProcessesAgenticCvProcessAgenticCvProcessProcessWalkthroughIdCvAcceptGetResponses];
@@ -9557,7 +11331,7 @@ export type GetFormForAgenticCvProcessAgenticCvProcessNewCvProcessesAgenticCvPro
     /**
      * Successful Response
      */
-    200: ProcessHumanInDto;
+    200: HumanInDto;
 };
 
 export type GetFormForAgenticCvProcessAgenticCvProcessNewCvProcessesAgenticCvProcessAgenticCvProcessNewCvGetResponse = GetFormForAgenticCvProcessAgenticCvProcessNewCvProcessesAgenticCvProcessAgenticCvProcessNewCvGetResponses[keyof GetFormForAgenticCvProcessAgenticCvProcessNewCvProcessesAgenticCvProcessAgenticCvProcessNewCvGetResponses];
@@ -9612,7 +11386,7 @@ export type GetFormForAgenticCvProcessAgenticCvProcessCvRejectProcessesAgenticCv
     /**
      * Successful Response
      */
-    200: ProcessHumanInDto;
+    200: HumanInDto;
 };
 
 export type GetFormForAgenticCvProcessAgenticCvProcessCvRejectProcessesAgenticCvProcessAgenticCvProcessProcessWalkthroughIdCvRejectGetResponse = GetFormForAgenticCvProcessAgenticCvProcessCvRejectProcessesAgenticCvProcessAgenticCvProcessProcessWalkthroughIdCvRejectGetResponses[keyof GetFormForAgenticCvProcessAgenticCvProcessCvRejectProcessesAgenticCvProcessAgenticCvProcessProcessWalkthroughIdCvRejectGetResponses];
@@ -9646,40 +11420,6 @@ export type SubmitFormForAgenticCvProcessAgenticCvProcessCvRejectProcessesAgenti
 };
 
 export type SubmitFormForAgenticCvProcessAgenticCvProcessCvRejectProcessesAgenticCvProcessAgenticCvProcessProcessWalkthroughIdCvRejectPostResponse = SubmitFormForAgenticCvProcessAgenticCvProcessCvRejectProcessesAgenticCvProcessAgenticCvProcessProcessWalkthroughIdCvRejectPostResponses[keyof SubmitFormForAgenticCvProcessAgenticCvProcessCvRejectProcessesAgenticCvProcessAgenticCvProcessProcessWalkthroughIdCvRejectPostResponses];
-
-export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostData = {
-    body: UserMessageEventInput;
-    path?: never;
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/LLMWrappingAgent/dev_agent/user_message_event';
-};
-
-export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostError = SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostErrors[keyof SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostErrors];
-
-export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: LlmStopEventOutput;
-};
-
-export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponse = SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses[keyof SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses];
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});

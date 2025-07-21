@@ -332,3 +332,15 @@ role:
   role_saved:
     summary: "Role saved"
     detail: "Role saved successfully, the new access rules take effect immediately."
+
+process:
+  title: "Processes"
+  overview:
+    name: "Name"
+    class: "Class"
+    processId: "Process ID"
+    status: "Status"
+    online: "Online"
+    offline: "Offline"
+  navigation:
+    overview: "Overview"

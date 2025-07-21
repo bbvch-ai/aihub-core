@@ -1,10 +1,9 @@
 from typing import Annotated
 
+from aihub_api.routes.process.dto.in_specs.AgentInDTO import AgentInDTO
+from aihub_api.routes.process.dto.in_specs.HumanInDTO import HumanInDTO
+from aihub_api.routes.process.dto.in_specs.ProgramInDTO import ProgramInDTO
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
-from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
-from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
-from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from aihub_lib.persistence.process.ProcessEntity import ProcessEntity
 from pydantic import BaseModel, Field
 
@@ -26,13 +25,13 @@ class ProcessDTO(BaseModel):
     process_id: Annotated[str, Field(description="A unique identifier for the process instance.")]
     process_config: Annotated[ProcessConfigDTO, Field(description="Configuration for the process instance.")]
     human_inputs: Annotated[
-        list[HumanInSpecs], Field(description="List of human work events that the process can receive.")
+        list[HumanInDTO], Field(description="List of human work events that the process can receive.")
     ]
     program_inputs: Annotated[
-        list[ProgramInSpecs], Field(description="List of program work events that the process can receive.")
+        list[ProgramInDTO], Field(description="List of program work events that the process can receive.")
     ]
     agent_inputs: Annotated[
-        list[AgentInSpecs],
+        list[AgentInDTO],
         Field(
             description="List of agent work events that the process can receive. "
             "Agent work events are used to trigger the execution of an agent."
@@ -43,53 +42,24 @@ class ProcessDTO(BaseModel):
     @classmethod
     def from_entity(cls, entity: ProcessEntity, t: LocaleHandler, is_online: bool) -> "ProcessDTO":
         human_inputs = [
-            HumanInSpecs(
-                name=spec.name,
-                description=spec.description,
-                route=spec.route,
-                method=spec.method,
-                is_process_start=spec.is_process_start,
-                event_specs=EventSpecs(
-                    event_name=spec.event_specs.event_name,
-                    event_schema=spec.event_specs.event_schema,
-                    event_parents=spec.event_specs.event_parents,
-                ),
-            )
-            for spec in entity.human_inputs
+            HumanInDTO.from_entity_specs(specs, t)
+            for specs in entity.human_inputs
         ]
 
         program_inputs = [
-            ProgramInSpecs(
-                route=spec.route,
-                method=spec.method,
-                is_process_start=spec.is_process_start,
-                event_specs=EventSpecs(
-                    event_name=spec.event_specs.event_name,
-                    event_schema=spec.event_specs.event_schema,
-                    event_parents=spec.event_specs.event_parents,
-                ),
-            )
-            for spec in entity.program_inputs
+            ProgramInDTO.from_entity_specs(specs)
+            for specs in entity.program_inputs
         ]
 
         agent_inputs = [
-            AgentInSpecs(
-                agent_class=spec.agent_class,
-                agent_id=spec.agent_id,
-                is_process_start=spec.is_process_start,
-                event_specs=EventSpecs(
-                    event_name=spec.event_specs.event_name,
-                    event_schema=spec.event_specs.event_schema,
-                    event_parents=spec.event_specs.event_parents,
-                ),
-            )
-            for spec in entity.agent_inputs
+            AgentInDTO.from_entity_specs(specs, t)
+            for specs in entity.agent_inputs
         ]
 
         return cls(
             process_class=entity.process_class,
             process_id=entity.process_id,
-            process_config=ProcessConfigDTO.from_process_config(entity.process_config, t),
+            process_config=ProcessConfigDTO.from_process_entity_config(entity.process_config, t),
             human_inputs=human_inputs,
             program_inputs=program_inputs,
             agent_inputs=agent_inputs,

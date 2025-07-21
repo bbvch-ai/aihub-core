@@ -2,7 +2,10 @@ from typing import Annotated
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
-from aihub_lib.nats.events.form.InputTextElement import InputTextElement
+
+from aihub_lib.nats.events.form import Select, SelectButton, InputNumber, Knob, CascadeSelect, Checkbox, DatePicker, \
+    Textarea, Slider
+from aihub_lib.nats.events.form.elements.InputText import InputText
 from aihub_lib.testing.auth_utils.fake_user import fake_user
 from llama_index.core.base.llms.types import ChatMessage
 
@@ -19,14 +22,79 @@ from playground.AgenticCVProcess.events.human.SubmittedCV import SubmittedCV
 
 class AgenticCVProcess(AgenticProcess):
     @process_step()
-    def received_cv_2_analyzed_cv(
+    async def received_cv_2_analyzed_cv(
         self,
         cv: Annotated[
             SubmittedCV,
             Human.In(
                 route="/new-cv",
                 method="POST",
-                start_form=SubmittedCV(name=InputTextElement(label=LocaleString(en="Name of applicant"))),
+                start_form=SubmittedCV(
+                    name=InputText(label=LocaleString(en="Name of applicant")),
+                    profession=Select(
+                        label=LocaleString(en="Profession"),
+                        option_label="label",
+                        option_value="shortname",
+                        options=[
+                            { "shortname": "eng", "label": LocaleString(en="Engineer") },
+                            { "shortname": "mng", "label": LocaleString(en="Manager") },
+                        ],
+                    ),
+                    application_date=DatePicker(
+                        label=LocaleString(en="Application date"),
+                    ),
+                    level=SelectButton(
+                        label="Level",
+                        options=["Junior", "Senior"]
+                    ),
+                    match=Slider(
+                        label="Match",
+                        min=0,
+                        max=100,
+                        step=1,
+                    ),
+                    salary=InputNumber(
+                        label="Salary Expectations",
+                        min=0,
+                        max=200_000,
+                        step=10_000,
+                        mode="currency",
+                        show_buttons=True,
+                        currency="CHF",
+                        locale="de-CH"
+                    ),
+                    business_area=CascadeSelect(
+                        label="Business area",
+                        options=[
+                            {
+                                "name": LocaleString(en="bbv Switzerland"),
+                                "code": "bbv-ch",
+                                "locations": [
+                                    { "name": "Zurich", "code": "bbv-ch-zh" },
+                                    { "name": "Lucerne", "code": "bbv-ch-lu"}
+                                ]
+                            },
+                            {
+                                "name": LocaleString(en="bbv Greece"),
+                                "code": "bbv-gr",
+                                "locations": [
+                                    { "name": "Thessaloniki", "code": "bbv-gr-th" },
+                                ]
+                            }
+                        ],
+                        option_label="name",
+                        option_value="code",
+                        option_group_label="name",
+                        option_group_children=["locations"],
+                    ),
+                    hire=Checkbox(
+                        label=LocaleString(en="Hire $name?")
+                    ),
+                    reasoning=Textarea(
+                        condition_if="$get(hire).value",
+                        label=LocaleString(en="Why should we hire / not hire this person?")
+                    )
+                ),
             ),
         ],
     ) -> Annotated[AnalyzeCVRequest, Agent.Out(agent_class="LLMWrappingAgent", agent_id="dev_agent")]:
@@ -37,7 +105,7 @@ class AgenticCVProcess(AgenticProcess):
         )
 
     @process_step()
-    def analyzed_cv_2_accept_reject(
+    async def analyzed_cv_2_accept_reject(
         self,
         analyzed_cv: Annotated[
             AnalyzeCVRequest.submission, Agent.In(agent_class="LLMWrappingAgent", agent_id="dev_agent")
@@ -48,25 +116,25 @@ class AgenticCVProcess(AgenticProcess):
                 AcceptRejectRequest.accept(
                     display_name=LocaleString(en="This is Accept"),
                     display_description=LocaleString(en="This is description"),
-                    reason=InputTextElement(label=LocaleString(en=f"Why do you accept {analyzed_cv.cv_name}?")),
+                    reason=InputText(label=LocaleString(en=f"Why do you accept {analyzed_cv.cv_name}?")),
                 ),
                 AcceptRejectRequest.reject(
                     display_name=LocaleString(en="This is Reject"),
                     display_description=LocaleString(en="This is description"),
-                    reason=InputTextElement(label=LocaleString(en=f"Why do you reject {analyzed_cv.cv_name}?")),
+                    reason=InputText(label=LocaleString(en=f"Why do you reject {analyzed_cv.cv_name}?")),
                 ),
             ]
         )
 
     @process_step()
-    def accept_cv(
+    async def accept_cv(
         self,
         accepted_cv: Annotated[AcceptRejectRequest.accept, Human.In(route="/cv/accept", method="POST")],
     ) -> Annotated[SaveDecisionRequest, Program.Out(endpoint="http://my-webserver.com/cv/accept", method="POST")]:
         return SaveDecisionRequest(decision=f"Accepted due to {accepted_cv.reason}")
 
     @process_step()
-    def reject_cv(
+    async def reject_cv(
         self,
         rejected_cv: Annotated[AcceptRejectRequest.reject, Human.In(route="/cv/reject", method="POST")],
     ) -> Annotated[SaveDecisionRequest, Program.Out(endpoint="http://my-webserver.com/cv/reject", method="POST")]:

@@ -32,6 +32,6 @@ const { t } = useI18n()
 const { processes, processesAreLoading } = useProcesses()
 
 const toProcess = (process: ProcessDto) => {
-  router.push(localePath(`/service/processes/process-${process.process_id}-${process.process_class}/overview`))
+  router.push(localePath(`/service/processes/${process.process_class}-${process.process_id}/overview`))
 }
 </script>

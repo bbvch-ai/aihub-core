@@ -1,5 +1,6 @@
 from typing import Annotated
 
+from aihub_api.routes.process.dto.in_specs.HumanInDTO import HumanInDTO
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -17,7 +18,6 @@ from nats.aio.client import Client as NATS
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
-from aihub_api.routes.process.dto.ProcessHumanInDto import ProcessHumanInDto
 from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 from aihub_api.routes.process.ProcessService import ProcessService
 
@@ -50,7 +50,7 @@ class ProcessController(Controller):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def get_processes(self, route: str = "/") -> "ProcessController":
-        @self.router.get(route, tags=self.tags)
+        @self.router.get(route, tags=self.tags, response_model_exclude_none=True)
         async def get_processes(
             nc: Annotated[NATS, Depends(use_nats)],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.process.?>"))],
@@ -69,7 +69,7 @@ class ProcessController(Controller):
         return self
 
     def discover_processes(self, route: str = "/discover") -> "ProcessController":
-        @self.router.get(route, tags=self.tags)
+        @self.router.get(route, tags=self.tags, response_model_exclude_none=True)
         async def discover_processes(
             nc: Annotated[NATS, Depends(use_nats)],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.process.?>"))],
@@ -88,7 +88,7 @@ class ProcessController(Controller):
         return self
 
     def get_process(self, route: str = "/{process_class}/{process_id}") -> "ProcessController":
-        @self.router.get(route, tags=self.tags)
+        @self.router.get(route, tags=self.tags, response_model_exclude_none=True)
         async def get_process(
             nc: Annotated[NATS, Depends(use_nats)],
             process_class: str,
@@ -104,7 +104,7 @@ class ProcessController(Controller):
         return self
 
     def get_process_start_forms(self, route: str = "/{process_class}/{process_id}/start_forms") -> "ProcessController":
-        @self.router.get(route, tags=self.tags)
+        @self.router.get(route, tags=self.tags, response_model_exclude_none=True)
         async def get_process_start_forms(
             process_class: str,
             process_id: str,
@@ -113,7 +113,7 @@ class ProcessController(Controller):
                 UserIdentity, Security(self.user_with_permission("aihub.user.process.{process_class}.{process_id}"))
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-        ) -> list[ProcessHumanInDto]:
+        ) -> list[HumanInDTO]:
             """Returns a list of formkit forms that the user can submit to start the process."""
             # TODO: Filter for forms that the user has access to
             return await ProcessService.get_process_start_forms(nc, process_class, process_id, t)
@@ -123,7 +123,7 @@ class ProcessController(Controller):
     def get_process_open_forms(
         self, route: str = "/{process_class}/{process_id}/{process_walkthrough_id}/open_forms"
     ) -> "ProcessController":
-        @self.router.get(route, tags=self.tags)
+        @self.router.get(route, tags=self.tags, response_model_exclude_none=True)
         async def get_process_open_forms(
             process_class: str,
             process_id: str,
@@ -133,7 +133,7 @@ class ProcessController(Controller):
                 UserIdentity, Security(self.user_with_permission("aihub.user.process.{process_class}.{process_id}"))
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-        ) -> list[ProcessHumanInDto]:
+        ) -> list[HumanInDTO]:
             """Returns a list of formkit forms that the user can submit to continue the given process walkthrough"""
             # TODO: Filter for forms that the user has access to
             return await ProcessService.get_process_open_forms(nc, process_class, process_id, process_walkthrough_id, t)

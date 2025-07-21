@@ -1,7 +1,7 @@
 import abc
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import Field, computed_field, PrivateAttr
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -16,13 +16,25 @@ class PrimeVueElement(FormkitElement, abc.ABC):
     is available that lets you create InputText, CheckBoxes etc.
     """
 
-    formkit: Annotated[str, Field(description="Primevue Element")]
+    formkit: Annotated[str, Field(description="Primevue Element", alias="$formkit")]
     name: Annotated[str | None, Field(description="Name of this field")] = None
-    label: Annotated[LocaleString, Field(description="Label of this field")]
-    help: Annotated[LocaleString | None, Field(description="Help text of this field")] = None
+    label: Annotated[LocaleString | str, Field(description="Label of this field")]
+    help: Annotated[LocaleString | str | None, Field(description="Help text of this field")] = None
+
+    _required: bool = PrivateAttr(default=False)
 
     # https://formkit.com/essentials/validation
-    validation: Annotated[str | None, Field(description="Validation expression")] = None
+    additional_validation_rules: Annotated[str | None, Field(description="Validation expression")] = None
+
+    @computed_field
+    @property
+    def validation(self) -> str:
+        validation_str = ""
+        if self._required:
+            validation_str += "required"
+        if self.additional_validation_rules:
+            validation_str += self.additional_validation_rules
+        return validation_str.strip()
 
     def in_locale(self, t: LocaleHandler) -> "PrimeVueElement":
         self_copy = self.model_copy()

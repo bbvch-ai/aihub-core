@@ -21,7 +21,7 @@ class HumanWorkEvent(WorkEvent, Form):
 
     ```python
     class MyWorkEvent(HumanWorkEvent):
-        note: Annotated[str | InputTextElement, Field(description="Enter a note")]
+        note: Annotated[str | InputText, Field(description="Enter a note")]
         terms: Annotated[bool | InputCheckboxElement, Field(description="Accept the terms")]
     ```
 

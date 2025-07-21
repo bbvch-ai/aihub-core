@@ -3,6 +3,9 @@ import time
 from asyncio import sleep
 from typing import Any
 
+from aihub_api.routes.process.dto.in_specs.AgentInDTO import AgentInDTO
+from aihub_api.routes.process.dto.in_specs.HumanInDTO import HumanInDTO
+from aihub_api.routes.process.dto.in_specs.ProgramInDTO import ProgramInDTO
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalProcessEvent import ExternalProcessEvent
@@ -23,7 +26,6 @@ from nats.aio.client import Client as NATS
 
 from aihub_api.routes.process.dto.ProcessConfigDTO import ProcessConfigDTO
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
-from aihub_api.routes.process.dto.ProcessHumanInDto import ProcessHumanInDto
 from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 
 # In-memory caches to avoid repeatedly querying NATS for process info
@@ -106,12 +108,12 @@ class ProcessService:
                 process_class=event.process_class,
                 process_id=event.process_id,
                 process_config=ProcessConfigDTO.from_process_config(event.process_config, t),
-                human_inputs=event.human_inputs,
-                program_inputs=event.program_inputs,
-                agent_inputs=event.agent_inputs,
+                human_inputs=[HumanInDTO.from_human_in_specs(spec, t) for spec in event.human_inputs],
+                program_inputs=[ProgramInDTO.from_program_in_specs(spec) for spec in event.program_inputs],
+                agent_inputs=[AgentInDTO.from_agent_in_specs(spec, t) for spec in event.agent_inputs],
                 is_online=True,
             )
-            ProcessEntity.create_or_update_from_dto(process_dto)
+            ProcessEntity.create_or_update_from_discovery_response(event)
             process_found_event.set()
 
         topic_manager = ProcessInstanceTopicManager(process_class=process_class, process_id=process_id)
@@ -182,12 +184,12 @@ class ProcessService:
                     process_class=response.process_class,
                     process_id=response.process_id,
                     process_config=ProcessConfigDTO.from_process_config(response.process_config, t),
-                    human_inputs=response.human_inputs,
-                    program_inputs=response.program_inputs,
-                    agent_inputs=response.agent_inputs,
+                    human_inputs=[HumanInDTO.from_human_in_specs(spec, t) for spec in response.human_inputs],
+                    program_inputs=[ProgramInDTO.from_program_in_specs(spec) for spec in response.program_inputs],
+                    agent_inputs=[AgentInDTO.from_agent_in_specs(spec, t) for spec in response.agent_inputs],
                     is_online=True,
                 )
-                ProcessEntity.create_or_update_from_dto(process_dto)
+                ProcessEntity.create_or_update_from_discovery_response(response)
                 unique_processes_dict[unique_key] = process_dto
 
         processes = list(unique_processes_dict.values())
@@ -219,33 +221,18 @@ class ProcessService:
     @staticmethod
     async def get_process_start_forms(
         nc: NATS, process_class: str, process_id: str, t: LocaleHandler
-    ) -> list[ProcessHumanInDto]:
+    ) -> list[HumanInDTO]:
         """Returns a list of formkit forms that the user can submit to start the process."""
         process = await ProcessService.get_process(nc=nc, process_class=process_class, process_id=process_id, t=t)
-        process_human_input_dtos: list[ProcessHumanInDto] = []
-
-        for human_input in process.human_inputs:
-            if not human_input.is_process_start:
-                continue
-
-            process_human_input_dto = ProcessHumanInDto(
-                name=t.extract(human_input.name),
-                description=t.extract(human_input.description),
-                route=human_input.route,
-                method=human_input.method,
-                form=human_input.form,
-            )
-            process_human_input_dto.form = [form_element.in_locale(t) for form_element in process_human_input_dto.form]
-            process_human_input_dtos.append(process_human_input_dto)
-        return process_human_input_dtos
+        return process.human_inputs
 
     @staticmethod
     async def get_process_open_forms(
         nc: NATS, process_class: str, process_id: str, process_walkthrough_id: str, t: LocaleHandler
-    ) -> list[ProcessHumanInDto]:
+    ) -> list[HumanInDTO]:
         """Returns a list of formkit forms that the user can submit to continue the given process walkthrough"""
         process = await ProcessService.get_process(nc=nc, process_class=process_class, process_id=process_id, t=t)
-        process_human_input_dtos: list[ProcessHumanInDto] = []
+        process_human_input_dtos: list[HumanInDTO] = []
 
         persisted_events = PersistedProcessEventEntity.get_open_human_work_requests(
             process_class, process_id, process_walkthrough_id
@@ -272,12 +259,14 @@ class ProcessService:
                             }
                         )
 
-                process_human_input_dto = ProcessHumanInDto(
-                    name=t.extract(human_in.name),
-                    description=t.extract(human_in.description),
+                process_human_input_dto = HumanInDTO(
+                    name=human_in.name,
+                    description=human_in.description,
                     route=human_in.route,
                     method=human_in.method,
                     form=work_form_elements,
+                    is_process_start=False,
+                    event_specs=human_in.event_specs,
                 )
                 process_human_input_dto.form = [
                     form_element.in_locale(t) for form_element in process_human_input_dto.form

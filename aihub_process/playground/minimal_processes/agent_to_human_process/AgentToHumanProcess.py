@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.form.InputTextElement import InputTextElement
+from aihub_lib.nats.events.form.elements.InputText import InputText
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.delegators.agent.Agent import Agent
@@ -25,7 +25,7 @@ class AgentToHumanProcess(AgenticProcess):
         return HumanBWorkRequest(
             forms=[
                 HumanBWork(
-                    payload=InputTextElement(
+                    payload=InputText(
                         label=LocaleString(en=f"Please respond to <{agent_payload}> with a single word:")
                     )
                 )
