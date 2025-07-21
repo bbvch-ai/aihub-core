@@ -71,7 +71,7 @@ class AgentDispatcher(BaseDispatcher):
     async def handle_event(
         self,
         event: Annotated[ControlEvent, "The incoming control event to handle."],
-        topic: Annotated[AgentTopic, "The parsed topic of the event."],
+        topic: Annotated[PartialAgentTopic, "The parsed topic of the event."],
     ):
         """
         Called whenever a new event arrives. This method:
