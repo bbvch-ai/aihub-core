@@ -6,9 +6,8 @@ from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTop
 from aihub_lib.nats.topics.Topic import Topic
 
 
-class ProcessTopic(Topic):
+class ProcessClassTopic(Topic):
     process_class: Annotated[str, Field(description="The processes class identifier.")]
-    process_id: Annotated[str, Field(description="Unique identifier for the specific process instance.")]
 
     process_walkthrough_id: Annotated[
         str, Field(description="Unique identifier for this specific process walk through.")
@@ -31,7 +30,7 @@ class ProcessTopic(Topic):
         return (
             f"{ProcessTopicManager.PROCESS_TOPIC}."
             f"{self.process_class}."
-            f"{self.process_id}."
+            f"*."
             f"{self.process_walkthrough_id}."
             f"{self.event_type}."
             f"{self.event_name}."
@@ -39,7 +38,7 @@ class ProcessTopic(Topic):
         )
 
     @classmethod
-    def from_subject(cls, subject: str) -> "ProcessTopic":
+    def from_subject(cls, subject: str) -> "ProcessInstanceTopic":
         """
         Constructs a ProcessTopic from a subject string that may contain wildcards.
         """
@@ -56,7 +55,6 @@ class ProcessTopic(Topic):
 
         return cls(
             process_class=process_class,
-            process_id=process_id,
             process_walkthrough_id=process_walkthrough_id,
             event_type=event_type,
             event_name=event_name,

@@ -38,7 +38,7 @@ async def main():
 
     process_runner = ProcessTestRunner(
         process_type=FanOutProcess,
-        process_config=ProcessConfig(
+        default_process_config=ProcessConfig(
             process_id="fan_out_process",
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),

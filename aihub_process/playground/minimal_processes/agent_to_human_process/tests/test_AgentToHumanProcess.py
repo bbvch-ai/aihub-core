@@ -20,7 +20,7 @@ scenarios("./features/agent_to_human_process.feature")
 def process_runner_fixture():
     return ProcessTestRunner(
         process_type=AgentToHumanProcess,
-        process_config=ProcessConfig(
+        default_process_config=ProcessConfig(
             process_id="agent_to_human_process",
             name=LocaleString(en="Agent To Human Process"),
             description=LocaleString(en="Test Process with Agent and Human"),

@@ -25,7 +25,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Span, StatusCode, set_tracer_provider
 from pydantic import BaseModel
 
-from aihub_agent.context.BaseContext import BaseContext
+from aihub_lib.context.BaseContext import BaseContext
 
 logger = logging.getLogger(__name__)
 

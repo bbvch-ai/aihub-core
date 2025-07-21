@@ -6,7 +6,7 @@ from aihub_lib.nats.events import BaseEvent, InstanceDiscoveryRequestEvent, Proc
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
-from aihub_lib.nats.topics.process.ProcessTopic import ProcessTopic
+from aihub_lib.nats.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
 
 
 class ProcessNCSubscriber(NCSubscriber):
@@ -15,11 +15,11 @@ class ProcessNCSubscriber(NCSubscriber):
         cls,
         nc: NATS,
         topic_manager: ProcessTopicManager,
-        handler: Callable[[InstanceDiscoveryRequestEvent, ProcessTopic], Awaitable[None]],
+        handler: Callable[[InstanceDiscoveryRequestEvent, ProcessInstanceTopic], Awaitable[None]],
         call_id: str = "*",
     ):
         """Subscribe to discovery request events for all processes"""
-        subject = topic_manager.get_process_discovery_subject_request(call_id)
+        subject = topic_manager.get_process_instance_discovery_subject_request(call_id)
         return cls(
             nc=nc,
             subject=subject,
@@ -32,11 +32,11 @@ class ProcessNCSubscriber(NCSubscriber):
         cls,
         nc: NATS,
         topic_manager: ProcessTopicManager,
-        handler: Callable[[BaseEvent, ProcessTopic], Awaitable[None]],
+        handler: Callable[[BaseEvent, ProcessInstanceTopic], Awaitable[None]],
         call_id: str = "*",
     ):
         """Subscribe to discovery response events for processes, optionally filtered by a specific call_id."""
-        subject = topic_manager.get_process_discovery_subject_response(call_id)
+        subject = topic_manager.get_process_instance_discovery_subject_response(call_id)
         return cls(
             nc=nc,
             subject=subject,
@@ -49,7 +49,7 @@ class ProcessNCSubscriber(NCSubscriber):
         cls,
         nc: NATS,
         topic_manager: ProcessTopicManager,
-        handler: Callable[[ProcessEvent, ProcessTopic], Awaitable[None]],
+        handler: Callable[[ProcessEvent, ProcessInstanceTopic], Awaitable[None]],
     ):
         """Subscribe to all events within a specific process"""
         subject = topic_manager.get_subject_for_all_events_in_process()
@@ -65,7 +65,7 @@ class ProcessNCSubscriber(NCSubscriber):
         cls,
         nc: NATS,
         topic_manager: ProcessInstanceTopicManager,
-        handler: Callable[[BaseEvent, ProcessTopic], Awaitable[None]],
+        handler: Callable[[BaseEvent, ProcessInstanceTopic], Awaitable[None]],
         event: type[BaseEvent],
     ):
         """Subscribe to all events within a specific process instance"""

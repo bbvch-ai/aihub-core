@@ -6,7 +6,7 @@ from nats.js import JetStreamContext
 from aihub_lib.nats.events import BaseEvent, ControlEvent, WorkEvent, WorkRequestEvent
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
-from aihub_lib.nats.topics.process.ProcessTopic import ProcessTopic
+from aihub_lib.nats.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
 
 
 class ProcessJSSubscriber(JSSubscriber):
@@ -15,7 +15,7 @@ class ProcessJSSubscriber(JSSubscriber):
         cls,
         nc: NATS,
         topic_manager: ProcessInstanceTopicManager,
-        handler: Callable[[WorkEvent, ProcessTopic], Awaitable[None]],
+        handler: Callable[[WorkEvent, ProcessInstanceTopic], Awaitable[None]],
         queue_group: str,
         js: JetStreamContext | None = None,
     ):
@@ -39,7 +39,7 @@ class ProcessJSSubscriber(JSSubscriber):
         cls,
         nc: NATS,
         topic_manager: ProcessInstanceTopicManager,
-        handler: Callable[[WorkRequestEvent, ProcessTopic], Awaitable[None]],
+        handler: Callable[[WorkRequestEvent, ProcessInstanceTopic], Awaitable[None]],
         queue_group: str,
         js: JetStreamContext | None = None,
     ):
@@ -63,7 +63,7 @@ class ProcessJSSubscriber(JSSubscriber):
         cls,
         nc: NATS,
         topic_manager: ProcessInstanceTopicManager,
-        handler: Callable[[BaseEvent, ProcessTopic], Awaitable[None]],
+        handler: Callable[[BaseEvent, ProcessInstanceTopic], Awaitable[None]],
         queue_group: str,
         js: JetStreamContext | None = None,
     ):

@@ -7,7 +7,7 @@ from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.subscribers.process.ProcessJSSubscriber import ProcessJSSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
-from aihub_lib.nats.topics import ProcessTopic, Topic
+from aihub_lib.nats.topics import ProcessInstanceTopic, Topic
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
@@ -105,7 +105,7 @@ class AbstractEntityDelegator(abc.ABC):
         pass
 
     @abc.abstractmethod
-    async def handle_process_step_output(self, event: WorkRequestEvent, topic: ProcessTopic):
+    async def handle_process_step_output(self, event: WorkRequestEvent, topic: ProcessInstanceTopic):
         """
         In the default implementation, this method will receive ALL WorkReqeustEvents returned in this process.
         Note that you must usually filter by instance to ensure you only process events that match the entity type.

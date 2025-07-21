@@ -8,11 +8,12 @@ from aihub_lib.nats.events import (
     ProgramWorkEvent,
     WorkRequestEvent,
 )
-from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
 from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
-from aihub_lib.nats.events.discovery.process.ProcessDiscoveryResponseEvent import ProcessDiscoveryResponseEvent
+from aihub_lib.nats.events.discovery.process.ProcessInstanceDiscoveryResponseEvent import (
+    ProcessInstanceDiscoveryResponseEvent,
+)
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from aihub_lib.nats.events.form import InputTextElement
 from aihub_lib.nats.events.process.ProcessEvent import ProcessEvent
@@ -26,8 +27,8 @@ from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubs
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
-from aihub_lib.nats.topics.discovery.process.ProcessDiscoveryTopic import ProcessDiscoveryTopic
-from aihub_lib.nats.topics.process.ProcessTopic import ProcessTopic
+from aihub_lib.nats.topics.discovery.process.ProcessInstanceDiscoveryTopic import ProcessInstanceDiscoveryTopic
+from aihub_lib.nats.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
@@ -97,8 +98,8 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
         self.process_event_subscriber: JSSubscriber[WorkRequestEvent] | None = None
         self.js_publisher: JSPublisher | None = None
 
-        self.nc_publisher: NCPublisher[ProcessDiscoveryResponseEvent] | None = None
-        self.discovery_subscriber: NCSubscriber[DiscoveryRequestEvent] | None = None
+        self.nc_publisher: NCPublisher[ProcessInstanceDiscoveryResponseEvent] | None = None
+        self.discovery_subscriber: NCSubscriber[InstanceDiscoveryRequestEvent] | None = None
 
         self.simulated_events: list[tuple[type[ProcessEvent], ProcessEvent]] = simulated_events or {}
 
@@ -112,7 +113,7 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
             description=LocaleString(de="Test Process Description"),
         )
 
-    async def simulate_process(self, event: ProcessEvent, topic: ProcessTopic):
+    async def simulate_process(self, event: ProcessEvent, topic: ProcessInstanceTopic):
         """
         Handler for work request events targeting this process instance. If a WorkRequestEvent arrives,
         publish the simulated events in sequence.
@@ -124,24 +125,24 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
             if event.event_name == in_event_type.event_name_from_class():
                 await self.publish_event(out_event, topic)
 
-    async def discovery_handler(self, event: DiscoveryRequestEvent, topic: ProcessDiscoveryTopic):
+    async def discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: ProcessInstanceDiscoveryTopic):
         """
         Responds to a discovery request by publishing an `ProcessDiscoveryResponseEvent`.
         This simulates the process being discoverable by clients, providing metadata and start events.
         """
         logger.debug(f"Received discovery request for {self.process_class} ({self.process_id})")
-        subject = self.topic_manager.get_process_discovery_subject_response(topic.call_id)
-        process_discovery_response_event = ProcessDiscoveryResponseEvent(
+        subject = self.topic_manager.get_process_instance_discovery_subject_response(topic.call_id)
+        process_discovery_response_event = ProcessInstanceDiscoveryResponseEvent(
             process_class=self.process_class,
             process_id=self.process_id,
-            process_config=self.default_process_config,
+            default_process_config=self.default_process_config,
             human_inputs=self.human_inputs,
             program_inputs=self.program_inputs,
             agent_inputs=self.agent_inputs,
         )
         await self.nc_publisher.publish_event(process_discovery_response_event, subject)
 
-    async def publish_event(self, event: BaseEvent, topic: ProcessTopic):
+    async def publish_event(self, event: BaseEvent, topic: ProcessInstanceTopic):
         """
         Publish a given event (ControlEvent or DisplayEvent) to the appropriate subject based
         on the process walkthrough ID specified in the `topic`.

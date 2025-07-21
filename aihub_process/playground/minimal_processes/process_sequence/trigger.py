@@ -28,7 +28,7 @@ async def main():
 
     initial_process_runner = ProcessTestRunner(
         process_type=InitialProcess,
-        process_config=ProcessConfig(
+        default_process_config=ProcessConfig(
             process_id="initial_process",
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
@@ -37,7 +37,7 @@ async def main():
 
     subsequent_process_runner = ProcessTestRunner(
         process_type=SubsequentProcess,
-        process_config=ProcessConfig(
+        default_process_config=ProcessConfig(
             process_id="subsequent_process",
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),

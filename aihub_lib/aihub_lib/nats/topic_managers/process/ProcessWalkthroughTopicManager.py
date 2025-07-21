@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
-from aihub_lib.nats.topics.process.ProcessTopic import ProcessTopic
+from aihub_lib.nats.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
 
 
 class ProcessWalkthroughTopicManager(ProcessInstanceTopicManager):
@@ -70,7 +70,7 @@ class ProcessWalkthroughTopicManager(ProcessInstanceTopicManager):
         )
 
     @classmethod
-    def from_process_topic(cls, topic: ProcessTopic) -> "ProcessWalkthroughTopicManager":
+    def from_process_topic(cls, topic: ProcessInstanceTopic) -> "ProcessWalkthroughTopicManager":
         """Constructs an ProcessWalkthroughTopicManager directly from an processTopic object."""
         return cls(
             process_class=topic.process_class,

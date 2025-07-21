@@ -7,7 +7,7 @@ from aihub_lib.nats.events.work.process.ProcessWorkEvent import ProcessWorkEvent
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
-from aihub_lib.nats.topics import ProcessTopic
+from aihub_lib.nats.topics import ProcessInstanceTopic
 from bson import ObjectId
 
 from aihub_process.delegators.AbstractEntityDelegator import AbstractEntityDelegator
@@ -68,10 +68,10 @@ class ProcessDelegator(AbstractEntityDelegator):
 
     def handle_process_step_input_factory(
         self, work_event_type: type[ProcessWorkEvent], is_process_start: bool
-    ) -> Callable[[ProcessStopEvent, ProcessTopic], Awaitable[None]]:
+    ) -> Callable[[ProcessStopEvent, ProcessInstanceTopic], Awaitable[None]]:
         async def _handle_process_step_input(
             event: Annotated[ProcessStopEvent, "The incoming process stop event to handle."],
-            topic: Annotated[ProcessTopic, "The parsed topic of the event."],
+            topic: Annotated[ProcessInstanceTopic, "The parsed topic of the event."],
         ):
             logger.debug(f"Handling process stop event: {event.event_name}")
             work_event = work_event_type(process_stop_event=event)
@@ -90,6 +90,6 @@ class ProcessDelegator(AbstractEntityDelegator):
 
         return _handle_process_step_input
 
-    async def handle_process_step_output(self, event: WorkRequestEvent, topic: ProcessTopic):
+    async def handle_process_step_output(self, event: WorkRequestEvent, topic: ProcessInstanceTopic):
         # The ProcessOutput Event is already published in the right format anyways
         return

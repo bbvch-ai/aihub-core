@@ -45,7 +45,7 @@ def agent_b_runner_fixture():
 def process_runner_fixture():
     return ProcessTestRunner(
         process_type=AgentOnlyProcess,
-        process_config=ProcessConfig(
+        default_process_config=ProcessConfig(
             process_id="agent_only_process",
             name=LocaleString(en="Agent Only Process"),
             description=LocaleString(en="Test Agent Only Process with AgentA and AgentB"),

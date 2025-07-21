@@ -16,7 +16,7 @@ from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import Agent
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
 from aihub_lib.nats.topics import AgentTopic
-from aihub_lib.nats.topics.process.ProcessTopic import ProcessTopic
+from aihub_lib.nats.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent as AgentInThread
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from bson import ObjectId
@@ -158,7 +158,7 @@ class AgentDelegator(AbstractEntityDelegator):
 
         return _handle_process_step_input
 
-    async def handle_process_step_output(self, event: WorkRequestEvent, topic: ProcessTopic):
+    async def handle_process_step_output(self, event: WorkRequestEvent, topic: ProcessInstanceTopic):
         """
         When receiving a AgentWorkRequestEvent, we can simply create a new thread and send the start event
         that is part of te AgentWorkReqeustEvent to the appropriate agent as an external event.

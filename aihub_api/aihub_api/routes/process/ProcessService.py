@@ -8,13 +8,12 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalProcessEvent import ExternalProcessEvent
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
 from aihub_lib.nats.events import WorkEvent
-from aihub_lib.nats.events.discovery import ProcessDiscoveryResponseEvent
-from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
+from aihub_lib.nats.events.discovery import ProcessInstanceDiscoveryResponseEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
-from aihub_lib.nats.topics import ProcessDiscoveryTopic
+from aihub_lib.nats.topics import ProcessInstanceDiscoveryTopic
 from aihub_lib.persistence.messaging.entities.PersistedProcessEventEntity import PersistedProcessEventEntity
 from aihub_lib.persistence.process.ProcessEntity import ProcessEntity
 from bson import ObjectId
@@ -99,14 +98,14 @@ class ProcessService:
         process_dto: ProcessDTO | None = None
         process_found_event = asyncio.Event()
 
-        async def discovery_handler(event: ProcessDiscoveryResponseEvent, topic: ProcessDiscoveryTopic):
+        async def discovery_handler(event: ProcessInstanceDiscoveryResponseEvent, topic: ProcessInstanceDiscoveryTopic):
             nonlocal process_dto
             # Found the process, stop subscriber and signal event
             await nc_subscriber.stop()
             process_dto = ProcessDTO(
                 process_class=event.process_class,
                 process_id=event.process_id,
-                process_config=ProcessConfigDTO.from_process_config(event.process_config, t),
+                process_config=ProcessConfigDTO.from_process_config(event.default_process_config, t),
                 human_inputs=event.human_inputs,
                 program_inputs=event.program_inputs,
                 agent_inputs=event.agent_inputs,
@@ -124,7 +123,8 @@ class ProcessService:
 
         # Send discovery request for the specific process
         await nc_publisher.publish_event(
-            event=DiscoveryRequestEvent(), subject=topic_manager.get_process_discovery_subject_request(call_id=call_id)
+            event=InstanceDiscoveryRequestEvent(),
+            subject=topic_manager.get_process_instance_discovery_subject_request(call_id=call_id),
         )
 
         # Wait up to 1 second for response
@@ -154,7 +154,7 @@ class ProcessService:
         call_id = str(ObjectId())
         discovery_responses = []
 
-        async def discovery_handler(event: ProcessDiscoveryResponseEvent, topic: ProcessDiscoveryTopic):
+        async def discovery_handler(event: ProcessInstanceDiscoveryResponseEvent, topic: ProcessInstanceDiscoveryTopic):
             discovery_responses.append(event)
 
         topic_manager = ProcessTopicManager()
@@ -166,7 +166,8 @@ class ProcessService:
 
         # Broadcast the discovery request
         await nc_publisher.publish_event(
-            event=DiscoveryRequestEvent(), subject=topic_manager.get_process_discovery_subject_request(call_id=call_id)
+            event=InstanceDiscoveryRequestEvent(),
+            subject=topic_manager.get_process_instance_discovery_subject_request(call_id=call_id),
         )
 
         # Wait briefly for responses
@@ -182,7 +183,7 @@ class ProcessService:
                 process_dto = ProcessDTO(
                     process_class=response.process_class,
                     process_id=response.process_id,
-                    process_config=ProcessConfigDTO.from_process_config(response.process_config, t),
+                    process_config=ProcessConfigDTO.from_process_config(response.default_process_config, t),
                     human_inputs=response.human_inputs,
                     program_inputs=response.program_inputs,
                     agent_inputs=response.agent_inputs,

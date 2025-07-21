@@ -1,3 +1,3 @@
-from .ProcessDiscoveryTopic import ProcessDiscoveryTopic
+from .ProcessInstanceDiscoveryTopic import ProcessInstanceDiscoveryTopic
 
-__all__ = ["ProcessDiscoveryTopic"]
+__all__ = ["ProcessInstanceDiscoveryTopic"]

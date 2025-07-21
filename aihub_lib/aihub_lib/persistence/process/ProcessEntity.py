@@ -123,10 +123,10 @@ class ProcessEntity(Document):
         ).first()
 
         process_config = ProcessConfig(
-            process_id=process_dto.process_config.process_id,
-            name=process_dto.process_config.name,
-            description=process_dto.process_config.description,
-            icon=process_dto.process_config.icon,
+            process_id=process_dto.default_process_config.process_id,
+            name=process_dto.default_process_config.name,
+            description=process_dto.default_process_config.description,
+            icon=process_dto.default_process_config.icon,
         )
 
         # Create EventSpec objects, serializing the schema to avoid $ issues
@@ -138,7 +138,7 @@ class ProcessEntity(Document):
 
         if existing_process:
             # Update existing process
-            existing_process.process_config = process_config
+            existing_process.default_process_config = process_config
             existing_process.human_inputs = human_inputs
             existing_process.program_inputs = program_inputs
             existing_process.agent_inputs = agent_inputs
