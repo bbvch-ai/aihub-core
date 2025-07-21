@@ -43,7 +43,6 @@ FROM python:3.11-slim AS runtime
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
-    VIRTUAL_ENV=/app/aihub_api/.venv \
     POETRY_VERSION=2.1.1 \
     POETRY_HOME="/opt/poetry" \
     POETRY_NO_INTERACTION=1 \
@@ -84,9 +83,6 @@ RUN echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/"$USERNAME" && \
 
 # Set the working directory
 WORKDIR /app
-
-# Copy the virtual environment from the builder stage
-COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # Copy only the necessary code from the builder stage
 COPY --from=builder /app /app
