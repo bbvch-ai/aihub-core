@@ -7,10 +7,10 @@ from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent i
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from pydantic import Field
 
-from aihub_api.agents.AgentClass import AgentClass
+from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
 
 
-class AgentInstance(AgentClass):
+class AgentInstanceDTO(AgentClassDTO):
     """
     Encapsulates the data transfer object (DTO) for an agent class.
     Contains information about the agent class, including its name and configuration specifications.
@@ -23,7 +23,7 @@ class AgentInstance(AgentClass):
     ]
 
     @classmethod
-    def from_class_and_config(cls, class_dto: AgentClass, agent_config: AgentConfig) -> "AgentInstance":
+    def from_class_and_config(cls, class_dto: AgentClassDTO, agent_config: AgentConfig) -> "AgentInstanceDTO":
         """Creates an AgentDTO from an AgentClassDTO and an AgentConfig."""
         return cls(
             agent_class=class_dto.agent_class,

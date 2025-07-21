@@ -15,8 +15,8 @@ from aihub_lib.testing.logging.logger import enable_logging
 from bson import ObjectId
 from fastapi import HTTPException
 
-from aihub_api.agents.AgentClass import AgentClass
-from aihub_api.agents.AgentInstance import AgentInstance
+from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
+from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
 from aihub_api.routes.agent.AgentService import (
     DISCOVER_AGENTS_CACHE,
     GET_AGENT_CLASS_CACHE,
@@ -45,7 +45,7 @@ def sample_agent_config():
 @pytest.fixture
 def sample_agent_class(sample_agent_config):
     """Create a sample AgentClass for testing."""
-    mock_agent_class = Mock(spec=AgentClass)
+    mock_agent_class = Mock(spec=AgentClassDTO)
     mock_agent_class.agent_class = "TestAgent"
     mock_agent_class.default_agent_config = sample_agent_config
     mock_agent_class.agent_config_specs = []
@@ -59,7 +59,7 @@ def sample_agent_class(sample_agent_config):
 @pytest.fixture
 def sample_agent_instance(sample_agent_class, sample_agent_config):
     """Create a sample AgentInstance for testing."""
-    mock_instance = Mock(spec=AgentInstance)
+    mock_instance = Mock(spec=AgentInstanceDTO)
     mock_instance.agent_class = "TestAgent"
     mock_instance.agent_id = "test_agent_1"
     mock_instance.agent_config = sample_agent_config
@@ -271,10 +271,10 @@ class TestAgentServiceUnit:
                     custom_config.agent_id = "custom_agent"
                     mock_from_entity.return_value = custom_config
 
-                    with patch.object(AgentInstance, "from_class_and_config") as mock_from_class_config:
-                        mock_instance1 = Mock(spec=AgentInstance)
+                    with patch.object(AgentInstanceDTO, "from_class_and_config") as mock_from_class_config:
+                        mock_instance1 = Mock(spec=AgentInstanceDTO)
                         mock_instance1.agent_id = "custom_agent"
-                        mock_instance2 = Mock(spec=AgentInstance)
+                        mock_instance2 = Mock(spec=AgentInstanceDTO)
                         mock_instance2.agent_id = "test_agent_1"
                         mock_from_class_config.side_effect = [mock_instance1, mock_instance2]
 
@@ -296,7 +296,7 @@ class TestAgentServiceUnit:
     @pytest.mark.asyncio
     async def test_discover_agent_instances_cached(self, mock_nats):
         """Test discover_agent_instances returns cached result."""
-        cached_result = [Mock(spec=AgentInstance)]
+        cached_result = [Mock(spec=AgentInstanceDTO)]
         DISCOVER_AGENTS_CACHE["all_agent_instances"] = cached_result
 
         result = await AgentService.discover_agent_instances(mock_nats)
@@ -333,8 +333,8 @@ class TestAgentServiceUnit:
                     with patch("aihub_api.routes.agent.AgentService.sleep") as mock_sleep:
                         mock_sleep.return_value = None
 
-                        with patch.object(AgentClass, "from_discovery_event") as mock_from_event:
-                            mock_agent_class = Mock(spec=AgentClass)
+                        with patch.object(AgentClassDTO, "from_discovery_event") as mock_from_event:
+                            mock_agent_class = Mock(spec=AgentClassDTO)
                             mock_from_event.return_value = mock_agent_class
 
                             # Simulate receiving discovery response
@@ -364,7 +364,7 @@ class TestAgentServiceUnit:
                                     for response in discovery_responses:
                                         unique_key = response.agent_class
                                         if unique_key not in unique_agents_dict:
-                                            agent_class = AgentClass.from_discovery_event(response)
+                                            agent_class = AgentClassDTO.from_discovery_event(response)
                                             unique_agents_dict[unique_key] = agent_class
 
                                     agents = list(unique_agents_dict.values())
@@ -381,7 +381,7 @@ class TestAgentServiceUnit:
     @pytest.mark.asyncio
     async def test_discover_agent_classes_cached(self, mock_nats):
         """Test discover_agent_classes returns cached result."""
-        cached_result = [Mock(spec=AgentClass)]
+        cached_result = [Mock(spec=AgentClassDTO)]
         DISCOVER_AGENTS_CACHE["all_agent_classes"] = cached_result
 
         result = await AgentService.discover_agent_classes(mock_nats)
@@ -478,7 +478,7 @@ class TestAgentServiceUnit:
     @pytest.mark.asyncio
     async def test_discover_agent_class_cached(self, mock_nats):
         """Test discover_agent_class returns cached result."""
-        cached_result = Mock(spec=AgentClass)
+        cached_result = Mock(spec=AgentClassDTO)
         GET_AGENT_CLASS_CACHE["TestAgent"] = cached_result
 
         result = await AgentService.discover_agent_class(mock_nats, "TestAgent")
@@ -667,7 +667,7 @@ class TestAgentServiceUnit:
                                 for response in discovery_responses:
                                     unique_key = response.agent_class
                                     if unique_key not in unique_agents_dict:
-                                        agent_class = AgentClass.from_discovery_event(response)
+                                        agent_class = AgentClassDTO.from_discovery_event(response)
                                         unique_agents_dict[unique_key] = agent_class
 
                                 agents = list(unique_agents_dict.values())

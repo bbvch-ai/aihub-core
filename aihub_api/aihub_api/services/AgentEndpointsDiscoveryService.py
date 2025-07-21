@@ -30,7 +30,7 @@ from pydantic import BaseModel
 from stringcase import snakecase
 from typing_extensions import override
 
-from aihub_api.agents.AgentInstance import AgentInstance
+from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.agent.AgentService import AgentService
@@ -73,7 +73,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             topic.call_id, topic.agent_class, topic.agent_id
         )
 
-        agents: list[AgentInstance] = []
+        agents: list[AgentInstanceDTO] = []
         if topic.agent_class == "*":
             agents = await AgentService.discover_agent_instances(self.nc)
 
@@ -118,7 +118,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
     @override
     async def _discover_and_register(self):
         """Discovers agents and registers endpoints that accept their starting events"""
-        agents: list[AgentInstance] = await AgentService.discover_agent_instances(self.nc)
+        agents: list[AgentInstanceDTO] = await AgentService.discover_agent_instances(self.nc)
 
         # Deregister old endpoints
         for registered_agent_class, registered_agent_id in list(self.registered_entities):

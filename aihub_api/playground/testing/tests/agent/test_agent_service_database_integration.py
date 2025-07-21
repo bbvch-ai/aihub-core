@@ -8,8 +8,8 @@ from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # 
 from aihub_lib.testing.logging.logger import enable_logging
 from fastapi import HTTPException
 
-from aihub_api.agents.AgentClass import AgentClass
-from aihub_api.agents.AgentInstance import AgentInstance
+from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
+from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
 from aihub_api.routes.agent.AgentService import GET_AGENT_INSTANCE_CACHE, AgentService
 
 enable_logging()
@@ -42,7 +42,7 @@ def sample_default_config():
 @pytest.fixture
 def sample_agent_class(sample_default_config):
     """Create a sample AgentClass with default config."""
-    mock_agent_class = Mock(spec=AgentClass)
+    mock_agent_class = Mock(spec=AgentClassDTO)
     mock_agent_class.agent_class = "TestAgent"
     mock_agent_class.default_agent_config = sample_default_config
     return mock_agent_class
@@ -87,8 +87,8 @@ class TestAgentServiceDatabaseIntegration:
                 with patch.object(AgentConfig, "from_entity") as mock_from_entity:
                     mock_from_entity.return_value = sample_agent_config
 
-                    with patch.object(AgentInstance, "from_class_and_config") as mock_from_class_config:
-                        mock_instance = Mock(spec=AgentInstance)
+                    with patch.object(AgentInstanceDTO, "from_class_and_config") as mock_from_class_config:
+                        mock_instance = Mock(spec=AgentInstanceDTO)
                         mock_instance.agent_config = sample_agent_config
                         mock_from_class_config.return_value = mock_instance
 
@@ -123,8 +123,8 @@ class TestAgentServiceDatabaseIntegration:
             with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find_configs:
                 mock_find_configs.return_value = []  # No DB configs found
 
-                with patch.object(AgentInstance, "from_class_and_config") as mock_from_class_config:
-                    mock_instance = Mock(spec=AgentInstance)
+                with patch.object(AgentInstanceDTO, "from_class_and_config") as mock_from_class_config:
+                    mock_instance = Mock(spec=AgentInstanceDTO)
                     mock_instance.agent_config = sample_default_config
                     mock_from_class_config.return_value = mock_instance
 
@@ -173,8 +173,8 @@ class TestAgentServiceDatabaseIntegration:
                 with patch.object(AgentConfig, "from_entity") as mock_from_entity:
                     mock_from_entity.return_value = db_config
 
-                    with patch.object(AgentInstance, "from_class_and_config") as mock_from_class_config:
-                        mock_instance = Mock(spec=AgentInstance)
+                    with patch.object(AgentInstanceDTO, "from_class_and_config") as mock_from_class_config:
+                        mock_instance = Mock(spec=AgentInstanceDTO)
                         mock_instance.agent_config = db_config
                         mock_from_class_config.return_value = mock_instance
 
@@ -253,12 +253,12 @@ class TestAgentServiceDatabaseIntegration:
                 with patch.object(AgentConfig, "from_entity") as mock_from_entity:
                     mock_from_entity.side_effect = [sample_agent_config, config2]
 
-                    with patch.object(AgentInstance, "from_class_and_config") as mock_from_class_config:
-                        mock_instance1 = Mock(spec=AgentInstance)
+                    with patch.object(AgentInstanceDTO, "from_class_and_config") as mock_from_class_config:
+                        mock_instance1 = Mock(spec=AgentInstanceDTO)
                         mock_instance1.agent_config = sample_agent_config
-                        mock_instance2 = Mock(spec=AgentInstance)
+                        mock_instance2 = Mock(spec=AgentInstanceDTO)
                         mock_instance2.agent_config = config2
-                        mock_instance3 = Mock(spec=AgentInstance)
+                        mock_instance3 = Mock(spec=AgentInstanceDTO)
                         mock_instance3.agent_config = sample_default_config
 
                         mock_from_class_config.side_effect = [mock_instance1, mock_instance2, mock_instance3]
@@ -309,8 +309,8 @@ class TestAgentServiceDatabaseIntegration:
                 with patch.object(AgentConfig, "from_entity") as mock_from_entity:
                     mock_from_entity.return_value = db_config
 
-                    with patch.object(AgentInstance, "from_class_and_config") as mock_from_class_config:
-                        mock_instance = Mock(spec=AgentInstance)
+                    with patch.object(AgentInstanceDTO, "from_class_and_config") as mock_from_class_config:
+                        mock_instance = Mock(spec=AgentInstanceDTO)
                         mock_instance.agent_config = db_config
                         mock_from_class_config.return_value = mock_instance
 
@@ -336,7 +336,7 @@ class TestAgentServiceDatabaseIntegration:
         # Clear any existing cache
         GET_AGENT_INSTANCE_CACHE.clear()
 
-        cached_result = [Mock(spec=AgentInstance)]
+        cached_result = [Mock(spec=AgentInstanceDTO)]
         cache_key = ("TestAgent", "*")
         GET_AGENT_INSTANCE_CACHE[cache_key] = cached_result
 
@@ -352,7 +352,7 @@ class TestAgentServiceDatabaseIntegration:
         # Clear any existing cache
         GET_AGENT_INSTANCE_CACHE.clear()
 
-        cached_result = Mock(spec=AgentInstance)
+        cached_result = Mock(spec=AgentInstanceDTO)
         cache_key = ("TestAgent", "test_agent_1")
         GET_AGENT_INSTANCE_CACHE[cache_key] = cached_result
 
@@ -378,8 +378,8 @@ class TestAgentServiceDatabaseIntegration:
             with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find_configs:
                 mock_find_configs.return_value = []  # No DB configs found
 
-                with patch.object(AgentInstance, "from_class_and_config") as mock_from_class_config:
-                    mock_instance = Mock(spec=AgentInstance)
+                with patch.object(AgentInstanceDTO, "from_class_and_config") as mock_from_class_config:
+                    mock_instance = Mock(spec=AgentInstanceDTO)
                     mock_instance.agent_config = sample_default_config
                     mock_from_class_config.return_value = mock_instance
 
