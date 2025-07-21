@@ -236,7 +236,7 @@ services:
       - "traefik.http.routers.webui.tls.certresolver=letsencrypt"
       - "traefik.http.services.webui.loadbalancer.server.port=8080"
       - "traefik.http.middlewares.allow-iframe.headers.customResponseHeaders.Content-Security-Policy=frame-ancestors 'self' https://${DOMAIN}"
-      - "traefik.http.routers.webui.middlewares=security-headers@fil,allow-iframe"
+      - "traefik.http.routers.webui.middlewares=security-headers@file,allow-iframe"
 
   # </editor-fold>
 
@@ -264,7 +264,7 @@ services:
       - "traefik.http.routers.phoenix.tls.certresolver=letsencrypt"
       - "traefik.http.services.phoenix.loadbalancer.server.port=6006"
       - "traefik.http.middlewares.strip-phoenix.stripprefix.prefixes=/phoenix"
-      - "traefik.http.routers.phoenix.middlewares=security-headers@fil,strip-phoenix"
+      - "traefik.http.routers.phoenix.middlewares=security-headers@file,strip-phoenix"
   # </editor-fold">
 
   # === Nats & Redis Stack ===
@@ -410,14 +410,6 @@ services:
       - "traefik.http.routers.http-catch.entrypoints=web"
       - "traefik.http.routers.http-catch.middlewares=https-redirect"
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
-      # Security headers
-      - "traefik.http.middlewares.security-headers.headers.sslredirect=true"
-      - "traefik.http.middlewares.security-headers.headers.stsSeconds=31536000"
-      - "traefik.http.middlewares.security-headers.headers.stsIncludeSubdomains=true"
-      - "traefik.http.middlewares.security-headers.headers.customFrameOptionsValue=DENY"
-      - "traefik.http.middlewares.security-headers.headers.contentTypeNosniff=true"
-      - "traefik.http.middlewares.security-headers.headers.browserXssFilter=true"
-      - "traefik.http.middlewares.security-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
       # Dashboard
       - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
       - "traefik.http.routers.traefik.entrypoints=websecure"
