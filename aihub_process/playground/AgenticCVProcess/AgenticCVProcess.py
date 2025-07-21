@@ -14,14 +14,21 @@ from aihub_process.process.decorators.process_step import process_step
 from playground.AgenticCVProcess.events.agent.AnalyzeCVRequest import AnalyzeCVRequest
 from playground.AgenticCVProcess.events.human.AcceptRejectRequest import AcceptRejectRequest
 from playground.AgenticCVProcess.events.program.SaveDecisionRequest import SaveDecisionRequest
-from playground.AgenticCVProcess.events.program.SubmittedCV import SubmittedCV
+from playground.AgenticCVProcess.events.human.SubmittedCV import SubmittedCV
 
 
 class AgenticCVProcess(AgenticProcess):
     @process_step()
     def received_cv_2_analyzed_cv(
         self,
-        cv: Annotated[SubmittedCV, Program.In(route="/cv", method="POST")],
+        cv: Annotated[
+            SubmittedCV,
+            Human.In(
+                route="/new-cv",
+                method="POST",
+                start_form=SubmittedCV(name=InputTextElement(label=LocaleString(en="Name of applicant"))),
+            ),
+        ],
     ) -> Annotated[AnalyzeCVRequest, Agent.Out(agent_class="LLMWrappingAgent", agent_id="dev_agent")]:
         return AnalyzeCVRequest(
             start_event=UserMessageEvent(
@@ -35,7 +42,7 @@ class AgenticCVProcess(AgenticProcess):
         analyzed_cv: Annotated[
             AnalyzeCVRequest.submission, Agent.In(agent_class="LLMWrappingAgent", agent_id="dev_agent")
         ],
-    ) -> Annotated[AcceptRejectRequest, Human.Out(users=[])]:
+    ) -> Annotated[AcceptRejectRequest, Human.Out(user_ids=["some-user-id"])]:
         return AcceptRejectRequest(
             forms=[
                 AcceptRejectRequest.accept(
@@ -55,12 +62,12 @@ class AgenticCVProcess(AgenticProcess):
     def accept_cv(
         self,
         accepted_cv: Annotated[AcceptRejectRequest.accept, Human.In(route="/cv/accept", method="POST")],
-    ) -> Annotated[SaveDecisionRequest, Program.Out(route="http://my-webserver.com/cv/accept", method="POST")]:
+    ) -> Annotated[SaveDecisionRequest, Program.Out(endpoint="http://my-webserver.com/cv/accept", method="POST")]:
         return SaveDecisionRequest(decision=f"Accepted due to {accepted_cv.reason}")
 
     @process_step()
     def reject_cv(
         self,
         rejected_cv: Annotated[AcceptRejectRequest.reject, Human.In(route="/cv/reject", method="POST")],
-    ) -> Annotated[SaveDecisionRequest, Program.Out(route="http://my-webserver.com/cv/reject", method="POST")]:
+    ) -> Annotated[SaveDecisionRequest, Program.Out(endpoint="http://my-webserver.com/cv/reject", method="POST")]:
         return SaveDecisionRequest(decision=f"Rejected due to {rejected_cv.reason}")

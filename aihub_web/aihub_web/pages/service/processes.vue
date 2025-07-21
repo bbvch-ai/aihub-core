@@ -7,12 +7,12 @@
       <div
         class="grid grid-cols-2 gap-4 2xl:grid-cols-2"
       >
-        <!--        <ProcessCard -->
-        <!--          v-for="process in processes" -->
-        <!--          :key="process.process_id" -->
-        <!--          :process="process" -->
-        <!--          @click="() => toProcess(process)" -->
-        <!--        /> -->
+        <ProcessCard
+          v-for="process in processes"
+          :key="process.process_id"
+          :process="process"
+          @click="() => toProcess(process)"
+        />
       </div>
     </StructuralColumn>
 
