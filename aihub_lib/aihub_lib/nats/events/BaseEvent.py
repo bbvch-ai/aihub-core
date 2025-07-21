@@ -11,7 +11,6 @@ from llama_index.core.base.llms.types import ChatMessage
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, computed_field
 from typing_extensions import override
 
-from aihub_lib.config.BaseConfig import BaseConfig
 from aihub_lib.nats.events.utils import get_inheritance_depth, get_parent_classes_until_base
 
 logger = logging.getLogger(__name__)
@@ -239,7 +238,6 @@ class BaseEvent(BaseModel):
     def deserialize_event(
         cls,
         data: bytes | str | dict[str, Any],
-        config_type: type[BaseConfig] = BaseConfig,
     ) -> "BaseEvent":
         """
         Given raw event data, deserializes it into the most specific event class possible
@@ -264,8 +262,6 @@ class BaseEvent(BaseModel):
                     cls.deserialize_event(item) if isinstance(item, dict) and "_event_name" in item else item
                     for item in value
                 ]
-            elif isinstance(value, dict) and "_config_name" in value:
-                json_data[key] = config_type.model_validate(value)
 
         # Get event type and parent classes
         event_name: str = json_data.get("_event_name")

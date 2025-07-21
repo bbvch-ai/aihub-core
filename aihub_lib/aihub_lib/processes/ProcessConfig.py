@@ -1,11 +1,11 @@
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
-from aihub_lib.config.BaseConfig import BaseConfig
+from aihub_lib.i18n.LocaleString import LocaleString
 
 
-class ProcessConfig(BaseConfig):
+class ProcessConfig(BaseModel):
     """
     Each process instance can be configured with its own parameters.
     Note that the process config is much less flexible than the agent config.
@@ -26,6 +26,10 @@ class ProcessConfig(BaseConfig):
     That is possible and also allowed. It's just not the same flexibility as the agent config, which is dynamically
     injected into each agent step at-runtime.
     """
+
+    name: Annotated[LocaleString, Field(description="The name of the process or agent.")]
+    description: Annotated[LocaleString, Field(description="The description of the process or agent.")]
+    icon: Annotated[str, Field(description="The icon representing the process or agent.")] = "meteor-icons:robot"
 
     process_id: Annotated[
         str, Field(description="Used to uniquely identify this process instance.", pattern=r"^[a-z0-9_-]+$")

@@ -6,7 +6,6 @@ from nats.aio.client import Client as NATS
 from nats.errors import MsgAlreadyAckdError
 from nats.js import JetStreamContext
 
-from aihub_lib.config.BaseConfig import BaseConfig
 from aihub_lib.nats.streams.StreamManager import StreamManager
 from aihub_lib.nats.subscribers.AbstractSubscriber import AbstractSubscriber, TEvent
 from aihub_lib.nats.topics import Topic
@@ -46,9 +45,8 @@ class JSSubscriber(AbstractSubscriber):
         event_cls: type[TEvent],
         handler: Callable[[TEvent, Topic], Awaitable[None]],
         js: JetStreamContext | None = None,
-        config_type: type[BaseConfig] = BaseConfig,
     ):
-        super().__init__(nc, subject, event_cls, handler, config_type=config_type)
+        super().__init__(nc, subject, event_cls, handler)
         self.js = js or nc.jetstream()
         self.queue_group = queue_group
         self.stream_manager = StreamManager(self.js, stream_name, stream_subject)
@@ -79,7 +77,7 @@ class JSSubscriber(AbstractSubscriber):
             logger.debug(f"Received message: {msg.subject} with event data: {msg.data}")
             topic = Topic.from_subject(msg.subject)
             event_data = msg.data
-            event = self.event_cls.deserialize_event(event_data, config_type=self.config_type)
+            event = self.event_cls.deserialize_event(event_data)
             event._jetstream_sequence = msg.metadata.sequence.stream
             logger.debug(f"Deserialized event: {event}")
             await msg.ack()

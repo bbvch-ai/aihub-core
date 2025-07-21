@@ -144,7 +144,6 @@ class AgentTestRunner(AgentRunner):
                 run_id=run_id,
             ),
             handler=self.observe_event,
-            config_type=self.agent_config_type,
         )
         await self.test_event_subscriber.start()
 
@@ -152,7 +151,6 @@ class AgentTestRunner(AgentRunner):
             nc=self.nc,
             topic_manager=AgentTopicManager(),
             handler=self.observe_event,
-            config_type=self.agent_config_type,
         )
         await self.observe_discovery_event_subscriber.start()
 
@@ -160,7 +158,6 @@ class AgentTestRunner(AgentRunner):
             nc=self.nc,
             topic_manager=AgentTopicManager(),
             handler=self.observe_event,
-            config_type=self.agent_config_type,
         )
         await self.observe_discovery_response_event_subscriber.start()
 

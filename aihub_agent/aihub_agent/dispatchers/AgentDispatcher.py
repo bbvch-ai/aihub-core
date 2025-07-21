@@ -60,7 +60,7 @@ class AgentDispatcher(BaseDispatcher):
         topic_manager: Annotated[AgentClassTopicManager, "Manages event subjects for this agent instance."],
         locale_handler: Annotated[AgentLocaleHandler, "Manages localization for the agent."],
     ):
-        super().__init__(nc, js, redis, topic_manager, PartialAgentTopic, default_config=default_agent_config)
+        super().__init__(nc, js, redis, topic_manager, PartialAgentTopic)
         self.agent = agent
         self.default_agent_config = default_agent_config
         self.locale_handler = locale_handler
@@ -87,17 +87,18 @@ class AgentDispatcher(BaseDispatcher):
         # Retrieve contexts (run and thread)
         run_context = RunContext(self.redis, topic.thread_id, topic.run_id)
         thread_context = ThreadContext(self.redis, topic.thread_id)
-        run_agent_config: AgentConfig | None = None
+        agent_config_dict: dict[str, Any] | None = None
 
         if event.is_start_event:
-            run_agent_config = event.agent_config or self.default_agent_config
-            await run_context.set("_agent_config", run_agent_config.model_dump())
+            agent_config_dict: dict[str, Any] = event.agent_config or self.default_agent_config.model_dump()
+            await run_context.set("_agent_config", agent_config_dict)
 
-        if run_agent_config is None:
-            # Get dynamic configuration data from run context
+        if agent_config_dict is None:
             agent_config_dict: dict[str, Any] = await run_context.get("_agent_config")
+            if agent_config_dict is None:
+                raise ValueError(f"No agent config found for event {event.event_name} and topic {topic}")
 
-            run_agent_config = self.agent_config_type.model_validate(agent_config_dict)
+        run_agent_config = self.agent_config_type.model_validate(agent_config_dict)
         topic = AgentTopic.from_partial_topic(
             partial_topic=topic,
             agent_id=run_agent_config.agent_id,

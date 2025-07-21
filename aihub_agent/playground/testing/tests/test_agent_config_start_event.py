@@ -1,8 +1,9 @@
+from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.config.BaseConfig import LocaleString
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.control.start.StartEvent import StartEvent
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from aihub_lib.testing.logging.logger import enable_logging
@@ -13,7 +14,7 @@ enable_logging()
 
 
 @pytest.fixture
-def sample_default_config():
+def sample_default_config() -> dict[str, Any]:
     """Create a sample default AgentConfig for testing."""
     return AgentConfig(
         agent_class="TestAgent",
@@ -23,11 +24,11 @@ def sample_default_config():
         icon="default-icon",
         color="#0066CC",
         voice="default-voice",
-    )
+    ).model_dump()
 
 
 @pytest.fixture
-def sample_start_event_config():
+def sample_start_event_config() -> dict[str, Any]:
     """Create a sample AgentConfig that will be passed in a StartEvent."""
     return AgentConfig(
         agent_class="TestAgent",
@@ -37,7 +38,7 @@ def sample_start_event_config():
         icon="start-event-icon",
         color="#FF5733",
         voice="start-event-voice",
-    )
+    ).model_dump()
 
 
 class TestAgentConfigPrecedence:
@@ -54,8 +55,8 @@ class TestAgentConfigPrecedence:
 
         # Verify start event config takes precedence
         assert run_agent_config == sample_start_event_config
-        assert run_agent_config.agent_id == "start_event_agent"
-        assert run_agent_config.name.en == "Start Event Agent"
+        assert run_agent_config["agent_id"] == "start_event_agent"
+        assert run_agent_config["name"]["en"] == "Start Event Agent"
 
     def test_default_config_fallback_logic(self, sample_default_config):
         """Test the fallback to default config when start event has no agent_config."""
@@ -68,8 +69,8 @@ class TestAgentConfigPrecedence:
 
         # Verify default config is used
         assert run_agent_config == sample_default_config
-        assert run_agent_config.agent_id == "default_agent"
-        assert run_agent_config.name.en == "Default Test Agent"
+        assert run_agent_config["agent_id"] == "default_agent"
+        assert run_agent_config["name"]["en"] == "Default Test Agent"
 
     def test_start_event_to_context_dict_excludes_internal_fields(self, sample_start_event_config):
         """Test that StartEvent.to_context_dict() excludes internal fields."""
@@ -96,8 +97,8 @@ class TestAgentConfigPrecedence:
 
         # Verify default config is used
         assert run_agent_config == sample_default_config
-        assert run_agent_config.agent_id == "default_agent"
-        assert run_agent_config.name.en == "Default Test Agent"
+        assert run_agent_config["agent_id"] == "default_agent"
+        assert run_agent_config["name"]["en"] == "Default Test Agent"
 
     def test_multiple_start_events_with_different_configs(self, sample_default_config):
         """Test multiple start events with different agent configs."""
@@ -123,8 +124,8 @@ class TestAgentConfigPrecedence:
         )
 
         # Create start events with different configs
-        start_event1 = StartEvent(agent_config=config1)
-        start_event2 = StartEvent(agent_config=config2)
+        start_event1 = StartEvent(agent_config=config1.model_dump())
+        start_event2 = StartEvent(agent_config=config2.model_dump())
         start_event3 = StartEvent()  # No config
 
         # Test precedence logic for each
@@ -136,17 +137,17 @@ class TestAgentConfigPrecedence:
             run_config3 = start_event3.agent_config or sample_default_config
 
         # Verify correct configs are used
-        assert run_config1 == config1
-        assert run_config1.agent_id == "agent_1"
-        assert run_config1.name.en == "Agent 1"
+        assert run_config1 == config1.model_dump()
+        assert run_config1["agent_id"] == "agent_1"
+        assert run_config1["name"]["en"] == "Agent 1"
 
-        assert run_config2 == config2
-        assert run_config2.agent_id == "agent_2"
-        assert run_config2.name.en == "Agent 2"
+        assert run_config2 == config2.model_dump()
+        assert run_config2["agent_id"] == "agent_2"
+        assert run_config2["name"]["en"] == "Agent 2"
 
         assert run_config3 == sample_default_config
-        assert run_config3.agent_id == "default_agent"
-        assert run_config3.name.en == "Default Test Agent"
+        assert run_config3["agent_id"] == "default_agent"
+        assert run_config3["name"]["en"] == "Default Test Agent"
 
 
 class TestAgentDispatcherConfigHandling:
@@ -172,11 +173,11 @@ class TestAgentDispatcherConfigHandling:
             # Simulate the testing logic from AgentDispatcher.handle_event:92-94
             if start_event.is_start_event:
                 run_agent_config = start_event.agent_config or sample_default_config
-                await mock_run_context.set("_agent_config", run_agent_config.model_dump())
+                await mock_run_context.set("_agent_config", run_agent_config)
 
                 # Verify the start event config was used
                 assert run_agent_config == sample_start_event_config
-                mock_run_context.set.assert_called_with("_agent_config", sample_start_event_config.model_dump())
+                mock_run_context.set.assert_called_with("_agent_config", sample_start_event_config)
 
     @pytest.mark.asyncio
     async def test_dispatcher_config_precedence_without_start_event_config(self, sample_default_config):
@@ -196,11 +197,11 @@ class TestAgentDispatcherConfigHandling:
             # Simulate the testing logic from AgentDispatcher.handle_event:92-94
             if start_event.is_start_event:
                 run_agent_config = start_event.agent_config or sample_default_config
-                await mock_run_context.set("_agent_config", run_agent_config.model_dump())
+                await mock_run_context.set("_agent_config", run_agent_config)
 
                 # Verify the default config was used
                 assert run_agent_config == sample_default_config
-                mock_run_context.set.assert_called_with("_agent_config", sample_default_config.model_dump())
+                mock_run_context.set.assert_called_with("_agent_config", sample_default_config)
 
     @pytest.mark.asyncio
     async def test_dispatcher_context_injection_from_start_event(self, sample_start_event_config):
@@ -232,7 +233,7 @@ class TestAgentDispatcherConfigHandling:
     def test_agent_config_serialization_compatibility(self, sample_start_event_config):
         """Test that AgentConfig can be serialized and deserialized for context storage."""
         # Test that AgentConfig can be serialized via model_dump()
-        config_dict = sample_start_event_config.model_dump()
+        config_dict = sample_start_event_config
 
         # Verify serialization includes key fields
         assert config_dict["agent_class"] == "TestAgent"
@@ -244,7 +245,7 @@ class TestAgentDispatcherConfigHandling:
         deserialized_config = AgentConfig.model_validate(config_dict)
 
         # Verify deserialization preserves data
-        assert deserialized_config == sample_start_event_config
+        assert deserialized_config.model_dump() == sample_start_event_config
         assert deserialized_config.agent_id == "start_event_agent"
         assert deserialized_config.name.en == "Start Event Agent"
 
@@ -256,7 +257,7 @@ class TestAgentDispatcherConfigHandling:
 
         # Mock run context that returns a config
         mock_run_context = Mock(spec=RunContext)
-        mock_run_context.get = AsyncMock(return_value=sample_start_event_config.model_dump())
+        mock_run_context.get = AsyncMock(return_value=sample_start_event_config)
 
         # Simulate the config retrieval logic
         async def simulate_config_retrieval():
@@ -274,7 +275,7 @@ class TestAgentDispatcherConfigHandling:
         retrieved_config = asyncio.run(simulate_config_retrieval())
 
         # Verify the config was retrieved correctly
-        assert retrieved_config == sample_start_event_config
+        assert retrieved_config.model_dump() == sample_start_event_config
         assert retrieved_config.agent_id == "start_event_agent"
         mock_run_context.get.assert_called_once_with("_agent_config")
 
@@ -296,7 +297,7 @@ class TestAgentConfigIntegration:
         )
 
         # Step 1: Start event with custom config
-        start_event = StartEvent(agent_config=custom_config)
+        start_event = StartEvent(agent_config=custom_config.model_dump())
 
         # Step 2: Dispatcher precedence logic
         if start_event.is_start_event:
@@ -306,7 +307,7 @@ class TestAgentConfigIntegration:
         event_data = start_event.to_context_dict()
 
         # Step 4: Config serialization for storage
-        config_dict = run_agent_config.model_dump()
+        config_dict = run_agent_config
 
         # Step 5: Config deserialization for usage
         final_config = AgentConfig.model_validate(config_dict)
@@ -317,7 +318,7 @@ class TestAgentConfigIntegration:
         assert final_config.name.en == "Custom Agent"
         assert final_config.color == "#9900FF"
         assert "agent_config" in event_data
-        assert event_data["agent_config"] == custom_config
+        assert event_data["agent_config"] == custom_config.model_dump()
 
     def test_config_override_scenarios(self, sample_default_config):
         """Test different scenarios of config override behavior."""
@@ -333,7 +334,7 @@ class TestAgentConfigIntegration:
                         icon="override-1",
                         color="#FF0000",
                         voice="override-1",
-                    )
+                    ).model_dump()
                 ),
                 "expected_id": "override_1",
                 "expected_name": "Override 1",
@@ -360,5 +361,5 @@ class TestAgentConfigIntegration:
                 run_agent_config = start_event.agent_config or sample_default_config
 
             # Verify expected behavior
-            assert run_agent_config.agent_id == scenario["expected_id"], f"Scenario {i+1} failed: wrong agent_id"
-            assert run_agent_config.name.en == scenario["expected_name"], f"Scenario {i+1} failed: wrong name"
+            assert run_agent_config["agent_id"] == scenario["expected_id"], f"Scenario {i+1} failed: wrong agent_id"
+            assert run_agent_config["name"]["en"] == scenario["expected_name"], f"Scenario {i+1} failed: wrong name"

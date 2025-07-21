@@ -10,7 +10,6 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
 
-from aihub_lib.config.BaseConfig import BaseConfig
 from aihub_lib.nats.dispatcher.stores.event.JetStreamEventStore import JetStreamEventStore
 from aihub_lib.nats.dispatcher.stores.step.StepStore import StepStore
 from aihub_lib.nats.events import BaseEvent
@@ -70,7 +69,6 @@ class BaseDispatcher(abc.ABC):
         redis: Annotated[Redis, "Redis client for distributed storage."],
         topic_manager: Annotated[AbstractStreamTopicManager, "Manages event subjects."],
         topic: Annotated[type[Topic], "Topic under which these events were published"],
-        default_config: Annotated[BaseConfig | None, "Default configuration for this workflow."] = None,
     ):
         self.nc = nc
         self.js = js
@@ -87,7 +85,6 @@ class BaseDispatcher(abc.ABC):
             self.js,
             self.topic_manager,
             self.topic,
-            config_type=default_config.__class__ if default_config else None,
         )
         self.step_store = StepStore(redis)
 
