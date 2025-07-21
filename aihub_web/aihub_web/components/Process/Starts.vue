@@ -15,16 +15,16 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 
-import type { HumanInDto } from '@core/sdk/client'
+import type { HumanInDtoReadable } from '@core/sdk/client'
 
 defineProps<{
-  humanInputs: HumanInDto[]
+  humanInputs: HumanInDtoReadable[]
 }>()
 
 const route = useRoute()
 const { sendProcessStartForm } = useSendProcessStartForm()
 
-const submitForm = async (form: Record<string, unknown>, humanInput: HumanInDto) => {
+const submitForm = async (form: Record<string, unknown>, humanInput: HumanInDtoReadable) => {
   console.log(form)
   await sendProcessStartForm({
     processClass: route.params.process_class as string,

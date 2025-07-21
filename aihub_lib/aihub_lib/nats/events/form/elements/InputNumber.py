@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from pydantic import Field
+from pydantic import Field, computed_field
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -42,20 +42,16 @@ class InputNumber(PrimeVueElement):
     @computed_field
     @property
     def validation(self) -> str:
-        # Get base validation from parent
         validation_rules = []
         base_validation = super().validation
         if base_validation:
             validation_rules.append(base_validation)
 
-        # Add number validation
         validation_rules.append("number")
 
-        # Add min validation if specified
         if self.min is not None:
             validation_rules.append(f"min:{self.min}")
 
-        # Add max validation if specified
         if self.max is not None:
             validation_rules.append(f"max:{self.max}")
 

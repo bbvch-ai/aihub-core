@@ -17,6 +17,7 @@ export const useSendProcessStartForm = defineMutation(() => {
       submissionMethod: string
       data: Record<string, unknown>
     }) => {
+      console.log('sending', data)
       await sendProcessStartForm({
         composable: '$fetch',
         path: {
@@ -27,7 +28,7 @@ export const useSendProcessStartForm = defineMutation(() => {
           submission_route: submissionRoute,
           submission_method: submissionMethod,
         },
-        body: data,
+        body: JSON.parse(JSON.stringify(data)),
       })
       queryCache.invalidateQueries({ key: ['processes'] })
     },

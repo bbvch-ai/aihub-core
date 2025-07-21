@@ -21,7 +21,7 @@ class PrimeVueElement(FormkitElement, abc.ABC):
     label: Annotated[LocaleString | str, Field(description="Label of this field")]
     help: Annotated[LocaleString | str | None, Field(description="Help text of this field")] = None
 
-    _required: bool = PrivateAttr(default=False)
+    required: Annotated[bool, Field(description="Whether this field is required")] = False
 
     # https://formkit.com/essentials/validation
     additional_validation_rules: Annotated[str | None, Field(description="Validation expression")] = None
@@ -29,13 +29,12 @@ class PrimeVueElement(FormkitElement, abc.ABC):
     @computed_field
     @property
     def validation(self) -> str:
-        validation_str = ""
-        if self._required:
-            validation_str += "required"
+        rules: list[str] = []
+        if self.required:
+            rules.append("required")
         if self.additional_validation_rules:
-            sep = "|" if validation_str else ""
-            validation_str = f"{validation_str}{sep}{self.additional_validation_rules}"
-        return validation_str.strip()
+            rules.append(self.additional_validation_rules)
+        return "|".join(rules)
 
     def in_locale(self, t: LocaleHandler) -> "PrimeVueElement":
         self_copy = self.model_copy()
@@ -43,4 +42,6 @@ class PrimeVueElement(FormkitElement, abc.ABC):
             self_copy.label = t.extract(self_copy.label)
         if isinstance(self_copy.help, LocaleString):
             self_copy.help = t.extract(self_copy.help)
+        if "required" in self_copy.validation and "*" not in self_copy.label:
+            self_copy.label = f"{self_copy.label} *"
         return self_copy

@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from pydantic import Field
+from pydantic import Field, computed_field
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -17,7 +17,7 @@ class DatePicker(PrimeVueElement):
     readonly: Annotated[bool, Field(description="Whether the input is readonly")] = False
     placeholder: Annotated[LocaleString | str | None, Field(description="Placeholder text")] = None
     date_format: Annotated[str | None, Field(description="Format of the date display", alias="dateFormat")] = (
-        "dd.mm.yyyy"
+        "dd.mm.yy"
     )
     show_icon: Annotated[bool, Field(description="Whether to show the calendar icon", alias="showIcon")] = False
     icon: Annotated[str | None, Field(description="Custom icon class", pattern=r"^pi pi-[a-z0-9-]+$")] = None
@@ -25,6 +25,18 @@ class DatePicker(PrimeVueElement):
         Literal["single", "range", "multiple"], Field(description="Selection mode for dates", alias="selectionMode")
     ] = "single"
     manual_input: Annotated[bool, Field(description="Whether to allow manual input", alias="manualInput")] = True
+
+    @computed_field
+    @property
+    def validation(self) -> str:
+        validation_rules = []
+        base_validation = super().validation
+        if base_validation:
+            validation_rules.append(base_validation)
+
+        validation_rules.append("date")
+
+        return "|".join(validation_rules)
 
     def in_locale(self, t: LocaleHandler) -> "DatePicker":
         self_copy = super().in_locale(t)

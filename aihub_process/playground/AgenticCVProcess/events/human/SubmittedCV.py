@@ -12,9 +12,9 @@ class SubmittedCV(HumanWorkEvent, ProcessStartEvent):
     name: Annotated[InputText | str, Field(description="Name of the applicant")]
     application_date: Annotated[DatePicker | datetime, Field(description="Date of the application")]
     profession: Annotated[Select | str, Field(description="Profession of the applicant")]
-    level: Annotated[SelectButton | str | None, Field(description="Level of the applicant")]
-    match: Annotated[Slider | float | None, Field(description="Match score")]
-    salary: Annotated[InputNumber | float | None, Field(description="Match score")]
-    business_area: Annotated[CascadeSelect | str | None, Field(description="Business area")]
-    hire: Annotated[Checkbox | str, Field(description="Hire or not")]
+    level: Annotated[SelectButton | str | None, Field(description="Level of the applicant")] = None
+    match: Annotated[Slider | float | None, Field(description="Match score")] = None
+    salary: Annotated[InputNumber | float | None, Field(description="Match score")] = None
+    business_area: Annotated[CascadeSelect | str | None, Field(description="Business area")] = None
+    hire: Annotated[Checkbox | bool, Field(description="Hire or not")]
     reasoning: Annotated[Textarea | str, Field(description="Reasoning")]

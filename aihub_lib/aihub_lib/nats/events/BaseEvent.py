@@ -268,7 +268,7 @@ class BaseEvent(BaseModel):
         if event_name and isinstance(event_name, str):
             event_class = cls._event_registry.get(event_name)
             if event_class:
-                return event_class(**json_data)
+                return event_class.model_validate(json_data)
 
         # If we get here, either:
         # 1. The event type wasn't in our registry, or
@@ -288,7 +288,7 @@ class BaseEvent(BaseModel):
                             event_class = cls._event_registry.get("ControlAndDisplayEvent")
 
                         # Create the instance with the parent class
-                        event = event_class(**json_data)
+                        event = event_class.model_validate(json_data)
 
                         # Set the private attributes since this isn't the exact original class
                         event._unknown_event_name = event_name
@@ -306,7 +306,7 @@ class BaseEvent(BaseModel):
         # If all else fails, fall back to BaseEvent
         logger.warning(f"{event_name} not found in registry. Using fallback {cls.__name__}.")
 
-        event = cls(**json_data)
+        event = cls.model_validate(json_data)
 
         # Set private attributes for BaseEvent fallback
         event._unknown_event_name = event_name

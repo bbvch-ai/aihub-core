@@ -892,212 +892,6 @@ export const AudioContentSchema = {
     title: 'AudioContent'
 } as const;
 
-export const AutoCompleteSchema = {
-    properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primeAutoComplete',
-            title: 'Formkit',
-            description: 'PrimeVue AutoComplete element.',
-            default: 'primeAutoComplete'
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        validation: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Validation',
-            description: 'Validation expression'
-        },
-        options: {
-            items: {
-                additionalProperties: {
-                    anyOf: [
-                        {
-                            type: 'string'
-                        },
-                        {
-                            '$ref': '#/components/schemas/LocaleString'
-                        }
-                    ]
-                },
-                type: 'object'
-            },
-            type: 'array',
-            title: 'Options',
-            description: 'Array of suggestion objects'
-        },
-        optionLabel: {
-            type: 'string',
-            title: 'Optionlabel',
-            description: 'Property name to use as the label of an option'
-        },
-        optionValue: {
-            type: 'string',
-            title: 'Optionvalue',
-            description: 'Property name to use as the label of an option'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        placeholder: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Placeholder',
-            description: 'Placeholder text'
-        },
-        dropdown: {
-            type: 'boolean',
-            title: 'Dropdown',
-            description: 'Whether to display a dropdown button',
-            default: false
-        },
-        multiple: {
-            type: 'boolean',
-            title: 'Multiple',
-            description: 'Whether to allow multiple selections',
-            default: false
-        },
-        typeahead: {
-            type: 'boolean',
-            title: 'Typeahead',
-            description: 'Whether to enable typeahead mode',
-            default: true
-        },
-        size: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Size',
-            description: "Size of the component ('small', 'large')"
-        },
-        minLength: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Minlength',
-            description: 'Minimum number of characters to trigger suggestions'
-        },
-        fluid: {
-            type: 'boolean',
-            title: 'Fluid',
-            description: 'Whether the component should span the full width',
-            default: false
-        },
-        separators: {
-            anyOf: [
-                {
-                    items: {
-                        type: 'string'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Separators',
-            description: 'Characters to use as separators for multiple mode'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['label', 'options', 'optionLabel', 'optionValue'],
-    title: 'AutoComplete',
-    description: 'https://formkit-primevue.netlify.app/inputs/AutoComplete'
-} as const;
-
 export const Body_create_transcription_openai_audio_transcriptions_postSchema = {
     properties: {
         file: {
@@ -1205,6 +999,18 @@ export const CascadeSelectSchema = {
             title: 'If',
             description: 'Conditional expression to show this element'
         },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
         formkit: {
             type: 'string',
             const: 'primeCascadeSelect',
@@ -1251,7 +1057,13 @@ export const CascadeSelectSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -1260,7 +1072,7 @@ export const CascadeSelectSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
         disabled: {
@@ -1292,7 +1104,17 @@ export const CascadeSelectSchema = {
         },
         options: {
             items: {
-                additionalProperties: true,
+                additionalProperties: {
+                    anyOf: [
+                        {
+                            type: 'string'
+                        },
+                        {
+                            '$ref': '#/components/schemas/LocaleString'
+                        },
+                        {}
+                    ]
+                },
                 type: 'object'
             },
             type: 'array',
@@ -1361,11 +1183,16 @@ export const CascadeSelectSchema = {
             title: 'Multiple',
             description: 'Whether to allow multiple selections',
             default: false
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label', 'options'],
+    required: ['label', 'options', 'validation'],
     title: 'CascadeSelect',
     description: 'https://formkit-primevue.netlify.app/inputs/CascadeSelect'
 } as const;
@@ -2602,6 +2429,18 @@ export const CheckboxSchema = {
             title: 'If',
             description: 'Conditional expression to show this element'
         },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
         formkit: {
             type: 'string',
             const: 'primeCheckbox',
@@ -2648,7 +2487,13 @@ export const CheckboxSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -2657,7 +2502,7 @@ export const CheckboxSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
         disabled: {
@@ -2686,11 +2531,13 @@ export const CheckboxSchema = {
         },
         trueValue: {
             title: 'Truevalue',
-            description: 'Value to emit when checked'
+            description: 'Value to emit when checked',
+            default: true
         },
         falseValue: {
             title: 'Falsevalue',
-            description: 'Value to emit when unchecked'
+            description: 'Value to emit when unchecked',
+            default: false
         },
         prefix: {
             anyOf: [
@@ -2721,11 +2568,16 @@ export const CheckboxSchema = {
             ],
             title: 'Suffix',
             description: 'Suffix text'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label'],
+    required: ['label', 'validation'],
     title: 'Checkbox',
     description: 'https://formkit-primevue.netlify.app/inputs/Checkbox'
 } as const;
@@ -2908,6 +2760,18 @@ export const ColorPickerSchema = {
             title: 'If',
             description: 'Conditional expression to show this element'
         },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
         formkit: {
             type: 'string',
             const: 'primeColorPicker',
@@ -2954,7 +2818,13 @@ export const ColorPickerSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -2963,7 +2833,7 @@ export const ColorPickerSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
         disabled: {
@@ -2995,11 +2865,16 @@ export const ColorPickerSchema = {
             ],
             title: 'Format',
             description: 'Format of the color value (hex, rgb, hsl)'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label'],
+    required: ['label', 'validation'],
     title: 'ColorPicker',
     description: 'https://formkit-primevue.netlify.app/inputs/ColorPicker'
 } as const;
@@ -3760,6 +3635,18 @@ export const DatePickerSchema = {
             title: 'If',
             description: 'Conditional expression to show this element'
         },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
         formkit: {
             type: 'string',
             const: 'primeDatePicker',
@@ -3806,7 +3693,13 @@ export const DatePickerSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -3815,7 +3708,7 @@ export const DatePickerSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
         disabled: {
@@ -3855,7 +3748,8 @@ export const DatePickerSchema = {
                 }
             ],
             title: 'Dateformat',
-            description: 'Format of the date display'
+            description: 'Format of the date display',
+            default: 'dd.mm.yy'
         },
         showIcon: {
             type: 'boolean',
@@ -3877,28 +3771,27 @@ export const DatePickerSchema = {
             description: 'Custom icon class'
         },
         selectionMode: {
-            anyOf: [
-                {
-                    type: 'string',
-                    enum: ['single', 'range', 'multiple']
-                },
-                {
-                    type: 'null'
-                }
-            ],
+            type: 'string',
+            enum: ['single', 'range', 'multiple'],
             title: 'Selectionmode',
-            description: 'Selection mode for dates'
+            description: 'Selection mode for dates',
+            default: 'single'
         },
         manualInput: {
             type: 'boolean',
             title: 'Manualinput',
             description: 'Whether to allow manual input',
             default: true
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label'],
+    required: ['label', 'validation'],
     title: 'DatePicker',
     description: 'https://formkit-primevue.netlify.app/inputs/DatePicker'
 } as const;
@@ -4149,121 +4042,6 @@ export const EdgeDataSchema = {
     required: ['source', 'target', 'edge_id', 'event_name', 'event_full_name', 'is_start_event', 'is_stop_event', 'payload'],
     title: 'EdgeData',
     description: 'Data for an edge in the workflow graph.'
-} as const;
-
-export const EditorSchema = {
-    properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primeEditor',
-            title: 'Formkit',
-            description: 'PrimeVue Editor element.',
-            default: 'primeEditor'
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        validation: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Validation',
-            description: 'Validation expression'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        placeholder: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Placeholder',
-            description: 'Placeholder text'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['label'],
-    title: 'Editor',
-    description: 'https://formkit-primevue.netlify.app/inputs/Editor'
 } as const;
 
 export const EmbeddingSchema = {
@@ -5455,6 +5233,18 @@ export const HtmlElementSchema = {
             title: 'If',
             description: 'Conditional expression to show this element'
         },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
         '$el': {
             type: 'string',
             title: '$El',
@@ -5558,9 +5348,6 @@ export const HumanInDTOSchema = {
                         '$ref': '#/components/schemas/InputText'
                     },
                     {
-                        '$ref': '#/components/schemas/AutoComplete'
-                    },
-                    {
                         '$ref': '#/components/schemas/CascadeSelect'
                     },
                     {
@@ -5571,9 +5358,6 @@ export const HumanInDTOSchema = {
                     },
                     {
                         '$ref': '#/components/schemas/DatePicker'
-                    },
-                    {
-                        '$ref': '#/components/schemas/Editor'
                     },
                     {
                         '$ref': '#/components/schemas/InputMask'
@@ -6612,6 +6396,18 @@ export const InputMaskSchema = {
             title: 'If',
             description: 'Conditional expression to show this element'
         },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
         formkit: {
             type: 'string',
             const: 'primeInputMask',
@@ -6658,7 +6454,13 @@ export const InputMaskSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -6667,7 +6469,7 @@ export const InputMaskSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
         disabled: {
@@ -6758,11 +6560,16 @@ export const InputMaskSchema = {
             ],
             title: 'Iconsuffix',
             description: 'Icon suffix'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label'],
+    required: ['label', 'validation'],
     title: 'InputMask',
     description: 'https://formkit-primevue.netlify.app/inputs/InputMask'
 } as const;
@@ -6788,6 +6595,18 @@ export const InputNumberSchema = {
             ],
             title: 'If',
             description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
         },
         formkit: {
             type: 'string',
@@ -6835,7 +6654,13 @@ export const InputNumberSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -6844,7 +6669,7 @@ export const InputNumberSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
         disabled: {
@@ -7025,11 +6850,16 @@ export const InputNumberSchema = {
             ],
             title: 'Buttonlayout',
             description: 'Layout of increment/decrement buttons'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label'],
+    required: ['label', 'validation'],
     title: 'InputNumber',
     description: 'https://formkit-primevue.netlify.app/inputs/InputNumber'
 } as const;
@@ -7055,6 +6885,18 @@ export const InputOtpSchema = {
             ],
             title: 'If',
             description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
         },
         formkit: {
             type: 'string',
@@ -7102,7 +6944,13 @@ export const InputOtpSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -7111,7 +6959,7 @@ export const InputOtpSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
         disabled: {
@@ -7155,11 +7003,16 @@ export const InputOtpSchema = {
             ],
             title: 'Variant',
             description: 'Styling variant of the component'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label'],
+    required: ['label', 'validation'],
     title: 'InputOtp',
     description: 'https://formkit-primevue.netlify.app/inputs/InputOtp'
 } as const;
@@ -7185,6 +7038,18 @@ export const InputTextSchema = {
             ],
             title: 'If',
             description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
         },
         formkit: {
             type: 'string',
@@ -7232,7 +7097,13 @@ export const InputTextSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -7241,7 +7112,7 @@ export const InputTextSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
         disabled: {
@@ -7314,11 +7185,16 @@ export const InputTextSchema = {
             ],
             title: 'Iconsuffix',
             description: 'Icon suffix'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label'],
+    required: ['label', 'validation'],
     title: 'InputText',
     description: 'https://formkit-primevue.netlify.app/inputs/InputText'
 } as const;
@@ -7377,6 +7253,18 @@ export const KnobSchema = {
             title: 'If',
             description: 'Conditional expression to show this element'
         },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
         formkit: {
             type: 'string',
             const: 'primeKnob',
@@ -7423,7 +7311,13 @@ export const KnobSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -7432,7 +7326,7 @@ export const KnobSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
         disabled: {
@@ -7560,11 +7454,16 @@ export const KnobSchema = {
             ],
             title: 'Valuetemplate',
             description: 'Template string for value display'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label'],
+    required: ['label', 'validation'],
     title: 'Knob',
     description: 'https://formkit-primevue.netlify.app/inputs/Knob'
 } as const;
@@ -8399,6 +8298,18 @@ export const ListboxSchema = {
             title: 'If',
             description: 'Conditional expression to show this element'
         },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
         formkit: {
             type: 'string',
             const: 'primeListbox',
@@ -8445,7 +8356,13 @@ export const ListboxSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -8454,7 +8371,7 @@ export const ListboxSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
         disabled: {
@@ -8528,11 +8445,16 @@ export const ListboxSchema = {
             title: 'Filter',
             description: 'Whether to enable filtering',
             default: false
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label', 'options'],
+    required: ['label', 'options', 'validation'],
     title: 'Listbox',
     description: 'https://formkit-primevue.netlify.app/inputs/Listbox'
 } as const;
@@ -8921,7 +8843,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1753102094
+            default: 1753113215
         },
         owned_by: {
             type: 'string',
@@ -9003,6 +8925,18 @@ export const MultiSelectSchema = {
             title: 'If',
             description: 'Conditional expression to show this element'
         },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
         formkit: {
             type: 'string',
             const: 'primeMultiSelect',
@@ -9049,7 +8983,13 @@ export const MultiSelectSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -9058,7 +8998,7 @@ export const MultiSelectSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
         disabled: {
@@ -9126,11 +9066,16 @@ export const MultiSelectSchema = {
             title: 'Filter',
             description: 'Whether to enable filtering',
             default: false
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label', 'options'],
+    required: ['label', 'options', 'validation'],
     title: 'MultiSelect',
     description: 'https://formkit-primevue.netlify.app/inputs/MultiSelect'
 } as const;
@@ -9551,6 +9496,18 @@ export const PasswordSchema = {
             title: 'If',
             description: 'Conditional expression to show this element'
         },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
         formkit: {
             type: 'string',
             const: 'primePassword',
@@ -9597,7 +9554,13 @@ export const PasswordSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -9606,7 +9569,7 @@ export const PasswordSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
         disabled: {
@@ -9731,11 +9694,16 @@ export const PasswordSchema = {
             ],
             title: 'Stronglabel',
             description: 'Label for strong password strength'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label'],
+    required: ['label', 'validation'],
     title: 'Password',
     description: 'https://formkit-primevue.netlify.app/inputs/Password'
 } as const;
@@ -9912,6 +9880,18 @@ export const RadioButtonSchema = {
             title: 'If',
             description: 'Conditional expression to show this element'
         },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
         formkit: {
             type: 'string',
             const: 'primeRadioButton',
@@ -9958,7 +9938,13 @@ export const RadioButtonSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -9967,7 +9953,7 @@ export const RadioButtonSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
         disabled: {
@@ -10026,11 +10012,16 @@ export const RadioButtonSchema = {
             ],
             title: 'Optionclass',
             description: 'CSS class to apply to each option'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label', 'options'],
+    required: ['label', 'options', 'validation'],
     title: 'RadioButton',
     description: 'https://formkit-primevue.netlify.app/inputs/RadioButton'
 } as const;
@@ -10056,6 +10047,18 @@ export const RatingSchema = {
             ],
             title: 'If',
             description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
         },
         formkit: {
             type: 'string',
@@ -10103,7 +10106,13 @@ export const RatingSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -10112,7 +10121,7 @@ export const RatingSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
         disabled: {
@@ -10177,11 +10186,16 @@ export const RatingSchema = {
             ],
             title: 'Cancelicon',
             description: 'Icon for cancel button'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label'],
+    required: ['label', 'validation'],
     title: 'Rating',
     description: 'https://formkit-primevue.netlify.app/inputs/Rating'
 } as const;
@@ -10765,6 +10779,18 @@ export const SelectSchema = {
             title: 'If',
             description: 'Conditional expression to show this element'
         },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
         formkit: {
             type: 'string',
             const: 'primeSelect',
@@ -10811,7 +10837,13 @@ export const SelectSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -10820,42 +10852,34 @@ export const SelectSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        placeholder: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Placeholder',
-            description: 'Placeholder text'
         },
         options: {
             anyOf: [
                 {
                     items: {
-                        additionalProperties: true,
-                        type: 'object'
+                        anyOf: [
+                            {
+                                type: 'string'
+                            },
+                            {
+                                '$ref': '#/components/schemas/LocaleString'
+                            },
+                            {
+                                additionalProperties: {
+                                    anyOf: [
+                                        {
+                                            type: 'string'
+                                        },
+                                        {
+                                            '$ref': '#/components/schemas/LocaleString'
+                                        }
+                                    ]
+                                },
+                                type: 'object'
+                            }
+                        ]
                     },
                     type: 'array'
                 },
@@ -10893,6 +10917,33 @@ export const SelectSchema = {
             title: 'Optionvalue',
             description: 'Property name to use as the value of an option'
         },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        placeholder: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Placeholder',
+            description: 'Placeholder text'
+        },
         showClear: {
             type: 'boolean',
             title: 'Showclear',
@@ -10904,11 +10955,16 @@ export const SelectSchema = {
             title: 'Filter',
             description: 'Whether to enable filtering',
             default: false
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label', 'options'],
+    required: ['label', 'options', 'validation'],
     title: 'Select',
     description: 'https://formkit-primevue.netlify.app/inputs/Select'
 } as const;
@@ -10934,6 +10990,18 @@ export const SelectButtonSchema = {
             ],
             title: 'If',
             description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
         },
         formkit: {
             type: 'string',
@@ -10981,7 +11049,13 @@ export const SelectButtonSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -10990,29 +11064,46 @@ export const SelectButtonSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
         options: {
-            items: {
-                additionalProperties: true,
-                type: 'object'
-            },
-            type: 'array',
+            anyOf: [
+                {
+                    items: {
+                        anyOf: [
+                            {
+                                type: 'string'
+                            },
+                            {
+                                '$ref': '#/components/schemas/LocaleString'
+                            },
+                            {
+                                additionalProperties: {
+                                    anyOf: [
+                                        {
+                                            type: 'string'
+                                        },
+                                        {
+                                            '$ref': '#/components/schemas/LocaleString'
+                                        }
+                                    ]
+                                },
+                                type: 'object'
+                            }
+                        ]
+                    },
+                    type: 'array'
+                },
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                }
+            ],
             title: 'Options',
-            description: 'Array of selectable option objects'
+            description: 'Array of selectable options (objects or strings)'
         },
         optionLabel: {
             anyOf: [
@@ -11037,6 +11128,18 @@ export const SelectButtonSchema = {
             ],
             title: 'Optionvalue',
             description: 'Property name to use as the value of an option'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
         },
         optionDisabled: {
             anyOf: [
@@ -11073,11 +11176,16 @@ export const SelectButtonSchema = {
             ],
             title: 'Datakey',
             description: 'Property name for unique option identification'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label', 'options'],
+    required: ['label', 'options', 'validation'],
     title: 'SelectButton',
     description: 'https://formkit-primevue.netlify.app/inputs/SelectButton'
 } as const;
@@ -11233,6 +11341,18 @@ export const SliderSchema = {
             title: 'If',
             description: 'Conditional expression to show this element'
         },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
         formkit: {
             type: 'string',
             const: 'primeSlider',
@@ -11279,7 +11399,13 @@ export const SliderSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -11288,7 +11414,7 @@ export const SliderSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
         disabled: {
@@ -11357,11 +11483,16 @@ export const SliderSchema = {
             ],
             title: 'Orientation',
             description: 'Orientation of the slider'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label'],
+    required: ['label', 'validation'],
     title: 'Slider',
     description: 'https://formkit-primevue.netlify.app/inputs/Slider'
 } as const;
@@ -11572,14 +11703,78 @@ export const SubmittedCVInputSchema = {
             title: 'Name',
             description: 'Name of the applicant'
         },
+        application_date: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Application Date',
+            description: 'Date of the application'
+        },
         profession: {
             type: 'string',
             title: 'Profession',
             description: 'Profession of the applicant'
+        },
+        level: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Level',
+            description: 'Level of the applicant'
+        },
+        match: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Match',
+            description: 'Match score'
+        },
+        salary: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Salary',
+            description: 'Match score'
+        },
+        business_area: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Business Area',
+            description: 'Business area'
+        },
+        hire: {
+            type: 'string',
+            title: 'Hire',
+            description: 'Hire or not'
+        },
+        reasoning: {
+            type: 'string',
+            title: 'Reasoning',
+            description: 'Reasoning'
         }
     },
     type: 'object',
-    required: ['name', 'profession'],
+    required: ['name', 'application_date', 'profession', 'level', 'match', 'salary', 'business_area', 'hire', 'reasoning'],
     title: 'SubmittedCVInput'
 } as const;
 
@@ -11603,8 +11798,7 @@ export const SubmittedFormDTOSchema = {
     },
     type: 'object',
     required: ['process_class', 'process_id', 'process_walkthrough_id'],
-    title: 'SubmittedFormDTO',
-    description: 'TODO: Define what information shall be returned on partial or sucessfull submittion of the form'
+    title: 'SubmittedFormDTO'
 } as const;
 
 export const SuiteDTOSchema = {
@@ -11740,6 +11934,18 @@ export const TextareaSchema = {
             title: 'If',
             description: 'Conditional expression to show this element'
         },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
         formkit: {
             type: 'string',
             const: 'primeTextarea',
@@ -11786,7 +11992,13 @@ export const TextareaSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -11795,7 +12007,7 @@ export const TextareaSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
         disabled: {
@@ -11842,11 +12054,16 @@ export const TextareaSchema = {
             title: 'Autoresize',
             description: 'Whether to automatically resize based on content',
             default: false
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label'],
+    required: ['label', 'validation'],
     title: 'Textarea',
     description: 'https://formkit-primevue.netlify.app/inputs/Textarea'
 } as const;
@@ -12179,6 +12396,18 @@ export const ToggleButtonSchema = {
             title: 'If',
             description: 'Conditional expression to show this element'
         },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
         formkit: {
             type: 'string',
             const: 'primeToggleButton',
@@ -12225,7 +12454,13 @@ export const ToggleButtonSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -12234,7 +12469,7 @@ export const ToggleButtonSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
         disabled: {
@@ -12317,11 +12552,16 @@ export const ToggleButtonSchema = {
             ],
             title: 'Iconpos',
             description: 'Position of the icon'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label'],
+    required: ['label', 'validation'],
     title: 'ToggleButton',
     description: 'https://formkit-primevue.netlify.app/inputs/ToggleButton'
 } as const;
@@ -12347,6 +12587,18 @@ export const ToggleSwitchSchema = {
             ],
             title: 'If',
             description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
         },
         formkit: {
             type: 'string',
@@ -12394,7 +12646,13 @@ export const ToggleSwitchSchema = {
             title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -12403,7 +12661,7 @@ export const ToggleSwitchSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
         disabled: {
@@ -12455,11 +12713,16 @@ export const ToggleSwitchSchema = {
             ],
             title: 'Suffix',
             description: 'Suffix text'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label'],
+    required: ['label', 'validation'],
     title: 'ToggleSwitch',
     description: 'https://formkit-primevue.netlify.app/inputs/ToggleSwitch'
 } as const;

@@ -27,6 +27,7 @@
         </FormKit>
       </div>
     </div>
+    <pre>{{ data }}</pre>
   </Panel>
 </template>
 
@@ -70,6 +71,7 @@ const schema = computed<FormKitSchemaDefinition>(() => {
 console.log(schema.value)
 
 async function submitHandler() {
+  console.log('submit', data.value)
   emit('submit', data.value)
 }
 </script>

@@ -14,13 +14,12 @@
 </template>
 
 <script setup lang="ts">
-import type { HumanInDto } from '@core/sdk/client'
+import type { HumanInDtoReadable } from '@core/sdk/client'
 
 const { process, processIsLoading } = useProcess()
-const { t } = useI18n()
 
-const startInputs = computed<HumanInDto[]>(() => {
-  return process.value?.human_inputs?.filter((input: HumanInDto) => {
+const startInputs = computed<HumanInDtoReadable[]>(() => {
+  return process.value?.human_inputs?.filter((input: HumanInDtoReadable) => {
     return input.is_process_start
   })
 })

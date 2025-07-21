@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from pydantic import Field
+from pydantic import Field, computed_field
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.form.base.PrimeVueElement import PrimeVueElement
@@ -16,6 +16,21 @@ class InputOtp(PrimeVueElement):
     integer_only: Annotated[bool, Field(description="Whether to allow only integers", alias="integerOnly")] = False
     mask: Annotated[bool, Field(description="Whether to mask the input characters")] = False
     variant: Annotated[str | None, Field(description="Styling variant of the component")] = None
+
+    @computed_field
+    @property
+    def validation(self) -> str:
+        validation_rules = []
+        base_validation = super().validation
+        if base_validation:
+            validation_rules.append(base_validation)
+
+        validation_rules.append(f"length:{self.length}")
+
+        if self.integer_only:
+            validation_rules.append("matches:/^[0-9]+$/")
+
+        return "|".join(validation_rules)
 
     def in_locale(self, t: LocaleHandler) -> "InputOtp":
         self_copy = super().in_locale(t)

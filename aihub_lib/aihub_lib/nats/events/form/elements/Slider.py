@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from pydantic import Field
+from pydantic import Field, computed_field
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.form.base.PrimeVueElement import PrimeVueElement
@@ -19,6 +19,24 @@ class Slider(PrimeVueElement):
     orientation: Annotated[Literal["horizontal", "vertical"] | None, Field(description="Orientation of the slider")] = (
         None
     )
+
+    @computed_field
+    @property
+    def validation(self) -> str:
+        validation_rules = []
+        base_validation = super().validation
+        if base_validation:
+            validation_rules.append(base_validation)
+
+        validation_rules.append("number")
+
+        if self.min is not None:
+            validation_rules.append(f"min:{self.min}")
+
+        if self.max is not None:
+            validation_rules.append(f"max:{self.max}")
+
+        return "|".join(validation_rules)
 
     def in_locale(self, t: LocaleHandler) -> "Slider":
         self_copy = super().in_locale(t)

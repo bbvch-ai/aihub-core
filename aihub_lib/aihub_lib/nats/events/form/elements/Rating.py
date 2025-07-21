@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from pydantic import Field
+from pydantic import Field, computed_field
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.form.base.PrimeVueElement import PrimeVueElement
@@ -23,6 +23,23 @@ class Rating(PrimeVueElement):
     cancel_icon: Annotated[
         str | None, Field(description="Icon for cancel button", alias="cancelIcon", pattern=r"^pi pi-[a-z0-9-]+$")
     ] = None
+
+    @computed_field
+    @property
+    def validation(self) -> str:
+        validation_rules = []
+        base_validation = super().validation
+        if base_validation:
+            validation_rules.append(base_validation)
+
+        validation_rules.append("integer")
+
+        min_value = 0 if self.cancel else 1
+        validation_rules.append(f"min:{min_value}")
+
+        validation_rules.append(f"max:{self.stars}")
+
+        return "|".join(validation_rules)
 
     def in_locale(self, t: LocaleHandler) -> "Rating":
         self_copy = super().in_locale(t)

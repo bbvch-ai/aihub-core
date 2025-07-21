@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from pydantic import Field
+from pydantic import Field, computed_field
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -36,6 +36,23 @@ class Password(PrimeVueElement):
     strong_label: Annotated[
         LocaleString | str | None, Field(description="Label for strong password strength", alias="strongLabel")
     ] = None
+
+    @computed_field
+    @property
+    def validation(self) -> str:
+        validation_rules = []
+        base_validation = super().validation
+        if base_validation:
+            validation_rules.append(base_validation)
+
+        validation_rules.append("length:8,")
+
+        if self.strong_regex:
+            validation_rules.append(f"matches:/{self.strong_regex}/")
+        elif self.medium_regex:
+            validation_rules.append(f"matches:/{self.medium_regex}/")
+
+        return "|".join(validation_rules)
 
     def in_locale(self, t: LocaleHandler) -> "Password":
         self_copy = super().in_locale(t)
