@@ -86,18 +86,6 @@ export const AgentConfigDTOSchema = {
             title: 'Description',
             description: 'The description of the agent.'
         },
-        color: {
-            type: 'string',
-            title: 'Color',
-            description: 'The color of the agent UI theme.',
-            default: '#10A37F'
-        },
-        voice: {
-            type: 'string',
-            title: 'Voice',
-            description: 'The TTS voice ID the agent uses.',
-            default: 'de-DE-ChristophNeural'
-        },
         icon: {
             type: 'string',
             title: 'Icon',

@@ -22,8 +22,6 @@ class AgentConfigEntity(BaseDocument):
         LocaleStringEntity, required=True, description="Description of the agent's purpose or functionality."
     )
     icon = StringField(required=True, description="Icon representing the agent, e.g., 'meteor-icons:robot'.")
-    color = StringField(required=False, description="UI theme color for the agent.", null=True)
-    voice = StringField(required=False, description="TTS voice ID used by the agent.", null=True)
     config_data = DictField(required=True, description="The configuration data matching the Pydantic model.")
 
     @classmethod
@@ -35,8 +33,6 @@ class AgentConfigEntity(BaseDocument):
             name=LocaleStringEntity.from_locale_string(agent_config.name),
             description=LocaleStringEntity.from_locale_string(agent_config.description),
             icon=agent_config.icon,
-            color=agent_config.color,
-            voice=agent_config.voice,
             config_data=agent_config.model_dump(),
         )
 
@@ -47,7 +43,5 @@ class AgentConfigEntity(BaseDocument):
         self.name = LocaleStringEntity.from_locale_string(agent_config.name)
         self.description = LocaleStringEntity.from_locale_string(agent_config.description)
         self.icon = agent_config.icon
-        self.color = agent_config.color
-        self.voice = agent_config.voice
         self.config_data = agent_config.model_dump()
         return self

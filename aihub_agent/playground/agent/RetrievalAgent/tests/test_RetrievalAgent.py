@@ -59,8 +59,6 @@ def build_retrieval_agent_config(
         agent_class=RetrievalAgent.__name__,
         name=LocaleString(en="Retrieval Agent"),
         description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
-        color="#00FF00",
-        voice="",
         icon="robot",
         retrieve_step_config=RetrieveStepConfig(
             embed_model=embedding_config,

@@ -19,8 +19,6 @@ def sample_agent_config():
         name=LocaleString(en="Test Agent 1"),
         description=LocaleString(en="A test agent for validation"),
         icon="test-icon",
-        color="#FF5733",
-        voice="test-voice",
     )
 
 
@@ -33,8 +31,6 @@ def sample_default_config():
         name=LocaleString(en="Default Test Agent"),
         description=LocaleString(en="Default test agent configuration"),
         icon="default-icon",
-        color="#0066CC",
-        voice="default-voice",
     )
 
 
@@ -47,8 +43,6 @@ def mock_agent_config_document(sample_agent_config):
     mock_doc.name = sample_agent_config.name
     mock_doc.description = sample_agent_config.description
     mock_doc.icon = sample_agent_config.icon
-    mock_doc.color = sample_agent_config.color
-    mock_doc.voice = sample_agent_config.voice
     mock_doc.config_data = {}
     return mock_doc
 
@@ -105,8 +99,6 @@ class TestAgentConfigDatabaseOperations:
             name=LocaleString(en="DB Test Agent"),
             description=LocaleString(en="Agent config from database"),
             icon="db-icon",
-            color="#FF0000",
-            voice="db-voice",
         )
 
         default_config = AgentConfig(
@@ -115,8 +107,6 @@ class TestAgentConfigDatabaseOperations:
             name=LocaleString(en="Default Test Agent"),
             description=LocaleString(en="Default agent config"),
             icon="default-icon",
-            color="#0000FF",
-            voice="default-voice",
         )
 
         # Mock database document
@@ -126,8 +116,6 @@ class TestAgentConfigDatabaseOperations:
         mock_doc.name = db_config.name
         mock_doc.description = db_config.description
         mock_doc.icon = db_config.icon
-        mock_doc.color = db_config.color
-        mock_doc.voice = db_config.voice
         mock_doc.config_data = {}
 
         # Test the override scenario
@@ -144,7 +132,6 @@ class TestAgentConfigDatabaseOperations:
                 converted_config = AgentConfig.from_entity(result)
                 assert converted_config == db_config
                 assert converted_config.name.en == "DB Test Agent"
-                assert converted_config.color == "#FF0000"
 
                 # Verify it's not the default config
                 assert converted_config != default_config
@@ -158,8 +145,6 @@ class TestAgentConfigDatabaseOperations:
             name=LocaleString(en="Overridden Default"),
             description=LocaleString(en="DB config overriding default"),
             icon="override-icon",
-            color="#FFFF00",
-            voice="override-voice",
         )
 
         # Mock DB document
@@ -169,8 +154,6 @@ class TestAgentConfigDatabaseOperations:
         mock_doc.name = db_config.name
         mock_doc.description = db_config.description
         mock_doc.icon = db_config.icon
-        mock_doc.color = db_config.color
-        mock_doc.voice = db_config.voice
         mock_doc.config_data = {}
 
         # Test the override scenario
@@ -187,7 +170,6 @@ class TestAgentConfigDatabaseOperations:
                 converted_config = AgentConfig.from_entity(result)
                 assert converted_config == db_config
                 assert converted_config.name.en == "Overridden Default"
-                assert converted_config.color == "#FFFF00"
 
                 # Verify it's not the default config
                 assert converted_config != sample_default_config
@@ -201,8 +183,6 @@ class TestAgentConfigDatabaseOperations:
         mock_doc1.name = LocaleString(en="Agent 1")
         mock_doc1.description = LocaleString(en="First agent")
         mock_doc1.icon = "icon1"
-        mock_doc1.color = "#FF0000"
-        mock_doc1.voice = "voice1"
         mock_doc1.config_data = {}
 
         mock_doc2 = Mock()
@@ -211,8 +191,6 @@ class TestAgentConfigDatabaseOperations:
         mock_doc2.name = LocaleString(en="Agent 2")
         mock_doc2.description = LocaleString(en="Second agent")
         mock_doc2.icon = "icon2"
-        mock_doc2.color = "#00FF00"
-        mock_doc2.voice = "voice2"
         mock_doc2.config_data = {}
 
         config1 = AgentConfig(
@@ -221,8 +199,6 @@ class TestAgentConfigDatabaseOperations:
             name=LocaleString(en="Agent 1"),
             description=LocaleString(en="First agent"),
             icon="icon1",
-            color="#FF0000",
-            voice="voice1",
         )
 
         config2 = AgentConfig(
@@ -231,8 +207,6 @@ class TestAgentConfigDatabaseOperations:
             name=LocaleString(en="Agent 2"),
             description=LocaleString(en="Second agent"),
             icon="icon2",
-            color="#00FF00",
-            voice="voice2",
         )
 
         with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find:
@@ -273,8 +247,6 @@ class TestAgentConfigDatabaseOperations:
             name=LocaleString(en="DB Config"),
             description=LocaleString(en="From database"),
             icon="db-icon",
-            color="#FF0000",
-            voice="db-voice",
         )
 
         mock_doc = Mock()

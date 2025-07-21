@@ -39,8 +39,6 @@ def sample_agent_config():
         name=LocaleString(en="Test Agent 1"),
         description=LocaleString(en="A test agent for validation"),
         icon="test-icon",
-        color="#FF5733",
-        voice="test-voice",
     )
 
 
@@ -77,8 +75,6 @@ def sample_agent_entity():
     mock_entity.name = LocaleString(en="Test Agent 1")
     mock_entity.description = LocaleString(en="A test agent")
     mock_entity.icon = "test-icon"
-    mock_entity.color = "#FF5733"
-    mock_entity.voice = "test-voice"
     return mock_entity
 
 

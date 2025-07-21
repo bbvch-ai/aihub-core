@@ -62,23 +62,6 @@ class AgentConfig(BaseModel):
     agent_class: Annotated[str, Field(description="The class name of the agent, used for identification.")]
     agent_id: Annotated[str, Field(description="Uniquely identifies the agent instance.", pattern=r"^[a-z0-9_-]+$")]
 
-    color: Annotated[
-        str | None,
-        Field(
-            description="The color of the agent UI theme.",
-            deprecated="This field is deprecated. It will be removed in a future release. "
-            "If you need a color, please define it yourself in a subclass of AgentConfig.",
-        ),
-    ] = "#10A37F"
-    voice: Annotated[
-        str | None,
-        Field(
-            description="The TTS voice ID the agent uses.",
-            deprecated="This field is deprecated. It will be removed in a future release. "
-            "If you need a voice, please define it yourself in a subclass of AgentConfig.",
-        ),
-    ] = "de-DE-ChristophNeural"
-
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
 
     @classmethod
@@ -89,8 +72,6 @@ class AgentConfig(BaseModel):
             "name": entity.name.to_locale_string(),
             "description": entity.description.to_locale_string(),
             "icon": entity.icon,
-            "color": entity.color or "#10A37F",  # Default color if not set
-            "voice": entity.voice or "de-DE-ChristophNeural",  # Default voice if not set
             **entity.config_data,
         }
         config = cls(**data)

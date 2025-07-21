@@ -81,16 +81,6 @@ export type AgentConfigDto = {
      */
     description: string;
     /**
-     * Color
-     * The color of the agent UI theme.
-     */
-    color?: string;
-    /**
-     * Voice
-     * The TTS voice ID the agent uses.
-     */
-    voice?: string;
-    /**
      * Icon
      * The icon representing the agent.
      */

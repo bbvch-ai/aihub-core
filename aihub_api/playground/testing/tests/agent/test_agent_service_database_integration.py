@@ -24,8 +24,6 @@ def sample_agent_config():
         name=LocaleString(en="Test Agent 1"),
         description=LocaleString(en="A test agent for validation"),
         icon="test-icon",
-        color="#FF5733",
-        voice="test-voice",
     )
 
 
@@ -38,8 +36,6 @@ def sample_default_config():
         name=LocaleString(en="Default Test Agent"),
         description=LocaleString(en="Default test agent configuration"),
         icon="default-icon",
-        color="#0066CC",
-        voice="default-voice",
     )
 
 
@@ -61,8 +57,6 @@ def mock_agent_config_document(sample_agent_config):
     mock_doc.name = sample_agent_config.name
     mock_doc.description = sample_agent_config.description
     mock_doc.icon = sample_agent_config.icon
-    mock_doc.color = sample_agent_config.color
-    mock_doc.voice = sample_agent_config.voice
     mock_doc.config_data = {}
     return mock_doc
 
@@ -165,8 +159,6 @@ class TestAgentServiceDatabaseIntegration:
             name=LocaleString(en="DB Override Config"),
             description=LocaleString(en="DB config overriding default"),
             icon="db-icon",
-            color="#FF0000",
-            voice="db-voice",
         )
 
         # Mock the document to have the same ID as default
@@ -242,8 +234,6 @@ class TestAgentServiceDatabaseIntegration:
         mock_doc2.name = LocaleString(en="DB Agent 2")
         mock_doc2.description = LocaleString(en="Second DB agent")
         mock_doc2.icon = "db-icon2"
-        mock_doc2.color = "#00FF00"
-        mock_doc2.voice = "db-voice2"
         mock_doc2.config_data = {}
 
         config2 = AgentConfig(
@@ -252,8 +242,6 @@ class TestAgentServiceDatabaseIntegration:
             name=LocaleString(en="DB Agent 2"),
             description=LocaleString(en="Second DB agent"),
             icon="db-icon2",
-            color="#00FF00",
-            voice="db-voice2",
         )
 
         with patch.object(AgentService, "discover_agent_class") as mock_discover_class:
@@ -308,8 +296,6 @@ class TestAgentServiceDatabaseIntegration:
             name=LocaleString(en="DB Override Config"),
             description=LocaleString(en="DB config overriding default"),
             icon="db-icon",
-            color="#FF0000",
-            voice="db-voice",
         )
 
         mock_agent_config_document.agent_id = "default_agent"

@@ -22,8 +22,6 @@ def sample_default_config() -> dict[str, Any]:
         name=LocaleString(en="Default Test Agent"),
         description=LocaleString(en="Default agent configuration"),
         icon="default-icon",
-        color="#0066CC",
-        voice="default-voice",
     ).model_dump()
 
 
@@ -36,8 +34,6 @@ def sample_start_event_config() -> dict[str, Any]:
         name=LocaleString(en="Start Event Agent"),
         description=LocaleString(en="Agent config from start event"),
         icon="start-event-icon",
-        color="#FF5733",
-        voice="start-event-voice",
     ).model_dump()
 
 
@@ -109,8 +105,6 @@ class TestAgentConfigPrecedence:
             name=LocaleString(en="Agent 1"),
             description=LocaleString(en="First agent"),
             icon="icon-1",
-            color="#FF0000",
-            voice="voice-1",
         )
 
         config2 = AgentConfig(
@@ -119,8 +113,6 @@ class TestAgentConfigPrecedence:
             name=LocaleString(en="Agent 2"),
             description=LocaleString(en="Second agent"),
             icon="icon-2",
-            color="#00FF00",
-            voice="voice-2",
         )
 
         # Create start events with different configs
@@ -239,7 +231,6 @@ class TestAgentDispatcherConfigHandling:
         assert config_dict["agent_class"] == "TestAgent"
         assert config_dict["agent_id"] == "start_event_agent"
         assert config_dict["name"]["en"] == "Start Event Agent"
-        assert config_dict["color"] == "#FF5733"
 
         # Test that AgentConfig can be deserialized
         deserialized_config = AgentConfig.model_validate(config_dict)
@@ -292,8 +283,6 @@ class TestAgentConfigIntegration:
             name=LocaleString(en="Custom Agent"),
             description=LocaleString(en="Custom agent for testing"),
             icon="custom-icon",
-            color="#9900FF",
-            voice="custom-voice",
         )
 
         # Step 1: Start event with custom config
@@ -316,7 +305,6 @@ class TestAgentConfigIntegration:
         assert final_config == custom_config
         assert final_config.agent_id == "custom_agent"
         assert final_config.name.en == "Custom Agent"
-        assert final_config.color == "#9900FF"
         assert "agent_config" in event_data
         assert event_data["agent_config"] == custom_config.model_dump()
 
@@ -332,8 +320,6 @@ class TestAgentConfigIntegration:
                         name=LocaleString(en="Override 1"),
                         description=LocaleString(en="First override"),
                         icon="override-1",
-                        color="#FF0000",
-                        voice="override-1",
                     ).model_dump()
                 ),
                 "expected_id": "override_1",
