@@ -87,7 +87,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             agents.append(await AgentService.discover_agent_instance(self.nc, topic.agent_class, topic.agent_id))
 
         for agent in agents:
-            agent_discovery_response_event = AgentInstanceDiscoveryResponseEvent.from_agent_instance(agent)
+            agent_discovery_response_event = agent.to_discovery_response_event()
             await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
     @override
