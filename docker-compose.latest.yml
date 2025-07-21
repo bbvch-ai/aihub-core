@@ -353,13 +353,18 @@ services:
   web:
     image: ghcr.io/bbvch-ai/aihub-core/web:latest
     restart: always
-    ports:
-      - "80:80"
     environment:
       AZURE_AD_CLIENT_ID: ${AZURE_AD_CLIENT_ID}
       AZURE_AD_TENANT_ID: ${AZURE_AD_TENANT_ID}
       WEBUI_URL: "https://openwebui.${DOMAIN}"
       WS_ENDPOINT: "wss://${DOMAIN}/api/v1/event/ws"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.routers.web.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web.middlewares=security-headers@file"
+      - "traefik.http.services.web.loadbalancer.server.port=80"
 
   # TODO: only use in dev , delete from latest
   # === CPU LLMs Stack ===
