@@ -460,11 +460,6 @@ class TestAgentDispatcherStepExecution:
         # Arrange
         start_event = StartEvent()
 
-        mock_run_context = Mock(spec=RunContext)
-        mock_run_context.get = AsyncMock(return_value=agent_dispatcher.default_agent_config.model_dump())
-
-        mock_thread_context = Mock(spec=ThreadContext)
-
         # Use the actual MockAgent limited_step method (max_executions_per_run=1)
         mock_step_method = MockAgent.limited_step
         agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[mock_step_method])
@@ -473,20 +468,21 @@ class TestAgentDispatcherStepExecution:
         agent_dispatcher.step_store.get_execution_count = AsyncMock(return_value=1)  # Already at max
 
         with (
-            patch("aihub_agent.dispatchers.AgentDispatcher.RunContext", return_value=mock_run_context),
-            patch("aihub_agent.dispatchers.AgentDispatcher.ThreadContext", return_value=mock_thread_context),
-            patch("aihub_agent.dispatchers.AgentDispatcher.RunTraceCoordinator"),
+            patch("aihub_agent.dispatchers.AgentDispatcher.RunTraceCoordinator") as mock_tracer_class,
+            patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
-            with patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle:
-                mock_base_handle.return_value = None
+            mock_tracer = Mock(spec=RunTraceCoordinator)
+            mock_tracer.trace_run_start.return_value = {"trace": "headers"}
+            mock_tracer_class.return_value = mock_tracer
+            mock_base_handle.return_value = None
 
-                # Act
-                await agent_dispatcher.handle_event(start_event, agent_topic)
+            # Act
+            await agent_dispatcher.handle_event(start_event, agent_topic)
 
-                # Assert - step should not be executed because max executions reached
-                agent_dispatcher.step_store.get_execution_count.assert_called_once_with(
-                    agent_topic.execution_context_id, "limited_step"
-                )
+            # Assert - step should not be executed because max executions reached
+            agent_dispatcher.step_store.get_execution_count.assert_called_once_with(
+                agent_topic.execution_context_id, "limited_step"
+            )
 
     @pytest.mark.asyncio
     async def test_step_execution_with_precondition(self, agent_dispatcher, agent_topic):
@@ -495,21 +491,8 @@ class TestAgentDispatcherStepExecution:
         start_event = StartEvent()
         start_event.condition = True  # Set condition for precondition to check
 
-        mock_run_context = Mock(spec=RunContext)
-        mock_run_context.get = AsyncMock(return_value=agent_dispatcher.default_agent_config.model_dump())
-
-        mock_thread_context = Mock(spec=ThreadContext)
-
-        # For this test, we need more control over precondition behavior, so use a mock
-        mock_step_method = Mock()
-        mock_step_method.__name__ = "conditional_step"
-        setattr(mock_step_method, Agent.INPUT_EVENTS_ANNOTATION, {StartEvent})
-
-        # Mock precondition function that returns True when event has condition=True
-        mock_precondition = AsyncMock(return_value=True)
-        setattr(mock_step_method, Agent.PRECONDITION_FUNCTION_ANNOTATION, mock_precondition)
-        setattr(mock_step_method, Agent.MAX_EXECUTION_PER_RUN_ANNOTATION, None)  # Ensure this is None, not Mock
-
+        # Use the actual MockAgent conditional_step method
+        mock_step_method = MockAgent.conditional_step
         agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[mock_step_method])
 
         # Mock _build_method_kwargs to return proper EventsAndKwargs
@@ -519,24 +502,26 @@ class TestAgentDispatcherStepExecution:
         agent_dispatcher._build_method_kwargs = AsyncMock(return_value=mock_events_and_kwargs)
 
         with (
-            patch("aihub_agent.dispatchers.AgentDispatcher.RunContext", return_value=mock_run_context),
-            patch("aihub_agent.dispatchers.AgentDispatcher.ThreadContext", return_value=mock_thread_context),
-            patch("aihub_agent.dispatchers.AgentDispatcher.RunTraceCoordinator"),
+            patch("aihub_agent.dispatchers.AgentDispatcher.RunTraceCoordinator") as mock_tracer_class,
+            patch.object(agent_dispatcher, "is_step_ready", return_value=True),
             patch.object(agent_dispatcher, "execute_step"),
+            patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
-            with patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle:
-                mock_base_handle.return_value = None
+            mock_tracer = Mock(spec=RunTraceCoordinator)
+            mock_tracer.trace_run_start.return_value = {"trace": "headers"}
+            mock_tracer_class.return_value = mock_tracer
+            mock_base_handle.return_value = None
 
-                # Mock asyncio task creation
-                mock_task = Mock()
-                mock_task.add_done_callback = Mock()
+            # Mock asyncio task creation
+            mock_task = Mock()
+            mock_task.add_done_callback = Mock()
 
-                with patch("asyncio.create_task", return_value=mock_task):
-                    # Act
-                    await agent_dispatcher.handle_event(start_event, agent_topic)
+            with patch("asyncio.create_task", return_value=mock_task):
+                # Act
+                await agent_dispatcher.handle_event(start_event, agent_topic)
 
-                    # Assert - step should be executed (background task created)
-                    assert len(agent_dispatcher._background_tasks) == 1
+                # Assert - step should be executed (background task created)
+                assert len(agent_dispatcher._background_tasks) == 1
 
 
 class TestAgentDispatcherErrorHandling:
