@@ -235,7 +235,10 @@ class BaseEvent(BaseModel):
         BaseEvent._event_registry[cls.__name__] = cls
 
     @classmethod
-    def deserialize_event(cls, data: bytes | str | dict[str, Any]) -> "BaseEvent":
+    def deserialize_event(
+        cls,
+        data: bytes | str | dict[str, Any],
+    ) -> "BaseEvent":
         """
         Given raw event data, deserializes it into the most specific event class possible
         based on inheritance hierarchy, while preserving original type information.

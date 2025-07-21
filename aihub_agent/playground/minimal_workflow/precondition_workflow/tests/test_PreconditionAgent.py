@@ -15,11 +15,11 @@ scenarios("./features/precondition_agent.feature")
 def _(number_of_events):
     return AgentTestRunner(
         agent_type=PreconditionAgent,
-        agent_config=PreconditionAgentConfig(
+        default_agent_config=PreconditionAgentConfig(
             agent_id="precondition_agent",
+            agent_class=PreconditionAgent.__name__,
             name=LocaleString(en="Agent with preconditions"),
             description=LocaleString(en="This is an agent that has preconditions"),
-            system_prompt=LocaleString(en="You are an agent"),
             number_of_events=number_of_events,
         ),
     )

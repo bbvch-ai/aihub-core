@@ -609,7 +609,8 @@ agent might be a developmental agent used to explore new features or test config
 ```python
 import asyncio
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.resources.models.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig, AzureOpenAIParameter
+from aihub_lib.generative_ai.resources.models.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig,
+    AzureOpenAIParameter
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.testing.logging.logger import enable_logging
 from playground.agent.LLMWrappingAgent import DevAgent
@@ -619,32 +620,32 @@ enable_logging()
 
 
 async def main():
-  runner = AgentTestRunner(
-    agent_type=DevAgent,
-    agent_config=DevAgentConfig(
-      agent_id="dev_agent",
-      name=LocaleString(en="Dev Agent"),
-      description=LocaleString(en="This is an agent that can be used to develop the frontend"),
-      system_prompt=LocaleString(en="You are an agent"),
-      llm=AzureOpenAILLMConfig(
-        name="gpt-4o",
-        base_url="https://aihub-dev-openai-che.openai.azure.com/",
-        api_version="2024-12-01-preview",
-        prompt_tokens_costs_per_thousand=0.0045,
-        completion_tokens_costs_per_thousand=0.0133,
-        default_parameter=AzureOpenAIParameter(temperature=0.0)
-      )
-    ),
-  )
+    runner = AgentTestRunner(
+        agent_type=DevAgent,
+        default_agent_config=DevAgentConfig(
+            agent_id="dev_agent",
+            agent_class=DevAgent.__name__,
+            name=LocaleString(en="Dev Agent"),
+            description=LocaleString(en="This is an agent that can be used to develop the frontend"),
+            llm=AzureOpenAILLMConfig(
+                name="gpt-4o",
+                base_url="https://aihub-dev-openai-che.openai.azure.com/",
+                api_version="2024-12-01-preview",
+                prompt_tokens_costs_per_thousand=0.0045,
+                completion_tokens_costs_per_thousand=0.0133,
+                default_parameter=AzureOpenAIParameter(temperature=0.0)
+            )
+        ),
+    )
 
-  # The run_forever() method starts the agent and keeps it running.
-  # The agent now listens for events. You can trigger events (e.g., StartEvents)
-  # by publishing them to NATS or using the testing utilities to simulate them.
-  await runner.run_forever()
+    # The run_forever() method starts the agent and keeps it running.
+    # The agent now listens for events. You can trigger events (e.g., StartEvents)
+    # by publishing them to NATS or using the testing utilities to simulate them.
+    await runner.run_forever()
 
 
 if __name__ == "__main__":
-  asyncio.run(main())
+    asyncio.run(main())
 ```
 
 **What’s Happening Here:**

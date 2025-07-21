@@ -14,11 +14,11 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=WebuiAgent,
-        agent_config=WebuiAgentConfig(
+        default_agent_config=WebuiAgentConfig(
             agent_id="deepseek",
+            agent_class=WebuiAgent.__name__,
             name=LocaleString(en="Webui Agent"),
             description=LocaleString(en="This is an agent that wraps an openai webui assistant"),
-            system_prompt=LocaleString(en="You are an agent"),
             webui_base_url="http://localhost:8080",
             webui_bearer_token=os.environ.get("WEBUI_BEARER_TOKEN"),
             assistant_name="deepseek",

@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime
 
 from bson import ObjectId
@@ -11,8 +12,14 @@ from mongoengine import (
     EmbeddedDocumentField,
     IntField,
     ListField,
+    ReferenceField,
     StringField,
 )
+
+from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
+from aihub_lib.persistence.agents.AgentConfigEntityEmbeddedDocument import AgentConfigEntityEmbeddedDocument
+
+logger = logging.getLogger(__name__)
 
 
 class EventPayloadField(EmbeddedDocument):
@@ -89,16 +96,6 @@ class EventSpec(EmbeddedDocument):
         )
 
 
-class AgentConfigEntity(EmbeddedDocument):
-    agent_id = StringField(required=True)
-    name = StringField(required=True)  # TODO: This must be a i18n dict
-    description = StringField(required=True)  # TODO: This must be a i18n dict
-    system_prompt = StringField(required=True)  # TODO: This must be a i18n dict (or deprecated)
-    color = StringField(default="#10A37F")
-    voice = StringField(default="de-DE-ChristophNeural")
-    icon = StringField(default="meteor-icons:robot")
-
-
 class AgentEntity(Document):
     meta = {
         "collection": "agents",
@@ -107,7 +104,8 @@ class AgentEntity(Document):
     }
     agent_class = StringField(required=True)
     agent_id = StringField(required=True)
-    agent_config = EmbeddedDocumentField(AgentConfigEntity, required=True)
+    agent_config = ReferenceField(AgentConfigEntityDocument, required=False)
+    default_agent_config = EmbeddedDocumentField(AgentConfigEntityEmbeddedDocument, required=True)
     is_conversational = BooleanField(required=True)
     start_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
     stop_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
@@ -120,7 +118,8 @@ class AgentEntity(Document):
         cls,
         agent_class: str,
         agent_id: str,
-        agent_config: AgentConfigEntity,
+        agent_config: AgentConfigEntityDocument | None,
+        default_agent_config: AgentConfigEntityEmbeddedDocument,
         is_conversational: bool,
         start_events: list[EventSpec],
         stop_events: list[EventSpec],
@@ -132,6 +131,7 @@ class AgentEntity(Document):
             agent_class=agent_class,
             agent_id=agent_id,
             agent_config=agent_config,
+            default_agent_config=default_agent_config,
             is_conversational=is_conversational,
             start_events=start_events,
             stop_events=stop_events,
@@ -143,34 +143,37 @@ class AgentEntity(Document):
         return agent
 
     @classmethod
-    def create_or_update_from_dto(cls, agent_dto) -> "AgentEntity":
+    def create_or_update_from_dto(cls, agent_instance) -> "AgentEntity":
         """
         Creates a new AgentEntity from an AgentDTO or updates an existing one if an agent
         with the same agent_class and agent_id already exists.
         """
         # Check if an agent with the same agent_class and agent_id already exists
-        existing_agent = cls.objects(agent_class=agent_dto.agent_class, agent_id=agent_dto.agent_id).first()
+        existing_agent = cls.objects(agent_class=agent_instance.agent_class, agent_id=agent_instance.agent_id).first()
 
-        agent_config = AgentConfigEntity(
-            agent_id=agent_dto.agent_config.agent_id,
-            name=agent_dto.agent_config.name,
-            description=agent_dto.agent_config.description,
-            system_prompt=agent_dto.agent_config.system_prompt,
-            color=agent_dto.agent_config.color,
-            voice=agent_dto.agent_config.voice,
-            icon=agent_dto.agent_config.icon,
+        agent_config_entity = AgentConfigEntityDocument.find_for_class_and_id(
+            agent_class=agent_instance.agent_class, agent_id=agent_instance.agent_id
+        )
+        if not agent_config_entity:
+            logger.debug(
+                f"No agent config found for class {agent_instance.agent_class} and ID {agent_instance.agent_id}."
+            )
+
+        default_agent_config_entity = AgentConfigEntityEmbeddedDocument.from_agent_config(
+            agent_instance.default_agent_config
         )
 
         # Create EventSpec objects, serializing the schema to avoid $ issues
-        start_events = [EventSpec.from_dto(event) for event in agent_dto.start_events]
-        stop_events = [EventSpec.from_dto(event) for event in agent_dto.stop_events]
+        start_events = [EventSpec.from_dto(event) for event in agent_instance.start_events]
+        stop_events = [EventSpec.from_dto(event) for event in agent_instance.stop_events]
 
-        network_graph = agent_dto.network_graph.model_dump()
+        network_graph = agent_instance.network_graph.model_dump()
 
         if existing_agent:
             # Update existing agent
-            existing_agent.agent_config = agent_config
-            existing_agent.is_conversational = agent_dto.is_conversational
+            existing_agent.agent_config = agent_config_entity
+            existing_agent.default_agent_config = default_agent_config_entity
+            existing_agent.is_conversational = agent_instance.is_conversational
             existing_agent.start_events = start_events
             existing_agent.stop_events = stop_events
             existing_agent.network_graph = network_graph
@@ -180,10 +183,11 @@ class AgentEntity(Document):
         else:
             # Create new agent
             return cls.create_agent(
-                agent_class=agent_dto.agent_class,
-                agent_id=agent_dto.agent_id,
-                agent_config=agent_config,
-                is_conversational=agent_dto.is_conversational,
+                agent_class=agent_instance.agent_class,
+                agent_id=agent_instance.agent_id,
+                agent_config=agent_config_entity,
+                default_agent_config=default_agent_config_entity,
+                is_conversational=agent_instance.is_conversational,
                 start_events=start_events,
                 stop_events=stop_events,
                 network_graph=network_graph,

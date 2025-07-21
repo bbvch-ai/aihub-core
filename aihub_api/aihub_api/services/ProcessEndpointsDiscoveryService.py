@@ -60,7 +60,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         human_input: HumanInSpecs,
     ):
         """Register endpoints that allow humans to interact with a process by getting and submitting forms."""
-        base_path = self._get_endpoint_name(process_class, process_id)
+        base_path = self._get_endpoint_base_path(process_class, process_id)
 
         process_class_snake = snakecase(process_class)
         process_id_snake = snakecase(process_id)
@@ -124,7 +124,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         program_input: ProgramInSpecs,
     ):
         """Register endpoints that allow programs to interact with a process submitting data."""
-        base_path = self._get_endpoint_name(process_class, process_id)
+        base_path = self._get_endpoint_base_path(process_class, process_id)
 
         process_class_snake = snakecase(process_class)
         process_id_snake = snakecase(process_id)

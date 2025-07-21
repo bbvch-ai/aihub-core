@@ -3,17 +3,20 @@ import logging
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events import UserMessageEvent
-from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent
-from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
+from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
+    AgentClassDiscoveryResponseEvent,
+    AgentConfigSpecs,
+)
+from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
-from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
+from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from aihub_lib.nats.topics.discovery.agent.AgentDiscoveryTopic import AgentDiscoveryTopic
+from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
 from aihub_lib.nats.workflow.visualizers.WorkflowVisualizer import WorkflowVisualizer
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
@@ -38,7 +41,7 @@ class AgentRunner:
         servers: list[str],
         redis_url: str,
         agent_type: type[Agent],
-        agent_config: AgentConfig,
+        default_agent_config: AgentConfig,
         locale_paths: list[str] | None = None,
     ):
         if not isinstance(agent_type, type):
@@ -49,40 +52,39 @@ class AgentRunner:
         self.servers = servers
         self.redis_url = redis_url
         self.agent_type = agent_type
-        self.agent_config = agent_config
+        self.default_agent_config = default_agent_config
+        self.agent_config_type = default_agent_config.__class__
         self.running = False
         self._stop_signal = asyncio.Event()
+        self._loop_task: asyncio.Task | None = None
 
         self.agent_class = self.agent_type.__name__
-        self.topic_manager = AgentInstanceTopicManager(self.agent_class, self.agent_config.agent_id)
+        self.topic_manager = AgentClassTopicManager(self.agent_class)
 
         self.nc: NATS | None = None
         self.js: JetStreamContext | None = None
 
         self.dispatcher: AgentDispatcher | None = None
 
-        self.discovery_event_subscriber: NCSubscriber[DiscoveryRequestEvent] | None = None
+        self.discovery_event_subscriber: NCSubscriber[ClassDiscoveryRequestEvent] | None = None
         self.control_event_subscriber: JSSubscriber | None = None
-        self.nc_publisher: NCPublisher[AgentDiscoveryResponseEvent] | None = None
+        self.nc_publisher: NCPublisher[AgentClassDiscoveryResponseEvent] | None = None
 
         self.locale_handler = AgentLocaleHandler(locale_paths=locale_paths)
 
-    async def discovery_handler(self, event: DiscoveryRequestEvent, topic: AgentDiscoveryTopic):
+    async def discovery_handler(self, event: ClassDiscoveryRequestEvent, topic: AgentClassDiscoveryTopic):
         """
         Responds to discovery requests by publishing an AgentDiscoveryResponseEvent that includes the basic
         agent configuration as well as some carefully crafted event specifications.
         """
-        if topic.agent_class not in [self.agent_class, "*"] or topic.agent_id not in [
-            self.agent_config.agent_id,
-            "*",
-        ]:
-            logger.debug(
-                f"Discovery request for {topic.agent_class} with id {topic.agent_id} does not match this agent."
-            )
+        if topic.agent_class not in [self.agent_class, "*"]:
+            logger.debug(f"Discovery request for {topic.agent_class} does not match this agent.")
             return
 
-        logger.debug(f"Received discovery request for {topic.agent_class} with id {topic.agent_id}.")
-        subject = self.topic_manager.get_agent_discovery_subject_response(topic.call_id)
+        logger.debug(f"Received discovery request for {topic.agent_class}.")
+        subject = self.topic_manager.get_agent_class_discovery_subject_response(
+            topic.call_id, agent_class=self.agent_class
+        )
 
         start_events = self.agent_type.get_start_events()
         start_event_specs = [EventSpecs.from_event_class(e) for e in start_events]
@@ -93,14 +95,16 @@ class AgentRunner:
         network_graph = WorkflowVisualizer(agent=self.agent_type)
         network_graph.build_workflow_graph()
 
-        agent_discovery_response_event = AgentDiscoveryResponseEvent(
+        agent_config_specs = AgentConfigSpecs.from_agent_config_class(self.agent_config_type)
+
+        agent_discovery_response_event = AgentClassDiscoveryResponseEvent(
             agent_class=self.agent_class,
-            agent_id=self.agent_config.agent_id,
+            agent_config_specs=agent_config_specs,
             is_conversational=any([issubclass(event, UserMessageEvent) for event in start_events]),
-            agent_config=self.agent_config,
             start_events=start_event_specs,
             stop_events=stop_event_specs,
             network_graph=network_graph.to_pydantic(),
+            default_agent_config=self.default_agent_config,
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
@@ -125,7 +129,7 @@ class AgentRunner:
         # Initialize dispatcher
         self.dispatcher = AgentDispatcher(
             self.agent_type,
-            self.agent_config,
+            self.default_agent_config,
             self.nc,
             self.js,
             self.redis,
@@ -135,23 +139,23 @@ class AgentRunner:
         await self.dispatcher.start()
 
         self.nc_publisher = NCPublisher(self.nc)
-        self.discovery_event_subscriber = AgentNCSubscriber.for_agent_discovery_request_events(
+        self.discovery_event_subscriber = AgentNCSubscriber.for_agent_class_discovery_request_events(
             self.nc, AgentTopicManager(), self.discovery_handler
         )
         await self.discovery_event_subscriber.start()
 
         # Subscribe to control events
-        self.control_event_subscriber = AgentJSSubscriber.for_agent_instance_control_events(
+        self.control_event_subscriber = AgentJSSubscriber.for_agent_class_control_events(
             self.nc,
             self.topic_manager,
             handler=self.dispatcher.handle_event,
             js=self.js,
-            queue_group=f"agent_runner_{self.agent_class}_{self.agent_config.agent_id}",
+            queue_group=f"agent_runner_{self.agent_class}",
         )
         await self.control_event_subscriber.start()
 
         logger.debug(f"{self.agent_class} is now running and subscribed to incoming messages.")
-        asyncio.create_task(self._run_loop())
+        self._loop_task = asyncio.create_task(self._run_loop())
 
     async def stop(self):
         """
@@ -163,8 +167,16 @@ class AgentRunner:
 
         logger.debug(f"Shutting down {self.agent_class}...")
         self._stop_signal.set()
+
+        if self._loop_task is not None:
+            await self._loop_task
+
+        else:
+            logger.exception(f"Loop task was not running for {self.agent_class}.")
+
         self.running = False
 
+        await self.discovery_event_subscriber.stop()
         await self.control_event_subscriber.stop()
         await self.dispatcher.stop()
 
@@ -188,7 +200,7 @@ class AgentRunner:
         Starts the agent and waits indefinitely (or until a stop event is triggered).
         Useful for production usage where the agent should run until manually stopped.
         """
-        logger.debug(f"Starting {self.agent_class}.{self.agent_config.agent_id}")
+        logger.debug(f"Starting {self.agent_class}")
         await self.start()
         try:
             await self._stop_signal.wait()

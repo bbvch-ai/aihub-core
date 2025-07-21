@@ -149,8 +149,13 @@ class AzureGraphService:
 
         logger.debug(f"Fetching profile image for user OID {user_oid}.")
         image_url = f"{self.MS_GRAPH_BASE_URL}/users/{user_oid}/photo/$value"
-
-        image_response = await self._make_graph_request("GET", image_url)
+        try:
+            image_response = await self._make_graph_request("GET", image_url)
+        except GraphAPIError as e:
+            if e.status_code == 404:
+                image_response = None
+            else:
+                raise
 
         image_data_url = None
         if image_response:  # Response is empty dict on 404

@@ -38,4 +38,5 @@ class TopicManager:
     of event-driven architectures by standardizing how events are named and accessed.
     """
 
-    DISCOVERY_TOPIC = "discovery"
+    INSTANCE_DISCOVERY_TOPIC = "instance_discovery"
+    CLASS_DISCOVERY_TOPIC = "class_discovery"

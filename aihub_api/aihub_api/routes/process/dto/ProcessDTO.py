@@ -37,7 +37,9 @@ class ProcessDTO(BaseModel):
             "Agent work events are used to trigger the execution of an agent."
         ),
     ]
-    is_online: Annotated[bool | None, Field(description="Indicates whether the process is online and reachable.")] = None
+    is_online: Annotated[bool | None, Field(description="Indicates whether the process is online and reachable.")] = (
+        None
+    )
 
     @classmethod
     def from_entity(cls, entity: ProcessEntity, t: LocaleHandler, is_online: bool) -> "ProcessDTO":

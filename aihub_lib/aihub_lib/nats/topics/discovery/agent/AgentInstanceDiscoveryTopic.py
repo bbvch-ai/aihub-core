@@ -6,7 +6,7 @@ from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicMan
 from aihub_lib.nats.topics.discovery.DiscoveryTopic import DiscoveryTopic
 
 
-class AgentDiscoveryTopic(DiscoveryTopic):
+class AgentInstanceDiscoveryTopic(DiscoveryTopic):
     """
     Specialization of DiscoveryTopic for agent-specific discovery subjects, including agent_class and agent_id.
 
@@ -19,7 +19,7 @@ class AgentDiscoveryTopic(DiscoveryTopic):
     agent_id: Annotated[str, Field(description="Specific agent instance targeted by the discovery.")]
 
     @classmethod
-    def from_subject(cls, subject: str) -> "AgentDiscoveryTopic":
+    def from_subject(cls, subject: str) -> "AgentInstanceDiscoveryTopic":
         """
         Use this when dealing with agent-specific discovery subjects to extract agent_class and agent_id.
         """
@@ -31,7 +31,7 @@ class AgentDiscoveryTopic(DiscoveryTopic):
             request_response,
             call_id,
         ) = subject.split(".")
-        assert topic_type == AgentTopicManager.DISCOVERY_TOPIC, f"Unexpected topic type: {subject}"
+        assert topic_type == AgentTopicManager.INSTANCE_DISCOVERY_TOPIC, f"Unexpected topic type: {subject}"
         assert discovery_topic == AgentTopicManager.AGENT_TOPIC, f"Not an agent discovery topic: {subject}"
 
         return cls(

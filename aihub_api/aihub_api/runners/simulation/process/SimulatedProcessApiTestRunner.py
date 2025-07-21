@@ -106,6 +106,12 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
         self.program_inputs: list[ProgramInSpecs] = []
         self.agent_inputs: list[AgentInSpecs] = []
 
+        self.default_process_config = ProcessConfig(
+            process_id=self.process_id,
+            name=LocaleString(de="Test Process"),
+            description=LocaleString(de="Test Process Description"),
+        )
+
     async def simulate_process(self, event: ProcessEvent, topic: ProcessTopic):
         """
         Handler for work request events targeting this process instance. If a WorkRequestEvent arrives,
@@ -128,11 +134,7 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
         process_discovery_response_event = ProcessDiscoveryResponseEvent(
             process_class=self.process_class,
             process_id=self.process_id,
-            process_config=ProcessConfig(
-                process_id=self.process_id,
-                name=LocaleString(de="Test Process"),
-                description=LocaleString(de="Test Process Description"),
-            ),
+            process_config=self.default_process_config,
             human_inputs=self.human_inputs,
             program_inputs=self.program_inputs,
             agent_inputs=self.agent_inputs,

@@ -24,11 +24,11 @@ scenarios("./features/human_in_the_loop_agent.feature")
 def _():
     return AgentTestRunner(
         agent_type=HumanInTheLoopAgent,
-        agent_config=HumanInTheLoopAgentConfig(
+        default_agent_config=HumanInTheLoopAgentConfig(
             agent_id="human_in_the_loop_agent",
+            agent_class=HumanInTheLoopAgent.__name__,
             name=LocaleString(en="Human In The Loop Agent"),
             description=LocaleString(en="This is a very human in the loop agent"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
 
