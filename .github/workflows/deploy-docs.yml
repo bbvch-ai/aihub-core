@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - "feat/aihub-claude-code"
+      - 'feat/aihub-claude-code'
     paths:
       - 'aihub_doc/**'
       - '.github/workflows/deploy-docs.yml'
