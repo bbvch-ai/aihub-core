@@ -1,15 +1,15 @@
 import {
   getNotifications,
-  markAllDone,
-  markAllRead,
+  type PaginatedNotificationsResponse,
   updateNotification,
   type UpdateNotificationRequest,
+  updateNotificationsBulk,
 } from '@core/sdk/client'
 import {defineMutation, defineQuery, useMutation, useQueryCache} from '@pinia/colada'
 import {type Ref} from 'vue'
 
 
-export const useNotifications = defineQuery((options?: {
+export const useNotifications = (options?: {
   types?: Ref<string[] | undefined>,
   severities?: Ref<string[] | undefined>,
   read?: Ref<boolean | undefined>,
@@ -24,14 +24,14 @@ export const useNotifications = defineQuery((options?: {
     data: paginatedResponse,
     isPending: isLoading,
     refetch,
-  } = useQuery({
-    key: () => ['notifications'],
-    query: async () => {
+  } = useQuery<PaginatedNotificationsResponse>({
+    key: () => ['notifications', types?.value, severities?.value, read?.value, done?.value],
+    query: () => {
       return getNotifications({
         composable: '$fetch',
         query: {
           page: 1,
-          page_size: 10,
+          page_size: 100,
           types: types?.value,
           severities: severities?.value,
           read: read?.value,
@@ -48,7 +48,7 @@ export const useNotifications = defineQuery((options?: {
     isLoading,
     refetch,
   }
-})
+}
 
 
 export const useUpdateNotification = defineMutation(() => {
@@ -67,19 +67,49 @@ export const useUpdateNotification = defineMutation(() => {
 })
 
 
-export const useMarkAllNotificationsAsRead = defineMutation(() => {
+export const useUpdateMultipleNotifications = defineMutation(() => {
   const queryCache = useQueryCache()
   return useMutation({
-    mutation: () => markAllRead({composable: '$fetch'}),
-    onSuccess: () => queryCache.invalidateQueries({key: ['notifications']}),
+    mutation: ({ids, payload}: { ids: string[], payload: Ref<UpdateNotificationRequest> }) =>
+      updateNotificationsBulk({
+        composable: '$fetch',
+        body: {notification_ids: ids, updates: payload}
+      }),
+    onSuccess: () => {
+      queryCache.invalidateQueries({key: ['notifications']})
+    },
   })
 })
 
 
-export const useMarkAllNotificationsAsDone = defineMutation(() => {
-  const queryCache = useQueryCache()
-  return useMutation({
-    mutation: () => markAllDone({composable: '$fetch'}),
-    onSuccess: () => queryCache.invalidateQueries({key: ['notifications']}),
+export const usePaginatedNotifications = defineQuery(() => {
+  const currentPage = ref(1)
+  const pageSize = ref(10)
+
+  const query = useQuery({
+    key: () => ['notifications_paginated', currentPage.value, pageSize.value],
+    query: () => getNotifications({
+      composable: '$fetch',
+      query: {
+        page: currentPage.value,
+        page_size: pageSize.value,
+      },
+    }),
   })
+
+  const notifications = computed(() => query.data.value?.notifications ?? [])
+  const totalRecords = computed(() => query.data.value?.total ?? 0)
+
+  const setPage = (newPage: number) => {
+    currentPage.value = newPage
+  }
+
+  return {
+    notifications,
+    isLoading: query.isPending,
+    refetch: query.refetch,
+    totalRecords,
+    pageSize,
+    setPage,
+  }
 })

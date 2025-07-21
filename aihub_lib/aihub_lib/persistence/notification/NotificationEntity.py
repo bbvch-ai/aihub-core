@@ -4,7 +4,6 @@ from mongoengine import (
     BooleanField,
     DateTimeField,
     Document,
-    DoesNotExist,
     EmbeddedDocumentField,
     StringField,
 )
@@ -28,7 +27,7 @@ class NotificationEntity(Document):
     message = EmbeddedDocumentField(LocaleStringEntity)
     read = BooleanField(default=False)
     done = BooleanField(default=False)
-    type = StringField(choices=("info", "warning", "success", "danger"), default="info")
+    type = StringField(choices=("info", "warn", "success", "error"), default="info")
     severity = StringField(choices=("low", "medium", "high"), default="medium")
     link = StringField()
     created_at = DateTimeField(default=lambda: datetime.now(UTC))
@@ -43,6 +42,7 @@ class NotificationEntity(Document):
         severities: list[str] | None = None,
         read: bool | None = None,
         done: bool | None = None,
+        order_by: str = "-created_at",
     ) -> tuple[list["NotificationEntity"], int]:
         """Retrieves a paginated list of notifications, with optional filters."""
         query = cls.objects(user_id=user_id)
@@ -57,36 +57,24 @@ class NotificationEntity(Document):
             query = query.filter(done=done)
 
         offset = (page - 1) * page_size
-        notifications = query.order_by("-created_at").skip(offset).limit(page_size).all()
+        notifications = query.order_by(order_by).skip(offset).limit(page_size).all()
         total = query.count()
         return notifications, total
 
-    @classmethod
-    def mark_as_read(cls, notification_id: str, user_id: str) -> "NotificationEntity":
-        """Marks a specific notification as read."""
-        notification = cls.objects(id=notification_id, user_id=user_id).first()
-        if not notification:
-            raise DoesNotExist("Notification not found.")
-        notification.read = True
-        notification.save()
-        return notification
+    def mark_as_read(self):
+        self.read = True
+        self.save()
+        return self
+
+    def mark_as_done(self):
+        self.done = True
+        self.save()
+        return self
 
     @classmethod
-    def mark_as_done(cls, notification_id: str, user_id: str) -> "NotificationEntity":
-        """Marks a specific notification as done."""
-        notification = cls.objects(id=notification_id, user_id=user_id).first()
-        if not notification:
-            raise DoesNotExist("Notification not found.")
-        notification.done = True
-        notification.save()
-        return notification
+    def mark_multiple_as_read(cls, user_id: str, notification_ids: list[str]) -> int:
+        return cls.objects(id__in=notification_ids, user_id=user_id).update(set__read=True)
 
     @classmethod
-    def mark_all_as_read(cls, user_id: str) -> int:
-        """Marks all of a user's unread notifications as read."""
-        return cls.objects(user_id=user_id, read=False).update(read=True)
-
-    @classmethod
-    def mark_all_as_done(cls, user_id: str) -> int:
-        """Marks all of a user's not-done notifications as done."""
-        return cls.objects(user_id=user_id, done=False).update(done=True)
+    def mark_multiple_as_done(cls, user_id: str, notification_ids: list[str]) -> int:
+        return cls.objects(id__in=notification_ids, user_id=user_id).update(set__done=True)

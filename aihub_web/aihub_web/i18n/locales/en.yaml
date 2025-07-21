@@ -335,13 +335,20 @@ role:
 
 notification:
   title: "Notifications"
-  no_notifications: "No notifications available"
+  no_unread_notifications: "No unread notifications available"
   read: "Read"
   unread: "Unread"
   mark_all_as_read: "Mark all as read"
   mark_all_as_unread: "Mark all as unread"
-  delete_all: "Delete all notifications"
+  mark_as_read: "Mark as read"
+  mark_as_done: "Mark as done"
   view_all: "View all notifications"
+  select_all: "Select all"
+  click_to_view: "Click to view notification"
+
+bar:
+  toggle_dark_mode: "Toggle dark mode"
+  show_notifications: "Show notifications"
 
 process:
   title: "Processes"

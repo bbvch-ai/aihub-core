@@ -855,16 +855,25 @@ export const Body_create_transcription_openai_audio_transcriptions_postSchema = 
     title: 'Body_create_transcription_openai_audio_transcriptions_post'
 } as const;
 
-export const BulkUpdateResponseSchema = {
+export const BulkUpdateNotificationRequestSchema = {
     properties: {
-        modified_count: {
-            type: 'integer',
-            title: 'Modified Count'
+        notification_ids: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Notification Ids',
+            description: 'The IDs of the notifications to update.'
+        },
+        updates: {
+            '$ref': '#/components/schemas/UpdateNotificationRequest',
+            description: 'The updates to apply to each notification.'
         }
     },
     type: 'object',
-    required: ['modified_count'],
-    title: 'BulkUpdateResponse'
+    required: ['notification_ids', 'updates'],
+    title: 'BulkUpdateNotificationRequest',
+    description: 'Request model for updating multiple notifications at once.'
 } as const;
 
 export const ChainEventSchema = {
@@ -6644,7 +6653,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1752846752
+            default: 1753116749
         },
         owned_by: {
             type: 'string',
@@ -6905,16 +6914,18 @@ export const NotificationDTOSchema = {
         read: {
             type: 'boolean',
             title: 'Read',
-            description: 'Indicates if the notification has been read by the user.'
+            description: 'Indicates if the notification has been read by the user.',
+            default: false
         },
         done: {
             type: 'boolean',
             title: 'Done',
-            description: 'Indicates if the task associated with the notification has been completed.'
+            description: 'Indicates if the task associated with the notification has been completed.',
+            default: false
         },
         type: {
             type: 'string',
-            enum: ['success', 'info', 'warning', 'danger'],
+            enum: ['success', 'info', 'warn', 'error'],
             title: 'Type',
             description: 'Categorizes the notification for visual representation (e.g., icon and color).'
         },
@@ -6927,8 +6938,7 @@ export const NotificationDTOSchema = {
         link: {
             anyOf: [
                 {
-                    type: 'string',
-                    pattern: '^/.*$'
+                    type: 'string'
                 },
                 {
                     type: 'null'
@@ -6945,7 +6955,7 @@ export const NotificationDTOSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'user_id', 'title', 'message', 'read', 'done', 'type', 'severity', 'created_at'],
+    required: ['id', 'user_id', 'title', 'message', 'type', 'severity', 'created_at'],
     title: 'NotificationDTO',
     description: 'Data Transfer Object for a notification.'
 } as const;

@@ -1,23 +1,18 @@
+from fastapi import HTTPException, Path, Query, Security
+from mongoengine import DoesNotExist
 from typing import Annotated
 
+from aihub_api.routes.notification.NotificationService import NotificationService
+from aihub_api.routes.notification.dto.NotificationDTO import (
+    NotificationDTO,
+)
+from aihub_api.routes.notification.dto.PaginatedNotificationsResponse import PaginatedNotificationsResponse
+from aihub_api.routes.notification.dto.UpdateNotificationRequest import UpdateNotificationRequest, \
+    BulkUpdateNotificationRequest
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
-from fastapi import HTTPException, Path, Query, Security
-from mongoengine import DoesNotExist
-from pydantic import BaseModel
-
-from aihub_api.routes.notification.dto.NotificationDTO import (
-    NotificationDTO,
-    PaginatedNotificationsResponse,
-    UpdateNotificationRequest,
-)
-from aihub_api.routes.notification.NotificationService import NotificationService
-
-
-class BulkUpdateResponse(BaseModel):
-    modified_count: int
 
 
 class NotificationController(Controller):
@@ -56,26 +51,19 @@ class NotificationController(Controller):
         ) -> NotificationDTO:
             """Partially updates a notification (e.g., marks it as read or done)."""
             try:
-                return NotificationService.update_notification(notification_id, user.id, updates)
+                return NotificationService.update_one(notification_id, user.id, updates)
             except DoesNotExist:
                 raise HTTPException(status_code=404, detail="Notification not found.")
 
         return self
 
-    def mark_all_as_read(self, route: str = "/read-all") -> "NotificationController":
-        @self.router.post(route, tags=self.tags, response_model=BulkUpdateResponse)
-        async def mark_all_read(user: UserIdentity = Security(self.user_with_permission("aihub.user.?>"))):
-            """Marks all of the user's unread notifications as read."""
-            count = NotificationService.mark_all_as_read(user.id)
-            return BulkUpdateResponse(modified_count=count)
-
-        return self
-
-    def mark_all_as_done(self, route: str = "/done-all") -> "NotificationController":
-        @self.router.post(route, tags=self.tags, response_model=BulkUpdateResponse)
-        async def mark_all_done(user: UserIdentity = Security(self.user_with_permission("aihub.user.?>"))):
-            """Marks all of the user's incomplete notifications as done."""
-            count = NotificationService.mark_all_as_done(user.id)
-            return BulkUpdateResponse(modified_count=count)
+    def update_notifications(self, route: str = "/") -> "NotificationController":
+        @self.router.patch(route, tags=self.tags, response_model=list[NotificationDTO])
+        async def update_notifications_bulk(
+            bulk_updates: BulkUpdateNotificationRequest,
+            user: UserIdentity = Security(self.user_with_permission("aihub.user.?>")),
+        ) -> list[NotificationDTO]:
+            """Partially updates a list of notifications (e.g., marks them as read or done)."""
+            return NotificationService.update_many(user.id, bulk_updates)
 
         return self

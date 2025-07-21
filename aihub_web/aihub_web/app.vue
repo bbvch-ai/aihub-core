@@ -1,18 +1,18 @@
 <template>
   <NuxtLayout>
-    <NuxtPage />
-    <Toast />
-    <ConfirmDialog />
+    <NuxtPage/>
+    <Toast/>
+    <ConfirmDialog/>
   </NuxtLayout>
 </template>
 
 <script setup lang="ts">
 import 'primeicons/primeicons.css'
 import 'gridstack/dist/gridstack.min.css'
-import { client } from './sdk/client/client.gen'
+import {client} from './sdk/client/client.gen'
 
-const { getToken } = useAuth()
-const { t, locale } = useI18n()
+const {getToken} = useAuth()
+const {t, locale} = useI18n()
 const toast = useToast()
 
 client.setConfig({
@@ -20,12 +20,17 @@ client.setConfig({
   auth: async () => {
     return await getToken()
   },
-  onRequest: ({ options }) => {
+  onRequest: ({options}) => {
     options.headers.set('lang', locale.value)
   },
-  onResponseError: async ({ response }) => {
+  onResponseError: async ({response}) => {
     console.error('This is the options on error', response)
-    toast.add({ severity: 'error', summary: t(`http_error.code.${response.status}`), detail: response._data.detail, life: 10_000 })
+    toast.add({
+      severity: 'error',
+      summary: t(`http_error.code.${response.status}`),
+      detail: response._data.detail,
+      life: 10_000
+    })
   },
 })
 </script>

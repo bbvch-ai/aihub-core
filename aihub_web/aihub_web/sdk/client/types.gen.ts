@@ -746,13 +746,19 @@ export type BodyCreateTranscriptionOpenaiAudioTranscriptionsPost = {
 };
 
 /**
- * BulkUpdateResponse
+ * BulkUpdateNotificationRequest
+ * Request model for updating multiple notifications at once.
  */
-export type BulkUpdateResponse = {
+export type BulkUpdateNotificationRequest = {
     /**
-     * Modified Count
+     * Notification Ids
+     * The IDs of the notifications to update.
      */
-    modified_count: number;
+    notification_ids: Array<string>;
+    /**
+     * The updates to apply to each notification.
+     */
+    updates: UpdateNotificationRequest;
 };
 
 /**
@@ -5094,17 +5100,17 @@ export type NotificationDto = {
      * Read
      * Indicates if the notification has been read by the user.
      */
-    read: boolean;
+    read?: boolean;
     /**
      * Done
      * Indicates if the task associated with the notification has been completed.
      */
-    done: boolean;
+    done?: boolean;
     /**
      * Type
      * Categorizes the notification for visual representation (e.g., icon and color).
      */
-    type: 'success' | 'info' | 'warning' | 'danger';
+    type: 'success' | 'info' | 'warn' | 'error';
     /**
      * Severity
      * The priority level of the notification.
@@ -9264,37 +9270,31 @@ export type GetNotificationsResponses = {
 
 export type GetNotificationsResponse = GetNotificationsResponses[keyof GetNotificationsResponses];
 
-export type MarkAllDoneData = {
-    body?: never;
+export type UpdateNotificationsBulkData = {
+    body: BulkUpdateNotificationRequest;
     path?: never;
     query?: never;
-    url: '/notifications/done-all';
+    url: '/notifications/';
 };
 
-export type MarkAllDoneResponses = {
+export type UpdateNotificationsBulkErrors = {
     /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateNotificationsBulkError = UpdateNotificationsBulkErrors[keyof UpdateNotificationsBulkErrors];
+
+export type UpdateNotificationsBulkResponses = {
+    /**
+     * Response Update Notifications Bulk Notifications  Patch
      * Successful Response
      */
-    200: BulkUpdateResponse;
+    200: Array<NotificationDto>;
 };
 
-export type MarkAllDoneResponse = MarkAllDoneResponses[keyof MarkAllDoneResponses];
-
-export type MarkAllReadData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/notifications/read-all';
-};
-
-export type MarkAllReadResponses = {
-    /**
-     * Successful Response
-     */
-    200: BulkUpdateResponse;
-};
-
-export type MarkAllReadResponse = MarkAllReadResponses[keyof MarkAllReadResponses];
+export type UpdateNotificationsBulkResponse = UpdateNotificationsBulkResponses[keyof UpdateNotificationsBulkResponses];
 
 export type UpdateNotificationData = {
     body: UpdateNotificationRequest;
