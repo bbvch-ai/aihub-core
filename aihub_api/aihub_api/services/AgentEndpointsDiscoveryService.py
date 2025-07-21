@@ -4,6 +4,7 @@ from functools import reduce
 from operator import or_
 from typing import Annotated, Any
 
+from aihub_api.agents.AgentInstance import AgentInstance
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -33,7 +34,6 @@ from typing_extensions import override
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.agent.AgentService import AgentService
-from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
 from aihub_api.services.EndpointsDiscoveryService import EndpointsDiscoveryService
 from aihub_api.services.ModelCreationService import ModelCreationService
@@ -73,7 +73,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             topic.call_id, topic.agent_class, topic.agent_id
         )
 
-        agents: list[AgentDTO] = []
+        agents: list[AgentInstance] = []
         if topic.agent_class == "*":
             agents = await AgentService.discover_agent_instances(self.nc)
 
@@ -87,7 +87,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             agents.append(await AgentService.discover_agent_instance(self.nc, topic.agent_class, topic.agent_id))
 
         for agent in agents:
-            agent_discovery_response_event = AgentInstanceDiscoveryResponseEvent.from_agent_dto(agent)
+            agent_discovery_response_event = AgentInstanceDiscoveryResponseEvent.from_agent_instance(agent)
             await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
     @override
@@ -118,7 +118,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
     @override
     async def _discover_and_register(self):
         """Discovers agents and registers endpoints that accept their starting events"""
-        agents: list[AgentDTO] = await AgentService.discover_agent_instances(self.nc)
+        agents: list[AgentInstance] = await AgentService.discover_agent_instances(self.nc)
 
         # Deregister old endpoints
         for registered_agent_class, registered_agent_id in list(self.registered_entities):
