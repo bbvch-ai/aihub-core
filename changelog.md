@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.223.0] - 2025-07-18 - Streamlined Pipeline Operations and Enhanced Robustness
+
+### Added
+- 🦾 **New Job Creation Utility**: Introduced `materialize_asset_job` to simplify the creation of jobs for materializing specific selections of assets.
+- 📅 **Automated Playground Workflows**: Implemented new daily jobs and schedules within the playground environment to automatically observe source data and manage document removal processes.
+
+### Changed
+- ⚙️ **Refined Asset Automation**: Adjusted automation configurations for document and data lake file removal assets, transitioning from eager conditions to more explicit job-driven scheduling.
+- 🔗 **Specialized I/O Manager**: Updated the SharePoint observable asset to utilize a dedicated `sharepoint_io_manager`, ensuring more appropriate handling of SharePoint data interactions.
+
+### Fixed
+- 🐛 **Robust Figure Deletion**: Improved the document figure deletion process to gracefully handle cases where associated figure directories do not exist, preventing unnecessary errors and log messages.
+
+---
+
+
+
 ## [v0.222.0] - 2025-07-15 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
 
 ### Added
