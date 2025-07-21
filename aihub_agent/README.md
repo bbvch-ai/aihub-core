@@ -308,7 +308,6 @@ async def main():
             agent_id="rag_agent",
             name="RAG Agent",
             description="Agent for frontend development",
-            system_prompt="You are an agent",
             # Additional configuration parameters...
         ),
     )

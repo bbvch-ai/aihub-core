@@ -134,7 +134,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.216.0] - 2025-07-08 - Foundational Polish: Modernizing Python Syntax and Enhancing Type Safety
 
 ### Added
-- ✨ **Deprecated `AgentConfig` Fields:** Introduced deprecation warnings for `color`, `voice`, and `system_prompt` fields within `AgentConfig`, guiding users to define these properties directly in agent subclasses for better customization.
+- ✨ **Deprecated `AgentConfig` Fields:** Introduced deprecation warnings for `color`, `voice` fields within `AgentConfig`, guiding users to define these properties directly in agent subclasses for better customization.
 
 ### Changed
 - 🔄 **Standardized Datetime Handling:** Updated datetime operations to consistently use timezone-aware UTC for improved time-based accuracy and consistency across the platform.
@@ -313,7 +313,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - 🔄 **Platform Version Alignment**: All core microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`, `aihub_process`) and their internal `aihub_lib` dependencies have been updated to `v0.206.0`, ensuring a unified and consistent release across the entire platform.
-- ⚠️ **Deprecated AgentConfig Fields**: Marked `color`, `voice`, and `system_prompt` fields in `AgentConfig` as deprecated, encouraging subclasses to define these properties directly for better customization and reduced coupling.
+- ⚠️ **Deprecated AgentConfig Fields**: Marked `color`, `voice` fields in `AgentConfig` as deprecated, encouraging subclasses to define these properties directly for better customization and reduced coupling.
 - 📄 **Streamlined Docling and OpenWebUI Configurations**: Refined default value assignments for `DOCLING_FROM_FORMATS`, `DOCLING_TO_FORMATS` in `DoclingConfig` and various `Pipe.Valves`/`Action.Valves` settings in `webui_pipelines` for clearer and more direct configuration.
 
 ---
@@ -428,7 +428,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🔄 **Unified Workflow Architecture**: Existing `aihub_agent` and related `aihub_lib` components have been refactored to align with the new generalized `DispatchableWorkflow` and `BaseDispatcher` abstractions, improving modularity and consistency across agent and process implementations.
 - 📄 **Enhanced Thread Management**: The `ThreadEntity` now includes fields (`process_class`, `process_id`, `process_walkthrough_id`) to explicitly link conversation threads with specific process executions, enabling better tracking and context.
 - 🧰 **Refined NATS Infrastructure Components**: Core NATS components such as `StreamManager`, `AbstractPublisher`, and `AbstractSubscriber` within `aihub_lib` are now more generic and flexible, supporting diverse eventing patterns for both agent and process workflows.
-- ⚠️ **Agent Configuration Field Deprecation**: Certain generic fields (`color`, `voice`, `system_prompt`) in `AgentConfig` have been marked as deprecated, encouraging more specialized and customizable configurations within agent subclasses.
+- ⚠️ **Agent Configuration Field Deprecation**: Certain generic fields (`color`, `voice`) in `AgentConfig` have been marked as deprecated, encouraging more specialized and customizable configurations within agent subclasses.
 - 🏷️ **Improved Localization Metadata**: `LocaleString` fields now include explicit `Annotated` types and descriptions, enhancing clarity and maintainability for internationalization efforts.
 - 🏗️ **CI/CD Pipeline Integration**: The continuous integration and delivery (CI/CD) pipelines and local development Makefiles have been updated to seamlessly incorporate the new `aihub_process` module for linting, testing, and tagging.
 - 📊 **Synchronized Frontend SDK**: The frontend SDK has been updated to reflect all backend API changes, including new event schemas, refined `LocaleString` handling, and updated metadata structures for ingested documents and nodes.

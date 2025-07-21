@@ -81,11 +81,6 @@ export type AgentConfigDto = {
      */
     description: string;
     /**
-     * System Prompt
-     * The system prompt of the agent.
-     */
-    system_prompt: string;
-    /**
      * Color
      * The color of the agent UI theme.
      */

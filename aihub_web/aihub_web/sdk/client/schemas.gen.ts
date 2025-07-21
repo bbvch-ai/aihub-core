@@ -86,11 +86,6 @@ export const AgentConfigDTOSchema = {
             title: 'Description',
             description: 'The description of the agent.'
         },
-        system_prompt: {
-            type: 'string',
-            title: 'System Prompt',
-            description: 'The system prompt of the agent.'
-        },
         color: {
             type: 'string',
             title: 'Color',
@@ -111,7 +106,7 @@ export const AgentConfigDTOSchema = {
         }
     },
     type: 'object',
-    required: ['agent_id', 'name', 'description', 'system_prompt'],
+    required: ['agent_id', 'name', 'description'],
     title: 'AgentConfigDTO'
 } as const;
 
