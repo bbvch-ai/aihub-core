@@ -236,7 +236,7 @@ services:
       - "traefik.http.routers.webui.tls.certresolver=letsencrypt"
       - "traefik.http.services.webui.loadbalancer.server.port=8080"
       - "traefik.http.middlewares.allow-iframe.headers.customResponseHeaders.Content-Security-Policy=frame-ancestors 'self' https://${DOMAIN}"
-      - "traefik.http.routers.webui.middlewares=security-headers@docker,allow-iframe"
+      - "traefik.http.routers.webui.middlewares=security-headers@fil,allow-iframe"
 
   # </editor-fold>
 
@@ -264,7 +264,7 @@ services:
       - "traefik.http.routers.phoenix.tls.certresolver=letsencrypt"
       - "traefik.http.services.phoenix.loadbalancer.server.port=6006"
       - "traefik.http.middlewares.strip-phoenix.stripprefix.prefixes=/phoenix"
-      - "traefik.http.routers.phoenix.middlewares=security-headers@docker,strip-phoenix"
+      - "traefik.http.routers.phoenix.middlewares=security-headers@fil,strip-phoenix"
   # </editor-fold">
 
   # === Nats & Redis Stack ===
@@ -347,7 +347,7 @@ services:
       - "traefik.http.routers.api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/v1`)"
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.api.middlewares=security-headers@docker"
+      - "traefik.http.routers.api.middlewares=security-headers@file"
       - "traefik.http.services.api.loadbalancer.server.port=8000"
 
   # TODO: only use in dev , delete from latest
