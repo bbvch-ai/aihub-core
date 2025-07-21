@@ -18,7 +18,7 @@ from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.runners.simulation.agent.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 from aihub_api.services.ModelCreationService import ModelCreationService
 
-AGENT_CLASS = "test_agent"
+AGENT_CLASS = "TestAgent"
 AGENT_ID = "test_agent_1"
 
 enable_logging()

@@ -176,6 +176,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                     input_type=start_event_input_type,
                     stop_event_union_type=stop_event_union_type,
                     start_event_parents=start_event_specs.event_parents,
+                    start_event_name=start_event_specs.event_name,
                     agent_class=agent_class,
                     agent_id=agent_id,
                     agent_controller=self.controller,
@@ -193,6 +194,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         input_type: type[BaseModel],
         stop_event_union_type: type[BaseModel],
         start_event_parents: list[str],
+        start_event_name: str,
         agent_class: str,
         agent_id: str,
         agent_controller: AgentController,
@@ -234,7 +236,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 **start_event_input.model_dump(),
                 "locale": t.locale,
                 "_parent_event_names": start_event_parents,
-                "agent_config": agent_config,
+                "_event_name": start_event_name,
+                "agent_config": agent_config.model_dump(),
             }
             event: BaseEvent = BaseEvent.deserialize_event(json_data)
 
