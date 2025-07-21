@@ -98,6 +98,7 @@ class AgenticCVProcess(AgenticProcess):
             ),
         ],
     ) -> Annotated[AnalyzeCVRequest, Agent.Out(agent_class="LLMWrappingAgent", agent_id="dev_agent")]:
+        print("[AgenticCVProcess].received_cv_2_analyzed_cv")
         return AnalyzeCVRequest(
             start_event=UserMessageEvent(
                 messages=[ChatMessage(role="user", content=f"Hey {cv.name}!")], user=fake_user()
@@ -111,17 +112,19 @@ class AgenticCVProcess(AgenticProcess):
             AnalyzeCVRequest.submission, Agent.In(agent_class="LLMWrappingAgent", agent_id="dev_agent")
         ],
     ) -> Annotated[AcceptRejectRequest, Human.Out(user_ids=["some-user-id"])]:
+        print("[AgenticCVProcess].analyzed_cv_2_accept_reject", analyzed_cv)
+        msg = analyzed_cv.agent_stop_event.output_messages[-1].content
         return AcceptRejectRequest(
             forms=[
                 AcceptRejectRequest.accept(
                     display_name=LocaleString(en="This is Accept"),
                     display_description=LocaleString(en="This is description"),
-                    reason=InputText(label=LocaleString(en=f"Why do you accept {analyzed_cv.cv_name}?")),
+                    reason=InputText(label=LocaleString(en=f"Why do you accept {msg}?")),
                 ),
                 AcceptRejectRequest.reject(
                     display_name=LocaleString(en="This is Reject"),
                     display_description=LocaleString(en="This is description"),
-                    reason=InputText(label=LocaleString(en=f"Why do you reject {analyzed_cv.cv_name}?")),
+                    reason=InputText(label=LocaleString(en=f"Why do you reject {msg}?")),
                 ),
             ]
         )
@@ -131,6 +134,7 @@ class AgenticCVProcess(AgenticProcess):
         self,
         accepted_cv: Annotated[AcceptRejectRequest.accept, Human.In(route="/cv/accept", method="POST")],
     ) -> Annotated[SaveDecisionRequest, Program.Out(endpoint="http://my-webserver.com/cv/accept", method="POST")]:
+        print("[AgenticCVProcess].accept_cv", accepted_cv)
         return SaveDecisionRequest(decision=f"Accepted due to {accepted_cv.reason}")
 
     @process_step()
@@ -138,4 +142,5 @@ class AgenticCVProcess(AgenticProcess):
         self,
         rejected_cv: Annotated[AcceptRejectRequest.reject, Human.In(route="/cv/reject", method="POST")],
     ) -> Annotated[SaveDecisionRequest, Program.Out(endpoint="http://my-webserver.com/cv/reject", method="POST")]:
+        print("[AgenticCVProcess].reject_cv", rejected_cv)
         return SaveDecisionRequest(decision=f"Rejected due to {rejected_cv.reason}")
