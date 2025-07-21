@@ -350,6 +350,17 @@ services:
       - "traefik.http.routers.api.middlewares=security-headers@file"
       - "traefik.http.services.api.loadbalancer.server.port=8000"
 
+  web:
+    image: ghcr.io/bbvch-ai/aihub-core/web:latest
+    restart: always
+    ports:
+      - "80:80"
+    environment:
+      AZURE_AD_CLIENT_ID: ${AZURE_AD_CLIENT_ID}
+      AZURE_AD_TENANT_ID: ${AZURE_AD_TENANT_ID}
+      WEBUI_URL: "https://openwebui.${DOMAIN}"
+      WS_ENDPOINT: "wss://${DOMAIN}/api/v1/event/ws"
+
   # TODO: only use in dev , delete from latest
   # === CPU LLMs Stack ===
   # <editor-fold desc="CPU LLMs Stack">
