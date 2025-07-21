@@ -6615,7 +6615,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1752581125
+            default: 1753110752
         },
         owned_by: {
             type: 'string',
@@ -7149,7 +7149,7 @@ export const ProcessDTOSchema = {
                 }
             ],
             title: 'Is Online',
-            description: 'Indicates whether the processis online and reachable.'
+            description: 'Indicates whether the process is online and reachable.'
         }
     },
     type: 'object',
@@ -8038,6 +8038,19 @@ export const StartEventSchema = {
                 }
             ],
             description: 'Display description for the event'
+        },
+        agent_config: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Agent Config',
+            description: 'Agent configuration'
         },
         _event_name: {
             type: 'string',
@@ -9199,6 +9212,19 @@ export const UserMessageEventSchema = {
                 }
             ],
             description: 'Display description for the event'
+        },
+        agent_config: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Agent Config',
+            description: 'Agent configuration'
         },
         locale: {
             type: 'string',

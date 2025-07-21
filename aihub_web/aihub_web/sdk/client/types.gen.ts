@@ -5259,7 +5259,7 @@ export type ProcessDto = {
     agent_inputs: Array<AgentInSpecs>;
     /**
      * Is Online
-     * Indicates whether the processis online and reachable.
+     * Indicates whether the process is online and reachable.
      */
     is_online?: boolean | null;
 };
@@ -6122,6 +6122,13 @@ export type StartEventReadable = {
      */
     display_description?: LocaleString | null;
     /**
+     * Agent Config
+     * Agent configuration
+     */
+    agent_config?: {
+        [key: string]: unknown;
+    } | null;
+    /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
@@ -6132,7 +6139,9 @@ export type StartEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
+        [key: string]: unknown;
+    } | null) | Array<string> | undefined;
 };
 
 /**
@@ -6165,7 +6174,16 @@ export type StartEventWritable = {
      * Display description for the event
      */
     display_description?: LocaleString | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+    /**
+     * Agent Config
+     * Agent configuration
+     */
+    agent_config?: {
+        [key: string]: unknown;
+    } | null;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
+        [key: string]: unknown;
+    } | null) | undefined;
 };
 
 /**
@@ -7102,6 +7120,13 @@ export type UserMessageEventReadable = {
      */
     display_description?: LocaleString | null;
     /**
+     * Agent Config
+     * Agent configuration
+     */
+    agent_config?: {
+        [key: string]: unknown;
+    } | null;
+    /**
      * Locale
      * The user’s locale, defaults to a system-wide default locale, guiding language or regional adaptations.
      */
@@ -7131,7 +7156,9 @@ export type UserMessageEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | UserIdentity | Array<ChatMessage | UserChatMessage | AssistantChatMessage> | (Array<UserUploadedFile> | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
+        [key: string]: unknown;
+    } | null) | UserIdentity | Array<ChatMessage | UserChatMessage | AssistantChatMessage> | (Array<UserUploadedFile> | null) | Array<string> | undefined;
 };
 
 /**
@@ -7178,6 +7205,13 @@ export type UserMessageEventWritable = {
      */
     display_description?: LocaleString | null;
     /**
+     * Agent Config
+     * Agent configuration
+     */
+    agent_config?: {
+        [key: string]: unknown;
+    } | null;
+    /**
      * Locale
      * The user’s locale, defaults to a system-wide default locale, guiding language or regional adaptations.
      */
@@ -7196,7 +7230,9 @@ export type UserMessageEventWritable = {
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
     files?: Array<UserUploadedFile> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | UserIdentity | Array<ChatMessage | UserChatMessage | AssistantChatMessage> | (Array<UserUploadedFile> | null) | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
+        [key: string]: unknown;
+    } | null) | UserIdentity | Array<ChatMessage | UserChatMessage | AssistantChatMessage> | (Array<UserUploadedFile> | null) | undefined;
 };
 
 /**
