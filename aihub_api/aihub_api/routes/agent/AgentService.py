@@ -111,20 +111,20 @@ class AgentService:
         for config in configs:
             if config.agent_id == agent_id:
                 agent_config = AgentConfig.from_entity(config)
-                agent_dto = AgentInstance.from_class_and_config(
+                agent_instance = AgentInstance.from_class_and_config(
                     class_dto=agent_class_dto,
                     agent_config=agent_config,
                 )
-                GET_AGENT_INSTANCE_CACHE[cache_key] = agent_dto
-                return agent_dto
+                GET_AGENT_INSTANCE_CACHE[cache_key] = agent_instance
+                return agent_instance
 
         if agent_class_dto.default_agent_config.agent_id == agent_id:
-            agent_dto = AgentInstance.from_class_and_config(
+            agent_instance = AgentInstance.from_class_and_config(
                 class_dto=agent_class_dto,
                 agent_config=agent_class_dto.default_agent_config,
             )
-            GET_AGENT_INSTANCE_CACHE[cache_key] = agent_dto
-            return agent_dto
+            GET_AGENT_INSTANCE_CACHE[cache_key] = agent_instance
+            return agent_instance
 
         raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
 
@@ -145,20 +145,20 @@ class AgentService:
         agent_instances = []
         for config in configs:
             agent_config = AgentConfig.from_entity(config)
-            agent_dto = AgentInstance.from_class_and_config(
+            agent_instance = AgentInstance.from_class_and_config(
                 class_dto=agent_class_dto,
                 agent_config=agent_config,
             )
-            agent_instances.append(agent_dto)
+            agent_instances.append(agent_instance)
 
         db_agent_ids = {config.agent_id for config in configs}
 
         if agent_class_dto.default_agent_config.agent_id not in db_agent_ids:
-            agent_dto = AgentInstance.from_class_and_config(
+            agent_instance = AgentInstance.from_class_and_config(
                 class_dto=agent_class_dto,
                 agent_config=agent_class_dto.default_agent_config,
             )
-            agent_instances.append(agent_dto)
+            agent_instances.append(agent_instance)
 
         if len(agent_instances) > 0:
             GET_AGENT_INSTANCE_CACHE[cache_key] = agent_instances
@@ -178,14 +178,14 @@ class AgentService:
             return GET_AGENT_CLASS_CACHE[cache_key]
 
         call_id = str(ObjectId())
-        agent_dto: AgentClass | None = None
+        agent_class: AgentClass | None = None
         agent_found_event = asyncio.Event()
 
         async def discovery_handler(event: AgentClassDiscoveryResponseEvent, topic: AgentClassDiscoveryTopic):
-            nonlocal agent_dto
+            nonlocal agent_class
             # Found the agent, stop subscriber and signal event
             await nc_subscriber.stop()
-            agent_dto = AgentClass(
+            agent_class = AgentClass(
                 agent_class=event.agent_class,
                 agent_config_specs=event.agent_config_specs,
                 is_conversational=event.is_conversational,
@@ -217,9 +217,9 @@ class AgentService:
             await nc_subscriber.stop()
             raise HTTPException(status_code=404, detail=f"Agent {agent_class} not found.")
 
-        if agent_dto is not None:
-            GET_AGENT_CLASS_CACHE[cache_key] = agent_dto
-            return agent_dto
+        if agent_class is not None:
+            GET_AGENT_CLASS_CACHE[cache_key] = agent_class
+            return agent_class
 
         raise HTTPException(status_code=404, detail=f"Agent {agent_class} not found.")
 
@@ -244,22 +244,22 @@ class AgentService:
             configs = AgentConfigEntityDocument.find_for_class(agent_class)
             for config in configs:
                 config_instance = AgentConfig.from_entity(config)
-                agent_dto = AgentInstance.from_class_and_config(
+                agent_instance = AgentInstance.from_class_and_config(
                     class_dto=agent,
                     agent_config=config_instance,
                 )
-                AgentEntity.create_or_update_from_dto(agent_instance=agent_dto)
-                configured_agents.append(agent_dto)
+                agent_instance.create_or_update_agent_entity()
+                configured_agents.append(agent_instance)
 
             # Step 3: Check if default agent config is present in database
             db_agent_ids = {configured_agent.agent_id for configured_agent in configured_agents}
             if agent.default_agent_config.agent_id not in db_agent_ids:
-                agent_dto = AgentInstance.from_class_and_config(
+                agent_instance = AgentInstance.from_class_and_config(
                     class_dto=agent,
                     agent_config=agent.default_agent_config,
                 )
-                AgentEntity.create_or_update_from_dto(agent_instance=agent_dto)
-                configured_agents.append(agent_dto)
+                agent_instance.create_or_update_agent_entity()
+                configured_agents.append(agent_instance)
 
         if len(configured_agents) > 0:
             DISCOVER_AGENTS_CACHE[cache_key] = configured_agents
@@ -306,8 +306,8 @@ class AgentService:
             unique_key = response.agent_class
 
             if unique_key not in unique_agents_dict:
-                agent_dto = AgentClass.from_discovery_event(response)
-                unique_agents_dict[unique_key] = agent_dto
+                agent_class = AgentClass.from_discovery_event(response)
+                unique_agents_dict[unique_key] = agent_class
 
         agents = list(unique_agents_dict.values())
 

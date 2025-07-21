@@ -362,8 +362,8 @@ class TestAgentServiceUnit:
                                     for response in discovery_responses:
                                         unique_key = response.agent_class
                                         if unique_key not in unique_agents_dict:
-                                            agent_dto = AgentClass.from_discovery_event(response)
-                                            unique_agents_dict[unique_key] = agent_dto
+                                            agent_class = AgentClass.from_discovery_event(response)
+                                            unique_agents_dict[unique_key] = agent_class
 
                                     agents = list(unique_agents_dict.values())
                                     if len(agents) > 0:
@@ -665,8 +665,8 @@ class TestAgentServiceUnit:
                                 for response in discovery_responses:
                                     unique_key = response.agent_class
                                     if unique_key not in unique_agents_dict:
-                                        agent_dto = AgentClass.from_discovery_event(response)
-                                        unique_agents_dict[unique_key] = agent_dto
+                                        agent_class = AgentClass.from_discovery_event(response)
+                                        unique_agents_dict[unique_key] = agent_class
 
                                 agents = list(unique_agents_dict.values())
                                 # Should not cache empty results

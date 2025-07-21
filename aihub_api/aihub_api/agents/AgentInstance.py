@@ -1,6 +1,13 @@
 from typing import Annotated
 
+from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
+from aihub_lib.persistence.agents.AgentConfigEntityEmbeddedDocument import AgentConfigEntityEmbeddedDocument
+from aihub_lib.persistence.agents.AgentEntity import AgentEntity
+
 from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import (
+    AgentInstanceDiscoveryResponseEvent,
+)
 from pydantic import Field
 
 from aihub_api.agents.AgentClass import AgentClass
@@ -32,4 +39,28 @@ class AgentInstance(AgentClass):
             is_online=class_dto.is_online,
             agent_config_specs=class_dto.agent_config_specs,
             default_agent_config=class_dto.default_agent_config,
+        )
+
+    def to_discovery_response_event(self) -> AgentInstanceDiscoveryResponseEvent:
+        return AgentInstanceDiscoveryResponseEvent(
+            agent_class=self.agent_class,
+            agent_id=self.agent_id,
+            agent_config=self.agent_config,
+            default_agent_config=self.default_agent_config,
+            agent_config_specs=self.agent_config_specs,
+            start_events=self.start_events,
+            stop_events=self.stop_events,
+            network_graph=self.network_graph,
+            is_conversational=self.is_conversational,
+        )
+
+    def create_or_update_agent_entity(self) -> AgentEntity:
+        return AgentEntity.create_or_update(
+            agent_id=self.agent_id,
+            agent_class=self.agent_class,
+            default_agent_config=self.default_agent_config,
+            is_conversational=self.is_conversational,
+            start_events=self.start_events,
+            stop_events=self.stop_events,
+            network_graph=self.network_graph,
         )
