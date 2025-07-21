@@ -278,18 +278,20 @@ class TestAgentServiceUnit:
                         mock_instance2.agent_id = "test_agent_1"
                         mock_from_class_config.side_effect = [mock_instance1, mock_instance2]
 
-                        with patch.object(AgentEntity, "create_or_update_from_dto") as mock_create_update:
-                            result = await AgentService.discover_agent_instances(mock_nats)
+                        with patch.object(mock_instance1, "create_or_update_agent_entity") as mock_1_create_update:
+                            with patch.object(mock_instance2, "create_or_update_agent_entity") as mock_2_create_update:
+                                result = await AgentService.discover_agent_instances(mock_nats)
 
-                            mock_discover_classes.assert_called_once_with(mock_nats)
-                            mock_find_configs.assert_called_once_with("TestAgent")
-                            mock_from_entity.assert_called_once_with(mock_config_doc)
-                            assert mock_from_class_config.call_count == 2
-                            assert mock_create_update.call_count == 2
+                                mock_discover_classes.assert_called_once_with(mock_nats)
+                                mock_find_configs.assert_called_once_with("TestAgent")
+                                mock_from_entity.assert_called_once_with(mock_config_doc)
+                                assert mock_from_class_config.call_count == 2
+                                assert mock_1_create_update.call_count == 1
+                                assert mock_2_create_update.call_count == 1
 
-                            assert len(result) == 2
-                            assert mock_instance1 in result
-                            assert mock_instance2 in result
+                                assert len(result) == 2
+                                assert mock_instance1 in result
+                                assert mock_instance2 in result
 
     @pytest.mark.asyncio
     async def test_discover_agent_instances_cached(self, mock_nats):
