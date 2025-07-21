@@ -144,7 +144,7 @@ class ChatService:
                 user=user,
                 locale=locale or LocaleHandler.DEFAULT_LOCALE,
                 files=files,
-                agent_config=agent_config,
+                agent_config=agent_config.model_dump() if agent_config else None,
             )
 
         event = ExternalAgentEvent(
