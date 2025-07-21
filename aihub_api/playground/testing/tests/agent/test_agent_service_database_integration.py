@@ -8,9 +8,9 @@ from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # 
 from aihub_lib.testing.logging.logger import enable_logging
 from fastapi import HTTPException
 
+from aihub_api.routes.agent.AgentService import GET_AGENT_INSTANCE_CACHE, AgentService
 from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
 from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
-from aihub_api.routes.agent.AgentService import GET_AGENT_INSTANCE_CACHE, AgentService
 
 enable_logging()
 

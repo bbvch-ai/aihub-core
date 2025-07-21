@@ -15,15 +15,15 @@ from aihub_lib.testing.logging.logger import enable_logging
 from bson import ObjectId
 from fastapi import HTTPException
 
-from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
-from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
 from aihub_api.routes.agent.AgentService import (
     DISCOVER_AGENTS_CACHE,
     GET_AGENT_CLASS_CACHE,
     GET_AGENT_INSTANCE_CACHE,
     AgentService,
 )
+from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
+from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
 from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
 
@@ -364,8 +364,8 @@ class TestAgentServiceUnit:
                                     for response in discovery_responses:
                                         unique_key = response.agent_class
                                         if unique_key not in unique_agents_dict:
-                                            agent_class = AgentClassDTO.from_discovery_event(response)
-                                            unique_agents_dict[unique_key] = agent_class
+                                            agent_class_dto = AgentClassDTO.from_discovery_event(response)
+                                            unique_agents_dict[unique_key] = agent_class_dto
 
                                     agents = list(unique_agents_dict.values())
                                     if len(agents) > 0:
@@ -667,8 +667,8 @@ class TestAgentServiceUnit:
                                 for response in discovery_responses:
                                     unique_key = response.agent_class
                                     if unique_key not in unique_agents_dict:
-                                        agent_class = AgentClassDTO.from_discovery_event(response)
-                                        unique_agents_dict[unique_key] = agent_class
+                                        agent_class_dto = AgentClassDTO.from_discovery_event(response)
+                                        unique_agents_dict[unique_key] = agent_class_dto
 
                                 agents = list(unique_agents_dict.values())
                                 # Should not cache empty results
