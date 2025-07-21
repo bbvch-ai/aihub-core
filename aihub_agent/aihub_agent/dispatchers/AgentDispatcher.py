@@ -364,13 +364,13 @@ class AgentDispatcher(BaseDispatcher):
 
     async def _get_parameter_value(
         self,
-        param: inspect.Parameter,
-        step_configs: dict[type[StepConfig], StepConfig],
-        agent_config: AgentConfig,
-        run_context: RunContext,
-        thread_context: ThreadContext,
-        topic: AgentTopic,
-    ):
+        param: Annotated[inspect.Parameter, "Parameter from the step method signature."],
+        step_configs: Annotated[dict[type[StepConfig], StepConfig], "Step configurations for the agent."],
+        agent_config: Annotated[AgentConfig, "The agent configuration for this run."],
+        run_context: Annotated[RunContext, "Per-run context for state and configuration."],
+        thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
+        topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
+    ) -> Annotated[Any, "The value to inject for the parameter."]:
         if step_configs.get(param.annotation):
             return step_configs[param.annotation]
 
