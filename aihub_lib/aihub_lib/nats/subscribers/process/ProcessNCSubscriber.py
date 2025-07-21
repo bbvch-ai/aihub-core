@@ -17,7 +17,6 @@ class ProcessNCSubscriber(NCSubscriber):
         nc: NATS,
         topic_manager: ProcessTopicManager,
         handler: Callable[[InstanceDiscoveryRequestEvent, ProcessTopic], Awaitable[None]],
-        config_type: type[ProcessConfig] = ProcessConfig,
         call_id: str = "*",
     ):
         """Subscribe to discovery request events for all processes"""
@@ -27,7 +26,6 @@ class ProcessNCSubscriber(NCSubscriber):
             subject=subject,
             event_cls=InstanceDiscoveryRequestEvent,
             handler=handler,
-            config_type=config_type,
         )
 
     @classmethod
@@ -46,7 +44,6 @@ class ProcessNCSubscriber(NCSubscriber):
             subject=subject,
             event_cls=BaseEvent,
             handler=handler,
-            config_type=config_type,
         )
 
     @classmethod
@@ -63,7 +60,6 @@ class ProcessNCSubscriber(NCSubscriber):
             nc=nc,
             subject=subject,
             handler=handler,
-            config_type=config_type,
             event_cls=ProcessEvent,
         )
 
@@ -89,5 +85,4 @@ class ProcessNCSubscriber(NCSubscriber):
             subject=subject,
             event_cls=BaseEvent,
             handler=handler,
-            config_type=config_type,
         )

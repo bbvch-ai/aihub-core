@@ -19,7 +19,6 @@ class ProcessJSSubscriber(JSSubscriber):
         handler: Callable[[WorkEvent, ProcessTopic], Awaitable[None]],
         queue_group: str,
         js: JetStreamContext | None = None,
-        config_type: type[ProcessConfig] = ProcessConfig,
     ):
         """Subscribe to all work events within a specific process instance."""
         subject = topic_manager.get_subject_for_all_work_events_within_process_instance()
@@ -34,7 +33,6 @@ class ProcessJSSubscriber(JSSubscriber):
             event_cls=WorkEvent,
             handler=handler,
             js=js,
-            config_type=config_type,
         )
 
     @classmethod
@@ -60,7 +58,6 @@ class ProcessJSSubscriber(JSSubscriber):
             event_cls=WorkRequestEvent,
             handler=handler,
             js=js,
-            config_type=config_type,
         )
 
     @classmethod
@@ -86,5 +83,4 @@ class ProcessJSSubscriber(JSSubscriber):
             event_cls=ControlEvent,
             handler=handler,
             js=js,
-            config_type=config_type,
         )
