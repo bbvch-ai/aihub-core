@@ -7,7 +7,7 @@ from aihub_pipeline.types.SharePointFile import MinimalSharePointFile, SharePoin
 
 
 class SharePointIoManager(ConfigurableIOManager):
-    sharepoint_client: ResourceDependency[SharePointResource]
+    share_point_client: ResourceDependency[SharePointResource]
 
     def handle_output(self, context: OutputContext, obj: bytes | SharePointFile):
         """
@@ -24,7 +24,7 @@ class SharePointIoManager(ConfigurableIOManager):
         files from the upstream output but WITHOUT downloading them.
         """
         if context.has_partition_key:
-            return self.sharepoint_client.download_file(context.partition_key)
+            return self.share_point_client.download_file(context.partition_key)
         else:
             upstream_output = context.upstream_output
             partitions_def = upstream_output.asset_partitions_def
@@ -32,7 +32,7 @@ class SharePointIoManager(ConfigurableIOManager):
             if partitions_def is not None:
                 all_partition_keys = partitions_def.get_partition_keys(dynamic_partitions_store=context.instance)
                 return asyncio.run(
-                    self.sharepoint_client.get_multiple_minimal_share_point_files(list(all_partition_keys))
+                    self.share_point_client.get_multiple_minimal_share_point_files(list(all_partition_keys))
                 )
             else:
                 context.log.error("No partition definition found for the upstream asset.")

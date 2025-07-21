@@ -16,7 +16,7 @@ condenser:
 
 rag:
   context_prompt: |
-    {% chat role="system" %}
+    {% chat role="user" %}
     Dir werden zusätzliche Kontextinformationen in Form von strukturierten Dokumenten bereitgestellt. 
     Jedes Dokument folgt einem einheitlichen Format, beginnend mit `<REFERENCE_DOCUMENT [metadata]>` und endend 
     mit `</REFERENCE_DOCUMENT>`. Diese Dokumente enthalten wichtige Details, die genutzt werden sollten, um die 

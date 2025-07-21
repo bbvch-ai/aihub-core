@@ -2,7 +2,7 @@ from typing import Annotated
 
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs
+from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from pydantic import BaseModel, Field
 
@@ -40,12 +40,9 @@ class MinimalAgentDTO(BaseModel):
 class AgentDTO(MinimalAgentDTO):
     """
     A data transfer object for representing agent information in responses.
-
-    ### Why AgentDTO?
     This DTO standardizes how agent data is returned from the service layer to the controller,
     and subsequently to the API response. It helps maintain a clean separation between the internal
     event models and the publicly exposed fields in HTTP responses.
-
     By using `AgentDTO`, the API can evolve independently from the internal event representations.
     """
 

@@ -25,7 +25,6 @@ class ThreadController(Controller):
     """
     A controller that manages thread-related endpoints.
 
-    ### Why ThreadController?
     Conversations or workflows are often organized into "threads"—units that group users and agents together.
     The `ThreadController` provides endpoints to:
     - List user-specific threads.
@@ -35,33 +34,6 @@ class ThreadController(Controller):
 
     By structuring these operations in a controller, the API remains organized, and user authorization checks
     stay consistent and centralized.
-
-    ### Endpoints
-    - `GET /thread/`: Lists all threads for the authenticated user.
-    - `POST /thread/{thread_id}`: Creates a thread with specified users and agents.
-    - `GET /thread/{thread_id}`: Retrieves details of a specific thread, ensuring the user has access.
-    - `POST /thread/{thread_id}/agents`: Adds an agent to a thread if the user is a member.
-    - `DELETE /thread/{thread_id}/agents/{agent_class}/{agent_id}`: Removes an agent from a thread if authorized.
-    - `POST /thread/{thread_id}/users`: Adds a user to a thread if authorized.
-    - `DELETE /thread/{thread_id}/users/{remove_user_id}`: Removes a user from a thread if authorized.
-
-    ### Authentication & Authorization
-    Most operations require that the authenticated user be a member of the thread. Otherwise,
-    a `403 Forbidden` is raised.
-
-    ### Usage
-    ```python
-    app = FastAPI()
-    ThreadController(auth=some_auth_dependency)
-        .get_user_threads()
-        .create_thread()
-        .get_thread()
-        .add_agent_to_thread()
-        .remove_agent_from_thread()
-        .add_user_to_thread()
-        .remove_user_from_thread()
-        .mount(app)
-    ```
     """
 
     name = LocaleString(en="Thread")

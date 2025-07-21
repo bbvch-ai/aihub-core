@@ -30,6 +30,7 @@ from aihub_api.routes.file.FileController import FileController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
+from aihub_api.routes.process.ProcessController import ProcessController
 from aihub_api.routes.role.RoleController import RoleController
 from aihub_api.routes.suite.SuiteController import SuiteController
 from aihub_api.routes.thread.ThreadController import ThreadController
@@ -71,7 +72,7 @@ async def main():
         SuiteController(auth=auth).get_suite(),
         UserController(auth=auth).get_my_user().get_user().get_users().get_my_dashboard().update_my_dashboard(),
         I18nController(auth=auth).get_my_locale(),
-        EventController(auth=auth).ws().get_events_in_thread().get_event_timeseries(),
+        EventController(auth=auth).ws().get_agent_events_in_thread().get_agent_event_timeseries(),
         ThreadController(auth=auth)
         .get_user_threads()
         .create_thread()
@@ -81,6 +82,14 @@ async def main():
         .add_user_to_thread()
         .remove_user_from_thread(),
         AgentController(auth=auth).get_agent().get_agent_threads().get_agents().discover_agents(),
+        ProcessController(auth=auth)
+        .get_process()
+        .get_processes()
+        .discover_processes()
+        .get_process_start_forms()
+        .get_process_open_forms()
+        .send_process_start_form()
+        .send_process_open_form(),
         TokenController(auth=auth).create_token().list_tokens().revoke_token(),
         RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
         OpenaiController(

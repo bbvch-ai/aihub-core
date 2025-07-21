@@ -1,3 +1,7 @@
+from typing import Annotated
+
+from pydantic import Field
+
 from aihub_process.delegators.AbstractProcessEntity import BaseProcessEntity
 
 
@@ -14,8 +18,8 @@ class Process(BaseProcessEntity):
     class In(BaseProcessEntity.In):
         """Receive ProcessWorkEvent as INPUT to a process step from another process with class and id."""
 
-        process_class: str
-        process_id: str
+        process_class: Annotated[str, Field(description="The class of the process that completed.")]
+        process_id: Annotated[str, Field(description="The ID of the process that completed.")]
 
     class Out(BaseProcessEntity.Out):
         """Does NOT further delegate the work, instead, acts like a sink, terminating the process."""

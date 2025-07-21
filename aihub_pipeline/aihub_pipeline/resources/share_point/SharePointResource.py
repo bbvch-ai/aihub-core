@@ -19,8 +19,8 @@ class SharePointResource(ConfigurableResource):
     site_url: Annotated[str, Field(description="SharePoint site URL")]
     target_folders: Annotated[
         list[str] | None,
-        Field(default=None, description="List of folder paths to fetch files from. If None, fetches from root."),
-    ]
+        Field(description="List of folder paths to fetch files from. If None, fetches from root."),
+    ] = None
     exclude_folders: Annotated[
         list[str] | None,
         Field(

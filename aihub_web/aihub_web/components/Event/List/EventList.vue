@@ -67,11 +67,11 @@
 import type {
   DisplayStatistics, RunStatistics,
   ThreadDto,
-  WsServerEventReadable,
+  WsServerAgentEventReadable,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  events: WsServerEventReadable[]
+  events: WsServerAgentEventReadable[]
   thread: ThreadDto
   displayId?: string
 }>()
@@ -90,9 +90,9 @@ watch(display, () => {
   activeRuns.value = display.value?.runs ?? []
 }, { immediate: true })
 
-const eventsInRuns = computed<WsServerEventReadable[]>(() => {
+const eventsInRuns = computed<WsServerAgentEventReadable[]>(() => {
   const runIds = activeRuns.value.map((run: RunStatistics) => run.run_id)
-  return props.events.filter((event: WsServerEventReadable) => runIds.includes(event.run_id))
+  return props.events.filter((event: WsServerAgentEventReadable) => runIds.includes(event.run_id))
 })
 
 const { resolveComponentForEvent } = useEventComponent()

@@ -22,33 +22,12 @@ class ExternalAgentEventDistributor:
     transforming them into NATS/JetStream events that the rest of the system can consume.
     This class essentially bridges user actions back into the event-driven architecture.
 
-    ### Why ExternalAgentEventDistributor?
     Users might send messages, start commands, or respond to human-in-the-loop prompts.
     The server must:
     - Validate the user's thread membership.
     - Determine the correct agent/topic subjects.
     - Publish the user's event (e.g. a StartEvent or a DisplayEvent) as a JetStream event,
       ensuring downstream agents or services can react.
-
-    ### Key Responsibilities
-    - Validate the user belongs to the thread specified by the event.
-    - If it's a `HumanInTheLoopResponseEvent`, ensure the targeted agent belongs to the thread.
-    - Publish events to the correct subject derived from the agent/thread IDs.
-    - For `StartEvent`s, if no initial messages are provided, fetch the message history and embed it.
-
-    ### Flow
-    1. `receive_event`: Main entry point. Identifies the event type and dispatches to the appropriate handler.
-    2. `_handle_start_event`: If user starts something (like an agent run),
-       it may reconstruct message history and publish a start event.
-    3. `_handle_display_message`: Convert a user-provided `DisplayEvent` into a JetStream event.
-    4. `_handle_human_in_the_loop_response`: Ensure correctness and publish the HITL response event.
-
-    ### Example
-    Suppose the user sends a message from the frontend UI. The frontend dispatches a `ExternalAgentEvent` to the server.
-    `ExternalAgentEventDistributor` then:
-    - Verifies the user is in the thread.
-    - If it's a display event, publishes it so other agents or components can see the user input.
-    - If it's a start event, publishes a start event to trigger agent processing.
     """
 
     def __init__(self, nc: NATS, js: JetStreamContext):

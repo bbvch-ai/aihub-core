@@ -51,7 +51,6 @@ class OpenaiService:
     """
     A service layer that encapsulates the core operations for generative AI, mirroring OpenAI's API functionality.
 
-    ### Purpose
     OpenaiService provides the business logic for:
     - Retrieving and detailing available AI models.
     - Generating text embeddings.
@@ -212,7 +211,7 @@ class OpenaiService:
         chat_completion_request: ChatCompletionRequest,
         user: UserIdentity,
         nc: NATS,
-        external_event_distributor: ExternalAgentEventDistributor,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
         t: LocaleHandler,
     ) -> ChatCompletion | StreamingResponse:
         """
@@ -232,7 +231,13 @@ class OpenaiService:
 
         if chat_completion_request.stream:
             return await OpenaiService.stream_assistant(
-                agent_class, agent_id, chat_completion_request, user, nc, external_event_distributor, locale=t.locale
+                agent_class,
+                agent_id,
+                chat_completion_request,
+                user,
+                nc,
+                external_agent_event_distributor,
+                locale=t.locale,
             )
 
         return await OpenaiService.json_assistant(
@@ -241,7 +246,7 @@ class OpenaiService:
             chat_completion_request,
             user,
             nc,
-            external_event_distributor,
+            external_agent_event_distributor,
             locale=t.locale,
         )
 
@@ -252,7 +257,7 @@ class OpenaiService:
         chat_completion_request: ChatCompletionRequest,
         user: UserIdentity,
         nc: NATS,
-        external_event_distributor: ExternalAgentEventDistributor,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
         locale: str | None = None,
     ):
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
@@ -268,7 +273,7 @@ class OpenaiService:
             agent_id=agent_id,
             messages=chat_completion_request.llama_index_messages,
             nc=nc,
-            external_event_distributor=external_event_distributor,
+            external_agent_event_distributor=external_agent_event_distributor,
             thread_id=str_to_object_id(thread_id),
             display_id=str_to_object_id(display_id),
             files=files,
@@ -313,7 +318,7 @@ class OpenaiService:
         chat_completion_request: ChatCompletionRequest,
         user: UserIdentity,
         nc: NATS,
-        external_event_distributor: ExternalAgentEventDistributor,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
         locale: str | None = None,
     ):
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
@@ -329,7 +334,7 @@ class OpenaiService:
             agent_id=agent_id,
             messages=chat_completion_request.llama_index_messages,
             nc=nc,
-            external_event_distributor=external_event_distributor,
+            external_agent_event_distributor=external_agent_event_distributor,
             thread_id=str_to_object_id(thread_id),
             display_id=str_to_object_id(display_id),
             files=files,

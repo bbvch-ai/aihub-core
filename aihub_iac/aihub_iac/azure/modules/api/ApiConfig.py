@@ -69,6 +69,13 @@ class ApiConfig(BaseConfig):
 
     version: Annotated[str, Field(description="Version of the API service")]
 
+    additional_env_vars: Annotated[
+        dict[str, str | dict[str, str]],
+        Field(
+            description="Additional environment variables to pass to the api, can be plain values or secret references",
+        ),
+    ] = {}
+
     @property
     def service_name(self) -> str:
         return self.resource_namer.app_service_name(DEFAULT_API_SUFFIX)
