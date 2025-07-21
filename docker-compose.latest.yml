@@ -403,6 +403,7 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
+      - "./traefik/middlewares.yml:/etc/traefik/middlewares.yml:ro"
       - "/srv/app/traefik/acme.json:/srv/app/traefik/acme.json"
     labels:
       # Redirect HTTP to HTTPS
