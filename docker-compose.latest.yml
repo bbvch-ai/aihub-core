@@ -135,6 +135,7 @@ services:
     depends_on:
       - "postgres"
       - "redis"
+      - "traefik"
     container_name: openwebui
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/open-webui:/app/backend/data
@@ -246,6 +247,7 @@ services:
     restart: always
     depends_on:
       - "postgres"
+      - "traefik"
     ports:
       - "6006:6006"
       - "4317:4317"
@@ -324,6 +326,7 @@ services:
     depends_on:
       - "mongo"
       - "nats"
+      - "traefik"
     environment:
       NATS_ENDPOINT: nats://nats:4222
       COSMOS_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
