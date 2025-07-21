@@ -33,27 +33,29 @@ class EndpointsDiscoveryService(abc.ABC):
         self.running: bool = False
         self.task: asyncio.Task | None = None
 
-    async def start(self):
+    async def start(self) -> bool:
         """Start the discovery loop"""
         if self.running:
             logger.warning("Endpoint discovery service is already running")
-            return
+            return False
 
         self.running = True
         self.task = asyncio.create_task(self._discovery_loop())
         logger.info("Endpoint discovery service started")
+        return True
 
-    async def stop(self):
+    async def stop(self) -> bool:
         """Stop the discovery loop"""
         if not self.running:
             logger.warning("Endpoint discovery service is not running")
-            return
+            return False
 
         self.running = False
         if self.task:
             self.task.cancel()
             await asyncio.gather(self.task, return_exceptions=True)
         logger.info("Endpoint discovery service stopped")
+        return True
 
     async def _discovery_loop(self):
         """Periodically discover and register endpoints."""
@@ -71,13 +73,13 @@ class EndpointsDiscoveryService(abc.ABC):
         """Register endpoints for discovered entities."""
         ...
 
-    def _get_endpoint_name(self, entity_class: str, entity_id: str) -> str:
+    def _get_endpoint_base_path(self, entity_class: str, entity_id: str) -> str:
         """Returns the base path for the agent endpoints."""
         return f"{self.controller.base_route}/{entity_class}/{entity_id}"
 
     def _deregister_endpoints(self, entity_class: str, entity_id: str):
         """Deregister all endpoints for the given entity."""
-        base_path = self._get_endpoint_name(entity_class, entity_id)
+        base_path = self._get_endpoint_base_path(entity_class, entity_id)
 
         for route in list(self.app.routes):
             if route.path.startswith(f"{base_path}/"):

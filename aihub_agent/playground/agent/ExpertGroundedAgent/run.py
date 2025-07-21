@@ -17,11 +17,11 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=ExpertGroundedAgent,
-        agent_config=ExpertGroundedAgentConfig(
+        default_agent_config=ExpertGroundedAgentConfig(
             agent_id="grounded_agent",
+            agent_class=ExpertGroundedAgent.__name__,
             name=LocaleString(en="Grounded Agent"),
             description=LocaleString(en="This is an agent that can be used to develop the frontend"),
-            system_prompt=LocaleString(en="You are an agent"),
             expert_asking_agent_class="ExpertAskingAgent",
             expert_asking_agent_id="expert_agent",
             llm=AzureOpenAILLMConfig(

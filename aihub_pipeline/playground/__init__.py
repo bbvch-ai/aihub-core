@@ -1,5 +1,3 @@
-from dagster import AssetKey, AssetSelection, Definitions, DynamicPartitionsDefinition
-
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
@@ -8,6 +6,8 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmb
     AzureOpenAIEmbeddingConfig,
     AzureOpenAIEmbeddingParameter,
 )
+from dagster import AssetKey, AssetSelection, Definitions, DynamicPartitionsDefinition
+
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (

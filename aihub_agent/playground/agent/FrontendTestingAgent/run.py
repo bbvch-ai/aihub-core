@@ -23,9 +23,9 @@ async def main():
         agent_type=FrontendTestingAgent,
         agent_config=FrontendTestingAgentConfig(
             agent_id="frontend_testing",
+            agent_class=FrontendTestingAgent.__name__,
             name=LocaleString(en="Frontend Testing Agent"),
             description=LocaleString(en="This is an agent that can be used to develop the frontend"),
-            system_prompt=LocaleString(en="You are an agent"),
             llm=AzureOpenAILLMConfig(
                 name="gpt-4o",
                 base_url="https://aihub-dev-openai-che.openai.azure.com/",

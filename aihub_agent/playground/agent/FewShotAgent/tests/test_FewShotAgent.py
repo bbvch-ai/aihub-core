@@ -123,9 +123,9 @@ def _(agent_config_data, azure_llm_config):
 
     config = FewShotAgentConfig(
         agent_id="few_shot_agent",
+        agent_class=FewShotAgent.__name__,
         name=LocaleString(en="FewShotAgent"),
         description=LocaleString(en=agent_config_data["description"]),
-        system_prompt=LocaleString(en="You're an agent..."),
         llm=azure_llm_config,
         number_of_input_tokens=100000,
         condense_question_prompt=LocaleString(
@@ -141,7 +141,7 @@ def _(agent_config_data, azure_llm_config):
         ),
     )
 
-    return AgentTestRunner(agent_type=FewShotAgent, agent_config=config)
+    return AgentTestRunner(agent_type=FewShotAgent, default_agent_config=config)
 
 
 @pytest.mark.usefixtures("self_hosted_agent_config")
@@ -160,9 +160,9 @@ def _(agent_config_data, self_hosted_llm_config):
 
     config = FewShotAgentConfig(
         agent_id="few_shot_agent",
+        agent_class=FewShotAgent.__name__,
         name=LocaleString(en="FewShotAgent"),
         description=LocaleString(en=agent_config_data["description"]),
-        system_prompt=LocaleString(en="You're an agent..."),
         llm=self_hosted_llm_config,
         number_of_input_tokens=100000,
         condense_question_prompt=LocaleString(
@@ -178,7 +178,7 @@ def _(agent_config_data, self_hosted_llm_config):
         ),
     )
 
-    return AgentTestRunner(agent_type=FewShotAgent, agent_config=config)
+    return AgentTestRunner(agent_type=FewShotAgent, default_agent_config=config)
 
 
 @when(parsers.parse('the start event is sent with a user query "{query}"'))
@@ -188,7 +188,9 @@ async def when_start_event_sent(agent_runner: AgentTestRunner, query: str):
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
-                locale="en", user=fake_user(), messages=[ChatMessage(content=query, role=MessageRole.USER)]
+                locale="en",
+                user=fake_user(),
+                messages=[ChatMessage(content=query, role=MessageRole.USER)],
             ),
         )
 

@@ -19,14 +19,11 @@ enable_logging()
 
 async def main():
     runner = AgentTestRunner(
-        agent_type=FewShotAgent,
-        agent_config=FewShotAgentConfig(
+        default_agent_config=FewShotAgentConfig(
             agent_id="few_shot_agent",
+            agent_class=FewShotAgent.__name__,
             name=LocaleString(en="RAG Agent"),
             description=LocaleString(en="This is an agent can transfer movie titles into emojis"),
-            system_prompt=LocaleString(
-                en="You're an agent answering user requests. Only use the context information provided."
-            ),
             llm=AzureOpenAILLMConfig(
                 name="gpt-4o",
                 base_url="https://aihub-dev-openai-che.openai.azure.com/",

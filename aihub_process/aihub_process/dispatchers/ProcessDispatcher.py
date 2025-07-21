@@ -86,7 +86,9 @@ class ProcessDispatcher(BaseDispatcher):
             )
             if await self.is_step_ready(step_method, events, topic):
                 logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.event_name}'")
-                asyncio.create_task(self.execute_step(event, step_method, events, topic))
+                task = asyncio.create_task(self.execute_step(event, step_method, events, topic))
+                self._background_tasks.add(task)
+                task.add_done_callback(self._background_tasks.discard)
 
     @override
     async def is_step_ready(

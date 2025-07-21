@@ -7,7 +7,7 @@ from .common import LimitChatHistoryEvent, StandaloneQuestionCondenserEvent
 from .control import ControlEvent, ExceptionEvent, StartEvent, StopEvent
 from .ControlAndDisplayEvent import ControlAndDisplayEvent
 from .cost import CostEvent, LLMCostEvent
-from .discovery import AgentDiscoveryResponseEvent, DiscoveryRequestEvent
+from .discovery import AgentInstanceDiscoveryResponseEvent, InstanceDiscoveryRequestEvent
 from .display import ChunkEvent, DisplayEvent, ThoughtEvent
 from .guard import GuardRejectionEvent
 from .human_in_the_loop import HumanInTheLoop
@@ -38,8 +38,8 @@ __all__ = [
     "StopEvent",
     "CostEvent",
     "LLMCostEvent",
-    "DiscoveryRequestEvent",
-    "AgentDiscoveryResponseEvent",
+    "InstanceDiscoveryRequestEvent",
+    "AgentInstanceDiscoveryResponseEvent",
     "HumanInTheLoopRequestEvent",
     "HumanInTheLoopResponseEvent",
     "HumanInTheLoop",
