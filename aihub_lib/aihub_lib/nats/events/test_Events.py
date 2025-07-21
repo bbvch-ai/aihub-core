@@ -2,8 +2,6 @@ import json
 
 import pytest
 
-from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.agent_in_the_loop.exception.AgentInTheLoopExceptionEvent import AgentInTheLoopExceptionEvent
 from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
 from aihub_lib.nats.events.agent_in_the_loop.response.AgentInTheLoopResponseEvent import AgentInTheLoopResponseEvent
@@ -50,17 +48,7 @@ class TestDisplayEvent(DisplayEvent):
 
 
 @pytest.fixture
-def agent_config() -> AgentConfig:
-    return AgentConfig(
-        agent_class="TestAgent",
-        agent_id="test_agent",
-        name=LocaleString(en="Test Agent"),
-        description=LocaleString(en="This is a test agent."),
-    )
-
-
-@pytest.fixture
-def test_start_event(agent_config: AgentConfig):
+def test_start_event():
     return TestStartEvent(message="Hello, world!")
 
 
@@ -280,12 +268,11 @@ def test_aitl_workflow_serialization(aitl_request_event, aitl_response_event):
     assert agent_response.stop_event.result == 42
 
 
-def test_missing_fields(agent_config: AgentConfig):
+def test_missing_fields():
     """Test deserialization with missing fields."""
     # Missing fields should be handled gracefully
     incomplete_data = {
         "_event_name": "TestStartEvent",
-        "agent_config": agent_config.model_dump(),
         # Missing message field
     }
 
@@ -295,18 +282,16 @@ def test_missing_fields(agent_config: AgentConfig):
         print(event._event_name)
 
 
-def test_extra_fields(agent_config: AgentConfig):
+def test_extra_fields():
     """Test deserialization with extra fields."""
     # Extra fields should be preserved
     extra_data = {
         "_event_name": "TestStartEvent",
-        "agent_config": agent_config.model_dump(),
         "message": "Hello",
         "extra_field": "This wasn't in the original class",
     }
 
     event = BaseEvent.deserialize_event(extra_data)
-    assert event.extra_field == "This wasn't in the original class"
 
     # The field should be accessible in the model dump
     data = event.model_dump()
@@ -328,11 +313,10 @@ def test_invalid_json():
         BaseEvent.deserialize_event("This is not valid JSON")
 
 
-def test_corrupted_parent_event_names(agent_config: AgentConfig):
+def test_corrupted_parent_event_names():
     """Test handling of corrupted _parent_event_names."""
     corrupted_data = {
         "_event_name": "TestStartEvent",
-        "agent_config": agent_config.model_dump(),
         "message": "Hello",
         "_parent_event_names": "Not a list",  # Should be a list
     }
@@ -404,7 +388,7 @@ def test_aitl_without_worker_agent_class(aitl_response_event):
             BaseEvent._event_registry["TestStopEvent"] = original_class
 
 
-def test_user_message_event_round_trip(agent_config: AgentConfig):
+def test_user_message_event_round_trip():
     """Test that a UserMessageEvent survives a round trip serialization."""
     # Create a user message
     user_msg = UserMessageEvent(message="Hello agent!", user=fake_user())

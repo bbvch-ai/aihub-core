@@ -16,7 +16,6 @@ from mongoengine import (
     StringField,
 )
 
-from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from aihub_lib.persistence.agents.AgentConfigEntityEmbeddedDocument import AgentConfigEntityEmbeddedDocument
 
@@ -144,33 +143,37 @@ class AgentEntity(Document):
         return agent
 
     @classmethod
-    def create_or_update_from_dto(cls, agent_dto, default_agent_config: AgentConfig) -> "AgentEntity":
+    def create_or_update_from_dto(cls, agent_instance) -> "AgentEntity":
         """
         Creates a new AgentEntity from an AgentDTO or updates an existing one if an agent
         with the same agent_class and agent_id already exists.
         """
         # Check if an agent with the same agent_class and agent_id already exists
-        existing_agent = cls.objects(agent_class=agent_dto.agent_class, agent_id=agent_dto.agent_id).first()
+        existing_agent = cls.objects(agent_class=agent_instance.agent_class, agent_id=agent_instance.agent_id).first()
 
         agent_config_entity = AgentConfigEntityDocument.find_for_class_and_id(
-            agent_class=agent_dto.agent_class, agent_id=agent_dto.agent_id
+            agent_class=agent_instance.agent_class, agent_id=agent_instance.agent_id
         )
         if not agent_config_entity:
-            logger.debug(f"No agent config found for class {agent_dto.agent_class} and ID {agent_dto.agent_id}.")
+            logger.debug(
+                f"No agent config found for class {agent_instance.agent_class} and ID {agent_instance.agent_id}."
+            )
 
-        default_agent_config_entity = AgentConfigEntityEmbeddedDocument.from_agent_config(default_agent_config)
+        default_agent_config_entity = AgentConfigEntityEmbeddedDocument.from_agent_config(
+            agent_instance.default_agent_config
+        )
 
         # Create EventSpec objects, serializing the schema to avoid $ issues
-        start_events = [EventSpec.from_dto(event) for event in agent_dto.start_events]
-        stop_events = [EventSpec.from_dto(event) for event in agent_dto.stop_events]
+        start_events = [EventSpec.from_dto(event) for event in agent_instance.start_events]
+        stop_events = [EventSpec.from_dto(event) for event in agent_instance.stop_events]
 
-        network_graph = agent_dto.network_graph.model_dump()
+        network_graph = agent_instance.network_graph.model_dump()
 
         if existing_agent:
             # Update existing agent
             existing_agent.agent_config = agent_config_entity
             existing_agent.default_agent_config = default_agent_config_entity
-            existing_agent.is_conversational = agent_dto.is_conversational
+            existing_agent.is_conversational = agent_instance.is_conversational
             existing_agent.start_events = start_events
             existing_agent.stop_events = stop_events
             existing_agent.network_graph = network_graph
@@ -180,11 +183,11 @@ class AgentEntity(Document):
         else:
             # Create new agent
             return cls.create_agent(
-                agent_class=agent_dto.agent_class,
-                agent_id=agent_dto.agent_id,
+                agent_class=agent_instance.agent_class,
+                agent_id=agent_instance.agent_id,
                 agent_config=agent_config_entity,
                 default_agent_config=default_agent_config_entity,
-                is_conversational=agent_dto.is_conversational,
+                is_conversational=agent_instance.is_conversational,
                 start_events=start_events,
                 stop_events=stop_events,
                 network_graph=network_graph,

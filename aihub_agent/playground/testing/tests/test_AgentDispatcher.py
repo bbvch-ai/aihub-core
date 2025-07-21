@@ -378,8 +378,7 @@ class TestAgentDispatcherHandleEvent:
         self, agent_dispatcher, agent_topic
     ):
         """Test that non-start events retrieve agent config from run context."""
-        # Arrange - First store config in context using a start event
-        start_event = StartEvent()
+        # Arrange - First store config in context
         stored_config = agent_dispatcher.default_agent_config.model_dump()
 
         # Pre-populate the context with config

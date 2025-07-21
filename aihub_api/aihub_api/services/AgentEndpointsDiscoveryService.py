@@ -4,7 +4,6 @@ from functools import reduce
 from operator import or_
 from typing import Annotated, Any
 
-from aihub_api.agents.AgentInstance import AgentInstance
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -31,6 +30,7 @@ from pydantic import BaseModel
 from stringcase import snakecase
 from typing_extensions import override
 
+from aihub_api.agents.AgentInstance import AgentInstance
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.agent.AgentService import AgentService

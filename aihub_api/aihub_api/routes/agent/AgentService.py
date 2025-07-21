@@ -248,10 +248,7 @@ class AgentService:
                     class_dto=agent,
                     agent_config=config_instance,
                 )
-                AgentEntity.create_or_update_from_dto(
-                    agent_dto=agent_dto,
-                    default_agent_config=agent.default_agent_config,
-                )
+                AgentEntity.create_or_update_from_dto(agent_instance=agent_dto)
                 configured_agents.append(agent_dto)
 
             # Step 3: Check if default agent config is present in database
@@ -261,10 +258,7 @@ class AgentService:
                     class_dto=agent,
                     agent_config=agent.default_agent_config,
                 )
-                AgentEntity.create_or_update_from_dto(
-                    agent_dto=agent_dto,
-                    default_agent_config=agent.default_agent_config,
-                )
+                AgentEntity.create_or_update_from_dto(agent_instance=agent_dto)
                 configured_agents.append(agent_dto)
 
         if len(configured_agents) > 0:

@@ -306,6 +306,7 @@ async def main():
         agent_type=RAGAgent,
         default_agent_config=RAGAgentConfig(
             agent_id="rag_agent",
+            agent_class=RAGAgent.__name__,
             name="RAG Agent",
             description="Agent for frontend development",
             # Additional configuration parameters...
@@ -442,6 +443,7 @@ def _():
         agent_type=SimpleAgent,
         default_agent_config=SimpleAgentConfig(
             agent_id="simple_agent",
+            agent_class=SimpleAgent.__name__,
             name="Simple Agent",
             description="A minimal agent demo",
         ),

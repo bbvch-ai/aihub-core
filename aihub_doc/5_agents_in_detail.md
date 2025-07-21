@@ -624,6 +624,7 @@ async def main():
         agent_type=DevAgent,
         default_agent_config=DevAgentConfig(
             agent_id="dev_agent",
+            agent_class=DevAgent.__name__,
             name=LocaleString(en="Dev Agent"),
             description=LocaleString(en="This is an agent that can be used to develop the frontend"),
             llm=AzureOpenAILLMConfig(

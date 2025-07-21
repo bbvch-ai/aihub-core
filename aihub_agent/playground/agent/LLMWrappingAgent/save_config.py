@@ -1,7 +1,3 @@
-from mongoengine import connect
-
-from aihub_agent.agents.LLMWrappingAgent.LLMWrappingAgent import LLMWrappingAgent
-from aihub_agent.agents.LLMWrappingAgent.LLMWrappingAgentConfig import LLMWrappingAgentConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
     AzureOpenAIParameter,
@@ -10,6 +6,10 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
+from mongoengine import connect
+
+from aihub_agent.agents.LLMWrappingAgent.LLMWrappingAgent import LLMWrappingAgent
+from aihub_agent.agents.LLMWrappingAgent.LLMWrappingAgentConfig import LLMWrappingAgentConfig
 
 config = LLMWrappingAgentConfig(
     agent_class=LLMWrappingAgent.__name__,

@@ -27,10 +27,9 @@ class ProcessConfig(BaseModel):
     injected into each agent step at-runtime.
     """
 
-    name: Annotated[LocaleString, Field(description="The name of the process or agent.")]
-    description: Annotated[LocaleString, Field(description="The description of the process or agent.")]
-    icon: Annotated[str, Field(description="The icon representing the process or agent.")] = "meteor-icons:robot"
-
     process_id: Annotated[
         str, Field(description="Used to uniquely identify this process instance.", pattern=r"^[a-z0-9_-]+$")
     ]
+    name: Annotated[LocaleString, Field(description="The name of the process.")]
+    description: Annotated[LocaleString, Field(description="The description of the process.")]
+    icon: Annotated[str, Field(description="The icon representing the agent.")] = "meteor-icons:robot"
