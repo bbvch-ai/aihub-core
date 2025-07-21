@@ -16,7 +16,9 @@ class InputMask(PrimeVueElement):
     placeholder: Annotated[LocaleString | str | None, Field(description="Placeholder text")] = None
     mask: Annotated[str | None, Field(description="Input mask pattern")] = None
     slot_char: Annotated[str | None, Field(description="Placeholder character for mask slots", alias="slotChar")] = None
-    auto_clear: Annotated[bool, Field(description="Whether to clear incomplete values on blur", alias="autoClear")] = True
+    auto_clear: Annotated[bool, Field(description="Whether to clear incomplete values on blur", alias="autoClear")] = (
+        True
+    )
     unmask: Annotated[bool, Field(description="Whether to return unmasked value")] = False
     icon_prefix: Annotated[
         str | None, Field(description="Icon prefix", alias="iconPrefix", pattern=r"^pi pi-[a-z0-9-]+$")

@@ -16,7 +16,9 @@ class Slider(PrimeVueElement):
     max: Annotated[float | None, Field(description="Maximum value")] = None
     step: Annotated[float | None, Field(description="Step factor for increment/decrement")] = None
     range: Annotated[bool, Field(description="Whether to enable range selection")] = False
-    orientation: Annotated[Literal["horizontal", "vertical"] | None, Field(description="Orientation of the slider")] = None
+    orientation: Annotated[Literal["horizontal", "vertical"] | None, Field(description="Orientation of the slider")] = (
+        None
+    )
 
     def in_locale(self, t: LocaleHandler) -> "Slider":
         self_copy = super().in_locale(t)

@@ -21,7 +21,9 @@ class Knob(PrimeVueElement):
     value_color: Annotated[str | None, Field(description="Color of the value arc", alias="valueColor")] = None
     range_color: Annotated[str | None, Field(description="Color of the range arc", alias="rangeColor")] = None
     text_color: Annotated[str | None, Field(description="Color of the value text", alias="textColor")] = None
-    value_template: Annotated[str | None, Field(description="Template string for value display", alias="valueTemplate")] = None
+    value_template: Annotated[
+        str | None, Field(description="Template string for value display", alias="valueTemplate")
+    ] = None
 
     def in_locale(self, t: LocaleHandler) -> "Knob":
         self_copy = super().in_locale(t)

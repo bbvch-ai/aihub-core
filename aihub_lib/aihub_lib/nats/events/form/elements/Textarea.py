@@ -15,7 +15,9 @@ class Textarea(PrimeVueElement):
     readonly: Annotated[bool, Field(description="Whether the input is readonly")] = False
     placeholder: Annotated[LocaleString | str | None, Field(description="Placeholder text")] = None
     rows: Annotated[int | None, Field(description="Number of rows to display")] = None
-    auto_resize: Annotated[bool, Field(description="Whether to automatically resize based on content", alias="autoResize")] = False
+    auto_resize: Annotated[
+        bool, Field(description="Whether to automatically resize based on content", alias="autoResize")
+    ] = False
 
     def in_locale(self, t: LocaleHandler) -> "Textarea":
         self_copy = super().in_locale(t)

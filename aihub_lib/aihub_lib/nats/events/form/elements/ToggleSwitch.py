@@ -10,7 +10,9 @@ from aihub_lib.nats.events.form.base.PrimeVueElement import PrimeVueElement
 class ToggleSwitch(PrimeVueElement):
     """https://formkit-primevue.netlify.app/inputs/ToggleSwitch"""
 
-    formkit: Annotated[Literal["primeToggleSwitch"], Field(description="PrimeVue ToggleSwitch element.")] = "primeToggleSwitch"
+    formkit: Annotated[Literal["primeToggleSwitch"], Field(description="PrimeVue ToggleSwitch element.")] = (
+        "primeToggleSwitch"
+    )
     disabled: Annotated[bool, Field(description="Whether the input is disabled")] = False
     readonly: Annotated[bool, Field(description="Whether the input is readonly")] = False
     true_value: Annotated[Any, Field(description="Value to emit when toggled on", alias="trueValue")] = None

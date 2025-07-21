@@ -15,8 +15,12 @@ class Listbox(PrimeVueElement):
     readonly: Annotated[bool, Field(description="Whether the input is readonly")] = False
     placeholder: Annotated[LocaleString | str | None, Field(description="Placeholder text")] = None
     options: Annotated[list[dict[str, Any]], Field(description="Array of selectable option objects")]
-    option_label: Annotated[str | None, Field(description="Property name to use as the label of an option", alias="optionLabel")] = None
-    option_value: Annotated[str | None, Field(description="Property name to use as the value of an option", alias="optionValue")] = None
+    option_label: Annotated[
+        str | None, Field(description="Property name to use as the label of an option", alias="optionLabel")
+    ] = None
+    option_value: Annotated[
+        str | None, Field(description="Property name to use as the value of an option", alias="optionValue")
+    ] = None
     multiple: Annotated[bool, Field(description="Whether to allow multiple selections")] = False
     filter: Annotated[bool, Field(description="Whether to enable filtering")] = False
 
@@ -25,4 +29,3 @@ class Listbox(PrimeVueElement):
         if isinstance(self_copy.placeholder, LocaleString):
             self_copy.placeholder = t.extract(self_copy.placeholder)
         return self_copy
-

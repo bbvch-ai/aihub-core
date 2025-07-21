@@ -123,9 +123,7 @@ class ProcessEntity(Document):
 
     @classmethod
     def create_or_update_from_discovery_response(cls, response: ProcessDiscoveryResponseEvent) -> "ProcessEntity":
-        existing_process = cls.objects(
-            process_class=response.process_class, process_id=response.process_id
-        ).first()
+        existing_process = cls.objects(process_class=response.process_class, process_id=response.process_id).first()
 
         process_config = ProcessConfig(
             process_id=response.process_config.process_id,
@@ -136,9 +134,7 @@ class ProcessEntity(Document):
 
         # Create EventSpec objects, serializing the schema to avoid $ issues
         human_inputs = [HumanInSpecsEntity.from_specs(human_in_dto) for human_in_dto in response.human_inputs]
-        program_inputs = [
-            ProgramInSpecsEntity.from_specs(program_in_dto) for program_in_dto in response.program_inputs
-        ]
+        program_inputs = [ProgramInSpecsEntity.from_specs(program_in_dto) for program_in_dto in response.program_inputs]
         agent_inputs = [AgentInSpecsEntity.from_specs(agent_in_dto) for agent_in_dto in response.agent_inputs]
 
         if existing_process:

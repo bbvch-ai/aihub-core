@@ -87,7 +87,7 @@ class Form(BaseModel):
 
     @classmethod
     def to_form_submission_model(
-            cls,
+        cls,
     ) -> type[BaseModel]:
         """Creates a new Pydantic model by removing a specific type from all Union fields."""
         new_fields = {}

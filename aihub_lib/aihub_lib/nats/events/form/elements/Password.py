@@ -15,13 +15,27 @@ class Password(PrimeVueElement):
     readonly: Annotated[bool, Field(description="Whether the input is readonly")] = False
     placeholder: Annotated[LocaleString | str | None, Field(description="Placeholder text")] = None
     feedback: Annotated[bool, Field(description="Whether to show password strength feedback")] = False
-    toggle_mask: Annotated[bool, Field(description="Whether to show toggle button to reveal/hide password", alias="toggleMask")] = False
-    medium_regex: Annotated[str | None, Field(description="Regex pattern for medium strength validation", alias="mediumRegex")] = None
-    strong_regex: Annotated[str | None, Field(description="Regex pattern for strong strength validation", alias="strongRegex")] = None
-    prompt_label: Annotated[LocaleString | str | None, Field(description="Label for password prompt", alias="promptLabel")] = None
-    weak_label: Annotated[LocaleString | str | None, Field(description="Label for weak password strength", alias="weakLabel")] = None
-    medium_label: Annotated[LocaleString | str | None, Field(description="Label for medium password strength", alias="mediumLabel")] = None
-    strong_label: Annotated[LocaleString | str | None, Field(description="Label for strong password strength", alias="strongLabel")] = None
+    toggle_mask: Annotated[
+        bool, Field(description="Whether to show toggle button to reveal/hide password", alias="toggleMask")
+    ] = False
+    medium_regex: Annotated[
+        str | None, Field(description="Regex pattern for medium strength validation", alias="mediumRegex")
+    ] = None
+    strong_regex: Annotated[
+        str | None, Field(description="Regex pattern for strong strength validation", alias="strongRegex")
+    ] = None
+    prompt_label: Annotated[
+        LocaleString | str | None, Field(description="Label for password prompt", alias="promptLabel")
+    ] = None
+    weak_label: Annotated[
+        LocaleString | str | None, Field(description="Label for weak password strength", alias="weakLabel")
+    ] = None
+    medium_label: Annotated[
+        LocaleString | str | None, Field(description="Label for medium password strength", alias="mediumLabel")
+    ] = None
+    strong_label: Annotated[
+        LocaleString | str | None, Field(description="Label for strong password strength", alias="strongLabel")
+    ] = None
 
     def in_locale(self, t: LocaleHandler) -> "Password":
         self_copy = super().in_locale(t)

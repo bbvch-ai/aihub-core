@@ -10,15 +10,28 @@ from aihub_lib.nats.events.form.base.PrimeVueElement import PrimeVueElement
 class CascadeSelect(PrimeVueElement):
     """https://formkit-primevue.netlify.app/inputs/CascadeSelect"""
 
-    formkit: Annotated[Literal["primeCascadeSelect"], Field(description="PrimeVue CascadeSelect element.")] = "primeCascadeSelect"
+    formkit: Annotated[Literal["primeCascadeSelect"], Field(description="PrimeVue CascadeSelect element.")] = (
+        "primeCascadeSelect"
+    )
     disabled: Annotated[bool, Field(description="Whether the input is disabled")] = False
     readonly: Annotated[bool, Field(description="Whether the input is readonly")] = False
     placeholder: Annotated[LocaleString | str | None, Field(description="Placeholder text")] = None
-    options: Annotated[list[dict[str, str | LocaleString | Any]], Field(description="Array of hierarchical option objects")]
-    option_label: Annotated[str | None, Field(description="Property name to use as the label of an option", alias="optionLabel")] = None
-    option_value: Annotated[str | None, Field(description="Property name to use as the value of an option", alias="optionValue")] = None
-    option_group_label: Annotated[str | None, Field(description="Property name to use as the label of an option group", alias="optionGroupLabel")] = None
-    option_group_children: Annotated[list[str] | None, Field(description="Property names that define the children of option groups", alias="optionGroupChildren")] = None
+    options: Annotated[
+        list[dict[str, str | LocaleString | Any]], Field(description="Array of hierarchical option objects")
+    ]
+    option_label: Annotated[
+        str | None, Field(description="Property name to use as the label of an option", alias="optionLabel")
+    ] = None
+    option_value: Annotated[
+        str | None, Field(description="Property name to use as the value of an option", alias="optionValue")
+    ] = None
+    option_group_label: Annotated[
+        str | None, Field(description="Property name to use as the label of an option group", alias="optionGroupLabel")
+    ] = None
+    option_group_children: Annotated[
+        list[str] | None,
+        Field(description="Property names that define the children of option groups", alias="optionGroupChildren"),
+    ] = None
     filter: Annotated[bool, Field(description="Whether to enable filtering")] = False
     multiple: Annotated[bool, Field(description="Whether to allow multiple selections")] = False
 

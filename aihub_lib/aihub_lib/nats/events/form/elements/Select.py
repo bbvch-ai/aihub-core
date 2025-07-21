@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Literal
+from typing import Annotated, Literal
 
 from pydantic import Field
 
@@ -12,9 +12,16 @@ class Select(PrimeVueElement):
 
     formkit: Annotated[Literal["primeSelect"], Field(description="PrimeVue Select element.")] = "primeSelect"
 
-    options: Annotated[list[str | LocaleString | dict[str, str | LocaleString]] | list[str], Field(description="Array of selectable options (objects or strings)")]
-    option_label: Annotated[str | None, Field(description="Property name to use as the label of an option", alias="optionLabel")] = None
-    option_value: Annotated[str | None, Field(description="Property name to use as the value of an option", alias="optionValue")] = None
+    options: Annotated[
+        list[str | LocaleString | dict[str, str | LocaleString]] | list[str],
+        Field(description="Array of selectable options (objects or strings)"),
+    ]
+    option_label: Annotated[
+        str | None, Field(description="Property name to use as the label of an option", alias="optionLabel")
+    ] = None
+    option_value: Annotated[
+        str | None, Field(description="Property name to use as the value of an option", alias="optionValue")
+    ] = None
 
     disabled: Annotated[bool, Field(description="Whether the input is disabled")] = False
     readonly: Annotated[bool, Field(description="Whether the input is readonly")] = False

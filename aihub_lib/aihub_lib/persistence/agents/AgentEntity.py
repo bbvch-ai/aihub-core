@@ -91,8 +91,8 @@ class EventSpec(EmbeddedDocument):
 
 class AgentConfigEntity(EmbeddedDocument):
     agent_id = StringField(required=True)
-    name = StringField(required=True)           # TODO: This must be a i18n dict
-    description = StringField(required=True)    # TODO: This must be a i18n dict
+    name = StringField(required=True)  # TODO: This must be a i18n dict
+    description = StringField(required=True)  # TODO: This must be a i18n dict
     system_prompt = StringField(required=True)  # TODO: This must be a i18n dict (or deprecated)
     color = StringField(default="#10A37F")
     voice = StringField(default="de-DE-ChristophNeural")

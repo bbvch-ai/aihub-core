@@ -1,7 +1,7 @@
 import abc
 from typing import Annotated
 
-from pydantic import Field, computed_field, PrivateAttr
+from pydantic import Field, PrivateAttr, computed_field
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -33,7 +33,8 @@ class PrimeVueElement(FormkitElement, abc.ABC):
         if self._required:
             validation_str += "required"
         if self.additional_validation_rules:
-            validation_str += self.additional_validation_rules
+            sep = "|" if validation_str else ""
+            validation_str = f"{validation_str}{sep}{self.additional_validation_rules}"
         return validation_str.strip()
 
     def in_locale(self, t: LocaleHandler) -> "PrimeVueElement":
