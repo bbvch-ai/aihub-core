@@ -3,7 +3,6 @@ from typing import Annotated
 from pydantic import Field
 
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from aihub_lib.nats.topics.discovery.DiscoveryTopic import DiscoveryTopic
 from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
 
 

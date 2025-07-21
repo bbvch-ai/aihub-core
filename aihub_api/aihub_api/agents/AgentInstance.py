@@ -1,13 +1,10 @@
 from typing import Annotated
 
-from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
-from aihub_lib.persistence.agents.AgentConfigEntityEmbeddedDocument import AgentConfigEntityEmbeddedDocument
-from aihub_lib.persistence.agents.AgentEntity import AgentEntity
-
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import (
     AgentInstanceDiscoveryResponseEvent,
 )
+from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from pydantic import Field
 
 from aihub_api.agents.AgentClass import AgentClass
