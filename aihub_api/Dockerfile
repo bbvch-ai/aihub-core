@@ -32,6 +32,7 @@ COPY aihub_api ./aihub_api
 COPY aihub_lib ./aihub_lib
 
 RUN poetry install
+RUN poetry add gunicorn
 RUN make use-local-core
 RUN rm Makefile switch_dependencies.py pyproject.toml
 # Set the working directory
