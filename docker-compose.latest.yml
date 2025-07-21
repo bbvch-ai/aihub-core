@@ -233,7 +233,7 @@ services:
       - "traefik.http.routers.webui.rule=Host(`openwebui.${DOMAIN}`)"
       - "traefik.http.routers.webui.entrypoints=websecure"
       - "traefik.http.routers.webui.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.webui.middlewares=security-headers@docker"
+      - "traefik.http.routers.webui.middlewares=security-headers"
       - "traefik.http.services.webui.loadbalancer.server.port=8080"
       - "traefik.http.middlewares.allow-iframe.headers.customResponseHeaders.Content-Security-Policy=frame-ancestors 'self' https://${DOMAIN}"
 
@@ -260,7 +260,7 @@ services:
       - "traefik.http.routers.phoenix.rule=Host(`${DOMAIN}`) && PathPrefix(`/phoenix`)"
       - "traefik.http.routers.phoenix.entrypoints=websecure"
       - "traefik.http.routers.phoenix.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.phoenix.middlewares=security-headers@docker"
+      - "traefik.http.routers.phoenix.middlewares=security-headers"
       - "traefik.http.services.phoenix.loadbalancer.server.port=6006"
       - "traefik.http.middlewares.strip-phoenix.stripprefix.prefixes=/phoenix"
   # </editor-fold">
@@ -344,7 +344,7 @@ services:
       - "traefik.http.routers.api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/v1`)"
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.api.middlewares=security-headers,strip-api"
+      - "traefik.http.routers.api.middlewares=security-headers"
       - "traefik.http.services.api.loadbalancer.server.port=8000"
 
   # TODO: only use in dev , delete from latest
