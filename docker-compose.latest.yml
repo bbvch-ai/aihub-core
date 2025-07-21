@@ -233,7 +233,7 @@ services:
       - "traefik.http.routers.webui.rule=Host(`openwebui.${DOMAIN}`)"
       - "traefik.http.routers.webui.entrypoints=websecure"
       - "traefik.http.routers.webui.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.webui.middlewares=security-headers"
+      - "traefik.http.routers.webui.middlewares=security-headers@docker"
       - "traefik.http.services.webui.loadbalancer.server.port=8080"
       - "traefik.http.middlewares.allow-iframe.headers.customResponseHeaders.Content-Security-Policy=frame-ancestors 'self' https://${DOMAIN}"
 
@@ -260,7 +260,7 @@ services:
       - "traefik.http.routers.phoenix.rule=Host(`${DOMAIN}`) && PathPrefix(`/phoenix`)"
       - "traefik.http.routers.phoenix.entrypoints=websecure"
       - "traefik.http.routers.phoenix.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.phoenix.middlewares=security-headers,strip-phoenix"
+      - "traefik.http.routers.phoenix.middlewares=security-headers@docker"
       - "traefik.http.services.phoenix.loadbalancer.server.port=6006"
       - "traefik.http.middlewares.strip-phoenix.stripprefix.prefixes=/phoenix"
   # </editor-fold">
@@ -391,7 +391,7 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.letsencrypt.acme.email={{ acme_email }}"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
       - "--api.dashboard=true"
     ports:
@@ -420,6 +420,6 @@ services:
       # Dashboard
       - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
       - "traefik.http.routers.traefik.service=api@internal"
-      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:{{ 'yourpassword' | password_hash('bcrypt') }}"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:${ADMIN_PASSWORD_HASH}"
       - "traefik.http.routers.traefik.middlewares=security-headers,traefik-auth"
 
