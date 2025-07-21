@@ -410,7 +410,6 @@ services:
       - "traefik.http.routers.http-catch.entrypoints=web"
       - "traefik.http.routers.http-catch.middlewares=https-redirect"
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
-
       # Security headers
       - "traefik.http.middlewares.security-headers.headers.sslredirect=true"
       - "traefik.http.middlewares.security-headers.headers.stsSeconds=31536000"
@@ -419,7 +418,6 @@ services:
       - "traefik.http.middlewares.security-headers.headers.contentTypeNosniff=true"
       - "traefik.http.middlewares.security-headers.headers.browserXssFilter=true"
       - "traefik.http.middlewares.security-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
-
       # Dashboard
       - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
       - "traefik.http.routers.traefik.entrypoints=websecure"
