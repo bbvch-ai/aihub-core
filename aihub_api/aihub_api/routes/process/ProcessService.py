@@ -96,15 +96,7 @@ class ProcessService:
     def get_minimal_process(process_class: str, process_id: str, t: LocaleHandler) -> MinimalProcessDTO:
         """Returns minimal details for a process from database."""
         process_entity = ProcessEntity.get_process(process_class=process_class, process_id=process_id)
-        process_config = ProcessConfig.from_entity(
-            process_entity.process_config or process_entity.default_process_config
-        )
-        process_config_dto = ProcessConfigDTO.from_process_config(process_config, t)
-        return MinimalProcessDTO(
-            process_class=process_entity.process_class,
-            process_id=process_entity.process_id,
-            process_config=process_config_dto,
-        )
+        return MinimalProcessDTO.from_entity(process_entity, t)
 
     @staticmethod
     async def discover_process_instance(nc: NATS, process_class: str, process_id: str) -> ProcessInstanceDTO:

@@ -8,10 +8,10 @@ from aihub_lib.nats.subscribers.process.ProcessJSSubscriber import ProcessJSSubs
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
 from aihub_lib.nats.topics import Topic
+from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
-from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 
 

@@ -18,12 +18,12 @@ from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import Proce
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
 from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
 from aihub_lib.nats.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
+from aihub_lib.processes.ProcessConfig import ProcessConfig
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
 from typing_extensions import override
 
-from aihub_lib.processes.ProcessConfig import ProcessConfig
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.context.walkthrough.WalkthroughContext import WalkthroughContext
 from aihub_process.delegators.agent.Agent import Agent

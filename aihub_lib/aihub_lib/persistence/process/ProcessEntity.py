@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from bson import ObjectId
@@ -10,9 +11,17 @@ from mongoengine import (
     EmbeddedDocumentField,
     ListField,
     StringField,
+    ReferenceField,
 )
 
+from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
+from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
+from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from aihub_lib.persistence.agents.AgentEntity import EventSpec
+from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
+from aihub_lib.persistence.process.ProcessConfigEntityEmbeddedDocument import ProcessConfigEntityEmbeddedDocument
+
+logger = logging.getLogger(__name__)
 
 
 class ProgramInSpecsEntity(EmbeddedDocument):
@@ -22,7 +31,7 @@ class ProgramInSpecsEntity(EmbeddedDocument):
     event_specs = EmbeddedDocumentField(EventSpec, required=True)
 
     @classmethod
-    def from_dto(cls, program_in_dto) -> "ProgramInSpecsEntity":
+    def from_specs(cls, program_in_dto) -> "ProgramInSpecsEntity":
         return cls(
             route=program_in_dto.route,
             method=program_in_dto.method,
@@ -41,7 +50,7 @@ class HumanInSpecsEntity(EmbeddedDocument):
     form = ListField(DictField(), default=list)
 
     @classmethod
-    def from_dto(cls, human_in_dto) -> "HumanInSpecsEntity":
+    def from_specs(cls, human_in_dto) -> "HumanInSpecsEntity":
         return cls(
             name=human_in_dto.name.model_dump(),
             description=human_in_dto.description.model_dump(),
@@ -60,7 +69,7 @@ class AgentInSpecsEntity(EmbeddedDocument):
     event_specs = EmbeddedDocumentField(EventSpec, required=True)
 
     @classmethod
-    def from_dto(cls, agent_in_dto) -> "AgentInSpecsEntity":
+    def from_specs(cls, agent_in_dto) -> "AgentInSpecsEntity":
         return cls(
             agent_class=agent_in_dto.agent_class,
             agent_id=agent_in_dto.agent_id,
@@ -84,7 +93,8 @@ class ProcessEntity(Document):
     }
     process_class = StringField(required=True)
     process_id = StringField(required=True)
-    process_config = EmbeddedDocumentField(ProcessConfig, required=True)
+    process_config = ReferenceField(ProcessConfigEntityDocument, required=False)
+    default_process_config = EmbeddedDocumentField(ProcessConfigEntityEmbeddedDocument, required=True)
     human_inputs = ListField(EmbeddedDocumentField(HumanInSpecsEntity), default=list)
     program_inputs = ListField(EmbeddedDocumentField(ProgramInSpecsEntity), default=list)
     agent_inputs = ListField(EmbeddedDocumentField(AgentInSpecsEntity), default=list)
@@ -96,7 +106,8 @@ class ProcessEntity(Document):
         cls,
         process_class: str,
         process_id: str,
-        process_config: ProcessConfig,
+        process_config: ProcessConfigEntityDocument | None,
+        default_process_config: ProcessConfigEntityEmbeddedDocument,
         human_inputs: list[HumanInSpecsEntity],
         program_inputs: list[ProgramInSpecsEntity],
         agent_inputs: list[AgentInSpecsEntity],
@@ -107,6 +118,7 @@ class ProcessEntity(Document):
             process_class=process_class,
             process_id=process_id,
             process_config=process_config,
+            default_process_config=default_process_config,
             human_inputs=human_inputs,
             agent_inputs=agent_inputs,
             program_inputs=program_inputs,
@@ -117,28 +129,34 @@ class ProcessEntity(Document):
         return process
 
     @classmethod
-    def create_or_update_from_dto(cls, process_dto) -> "ProcessEntity":
-        existing_process = cls.objects(
-            process_class=process_dto.process_class, process_id=process_dto.process_id
-        ).first()
+    def create_or_update(
+        cls,
+        process_id: str,
+        process_class: str,
+        default_process_config: ProcessConfig,
+        human_inputs: list[HumanInSpecs],
+        program_inputs: list[ProgramInSpecs],
+        agent_inputs: list[AgentInSpecs],
+    ) -> "ProcessEntity":
+        existing_process = cls.objects(process_class=process_class, process_id=process_id).first()
 
-        process_config = ProcessConfig(
-            process_id=process_dto.default_process_config.process_id,
-            name=process_dto.default_process_config.name,
-            description=process_dto.default_process_config.description,
-            icon=process_dto.default_process_config.icon,
+        process_config_entity = ProcessConfigEntityDocument.find_for_class_and_id(
+            process_class=process_class, process_id=process_id
         )
+        if not process_config_entity:
+            logger.debug(f"No process config found for class {process_class} and ID {process_id}.")
+
+        default_process_config_entity = ProcessConfigEntityEmbeddedDocument.from_process_config(default_process_config)
 
         # Create EventSpec objects, serializing the schema to avoid $ issues
-        human_inputs = [HumanInSpecsEntity.from_dto(human_in_dto) for human_in_dto in process_dto.human_inputs]
-        program_inputs = [
-            ProgramInSpecsEntity.from_dto(program_in_dto) for program_in_dto in process_dto.program_inputs
-        ]
-        agent_inputs = [AgentInSpecsEntity.from_dto(agent_in_dto) for agent_in_dto in process_dto.agent_inputs]
+        human_inputs = [HumanInSpecsEntity.from_specs(human_in_dto) for human_in_dto in human_inputs]
+        program_inputs = [ProgramInSpecsEntity.from_specs(program_in_dto) for program_in_dto in program_inputs]
+        agent_inputs = [AgentInSpecsEntity.from_specs(agent_in_dto) for agent_in_dto in agent_inputs]
 
         if existing_process:
             # Update existing process
-            existing_process.default_process_config = process_config
+            existing_process.default_process_config = process_config_entity
+            existing_process.process_config = process_config_entity
             existing_process.human_inputs = human_inputs
             existing_process.program_inputs = program_inputs
             existing_process.agent_inputs = agent_inputs
@@ -148,9 +166,10 @@ class ProcessEntity(Document):
         else:
             # Create new process
             return cls.create_process(
-                process_class=process_dto.process_class,
-                process_id=process_dto.process_id,
-                process_config=process_config,
+                process_class=process_class,
+                process_id=process_id,
+                process_config=process_config_entity,
+                default_process_config=default_process_config_entity,
                 human_inputs=human_inputs,
                 program_inputs=program_inputs,
                 agent_inputs=agent_inputs,

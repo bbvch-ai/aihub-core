@@ -122,6 +122,7 @@ class TestProcessServiceUnitTests:
             with pytest.raises(AttributeError):
                 ProcessService.get_minimal_process("TestProcess", "nonexistent", mock_locale_handler)
 
+    @pytest.mark.asyncio
     async def test_get_process_online_success(self, sample_process_instance, mock_locale_handler):
         """Test get_process returns online process when discoverable."""
         with patch.object(ProcessService, "discover_process_instance") as mock_discover:
@@ -139,6 +140,7 @@ class TestProcessServiceUnitTests:
                 )
                 assert result == mock_dto
 
+    @pytest.mark.asyncio
     async def test_get_process_falls_back_to_database(self, sample_process_entity, mock_locale_handler):
         """Test get_process falls back to database when process not discoverable."""
         with patch.object(ProcessService, "discover_process_instance") as mock_discover:
@@ -161,6 +163,7 @@ class TestProcessServiceUnitTests:
                     )
                     assert result == mock_dto
 
+    @pytest.mark.asyncio
     async def test_get_process_not_found_anywhere(self, mock_locale_handler):
         """Test get_process raises 404 when process not found online or in database."""
         with patch.object(ProcessService, "discover_process_instance") as mock_discover:
@@ -175,6 +178,7 @@ class TestProcessServiceUnitTests:
                 assert exc_info.value.status_code == 404
                 assert "Process TestProcess.nonexistent not found" in str(exc_info.value.detail)
 
+    @pytest.mark.asyncio
     async def test_get_processes_combines_online_and_saved(
         self, sample_process_instance, sample_process_entity, mock_locale_handler
     ):
@@ -203,6 +207,7 @@ class TestProcessServiceUnitTests:
                     assert online_dto in result
                     assert saved_dto in result
 
+    @pytest.mark.asyncio
     async def test_discover_process_class_success(self, sample_process_class):
         """Test discover_process_class successfully discovers and caches process class."""
         mock_nc = AsyncMock()
@@ -238,6 +243,7 @@ class TestProcessServiceUnitTests:
                         assert result == sample_process_class
                         assert GET_PROCESS_CLASS_CACHE["TestProcess"] == sample_process_class
 
+    @pytest.mark.asyncio
     async def test_discover_process_class_timeout(self):
         """Test discover_process_class raises HTTPException on timeout."""
         mock_nc = AsyncMock()
@@ -259,6 +265,7 @@ class TestProcessServiceUnitTests:
                     assert exc_info.value.status_code == 404
                     assert "Process TestProcess not found" in str(exc_info.value.detail)
 
+    @pytest.mark.asyncio
     async def test_discover_processes_converts_instances_to_dtos(self, sample_process_instance, mock_locale_handler):
         """Test discover_processes converts process instances to DTOs."""
         with patch.object(ProcessService, "discover_process_instances") as mock_discover_instances:
@@ -296,6 +303,7 @@ class TestProcessServiceUnitTests:
         assert len(GET_PROCESS_INSTANCE_CACHE) == 0
         assert len(GET_PROCESS_CLASS_CACHE) == 0
 
+    @pytest.mark.asyncio
     async def test_discover_process_classes_caching_behavior(self, sample_process_class):
         """Test that discover_process_classes properly caches results."""
         cache_key = "all_process_classes"
@@ -341,6 +349,7 @@ class TestProcessServiceUnitTests:
                         assert result2 == DISCOVER_PROCESSES_CACHE[cache_key]
                         assert len(result2) == 1
 
+    @pytest.mark.asyncio
     async def test_process_service_error_handling_during_discovery(self):
         """Test ProcessService handles errors gracefully during discovery operations."""
         mock_nc = AsyncMock()
@@ -353,6 +362,7 @@ class TestProcessServiceUnitTests:
 
             assert str(exc_info.value) == "NATS error"
 
+    @pytest.mark.asyncio
     async def test_multiple_process_configs_handling(self, sample_process_class):
         """Test handling of multiple process configurations for the same class."""
         config1 = ProcessConfig(

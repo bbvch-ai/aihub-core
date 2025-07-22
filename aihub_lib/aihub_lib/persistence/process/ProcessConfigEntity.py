@@ -8,7 +8,8 @@ from aihub_lib.processes.ProcessConfig import ProcessConfig
 class ProcessConfigEntity(BaseDocument):
     """
     This is the base class for storing a process configuration.
-    Never use this class directly; instead, use the `ProcessConfigEntityDocument` or `ProcessConfigEntityEmbeddedDocument`
+    Never use this class directly; instead, use the `ProcessConfigEntityDocument` or
+    `ProcessConfigEntityEmbeddedDocument`
     subclasses for persistence in MongoDB.
     This class is only used to define the common fields and methods for process configs.
     """

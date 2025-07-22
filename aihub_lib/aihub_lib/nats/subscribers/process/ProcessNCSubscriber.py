@@ -12,6 +12,24 @@ from aihub_lib.nats.topics.process.ProcessInstanceTopic import ProcessInstanceTo
 
 
 class ProcessNCSubscriber(NCSubscriber):
+
+    @classmethod
+    def for_process_instance_discovery_request_events(
+        cls,
+        nc: NATS,
+        topic_manager: ProcessInstanceTopicManager,
+        handler: Callable[[InstanceDiscoveryRequestEvent, ProcessInstanceTopic], Awaitable[None]],
+        call_id: str = "*",
+    ):
+        """Subscribe to discovery request events for all processes"""
+        subject = topic_manager.get_process_instance_discovery_subject_request(call_id)
+        return cls(
+            nc=nc,
+            subject=subject,
+            event_cls=InstanceDiscoveryRequestEvent,
+            handler=handler,
+        )
+
     @classmethod
     def for_process_class_discovery_request_events(
         cls,
@@ -25,7 +43,7 @@ class ProcessNCSubscriber(NCSubscriber):
         return cls(
             nc=nc,
             subject=subject,
-            event_cls=InstanceDiscoveryRequestEvent,
+            event_cls=ClassDiscoveryRequestEvent,
             handler=handler,
         )
 
@@ -39,6 +57,23 @@ class ProcessNCSubscriber(NCSubscriber):
     ):
         """Subscribe to discovery response events for processes, optionally filtered by a specific call_id."""
         subject = topic_manager.get_process_instance_discovery_subject_response(call_id)
+        return cls(
+            nc=nc,
+            subject=subject,
+            event_cls=BaseEvent,
+            handler=handler,
+        )
+
+    @classmethod
+    def for_process_class_discovery_response_events(
+        cls,
+        nc: NATS,
+        topic_manager: ProcessTopicManager,
+        handler: Callable[[BaseEvent, ProcessClassDiscoveryTopic], Awaitable[None]],
+        call_id: str = "*",
+    ):
+        """Subscribe to discovery response events for processes, optionally filtered by a specific call_id."""
+        subject = topic_manager.get_process_class_discovery_subject_response(call_id)
         return cls(
             nc=nc,
             subject=subject,

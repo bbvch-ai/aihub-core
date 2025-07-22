@@ -8,7 +8,11 @@ from aihub_lib.nats.events import (
     ProgramWorkEvent,
     WorkRequestEvent,
 )
+from aihub_lib.nats.events.discovery import ProcessClassDiscoveryResponseEvent
+from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
+from aihub_lib.nats.events.discovery.InstanceDiscoveryRequestEvent import InstanceDiscoveryRequestEvent
+from aihub_lib.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
 from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
 from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
 from aihub_lib.nats.events.discovery.process.ProcessInstanceDiscoveryResponseEvent import (
@@ -27,6 +31,7 @@ from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubs
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
+from aihub_lib.nats.topics.discovery.process.ProcessClassDiscoveryTopic import ProcessClassDiscoveryTopic
 from aihub_lib.nats.topics.discovery.process.ProcessInstanceDiscoveryTopic import ProcessInstanceDiscoveryTopic
 from aihub_lib.nats.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
 from aihub_lib.processes.ProcessConfig import ProcessConfig
@@ -101,13 +106,14 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
         self.nc_publisher: NCPublisher[ProcessInstanceDiscoveryResponseEvent] | None = None
         self.discovery_subscriber: NCSubscriber[InstanceDiscoveryRequestEvent] | None = None
 
-        self.simulated_events: list[tuple[type[ProcessEvent], ProcessEvent]] = simulated_events or {}
+        self.simulated_events: list[tuple[type[ProcessEvent], ProcessEvent]] = simulated_events or []
 
         self.human_inputs: list[HumanInSpecs] = []
         self.program_inputs: list[ProgramInSpecs] = []
         self.agent_inputs: list[AgentInSpecs] = []
 
         self.default_process_config = ProcessConfig(
+            process_class=self.process_class,
             process_id=self.process_id,
             name=LocaleString(de="Test Process"),
             description=LocaleString(de="Test Process Description"),
@@ -125,20 +131,20 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
             if event.event_name == in_event_type.event_name_from_class():
                 await self.publish_event(out_event, topic)
 
-    async def discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: ProcessInstanceDiscoveryTopic):
+    async def discovery_handler(self, event: ClassDiscoveryRequestEvent, topic: ProcessClassDiscoveryTopic):
         """
         Responds to a discovery request by publishing an `ProcessDiscoveryResponseEvent`.
         This simulates the process being discoverable by clients, providing metadata and start events.
         """
         logger.debug(f"Received discovery request for {self.process_class} ({self.process_id})")
-        subject = self.topic_manager.get_process_instance_discovery_subject_response(topic.call_id)
-        process_discovery_response_event = ProcessInstanceDiscoveryResponseEvent(
+        subject = self.topic_manager.get_process_class_discovery_subject_response(topic.call_id)
+        process_discovery_response_event = ProcessClassDiscoveryResponseEvent(
             process_class=self.process_class,
-            process_id=self.process_id,
-            default_process_config=self.default_process_config,
             human_inputs=self.human_inputs,
             program_inputs=self.program_inputs,
             agent_inputs=self.agent_inputs,
+            process_config_specs=ProcessConfigSpecs.from_process_config_class(ProcessConfig),
+            default_process_config=self.default_process_config,
         )
         await self.nc_publisher.publish_event(process_discovery_response_event, subject)
 
@@ -267,14 +273,14 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
         A convenience method to populate a standard sequence of process events with just two humans involved.
         """
         self.simulated_events = [
-            [
+            (
                 HumanStartEvent,
                 HumanBWorkRequest(
                     forms=[
                         HumanBWork(payload=InputTextElement(label=LocaleString(en="This is some label for HumanBWork")))
                     ]
                 ),
-            ],
-            [HumanBWork, CustomProcessStopEvent(payload="Done")],
+            ),
+            (HumanBWork, CustomProcessStopEvent(payload="Done")),
         ]
         return self

@@ -1,8 +1,7 @@
 import logging
 
-from redis.asyncio import Redis
-
 from aihub_lib.context.BaseContext import BaseContext
+from redis.asyncio import Redis
 
 logger = logging.getLogger(__name__)
 

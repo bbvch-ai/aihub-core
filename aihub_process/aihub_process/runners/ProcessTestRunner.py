@@ -12,7 +12,10 @@ from aihub_lib.nats.events import (
     ProcessStopEvent,
     WorkEvent,
 )
-from aihub_lib.nats.events.discovery import ProcessInstanceDiscoveryResponseEvent
+from aihub_lib.nats.events.discovery import (
+    InstanceDiscoveryRequestEvent,
+    ProcessInstanceDiscoveryResponseEvent,
+)
 from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber

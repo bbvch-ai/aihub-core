@@ -1,14 +1,12 @@
 import logging
 
-from redis.asyncio import Redis
-
 from aihub_lib.context.BaseContext import BaseContext
+from redis.asyncio import Redis
 
 logger = logging.getLogger(__name__)
 
 
 class WalkthroughContext(BaseContext):
-
     def __init__(self, redis: Redis, walkthrough_id: str):
         self.walkthrough_id = walkthrough_id
         store_name = f"walkthrough_context_{walkthrough_id}"

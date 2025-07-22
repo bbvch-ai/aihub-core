@@ -27,10 +27,11 @@ class ProcessClassDiscoveryTopic(DiscoveryTopic):
             topic_type,
             discovery_topic,
             process_class,
+            process_id,
             request_response,
             call_id,
         ) = subject.split(".")
-        assert topic_type == ProcessTopicManager.INSTANCE_DISCOVERY_TOPIC, f"Unexpected topic type: {subject}"
+        assert topic_type == ProcessTopicManager.CLASS_DISCOVERY_TOPIC, f"Unexpected topic type: {subject}"
         assert discovery_topic == ProcessTopicManager.PROCESS_TOPIC, f"Not a process discovery topic: {subject}"
 
         return cls(
