@@ -7,7 +7,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmb
     AzureOpenAIEmbeddingConfig,
 )
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
+from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.logging.logger import enable_logging
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
@@ -22,16 +22,11 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=RAGAgent,
-        agent_config=RAGAgentConfig(
+        default_agent_config=RAGAgentConfig(
             agent_id="dev_agent",
+            agent_class=RAGAgent.__name__,
             name=LocaleString(en="RAG Agent"),
             description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
-            system_prompt=LocaleString(
-                en="You're an agent answering user requests. "
-                "Only use the context information provided, either as documents or images."
-                "Analyze the context information and provide a detailed answer to the user question. "
-                "If you don't know the answer, say 'I don't know'."
-            ),
             llm=AzureOpenAILLMConfig(
                 name="gpt-4o",
                 base_url="https://bbvaihub-openai-sui.openai.azure.com",
@@ -50,10 +45,10 @@ async def main():
                 retrieve_k=5,
                 query_mode=VectorStoreQueryMode.DEFAULT,
                 node_types=["content"],
-                vector_store=create_milvus_vector_store(
+                vector_store=MilvusVectorStoreConfig(
                     uri="http://localhost:19530",
                     collection_name="test",
-                    embedding_vector_dimension=3072,
+                    dimensions=3072,
                 ),
                 retrieve_prev_next=RetrievePrevNextConfig(num_nodes=10, mode=ModeOptions.BOTH),
             ),

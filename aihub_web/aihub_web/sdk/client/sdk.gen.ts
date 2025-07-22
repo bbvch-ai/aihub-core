@@ -501,7 +501,8 @@ export const getProcess = <TComposable extends Composable, DefaultT extends GetP
 
 /**
  * Get Processes
- * Retrieve a list of all processes, both online (discoverable) and offline (not discoverable). Filters out processes the user cannot access.
+ * Retrieve a list of all processes, both online (discoverable) and offline (not discoverable).
+ * Filters out processes the user cannot access.
  */
 export const getProcesses = <TComposable extends Composable, DefaultT extends GetProcessesResponse = GetProcessesResponse>(options: Options<TComposable, GetProcessesData, GetProcessesResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetProcessesResponse | DefaultT, unknown, DefaultT>({

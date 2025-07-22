@@ -20,11 +20,11 @@ scenarios("./features/custom_start_stop_agent.feature")
 def _():
     return AgentTestRunner(
         agent_type=CustomStartStopEventAgent,
-        agent_config=CustomStartStopEventAgentConfig(
+        default_agent_config=CustomStartStopEventAgentConfig(
             agent_id="custom_start_stop_agent",
+            agent_class=CustomStartStopEventAgent.__name__,
             name=LocaleString(en="Custom Start Stop Agent"),
             description=LocaleString(en="This is a very custom agent"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
 
@@ -34,7 +34,9 @@ def _():
 async def _(agent_runner: AgentTestRunner, payload: str):
     async with agent_runner.test_run() as topic:
         await agent_runner.send_event_from_topic(
-            start_event=MyCustomStartEvent(payload=PydanticPayload(payload=payload)),
+            start_event=MyCustomStartEvent(
+                payload=PydanticPayload(payload=payload),
+            ),
             topic=topic,
         )
 

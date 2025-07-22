@@ -27,7 +27,7 @@ class ProgramInSpecsEntity(EmbeddedDocument):
             route=program_in_dto.route,
             method=program_in_dto.method,
             is_process_start=program_in_dto.is_process_start,
-            event_specs=EventSpec.from_dto(program_in_dto.event_specs),
+            event_specs=EventSpec.from_specs(program_in_dto.event_specs),
         )
 
 
@@ -48,7 +48,7 @@ class HumanInSpecsEntity(EmbeddedDocument):
             route=human_in_dto.route,
             method=human_in_dto.method,
             is_process_start=human_in_dto.is_process_start,
-            event_specs=EventSpec.from_dto(human_in_dto.event_specs),
+            event_specs=EventSpec.from_specs(human_in_dto.event_specs),
             form=[form_element.model_dump() for form_element in human_in_dto.form],
         )
 
@@ -65,7 +65,7 @@ class AgentInSpecsEntity(EmbeddedDocument):
             agent_class=agent_in_dto.agent_class,
             agent_id=agent_in_dto.agent_id,
             is_process_start=agent_in_dto.is_process_start,
-            event_specs=EventSpec.from_dto(agent_in_dto.event_specs),
+            event_specs=EventSpec.from_specs(agent_in_dto.event_specs),
         )
 
 

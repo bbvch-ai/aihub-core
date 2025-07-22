@@ -18,11 +18,11 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=ConditionalAgent,
-        agent_config=ConditionalAgentConfig(
+        default_agent_config=ConditionalAgentConfig(
             agent_id="conditional_agent",
+            agent_class=ConditionalAgent.__name__,
             name=LocaleString(en="Conditional Agent"),
             description=LocaleString(en="This is an agent with conditions"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
     async with runner.test_run() as topic:

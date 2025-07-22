@@ -7,13 +7,13 @@ from typing import Annotated
 from aihub_lib.infrastructure.RedisConfig import RedisConfig
 from aihub_lib.nats.events import (
     BaseEvent,
-    DiscoveryRequestEvent,
     ProcessExceptionEvent,
     ProcessStartEvent,
     ProcessStopEvent,
     WorkEvent,
 )
 from aihub_lib.nats.events.discovery import ProcessDiscoveryResponseEvent
+from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber

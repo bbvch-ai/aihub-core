@@ -12,12 +12,15 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
     DangerousDevelopmentOnlyIdentityProvider,
 )
 from aihub_lib.routes.health.HealthController import HealthController
+from aihub_lib.testing.logging.logger import enable_logging
 from aihub_lib.testing.route_adapter.ASGIAdapter import ASGIAdapter
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 
 from aihub_bot.routes.agent.AgentChatController import AgentChatController
 from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
+
+enable_logging()
 
 BASE_URL = "http://test/api/v1"
 PORT = 8001

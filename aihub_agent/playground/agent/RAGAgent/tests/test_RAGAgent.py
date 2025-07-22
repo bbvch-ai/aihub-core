@@ -27,8 +27,8 @@ from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryE
 from aihub_lib.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
-from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreFactory import create_azure_ai_search_vector_store
-from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
+from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreConfig import AzureAISearchVectorStoreConfig
+from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.logging.logger import enable_logging
@@ -77,11 +77,9 @@ def build_rag_agent_config(
     """
     return RAGAgentConfig(
         agent_id="rag_agent",
+        agent_class=RAGAgent.__name__,
         name=LocaleString(en="RAG Agent"),
         description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
-        system_prompt=LocaleString(
-            en="You're an agent answering user requests. Only use the context information provided."
-        ),
         llm=llm_config,
         retrieve_step_config=RetrieveStepConfig(
             embed_model=embedding_config,
@@ -120,7 +118,7 @@ def azure_agent_config():
         embedding_tokens_costs_per_thousand=0.0,
         default_parameter=AzureOpenAIEmbeddingParameter(),
     )
-    vector_store = create_azure_ai_search_vector_store(
+    vector_store: AzureAISearchVectorStoreConfig = AzureAISearchVectorStoreConfig(
         # needed for embedding field
         vector_store_name="development",
         semantic_configuration_name="mySemanticConfig",
@@ -166,10 +164,10 @@ def self_hosted_agent_config(event_loop):
             truncate_text=False,
         ),
     )
-    vector_store = create_milvus_vector_store(
+    vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="development",
-        embedding_vector_dimension=768,
+        dimensions=768,
     )
     doc_store = create_mongo_document_store(document_store_name="development")
 
@@ -197,14 +195,14 @@ def _(azure_agent_config):
     """
     return AgentTestRunner(
         agent_type=RAGAgent,
-        agent_config=azure_agent_config,
+        default_agent_config=azure_agent_config,
     )
 
 
 @given(parsers.parse('check_context_sufficiency set to "{flag}" and max_hops to "{max_hops:d}"'))
 def _(flag: bool, max_hops: int, agent_runner: AgentTestRunner):
-    agent_runner.agent_config.check_context_sufficiency = flag
-    agent_runner.agent_config.max_hops = max_hops
+    agent_runner.default_agent_config.check_context_sufficiency = flag
+    agent_runner.default_agent_config.max_hops = max_hops
 
 
 @pytest.mark.usefixtures("self_hosted_agent_config")
@@ -215,7 +213,7 @@ def _(self_hosted_agent_config):
     """
     return AgentTestRunner(
         agent_type=RAGAgent,
-        agent_config=self_hosted_agent_config,
+        default_agent_config=self_hosted_agent_config,
     )
 
 
@@ -226,7 +224,9 @@ async def _(agent_runner: AgentTestRunner, query: str):
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
-                messages=[ChatMessage(content=query, role=MessageRole.USER)], user=fake_user(), locale="en"
+                messages=[ChatMessage(content=query, role=MessageRole.USER)],
+                user=fake_user(),
+                locale="en",
             ),
         )
 
@@ -299,7 +299,7 @@ def _(agent_runner: AgentTestRunner, datatable):
         examples.append(
             FewShotGuardExample(user=LocaleString(en=row[0]), success=row[1], reason=LocaleString(en=row[2]))
         )
-    agent_runner.agent_config.few_shot_guard_examples = examples
+    agent_runner.default_agent_config.few_shot_guard_examples = examples
     return agent_runner
 
 
@@ -310,7 +310,9 @@ async def _(agent_runner: AgentTestRunner, query: str, locale: str):
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
-                locale=locale, user=fake_user(), messages=[ChatMessage(content=query, role=MessageRole.USER)]
+                locale=locale,
+                user=fake_user(),
+                messages=[ChatMessage(content=query, role=MessageRole.USER)],
             ),
         )
 
