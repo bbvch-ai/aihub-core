@@ -14,7 +14,7 @@ from aihub_lib.persistence.messaging.entities.types.EventBucket import EventBuck
 
 if TYPE_CHECKING:
     from aihub_lib.nats.events import BaseEvent
-    from aihub_lib.nats.topics import AgentTopic
+    from aihub_lib.nats.topics import AgentInstanceTopic
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +95,7 @@ class PersistedAgentEventEntity(Document):
     event_parents = ListField(StringField(), required=True)
 
     @classmethod
-    def persist_event(cls, event: "BaseEvent", topic: "AgentTopic", db: str):
+    def persist_event(cls, event: "BaseEvent", topic: "AgentInstanceTopic", db: str):
         persisted_entity = cls(
             id=ObjectId(),
             agent_class=topic.agent_class,

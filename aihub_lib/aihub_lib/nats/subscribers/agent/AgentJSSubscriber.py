@@ -7,7 +7,7 @@ from aihub_lib.nats.events import BaseEvent, ControlEvent
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
-from aihub_lib.nats.topics import AgentTopic
+from aihub_lib.nats.topics import AgentInstanceTopic
 
 
 class AgentJSSubscriber(JSSubscriber):
@@ -16,7 +16,7 @@ class AgentJSSubscriber(JSSubscriber):
         cls,
         nc: NATS,
         topic_manager: AgentInstanceTopicManager,
-        handler: Callable[[ControlEvent, AgentTopic], Awaitable[None]],
+        handler: Callable[[ControlEvent, AgentInstanceTopic], Awaitable[None]],
         queue_group: str,
         js: JetStreamContext | None = None,
     ):
@@ -40,7 +40,7 @@ class AgentJSSubscriber(JSSubscriber):
         cls,
         nc: NATS,
         topic_manager: AgentClassTopicManager,
-        handler: Callable[[ControlEvent, AgentTopic], Awaitable[None]],
+        handler: Callable[[ControlEvent, AgentInstanceTopic], Awaitable[None]],
         queue_group: str,
         js: JetStreamContext | None = None,
     ):
@@ -64,7 +64,7 @@ class AgentJSSubscriber(JSSubscriber):
         cls,
         nc: NATS,
         topic_manager: AgentInstanceTopicManager,
-        handler: Callable[[BaseEvent, AgentTopic], Awaitable[None]],
+        handler: Callable[[BaseEvent, AgentInstanceTopic], Awaitable[None]],
         queue_group: str,
         js: JetStreamContext | None = None,
     ):

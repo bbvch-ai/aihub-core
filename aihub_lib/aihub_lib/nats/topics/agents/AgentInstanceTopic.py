@@ -3,10 +3,11 @@ from typing import Annotated
 from pydantic import Field
 
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from aihub_lib.nats.topics.agents.AgentClassTopic import AgentClassTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 
-class AgentTopic(PartialAgentTopic):
+class AgentInstanceTopic(AgentClassTopic):
     """
     Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
     to be present. This includes identifiers for agent_class, agent_id, and the event itself.
@@ -24,16 +25,7 @@ class AgentTopic(PartialAgentTopic):
     then this AgentTopic can represent it, providing quick field-level access and serialization.
     """
 
-    agent_class: Annotated[str, Field(description="The agent's class identifier.")]
     agent_id: Annotated[str, Field(description="Unique identifier for the specific agent instance.")]
-    run_id: Annotated[str, Field(description="The run ID within the thread.")]
-    thread_id: Annotated[str, Field(description="Unique identifier for the conversation or workflow thread.")]
-    display_id: Annotated[str, Field(description="UI-facing grouping ID, used to distinguish or group related runs.")]
-    event_type: Annotated[str, Field(description="Type of event (e.g., 'display_event', 'control_event').")]
-    event_name: Annotated[
-        str, Field(description="Name of the event (e.g., 'StartEvent', 'StopEvent', 'ExceptionEvent, ...').")
-    ]
-    event_id: Annotated[str, Field(description="Unique identifier for this particular event instance.")]
 
     @property
     def execution_context_id(self) -> str:
@@ -65,7 +57,7 @@ class AgentTopic(PartialAgentTopic):
         event_type: str | None = None,
         event_name: str | None = None,
         event_id: str | None = None,
-    ) -> "AgentTopic":
+    ) -> "AgentInstanceTopic":
         """
         Converts a PartialAgentTopic into a fully-defined AgentTopic, filling in any missing fields
         from the provided optional parameters.
@@ -82,4 +74,24 @@ class AgentTopic(PartialAgentTopic):
             event_type=partial_topic.event_type or event_type,
             event_name=partial_topic.event_name or event_name,
             event_id=partial_topic.event_id or event_id,
+        )
+
+    @classmethod
+    def from_agent_class_topic(
+        cls,
+        agent_class_topic: AgentClassTopic,
+        agent_id: Annotated[str, Field(description="Unique identifier for the specific agent instance.")],
+    ) -> "AgentInstanceTopic":
+        """
+        Constructs an AgentInstanceTopic from an AgentClassTopic and a specific agent_id.
+        """
+        return cls(
+            agent_class=agent_class_topic.agent_class,
+            agent_id=agent_id,
+            thread_id=agent_class_topic.thread_id,
+            display_id=agent_class_topic.display_id,
+            run_id=agent_class_topic.run_id,
+            event_type=agent_class_topic.event_type,
+            event_name=agent_class_topic.event_name,
+            event_id=agent_class_topic.event_id,
         )

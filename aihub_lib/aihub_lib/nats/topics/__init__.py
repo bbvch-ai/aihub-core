@@ -1,4 +1,4 @@
-from .agents import AgentTopic, PartialAgentTopic
+from .agents import AgentInstanceTopic, PartialAgentTopic
 from .discovery import AgentInstanceDiscoveryTopic, DiscoveryTopic, ProcessInstanceDiscoveryTopic
 from .process import ProcessInstanceTopic
 from .Topic import Topic
@@ -8,7 +8,7 @@ __all__ = [
     "DiscoveryTopic",
     "ProcessInstanceDiscoveryTopic",
     "AgentInstanceDiscoveryTopic",
-    "AgentTopic",
+    "AgentInstanceTopic",
     "ProcessInstanceTopic",
     "PartialAgentTopic",
 ]

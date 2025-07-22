@@ -15,7 +15,7 @@ from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
-from aihub_lib.nats.topics import AgentTopic
+from aihub_lib.nats.topics import AgentInstanceTopic
 from aihub_lib.nats.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent as AgentInThread
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
@@ -117,7 +117,7 @@ class AgentDelegator(AbstractEntityDelegator):
 
     def handle_process_step_input_factory(
         self, work_event_type: type[AgentWorkEvent], is_process_start: bool
-    ) -> Callable[[ControlEvent, AgentTopic], Awaitable[None]]:
+    ) -> Callable[[ControlEvent, AgentInstanceTopic], Awaitable[None]]:
         """
         The agent delegator must differentiate the cases in which the agent can trigger a new process walkthrough
         and the case in which the agent can only continue an existing process walkthrough.
@@ -128,7 +128,7 @@ class AgentDelegator(AbstractEntityDelegator):
 
         async def _handle_process_step_input(
             event: Annotated[ControlEvent, "The incoming agent event to handle."],
-            topic: Annotated[AgentTopic, "The parsed topic of the event."],
+            topic: Annotated[AgentInstanceTopic, "The parsed topic of the event."],
         ):
             logger.debug(f"Handling agent event: {event.event_name}")
             work_event = work_event_type(agent_stop_event=event)
