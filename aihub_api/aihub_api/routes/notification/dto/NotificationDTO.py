@@ -1,13 +1,14 @@
 from datetime import datetime
-from pydantic import BaseModel, Field
 from typing import Annotated, Literal
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.notification.NotificationEntity import NotificationEntity
+from pydantic import BaseModel, Field
 
 NotificationTypeAPI = Literal["success", "info", "warn", "error"]
 
-NotificationSeverityAPI = Literal["low", "medium", "high"]
+NotificationSeverityAPI = Literal["low", "medium", "high", "critical"]
+
 
 class NotificationDTO(BaseModel):
     """Data Transfer Object for a notification."""
@@ -28,9 +29,7 @@ class NotificationDTO(BaseModel):
         Field(description="Categorizes the notification for visual representation (e.g., icon and color)."),
     ]
     severity: Annotated[NotificationSeverityAPI, Field(description="The priority level of the notification.")]
-    link: Annotated[
-        str | None, Field(description="An optional internal link to navigate to the relevant resource.")
-    ] = None
+    link: Annotated[str, Field(description="A relative internal link to navigate to the relevant resource.")]
     created_at: Annotated[datetime, Field(description="The timestamp when the notification was created.")]
 
     @classmethod
@@ -49,4 +48,3 @@ class NotificationDTO(BaseModel):
             link=entity.link,
             created_at=entity.created_at,
         )
-

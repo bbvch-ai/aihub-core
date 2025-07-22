@@ -14,7 +14,7 @@ import {client} from './sdk/client/client.gen'
 const {getToken} = useAuth()
 const {t, locale} = useI18n()
 const toast = useToast()
-
+useNotificationPoller()
 client.setConfig({
   baseURL: '/api/v1',
   auth: async () => {

@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field
 from typing import Annotated
+
+from pydantic import BaseModel, Field
 
 from aihub_api.routes.notification.dto.NotificationDTO import NotificationDTO
 

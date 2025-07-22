@@ -5115,12 +5115,12 @@ export type NotificationDto = {
      * Severity
      * The priority level of the notification.
      */
-    severity: 'low' | 'medium' | 'high';
+    severity: 'low' | 'medium' | 'high' | 'critical';
     /**
      * Link
-     * An optional internal link to navigate to the relevant resource.
+     * A relative internal link to navigate to the relevant resource.
      */
-    link?: string | null;
+    link: string;
     /**
      * Created At
      * The timestamp when the notification was created.

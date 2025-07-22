@@ -1,18 +1,21 @@
-from fastapi import HTTPException, Path, Query, Security
-from mongoengine import DoesNotExist
 from typing import Annotated
 
-from aihub_api.routes.notification.NotificationService import NotificationService
-from aihub_api.routes.notification.dto.NotificationDTO import (
-    NotificationDTO,
-)
-from aihub_api.routes.notification.dto.PaginatedNotificationsResponse import PaginatedNotificationsResponse
-from aihub_api.routes.notification.dto.UpdateNotificationRequest import UpdateNotificationRequest, \
-    BulkUpdateNotificationRequest
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
+from fastapi import HTTPException, Path, Query, Security
+from mongoengine import DoesNotExist
+
+from aihub_api.routes.notification.dto.NotificationDTO import (
+    NotificationDTO,
+)
+from aihub_api.routes.notification.dto.PaginatedNotificationsResponse import PaginatedNotificationsResponse
+from aihub_api.routes.notification.dto.UpdateNotificationRequest import (
+    BulkUpdateNotificationRequest,
+    UpdateNotificationRequest,
+)
+from aihub_api.routes.notification.NotificationService import NotificationService
 
 
 class NotificationController(Controller):

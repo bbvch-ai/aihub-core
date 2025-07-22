@@ -1,13 +1,16 @@
 import math
+
+from aihub_lib.persistence.notification.NotificationEntity import NotificationEntity
 from mongoengine import DoesNotExist
 
 from aihub_api.routes.notification.dto.NotificationDTO import (
     NotificationDTO,
 )
 from aihub_api.routes.notification.dto.PaginatedNotificationsResponse import PaginatedNotificationsResponse
-from aihub_api.routes.notification.dto.UpdateNotificationRequest import UpdateNotificationRequest, \
-    BulkUpdateNotificationRequest
-from aihub_lib.persistence.notification.NotificationEntity import NotificationEntity
+from aihub_api.routes.notification.dto.UpdateNotificationRequest import (
+    BulkUpdateNotificationRequest,
+    UpdateNotificationRequest,
+)
 
 
 class NotificationService:
@@ -15,7 +18,7 @@ class NotificationService:
 
     @staticmethod
     def get_notifications_for_user(
-            user_id: str, page: int, page_size: int, **filters
+        user_id: str, page: int, page_size: int, **filters
     ) -> PaginatedNotificationsResponse:
         """Retrieves a paginated list of notifications with optional filters."""
         entities, total = NotificationEntity.get_for_user(user_id=user_id, page=page, page_size=page_size, **filters)
@@ -57,7 +60,7 @@ class NotificationService:
 
         if update_data.read:
             NotificationEntity.mark_multiple_as_read(user_id, ids_to_update)
-        elif update_data.done:
+        if update_data.done:
             NotificationEntity.mark_multiple_as_done(user_id, ids_to_update)
 
         updated_notifications = NotificationEntity.objects(id__in=ids_to_update).all()

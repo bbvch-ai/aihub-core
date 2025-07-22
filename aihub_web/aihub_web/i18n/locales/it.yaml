@@ -334,13 +334,38 @@ role:
 
 notification:
   title: "Notifiche"
-  description: "Qui puoi vedere le notifiche recenti"
-  empty: "Nessuna notifica recente"
+  no_unread_notifications: "Nessuna notifica non letta"
+  no_notifications: "Nessuna notifica disponibile"
+  no_pending_notifications: "Nessuna notifica in sospeso"
   mark_all_as_read: "Segna tutte come lette"
   mark_as_read: "Segna come letto"
-  mark_as_unread: "Segna come non letto"
-  delete: "Elimina"
-  delete_all: "Elimina tutte le notifiche"
-  delete_confirmation: "Sei sicuro di voler eliminare questa notifica?"
-  delete_all_confirmation: "Sei sicuro di voler eliminare tutte le notifiche?"
+  mark_as_done: "Segna come completato"
   view_all: "Visualizza tutte le notifiche"
+  click_to_view: "Clicca per visualizzare la notifica"
+  clear_selection: "Cancella selezione"
+  select_all: "Seleziona tutte le notifiche"
+  filter_notifications: "Filtra notifiche"
+  select_notification: "Seleziona notifica"
+  default_summary: "Nuova notifica"
+  view_button: "Visualizza"
+  filter:
+    all: "Tutte"
+    unread: "Non lette"
+    not_done: "Da fare"
+  types:
+    info: "Info"
+    success: "Successo"
+    warn: "Avviso"
+    error: "Errore"
+  severities:
+    low: "Bassa"
+    medium: "Media"
+    high: "Alta"
+    critical: "Critica"
+
+bar:
+  toggle_dark_mode: "Attiva/disattiva modalità scura"
+  show_notifications: "Mostra notifiche"
+
+process:
+  title: "Processi"

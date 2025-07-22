@@ -62,9 +62,6 @@ import NotificationsOverlay from "@core/components/Notification/NotificationsOve
 
 const {t} = useI18n()
 const {myUser, myUserIsLoading} = useMyUser();
-const {notifications} = useNotifications()
-const router = useRouter()
-const localeRoute = useLocaleRoute()
 
 const userInitials = computed(() =>
   myUser.value?.name?.split(' ').map(n => n[0]).join(''),
