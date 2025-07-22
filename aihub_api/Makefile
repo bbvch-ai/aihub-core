@@ -41,4 +41,4 @@ run-prod:
 		--timeout=300 \
 		-b 0.0.0.0:8000 \
 		--forwarded-allow-ips=* \
-		app/main:app
+		aihub_api.app/main:app

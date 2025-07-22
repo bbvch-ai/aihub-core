@@ -93,7 +93,7 @@ USER $USERNAME
 # Expose port 8000
 EXPOSE 8000
 
-WORKDIR /app/aihub_api
+WORKDIR /app
 
 # Start the server using Makefile
 ENTRYPOINT ["make", "run-prod"]
