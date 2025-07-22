@@ -413,7 +413,7 @@ services:
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
       - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
       - "--certificatesresolvers.letsencrypt.acme.storage=/srv/app/traefik/acme.json"
-      - "--api.dashboard=true"
+      - "--api=true"
     ports:
       - "80:80"
       - "443:443"
