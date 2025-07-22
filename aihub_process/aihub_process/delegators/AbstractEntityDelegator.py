@@ -6,11 +6,12 @@ from aihub_lib.nats.events import BaseEvent, WorkEvent, WorkRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.subscribers.process.ProcessJSSubscriber import ProcessJSSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
-from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
-from aihub_lib.nats.topics import ProcessInstanceTopic, Topic
+from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
+from aihub_lib.nats.topics import Topic
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
+from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 
 
@@ -35,18 +36,16 @@ class AbstractEntityDelegator(abc.ABC):
 
     def __init__(
         self,
-        process_class: Annotated[type[AgenticProcess], "The agentic process defining steps and logic."],
-        process_id: Annotated[str, "Process ID"],
+        process_type: Annotated[type[AgenticProcess], "The agentic process defining steps and logic."],
         nc: Annotated[NATS, "NATS client for messaging."],
         js: Annotated[
             JetStreamContext,
             "JetStream context for persistent storage and event streams.",
         ],
-        topic_manager: Annotated[ProcessInstanceTopicManager, "Manages event subjects."],
+        topic_manager: Annotated[ProcessClassTopicManager, "Manages event subjects."],
         queue_group: Annotated[str, "Queue group for the delegator's subscriptions."],
     ):
-        self.process_class = process_class
-        self.process_id = process_id
+        self.process_class = process_type
         self.nc = nc
         self.js = js
 
@@ -70,12 +69,12 @@ class AbstractEntityDelegator(abc.ABC):
         but also reduces the number of subscriptions it needs to manage as well as the implementation complexity.
 
         As we can generally assume that a process may only consist of a few dozen steps at most, and given that
-        the subscription we make here has a very limited scope (only this one process instance), this is reasonable.
+        the subscription we make here has a very limited scope (only this one process class), this is reasonable.
 
         Note that this method is abstract as it does not handle process inputs / work events at all! This is
         up to the specific delegator to implement.
         """
-        subscription = ProcessJSSubscriber.for_process_instance_work_request_events(
+        subscription = ProcessJSSubscriber.for_process_class_work_request_events(
             nc=self.nc,
             topic_manager=self.topic_manager,
             handler=self.handle_process_step_output,
@@ -105,9 +104,9 @@ class AbstractEntityDelegator(abc.ABC):
         pass
 
     @abc.abstractmethod
-    async def handle_process_step_output(self, event: WorkRequestEvent, topic: ProcessInstanceTopic):
+    async def handle_process_step_output(self, event: WorkRequestEvent, topic: ProcessClassTopic):
         """
         In the default implementation, this method will receive ALL WorkReqeustEvents returned in this process.
-        Note that you must usually filter by instance to ensure you only process events that match the entity type.
+        Note that you must usually filter by class to ensure you only process events that match the entity type.
         """
         pass

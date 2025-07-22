@@ -3,23 +3,26 @@ from collections.abc import Awaitable, Callable
 from nats.aio.client import Client as NATS
 
 from aihub_lib.nats.events import BaseEvent, InstanceDiscoveryRequestEvent, ProcessEvent
+from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
+from aihub_lib.nats.topics.discovery.process.ProcessClassDiscoveryTopic import ProcessClassDiscoveryTopic
+from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
 from aihub_lib.nats.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
 
 
 class ProcessNCSubscriber(NCSubscriber):
     @classmethod
-    def for_process_discovery_request_events(
+    def for_process_class_discovery_request_events(
         cls,
         nc: NATS,
         topic_manager: ProcessTopicManager,
-        handler: Callable[[InstanceDiscoveryRequestEvent, ProcessInstanceTopic], Awaitable[None]],
+        handler: Callable[[ClassDiscoveryRequestEvent, ProcessClassDiscoveryTopic], Awaitable[None]],
         call_id: str = "*",
     ):
         """Subscribe to discovery request events for all processes"""
-        subject = topic_manager.get_process_instance_discovery_subject_request(call_id)
+        subject = topic_manager.get_process_class_discovery_subject_request(call_id)
         return cls(
             nc=nc,
             subject=subject,
@@ -28,7 +31,7 @@ class ProcessNCSubscriber(NCSubscriber):
         )
 
     @classmethod
-    def for_process_discovery_response_events(
+    def for_process_instance_discovery_response_events(
         cls,
         nc: NATS,
         topic_manager: ProcessTopicManager,

@@ -123,17 +123,19 @@ class ProcessTestRunner(ProcessRunner):
         )
         await self.test_event_subscriber.start()
 
-        self.observe_discovery_event_subscriber = ProcessNCSubscriber.for_process_discovery_request_events(
+        self.observe_discovery_event_subscriber = ProcessNCSubscriber.for_process_class_discovery_request_events(
             nc=self.nc,
             topic_manager=ProcessTopicManager(),
             handler=self.observe_event,
         )
         await self.observe_discovery_event_subscriber.start()
 
-        self.observe_discovery_response_event_subscriber = ProcessNCSubscriber.for_process_discovery_request_events(
-            nc=self.nc,
-            topic_manager=ProcessTopicManager(),
-            handler=self.observe_event,
+        self.observe_discovery_response_event_subscriber = (
+            ProcessNCSubscriber.for_process_class_discovery_request_events(
+                nc=self.nc,
+                topic_manager=ProcessTopicManager(),
+                handler=self.observe_event,
+            )
         )
         await self.observe_discovery_response_event_subscriber.start()
 

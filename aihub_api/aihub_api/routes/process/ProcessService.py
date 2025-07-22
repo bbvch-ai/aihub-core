@@ -116,7 +116,7 @@ class ProcessService:
 
         topic_manager = ProcessInstanceTopicManager(process_class=process_class, process_id=process_id)
         nc_publisher = NCPublisher(nc)
-        nc_subscriber = ProcessNCSubscriber.for_process_discovery_response_events(
+        nc_subscriber = ProcessNCSubscriber.for_process_instance_discovery_response_events(
             nc, topic_manager, discovery_handler, call_id=call_id
         )
         await nc_subscriber.start()
@@ -159,7 +159,7 @@ class ProcessService:
 
         topic_manager = ProcessTopicManager()
         nc_publisher = NCPublisher(nc)
-        nc_subscriber = ProcessNCSubscriber.for_process_discovery_response_events(
+        nc_subscriber = ProcessNCSubscriber.for_process_instance_discovery_response_events(
             nc, topic_manager, discovery_handler, call_id=call_id
         )
         await nc_subscriber.start()

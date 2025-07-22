@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import logging
 from collections.abc import Callable
 from typing import Annotated, Any
@@ -14,7 +15,6 @@ from aihub_lib.nats.events import (
     WorkEvent,
 )
 from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
-from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
 from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
 from aihub_lib.nats.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
@@ -143,7 +143,12 @@ class ProcessDispatcher(BaseDispatcher):
         topic: Annotated[ProcessInstanceTopic, "Topic info for the current process."],
         process_config: Annotated[ProcessConfig, "Configuration for the process."],
     ):
-        events_and_kwargs: EventsAndKwargs = await self._build_event_kwargs(trigger_event, step_method, events)
+        events_and_kwargs: EventsAndKwargs = await self._build_method_kwargs(
+            trigger_event,
+            step_method,
+            events,
+            process_config,
+        )
 
         duplicated_run = await self.step_store.was_called_with_events(
             topic.execution_context_id, step_name=step_method.__name__, events=events_and_kwargs.events
@@ -242,6 +247,30 @@ class ProcessDispatcher(BaseDispatcher):
 
         logger.debug(f"Publishing event '{event.event_name}' to subject '{subject}'")
         await self.js_publisher.publish_event(event, subject)
+
+    async def _build_method_kwargs(
+        self,
+        trigger_event: Annotated[WorkEvent, "The event that triggered the step."],
+        method: Annotated[Callable, "The step method to execute."],
+        events: Annotated[dict[str, list[WorkEvent]], "All events for this run, keyed by event name."],
+        process_config: Annotated[ProcessConfig, "Configuration for the process."],
+    ) -> EventsAndKwargs:
+        events_and_kwargs: EventsAndKwargs = await self._build_event_kwargs(trigger_event, method, events)
+
+        step_signature = inspect.signature(method)
+        for param in step_signature.parameters.values():
+            if inspect.isclass(param.annotation) and issubclass(param.annotation, ProcessConfig):
+                if param.annotation != self.process_config_type:
+                    raise ValueError(
+                        f"Expected ProcessConfig type '{self.process_config_type.__name__}', "
+                        f"but got '{param.annotation.__name__}' for parameter '{param.name}'."
+                    )
+                logger.debug(
+                    f"Injected dynamic configuration for parameter '{param.name}' of type '{param.annotation.__name__}'"
+                )
+                events_and_kwargs.kwargs[param.name] = process_config
+
+        return events_and_kwargs
 
     def get_topic_manager_for_process_walkthrough(
         self, topic: Annotated[ProcessInstanceTopic, "Topic identifying the run/thread."]

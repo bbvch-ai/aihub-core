@@ -12,9 +12,6 @@ from aihub_lib.nats.events.discovery.process.ProcessClassDiscoveryResponseEvent 
 from aihub_lib.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
 from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
 from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
-from aihub_lib.nats.events.discovery.process.ProcessInstanceDiscoveryResponseEvent import (
-    ProcessInstanceDiscoveryResponseEvent,
-)
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
@@ -22,9 +19,7 @@ from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.subscribers.process.ProcessJSSubscriber import ProcessJSSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
-from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
-from aihub_lib.nats.topics import ProcessInstanceDiscoveryTopic
 from aihub_lib.nats.topics.discovery.process.ProcessClassDiscoveryTopic import ProcessClassDiscoveryTopic
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 from mongoengine import connect
@@ -187,37 +182,35 @@ class ProcessRunner:
         await self.dispatcher.start()
 
         self.agent_delegator = AgentDelegator(
-            self.process_type,
-            self.default_process_config.process_id,
-            self.nc,
-            self.js,
-            self.topic_manager,
-            queue_group=f"agent_delegator_{self.process_class}_{self.default_process_config.process_id}",
+            process_type=self.process_type,
+            nc=self.nc,
+            js=self.js,
+            topic_manager=self.topic_manager,
+            queue_group=f"agent_delegator_{self.process_class}",
         )
         await self.agent_delegator.start()
 
         self.process_delegator = ProcessDelegator(
             self.process_type,
-            self.default_process_config.process_id,
             self.nc,
             self.js,
             self.topic_manager,
-            queue_group=f"process_delegator_{self.process_class}_{self.default_process_config.process_id}",
+            queue_group=f"process_delegator_{self.process_class}",
         )
         await self.process_delegator.start()
 
         self.nc_publisher = NCPublisher(self.nc)
-        self.discovery_event_subscriber = ProcessNCSubscriber.for_process_discovery_request_events(
+        self.discovery_event_subscriber = ProcessNCSubscriber.for_process_class_discovery_request_events(
             self.nc, ProcessTopicManager(), self.discovery_handler
         )
         await self.discovery_event_subscriber.start()
 
-        self.work_event_subscriber = ProcessJSSubscriber.for_process_instance_work_events(
+        self.work_event_subscriber = ProcessJSSubscriber.for_process_class_work_events(
             self.nc,
             self.topic_manager,
             handler=self.dispatcher.handle_event,
             js=self.js,
-            queue_group=f"process_runner_{self.process_class}_{self.default_process_config.process_id}",
+            queue_group=f"process_runner_{self.process_class}",
         )
         await self.work_event_subscriber.start()
 

@@ -220,7 +220,7 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
                 program_endpoints += 1
 
         self.nc_publisher = NCPublisher(self.nc)
-        self.discovery_subscriber = ProcessNCSubscriber.for_process_discovery_request_events(
+        self.discovery_subscriber = ProcessNCSubscriber.for_process_class_discovery_request_events(
             self.nc, ProcessTopicManager(), self.discovery_handler
         )
         await self.discovery_subscriber.start()
