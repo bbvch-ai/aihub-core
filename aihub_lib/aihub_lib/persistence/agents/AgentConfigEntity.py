@@ -1,11 +1,10 @@
 from mongoengine import DictField, EmbeddedDocumentField, StringField
-from mongoengine.base import BaseDocument
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
 
-class AgentConfigEntity(BaseDocument):
+class AgentConfigEntity:
     """
     This is the base class for storing an agent configuration.
     Never use this class directly; instead, use the `AgentConfigEntityDocument` or `AgentConfigEntityEmbeddedDocument`

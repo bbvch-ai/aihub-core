@@ -38,7 +38,7 @@ class ProcessClassTopic(Topic):
         )
 
     @classmethod
-    def from_subject(cls, subject: str) -> "ProcessInstanceTopic":
+    def from_subject(cls, subject: str) -> "ProcessClassTopic":
         """
         Constructs a ProcessTopic from a subject string that may contain wildcards.
         """

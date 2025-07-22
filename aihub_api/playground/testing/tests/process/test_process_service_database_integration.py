@@ -64,7 +64,7 @@ def mock_process_config_document():
 class TestProcessServiceDatabaseIntegration:
     """Test ProcessService database integration functionality."""
 
-    def test_discover_process_instance_uses_db_config_when_available(
+    async def test_discover_process_instance_uses_db_config_when_available(
         self, sample_process_config, sample_process_class, mock_process_config_document
     ):
         """Test that discover_process_instance uses DB config when available, matching AgentService behavior."""
@@ -91,7 +91,7 @@ class TestProcessServiceDatabaseIntegration:
                         )
                         assert result == mock_instance
 
-    def test_discover_process_instance_falls_back_to_default_when_no_db_config(
+    async def test_discover_process_instance_falls_back_to_default_when_no_db_config(
         self, sample_default_config, sample_process_class
     ):
         """Test that discover_process_instance falls back to default config when no DB config exists."""
@@ -113,7 +113,7 @@ class TestProcessServiceDatabaseIntegration:
                     )
                     assert result == mock_instance
 
-    def test_discover_process_instance_raises_404_when_process_not_found(self, sample_process_class):
+    async def test_discover_process_instance_raises_404_when_process_not_found(self, sample_process_class):
         """Test that discover_process_instance raises 404 when process ID not found."""
         with patch.object(ProcessService, "discover_process_class") as mock_discover_class:
             mock_discover_class.return_value = sample_process_class
@@ -128,7 +128,7 @@ class TestProcessServiceDatabaseIntegration:
                 assert exc_info.value.status_code == 404
                 assert "Process TestProcess.nonexistent_process not found" in str(exc_info.value.detail)
 
-    def test_discover_process_instances_includes_db_and_default_configs(
+    async def test_discover_process_instances_includes_db_and_default_configs(
         self, sample_process_config, sample_default_config, sample_process_class, mock_process_config_document
     ):
         """Test that discover_process_instances includes both DB configs and default config."""
@@ -166,7 +166,7 @@ class TestProcessServiceDatabaseIntegration:
                             assert second_call[1]["class_dto"] == sample_process_class
                             assert second_call[1]["process_config"] == sample_default_config
 
-    def test_discover_process_instances_avoids_duplicate_default_when_in_db(
+    async def test_discover_process_instances_avoids_duplicate_default_when_in_db(
         self, sample_default_config, sample_process_class
     ):
         """Test that discover_process_instances doesn't duplicate default config if it exists in DB."""
@@ -210,7 +210,7 @@ class TestProcessServiceDatabaseIntegration:
                             assert call_args[1]["process_config"] == db_config_with_default_id
                             assert call_args[1]["process_config"].name.en == "DB Override Default"
 
-    def test_caching_behavior_for_process_instances(self, sample_process_config, sample_process_class):
+    async def test_caching_behavior_for_process_instances(self, sample_process_config, sample_process_class):
         """Test that process instance discovery results are cached properly."""
         cache_key = ("TestProcess", "test_process_1")
 
@@ -252,7 +252,7 @@ class TestProcessServiceDatabaseIntegration:
         # Verify all caches are cleared
         assert len(GET_PROCESS_INSTANCE_CACHE) == 0
 
-    def test_process_config_priority_integration(
+    async def test_process_config_priority_integration(
         self, sample_process_config, sample_default_config, sample_process_class
     ):
         """Integration test demonstrating DB config takes priority over default config."""
