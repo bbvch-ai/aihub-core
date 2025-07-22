@@ -21,9 +21,8 @@ adlfs = "^2024.12.0"
 lxml = "^5.4.0"
 
 [tool.poetry.dependencies.aihub_lib]
-git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.226.0"
-subdirectory = "aihub_lib"
+path = "../aihub_lib"
+develop = true
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
