@@ -36,6 +36,7 @@ RUN make use-local-core
 RUN rm Makefile switch_dependencies.py pyproject.toml
 # Set the working directory
 WORKDIR /app/aihub_api
+RUN poetry install
 
 
 # Runtime stage
@@ -93,7 +94,7 @@ USER $USERNAME
 # Expose port 8000
 EXPOSE 8000
 
-WORKDIR /app
+WORKDIR /app/aihub_api
 
 # Start the server using Makefile
 ENTRYPOINT ["make", "run-prod"]
