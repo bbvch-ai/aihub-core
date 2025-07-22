@@ -345,8 +345,11 @@ services:
       MODEL_EUR_URL: ${MODEL_EUR_URL}
       MODEL_EUR_API_KEY: ${MODEL_EUR_API_KEY}
       CLIENT_ID: ${OAUTH_CLIENT_ID}
+      AZURE_CLIENT_ID: ${OAUTH_CLIENT_ID}
       TENANT_ID: ${OAUTH_TENANT_ID}
+      AZURE_TENANT_ID: ${OAUTH_TENANT_ID}
       AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
+      AZURE_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
     logging:
