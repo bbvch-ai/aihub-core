@@ -83,20 +83,22 @@ class OpenaiService:
         Returns a ModelResponse containing details of every configured chat model or assistant.
         """
         chat_models = [ModelDetails(id=model.name) for model in chat_models]
-        agent_dtos = await AgentService.discover_agents(nc, t)
+        agent_instance_dtos = await AgentService.discover_agent_instances(nc)
 
         # Ensures we have no recursive webui agent discovery
         if exclude_webui_agents:
-            agent_dtos = [agent_dto for agent_dto in agent_dtos if agent_dto.agent_class != "WebuiAgent"]
+            agent_instance_dtos = [
+                agent_instance for agent_instance in agent_instance_dtos if agent_instance.agent_class != "WebuiAgent"
+            ]
 
         assistants = [
             ModelDetails(
-                id=f"{agent_dto.agent_class}/{agent_dto.agent_id}",
+                id=f"{agent_instance_dto.agent_class}/{agent_instance_dto.agent_id}",
                 object="assistant",
-                agent_class=agent_dto.agent_class,
-                agent_id=agent_dto.agent_id,
+                agent_class=agent_instance_dto.agent_class,
+                agent_id=agent_instance_dto.agent_id,
             )
-            for agent_dto in agent_dtos
+            for agent_instance_dto in agent_instance_dtos
         ]
         return ModelResponse(data=[*chat_models, *assistants])
 

@@ -25,11 +25,11 @@ scenarios("./features/optional_agent.feature")
 def _():
     return AgentTestRunner(
         agent_type=OptionalAgent,
-        agent_config=OptionalAgentConfig(
+        default_agent_config=OptionalAgentConfig(
             agent_id="optional_agent",
+            agent_class=OptionalAgent.__name__,
             name=LocaleString(en="Optional Agent"),
             description=LocaleString(en="This is an optional agent"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
 

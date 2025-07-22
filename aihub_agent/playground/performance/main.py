@@ -136,9 +136,9 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
     agent_type = PerformanceTestingAgent
     agent_config = PerformanceTestingAgentConfig(
         agent_id=agent_id,
+        agent_class=agent_type.__name__,
         name=LocaleString(en="Performance Testing Agent"),
         description=LocaleString(en=""),
-        system_prompt=LocaleString(en=""),
         number_of_events=n_events,
         payload_kb=payload_kb,
     )
@@ -323,9 +323,9 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
         "throughput_kb": throughput_kb,
         "completion": unique_events / n_events * 100 if n_events > 0 else 0,
         "timed_out": timed_out,
-        "missing_indices": sorted(missing_indices)
-        if len(missing_indices) <= 10
-        else f"{len(missing_indices)} indices missing",
+        "missing_indices": (
+            sorted(missing_indices) if len(missing_indices) <= 10 else f"{len(missing_indices)} indices missing"
+        ),
         "duplicate_indices": len(duplicate_indices),
         "index_distribution": {
             "min_index": min(event_indices) if event_indices else None,

@@ -1,8 +1,14 @@
-from typing import Annotated
+import logging
+from typing import TYPE_CHECKING, Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from aihub_lib.i18n.LocaleString import LocaleString
+
+if TYPE_CHECKING:
+    from aihub_lib.persistence.agents import AgentConfigEntity
+
+logger = logging.getLogger(__name__)
 
 
 class StepConfig(BaseModel):
@@ -49,35 +55,27 @@ class AgentConfig(BaseModel):
     ```
     """
 
-    agent_id: Annotated[str, Field(description="Uniquely identifies the agent instance.", pattern=r"^[a-z0-9_-]+$")]
-    name: Annotated[LocaleString, Field(description="The name of the agent.")]
-    description: Annotated[LocaleString, Field(description="The description of the agent.")]
-    icon: Annotated[str, Field(description="The icon representing the agent.")] = "meteor-icons:robot"
+    name: Annotated[LocaleString, Field(description="The name of the process or agent.")]
+    description: Annotated[LocaleString, Field(description="The description of the process or agent.")]
+    icon: Annotated[str, Field(description="The icon representing the process or agent.")] = "meteor-icons:robot"
 
-    color: Annotated[
-        str | None,
-        Field(
-            description="The color of the agent UI theme.",
-            deprecated="This field is deprecated. It will be removed in a future release. "
-            "If you need a color, please define it yourself in a subclass of AgentConfig.",
-        ),
-    ] = "#10A37F"
-    voice: Annotated[
-        str | None,
-        Field(
-            description="The TTS voice ID the agent uses.",
-            deprecated="This field is deprecated. It will be removed in a future release. "
-            "If you need a voice, please define it yourself in a subclass of AgentConfig.",
-        ),
-    ] = "de-DE-ChristophNeural"
-    system_prompt: Annotated[
-        LocaleString,
-        Field(
-            description="The system prompt of the agent.",
-            deprecated="This field is deprecated. It will be removed in a future release."
-            "If you need a system prompt, please define it yourself in a subclass of AgentConfig.",
-        ),
-    ]
+    agent_class: Annotated[str, Field(description="The class name of the agent, used for identification.")]
+    agent_id: Annotated[str, Field(description="Uniquely identifies the agent instance.", pattern=r"^[a-z0-9_-]+$")]
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
+
+    @classmethod
+    def from_entity(cls, entity: "AgentConfigEntity") -> "AgentConfig":
+        data = {
+            "agent_class": entity.agent_class,
+            "agent_id": entity.agent_id,
+            "name": entity.name.to_locale_string(),
+            "description": entity.description.to_locale_string(),
+            "icon": entity.icon,
+            **entity.config_data,
+        }
+        config = cls(**data)
+        return config
 
     def get_step_configs(self) -> dict[type[StepConfig], StepConfig]:
         """
