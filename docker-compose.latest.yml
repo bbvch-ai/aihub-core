@@ -23,6 +23,7 @@ services:
       - "9001:9001"
       - "9000:9000"
     volumes:
+      - ./configs/milvus/milvus.yaml:/milvus/configs/milvus.yaml
       - ${VOLUME_ROOT:-./local-volumes}/minio_data:/minio_data
     command: minio server /minio_data --console-address ":9001"
     healthcheck:
@@ -343,6 +344,9 @@ services:
       MODEL_SUI_API_KEY: ${MODEL_SUI_API_KEY}
       MODEL_EUR_URL: ${MODEL_EUR_URL}
       MODEL_EUR_API_KEY: ${MODEL_EUR_API_KEY}
+      CLIENT_ID: ${OAUTH_CLIENT_ID}
+      TENANT_ID: ${OAUTH_TENANT_ID}
+      AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
     logging:
