@@ -155,7 +155,7 @@ class ProcessEntity(Document):
 
         if existing_process:
             # Update existing process
-            existing_process.default_process_config = process_config_entity
+            existing_process.default_process_config = default_process_config_entity
             existing_process.process_config = process_config_entity
             existing_process.human_inputs = human_inputs
             existing_process.program_inputs = program_inputs
