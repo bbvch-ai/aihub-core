@@ -5,7 +5,7 @@ index: 100
 
 # AI-Hub Developer Guide
 
-## :rocket: Introduction
+## 1. :rocket: Introduction
 
 ### What is the Swiss AI-Hub?
 
@@ -84,7 +84,7 @@ aspects of their jobs while maintaining oversight for key decisions.
 
 -----
 
-## :file_folder: Project Structure & Repositories
+## 2. :file_folder: Project Structure & Repositories
 
 The Swiss AI-Hub is designed as a powerful, cohesive ecosystem. Its structure is not just a technical choice; it is a
 reflection of our vision to provide a platform that is both ready-to-use and infinitely extensible.
@@ -168,7 +168,7 @@ logic, and the platform handles the rest.
 
 -----
 
-## :computer: Getting Started: Local Development Setup
+## 3.:computer: Getting Started: Local Development Setup
 
 This chapter outlines the technologies used in the AI-Hub and the necessary steps to set up the development environment
 from the command line. It is up to the developer to install the required tools according to their operating system and
@@ -420,7 +420,7 @@ Each scope contains `CLAUDE.md` and `GEMINI.md` files that reference the respect
 assistants with proper context about each component's purpose and architecture.
 :::
 
-## :clipboard: Project Governance & Work Management
+## 4. :clipboard: Project Governance & Work Management
 
 This chapter outlines the rules and processes that govern contributions, technical decision-making, and how development
 work is managed across the project.
@@ -523,7 +523,7 @@ Describe the results of your decision. List both positive outcomes and any poten
 
 -----
 
-## :evergreen_tree: Git & GitHub Workflow
+## 5. :evergreen_tree: Git & GitHub Workflow
 
 This chapter outlines the rules and processes for source code management, including branching, commit conventions, and
 pull request procedures.
@@ -639,7 +639,7 @@ To ensure the stability and integrity of our codebase, the `main` branch is prot
 
 -----
 
-## :test_tube: Testing In-Depth
+## 6. :test_tube: Testing In-Depth
 
 This chapter describes the testing frameworks and philosophies used in the AI-Hub project. While comprehensive testing
 is a core part of our development cycle, we do **not** follow a strict Test-Driven Development (TDD) methodology.
@@ -695,7 +695,7 @@ When possible, we favor BDD for several key reasons:
 
 -----
 
-## :pencil2: Code Conventions
+## 7. :pencil2: Code Conventions
 
 Adherence to a consistent coding standard is critical for maintaining the quality, readability, and long-term
 maintainability of the AI-Hub codebase. The following conventions are not optional; they are strictly enforced by our
@@ -820,7 +820,7 @@ shall fail.
 
 -----
 
-## :repeat: The Core Development Cycle
+## 8. :repeat: The Core Development Cycle
 
 This chapter outlines the standard, step-by-step process for every development task. Following this cycle ensures that
 all work is done consistently, contextually aware, and meets our quality standards.
@@ -925,7 +925,7 @@ make test
 
 -----
 
-## :books: Documentation and Self-Improvement
+## 9. :books: Documentation and Self-Improvement
 
 A key principle of the AI-Hub project is that documentation must evolve with the code. This chapter outlines our
 documentation philosophy and the process every developer must follow to ensure our documentation remains accurate,
@@ -979,7 +979,7 @@ After implementing your changes, ask yourself the following questions:
 
 -----
 
-## :book: Technical Reference
+## 10. :book: Technical Reference
 
 This chapter provides a reference for the project's package management strategy and the technologies used in the stack.
 
