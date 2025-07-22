@@ -2,6 +2,9 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
+from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
+from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
+
 
 class ProcessWalkthroughDTO(BaseModel):
     """DTO representing a process walkthrough with detailed step information."""
@@ -24,4 +27,15 @@ class ProcessWalkthroughDTO(BaseModel):
 
     completed_steps: Annotated[int, Field(description="Number of completed steps in this walkthrough.")]
 
-    is_active: Annotated[bool, Field(description="Whether this walkthrough has uncompleted steps.")]
+    is_active: Annotated[bool, Field(description="Whether this walkthrough is active (no ProcessStopEvent).")]
+
+    involved_agents: Annotated[list[MinimalAgentDTO], Field(description="List of agents that submitted work in this walkthrough.")]
+
+    involved_humans: Annotated[list[MinimalUserDTO], Field(description="List of humans that submitted work in this walkthrough.")]
+
+
+# Rebuild model to resolve forward references
+try:
+    ProcessWalkthroughDTO.model_rebuild()
+except Exception:
+    pass  # Ignore if already rebuilt

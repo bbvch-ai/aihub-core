@@ -22,8 +22,9 @@ from cachetools import TTLCache
 from fastapi import HTTPException
 from nats.aio.client import Client as NATS
 
-from aihub_api.routes.process.dto import ProcessWalkthroughDTO, PersistedEventDTO, HumanProcessStepDTO, \
+from aihub_api.routes.process.dto import PersistedEventDTO, HumanProcessStepDTO, \
     AgentProcessStepDTO, ProgramProcessStepDTO
+from aihub_api.routes.process.dto.ProcessWalkthroughDTO import ProcessWalkthroughDTO
 from aihub_api.routes.process.dto.in_specs.AgentInDTO import AgentInDTO
 from aihub_api.routes.process.dto.in_specs.HumanInDTO import HumanInDTO
 from aihub_api.routes.process.dto.in_specs.ProgramInDTO import ProgramInDTO
@@ -407,6 +408,18 @@ class ProcessService:
             )
 
             completed_steps = sum(1 for step in process_steps if step.is_completed)
+            
+            # Determine if walkthrough is active by checking for ProcessStopEvent
+            is_active = True
+            for event in walkthrough_data["events"]:
+                if any("ProcessStopEvent" in parent for parent in event.get("event_parents", [])):
+                    is_active = False
+                    break
+            
+            # Collect involved agents and humans
+            involved_agents, involved_humans = ProcessService._extract_involved_entities(
+                walkthrough_data["events"], t
+            )
 
             walkthrough = ProcessWalkthroughDTO(
                 process_walkthrough_id=walkthrough_data["process_walkthrough_id"],
@@ -417,7 +430,9 @@ class ProcessService:
                 updated_at=walkthrough_data["last_event_timestamp"],
                 total_steps=len(process_steps),
                 completed_steps=completed_steps,
-                is_active=completed_steps < len(process_steps),
+                is_active=is_active,
+                involved_agents=involved_agents,
+                involved_humans=involved_humans,
             )
             walkthroughs.append(walkthrough)
 
@@ -457,10 +472,12 @@ class ProcessService:
         work_requests.sort(key=lambda x: x.event_data.get("created_at", 0))
         work_responses.sort(key=lambda x: x.event_data.get("created_at", 0))
 
-        # Pair requests with responses and create entity-specific steps
+        # Create steps from all events in chronological order
         steps = []
         step_index = 0
+        used_response_ids = set()
 
+        # First, create steps from work requests and their corresponding responses
         for request_event in work_requests:
             request_type = ProcessService._get_step_type_from_event_parents(request_event.event_parents)
 
@@ -469,6 +486,7 @@ class ProcessService:
             for resp_event in work_responses:
                 if resp_event.event_data.get("in_response_to") == request_event.event_id:
                     response_event = resp_event
+                    used_response_ids.add(resp_event.event_id)
                     break
 
             # Create entity-specific step using classmethods
@@ -482,7 +500,105 @@ class ProcessService:
             steps.append(step)
             step_index += 1
 
+        # Second, create steps from standalone work responses (process start events)
+        standalone_responses = [resp for resp in work_responses if resp.event_id not in used_response_ids]
+        for response_event in standalone_responses:
+            response_type = ProcessService._get_step_type_from_event_parents(response_event.event_parents)
+
+            # Create entity-specific step with no request event
+            if response_type == "human":
+                step = HumanProcessStepDTO.from_events(None, response_event, step_index, t)
+            elif response_type == "agent":
+                step = AgentProcessStepDTO.from_events(None, response_event, step_index, t)
+            else:  # program
+                step = ProgramProcessStepDTO.from_events(None, response_event, step_index, t)
+
+            steps.append(step)
+            step_index += 1
+
+        # Sort all steps by creation time to ensure correct chronological order
+        steps.sort(key=lambda x: x.created_at)
+        
+        # Re-index steps after sorting
+        for i, step in enumerate(steps):
+            step.step_index = i
+
         return steps
+
+    @staticmethod
+    def _extract_involved_entities(events: list[dict], t) -> tuple[list, list]:
+        """
+        Extracts involved agents and humans from events.
+        Returns a tuple of (involved_agents, involved_humans).
+        """
+        from aihub_lib.persistence.agents.AgentEntity import AgentEntity
+        from aihub_lib.persistence.user.UserEntity import UserEntity
+        
+        from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
+        from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
+
+        involved_agents = {}  # Use dict to avoid duplicates by agent_id
+        involved_humans = {}  # Use dict to avoid duplicates by user_id
+
+        for event in events:
+            event_data = event.get("event_data", {})
+            event_parents = event.get("event_parents", [])
+            
+            # Check if this is a work event (response, not request)
+            if any("WorkEvent" in parent and "WorkRequestEvent" not in parent for parent in event_parents):
+                # Check for agent work
+                if any("AgentWork" in parent for parent in event_parents):
+                    agent_class = event_data.get("agent_class")
+                    agent_id = event_data.get("agent_id")
+                    if agent_class and agent_id:
+                        agent_key = f"{agent_class}:{agent_id}"
+                        if agent_key not in involved_agents:
+                            try:
+                                agent_entity = AgentEntity.get_agent(agent_class, agent_id)
+                                if agent_entity:
+                                    involved_agents[agent_key] = MinimalAgentDTO.from_entity(agent_entity, t)
+                            except Exception:
+                                pass  # Agent not found or error loading
+                
+                # Check for human work
+                elif any("HumanWork" in parent for parent in event_parents):
+                    submitted_by = event_data.get("submitted_by")
+                    if submitted_by:
+                        user_id = submitted_by.get("id") if isinstance(submitted_by, dict) else getattr(submitted_by, "id", None)
+                        if user_id and user_id not in involved_humans:
+                            try:
+                                # Check if we need to fetch user profile
+                                profile_image = None
+                                if isinstance(submitted_by, dict):
+                                    profile_image = submitted_by.get("profile_image")
+                                else:
+                                    profile_image = getattr(submitted_by, "profile_image", None)
+                                
+                                if not profile_image:
+                                    # Fetch user from database to get profile image
+                                    user_entity = UserEntity.get_user_by_id(user_id)
+                                    if user_entity:
+                                        involved_humans[user_id] = MinimalUserDTO.from_user_entity(user_entity)
+                                else:
+                                    # Use existing user data
+                                    if isinstance(submitted_by, dict):
+                                        involved_humans[user_id] = MinimalUserDTO(
+                                            id=submitted_by.get("id", ""),
+                                            name=submitted_by.get("name", ""),
+                                            email=submitted_by.get("email", ""),
+                                            profile_image=profile_image
+                                        )
+                                    else:
+                                        involved_humans[user_id] = MinimalUserDTO(
+                                            id=getattr(submitted_by, "id", ""),
+                                            name=getattr(submitted_by, "name", ""),
+                                            email=getattr(submitted_by, "email", ""),
+                                            profile_image=profile_image
+                                        )
+                            except Exception:
+                                pass  # User not found or error loading
+
+        return list(involved_agents.values()), list(involved_humans.values())
 
     @staticmethod
     def _get_step_type_from_event_parents(event_parents: list[str]) -> str:
