@@ -16,6 +16,7 @@ from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import Proce
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 from aihub_lib.nats.topics.discovery.process.ProcessClassDiscoveryTopic import ProcessClassDiscoveryTopic
 from aihub_lib.persistence.messaging.entities.PersistedProcessEventEntity import PersistedProcessEventEntity
+from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
 from aihub_lib.persistence.process.ProcessEntity import ProcessEntity
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 from bson import ObjectId
@@ -95,7 +96,9 @@ class ProcessService:
     def get_minimal_process(process_class: str, process_id: str, t: LocaleHandler) -> MinimalProcessDTO:
         """Returns minimal details for a process from database."""
         process_entity = ProcessEntity.get_process(process_class=process_class, process_id=process_id)
-        process_config = ProcessConfig.from_entity(process_entity.process_config)
+        process_config = ProcessConfig.from_entity(
+            process_entity.process_config or process_entity.default_process_config
+        )
         process_config_dto = ProcessConfigDTO.from_process_config(process_config, t)
         return MinimalProcessDTO(
             process_class=process_entity.process_class,
@@ -116,25 +119,26 @@ class ProcessService:
 
         process_class_dto = await ProcessService.discover_process_class(nc, process_class)
 
-        # For processes, we assume there's a default configuration or we get it from the class
-        # This follows the agent pattern where instances are created from class + config
-        process_config = process_class_dto.default_process_config
-        if process_config.process_id != process_id:
-            # Look for specific process configuration if available
-            # This is a simplification - in practice you might have a ProcessConfigEntityDocument
-            process_config = ProcessConfig(
-                process_id=process_id,
-                name=process_class_dto.default_process_config.name,
-                description=process_class_dto.default_process_config.description,
-                icon=process_class_dto.default_process_config.icon,
-            )
+        configs = ProcessConfigEntityDocument.find_for_class(process_class)
+        for config in configs:
+            if config.process_id == process_id:
+                process_config = ProcessConfig.from_entity(config)
+                process_instance_dto = ProcessInstanceDTO.from_class_and_config(
+                    class_dto=process_class_dto,
+                    process_config=process_config,
+                )
+                GET_PROCESS_INSTANCE_CACHE[cache_key] = process_instance_dto
+                return process_instance_dto
 
-        process_instance_dto = ProcessInstanceDTO.from_class_and_config(
-            class_dto=process_class_dto,
-            process_config=process_config,
-        )
-        GET_PROCESS_INSTANCE_CACHE[cache_key] = process_instance_dto
-        return process_instance_dto
+        if process_class_dto.default_process_config.process_id == process_id:
+            process_instance_dto = ProcessInstanceDTO.from_class_and_config(
+                class_dto=process_class_dto,
+                process_config=process_class_dto.default_process_config,
+            )
+            GET_PROCESS_INSTANCE_CACHE[cache_key] = process_instance_dto
+            return process_instance_dto
+
+        raise HTTPException(status_code=404, detail=f"Process {process_class}.{process_id} not found.")
 
     @staticmethod
     async def discover_process_class(nc: NATS, process_class: str) -> ProcessClassDTO:
@@ -198,18 +202,29 @@ class ProcessService:
         # Step 1: Discover which process classes are online
         online_processes: list[ProcessClassDTO] = await ProcessService.discover_process_classes(nc)
 
-        # Step 2: Get all configured process instances
+        # Step 2: Get all configured process instances from database
         configured_processes = []
         for process in online_processes:
             process_class = process.process_class
-            # For now, we use the default config as the instance
-            # In a full implementation, you'd query ProcessConfigEntityDocument
-            process_instance_dto = ProcessInstanceDTO.from_class_and_config(
-                class_dto=process,
-                process_config=process.default_process_config,
-            )
-            process_instance_dto.create_or_update_process_entity()
-            configured_processes.append(process_instance_dto)
+            configs = ProcessConfigEntityDocument.find_for_class(process_class)
+            for config in configs:
+                config_instance = ProcessConfig.from_entity(config)
+                process_instance_dto = ProcessInstanceDTO.from_class_and_config(
+                    class_dto=process,
+                    process_config=config_instance,
+                )
+                process_instance_dto.create_or_update_process_entity()
+                configured_processes.append(process_instance_dto)
+
+            # Step 3: Check if default process config is present in database
+            db_process_ids = {configured_process.process_id for configured_process in configured_processes}
+            if process.default_process_config.process_id not in db_process_ids:
+                process_instance_dto = ProcessInstanceDTO.from_class_and_config(
+                    class_dto=process,
+                    process_config=process.default_process_config,
+                )
+                process_instance_dto.create_or_update_process_entity()
+                configured_processes.append(process_instance_dto)
 
         if len(configured_processes) > 0:
             DISCOVER_PROCESSES_CACHE[cache_key] = configured_processes

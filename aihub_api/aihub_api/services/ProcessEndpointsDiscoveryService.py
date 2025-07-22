@@ -27,6 +27,7 @@ from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
 from aihub_api.routes.process.dto.ProcessHumanInDto import ProcessHumanInDto
+from aihub_api.routes.process.dto.ProcessInstanceDTO import ProcessInstanceDTO
 from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 from aihub_api.routes.process.ProcessController import ProcessController
 from aihub_api.routes.process.ProcessService import ProcessService
@@ -67,27 +68,26 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
             topic.call_id, topic.process_class, topic.process_id
         )
 
-        processes: list[ProcessDTO] = []
+        process_instances: list[ProcessInstanceDTO] = []
         if topic.process_class == "*":
-            processes = await ProcessService.discover_processes(self.nc, self.locale_handler)
+            process_instances = await ProcessService.discover_process_instances(self.nc)
 
             if topic.process_id != "*":
-                processes = [process for process in processes if process.process_id == topic.process_id]
+                process_instances = [process for process in process_instances if process.process_id == topic.process_id]
 
         elif topic.process_id == "*":
-            # For processes, we don't have a discover_by_class method like agents, so we filter from all
-            all_processes = await ProcessService.discover_processes(self.nc, self.locale_handler)
-            processes = [process for process in all_processes if process.process_class == topic.process_class]
+            all_process_instances = await ProcessService.discover_process_instances(self.nc)
+            process_instances = [
+                process for process in all_process_instances if process.process_class == topic.process_class
+            ]
 
         else:
-            processes.append(
-                await ProcessService.discover_process(
-                    self.nc, topic.process_class, topic.process_id, self.locale_handler
-                )
+            process_instances.append(
+                await ProcessService.discover_process_instance(self.nc, topic.process_class, topic.process_id)
             )
 
-        for process in processes:
-            process_discovery_response_event = process.to_discovery_response_event()
+        for process_instance in process_instances:
+            process_discovery_response_event = process_instance.to_discovery_response_event()
             await self.nc_publisher.publish_event(process_discovery_response_event, subject)
 
     @override

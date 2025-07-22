@@ -3,7 +3,6 @@ from typing import Annotated
 from pydantic import Field
 
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
-from aihub_lib.nats.topics.discovery.DiscoveryTopic import DiscoveryTopic
 from aihub_lib.nats.topics.discovery.process.ProcessClassDiscoveryTopic import ProcessClassDiscoveryTopic
 
 
