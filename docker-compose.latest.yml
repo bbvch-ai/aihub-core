@@ -259,8 +259,7 @@ services:
         max-file: "2"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.phoenix.rule=Host(`${DOMAIN}`) && PathPrefix(`/phoenix`)"
-      - "traefik.http.routers.api.priority=100"
+      - "traefik.http.routers.phoenix.rule=Host(`phoenix.${DOMAIN}`)"
       - "traefik.http.routers.phoenix.entrypoints=websecure"
       - "traefik.http.routers.phoenix.tls.certresolver=letsencrypt"
       - "traefik.http.services.phoenix.loadbalancer.server.port=6006"
