@@ -3,9 +3,6 @@ import time
 from asyncio import sleep
 from typing import Any
 
-from aihub_api.routes.process.dto.in_specs.AgentInDTO import AgentInDTO
-from aihub_api.routes.process.dto.in_specs.HumanInDTO import HumanInDTO
-from aihub_api.routes.process.dto.in_specs.ProgramInDTO import ProgramInDTO
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalProcessEvent import ExternalProcessEvent
@@ -25,6 +22,9 @@ from cachetools import TTLCache
 from fastapi import HTTPException
 from nats.aio.client import Client as NATS
 
+from aihub_api.routes.process.dto.in_specs.AgentInDTO import AgentInDTO
+from aihub_api.routes.process.dto.in_specs.HumanInDTO import HumanInDTO
+from aihub_api.routes.process.dto.in_specs.ProgramInDTO import ProgramInDTO
 from aihub_api.routes.process.dto.ProcessConfigDTO import ProcessConfigDTO
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
 from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
@@ -381,3 +381,31 @@ class ProcessService:
             process_id=process_id,
             process_walkthrough_id=external_event.process_walkthrough_id,
         )
+
+    @staticmethod
+    async def get_process_walkthroughs(
+        process_class: str, process_id: str, user: UserIdentity
+    ) -> list[ProcessWalkthroughDTO]:
+        """
+        Gets all process walkthroughs for a given process.
+        Returns walkthrough information including event counts and open form status.
+        """
+        from aihub_api.routes.process.dto.ProcessWalkthroughDTO import ProcessWalkthroughDTO
+
+        walkthroughs_data = PersistedProcessEventEntity.get_process_walkthroughs(process_class, process_id)
+
+        walkthroughs = []
+        for walkthrough_data in walkthroughs_data:
+            walkthroughs.append(
+                ProcessWalkthroughDTO(
+                    process_walkthrough_id=walkthrough_data["process_walkthrough_id"],
+                    process_class=process_class,
+                    process_id=process_id,
+                    event_count=walkthrough_data["event_count"],
+                    has_open_forms=walkthrough_data.get("has_open_forms", False),
+                    first_event_timestamp=walkthrough_data.get("first_event_timestamp"),
+                    last_event_timestamp=walkthrough_data.get("last_event_timestamp"),
+                )
+            )
+
+        return walkthroughs

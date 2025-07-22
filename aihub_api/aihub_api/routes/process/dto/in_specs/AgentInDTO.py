@@ -1,11 +1,10 @@
 from typing import Annotated
 
-from pydantic import BaseModel, Field
-
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
 from aihub_lib.persistence.process.ProcessEntity import AgentInSpecsEntity
+from pydantic import BaseModel, Field
 
 
 class AgentInDTO(BaseModel):

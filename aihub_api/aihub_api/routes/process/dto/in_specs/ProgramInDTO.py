@@ -1,10 +1,9 @@
 from typing import Annotated
 
-from pydantic import BaseModel, Field
-
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from aihub_lib.persistence.process.ProcessEntity import ProgramInSpecsEntity
+from pydantic import BaseModel, Field
 
 
 class ProgramInDTO(BaseModel):

@@ -1,12 +1,12 @@
 from typing import Annotated
 
-from aihub_api.routes.process.dto.in_specs.AgentInDTO import AgentInDTO
-from aihub_api.routes.process.dto.in_specs.HumanInDTO import HumanInDTO
-from aihub_api.routes.process.dto.in_specs.ProgramInDTO import ProgramInDTO
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.process.ProcessEntity import ProcessEntity
 from pydantic import BaseModel, Field
 
+from aihub_api.routes.process.dto.in_specs.AgentInDTO import AgentInDTO
+from aihub_api.routes.process.dto.in_specs.HumanInDTO import HumanInDTO
+from aihub_api.routes.process.dto.in_specs.ProgramInDTO import ProgramInDTO
 from aihub_api.routes.process.dto.ProcessConfigDTO import ProcessConfigDTO
 
 
@@ -43,20 +43,11 @@ class ProcessDTO(BaseModel):
 
     @classmethod
     def from_entity(cls, entity: ProcessEntity, t: LocaleHandler, is_online: bool) -> "ProcessDTO":
-        human_inputs = [
-            HumanInDTO.from_entity_specs(specs, t)
-            for specs in entity.human_inputs
-        ]
+        human_inputs = [HumanInDTO.from_entity_specs(specs, t) for specs in entity.human_inputs]
 
-        program_inputs = [
-            ProgramInDTO.from_entity_specs(specs)
-            for specs in entity.program_inputs
-        ]
+        program_inputs = [ProgramInDTO.from_entity_specs(specs) for specs in entity.program_inputs]
 
-        agent_inputs = [
-            AgentInDTO.from_entity_specs(specs, t)
-            for specs in entity.agent_inputs
-        ]
+        agent_inputs = [AgentInDTO.from_entity_specs(specs, t) for specs in entity.agent_inputs]
 
         return cls(
             process_class=entity.process_class,

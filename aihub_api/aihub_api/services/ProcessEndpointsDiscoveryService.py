@@ -1,7 +1,6 @@
 import logging
 from typing import Annotated
 
-from aihub_api.routes.process.dto.in_specs.HumanInDTO import HumanInDTO
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
@@ -19,6 +18,7 @@ from typing_extensions import override
 
 from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_api.i18n.dependencies.use_locale import use_locale
+from aihub_api.routes.process.dto.in_specs.HumanInDTO import HumanInDTO
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
 from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 from aihub_api.routes.process.ProcessController import ProcessController

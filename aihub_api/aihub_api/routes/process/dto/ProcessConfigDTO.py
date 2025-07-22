@@ -1,8 +1,8 @@
 from typing import Annotated
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.processes.ProcessConfig import ProcessConfig
 from aihub_lib.persistence.process.ProcessEntity import ProcessConfig as ProcessConfigEntity
+from aihub_lib.processes.ProcessConfig import ProcessConfig
 from pydantic import BaseModel, Field
 
 
@@ -24,7 +24,9 @@ class ProcessConfigDTO(BaseModel):
         )
 
     @classmethod
-    def from_process_entity_config(cls, process_entity_config: ProcessConfigEntity, t: LocaleHandler) -> "ProcessConfigDTO":
+    def from_process_entity_config(
+        cls, process_entity_config: ProcessConfigEntity, t: LocaleHandler
+    ) -> "ProcessConfigDTO":
         return cls(
             process_id=process_entity_config.process_id,
             name=t.extract(process_entity_config.name.to_locale_string()),

@@ -269,9 +269,7 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
             [
                 HumanStartEvent,
                 HumanBWorkRequest(
-                    forms=[
-                        HumanBWork(payload=InputText(label=LocaleString(en="This is some label for HumanBWork")))
-                    ]
+                    forms=[HumanBWork(payload=InputText(label=LocaleString(en="This is some label for HumanBWork")))]
                 ),
             ],
             [HumanBWork, CustomProcessStopEvent(payload="Done")],

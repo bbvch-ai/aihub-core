@@ -1,6 +1,5 @@
 from typing import Annotated
 
-from aihub_api.routes.process.dto.in_specs.HumanInDTO import HumanInDTO
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -17,7 +16,9 @@ from fastapi.params import Query
 from nats.aio.client import Client as NATS
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
+from aihub_api.routes.process.dto.in_specs.HumanInDTO import HumanInDTO
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
+from aihub_api.routes.process.dto.ProcessWalkthroughDTO import ProcessWalkthroughDTO
 from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 from aihub_api.routes.process.ProcessService import ProcessService
 
@@ -101,6 +102,23 @@ class ProcessController(Controller):
         ) -> ProcessDTO:
             """Retrieve details for a specific process."""
             return await ProcessService.get_process(nc, process_class, process_id, t)
+
+        return self
+
+    def get_process_walkthroughs(
+        self, route: str = "/{process_class}/{process_id}/walkthroughs"
+    ) -> "ProcessController":
+        @self.router.get(route, tags=self.tags, response_model_exclude_none=True)
+        async def get_process_walkthroughs(
+            process_class: str,
+            process_id: str,
+            user: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.user.process.{process_class}.{process_id}"))
+            ],
+        ) -> list[ProcessWalkthroughDTO]:
+            """Get all process walkthroughs for a specific process."""
+
+            return await ProcessService.get_process_walkthroughs(process_class, process_id, user)
 
         return self
 

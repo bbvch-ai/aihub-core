@@ -1,7 +1,7 @@
 import abc
 from typing import Annotated
 
-from pydantic import Field, PrivateAttr, computed_field
+from pydantic import Field, computed_field
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString

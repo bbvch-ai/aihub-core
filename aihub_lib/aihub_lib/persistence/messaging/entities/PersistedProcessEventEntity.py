@@ -137,3 +137,86 @@ class PersistedProcessEventEntity(Document):
             # This bypasses MongoEngine's schema validation for this part of the query.
             __raw__={"event_data.forms._event_name": event_name},
         ).first()
+
+    @classmethod
+    def get_process_walkthroughs(cls, process_class: str, process_id: str) -> list[dict]:
+        """
+        Gets all distinct process walkthroughs for a given process with aggregated information.
+
+        Returns a list of dictionaries containing walkthrough information including:
+        - process_walkthrough_id
+        - event_count
+        - has_open_forms
+        - first_event_timestamp
+        - last_event_timestamp
+        """
+        pipeline = [
+            # Stage 1: Filter for the specific process
+            {
+                "$match": {
+                    "process_class": process_class,
+                    "process_id": process_id,
+                }
+            },
+            # Stage 2: Group by walkthrough ID and collect information
+            {
+                "$group": {
+                    "_id": "$process_walkthrough_id",
+                    "event_count": {"$sum": 1},
+                    "has_human_work_requests": {
+                        "$max": {"$cond": [{"$in": ["HumanWorkRequestEvent", "$event_parents"]}, True, False]}
+                    },
+                    "event_timestamps": {"$push": "$event_data.created_at"},
+                    "event_names": {"$push": "$event_name"},
+                    "human_work_request_event_names": {
+                        "$push": {
+                            "$cond": [
+                                {"$in": ["HumanWorkRequestEvent", "$event_parents"]},
+                                "$event_data.forms._event_name",
+                                None,
+                            ]
+                        }
+                    },
+                }
+            },
+            # Stage 3: Calculate if there are open forms
+            {
+                "$project": {
+                    "process_walkthrough_id": "$_id",
+                    "event_count": 1,
+                    "has_open_forms": {
+                        "$and": [
+                            "$has_human_work_requests",
+                            {
+                                "$gt": [
+                                    {
+                                        "$size": {
+                                            "$filter": {
+                                                "input": {
+                                                    "$reduce": {
+                                                        "input": "$human_work_request_event_names",
+                                                        "initialValue": [],
+                                                        "in": {
+                                                            "$concatArrays": ["$$value", {"$ifNull": ["$$this", []]}]
+                                                        },
+                                                    }
+                                                },
+                                                "as": "req_event",
+                                                "cond": {"$not": {"$in": ["$$req_event", "$event_names"]}},
+                                            }
+                                        }
+                                    },
+                                    0,
+                                ]
+                            },
+                        ]
+                    },
+                    "first_event_timestamp": {"$min": "$event_timestamps"},
+                    "last_event_timestamp": {"$max": "$event_timestamps"},
+                }
+            },
+            # Stage 4: Sort by last event timestamp (most recent first)
+            {"$sort": {"last_event_timestamp": -1}},
+        ]
+
+        return list(cls._get_collection().aggregate(pipeline))

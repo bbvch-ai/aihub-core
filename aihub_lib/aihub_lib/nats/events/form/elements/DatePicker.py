@@ -16,9 +16,7 @@ class DatePicker(PrimeVueElement):
     disabled: Annotated[bool, Field(description="Whether the input is disabled")] = False
     readonly: Annotated[bool, Field(description="Whether the input is readonly")] = False
     placeholder: Annotated[LocaleString | str | None, Field(description="Placeholder text")] = None
-    date_format: Annotated[str | None, Field(description="Format of the date display", alias="dateFormat")] = (
-        "dd.mm.yy"
-    )
+    date_format: Annotated[str | None, Field(description="Format of the date display", alias="dateFormat")] = "dd.mm.yy"
     show_icon: Annotated[bool, Field(description="Whether to show the calendar icon", alias="showIcon")] = False
     icon: Annotated[str | None, Field(description="Custom icon class", pattern=r"^pi pi-[a-z0-9-]+$")] = None
     selection_mode: Annotated[
