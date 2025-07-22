@@ -33,21 +33,3 @@ class AgentInstanceDiscoveryResponseEvent(AgentClassDiscoveryResponseEvent):
             "temperature settings, or other domain-specific parameters.",
         ),
     ]
-
-    @classmethod
-    def from_agent_instance(cls, agent_instance) -> "AgentInstanceDiscoveryResponseEvent":
-        """
-        Converts an AgentDTO to an AgentInstanceDiscoveryResponseEvent.
-        This is useful for creating a discovery response from a DTO representation of an agent.
-        """
-        return cls(
-            agent_class=agent_instance.agent_class,
-            agent_id=agent_instance.agent_id,
-            agent_config=agent_instance.agent_config,
-            default_agent_config=agent_instance.default_agent_config,
-            agent_config_specs=agent_instance.agent_config_specs,
-            start_events=agent_instance.start_events,
-            stop_events=agent_instance.stop_events,
-            network_graph=agent_instance.network_graph,
-            is_conversational=agent_instance.is_conversational,
-        )

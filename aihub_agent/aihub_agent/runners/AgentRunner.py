@@ -54,6 +54,7 @@ class AgentRunner:
         self.agent_type = agent_type
         self.default_agent_config = default_agent_config
         self.agent_config_type = default_agent_config.__class__
+
         self.running = False
         self._stop_signal = asyncio.Event()
         self._loop_task: asyncio.Task | None = None

@@ -106,30 +106,6 @@ class AgentClassTopicManager(AgentTopicManager, AbstractStreamTopicManager):
             event_id=event_id,
         )
 
-    def get_subject_for_everything_within_agent_class(self) -> str:
-        """Returns a subject pattern for all events in this agent instance, regardless of thread, display, or run."""
-        return self.get_subject_for_specific_event_in_agent_instance(
-            agent_id="*",
-            thread_id="*",
-            display_id="*",
-            run_id="*",
-            event_type="*",
-            event_name="*",
-            event_id="*",
-        )
-
-    def get_subject_for_all_display_events_within_agent_class(self) -> str:
-        """Returns a subject pattern matching all display events within this agent instance."""
-        return self.get_subject_for_specific_event_in_agent_instance(
-            agent_id="*",
-            thread_id="*",
-            display_id="*",
-            run_id="*",
-            event_type=self.DISPLAY_EVENT,
-            event_name="*",
-            event_id="*",
-        )
-
     def get_subject_for_all_control_events_within_agent_class(self) -> str:
         """Returns a subject pattern matching all control events within this agent instance."""
         return self.get_subject_for_specific_event_in_agent_class(

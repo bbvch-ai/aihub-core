@@ -10,7 +10,7 @@ from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from pydantic import BaseModel, Field
 
 
-class AgentClass(BaseModel):
+class AgentClassDTO(BaseModel):
     """
     Encapsulates the data transfer object (DTO) for an agent class.
     Contains information about the agent class, including its name and configuration specifications.
@@ -54,7 +54,7 @@ class AgentClass(BaseModel):
     def from_discovery_event(
         cls,
         event: AgentClassDiscoveryResponseEvent,
-    ) -> "AgentClass":
+    ) -> "AgentClassDTO":
         """Converts an AgentClassDiscoveryResponseEvent to an AgentClassDTO."""
         return cls(
             agent_class=event.agent_class,
