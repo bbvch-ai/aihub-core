@@ -317,6 +317,15 @@ class AgentService:
         return agents
 
     @staticmethod
+    async def discover_agents(nc: NATS, t: LocaleHandler) -> list[AgentDTO]:
+        """
+        Discovers all agents by broadcasting a discovery request and waiting for responses.
+        Returns a cached result if available.
+        """
+        discovered_agents = await AgentService.discover_agent_instances(nc)
+        return [AgentDTO.from_instance(agent_instance, is_online=True, t=t) for agent_instance in discovered_agents]
+
+    @staticmethod
     async def send_event(
         nc: NATS,
         external_agent_event_distributor: ExternalAgentEventDistributor,
