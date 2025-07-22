@@ -8,33 +8,40 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalProcessEvent import ExternalProcessEvent
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
 from aihub_lib.nats.events import WorkEvent
-from aihub_lib.nats.events.discovery import ProcessInstanceDiscoveryResponseEvent
+from aihub_lib.nats.events.discovery import ProcessClassDiscoveryResponseEvent
+from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
-from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
+from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
-from aihub_lib.nats.topics import ProcessInstanceDiscoveryTopic
+from aihub_lib.nats.topics.discovery.process.ProcessClassDiscoveryTopic import ProcessClassDiscoveryTopic
 from aihub_lib.persistence.messaging.entities.PersistedProcessEventEntity import PersistedProcessEventEntity
 from aihub_lib.persistence.process.ProcessEntity import ProcessEntity
+from aihub_lib.processes.ProcessConfig import ProcessConfig
 from bson import ObjectId
 from cachetools import TTLCache
 from fastapi import HTTPException
 from nats.aio.client import Client as NATS
 
+from aihub_api.routes.process.dto.MinimalProcessDTO import MinimalProcessDTO
+from aihub_api.routes.process.dto.ProcessClassDTO import ProcessClassDTO
 from aihub_api.routes.process.dto.ProcessConfigDTO import ProcessConfigDTO
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
 from aihub_api.routes.process.dto.ProcessHumanInDto import ProcessHumanInDto
+from aihub_api.routes.process.dto.ProcessInstanceDTO import ProcessInstanceDTO
 from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 
 # In-memory caches to avoid repeatedly querying NATS for process info
-DISCOVER_PROCESS_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache the entire process list for 60s
-GET_PROCESS_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache individual processes for 60s
+DISCOVER_PROCESSES_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache the entire process list for 60s
+GET_PROCESS_INSTANCE_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache individual processes for 60s
+GET_PROCESS_CLASS_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache process classes for 60s
 
 
 class ProcessService:
     """
-    The process service connects humans and programs to agentic processes, as well as offering methods to
-    retrieve the available processes and their current state.
+    Provides functionality to discover and retrieve process information via NATS-based discovery events.
+    `ProcessService` acts as the business logic layer for process operations,
+    isolating NATS-based discovery requests from the HTTP layer.
 
     Users mainly interact with an agentic process through forms. Hence, the service offers methods to retrieve
     the formkit definitions of forms that the user can submit to either start a new process or continue
@@ -48,7 +55,8 @@ class ProcessService:
         otherwise, use saved information from the database.
         """
         try:
-            return await ProcessService.discover_process(nc, process_class, process_id, t)
+            discovered_process = await ProcessService.discover_process_instance(nc, process_class, process_id)
+            return ProcessDTO.from_instance(discovered_process, is_online=True, t=t)
         except HTTPException:
             process = ProcessEntity.get_process(process_class, process_id)
             if process is None:
@@ -84,47 +92,83 @@ class ProcessService:
         return all_processes
 
     @staticmethod
-    async def discover_process(nc: NATS, process_class: str, process_id: str, t: LocaleHandler) -> ProcessDTO:
+    def get_minimal_process(process_class: str, process_id: str, t: LocaleHandler) -> MinimalProcessDTO:
+        """Returns minimal details for a process from database."""
+        process_entity = ProcessEntity.get_process(process_class=process_class, process_id=process_id)
+        process_config = ProcessConfig.from_entity(process_entity.process_config)
+        process_config_dto = ProcessConfigDTO.from_process_config(process_config, t)
+        return MinimalProcessDTO(
+            process_class=process_entity.process_class,
+            process_id=process_entity.process_id,
+            process_config=process_config_dto,
+        )
+
+    @staticmethod
+    async def discover_process_instance(nc: NATS, process_class: str, process_id: str) -> ProcessInstanceDTO:
         """
         Retrieves details about a specific process. If cached, returns immediately.
         Otherwise, sends a targeted discovery request and waits for a response.
         """
         cache_key = (process_class, process_id)
 
-        if cache_key in GET_PROCESS_CACHE:
-            return GET_PROCESS_CACHE[cache_key]
+        if cache_key in GET_PROCESS_INSTANCE_CACHE:
+            return GET_PROCESS_INSTANCE_CACHE[cache_key]
+
+        process_class_dto = await ProcessService.discover_process_class(nc, process_class)
+
+        # For processes, we assume there's a default configuration or we get it from the class
+        # This follows the agent pattern where instances are created from class + config
+        process_config = process_class_dto.default_process_config
+        if process_config.process_id != process_id:
+            # Look for specific process configuration if available
+            # This is a simplification - in practice you might have a ProcessConfigEntityDocument
+            process_config = ProcessConfig(
+                process_id=process_id,
+                name=process_class_dto.default_process_config.name,
+                description=process_class_dto.default_process_config.description,
+                icon=process_class_dto.default_process_config.icon,
+            )
+
+        process_instance_dto = ProcessInstanceDTO.from_class_and_config(
+            class_dto=process_class_dto,
+            process_config=process_config,
+        )
+        GET_PROCESS_INSTANCE_CACHE[cache_key] = process_instance_dto
+        return process_instance_dto
+
+    @staticmethod
+    async def discover_process_class(nc: NATS, process_class: str) -> ProcessClassDTO:
+        """
+        Retrieves details about a specific process class. If cached, returns immediately.
+        Otherwise, sends a targeted discovery request and waits for a response.
+        """
+        cache_key = process_class
+
+        if cache_key in GET_PROCESS_CLASS_CACHE:
+            return GET_PROCESS_CLASS_CACHE[cache_key]
 
         call_id = str(ObjectId())
-        process_dto: ProcessDTO | None = None
+        process_class_dto: ProcessClassDTO | None = None
         process_found_event = asyncio.Event()
 
-        async def discovery_handler(event: ProcessInstanceDiscoveryResponseEvent, topic: ProcessInstanceDiscoveryTopic):
-            nonlocal process_dto
+        async def discovery_handler(event: ProcessClassDiscoveryResponseEvent, topic: ProcessClassDiscoveryTopic):
+            nonlocal process_class_dto
             # Found the process, stop subscriber and signal event
             await nc_subscriber.stop()
-            process_dto = ProcessDTO(
-                process_class=event.process_class,
-                process_id=event.process_id,
-                process_config=ProcessConfigDTO.from_process_config(event.default_process_config, t),
-                human_inputs=event.human_inputs,
-                program_inputs=event.program_inputs,
-                agent_inputs=event.agent_inputs,
-                is_online=True,
-            )
-            ProcessEntity.create_or_update_from_dto(process_dto)
+            process_class_dto = ProcessClassDTO.from_discovery_event(event)
             process_found_event.set()
 
-        topic_manager = ProcessInstanceTopicManager(process_class=process_class, process_id=process_id)
+        topic_manager = ProcessClassTopicManager(process_class=process_class)
         nc_publisher = NCPublisher(nc)
-        nc_subscriber = ProcessNCSubscriber.for_process_instance_discovery_response_events(
+        nc_subscriber = ProcessNCSubscriber.for_process_class_discovery_response_events(
             nc, topic_manager, discovery_handler, call_id=call_id
         )
         await nc_subscriber.start()
 
         # Send discovery request for the specific process
         await nc_publisher.publish_event(
-            event=InstanceDiscoveryRequestEvent(),
-            subject=topic_manager.get_process_instance_discovery_subject_request(call_id=call_id),
+            event=ClassDiscoveryRequestEvent(),
+            subject=topic_manager.get_process_class_discovery_subject_request(call_id=call_id),
         )
 
         # Wait up to 1 second for response
@@ -132,13 +176,95 @@ class ProcessService:
             await asyncio.wait_for(process_found_event.wait(), timeout=1.0)
         except TimeoutError:
             await nc_subscriber.stop()
-            raise HTTPException(status_code=404, detail=f"Process {process_class}.{process_id} not found.")
+            raise HTTPException(status_code=404, detail=f"Process {process_class} not found.")
 
-        if process_dto is not None:
-            GET_PROCESS_CACHE[cache_key] = process_dto
-            return process_dto
+        if process_class_dto is not None:
+            GET_PROCESS_CLASS_CACHE[cache_key] = process_class_dto
+            return process_class_dto
 
-        raise HTTPException(status_code=404, detail=f"Process {process_class}.{process_id} not found.")
+        raise HTTPException(status_code=404, detail=f"Process {process_class} not found.")
+
+    @staticmethod
+    async def discover_process_instances(nc: NATS) -> list[ProcessInstanceDTO]:
+        """
+        Discovers all processes by broadcasting a discovery request and waiting for responses.
+        Returns a cached result if available.
+        """
+        cache_key = "all_process_instances"
+
+        if cache_key in DISCOVER_PROCESSES_CACHE:
+            return DISCOVER_PROCESSES_CACHE[cache_key]
+
+        # Step 1: Discover which process classes are online
+        online_processes: list[ProcessClassDTO] = await ProcessService.discover_process_classes(nc)
+
+        # Step 2: Get all configured process instances
+        configured_processes = []
+        for process in online_processes:
+            process_class = process.process_class
+            # For now, we use the default config as the instance
+            # In a full implementation, you'd query ProcessConfigEntityDocument
+            process_instance_dto = ProcessInstanceDTO.from_class_and_config(
+                class_dto=process,
+                process_config=process.default_process_config,
+            )
+            process_instance_dto.create_or_update_process_entity()
+            configured_processes.append(process_instance_dto)
+
+        if len(configured_processes) > 0:
+            DISCOVER_PROCESSES_CACHE[cache_key] = configured_processes
+
+        return configured_processes
+
+    @staticmethod
+    async def discover_process_classes(nc: NATS) -> list[ProcessClassDTO]:
+        """
+        Discovers all process classes by broadcasting a discovery request and waiting for responses.
+        Returns a cached result if available.
+        """
+        cache_key = "all_process_classes"
+
+        if cache_key in DISCOVER_PROCESSES_CACHE:
+            return DISCOVER_PROCESSES_CACHE[cache_key]
+
+        call_id = str(ObjectId())
+        discovery_responses: list[ProcessClassDiscoveryResponseEvent] = []
+
+        async def discovery_handler(event: ProcessClassDiscoveryResponseEvent, topic: ProcessClassDiscoveryTopic):
+            discovery_responses.append(event)
+
+        topic_manager = ProcessTopicManager()
+        nc_publisher = NCPublisher(nc)
+        nc_subscriber = ProcessNCSubscriber.for_process_class_discovery_response_events(
+            nc, topic_manager, discovery_handler, call_id=call_id
+        )
+        await nc_subscriber.start()
+
+        # Broadcast the discovery request
+        await nc_publisher.publish_event(
+            event=ClassDiscoveryRequestEvent(),
+            subject=topic_manager.get_process_class_discovery_subject_request(call_id=call_id),
+        )
+
+        # Wait briefly for responses
+        await sleep(1)
+        await nc_subscriber.stop()
+
+        unique_processes_dict: dict[str, ProcessClassDTO] = {}
+
+        for response in discovery_responses:
+            unique_key = response.process_class
+
+            if unique_key not in unique_processes_dict:
+                process_class_dto = ProcessClassDTO.from_discovery_event(response)
+                unique_processes_dict[unique_key] = process_class_dto
+
+        processes = list(unique_processes_dict.values())
+
+        if len(processes) > 0:
+            DISCOVER_PROCESSES_CACHE[cache_key] = processes
+
+        return processes
 
     @staticmethod
     async def discover_processes(nc: NATS, t: LocaleHandler) -> list[ProcessDTO]:
@@ -146,58 +272,10 @@ class ProcessService:
         Discovers all processes by broadcasting a discovery request and waiting for responses.
         Returns a cached result if available.
         """
-        cache_key = "all_processes"
-
-        if cache_key in DISCOVER_PROCESS_CACHE:
-            return DISCOVER_PROCESS_CACHE[cache_key]
-
-        call_id = str(ObjectId())
-        discovery_responses = []
-
-        async def discovery_handler(event: ProcessInstanceDiscoveryResponseEvent, topic: ProcessInstanceDiscoveryTopic):
-            discovery_responses.append(event)
-
-        topic_manager = ProcessTopicManager()
-        nc_publisher = NCPublisher(nc)
-        nc_subscriber = ProcessNCSubscriber.for_process_instance_discovery_response_events(
-            nc, topic_manager, discovery_handler, call_id=call_id
-        )
-        await nc_subscriber.start()
-
-        # Broadcast the discovery request
-        await nc_publisher.publish_event(
-            event=InstanceDiscoveryRequestEvent(),
-            subject=topic_manager.get_process_instance_discovery_subject_request(call_id=call_id),
-        )
-
-        # Wait briefly for responses
-        await sleep(1)
-        await nc_subscriber.stop()
-
-        unique_processes_dict = {}
-
-        for response in discovery_responses:
-            unique_key = (response.process_class, response.process_id)
-
-            if unique_key not in unique_processes_dict:
-                process_dto = ProcessDTO(
-                    process_class=response.process_class,
-                    process_id=response.process_id,
-                    process_config=ProcessConfigDTO.from_process_config(response.default_process_config, t),
-                    human_inputs=response.human_inputs,
-                    program_inputs=response.program_inputs,
-                    agent_inputs=response.agent_inputs,
-                    is_online=True,
-                )
-                ProcessEntity.create_or_update_from_dto(process_dto)
-                unique_processes_dict[unique_key] = process_dto
-
-        processes = list(unique_processes_dict.values())
-
-        if len(processes) > 0:
-            DISCOVER_PROCESS_CACHE[cache_key] = processes
-
-        return processes
+        discovered_processes = await ProcessService.discover_process_instances(nc)
+        return [
+            ProcessDTO.from_instance(process_instance, is_online=True, t=t) for process_instance in discovered_processes
+        ]
 
     @staticmethod
     async def send_event(
@@ -393,3 +471,13 @@ class ProcessService:
             process_id=process_id,
             process_walkthrough_id=external_event.process_walkthrough_id,
         )
+
+    @staticmethod
+    def clear_cache() -> None:
+        """
+        Clears the in-memory caches used for process discovery. Useful for testing purposes to ensure fresh discovery
+        requests.
+        """
+        DISCOVER_PROCESSES_CACHE.clear()
+        GET_PROCESS_INSTANCE_CACHE.clear()
+        GET_PROCESS_CLASS_CACHE.clear()

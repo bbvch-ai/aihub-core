@@ -8,9 +8,16 @@ from aihub_lib.nats.distributor.dependencies.use_external_process_event_distribu
     use_external_process_event_distributor,
 )
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
+from aihub_lib.nats.events import InstanceDiscoveryRequestEvent
+from aihub_lib.nats.events.discovery import ProcessInstanceDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
-from fastapi import Body, Depends, HTTPException, Path, Security
+from aihub_lib.nats.publishers.NCPublisher import NCPublisher
+from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
+from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
+from aihub_lib.nats.topics import ProcessInstanceDiscoveryTopic
+from fastapi import Body, Depends, FastAPI, HTTPException, Path, Security
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from stringcase import snakecase
@@ -29,6 +36,85 @@ logger = logging.getLogger(__name__)
 
 
 class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
+    """
+    This service ensures that new processes in the system are automatically registered.
+    This ensures that the API and the Processes are decoupled.
+    """
+
+    def __init__(
+        self,
+        nc: NATS,
+        api_app: FastAPI,
+        controller: ProcessController,
+        locale_handler: LocaleHandler,
+        discovery_interval: int = 60,
+    ):
+        super().__init__(nc, api_app, controller, locale_handler, discovery_interval)
+        self.controller: ProcessController = controller
+        self.topic_manager: ProcessTopicManager = ProcessTopicManager()
+
+        self.nc_publisher: NCPublisher[ProcessInstanceDiscoveryResponseEvent] | None = None
+        self.discovery_event_subscriber: NCSubscriber[InstanceDiscoveryRequestEvent] | None = None
+
+    async def discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: ProcessInstanceDiscoveryTopic):
+        """
+        Responds to discovery requests by publishing a ProcessDiscoveryResponseEvent that includes the basic
+        process configuration as well as some carefully crafted event specifications.
+        """
+        logger.debug(f"Received discovery request for {topic.process_class} with id {topic.process_id}.")
+
+        subject = self.topic_manager.get_process_instance_discovery_subject_response(
+            topic.call_id, topic.process_class, topic.process_id
+        )
+
+        processes: list[ProcessDTO] = []
+        if topic.process_class == "*":
+            processes = await ProcessService.discover_processes(self.nc, self.locale_handler)
+
+            if topic.process_id != "*":
+                processes = [process for process in processes if process.process_id == topic.process_id]
+
+        elif topic.process_id == "*":
+            # For processes, we don't have a discover_by_class method like agents, so we filter from all
+            all_processes = await ProcessService.discover_processes(self.nc, self.locale_handler)
+            processes = [process for process in all_processes if process.process_class == topic.process_class]
+
+        else:
+            processes.append(
+                await ProcessService.discover_process(
+                    self.nc, topic.process_class, topic.process_id, self.locale_handler
+                )
+            )
+
+        for process in processes:
+            process_discovery_response_event = process.to_discovery_response_event()
+            await self.nc_publisher.publish_event(process_discovery_response_event, subject)
+
+    @override
+    async def start(self):
+        started = await super().start()
+        if not started:
+            logger.debug("Process discovery service already running")
+            return
+
+        self.discovery_event_subscriber = ProcessNCSubscriber.for_process_instance_discovery_request_events(
+            nc=self.nc,
+            topic_manager=ProcessTopicManager(),
+            handler=self.discovery_handler,
+        )
+        await self.discovery_event_subscriber.start()
+        logger.info("Process discovery service started")
+
+    @override
+    async def stop(self):
+        stopped = await super().stop()
+        if not stopped:
+            logger.debug("Process discovery service already stopped")
+            return
+
+        await self.discovery_event_subscriber.stop()
+        logger.info("Process discovery service stopped")
+
     @override
     async def _discover_and_register(self):
         """
@@ -36,11 +122,12 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         """
         processes: list[ProcessDTO] = await ProcessService.discover_processes(self.nc, self.locale_handler)
 
+        # Deregister old endpoints
         for registered_process_class, registered_process_id in list(self.registered_entities):
             self._deregister_endpoints(registered_process_class, registered_process_id)
-
         self.app.openapi_schema = None
 
+        # Register new endpoints for configured processes
         for process in processes:
             process_key = (process.process_class, process.process_id)
 
@@ -51,7 +138,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
                 self._register_program_endpoint(process.process_class, process.process_id, process_input)
 
             self.registered_entities.add(process_key)
-            logger.info(f"Registered endpoints for process: {process.process_class}.{process.process_id}")
+            logger.info(f"Registered endpoints for configured process: {process.process_class}.{process.process_id}")
 
     def _register_human_endpoint(
         self,
