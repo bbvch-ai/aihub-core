@@ -421,6 +421,7 @@ services:
       - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
       - "--certificatesresolvers.letsencrypt.acme.storage=/srv/app/traefik/acme.json"
       - "--api=true"
+      - "--api.dashboard=true"
     ports:
       - "80:80"
       - "443:443"
