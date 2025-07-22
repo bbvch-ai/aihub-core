@@ -433,5 +433,5 @@ services:
       - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:${ADMIN_PASSWORD_HASH}"
-      - "traefik.http.routers.traefik.middlewares=security-headers,traefik-auth"
+      - "traefik.http.routers.traefik.middlewares=security-headers@file,traefik-auth"
 
