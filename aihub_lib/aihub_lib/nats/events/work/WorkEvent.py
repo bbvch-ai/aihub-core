@@ -26,6 +26,8 @@ class WorkEvent(ProcessEvent):
         LocaleString | None, Field(description="Display description for the process step")
     ] = None
 
+    in_response_to: Annotated[str | None, Field(description="The ID of the work event that this event is in response to")] = None
+
     @model_validator(mode="after")
     def set_default_values(self) -> "WorkEvent":
         """Set default values from class if instance values are None."""

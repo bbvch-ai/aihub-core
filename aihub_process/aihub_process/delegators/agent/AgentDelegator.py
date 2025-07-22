@@ -131,7 +131,7 @@ class AgentDelegator(AbstractEntityDelegator):
             topic: Annotated[AgentTopic, "The parsed topic of the event."],
         ):
             logger.debug(f"Handling agent event: {event.event_name}")
-            work_event = work_event_type(agent_stop_event=event)
+            work_event = work_event_type(agent_stop_event=event, in_response_to=topic.display_id if not is_process_start else None)
 
             if is_process_start:
                 process_walkthrough_id = str(ObjectId())
@@ -168,7 +168,6 @@ class AgentDelegator(AbstractEntityDelegator):
 
         logger.debug(f"Delegating agent output to external agent: {event.agent_class} with id {event.agent_id}")
         thread_id = ObjectId()
-        display_id = ObjectId()
 
         ThreadEntity.create_process_thread(
             name=self.process_class.__name__,
@@ -181,7 +180,7 @@ class AgentDelegator(AbstractEntityDelegator):
 
         external_event = ExternalAgentEvent(
             thread_id=str(thread_id),
-            display_id=str(display_id),
+            display_id=event.event_id,
             event=event.start_event,
         )
 

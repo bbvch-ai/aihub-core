@@ -22,6 +22,8 @@ from cachetools import TTLCache
 from fastapi import HTTPException
 from nats.aio.client import Client as NATS
 
+from aihub_api.routes.process.dto import ProcessWalkthroughDTO, PersistedEventDTO, HumanProcessStepDTO, \
+    AgentProcessStepDTO, ProgramProcessStepDTO
 from aihub_api.routes.process.dto.in_specs.AgentInDTO import AgentInDTO
 from aihub_api.routes.process.dto.in_specs.HumanInDTO import HumanInDTO
 from aihub_api.routes.process.dto.in_specs.ProgramInDTO import ProgramInDTO
@@ -339,7 +341,9 @@ class ProcessService:
             process_class, process_id, process_walkthrough_id
         )
 
+        # TODO: Ensure this also works for programs
         human_in = None
+        in_response_to = None
         for persisted_event in persisted_events:
             for work_form in persisted_event["event_data"]["forms"]:
                 potential_human_in = next(
@@ -352,6 +356,7 @@ class ProcessService:
                 )
                 if potential_human_in:
                     human_in = potential_human_in
+                    in_response_to = persisted_event["event_id"]
                     break
 
         if not human_in:
@@ -361,6 +366,7 @@ class ProcessService:
             "event_id": str(ObjectId()),
             "created_at": time.time_ns(),
             **raw_event_data,
+            "in_response_to": in_response_to,
             "_event_name": human_in.event_specs.event_name,
             "_parent_event_names": human_in.event_specs.event_parents,
         }
@@ -384,28 +390,134 @@ class ProcessService:
 
     @staticmethod
     async def get_process_walkthroughs(
-        process_class: str, process_id: str, user: UserIdentity
-    ) -> list[ProcessWalkthroughDTO]:
+        process_class: str, process_id: str, t: LocaleHandler, page: int = 1, page_size: int = 20
+    ) -> tuple[int, list]:
         """
-        Gets all process walkthroughs for a given process.
-        Returns walkthrough information including event counts and open form status.
+        Gets paginated process walkthroughs with detailed step information.
+        Returns a tuple of (total_count, walkthroughs_with_steps).
         """
-        from aihub_api.routes.process.dto.ProcessWalkthroughDTO import ProcessWalkthroughDTO
-
-        walkthroughs_data = PersistedProcessEventEntity.get_process_walkthroughs(process_class, process_id)
+        total_count, walkthroughs_data = PersistedProcessEventEntity.get_paginated_walkthrough_events(
+            process_class, process_id, page, page_size
+        )
 
         walkthroughs = []
         for walkthrough_data in walkthroughs_data:
-            walkthroughs.append(
-                ProcessWalkthroughDTO(
-                    process_walkthrough_id=walkthrough_data["process_walkthrough_id"],
-                    process_class=process_class,
-                    process_id=process_id,
-                    event_count=walkthrough_data["event_count"],
-                    has_open_forms=walkthrough_data.get("has_open_forms", False),
-                    first_event_timestamp=walkthrough_data.get("first_event_timestamp"),
-                    last_event_timestamp=walkthrough_data.get("last_event_timestamp"),
-                )
+            process_steps = ProcessService._build_process_steps_from_events(
+                walkthrough_data["events"], t, walkthrough_data["process_class"], walkthrough_data["process_id"]
             )
 
-        return walkthroughs
+            completed_steps = sum(1 for step in process_steps if step.is_completed)
+
+            walkthrough = ProcessWalkthroughDTO(
+                process_walkthrough_id=walkthrough_data["process_walkthrough_id"],
+                process_class=walkthrough_data["process_class"],
+                process_id=walkthrough_data["process_id"],
+                process_steps=process_steps,
+                created_at=walkthrough_data["first_event_timestamp"],
+                updated_at=walkthrough_data["last_event_timestamp"],
+                total_steps=len(process_steps),
+                completed_steps=completed_steps,
+                is_active=completed_steps < len(process_steps),
+            )
+            walkthroughs.append(walkthrough)
+
+        return total_count, walkthroughs
+
+    @staticmethod
+    def _build_process_steps_from_events(events: list[dict], t: LocaleHandler, process_class: str, process_id: str) -> list:
+        """
+        Builds a list of ProcessStepDTO objects from raw event data by pairing
+        work requests with their corresponding work responses.
+        """
+        # Convert raw events to Pydantic models for better typing
+        persisted_events = []
+        for event in events:
+            # Ensure process fields are present (they should be from the aggregation pipeline)
+            if "process_class" not in event:
+                event["process_class"] = process_class
+            if "process_id" not in event:
+                event["process_id"] = process_id
+            if "process_walkthrough_id" not in event:
+                # This should not happen, but fallback to empty string if needed
+                event["process_walkthrough_id"] = ""
+            
+            persisted_events.append(PersistedEventDTO(**event))
+
+        # Separate work request and work response events
+        work_requests = []
+        work_responses = []
+
+        for event in persisted_events:
+            if any("WorkRequestEvent" in parent for parent in event.event_parents):
+                work_requests.append(event)
+            elif any("WorkEvent" in parent for parent in event.event_parents):
+                work_responses.append(event)
+
+        # Sort by creation time
+        work_requests.sort(key=lambda x: x.event_data.get("created_at", 0))
+        work_responses.sort(key=lambda x: x.event_data.get("created_at", 0))
+
+        # Pair requests with responses and create entity-specific steps
+        steps = []
+        step_index = 0
+
+        for request_event in work_requests:
+            request_type = ProcessService._get_step_type_from_event_parents(request_event.event_parents)
+
+            # Find corresponding work response using in_response_to field
+            response_event = None
+            for resp_event in work_responses:
+                if resp_event.event_data.get("in_response_to") == request_event.event_id:
+                    response_event = resp_event
+                    break
+
+            # Create entity-specific step using classmethods
+            if request_type == "human":
+                step = HumanProcessStepDTO.from_events(request_event, response_event, step_index, t)
+            elif request_type == "agent":
+                step = AgentProcessStepDTO.from_events(request_event, response_event, step_index, t)
+            else:  # program
+                step = ProgramProcessStepDTO.from_events(request_event, response_event, step_index, t)
+
+            steps.append(step)
+            step_index += 1
+
+        return steps
+
+    @staticmethod
+    def _get_step_type_from_event_parents(event_parents: list[str]) -> str:
+        """Determines the step type (human/agent/program) from the event parents."""
+        for parent in event_parents:
+            if "HumanWork" in parent:
+                return "human"
+            elif "AgentWork" in parent:
+                return "agent"
+            elif "ProgramWork" in parent:
+                return "program"
+        return "human"  # Default fallback
+
+    @staticmethod
+    def _events_match(request_event: dict, response_event: dict) -> bool:
+        """
+        Determines if a work request event matches a work response event.
+        This is done by checking if the response event name matches any of the
+        form event names in the request, or by other matching logic.
+        """
+        request_data = request_event.get("event_data", {})
+        response_event_name = response_event.get("event_name", "")
+
+        # For human work requests, check forms
+        forms = request_data.get("forms", [])
+        if forms:
+            for form in forms:
+                if form.get("_event_name") == response_event_name:
+                    return True
+
+        # For agent/program work requests, match by removing "Request" from the name
+        request_name = request_event.get("event_name", "")
+        expected_response_name = request_name.replace("RequestEvent", "Event").replace("Request", "")
+        if response_event_name == expected_response_name:
+            return True
+
+        return False
+

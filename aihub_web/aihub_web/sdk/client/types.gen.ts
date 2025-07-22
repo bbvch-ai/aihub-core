@@ -7212,6 +7212,38 @@ export type PaginatedDocumentsResponse = {
 };
 
 /**
+ * PaginatedProcessWalkthroughsResponse
+ * Paginated response containing process walkthroughs with detailed step information.
+ */
+export type PaginatedProcessWalkthroughsResponse = {
+    /**
+     * Total
+     * Total number of items available
+     */
+    total: number;
+    /**
+     * Page
+     * Current page number (1-indexed)
+     */
+    page: number;
+    /**
+     * Page Size
+     * Number of threads per page
+     */
+    page_size: number;
+    /**
+     * Total Pages
+     * Total number of pages available
+     */
+    total_pages: number;
+    /**
+     * Walkthroughs
+     * List of process walkthroughs for the current page
+     */
+    walkthroughs: Array<ProcessWalkthroughDto>;
+};
+
+/**
  * PaginatedThreadsResponse
  */
 export type PaginatedThreadsResponse = {
@@ -7670,6 +7702,58 @@ export type ProcessDtoWritable = {
      * Indicates whether the process is online and reachable.
      */
     is_online?: boolean | null;
+};
+
+/**
+ * ProcessWalkthroughDTO
+ * DTO representing a process walkthrough with detailed step information.
+ */
+export type ProcessWalkthroughDto = {
+    /**
+     * Process Walkthrough Id
+     * Unique identifier for this specific process walkthrough.
+     */
+    process_walkthrough_id: string;
+    /**
+     * Process Class
+     * The class/type of the process.
+     */
+    process_class: string;
+    /**
+     * Process Id
+     * Unique identifier for the specific process instance.
+     */
+    process_id: string;
+    /**
+     * Process Steps
+     * List of all steps in this walkthrough, ordered chronologically.
+     */
+    process_steps: Array<unknown>;
+    /**
+     * Created At
+     * Timestamp of the first event in nanoseconds.
+     */
+    created_at: number;
+    /**
+     * Updated At
+     * Timestamp of the last event in nanoseconds.
+     */
+    updated_at: number;
+    /**
+     * Total Steps
+     * Total number of steps in this walkthrough.
+     */
+    total_steps: number;
+    /**
+     * Completed Steps
+     * Number of completed steps in this walkthrough.
+     */
+    completed_steps: number;
+    /**
+     * Is Active
+     * Whether this walkthrough has uncompleted steps.
+     */
+    is_active: boolean;
 };
 
 /**
@@ -11880,6 +11964,51 @@ export type DiscoverProcessesResponses = {
 };
 
 export type DiscoverProcessesResponse = DiscoverProcessesResponses[keyof DiscoverProcessesResponses];
+
+export type GetProcessWalkthroughsData = {
+    body?: never;
+    path: {
+        /**
+         * Process Class
+         */
+        process_class: string;
+        /**
+         * Process Id
+         */
+        process_id: string;
+    };
+    query?: {
+        /**
+         * Page Number
+         * Page number to retrieve (starting from 1)
+         */
+        page?: number;
+        /**
+         * Page Size
+         * Number of items per page (maximum 100)
+         */
+        page_size?: number;
+    };
+    url: '/processes/{process_class}/{process_id}/walkthroughs';
+};
+
+export type GetProcessWalkthroughsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetProcessWalkthroughsError = GetProcessWalkthroughsErrors[keyof GetProcessWalkthroughsErrors];
+
+export type GetProcessWalkthroughsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PaginatedProcessWalkthroughsResponse;
+};
+
+export type GetProcessWalkthroughsResponse = GetProcessWalkthroughsResponses[keyof GetProcessWalkthroughsResponses];
 
 export type GetProcessStartFormsData = {
     body?: never;

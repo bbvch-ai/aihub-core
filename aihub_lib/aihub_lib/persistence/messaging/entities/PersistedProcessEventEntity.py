@@ -139,6 +139,94 @@ class PersistedProcessEventEntity(Document):
         ).first()
 
     @classmethod
+    def get_paginated_walkthrough_events(
+        cls, process_class: str, process_id: str, page: int = 1, page_size: int = 20
+    ) -> tuple[int, list[dict]]:
+        """
+        Gets paginated process walkthroughs with all their events.
+
+        Returns a tuple of (total_count, walkthrough_data) where walkthrough_data contains
+        aggregated information about each walkthrough including all its events.
+        """
+        # First, get the total count of unique walkthroughs
+        pipeline_count = [
+            {
+                "$match": {
+                    "process_class": process_class,
+                    "process_id": process_id,
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$process_walkthrough_id",
+                }
+            },
+            {"$count": "total"},
+        ]
+
+        count_result = list(cls.objects.aggregate(pipeline_count))
+        total_count = count_result[0]["total"] if count_result else 0
+
+        # Calculate pagination
+        skip = (page - 1) * page_size
+
+        # Main pipeline to get walkthrough data with events
+        pipeline = [
+            {
+                "$match": {
+                    "process_class": process_class,
+                    "process_id": process_id,
+                }
+            },
+            {
+                "$sort": {"event_data.created_at": 1}  # Sort events by creation time
+            },
+            {
+                "$group": {
+                    "_id": "$process_walkthrough_id",
+                    "process_class": {"$first": "$process_class"},
+                    "process_id": {"$first": "$process_id"},
+                    "events": {
+                        "$push": {
+                            "event_id": "$event_id",
+                            "event_type": "$event_type",
+                            "event_name": "$event_name",
+                            "event_data": "$event_data",
+                            "event_parents": "$event_parents",
+                            "process_class": "$process_class",
+                            "process_id": "$process_id",
+                            "process_walkthrough_id": "$process_walkthrough_id",
+                        }
+                    },
+                    "first_event_timestamp": {"$min": "$event_data.created_at"},
+                    "last_event_timestamp": {"$max": "$event_data.created_at"},
+                    "event_count": {"$sum": 1},
+                }
+            },
+            {
+                "$sort": {"last_event_timestamp": -1}  # Sort walkthroughs by most recent activity
+            },
+            {"$skip": skip},
+            {"$limit": page_size},
+            {
+                "$project": {
+                    "process_walkthrough_id": "$_id",
+                    "process_class": 1,
+                    "process_id": 1,
+                    "events": 1,
+                    "first_event_timestamp": 1,
+                    "last_event_timestamp": 1,
+                    "event_count": 1,
+                    "_id": 0,
+                }
+            },
+        ]
+
+        walkthrough_data = list(cls.objects.aggregate(pipeline))
+
+        return total_count, walkthrough_data
+
+    @classmethod
     def get_process_walkthroughs(cls, process_class: str, process_id: str) -> list[dict]:
         """
         Gets all distinct process walkthroughs for a given process with aggregated information.

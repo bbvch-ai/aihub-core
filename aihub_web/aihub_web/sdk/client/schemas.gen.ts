@@ -8494,7 +8494,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1753116470
+            default: 1753184682
         },
         owned_by: {
             type: 'string',
@@ -8931,6 +8931,43 @@ export const PaginatedDocumentsResponseSchema = {
     type: 'object',
     required: ['total', 'page', 'page_size', 'total_pages', 'documents'],
     title: 'PaginatedDocumentsResponse'
+} as const;
+
+export const PaginatedProcessWalkthroughsResponseSchema = {
+    properties: {
+        total: {
+            type: 'integer',
+            title: 'Total',
+            description: 'Total number of items available'
+        },
+        page: {
+            type: 'integer',
+            title: 'Page',
+            description: 'Current page number (1-indexed)'
+        },
+        page_size: {
+            type: 'integer',
+            title: 'Page Size',
+            description: 'Number of threads per page'
+        },
+        total_pages: {
+            type: 'integer',
+            title: 'Total Pages',
+            description: 'Total number of pages available'
+        },
+        walkthroughs: {
+            items: {
+                '$ref': '#/components/schemas/ProcessWalkthroughDTO'
+            },
+            type: 'array',
+            title: 'Walkthroughs',
+            description: 'List of process walkthroughs for the current page'
+        }
+    },
+    type: 'object',
+    required: ['total', 'page', 'page_size', 'total_pages', 'walkthroughs'],
+    title: 'PaginatedProcessWalkthroughsResponse',
+    description: 'Paginated response containing process walkthroughs with detailed step information.'
 } as const;
 
 export const PaginatedThreadsResponseSchema = {
@@ -9450,6 +9487,61 @@ common goal.
 To interact with the process, it is necessary to know which entity (human, agent, program) can and must submit
 what kind of work to start / continue the process.
 Hence, this object offers information about the inputs (work events) that these entities can contribute.`
+} as const;
+
+export const ProcessWalkthroughDTOSchema = {
+    properties: {
+        process_walkthrough_id: {
+            type: 'string',
+            title: 'Process Walkthrough Id',
+            description: 'Unique identifier for this specific process walkthrough.'
+        },
+        process_class: {
+            type: 'string',
+            title: 'Process Class',
+            description: 'The class/type of the process.'
+        },
+        process_id: {
+            type: 'string',
+            title: 'Process Id',
+            description: 'Unique identifier for the specific process instance.'
+        },
+        process_steps: {
+            items: {},
+            type: 'array',
+            title: 'Process Steps',
+            description: 'List of all steps in this walkthrough, ordered chronologically.'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'Timestamp of the first event in nanoseconds.'
+        },
+        updated_at: {
+            type: 'integer',
+            title: 'Updated At',
+            description: 'Timestamp of the last event in nanoseconds.'
+        },
+        total_steps: {
+            type: 'integer',
+            title: 'Total Steps',
+            description: 'Total number of steps in this walkthrough.'
+        },
+        completed_steps: {
+            type: 'integer',
+            title: 'Completed Steps',
+            description: 'Number of completed steps in this walkthrough.'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active',
+            description: 'Whether this walkthrough has uncompleted steps.'
+        }
+    },
+    type: 'object',
+    required: ['process_walkthrough_id', 'process_class', 'process_id', 'process_steps', 'created_at', 'updated_at', 'total_steps', 'completed_steps', 'is_active'],
+    title: 'ProcessWalkthroughDTO',
+    description: 'DTO representing a process walkthrough with detailed step information.'
 } as const;
 
 export const ProgramInDTOSchema = {

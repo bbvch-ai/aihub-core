@@ -37,6 +37,7 @@ const isActive = (path: string) => {
 const navItems = computed<NavItem[]>(() => {
   const items: NavItem[] = [
     { name: t('process.navigation.overview'), key: 'overview', path: subPath('overview'), isActive: isActive('overview') },
+    { name: t('process.navigation.walkthroughs'), key: 'walkthroughs', path: subPath('walkthroughs'), isActive: isActive('walkthroughs') },
     { name: t('process.navigation.start'), key: 'start', path: subPath('start'), isActive: isActive('start') },
   ]
   return items

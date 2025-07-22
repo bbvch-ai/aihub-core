@@ -86,6 +86,7 @@ async def main():
         .get_process()
         .get_processes()
         .discover_processes()
+        .get_process_walkthroughs()
         .get_process_start_forms()
         .get_process_open_forms()
         .send_process_start_form()

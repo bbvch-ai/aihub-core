@@ -16,9 +16,11 @@ from fastapi.params import Query
 from nats.aio.client import Client as NATS
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
+from aihub_api.pagination.type.PageNumber import PageNumber
+from aihub_api.pagination.type.PageSize import PageSize
+from aihub_api.routes.process.dto import PaginatedProcessWalkthroughsResponse
 from aihub_api.routes.process.dto.in_specs.HumanInDTO import HumanInDTO
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
-from aihub_api.routes.process.dto.ProcessWalkthroughDTO import ProcessWalkthroughDTO
 from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 from aihub_api.routes.process.ProcessService import ProcessService
 
@@ -112,13 +114,27 @@ class ProcessController(Controller):
         async def get_process_walkthroughs(
             process_class: str,
             process_id: str,
-            user: Annotated[
+            _: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.user.process.{process_class}.{process_id}"))
             ],
-        ) -> list[ProcessWalkthroughDTO]:
-            """Get all process walkthroughs for a specific process."""
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+            page: PageNumber = 1,
+            page_size: PageSize = 20,
+        ) -> PaginatedProcessWalkthroughsResponse:
+            """Get paginated process walkthroughs with detailed step information for a specific process."""
+            total, walkthroughs = await ProcessService.get_process_walkthroughs(
+                process_class, process_id, t, page, page_size
+            )
 
-            return await ProcessService.get_process_walkthroughs(process_class, process_id, user)
+            total_pages = (total + page_size - 1) // page_size
+
+            return PaginatedProcessWalkthroughsResponse(
+                walkthroughs=walkthroughs,
+                total=total,
+                page=page,
+                page_size=page_size,
+                total_pages=total_pages,
+            )
 
         return self
 
