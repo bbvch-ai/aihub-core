@@ -92,10 +92,6 @@ class ProcessService:
 
     @staticmethod
     async def discover_process_instance(nc: NATS, process_class: str, process_id: str) -> ProcessInstanceDTO:
-        """
-        Retrieves details about a specific process. If cached, returns immediately.
-        Otherwise, sends a targeted discovery request and waits for a response.
-        """
         cache_key = (process_class, process_id)
 
         if cache_key in GET_PROCESS_INSTANCE_CACHE:
@@ -126,10 +122,6 @@ class ProcessService:
 
     @staticmethod
     async def discover_process_instances_by_class(nc: NATS, process_class: str) -> list[ProcessInstanceDTO]:
-        """
-        Retrieves all process instances for a specific process class. If cached, returns immediately.
-        Otherwise, sends a discovery request and waits for responses.
-        """
         cache_key = (process_class, "*")
 
         if cache_key in GET_PROCESS_INSTANCE_CACHE:
@@ -164,10 +156,6 @@ class ProcessService:
 
     @staticmethod
     async def discover_process_class(nc: NATS, process_class: str) -> ProcessClassDTO:
-        """
-        Retrieves details about a specific process class. If cached, returns immediately.
-        Otherwise, sends a targeted discovery request and waits for a response.
-        """
         cache_key = process_class
 
         if cache_key in GET_PROCESS_CLASS_CACHE:
@@ -212,10 +200,6 @@ class ProcessService:
 
     @staticmethod
     async def discover_process_instances(nc: NATS) -> list[ProcessInstanceDTO]:
-        """
-        Discovers all processes by broadcasting a discovery request and waiting for responses.
-        Returns a cached result if available.
-        """
         cache_key = "all_process_instances"
 
         if cache_key in DISCOVER_PROCESSES_CACHE:
@@ -255,10 +239,6 @@ class ProcessService:
 
     @staticmethod
     async def discover_process_classes(nc: NATS) -> list[ProcessClassDTO]:
-        """
-        Discovers all process classes by broadcasting a discovery request and waiting for responses.
-        Returns a cached result if available.
-        """
         cache_key = "all_process_classes"
 
         if cache_key in DISCOVER_PROCESSES_CACHE:
@@ -305,10 +285,6 @@ class ProcessService:
 
     @staticmethod
     async def discover_processes(nc: NATS, t: LocaleHandler) -> list[ProcessDTO]:
-        """
-        Discovers all processes by broadcasting a discovery request and waiting for responses.
-        Returns a cached result if available.
-        """
         discovered_processes = await ProcessService.discover_process_instances(nc)
         return [
             ProcessDTO.from_instance(process_instance, is_online=True, t=t) for process_instance in discovered_processes
