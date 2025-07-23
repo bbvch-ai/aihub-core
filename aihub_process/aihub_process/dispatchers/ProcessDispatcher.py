@@ -7,8 +7,8 @@ from typing import Annotated, Any
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
 from aihub_lib.nats.events import (
     AgentWorkRequestEvent,
-    BaseEvent,
     HumanWorkRequestEvent,
+    ProcessEvent,
     ProcessExceptionEvent,
     ProcessStopEvent,
     ProgramWorkRequestEvent,
@@ -91,8 +91,10 @@ class ProcessDispatcher(BaseDispatcher):
 
         if event.is_process_stop_event:
             logger.debug(f"Handling ProcessStopEvent: {event.event_name}")
+            await walkthrough_context.delete_all()
             await self.event_store.delete_all(topic.execution_context_id)
             await self.step_store.delete_all(topic.execution_context_id)
+            return
 
         if event.is_process_exception_event:
             logger.debug(f"Handling ProcessExceptionEvent: {event.event_name}")
@@ -231,7 +233,7 @@ class ProcessDispatcher(BaseDispatcher):
     @override
     async def publish_event(
         self,
-        event: Annotated[BaseEvent, "The event to publish."],
+        event: Annotated[ProcessEvent, "The event to publish."],
         topic: Annotated[ProcessInstanceTopic, "Current process topic context."],
     ):
         """

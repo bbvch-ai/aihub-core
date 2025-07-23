@@ -97,7 +97,7 @@ class ProcessNCSubscriber(NCSubscriber):
         )
 
     @classmethod
-    def for_specific_work_request_event_in_process_instance(
+    def for_specific_work_event_in_process_instance(
         cls,
         nc: NATS,
         topic_manager: ProcessInstanceTopicManager,
@@ -107,7 +107,7 @@ class ProcessNCSubscriber(NCSubscriber):
         """Subscribe to all events within a specific process instance"""
         subject = topic_manager.get_subject_for_specific_event_in_process_instance(
             process_walkthrough_id="*",
-            event_type=ProcessTopicManager.WORK_REQUEST_EVENT,
+            event_type=ProcessTopicManager.WORK_EVENT,
             event_name=event.event_name_from_class(),
             event_id="*",
         )

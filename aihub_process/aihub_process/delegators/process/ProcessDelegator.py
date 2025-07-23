@@ -50,7 +50,7 @@ class ProcessDelegator(AbstractEntityDelegator):
                     process_id=process_in.process_id,
                 )
 
-                subscription = ProcessNCSubscriber.for_specific_work_request_event_in_process_instance(
+                subscription = ProcessNCSubscriber.for_specific_work_event_in_process_instance(
                     nc=self.nc,
                     topic_manager=process_instance_topic_manager,
                     handler=self.handle_process_step_input_factory(

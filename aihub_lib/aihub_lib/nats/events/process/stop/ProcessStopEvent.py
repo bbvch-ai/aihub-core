@@ -2,10 +2,10 @@ from typing import Annotated
 
 from pydantic import Field
 
-from aihub_lib.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
+from aihub_lib.nats.events import WorkEvent
 
 
-class ProcessStopEvent(WorkRequestEvent):
+class ProcessStopEvent(WorkEvent):
     """
     Signals the successful termination of a process walkthrough.
     """
