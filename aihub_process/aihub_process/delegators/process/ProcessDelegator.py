@@ -8,9 +8,9 @@ from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubs
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
 from aihub_lib.nats.topics import ProcessInstanceTopic
+from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
 from bson import ObjectId
 
-from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
 from aihub_process.delegators.AbstractEntityDelegator import AbstractEntityDelegator
 
 logger = logging.getLogger(__name__)
