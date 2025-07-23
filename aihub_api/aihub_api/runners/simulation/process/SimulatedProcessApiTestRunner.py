@@ -166,6 +166,7 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
                 event.event_name, event.event_id
             )
             logger.debug(f"Publishing work request event {event.event_name} to {subject}")
+            event.process_id = self.process_id
             await self.js_publisher.publish_event(event, subject)
 
     async def start_simulation(self):

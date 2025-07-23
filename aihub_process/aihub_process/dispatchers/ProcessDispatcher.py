@@ -217,7 +217,6 @@ class ProcessDispatcher(BaseDispatcher):
                 elif isinstance(event, ProcessStopEvent) and isinstance(config, Process.Out):
                     logger.debug("Step return correctly identified as ProcessStopEvent")
                     event.process_class = topic.process_class
-                    event.process_id = topic.process_id
                     event.process_walkthrough_id = topic.process_walkthrough_id
                     logger.debug("Received process STOP event")
 
@@ -244,6 +243,9 @@ class ProcessDispatcher(BaseDispatcher):
 
         if not (event.is_work_request_event or event.is_process_exception_event or event.is_process_stop_event):
             raise ValueError("ProcessDispatcher must only emit WorkRequest-, ProcessException-, or ProcessStop-Events")
+
+        if event.is_work_request_event:
+            event.process_id = topic.process_id
 
         logger.debug(f"Publishing event '{event.event_name}' to subject '{subject}'")
         await self.js_publisher.publish_event(event, subject)

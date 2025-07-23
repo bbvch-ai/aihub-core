@@ -53,6 +53,9 @@ class ProcessClassTopic(Topic):
         ) = subject.split(".")
         assert topic_type == ProcessTopicManager.PROCESS_TOPIC, f"Unexpected topic type in subject: {subject}"
 
+        if process_id != "*":
+            raise ValueError(f"Unexpected process_id in subject: {subject}")
+
         return cls(
             process_class=process_class,
             process_walkthrough_id=process_walkthrough_id,

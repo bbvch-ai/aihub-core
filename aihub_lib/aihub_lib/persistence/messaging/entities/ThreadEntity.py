@@ -47,6 +47,7 @@ class ThreadEntity(Document):
         agent: Agent,
         thread_id: ObjectId,
         process_class: str,
+        process_id: str,
         process_walkthrough_id: str,
     ) -> "ThreadEntity":
         thread = cls(
@@ -55,6 +56,7 @@ class ThreadEntity(Document):
             users=[],
             agents=[agent],
             process_class=process_class,
+            process_id=process_id,
             process_walkthrough_id=process_walkthrough_id,
             created_at=datetime.now(),
         )

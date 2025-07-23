@@ -174,6 +174,7 @@ class AgentDelegator(AbstractEntityDelegator):
             agent=AgentInThread(agent_class=event.agent_class, agent_id=event.agent_id),
             thread_id=thread_id,
             process_class=self.process_class.__name__,
+            process_id=event.process_id,
             process_walkthrough_id=topic.process_walkthrough_id,
         )
 

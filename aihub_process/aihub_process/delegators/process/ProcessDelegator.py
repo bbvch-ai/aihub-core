@@ -10,6 +10,7 @@ from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import
 from aihub_lib.nats.topics import ProcessInstanceTopic
 from bson import ObjectId
 
+from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
 from aihub_process.delegators.AbstractEntityDelegator import AbstractEntityDelegator
 
 logger = logging.getLogger(__name__)
@@ -90,6 +91,6 @@ class ProcessDelegator(AbstractEntityDelegator):
 
         return _handle_process_step_input
 
-    async def handle_process_step_output(self, event: WorkRequestEvent, topic: ProcessInstanceTopic):
+    async def handle_process_step_output(self, event: WorkRequestEvent, topic: ProcessClassTopic):
         # The ProcessOutput Event is already published in the right format anyways
         return

@@ -17,13 +17,6 @@ class ProcessStopEvent(WorkRequestEvent):
             "This field will be auto-ingested by the process dispatcher."
         ),
     ] = None
-    process_id: Annotated[
-        str | None,
-        Field(
-            description="Process ID associated with this Stop Event. "
-            "This field will be auto-ingested by the process dispatcher."
-        ),
-    ] = None
     process_walkthrough_id: Annotated[
         str | None,
         Field(
