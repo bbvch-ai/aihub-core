@@ -157,6 +157,9 @@ class AzureGraphService:
                 logger.warning(f"Unable to fetch user profile image: {e}")
             return None
 
+        if not image_response:
+            return None
+
         content_type = image_response["headers"].get("Content-Type", "image/jpeg")
         base64_data = base64.b64encode(image_response["content"]).decode("utf-8")
         image_data_url = f"data:{content_type};base64,{base64_data}"
