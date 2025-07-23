@@ -18,7 +18,7 @@ class StartEvent(ControlAndDisplayEvent):
     drive the flow. Other event types may provide data or UI updates but do not start or control runs.
     """
 
-    agent_config: Annotated[dict[str, Any] | None, Field(description="Agent configuration")] = None
+    agent_config: Annotated["dict[str, Any] | None", Field(description="Agent configuration")] = None
 
     def to_context_dict(self) -> dict[str, Any]:
         """

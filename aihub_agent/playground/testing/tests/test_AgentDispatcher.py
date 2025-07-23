@@ -1,3 +1,4 @@
+from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import nats
@@ -530,7 +531,8 @@ class TestAgentDispatcherErrorHandling:
     async def test_handle_event_with_invalid_agent_config_type(self, agent_dispatcher, agent_topic):
         """Test handling of invalid agent config type validation."""
         # Arrange
-        start_event = StartEvent(agent_config={"invalid": "config"})
+        invalid_config: dict[str, Any] = {"invalid": "config"}
+        start_event = StartEvent(agent_config=invalid_config)
 
         mock_run_context = Mock(spec=RunContext)
         mock_run_context.set = AsyncMock()
