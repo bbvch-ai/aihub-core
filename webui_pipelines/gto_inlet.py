@@ -26,36 +26,34 @@ class Filter:
 
     def __init__(self):
         self.valves = self.Valves()
-        self.gto_text = None
 
     async def inlet(self, body: dict, __user__: Optional[dict] = None, __event_emitter__=None) -> dict:
-        if not self.gto_text:
-            if __event_emitter__:
-                await __event_emitter__(
-                    {
-                        "type": "status",
-                        "data": {
-                            "description": "GTO Daten werden geladen...",
-                            "done": False,
-                        },
-                    }
-                )
-            headers = {
-                "Authorization": f"Bearer {self.valves.LCDM_HUB_TOKEN}",
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-            }
-
-            response = requests.get(
-                f"{self.valves.LCDM_HUB_BASE_URL}availablenames",
-                headers=headers,
+        if __event_emitter__:
+            await __event_emitter__(
+                {
+                    "type": "status",
+                    "data": {
+                        "description": "GTO Daten werden geladen...",
+                        "done": False,
+                    },
+                }
             )
-            if response.status_code == 200:
-                names = eval(response.text)
+        headers = {
+            "Authorization": f"Bearer {self.valves.LCDM_HUB_TOKEN}",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
 
-                self.gto_text = f"\n\n<GTO_SCHEMAS>{dict_to_md_table(names)}</GTO_SCHEMAS>"
-            else:
-                raise Exception(f"Failed to fetch GTO data: {response.status_code} - {response.text}")
+        response = requests.get(
+            f"{self.valves.LCDM_HUB_BASE_URL}availablenames",
+            headers=headers,
+        )
+        if response.status_code == 200:
+            names = eval(response.text)
+
+            gto_text = f"\n\n<GTO_SCHEMAS>{dict_to_md_table(names)}</GTO_SCHEMAS>"
+        else:
+            raise Exception(f"Failed to fetch GTO data: {response.status_code} - {response.text}")
 
         if __event_emitter__:
             await __event_emitter__(
@@ -67,7 +65,7 @@ class Filter:
 
         context_message = {
             "role": "system",
-            "content": self.gto_text,
+            "content": gto_text,
         }
 
         body.setdefault("messages", []).insert(0, context_message)

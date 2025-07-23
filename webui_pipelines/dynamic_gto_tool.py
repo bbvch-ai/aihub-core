@@ -154,7 +154,7 @@ class Tools:
                     {
                         "type": "status",
                         "data": {
-                            "description": f"Speichere {len(hub_data)} Einträge im LCDM Hub...",
+                            "description": f"Speichere {int(len(hub_data)/len(gto_schema['gtoAttributeDefinitions']))} Einträge im LCDM Hub...",
                             "done": False,
                         },
                     }
@@ -232,14 +232,14 @@ class Tools:
 
         for attr_key, attr_def in attribute_definitions.items():
             field_name = attr_def.get("key", attr_key)
-            data_type = attr_def.get("dataType", "String")
+            data_type = attr_def.get("dataType", "string")
             is_mandatory = attr_def.get("mandatory", False)
 
-            if data_type == "Integer" or attr_def.get("valueType") == "Integer":
+            if data_type == "integer" or attr_def.get("valueType") == "integer":
                 python_type = int
-            elif data_type == "Float" or attr_def.get("valueType") == "Float":
+            elif data_type == "float" or attr_def.get("valueType") == "float":
                 python_type = float
-            elif data_type == "Boolean" or attr_def.get("valueType") == "Boolean":
+            elif data_type == "boolean" or attr_def.get("valueType") == "boolean":
                 python_type = bool
             else:
                 python_type = str

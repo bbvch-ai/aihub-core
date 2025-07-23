@@ -1,7 +1,7 @@
 """
 title: LCDM Hub GTO Manager
 author: Noah Hermann
-description: Validates a GTO schemas and saves it to the LCDM hub. Is used when the user wants to save a GTO schema.
+description: Validates a GTO schemas and saves it to the LCDM hub. Is used when the user wants to save a GTO schema. Pass {'gto_data': gto_data} as body.
 version: 0.1.0
 """
 
@@ -14,18 +14,18 @@ from pydantic import BaseModel, Field, field_validator
 class GtoAttributeDefinition(BaseModel):
     id: int = Field(0, description="Unique identifier of the GTO attribute, needs to be 0")
     key: str = Field(..., description="The name of the GTO attribute")
-    dataType: Optional[str] = Field(None, description="The datatype for the attributes value")
+    dataType: str = Field("MANUAL_VALUE_TYPE", description="The datatype for the attributes value")
     valueType: str = Field(..., description="")
-    unitOfMeasurement: Optional[str] = Field(None, description="Mostly used for integers")
-    leadOfData: Optional[str] = Field(None, description="")
-    reportRelevant: Optional[bool] = Field(None, description="")
+    unitOfMeasurement: Optional[str] = Field("", description="Mostly used for integers")
+    leadOfData: str = Field("SOURCE", description="")
+    reportRelevant: bool = Field(False, description="")
     gtoAttributeDefinitionsKey: Optional[str] = Field(None, description="")
-    mandatory: Optional[bool] = Field(None, description="")
-    relationFinderActive: Optional[bool] = Field(None, description="")
-    relatedGtoId: Optional[int] = Field(None, description="")
+    mandatory: bool = Field(False, description="")
+    relationFinderActive: Optional[str] = Field(None, description="")
+    relatedGtoId: int = Field(0, description="")
     relatedGtoAttributeKey: Optional[str] = Field(None, description="")
-    reportFields: Optional[Dict] = Field(None, description="")
-    spellingValues: Optional[List] = Field(None, description="")
+    reportFields: Dict = Field(default_factory=dict, description="")
+    spellingValues: List = Field(default_factory=list, description="")
 
     @field_validator("id")
     @classmethod
@@ -152,22 +152,23 @@ class Tools:
         Example usage:
             To create a "Door" GTO with Material and Size attributes:
             {
-                "id": 0,
-                "name": "Door",
-                "idguid": "door-gto-v1",
-                "gtoAttributeDefinitions": {
-                    "material_attr": {
-                        "id": 0,
-                        "key": "Material",
-                        "valueType": "string"
-                    },
-                    "size_attr": {
-                        "id": 0,
-                        "key": "Size",
-                        "valueType": "int",
-                        "unitOfMeasurement": "m²"
+                "gto_data": {
+                    "id": 0,
+                    "name": "Door",
+                    "idguid": "door-gto-v1",
+                    "gtoAttributeDefinitions": {
+                        "material_attr": {
+                            "id": 0,
+                            "key": "Material",
+                            "valueType": "string"
+                        },
+                        "size_attr": {
+                            "id": 0,
+                            "key": "Size",
+                            "valueType": "int",
+                            "unitOfMeasurement": "m²"
+                        }
                     }
-                }
             }
         """
 
@@ -303,6 +304,7 @@ class Tools:
 
         for i, definition in enumerate(definitions):
             new_key = f"{(i + 1) * 5:04d}"  # 0005, 0010, 0015, etc.
+            definition.gtoAttributeDefinitionsKey = new_key
             new_definitions[new_key] = definition
 
         return gto.model_copy(update={"gtoAttributeDefinitions": new_definitions})
