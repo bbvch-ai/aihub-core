@@ -16,29 +16,10 @@ enable_logging()
 
 
 @pytest.fixture(autouse=True)
-def cleanup_db_and_cache():
-    """Ensure clean cache and DB state before and after each test."""
-    # Clear cache before test
+def cleanup_db_and_cache(sample_process_config):
     ProcessService.clear_cache()
-    
-    # Clean up any test data that might exist in DB
-    try:
-        # Remove any ProcessConfigEntityDocument records created during testing
-        ProcessConfigEntityDocument.delete_many({"process_class": "TestProcess"})
-    except Exception:
-        # Ignore cleanup failures (e.g., if collection doesn't exist)
-        pass
-    
     yield
-    
-    # Clean up after test
     ProcessService.clear_cache()
-    try:
-        # Remove any ProcessConfigEntityDocument records created during testing
-        ProcessConfigEntityDocument.delete_many({"process_class": "TestProcess"})
-    except Exception:
-        # Ignore cleanup failures
-        pass
 
 
 @pytest.fixture
@@ -242,9 +223,11 @@ class TestProcessServiceDatabaseIntegration:
                             assert call_args[1]["process_config"].name.en == "DB Override Default"
 
     @pytest.mark.asyncio
-    async def test_caching_behavior_for_process_instances(self, sample_process_config, sample_process_class):
+    async def test_caching_behavior_for_process_instances(self, sample_default_config, sample_process_class):
         """Test that process instance discovery results are cached properly."""
-        cache_key = ("TestProcess", "test_process_1")
+        process_class = sample_process_class.process_class
+        process_id = sample_default_config.process_id
+        cache_key = (process_class, process_id)
 
         # Clear cache first
         ProcessService.clear_cache()
@@ -260,12 +243,12 @@ class TestProcessServiceDatabaseIntegration:
                     mock_create_instance.return_value = mock_instance
 
                     # First call should hit the service
-                    result1 = await ProcessService.discover_process_instance(Mock(), "TestProcess", "test_process_1")
+                    result1 = await ProcessService.discover_process_instance(Mock(), process_class, process_id)
                     assert result1 == mock_instance
                     assert mock_create_instance.call_count == 1
 
                     # Second call should use cache
-                    result2 = await ProcessService.discover_process_instance(Mock(), "TestProcess", "test_process_1")
+                    result2 = await ProcessService.discover_process_instance(Mock(), process_class, process_id)
                     assert result2 == mock_instance
                     assert mock_create_instance.call_count == 1  # Should not be called again
 

@@ -16,29 +16,10 @@ enable_logging()
 
 
 @pytest.fixture(autouse=True)
-def cleanup_db_and_cache():
-    """Ensure clean cache and DB state before and after each test."""
-    # Clear cache before test
+def cleanup_db_and_cache(sample_agent_config):
     AgentService.clear_cache()
-    
-    # Clean up any test data that might exist in DB
-    try:
-        # Remove any AgentConfigEntityDocument records created during testing
-        AgentConfigEntityDocument.delete_many({"agent_class": "TestAgent"})
-    except Exception:
-        # Ignore cleanup failures (e.g., if collection doesn't exist)
-        pass
-    
     yield
-    
-    # Clean up after test
     AgentService.clear_cache()
-    try:
-        # Remove any AgentConfigEntityDocument records created during testing
-        AgentConfigEntityDocument.delete_many({"agent_class": "TestAgent"})
-    except Exception:
-        # Ignore cleanup failures
-        pass
 
 
 @pytest.fixture

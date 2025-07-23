@@ -48,30 +48,9 @@ async def process_api_client():
 
 @pytest.fixture(autouse=True)
 def cleanup_db_and_cache():
-    """Ensure clean cache and DB state before and after each test."""
-    # Clear cache before test
     ProcessService.clear_cache()
-    
-    # Clean up any test data that might exist in DB
-    try:
-        # Remove any ProcessConfigEntityDocument records created during testing
-        ProcessConfigEntityDocument.delete_many({"process_class": PROCESS_CLASS})
-        ProcessConfigEntityDocument.delete_many({"process_class": "TestProcess"})
-    except Exception:
-        # Ignore cleanup failures (e.g., if collection doesn't exist)
-        pass
-    
     yield
-    
-    # Clean up after test
     ProcessService.clear_cache()
-    try:
-        # Remove any ProcessConfigEntityDocument records created during testing
-        ProcessConfigEntityDocument.delete_many({"process_class": PROCESS_CLASS})
-        ProcessConfigEntityDocument.delete_many({"process_class": "TestProcess"})
-    except Exception:
-        # Ignore cleanup failures
-        pass
 
 
 @pytest.mark.asyncio(loop_scope="module")

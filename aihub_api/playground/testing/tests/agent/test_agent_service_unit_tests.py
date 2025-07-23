@@ -30,6 +30,13 @@ from aihub_api.routes.thread.ThreadService import ThreadService
 enable_logging()
 
 
+@pytest.fixture(autouse=True)
+def cleanup_db_and_cache(sample_agent_config):
+    AgentService.clear_cache()
+    yield
+    AgentService.clear_cache()
+
+
 @pytest.fixture
 def sample_agent_config():
     """Create a sample AgentConfig for testing."""

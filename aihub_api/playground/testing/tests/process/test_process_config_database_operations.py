@@ -1,6 +1,8 @@
 from unittest.mock import Mock, patch
 
 import pytest
+
+from aihub_api.routes.process.ProcessService import ProcessService
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
 from aihub_lib.processes.ProcessConfig import ProcessConfig
@@ -8,6 +10,13 @@ from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # 
 from aihub_lib.testing.logging.logger import enable_logging
 
 enable_logging()
+
+
+@pytest.fixture(autouse=True)
+def cleanup_db_and_cache(sample_process_config):
+    ProcessService.clear_cache()
+    yield
+    ProcessService.clear_cache()
 
 
 @pytest.fixture

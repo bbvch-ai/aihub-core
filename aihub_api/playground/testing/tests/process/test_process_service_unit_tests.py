@@ -25,6 +25,13 @@ from aihub_api.routes.process.ProcessService import (
 enable_logging()
 
 
+@pytest.fixture(autouse=True)
+def cleanup_db_and_cache(sample_process_config):
+    ProcessService.clear_cache()
+    yield
+    ProcessService.clear_cache()
+
+
 @pytest.fixture
 def sample_process_config():
     """Create a sample ProcessConfig for testing."""
@@ -100,7 +107,7 @@ class TestProcessServiceUnitTests:
             with patch.object(ProcessConfig, "from_entity") as mock_from_entity:
                 mock_from_entity.return_value = sample_config
 
-                with patch("aihub_api.routes.process.ProcessService.ProcessConfigDTO") as mock_config_dto_class:
+                with patch("aihub_api.routes.process.dto.ProcessConfigDTO.ProcessConfigDTO") as mock_config_dto_class:
                     mock_config_dto = Mock()
                     mock_config_dto_class.from_process_config.return_value = mock_config_dto
 
@@ -132,9 +139,12 @@ class TestProcessServiceUnitTests:
                 mock_dto = Mock()
                 mock_from_instance.return_value = mock_dto
 
-                result = await ProcessService.get_process(Mock(), "TestProcess", "test_process_1", mock_locale_handler)
+                mock_nats = Mock()
+                result = await ProcessService.get_process(
+                    mock_nats, "TestProcess", "test_process_1", mock_locale_handler
+                )
 
-                mock_discover.assert_called_once_with(Mock(), "TestProcess", "test_process_1")
+                mock_discover.assert_called_once_with(mock_nats, "TestProcess", "test_process_1")
                 mock_from_instance.assert_called_once_with(
                     sample_process_instance, is_online=True, t=mock_locale_handler
                 )
@@ -212,9 +222,6 @@ class TestProcessServiceUnitTests:
         """Test discover_process_class successfully discovers and caches process class."""
         mock_nc = AsyncMock()
         mock_event = Mock(spec=ProcessClassDiscoveryResponseEvent)
-
-        # Clear cache first
-        GET_PROCESS_CLASS_CACHE.clear()
 
         with patch.object(ProcessClassDTO, "from_discovery_event") as mock_from_event:
             mock_from_event.return_value = sample_process_class
@@ -307,9 +314,6 @@ class TestProcessServiceUnitTests:
     async def test_discover_process_classes_caching_behavior(self, sample_process_class):
         """Test that discover_process_classes properly caches results."""
         cache_key = "all_process_classes"
-
-        # Clear cache first
-        DISCOVER_PROCESSES_CACHE.clear()
 
         mock_nc = AsyncMock()
         mock_event = Mock(spec=ProcessClassDiscoveryResponseEvent)
