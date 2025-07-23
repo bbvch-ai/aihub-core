@@ -61,6 +61,7 @@ def process_runner_fixture():
         process_type=MultiInputProcess,
         default_process_config=ProcessConfig(
             process_id="multi_input_process",
+            process_class=MultiInputProcess.__name__,
             name=LocaleString(en="Multi Input Process"),
             description=LocaleString(en="Test Multi Input Process"),
         ),

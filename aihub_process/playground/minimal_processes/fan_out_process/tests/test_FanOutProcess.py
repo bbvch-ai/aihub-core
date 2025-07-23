@@ -47,6 +47,7 @@ def process_runner_fixture():
         process_type=FanOutProcess,
         default_process_config=ProcessConfig(
             process_id="fan_out_process",
+            process_class=FanOutProcess.__name__,
             name=LocaleString(en="Fan Out Process"),
             description=LocaleString(en="Test Fan Out Process"),
         ),

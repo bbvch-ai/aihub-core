@@ -40,6 +40,7 @@ async def main():
         process_type=AgentOnlyProcess,
         default_process_config=ProcessConfig(
             process_id="agent_only_process",
+            process_class=AgentOnlyProcess.__name__,
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
         ),

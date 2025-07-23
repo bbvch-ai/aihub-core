@@ -51,6 +51,7 @@ async def main():
         process_type=MultiInputProcess,
         default_process_config=ProcessConfig(
             process_id="multi_input_process",
+            process_class=MultiInputProcess.__name__,
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
         ),

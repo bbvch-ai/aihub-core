@@ -30,6 +30,7 @@ async def main():
         process_type=InitialProcess,
         default_process_config=ProcessConfig(
             process_id="initial_process",
+            process_class=InitialProcess.__name__,
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
         ),
@@ -39,6 +40,7 @@ async def main():
         process_type=SubsequentProcess,
         default_process_config=ProcessConfig(
             process_id="subsequent_process",
+            process_class=SubsequentProcess.__name__,
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
         ),

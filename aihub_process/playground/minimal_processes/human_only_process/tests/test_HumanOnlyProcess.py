@@ -23,6 +23,7 @@ def process_runner_fixture():
         process_type=HumanOnlyProcess,
         default_process_config=ProcessConfig(
             process_id="human_only_process",
+            process_class=HumanOnlyProcess.__name__,
             name=LocaleString(en="Human Only Process"),
             description=LocaleString(en="Test Human Only Process with HumanA and HumanB"),
         ),

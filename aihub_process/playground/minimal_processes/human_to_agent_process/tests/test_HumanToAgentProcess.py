@@ -22,6 +22,7 @@ def process_runner_fixture():
         process_type=HumanToAgentProcess,
         default_process_config=ProcessConfig(
             process_id="human_to_agent_process",
+            process_class=HumanToAgentProcess.__name__,
             name=LocaleString(en="Human To Agent Process"),
             description=LocaleString(en="Test Process with Human and Agent"),
         ),
