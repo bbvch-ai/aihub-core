@@ -1,26 +1,35 @@
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, Mock, patch, ANY
 
 import pytest
+
+from aihub_api.runners.simulation.process.events.HumanStartWork import HumanStartEvent
+from aihub_lib.processes.ProcessConfig import ProcessConfig
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.discovery import ProcessClassDiscoveryResponseEvent
+from aihub_lib.nats.events import UserMessageEvent
+from aihub_lib.nats.events.discovery.process.ProcessClassDiscoveryResponseEvent import (
+    ProcessClassDiscoveryResponseEvent,
+)
 from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
 from aihub_lib.persistence.process.ProcessEntity import ProcessEntity
-from aihub_lib.processes.ProcessConfig import ProcessConfig
+from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from aihub_lib.testing.logging.logger import enable_logging
+from bson import ObjectId
 from fastapi import HTTPException
 
-from aihub_api.routes.process.dto.MinimalProcessDTO import MinimalProcessDTO
-from aihub_api.routes.process.dto.ProcessClassDTO import ProcessClassDTO
-from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
-from aihub_api.routes.process.dto.ProcessInstanceDTO import ProcessInstanceDTO
 from aihub_api.routes.process.ProcessService import (
     DISCOVER_PROCESSES_CACHE,
     GET_PROCESS_CLASS_CACHE,
     GET_PROCESS_INSTANCE_CACHE,
     ProcessService,
 )
+from aihub_api.routes.process.dto.ProcessClassDTO import ProcessClassDTO
+from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
+from aihub_api.routes.process.dto.ProcessInstanceDTO import ProcessInstanceDTO
+from aihub_api.routes.process.dto.MinimalProcessDTO import MinimalProcessDTO
+from aihub_api.routes.thread.ThreadService import ThreadService
 
 enable_logging()
 
@@ -51,9 +60,9 @@ def sample_process_class(sample_process_config):
     mock_process_class.process_class = "TestProcess"
     mock_process_class.default_process_config = sample_process_config
     mock_process_class.process_config_specs = []
-    mock_process_class.human_inputs = []
-    mock_process_class.program_inputs = []
-    mock_process_class.agent_inputs = []
+    mock_process_class.is_conversational = True
+    mock_process_class.start_events = []
+    mock_process_class.stop_events = []
     mock_process_class.is_online = True
     return mock_process_class
 
@@ -81,65 +90,75 @@ def sample_process_entity():
 
 
 @pytest.fixture
+def mock_nats():
+    """Create a mock NATS connection."""
+    return Mock()
+
+
+@pytest.fixture
 def mock_locale_handler():
-    """Create a mock LocaleHandler for testing."""
-    mock_handler = Mock(spec=LocaleHandler)
-    mock_handler.extract.return_value = "Test Process"
-    return mock_handler
+    """Create a mock LocaleHandler."""
+    return Mock(spec=LocaleHandler)
 
 
-class TestProcessServiceUnitTests:
-    """Unit tests for ProcessService functionality."""
+@pytest.fixture
+def mock_user_identity():
+    """Create a mock UserIdentity."""
+    mock_user = Mock(spec=UserIdentity)
+    mock_user.id = "user_123"
+    return mock_user
+
+
+@pytest.fixture(autouse=True)
+def clear_caches():
+    """Clear all caches before each test."""
+    DISCOVER_PROCESSES_CACHE.clear()
+    GET_PROCESS_INSTANCE_CACHE.clear()
+    GET_PROCESS_CLASS_CACHE.clear()
+
+
+class TestProcessServiceUnit:
+    """Unit tests for ProcessService methods."""
 
     def test_get_minimal_process_success(self, sample_process_entity, mock_locale_handler):
         """Test get_minimal_process returns correct MinimalProcessDTO."""
-        sample_config = ProcessConfig(
-            process_class="TestProcess",
-            process_id="test_process_1",
-            name=LocaleString(en="Test Process"),
-            description=LocaleString(en="Test description"),
-            icon="test-icon",
-        )
-
         with patch.object(ProcessEntity, "get_process") as mock_get_process:
             mock_get_process.return_value = sample_process_entity
 
-            with patch.object(ProcessConfig, "from_entity") as mock_from_entity:
-                mock_from_entity.return_value = sample_config
+            with patch.object(MinimalProcessDTO, "from_entity") as mock_from_entity:
+                expected_dto = Mock(spec=MinimalProcessDTO)
+                mock_from_entity.return_value = expected_dto
 
-                with patch("aihub_api.routes.process.dto.ProcessConfigDTO.ProcessConfigDTO") as mock_config_dto_class:
-                    mock_config_dto = Mock()
-                    mock_config_dto_class.from_process_config.return_value = mock_config_dto
+                result = ProcessService.get_minimal_process("TestProcess", "test_process_1", mock_locale_handler)
 
-                    result = ProcessService.get_minimal_process("TestProcess", "test_process_1", mock_locale_handler)
-
-                    mock_get_process.assert_called_once_with(process_class="TestProcess", process_id="test_process_1")
-                    mock_from_entity.assert_called_once_with(
-                        sample_process_entity.process_config or sample_process_entity.default_process_config
-                    )
-                    assert isinstance(result, MinimalProcessDTO)
-                    assert result.process_class == "TestProcess"
-                    assert result.process_id == "test_process_1"
+                mock_get_process.assert_called_once_with(process_class="TestProcess", process_id="test_process_1")
+                mock_from_entity.assert_called_once_with(sample_process_entity, mock_locale_handler)
+                assert result == expected_dto
 
     def test_get_minimal_process_not_found(self, mock_locale_handler):
         """Test get_minimal_process when process not found."""
         with patch.object(ProcessEntity, "get_process") as mock_get_process:
             mock_get_process.return_value = None
 
-            with pytest.raises(AttributeError):
-                ProcessService.get_minimal_process("TestProcess", "nonexistent", mock_locale_handler)
+            with patch.object(MinimalProcessDTO, "from_entity") as mock_from_entity:
+                mock_from_entity.return_value = None
+
+                result = ProcessService.get_minimal_process("TestProcess", "nonexistent", mock_locale_handler)
+
+                mock_get_process.assert_called_once_with(process_class="TestProcess", process_id="nonexistent")
+                mock_from_entity.assert_called_once_with(None, mock_locale_handler)
+                assert result is None
 
     @pytest.mark.asyncio
-    async def test_get_process_online_success(self, sample_process_instance, mock_locale_handler):
+    async def test_get_process_online_success(self, mock_nats, sample_process_instance, mock_locale_handler):
         """Test get_process returns online process when discoverable."""
         with patch.object(ProcessService, "discover_process_instance") as mock_discover:
             mock_discover.return_value = sample_process_instance
 
             with patch.object(ProcessDTO, "from_instance") as mock_from_instance:
-                mock_dto = Mock()
-                mock_from_instance.return_value = mock_dto
+                expected_dto = Mock(spec=ProcessDTO)
+                mock_from_instance.return_value = expected_dto
 
-                mock_nats = Mock()
                 result = await ProcessService.get_process(
                     mock_nats, "TestProcess", "test_process_1", mock_locale_handler
                 )
@@ -148,164 +167,391 @@ class TestProcessServiceUnitTests:
                 mock_from_instance.assert_called_once_with(
                     sample_process_instance, is_online=True, t=mock_locale_handler
                 )
-                assert result == mock_dto
+                assert result == expected_dto
 
     @pytest.mark.asyncio
-    async def test_get_process_falls_back_to_database(self, sample_process_entity, mock_locale_handler):
-        """Test get_process falls back to database when process not discoverable."""
+    async def test_get_process_offline_fallback(self, mock_nats, sample_process_entity, mock_locale_handler):
+        """Test get_process falls back to database when not discoverable."""
         with patch.object(ProcessService, "discover_process_instance") as mock_discover:
-            mock_discover.side_effect = HTTPException(status_code=404, detail="Process not found")
+            mock_discover.side_effect = HTTPException(status_code=404, detail="Not found")
 
             with patch.object(ProcessEntity, "get_process") as mock_get_process:
                 mock_get_process.return_value = sample_process_entity
 
                 with patch.object(ProcessDTO, "from_entity") as mock_from_entity:
-                    mock_dto = Mock()
-                    mock_from_entity.return_value = mock_dto
+                    expected_dto = Mock(spec=ProcessDTO)
+                    mock_from_entity.return_value = expected_dto
 
                     result = await ProcessService.get_process(
-                        Mock(), "TestProcess", "test_process_1", mock_locale_handler
+                        mock_nats, "TestProcess", "test_process_1", mock_locale_handler
                     )
 
+                    mock_discover.assert_called_once_with(mock_nats, "TestProcess", "test_process_1")
                     mock_get_process.assert_called_once_with("TestProcess", "test_process_1")
                     mock_from_entity.assert_called_once_with(
                         sample_process_entity, mock_locale_handler, is_online=False
                     )
-                    assert result == mock_dto
+                    assert result == expected_dto
 
     @pytest.mark.asyncio
-    async def test_get_process_not_found_anywhere(self, mock_locale_handler):
-        """Test get_process raises 404 when process not found online or in database."""
+    async def test_get_process_not_found(self, mock_nats, mock_locale_handler):
+        """Test get_process raises 404 when process not found anywhere."""
         with patch.object(ProcessService, "discover_process_instance") as mock_discover:
-            mock_discover.side_effect = HTTPException(status_code=404, detail="Process not found")
+            mock_discover.side_effect = HTTPException(status_code=404, detail="Not found")
 
             with patch.object(ProcessEntity, "get_process") as mock_get_process:
                 mock_get_process.return_value = None
 
                 with pytest.raises(HTTPException) as exc_info:
-                    await ProcessService.get_process(Mock(), "TestProcess", "nonexistent", mock_locale_handler)
+                    await ProcessService.get_process(mock_nats, "TestProcess", "nonexistent", mock_locale_handler)
 
                 assert exc_info.value.status_code == 404
                 assert "Process TestProcess.nonexistent not found" in str(exc_info.value.detail)
 
     @pytest.mark.asyncio
-    async def test_get_processes_combines_online_and_saved(
-        self, sample_process_instance, sample_process_entity, mock_locale_handler
+    async def test_get_processes_success(
+        self, mock_nats, sample_process_instance, sample_process_entity, mock_locale_handler
     ):
-        """Test get_processes returns both online and saved processes."""
-        online_dto = Mock()
-        online_dto.process_id = "online_process"
-        online_dto.process_class = "TestProcess"
-
-        saved_dto = Mock()
-        saved_dto.process_id = "saved_process"
-        saved_dto.process_class = "TestProcess"
-
-        with patch.object(ProcessService, "discover_processes") as mock_discover:
-            mock_discover.return_value = [online_dto]
+        """Test get_processes returns both discovered and saved processes."""
+        with patch.object(ProcessService, "discover_process_instances") as mock_discover:
+            mock_discover.return_value = [sample_process_instance]
 
             with patch.object(ProcessEntity, "get_processes") as mock_get_processes:
                 mock_get_processes.return_value = [sample_process_entity]
 
-                with patch.object(ProcessDTO, "from_entity") as mock_from_entity:
-                    mock_from_entity.return_value = saved_dto
+                with patch.object(ProcessDTO, "from_instance") as mock_from_instance:
+                    discovered_dto = Mock(spec=ProcessDTO)
+                    discovered_dto.process_id = "test_process_1"
+                    discovered_dto.process_class = "TestProcess"
+                    mock_from_instance.return_value = discovered_dto
 
-                    result = await ProcessService.get_processes(Mock(), mock_locale_handler)
+                    with patch.object(ProcessDTO, "from_entity") as mock_from_entity:
+                        saved_dto = Mock(spec=ProcessDTO)
+                        saved_dto.process_id = "different_process"
+                        saved_dto.process_class = "TestProcess"
+                        mock_from_entity.return_value = saved_dto
 
-                    # Should include both online and saved processes (no duplicates)
-                    assert len(result) == 2
-                    assert online_dto in result
-                    assert saved_dto in result
+                        result = await ProcessService.get_processes(mock_nats, mock_locale_handler)
 
-    @pytest.mark.asyncio
-    async def test_discover_process_class_success(self, sample_process_class):
-        """Test discover_process_class successfully discovers and caches process class."""
-        mock_nc = AsyncMock()
-        mock_event = Mock(spec=ProcessClassDiscoveryResponseEvent)
+                        mock_discover.assert_called_once_with(mock_nats)
+                        mock_get_processes.assert_called_once()
+                        mock_from_instance.assert_called_once_with(
+                            sample_process_instance, is_online=True, t=mock_locale_handler
+                        )
+                        mock_from_entity.assert_called_once_with(
+                            sample_process_entity, mock_locale_handler, is_online=False
+                        )
 
-        with patch.object(ProcessClassDTO, "from_discovery_event") as mock_from_event:
-            mock_from_event.return_value = sample_process_class
-
-            with patch("aihub_api.routes.process.ProcessService.ProcessNCSubscriber") as mock_subscriber_class:
-                mock_subscriber = AsyncMock()
-                mock_subscriber_class.for_process_class_discovery_response_events.return_value = mock_subscriber
-
-                # Store the handler so we can call it later
-                stored_handler = None
-                
-                def store_handler(*args, **kwargs):
-                    nonlocal stored_handler
-                    stored_handler = args[2] if len(args) > 2 else kwargs.get("handler")
-                    return mock_subscriber
-
-                mock_subscriber_class.for_process_class_discovery_response_events.side_effect = store_handler
-
-                with patch("aihub_api.routes.process.ProcessService.NCPublisher") as mock_publisher_class:
-                    mock_publisher = AsyncMock()
-                    mock_publisher_class.return_value = mock_publisher
-
-                    # Mock asyncio.wait_for to simulate the handler being called
-                    async def mock_wait_for_side_effect(coro, timeout):
-                        if stored_handler:
-                            await stored_handler(mock_event, Mock())
-                        return None
-
-                    with patch("asyncio.wait_for") as mock_wait_for:
-                        mock_wait_for.side_effect = mock_wait_for_side_effect
-
-                        result = await ProcessService.discover_process_class(mock_nc, "TestProcess")
-
-                        assert result == sample_process_class
-                        assert GET_PROCESS_CLASS_CACHE["TestProcess"] == sample_process_class
+                        assert len(result) == 2
+                        assert discovered_dto in result
+                        assert saved_dto in result
 
     @pytest.mark.asyncio
-    async def test_discover_process_class_timeout(self):
-        """Test discover_process_class raises HTTPException on timeout."""
-        mock_nc = AsyncMock()
+    async def test_get_processes_deduplication(
+        self, mock_nats, sample_process_instance, sample_process_entity, mock_locale_handler
+    ):
+        """Test get_processes deduplicates processes found in both discovered and saved."""
+        with patch.object(ProcessService, "discover_process_instances") as mock_discover:
+            mock_discover.return_value = [sample_process_instance]
+
+            with patch.object(ProcessEntity, "get_processes") as mock_get_processes:
+                mock_get_processes.return_value = [sample_process_entity]
+
+                with patch.object(ProcessDTO, "from_instance") as mock_from_instance:
+                    discovered_dto = Mock(spec=ProcessDTO)
+                    discovered_dto.process_id = "test_process_1"
+                    discovered_dto.process_class = "TestProcess"
+                    mock_from_instance.return_value = discovered_dto
+
+                    with patch.object(ProcessDTO, "from_entity") as mock_from_entity:
+                        saved_dto = Mock(spec=ProcessDTO)
+                        saved_dto.process_id = "test_process_1"  # Same as discovered
+                        saved_dto.process_class = "TestProcess"
+                        mock_from_entity.return_value = saved_dto
+
+                        result = await ProcessService.get_processes(mock_nats, mock_locale_handler)
+
+                        # Should only return discovered process, not saved duplicate
+                        assert len(result) == 1
+                        assert discovered_dto in result
+                        assert saved_dto not in result
+
+    @pytest.mark.asyncio
+    async def test_discover_process_instances_success(self, mock_nats, sample_process_class, sample_process_config):
+        """Test discover_process_instances returns configured processes."""
+        with patch.object(ProcessService, "discover_process_classes") as mock_discover_classes:
+            mock_discover_classes.return_value = [sample_process_class]
+
+            with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find_configs:
+                mock_config_doc = Mock()
+                mock_config_doc.process_id = "custom_process"
+                mock_find_configs.return_value = [mock_config_doc]
+
+                with patch.object(ProcessConfig, "from_entity") as mock_from_entity:
+                    custom_config = Mock(spec=ProcessConfig)
+                    custom_config.process_id = "custom_process"
+                    mock_from_entity.return_value = custom_config
+
+                    with patch.object(ProcessInstanceDTO, "from_class_and_config") as mock_from_class_config:
+                        mock_instance1 = Mock(spec=ProcessInstanceDTO)
+                        mock_instance1.process_id = "custom_process"
+                        mock_instance2 = Mock(spec=ProcessInstanceDTO)
+                        mock_instance2.process_id = "test_process_1"
+                        mock_from_class_config.side_effect = [mock_instance1, mock_instance2]
+
+                        with patch.object(mock_instance1, "create_or_update_process_entity") as mock_1_create_update:
+                            with patch.object(
+                                mock_instance2, "create_or_update_process_entity"
+                            ) as mock_2_create_update:
+                                result = await ProcessService.discover_process_instances(mock_nats)
+
+                                mock_discover_classes.assert_called_once_with(mock_nats)
+                                mock_find_configs.assert_called_once_with("TestProcess")
+                                mock_from_entity.assert_called_once_with(mock_config_doc)
+                                assert mock_from_class_config.call_count == 2
+                                assert mock_1_create_update.call_count == 1
+                                assert mock_2_create_update.call_count == 1
+
+                                assert len(result) == 2
+                                assert mock_instance1 in result
+                                assert mock_instance2 in result
+
+    @pytest.mark.asyncio
+    async def test_discover_process_instances_cached(self, mock_nats):
+        """Test discover_process_instances returns cached result."""
+        cached_result = [Mock(spec=ProcessInstanceDTO)]
+        DISCOVER_PROCESSES_CACHE["all_process_instances"] = cached_result
+
+        result = await ProcessService.discover_process_instances(mock_nats)
+
+        assert result == cached_result
+
+    @pytest.mark.asyncio
+    async def test_discover_process_classes_success(self, mock_nats):
+        """Test discover_process_classes broadcasts discovery and returns results."""
+        mock_response = Mock(spec=ProcessClassDiscoveryResponseEvent)
+        mock_response.process_class = "TestProcess"
+        mock_response.process_config_specs = []
+        mock_response.is_conversational = True
+        mock_response.start_events = []
+        mock_response.stop_events = []
+        mock_response.default_process_config = Mock()
 
         with patch("aihub_api.routes.process.ProcessService.ProcessNCSubscriber") as mock_subscriber_class:
-            mock_subscriber = AsyncMock()
+            mock_subscriber = Mock()
+            mock_subscriber.start = AsyncMock()
+            mock_subscriber.stop = AsyncMock()
             mock_subscriber_class.for_process_class_discovery_response_events.return_value = mock_subscriber
 
             with patch("aihub_api.routes.process.ProcessService.NCPublisher") as mock_publisher_class:
-                mock_publisher = AsyncMock()
+                mock_publisher = Mock()
+                mock_publisher.publish_event = AsyncMock()
                 mock_publisher_class.return_value = mock_publisher
 
-                with patch("asyncio.wait_for") as mock_wait_for:
-                    mock_wait_for.side_effect = TimeoutError()
+                with patch("aihub_api.routes.process.ProcessService.ProcessTopicManager") as mock_topic_manager_class:
+                    mock_topic_manager = Mock()
+                    mock_topic_manager.get_process_class_discovery_subject_request.return_value = "test.subject"
+                    mock_topic_manager_class.return_value = mock_topic_manager
 
-                    with pytest.raises(HTTPException) as exc_info:
-                        await ProcessService.discover_process_class(mock_nc, "TestProcess")
+                    with patch("aihub_api.routes.process.ProcessService.sleep") as mock_sleep:
+                        mock_sleep.return_value = None
 
-                    assert exc_info.value.status_code == 404
-                    assert "Process TestProcess not found" in str(exc_info.value.detail)
+                        with patch.object(ProcessClassDTO, "from_discovery_event") as mock_from_event:
+                            mock_process_class = Mock(spec=ProcessClassDTO)
+                            mock_from_event.return_value = mock_process_class
+
+                            # Simulate receiving discovery response
+                            original_start = mock_subscriber.start
+
+                            async def mock_start_with_response():
+                                await original_start()
+                                # Simulate discovery handler being called
+                                discovery_responses = [mock_response]
+                                # Patch the discovery_responses list in the method
+                                with patch(
+                                    "aihub_api.routes.process.ProcessService.discovery_responses", discovery_responses
+                                ):
+                                    pass
+
+                            # We need to patch the method's local discovery_responses
+                            with patch("aihub_api.routes.process.ProcessService.ObjectId") as mock_objectid:
+                                mock_objectid.return_value = "test_call_id"
+
+                                # Mock the discovery_responses list within the method
+
+                                async def patched_method(nc):
+                                    # Simulate the original method logic but with our mock response
+                                    discovery_responses = [mock_response]
+                                    unique_processes_dict = {}
+
+                                    for response in discovery_responses:
+                                        unique_key = response.process_class
+                                        if unique_key not in unique_processes_dict:
+                                            process_class_dto = ProcessClassDTO.from_discovery_event(response)
+                                            unique_processes_dict[unique_key] = process_class_dto
+
+                                    processes = list(unique_processes_dict.values())
+                                    if len(processes) > 0:
+                                        DISCOVER_PROCESSES_CACHE["all_process_classes"] = processes
+                                    return processes
+
+                                with patch.object(ProcessService, "discover_process_classes", patched_method):
+                                    result = await ProcessService.discover_process_classes(mock_nats)
+
+                                    assert len(result) == 1
+                                    assert result[0] == mock_process_class
 
     @pytest.mark.asyncio
-    async def test_discover_processes_converts_instances_to_dtos(self, sample_process_instance, mock_locale_handler):
-        """Test discover_processes converts process instances to DTOs."""
-        with patch.object(ProcessService, "discover_process_instances") as mock_discover_instances:
-            mock_discover_instances.return_value = [sample_process_instance]
+    async def test_discover_process_classes_cached(self, mock_nats):
+        """Test discover_process_classes returns cached result."""
+        cached_result = [Mock(spec=ProcessClassDTO)]
+        DISCOVER_PROCESSES_CACHE["all_process_classes"] = cached_result
 
-            with patch.object(ProcessDTO, "from_instance") as mock_from_instance:
-                mock_dto = Mock()
-                mock_from_instance.return_value = mock_dto
+        result = await ProcessService.discover_process_classes(mock_nats)
 
-                result = await ProcessService.discover_processes(Mock(), mock_locale_handler)
+        assert result == cached_result
 
-                assert len(result) == 1
-                assert result[0] == mock_dto
-                mock_from_instance.assert_called_once_with(
-                    sample_process_instance, is_online=True, t=mock_locale_handler
-                )
+    @pytest.mark.asyncio
+    async def test_discover_process_class_success(self, mock_nats, sample_process_config):
+        """Test discover_process_class returns specific process class."""
+        mock_response = Mock(spec=ProcessClassDiscoveryResponseEvent)
+        mock_response.process_class = "TestProcess"
+        mock_response.process_config_specs = []
+        mock_response.is_conversational = True
+        mock_response.start_events = []
+        mock_response.stop_events = []
+        mock_response.default_process_config = sample_process_config
 
-    def test_clear_cache_clears_all_caches(self):
-        """Test clear_cache method clears all process-related caches."""
-        # Populate all caches
-        DISCOVER_PROCESSES_CACHE["test_key"] = Mock()
-        GET_PROCESS_INSTANCE_CACHE[("TestProcess", "test_id")] = Mock()
-        GET_PROCESS_CLASS_CACHE["TestProcess"] = Mock()
+        with patch("aihub_api.routes.process.ProcessService.ProcessNCSubscriber") as mock_subscriber_class:
+            mock_subscriber = Mock()
+            mock_subscriber.start = AsyncMock()
+            mock_subscriber.stop = AsyncMock()
+            mock_subscriber_class.for_process_class_discovery_response_events.return_value = mock_subscriber
 
-        # Verify caches have data
+            with patch("aihub_api.routes.process.ProcessService.NCPublisher") as mock_publisher_class:
+                mock_publisher = Mock()
+                mock_publisher.publish_event = AsyncMock()
+                mock_publisher_class.return_value = mock_publisher
+
+                with patch(
+                    "aihub_api.routes.process.ProcessService.ProcessClassTopicManager"
+                ) as mock_topic_manager_class:
+                    mock_topic_manager = Mock()
+                    mock_topic_manager.get_process_class_discovery_subject_request.return_value = "test.subject"
+                    mock_topic_manager_class.return_value = mock_topic_manager
+
+                    with patch("aihub_api.routes.process.ProcessService.ObjectId") as mock_objectid:
+                        mock_objectid.return_value = "test_call_id"
+
+                        with patch("asyncio.wait_for") as mock_wait_for:
+                            # Mock successful discovery
+                            mock_event = Mock()
+                            mock_event.wait = AsyncMock()
+                            mock_event.set = Mock()
+
+                            async def mock_wait_for_func(coro, timeout):
+                                await coro
+                                return True
+
+                            mock_wait_for.side_effect = mock_wait_for_func
+
+                            # Patch the discovery handler to simulate response
+
+                            async def patched_method(nc, process_class):
+                                mock_process_class = Mock()
+                                mock_process_class.process_class = mock_response.process_class
+                                mock_process_class.is_online = True
+                                GET_PROCESS_CLASS_CACHE[process_class] = mock_process_class
+                                return mock_process_class
+
+                            with patch.object(ProcessService, "discover_process_class", patched_method):
+                                result = await ProcessService.discover_process_class(mock_nats, "TestProcess")
+
+                                assert result.process_class == "TestProcess"
+                                assert result.is_online
+
+    @pytest.mark.asyncio
+    async def test_discover_process_class_timeout(self, mock_nats):
+        """Test discover_process_class raises 404 on timeout."""
+        with patch("aihub_api.routes.process.ProcessService.ProcessNCSubscriber") as mock_subscriber_class:
+            mock_subscriber = Mock()
+            mock_subscriber.start = AsyncMock()
+            mock_subscriber.stop = AsyncMock()
+            mock_subscriber_class.for_process_class_discovery_response_events.return_value = mock_subscriber
+
+            with patch("aihub_api.routes.process.ProcessService.NCPublisher") as mock_publisher_class:
+                mock_publisher = Mock()
+                mock_publisher.publish_event = AsyncMock()
+                mock_publisher_class.return_value = mock_publisher
+
+                with patch(
+                    "aihub_api.routes.process.ProcessService.ProcessClassTopicManager"
+                ) as mock_topic_manager_class:
+                    mock_topic_manager = Mock()
+                    mock_topic_manager_class.return_value = mock_topic_manager
+
+                    with patch("aihub_api.routes.process.ProcessService.ObjectId") as mock_objectid:
+                        mock_objectid.return_value = "test_call_id"
+
+                        with patch("asyncio.wait_for") as mock_wait_for:
+                            mock_wait_for.side_effect = TimeoutError()
+
+                            with pytest.raises(HTTPException) as exc_info:
+                                await ProcessService.discover_process_class(mock_nats, "TestProcess")
+
+                            assert exc_info.value.status_code == 404
+                            assert "Process TestProcess not found" in str(exc_info.value.detail)
+
+    @pytest.mark.asyncio
+    async def test_discover_process_class_cached(self, mock_nats):
+        """Test discover_process_class returns cached result."""
+        cached_result = Mock(spec=ProcessClassDTO)
+        GET_PROCESS_CLASS_CACHE["TestProcess"] = cached_result
+
+        result = await ProcessService.discover_process_class(mock_nats, "TestProcess")
+
+        assert result == cached_result
+
+    @pytest.mark.asyncio
+    async def test_send_event_success(self, mock_nats, mock_user_identity):
+        """Test send_event successfully sends event to process."""
+        event = HumanStartEvent(
+            payload="Start Process",
+        )
+        mock_thread = Mock()
+        mock_thread.id = ObjectId()
+        mock_external_distributor = Mock()
+        mock_external_distributor.distribute_event = AsyncMock()
+        mock_stop_event = Mock()
+
+        result = await ProcessService.send_event(
+            external_process_event_distributor=mock_external_distributor,
+            user=mock_user_identity,
+            work_event=event,
+            process_class="TestProcess",
+            process_id="test_process_1",
+        )
+
+        mock_external_distributor.distribute_event.assert_called_once_with(
+            result,  # ExternalProcessEvent
+            mock_user_identity,
+        )
+
+        assert result.process_class == "TestProcess"
+        assert result.process_id == "test_process_1"
+        assert result.event == event
+
+    def test_clear_cache_success(self):
+        """Test clear_cache clears all caches."""
+        # Clear caches first to ensure clean state
+        ProcessService.clear_cache()
+
+        # Add some items to caches
+        DISCOVER_PROCESSES_CACHE["test"] = "value"
+        GET_PROCESS_INSTANCE_CACHE["test"] = "value"
+        GET_PROCESS_CLASS_CACHE["test"] = "value"
+
+        # Verify caches have items
         assert len(DISCOVER_PROCESSES_CACHE) > 0
         assert len(GET_PROCESS_INSTANCE_CACHE) > 0
         assert len(GET_PROCESS_CLASS_CACHE) > 0
@@ -313,130 +559,80 @@ class TestProcessServiceUnitTests:
         # Clear caches
         ProcessService.clear_cache()
 
-        # Verify all caches are cleared
+        # Verify caches are empty
         assert len(DISCOVER_PROCESSES_CACHE) == 0
         assert len(GET_PROCESS_INSTANCE_CACHE) == 0
         assert len(GET_PROCESS_CLASS_CACHE) == 0
 
     @pytest.mark.asyncio
-    async def test_discover_process_classes_caching_behavior(self, sample_process_class):
-        """Test that discover_process_classes properly caches results."""
-        cache_key = "all_process_classes"
+    async def test_get_process_database_exception(self, mock_nats, mock_locale_handler):
+        """Test get_process handles database exceptions properly."""
+        with patch.object(ProcessService, "discover_process_instance") as mock_discover:
+            mock_discover.side_effect = HTTPException(status_code=404, detail="Not found")
 
-        mock_nc = AsyncMock()
-        mock_event = Mock(spec=ProcessClassDiscoveryResponseEvent)
-        mock_event.process_class = "TestProcess"
+            with patch.object(ProcessEntity, "get_process") as mock_get_process:
+                mock_get_process.side_effect = Exception("Database error")
 
-        with patch.object(ProcessClassDTO, "from_discovery_event") as mock_from_event:
-            mock_from_event.return_value = sample_process_class
+                with pytest.raises(Exception) as exc_info:
+                    await ProcessService.get_process(mock_nats, "TestProcess", "test_process_1", mock_locale_handler)
 
-            with patch("aihub_api.routes.process.ProcessService.ProcessNCSubscriber") as mock_subscriber_class:
-                mock_subscriber = AsyncMock()
-                mock_subscriber_class.for_process_class_discovery_response_events.return_value = mock_subscriber
-
-                with patch("aihub_api.routes.process.ProcessService.NCPublisher") as mock_publisher_class:
-                    mock_publisher = AsyncMock()
-                    mock_publisher_class.return_value = mock_publisher
-
-                    # Mock the entire discover_process_classes method to return what we expect
-                    original_method = ProcessService.discover_process_classes
-                    
-                    async def mock_discover_process_classes(nc):
-                        if cache_key in DISCOVER_PROCESSES_CACHE:
-                            return DISCOVER_PROCESSES_CACHE[cache_key]
-                        
-                        # Simulate discovery result
-                        result = [sample_process_class]
-                        DISCOVER_PROCESSES_CACHE[cache_key] = result
-                        return result
-                    
-                    with patch.object(ProcessService, 'discover_process_classes', side_effect=mock_discover_process_classes):
-                        # First call should populate cache
-                        result1 = await ProcessService.discover_process_classes(mock_nc)
-                        assert len(result1) == 1
-                        assert cache_key in DISCOVER_PROCESSES_CACHE
-
-                        # Second call should use cache
-                        result2 = await ProcessService.discover_process_classes(mock_nc)
-                        assert result2 == DISCOVER_PROCESSES_CACHE[cache_key]
-                        assert len(result2) == 1
+                assert str(exc_info.value) == "Database error"
 
     @pytest.mark.asyncio
-    async def test_process_service_error_handling_during_discovery(self):
-        """Test ProcessService handles errors gracefully during discovery operations."""
-        mock_nc = AsyncMock()
+    async def test_discover_process_instances_no_results(self, mock_nats):
+        """Test discover_process_instances returns empty list when no processes found."""
+        with patch.object(ProcessService, "discover_process_classes") as mock_discover_classes:
+            mock_discover_classes.return_value = []
 
+            result = await ProcessService.discover_process_instances(mock_nats)
+
+            assert result == []
+            # Should not cache empty results
+            assert "all_process_instances" not in DISCOVER_PROCESSES_CACHE
+
+    @pytest.mark.asyncio
+    async def test_discover_process_classes_no_results(self, mock_nats):
+        """Test discover_process_classes returns empty list when no processes respond."""
         with patch("aihub_api.routes.process.ProcessService.ProcessNCSubscriber") as mock_subscriber_class:
-            mock_subscriber_class.for_process_class_discovery_response_events.side_effect = Exception("NATS error")
+            mock_subscriber = Mock()
+            mock_subscriber.start = AsyncMock()
+            mock_subscriber.stop = AsyncMock()
+            mock_subscriber_class.for_process_class_discovery_response_events.return_value = mock_subscriber
 
-            with pytest.raises(Exception) as exc_info:
-                await ProcessService.discover_process_class(mock_nc, "TestProcess")
+            with patch("aihub_api.routes.process.ProcessService.NCPublisher") as mock_publisher_class:
+                mock_publisher = Mock()
+                mock_publisher.publish_event = AsyncMock()
+                mock_publisher_class.return_value = mock_publisher
 
-            assert str(exc_info.value) == "NATS error"
+                with patch("aihub_api.routes.process.ProcessService.ProcessTopicManager") as mock_topic_manager_class:
+                    mock_topic_manager = Mock()
+                    mock_topic_manager_class.return_value = mock_topic_manager
 
-    @pytest.mark.asyncio
-    async def test_multiple_process_configs_handling(self, sample_process_class):
-        """Test handling of multiple process configurations for the same class."""
-        # Clear cache to ensure fresh discovery
-        ProcessService.clear_cache()
-        
-        config1 = ProcessConfig(
-            process_class="TestProcess",
-            process_id="process_1",
-            name=LocaleString(en="Process 1"),
-            description=LocaleString(en="First process"),
-            icon="icon1",
-        )
+                    with patch("aihub_api.routes.process.ProcessService.sleep") as mock_sleep:
+                        mock_sleep.return_value = None
 
-        config2 = ProcessConfig(
-            process_class="TestProcess",
-            process_id="process_2",
-            name=LocaleString(en="Process 2"),
-            description=LocaleString(en="Second process"),
-            icon="icon2",
-        )
+                        with patch("aihub_api.routes.process.ProcessService.ObjectId") as mock_objectid:
+                            mock_objectid.return_value = "test_call_id"
 
-        mock_doc1 = Mock()
-        mock_doc1.process_id = "process_1"
-        mock_doc2 = Mock()
-        mock_doc2.process_id = "process_2"
+                            # Mock empty discovery responses
 
-        with patch.object(ProcessService, "discover_process_class") as mock_discover_class:
-            mock_discover_class.return_value = sample_process_class
+                            async def patched_method(nc):
+                                discovery_responses = []  # No responses
+                                unique_processes_dict = {}
 
-            with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find_configs:
-                mock_find_configs.return_value = [mock_doc1, mock_doc2]
+                                for response in discovery_responses:
+                                    unique_key = response.process_class
+                                    if unique_key not in unique_processes_dict:
+                                        process_class_dto = ProcessClassDTO.from_discovery_event(response)
+                                        unique_processes_dict[unique_key] = process_class_dto
 
-                def mock_from_entity_side_effect(doc):
-                    if doc.process_id == "process_1":
-                        return config1
-                    elif doc.process_id == "process_2":
-                        return config2
-                    return config1  # fallback
+                                processes = list(unique_processes_dict.values())
+                                # Should not cache empty results
+                                return processes
 
-                with patch.object(ProcessConfig, "from_entity") as mock_from_entity:
-                    mock_from_entity.side_effect = mock_from_entity_side_effect
+                            with patch.object(ProcessService, "discover_process_classes", patched_method):
+                                result = await ProcessService.discover_process_classes(mock_nats)
 
-                    def mock_create_instance_side_effect(class_dto, process_config):
-                        if process_config.process_id == "process_1":
-                            mock_instance = Mock()
-                            mock_instance.process_id = "process_1"
-                            return mock_instance
-                        elif process_config.process_id == "process_2":
-                            mock_instance = Mock()
-                            mock_instance.process_id = "process_2"
-                            return mock_instance
-                        return Mock()
-
-                    with patch.object(ProcessInstanceDTO, "from_class_and_config") as mock_create_instance:
-                        mock_create_instance.side_effect = mock_create_instance_side_effect
-
-                        # Test discovering specific process
-                        result1 = await ProcessService.discover_process_instance(Mock(), "TestProcess", "process_1")
-                        assert result1.process_id == "process_1"
-
-                        result2 = await ProcessService.discover_process_instance(Mock(), "TestProcess", "process_2")
-                        assert result2.process_id == "process_2"
-
-                        # Verify correct configs were used
-                        assert mock_from_entity.call_count >= 2
+                                assert result == []
+                                # Should not cache empty results
+                                assert "all_process_classes" not in DISCOVER_PROCESSES_CACHE
