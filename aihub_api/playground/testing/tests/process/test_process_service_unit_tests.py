@@ -1,35 +1,31 @@
-from unittest.mock import AsyncMock, Mock, patch, ANY
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-
-from aihub_api.runners.simulation.process.events.HumanStartWork import HumanStartEvent
-from aihub_lib.processes.ProcessConfig import ProcessConfig
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.nats.events.discovery.process.ProcessClassDiscoveryResponseEvent import (
     ProcessClassDiscoveryResponseEvent,
 )
 from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
 from aihub_lib.persistence.process.ProcessEntity import ProcessEntity
-from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
+from aihub_lib.processes.ProcessConfig import ProcessConfig
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from aihub_lib.testing.logging.logger import enable_logging
 from bson import ObjectId
 from fastapi import HTTPException
 
+from aihub_api.routes.process.dto.MinimalProcessDTO import MinimalProcessDTO
+from aihub_api.routes.process.dto.ProcessClassDTO import ProcessClassDTO
+from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
+from aihub_api.routes.process.dto.ProcessInstanceDTO import ProcessInstanceDTO
 from aihub_api.routes.process.ProcessService import (
     DISCOVER_PROCESSES_CACHE,
     GET_PROCESS_CLASS_CACHE,
     GET_PROCESS_INSTANCE_CACHE,
     ProcessService,
 )
-from aihub_api.routes.process.dto.ProcessClassDTO import ProcessClassDTO
-from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
-from aihub_api.routes.process.dto.ProcessInstanceDTO import ProcessInstanceDTO
-from aihub_api.routes.process.dto.MinimalProcessDTO import MinimalProcessDTO
-from aihub_api.routes.thread.ThreadService import ThreadService
+from aihub_api.runners.simulation.process.events.HumanStartWork import HumanStartEvent
 
 enable_logging()
 
@@ -522,7 +518,6 @@ class TestProcessServiceUnit:
         mock_thread.id = ObjectId()
         mock_external_distributor = Mock()
         mock_external_distributor.distribute_event = AsyncMock()
-        mock_stop_event = Mock()
 
         result = await ProcessService.send_event(
             external_process_event_distributor=mock_external_distributor,

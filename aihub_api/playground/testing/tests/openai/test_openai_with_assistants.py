@@ -2,7 +2,6 @@ import json
 
 import pytest
 import pytest_asyncio
-
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,

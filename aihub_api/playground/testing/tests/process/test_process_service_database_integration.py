@@ -1,16 +1,16 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from aihub_lib.processes.ProcessConfig import ProcessConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
+from aihub_lib.processes.ProcessConfig import ProcessConfig
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from aihub_lib.testing.logging.logger import enable_logging
 from fastapi import HTTPException
 
-from aihub_api.routes.process.ProcessService import GET_PROCESS_INSTANCE_CACHE, ProcessService
 from aihub_api.routes.process.dto.ProcessClassDTO import ProcessClassDTO
 from aihub_api.routes.process.dto.ProcessInstanceDTO import ProcessInstanceDTO
+from aihub_api.routes.process.ProcessService import GET_PROCESS_INSTANCE_CACHE, ProcessService
 
 enable_logging()
 

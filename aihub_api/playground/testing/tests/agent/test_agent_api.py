@@ -7,7 +7,6 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
     DangerousDevelopmentOnlyIdentityProvider,
 )
 from aihub_lib.nats.events import UserMessageEvent
-from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from aihub_lib.testing.logging.logger import enable_logging
 from asgi_lifespan import LifespanManager
