@@ -1,11 +1,11 @@
 from typing import Annotated
 
-from pydantic import BaseModel, Field
-
-from aihub_api.routes.process.dto.ProcessConfigDTO import ProcessConfigDTO
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.process import ProcessEntity
 from aihub_lib.processes.ProcessConfig import ProcessConfig
+from pydantic import BaseModel, Field
+
+from aihub_api.routes.process.dto.ProcessConfigDTO import ProcessConfigDTO
 
 
 class MinimalProcessDTO(BaseModel):

@@ -12,9 +12,9 @@ from aihub_lib.nats.events.discovery import ProcessClassDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.nats.events.discovery.InstanceDiscoveryRequestEvent import InstanceDiscoveryRequestEvent
-from aihub_lib.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
 from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
 from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
+from aihub_lib.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
 from aihub_lib.nats.events.discovery.process.ProcessInstanceDiscoveryResponseEvent import (
     ProcessInstanceDiscoveryResponseEvent,
 )
@@ -32,7 +32,6 @@ from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import Pr
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
 from aihub_lib.nats.topics.discovery.process.ProcessClassDiscoveryTopic import ProcessClassDiscoveryTopic
-from aihub_lib.nats.topics.discovery.process.ProcessInstanceDiscoveryTopic import ProcessInstanceDiscoveryTopic
 from aihub_lib.nats.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 from nats.aio.client import Client as NATS

@@ -26,7 +26,6 @@ from nats.aio.client import Client as NATS
 
 from aihub_api.routes.process.dto.MinimalProcessDTO import MinimalProcessDTO
 from aihub_api.routes.process.dto.ProcessClassDTO import ProcessClassDTO
-from aihub_api.routes.process.dto.ProcessConfigDTO import ProcessConfigDTO
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
 from aihub_api.routes.process.dto.ProcessHumanInDto import ProcessHumanInDto
 from aihub_api.routes.process.dto.ProcessInstanceDTO import ProcessInstanceDTO

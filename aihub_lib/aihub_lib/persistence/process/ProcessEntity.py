@@ -10,8 +10,8 @@ from mongoengine import (
     EmbeddedDocument,
     EmbeddedDocumentField,
     ListField,
-    StringField,
     ReferenceField,
+    StringField,
 )
 
 from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
