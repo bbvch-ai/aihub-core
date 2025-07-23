@@ -1,6 +1,12 @@
 import logging
 from typing import Annotated
 
+from aihub_api.i18n.dependencies.use_locale import use_locale, use_locale_ws
+from aihub_api.routes.event.EventService import EventService
+from aihub_api.routes.event.dto.EventTimeseries import EventTimeseries
+from aihub_api.routes.thread.ThreadService import ThreadService
+from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
+from aihub_api.sockets.manager.dependencies.use_ws_manager import use_ws_manager_ws
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -14,12 +20,7 @@ from fastapi.params import Path, Query
 
 from aihub_api.sockets.events.server_to_user.ContextualizedAgentEvent import ContextualizedAgentEvent
 
-from ...i18n.dependencies.use_locale import use_locale, use_locale_ws
-from ...sockets.manager.dependencies.use_ws_manager import use_ws_manager_ws
-from ...sockets.manager.WebSocketManager import WebSocketManager
-from ..thread.ThreadService import ThreadService
-from .dto.EventTimeseries import EventTimeseries
-from .EventService import EventService
+
 
 logger = logging.getLogger(__name__)
 

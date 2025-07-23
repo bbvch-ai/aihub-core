@@ -25,9 +25,7 @@ class AgentToHumanProcess(AgenticProcess):
         return HumanBWorkRequest(
             forms=[
                 HumanBWork(
-                    payload=InputText(
-                        label=LocaleString(en=f"Please respond to <{agent_payload}> with a single word:")
-                    )
+                    payload=InputText(label=LocaleString(en=f"Please respond to <{agent_payload}> with a single word:"))
                 )
             ]
         )

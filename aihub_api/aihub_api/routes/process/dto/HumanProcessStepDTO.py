@@ -2,9 +2,9 @@ from typing import TYPE_CHECKING, Annotated
 
 from pydantic import Field
 
-from .BaseProcessStepDTO import BaseProcessStepDTO
-from .HumanWorkRequestDTO import HumanWorkRequestDTO
-from .HumanWorkResponseDTO import HumanWorkResponseDTO
+from aihub_api.routes.process.dto.BaseProcessStepDTO import BaseProcessStepDTO
+from aihub_api.routes.process.dto.HumanWorkRequestDTO import HumanWorkRequestDTO
+from aihub_api.routes.process.dto.HumanWorkResponseDTO import HumanWorkResponseDTO
 
 if TYPE_CHECKING:
     from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -13,51 +13,51 @@ if TYPE_CHECKING:
 class HumanProcessStepDTO(BaseProcessStepDTO):
     """DTO representing a human process step with human-specific work request and response information."""
 
-    step_type: Annotated[str, Field(default="human", description="Type of entity involved in this step.")]
+    step_type: Annotated[str, Field(description="Type of entity involved in this step.")] = "human"
 
-    work_request: Annotated[
-        HumanWorkRequestDTO | None,
-        Field(description="The human work request for this step."),
-    ]
-
+    work_request: Annotated[HumanWorkRequestDTO | None, Field(description="The human work request for this step.")] = (
+        None
+    )
     work_response: Annotated[
         HumanWorkResponseDTO | None,
         Field(description="The human work response for this step. May be None if work is not yet completed."),
-    ]
+    ] = None
 
     @classmethod
-    def from_events(cls, request_event: "PersistedEventDTO | None", response_event: "PersistedEventDTO | None", step_index: int, t: "LocaleHandler") -> "HumanProcessStepDTO":
+    def from_events(
+        cls,
+        request_event,
+        response_event,
+        step_index: int,
+        t: "LocaleHandler",
+    ) -> "HumanProcessStepDTO":
         """Creates a HumanProcessStepDTO from optional request and response events."""
         from .PersistedEventDTO import PersistedEventDTO
 
         # Create work request if request_event exists
-        work_request = None
+        work_request: HumanWorkRequestDTO | None = None
         if request_event:
-            # Convert dict to PersistedEventDTO for better typing
             if isinstance(request_event, dict):
-                request_event = PersistedEventDTO(**request_event)
-
-            request_data = request_event.event_data
+                request_event = PersistedEventDTO.model_validate(request_event)
             work_request = HumanWorkRequestDTO.from_event_data(
-                request_data,
+                request_event.event_data,
                 request_event.event_id,
                 request_event.event_name,
-                request_data.get("created_at", 0),
+                request_event.event_data["created_at"],
                 t,
             )
 
         # Create work response if exists
-        work_response = None
+        work_response: HumanWorkResponseDTO | None = None
         created_at = 0
         if response_event:
             if isinstance(response_event, dict):
-                response_event = PersistedEventDTO(**response_event)
-            response_data = response_event.event_data
+                response_event = PersistedEventDTO.model_validate(response_event)
             work_response = HumanWorkResponseDTO.from_event_data(
-                response_data,
+                response_event.event_data,
                 response_event.event_id,
                 response_event.event_name,
-                response_data.get("created_at", 0),
+                response_event.event_data["created_at"],
                 t,
             )
             created_at = work_response.created_at
@@ -74,9 +74,3 @@ class HumanProcessStepDTO(BaseProcessStepDTO):
             work_response=work_response,
         )
 
-
-# Rebuild model to resolve forward references
-try:
-    HumanProcessStepDTO.model_rebuild()
-except Exception:
-    pass  # Ignore if already rebuilt

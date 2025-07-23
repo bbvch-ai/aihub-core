@@ -2,9 +2,16 @@ from typing import Annotated
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
-
-from aihub_lib.nats.events.form import Select, SelectButton, InputNumber, Knob, CascadeSelect, Checkbox, DatePicker, \
-    Textarea, Slider
+from aihub_lib.nats.events.form import (
+    CascadeSelect,
+    Checkbox,
+    DatePicker,
+    InputNumber,
+    Select,
+    SelectButton,
+    Slider,
+    Textarea,
+)
 from aihub_lib.nats.events.form.elements.InputText import InputText
 from aihub_lib.testing.auth_utils.fake_user import fake_user
 from llama_index.core.base.llms.types import ChatMessage
@@ -16,8 +23,8 @@ from aihub_process.delegators.program.Program import Program
 from aihub_process.process.decorators.process_step import process_step
 from playground.AgenticCVProcess.events.agent.AnalyzeCVRequest import AnalyzeCVRequest
 from playground.AgenticCVProcess.events.human.AcceptRejectRequest import AcceptRejectRequest
-from playground.AgenticCVProcess.events.program.SaveDecisionRequest import SaveDecisionRequest
 from playground.AgenticCVProcess.events.human.SubmittedCV import SubmittedCV
+from playground.AgenticCVProcess.events.program.SaveDecisionRequest import SaveDecisionRequest
 
 
 class AgenticCVProcess(AgenticProcess):
@@ -36,17 +43,14 @@ class AgenticCVProcess(AgenticProcess):
                         option_label="label",
                         option_value="shortname",
                         options=[
-                            { "shortname": "eng", "label": LocaleString(en="Engineer") },
-                            { "shortname": "mng", "label": LocaleString(en="Manager") },
+                            {"shortname": "eng", "label": LocaleString(en="Engineer")},
+                            {"shortname": "mng", "label": LocaleString(en="Manager")},
                         ],
                     ),
                     application_date=DatePicker(
                         label=LocaleString(en="Application date"),
                     ),
-                    level=SelectButton(
-                        label="Level",
-                        options=["Junior", "Senior"]
-                    ),
+                    level=SelectButton(label="Level", options=["Junior", "Senior"]),
                     match=Slider(
                         label="Match",
                         min=0,
@@ -61,7 +65,7 @@ class AgenticCVProcess(AgenticProcess):
                         mode="currency",
                         show_buttons=True,
                         currency="CHF",
-                        locale="de-CH"
+                        locale="de-CH",
                     ),
                     business_area=CascadeSelect(
                         label="Business area",
@@ -70,30 +74,28 @@ class AgenticCVProcess(AgenticProcess):
                                 "name": LocaleString(en="bbv Switzerland"),
                                 "code": "bbv-ch",
                                 "locations": [
-                                    { "name": "Zurich", "code": "bbv-ch-zh" },
-                                    { "name": "Lucerne", "code": "bbv-ch-lu"}
-                                ]
+                                    {"name": "Zurich", "code": "bbv-ch-zh"},
+                                    {"name": "Lucerne", "code": "bbv-ch-lu"},
+                                ],
                             },
                             {
                                 "name": LocaleString(en="bbv Greece"),
                                 "code": "bbv-gr",
                                 "locations": [
-                                    { "name": "Thessaloniki", "code": "bbv-gr-th" },
-                                ]
-                            }
+                                    {"name": "Thessaloniki", "code": "bbv-gr-th"},
+                                ],
+                            },
                         ],
                         option_label="name",
                         option_value="code",
                         option_group_label="name",
                         option_group_children=["locations"],
                     ),
-                    hire=Checkbox(
-                        label=LocaleString(en="Hire $name?")
-                    ),
+                    hire=Checkbox(label=LocaleString(en="Hire $name?")),
                     reasoning=Textarea(
                         condition_if="$get(hire).value",
-                        label=LocaleString(en="Why should we hire / not hire this person?")
-                    )
+                        label=LocaleString(en="Why should we hire / not hire this person?"),
+                    ),
                 ),
             ),
         ],

@@ -1,23 +1,26 @@
 <template>
-  <StructuralColumn
-    :title="t('process.title')"
-    :loading="isLoading"
-  >
-    <ProcessWalkthroughList
-      :walkthroughs="walkthroughs"
-      @selected="toWalkthrough"
-    />
-
-    <div class="mt-4">
-      <Paginator
-        :rows="pageSize"
-        :total-records="pagination.total"
-        :rows-per-page-options="[10, 20, 30, 50]"
-        :first="(currentPage - 1) * pageSize"
-        @page="onPageChange"
+  <StructuralSubstructure>
+    <StructuralColumn
+      :title="t('process.title')"
+      :loading="isLoading"
+    >
+      <ProcessWalkthroughList
+        :walkthroughs="walkthroughs"
+        @selected="toWalkthrough"
       />
-    </div>
-  </StructuralColumn>
+
+      <div class="mt-4">
+        <Paginator
+          :rows="pageSize"
+          :total-records="pagination.total"
+          :rows-per-page-options="[10, 20, 30, 50]"
+          :first="(currentPage - 1) * pageSize"
+          @page="onPageChange"
+        />
+      </div>
+    </StructuralColumn>
+    <NuxtPage />
+  </StructuralSubstructure>
 </template>
 
 <script setup lang="ts">
@@ -43,7 +46,7 @@ const {
 } = useProcessWalkthroughs()
 
 const toWalkthrough = (walkthrough: ProcessWalkthroughDto) => {
-  router.push(localePath(`/service/processes/${route.params.process_class}-${route.params.process_id}/${walkthrough.id}/overview`))
+  router.push(localePath(`/service/processes/${walkthrough.process_class}-${walkthrough.process_id}/walkthroughs/${walkthrough.process_walkthrough_id}/overview`))
 }
 
 const onPageChange = (event) => {

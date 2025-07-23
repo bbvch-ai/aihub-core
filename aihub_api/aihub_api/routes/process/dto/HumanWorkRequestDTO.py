@@ -11,19 +11,13 @@ if TYPE_CHECKING:
 class HumanWorkRequestDTO(WorkRequestDTO):
     """DTO representing a human work request with specific human-related information."""
 
-    user_ids: Annotated[list[str], Field(description="List of user IDs that can respond to this request.")]
-
-    user_emails: Annotated[list[str], Field(description="List of user emails that can respond to this request.")]
-
-    user_roles: Annotated[list[str], Field(description="List of user roles that can respond to this request.")]
-
-    notify: Annotated[bool, Field(description="Whether users should be notified about this request.")]
-
-    forms: Annotated[list[dict[str, Any]], Field(description="List of forms that users can submit.")]
-
-    endpoint: Annotated[str | None, Field(description="API endpoint for form submission.")]
-
-    method: Annotated[str | None, Field(description="HTTP method for form submission.")]
+    user_ids: Annotated[list[str], Field(description="List of user IDs that can respond to this request.")] = []
+    user_emails: Annotated[list[str], Field(description="List of user emails that can respond to this request.")] = []
+    user_roles: Annotated[list[str], Field(description="List of user roles that can respond to this request.")] = []
+    notify: Annotated[bool, Field(description="Whether users should be notified about this request.")] = False
+    forms: Annotated[list[dict[str, Any]], Field(description="List of forms that users can submit.")] = []
+    endpoint: Annotated[str | None, Field(description="API endpoint for form submission.")] = None
+    method: Annotated[str | None, Field(description="HTTP method for form submission.")] = None
 
     @classmethod
     def from_event_data(
@@ -31,12 +25,12 @@ class HumanWorkRequestDTO(WorkRequestDTO):
     ) -> "HumanWorkRequestDTO":
         """Creates a HumanWorkRequestDTO from raw event data."""
         # Extract localized display fields
-        display_name = None
-        display_description = None
+        display_name: str | None = None
+        display_description: str | None = None
         if event_data.get("display_name"):
-            display_name = t.extract(event_data.get("display_name"))
+            display_name = t.extract(event_data["display_name"])
         if event_data.get("display_description"):
-            display_description = t.extract(event_data.get("display_description"))
+            display_description = t.extract(event_data["display_description"])
 
         return cls(
             event_id=event_id,

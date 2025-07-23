@@ -11,9 +11,8 @@ if TYPE_CHECKING:
 class ProgramWorkRequestDTO(WorkRequestDTO):
     """DTO representing a program work request with specific program-related information."""
 
-    endpoint: Annotated[str | None, Field(description="API endpoint for the program to submit work.")]
-
-    method: Annotated[str | None, Field(description="HTTP method for the program to submit work.")]
+    endpoint: Annotated[str | None, Field(description="API endpoint for the program to submit work.")] = None
+    method: Annotated[str | None, Field(description="HTTP method for the program to submit work.")] = None
 
     @classmethod
     def from_event_data(
@@ -21,12 +20,12 @@ class ProgramWorkRequestDTO(WorkRequestDTO):
     ) -> "ProgramWorkRequestDTO":
         """Creates a ProgramWorkRequestDTO from raw event data."""
         # Extract localized display fields
-        display_name = None
-        display_description = None
+        display_name: str | None = None
+        display_description: str | None = None
         if event_data.get("display_name"):
-            display_name = t.extract(event_data.get("display_name"))
+            display_name = t.extract(event_data["display_name"])
         if event_data.get("display_description"):
-            display_description = t.extract(event_data.get("display_description"))
+            display_description = t.extract(event_data["display_description"])
 
         return cls(
             event_id=event_id,

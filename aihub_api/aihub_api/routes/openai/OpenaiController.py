@@ -2,6 +2,15 @@ import logging
 from collections.abc import AsyncIterator
 from typing import Annotated, Literal
 
+from aihub_api.i18n.dependencies.use_locale import use_locale
+from aihub_api.routes.openai.OpenaiService import OpenaiService
+from aihub_api.routes.openai.dto.ChatCompletionRequest import ChatCompletionRequest
+from aihub_api.routes.openai.dto.EmbeddingsRequest import EmbeddingsRequest
+from aihub_api.routes.openai.dto.EmbeddingsResponse import EmbeddingsResponse
+from aihub_api.routes.openai.dto.ImageGenerationRequest import ImageGenerationRequest
+from aihub_api.routes.openai.dto.ModelDetails import ModelDetails
+from aihub_api.routes.openai.dto.ModelResponse import ModelResponse
+from aihub_api.routes.openai.dto.TextToSpeechRequest import TextToSpeechRequest
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -26,15 +35,7 @@ from openai.types.audio import Transcription, TranscriptionVerbose
 from openai.types.chat import ChatCompletion
 from starlette.responses import StreamingResponse
 
-from ...i18n.dependencies.use_locale import use_locale
-from .dto.ChatCompletionRequest import ChatCompletionRequest
-from .dto.EmbeddingsRequest import EmbeddingsRequest
-from .dto.EmbeddingsResponse import EmbeddingsResponse
-from .dto.ImageGenerationRequest import ImageGenerationRequest
-from .dto.ModelDetails import ModelDetails
-from .dto.ModelResponse import ModelResponse
-from .dto.TextToSpeechRequest import TextToSpeechRequest
-from .OpenaiService import OpenaiService
+
 
 logger = logging.getLogger(__name__)
 

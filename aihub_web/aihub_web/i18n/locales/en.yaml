@@ -344,3 +344,15 @@ process:
     offline: "Offline"
   navigation:
     overview: "Overview"
+    walkthroughs: "Runs"
+    start: "Start Run"
+  walkthrough:
+    list:
+      created: "Created"
+      updated: "Last Interaction"
+      agents: "Agents"
+      users: "Users"
+      state: "State"
+      in_progress: "In Progress"
+      done: "Done"
+      steps: "Fortschritt"

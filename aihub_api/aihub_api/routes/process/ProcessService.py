@@ -22,14 +22,18 @@ from cachetools import TTLCache
 from fastapi import HTTPException
 from nats.aio.client import Client as NATS
 
-from aihub_api.routes.process.dto import PersistedEventDTO, HumanProcessStepDTO, \
-    AgentProcessStepDTO, ProgramProcessStepDTO
-from aihub_api.routes.process.dto.ProcessWalkthroughDTO import ProcessWalkthroughDTO
+from aihub_api.routes.process.dto import (
+    AgentProcessStepDTO,
+    HumanProcessStepDTO,
+    PersistedEventDTO,
+    ProgramProcessStepDTO,
+)
 from aihub_api.routes.process.dto.in_specs.AgentInDTO import AgentInDTO
 from aihub_api.routes.process.dto.in_specs.HumanInDTO import HumanInDTO
 from aihub_api.routes.process.dto.in_specs.ProgramInDTO import ProgramInDTO
 from aihub_api.routes.process.dto.ProcessConfigDTO import ProcessConfigDTO
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
+from aihub_api.routes.process.dto.ProcessWalkthroughDTO import ProcessWalkthroughDTO
 from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 
 # In-memory caches to avoid repeatedly querying NATS for process info
@@ -408,18 +412,16 @@ class ProcessService:
             )
 
             completed_steps = sum(1 for step in process_steps if step.is_completed)
-            
+
             # Determine if walkthrough is active by checking for ProcessStopEvent
             is_active = True
             for event in walkthrough_data["events"]:
                 if any("ProcessStopEvent" in parent for parent in event.get("event_parents", [])):
                     is_active = False
                     break
-            
+
             # Collect involved agents and humans
-            involved_agents, involved_humans = ProcessService._extract_involved_entities(
-                walkthrough_data["events"], t
-            )
+            involved_agents, involved_humans = ProcessService._extract_involved_entities(walkthrough_data["events"], t)
 
             walkthrough = ProcessWalkthroughDTO(
                 process_walkthrough_id=walkthrough_data["process_walkthrough_id"],
@@ -439,7 +441,9 @@ class ProcessService:
         return total_count, walkthroughs
 
     @staticmethod
-    def _build_process_steps_from_events(events: list[dict], t: LocaleHandler, process_class: str, process_id: str) -> list:
+    def _build_process_steps_from_events(
+        events: list[dict], t: LocaleHandler, process_class: str, process_id: str
+    ) -> list:
         """
         Builds a list of ProcessStepDTO objects from raw event data by pairing
         work requests with their corresponding work responses.
@@ -455,8 +459,8 @@ class ProcessService:
             if "process_walkthrough_id" not in event:
                 # This should not happen, but fallback to empty string if needed
                 event["process_walkthrough_id"] = ""
-            
-            persisted_events.append(PersistedEventDTO(**event))
+
+            persisted_events.append(PersistedEventDTO.model_validate(event))
 
         # Separate work request and work response events
         work_requests = []
@@ -518,7 +522,7 @@ class ProcessService:
 
         # Sort all steps by creation time to ensure correct chronological order
         steps.sort(key=lambda x: x.created_at)
-        
+
         # Re-index steps after sorting
         for i, step in enumerate(steps):
             step.step_index = i
@@ -533,7 +537,7 @@ class ProcessService:
         """
         from aihub_lib.persistence.agents.AgentEntity import AgentEntity
         from aihub_lib.persistence.user.UserEntity import UserEntity
-        
+
         from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
         from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
 
@@ -543,60 +547,51 @@ class ProcessService:
         for event in events:
             event_data = event.get("event_data", {})
             event_parents = event.get("event_parents", [])
-            
+
             # Check if this is a work event (response, not request)
             if any("WorkEvent" in parent and "WorkRequestEvent" not in parent for parent in event_parents):
                 # Check for agent work
                 if any("AgentWork" in parent for parent in event_parents):
-                    agent_class = event_data.get("agent_class")
-                    agent_id = event_data.get("agent_id")
-                    if agent_class and agent_id:
-                        agent_key = f"{agent_class}:{agent_id}"
-                        if agent_key not in involved_agents:
-                            try:
-                                agent_entity = AgentEntity.get_agent(agent_class, agent_id)
-                                if agent_entity:
-                                    involved_agents[agent_key] = MinimalAgentDTO.from_entity(agent_entity, t)
-                            except Exception:
-                                pass  # Agent not found or error loading
-                
+                    agent_class = event_data["submitted_by"]["agent_class"]
+                    agent_id = event_data["submitted_by"]["agent_id"]
+                    agent_key = f"{agent_class}:{agent_id}"
+                    if agent_key not in involved_agents:
+                        agent_entity = AgentEntity.get_agent(agent_class, agent_id)
+                        if agent_entity:
+                            involved_agents[agent_key] = MinimalAgentDTO.from_entity(agent_entity, t)
+
                 # Check for human work
                 elif any("HumanWork" in parent for parent in event_parents):
-                    submitted_by = event_data.get("submitted_by")
-                    if submitted_by:
-                        user_id = submitted_by.get("id") if isinstance(submitted_by, dict) else getattr(submitted_by, "id", None)
-                        if user_id and user_id not in involved_humans:
+                    submitted_by = event_data["submitted_by"]
+                    user_id = (
+                        submitted_by.get("id") if isinstance(submitted_by, dict) else getattr(submitted_by, "id", None)
+                    )
+                    if user_id and user_id not in involved_humans:
+                        profile_image = (
+                            submitted_by.get("profile_image")
+                            if isinstance(submitted_by, dict)
+                            else getattr(submitted_by, "profile_image", None)
+                        )
+
+                        if not profile_image:
                             try:
-                                # Check if we need to fetch user profile
-                                profile_image = None
-                                if isinstance(submitted_by, dict):
-                                    profile_image = submitted_by.get("profile_image")
-                                else:
-                                    profile_image = getattr(submitted_by, "profile_image", None)
-                                
-                                if not profile_image:
-                                    # Fetch user from database to get profile image
-                                    user_entity = UserEntity.get_user_by_id(user_id)
-                                    if user_entity:
-                                        involved_humans[user_id] = MinimalUserDTO.from_user_entity(user_entity)
-                                else:
-                                    # Use existing user data
-                                    if isinstance(submitted_by, dict):
-                                        involved_humans[user_id] = MinimalUserDTO(
-                                            id=submitted_by.get("id", ""),
-                                            name=submitted_by.get("name", ""),
-                                            email=submitted_by.get("email", ""),
-                                            profile_image=profile_image
-                                        )
-                                    else:
-                                        involved_humans[user_id] = MinimalUserDTO(
-                                            id=getattr(submitted_by, "id", ""),
-                                            name=getattr(submitted_by, "name", ""),
-                                            email=getattr(submitted_by, "email", ""),
-                                            profile_image=profile_image
-                                        )
+                                user_entity = UserEntity.by_oid(user_id)
+                                involved_humans[user_id] = MinimalUserDTO.from_user_entity(user_entity)
                             except Exception:
-                                pass  # User not found or error loading
+                                pass
+                        else:
+                            involved_humans[user_id] = MinimalUserDTO.model_validate(
+                                {
+                                    "id": user_id,
+                                    "name": submitted_by.get("name")
+                                    if isinstance(submitted_by, dict)
+                                    else getattr(submitted_by, "name", ""),
+                                    "email": submitted_by.get("email")
+                                    if isinstance(submitted_by, dict)
+                                    else getattr(submitted_by, "email", ""),
+                                    "profile_image": profile_image,
+                                }
+                            )
 
         return list(involved_agents.values()), list(involved_humans.values())
 
@@ -636,4 +631,3 @@ class ProcessService:
             return True
 
         return False
-
