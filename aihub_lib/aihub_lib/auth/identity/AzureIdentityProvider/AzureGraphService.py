@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import logging
 from typing import Any
@@ -152,18 +153,13 @@ class AzureGraphService:
         try:
             image_response = await self._make_graph_request("GET", image_url)
         except GraphAPIError as e:
-            if e.status_code == 404:
-                image_response = None
-            else:
-                raise
+            if e.status_code != 404:
+                logger.warning(f"Unable to fetch user profile image: {e}")
+            return None
 
-        image_data_url = None
-        if image_response:  # Response is empty dict on 404
-            content_type = image_response["headers"].get("Content-Type", "image/jpeg")
-            base64_data = base64.b64encode(image_response["content"]).decode("utf-8")
-            image_data_url = f"data:{content_type};base64,{base64_data}"
-        else:
-            logger.debug(f"No profile image found for user OID {user_oid} (404).")
+        content_type = image_response["headers"].get("Content-Type", "image/jpeg")
+        base64_data = base64.b64encode(image_response["content"]).decode("utf-8")
+        image_data_url = f"data:{content_type};base64,{base64_data}"
 
         self.profile_image_cache[cache_key] = image_data_url
         return image_data_url
@@ -233,9 +229,6 @@ class AzureGraphService:
         profile_task = self._get_user_profile(user_oid)
         roles_task = self.get_user_roles(user_oid)
         image_task = self.get_user_profile_image_data_url(user_oid)
-
-        # Await all results
-        import asyncio
 
         user_profile, user_roles, profile_image = await asyncio.gather(profile_task, roles_task, image_task)
 
