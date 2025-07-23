@@ -17,6 +17,7 @@ from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 from aihub_lib.nats.topics import ProcessInstanceDiscoveryTopic
+from aihub_lib.persistence.process.ProcessEntity import ProcessConfig
 from fastapi import Body, Depends, FastAPI, HTTPException, Path, Security
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
@@ -25,7 +26,6 @@ from typing_extensions import override
 
 from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_api.i18n.dependencies.use_locale import use_locale
-from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
 from aihub_api.routes.process.dto.ProcessHumanInDto import ProcessHumanInDto
 from aihub_api.routes.process.dto.ProcessInstanceDTO import ProcessInstanceDTO
 from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
@@ -57,7 +57,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         self.nc_publisher: NCPublisher[ProcessInstanceDiscoveryResponseEvent] | None = None
         self.discovery_event_subscriber: NCSubscriber[InstanceDiscoveryRequestEvent] | None = None
 
-    async def discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: ProcessInstanceDiscoveryTopic):
+    async def _discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: ProcessInstanceDiscoveryTopic):
         """
         Responds to discovery requests by publishing a ProcessDiscoveryResponseEvent that includes the basic
         process configuration as well as some carefully crafted event specifications.
@@ -97,7 +97,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         self.discovery_event_subscriber = ProcessNCSubscriber.for_process_instance_discovery_request_events(
             nc=self.nc,
             topic_manager=ProcessTopicManager(),
-            handler=self.discovery_handler,
+            handler=self._discovery_handler,
         )
         await self.discovery_event_subscriber.start()
         logger.info("Process discovery service started")
@@ -117,7 +117,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         """
         Discovers processes and registers endpoints for retrieving and submitting forms to start / continue the process.
         """
-        processes: list[ProcessDTO] = await ProcessService.discover_processes(self.nc, self.locale_handler)
+        processes: list[ProcessInstanceDTO] = await ProcessService.discover_process_instances(self.nc)
 
         # Deregister old endpoints
         for registered_process_class, registered_process_id in list(self.registered_entities):
@@ -129,10 +129,14 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
             process_key = (process.process_class, process.process_id)
 
             for human_input in process.human_inputs:
-                self._register_human_endpoint(process.process_class, process.process_id, human_input)
+                self._register_human_endpoint(
+                    process.process_class, process.process_id, human_input, process.process_config
+                )
 
             for process_input in process.program_inputs:
-                self._register_program_endpoint(process.process_class, process.process_id, process_input)
+                self._register_program_endpoint(
+                    process.process_class, process.process_id, process_input, process.process_config
+                )
 
             self.registered_entities.add(process_key)
             logger.info(f"Registered endpoints for configured process: {process.process_class}.{process.process_id}")
@@ -142,6 +146,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         process_class: str,
         process_id: str,
         human_input: HumanInSpecs,
+        process_config: ProcessConfig,
     ):
         """Register endpoints that allow humans to interact with a process by getting and submitting forms."""
         base_path = self._get_endpoint_base_path(process_class, process_id)
@@ -163,11 +168,11 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         post_input_type = EventModelCreationService.create_input_model_from_specs(human_input.event_specs)
 
         if human_input.is_process_start:
-            get_endpoint_creator = self.create_form_get_endpoint_process_start
-            post_endpoint_creator = self.create_form_post_endpoint_process_start
+            get_endpoint_creator = self._create_form_get_endpoint_process_start
+            post_endpoint_creator = self._create_form_post_endpoint_process_start
         else:
-            get_endpoint_creator = self.create_form_get_endpoint
-            post_endpoint_creator = self.create_form_post_endpoint
+            get_endpoint_creator = self._create_form_get_endpoint
+            post_endpoint_creator = self._create_form_post_endpoint
 
         # GET endpoint that returns form
         logger.debug(f"Creating Human.In GET endpoint for form: {path} with name {get_endpoint_name}")
@@ -194,6 +199,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
                 process_id=process_id,
                 process_controller=self.controller,
                 input_specs=human_input,
+                process_config=process_config,
             ),
             methods=[human_input.method],
             name=post_endpoint_name,
@@ -206,6 +212,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         process_class: str,
         process_id: str,
         program_input: ProgramInSpecs,
+        process_config: ProcessConfig,
     ):
         """Register endpoints that allow programs to interact with a process submitting data."""
         base_path = self._get_endpoint_base_path(process_class, process_id)
@@ -221,9 +228,9 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         post_input_type = EventModelCreationService.create_input_model_from_specs(program_input.event_specs)
 
         if program_input.is_process_start:
-            endpoint_creator = self.create_form_post_endpoint_process_start
+            endpoint_creator = self._create_form_post_endpoint_process_start
         else:
-            endpoint_creator = self.create_form_post_endpoint
+            endpoint_creator = self._create_form_post_endpoint
 
         logger.debug(f"Creating Program.In POST endpoint for form: {path} with name {post_endpoint_name}")
         self.app.add_api_route(
@@ -234,6 +241,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
                 process_id=process_id,
                 process_controller=self.controller,
                 input_specs=program_input,
+                process_config=process_config,
             ),
             methods=[program_input.method],
             name=post_endpoint_name,
@@ -242,7 +250,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         logger.info(f"Successfully registered endpoints for {process_class}/{process_id}")
 
     @staticmethod
-    def create_form_get_endpoint_process_start(
+    def _create_form_get_endpoint_process_start(
         process_class: str,
         process_id: str,
         process_controller: ProcessController,
@@ -258,6 +266,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ProcessHumanInDto:
+            # TODO: Ensure the user has the right to fetch this form
             process_human_input_dtos = await ProcessService.get_process_start_forms(
                 nc=nc,
                 process_class=process_class,
@@ -281,7 +290,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         return get_form
 
     @staticmethod
-    def create_form_get_endpoint(
+    def _create_form_get_endpoint(
         process_class: str,
         process_id: str,
         process_controller: ProcessController,
@@ -298,6 +307,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
             nc: Annotated[NATS, Depends(use_nats)],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ProcessHumanInDto:
+            # TODO: Ensure the user has the right to fetch this form
             process_human_input_dtos = await ProcessService.get_process_open_forms(
                 nc=nc,
                 process_class=process_class,
@@ -322,12 +332,13 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         return get_form
 
     @staticmethod
-    def create_form_post_endpoint_process_start(
+    def _create_form_post_endpoint_process_start(
         input_type: type[BaseModel],
         process_class: str,
         process_id: str,
         process_controller: ProcessController,
         input_specs: HumanInSpecs | ProgramInSpecs,
+        process_config: ProcessConfig,
     ):
         """Create an endpoint to submit a form for starting a process."""
 
@@ -343,6 +354,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
             nc: Annotated[NATS, Depends(use_nats)],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> SubmittedFormDTO:
+            # TODO: Ensure the user has the right to start this process
             return await ProcessService.submit_process_start_form(
                 nc=nc,
                 process_class=process_class,
@@ -353,17 +365,19 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
                 external_process_event_distributor=external_process_event_distributor,
                 user=user,
                 t=t,
+                process_config=process_config,
             )
 
         return send_event
 
     @staticmethod
-    def create_form_post_endpoint(
+    def _create_form_post_endpoint(
         input_type: type[BaseModel],
         process_class: str,
         process_id: str,
         process_controller: ProcessController,
         input_specs: HumanInSpecs | ProgramInSpecs,
+        process_config: ProcessConfig,  # Unused parameter, but kept for consistency with the start endpoint
     ):
         """Create an endpoint to submit a form for continuing a process."""
 
@@ -380,6 +394,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
             nc: Annotated[NATS, Depends(use_nats)],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> SubmittedFormDTO:
+            # TODO: Ensure the user has the right to continue this process
             return await ProcessService.submit_process_open_form(
                 nc=nc,
                 process_class=process_class,

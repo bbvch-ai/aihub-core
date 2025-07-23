@@ -82,14 +82,7 @@ async def main():
         .add_user_to_thread()
         .remove_user_from_thread(),
         AgentController(auth=auth).get_agent().get_agent_threads().get_agents().discover_agents(),
-        ProcessController(auth=auth)
-        .get_process()
-        .get_processes()
-        .discover_processes()
-        .get_process_start_forms()
-        .get_process_open_forms()
-        .send_process_start_form()
-        .send_process_open_form(),
+        ProcessController(auth=auth).get_process().get_processes().discover_processes(),
         TokenController(auth=auth).create_token().list_tokens().revoke_token(),
         RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
         OpenaiController(

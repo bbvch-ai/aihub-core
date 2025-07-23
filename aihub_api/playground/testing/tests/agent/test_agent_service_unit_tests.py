@@ -32,9 +32,9 @@ enable_logging()
 
 @pytest.fixture(autouse=True)
 def cleanup_db_and_cache(sample_agent_config):
-    AgentService.clear_cache()
+    AgentService._clear_cache()
     yield
-    AgentService.clear_cache()
+    AgentService._clear_cache()
 
 
 @pytest.fixture
@@ -380,7 +380,7 @@ class TestAgentServiceUnit:
                                     return agents
 
                                 with patch.object(AgentService, "discover_agent_classes", patched_method):
-                                    result = await AgentService.discover_agent_classes(mock_nats)
+                                    result = await AgentService._discover_agent_classes(mock_nats)
 
                                     assert len(result) == 1
                                     assert result[0] == mock_agent_class
@@ -391,7 +391,7 @@ class TestAgentServiceUnit:
         cached_result = [Mock(spec=AgentClassDTO)]
         DISCOVER_AGENTS_CACHE["all_agent_classes"] = cached_result
 
-        result = await AgentService.discover_agent_classes(mock_nats)
+        result = await AgentService._discover_agent_classes(mock_nats)
 
         assert result == cached_result
 
@@ -447,7 +447,7 @@ class TestAgentServiceUnit:
                                 return mock_agent_class
 
                             with patch.object(AgentService, "discover_agent_class", patched_method):
-                                result = await AgentService.discover_agent_class(mock_nats, "TestAgent")
+                                result = await AgentService._discover_agent_class(mock_nats, "TestAgent")
 
                                 assert result.agent_class == "TestAgent"
                                 assert result.is_online
@@ -477,7 +477,7 @@ class TestAgentServiceUnit:
                             mock_wait_for.side_effect = TimeoutError()
 
                             with pytest.raises(HTTPException) as exc_info:
-                                await AgentService.discover_agent_class(mock_nats, "TestAgent")
+                                await AgentService._discover_agent_class(mock_nats, "TestAgent")
 
                             assert exc_info.value.status_code == 404
                             assert "Agent TestAgent not found" in str(exc_info.value.detail)
@@ -488,7 +488,7 @@ class TestAgentServiceUnit:
         cached_result = Mock(spec=AgentClassDTO)
         GET_AGENT_CLASS_CACHE["TestAgent"] = cached_result
 
-        result = await AgentService.discover_agent_class(mock_nats, "TestAgent")
+        result = await AgentService._discover_agent_class(mock_nats, "TestAgent")
 
         assert result == cached_result
 
@@ -515,7 +515,7 @@ class TestAgentServiceUnit:
                 mock_chat_service.start_json_event_interaction = AsyncMock(return_value=mock_resources)
 
                 thread_id = ObjectId()
-                result = await AgentService.send_event(
+                result = await AgentService._send_event(
                     nc=mock_nats,
                     external_agent_event_distributor=mock_external_distributor,
                     user=mock_user_identity,
@@ -554,7 +554,7 @@ class TestAgentServiceUnit:
 
                 mock_chat_service.start_json_event_interaction = AsyncMock(return_value=mock_resources)
 
-                result = await AgentService.send_event(
+                result = await AgentService._send_event(
                     nc=mock_nats,
                     external_agent_event_distributor=mock_external_distributor,
                     user=mock_user_identity,
@@ -595,7 +595,7 @@ class TestAgentServiceUnit:
     def test_clear_cache_success(self):
         """Test clear_cache clears all caches."""
         # Clear caches first to ensure clean state
-        AgentService.clear_cache()
+        AgentService._clear_cache()
 
         # Add some items to caches
         DISCOVER_AGENTS_CACHE["test"] = "value"
@@ -608,7 +608,7 @@ class TestAgentServiceUnit:
         assert len(GET_AGENT_CLASS_CACHE) > 0
 
         # Clear caches
-        AgentService.clear_cache()
+        AgentService._clear_cache()
 
         # Verify caches are empty
         assert len(DISCOVER_AGENTS_CACHE) == 0
@@ -682,7 +682,7 @@ class TestAgentServiceUnit:
                                 return agents
 
                             with patch.object(AgentService, "discover_agent_classes", patched_method):
-                                result = await AgentService.discover_agent_classes(mock_nats)
+                                result = await AgentService._discover_agent_classes(mock_nats)
 
                                 assert result == []
                                 # Should not cache empty results

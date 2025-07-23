@@ -7,7 +7,7 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalProcessEvent import ExternalProcessEvent
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
-from aihub_lib.nats.events import WorkEvent
+from aihub_lib.nats.events import ProcessStartEvent, WorkEvent
 from aihub_lib.nats.events.discovery import ProcessClassDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
@@ -97,7 +97,7 @@ class ProcessService:
         if cache_key in GET_PROCESS_INSTANCE_CACHE:
             return GET_PROCESS_INSTANCE_CACHE[cache_key]
 
-        process_class_dto = await ProcessService.discover_process_class(nc, process_class)
+        process_class_dto = await ProcessService._discover_process_class(nc, process_class)
 
         configs = ProcessConfigEntityDocument.find_for_class(process_class)
         for config in configs:
@@ -127,7 +127,7 @@ class ProcessService:
         if cache_key in GET_PROCESS_INSTANCE_CACHE:
             return GET_PROCESS_INSTANCE_CACHE[cache_key]
 
-        process_class_dto = await ProcessService.discover_process_class(nc, process_class)
+        process_class_dto = await ProcessService._discover_process_class(nc, process_class)
 
         configs = ProcessConfigEntityDocument.find_for_class(process_class)
         process_instance_dtos = []
@@ -155,7 +155,7 @@ class ProcessService:
         raise HTTPException(status_code=404, detail=f"No process instances found for class {process_class}.")
 
     @staticmethod
-    async def discover_process_class(nc: NATS, process_class: str) -> ProcessClassDTO:
+    async def _discover_process_class(nc: NATS, process_class: str) -> ProcessClassDTO:
         cache_key = process_class
 
         if cache_key in GET_PROCESS_CLASS_CACHE:
@@ -206,7 +206,7 @@ class ProcessService:
             return DISCOVER_PROCESSES_CACHE[cache_key]
 
         # Step 1: Discover which process classes are online
-        online_processes: list[ProcessClassDTO] = await ProcessService.discover_process_classes(nc)
+        online_processes: list[ProcessClassDTO] = await ProcessService._discover_process_classes(nc)
 
         # Step 2: Get all configured process instances from database
         configured_processes = []
@@ -238,7 +238,7 @@ class ProcessService:
         return configured_processes
 
     @staticmethod
-    async def discover_process_classes(nc: NATS) -> list[ProcessClassDTO]:
+    async def _discover_process_classes(nc: NATS) -> list[ProcessClassDTO]:
         cache_key = "all_process_classes"
 
         if cache_key in DISCOVER_PROCESSES_CACHE:
@@ -291,7 +291,7 @@ class ProcessService:
         ]
 
     @staticmethod
-    async def send_event(
+    async def _send_event(
         external_process_event_distributor: ExternalProcessEventDistributor,
         user: UserIdentity,
         work_event: WorkEvent,
@@ -390,6 +390,7 @@ class ProcessService:
         external_process_event_distributor: ExternalProcessEventDistributor,
         user: UserIdentity,
         t: LocaleHandler,
+        process_config: ProcessConfig,
     ) -> SubmittedFormDTO:
         """Submit an object satisfying a form to start a process"""
         process = await ProcessService.get_process(nc=nc, process_class=process_class, process_id=process_id, t=t)
@@ -405,12 +406,13 @@ class ProcessService:
             "event_id": str(ObjectId()),
             "created_at": time.time_ns(),
             **raw_event_data,
-            "_event_name": human_in.event_specs.event_name,
             "_parent_event_names": human_in.event_specs.event_parents,
+            "_event_name": human_in.event_specs.event_name,
+            "process_config": process_config.model_dump(),
         }
-        event: WorkEvent = WorkEvent.deserialize_event(json_data)
+        event: ProcessStartEvent = ProcessStartEvent.deserialize_event(json_data)
 
-        external_event = await ProcessService.send_event(
+        external_event: ExternalProcessEvent = await ProcessService._send_event(
             external_process_event_distributor,
             user,
             event,
@@ -471,7 +473,7 @@ class ProcessService:
         # TODO: Catch if WorkEvent can not be created and safe partial object to DB
         event: WorkEvent = WorkEvent.deserialize_event(json_data)
 
-        external_event = await ProcessService.send_event(
+        external_event: ExternalProcessEvent = await ProcessService._send_event(
             external_process_event_distributor,
             user,
             event,
@@ -486,7 +488,7 @@ class ProcessService:
         )
 
     @staticmethod
-    def clear_cache() -> None:
+    def _clear_cache() -> None:
         """
         Clears the in-memory caches used for process discovery. Useful for testing purposes to ensure fresh discovery
         requests.

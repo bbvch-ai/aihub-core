@@ -17,9 +17,9 @@ enable_logging()
 
 @pytest.fixture(autouse=True)
 def cleanup_db_and_cache(sample_process_config):
-    ProcessService.clear_cache()
+    ProcessService._clear_cache()
     yield
-    ProcessService.clear_cache()
+    ProcessService._clear_cache()
 
 
 @pytest.fixture
@@ -83,7 +83,7 @@ class TestProcessServiceDatabaseIntegration:
     ):
         """Test that ProcessService.discover_process_instance correctly fetches and uses DB config."""
         # Clear any existing cache
-        ProcessService.clear_cache()
+        ProcessService._clear_cache()
 
         with patch.object(ProcessService, "discover_process_class") as mock_discover_class:
             mock_discover_class.return_value = sample_process_class
@@ -122,7 +122,7 @@ class TestProcessServiceDatabaseIntegration:
     ):
         """Test that ProcessService.discover_process_instance falls back to default config when no DB config exists."""
         # Clear any existing cache
-        ProcessService.clear_cache()
+        ProcessService._clear_cache()
 
         with patch.object(ProcessService, "discover_process_class") as mock_discover_class:
             mock_discover_class.return_value = sample_process_class
@@ -157,7 +157,7 @@ class TestProcessServiceDatabaseIntegration:
     ):
         """Test that DB config overrides default config when both have the same process_id."""
         # Clear any existing cache
-        ProcessService.clear_cache()
+        ProcessService._clear_cache()
 
         # Create a DB config with same ID as default
         db_config = ProcessConfig(
@@ -208,7 +208,7 @@ class TestProcessServiceDatabaseIntegration:
     async def test_discover_process_instance_not_found(self, mock_nats, sample_process_class):
         """Test that ProcessService.discover_process_instance raises 404 when process not found."""
         # Clear any existing cache
-        ProcessService.clear_cache()
+        ProcessService._clear_cache()
 
         with patch.object(ProcessService, "discover_process_class") as mock_discover_class:
             mock_discover_class.return_value = sample_process_class
@@ -237,7 +237,7 @@ class TestProcessServiceDatabaseIntegration:
     ):
         """Test that ProcessService.discover_process_instances_by_class includes both DB and default configs."""
         # Clear any existing cache
-        ProcessService.clear_cache()
+        ProcessService._clear_cache()
 
         # Create a second DB config with different ID
         mock_doc2 = Mock()
@@ -299,7 +299,7 @@ class TestProcessServiceDatabaseIntegration:
     ):
         """Test that default config is excluded when DB has config with same process_id."""
         # Clear any existing cache
-        ProcessService.clear_cache()
+        ProcessService._clear_cache()
 
         # Create DB config with same ID as default
         db_config = ProcessConfig(
@@ -346,7 +346,7 @@ class TestProcessServiceDatabaseIntegration:
     async def test_discover_process_instances_by_class_cache_behavior(self, mock_nats, sample_process_class):
         """Test that ProcessService.discover_process_instances_by_class uses cache correctly."""
         # Clear any existing cache
-        ProcessService.clear_cache()
+        ProcessService._clear_cache()
 
         cached_result = [Mock(spec=ProcessInstanceDTO)]
         cache_key = ("TestProcess", "*")
@@ -362,7 +362,7 @@ class TestProcessServiceDatabaseIntegration:
     async def test_discover_process_instance_cache_behavior(self, mock_nats, sample_process_class):
         """Test that ProcessService.discover_process_instance uses cache correctly."""
         # Clear any existing cache
-        ProcessService.clear_cache()
+        ProcessService._clear_cache()
 
         cached_result = Mock(spec=ProcessInstanceDTO)
         cache_key = ("TestProcess", "test_process_1")
@@ -382,7 +382,7 @@ class TestProcessServiceDatabaseIntegration:
     ):
         """Test that discover_process_instances_by_class returns only default config when no DB configs exist."""
         # Clear any existing cache
-        ProcessService.clear_cache()
+        ProcessService._clear_cache()
 
         with patch.object(ProcessService, "discover_process_class") as mock_discover_class:
             mock_discover_class.return_value = sample_process_class

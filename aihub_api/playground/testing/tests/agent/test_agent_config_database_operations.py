@@ -14,9 +14,9 @@ enable_logging()
 
 @pytest.fixture(autouse=True)
 def cleanup_db_and_cache(sample_agent_config):
-    AgentService.clear_cache()
+    AgentService._clear_cache()
     yield
-    AgentService.clear_cache()
+    AgentService._clear_cache()
 
 
 @pytest.fixture

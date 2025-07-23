@@ -23,16 +23,7 @@ PROCESS_ID = "test_process_1"
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def process_api_client():
     auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
-    controller = (
-        ProcessController(auth=auth)
-        .discover_processes()
-        .get_processes()
-        .get_process()
-        .get_process_start_forms()
-        .get_process_open_forms()
-        .send_process_start_form()
-        .send_process_open_form()
-    )
+    controller = ProcessController(auth=auth).discover_processes().get_processes().get_process()
     runner = SimulatedProcessApiTestRunner(
         process_class=PROCESS_CLASS, process_id=PROCESS_ID
     ).with_simple_human_only_process_events()
@@ -47,9 +38,9 @@ async def process_api_client():
 
 @pytest.fixture(autouse=True)
 def cleanup_db_and_cache():
-    ProcessService.clear_cache()
+    ProcessService._clear_cache()
     yield
-    ProcessService.clear_cache()
+    ProcessService._clear_cache()
 
 
 @pytest.mark.asyncio(loop_scope="module")

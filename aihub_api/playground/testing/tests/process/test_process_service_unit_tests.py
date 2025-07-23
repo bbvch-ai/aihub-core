@@ -31,9 +31,9 @@ enable_logging()
 
 @pytest.fixture(autouse=True)
 def cleanup_db_and_cache(sample_process_config):
-    ProcessService.clear_cache()
+    ProcessService._clear_cache()
     yield
-    ProcessService.clear_cache()
+    ProcessService._clear_cache()
 
 
 @pytest.fixture
@@ -362,7 +362,7 @@ class TestProcessServiceUnit:
                                     return processes
 
                                 with patch.object(ProcessService, "discover_process_classes", patched_method):
-                                    result = await ProcessService.discover_process_classes(mock_nats)
+                                    result = await ProcessService._discover_process_classes(mock_nats)
 
                                     assert len(result) == 1
                                     assert result[0] == mock_process_class
@@ -373,7 +373,7 @@ class TestProcessServiceUnit:
         cached_result = [Mock(spec=ProcessClassDTO)]
         DISCOVER_PROCESSES_CACHE["all_process_classes"] = cached_result
 
-        result = await ProcessService.discover_process_classes(mock_nats)
+        result = await ProcessService._discover_process_classes(mock_nats)
 
         assert result == cached_result
 
@@ -431,7 +431,7 @@ class TestProcessServiceUnit:
                                 return mock_process_class
 
                             with patch.object(ProcessService, "discover_process_class", patched_method):
-                                result = await ProcessService.discover_process_class(mock_nats, "TestProcess")
+                                result = await ProcessService._discover_process_class(mock_nats, "TestProcess")
 
                                 assert result.process_class == "TestProcess"
                                 assert result.is_online
@@ -463,7 +463,7 @@ class TestProcessServiceUnit:
                             mock_wait_for.side_effect = TimeoutError()
 
                             with pytest.raises(HTTPException) as exc_info:
-                                await ProcessService.discover_process_class(mock_nats, "TestProcess")
+                                await ProcessService._discover_process_class(mock_nats, "TestProcess")
 
                             assert exc_info.value.status_code == 404
                             assert "Process TestProcess not found" in str(exc_info.value.detail)
@@ -474,7 +474,7 @@ class TestProcessServiceUnit:
         cached_result = Mock(spec=ProcessClassDTO)
         GET_PROCESS_CLASS_CACHE["TestProcess"] = cached_result
 
-        result = await ProcessService.discover_process_class(mock_nats, "TestProcess")
+        result = await ProcessService._discover_process_class(mock_nats, "TestProcess")
 
         assert result == cached_result
 
@@ -489,7 +489,7 @@ class TestProcessServiceUnit:
         mock_external_distributor = Mock()
         mock_external_distributor.distribute_event = AsyncMock()
 
-        result = await ProcessService.send_event(
+        result = await ProcessService._send_event(
             external_process_event_distributor=mock_external_distributor,
             user=mock_user_identity,
             work_event=event,
@@ -509,7 +509,7 @@ class TestProcessServiceUnit:
     def test_clear_cache_success(self):
         """Test clear_cache clears all caches."""
         # Clear caches first to ensure clean state
-        ProcessService.clear_cache()
+        ProcessService._clear_cache()
 
         # Add some items to caches
         DISCOVER_PROCESSES_CACHE["test"] = "value"
@@ -522,7 +522,7 @@ class TestProcessServiceUnit:
         assert len(GET_PROCESS_CLASS_CACHE) > 0
 
         # Clear caches
-        ProcessService.clear_cache()
+        ProcessService._clear_cache()
 
         # Verify caches are empty
         assert len(DISCOVER_PROCESSES_CACHE) == 0
@@ -596,7 +596,7 @@ class TestProcessServiceUnit:
                                 return processes
 
                             with patch.object(ProcessService, "discover_process_classes", patched_method):
-                                result = await ProcessService.discover_process_classes(mock_nats)
+                                result = await ProcessService._discover_process_classes(mock_nats)
 
                                 assert result == []
                                 # Should not cache empty results

@@ -41,9 +41,9 @@ async def agent_api_client():
 
 @pytest.fixture(autouse=True)
 def cleanup_db_and_cache():
-    AgentService.clear_cache()
+    AgentService._clear_cache()
     yield
-    AgentService.clear_cache()
+    AgentService._clear_cache()
 
 
 @pytest.mark.asyncio(loop_scope="module")

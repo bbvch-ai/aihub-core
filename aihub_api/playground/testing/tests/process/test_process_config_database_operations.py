@@ -14,9 +14,9 @@ enable_logging()
 
 @pytest.fixture(autouse=True)
 def cleanup_db_and_cache(sample_process_config):
-    ProcessService.clear_cache()
+    ProcessService._clear_cache()
     yield
-    ProcessService.clear_cache()
+    ProcessService._clear_cache()
 
 
 @pytest.fixture
