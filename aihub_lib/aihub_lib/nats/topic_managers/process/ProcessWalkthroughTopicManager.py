@@ -65,6 +65,7 @@ class ProcessWalkthroughTopicManager(ProcessClassTopicManager):
         cls,
         topic_manager: ProcessClassTopicManager,
         process_walkthrough_id: Annotated[str, "walkthrough ID"],
+        process_id: Annotated[str | None, "Optional process ID"] = None,
     ) -> "ProcessWalkthroughTopicManager":
         """
         Creates a ProcessWalkthroughTopicManager from an existing
@@ -72,7 +73,7 @@ class ProcessWalkthroughTopicManager(ProcessClassTopicManager):
         """
         return cls(
             process_class=topic_manager.process_class,
-            process_id=None,
+            process_id=process_id,
             process_walkthrough_id=process_walkthrough_id,
         )
 

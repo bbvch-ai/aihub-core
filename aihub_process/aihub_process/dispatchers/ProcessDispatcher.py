@@ -283,7 +283,8 @@ class ProcessDispatcher(BaseDispatcher):
         Returns a thread-specific topic manager derived from the agent's instance topic manager.
         Useful for publishing thread-scoped events.
         """
-        return ProcessWalkthroughTopicManager.from_process_instance_topic_manager(
+        return ProcessWalkthroughTopicManager.from_process_class_topic_manager(
             topic_manager=self.topic_manager,
             process_walkthrough_id=topic.process_walkthrough_id,
+            process_id=topic.process_id,
         )

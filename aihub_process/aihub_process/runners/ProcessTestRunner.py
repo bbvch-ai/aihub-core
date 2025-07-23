@@ -66,6 +66,10 @@ class ProcessTestRunner(ProcessRunner):
             default_process_config=default_process_config,
             locale_paths=locale_paths,
         )
+        self.topic_manager = ProcessInstanceTopicManager(
+            process_class=self.process_class,
+            process_id=self.default_process_config.process_id,
+        )
         self.test_event_subscriber: JSSubscriber | None = None
         self.observed_events: list[ObservedEvent] = []
 
@@ -134,7 +138,7 @@ class ProcessTestRunner(ProcessRunner):
         await self.observe_discovery_event_subscriber.start()
 
         self.observe_discovery_response_event_subscriber = (
-            ProcessNCSubscriber.for_process_class_discovery_request_events(
+            ProcessNCSubscriber.for_process_class_discovery_response_events(
                 nc=self.nc,
                 topic_manager=ProcessTopicManager(),
                 handler=self.observe_event,

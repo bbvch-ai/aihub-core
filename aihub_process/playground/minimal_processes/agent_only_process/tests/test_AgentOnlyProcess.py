@@ -47,6 +47,7 @@ def process_runner_fixture():
         process_type=AgentOnlyProcess,
         default_process_config=ProcessConfig(
             process_id="agent_only_process",
+            process_class=AgentOnlyProcess.__name__,
             name=LocaleString(en="Agent Only Process"),
             description=LocaleString(en="Test Agent Only Process with AgentA and AgentB"),
         ),
