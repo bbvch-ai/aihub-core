@@ -136,15 +136,15 @@ class ChatService:
             agent_config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
             if agent_config_entity is None:
                 logger.info(f"Agent config not found for class {agent_class} and id {agent_id}. Using default config.")
-                agent_config_dict = None
+                agent_config = None
             else:
-                agent_config_dict = AgentConfig.from_entity(agent_config_entity).model_dump()
+                agent_config = AgentConfig.from_entity(agent_config_entity)
             event = UserMessageEvent(
                 messages=messages,
                 user=user,
                 locale=locale or LocaleHandler.DEFAULT_LOCALE,
                 files=files,
-                agent_config=agent_config_dict,
+                agent_config=agent_config,
             )
 
         event = ExternalAgentEvent(
