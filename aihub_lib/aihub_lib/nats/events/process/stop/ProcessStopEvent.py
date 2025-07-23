@@ -2,7 +2,7 @@ from typing import Annotated
 
 from pydantic import Field
 
-from aihub_lib.nats.events import WorkEvent
+from aihub_lib.nats.events.work.WorkEvent import WorkEvent
 
 
 class ProcessStopEvent(WorkEvent):
