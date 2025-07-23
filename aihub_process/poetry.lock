@@ -44,7 +44,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-agent"
-version = "v0.226.0"
+version = "v0.227.0"
 description = "agents core"
 optional = false
 python-versions = ">=3.11, <3.12"
@@ -53,7 +53,7 @@ files = []
 develop = true
 
 [package.dependencies]
-aihub_lib = {path = "../aihub_lib", develop = true}
+aihub_lib = {git = "https://github.com/bbvch-ai/aihub-core.git", tag = "v0.227.0", subdirectory = "aihub_lib"}
 cachetools = "^5.5.2"
 colorlog = "^6.9.0"
 flatdict = "^4.0.1"
@@ -80,13 +80,13 @@ url = "../aihub_agent"
 
 [[package]]
 name = "aihub-lib"
-version = "v0.226.0"
+version = "v0.227.0"
 description = ""
 optional = false
 python-versions = ">=3.11, <3.12"
 groups = ["main", "dev"]
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 adlfs = "^2024.12.0"
@@ -137,8 +137,11 @@ redis = "^5.2.1"
 transformers = "^4.48.1"
 
 [package.source]
-type = "directory"
-url = "../aihub_lib"
+type = "git"
+url = "https://github.com/bbvch-ai/aihub-core.git"
+reference = "v0.227.0"
+resolved_reference = "67b92d2fde40d16788e4ae4a955af8ab2da719ab"
+subdirectory = "aihub_lib"
 
 [[package]]
 name = "aiohappyeyeballs"
@@ -6542,4 +6545,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "94adcb67825b0197716eb7d1a999b42ed9d6786b93c14e30d568a7780514e421"
+content-hash = "e92e205976667e9adac4a6815620e029c218ac770dba3f8445670d151c44abbc"
