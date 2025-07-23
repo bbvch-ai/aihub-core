@@ -114,29 +114,61 @@ class Tools:
             default="",
             description="Token to authenticate requests to the LCDM Hub API.",
         )
-        OPENAI_API_BASE_URL: str = Field(
-            default="https://bbvaihub-app-sui-api.azurewebsites.net/api/v1/openai",
-            description="Base URL for accessing OpenAI API endpoints.",
-        )
-        OPENAI_API_KEY: str = Field(
-            default="",
-            description="API key for authenticating requests to the OpenAI API.",
-        )
         timeout_seconds: int = Field(default=30, description="Request timeout in seconds")
 
     def __init__(self):
         self.valves = self.Valves()
 
-    async def create_GTO(
+    async def save_gto_schema(
         self,
         gto_data: dict,
         __event_emitter__: Optional[Callable[[dict], Any]] = None,
     ) -> str:
         """
-        Erstellt ein GTO mit Attributen und speichert dieses im LCDM Hub.
+        Creates a GTO (Generic Transfer Object) schema and saves it to the LCDM Hub.
 
-        :param gto_data: Dictionary welches GTO Definitionen enthält mit required fields (id, name, idguid, gtoAttributeDefinitions)
-        :return: Erfolg-/Fehlermeldung mit Details
+        This function validates the GTO structure and sends it to the LCDM Hub API.
+
+        Args:
+            gto_data (dict): Dictionary containing GTO definition with the following structure:
+                {
+                    "name": "ObjectTypeName",  # e.g., "Door", "Window"
+                    "idguid": "unique-identifier-string",  # Any unique string
+                    "gtoAttributeDefinitions": {
+                        "any_key_name": {  # Key names will be auto-converted to 0005, 0010, etc.
+                            "id": 0,  # Always 0
+                            "key": "AttributeName",  # e.g., "Material", "Size"
+                            "valueType": "string|int|float|boolean",  # Data type
+                            "unitOfMeasurement": "unit",  # e.g., "m²", "kg" (optional for strings)
+                            # ... other optional fields with defaults
+                        }
+                        # Add more attributes as needed
+                    }
+                }
+
+        Returns:
+            str: Success or error message with details
+
+        Example usage:
+            To create a "Door" GTO with Material and Size attributes:
+            {
+                "id": 0,
+                "name": "Door",
+                "idguid": "door-gto-v1",
+                "gtoAttributeDefinitions": {
+                    "material_attr": {
+                        "id": 0,
+                        "key": "Material",
+                        "valueType": "string"
+                    },
+                    "size_attr": {
+                        "id": 0,
+                        "key": "Size",
+                        "valueType": "int",
+                        "unitOfMeasurement": "m²"
+                    }
+                }
+            }
         """
 
         if not self.valves.LCDM_HUB_TOKEN:
@@ -159,7 +191,7 @@ class Tools:
 
             try:
                 gto = GTO.model_validate(gto_data)
-                gto = self.rekey_gto_definitions(gto)
+                gto = self._rekey_gto_definitions(gto)
 
             except Exception as validation_error:
                 error_msg = f"GTO Validierung fehlgeschlagen: {str(validation_error)}"
@@ -261,8 +293,11 @@ class Tools:
                 await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
             return f"Fehler: {error_msg}"
 
-    def rekey_gto_definitions(self, gto: GTO) -> GTO:
-        """Rekey a GTO object's attribute definitions to follow the proper numbering pattern"""
+    def _rekey_gto_definitions(self, gto: GTO) -> GTO:
+        """
+        Internal method: Rekeys GTO attribute definitions to follow the proper numbering pattern.
+        Converts any key names to the format: 0005, 0010, 0015, etc.
+        """
         definitions = list(gto.gtoAttributeDefinitions.values())
         new_definitions = {}
 
@@ -271,17 +306,3 @@ class Tools:
             new_definitions[new_key] = definition
 
         return gto.model_copy(update={"gtoAttributeDefinitions": new_definitions})
-
-    def get_existing_gto_names(self):
-        """Fetch existing GTOs from the LCDM Hub."""
-        headers = {
-            "Authorization": f"Bearer {self.valves.LCDM_HUB_TOKEN}",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        }
-        response = requests.get(
-            f"{self.valves.LCDM_HUB_BASE_URL}availablenames",
-            headers=headers,
-        )
-        names = response.text
-        return names

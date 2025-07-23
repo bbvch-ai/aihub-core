@@ -29,29 +29,55 @@ class Action:
             {
                 "type": "input",
                 "data": {
-                    "title": "write a message",
-                    "message": "here write a message to append",
-                    "placeholder": "enter your message",
+                    "title": "GTO ID",
+                    "message": "Bitte geben Sie die GTO ID ein.",
+                    "placeholder": "Bsp. 73933488",
                 },
             }
         )
 
-        headers = {
-            "Authorization": f"Bearer {self.valves.LCDM_HUB_TOKEN}",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        }
+        if __event_emitter__:
+            await __event_emitter__(
+                {
+                    "type": "status",
+                    "data": {
+                        "description": "GTO Schema wird gesucht...",
+                        "done": False,
+                    },
+                }
+            )
 
-        response = requests.get(
-            f"{self.valves.LCDM_HUB_BASE_URL}availablenames",
-            headers=headers,
-        )
-        names = eval(response.text)
+        try:
+            headers = {
+                "Authorization": f"Bearer {self.valves.LCDM_HUB_TOKEN}",
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            }
+
+            response = requests.get(
+                f"{self.valves.LCDM_HUB_BASE_URL}availablenames",
+                headers=headers,
+            )
+        except Exception as e:
+            if __event_emitter__:
+                await __event_emitter__(
+                    {
+                        "type": "status",
+                        "data": {
+                            "description": f"Ein Fehler ist aufgetreten: {e}",
+                            "done": True,
+                        },
+                    }
+                )
+                return body
+
+        names = response.json()
         keys = [key for key, value in names]
         if gto_id in keys:
             r = requests.get(
                 f"{self.valves.LCDM_HUB_BASE_URL}{gto_id}",
                 headers=headers,
+                timeout=10,
             )
 
             context_message = {
@@ -64,8 +90,23 @@ class Action:
             if __event_emitter__:
                 await __event_emitter__(
                     {
+                        "type": "status",
+                        "data": {"description": "GTO Schema gefunden!", "done": True},
+                    }
+                )
+
+                await __event_emitter__(
+                    {
                         "type": "message",
                         "data": {"content": f"<GTO_DEFINITION>{r.json()}</GTO_DEFINITION>"},
+                    }
+                )
+        else:
+            if __event_emitter__:
+                await __event_emitter__(
+                    {
+                        "type": "status",
+                        "data": {"description": "GTO ID ist ungültig!", "done": True},
                     }
                 )
 
