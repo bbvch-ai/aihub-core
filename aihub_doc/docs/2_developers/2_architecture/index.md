@@ -22,6 +22,7 @@ Our architecture embodies this philosophy by providing a complete, production-re
 
 The Swiss AI-Hub is architected as a symphony of interconnected components, each playing a vital role in creating intelligent, collaborative workflows. Rather than a monolithic system, we've designed a modular ecosystem where each layer serves a specific purpose while harmoniously working together.
 
+
 ::: tip Architecture Philosophy
 Our architecture follows the principle of **separation of concerns** with **clear interfaces** between components. This design enables independent development, testing, and scaling of each layer while maintaining system cohesion.
 :::
@@ -30,36 +31,37 @@ Our architecture follows the principle of **separation of concerns** with **clea
 
 These components form the interface through which users interact with the AI-Hub, whether through web applications, APIs, or collaboration platforms.
 
-::: details AI-Hub API Layer - The Gateway to Intelligence
+::: details AI-Hub API Gateway - The Protocol Bridge
 **Your Bridge to AI Capabilities**
 
-The API layer serves as the primary interface for web and bot clients, translating HTTP requests into NATS events and streaming responses back to users in real-time.
+The API gateway serves as the universal translator between HTTP/WebSocket protocols and the NATS event system, enabling seamless integration while maintaining the event-driven architecture.
 
 **What makes it special:**
-- **Protocol Translation**: Seamlessly converts REST and WebSocket requests into NATS events that agents and processes understand
-- **Real-time Streaming**: WebSocket connections stream agent workflow steps back to users as they happen
+- **Dynamic Endpoint Generation**: Automatically creates REST endpoints based on process requirements—when a process needs external input, the API creates the appropriate webhook
+- **Real-time Streaming**: WebSocket connections stream agent workflow steps and process updates back to users as they happen
 - **Discovery Orchestration**: Sends discovery events to find available agents and processes, enabling dynamic system composition
+- **Protocol Translation**: Seamlessly converts REST and WebSocket requests into NATS events that agents and processes understand
 - **Enterprise-Grade Security**: Hierarchical permissions ensure the right users access the right resources at the right time
 - **Developer-Friendly**: Auto-generated OpenAPI schemas and comprehensive documentation make integration seamless
 
 **Behind the scenes:**
-The API doesn't orchestrate the system—it translates between protocols. When you ask a question, the API sends a NATS event to the appropriate agent, then subscribes to the response stream, forwarding each step back to your browser via WebSocket. This creates a responsive, real-time experience while keeping the API layer lightweight and focused.
+The API doesn't orchestrate the system—it translates between protocols. When you ask a question, the API sends a NATS event to the appropriate agent, then subscribes to the response stream, forwarding each step back to your browser via WebSocket. For processes, it dynamically generates endpoints like `/process/cv-review` that external systems can call, automatically translating HTTP requests into NATS events.
 :::
 
-::: details AI-Hub Web Interface - The Command Center
+::: details AI-Hub Web Interface - The Adaptive Command Center
 **Where Intelligence Meets Intuition**
 
-The web interface provides multiple interaction modes: chat interfaces for direct agent communication and process dashboards for monitoring and participating in complex workflows.
+The web interface adapts to how you want to work: chat mode for direct agent conversations and process mode for orchestrating complex workflows with multiple participants.
 
 **What makes it special:**
-- **Dual Interface Modes**: Chat mode for direct agent interaction, Process mode for workflow participation and monitoring
+- **Adaptive Interface Modes**: Seamlessly switches between chat mode for agent conversations and process dashboards for workflow orchestration
 - **Real-time Everything**: Live updates show agent workflow steps, process progress, and system health as they happen
-- **Dynamic Process UIs**: Automatically generates forms and interfaces based on what each process step needs from humans
+- **Dynamic Process UIs**: Automatically generates forms and interfaces based on what each process step needs from human participants
 - **Complete Observability**: Inspect every step an agent took, what data it used, and how it reached its conclusions
 - **Multi-Cultural**: Native support for German, French, Italian, and English ensures global accessibility
 
 **Behind the scenes:**
-Built on Nuxt 3 and Vue 3, the interface receives real-time updates via WebSocket connections to the API. When agents work or processes execute, each step streams to the browser immediately. The system auto-generates TypeScript clients from API schemas, while Pinia-Colada manages state and caching seamlessly.
+Built on Nuxt 3 and Vue 3, the interface receives real-time updates via WebSocket connections to the API gateway. When agents work or processes execute, each step streams to the browser immediately. The system auto-generates TypeScript clients from API schemas, while Pinia-Colada manages state and caching seamlessly.
 :::
 
 ::: details AI-Hub Bot Integration - The Conversational Bridge
@@ -99,31 +101,33 @@ Agents are built using workflow-based execution that makes every step visible an
 ::: details AI-Hub Process Orchestration - The Collaboration Engine
 **Where Human and AI Intelligence Converge**
 
-The process layer orchestrates complex workflows that involve multiple agents, human participants, and external systems working together toward common goals.
+The process orchestration layer coordinates complex workflows involving multiple agents, human participants, and external programs, transforming outputs from one entity into valid inputs for the next.
 
 **What makes it special:**
-- **Delegation-Based Design**: Processes don't execute work themselves—they intelligently delegate to the most appropriate entity
-- **Human-AI Collaboration**: Seamlessly integrates human decision-making with AI automation
-- **Visual Workflows**: Complex processes are represented as clear, understandable flowcharts
-- **Flexible Patterns**: Supports everything from simple approval workflows to complex multi-stage business processes
+- **Delegation-Based Design**: Processes don't execute work themselves—they intelligently delegate to the most appropriate entity (agent, human, or program)
+- **Entity Coordination**: Seamlessly orchestrates between agents, humans, and external programs through NATS events
+- **Data Transformation**: Transforms outputs from one entity into valid inputs for the next, ensuring seamless workflow execution
+- **Dynamic Triggering**: Processes can be triggered by external events, time schedules, or other processes
+- **Live Monitoring**: Every process step is observable in real-time through the web interface
 
 **Behind the scenes:**
-The process engine uses event-driven architecture with NATS messaging to coordinate between entities. The system provides rich testing frameworks with BDD support, making complex workflows easy to validate and debug.
+The process engine uses pure event-driven architecture with NATS messaging to coordinate between all entities. Processes announce themselves through discovery events just like agents, enabling the same dynamic scaling and hot deployment capabilities.
 :::
 
 ::: details AI-Hub Data Pipelines - The Knowledge Foundation
 **Turning Information into Intelligence**
 
-The pipeline layer operates independently, watching the data lake for changes and automatically transforming documents into AI-ready knowledge that agents can access.
+The data pipeline layer operates autonomously, watching the data lake for changes and automatically transforming raw documents into AI-ready knowledge that agents can leverage for intelligent responses.
 
 **What makes it special:**
-- **Fully Autonomous**: Watches data lake changes and processes documents without any external coordination
-- **Smart Document Understanding**: Handles PDFs, Word documents, PowerPoint presentations, and more with intelligent parsing
-- **Vector Intelligence**: Converts text into high-dimensional embeddings that agents use for semantic search and reasoning
-- **Zero-Coordination Architecture**: Operates independently—agents and API access the results, but pipelines run on their own schedule
+- **Fully Autonomous**: Watches data lake changes and processes documents without any external coordination or NATS communication
+- **Smart Document Understanding**: Handles PDFs, Word documents, PowerPoint presentations, and more with intelligent parsing strategies
+- **Vector Intelligence**: Converts text into high-dimensional embeddings for semantic search and reasoning
+- **Zero-Coordination Architecture**: Operates independently—agents and the API gateway access the results, but pipelines run on their own reactive schedule
+- **Observable Processing**: Built on Dagster with full observability and lineage tracking
 
 **Behind the scenes:**
-Built on Dagster with observable assets that react to data lake changes. When the API uploads a file or external systems add documents, pipelines automatically detect and process them. The results flow into vector stores and document databases where agents can access them. No coordination needed—pure reactive processing.
+Built on Dagster with observable assets that react to data lake changes. When the API gateway uploads a file or external systems add documents, pipelines automatically detect and process them. The results flow into vector stores and document databases where agents can access them directly—no coordination needed, pure reactive processing.
 :::
 
 ## :electric_plug: The Event-Driven Nervous System
@@ -148,9 +152,53 @@ NATS is the electrical impulse system that makes everything work:
 
 **⚖️ Automatic Load Balancing**: Deploy multiple instances of the same agent, and NATS automatically distributes work between them.
 
-## :arrows_counterclockwise: A Complete Intelligence Journey
+## :arrows_counterclockwise: Intelligence in Action: Two Core Patterns
+
+The AI-Hub supports two fundamental interaction patterns that showcase the power of the event-driven architecture.
+
+### 💬 Pattern 1: Direct User-Agent Communication
 
 Let's trace a real user interaction from start to finish:
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant W as Web UI
+    participant A as API
+    participant N as NATS
+    participant Ag as Agent
+    participant V as Vector Store
+    participant P as Pipeline
+    participant D as Data Lake
+    
+    Note over P,D: 1. Knowledge Preparation
+    P-->>D: Watch for changes
+    D->>P: New document detected
+    P->>V: Process & store embeddings
+    
+    Note over U,A: 2-4. User Interaction
+    U->>W: Ask question
+    W->>A: WebSocket request
+    A->>N: Discovery event
+    N->>Ag: Who can handle this?
+    Ag->>N: I can handle it
+    A->>N: Delegate work
+    N->>Ag: User question
+    
+    Note over Ag,V: 5-6. Agent Processing
+    Ag->>V: Query knowledge
+    V-->>Ag: Relevant data
+    Ag->>N: Workflow step 1
+    N->>A: Workflow step 1
+    A->>W: Stream step 1
+    Ag->>N: Workflow step 2
+    N->>A: Workflow step 2
+    A->>W: Stream step 2
+    Ag->>N: Final response
+    N->>A: Final response
+    A->>W: Stream final response
+    W->>U: Real-time updates
+```
 
 **📁 Step 1: Knowledge Preparation**
 An admin uploads a document to the data lake. The Data Pipeline automatically detects this change, processes the document with AI, and ingests it into the vector store. No coordination needed—pure reactive processing.
@@ -172,6 +220,84 @@ As the agent works through its workflow—reasoning, retrieving, generating—ea
 
 **🎉 Step 7: Live Observability**
 The user sees the agent's thinking process in real-time. Later, they can navigate to the observability interface to inspect every step, every piece of data used, and how the agent reached its conclusion.
+
+### 🔄 Pattern 2: Agentic Process Orchestration
+
+Now let's see how the AI-Hub orchestrates complex workflows involving multiple entities. Here's a CV reviewing process triggered by incoming emails:
+
+```mermaid
+sequenceDiagram
+    participant E as Email Program
+    participant API as API
+    participant N as NATS
+    participant P as Agentic Process
+    participant A as CV Agent
+    participant W as Web UI
+    participant H as HR Person
+    
+    Note over E,API: Process Trigger
+    E->>API: POST /process/cv-review (webhook)
+    API->>N: Email received event
+    N->>P: New email at talent@company.ch
+    P->>N: Process started event
+    N->>API: Process started
+    API->>W: Live process update
+    
+    Note over P,A: Step 1: Agent Analysis
+    P->>N: CV review request
+    N->>A: Analyze CV from email
+    A->>N: Analysis step 1
+    N->>API: Stream agent work
+    API->>W: Live agent progress
+    A->>N: Analysis step 2
+    N->>API: Stream agent work
+    API->>W: Live agent progress
+    A->>N: CV assessment complete
+    N->>P: CV assessment result
+    P->>N: Agent step completed
+    N->>API: Process step update
+    API->>W: Step 1 completed
+    
+    Note over P,H: Step 2: Human Decision
+    P->>N: HR review request
+    N->>API: Human work needed
+    API->>W: Generate dynamic form
+    W->>H: Notification: Action required
+    H->>W: Navigate to process
+    W->>H: Show: Email + Agent assessment + Decision form
+    H->>W: Submit decision (Accept/Reject)
+    W->>API: Form submission
+    API->>N: Human decision
+    N->>P: Human work completed
+    P->>N: Process completed
+    N->>API: Final process update
+    API->>W: Process finished
+```
+
+**📧 Step 1: Email Trigger**
+An email arrives at talent@company.ch. The email program sends a POST request to the API's dynamically generated webhook endpoint `/process/cv-review`. The API translates this HTTP request into a NATS event that triggers the agentic process.
+
+**🤖 Step 2: Agent Analysis**
+The process transforms the email into a CV review request and delegates it to the CV Agent via NATS. The agent analyzes the CV, with each workflow step streaming live through NATS to the API, then to the Web UI.
+
+**📊 Step 3: Process Transformation**
+The process receives the agent's assessment via NATS and transforms it into a human-readable format with a decision form.
+
+**👥 Step 4: Human Review**
+The HR person receives a notification in the AI-Hub interface. They navigate to the process view and see:
+- **Step 1**: The original email from the candidate
+- **Step 2**: The agent's technical assessment with reasoning  
+- **Step 3**: A dynamic form asking for Accept/Reject decision
+
+**✅ Step 5: Decision & Completion**
+The HR person submits their decision through the Web UI. The API receives this form submission and translates it into a NATS event for the process orchestrator. The process marks the workflow as complete, and all participants can see the final result.
+
+**👁️ Live Observability Throughout**
+At every moment, the Web UI shows live updates:
+- Process progress and current step
+- Agent workflow steps as they happen
+- Human participants and their required actions
+- Complete audit trail of all decisions and reasoning
 
 ::: details Process-Driven Workflows - The Next Level
 **Taking Humans Out of the Loop**
@@ -208,19 +334,25 @@ This architecture provides unprecedented flexibility:
 ::: details Communication Patterns - The Signal Types
 **How Different Components Communicate**
 
-**🌐 Web ↔ API**: REST and WebSocket for user interactions and real-time streaming
+**🌐 Web Interface ↔ API Gateway**: REST and WebSocket for user interactions and real-time streaming
 
-**📡 API ↔ NATS**: Discovery events, work delegation, and response streaming
+**🤖 Bot Integration ↔ API Gateway**: HTTP requests for bot messages and responses
 
-**🤖 Agent ↔ NATS**: Discovery responses, workflow step publishing, and inter-agent communication
+**📡 API Gateway ↔ NATS**: Discovery events, work delegation, response streaming, and dynamic endpoint creation
+
+**🧠 Agent ↔ NATS**: Discovery responses, workflow step publishing, and inter-agent communication
 
 **🔄 Process ↔ NATS**: Process orchestration, step coordination, and status updates
 
-**📊 Pipeline ↔ Data Lake**: File watching and reactive processing (no NATS needed)
+**💬 Agent ↔ Process**: Coordination through NATS events for complex workflows
 
-**🎯 Agent ↔ Vector Store**: Direct access for knowledge retrieval
+**📊 Pipeline ↔ Data Lake**: File watching and reactive processing (autonomous, no NATS needed)
 
-**💾 API ↔ Data Lake**: File uploads that trigger pipeline processing
+**🎯 Agent ↔ Vector Store**: Direct access for knowledge retrieval and semantic search
+
+**💾 API Gateway ↔ Data Lake**: File uploads that trigger automatic pipeline processing
+
+**🔗 External Programs ↔ API Gateway**: HTTP requests to dynamically generated webhook endpoints
 :::
 
 ::: details Security Architecture - Trust Through Transparency
@@ -277,5 +409,11 @@ Each component can be tested in isolation with comprehensive test suites. Integr
 Built-in monitoring and tracing across all components means you always know what's happening in your system. Performance issues, bottlenecks, and errors are visible and actionable.
 :::
 
-The Swiss AI-Hub's architecture is more than just a technical design—it's a foundation for building intelligent, collaborative systems that users love and administrators trust.
+## :star: The Architectural Revolution
+
+The Swiss AI-Hub's architecture represents a fundamental shift in how AI systems are built. By embracing event-driven, discovery-based design principles, we've created a platform that doesn't just scale—it evolves.
+
+**The Result**: A system where intelligence emerges from the collaboration between loosely coupled components, where adding new capabilities is as simple as deploying a new service, and where every interaction is transparent, auditable, and trustworthy.
+
+This is more than just a technical design—it's a foundation for building intelligent, collaborative systems that users love, administrators trust, and organizations can rely on for their most critical workflows.
 

@@ -152,6 +152,7 @@ export default withMermaid({
   title: "Swiss AI-Hub",
   description: "Developer focused documentation of the Swiss AI-Hub Agentic Platform",
   lastUpdated: true,
+  base: '/aihub-core/',
   themeConfig: {
     logo: './media/logo.png',
     footer: {
