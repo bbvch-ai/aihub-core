@@ -17,11 +17,11 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=ExpertAskingAgent,
-        agent_config=ExpertAskingAgentConfig(
+        default_agent_config=ExpertAskingAgentConfig(
             agent_id="expert_agent",
+            agent_class=ExpertAskingAgent.__name__,
             name=LocaleString(en="Expert Asking Agent"),
             description=LocaleString(en="This is an agent that can be used to develop the frontend"),
-            system_prompt=LocaleString(en="You are an agent"),
             slack_channel_id="C08MK7Z8GU9",
             open_webui_knowledge_id="c49fd8bb-8e6b-4ed5-ba31-5e97b55bcbe8",
             open_webui_api_key="sk-acb200cc04414a84867ad239471549cb",

@@ -89,6 +89,7 @@ class RunTraceCoordinator:
 
         LlamaIndexInstrumentor().instrument(tracer_provider=tracer_provider)
         self.tracer = trace.get_tracer(__name__)
+        self._background_tasks: set[asyncio.Task] = set()
 
     def trace_run_start(self, topic: AgentTopic, event: StartEvent) -> dict[str, str]:
         """
@@ -121,7 +122,9 @@ class RunTraceCoordinator:
             telemetry_headers: dict[str, str] = {}
             inject(telemetry_headers, context=span_context)
             logger.debug(f"Tracing run start for {topic.agent_class} with headers {telemetry_headers}")
-            asyncio.create_task(self._end_span_on_event(topic, span))
+            task = asyncio.create_task(self._end_span_on_event(topic, span))
+            self._background_tasks.add(task)
+            task.add_done_callback(self._background_tasks.discard)
             return telemetry_headers
 
     async def _end_span_on_event(self, topic: AgentTopic, span: Span):

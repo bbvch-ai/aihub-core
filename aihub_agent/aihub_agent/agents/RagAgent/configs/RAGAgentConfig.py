@@ -2,7 +2,9 @@ from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
+from aihub_lib.generative_ai.resources.models.llm.chat.gemini.GeminiLLMConfig import GeminiLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
@@ -14,7 +16,10 @@ class RAGAgentConfig(AgentConfig):
     Configuration for a RAGAgent, specifying the LLM, retrieval parameters, and prompts used to generate responses.
     """
 
-    llm: Annotated[ChatLLMConfig, Field(description="The LLM configuration for the agent.")]
+    llm: Annotated[
+        AzureOpenAILLMConfig | GeminiLLMConfig | OpenaiLikeLLMConfig,
+        Field(description="The LLM configuration for the agent."),
+    ]
     retrieve_step_config: Annotated[RetrieveStepConfig, Field(description="The configuration for the retrieval step.")]
     number_of_input_tokens: Annotated[
         int, Field(description="Maximum tokens allowed in input to manage context size or cost.")

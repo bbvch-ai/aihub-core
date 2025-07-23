@@ -1,7 +1,7 @@
 import asyncio
 
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
+from aihub_lib.nats.events.discovery.InstanceDiscoveryRequestEvent import InstanceDiscoveryRequestEvent
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.testing.logging.logger import enable_logging
 from bson import ObjectId
@@ -20,19 +20,19 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=DiscoverableAgent,
-        agent_config=DiscoverableAgentConfig(
+        default_agent_config=DiscoverableAgentConfig(
             agent_id="discoverable_agent",
+            agent_class=DiscoverableAgent.__name__,
             name=LocaleString(en="Discoverable Agent"),
             description=LocaleString(en="This is a very simple discoverable agent"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
 
     call_id = str(ObjectId())
     async with runner.test_run():
         await runner.nc_publisher.publish_event(
-            event=DiscoveryRequestEvent(),
-            subject=AgentTopicManager().get_agent_discovery_subject_request(call_id=call_id),
+            event=InstanceDiscoveryRequestEvent(),
+            subject=AgentTopicManager().get_agent_instance_discovery_subject_request(call_id=call_id),
         )
 
 

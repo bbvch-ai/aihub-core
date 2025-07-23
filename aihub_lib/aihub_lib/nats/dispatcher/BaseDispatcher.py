@@ -80,12 +80,19 @@ class BaseDispatcher(abc.ABC):
         self.nc_publisher = NCPublisher(self.nc)
         self.js_publisher = JSPublisher(self.js)
 
-        self.event_store = JetStreamEventStore(self.nc, self.js, self.topic_manager, self.topic)
+        self.event_store = JetStreamEventStore(
+            self.nc,
+            self.js,
+            self.topic_manager,
+            self.topic,
+        )
         self.step_store = StepStore(redis)
 
         # Initialization flag
         self._initialized = False
         self._init_lock = asyncio.Lock()
+
+        self._background_tasks: set[asyncio.Task] = set()
 
     @abc.abstractmethod
     async def handle_event(

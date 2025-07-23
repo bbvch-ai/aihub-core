@@ -25,11 +25,11 @@ async def agent_runner():
     """Returns an AgentTestRunner configured for the MultistepHumanInTheLoopAgent."""
     agent_runner = AgentTestRunner(
         agent_type=MultistepHumanInTheLoopAgent,
-        agent_config=MultistepHumanInTheLoopAgentConfig(
+        default_agent_config=MultistepHumanInTheLoopAgentConfig(
             agent_id="multistep_human_in_the_loop_agent",
+            agent_class=MultistepHumanInTheLoopAgent.__name__,
             name=LocaleString(en="Multistep Human In The Loop Agent"),
             description=LocaleString(en="This is a multistep human in the loop agent"),
-            system_prompt=LocaleString(en="You are a multistep agent"),
         ),
     )
     await agent_runner.test_run_start()

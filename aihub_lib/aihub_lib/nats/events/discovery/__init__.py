@@ -1,9 +1,9 @@
-from .agent import AgentDiscoveryResponseEvent
-from .DiscoveryRequestEvent import DiscoveryRequestEvent
+from .agent import AgentInstanceDiscoveryResponseEvent
+from .InstanceDiscoveryRequestEvent import InstanceDiscoveryRequestEvent
 from .process import ProcessDiscoveryResponseEvent
 
 __all__ = [
-    "AgentDiscoveryResponseEvent",
+    "AgentInstanceDiscoveryResponseEvent",
     "ProcessDiscoveryResponseEvent",
-    "DiscoveryRequestEvent",
+    "InstanceDiscoveryRequestEvent",
 ]

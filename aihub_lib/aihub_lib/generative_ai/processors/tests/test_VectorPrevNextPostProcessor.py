@@ -11,7 +11,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
     SelfHostedEmbeddingParameter,
 )
 from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
-from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
+from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.milvus_vector_store_content import fill_collection
 
 
@@ -71,10 +71,10 @@ def milvus_vector_store(nodes_with_relationships, event_loop):
             truncate_text=False,
         ),
     )
-    vector_store = create_milvus_vector_store(
+    vector_store = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="prev_next_test",
-        embedding_vector_dimension=768,
+        dimensions=768,
     )
     doc_store = create_mongo_document_store(document_store_name="development")
 
@@ -90,7 +90,7 @@ def milvus_vector_store(nodes_with_relationships, event_loop):
 
 @given("a valid vector store with all nodes", target_fixture="vector_store")
 def _(milvus_vector_store):
-    return milvus_vector_store
+    return milvus_vector_store.to_llama_index()
 
 
 @given(parsers.parse('starting node is "{target_node_id}"'), target_fixture="starting_node")

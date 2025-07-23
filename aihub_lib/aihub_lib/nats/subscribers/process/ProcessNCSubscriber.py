@@ -2,7 +2,7 @@ from collections.abc import Awaitable, Callable
 
 from nats.aio.client import Client as NATS
 
-from aihub_lib.nats.events import BaseEvent, DiscoveryRequestEvent, ProcessEvent
+from aihub_lib.nats.events import BaseEvent, InstanceDiscoveryRequestEvent, ProcessEvent
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
@@ -15,7 +15,7 @@ class ProcessNCSubscriber(NCSubscriber):
         cls,
         nc: NATS,
         topic_manager: ProcessTopicManager,
-        handler: Callable[[DiscoveryRequestEvent, ProcessTopic], Awaitable[None]],
+        handler: Callable[[InstanceDiscoveryRequestEvent, ProcessTopic], Awaitable[None]],
         call_id: str = "*",
     ):
         """Subscribe to discovery request events for all processes"""
@@ -23,7 +23,7 @@ class ProcessNCSubscriber(NCSubscriber):
         return cls(
             nc=nc,
             subject=subject,
-            event_cls=DiscoveryRequestEvent,
+            event_cls=InstanceDiscoveryRequestEvent,
             handler=handler,
         )
 

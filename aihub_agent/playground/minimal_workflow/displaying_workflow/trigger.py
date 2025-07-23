@@ -16,15 +16,21 @@ from playground.minimal_workflow.displaying_workflow.DisplayingAgentConfig impor
 async def main():
     runner = AgentTestRunner(
         agent_type=DisplayingAgent,
-        agent_config=DisplayingAgentConfig(
+        default_agent_config=DisplayingAgentConfig(
             agent_id="displaying_agent",
+            agent_class=DisplayingAgent.__name__,
             name=LocaleString(en="Displaying Agent"),
             description=LocaleString(en="This is a very simple agent that displays stuff to the user"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
     async with runner.test_run() as topic:
-        await runner.send_event_from_topic(topic=topic, start_event=UserMessageEvent(messages=[], user=fake_user()))
+        await runner.send_event_from_topic(
+            topic=topic,
+            start_event=UserMessageEvent(
+                messages=[],
+                user=fake_user(),
+            ),
+        )
 
 
 if __name__ == "__main__":
