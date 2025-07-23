@@ -73,21 +73,25 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             topic.call_id, topic.agent_class, topic.agent_id
         )
 
-        agents: list[AgentInstanceDTO] = []
+        agent_instances: list[AgentInstanceDTO] = []
         if topic.agent_class == "*":
-            agents = await AgentService.discover_agent_instances(self.nc)
+            agent_instances = await AgentService.discover_agent_instances(self.nc)
 
             if topic.agent_id != "*":
-                agents = [agent for agent in agents if agent.agent_id == topic.agent_id]
+                agent_instances = [agent for agent in agent_instances if agent.agent_id == topic.agent_id]
 
         elif topic.agent_id == "*":
-            agents = await AgentService.discover_agent_instances_by_class(nc=self.nc, agent_class=topic.agent_class)
+            agent_instances = await AgentService.discover_agent_instances_by_class(
+                nc=self.nc, agent_class=topic.agent_class
+            )
 
         else:
-            agents.append(await AgentService.discover_agent_instance(self.nc, topic.agent_class, topic.agent_id))
+            agent_instances.append(
+                await AgentService.discover_agent_instance(self.nc, topic.agent_class, topic.agent_id)
+            )
 
-        for agent in agents:
-            agent_discovery_response_event = agent.to_discovery_response_event()
+        for agent_instance in agent_instances:
+            agent_discovery_response_event = agent_instance.to_discovery_response_event()
             await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
     @override

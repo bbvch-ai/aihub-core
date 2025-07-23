@@ -76,10 +76,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
                 process_instances = [process for process in process_instances if process.process_id == topic.process_id]
 
         elif topic.process_id == "*":
-            all_process_instances = await ProcessService.discover_process_instances(self.nc)
-            process_instances = [
-                process for process in all_process_instances if process.process_class == topic.process_class
-            ]
+            process_instances = await ProcessService.discover_process_instances_by_class(self.nc, topic.process_class)
 
         else:
             process_instances.append(

@@ -49,6 +49,12 @@ class ProcessService:
     """
 
     @staticmethod
+    def get_minimal_process(process_class: str, process_id: str, t: LocaleHandler) -> MinimalProcessDTO:
+        """Returns minimal details for a process from database."""
+        process_entity = ProcessEntity.get_process(process_class=process_class, process_id=process_id)
+        return MinimalProcessDTO.from_entity(process_entity, t)
+
+    @staticmethod
     async def get_process(nc: NATS, process_class: str, process_id: str, t: LocaleHandler) -> ProcessDTO:
         """
         Returns details for a given process. If process is online, use live information reported by the process,
@@ -92,12 +98,6 @@ class ProcessService:
         return all_processes
 
     @staticmethod
-    def get_minimal_process(process_class: str, process_id: str, t: LocaleHandler) -> MinimalProcessDTO:
-        """Returns minimal details for a process from database."""
-        process_entity = ProcessEntity.get_process(process_class=process_class, process_id=process_id)
-        return MinimalProcessDTO.from_entity(process_entity, t)
-
-    @staticmethod
     async def discover_process_instance(nc: NATS, process_class: str, process_id: str) -> ProcessInstanceDTO:
         """
         Retrieves details about a specific process. If cached, returns immediately.
@@ -130,6 +130,44 @@ class ProcessService:
             return process_instance_dto
 
         raise HTTPException(status_code=404, detail=f"Process {process_class}.{process_id} not found.")
+
+    @staticmethod
+    async def discover_process_instances_by_class(nc: NATS, process_class: str) -> list[ProcessInstanceDTO]:
+        """
+        Retrieves all process instances for a specific process class. If cached, returns immediately.
+        Otherwise, sends a discovery request and waits for responses.
+        """
+        cache_key = (process_class, "*")
+
+        if cache_key in GET_PROCESS_INSTANCE_CACHE:
+            return GET_PROCESS_INSTANCE_CACHE[cache_key]
+
+        process_class_dto = await ProcessService.discover_process_class(nc, process_class)
+
+        configs = ProcessConfigEntityDocument.find_for_class(process_class)
+        process_instance_dtos = []
+        for config in configs:
+            process_config = ProcessConfig.from_entity(config)
+            process_instance_dto = ProcessInstanceDTO.from_class_and_config(
+                class_dto=process_class_dto,
+                process_config=process_config,
+            )
+            process_instance_dtos.append(process_instance_dto)
+
+        db_process_ids = {config.process_id for config in configs}
+
+        if process_class_dto.default_process_config.process_id not in db_process_ids:
+            process_instance_dto = ProcessInstanceDTO.from_class_and_config(
+                class_dto=process_class_dto,
+                process_config=process_class_dto.default_process_config,
+            )
+            process_instance_dtos.append(process_instance_dto)
+
+        if len(process_instance_dtos) > 0:
+            GET_PROCESS_INSTANCE_CACHE[cache_key] = process_instance_dtos
+            return process_instance_dtos
+
+        raise HTTPException(status_code=404, detail=f"No process instances found for class {process_class}.")
 
     @staticmethod
     async def discover_process_class(nc: NATS, process_class: str) -> ProcessClassDTO:
