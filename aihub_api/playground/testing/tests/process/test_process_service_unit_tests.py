@@ -15,7 +15,6 @@ from aihub_lib.testing.logging.logger import enable_logging
 from bson import ObjectId
 from fastapi import HTTPException
 
-from aihub_api.routes.process.dto.MinimalProcessDTO import MinimalProcessDTO
 from aihub_api.routes.process.dto.ProcessClassDTO import ProcessClassDTO
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
 from aihub_api.routes.process.dto.ProcessInstanceDTO import ProcessInstanceDTO
@@ -115,35 +114,6 @@ def clear_caches():
 
 class TestProcessServiceUnit:
     """Unit tests for ProcessService methods."""
-
-    def test_get_minimal_process_success(self, sample_process_entity, mock_locale_handler):
-        """Test get_minimal_process returns correct MinimalProcessDTO."""
-        with patch.object(ProcessEntity, "get_process") as mock_get_process:
-            mock_get_process.return_value = sample_process_entity
-
-            with patch.object(MinimalProcessDTO, "from_entity") as mock_from_entity:
-                expected_dto = Mock(spec=MinimalProcessDTO)
-                mock_from_entity.return_value = expected_dto
-
-                result = ProcessService.get_minimal_process("TestProcess", "test_process_1", mock_locale_handler)
-
-                mock_get_process.assert_called_once_with(process_class="TestProcess", process_id="test_process_1")
-                mock_from_entity.assert_called_once_with(sample_process_entity, mock_locale_handler)
-                assert result == expected_dto
-
-    def test_get_minimal_process_not_found(self, mock_locale_handler):
-        """Test get_minimal_process when process not found."""
-        with patch.object(ProcessEntity, "get_process") as mock_get_process:
-            mock_get_process.return_value = None
-
-            with patch.object(MinimalProcessDTO, "from_entity") as mock_from_entity:
-                mock_from_entity.return_value = None
-
-                result = ProcessService.get_minimal_process("TestProcess", "nonexistent", mock_locale_handler)
-
-                mock_get_process.assert_called_once_with(process_class="TestProcess", process_id="nonexistent")
-                mock_from_entity.assert_called_once_with(None, mock_locale_handler)
-                assert result is None
 
     @pytest.mark.asyncio
     async def test_get_process_online_success(self, mock_nats, sample_process_instance, mock_locale_handler):

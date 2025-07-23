@@ -24,7 +24,6 @@ from cachetools import TTLCache
 from fastapi import HTTPException
 from nats.aio.client import Client as NATS
 
-from aihub_api.routes.process.dto.MinimalProcessDTO import MinimalProcessDTO
 from aihub_api.routes.process.dto.ProcessClassDTO import ProcessClassDTO
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
 from aihub_api.routes.process.dto.ProcessHumanInDto import ProcessHumanInDto
@@ -47,12 +46,6 @@ class ProcessService:
     the formkit definitions of forms that the user can submit to either start a new process or continue
     an existing one.
     """
-
-    @staticmethod
-    def get_minimal_process(process_class: str, process_id: str, t: LocaleHandler) -> MinimalProcessDTO:
-        """Returns minimal details for a process from database."""
-        process_entity = ProcessEntity.get_process(process_class=process_class, process_id=process_id)
-        return MinimalProcessDTO.from_entity(process_entity, t)
 
     @staticmethod
     async def get_process(nc: NATS, process_class: str, process_id: str, t: LocaleHandler) -> ProcessDTO:
