@@ -15,6 +15,32 @@ from aihub_api.routes.process.ProcessService import GET_PROCESS_INSTANCE_CACHE, 
 enable_logging()
 
 
+@pytest.fixture(autouse=True)
+def cleanup_db_and_cache():
+    """Ensure clean cache and DB state before and after each test."""
+    # Clear cache before test
+    ProcessService.clear_cache()
+    
+    # Clean up any test data that might exist in DB
+    try:
+        # Remove any ProcessConfigEntityDocument records created during testing
+        ProcessConfigEntityDocument.delete_many({"process_class": "TestProcess"})
+    except Exception:
+        # Ignore cleanup failures (e.g., if collection doesn't exist)
+        pass
+    
+    yield
+    
+    # Clean up after test
+    ProcessService.clear_cache()
+    try:
+        # Remove any ProcessConfigEntityDocument records created during testing
+        ProcessConfigEntityDocument.delete_many({"process_class": "TestProcess"})
+    except Exception:
+        # Ignore cleanup failures
+        pass
+
+
 @pytest.fixture
 def sample_process_config():
     """Create a sample ProcessConfig for testing."""
@@ -221,7 +247,7 @@ class TestProcessServiceDatabaseIntegration:
         cache_key = ("TestProcess", "test_process_1")
 
         # Clear cache first
-        GET_PROCESS_INSTANCE_CACHE.clear()
+        ProcessService.clear_cache()
 
         with patch.object(ProcessService, "discover_process_class") as mock_discover_class:
             mock_discover_class.return_value = sample_process_class

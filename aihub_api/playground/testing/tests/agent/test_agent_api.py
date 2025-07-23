@@ -7,6 +7,7 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
     DangerousDevelopmentOnlyIdentityProvider,
 )
 from aihub_lib.nats.events import UserMessageEvent
+from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from aihub_lib.testing.logging.logger import enable_logging
 from asgi_lifespan import LifespanManager
@@ -15,6 +16,7 @@ from llama_index.core.base.llms.types import ChatMessage
 from stringcase import snakecase
 
 from aihub_api.routes.agent.AgentController import AgentController
+from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.runners.simulation.agent.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 from aihub_api.services.ModelCreationService import ModelCreationService
 
@@ -36,6 +38,34 @@ async def agent_api_client():
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1") as client:
             yield client
+
+
+@pytest.fixture(autouse=True)
+def cleanup_db_and_cache():
+    """Ensure clean cache state before and after each test."""
+    # Clear cache before test
+    AgentService.clear_cache()
+
+    # Clean up any test data that might exist in DB
+    try:
+        # Remove any AgentConfigEntityDocument records created during testing
+        AgentConfigEntityDocument.delete_many({"agent_class": AGENT_CLASS})
+        AgentConfigEntityDocument.delete_many({"agent_class": "TestAgent"})
+    except Exception:
+        # Ignore cleanup failures (e.g., if collection doesn't exist)
+        pass
+
+    yield
+
+    # Clean up after test
+    AgentService.clear_cache()
+    try:
+        # Remove any AgentConfigEntityDocument records created during testing
+        AgentConfigEntityDocument.delete_many({"agent_class": AGENT_CLASS})
+        AgentConfigEntityDocument.delete_many({"agent_class": "TestAgent"})
+    except Exception:
+        # Ignore cleanup failures
+        pass
 
 
 @pytest.mark.asyncio(loop_scope="module")

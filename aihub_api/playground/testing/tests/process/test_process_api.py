@@ -8,11 +8,13 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
+from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 
 from aihub_api.routes.process.ProcessController import ProcessController
+from aihub_api.routes.process.ProcessService import ProcessService
 from aihub_api.runners.simulation.process.SimulatedProcessApiTestRunner import SimulatedProcessApiTestRunner
 
 PROCESS_CLASS = "test_process"
@@ -42,6 +44,34 @@ async def process_api_client():
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1") as client:
             yield client
+
+
+@pytest.fixture(autouse=True)
+def cleanup_db_and_cache():
+    """Ensure clean cache and DB state before and after each test."""
+    # Clear cache before test
+    ProcessService.clear_cache()
+    
+    # Clean up any test data that might exist in DB
+    try:
+        # Remove any ProcessConfigEntityDocument records created during testing
+        ProcessConfigEntityDocument.delete_many({"process_class": PROCESS_CLASS})
+        ProcessConfigEntityDocument.delete_many({"process_class": "TestProcess"})
+    except Exception:
+        # Ignore cleanup failures (e.g., if collection doesn't exist)
+        pass
+    
+    yield
+    
+    # Clean up after test
+    ProcessService.clear_cache()
+    try:
+        # Remove any ProcessConfigEntityDocument records created during testing
+        ProcessConfigEntityDocument.delete_many({"process_class": PROCESS_CLASS})
+        ProcessConfigEntityDocument.delete_many({"process_class": "TestProcess"})
+    except Exception:
+        # Ignore cleanup failures
+        pass
 
 
 @pytest.mark.asyncio(loop_scope="module")
