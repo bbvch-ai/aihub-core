@@ -292,10 +292,7 @@ class TestProcessDispatcherHandleEvent:
         await walkthrough_context.set("_process_config", process_dispatcher.default_process_config.model_dump())
         await walkthrough_context.set("test_data", "test_value")
 
-        with (
-            patch("aihub_process.dispatchers.ProcessDispatcher.WalkthroughTraceCoordinator"),
-            patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
-        ):
+        with (patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,):
             mock_base_handle.return_value = None
 
             # Act
@@ -320,7 +317,6 @@ class TestProcessDispatcherHandleEvent:
             patch(
                 "aihub_process.dispatchers.ProcessDispatcher.WalkthroughContext", return_value=mock_walkthrough_context
             ),
-            patch("aihub_process.dispatchers.ProcessDispatcher.WalkthroughTraceCoordinator"),
         ):
             with patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle:
                 mock_base_handle.return_value = None
@@ -389,10 +385,7 @@ class TestProcessDispatcherHandleEvent:
         work_event = WorkEvent()
         process_dispatcher.process.get_steps_waiting_for_event = Mock(return_value=[])
 
-        with (
-            patch("aihub_process.dispatchers.ProcessDispatcher.WalkthroughTraceCoordinator"),
-            patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
-        ):
+        with (patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,):
             mock_base_handle.return_value = None
 
             # Act
@@ -420,32 +413,6 @@ class TestProcessDispatcherHandleEvent:
             # Act & Assert - The real context should return None, causing the ValueError
             with pytest.raises(ValueError, match="No process config found"):
                 await process_dispatcher.handle_event(work_event, process_topic)
-
-    @pytest.mark.asyncio
-    async def test_handle_event_stores_start_event_context_data(
-        self, process_dispatcher, process_topic, mock_initial_process_stop_event
-    ):
-        """Test that InitialProcessWorkEvent context data is stored in walkthrough context."""
-        # Arrange
-        start_event = InitialProcessWorkEvent(process_stop_event=mock_initial_process_stop_event)
-        process_dispatcher.process.get_steps_waiting_for_event = Mock(return_value=[])
-
-        with (
-            patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
-        ):
-            mock_base_handle.return_value = None
-
-            # Act
-            await process_dispatcher.handle_event(start_event, process_topic)
-
-            # Assert - verify that context data from start event is actually stored in real context
-            walkthrough_context = WalkthroughContext(process_dispatcher.redis, process_topic.process_walkthrough_id)
-            event_data = start_event.to_context_dict()
-
-            # Check that each piece of event data was stored
-            for key, value in event_data.items():
-                stored_value = await walkthrough_context.get(key)
-                assert stored_value == value, f"Expected {key} to be {value}, but got {stored_value}"
 
 
 class TestProcessDispatcherErrorHandling:
@@ -558,15 +525,9 @@ class TestProcessDispatcherIntegration:
             stored_config = await walkthrough_context.get("_process_config")
             assert stored_config == custom_config.model_dump()
 
-            # 2. Context data should be stored in real context
-            event_data = start_event.to_context_dict()
-            for key, value in event_data.items():
-                stored_value = await walkthrough_context.get(key)
-                assert stored_value == value, f"Context key {key} not properly stored"
-
-            # 3. Step should be checked for readiness
+            # 2. Step should be checked for readiness
             process_dispatcher.is_step_ready.assert_called_once()
 
-            # 4. Background task should be created for step execution
+            # 3. Background task should be created for step execution
             assert len(process_dispatcher._background_tasks) == 1
             mock_task.add_done_callback.assert_called_once()

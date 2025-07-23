@@ -78,7 +78,7 @@ class ProcessDispatcher(BaseDispatcher):
         if process_config_dict is None:
             process_config_dict = await walkthrough_context.get("_process_config")
             if process_config_dict is None:
-                raise ValueError(f"No process configuration found for event {event.event_name} and topic {topic}")
+                raise ValueError(f"No process config found for event {event.event_name} and topic {topic}")
 
         walkthrough_process_config = self.process_config_type.model_validate(process_config_dict)
         topic = ProcessInstanceTopic.from_process_class_topic(

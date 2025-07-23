@@ -26,7 +26,7 @@ class AgentClassTopic(PartialAgentTopic):
         return (
             f"{AgentTopicManager.AGENT_TOPIC}."
             f"{self.agent_class}."
-            f"{self.agent_id}."
+            f"*."
             f"{self.thread_id}."
             f"{self.display_id}."
             f"{self.run_id}."

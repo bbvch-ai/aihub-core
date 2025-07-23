@@ -3,10 +3,10 @@ from typing import Annotated
 from pydantic import Field
 
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
-from aihub_lib.nats.topics.Topic import Topic
+from aihub_lib.nats.topics.process.PartialProcessTopic import PartialProcessTopic
 
 
-class ProcessClassTopic(Topic):
+class ProcessClassTopic(PartialProcessTopic):
     process_class: Annotated[str, Field(description="The processes class identifier.")]
 
     process_walkthrough_id: Annotated[
@@ -35,31 +35,4 @@ class ProcessClassTopic(Topic):
             f"{self.event_type}."
             f"{self.event_name}."
             f"{self.event_id}"
-        )
-
-    @classmethod
-    def from_subject(cls, subject: str) -> "ProcessClassTopic":
-        """
-        Constructs a ProcessTopic from a subject string that may contain wildcards.
-        """
-        (
-            topic_type,
-            process_class,
-            process_id,
-            process_walkthrough_id,
-            event_type,
-            event_name,
-            event_id,
-        ) = subject.split(".")
-        assert topic_type == ProcessTopicManager.PROCESS_TOPIC, f"Unexpected topic type in subject: {subject}"
-
-        if process_id != "*":
-            raise ValueError(f"Unexpected process_id in subject: {subject}")
-
-        return cls(
-            process_class=process_class,
-            process_walkthrough_id=process_walkthrough_id,
-            event_type=event_type,
-            event_name=event_name,
-            event_id=event_id,
         )
