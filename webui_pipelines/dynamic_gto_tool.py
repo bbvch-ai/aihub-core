@@ -1,7 +1,7 @@
 """
 title: LCDM Hub GTO Ingestion Tool
 author: Noah Hermann
-description: Validates GTO instances and saves them to the LCDM hub. Is used when the user wants to save GTO instances.
+description: Validates GTO instances and saves them to the LCDM hub. Is used when the user wants to save GTO instances. The tool can be called by passing {"gto_id": "some_id", "instances_data": []}
 version: 0.1.0
 """
 
@@ -274,6 +274,7 @@ class Tools:
             instance_dict = instance.model_dump()
             obj_id = self._generate_unique_obj_id(instance_dict, gto_type)
 
+            tmp_instances = []
             # Create hub entry for each attribute
             for attr_key, attr_def in attribute_definitions.items():
                 field_name = attr_def.get("key")
@@ -286,7 +287,7 @@ class Tools:
                     "keyId": field_name,
                     "sourceValue": (source_value if source_value is not None else ""),
                     "targetValue": "",
-                    "manualValue": "",
+                    "manualValue": (source_value if source_value is not None else ""),
                     "gtoId": gto_id,
                     "manuallyModified": False,
                     "released": False,
@@ -302,7 +303,9 @@ class Tools:
                     "participantMandatory": False,
                 }
 
-                hub_data.append(hub_entry)
+                tmp_instances.append(hub_entry)
+
+            hub_data.append(tmp_instances)
 
         return hub_data
 
@@ -328,7 +331,7 @@ class Tools:
             if response.status_code in [200, 201]:
                 return f"Success: Daten erfolgreich gespeichert."
             else:
-                return f"API Error: Anfrage fehlgeschlagen mit Status {response.status_code}: {response.text}"
+                return f"API Error: Anfrage fehlgeschlagen mit Status {response.status_code}: {response.text}/n/n{hub_data}"
 
         except requests.exceptions.Timeout:
             return f"Timeout Error: Anfrage timeout nach {self.valves.timeout_seconds} Sekunden."
