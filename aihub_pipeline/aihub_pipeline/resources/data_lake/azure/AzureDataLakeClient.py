@@ -103,6 +103,30 @@ class AzureDataLakeClient(AbstractDataLakeClient):
             metadata=meta,
         )
 
+    def directory_exists(self, directory_path: str) -> bool:
+        """Check if a directory exists using Azure client."""
+        try:
+            directory_client = self._client.get_directory_client(directory_path)
+            return directory_client.exists()
+        except Exception:
+            return False
+
+    def list_directory_contents(self, directory_path: str) -> list[str]:
+        """List contents of a directory using Azure client."""
+        try:
+            paths = self._client.get_paths(path=f"{directory_path}/", recursive=False)
+            return [path.name for path in paths]
+        except Exception:
+            return []
+
+    def delete_file(self, file_path: str) -> None:
+        """Delete a file using Azure client."""
+        self._client.delete_file(file_path)
+
+    def delete_directory(self, directory_path: str) -> None:
+        """Delete a directory and all its contents using Azure client."""
+        self._client.delete_directory(directory_path)
+
     @property
     def raw_client(self) -> FileSystemClient:
         """Access to the underlying Azure client for backward compatibility"""

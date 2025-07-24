@@ -144,6 +144,57 @@ class S3DataLakeClient(AbstractDataLakeClient):
             metadata=metadata,
         )
 
+    def directory_exists(self, directory_path: str) -> bool:
+        """Check if a directory (prefix) exists in S3."""
+        try:
+            # In S3, directories are just prefixes. Check if any objects exist with this prefix
+            response = self._client.list_objects_v2(Bucket=self.container_name, Prefix=f"{directory_path}/", MaxKeys=1)
+            return "Contents" in response
+        except Exception:
+            return False
+
+    def list_directory_contents(self, directory_path: str) -> list[str]:
+        """List contents of a directory (prefix) in S3."""
+        try:
+            response = self._client.list_objects_v2(
+                Bucket=self.container_name, Prefix=f"{directory_path}/", Delimiter="/"
+            )
+
+            contents = []
+            # Add files
+            if "Contents" in response:
+                contents.extend([obj["Key"] for obj in response["Contents"]])
+            # Add subdirectories (common prefixes)
+            if "CommonPrefixes" in response:
+                contents.extend([prefix["Prefix"].rstrip("/") for prefix in response["CommonPrefixes"]])
+
+            return contents
+        except Exception:
+            return []
+
+    def delete_file(self, file_path: str) -> None:
+        """Delete a file from S3."""
+        self._client.delete_object(Bucket=self.container_name, Key=file_path)
+
+    def delete_directory(self, directory_path: str) -> None:
+        """Delete a directory (prefix) and all its contents from S3."""
+        # List all objects with the prefix
+        paginator = self._client.get_paginator("list_objects_v2")
+        pages = paginator.paginate(Bucket=self.container_name, Prefix=f"{directory_path}/")
+
+        # Collect all objects to delete
+        objects_to_delete = []
+        for page in pages:
+            if "Contents" in page:
+                for obj in page["Contents"]:
+                    objects_to_delete.append({"Key": obj["Key"]})
+
+        # Delete objects in batches (S3 allows max 1000 per request)
+        if objects_to_delete:
+            for i in range(0, len(objects_to_delete), 1000):
+                batch = objects_to_delete[i : i + 1000]
+                self._client.delete_objects(Bucket=self.container_name, Delete={"Objects": batch})
+
     @property
     def raw_client(self) -> boto3.client:
         """Access to the underlying S3 client for backward compatibility"""

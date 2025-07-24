@@ -35,7 +35,7 @@ from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
 
 # Configuration: Change this to switch between cloud providers
-USE_S3 = True  # Set to True to use S3 (MinIO), False for Azure
+USE_S3 = True
 
 DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
 DOCUMENT_KEY = AssetKey(["playground", "documents"])
