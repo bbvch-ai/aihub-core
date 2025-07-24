@@ -3,7 +3,7 @@ from collections.abc import Awaitable, Callable
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
-from aihub_lib.nats.events import BaseEvent, ControlEvent, WorkEvent, WorkRequestEvent
+from aihub_lib.nats.events import BaseEvent, WorkEvent, WorkRequestEvent
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager

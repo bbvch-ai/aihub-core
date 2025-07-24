@@ -292,7 +292,9 @@ class TestProcessDispatcherHandleEvent:
         await walkthrough_context.set("_process_config", process_dispatcher.default_process_config.model_dump())
         await walkthrough_context.set("test_data", "test_value")
 
-        with (patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,):
+        with (
+            patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+        ):
             mock_base_handle.return_value = None
 
             # Act
@@ -385,7 +387,9 @@ class TestProcessDispatcherHandleEvent:
         work_event = WorkEvent()
         process_dispatcher.process.get_steps_waiting_for_event = Mock(return_value=[])
 
-        with (patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,):
+        with (
+            patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+        ):
             mock_base_handle.return_value = None
 
             # Act

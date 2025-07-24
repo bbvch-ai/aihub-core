@@ -6,8 +6,8 @@ from aihub_lib.nats.events import (
     HumanWorkEvent,
     ProcessStartEvent,
     ProgramWorkEvent,
-    WorkRequestEvent,
     WorkEvent,
+    WorkRequestEvent,
 )
 from aihub_lib.nats.events.discovery import ProcessClassDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent

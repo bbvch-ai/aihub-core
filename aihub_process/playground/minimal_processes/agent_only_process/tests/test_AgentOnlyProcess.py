@@ -3,6 +3,7 @@ from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test
+from aihub_lib.testing.logging.logger import enable_logging
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_process.runners.ProcessTestRunner import ProcessTestRunner
@@ -13,6 +14,8 @@ from playground.events.CustomProcessStopEvent import CustomProcessStopEvent
 from playground.minimal_processes.agent_only_process.AgentOnlyProcess import AgentOnlyProcess
 
 scenarios("./features/agent_only_process.feature")
+
+enable_logging()
 
 
 @given("an AgentA runner", target_fixture="agent_a_runner")

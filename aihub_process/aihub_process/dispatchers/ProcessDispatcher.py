@@ -236,16 +236,15 @@ class ProcessDispatcher(BaseDispatcher):
         Uses the per-walkthrough topic manager to form the right event subject and publishes via JSPublish.
         """
         topic_manager = self.get_topic_manager_for_process_walkthrough(topic)
-        subject = topic_manager.get_subject_for_work_request_event_in_walkthrough(event.event_name, event.event_id)
-
-        if not (event.is_work_request_event or event.is_process_exception_event or event.is_process_stop_event):
-            raise ValueError("ProcessDispatcher must only emit WorkRequest-, ProcessException-, or ProcessStop-Events")
 
         if event.is_work_request_event:
+            subject = topic_manager.get_subject_for_work_request_event_in_walkthrough(event.event_name, event.event_id)
             event.process_id = topic.process_id
+            await self.js_publisher.publish_event(event, subject)
 
-        logger.debug(f"Publishing event '{event.event_name}' to subject '{subject}'")
-        await self.js_publisher.publish_event(event, subject)
+        if event.is_work_event:
+            subject = topic_manager.get_subject_for_work_event_in_walkthrough(event.event_name, event.event_id)
+            await self.js_publisher.publish_event(event, subject)
 
     async def _build_method_kwargs(
         self,
