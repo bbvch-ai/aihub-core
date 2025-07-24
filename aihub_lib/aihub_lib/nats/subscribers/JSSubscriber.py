@@ -59,7 +59,10 @@ class JSSubscriber(AbstractSubscriber):
         """
         await self.stream_manager.ensure_stream_exists()
         self.js_subscription = await self.js.subscribe(
-            self.subject, cb=self.message_handler, stream=self.stream_manager.stream_name, queue=self.queue_group
+            subject=self.subject,
+            cb=self.message_handler,
+            stream=self.stream_manager.stream_name,
+            queue=self.queue_group,
         )
         logger.debug(f"Subscribed to '{self.subject}' with {self.stream_manager} and queue group '{self.queue_group}'.")
 
