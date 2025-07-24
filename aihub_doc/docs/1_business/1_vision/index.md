@@ -33,9 +33,13 @@ Our approach ensures a gradual, low-risk adoption, moving from secure experiment
 
 It all starts with a secure foundation. This tier provides your entire company with access to advanced large language models (LLMs) like GPT through a modern, secure web interface. It’s a safe, experimental environment where your team can begin to explore the power of generative AI, all within your company's secure perimeter.
 
+![Swiss AI-Hub Architecture](../../../media/tier1.png)
+
 ### 🔗 Tier 2: Basic+ Tier – AI in Your Daily Workflow
 
 Next, we embed AI directly into your daily workflows. This tier extends the platform’s reach with API integrations into the collaboration tools your employees already use, such as Microsoft Teams, Slack, and email. This step makes AI a readily available resource, removing friction and increasing adoption.
+
+![Swiss AI-Hub Architecture](../../../media/tier2.png)
 
 ### 🤖 Tier 3: Assistant Package – Specialized Expertise on Demand
 
@@ -61,48 +65,44 @@ A product team discusses an issue in a Microsoft Teams channel:
 In this scenario, each AI Assistant acts as a domain expert, providing precise, auditable information while acknowledging its limitations, allowing the human team to make the final strategic decisions.
 :::
 
+![Swiss AI-Hub Architecture](../../../media/tier3.png)
+
 ### 🌟 Tier 4: Agentic Process Automation – Redefining How Work Gets Done {#agentic-process-automation}
 
-This is the most advanced tier, where we go beyond reactive assistance to fundamentally rethink your business processes. This stage introduces autonomous **AI Agents** that proactively participate in and drive workflows.
+This is the most advanced tier, where we go beyond reactive assistance to fundamentally rethink your business processes. This stage introduces intelligent **Agentic Processes** that orchestrate seamless collaboration between humans, AI agents, and your existing tools.
 
 ::: tip
-**AI Agents** are *proactive*. They are designed to analyze workflows, autonomously determine the next steps, and execute tasks with minimal human intervention, while humans are reserved for critical decisions and oversight.
+**Agentic Process Automation** focuses on *orchestration, not execution*. Rather than replacing humans or existing systems, we create intelligent coordinators that delegate tasks to the most appropriate entity—whether that's a human for strategic decisions, an AI agent for intelligent analysis, or an external program for deterministic tasks.
 :::
 
-We don't just automate old processes; we redesign them as a deep, collaborative interplay between humans, specialized AI agents, and your existing programs and software.
+We don't just automate old processes; we redesign them as a transparent, controlled collaboration between humans, specialized AI agents, and your existing programs and software. Humans remain in complete control, with full visibility into every step and the ability to guide the process at any time.
 
-A scenario example: The HR application process, redesigned with Agentic Process Automation.
+:::details Example: The HR Application Process, Redesigned with Agentic Process Automation
+Consider how a traditional HR application process is transformed through Agentic Process Automation:
 
-```mermaid
-graph TD
-    A[Incoming Application via Email] --> B(Automation Tool);
-    B --> C{HR System};
-    C --> D[📄 Document Analysis Agent <br><i>Extracts qualifications, flags issues</i>];
-    D --> E[📊 Job Matching Agent <br><i>Compares to roles, calculates match score</i>];
-    E --> F(✨ HR Employee <br><i>Receives structured analysis & recommendation</i>);
-    F --> G{Makes Invite/Decline Decision};
-    G --> H[✍️ Communication Agent <br><i>Drafts personalized response</i>];
-    H --> I(✨ HR Employee <br><i>Reviews & Approves Email</i>);
-    I --> J(Automation Tool);
-    J --> K[Sends Final Email];
-```
+When a job application arrives via email, an existing automation tool (such as Power Automate) extracts the application and routes it into the HR system. At this point, the intelligent orchestration begins: a **Document Analysis Agent** reviews the CV and cover letter, extracting key qualifications and flagging any potential issues or inconsistencies. Next, a **Job Matching Agent** compares the candidate's profile against open positions, calculating match scores and identifying the most suitable roles.
 
-In this reimagined process, each component—human, AI agent, and automation tool—handles the task for which it is best suited, creating a workflow that is faster, more intelligent, and more efficient.
+The HR employee then receives a comprehensive analysis with clear recommendations, allowing them to make an informed hiring decision quickly. Once the decision is made, a **Communication Agent** drafts a personalized response—whether an interview invitation or a polite decline—tailored to the specific candidate and position. The HR employee reviews and approves this communication before the original automation tool sends the final email.
+
+Throughout this process, each component handles the task for which it is best suited: automation tools manage data flow, AI agents provide intelligent analysis and content generation, and the HR employee maintains complete strategic control over hiring decisions. This creates a workflow that is faster, more intelligent, and more efficient while keeping humans firmly in control of critical business decisions.
+:::
+
+![Swiss AI-Hub Architecture](../../../media/tier4.png)
 
 ## 🏗️ The Swiss AI-Hub Architecture: Built on Trust and Control
 
-To deliver on this vision, the Swiss AI-Hub is built on a philosophy of **controlled autonomy**. We understand that for businesses to embrace AI, it cannot be a "black box."
+To deliver on this vision, the Swiss AI-Hub is built on a philosophy of **human-centric collaboration**. We understand that for businesses to embrace AI, it must enhance human capabilities while maintaining complete transparency and control.
 
 ::: danger AI Agents as Structured Workflows
-Our agents are not monolithic, unpredictable entities. They are implemented as clear, step-by-step workflows. This approach ensures that every agent action is testable, traceable, and auditable. You get the benefits of autonomy without relinquishing control.
+Our agents are not monolithic, unpredictable entities. They are implemented as clear, step-by-step workflows. This approach ensures that every agent action is testable, traceable, and auditable. You get the benefits of intelligent automation while maintaining full visibility and control.
 :::
 
-:::danger Orchestration, Not Just Automation
-The Swiss AI-Hub acts as an intelligent orchestrator. The core processes do not perform the business logic themselves; they **delegate** tasks to the most appropriate entity—be it a human for a critical decision, an external program for a deterministic task, or a specialized AI agent for intelligent analysis.
+:::danger Orchestration, Not Replacement
+The Swiss AI-Hub acts as an intelligent orchestrator that connects rather than replaces. Our processes don't eliminate existing tools or human expertise; they **delegate** tasks to the most appropriate entity—be it a human for strategic decisions, your existing automation tools for deterministic tasks, or a specialized AI agent for intelligent analysis. This integration-first approach respects your current investments while adding AI intelligence exactly where it delivers the most value.
 :::
 
 ## 🎉 Conclusion: Your Partner for a New Era of Work
 
-The Swiss AI-Hub represents a fundamental shift in how organizations activate knowledge, design processes, and empower people. With our evolutionary, tiered architecture, we provide a pragmatic and secure path to integrating AI deep into your organization.
+The Swiss AI-Hub represents a fundamental shift in how organizations activate knowledge, design processes, and empower people. With our evolutionary, tiered architecture, we provide a pragmatic and secure path to integrating AI deep into your organization while respecting your existing investments and expertise.
 
-We begin by providing safe access to intelligence, then integrate it into daily work, evolve it into specialized assistance, and ultimately transform your business with a new, collaborative workforce of humans and AI. The result is a more agile, efficient, and intelligent organization, where people are always at the center, supported by trustworthy AI that excels within clear, controllable boundaries.
+We begin by providing safe access to intelligence, then integrate it into daily work, evolve it into specialized assistance, and ultimately transform your business processes through intelligent orchestration that connects humans, AI agents, and your existing tools. The result is a more agile, efficient, and intelligent organization, where people remain firmly in control, supported by transparent AI that enhances rather than replaces human judgment, working seamlessly with the automation tools you already trust.
