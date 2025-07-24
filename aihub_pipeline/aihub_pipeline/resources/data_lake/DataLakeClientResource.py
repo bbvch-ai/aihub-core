@@ -1,12 +1,5 @@
-from aihub_pipeline.resources.data_lake.azure.AzureDataLakeClientResource import AzureDataLakeClientResource
+from aihub_pipeline.resources.data_lake.base.AbstractDataLakeClientResource import AbstractDataLakeClientResource
 
-
-class DataLakeClientResource(AzureDataLakeClientResource):
-    """
-    Backward compatibility alias for AzureDataLakeClientResource.
-
-    This class is deprecated. Please use AzureDataLakeClientResource directly
-    for Azure implementations, or the appropriate cloud-specific resource.
-    """
-
-    pass
+# Generic alias to the abstract base class
+# Concrete implementations should use AzureDataLakeClientResource or S3DataLakeClientResource
+DataLakeClientResource = AbstractDataLakeClientResource

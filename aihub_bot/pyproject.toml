@@ -40,9 +40,8 @@ pytest-cov = "^6.0.0"
 asgi-lifespan = "^2.1.0"
 
 [tool.poetry.dependencies.aihub_lib]
-git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.227.0"
-subdirectory = "aihub_lib"
+path = "../aihub_lib"
+develop = true
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

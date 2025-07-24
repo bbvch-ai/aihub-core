@@ -1,39 +1,32 @@
-import base64
 from urllib.parse import quote, unquote
 
-from adlfs import AzureBlobFileSystem
-from azure.storage.filedatalake import ContentSettings, FileSystemClient
+import boto3
+import s3fs
 from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 
 
-class AzureDataLakeIOManager(ConfigurableIOManager):
-    """Azure Data Lake IO Manager for loading and storing files from/to the Azure Data Lake.
+class S3DataLakeIOManager(ConfigurableIOManager):
+    """Data Lake IO Manager for loading and storing files from/to S3-compatible storage (MinIO).
 
-    This IO Manager is different from the dagster default ADLS2PickleIOManager in its intended use.
-    Use the ADLS2PickleIOManager from dagster to store ops outputs as pickles to a distinct folder
-    in the data lake that is only used by dagster. It holds in-between artifacts that are required
-    to coordinate the individual pipeline-steps.
+    This IO Manager is the AWS equivalent of the AzureDataLakeIOManager.
+    It handles loading and storing user files from/to S3 buckets.
+    This IO Manager is aware of the metadata added to S3 files and always
+    returns a DataLakeFile object, not pickled data.
 
-    Use this AzureDataLakeIOManager IO Manager to load and store user files from/to the Azure Data Lake
-    that should be forwarded through the pipelines. These objects are not pickles but rather raw files
-    that will later be processed by our own data loaders. This IO Manager is aware of the metadata
-    added to data lake files and always returns a DataLakeFile object, not pickled data.
-
-    The AzureDataLakeIOManager depends on two other resources:
-    - **AzureDataLakeClientResource**: Responsible for providing the FileSystemClient to interact with the Azure Data Lake.
-    - **AzureDataLakeFileSystemResource**: Responsible for providing the AzureBlobFileSystem to interact with the
-    Azure Data Lake.
+    The S3DataLakeIOManager depends on two other resources:
+    - **S3DataLakeClientResource**: Responsible for providing the boto3 S3 client.
+    - **S3DataLakeFileSystemResource**: Responsible for providing the S3FileSystem to interact with S3.
 
     Hence, do NOT use this IO Manager as the default io_manager with the resource key ``"io_manager"``.
     In most cases, you'll want to use it with the resource key ``"data_lake_io_manager"``.
 
     This IO Manager assumes data partitioning. It can handle two cases:
     - **partitioned asset**: The IO Manager wraps an asset that is partitioned. In this case, the IO Manager
-    will load the data lake file corresponding to the partition key.
+    will load the S3 file corresponding to the partition key.
     - **non-partitioned asset**: The IO Manager wraps an asset that is not partitioned. In this case, the IO Manager
-    assumes that the upstream asset was partitioned and will load all data lake files corresponding to all
+    assumes that the upstream asset was partitioned and will load all S3 files corresponding to all
     partition keys available to the upstream dependency.
 
     **Note**: The IO Manager currently does not handle the case in which the pipeline is not partitioned
@@ -45,17 +38,17 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
 
     .. code-block:: python
 
-        from aihub_pipeline.io.AzureDataLakeIOManager import AzureDataLakeIOManager
-        from aihub_pipeline.resources.data_lake.azure.AzureDataLakeClientResource import AzureDataLakeClientResource
-        from aihub_pipeline.resources.data_lake.azure.AzureDataLakeFileSystemResource import AzureDataLakeFileSystemResource
+        from aihub_pipeline.io.S3DataLakeIOManager import S3DataLakeIOManager
+        from aihub_pipeline.resources.data_lake.aws.S3DataLakeClientResource import S3DataLakeClientResource
+        from aihub_pipeline.resources.data_lake.aws.S3DataLakeFileSystemResource import S3DataLakeFileSystemResource
 
         from dagster import Definitions, asset
 
         @asset(partitions_def=my_partition, "io_manager_key=data_lake_io_manager")
-          def create_file_on_lake(container_name, directory_name) -> DataLakeFile:
-            # Manually create a file to be written to data lake
-            uri = f"/{container_name}/{directory_name}/my_file.txt"
-            content = b"Hello, Azure Data Lake!"
+        def create_file_on_lake(container_name, directory_name) -> DataLakeFile:
+            # Manually create a file to be written to S3
+            uri = f"s3://{container_name}/{directory_name}/my_file.txt"
+            content = b"Hello, AWS S3!"
             metadata = {"author": "John Doe"}
             return DataLakeFile.from_content(
                 uri=uri,
@@ -64,17 +57,16 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
             )
 
 
-
         @asset(partitions_def=my_partition)
         def downstream_asset(create_file_on_lake: DataLakeFile):
-            # The input asset will be loaded from the data_lake
+            # The input asset will be loaded from S3
             ...
 
-        data_lake_client = AzureDataLakeClientResource(
-            container_name="my_container",
+        data_lake_client = S3DataLakeClientResource(
+            container_name="my-bucket",
         )
-        data_lake_file_system = AzureDataLakeFileSystemResource()
-        data_lake_io_manager = AzureDataLakeIOManager(
+        data_lake_file_system = S3DataLakeFileSystemResource()
+        data_lake_io_manager = S3DataLakeIOManager(
             data_lake_client=data_lake_client,
             data_lake_file_system=data_lake_file_system,
         )
@@ -89,8 +81,8 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
         )
     """
 
-    data_lake_client: ResourceDependency[FileSystemClient]
-    data_lake_file_system: ResourceDependency[AzureBlobFileSystem]
+    data_lake_client: ResourceDependency[boto3.client]
+    data_lake_file_system: ResourceDependency[s3fs.S3FileSystem]
 
     def handle_output(self, context: OutputContext, obj: DataLakeFile | list[DataLakeFile]) -> None:
         # Check if obj is a single DataLakeFile or a list of DataLakeFiles
@@ -104,39 +96,65 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
 
         for data_lake_file in data_lake_files:
             if data_lake_file.content is None:
-                context.log.error(f"No content found for file {data_lake_file.uri}. Cannot write to data lake.")
+                context.log.error(f"No content found for file {data_lake_file.uri}. Cannot write to S3.")
                 raise ValueError(f"No content to write for file {data_lake_file.uri}.")
 
-            # Use the data_lake_file_system to write the content to the specified path
-            file_path = data_lake_file.uri.lstrip("/")  # Remove leading slash if present
-            context.log.info(f"Writing file to data lake at path: {file_path}")
+            # Parse S3 URI to get bucket and key
+            if not data_lake_file.uri.startswith("s3://"):
+                context.log.error(f"Invalid S3 URI: {data_lake_file.uri}")
+                raise ValueError(f"URI must start with 's3://': {data_lake_file.uri}")
 
-            # Write the content to the data lake
-            with self.data_lake_file_system.open(file_path, mode="wb") as f:
+            # Remove s3:// prefix and split into bucket and key
+            s3_path = data_lake_file.uri[5:]  # Remove 's3://'
+            parts = s3_path.split("/", 1)
+            if len(parts) != 2:
+                context.log.error(f"Invalid S3 URI format: {data_lake_file.uri}")
+                raise ValueError(f"Invalid S3 URI format: {data_lake_file.uri}")
+
+            bucket_name = parts[0]
+            object_key = parts[1]
+
+            context.log.info(f"Writing file to S3: s3://{bucket_name}/{object_key}")
+
+            # Write the content to S3 using s3fs
+            with self.data_lake_file_system.open(data_lake_file.uri, mode="wb") as f:
                 f.write(data_lake_file.content)
 
             # Encode metadata before setting it on the file
             encoded_metadata = self._encode_metadata(data_lake_file.metadata)
 
-            # Set metadata
-            file_path_without_org = file_path.split("/", 1)[1]  # Remove the organization from the path
-            file_client = self.data_lake_client.get_file_client(file_path_without_org)
-            file_client.set_metadata(encoded_metadata)
-
-            # Set content settings (e.g., content type and MD5 hash)
-            content_settings = ContentSettings(
-                content_type=data_lake_file.content_type,
-                content_md5=base64.b64decode(data_lake_file.hash),
+            # Set metadata and content settings using boto3 client
+            self.data_lake_client.put_object_tagging(
+                Bucket=bucket_name,
+                Key=object_key,
+                Tagging={"TagSet": [{"Key": k, "Value": v} for k, v in encoded_metadata.items()]},
             )
-            file_client.set_http_headers(content_settings=content_settings)
 
-            context.log.info(f"Successfully wrote file {data_lake_file.uri} to data lake.")
+            # Set content type if available
+            if data_lake_file.content_type:
+                self.data_lake_client.copy_object(
+                    Bucket=bucket_name,
+                    Key=object_key,
+                    CopySource={"Bucket": bucket_name, "Key": object_key},
+                    ContentType=data_lake_file.content_type,
+                    MetadataDirective="REPLACE",
+                )
+
+            context.log.info(f"Successfully wrote file {data_lake_file.uri} to S3.")
 
     def load_input(self, context: InputContext) -> DataLakeFile | list[DataLakeFile]:
         if context.has_partition_key:
             # If the context has a partition key, proceed as usual
             document_uri = context.partition_key
             context.log.info(f"Loading DataLakeFile from uri: {document_uri}")
+
+            # For S3, we need to parse the URI
+            if not document_uri.startswith("s3://"):
+                # If it's not an S3 URI, we need the bucket name
+                # This should be handled by the DataLakeFile.from_uri method or we need to get bucket from context
+                context.log.error(f"Document URI must be a full S3 URI starting with 's3://': {document_uri}")
+                raise ValueError(f"Document URI must be a full S3 URI: {document_uri}")
+
             data_lake_file = DataLakeFile.from_uri(uri=document_uri, fs_client=self.data_lake_client)
 
             # Decode metadata after retrieval
@@ -155,6 +173,10 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
                 data_lake_files = []
                 for partition_key in all_partition_keys:
                     document_uri = partition_key
+                    if not document_uri.startswith("s3://"):
+                        context.log.error(f"Document URI must be a full S3 URI starting with 's3://': {document_uri}")
+                        raise ValueError(f"Document URI must be a full S3 URI: {document_uri}")
+
                     context.log.info(f"Loading DataLakeFile from uri: {document_uri}")
                     data_lake_file = DataLakeFile.from_uri(uri=document_uri, fs_client=self.data_lake_client)
 
