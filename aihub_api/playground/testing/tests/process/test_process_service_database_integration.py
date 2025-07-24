@@ -85,7 +85,7 @@ class TestProcessServiceDatabaseIntegration:
         # Clear any existing cache
         ProcessService._clear_cache()
 
-        with patch.object(ProcessService, "discover_process_class") as mock_discover_class:
+        with patch.object(ProcessService, "_discover_process_class") as mock_discover_class:
             mock_discover_class.return_value = sample_process_class
 
             with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find_configs:
@@ -124,7 +124,7 @@ class TestProcessServiceDatabaseIntegration:
         # Clear any existing cache
         ProcessService._clear_cache()
 
-        with patch.object(ProcessService, "discover_process_class") as mock_discover_class:
+        with patch.object(ProcessService, "_discover_process_class") as mock_discover_class:
             mock_discover_class.return_value = sample_process_class
 
             with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find_configs:
@@ -171,7 +171,7 @@ class TestProcessServiceDatabaseIntegration:
         # Mock the document to have the same ID as default
         mock_process_config_document.process_id = "default_process"
 
-        with patch.object(ProcessService, "discover_process_class") as mock_discover_class:
+        with patch.object(ProcessService, "_discover_process_class") as mock_discover_class:
             mock_discover_class.return_value = sample_process_class
 
             with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find_configs:
@@ -210,7 +210,7 @@ class TestProcessServiceDatabaseIntegration:
         # Clear any existing cache
         ProcessService._clear_cache()
 
-        with patch.object(ProcessService, "discover_process_class") as mock_discover_class:
+        with patch.object(ProcessService, "_discover_process_class") as mock_discover_class:
             mock_discover_class.return_value = sample_process_class
 
             with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find_configs:
@@ -256,7 +256,7 @@ class TestProcessServiceDatabaseIntegration:
             icon="db-icon2",
         )
 
-        with patch.object(ProcessService, "discover_process_class") as mock_discover_class:
+        with patch.object(ProcessService, "_discover_process_class") as mock_discover_class:
             mock_discover_class.return_value = sample_process_class
 
             with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find_configs:
@@ -312,7 +312,7 @@ class TestProcessServiceDatabaseIntegration:
 
         mock_process_config_document.process_id = "default_process"
 
-        with patch.object(ProcessService, "discover_process_class") as mock_discover_class:
+        with patch.object(ProcessService, "_discover_process_class") as mock_discover_class:
             mock_discover_class.return_value = sample_process_class
 
             with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find_configs:
@@ -384,7 +384,7 @@ class TestProcessServiceDatabaseIntegration:
         # Clear any existing cache
         ProcessService._clear_cache()
 
-        with patch.object(ProcessService, "discover_process_class") as mock_discover_class:
+        with patch.object(ProcessService, "_discover_process_class") as mock_discover_class:
             mock_discover_class.return_value = sample_process_class
 
             with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find_configs:

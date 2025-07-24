@@ -245,7 +245,7 @@ class TestProcessServiceUnit:
     @pytest.mark.asyncio
     async def test_discover_process_instances_success(self, mock_nats, sample_process_class, sample_process_config):
         """Test discover_process_instances returns configured processes."""
-        with patch.object(ProcessService, "discover_process_classes") as mock_discover_classes:
+        with patch.object(ProcessService, "_discover_process_classes") as mock_discover_classes:
             mock_discover_classes.return_value = [sample_process_class]
 
             with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find_configs:
@@ -361,7 +361,7 @@ class TestProcessServiceUnit:
                                         DISCOVER_PROCESSES_CACHE["all_process_classes"] = processes
                                     return processes
 
-                                with patch.object(ProcessService, "discover_process_classes", patched_method):
+                                with patch.object(ProcessService, "_discover_process_classes", patched_method):
                                     result = await ProcessService._discover_process_classes(mock_nats)
 
                                     assert len(result) == 1
@@ -430,7 +430,7 @@ class TestProcessServiceUnit:
                                 GET_PROCESS_CLASS_CACHE[process_class] = mock_process_class
                                 return mock_process_class
 
-                            with patch.object(ProcessService, "discover_process_class", patched_method):
+                            with patch.object(ProcessService, "_discover_process_class", patched_method):
                                 result = await ProcessService._discover_process_class(mock_nats, "TestProcess")
 
                                 assert result.process_class == "TestProcess"
@@ -546,7 +546,7 @@ class TestProcessServiceUnit:
     @pytest.mark.asyncio
     async def test_discover_process_instances_no_results(self, mock_nats):
         """Test discover_process_instances returns empty list when no processes found."""
-        with patch.object(ProcessService, "discover_process_classes") as mock_discover_classes:
+        with patch.object(ProcessService, "_discover_process_classes") as mock_discover_classes:
             mock_discover_classes.return_value = []
 
             result = await ProcessService.discover_process_instances(mock_nats)
@@ -595,7 +595,7 @@ class TestProcessServiceUnit:
                                 # Should not cache empty results
                                 return processes
 
-                            with patch.object(ProcessService, "discover_process_classes", patched_method):
+                            with patch.object(ProcessService, "_discover_process_classes", patched_method):
                                 result = await ProcessService._discover_process_classes(mock_nats)
 
                                 assert result == []

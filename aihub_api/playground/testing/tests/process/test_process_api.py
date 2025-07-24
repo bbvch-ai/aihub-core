@@ -23,7 +23,16 @@ PROCESS_ID = "test_process_1"
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def process_api_client():
     auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
-    controller = ProcessController(auth=auth).discover_processes().get_processes().get_process()
+    controller = (
+        ProcessController(auth=auth)
+        .get_process()
+        .get_processes()
+        .discover_processes()
+        .get_process_start_forms()
+        .send_process_start_form()
+        .send_process_open_form()
+        .get_process_open_forms()
+    )
     runner = SimulatedProcessApiTestRunner(
         process_class=PROCESS_CLASS, process_id=PROCESS_ID
     ).with_simple_human_only_process_events()
