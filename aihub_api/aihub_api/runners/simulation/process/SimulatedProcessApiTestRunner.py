@@ -7,6 +7,7 @@ from aihub_lib.nats.events import (
     ProcessStartEvent,
     ProgramWorkEvent,
     WorkRequestEvent,
+    WorkEvent,
 )
 from aihub_lib.nats.events.discovery import ProcessClassDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
@@ -99,7 +100,7 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
         self.nc: NATS | None = None
         self.js: JetStreamContext | None = None
 
-        self.process_event_subscriber: JSSubscriber[WorkRequestEvent] | None = None
+        self.process_work_event_subscriber: JSSubscriber[WorkRequestEvent] | None = None
         self.js_publisher: JSPublisher | None = None
 
         self.nc_publisher: NCPublisher[ProcessInstanceDiscoveryResponseEvent] | None = None
@@ -118,9 +119,9 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
             description=LocaleString(de="Test Process Description"),
         )
 
-    async def simulate_process(self, event: ProcessEvent, topic: ProcessInstanceTopic):
+    async def simulate_process(self, event: WorkEvent, topic: ProcessInstanceTopic):
         """
-        Handler for work request events targeting this process instance. If a WorkRequestEvent arrives,
+        Handler for work events targeting this process instance. If a WorkEvent arrives,
         publish the simulated events in sequence.
 
         This simulates an process run, where after receiving a start signal, the process responds
@@ -232,14 +233,14 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
         await self.discovery_subscriber.start()
 
         self.js = self.nc.jetstream()
-        self.process_event_subscriber = ProcessJSSubscriber.for_process_instance_events(
+        self.process_work_event_subscriber = ProcessJSSubscriber.for_process_instance_work_events(
             self.nc,
             self.topic_manager,
             js=self.js,
             handler=self.simulate_process,
             queue_group="simulated-process-runner-queue-group",
         )
-        await self.process_event_subscriber.start()
+        await self.process_work_event_subscriber.start()
 
         self.js_publisher = JSPublisher(self.js)
 
@@ -256,12 +257,14 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
                     process_class=self.process_class,
                     process_id=self.process_id,
                     human_input=human_input,
+                    process_config=self.default_process_config,
                 )
             for program_input in self.program_inputs:
                 discovery_service._register_program_endpoint(
                     process_class=self.process_class,
                     process_id=self.process_id,
                     program_input=program_input,
+                    process_config=self.default_process_config,
                 )
 
     async def run(self):

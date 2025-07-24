@@ -61,7 +61,7 @@ class ProcessJSSubscriber(JSSubscriber):
         )
 
     @classmethod
-    def for_process_instance_events(
+    def for_process_instance_work_events(
         cls,
         nc: NATS,
         topic_manager: ProcessInstanceTopicManager,
@@ -70,7 +70,7 @@ class ProcessJSSubscriber(JSSubscriber):
         js: JetStreamContext | None = None,
     ):
         """Subscribe to all events within a specific process instance."""
-        subject = topic_manager.get_subject_for_everything_within_process_instance()
+        subject = topic_manager.get_subject_for_all_work_events_within_process_instance()
         stream_name, stream_subject = topic_manager.get_stream()
 
         return cls(
@@ -79,7 +79,7 @@ class ProcessJSSubscriber(JSSubscriber):
             stream_subject=stream_subject,
             stream_name=stream_name,
             queue_group=queue_group,
-            event_cls=ControlEvent,
+            event_cls=WorkEvent,
             handler=handler,
             js=js,
         )

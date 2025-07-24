@@ -85,7 +85,7 @@ class TestAgentServiceDatabaseIntegration:
         # Clear any existing cache
         AgentService._clear_cache()
 
-        with patch.object(AgentService, "discover_agent_class") as mock_discover_class:
+        with patch.object(AgentService, "_discover_agent_class") as mock_discover_class:
             mock_discover_class.return_value = sample_agent_class
 
             with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find_configs:
@@ -124,7 +124,7 @@ class TestAgentServiceDatabaseIntegration:
         # Clear any existing cache
         AgentService._clear_cache()
 
-        with patch.object(AgentService, "discover_agent_class") as mock_discover_class:
+        with patch.object(AgentService, "_discover_agent_class") as mock_discover_class:
             mock_discover_class.return_value = sample_agent_class
 
             with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find_configs:
@@ -171,7 +171,7 @@ class TestAgentServiceDatabaseIntegration:
         # Mock the document to have the same ID as default
         mock_agent_config_document.agent_id = "default_agent"
 
-        with patch.object(AgentService, "discover_agent_class") as mock_discover_class:
+        with patch.object(AgentService, "_discover_agent_class") as mock_discover_class:
             mock_discover_class.return_value = sample_agent_class
 
             with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find_configs:
@@ -210,7 +210,7 @@ class TestAgentServiceDatabaseIntegration:
         # Clear any existing cache
         AgentService._clear_cache()
 
-        with patch.object(AgentService, "discover_agent_class") as mock_discover_class:
+        with patch.object(AgentService, "_discover_agent_class") as mock_discover_class:
             mock_discover_class.return_value = sample_agent_class
 
             with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find_configs:
@@ -251,7 +251,7 @@ class TestAgentServiceDatabaseIntegration:
             icon="db-icon2",
         )
 
-        with patch.object(AgentService, "discover_agent_class") as mock_discover_class:
+        with patch.object(AgentService, "_discover_agent_class") as mock_discover_class:
             mock_discover_class.return_value = sample_agent_class
 
             with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find_configs:
@@ -307,7 +307,7 @@ class TestAgentServiceDatabaseIntegration:
 
         mock_agent_config_document.agent_id = "default_agent"
 
-        with patch.object(AgentService, "discover_agent_class") as mock_discover_class:
+        with patch.object(AgentService, "_discover_agent_class") as mock_discover_class:
             mock_discover_class.return_value = sample_agent_class
 
             with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find_configs:
@@ -379,7 +379,7 @@ class TestAgentServiceDatabaseIntegration:
         # Clear any existing cache
         AgentService._clear_cache()
 
-        with patch.object(AgentService, "discover_agent_class") as mock_discover_class:
+        with patch.object(AgentService, "_discover_agent_class") as mock_discover_class:
             mock_discover_class.return_value = sample_agent_class
 
             with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find_configs:
