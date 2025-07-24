@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Annotated
+from typing import Annotated, cast
 
 from aihub_lib.nats.events import ProcessStopEvent, WorkRequestEvent
 from aihub_lib.nats.events.work.process.ProcessWorkEvent import ProcessWorkEvent
@@ -79,9 +79,15 @@ class ProcessDelegator(AbstractEntityDelegator):
             process_walkthrough_id = str(ObjectId())
             logger.debug(f"Creating new walkthrough with ID {process_walkthrough_id}")
 
-            walkthrough_topic_manager = ProcessWalkthroughTopicManager.from_process_class_topic_manager(
-                topic_manager=self.topic_manager, process_walkthrough_id=process_walkthrough_id
-            )
+            if hasattr(self.topic_manager, "process_id"):
+                topic_manager = cast(ProcessInstanceTopicManager, self.topic_manager)
+                walkthrough_topic_manager = ProcessWalkthroughTopicManager.from_process_instance_topic_manager(
+                    topic_manager=topic_manager, process_walkthrough_id=process_walkthrough_id
+                )
+            else:
+                walkthrough_topic_manager = ProcessWalkthroughTopicManager.from_process_class_topic_manager(
+                    topic_manager=self.topic_manager, process_walkthrough_id=process_walkthrough_id
+                )
             subject = walkthrough_topic_manager.get_subject_for_work_event_in_walkthrough(
                 event_name=work_event.event_name,
                 event_id=work_event.event_id,

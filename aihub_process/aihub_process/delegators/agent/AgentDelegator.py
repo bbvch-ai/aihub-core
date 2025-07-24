@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Annotated
+from typing import Annotated, cast
 
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
@@ -14,8 +14,9 @@ from aihub_lib.nats.events import (
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
+from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
-from aihub_lib.nats.topics import AgentInstanceTopic
+from aihub_lib.nats.topics import AgentInstanceTopic, ProcessInstanceTopic
 from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent as AgentInThread
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
@@ -145,9 +146,15 @@ class AgentDelegator(AbstractEntityDelegator):
                 process_walkthrough_id = thread.process_walkthrough_id
                 logger.debug(f"Continuing existing walkthrough with ID {process_walkthrough_id}")
 
-            walkthrough_topic_manager = ProcessWalkthroughTopicManager.from_process_class_topic_manager(
-                topic_manager=self.topic_manager, process_walkthrough_id=process_walkthrough_id
-            )
+            if hasattr(self.topic_manager, "process_id"):
+                topic_manager = cast(ProcessInstanceTopicManager, self.topic_manager)
+                walkthrough_topic_manager = ProcessWalkthroughTopicManager.from_process_instance_topic_manager(
+                    topic_manager=topic_manager, process_walkthrough_id=process_walkthrough_id
+                )
+            else:
+                walkthrough_topic_manager = ProcessWalkthroughTopicManager.from_process_class_topic_manager(
+                    topic_manager=self.topic_manager, process_walkthrough_id=process_walkthrough_id
+                )
             subject = walkthrough_topic_manager.get_subject_for_work_event_in_walkthrough(
                 event_name=work_event.event_name,
                 event_id=work_event.event_id,

@@ -154,8 +154,8 @@ class AgentNCSubscriber(NCSubscriber):
         cls,
         nc: NATS,
         topic_manager: AgentInstanceTopicManager,
-        handler: Callable[[BaseEvent, AgentInstanceTopic], Awaitable[None]],
-        event: type[BaseEvent],
+        handler: Callable[[ControlEvent, AgentInstanceTopic], Awaitable[None]],
+        event: type[ControlEvent],
     ):
         """
         Creates a NCSubscriber for all agent events.
