@@ -18,11 +18,11 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=SimpleAgent,
-        agent_config=SimpleAgentConfig(
+        default_agent_config=SimpleAgentConfig(
             agent_id="simple_agent",
+            agent_class=SimpleAgent.__name__,
             name=LocaleString(en="Simple Agent"),
             description=LocaleString(en="This is a very simple agent"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
 
@@ -30,7 +30,8 @@ async def main():
         await runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
-                messages=[ChatMessage(content="Hello", role=MessageRole.USER)], user=fake_user()
+                messages=[ChatMessage(content="Hello", role=MessageRole.USER)],
+                user=fake_user(),
             ),
         )
 

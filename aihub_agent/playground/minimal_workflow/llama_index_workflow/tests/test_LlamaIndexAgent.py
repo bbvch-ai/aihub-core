@@ -20,11 +20,11 @@ scenarios("./features/llama_index_agent.feature")
 def _():
     return AgentTestRunner(
         agent_type=LlamaIndexAgent,
-        agent_config=LlamaIndexAgentConfig(
+        default_agent_config=LlamaIndexAgentConfig(
             agent_id="llama_index_agent",
+            agent_class=LlamaIndexAgent.__name__,
             name=LocaleString(en="Llama Index Agent"),
             description=LocaleString(en="This is an agent that uses a llama index llm"),
-            system_prompt=LocaleString(en="You are an agent"),
             llm=OpenaiLikeLLMConfig(
                 name="unsloth/Llama-3.2-1B-Instruct",
                 base_url="http://localhost:8182/v1",
@@ -47,7 +47,8 @@ async def _(agent_runner: AgentTestRunner, payload: str):
     async with agent_runner.test_run(delay_before_stop=5) as topic:
         await agent_runner.send_event_from_topic(
             start_event=UserMessageEvent(
-                messages=[ChatMessage(content=payload, role=MessageRole.USER)], user=fake_user()
+                messages=[ChatMessage(content=payload, role=MessageRole.USER)],
+                user=fake_user(),
             ),
             topic=topic,
         )

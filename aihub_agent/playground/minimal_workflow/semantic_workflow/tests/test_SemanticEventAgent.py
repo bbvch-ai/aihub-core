@@ -14,11 +14,11 @@ scenarios("./features/semantic_event_agent.feature")
 def _():
     return AgentTestRunner(
         agent_type=SemanticEventAgent,
-        agent_config=SemanticEventAgentConfig(
+        default_agent_config=SemanticEventAgentConfig(
             agent_id="semantic_event_agent",
+            agent_class=SemanticEventAgent.__name__,
             name=LocaleString(en="Semantic Event Agent"),
             description=LocaleString(en="This is an agent with semantic events"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
 

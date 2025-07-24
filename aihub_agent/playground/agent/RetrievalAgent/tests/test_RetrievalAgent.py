@@ -11,7 +11,7 @@ from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHost
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
-from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
+from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.logging.logger import enable_logging
 from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection
@@ -56,13 +56,9 @@ def build_retrieval_agent_config(
     """
     return RetrievalAgentConfig(
         agent_id="retrieval_agent",
+        agent_class=RetrievalAgent.__name__,
         name=LocaleString(en="Retrieval Agent"),
         description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
-        system_prompt=LocaleString(
-            en="You're an agent answering user requests. Only use the context information provided."
-        ),
-        color="#00FF00",
-        voice="",
         icon="robot",
         retrieve_step_config=RetrieveStepConfig(
             embed_model=embedding_config,
@@ -96,10 +92,10 @@ def self_hosted_agent_config(event_loop):
             truncate_text=False,
         ),
     )
-    vector_store = create_milvus_vector_store(
+    vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="retrieval_agent_development",
-        embedding_vector_dimension=768,
+        dimensions=768,
     )
     doc_store = create_mongo_document_store(document_store_name="retrieval_agent_development")
 
@@ -126,7 +122,7 @@ def _(self_hosted_agent_config):
     """
     return AgentTestRunner(
         agent_type=RetrievalAgent,
-        agent_config=self_hosted_agent_config,
+        default_agent_config=self_hosted_agent_config,
     )
 
 

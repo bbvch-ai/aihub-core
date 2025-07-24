@@ -1,5 +1,5 @@
-from .AgentDiscoveryResponseEvent import AgentDiscoveryResponseEvent
+from .AgentInstanceDiscoveryResponseEvent import AgentInstanceDiscoveryResponseEvent
 
 __all__ = [
-    "AgentDiscoveryResponseEvent",
+    "AgentInstanceDiscoveryResponseEvent",
 ]

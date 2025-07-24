@@ -3,7 +3,7 @@ from typing import Annotated, Any
 
 from pydantic import Field
 
-from aihub_api.routes.agent.dto.AgentDTO import MinimalAgentDTO
+from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
 from aihub_api.routes.thread.dto.statistics.BaseEventStatistics import BaseEventStatistics
 
 
