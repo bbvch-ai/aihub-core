@@ -16,7 +16,7 @@ from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import Agent
 from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
-from aihub_lib.nats.topics import AgentInstanceTopic, ProcessInstanceTopic
+from aihub_lib.nats.topics import AgentInstanceTopic
 from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent as AgentInThread
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
