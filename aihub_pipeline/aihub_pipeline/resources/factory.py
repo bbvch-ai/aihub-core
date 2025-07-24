@@ -13,8 +13,6 @@ from dagster_azure.adls2 import ADLS2DefaultAzureCredential, ADLS2PickleIOManage
 from aihub_pipeline.io.AzureDataLakeIOManager import AzureDataLakeIOManager
 from aihub_pipeline.io.DocStoreIOManager import DocStoreIOManager
 from aihub_pipeline.io.VectorStoreIOManager import VectorStoreIOManager
-from aihub_pipeline.resources.data_lake.DataLakeClientResource import DataLakeClientResource
-from aihub_pipeline.resources.data_lake.DataLakeFileSystemResource import DataLakeFileSystemResource
 from aihub_pipeline.resources.data_lake.DataLakeResource import DataLakeResource
 from aihub_pipeline.resources.doc_store.DocStoreResource import DocStoreResource
 from aihub_pipeline.resources.doc_store.MongoDocumentStoreResource import MongoDocumentStoreResource
@@ -27,9 +25,48 @@ from aihub_pipeline.resources.vector_store.MilvusVectorStoreResource import Milv
 def azure_data_lake_resources(
     container_name: str, directory_name: str, figures_directory_name: str
 ) -> dict[str, ConfigurableResourceFactory]:
-    data_lake_client = DataLakeClientResource(container_name=container_name)
-    data_lake_file_system = DataLakeFileSystemResource()
+    from aihub_pipeline.resources.data_lake.azure.AzureDataLakeClientResource import AzureDataLakeClientResource
+    from aihub_pipeline.resources.data_lake.azure.AzureDataLakeFileSystemResource import AzureDataLakeFileSystemResource
+
+    data_lake_client = AzureDataLakeClientResource(container_name=container_name)
+    data_lake_file_system = AzureDataLakeFileSystemResource()
     data_lake_io_manager = AzureDataLakeIOManager(
+        data_lake_client=data_lake_client,
+        data_lake_file_system=data_lake_file_system,
+    )
+    data_lake_resource = DataLakeResource(
+        container_name=container_name, directory_name=directory_name, figures_directory_name=figures_directory_name
+    )
+    return {
+        "data_lake_client": data_lake_client,
+        "data_lake_file_system": data_lake_file_system,
+        "data_lake_io_manager": data_lake_io_manager,
+        "data_lake_resource": data_lake_resource,
+    }
+
+
+def aws_data_lake_resources(
+    container_name: str, directory_name: str, figures_directory_name: str
+) -> dict[str, ConfigurableResourceFactory]:
+    from aihub_pipeline.io.S3DataLakeIOManager import S3DataLakeIOManager
+    from aihub_pipeline.resources.data_lake.aws.S3DataLakeClientResource import S3DataLakeClientResource
+    from aihub_pipeline.resources.data_lake.aws.S3DataLakeFileSystemResource import S3DataLakeFileSystemResource
+
+    # Configure for local MinIO (from milvus docker-compose)
+    data_lake_client = S3DataLakeClientResource(
+        container_name=container_name,
+        aws_access_key_id="minioadmin",
+        aws_secret_access_key="minioadmin",
+        endpoint_url="http://localhost:9000",
+        region_name="us-east-1",  # MinIO doesn't care about region, but boto3 requires it
+    )
+    data_lake_file_system = S3DataLakeFileSystemResource(
+        aws_access_key_id="minioadmin",
+        aws_secret_access_key="minioadmin",
+        endpoint_url="http://localhost:9000",
+        region_name="us-east-1",
+    )
+    data_lake_io_manager = S3DataLakeIOManager(
         data_lake_client=data_lake_client,
         data_lake_file_system=data_lake_file_system,
     )
@@ -126,6 +163,30 @@ def default_io_manager_azure_datalake_resources(
     return {
         "adls2": adls2,
         "io_manager": adls2_pickle_io_manager,
+    }
+
+
+def default_io_manager_aws_datalake_resources(
+    container_name: str, directory_name: str
+) -> dict[str, ConfigurableResourceFactory]:
+    from dagster_aws.s3 import S3PickleIOManager, S3Resource
+
+    # Configure for local MinIO (from milvus docker-compose)
+    s3_resource = S3Resource(
+        aws_access_key_id="minioadmin",
+        aws_secret_access_key="minioadmin",
+        endpoint_url="http://localhost:9000",
+        region_name="us-east-1",
+    )
+    s3_pickle_io_manager = S3PickleIOManager(
+        s3_resource=s3_resource,
+        s3_bucket=container_name,
+        s3_prefix=f".{directory_name}-dagster/",
+    )
+
+    return {
+        "s3": s3_resource,
+        "io_manager": s3_pickle_io_manager,
     }
 
 

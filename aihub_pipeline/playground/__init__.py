@@ -20,7 +20,9 @@ from aihub_pipeline.assets.factories.data_lake_to_vector_store.summary_nodes_fac
 from aihub_pipeline.executors.factory import default_process_executor
 from aihub_pipeline.jobs.factory import materialize_asset_job, observe_source_job
 from aihub_pipeline.resources.factory import (
+    aws_data_lake_resources,
     azure_data_lake_resources,
+    default_io_manager_aws_datalake_resources,
     default_io_manager_azure_datalake_resources,
     local_mongo_milvus_storage_context_resource,
 )
@@ -31,6 +33,9 @@ from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
 from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
+
+# Configuration: Change this to switch between cloud providers
+USE_AWS = False  # Set to True to use AWS S3 (MinIO), False for Azure
 
 DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
 DOCUMENT_KEY = AssetKey(["playground", "documents"])
@@ -69,12 +74,30 @@ remove_job = materialize_asset_job(
 )
 
 
+# Select resources based on configuration
+if USE_AWS:
+    default_io_manager_resources = default_io_manager_aws_datalake_resources(
+        container_name=DATALAKE_CONTAINER_NAME, directory_name=DATALAKE_DIRECTORY_NAME
+    )
+    data_lake_resources = aws_data_lake_resources(
+        container_name=DATALAKE_CONTAINER_NAME,
+        directory_name=DATALAKE_DIRECTORY_NAME,
+        figures_directory_name=FIGURES_DIRECTORY_NAME,
+    )
+else:
+    default_io_manager_resources = default_io_manager_azure_datalake_resources(
+        container_name=DATALAKE_CONTAINER_NAME, directory_name=DATALAKE_DIRECTORY_NAME
+    )
+    data_lake_resources = azure_data_lake_resources(
+        container_name=DATALAKE_CONTAINER_NAME,
+        directory_name=DATALAKE_DIRECTORY_NAME,
+        figures_directory_name=FIGURES_DIRECTORY_NAME,
+    )
+
 defs = Definitions(
     assets=assets,
     resources={
-        **default_io_manager_azure_datalake_resources(
-            container_name=DATALAKE_CONTAINER_NAME, directory_name=DATALAKE_DIRECTORY_NAME
-        ),
+        **default_io_manager_resources,
         "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
         "node_parser": MarkdownStructuralNodeParserResource(),
         "summary_parser": RecursiveSummaryParserResource(),
@@ -83,11 +106,7 @@ defs = Definitions(
             store_name=STORE_NAME,
             namespace_name=NAMESPACE_NAME,
         ),
-        **azure_data_lake_resources(
-            container_name=DATALAKE_CONTAINER_NAME,
-            directory_name=DATALAKE_DIRECTORY_NAME,
-            figures_directory_name=FIGURES_DIRECTORY_NAME,
-        ),
+        **data_lake_resources,
         "embedding_model": EmbeddingModelResource(
             embedding_config=AzureOpenAIEmbeddingConfig(
                 name="text-embedding-3-large",

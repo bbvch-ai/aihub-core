@@ -16,7 +16,7 @@ from aihub_lib.nats.events.discovery.process.ProcessDiscoveryResponseEvent impor
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from aihub_lib.nats.events.form import InputTextElement
 from aihub_lib.nats.events.process.ProcessEvent import ProcessEvent
-from aihub_lib.nats.NatsConfig import NatsConfig
+from aihub_lib.infrastructure.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
