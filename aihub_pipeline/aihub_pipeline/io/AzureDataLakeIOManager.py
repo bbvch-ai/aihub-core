@@ -2,9 +2,10 @@ import base64
 from urllib.parse import quote, unquote
 
 from adlfs import AzureBlobFileSystem
-from azure.storage.filedatalake import ContentSettings, FileSystemClient
+from azure.storage.filedatalake import ContentSettings
 from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 
+from aihub_pipeline.resources.data_lake.azure.AzureDataLakeClient import AzureDataLakeClient
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 
 
@@ -89,7 +90,7 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
         )
     """
 
-    data_lake_client: ResourceDependency[FileSystemClient]
+    data_lake_client: ResourceDependency[AzureDataLakeClient]
     data_lake_file_system: ResourceDependency[AzureBlobFileSystem]
 
     def handle_output(self, context: OutputContext, obj: DataLakeFile | list[DataLakeFile]) -> None:
@@ -120,7 +121,7 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
 
             # Set metadata
             file_path_without_org = file_path.split("/", 1)[1]  # Remove the organization from the path
-            file_client = self.data_lake_client.get_file_client(file_path_without_org)
+            file_client = self.data_lake_client.raw_client.get_file_client(file_path_without_org)
             file_client.set_metadata(encoded_metadata)
 
             # Set content settings (e.g., content type and MD5 hash)
@@ -137,7 +138,7 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
             # If the context has a partition key, proceed as usual
             document_uri = context.partition_key
             context.log.info(f"Loading DataLakeFile from uri: {document_uri}")
-            data_lake_file = DataLakeFile.from_uri(uri=document_uri, fs_client=self.data_lake_client)
+            data_lake_file = self.data_lake_client.create_data_lake_file_from_uri(document_uri)
 
             # Decode metadata after retrieval
             decoded_metadata = self._decode_metadata(data_lake_file.metadata)
@@ -156,7 +157,7 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
                 for partition_key in all_partition_keys:
                     document_uri = partition_key
                     context.log.info(f"Loading DataLakeFile from uri: {document_uri}")
-                    data_lake_file = DataLakeFile.from_uri(uri=document_uri, fs_client=self.data_lake_client)
+                    data_lake_file = self.data_lake_client.create_data_lake_file_from_uri(document_uri)
 
                     # Decode metadata after retrieval
                     decoded_metadata = self._decode_metadata(data_lake_file.metadata)

@@ -1,3 +1,6 @@
+import base64
+import os
+
 from azure.storage.filedatalake import FileSystemClient
 
 from aihub_pipeline.resources.data_lake.base.AbstractDataLakeClient import AbstractDataLakeClient
@@ -38,7 +41,7 @@ class AzureDataLakeClient(AbstractDataLakeClient):
 
             # Azure URI format: container/path
             document_uri = f"{self.container_name}/{path.name.lstrip('/')}"
-            data_lake_file = DataLakeFile.from_uri(uri=document_uri, fs_client=self._client)
+            data_lake_file = self._create_data_lake_file_from_fs_uri(document_uri)
             data_lake_files.append(data_lake_file)
 
         return data_lake_files
@@ -48,6 +51,57 @@ class AzureDataLakeClient(AbstractDataLakeClient):
         file_client = self._client.get_file_client(file_path)
         properties = file_client.get_file_properties()
         return properties.metadata if properties.metadata else {}
+
+    def create_data_lake_file_from_uri(self, uri: str) -> DataLakeFile:
+        """Create a DataLakeFile from Azure URI by fetching file properties."""
+        return self._create_data_lake_file_from_fs_uri(uri)
+
+    def _create_data_lake_file_from_fs_uri(self, uri: str) -> DataLakeFile:
+        """
+        Create a DataLakeFile instance by retrieving file properties from the Azure Data Lake using its URI.
+        Fetches the file's metadata and properties from the data lake and
+        populates the DataLakeFile instance accordingly.
+        """
+        uri_parts = uri.split("/")
+        namespace = uri_parts[1]
+        filename = uri_parts[-1]
+
+        _, extension = os.path.splitext(filename)
+        file_type = extension.lower()[1:]
+        if not file_type:
+            file_type = "unknown"
+
+        document_uri = f"{'/'.join(uri_parts[1:])}"
+        file_client = self._client.get_file_client(document_uri)
+        properties = file_client.get_file_properties()
+
+        content_settings = properties.content_settings
+        md5_hash = content_settings.content_md5
+        md5_hash_str = base64.b64encode(md5_hash).decode("utf-8") if md5_hash else None
+
+        last_modified = properties["last_modified"]
+        last_modified_timestamp = int(last_modified.timestamp())
+
+        created_timestamp = None
+        if "creation_time" in properties:
+            creation_time = properties["creation_time"]
+            created_timestamp = int(creation_time.timestamp())
+
+        meta = properties.metadata
+
+        return DataLakeFile(
+            name=filename,
+            namespace=namespace,
+            filetype=file_type,
+            uri=uri,
+            size=properties.size,
+            created=created_timestamp,
+            updated=last_modified_timestamp,
+            content_type=properties.content_settings.content_type,
+            owner=properties.owner,
+            hash=md5_hash_str,
+            metadata=meta,
+        )
 
     @property
     def raw_client(self) -> FileSystemClient:

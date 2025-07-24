@@ -97,7 +97,7 @@ defs = Definitions(
     assets=assets,
     resources={
         **default_io_manager_resources,
-        "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
+        "document_parser": DocumentParserResource(loader_type=LoaderType.DOCUMENT_INTELLIGENCE),
         "node_parser": MarkdownStructuralNodeParserResource(),
         "summary_parser": RecursiveSummaryParserResource(),
         **local_mongo_milvus_storage_context_resource(

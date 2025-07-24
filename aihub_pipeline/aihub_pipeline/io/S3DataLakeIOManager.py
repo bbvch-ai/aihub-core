@@ -1,9 +1,9 @@
 from urllib.parse import quote, unquote
 
-import boto3
 import s3fs
 from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 
+from aihub_pipeline.resources.data_lake.s3.S3DataLakeClient import S3DataLakeClient
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 
 
@@ -81,7 +81,7 @@ class S3DataLakeIOManager(ConfigurableIOManager):
         )
     """
 
-    data_lake_client: ResourceDependency[boto3.client]
+    data_lake_client: ResourceDependency[S3DataLakeClient]
     data_lake_file_system: ResourceDependency[s3fs.S3FileSystem]
 
     def handle_output(self, context: OutputContext, obj: DataLakeFile | list[DataLakeFile]) -> None:
@@ -124,7 +124,7 @@ class S3DataLakeIOManager(ConfigurableIOManager):
             encoded_metadata = self._encode_metadata(data_lake_file.metadata)
 
             # Set metadata and content settings using boto3 client
-            self.data_lake_client.put_object_tagging(
+            self.data_lake_client.raw_client.put_object_tagging(
                 Bucket=bucket_name,
                 Key=object_key,
                 Tagging={"TagSet": [{"Key": k, "Value": v} for k, v in encoded_metadata.items()]},
@@ -132,7 +132,7 @@ class S3DataLakeIOManager(ConfigurableIOManager):
 
             # Set content type if available
             if data_lake_file.content_type:
-                self.data_lake_client.copy_object(
+                self.data_lake_client.raw_client.copy_object(
                     Bucket=bucket_name,
                     Key=object_key,
                     CopySource={"Bucket": bucket_name, "Key": object_key},
@@ -155,7 +155,7 @@ class S3DataLakeIOManager(ConfigurableIOManager):
                 context.log.error(f"Document URI must be a full S3 URI starting with 's3://': {document_uri}")
                 raise ValueError(f"Document URI must be a full S3 URI: {document_uri}")
 
-            data_lake_file = DataLakeFile.from_uri(uri=document_uri, fs_client=self.data_lake_client)
+            data_lake_file = self.data_lake_client.create_data_lake_file_from_uri(document_uri)
 
             # Decode metadata after retrieval
             decoded_metadata = self._decode_metadata(data_lake_file.metadata)
@@ -178,7 +178,7 @@ class S3DataLakeIOManager(ConfigurableIOManager):
                         raise ValueError(f"Document URI must be a full S3 URI: {document_uri}")
 
                     context.log.info(f"Loading DataLakeFile from uri: {document_uri}")
-                    data_lake_file = DataLakeFile.from_uri(uri=document_uri, fs_client=self.data_lake_client)
+                    data_lake_file = self.data_lake_client.create_data_lake_file_from_uri(document_uri)
 
                     # Decode metadata after retrieval
                     decoded_metadata = self._decode_metadata(data_lake_file.metadata)
