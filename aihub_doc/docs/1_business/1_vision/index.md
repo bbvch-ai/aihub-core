@@ -31,15 +31,33 @@ Our approach ensures a gradual, low-risk adoption, moving from secure experiment
 
 ### 🔐 Tier 1: Basic Tier – Your Secure Gateway to AI
 
-It all starts with a secure foundation. This tier provides your entire company with access to advanced large language models (LLMs) like GPT through a modern, secure web interface. It’s a safe, experimental environment where your team can begin to explore the power of generative AI, all within your company's secure perimeter.
+It all starts with a secure foundation. This tier provides your entire company with access to advanced large language models (LLMs) like ChatGPT, Mistral or DeepSeek through a modern, secure web interface. It’s a safe, experimental environment where your team can begin to explore the power of generative AI, all within your company's secure perimeter.
 
 ![Swiss AI-Hub Architecture](../../../media/tier1.png)
+
+:::details What's happening in this image?
+This diagram shows the foundational setup of the Swiss AI-Hub.
+
+On the left, you see the two ways people interact with the system: the **Chat UI** is the modern web interface your employees use to talk to the AI, and the **Admin UI** is where administrators control everything behind the scenes.
+
+Both of these interfaces connect to the central **API**, which acts as a secure gateway. This API then connects to a variety of Large Language Models (LLMs) on the right. For maximum security, open-source models like *Mistral* and *DeepSeek* can be hosted directly within the Swiss AI-Hub, ensuring no data ever leaves your company's premises when using them. The hub also connects to major online services like *OpenAI* and *Gemini*, giving you a flexible range of options.
+
+Essentially, this tier provides a single, secure entry point for your entire company to start experimenting with different powerful AIs in a controlled environment.
+:::
 
 ### 🔗 Tier 2: Basic+ Tier – AI in Your Daily Workflow
 
 Next, we embed AI directly into your daily workflows. This tier extends the platform’s reach with API integrations into the collaboration tools your employees already use, such as Microsoft Teams, Slack, and email. This step makes AI a readily available resource, removing friction and increasing adoption.
 
 ![Swiss AI-Hub Architecture](../../../media/tier2.png)
+
+:::details What's happening in this image?
+This diagram illustrates how the AI-Hub moves into the tools your team already uses every day.
+
+The top and right parts of the diagram are the same as in Tier 1—you still have the **Chat UI**, **Admin UI**, the central **API**, and the connections to LLMs like *Mistral*, *OpenAI*, and *Gemini*.
+
+The key change is at the bottom. You can now see icons for *Outlook*, *Slack*, and *Teams* connecting directly to the API. This means employees no longer have to open a separate webpage to use the AI. They can get help directly within their existing workflow, for example, by mentioning an AI in a Slack channel or forwarding an email to get it spell-checked. It brings intelligence to where people already work.
+:::
 
 ### 🤖 Tier 3: Assistant Package – Specialized Expertise on Demand
 
@@ -67,7 +85,17 @@ In this scenario, each AI Assistant acts as a domain expert, providing precise, 
 
 ![Swiss AI-Hub Architecture](../../../media/tier3.png)
 
-### 🌟 Tier 4: Agentic Process Automation – Redefining How Work Gets Done {#agentic-process-automation}
+:::details What's happening in this image?
+This tier shows a major evolution from general AI access to specialized, expert assistants. Let's break it down:
+
+On the bottom-right, you see your company's data sources, represented by icons for Word documents (*Source 1*), PDFs (*Source 2*), and images (*Source 3*). This data is fed into a **Pipeline**, which uses AI (like *OpenAI*) to intelligently process it and create a central **Knowledge** base. This is how the AI learns about your specific business.
+
+In the center, the API no longer connects users directly to generic LLMs. Instead, it routes them to a new layer of **Default** and **Custom** AI Assistants. These are specialized experts (like a *Finance-Assistant* or *HR-Assistant*) that use the company's **Knowledge** base and the best-suited LLM (like *Mistral*) to provide highly relevant, context-aware answers.
+
+On the left, you can see that other programs like *VSCode* or *Salesforce* can now also interact with these assistants through **MCP** (Model Context Protocol). And, of course, users can still talk to these new, smarter assistants through the **Chat UI** or from within *Outlook*, *Slack*, and *Teams*.
+:::
+
+### 🌟 Tier 4: Agentic Process Automation – Redefining How Work Gets Done
 
 This is the most advanced tier, where we go beyond reactive assistance to fundamentally rethink your business processes. This stage introduces intelligent **Agentic Processes** that orchestrate seamless collaboration between humans, AI agents, and your existing tools.
 
@@ -82,12 +110,25 @@ Consider how a traditional HR application process is transformed through Agentic
 
 When a job application arrives via email, an existing automation tool (such as Power Automate) extracts the application and routes it into the HR system. At this point, the intelligent orchestration begins: a **Document Analysis Agent** reviews the CV and cover letter, extracting key qualifications and flagging any potential issues or inconsistencies. Next, a **Job Matching Agent** compares the candidate's profile against open positions, calculating match scores and identifying the most suitable roles.
 
-The HR employee then receives a comprehensive analysis with clear recommendations, allowing them to make an informed hiring decision quickly. Once the decision is made, a **Communication Agent** drafts a personalized response—whether an interview invitation or a polite decline—tailored to the specific candidate and position. The HR employee reviews and approves this communication before the original automation tool sends the final email.
+The HR employee then receives a comprehensive analysis with clear recommendations, allowing them to make an Tinformed hiring decision quickly. Once the decision is made, a **Communication Agent** drafts a personalized response—whether an interview invitation or a polite decline—tailored to the specific candidate and position. The HR employee reviews and approves this communication before the original automation tool sends the final email.
 
 Throughout this process, each component handles the task for which it is best suited: automation tools manage data flow, AI agents provide intelligent analysis and content generation, and the HR employee maintains complete strategic control over hiring decisions. This creates a workflow that is faster, more intelligent, and more efficient while keeping humans firmly in control of critical business decisions.
 :::
 
 ![Swiss AI-Hub Architecture](../../../media/tier4.png)
+
+:::details What's happening in this image?
+This diagram shows the most advanced tier, which focuses on orchestrating entire business processes.
+
+Much of the architecture is the same as Tier 3—you still have the knowledge pipeline, specialized assistants, and integrations. The major addition is the new orchestration layer at the top, represented by **Process 1** and its corresponding **Process 1 UI**.
+
+Think of **Process 1** as an intelligent coordinator. Instead of a user simply asking a question, they can now trigger an entire workflow. This process then intelligently delegates tasks to the most appropriate entity. As shown in the diagram, it can:
+* Assign a task to one of the **AI Assistants** for intelligent analysis.
+* Route a task to an external automation tool. On the far right, you see logos for platforms like **PA** (*Power Automate*), **n8n**, and **UI Path**, which are great for handling repetitive, algorithmic steps.
+* Prompt a **human** for a strategic decision or approval, using the standard user interfaces.
+
+This creates a seamless collaboration between humans, specialized AI agents, and your existing automation software, all orchestrated by the AI-Hub. The HR employee remains in full control, making the critical decisions with enhanced insights from the system.
+:::
 
 ## 🏗️ The Swiss AI-Hub Architecture: Built on Trust and Control
 
