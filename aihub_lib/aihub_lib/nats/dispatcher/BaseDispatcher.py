@@ -168,7 +168,13 @@ class BaseDispatcher(abc.ABC):
             logger.info("Dispatcher initialized and ready to process events")
 
     async def stop(self):
+        if not self._initialized:
+            return
+
+        # Stop the event store
         await self.event_store.stop()
+        self._initialized = False
+        logger.info("Dispatcher stopped")
 
     async def _step_meets_basic_execution_requirements(
         self,

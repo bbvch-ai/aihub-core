@@ -17,10 +17,6 @@ class AgentClassTopic(PartialAgentTopic):
     ]
     event_id: Annotated[str, Field(description="Unique identifier for this particular event instance.")]
 
-    @property
-    def execution_context_id(self) -> str:
-        return self.run_id
-
     def __str__(self) -> str:
         """Returns the full subject string for this agent topic."""
         return (

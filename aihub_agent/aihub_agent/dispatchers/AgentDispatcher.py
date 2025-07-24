@@ -126,7 +126,6 @@ class AgentDispatcher(BaseDispatcher):
 
         if event.is_stop_event:
             logger.debug(f"Handling StopEvent: {event.event_name}")
-            # Clean up run-specific data
             await run_context.delete_all()
             await self.event_store.delete_all(topic.execution_context_id)
             await self.step_store.delete_all(topic.execution_context_id)
@@ -134,11 +133,9 @@ class AgentDispatcher(BaseDispatcher):
 
         if event.is_exception_event:
             logger.debug(f"Handling ExceptionEvent: {event.event_name}")
-            # Mark run as crashed so no further steps are executed
             await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
             return
 
-        # Determine which steps need to be executed due to this event
         steps = self.agent.get_steps_waiting_for_event(type(event))
         for step_method in steps:
             logger.debug(f"Checking step '{step_method.__name__}' for readiness")

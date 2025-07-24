@@ -67,6 +67,9 @@ class JSSubscriber(AbstractSubscriber):
         """Unsubscribes from the JetStream subject, stopping the flow of messages."""
         if self.js_subscription:
             await self.js_subscription.unsubscribe()
+        logger.debug(
+            f"Unsubscribed from '{self.subject}' with {self.stream_manager} and queue group '{self.queue_group}'."
+        )
 
     async def message_handler(self, msg):
         """

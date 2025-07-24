@@ -9,12 +9,6 @@ from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
 class ProcessInstanceTopic(ProcessClassTopic):
     process_id: Annotated[str, Field(description="Unique identifier for the specific process instance.")]
 
-    @property
-    def execution_context_id(self) -> str:
-        """In the domain of processes, the processes process_walkthrough_id is the narrowest scope in which
-        a process topic is published and must be persisted."""
-        return self.process_walkthrough_id
-
     def __str__(self) -> str:
         """Returns the full subject string for this agent topic."""
         return (

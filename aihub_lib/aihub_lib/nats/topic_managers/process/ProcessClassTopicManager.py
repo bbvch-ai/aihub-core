@@ -32,16 +32,6 @@ class ProcessClassTopicManager(ProcessTopicManager, AbstractStreamTopicManager):
             event_id=event_id,
         )
 
-    def get_subject_for_everything_within_process_class(self) -> str:
-        """Returns a subject pattern for all events in this process class, regardless of process_walkthrough_id."""
-        return self.get_subject_for_specific_event_in_process_class(
-            process_id="*",
-            process_walkthrough_id="*",
-            event_type="*",
-            event_name="*",
-            event_id="*",
-        )
-
     def get_subject_for_all_work_request_events_within_process_class(self) -> str:
         """Returns a subject pattern matching all work events within this process class."""
         return self.get_subject_for_specific_event_in_process_class(
@@ -100,8 +90,18 @@ class ProcessClassTopicManager(ProcessTopicManager, AbstractStreamTopicManager):
         )
 
     def get_stream(self) -> tuple[str, str]:
-        return self._get_stream_name_for_all_events(), self.get_subject_for_all_events_in_process()
+        return self._get_stream_name_for_all_events(), self._get_subject_for_all_events_in_process_class()
 
     def _get_stream_name_for_all_events(self) -> str:
         """Returns the stream name used for all process events."""
         return f"{self.PROCESS_TOPIC}_{self.process_class}_stream"
+
+    def _get_subject_for_all_events_in_process_class(self) -> str:
+        """Returns a subject pattern matching all events from this process class."""
+        return self.get_subject_for_specific_event_in_process_class(
+            process_id="*",
+            process_walkthrough_id="*",
+            event_type="*",
+            event_name="*",
+            event_id="*",
+        )

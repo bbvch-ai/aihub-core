@@ -56,10 +56,6 @@ class ProcessDispatcher(BaseDispatcher):
 
         self.process_config_type: type[ProcessConfig] = self.default_process_config.__class__
 
-        # Initialization flag
-        self._initialized = False
-        self._init_lock = asyncio.Lock()
-
     @override
     async def handle_event(
         self,
@@ -98,7 +94,6 @@ class ProcessDispatcher(BaseDispatcher):
 
         if event.is_process_exception_event:
             logger.debug(f"Handling ProcessExceptionEvent: {event.event_name}")
-            # Mark run as crashed so no further steps are executed
             await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
             return
 

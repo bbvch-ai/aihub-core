@@ -27,10 +27,6 @@ class AgentInstanceTopic(AgentClassTopic):
 
     agent_id: Annotated[str, Field(description="Unique identifier for the specific agent instance.")]
 
-    @property
-    def execution_context_id(self) -> str:
-        return self.run_id
-
     def __str__(self) -> str:
         """Returns the full subject string for this agent topic."""
         return (

@@ -162,8 +162,20 @@ class AgentClassTopicManager(AgentTopicManager, AbstractStreamTopicManager):
         )
 
     def get_stream(self) -> tuple[str, str]:
-        return self._get_stream_name_for_all_events(), self.get_subject_for_all_events_in_agent()
+        return self._get_stream_name_for_all_events(), self._get_subject_for_all_events_in_agent_class()
 
     def _get_stream_name_for_all_events(self) -> str:
         """Returns the stream name used for all agent events."""
         return f"{self.AGENT_TOPIC}_{self.agent_class}_stream"
+
+    def _get_subject_for_all_events_in_agent_class(self) -> str:
+        """Returns the subject for all events in this agent class."""
+        return self.get_subject_for_specific_event_in_agent_class(
+            agent_id="*",
+            thread_id="*",
+            display_id="*",
+            run_id="*",
+            event_type="*",
+            event_name="*",
+            event_id="*",
+        )

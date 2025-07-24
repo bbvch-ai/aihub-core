@@ -58,27 +58,3 @@ class AgentJSSubscriber(JSSubscriber):
             handler=handler,
             js=js,
         )
-
-    @classmethod
-    def for_agent_instance_events(
-        cls,
-        nc: NATS,
-        topic_manager: AgentInstanceTopicManager,
-        handler: Callable[[BaseEvent, AgentInstanceTopic], Awaitable[None]],
-        queue_group: str,
-        js: JetStreamContext | None = None,
-    ):
-        """Subscribe to all events within a specific agent instance."""
-        subject = topic_manager.get_subject_for_everything_within_agent_instance()
-        stream_name, stream_subject = topic_manager.get_stream()
-
-        return cls(
-            nc=nc,
-            subject=subject,
-            stream_subject=stream_subject,
-            stream_name=stream_name,
-            queue_group=queue_group,
-            event_cls=ControlEvent,
-            handler=handler,
-            js=js,
-        )
