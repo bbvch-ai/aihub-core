@@ -1,40 +1,25 @@
-from azure.storage.filedatalake import FileSystemClient
 from dagster import ResourceParam, op
 
+from aihub_pipeline.resources.data_lake.base.AbstractDataLakeClient import AbstractDataLakeClient
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 
 
 def fetch_all_files_in_data_lake_no_op(
-    data_lake_client: ResourceParam[FileSystemClient],
+    data_lake_client: ResourceParam[AbstractDataLakeClient],
     data_lake_container_name: str,
     data_lake_directory_name: str,
     data_lake_figures_directory_name: str,
 ) -> list[DataLakeFile]:
-    paths = data_lake_client.get_paths(path=f"{data_lake_directory_name}/", recursive=True)
-    data_lake_files: list[DataLakeFile] = []
-
-    for path in paths:
-        if path.is_directory:
-            continue
-
-        path_parts = path.name.split("/")
-        directory_name = path_parts[0]
-
-        is_root_folder = len(path_parts) == 1
-        is_wrong_name = directory_name != data_lake_directory_name
-        is_figure_folder = data_lake_figures_directory_name in path_parts
-        if is_root_folder or is_wrong_name or is_figure_folder:
-            continue
-
-        document_uri = f"{data_lake_container_name}/{path.name.lstrip('/')}"
-        data_lake_file = DataLakeFile.from_uri(uri=document_uri, fs_client=data_lake_client)
-        data_lake_files.append(data_lake_file)
-    return data_lake_files
+    """Fetches all files using the clean AbstractDataLakeClient interface."""
+    return data_lake_client.get_all_files(
+        directory_name=data_lake_directory_name,
+        figures_directory_name=data_lake_figures_directory_name,
+    )
 
 
 @op(code_version="v1")
 def fetch_all_files_in_data_lake(
-    data_lake_client: ResourceParam[FileSystemClient],
+    data_lake_client: ResourceParam[AbstractDataLakeClient],
     data_lake_container_name: str,
     data_lake_directory_name: str,
     data_lake_figures_directory_name: str,

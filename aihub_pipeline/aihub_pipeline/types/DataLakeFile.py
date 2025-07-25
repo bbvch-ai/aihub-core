@@ -5,7 +5,6 @@ import os
 from datetime import datetime
 from typing import Annotated
 
-from azure.storage.filedatalake import FileSystemClient
 from pydantic import BaseModel, Field, computed_field
 
 from aihub_pipeline.util.id_utils import uri_to_id
@@ -36,54 +35,6 @@ class DataLakeFile(BaseModel):
     @property
     def id_(self) -> str:
         return uri_to_id(self.uri)
-
-    @staticmethod
-    def from_uri(uri: str, fs_client: FileSystemClient):
-        """
-        Create a DataLakeFile instance by retrieving file properties from the Azure Data Lake using its URI.
-        Fetches the file's metadata and properties from the data lake and
-        populates the DataLakeFile instance accordingly.
-        """
-        uri_parts = uri.split("/")
-        namespace = uri_parts[1]
-        filename = uri_parts[-1]
-
-        _, extension = os.path.splitext(filename)
-        file_type = extension.lower()[1:]
-        if not file_type:
-            file_type = "unknown"
-
-        document_uri = f"{'/'.join(uri_parts[1:])}"
-        file_client = fs_client.get_file_client(document_uri)
-        properties = file_client.get_file_properties()
-
-        content_settings = properties.content_settings
-        md5_hash = content_settings.content_md5
-        md5_hash_str = base64.b64encode(md5_hash).decode("utf-8") if md5_hash else None
-
-        last_modified = properties["last_modified"]
-        last_modified_timestamp = int(last_modified.timestamp())
-
-        created_timestamp = None
-        if "creation_time" in properties:
-            creation_time = properties["creation_time"]
-            created_timestamp = int(creation_time.timestamp())
-
-        meta = properties.metadata
-
-        return DataLakeFile(
-            name=filename,
-            namespace=namespace,
-            filetype=file_type,
-            uri=uri,
-            size=properties.size,
-            created=created_timestamp,
-            updated=last_modified_timestamp,
-            content_type=properties.content_settings.content_type,
-            owner=properties.owner,
-            hash=md5_hash_str,
-            metadata=meta,
-        )
 
     @staticmethod
     def from_content(uri: str, content: bytes, metadata: dict = None):
