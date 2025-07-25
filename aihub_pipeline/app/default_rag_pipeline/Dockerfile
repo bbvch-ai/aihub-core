@@ -94,7 +94,7 @@ RUN apt-get update && \
 RUN echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/"$USERNAME" && \
     chmod 0440 /etc/sudoers.d/"$USERNAME"
 
-ENV DAGSTER_HOME=/data_home
+ENV DAGSTER_HOME=/dagster_home
 RUN mkdir -p $DAGSTER_HOME
 
 # Set the working directory

@@ -308,7 +308,7 @@ services:
       - -w
       - /dagster_home/workspace.yaml
     volumes:
-      - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/data_home
+      - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/dagster_home
       - ./config/dagster.yaml:/dagster_home/dagster.yaml
       - ./config/workspace.yaml:/dagster_home/workspace.yaml
     environment:
@@ -323,7 +323,7 @@ services:
       - dagster-daemon
       - run
     volumes:
-      - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/data_home
+      - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/dagster_home
       - ./config/dagster.yaml:/dagster_home/dagster.yaml
       - ./config/workspace.yaml:/dagster_home/workspace.yaml
     environment:
