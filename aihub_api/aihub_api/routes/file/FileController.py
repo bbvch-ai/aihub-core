@@ -71,7 +71,9 @@ class FileController(Controller):
 
         return self
 
-    def get_anonymous_file_redirect(self, route: str = "/anonymous/redirect/{container}/{file_path:path}") -> "FileController":
+    def get_anonymous_file_redirect(
+        self, route: str = "/anonymous/redirect/{container}/{file_path:path}"
+    ) -> "FileController":
         @self.router.get(route, tags=self.tags, summary="Access file via shared link")
         async def get_anonymous_file_redirect(
             container: str,
