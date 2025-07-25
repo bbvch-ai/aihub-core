@@ -1,6 +1,9 @@
 # Build stage
 FROM python:3.11-slim AS builder
 
+ARG AGENT=llm_wrapping_agent
+
+
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     POETRY_VERSION=2.1.1 \
@@ -17,30 +20,39 @@ RUN apt-get update && \
     build-essential \
     curl \
     git \
-    make && \
+    make \
+    openssh-client && \
     curl -sSL https://install.python-poetry.org | python3 - --version ${POETRY_VERSION} && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-
 # Set the working directory
 WORKDIR /app
 
-# Copy only the dependency files first
-COPY Makefile switch_dependencies.py pyproject.toml ./
-COPY aihub_api ./aihub_api
+COPY aihub_agent/app/${AGENT} ./aihub_agent/app/${AGENT}
+COPY aihub_agent/aihub_agent ./aihub_agent/aihub_agent
+COPY aihub_agent/Makefile ./aihub_agent/Makefile
+COPY aihub_agent/poetry.lock ./aihub_agent/poetry.lock
+COPY aihub_agent/pyproject.toml ./aihub_agent/pyproject.toml
 COPY aihub_lib ./aihub_lib
+
+COPY Makefile switch_dependencies.py pyproject.toml ./
 
 RUN poetry install
 RUN make use-local-core
 RUN rm Makefile switch_dependencies.py pyproject.toml
+
+
 # Set the working directory
-WORKDIR /app/aihub_api
+WORKDIR /app/aihub_agent
 RUN poetry install
 
 
 # Runtime stage
 FROM python:3.11-slim AS runtime
+
+ARG AGENT=llm_wrapping_agent
+
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -65,14 +77,14 @@ RUN groupadd --gid "$USER_GID" "$USERNAME" && \
 # Install system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    sudo \
-    tree \
-    vim \
+    ca-certificates \
+    curl \
     iputils-ping \
     libasound2 \
     make \
-    curl \
-    ffmpeg && \
+    sudo \
+    tree \
+    vim && \
     curl -sSL https://install.python-poetry.org | python3 - --version ${POETRY_VERSION} && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -90,10 +102,8 @@ COPY --from=builder /app /app
 # Switch to non-root user
 USER $USERNAME
 
-# Expose port 8000
-EXPOSE 8000
-
-WORKDIR /app/aihub_api
+# Set the working directory
+WORKDIR /app/aihub_agent
 
 # Start the server using Makefile
-ENTRYPOINT ["make", "run-prod"]
+ENTRYPOINT ["poetry", "run", "python", "-m", "app.$AGENT.main"]
