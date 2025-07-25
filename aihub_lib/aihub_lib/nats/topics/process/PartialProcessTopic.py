@@ -16,14 +16,6 @@ class PartialProcessTopic(Topic):
     or all events from a particular process class—without knowing the exact process_id, thread_id, or event_id.
     PartialProcessTopic captures this scenario, making it explicit which parts of the topic are defined
     and which remain open (None).
-
-    ### Use Cases
-    - **Generic Monitoring:** You might subscribe to `process.myclass.*.*.*.*.display_event.*.*` to monitor
-      all display events for a given process class, regardless of the specific process instance or thread.
-      The resulting PartialProcessTopic shows which filters have been fixed and which are open.
-    - **Routing Decisions:** If a system receives a message on a wildcard topic, it can inspect this
-      PartialProcessTopic to decide dynamically which handler to invoke based on known fields, leaving
-      unknowns as flexible conditions.
     """
 
     process_class: Annotated[str | None, Field(description="Process class or None if unspecified.")] = None
