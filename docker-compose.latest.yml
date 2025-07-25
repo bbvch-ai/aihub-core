@@ -19,13 +19,6 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
-      MINIO_IDENTITY_OPENID_CONFIG_URL: ${OPENID_PROVIDER_URL}
-      MINIO_IDENTITY_OPENID_CLIENT_ID: ${OAUTH_CLIENT_ID}
-      MINIO_IDENTITY_OPENID_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
-      MINIO_IDENTITY_OPENID_CLAIM_NAME: ${OAUTH_CLIENT_ID_CLAIM_NAME}
-      MINIO_IDENTITY_OPENID_CLAIM_PREFIX: "group:"
-      MINIO_IDENTITY_OPENID_REDIRECT_URI: "https://datalake.${DOMAIN}/oauth_callback"
-      MINIO_IDENTITY_OPENID_COMMENT: "Login with Azure"
     ports:
       - "9001:9001"
       - "9000:9000"
@@ -47,18 +40,6 @@ services:
       - "traefik.http.services.minio.loadbalancer.server.port=9001"
       - "traefik.http.routers.minio.middlewares=security-headers@file"
 
-  minio-init:
-    image: minio/mc:latest
-    depends_on:
-      minio:
-        condition: service_healthy
-    environment:
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-    entrypoint: [ "/bin/sh", "/init/init-minio-policies.sh" ]
-    volumes:
-      - ./configs/minio/oicd-policy.json:/policies/oicd-policy.json:ro
-      - ./configs/minio/init-minio-policies.sh:/init/init-minio-policies.sh:ro
   # </editor-fold>
 
   # === Milvus Stack ===
