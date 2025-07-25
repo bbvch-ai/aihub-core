@@ -97,7 +97,6 @@ def combine_nodes_in_order(
             if n.content_type == NODE_CONTENT_TYPE_FIGURE:
                 image_path = content.split("](")[-1][:-1]
 
-                # Handle different URI formats (Azure vs S3)
                 if image_path.startswith("s3://"):
                     # S3 URI format: s3://bucket/path
                     uri_parts = image_path[5:].split("/", 1)  # Remove 's3://' prefix

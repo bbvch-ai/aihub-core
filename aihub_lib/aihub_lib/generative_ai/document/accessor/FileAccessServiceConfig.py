@@ -20,7 +20,7 @@ class FileAccessServiceConfig(BaseSettings):
     This allows utility functions in aihub_lib to access the configured service.
     """
 
-    STORAGE_BACKEND: Literal["azure", "s3", "minio"] = Field(default="azure", description="Storage backend to use")
+    STORAGE_BACKEND: Literal["azure", "s3", "minio"] = Field(default="minio", description="Storage backend to use")
 
     model_config = SettingsConfigDict(
         env_file=".env",

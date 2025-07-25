@@ -44,7 +44,6 @@ def fetch_data_lake_files_without_excluded_uris(
 
     excluded_uris_set = set(excluded_uris)
 
-    # Use the abstracted get_all_files method
     all_files = data_lake_client.get_all_files(
         directory_name=data_lake_directory_name, figures_directory_name=figures_directory
     )

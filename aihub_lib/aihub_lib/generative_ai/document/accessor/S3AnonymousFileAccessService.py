@@ -42,6 +42,4 @@ class S3AnonymousFileAccessService(AbstractAnonymousFileAccessService):
         Gets the URL signing secret for S3/MinIO.
         Uses the SECRET_KEY from S3Config as the signing secret.
         """
-        # For S3/MinIO, we'll use the secret access key as the signing secret
-        # In production, you might want to use a separate dedicated secret
         return self._s3_config.SECRET_KEY
