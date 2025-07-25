@@ -116,9 +116,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_MULTIPLE_DATABASES: openwebui,phoenix
-    ports:
-      - "5432:5432"
+      POSTGRES_MULTIPLE_DATABASES: openwebui,phoenix,dagster
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/postgres-data:/var/lib/postgresql/data
       - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
@@ -279,9 +277,60 @@ services:
       - "traefik.http.routers.phoenix.entrypoints=websecure"
       - "traefik.http.routers.phoenix.tls.certresolver=letsencrypt"
       - "traefik.http.services.phoenix.loadbalancer.server.port=6006"
-      - "traefik.http.middlewares.strip-phoenix.stripprefix.prefixes=/phoenix"
-      - "traefik.http.routers.phoenix.middlewares=security-headers@file,strip-phoenix"
+      - "traefik.http.routers.phoenix.middlewares=security-headers@file"
   # </editor-fold">
+
+  # === Dagster Stack ===
+
+  oauth2proxy:
+    image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
+    environment:
+      OAUTH2_PROXY_HTTP_ADDRESS: "0.0.0.0:4180"
+      OAUTH2_PROXY_COOKIE_SECURE: false
+      OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
+      OAUTH2_PROXY_UPSTREAMS: http://dagster-service:8000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.phoenix.rule=Host(`dagster.${DOMAIN}`)"
+      - "traefik.http.routers.phoenix.entrypoints=websecure"
+      - "traefik.http.routers.phoenix.tls.certresolver=letsencrypt"
+      - "traefik.http.services.phoenix.loadbalancer.server.port=4180"
+      - "traefik.http.routers.phoenix.middlewares=security-headers@file"
+
+  dagster-webserver:
+    image: ghcr.io/bbvch-ai/aihub-core/dagster:latest
+    entrypoint:
+      - dagster-webserver
+      - -h
+      - 0.0.0.0
+      - -p
+      - '3000'
+      - -w
+      - /dagster_home/workspace.yaml
+    volumes:
+      - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/data_home
+      - ./config/dagster.yaml:/dagster_home/dagster.yaml
+      - ./config/workspace.yaml:/dagster_home/workspace.yaml
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+  dagster-daemon:
+    image: ghcr.io/bbvch-ai/aihub-core/dagster:latest
+    entrypoint:
+      - dagster-daemon
+      - run
+    volumes:
+      - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/data_home
+      - ./config/dagster.yaml:/dagster_home/dagster.yaml
+      - ./config/workspace.yaml:/dagster_home/workspace.yaml
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
   # === Nats & Redis Stack ===
   # <editor-fold desc="NATS & Redis Stack">

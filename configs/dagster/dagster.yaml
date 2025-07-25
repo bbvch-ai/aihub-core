@@ -1,14 +1,40 @@
-storage:
-  postgres:
+run_storage:
+  module: dagster_postgres.run_storage
+  class: PostgresRunStorage
+  config:
     postgres_db:
+      hostname: "postgres"
       username:
-        env: DAGSTER_PG_USERNAME
+        env: POSTGRES_USER
       password:
-        env: DAGSTER_PG_PASSWORD
-      hostname:
-        env: DAGSTER_PG_HOST
-      db_name:
-        env: DAGSTER_PG_DB
+        env: POSTGRES_PASSWORD
+      db_name: dagster
+      port: 5432
+
+event_log_storage:
+  module: dagster_postgres.event_log
+  class: PostgresEventLogStorage
+  config:
+    postgres_db:
+      hostname: "postgres"
+      username:
+        env: POSTGRES_USER
+      password:
+        env: POSTGRES_PASSWORD
+      db_name: dagster
+      port: 5432
+
+schedule_storage:
+  module: dagster_postgres.schedule_storage
+  class: PostgresScheduleStorage
+  config:
+    postgres_db:
+      hostname: "postgres"
+      username:
+        env: POSTGRES_USER
+      password:
+        env: POSTGRES_PASSWORD
+      db_name: dagster
       port: 5432
 
 compute_logs:
@@ -23,7 +49,7 @@ run_coordinator:
   module: dagster.core.run_coordinator
   class: QueuedRunCoordinator
   config:
-    max_concurrent_runs: 3
+    max_concurrent_runs: 10
 
 telemetry:
   enabled: false
