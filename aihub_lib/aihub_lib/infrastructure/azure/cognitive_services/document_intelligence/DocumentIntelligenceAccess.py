@@ -46,7 +46,7 @@ class DocumentIntelligenceAccess(CognitiveServiceAccess):
         self._di_endpoint = account.properties.endpoint
 
         keys = self._client.accounts.list_keys(self._resource_group_name, self._di_service_name)
-        self._primary_admin_key = keys.primary_key
+        self._primary_admin_key = keys.key1
 
         self.di_client = DocumentIntelligenceClient(
             endpoint=account.properties.endpoint,
