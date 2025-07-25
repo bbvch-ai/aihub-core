@@ -52,6 +52,7 @@ RUN poetry install
 FROM python:3.11-slim AS runtime
 
 ARG AGENT=llm_wrapping_agent
+ENV AGENT_NAME=${AGENT}
 
 
 # Set environment variables
@@ -106,4 +107,4 @@ USER $USERNAME
 WORKDIR /app/aihub_agent
 
 # Start the server using Makefile
-ENTRYPOINT exec poetry run python -m app.$AGENT.main
+ENTRYPOINT exec poetry run python -m app.$AGENT_NAME.main
