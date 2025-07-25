@@ -1,7 +1,5 @@
 import asyncio
-import time
 from asyncio import sleep
-from typing import Any
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
@@ -387,17 +385,14 @@ class AgentService:
         """
         Sends a start event to a specific agent and waits for a response.
         """
-        json_data: dict[str, Any] = {
-            "event_id": str(ObjectId()),
-            "created_at": time.time_ns(),
-            "user": user,
-            **raw_event_data,
-            "locale": t.locale,
-            "_parent_event_names": start_event_parents,
-            "_event_name": start_event_name,
-            "agent_config": agent_config.model_dump(),
-        }
-        event: StartEvent = StartEvent.deserialize_event(json_data)
+        event: StartEvent = StartEvent.from_raw_data(
+            raw_event_data=raw_event_data,
+            user=user,
+            start_event_name=start_event_name,
+            start_event_parents=start_event_parents,
+            agent_config=agent_config,
+            t=t,
+        )
 
         return await AgentService._send_event(
             nc,

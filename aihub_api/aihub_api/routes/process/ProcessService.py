@@ -402,15 +402,9 @@ class ProcessService:
         if not human_in:
             raise ValueError(f"No human input found for route {route} and method {method}")
 
-        json_data: dict[str, Any] = {
-            "event_id": str(ObjectId()),
-            "created_at": time.time_ns(),
-            **raw_event_data,
-            "_parent_event_names": human_in.event_specs.event_parents,
-            "_event_name": human_in.event_specs.event_name,
-            "process_config": process_config.model_dump(),
-        }
-        event: ProcessStartEvent = ProcessStartEvent.deserialize_event(json_data)
+        event: ProcessStartEvent = ProcessStartEvent.from_raw_data(
+            raw_event_data=raw_event_data, human_in=human_in, process_config=process_config
+        )
 
         external_event: ExternalProcessEvent = await ProcessService._send_event(
             external_process_event_distributor,
