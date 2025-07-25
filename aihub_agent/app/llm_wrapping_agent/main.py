@@ -28,7 +28,7 @@ async def main():
             llm=AzureOpenAILLMConfig(
                 name=settings.MODEL_NAME,
                 base_url=settings.MODEL_SUI_URL,
-                api_key=settings.MODEL_API_KEY,
+                api_key=settings.MODEL_SUI_API_KEY,
                 api_version="2024-12-01-preview",
                 prompt_tokens_costs_per_thousand=0.0045,
                 completion_tokens_costs_per_thousand=0.0133,
