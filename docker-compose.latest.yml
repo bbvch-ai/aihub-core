@@ -32,6 +32,13 @@ services:
       options:
         max-size: "10m"
         max-file: "2"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.minio.rule=Host(`datalake.${DOMAIN}`)"
+      - "traefik.http.routers.minio.entrypoints=websecure"
+      - "traefik.http.routers.minio.tls.certresolver=letsencrypt"
+      - "traefik.http.services.minio.loadbalancer.server.port=9001"
+      - "traefik.http.routers.minio.middlewares=security-headers@file"
   # </editor-fold>
 
   # === Milvus Stack ===
