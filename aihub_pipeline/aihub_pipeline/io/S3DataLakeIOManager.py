@@ -39,8 +39,8 @@ class S3DataLakeIOManager(ConfigurableIOManager):
     .. code-block:: python
 
         from aihub_pipeline.io.S3DataLakeIOManager import S3DataLakeIOManager
-        from aihub_pipeline.resources.data_lake.aws.S3DataLakeClientResource import S3DataLakeClientResource
-        from aihub_pipeline.resources.data_lake.aws.S3DataLakeFileSystemResource import S3DataLakeFileSystemResource
+        from aihub_pipeline.resources.data_lake.s3.S3DataLakeClientResource import S3DataLakeClientResource
+        from aihub_pipeline.resources.data_lake.s3.S3DataLakeFileSystemResource import S3DataLakeFileSystemResource
 
         from dagster import Definitions, asset
 
@@ -146,22 +146,7 @@ class S3DataLakeIOManager(ConfigurableIOManager):
         if context.has_partition_key:
             # If the context has a partition key, proceed as usual
             document_uri = context.partition_key
-            context.log.info(f"Loading DataLakeFile from uri: {document_uri}")
-
-            # For S3, we need to parse the URI
-            if not document_uri.startswith("s3://"):
-                # If it's not an S3 URI, we need the bucket name
-                # This should be handled by the DataLakeFile.from_uri method or we need to get bucket from context
-                context.log.error(f"Document URI must be a full S3 URI starting with 's3://': {document_uri}")
-                raise ValueError(f"Document URI must be a full S3 URI: {document_uri}")
-
-            data_lake_file = self.data_lake_client.create_data_lake_file_from_uri(document_uri)
-
-            # Decode metadata after retrieval
-            decoded_metadata = self._decode_metadata(data_lake_file.metadata)
-            data_lake_file.metadata = decoded_metadata
-
-            return data_lake_file
+            return self._load_data_lake_file_from_uri(context, document_uri)
         else:
             # No partition key, load all partitions
             upstream_output = context.upstream_output
@@ -172,23 +157,30 @@ class S3DataLakeIOManager(ConfigurableIOManager):
                 all_partition_keys = partitions_def.get_partition_keys(dynamic_partitions_store=context.instance)
                 data_lake_files = []
                 for partition_key in all_partition_keys:
-                    document_uri = partition_key
-                    if not document_uri.startswith("s3://"):
-                        context.log.error(f"Document URI must be a full S3 URI starting with 's3://': {document_uri}")
-                        raise ValueError(f"Document URI must be a full S3 URI: {document_uri}")
-
-                    context.log.info(f"Loading DataLakeFile from uri: {document_uri}")
-                    data_lake_file = self.data_lake_client.create_data_lake_file_from_uri(document_uri)
-
-                    # Decode metadata after retrieval
-                    decoded_metadata = self._decode_metadata(data_lake_file.metadata)
-                    data_lake_file.metadata = decoded_metadata
-
+                    data_lake_file = self._load_data_lake_file_from_uri(context, partition_key)
                     data_lake_files.append(data_lake_file)
                 return data_lake_files  # Return the list or process it as needed
             else:
                 context.log.error("No partition definition found for the upstream asset.")
                 raise ValueError("Cannot load data without partition information.")
+
+    def _load_data_lake_file_from_uri(self, context: InputContext, document_uri: str) -> DataLakeFile:
+        context.log.info(f"Loading DataLakeFile from uri: {document_uri}")
+
+        # For S3, we need to parse the URI
+        if not document_uri.startswith("s3://"):
+            # If it's not an S3 URI, we need the bucket name
+            # This should be handled by the DataLakeFile.from_uri method or we need to get bucket from context
+            context.log.error(f"Document URI must be a full S3 URI starting with 's3://': {document_uri}")
+            raise ValueError(f"Document URI must be a full S3 URI: {document_uri}")
+
+        data_lake_file = self.data_lake_client.create_data_lake_file_from_uri(document_uri)
+
+        # Decode metadata after retrieval
+        decoded_metadata = self._decode_metadata(data_lake_file.metadata)
+        data_lake_file.metadata = decoded_metadata
+
+        return data_lake_file
 
     @staticmethod
     def _encode_metadata(metadata: dict) -> dict:

@@ -11,7 +11,7 @@ from typing import Any
 import nats
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.nats.NatsConfig import NatsConfig
-from aihub_lib.infrastructure.redis import RedisConfig
+from aihub_lib.infrastructure.redis.RedisConfig import RedisConfig
 from aihub_lib.nats.events import BaseEvent, StartEvent, StopEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber

@@ -6,7 +6,7 @@ from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfi
 )
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.nats.NatsConfig import NatsConfig
-from aihub_lib.infrastructure.redis import RedisConfig
+from aihub_lib.infrastructure.redis.RedisConfig import RedisConfig
 from aihub_lib.testing.logging.logger import enable_logging
 
 from aihub_agent.runners.MultiprocessAgentRunner import MultiprocessAgentRunner

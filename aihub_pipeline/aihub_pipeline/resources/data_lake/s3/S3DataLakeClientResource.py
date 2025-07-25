@@ -26,7 +26,7 @@ class S3DataLakeClientResource(AbstractDataLakeClientResource[S3DataLakeClient])
 
     .. code-block:: python
 
-        from aihub_pipeline.resources.data_lake.aws.S3DataLakeClientResource import S3DataLakeClientResource
+        from aihub_pipeline.resources.data_lake.s3.S3DataLakeClientResource import S3DataLakeClientResource
 
         from dagster import Definitions, asset
 
@@ -52,8 +52,8 @@ class S3DataLakeClientResource(AbstractDataLakeClientResource[S3DataLakeClient])
     .. code-block:: python
 
         from aihub_pipeline.io.S3DataLakeIOManager import S3DataLakeIOManager
-        from aihub_pipeline.resources.data_lake.aws.S3DataLakeClientResource import S3DataLakeClientResource
-        from aihub_pipeline.resources.data_lake.aws.S3DataLakeFileSystemResource import S3DataLakeFileSystemResource
+        from aihub_pipeline.resources.data_lake.s3.S3DataLakeClientResource import S3DataLakeClientResource
+        from aihub_pipeline.resources.data_lake.s3.S3DataLakeFileSystemResource import S3DataLakeFileSystemResource
 
         from dagster import Definitions, asset
 
