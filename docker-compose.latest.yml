@@ -14,11 +14,11 @@ services:
   # === MinIO Stack (self-hosted S3-compatible) ===
   # <editor-fold desc="Minio Stack">
   minio:
-    image: ghcr.io/bbvch-ai/aihub-core/minio:release.2023-03-20t20-16-18z
+    image: ghcr.io/bbvch-ai/aihub-core/minio:release.2025-05-24t17-08-30z
     restart: always
     environment:
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
       MINIO_IDENTITY_OPENID_CONFIG_URL: ${OPENID_PROVIDER_URL}
       MINIO_IDENTITY_OPENID_CLIENT_ID: ${OAUTH_CLIENT_ID}
       MINIO_IDENTITY_OPENID_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
