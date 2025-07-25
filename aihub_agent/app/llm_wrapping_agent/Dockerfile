@@ -106,4 +106,4 @@ USER $USERNAME
 WORKDIR /app/aihub_agent
 
 # Start the server using Makefile
-ENTRYPOINT ["poetry", "run", "python", "-m", "app.$AGENT.main"]
+ENTRYPOINT exec poetry run python -m app.$AGENT.main
