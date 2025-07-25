@@ -118,7 +118,7 @@ class S3DataLakeClient(AbstractDataLakeClient):
         handling content type detection, hash conversion, and timestamp processing.
         """
         uri_parts = document_uri.split("/")
-        namespace = uri_parts[2]  # s3://bucket/namespace/...
+        namespace = uri_parts[3]  # s3://bucket/namespace/...
         filename = key.split("/")[-1]
 
         _, extension = os.path.splitext(filename)
