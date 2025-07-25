@@ -9,17 +9,7 @@ class AbstractAnonymousFileAccessService(ABC):
 
     @abstractmethod
     def generate_sas_url(self, container: str, file_path: str, lifetime_hours: int = 24) -> str:
-        """
-        Generates a temporary read-only URL for accessing a specific file.
-
-        Args:
-            container: Container/bucket name where the file is stored
-            file_path: Path to the file within the container
-            lifetime_hours: How long the URL should remain valid (default: 24 hours)
-
-        Returns:
-            A temporary URL that provides read-only access to the file
-        """
+        """Generates a temporary read-only URL for accessing a specific file."""
         pass
 
     @abstractmethod
@@ -27,8 +17,5 @@ class AbstractAnonymousFileAccessService(ABC):
         """
         Gets the secret key used for signing internal URLs.
         This is used for creating the HMAC signature in FileService.
-
-        Returns:
-            The secret key for URL signing
         """
         pass

@@ -27,13 +27,6 @@ class ResourceNamer(BaseModel):
         """
         Generate a standardized resource name following the pattern:
         {project_name}-{resource_type}-{location_short}[-{suffix}]
-
-        Args:
-            resource_type: The type of resource (e.g., 'cosmos', 'app-service')
-            suffix: Optional suffix to append to the name
-
-        Returns:
-            Formatted resource name
         """
         name_parts = [self.project_name, resource_type, self.location_short]
         if suffix:

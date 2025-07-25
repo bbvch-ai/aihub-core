@@ -25,17 +25,7 @@ class S3AnonymousFileAccessService(AbstractAnonymousFileAccessService):
         )
 
     def generate_sas_url(self, container: str, file_path: str, lifetime_hours: int = 24) -> str:
-        """
-        Generates a presigned URL for temporary read-only access to an S3 object.
-
-        Args:
-            container: S3 bucket name
-            file_path: Path to the object within the bucket
-            lifetime_hours: How long the URL should remain valid (default: 24 hours)
-
-        Returns:
-            A presigned URL that provides read-only access to the object
-        """
+        """Generates a presigned URL for temporary read-only access to an S3 object."""
         try:
             # Generate presigned URL for GET operation
             presigned_url = self._s3_client.generate_presigned_url(

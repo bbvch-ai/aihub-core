@@ -19,73 +19,30 @@ class AbstractDataLakeClient(ABC):
         directory_name: str,
         figures_directory_name: str,
     ) -> list[DataLakeFile]:
-        """
-        Get all files in the specified directory, excluding figures directory.
-
-        Args:
-            directory_name: The directory to search in
-            figures_directory_name: Directory name to exclude from results
-
-        Returns:
-            List of DataLakeFile objects
-        """
+        """Get all files in the specified directory, excluding figures directory."""
         pass
 
     @abstractmethod
     def get_file_metadata(self, file_path: str) -> dict:
-        """
-        Get metadata for a specific file.
-
-        Args:
-            file_path: Path to the file
-
-        Returns:
-            Dictionary of metadata
-        """
+        """Get metadata for a specific file."""
         pass
 
     @abstractmethod
     def directory_exists(self, directory_path: str) -> bool:
-        """
-        Check if a directory exists.
-
-        Args:
-            directory_path: Path to the directory
-
-        Returns:
-            True if directory exists, False otherwise
-        """
+        """Check if a directory exists."""
         pass
 
     @abstractmethod
     def list_directory_contents(self, directory_path: str) -> list[str]:
-        """
-        List contents of a directory.
-
-        Args:
-            directory_path: Path to the directory
-
-        Returns:
-            List of file/directory paths
-        """
+        """List contents of a directory."""
         pass
 
     @abstractmethod
     def delete_file(self, file_path: str) -> None:
-        """
-        Delete a file.
-
-        Args:
-            file_path: Path to the file to delete
-        """
+        """Delete a file."""
         pass
 
     @abstractmethod
     def delete_directory(self, directory_path: str) -> None:
-        """
-        Delete a directory and all its contents.
-
-        Args:
-            directory_path: Path to the directory to delete
-        """
+        """Delete a directory and all its contents."""
         pass
