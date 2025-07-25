@@ -1,0 +1,19 @@
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": [
+          "group:DataLakeAdmin"
+        ]
+      },
+      "Action": [
+        "s3:*"
+      ],
+      "Resource": [
+        "arn:aws:s3:::*"
+      ]
+    }
+  ]
+}
