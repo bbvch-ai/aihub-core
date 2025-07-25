@@ -6,6 +6,8 @@ from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfi
     AzureOpenAIParameter,
 )
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.RedisConfig import RedisConfig
+from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.testing.logging.logger import enable_logging
 
 from aihub_agent.agents.LLMWrappingAgent.LLMWrappingAgent import LLMWrappingAgent
@@ -17,7 +19,9 @@ enable_logging()
 
 async def main():
     settings = LLMWrappingAgentSettings()
-
+    redis = RedisConfig()
+    nats = NatsConfig().NATS_ENDPOINT
+    servers_list = [nats]
     runner = AgentRunner(
         agent_type=LLMWrappingAgent,
         default_agent_config=LLMWrappingAgentConfig(
@@ -35,6 +39,8 @@ async def main():
                 default_parameter=AzureOpenAIParameter(temperature=0.0),
             ),
         ),
+        redis_url=redis.REDIS_URL,
+        servers=servers_list,
     )
 
     await runner.run_forever()
