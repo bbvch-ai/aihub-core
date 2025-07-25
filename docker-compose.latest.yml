@@ -25,7 +25,7 @@ services:
       MINIO_IDENTITY_OPENID_CLAIM_NAME: ${OAUTH_CLIENT_ID_CLAIM_NAME}
       MINIO_IDENTITY_OPENID_CLAIM_PREFIX: "group:"
       MINIO_IDENTITY_OPENID_REDIRECT_URI: "https://datalake.${DOMAIN}/oauth_callback"
-
+      MINIO_IDENTITY_OPENID_COMMENT: "Login with Azure"
     ports:
       - "9001:9001"
       - "9000:9000"
