@@ -1,18 +1,23 @@
 import abc
+import logging
 from collections.abc import Awaitable, Callable
-from typing import Annotated
+from typing import Annotated, cast
 
 from aihub_lib.nats.events import BaseEvent, WorkEvent, WorkRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.subscribers.process.ProcessJSSubscriber import ProcessJSSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
+from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
+from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
+
+logger = logging.getLogger(__name__)
 
 
 class AbstractEntityDelegator(abc.ABC):
@@ -110,3 +115,24 @@ class AbstractEntityDelegator(abc.ABC):
         Note that you must usually filter by class to ensure you only process events that match the entity type.
         """
         pass
+
+    async def _publish_work_event(
+        self,
+        work_event: WorkEvent,
+        process_walkthrough_id: str,
+    ) -> None:
+        if hasattr(self.topic_manager, "process_id"):
+            topic_manager = cast(ProcessInstanceTopicManager, self.topic_manager)
+            walkthrough_topic_manager = ProcessWalkthroughTopicManager.from_process_instance_topic_manager(
+                topic_manager=topic_manager, process_walkthrough_id=process_walkthrough_id
+            )
+        else:
+            walkthrough_topic_manager = ProcessWalkthroughTopicManager.from_process_class_topic_manager(
+                topic_manager=self.topic_manager, process_walkthrough_id=process_walkthrough_id
+            )
+        subject = walkthrough_topic_manager.get_subject_for_work_event_in_walkthrough(
+            event_name=work_event.event_name,
+            event_id=work_event.event_id,
+        )
+        logger.debug(f"Publishing work {work_event} to subject '{subject}'")
+        await self.js_publisher.publish_event(work_event, subject)

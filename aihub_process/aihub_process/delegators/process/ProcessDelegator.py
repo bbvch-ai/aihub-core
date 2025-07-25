@@ -1,12 +1,11 @@
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Annotated, cast
+from typing import Annotated
 
-from aihub_lib.nats.events import ProcessStopEvent, WorkRequestEvent
+from aihub_lib.nats.events import ProcessStopEvent, WorkEvent, WorkRequestEvent
 from aihub_lib.nats.events.work.process.ProcessWorkEvent import ProcessWorkEvent
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
-from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
 from aihub_lib.nats.topics import ProcessInstanceTopic
 from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
 from bson import ObjectId
@@ -75,25 +74,14 @@ class ProcessDelegator(AbstractEntityDelegator):
             topic: Annotated[ProcessInstanceTopic, "The parsed topic of the event."],
         ):
             logger.debug(f"Handling process stop event: {event.event_name}")
-            work_event = work_event_type(process_stop_event=event)
+            work_event: WorkEvent = work_event_type(process_stop_event=event)
             process_walkthrough_id = str(ObjectId())
             logger.debug(f"Creating new walkthrough with ID {process_walkthrough_id}")
 
-            if hasattr(self.topic_manager, "process_id"):
-                topic_manager = cast(ProcessInstanceTopicManager, self.topic_manager)
-                walkthrough_topic_manager = ProcessWalkthroughTopicManager.from_process_instance_topic_manager(
-                    topic_manager=topic_manager, process_walkthrough_id=process_walkthrough_id
-                )
-            else:
-                walkthrough_topic_manager = ProcessWalkthroughTopicManager.from_process_class_topic_manager(
-                    topic_manager=self.topic_manager, process_walkthrough_id=process_walkthrough_id
-                )
-            subject = walkthrough_topic_manager.get_subject_for_work_event_in_walkthrough(
-                event_name=work_event.event_name,
-                event_id=work_event.event_id,
+            await self._publish_work_event(
+                work_event=work_event,
+                process_walkthrough_id=process_walkthrough_id,
             )
-            logger.debug(f"Publishing work {work_event} to subject '{subject}'")
-            await self.js_publisher.publish_event(work_event, subject)
 
         return _handle_process_step_input
 
