@@ -26,7 +26,7 @@ class FileController(Controller):
     def __init__(self, *, auth: AuthHandler, route: str = "/file", additionally_required_permission: str | None = None):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
-    def get_file_url(self, route: str = "/logged-in/url/{container}/{file_path:path}"):
+    def get_file_url(self, route: str = "/logged-in/url/{container}/{file_path:path}") -> "FileController":
         @self.router.get(route, tags=self.tags, summary="Get signed file URL")
         async def get_file_url(
             container: str,
@@ -42,7 +42,7 @@ class FileController(Controller):
 
         return self
 
-    def get_file_redirect(self, route: str = "/logged-in/redirect/{container}/{file_path:path}"):
+    def get_file_redirect(self, route: str = "/logged-in/redirect/{container}/{file_path:path}") -> "FileController":
         @self.router.get(route, tags=self.tags, summary="Access file as logged-in user")
         async def get_file_redirect(
             container: str,
@@ -56,7 +56,7 @@ class FileController(Controller):
 
         return self
 
-    def get_anonymous_file_url(self, route: str = "/anonymous/url/{container}/{file_path:path}"):
+    def get_anonymous_file_url(self, route: str = "/anonymous/url/{container}/{file_path:path}") -> "FileController":
         @self.router.get(route, tags=self.tags, summary="Access file url via shared link")
         async def get_anonymous_file_url(
             container: str,
@@ -71,7 +71,7 @@ class FileController(Controller):
 
         return self
 
-    def get_anonymous_file_redirect(self, route: str = "/anonymous/redirect/{container}/{file_path:path}"):
+    def get_anonymous_file_redirect(self, route: str = "/anonymous/redirect/{container}/{file_path:path}") -> "FileController":
         @self.router.get(route, tags=self.tags, summary="Access file via shared link")
         async def get_anonymous_file_redirect(
             container: str,
