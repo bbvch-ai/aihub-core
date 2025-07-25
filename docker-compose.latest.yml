@@ -309,8 +309,8 @@ services:
       - /dagster_home/workspace.yaml
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/dagster_home
-      - ./config/dagster.yaml:/dagster_home/dagster.yaml:ro
-      - ./config/workspace.yaml:/dagster_home/workspace.yaml:ro
+      - ./configs/dagster/dagster.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.yaml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -324,8 +324,8 @@ services:
       - run
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/dagster_home
-      - ./config/dagster.yaml:/dagster_home/dagster.yaml:ro
-      - ./config/workspace.yaml:/dagster_home/workspace.yaml:ro
+      - ./configs/dagster/dagster.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.yaml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
