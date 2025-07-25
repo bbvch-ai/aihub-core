@@ -16,8 +16,6 @@ class ProcessStartEvent(WorkEvent):
 
     process_config: Annotated["dict[str, Any] | None", Field(description="Process configuration")] = None
 
-    pass
-
     @classmethod
     def from_raw_data(
         cls,

@@ -20,7 +20,7 @@ class WorkRequestEvent(ProcessEvent):
             description="Process ID associated with this Stop Event. "
             "This field will be auto-ingested by the process dispatcher."
         ),
-    ] = (None,)
+    ] = None
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.process_steps.work_request_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
         "lib.process_steps.work_request_event.description"
