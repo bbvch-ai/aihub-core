@@ -2,6 +2,7 @@ from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.generative_ai.document.accessor.FileAccessServiceConfig import FileAccessServiceConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
 from fastapi import Query, Security
@@ -35,12 +36,21 @@ class FileController(Controller):
             """
             Generates a short-lived secure link to the blob resource, and returns the URL.
             """
-            sas_url = FileService.anonymous_file_access_service.generate_sas_url(container, file_path)
+            # Handle cases where container might be a full URI (e.g., s3://bucket)
+            if container.startswith("s3://"):
+                # Extract bucket from s3://bucket format
+                container = container[5:]  # Remove 's3://' prefix
+            elif "://" in container:
+                # Handle other URI schemes by extracting the part after ://
+                container = container.split("://", 1)[1]
+
+            file_access_config = FileAccessServiceConfig()
+            sas_url = file_access_config.service.generate_sas_url(container, file_path)
             return SignedUrlDto(url=sas_url)
 
         return self
 
-    def get_file_redirect(self, route: str = "/logged-in/redirect/{container}/{file_path:path}") -> "FileController":
+    def get_file_redirect(self, route: str = "/logged-in/redirect/{container}/{file_path:path}"):
         @self.router.get(route, tags=self.tags, summary="Access file as logged-in user")
         async def get_file_redirect(
             container: str,
@@ -54,7 +64,7 @@ class FileController(Controller):
 
         return self
 
-    def get_anonymous_file_url(self, route: str = "/anonymous/url/{container}/{file_path:path}") -> "FileController":
+    def get_anonymous_file_url(self, route: str = "/anonymous/url/{container}/{file_path:path}"):
         @self.router.get(route, tags=self.tags, summary="Access file url via shared link")
         async def get_anonymous_file_url(
             container: str,
@@ -69,9 +79,7 @@ class FileController(Controller):
 
         return self
 
-    def get_anonymous_file_redirect(
-        self, route: str = "/anonymous/redirect/{container}/{file_path:path}"
-    ) -> "FileController":
+    def get_anonymous_file_redirect(self, route: str = "/anonymous/redirect/{container}/{file_path:path}"):
         @self.router.get(route, tags=self.tags, summary="Access file via shared link")
         async def get_anonymous_file_redirect(
             container: str,
