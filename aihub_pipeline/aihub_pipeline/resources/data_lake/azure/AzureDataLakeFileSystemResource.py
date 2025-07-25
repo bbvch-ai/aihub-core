@@ -27,7 +27,8 @@ class AzureDataLakeFileSystemResource(AbstractDataLakeFileSystemResource[AzureBl
     1. Directly interact with the azure data lake file system:
 
     .. code-block:: python
-        from aihub_pipeline.resources.data_lake.azure.AzureDataLakeFileSystemResource import AzureDataLakeFileSystemResource
+        from aihub_pipeline.resources.data_lake.azure.AzureDataLakeFileSystemResource
+        import AzureDataLakeFileSystemResource
 
         from dagster import Definitions, asset
 
@@ -48,7 +49,8 @@ class AzureDataLakeFileSystemResource(AbstractDataLakeFileSystemResource[AzureBl
 
         from aihub_pipeline.io.AzureDataLakeIOManager import AzureDataLakeIOManager
         from aihub_pipeline.resources.data_lake.azure.AzureDataLakeClientResource import AzureDataLakeClientResource
-        from aihub_pipeline.resources.data_lake.azure.AzureDataLakeFileSystemResource import AzureDataLakeFileSystemResource
+        from aihub_pipeline.resources.data_lake.azure.AzureDataLakeFileSystemResource
+         import AzureDataLakeFileSystemResource
 
         from dagster import Definitions, asset
 

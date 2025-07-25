@@ -36,14 +36,6 @@ class FileController(Controller):
             """
             Generates a short-lived secure link to the blob resource, and returns the URL.
             """
-            # Handle cases where container might be a full URI (e.g., s3://bucket)
-            if container.startswith("s3://"):
-                # Extract bucket from s3://bucket format
-                container = container[5:]  # Remove 's3://' prefix
-            elif "://" in container:
-                # Handle other URI schemes by extracting the part after ://
-                container = container.split("://", 1)[1]
-
             file_access_config = FileAccessServiceConfig()
             sas_url = file_access_config.service.generate_sas_url(container, file_path)
             return SignedUrlDto(url=sas_url)

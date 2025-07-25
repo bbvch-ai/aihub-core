@@ -55,7 +55,8 @@ class AzureDataLakeClientResource(AbstractDataLakeClientResource[AzureDataLakeCl
 
         from aihub_pipeline.io.AzureDataLakeIOManager import AzureDataLakeIOManager
         from aihub_pipeline.resources.data_lake.azure.AzureDataLakeClientResource import AzureDataLakeClientResource
-        from aihub_pipeline.resources.data_lake.azure.AzureDataLakeFileSystemResource import AzureDataLakeFileSystemResource
+        from aihub_pipeline.resources.data_lake.azure.AzureDataLakeFileSystemResource
+        import AzureDataLakeFileSystemResource
 
         from dagster import Definitions, asset
 

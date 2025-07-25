@@ -23,7 +23,8 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
     added to data lake files and always returns a DataLakeFile object, not pickled data.
 
     The AzureDataLakeIOManager depends on two other resources:
-    - **AzureDataLakeClientResource**: Responsible for providing the FileSystemClient to interact with the Azure Data Lake.
+    - **AzureDataLakeClientResource**: Responsible for providing the FileSystemClient to
+      interact with the Azure Data Lake.
     - **AzureDataLakeFileSystemResource**: Responsible for providing the AzureBlobFileSystem to interact with the
     Azure Data Lake.
 
@@ -48,7 +49,8 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
 
         from aihub_pipeline.io.AzureDataLakeIOManager import AzureDataLakeIOManager
         from aihub_pipeline.resources.data_lake.azure.AzureDataLakeClientResource import AzureDataLakeClientResource
-        from aihub_pipeline.resources.data_lake.azure.AzureDataLakeFileSystemResource import AzureDataLakeFileSystemResource
+        from aihub_pipeline.resources.data_lake.azure.AzureDataLakeFileSystemResource
+        import AzureDataLakeFileSystemResource
 
         from dagster import Definitions, asset
 
