@@ -94,13 +94,14 @@ RUN apt-get update && \
 RUN echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/"$USERNAME" && \
     chmod 0440 /etc/sudoers.d/"$USERNAME"
 
-ENV DAGSTER_HOME=/dagster_home
-WORKDIR /dagster_home
+ENV DAGSTER_HOME=/app/aihub_pipeline
+RUN mkdir -p $DAGSTER_HOME
 
-# Copy application code and configuration files from builder stage into /dagster_home
-COPY --from=builder /app/aihub_pipeline /dagster_home/aihub_pipeline
-COPY --from=builder /app/aihub_pipeline/pyproject.toml /dagster_home/pyproject.toml
-COPY --from=builder /app/aihub_pipeline/poetry.lock /dagster_home/poetry.lock
+# Set the working directory
+WORKDIR /app
+
+# Copy application code and configuration files
+COPY --from=builder /app /app
 
 WORKDIR $DAGSTER_HOME
 
