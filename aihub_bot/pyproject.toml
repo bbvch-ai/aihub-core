@@ -27,6 +27,7 @@ httpx = "^0.28.1"
 cryptography = "^44.0.0"
 pyjwt = "^2.10.1"
 botbuilder-integration-aiohttp = "^4.16.2"
+gunicorn = "^23.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"

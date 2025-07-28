@@ -1,0 +1,131 @@
+services:
+  postgres:
+    image: ghcr.io/bbvch-ai/aihub-core/pgvector:pg17
+    container_name: webui-postgres
+    environment:
+      POSTGRES_USER: webui
+      POSTGRES_PASSWORD: webui_password
+      POSTGRES_DB: webui
+    ports:
+      - "5432:5432"
+    volumes:
+      - ${VOLUME_ROOT:-./local-volumes}/postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U webui" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  openwebui:
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.13
+    container_name: webui-openwebui
+    network_mode: "host"
+    volumes:
+      - ${VOLUME_ROOT:-./local-volumes}/open-webui:/app/backend/data
+    environment:
+      ENV: "dev"
+
+      SCARF_NO_ANALYTICS: true
+      DO_NOT_TRACK: true
+      ANONYMIZED_TELEMETRY: true
+      GLOBAL_LOG_LEVEL: "debug"
+
+      WEBUI_NAME: "bbv AI-Hub"
+      CORS_ALLOW_ORIGIN: "http://localhost:8080"
+      ENABLE_SIGNUP: true
+      ENABLE_LOGIN_FORM: true
+      ENABLE_ADMIN_EXPORT: true
+      ENABLE_ADMIN_CHAT_ACCESS: true
+      ENABLE_CHANNELS: false
+      ADMIN_EMAIL: "ai@bbv.ch"
+      SHOW_ADMIN_DETAILS: true
+      DEFAULT_USER_ROLE: "user"
+      DEFAULT_LOCALE: "de"
+      ENABLE_OLLAMA_API: false
+      ENABLE_OPENAI_API: true
+      ENABLE_FORWARD_USER_INFO_HEADERS: true
+      PRESERVE_METADATA_IN_OPENAI_API_CALLS: true
+
+      WEBUI_SESSION_COOKIE_SAME_SITE: "lax"
+      WEBUI_AUTH_COOKIE_SAME_SITE: "lax"
+
+      ENABLE_WEBSOCKET_SUPPORT: true
+      WEBSOCKET_MANAGER: "redis"
+      WEBSOCKET_REDIS_URL: "redis://localhost:6379/1"
+      WEB_CONCURRENCY: 4
+
+      DATABASE_URL: "postgresql://webui:webui_password@localhost:5432/webui"
+
+      OPENAI_API_BASE_URL: "http://localhost:8000/api/v1/openai"
+      RAG_OPENAI_API_BASE_URL: "http://localhost:8000/api/v1/openai"
+      AUDIO_STT_OPENAI_API_BASE_URL: "http://localhost:8000/api/v1/openai"
+      AUDIO_TTS_OPENAI_API_BASE_URL: "http://localhost:8000/api/v1/openai"
+      IMAGES_OPENAI_API_BASE_URL: "http://localhost:8000/api/v1/openai"
+
+      OPENAI_API_KEY: "67ee50ac1e8098d24d74c970.Pg_yCimIj9ZJaN6m2Bf-WEKnt8VK36xFXFzedHOKQU9ACIeTzZKM7XAbwY4T1DO1zMHE_mXmi4R2EQojaPlqtMqrNYjCiWsSR9UWwdZvS2wKTpPjfITANkjiO9nmkOFO"
+      RAG_OPENAI_API_KEY: "67ee50ac1e8098d24d74c970.Pg_yCimIj9ZJaN6m2Bf-WEKnt8VK36xFXFzedHOKQU9ACIeTzZKM7XAbwY4T1DO1zMHE_mXmi4R2EQojaPlqtMqrNYjCiWsSR9UWwdZvS2wKTpPjfITANkjiO9nmkOFO"
+      AUDIO_STT_OPENAI_API_KEY: "67ee50ac1e8098d24d74c970.Pg_yCimIj9ZJaN6m2Bf-WEKnt8VK36xFXFzedHOKQU9ACIeTzZKM7XAbwY4T1DO1zMHE_mXmi4R2EQojaPlqtMqrNYjCiWsSR9UWwdZvS2wKTpPjfITANkjiO9nmkOFO"
+      AUDIO_TTS_OPENAI_API_KEY: "67ee50ac1e8098d24d74c970.Pg_yCimIj9ZJaN6m2Bf-WEKnt8VK36xFXFzedHOKQU9ACIeTzZKM7XAbwY4T1DO1zMHE_mXmi4R2EQojaPlqtMqrNYjCiWsSR9UWwdZvS2wKTpPjfITANkjiO9nmkOFO"
+      IMAGES_OPENAI_API_KEY: "67ee50ac1e8098d24d74c970.Pg_yCimIj9ZJaN6m2Bf-WEKnt8VK36xFXFzedHOKQU9ACIeTzZKM7XAbwY4T1DO1zMHE_mXmi4R2EQojaPlqtMqrNYjCiWsSR9UWwdZvS2wKTpPjfITANkjiO9nmkOFO"
+
+      ENABLE_IMAGE_GENERATION: true
+      IMAGE_GENERATION_ENGINE: "openai"
+      IMAGE_SIZE: "1792x1024"
+      IMAGE_GENERATION_MODEL: "dall-e-3"
+
+      TASK_MODEL_EXTERNAL: "aihub/gpt-4o"
+
+      ENABLE_AUTOCOMPLETE_GENERATION: false
+      AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH: 60
+
+      VECTOR_DB: "pgvector"
+      RAG_EMBEDDING_ENGINE: "openai"
+      RAG_EMBEDDING_MODEL: "text-embedding-3-large"
+      RAG_EMBEDDING_OPENAI_BATCH_SIZE: 8
+      RAG_TOP_K: 3
+      RAG_RELEVANCE_THRESHOLD: 0.5
+      CHUNK_SIZE: 1024
+      CHUNK_OVERLAP: 256
+      PDF_EXTRACT_IMAGES: true
+      RAG_FILE_MAX_SIZE: 1024
+      RAG_FILE_MAX_COUNT: 10
+      ENABLE_RETRIEVAL_QUERY_GENERATION: true
+
+      ENABLE_RAG_WEB_SEARCH: true
+      ENABLE_SEARCH_QUERY_GENERATION: true
+
+      RAG_WEB_SEARCH_FULL_CONTEXT: true
+      RAG_WEB_SEARCH_RESULT_COUNT: 3
+      RAG_WEB_SEARCH_ENGINE: "jina"
+      JINA_API_KEY: "jina_d77fa4cacc3c4ac1a7bf560370b148d1xkZBcDksnOL0K6xpXtd3E9dWQR5I"
+
+      AUDIO_STT_ENGINE: "openai"
+      AUDIO_STT_MODEL: "whisper-1"
+
+      AUDIO_TTS_ENGINE: "openai"
+      AUDIO_TTS_MODEL: "tts-1-hd"
+      AUDIO_TTS_VOICE: "alloy"
+
+      ENABLE_API_KEY: true
+      RAG_EMBEDDING_BATCH_SIZE: 64
+
+      WEBUI_URL: "http://localhost:8080"
+
+      ENABLE_OAUTH_SIGNUP: true
+      OAUTH_CLIENT_ID: "3dc76991-ddd7-4c2d-9cf9-ac2146f33d23"
+      OAUTH_CLIENT_SECRET: "Ygj8Q~~ZiHb19RIUIH4.21ezYjBwzv9GxIu_Ubjm"
+      OPENID_PROVIDER_URL: "https://login.microsoftonline.com/279985bd-2077-4d9d-9797-42238cfc06e2/v2.0/.well-known/openid-configuration"
+      OAUTH_PROVIDER_NAME: "azure"
+
+      ENABLE_DIRECT_CONNECTIONS: false
+
+volumes:
+  open-webui: {}
+  postgres-data: {}

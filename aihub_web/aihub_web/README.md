@@ -14,9 +14,9 @@ pnpm install
 
 Your layer is at the root of this repository, it is exactly like a regular Nuxt project, except you can publish it on NPM.
 
-The `.playground` directory should help you on trying your layer during development.
+The `.app` directory should help you on trying your layer during development.
 
-Running `pnpm dev` will prepare and boot `.playground` directory, which imports your layer itself.
+Running `pnpm dev` will prepare and boot `.app` directory, which imports your layer itself.
 
 ## Distributing your layer
 

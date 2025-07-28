@@ -1,3 +1,5 @@
+NUM_WORKERS = $(shell echo $${NUM_WORKERS:-$$(( $$(nproc) * 1 ))})
+
 lint:
 	@echo "Running linter..."
 	poetry run ruff check --fix
@@ -31,3 +33,12 @@ pr-ready: format lint
 install-ffmpeg:
 	@echo "Installing ffmpeg..."
 	sudo apt-get update; sudo apt-get install -y ffmpeg
+
+run-prod:
+	@echo "Starting server with Gunicorn using ${NUM_WORKERS} workers..."
+	poetry run gunicorn -w ${NUM_WORKERS} \
+		-k uvicorn.workers.UvicornWorker \
+		--timeout=300 \
+		-b 0.0.0.0:8000 \
+		--forwarded-allow-ips=* \
+		app.main:app
