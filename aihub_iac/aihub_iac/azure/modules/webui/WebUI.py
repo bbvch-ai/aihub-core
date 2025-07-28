@@ -268,7 +268,7 @@ class WebUI(pulumi.ComponentResource):
             "IMAGE_SIZE": "1792x1024",
             "IMAGE_GENERATION_MODEL": "dall-e-3",
             # Task / Model settings
-            "TASK_MODEL_EXTERNAL": "unsloth/Llama-3.2-1B-Instruct",
+            "TASK_MODEL_EXTERNAL": "local/llama-3.2-1B",
             # Autocomplete Generation
             "ENABLE_AUTOCOMPLETE_GENERATION": "true",
             "AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH": "60",

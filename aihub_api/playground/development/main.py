@@ -9,14 +9,6 @@ from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenA
 from aihub_lib.auth.identity.AzureIdentityProvider.AzureIdentityProvider import AzureIdentityProvider
 from aihub_lib.auth.identity.TokenIdentityProvider.TokenIdentityProvider import TokenIdentityProvider
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
-from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
-    AzureOpenAIEmbeddingConfig,
-)
-from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
-    SelfHostedEmbeddingConfig,
-)
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
@@ -94,43 +86,6 @@ async def main():
         RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
         OpenaiController(
             auth=auth,
-            embedding_models=[
-                SelfHostedEmbeddingConfig(
-                    name="Alibaba-NLP/gte-base-en-v1.5",
-                    base_url="http://localhost:8183",
-                ),
-                AzureOpenAIEmbeddingConfig(
-                    name="text-embedding-3-large",
-                    base_url="https://bbvaihub-openai-sui.openai.azure.com",
-                    api_version="2024-12-01-preview",
-                    embedding_tokens_costs_per_thousand=0.0,
-                    api_key=azure_openai_settings.OPENAI_API_KEY,
-                ),
-            ],
-            chat_models=[
-                OpenaiLikeLLMConfig(
-                    name="unsloth/Llama-3.2-1B-Instruct",
-                    base_url="http://localhost:8182/v1",
-                    is_function_calling_model=False,
-                    context_size=512,
-                ),
-                AzureOpenAILLMConfig(
-                    name="gpt-4o",
-                    base_url="https://bbvaihub-openai-sui.openai.azure.com",
-                    api_version="2025-01-01-preview",
-                    prompt_tokens_costs_per_thousand=0.0045,
-                    completion_tokens_costs_per_thousand=0.0133,
-                    api_key=azure_openai_settings.OPENAI_API_KEY,
-                ),
-                AzureOpenAILLMConfig(
-                    name="gpt-4o-mini",
-                    base_url="https://bbvaihub-openai-sui.openai.azure.com",
-                    api_version="2025-01-01-preview",
-                    prompt_tokens_costs_per_thousand=0.0045,
-                    completion_tokens_costs_per_thousand=0.0133,
-                    api_key=azure_openai_settings.OPENAI_API_KEY,
-                ),
-            ],
             image_models=[
                 AzureOpenaiImageModelConfig(
                     name="dall-e-3",

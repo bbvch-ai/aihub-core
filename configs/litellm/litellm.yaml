@@ -1,0 +1,93 @@
+model_list:
+  - model_name: azure/gpt-4o-mini
+    litellm_params:
+      model: azure/gpt-4o-mini
+      api_base: https://aihub-dev-openai-che.openai.azure.com/
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_version: "2024-12-01-preview"
+
+  - model_name: google/gemini-2.5-flash
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY
+    model_info:
+      mode: chat
+
+  - model_name: local/llama-3.2-1b
+    litellm_params:
+      model: openai/unsloth/Llama-3.2-1B-Instruct-GGUF
+      api_base: http://llama-cpp:8182/v1
+      api_key: None
+    model_info:
+      mode: chat
+      max_input_tokens: 4096
+      supports_function_calling: true
+      max_output_tokens: 1024
+      input_cost_per_token: 0
+      output_cost_per_token: 0
+      custom_tokenizer:
+        identifier: unsloth/Llama-3.2-1B-Instruct-GGUF
+        revision: main
+        auth_token: os.environ/HUGGINGFACE_API_KEY
+
+  - model_name: local/text-embedding-gte
+    litellm_params:
+      model: openai/Alibaba-NLP/gte-base-en-v1.5
+      api_base: http://huggingface-text-embedding-inference:8183/v1
+      api_key: None
+    model_info:
+      mode: embedding
+      input_cost_per_token: 0
+      custom_tokenizer:
+        identifier: Alibaba-NLP/gte-base-en-v1.5
+        revision: main
+        auth_token: os.environ/HUGGINGFACE_API_KEY
+
+guardrails:
+  - guardrail_name: "presidio-mask-guard"
+    litellm_params:
+      guardrail: presidio
+      default_on: true
+      mode: "pre_call"
+      presidio_language: "en"
+      presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
+      presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
+      output_parse_pii: true
+      pii_entities_config:
+        PERSON: "MASK"
+        EMAIL_ADDRESS: "MASK"
+
+  - guardrail_name: "presidio-block-guard"
+    litellm_params:
+      guardrail: presidio
+      default_on: true
+      mode: "pre_call"
+      presidio_language: "en"
+      presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
+      presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
+      output_parse_pii: true
+      pii_entities_config:
+        CREDIT_CARD: "BLOCK"
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: os.environ/DATABASE_URL
+  store_model_in_db: true
+  store_prompts_in_spend_logs: true
+  maximum_spend_logs_retention_period: "365d"
+  maximum_spend_logs_retention_interval: "30d"
+
+litellm_settings:
+  callbacks: ["detect_prompt_injection"]
+  default_fallbacks: ["azure/gpt-4o-mini"]
+  telemetry: false
+  json_logs: true
+
+router_settings:
+  routing_strategy: "usage-based-routing-v2"
+  retry_policy:
+    "TimeoutErrorRetries": 2
+    "RateLimitErrorRetries": 3
+    "InternalServerErrorRetries": 2
+  allowed_fails: 3
+  cooldown_time: 30

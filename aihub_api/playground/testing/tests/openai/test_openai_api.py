@@ -6,10 +6,6 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
-from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
-from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
-    SelfHostedEmbeddingConfig,
-)
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
@@ -19,8 +15,8 @@ from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
 MODELS_ENDPOINT = "/api/v1/openai/models"
-CHAT_MODEL = "unsloth/Llama-3.2-1B-Instruct"
-EMBEDDING_MODEL = "Alibaba-NLP/gte-base-en-v1.5"
+CHAT_MODEL = "local/llama-3.2-1B"
+EMBEDDING_MODEL = "local/text-embedding-gte"
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
@@ -30,20 +26,6 @@ async def api_client():
     controller = (
         OpenaiController(
             auth=auth,
-            embedding_models=[
-                SelfHostedEmbeddingConfig(
-                    name=EMBEDDING_MODEL,
-                    base_url="http://localhost:8183",
-                ),
-            ],
-            chat_models=[
-                OpenaiLikeLLMConfig(
-                    name=CHAT_MODEL,
-                    base_url="http://localhost:8182/v1",
-                    is_function_calling_model=False,
-                    context_size=512,
-                ),
-            ],
         )
         .get_models()
         .get_model()

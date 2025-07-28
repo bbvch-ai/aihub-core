@@ -9,12 +9,7 @@ from typing import Any, Literal
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
-from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
-    AzureOpenAIEmbeddingConfig,
-    AzureOpenAIEmbeddingParameter,
-)
-from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -63,7 +58,7 @@ class OpenaiService:
     """
 
     @staticmethod
-    def get_models(chat_models: list[ChatLLMConfig]) -> ModelResponse:
+    def get_models(chat_models: list[LLMConfig]) -> ModelResponse:
         """
         Retrieve the list of available chat models.
         Returns a ModelResponse containing details of every configured chat model.
@@ -73,7 +68,7 @@ class OpenaiService:
 
     @staticmethod
     async def get_models_with_assistants(
-        chat_models: list[ChatLLMConfig],
+        chat_models: list[LLMConfig],
         nc: NATS,
         t: LocaleHandler,
         exclude_webui_agents: bool,
@@ -103,7 +98,7 @@ class OpenaiService:
         return ModelResponse(data=[*chat_models, *assistants])
 
     @staticmethod
-    def get_model(chat_models: list[ChatLLMConfig], model_name: str) -> ModelDetails:
+    def get_model(chat_models: list[LLMConfig], model_name: str) -> ModelDetails:
         """
         Fetch details for a specific chat model by name.
         Scans the chat model configurations and returns the matching model's details.
@@ -115,7 +110,7 @@ class OpenaiService:
 
     @staticmethod
     async def get_model_with_assistants(
-        chat_models: list[ChatLLMConfig],
+        chat_models: list[LLMConfig],
         model_name: str,
         nc: NATS,
         t: LocaleHandler,
@@ -174,7 +169,7 @@ class OpenaiService:
 
     @staticmethod
     async def chat_completion(
-        chat_models: list[ChatLLMConfig],
+        chat_models: list[LLMConfig],
         model_name: str,
         chat_completion_request: ChatCompletionRequest,
     ) -> ChatCompletion | StreamingResponse:
@@ -208,7 +203,7 @@ class OpenaiService:
 
     @staticmethod
     async def chat_completion_with_assistants(
-        chat_models: list[ChatLLMConfig],
+        chat_models: list[LLMConfig],
         model_name: str,
         chat_completion_request: ChatCompletionRequest,
         user: UserIdentity,

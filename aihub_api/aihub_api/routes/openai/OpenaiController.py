@@ -6,8 +6,8 @@ from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
-from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -72,8 +72,8 @@ class OpenaiController(Controller):
         auth: AuthHandler,
         route: str = "/openai",
         additionally_required_permission: str | None = None,
-        embedding_models: list[EmbeddingLLMConfig] | None = None,
-        chat_models: list[ChatLLMConfig] | None = None,
+        embedding_models: list[EmbeddingModelConfig] | None = None,
+        chat_models: list[LLMConfig] | None = None,
         image_models: list[AzureOpenaiImageModelConfig] | None = None,
         stt_models: list[AzureOpenaiSTTConfig] | None = None,
         tts_models: list[AzureOpenaiTTSConfig] | None = None,

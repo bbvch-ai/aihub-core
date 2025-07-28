@@ -1,11 +1,3 @@
-from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
-    AzureOpenAILLMConfig,
-    AzureOpenAIParameter,
-)
-from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
-    AzureOpenAIEmbeddingConfig,
-    AzureOpenAIEmbeddingParameter,
-)
 from aihub_lib.infrastructure.azure.data_lake.DataLakeAccess import DataLakeAccess
 from aihub_lib.infrastructure.s3.S3Config import S3Config
 from dagster._config.pythonic_config import ConfigurableResourceFactory
@@ -159,23 +151,10 @@ def default_io_manager_s3_datalake_resources(
 
 def default_llm_resources() -> dict[str, ConfigurableResourceFactory]:
     embedding_model_resource = EmbeddingModelResource(
-        embedding_config=AzureOpenAIEmbeddingConfig(
-            name="text-embedding-ada-002",
-            base_url="https://aihub-dev-openai-che.openai.azure.com/",
-            api_version="2024-12-01-preview",
-            embedding_tokens_costs_per_thousand=0.000019,
-            default_parameter=AzureOpenAIEmbeddingParameter(),
-        )
+        embedding_config=EmbeddingModelResource(model_name="azure/text-embedding-ada-002")
     )
     language_model = LanguageModelResource(
-        llm_config=AzureOpenAILLMConfig(
-            name="gpt-4o-mini",
-            base_url="https://aihub-dev-openai-che.openai.azure.com/",
-            api_version="2024-12-01-preview",
-            prompt_tokens_costs_per_thousand=0.00013599,
-            completion_tokens_costs_per_thousand=0.0005440,
-            default_parameter=AzureOpenAIParameter(temperature=0.0),
-        )
+        llm_config=LLMConfig(model_name="azure/gpt-4o-mini")
     )
     return {
         "embedding_model": embedding_model_resource,

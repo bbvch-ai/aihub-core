@@ -263,7 +263,7 @@ class RAGAgent(Agent):
             context_messages=[nodes_event.context_message],
             system_messages=system_messages,
             last_user_message=ChatMessage(role=MessageRole.USER, content=start_event.user_query),
-            tokenizer=agent_config.llm.tokenizer,
+            tokenizer=agent_config.llm.token_counter,
             number_of_input_tokens=agent_config.number_of_input_tokens,
         )
         return LimitChatHistoryWithContextEvent(limited_history_with_context=limited_chat_history)

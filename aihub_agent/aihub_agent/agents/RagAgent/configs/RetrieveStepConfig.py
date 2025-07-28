@@ -2,12 +2,7 @@ from typing import Annotated, Literal
 
 from aihub_lib.agents.AgentConfig import StepConfig
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
-from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
-    AzureOpenAIEmbeddingConfig,
-)
-from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
-    SelfHostedEmbeddingConfig,
-)
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreConfig import AzureAISearchVectorStoreConfig
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
@@ -22,7 +17,7 @@ class RetrieveStepConfig(StepConfig):
     """
 
     embed_model: Annotated[
-        AzureOpenAIEmbeddingConfig | SelfHostedEmbeddingConfig, Field(description="The embedding model configuration.")
+        EmbeddingModelConfig, Field(description="The embedding model configuration.")
     ]
     index_namespaces: Annotated[list[str], Field(description="The namespaces to retrieve from.", min_length=1)]
     retrieve_k: Annotated[int, Field(description="The number of documents to retrieve.", ge=1)]

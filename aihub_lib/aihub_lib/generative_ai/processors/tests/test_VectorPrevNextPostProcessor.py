@@ -6,10 +6,7 @@ from llama_index.core.schema import NodeRelationship, NodeWithScore, RelatedNode
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import VectorPrevNextPostProcessor
-from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
-    SelfHostedEmbeddingConfig,
-    SelfHostedEmbeddingParameter,
-)
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.milvus_vector_store_content import fill_collection
@@ -59,18 +56,7 @@ def milvus_vector_store(nodes_with_relationships, event_loop):
     # Use event_loop fixture to ensure there's an active event loop
     asyncio.set_event_loop(event_loop)
 
-    embedding_config = SelfHostedEmbeddingConfig(
-        name="Alibaba-NLP/gte-base-en-v1.5",
-        base_url="http://localhost:8183",
-        api_key=None,
-        timeout=60,
-        embed_batch_size=32,
-        default_parameter=SelfHostedEmbeddingParameter(
-            text_instruction=None,
-            query_instruction=None,
-            truncate_text=False,
-        ),
-    )
+    embedding_config = EmbeddingModelConfig(model_name="local/text-embedding-gte")
     vector_store = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="prev_next_test",

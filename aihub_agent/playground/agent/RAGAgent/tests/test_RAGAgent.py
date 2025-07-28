@@ -5,22 +5,8 @@ import pytest
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
-from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
-    AzureOpenAILLMConfig,
-    AzureOpenAIParameter,
-)
-from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import (
-    OpenaiLikeLLMConfig,
-    OpenaiLikeLLMParameter,
-)
-from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
-    AzureOpenAIEmbeddingConfig,
-    AzureOpenAIEmbeddingParameter,
-)
-from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
-    SelfHostedEmbeddingConfig,
-    SelfHostedEmbeddingParameter,
-)
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
@@ -103,21 +89,8 @@ def azure_agent_config():
     """
     Return a RAGAgentConfig that uses Azure OpenAI for both the LLM and embeddings.
     """
-    llm_config = AzureOpenAILLMConfig(
-        name="gpt-4o-mini",
-        base_url="https://aihub-dev-openai-che.openai.azure.com/",
-        api_version="2024-08-01-preview",
-        prompt_tokens_costs_per_thousand=0.0045,
-        completion_tokens_costs_per_thousand=0.0133,
-        default_parameter=AzureOpenAIParameter(temperature=0.0),
-    )
-    embedding_config = AzureOpenAIEmbeddingConfig(
-        name="text-embedding-ada-002",
-        base_url="https://aihub-dev-openai-che.openai.azure.com/",
-        api_version="2024-12-01-preview",
-        embedding_tokens_costs_per_thousand=0.0,
-        default_parameter=AzureOpenAIEmbeddingParameter(),
-    )
+    llm_config = LLMConfig(model_name="azure/gpt-4o-mini")
+    embedding_config = EmbeddingModelConfig(model_name="azure/text-embedding-3-large")
     vector_store: AzureAISearchVectorStoreConfig = AzureAISearchVectorStoreConfig(
         # needed for embedding field
         vector_store_name="development",
@@ -140,30 +113,8 @@ def self_hosted_agent_config(event_loop):
     # Set the event loop for this function
     asyncio.set_event_loop(event_loop)
 
-    llm_config = OpenaiLikeLLMConfig(
-        name="unsloth/Llama-3.2-1B-Instruct",
-        base_url="http://localhost:8182/v1",
-        api_key=None,
-        context_size=16384,
-        is_chat_model=True,
-        is_function_calling_model=False,
-        default_parameter=OpenaiLikeLLMParameter(
-            logit_bias=None,
-            logprobs=None,
-        ),
-    )
-    embedding_config = SelfHostedEmbeddingConfig(
-        name="Alibaba-NLP/gte-base-en-v1.5",
-        base_url="http://localhost:8183",
-        api_key=None,
-        timeout=60,
-        embed_batch_size=32,
-        default_parameter=SelfHostedEmbeddingParameter(
-            text_instruction=None,
-            query_instruction=None,
-            truncate_text=False,
-        ),
-    )
+    llm_config = LLMConfig(model_name="local/llama-3.2-1B")
+    embedding_config = EmbeddingModelConfig(model_name="local/text-embedding-gte"),
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="development",

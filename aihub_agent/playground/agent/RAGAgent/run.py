@@ -2,6 +2,7 @@ import asyncio
 
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
     AzureOpenAIEmbeddingConfig,
@@ -27,13 +28,7 @@ async def main():
             agent_class=RAGAgent.__name__,
             name=LocaleString(en="RAG Agent"),
             description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
-            llm=AzureOpenAILLMConfig(
-                name="gpt-4o",
-                base_url="https://bbvaihub-openai-sui.openai.azure.com",
-                api_version="2025-01-01-preview",
-                prompt_tokens_costs_per_thousand=0.0045,
-                completion_tokens_costs_per_thousand=0.0133,
-            ),
+            llm=LLMConfig(model_name="azure/gpt-4o-mini"),
             retrieve_step_config=RetrieveStepConfig(
                 embed_model=AzureOpenAIEmbeddingConfig(
                     name="text-embedding-3-large",

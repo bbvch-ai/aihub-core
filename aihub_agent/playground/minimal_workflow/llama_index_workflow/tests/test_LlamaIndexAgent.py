@@ -1,7 +1,4 @@
-from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import (
-    OpenaiLikeLLMConfig,
-    OpenaiLikeLLMParameter,
-)
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import ChunkEvent, LLMEvent, UserMessageEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
@@ -25,18 +22,7 @@ def _():
             agent_class=LlamaIndexAgent.__name__,
             name=LocaleString(en="Llama Index Agent"),
             description=LocaleString(en="This is an agent that uses a llama index llm"),
-            llm=OpenaiLikeLLMConfig(
-                name="unsloth/Llama-3.2-1B-Instruct",
-                base_url="http://localhost:8182/v1",
-                api_key=None,
-                context_size=512,
-                is_chat_model=True,
-                is_function_calling_model=False,
-                default_parameter=OpenaiLikeLLMParameter(
-                    logit_bias=None,
-                    logprobs=None,
-                ),
-            ),
+            llm=LLMConfig(model_name="local/llama-3.2-1B")
         ),
     )
 

@@ -952,7 +952,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - ⚙️ **Refined Agent Configuration Model**: Revised the `AgentConfig` structure by removing the `agent_class` field, making `agent_id` the primary instance identifier. Added `system_prompt`, `color`, and `voice` attributes to the base configuration for broader applicability (though deprecated for future removal).
-- 💡 **Unified LLM and Vector Store Configurations**: Agent configurations now utilize consolidated base types (`ChatLLMConfig`, `EmbeddingLLMConfig`, `BasePydanticVectorStore`) for LLMs, embedding models, and vector stores, enhancing type safety and abstraction.
+- 💡 **Unified LLM and Vector Store Configurations**: Agent configurations now utilize consolidated base types (`LLMConfig`, `EmbeddingModelConfig`, `BasePydanticVectorStore`) for LLMs, embedding models, and vector stores, enhancing type safety and abstraction.
 - 🚧 **Streamlined StartEvent**: The `StartEvent` no longer directly carries agent configuration, simplifying event payload and centralizing configuration management within the agent dispatcher.
 - 🔗 **Simplified RAG Node Combining**: The `combine_nodes_in_order` utility for RAG context now omits HTML-like tags (e.g., `<h1>`, `<content>`) and uses simpler text formatting, reducing prompt complexity.
 - ⚡️ **CI/CD Workflow Enhancements**: Updated GitHub Actions build workflows for Docker images to allow optional `ssh_key` usage.
@@ -1610,12 +1610,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🔑 **Centralized OpenAI API Key Configuration**: Added a new base `OpenaiResourceSettings` class for consistent management of OpenAI API keys across different services and environments.
 
 ### Changed
-- 🔄 **Generalized Resource Configuration**: Extended the base `ResourceConfig` to include an optional `api_key` field, enabling API key authentication for all derived generative AI resource configurations.
+- 🔄 **Generalized Resource Configuration**: Extended the base `LiteLLMProxyResourceConfig` to include an optional `api_key` field, enabling API key authentication for all derived generative AI resource configurations.
 - 🚀 **Improved Azure OpenAI Client Initialization**: Updated the Azure OpenAI client instantiation logic to intelligently use either an API key or Azure AD token provider based on the provided configuration, simplifying setup.
 - 📄 **Updated Development Playground Models**: Renamed the `o1-mini` model to `gpt-4o-mini` in the development environment configuration for improved clarity and alignment with current model names.
 
 ### Refactor
-- 🧹 **Streamlined API Key Definitions**: Removed redundant `api_key` fields from specific model configurations (e.g., chat LLMs, embedding LLMs, image models) as they are now managed centrally by the generalized `ResourceConfig`.
+- 🧹 **Streamlined API Key Definitions**: Removed redundant `api_key` fields from specific model configurations (e.g., chat LLMs, embedding LLMs, image models) as they are now managed centrally by the generalized `LiteLLMProxyResourceConfig`.
 
 ---
 
@@ -2981,7 +2981,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.126.0] - 2025-03-24 - Enhanced LLM Control with Configurable Timeouts
 
 ### Added
-- ✨ **Introduced LLM Request Timeout:** Added a new `timeout` parameter to `ChatLLMConfig`, allowing users to specify a timeout in seconds (defaulting to 30.0s) for LLM model requests. This provides finer control over model interactions and helps manage long-running requests.
+- ✨ **Introduced LLM Request Timeout:** Added a new `timeout` parameter to `LLMConfig`, allowing users to specify a timeout in seconds (defaulting to 30.0s) for LLM model requests. This provides finer control over model interactions and helps manage long-running requests.
 
 ### Changed
 - ⚙️ **Applied Configurable Timeouts to LLMs:** Integrated the new `timeout` parameter into the underlying LLM calls for `AzureOpenAILLMConfig` and `SelfHostedLLMConfig`. This ensures that all LLM interactions leveraging these configurations will respect the defined timeout duration.
@@ -3006,7 +3006,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🗑️ **Direct `chat_id` Field:** The direct `chat_id` field has been removed from the `ChatCompletionRequest` DTO, as its functionality is now handled via the `metadata` field for consistency.
 
 ### Refactor
-- 🧹 **Internal LLM Context Manager:** Adjusted the `ChatLLMConfig` context manager's type signature to explicitly return an `AsyncIterator[LLM]`, improving type consistency and internal API clarity.
+- 🧹 **Internal LLM Context Manager:** Adjusted the `LLMConfig` context manager's type signature to explicitly return an `AsyncIterator[LLM]`, improving type consistency and internal API clarity.
 - ⚡️ **Chat Service Model Naming:** Streamlined the internal derivation of model names within the `ChatService` to directly utilize `agent_class` and `agent_id` parameters, enhancing code readability.
 
 ---
@@ -3809,7 +3809,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.65.0] - 2025-02-25 - Enhanced LLM Integration and Agent Flexibility
 
 ### Changed
-- 🔄 **Expanded LLM Compatibility for `LLMWrappingAgent`**: The `LLMWrappingAgent` now utilizes a more generic `ChatLLMConfig`, enabling seamless integration with a broader array of Large Language Models beyond just Azure OpenAI.
+- 🔄 **Expanded LLM Compatibility for `LLMWrappingAgent`**: The `LLMWrappingAgent` now utilizes a more generic `LLMConfig`, enabling seamless integration with a broader array of Large Language Models beyond just Azure OpenAI.
 
 ---
 
@@ -4405,7 +4405,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ⚙️ **LLM Configuration Fields**: The `api_endpoint` field in LLM configurations has been consistently renamed to `base_url` for improved clarity and consistency across various generative AI resource types.
 
 ### Refactor
-- 🔄 **Generative AI Resource Reorganization**: Performed a significant internal restructuring of the `aihub_lib.generative_ai` package. The `llms.models` and `llms.costs` modules have been consolidated and renamed to `resources.models` and `resources.costs` respectively. This foundational change unifies the definition and management of all generative AI capabilities (LLMs, embeddings, image, STT, TTS) under a consistent `ResourceConfig` hierarchy.
+- 🔄 **Generative AI Resource Reorganization**: Performed a significant internal restructuring of the `aihub_lib.generative_ai` package. The `llms.models` and `llms.costs` modules have been consolidated and renamed to `resources.models` and `resources.costs` respectively. This foundational change unifies the definition and management of all generative AI capabilities (LLMs, embeddings, image, STT, TTS) under a consistent `LiteLLMProxyResourceConfig` hierarchy.
 - 🧹 **Streamlined Azure OpenAI Resource Management**: Introduced `AzureOpenaiResourceConfig` as a new common base class to centralize client initialization and simplify configuration for all Azure OpenAI-backed models.
 - ⬆️ **Core Library Update**: Updated `aihub-lib` to `v0.27.0` to incorporate the latest architectural improvements and new resource configurations.
 
@@ -4602,7 +4602,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - 🔄 **Abstracted RAG Agent Vector Store**: The RAG agent's retrieval step now uses a generic `BasePydanticVectorStore` instead of a specific `index_name`, significantly improving flexibility and allowing different vector databases to be plugged in without code changes.
 - ✏️ **Unified LLM Base URL Naming**: Renamed `api_endpoint` to `base_url` across all LLM and embedding configurations for consistent and clearer terminology.
-- 📝 **Streamlined LLM Tokenization Logic**: Abstracted the tokenizer access within `ChatLLMConfig` to a property, simplifying token counting and history limiting logic across various LLM implementations.
+- 📝 **Streamlined LLM Tokenization Logic**: Abstracted the tokenizer access within `LLMConfig` to a property, simplifying token counting and history limiting logic across various LLM implementations.
 - 🛠️ **Refined Agent Test Runner**: Enhanced `AgentTestRunner` by introducing distinct `test_run_start` and `test_run_stop` methods, providing more granular control over test execution and setup/teardown.
 - 📂 **Organized Playground Workflows**: Restructured playground examples into more descriptive and logical workflow directories, improving discoverability and maintainability of examples.
 - 📄 **Updated Documentation for Local Setup**: The `README.md` has been updated with clearer instructions for local Docker setup, including guidance on running self-hosted AI services.

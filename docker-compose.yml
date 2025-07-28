@@ -1,33 +1,162 @@
+
 services:
-  phoenix:
-    image: ghcr.io/bbvch-ai/aihub-core/phoenix:version-10.0.4
-    ports:
-      - "6006:6006"
-      - "4317:4317"
+  # === MinIO Stack (self-hosted S3-compatible) ===
+  # <editor-fold desc="Minio Stack">
+  minio:
+    image: ghcr.io/bbvch-ai/aihub-core/minio:release.2024-05-28T17-19-04Z
     restart: always
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    ports:
+      - "9001:9001"
+      - "9000:9000"
+    volumes:
+      - ./configs/milvus/milvus.yaml:/milvus/configs/milvus.yaml
+      - ${VOLUME_ROOT:-./local-volumes}/minio_data:/minio_data
+    command: minio server /minio_data --console-address ":9001"
     healthcheck:
-      test: [ "CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:6006/healthz')" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "2"
+
+  # </editor-fold>
+
+  # === Milvus Stack ===
+  # <editor-fold desc="Milvus Stack">
+  milvus-etcd:
+    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.16
+    restart: always
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    volumes:
+      - ${VOLUME_ROOT:-./local-volumes}/etcd-data:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "2"
+
+  milvus-standalone:
+    image: milvusdb/milvus:v2.4.7
+    restart: always
+    command: ["milvus", "run", "standalone"]
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      ETCD_ENDPOINTS: milvus-etcd:2379
+      MINIO_ADDRESS: minio:9000
+    volumes:
+      - ${VOLUME_ROOT:-./local-volumes}/milvus-data:/var/lib/milvus
+      - ./configs/milvus/milvus.yaml:/milvus/configs/milvus.yaml
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      start_period: 90s
+      timeout: 20s
+      retries: 3
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    depends_on:
+      - "milvus-etcd"
+      - "minio"
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "2"
+
+
+  # TODO: only use in dev , delete from latest
+  attu:
+    image: zilliz/attu:v2.5.6
+    restart: always
+    ports:
+      - "3003:3000"
+    depends_on:
+      - "milvus-standalone"
+    environment:
+      - MILVUS_URL=milvus-standalone:19530
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "2"
+  # </editor-fold>
+
+  # === Postgres Stack ===
+  # <editor-fold desc="Postgres Stack">
+  postgres:
+    image: ghcr.io/bbvch-ai/aihub-core/pgvector:pg17
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_MULTIPLE_DATABASES: openwebui,phoenix,dagster,litellm
+    volumes:
+      - ${VOLUME_ROOT:-./local-volumes}/postgres-data:/var/lib/postgresql/data
+      - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U webui" ]
       interval: 10s
       timeout: 5s
       retries: 3
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+  # </editor-fold>
 
+
+  # === Phoenix Stack ===
+  # <editor-fold desc="Phoenix Stack">
+  phoenix:
+    image: ghcr.io/bbvch-ai/aihub-core/phoenix:version-10.0.4
+    restart: always
+    depends_on:
+      - "postgres"
+    ports:
+      - "6006:6006"
+      - "4317:4317"
+    environment:
+      PHOENIX_SQL_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix"
+      AZURE_CLIENT_ID: ${OAUTH_CLIENT_ID} # Is this really needed? Is this not duplicate to PHOENIX_OAUTH2_MICROSOFT_ENTRA_ID_CLIENT_ID
+      PHOENIX_OAUTH2_MICROSOFT_ENTRA_ID_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      PHOENIX_OAUTH2_MICROSOFT_ENTRA_ID_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      PHOENIX_OAUTH2_MICROSOFT_ENTRA_ID_OIDC_CONFIG_URL: ${OPENID_PROVIDER_URL}
+      PHOENIX_ENABLE_AUTH: "True"
+      PHOENIX_SECRET: ${PHOENIX_SECRET}
+      VERSION: ""
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "2"
+  # </editor-fold">
+
+
+  # === Nats & Redis Stack ===
+  # <editor-fold desc="NATS & Redis Stack">
   nats:
     image: ghcr.io/bbvch-ai/aihub-core/nats:2.11.4
     command: -c /etc/nats/nats.conf
     volumes:
-      - ./nats/standalone/nats.conf:/etc/nats/nats.conf
-    ports:
-      - "4222:4222"
-      - "8222:8222"
+      - ./configs/nats/nats.conf:/etc/nats/nats.conf
+      - ${VOLUME_ROOT:-./local-volumes}/nats-data:/data
 
   redis:
     image: ghcr.io/bbvch-ai/aihub-core/redis:8.0.1
-    container_name: redis
     command: "redis-server --save 30 1 --loglevel warning"
     volumes:
-      - redis-data:/data
-    ports:
-      - "6379:6379"
+      - ${VOLUME_ROOT:-./local-volumes}/redis-data:/data
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
@@ -40,27 +169,34 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+  # </editor-fold>
 
   mongo:
     image: ghcr.io/bbvch-ai/aihub-core/mongo:8.0.9
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin
-    volumes:
-      - mongo-data:/data/db
-    ports:
-      - "27017:27017"
     restart: always
+    command: >
+      --quiet
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    volumes:
+      - ${VOLUME_ROOT:-./local-volumes}/mongo-data:/data/db
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "2"
 
-  llama.cpp:
+
+  # TODO: only use in dev , delete from latest
+  # === CPU LLMs Stack ===
+  # <editor-fold desc="CPU LLMs Stack">
+  llama-cpp:
     image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b5490
     platform: linux/amd64
+    volumes:
+      - ${VOLUME_ROOT:-./local-volumes}/llama-data:/data
     ports:
       - "8182:8182"
     command: >
@@ -75,8 +211,10 @@ services:
       retries: 3
       start_period: 30s
 
-  hf-TEI:
+  huggingface-text-embedding-inference:
     image: ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cpu-1.6
+    volumes:
+      - ${VOLUME_ROOT:-./local-volumes}/hf-tei-data:/data
     ports:
       - "8183:8183"
     command: >
@@ -85,7 +223,49 @@ services:
     restart: always
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8183/health" ]
+  # </editor-fold>
 
-volumes:
-  redis-data: {}
-  mongo-data: {}
+  # === LiteLLM Stack ===
+  # <editor-fold desc="LiteLLM Stack">
+  presidio-analyzer:
+    image: mcr.microsoft.com/presidio-analyzer:latest
+    container_name: presidio-analyzer
+    restart: unless-stopped
+
+  presidio-anonymizer:
+    image: mcr.microsoft.com/presidio-anonymizer:latest
+    container_name: presidio-anonymizer
+    restart: unless-stopped
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm-proxy
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/litellm"
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
+      UI_USERNAME: ${LITELLM_UI_USERNAME}
+      UI_PASSWORD: ${LITELLM_UI_PASSWORD}
+      AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      PRESIDIO_ANALYZER_API_BASE: "http://presidio-analyzer:3000"
+      PRESIDIO_ANONYMIZER_API_BASE: "http://presidio-anonymizer:3000"
+      SET_VERBOSE: "false"
+    volumes:
+      - ./configs/litellm/litellm.yaml:/app/config.yaml
+    command: --config /app/config.yaml --detailed_debug
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      presidio-analyzer:
+        condition: service_started
+      presidio-anonymizer:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  # </editor-fold">

@@ -429,7 +429,7 @@ services:
   # TODO: only use in dev , delete from latest
   # === CPU LLMs Stack ===
   # <editor-fold desc="CPU LLMs Stack">
-  llama.cpp:
+  llama-cpp:
     image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b5490
     platform: linux/amd64
     volumes:
@@ -448,7 +448,7 @@ services:
       retries: 3
       start_period: 30s
 
-  hf-TEI:
+  huggingface-text-embedding-inference:
     image: ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cpu-1.6
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/hf-tei-data:/data
