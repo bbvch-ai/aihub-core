@@ -5,7 +5,7 @@ from pydantic import Field
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import ControlEvent
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 
@@ -34,7 +34,7 @@ class BotInTheLoopRequestEvent(ControlEvent):
         str, Field(description="The ID of the Slack channel where the request is sent to.", pattern=r"^C[0-9A-Z]+$")
     ]
     topic: Annotated[
-        PartialAgentTopic | AgentTopic,
+        PartialAgentTopic | AgentInstanceTopic,
         Field(
             description="A partial or full agent topic specifying the event type and name of the expected response "
             "event, ensuring the correct workflow step resumes once the human replies.",

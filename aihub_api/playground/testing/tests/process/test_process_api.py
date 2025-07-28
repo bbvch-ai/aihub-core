@@ -13,6 +13,7 @@ from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 
 from aihub_api.routes.process.ProcessController import ProcessController
+from aihub_api.routes.process.ProcessService import ProcessService
 from aihub_api.runners.simulation.process.SimulatedProcessApiTestRunner import SimulatedProcessApiTestRunner
 
 PROCESS_CLASS = "test_process"
@@ -24,13 +25,13 @@ async def process_api_client():
     auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     controller = (
         ProcessController(auth=auth)
-        .discover_processes()
-        .get_processes()
         .get_process()
+        .get_processes()
+        .discover_processes()
         .get_process_start_forms()
-        .get_process_open_forms()
         .send_process_start_form()
         .send_process_open_form()
+        .get_process_open_forms()
     )
     runner = SimulatedProcessApiTestRunner(
         process_class=PROCESS_CLASS, process_id=PROCESS_ID
@@ -42,6 +43,13 @@ async def process_api_client():
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1") as client:
             yield client
+
+
+@pytest.fixture(autouse=True)
+def cleanup_db_and_cache():
+    ProcessService._clear_cache()
+    yield
+    ProcessService._clear_cache()
 
 
 @pytest.mark.asyncio(loop_scope="module")

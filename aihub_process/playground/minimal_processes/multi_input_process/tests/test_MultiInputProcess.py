@@ -59,8 +59,9 @@ def agent_c_runner_fixture():
 def process_runner_fixture():
     return ProcessTestRunner(
         process_type=MultiInputProcess,
-        process_config=ProcessConfig(
+        default_process_config=ProcessConfig(
             process_id="multi_input_process",
+            process_class=MultiInputProcess.__name__,
             name=LocaleString(en="Multi Input Process"),
             description=LocaleString(en="Test Multi Input Process"),
         ),

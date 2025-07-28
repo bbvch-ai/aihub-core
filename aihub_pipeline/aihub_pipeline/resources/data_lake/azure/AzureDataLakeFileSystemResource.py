@@ -1,9 +1,13 @@
 from adlfs import AzureBlobFileSystem
 from aihub_lib.infrastructure.azure.data_lake.DataLakeAccess import DataLakeAccess
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import InitResourceContext
+
+from aihub_pipeline.resources.data_lake.base.AbstractDataLakeFileSystemResource import (
+    AbstractDataLakeFileSystemResource,
+)
 
 
-class DataLakeFileSystemResource(ConfigurableResource[AzureBlobFileSystem]):
+class AzureDataLakeFileSystemResource(AbstractDataLakeFileSystemResource[AzureBlobFileSystem]):
     """
     This resource gives access to the Azure Blob File System and hence lets you interact
     with files on azure data lake as if they were on a local file system.
@@ -23,7 +27,8 @@ class DataLakeFileSystemResource(ConfigurableResource[AzureBlobFileSystem]):
     1. Directly interact with the azure data lake file system:
 
     .. code-block:: python
-        from aihub_pipeline.resources.data_lake.DataLakeFileSystemResource import DataLakeFileSystemResource
+        from aihub_pipeline.resources.data_lake.azure.AzureDataLakeFileSystemResource
+        import AzureDataLakeFileSystemResource
 
         from dagster import Definitions, asset
 
@@ -35,7 +40,7 @@ class DataLakeFileSystemResource(ConfigurableResource[AzureBlobFileSystem]):
         defs = Definitions(
             assets=[asset1],
             resources={
-                "data_lake_file_system": DataLakeFileSystemResource()}
+                "data_lake_file_system": AzureDataLakeFileSystemResource()}
         )
 
     2. Use the data lake file system as part of a data lake io manager:
@@ -43,8 +48,9 @@ class DataLakeFileSystemResource(ConfigurableResource[AzureBlobFileSystem]):
     .. code-block:: python
 
         from aihub_pipeline.io.AzureDataLakeIOManager import AzureDataLakeIOManager
-        from aihub_pipeline.resources.data_lake.DataLakeClientResource import DataLakeClientResource
-        from aihub_pipeline.resources.data_lake.DataLakeFileSystemResource import DataLakeFileSystemResource
+        from aihub_pipeline.resources.data_lake.azure.AzureDataLakeClientResource import AzureDataLakeClientResource
+        from aihub_pipeline.resources.data_lake.azure.AzureDataLakeFileSystemResource
+         import AzureDataLakeFileSystemResource
 
         from dagster import Definitions, asset
 
@@ -65,10 +71,10 @@ class DataLakeFileSystemResource(ConfigurableResource[AzureBlobFileSystem]):
             # The input asset will be loaded from the data_lake
             ...
 
-        data_lake_client = DataLakeClientResource(
+        data_lake_client = AzureDataLakeClientResource(
             container_name="my_container",
         )
-        data_lake_file_system = DataLakeFileSystemResource()
+        data_lake_file_system = AzureDataLakeFileSystemResource()
         data_lake_io_manager = AzureDataLakeIOManager(
             data_lake_client=data_lake_client,
             data_lake_file_system=data_lake_file_system,

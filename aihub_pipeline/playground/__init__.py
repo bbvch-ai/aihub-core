@@ -20,9 +20,9 @@ from aihub_pipeline.assets.factories.data_lake_to_vector_store.summary_nodes_fac
 from aihub_pipeline.executors.factory import default_process_executor
 from aihub_pipeline.jobs.factory import materialize_asset_job, observe_source_job
 from aihub_pipeline.resources.factory import (
-    azure_data_lake_resources,
-    default_io_manager_azure_datalake_resources,
+    default_io_manager_s3_datalake_resources,
     local_mongo_milvus_storage_context_resource,
+    s3_data_lake_resources,
 )
 from aihub_pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelResource
 from aihub_pipeline.resources.llm.LanguageModelResource import LanguageModelResource
@@ -32,6 +32,7 @@ from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import Recur
 from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
 
+# Configuration: Change this to switch between cloud providers
 DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
 DOCUMENT_KEY = AssetKey(["playground", "documents"])
 NODES_KEY = AssetKey(["playground", "nodes"])
@@ -40,9 +41,9 @@ SUMMARY_NODES_KEY = AssetKey(["playground", "summary_nodes"])
 
 DATALAKE_CONTAINER_NAME = "playground"
 DATALAKE_DIRECTORY_NAME = "test"
+NAMESPACE_NAME = DATALAKE_DIRECTORY_NAME
+STORE_NAME = DATALAKE_CONTAINER_NAME
 FIGURES_DIRECTORY_NAME = "__figures__"
-NAMESPACE_NAME = "test"
-STORE_NAME = "test"
 
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
@@ -68,14 +69,13 @@ remove_job = materialize_asset_job(
     asset_selection=AssetSelection.keys(REMOVED_DOCUMENTS_KEY),
 )
 
-
 defs = Definitions(
     assets=assets,
     resources={
-        **default_io_manager_azure_datalake_resources(
+        **default_io_manager_s3_datalake_resources(
             container_name=DATALAKE_CONTAINER_NAME, directory_name=DATALAKE_DIRECTORY_NAME
         ),
-        "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
+        "document_parser": DocumentParserResource(loader_type=LoaderType.DOCUMENT_INTELLIGENCE),
         "node_parser": MarkdownStructuralNodeParserResource(),
         "summary_parser": RecursiveSummaryParserResource(),
         **local_mongo_milvus_storage_context_resource(
@@ -83,7 +83,7 @@ defs = Definitions(
             store_name=STORE_NAME,
             namespace_name=NAMESPACE_NAME,
         ),
-        **azure_data_lake_resources(
+        **s3_data_lake_resources(
             container_name=DATALAKE_CONTAINER_NAME,
             directory_name=DATALAKE_DIRECTORY_NAME,
             figures_directory_name=FIGURES_DIRECTORY_NAME,

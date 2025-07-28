@@ -1,8 +1,11 @@
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from aihub_lib.i18n.LocaleString import LocaleString
+
+if TYPE_CHECKING:
+    from aihub_lib.persistence.process import ProcessConfigEntity
 
 
 class ProcessConfig(BaseModel):
@@ -27,9 +30,26 @@ class ProcessConfig(BaseModel):
     injected into each agent step at-runtime.
     """
 
+    name: Annotated[LocaleString, Field(description="The name of the process.")]
+    description: Annotated[LocaleString, Field(description="The description of the process.")]
+    icon: Annotated[str, Field(description="The icon representing the process.")] = "meteor-icons:robot"
+
+    process_class: Annotated[str, Field(description="The class name of the process, used for identification.")]
     process_id: Annotated[
         str, Field(description="Used to uniquely identify this process instance.", pattern=r"^[a-z0-9_-]+$")
     ]
-    name: Annotated[LocaleString, Field(description="The name of the process.")]
-    description: Annotated[LocaleString, Field(description="The description of the process.")]
-    icon: Annotated[str, Field(description="The icon representing the agent.")] = "meteor-icons:robot"
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
+
+    @classmethod
+    def from_entity(cls, entity: "ProcessConfigEntity") -> "ProcessConfig":
+        data = {
+            "process_class": entity.process_class,
+            "process_id": entity.process_id,
+            "name": entity.name.to_locale_string(),
+            "description": entity.description.to_locale_string(),
+            "icon": entity.icon,
+            **entity.config_data,
+        }
+        config = cls(**data)
+        return config

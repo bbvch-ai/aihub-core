@@ -3,10 +3,10 @@ from typing import Annotated
 from pydantic import Field
 
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
-from aihub_lib.nats.topics.discovery.DiscoveryTopic import DiscoveryTopic
+from aihub_lib.nats.topics.discovery.process.ProcessClassDiscoveryTopic import ProcessClassDiscoveryTopic
 
 
-class ProcessDiscoveryTopic(DiscoveryTopic):
+class ProcessInstanceDiscoveryTopic(ProcessClassDiscoveryTopic):
     """
     Specialization of DiscoveryTopic for process-specific discovery subjects, including process_class and process_id.
 
@@ -16,11 +16,10 @@ class ProcessDiscoveryTopic(DiscoveryTopic):
 
     """
 
-    process_class: Annotated[str, Field(description="Process class targeted by the discovery.")]
     process_id: Annotated[str, Field(description="Specific Process instance targeted by the discovery.")]
 
     @classmethod
-    def from_subject(cls, subject: str) -> "ProcessDiscoveryTopic":
+    def from_subject(cls, subject: str) -> "ProcessInstanceDiscoveryTopic":
         """
         Use this when dealing with process-specific discovery subjects to extract process_class and process_id.
         """

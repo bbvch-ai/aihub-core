@@ -32,8 +32,9 @@ def agent_a_runner_fixture():
 def initial_process_runner_fixture():
     return ProcessTestRunner(
         process_type=InitialProcess,
-        process_config=ProcessConfig(
+        default_process_config=ProcessConfig(
             process_id="initial_process",
+            process_class=InitialProcess.__name__,
             name=LocaleString(en="Initial Process"),
             description=LocaleString(en="Test Initial Process"),
         ),
@@ -44,8 +45,9 @@ def initial_process_runner_fixture():
 def subsequent_process_runner_fixture():
     return ProcessTestRunner(
         process_type=SubsequentProcess,
-        process_config=ProcessConfig(
+        default_process_config=ProcessConfig(
             process_id="subsequent_process",
+            process_class=SubsequentProcess.__name__,
             name=LocaleString(en="Subsequent Process"),
             description=LocaleString(en="Test Subsequent Process"),
         ),

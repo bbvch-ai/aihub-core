@@ -14,6 +14,13 @@ class WorkRequestEvent(ProcessEvent):
     AgentWorkRequestEvent, HumanWorkRequestEvent, ... etc. instead.
     """
 
+    process_id: Annotated[
+        str | None,
+        Field(
+            description="Process ID associated with this Stop Event. "
+            "This field will be auto-ingested by the process dispatcher."
+        ),
+    ] = None
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.process_steps.work_request_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
         "lib.process_steps.work_request_event.description"

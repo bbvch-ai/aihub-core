@@ -1,9 +1,11 @@
 from aihub_lib.infrastructure.azure.data_lake.DataLakeAccess import DataLakeAccess
-from azure.storage.filedatalake import FileSystemClient
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import InitResourceContext
+
+from aihub_pipeline.resources.data_lake.azure.AzureDataLakeClient import AzureDataLakeClient
+from aihub_pipeline.resources.data_lake.base.AbstractDataLakeClientResource import AbstractDataLakeClientResource
 
 
-class DataLakeClientResource(ConfigurableResource[FileSystemClient]):
+class AzureDataLakeClientResource(AbstractDataLakeClientResource[AzureDataLakeClient]):
     """
     A resource that provides a FileSystemClient for interacting with the Azure Data Lake using
     the Azure SDK for Python. The FileSystemClient is suitable when you need granular control over storage operations,
@@ -13,7 +15,7 @@ class DataLakeClientResource(ConfigurableResource[FileSystemClient]):
     last changed, etc.
 
     You should not use this client SDK when you want to open the file and read its contents. For that, you should use
-    the AzureBlobFileSystem provided by the DataLakeFileSystemResource.
+    the AzureBlobFileSystem provided by the AzureDataLakeFileSystemResource.
 
     **Note**: When using the client SDK, you have access to both your own namespace as well as all other namespaces
     in the organization. Be extra careful when using this client SDK.
@@ -32,7 +34,7 @@ class DataLakeClientResource(ConfigurableResource[FileSystemClient]):
 
     .. code-block:: python
 
-        from aihub_pipeline.resources.data_lake.DataLakeClientResource import DataLakeClientResource
+        from aihub_pipeline.resources.data_lake.azure.AzureDataLakeClientResource import AzureDataLakeClientResource
 
         from dagster import Definitions, asset
 
@@ -43,7 +45,7 @@ class DataLakeClientResource(ConfigurableResource[FileSystemClient]):
         defs = Definitions(
             assets=[asset1],
             resources={
-                "data_lake_client": DataLakeClientResource(container_name="my_container")
+                "data_lake_client": AzureDataLakeClientResource(container_name="my_container")
             }
         )
 
@@ -52,8 +54,9 @@ class DataLakeClientResource(ConfigurableResource[FileSystemClient]):
     .. code-block:: python
 
         from aihub_pipeline.io.AzureDataLakeIOManager import AzureDataLakeIOManager
-        from aihub_pipeline.resources.data_lake.DataLakeClientResource import DataLakeClientResource
-        from aihub_pipeline.resources.data_lake.DataLakeFileSystemResource import DataLakeFileSystemResource
+        from aihub_pipeline.resources.data_lake.azure.AzureDataLakeClientResource import AzureDataLakeClientResource
+        from aihub_pipeline.resources.data_lake.azure.AzureDataLakeFileSystemResource
+        import AzureDataLakeFileSystemResource
 
         from dagster import Definitions, asset
 
@@ -75,9 +78,9 @@ class DataLakeClientResource(ConfigurableResource[FileSystemClient]):
             # The input asset will be loaded from the data_lake
             ...
 
-        data_lake_client = DataLakeClientResource(container_name="my_container")
+        data_lake_client = AzureDataLakeClientResource(container_name="my_container")
 
-        data_lake_file_system = DataLakeFileSystemResource()
+        data_lake_file_system = AzureDataLakeFileSystemResource()
         data_lake_io_manager = AzureDataLakeIOManager(
             data_lake_client=data_lake_client,
             data_lake_file_system=data_lake_file_system,
@@ -94,8 +97,7 @@ class DataLakeClientResource(ConfigurableResource[FileSystemClient]):
 
     """
 
-    container_name: str
-
-    def create_resource(self, context: InitResourceContext) -> FileSystemClient:
+    def create_resource(self, context: InitResourceContext) -> AzureDataLakeClient:
         data_lake_client = DataLakeAccess().get_client()
-        return data_lake_client.get_file_system_client(file_system=self.container_name)
+        filesystem_client = data_lake_client.get_file_system_client(file_system=self.container_name)
+        return AzureDataLakeClient(self.container_name, filesystem_client)
