@@ -5,7 +5,6 @@ from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.open_webui.sdk import OpenWebuiClient
 from aihub_lib.generative_ai.routing.route_to_event_using_llm import route_to_event_using_llm
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
@@ -35,18 +34,21 @@ class ExpertAskingAgent(Agent):
     """
 
     @step(
-        name=LocaleString(en="Invoke Expert Step"),
-        description=LocaleString(en="Poses question to a group of experts."),
+        name=LocaleString(en="Post to Slack"),
+        description=LocaleString(en="Posts question directly to Slack channel."),
         icon="material-symbols:group-rounded",
     )
-    async def start_step(
+    async def post_to_slack_step(
         self,
         question_event: AskExpertStartEvent | AskExpertEvent,
         agent_config: ExpertAskingAgentConfig,
         displayer: EventDisplayer,
         run_context: RunContext,
         t: AgentLocaleHandler,
-    ) -> BotInTheLoop.request:
+    ) -> "SlackMessagePostedEvent":
+        from aihub_agent.agents.ExpertAskingAgent.events.SlackMessagePostedEvent import SlackMessagePostedEvent
+        from aihub_agent.agents.ExpertAskingAgent.SlackDirectClient import SlackDirectClient
+
         await displayer.display_thought(
             t("agent.expert_asking_agent.thoughts.asking_question", question=question_event.question_to_expert)
         )
@@ -56,11 +58,84 @@ class ExpertAskingAgent(Agent):
         chat_history.append(ChatMessage(role=MessageRole.ASSISTANT, content=question_event.question_to_expert))
         await run_context.set("chat_history", [msg.model_dump() for msg in chat_history])
 
-        return BotInTheLoop.invoke(
-            question=question_event.question_to_expert,
-            user=question_event.user,
-            slack_channel_id=agent_config.slack_channel_id,
+        # Get thread timestamp for follow-up questions
+        thread_ts = await run_context.get("thread_ts", None)
+
+        # Post message to Slack using direct API
+        slack_client = SlackDirectClient(agent_config.slack_token)
+        response = await slack_client.post_message(
+            channel=agent_config.slack_channel_id, text=question_event.question_to_expert, thread_ts=thread_ts
         )
+
+        message_ts = response["ts"]
+
+        # Store thread timestamp for follow-up questions
+        if not thread_ts:
+            await run_context.set("thread_ts", message_ts)
+            thread_ts = message_ts
+
+        return SlackMessagePostedEvent(
+            question=question_event.question_to_expert,
+            channel_id=agent_config.slack_channel_id,
+            message_ts=message_ts,
+            thread_ts=thread_ts,
+            user=question_event.user,
+        )
+
+    @step(
+        name=LocaleString(en="Wait for Slack Response"),
+        description=LocaleString(en="Waits for expert response from Slack."),
+        icon="material-symbols:hourglass-empty",
+    )
+    async def wait_for_slack_response_step(
+        self,
+        slack_message_event: "SlackMessagePostedEvent",
+        agent_config: ExpertAskingAgentConfig,
+        displayer: EventDisplayer,
+        t: AgentLocaleHandler,
+    ) -> "SlackResponseReceivedEvent":
+        from aihub_agent.agents.ExpertAskingAgent.events.SlackResponseReceivedEvent import SlackResponseReceivedEvent
+        from aihub_agent.agents.ExpertAskingAgent.SlackDirectClient import SlackDirectClient
+        from aihub_agent.agents.ExpertAskingAgent.SlackResponsePoller import SlackResponsePoller
+
+        await displayer.display_thought(t("agent.expert_asking_agent.thoughts.waiting_for_response"))
+
+        slack_client = SlackDirectClient(agent_config.slack_token)
+        poller = SlackResponsePoller(slack_client)
+
+        try:
+            responses = await poller.wait_for_response(
+                channel=slack_message_event.channel_id,
+                message_ts=slack_message_event.message_ts,
+                timeout=300,  # 5 minutes timeout
+            )
+
+            if not responses:
+                raise TimeoutError("No response received from experts")
+
+            # Use the first response (could be enhanced to handle multiple responses)
+            first_response = responses[0]
+
+            return SlackResponseReceivedEvent(
+                response=first_response.text,
+                expert_name=first_response.username,
+                channel_id=first_response.channel,
+                message_ts=first_response.ts,
+                thread_ts=first_response.thread_ts,
+                user=slack_message_event.user,
+            )
+
+        except TimeoutError:
+            await displayer.display_thought(t("agent.expert_asking_agent.thoughts.no_response_timeout"))
+            # Return empty response to trigger insufficient answer handling
+            return SlackResponseReceivedEvent(
+                response="",
+                expert_name="No Expert",
+                channel_id=slack_message_event.channel_id,
+                message_ts="",
+                thread_ts=slack_message_event.thread_ts,
+                user=slack_message_event.user,
+            )
 
     @step(
         name=LocaleString(en="Expert Response"),
@@ -70,14 +145,14 @@ class ExpertAskingAgent(Agent):
     async def expert_response_step(
         self,
         initial_question_event: AskExpertStartEvent,
-        expert_response_event: BotInTheLoop.response,
+        expert_response_event: "SlackResponseReceivedEvent",
         agent_config: ExpertAskingAgentConfig,
         displayer: EventDisplayer,
         run_context: RunContext,
         t: AgentLocaleHandler,
     ) -> RouterEvent:
         expert_response = expert_response_event.response
-        expert_name = expert_response_event.responder.user_name
+        expert_name = expert_response_event.expert_name
         await displayer.display_thought(
             t("agent.expert_asking_agent.thoughts.expert_responded", response=expert_response)
         )

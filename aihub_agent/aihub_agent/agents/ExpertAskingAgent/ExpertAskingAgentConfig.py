@@ -12,6 +12,7 @@ class ExpertAskingAgentConfig(AgentConfig):
     slack_channel_id: Annotated[
         str, Field(..., description="Slack channel ID to which expert question should be posted")
     ]
+    slack_token: Annotated[str, Field(..., description="Slack bot token for direct API access")]
     loop_max: Annotated[int, Field(3, description="Maximum number of loops to ask experts", gt=0)]
     open_webui_knowledge_id: Annotated[str, Field(..., description="Knowledge ID for Open WebUI")]
     open_webui_api_key: Annotated[str, Field(..., description="API key for Open WebUI")]

@@ -58,6 +58,8 @@ knowledge_snippet: |
 
 thoughts:
   asking_question: "Asking question to expert: '%{question}'."
+  waiting_for_response: "Waiting for expert response from Slack..."
+  no_response_timeout: "No response received from experts within timeout period."
   expert_responded: "Expert has responded: '%{response}'."
   determine_sufficient: "Verify if the expert's answer is sufficient."
   answer_sufficient: "The expert's answer is sufficient! Creating a knowledge snippet now."
