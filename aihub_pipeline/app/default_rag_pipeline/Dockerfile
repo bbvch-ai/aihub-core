@@ -109,4 +109,4 @@ WORKDIR $DAGSTER_HOME
 EXPOSE 4000
 
 # Start the application
-ENTRYPOINT exec poetry run dagster api grpc -h 0.0.0.0 -p 4000 -m aihub_pipeline.app.${PIPELINE_NAME}
+ENTRYPOINT exec poetry run dagster api grpc -h 0.0.0.0 -p 4000 -m app.${PIPELINE_NAME}
