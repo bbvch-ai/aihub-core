@@ -95,13 +95,12 @@ RUN echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/"$USERNAME" && \
     chmod 0440 /etc/sudoers.d/"$USERNAME"
 
 ENV DAGSTER_HOME=/dagster_home
-RUN mkdir -p $DAGSTER_HOME
+WORKDIR /dagster_home
 
-# Set the working directory
-WORKDIR /app
-
-# Copy application code and configuration files
-COPY --from=builder /app /app
+# Copy application code and configuration files from builder stage into /dagster_home
+COPY --from=builder /app/aihub_pipeline /dagster_home/aihub_pipeline
+COPY --from=builder /app/aihub_pipeline/pyproject.toml /dagster_home/pyproject.toml
+COPY --from=builder /app/aihub_pipeline/poetry.lock /dagster_home/poetry.lock
 
 WORKDIR $DAGSTER_HOME
 
