@@ -303,11 +303,11 @@ services:
       OAUTH2_PROXY_REDIRECT_URL: "https://dagster.${DOMAIN}"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.phoenix.rule=Host(`dagster.${DOMAIN}`)"
-      - "traefik.http.routers.phoenix.entrypoints=websecure"
-      - "traefik.http.routers.phoenix.tls.certresolver=letsencrypt"
-      - "traefik.http.services.phoenix.loadbalancer.server.port=4180"
-      - "traefik.http.routers.phoenix.middlewares=security-headers@file"
+      - "traefik.http.routers.dagster.rule=Host(`dagster.${DOMAIN}`)"
+      - "traefik.http.routers.dagster.entrypoints=websecure"
+      - "traefik.http.routers.dagster.tls.certresolver=letsencrypt"
+      - "traefik.http.services.dagster.loadbalancer.server.port=4180"
+      - "traefik.http.routers.dagster.middlewares=security-headers@file"
 
   dagster-webserver:
     image: ghcr.io/bbvch-ai/aihub-core/dagster:latest
