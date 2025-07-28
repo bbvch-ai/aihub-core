@@ -1,5 +1,7 @@
-from .ProcessDiscoveryResponseEvent import ProcessDiscoveryResponseEvent
+from .ProcessClassDiscoveryResponseEvent import ProcessClassDiscoveryResponseEvent
+from .ProcessInstanceDiscoveryResponseEvent import ProcessInstanceDiscoveryResponseEvent
 
 __all__ = [
-    "ProcessDiscoveryResponseEvent",
+    "ProcessClassDiscoveryResponseEvent",
+    "ProcessInstanceDiscoveryResponseEvent",
 ]

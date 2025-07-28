@@ -13,15 +13,17 @@ from aihub_lib.nats.events import (
     ProcessStopEvent,
     WorkEvent,
 )
-from aihub_lib.nats.events.discovery import ProcessDiscoveryResponseEvent
-from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
+from aihub_lib.nats.events.discovery import (
+    InstanceDiscoveryRequestEvent,
+    ProcessInstanceDiscoveryResponseEvent,
+)
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
-from aihub_lib.nats.topics import ProcessTopic, Topic
+from aihub_lib.nats.topics import ProcessInstanceTopic, Topic
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 from openai import BaseModel
 
@@ -54,15 +56,19 @@ class ProcessTestRunner(ProcessRunner):
     def __init__(
         self,
         process_type: type[AgenticProcess],
-        process_config: ProcessConfig,
+        default_process_config: ProcessConfig,
         locale_paths: list[str] | None = None,
     ):
         super().__init__(
             servers=[NatsConfig().NATS_ENDPOINT],
             redis_url=RedisConfig().REDIS_URL,
             process_type=process_type,
-            process_config=process_config,
+            default_process_config=default_process_config,
             locale_paths=locale_paths,
+        )
+        self.topic_manager = ProcessInstanceTopicManager(
+            process_class=self.process_class,
+            process_id=self.default_process_config.process_id,
         )
         self.test_event_subscriber: JSSubscriber | None = None
         self.observed_events: list[ObservedEvent] = []
@@ -90,7 +96,7 @@ class ProcessTestRunner(ProcessRunner):
         )
         await publisher.publish_event(work_event, subject)
 
-    async def send_event_from_topic(self, work_event: WorkEvent, topic: ProcessTopic):
+    async def send_event_from_topic(self, work_event: WorkEvent, topic: ProcessInstanceTopic):
         """
         Sends a StartEvent (or another initiating event) to the run identified by the PartialAgentTopic.
         This allows tests to inject their own events to drive the agent workflow.
@@ -118,23 +124,25 @@ class ProcessTestRunner(ProcessRunner):
             nc=self.nc,
             topic_manager=ProcessInstanceTopicManager(
                 process_class=self.process_class,
-                process_id=self.process_config.process_id,
+                process_id=self.default_process_config.process_id,
             ),
             handler=self.observe_event,
         )
         await self.test_event_subscriber.start()
 
-        self.observe_discovery_event_subscriber = ProcessNCSubscriber.for_process_discovery_request_events(
+        self.observe_discovery_event_subscriber = ProcessNCSubscriber.for_process_class_discovery_request_events(
             nc=self.nc,
             topic_manager=ProcessTopicManager(),
             handler=self.observe_event,
         )
         await self.observe_discovery_event_subscriber.start()
 
-        self.observe_discovery_response_event_subscriber = ProcessNCSubscriber.for_process_discovery_request_events(
-            nc=self.nc,
-            topic_manager=ProcessTopicManager(),
-            handler=self.observe_event,
+        self.observe_discovery_response_event_subscriber = (
+            ProcessNCSubscriber.for_process_class_discovery_response_events(
+                nc=self.nc,
+                topic_manager=ProcessTopicManager(),
+                handler=self.observe_event,
+            )
         )
         await self.observe_discovery_response_event_subscriber.start()
 
@@ -168,15 +176,15 @@ class ProcessTestRunner(ProcessRunner):
     @property
     def has_discovery_request_event(self) -> bool:
         """Check if a DiscoveryRequestEvent was observed."""
-        return any(isinstance(event.event, DiscoveryRequestEvent) for event in self.observed_events)
+        return any(isinstance(event.event, InstanceDiscoveryRequestEvent) for event in self.observed_events)
 
     @property
     def has_own_process_discovery_response_event(self) -> bool:
         """Check if an ProcessDiscoveryResponseEvent with the process's class and ID was observed."""
         return any(
-            isinstance(event.event, ProcessDiscoveryResponseEvent)
+            isinstance(event.event, ProcessInstanceDiscoveryResponseEvent)
             and event.event.process_class == self.process_class
-            and event.event.process_id == self.process_config.process_id
+            and event.event.process_id == self.default_process_config.process_id
             for event in self.observed_events
         )
 
@@ -184,14 +192,14 @@ class ProcessTestRunner(ProcessRunner):
         self,
         event_class: type[BaseEvent],
         exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
-    ) -> list[ProcessTopic]:
+    ) -> list[ProcessInstanceTopic]:
         """Returns the topics of all observed events of the specified class, if any are ProcessTopic."""
         return [
             ev.topic
             for ev in self.observed_events
             if isinstance(ev.event, event_class)
             and (not exact or event_class.event_name_from_class() == ev.event.event_name)
-            and isinstance(ev.topic, ProcessTopic)
+            and isinstance(ev.topic, ProcessInstanceTopic)
         ]
 
     def get_topic_and_events_of_class(

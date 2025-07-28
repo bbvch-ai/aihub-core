@@ -1,3 +1,4 @@
+from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import nats
@@ -6,7 +7,7 @@ from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import BaseEvent, ControlEvent, ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.testing.logging.logger import enable_logging
 from bson import ObjectId
 from nats.js import JetStreamContext
@@ -169,7 +170,7 @@ def locale_handler():
 @pytest.fixture
 def agent_topic():
     """Create a test agent topic."""
-    return AgentTopic(
+    return AgentInstanceTopic(
         agent_class="MockAgent",
         agent_id="test_agent",
         thread_id=str(ObjectId()),
@@ -530,7 +531,8 @@ class TestAgentDispatcherErrorHandling:
     async def test_handle_event_with_invalid_agent_config_type(self, agent_dispatcher, agent_topic):
         """Test handling of invalid agent config type validation."""
         # Arrange
-        start_event = StartEvent(agent_config={"invalid": "config"})
+        invalid_config: dict[str, Any] = {"invalid": "config"}
+        start_event = StartEvent(agent_config=invalid_config)
 
         mock_run_context = Mock(spec=RunContext)
         mock_run_context.set = AsyncMock()

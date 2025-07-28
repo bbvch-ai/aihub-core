@@ -21,7 +21,7 @@ from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.topics.discovery.agent.AgentInstanceDiscoveryTopic import AgentInstanceDiscoveryTopic
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
@@ -97,7 +97,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
             description=LocaleString(de="Test Agent Description"),
         )
 
-    async def simulate_agent(self, event: ControlEvent, topic: AgentTopic):
+    async def simulate_agent(self, event: ControlEvent, topic: AgentInstanceTopic):
         """
         Handler for control events targeting this agent instance. If a StartEvent arrives,
         publish the simulated events in sequence, followed by a StopEvent to conclude the run.
@@ -129,7 +129,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
-    async def publish_event(self, event: BaseEvent, topic: AgentTopic):
+    async def publish_event(self, event: BaseEvent, topic: AgentInstanceTopic):
         """
         Publish a given event (ControlEvent or DisplayEvent) to the appropriate subject based
         on the thread and run specified in the `topic`. Uses `AgentThreadTopicManager` to

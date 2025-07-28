@@ -7,7 +7,7 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from aihub_lib.nats.events import BaseEvent, ExceptionEvent, StopEvent
+from aihub_lib.nats.events import BaseEvent, ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentClassDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
@@ -72,12 +72,10 @@ class AgentService:
         Returns both agents that are online (answer to a discovery broadcast) and agents
         that are saved in the database.
         """
-        discovered_agents = await AgentService.discover_agent_instances(nc)
+        discovered_agents = await AgentService.discover_agents(nc, t)
         saved_agents = [AgentDTO.from_entity(agent, t, is_online=False) for agent in AgentEntity.get_agents()]
 
-        all_agents = [
-            AgentDTO.from_instance(agent_instance, is_online=True, t=t) for agent_instance in discovered_agents
-        ]
+        all_agents = discovered_agents.copy()
         for saved_agent in saved_agents:
             was_discovered = (
                 len(
@@ -105,7 +103,7 @@ class AgentService:
         if cache_key in GET_AGENT_INSTANCE_CACHE:
             return GET_AGENT_INSTANCE_CACHE[cache_key]
 
-        agent_class_dto = await AgentService.discover_agent_class(nc, agent_class)
+        agent_class_dto = await AgentService._discover_agent_class(nc, agent_class)
 
         configs = AgentConfigEntityDocument.find_for_class(agent_class)
         for config in configs:
@@ -139,7 +137,7 @@ class AgentService:
         if cache_key in GET_AGENT_INSTANCE_CACHE:
             return GET_AGENT_INSTANCE_CACHE[cache_key]
 
-        agent_class_dto = await AgentService.discover_agent_class(nc, agent_class)
+        agent_class_dto = await AgentService._discover_agent_class(nc, agent_class)
 
         configs = AgentConfigEntityDocument.find_for_class(agent_class)
         agent_instance_dtos = []
@@ -167,7 +165,7 @@ class AgentService:
         raise HTTPException(status_code=404, detail=f"No instances found for agent class {agent_class}.")
 
     @staticmethod
-    async def discover_agent_class(nc: NATS, agent_class: str) -> AgentClassDTO:
+    async def _discover_agent_class(nc: NATS, agent_class: str) -> AgentClassDTO:
         """
         Retrieves details about a specific agent. If cached, returns immediately.
         Otherwise, sends a targeted discovery request and waits for a response.
@@ -235,7 +233,7 @@ class AgentService:
             return DISCOVER_AGENTS_CACHE[cache_key]
 
         # Step 1: Discover which agent classes are online
-        online_agents: list[AgentClassDTO] = await AgentService.discover_agent_classes(nc)
+        online_agents: list[AgentClassDTO] = await AgentService._discover_agent_classes(nc)
 
         # Step 2: Get all configured agent instances from database
         configured_agents = []
@@ -267,7 +265,7 @@ class AgentService:
         return configured_agents
 
     @staticmethod
-    async def discover_agent_classes(nc: NATS) -> list[AgentClassDTO]:
+    async def _discover_agent_classes(nc: NATS) -> list[AgentClassDTO]:
         """
         Discovers all agents by broadcasting a discovery request and waiting for responses.
         Returns a cached result if available.
@@ -317,7 +315,12 @@ class AgentService:
         return agents
 
     @staticmethod
-    async def send_event(
+    async def discover_agents(nc: NATS, t: LocaleHandler) -> list[AgentDTO]:
+        discovered_agents = await AgentService.discover_agent_instances(nc)
+        return [AgentDTO.from_instance(agent_instance, is_online=True, t=t) for agent_instance in discovered_agents]
+
+    @staticmethod
+    async def _send_event(
         nc: NATS,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         user: UserIdentity,
@@ -365,6 +368,44 @@ class AgentService:
         return resources.stop_event
 
     @staticmethod
+    async def send_agent_start_event(
+        nc: NATS,
+        agent_class: str,
+        agent_id: str,
+        start_event_parents: list[str],
+        start_event_name: str,
+        raw_event_data: dict,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
+        thread_id: ObjectId | None,
+        display_id: ObjectId | None,
+        user: UserIdentity,
+        t: LocaleHandler,
+        agent_config: AgentConfig,
+    ) -> StopEvent | ExceptionEvent:
+        """
+        Sends a start event to a specific agent and waits for a response.
+        """
+        event: StartEvent = StartEvent.from_raw_data(
+            raw_event_data=raw_event_data,
+            user=user,
+            start_event_name=start_event_name,
+            start_event_parents=start_event_parents,
+            agent_config=agent_config,
+            t=t,
+        )
+
+        return await AgentService._send_event(
+            nc,
+            external_agent_event_distributor,
+            user,
+            event,
+            agent_class,
+            agent_id,
+            thread_id,
+            display_id,
+        )
+
+    @staticmethod
     async def get_paginated_agent_threads(
         agent_class: str,
         agent_id: str,
@@ -386,7 +427,7 @@ class AgentService:
         )
 
     @staticmethod
-    def clear_cache() -> None:
+    def _clear_cache() -> None:
         """
         Clears the in-memory caches used for agent discovery. Useful for testing purposes to ensure fresh discovery
         requests.

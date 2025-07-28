@@ -9,14 +9,14 @@ from aihub_lib.nats.events import (
     AgentWorkRequestEvent,
     ControlEvent,
     ProcessStartEvent,
+    WorkEvent,
     WorkRequestEvent,
 )
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
-from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
-from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
-from aihub_lib.nats.topics import AgentTopic
-from aihub_lib.nats.topics.process.ProcessTopic import ProcessTopic
+from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
+from aihub_lib.nats.topics import AgentInstanceTopic
+from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent as AgentInThread
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from bson import ObjectId
@@ -65,17 +65,16 @@ class AgentDelegator(AbstractEntityDelegator):
 
     def __init__(
         self,
-        process_class: Annotated[type[AgenticProcess], "The agentic process defining steps and logic."],
-        process_id: Annotated[str, "Process ID"],
+        process_type: Annotated[type[AgenticProcess], "The agentic process defining steps and logic."],
         nc: Annotated[NATS, "NATS client for messaging."],
         js: Annotated[
             JetStreamContext,
             "JetStream context for persistent storage and event streams.",
         ],
-        topic_manager: Annotated[ProcessInstanceTopicManager, "Manages event subjects."],
+        topic_manager: Annotated[ProcessClassTopicManager, "Manages event subjects."],
         queue_group: str,
     ):
-        super().__init__(process_class, process_id, nc, js, topic_manager, queue_group)
+        super().__init__(process_type, nc, js, topic_manager, queue_group)
         self.external_agent_event_distributor = ExternalAgentEventDistributor(nc=self.nc, js=self.js)
 
     async def start(self):
@@ -84,7 +83,7 @@ class AgentDelegator(AbstractEntityDelegator):
         create a nats subscription to these agents with the relevant stop event.
         """
         await super().start()
-        logger.debug(f"Starting agent delegator for process '{self.process_id}'")
+        logger.debug(f"Starting agent delegator for process class '{self.process_class}'")
 
         for work_event, config in self.process_class.get_events_with_agent_in():
             logger.debug(f"Found process step with agent work input: '{work_event.event_name_from_class()}'")
@@ -117,7 +116,7 @@ class AgentDelegator(AbstractEntityDelegator):
 
     def handle_process_step_input_factory(
         self, work_event_type: type[AgentWorkEvent], is_process_start: bool
-    ) -> Callable[[ControlEvent, AgentTopic], Awaitable[None]]:
+    ) -> Callable[[ControlEvent, AgentInstanceTopic], Awaitable[None]]:
         """
         The agent delegator must differentiate the cases in which the agent can trigger a new process walkthrough
         and the case in which the agent can only continue an existing process walkthrough.
@@ -128,10 +127,10 @@ class AgentDelegator(AbstractEntityDelegator):
 
         async def _handle_process_step_input(
             event: Annotated[ControlEvent, "The incoming agent event to handle."],
-            topic: Annotated[AgentTopic, "The parsed topic of the event."],
+            topic: Annotated[AgentInstanceTopic, "The parsed topic of the event."],
         ):
             logger.debug(f"Handling agent event: {event.event_name}")
-            work_event = work_event_type(agent_stop_event=event)
+            work_event: WorkEvent = work_event_type(agent_stop_event=event)
 
             if is_process_start:
                 process_walkthrough_id = str(ObjectId())
@@ -139,26 +138,21 @@ class AgentDelegator(AbstractEntityDelegator):
             else:
                 thread = ThreadEntity.get_thread_by_id(topic.thread_id)
 
-                if thread.process_id != self.process_id or thread.process_class != self.process_class.__name__:
+                if thread.process_class != self.process_class.__name__:
                     logger.debug("Ignoring agent event because it does not belong to this process")
                     return
 
                 process_walkthrough_id = thread.process_walkthrough_id
                 logger.debug(f"Continuing existing walkthrough with ID {process_walkthrough_id}")
 
-            walkthrough_topic_manager = ProcessWalkthroughTopicManager.from_process_instance_topic_manager(
-                topic_manager=self.topic_manager, process_walkthrough_id=process_walkthrough_id
+            await self._publish_work_event(
+                work_event=work_event,
+                process_walkthrough_id=process_walkthrough_id,
             )
-            subject = walkthrough_topic_manager.get_subject_for_work_event_in_walkthrough(
-                event_name=work_event.event_name,
-                event_id=work_event.event_id,
-            )
-            logger.debug(f"Publishing work {work_event} to subject '{subject}'")
-            await self.js_publisher.publish_event(work_event, subject)
 
         return _handle_process_step_input
 
-    async def handle_process_step_output(self, event: WorkRequestEvent, topic: ProcessTopic):
+    async def handle_process_step_output(self, event: WorkRequestEvent, topic: ProcessClassTopic):
         """
         When receiving a AgentWorkRequestEvent, we can simply create a new thread and send the start event
         that is part of te AgentWorkReqeustEvent to the appropriate agent as an external event.
@@ -175,7 +169,7 @@ class AgentDelegator(AbstractEntityDelegator):
             agent=AgentInThread(agent_class=event.agent_class, agent_id=event.agent_id),
             thread_id=thread_id,
             process_class=self.process_class.__name__,
-            process_id=self.process_id,
+            process_id=event.process_id,
             process_walkthrough_id=topic.process_walkthrough_id,
         )
 

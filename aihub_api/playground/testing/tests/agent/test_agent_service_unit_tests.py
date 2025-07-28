@@ -30,6 +30,13 @@ from aihub_api.routes.thread.ThreadService import ThreadService
 enable_logging()
 
 
+@pytest.fixture(autouse=True)
+def cleanup_db_and_cache(sample_agent_config):
+    AgentService._clear_cache()
+    yield
+    AgentService._clear_cache()
+
+
 @pytest.fixture
 def sample_agent_config():
     """Create a sample AgentConfig for testing."""
@@ -258,7 +265,7 @@ class TestAgentServiceUnit:
     @pytest.mark.asyncio
     async def test_discover_agent_instances_success(self, mock_nats, sample_agent_class, sample_agent_config):
         """Test discover_agent_instances returns configured agents."""
-        with patch.object(AgentService, "discover_agent_classes") as mock_discover_classes:
+        with patch.object(AgentService, "_discover_agent_classes") as mock_discover_classes:
             mock_discover_classes.return_value = [sample_agent_class]
 
             with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find_configs:
@@ -305,7 +312,7 @@ class TestAgentServiceUnit:
 
     @pytest.mark.asyncio
     async def test_discover_agent_classes_success(self, mock_nats):
-        """Test discover_agent_classes broadcasts discovery and returns results."""
+        """Test _discover_agent_classes broadcasts discovery and returns results."""
         mock_response = Mock(spec=AgentClassDiscoveryResponseEvent)
         mock_response.agent_class = "TestAgent"
         mock_response.agent_config_specs = []
@@ -372,19 +379,19 @@ class TestAgentServiceUnit:
                                         DISCOVER_AGENTS_CACHE["all_agent_classes"] = agents
                                     return agents
 
-                                with patch.object(AgentService, "discover_agent_classes", patched_method):
-                                    result = await AgentService.discover_agent_classes(mock_nats)
+                                with patch.object(AgentService, "_discover_agent_classes", patched_method):
+                                    result = await AgentService._discover_agent_classes(mock_nats)
 
                                     assert len(result) == 1
                                     assert result[0] == mock_agent_class
 
     @pytest.mark.asyncio
     async def test_discover_agent_classes_cached(self, mock_nats):
-        """Test discover_agent_classes returns cached result."""
+        """Test _discover_agent_classes returns cached result."""
         cached_result = [Mock(spec=AgentClassDTO)]
         DISCOVER_AGENTS_CACHE["all_agent_classes"] = cached_result
 
-        result = await AgentService.discover_agent_classes(mock_nats)
+        result = await AgentService._discover_agent_classes(mock_nats)
 
         assert result == cached_result
 
@@ -439,8 +446,8 @@ class TestAgentServiceUnit:
                                 GET_AGENT_CLASS_CACHE[agent_class] = mock_agent_class
                                 return mock_agent_class
 
-                            with patch.object(AgentService, "discover_agent_class", patched_method):
-                                result = await AgentService.discover_agent_class(mock_nats, "TestAgent")
+                            with patch.object(AgentService, "_discover_agent_class", patched_method):
+                                result = await AgentService._discover_agent_class(mock_nats, "TestAgent")
 
                                 assert result.agent_class == "TestAgent"
                                 assert result.is_online
@@ -470,7 +477,7 @@ class TestAgentServiceUnit:
                             mock_wait_for.side_effect = TimeoutError()
 
                             with pytest.raises(HTTPException) as exc_info:
-                                await AgentService.discover_agent_class(mock_nats, "TestAgent")
+                                await AgentService._discover_agent_class(mock_nats, "TestAgent")
 
                             assert exc_info.value.status_code == 404
                             assert "Agent TestAgent not found" in str(exc_info.value.detail)
@@ -481,7 +488,7 @@ class TestAgentServiceUnit:
         cached_result = Mock(spec=AgentClassDTO)
         GET_AGENT_CLASS_CACHE["TestAgent"] = cached_result
 
-        result = await AgentService.discover_agent_class(mock_nats, "TestAgent")
+        result = await AgentService._discover_agent_class(mock_nats, "TestAgent")
 
         assert result == cached_result
 
@@ -508,7 +515,7 @@ class TestAgentServiceUnit:
                 mock_chat_service.start_json_event_interaction = AsyncMock(return_value=mock_resources)
 
                 thread_id = ObjectId()
-                result = await AgentService.send_event(
+                result = await AgentService._send_event(
                     nc=mock_nats,
                     external_agent_event_distributor=mock_external_distributor,
                     user=mock_user_identity,
@@ -547,7 +554,7 @@ class TestAgentServiceUnit:
 
                 mock_chat_service.start_json_event_interaction = AsyncMock(return_value=mock_resources)
 
-                result = await AgentService.send_event(
+                result = await AgentService._send_event(
                     nc=mock_nats,
                     external_agent_event_distributor=mock_external_distributor,
                     user=mock_user_identity,
@@ -588,7 +595,7 @@ class TestAgentServiceUnit:
     def test_clear_cache_success(self):
         """Test clear_cache clears all caches."""
         # Clear caches first to ensure clean state
-        AgentService.clear_cache()
+        AgentService._clear_cache()
 
         # Add some items to caches
         DISCOVER_AGENTS_CACHE["test"] = "value"
@@ -601,7 +608,7 @@ class TestAgentServiceUnit:
         assert len(GET_AGENT_CLASS_CACHE) > 0
 
         # Clear caches
-        AgentService.clear_cache()
+        AgentService._clear_cache()
 
         # Verify caches are empty
         assert len(DISCOVER_AGENTS_CACHE) == 0
@@ -625,7 +632,7 @@ class TestAgentServiceUnit:
     @pytest.mark.asyncio
     async def test_discover_agent_instances_no_results(self, mock_nats):
         """Test discover_agent_instances returns empty list when no agents found."""
-        with patch.object(AgentService, "discover_agent_classes") as mock_discover_classes:
+        with patch.object(AgentService, "_discover_agent_classes") as mock_discover_classes:
             mock_discover_classes.return_value = []
 
             result = await AgentService.discover_agent_instances(mock_nats)
@@ -636,7 +643,7 @@ class TestAgentServiceUnit:
 
     @pytest.mark.asyncio
     async def test_discover_agent_classes_no_results(self, mock_nats):
-        """Test discover_agent_classes returns empty list when no agents respond."""
+        """Test _discover_agent_classes returns empty list when no agents respond."""
         with patch("aihub_api.routes.agent.AgentService.AgentNCSubscriber") as mock_subscriber_class:
             mock_subscriber = Mock()
             mock_subscriber.start = AsyncMock()
@@ -674,8 +681,8 @@ class TestAgentServiceUnit:
                                 # Should not cache empty results
                                 return agents
 
-                            with patch.object(AgentService, "discover_agent_classes", patched_method):
-                                result = await AgentService.discover_agent_classes(mock_nats)
+                            with patch.object(AgentService, "_discover_agent_classes", patched_method):
+                                result = await AgentService._discover_agent_classes(mock_nats)
 
                                 assert result == []
                                 # Should not cache empty results

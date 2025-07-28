@@ -228,10 +228,12 @@ class JetStreamEventStore:
         Callback for handling new events from the JetStream subscription.
         """
         try:
+            logger.debug(f"Received message: {msg.subject} with event data: {msg.data}")
             topic = self.topic.from_subject(msg.subject)
             store_execution_context_id = topic.execution_context_id
             event = BaseEvent.deserialize_event(msg.data)
             event._jetstream_sequence = msg.metadata.sequence.stream
+            logger.debug(f"Deserialized event: {event}")
 
             # Add the event to the store
             self._add_event_to_store(store_execution_context_id, event)
@@ -239,7 +241,8 @@ class JetStreamEventStore:
             # Acknowledge the message
             await msg.ack()
         except Exception as e:
-            logger.exception(f"Error handling new event: {e}")
+            logger.exception(e)
+            logger.exception(f"Error in message handler for subject '{msg.subject}': {e}")
             # Still ack the message to avoid redelivery
             try:
                 await msg.ack()
