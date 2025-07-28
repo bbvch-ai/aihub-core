@@ -44,7 +44,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-lib"
-version = "v0.228.0"
+version = "v0.229.0"
 description = ""
 optional = false
 python-versions = ">=3.11, <3.12"
@@ -64,6 +64,7 @@ azure-mgmt-resource = "^23.2.0"
 azure-mgmt-search = "^9.1.0"
 azure-mgmt-storage = "^21.2.1"
 azure-storage-file-datalake = "^12.18.1"
+boto3 = "^1.35.0"
 cachetools = "^5.5.2"
 colorlog = "^6.9.0"
 docling-core = "^2.38.0"
@@ -103,9 +104,35 @@ transformers = "^4.48.1"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.228.0"
-resolved_reference = "8bdaab4b48798373a119bbc20f505fd702f537b0"
+reference = "v0.229.0"
+resolved_reference = "4542dcf5ca947c62a549d1820b10cadadc6b75e6"
 subdirectory = "aihub_lib"
+
+[[package]]
+name = "aiobotocore"
+version = "2.23.1"
+description = "Async client for aws services using botocore and aiohttp"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "aiobotocore-2.23.1-py3-none-any.whl", hash = "sha256:d81c54d2eae2406ea9a473fea518fed580cf37bc4fc51ce43ba81546e5305114"},
+    {file = "aiobotocore-2.23.1.tar.gz", hash = "sha256:a59f2a78629b97d52f10936b79c73de64e481a8c44a62c1871f088df6c1afc4f"},
+]
+
+[package.dependencies]
+aiohttp = ">=3.9.2,<4.0.0"
+aioitertools = ">=0.5.1,<1.0.0"
+botocore = ">=1.38.40,<1.38.47"
+jmespath = ">=0.7.1,<2.0.0"
+multidict = ">=6.0.0,<7.0.0"
+python-dateutil = ">=2.1,<3.0.0"
+wrapt = ">=1.10.10,<2.0.0"
+
+[package.extras]
+awscli = ["awscli (>=1.40.39,<1.40.46)"]
+boto3 = ["boto3 (>=1.38.40,<1.38.47)"]
+httpx = ["httpx (>=0.25.1,<0.29)"]
 
 [[package]]
 name = "aiohappyeyeballs"
@@ -888,6 +915,46 @@ html5lib = ["html5lib"]
 lxml = ["lxml"]
 
 [[package]]
+name = "boto3"
+version = "1.38.46"
+description = "The AWS SDK for Python"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "boto3-1.38.46-py3-none-any.whl", hash = "sha256:9c8e88a32a6465e5905308708cff5b17547117f06982908bdfdb0108b4a65079"},
+    {file = "boto3-1.38.46.tar.gz", hash = "sha256:d1ca2b53138afd0341e1962bd52be6071ab7a63c5b4f89228c5ef8942c40c852"},
+]
+
+[package.dependencies]
+botocore = ">=1.38.46,<1.39.0"
+jmespath = ">=0.7.1,<2.0.0"
+s3transfer = ">=0.13.0,<0.14.0"
+
+[package.extras]
+crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
+
+[[package]]
+name = "botocore"
+version = "1.38.46"
+description = "Low-level, data-driven core of boto 3."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "botocore-1.38.46-py3-none-any.whl", hash = "sha256:89ca782ffbf2e8769ca9c89234cfa5ca577f1987d07d913ee3c68c4776b1eb5b"},
+    {file = "botocore-1.38.46.tar.gz", hash = "sha256:8798e5a418c27cf93195b077153644aea44cb171fcd56edc1ecebaa1e49e226e"},
+]
+
+[package.dependencies]
+jmespath = ">=0.7.1,<2.0.0"
+python-dateutil = ">=2.1,<3.0.0"
+urllib3 = {version = ">=1.25.4,<2.2.0 || >2.2.0,<3", markers = "python_version >= \"3.10\""}
+
+[package.extras]
+crt = ["awscrt (==0.23.8)"]
+
+[[package]]
 name = "cachetools"
 version = "5.5.2"
 description = "Extensible memoizing collections and decorators"
@@ -1388,35 +1455,33 @@ tests = ["pytest", "pytest-cov", "pytest-xdist"]
 
 [[package]]
 name = "dagster"
-version = "1.9.13"
+version = "1.11.2"
 description = "Dagster is an orchestration platform for the development, production, and observation of data assets."
 optional = false
-python-versions = "<3.13,>=3.9"
+python-versions = "<=3.13.3,>=3.9"
 groups = ["main"]
 files = [
-    {file = "dagster-1.9.13-py3-none-any.whl", hash = "sha256:613e97fe0c0326b9b4442d096b3fdf5a80188b2ee0afe27b07b60666457791f3"},
-    {file = "dagster-1.9.13.tar.gz", hash = "sha256:5f6bea3d5ba28ad963efd66cfbe2d18aa9cc3c97bcd166057e8f3c3485aa79b8"},
+    {file = "dagster-1.11.2-py3-none-any.whl", hash = "sha256:08ccd053e3dc44743b0b52abf24ace862b0333c6446a0685fccf9578a7d84560"},
+    {file = "dagster-1.11.2.tar.gz", hash = "sha256:aa23f52ce83abc6fa744bb62adb2f50659a3d3a0a9d7527232be29e477ec92ae"},
 ]
 
 [package.dependencies]
 alembic = ">=1.2.1,<1.6.3 || >1.6.3,<1.7.0 || >1.7.0,<1.11.0 || >1.11.0"
 antlr4-python3-runtime = "*"
-click = ">=5.0"
+click = ">=5.0,<8.2"
 coloredlogs = ">=6.1,<=14.0"
-dagster-pipes = "1.9.13"
+dagster-pipes = "1.11.2"
+dagster-shared = "1.11.2"
 docstring-parser = "*"
 filelock = "*"
 grpcio = ">=1.44.0"
 grpcio-health-checking = ">=1.44.0"
 Jinja2 = "*"
-packaging = ">=20.9"
 protobuf = {version = ">=4,<6", markers = "python_version >= \"3.11\""}
 psutil = {version = ">=1.0", markers = "platform_system == \"Windows\""}
-pydantic = ">=2,<3.0.0"
 python-dotenv = "*"
 pytz = "*"
 pywin32 = {version = "!=226", markers = "platform_system == \"Windows\""}
-PyYAML = ">=5.1"
 requests = "*"
 rich = "*"
 setuptools = "*"
@@ -1427,28 +1492,52 @@ tabulate = "*"
 tomli = "<3"
 toposort = ">=1.0"
 tqdm = "<5"
-typing-extensions = ">=4.10.0,<5"
 tzdata = {version = "*", markers = "platform_system == \"Windows\""}
-universal-pathlib = {version = "*", markers = "python_version < \"3.12\""}
+universal_pathlib = {version = "*", markers = "python_version < \"3.12\""}
 watchdog = ">=0.8.3,<6"
 
 [package.extras]
 docker = ["docker"]
 mypy = ["mypy (==1.8.0)"]
 pyright = ["pandas-stubs", "pyright (==1.1.379)", "types-PyYAML", "types-backports", "types-certifi", "types-chardet", "types-cryptography", "types-mock", "types-paramiko", "types-pyOpenSSL", "types-python-dateutil (>=2.9.0.20240316,<2.10.0.0)", "types-pytz", "types-requests", "types-simplejson", "types-six", "types-tabulate", "types-toml", "types-tzlocal"]
-ruff = ["ruff (==0.8.4)"]
-test = ["buildkite-test-collector", "docker", "flaky", "fsspec (<2024.5.0)", "grpcio-tools (>=1.44.0)", "morefs[asynclocal]", "mypy-protobuf", "objgraph", "pytest (>=8)", "pytest-asyncio", "pytest-cov (==5.0.0)", "pytest-mock (==3.14.0)", "pytest-xdist (==3.6.1)", "rapidfuzz", "responses (<=0.23.1)", "syrupy (>=4.0.0)", "tox (>=4)"]
+ruff = ["ruff (==0.11.5)"]
+test = ["buildkite-test-collector", "docker", "flaky", "fsspec (<2024.5.0)", "grpcio-tools (>=1.44.0)", "morefs[asynclocal]", "mypy-protobuf", "objgraph", "psutil", "pytest (>=8)", "pytest-asyncio", "pytest-cov (==5.0.0)", "pytest-mock (==3.14.0)", "pytest-timeout", "pytest-xdist (==3.6.1)", "rapidfuzz", "responses (<=0.23.1)", "ruff (==0.11.5)", "syrupy (>=4.0.0)", "tox (>=4)"]
+test-components = ["duckdb", "jsonschema", "pandas", "tomlkit"]
+
+[[package]]
+name = "dagster-aws"
+version = "0.27.2"
+description = "Package for AWS-specific Dagster framework solid and resource components."
+optional = false
+python-versions = "<=3.13.3,>=3.9"
+groups = ["main"]
+files = [
+    {file = "dagster_aws-0.27.2-py3-none-any.whl", hash = "sha256:bfe73d49b1a1c226b6e705b5b0e3229a211d65c871662036465e53553a7f5ba7"},
+    {file = "dagster_aws-0.27.2.tar.gz", hash = "sha256:1b496ad90d50277dbf60e13649812592aa582971af6297f74cac7544d824d3dd"},
+]
+
+[package.dependencies]
+boto3 = "*"
+dagster = "1.11.2"
+packaging = "*"
+requests = "*"
+
+[package.extras]
+pyspark = ["dagster-pyspark"]
+redshift = ["psycopg2-binary"]
+stubs = ["boto3-stubs-lite[ecs,emr,emr-containers,emr-serverless,glue,logs,s3]"]
+test = ["botocore (!=1.32.1)", "flaky", "moto[emrcontainers,emrserverless,glue,logs,s3,server] (>=2.2.8,<5.0)", "pytest-cases", "requests-mock", "xmltodict (==0.12.0)"]
 
 [[package]]
 name = "dagster-azure"
-version = "0.25.13"
+version = "0.27.2"
 description = "Package for Azure-specific Dagster framework op and resource components."
 optional = false
-python-versions = "<3.13,>=3.9"
+python-versions = "<=3.13.3,>=3.9"
 groups = ["main"]
 files = [
-    {file = "dagster-azure-0.25.13.tar.gz", hash = "sha256:5f483e336f6cc572abd39a8aa5a4062867284a731452be60c5feec7a52924342"},
-    {file = "dagster_azure-0.25.13-py3-none-any.whl", hash = "sha256:7f69c1adb0c32b0fc6354a16ec666bdd4dad5dcf88a2769b614d28320b1ceddf"},
+    {file = "dagster_azure-0.27.2-py3-none-any.whl", hash = "sha256:9d4a8716f9279e0ee12aeb3ac3a6f1e7acf3a204d0c9fb2c12a70fb8acec6947"},
+    {file = "dagster_azure-0.27.2.tar.gz", hash = "sha256:a7780dd945e3e37e66717367f8deed232bf26f43edae935d0237d1f440f67e63"},
 ]
 
 [package.dependencies]
@@ -1456,37 +1545,40 @@ azure-core = ">=1.7.0,<2.0.0"
 azure-identity = ">=1.7.0,<2.0.0"
 azure-storage-blob = ">=12.5.0,<13.0.0"
 azure-storage-file-datalake = ">=12.5,<13.0.0"
-dagster = "1.9.13"
+dagster = "1.11.2"
 
 [[package]]
 name = "dagster-graphql"
-version = "1.9.13"
+version = "1.11.2"
 description = "The GraphQL frontend to python dagster."
 optional = false
-python-versions = "<3.13,>=3.9"
+python-versions = "<=3.13.3,>=3.9"
 groups = ["main"]
 files = [
-    {file = "dagster-graphql-1.9.13.tar.gz", hash = "sha256:5a06d386bc75d29bcc3d58b0f2c33aeeb5e1544c1c1580cd60d9f52935b00efd"},
-    {file = "dagster_graphql-1.9.13-py3-none-any.whl", hash = "sha256:f7f755db869a7f00feded9d2f96622251d3cb1f31806375508eb0cbfa7c42f53"},
+    {file = "dagster_graphql-1.11.2-py3-none-any.whl", hash = "sha256:97ffa714b543810123f9d034a17fd1b2b6e10b2dabf983a7739b358b0c0d9929"},
+    {file = "dagster_graphql-1.11.2.tar.gz", hash = "sha256:b758bf0c27d253ed9d5a49134ee07e535cddd6c57bf02c0ffbbcaece84e4bea8"},
 ]
 
 [package.dependencies]
-dagster = "1.9.13"
+dagster = "1.11.2"
 gql = {version = ">=3,<4", extras = ["requests"]}
 graphene = ">=3,<4"
 requests = "*"
 starlette = "*"
 
+[package.extras]
+test = ["dagster-test"]
+
 [[package]]
 name = "dagster-pipes"
-version = "1.9.13"
+version = "1.11.2"
 description = "Toolkit for Dagster integrations with transform logic outside of Dagster"
 optional = false
-python-versions = "<3.13,>=3.9"
+python-versions = "<=3.13.3,>=3.9"
 groups = ["main"]
 files = [
-    {file = "dagster-pipes-1.9.13.tar.gz", hash = "sha256:c15f5b935ec99c159233837d8e2fb9ba84c44c15f7273aeaf5625226271d3da8"},
-    {file = "dagster_pipes-1.9.13-py3-none-any.whl", hash = "sha256:4044ba60c27880fdd54e7bc6726419555ab78ef7e5722b78e5b225dc3c4f9772"},
+    {file = "dagster_pipes-1.11.2-py3-none-any.whl", hash = "sha256:c2e36f743efd5103373991a5e62aad91754a400d6df1433f6b006032fc7bfc23"},
+    {file = "dagster_pipes-1.11.2.tar.gz", hash = "sha256:a7705156a85ce596873d4f5af9664675a47bc7554a7a678736fd88903f856410"},
 ]
 
 [package.extras]
@@ -1494,36 +1586,58 @@ stubs = ["google-cloud-storage"]
 
 [[package]]
 name = "dagster-postgres"
-version = "0.25.13"
+version = "0.27.2"
 description = "A Dagster integration for postgres"
 optional = false
-python-versions = "<3.13,>=3.9"
+python-versions = "<=3.13.3,>=3.9"
 groups = ["main"]
 files = [
-    {file = "dagster-postgres-0.25.13.tar.gz", hash = "sha256:b4ac87d5eefebfa8f6f7bf2bc29225f840c11bd1fc13611a62b414388faad249"},
-    {file = "dagster_postgres-0.25.13-py3-none-any.whl", hash = "sha256:0061473c34b4fd6a72c0daa0f15d30ffb9770e9fc17048145c1ff9d210631ccd"},
+    {file = "dagster_postgres-0.27.2-py3-none-any.whl", hash = "sha256:0058cfe87bc2b0b57ce8981d52499634a38a2ec03617f10e73aa9650b8629d89"},
+    {file = "dagster_postgres-0.27.2.tar.gz", hash = "sha256:039f46cfd1989086b0deb294268443fc49dd7f80e0768c3323cfd764d70bcca4"},
 ]
 
 [package.dependencies]
-dagster = "1.9.13"
+dagster = "1.11.2"
 psycopg2-binary = "*"
 
 [[package]]
-name = "dagster-webserver"
-version = "1.9.13"
-description = "Web UI for dagster."
+name = "dagster-shared"
+version = "1.11.2"
+description = "Shared code between dagster and dagster-dg-core."
 optional = false
-python-versions = "<3.13,>=3.9"
+python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "dagster-webserver-1.9.13.tar.gz", hash = "sha256:5e019b7520443390b6a5610e1d05743fe6d896863bbb88afb798a3f3c4b6d8ca"},
-    {file = "dagster_webserver-1.9.13-py3-none-any.whl", hash = "sha256:a43d2973f6ee9c47410dd29ad1f38fb7348ea5643af92a9724f2e632e0d9af20"},
+    {file = "dagster_shared-1.11.2-py3-none-any.whl", hash = "sha256:5c54a69b35a957ab15b29162a2afa8dedf7ac92cc9d4cddd95c32efc0da6ec55"},
+    {file = "dagster_shared-1.11.2.tar.gz", hash = "sha256:871013cd3609f986a1b38ac93946bf9020af9e479de8b6b3f1931280ddf5bb95"},
+]
+
+[package.dependencies]
+packaging = ">=20.9"
+pydantic = ">=2,<3.0.0"
+PyYAML = ">=5.1"
+tomlkit = "*"
+typing_extensions = ">=4.11.0,<5"
+
+[package.extras]
+test = ["buildkite-test-collector", "flaky", "pytest"]
+
+[[package]]
+name = "dagster-webserver"
+version = "1.11.2"
+description = "Web UI for dagster."
+optional = false
+python-versions = "<=3.13.3,>=3.9"
+groups = ["main"]
+files = [
+    {file = "dagster_webserver-1.11.2-py3-none-any.whl", hash = "sha256:81a1fa43997630fefe7b3bfbf470748d72d77605ec20eada06f751a6a4240187"},
+    {file = "dagster_webserver-1.11.2.tar.gz", hash = "sha256:c96be37a5290444447fd64d8077b80af4a2089c64ff2256636cae47f26801523"},
 ]
 
 [package.dependencies]
 click = ">=7.0,<9.0"
-dagster = "1.9.13"
-dagster-graphql = "1.9.13"
+dagster = "1.11.2"
+dagster-graphql = "1.11.2"
 starlette = "!=0.36.0"
 uvicorn = {version = "*", extras = ["standard"]}
 
@@ -2643,6 +2757,18 @@ files = [
     {file = "jiter-0.9.0-cp39-cp39-win32.whl", hash = "sha256:161d461dcbe658cf0bd0aa375b30a968b087cdddc624fc585f3867c63c6eca95"},
     {file = "jiter-0.9.0-cp39-cp39-win_amd64.whl", hash = "sha256:e8b36d8a16a61993be33e75126ad3d8aa29cf450b09576f3c427d27647fcb4aa"},
     {file = "jiter-0.9.0.tar.gz", hash = "sha256:aadba0964deb424daa24492abc3d229c60c4a31bfee205aedbf1acc7639d7893"},
+]
+
+[[package]]
+name = "jmespath"
+version = "1.0.1"
+description = "JSON Matching Expressions"
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "jmespath-1.0.1-py3-none-any.whl", hash = "sha256:02e2e4cc71b5bcab88332eebf907519190dd9e6e82107fa7f83b1003a6252980"},
+    {file = "jmespath-1.0.1.tar.gz", hash = "sha256:90261b206d6defd58fdd5e85f478bf633a2901798906be2ad389150c5c60edbe"},
 ]
 
 [[package]]
@@ -5672,6 +5798,45 @@ files = [
 ]
 
 [[package]]
+name = "s3fs"
+version = "2024.12.0"
+description = "Convenient Filesystem interface over S3"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "s3fs-2024.12.0-py3-none-any.whl", hash = "sha256:d8665549f9d1de083151582437a2f10d5f3b3227c1f8e67a2b0b730db813e005"},
+    {file = "s3fs-2024.12.0.tar.gz", hash = "sha256:1b0f3a8f5946cca5ba29871d6792ab1e4528ed762327d8aefafc81b73b99fd56"},
+]
+
+[package.dependencies]
+aiobotocore = ">=2.5.4,<3.0.0"
+aiohttp = "<4.0.0a0 || >4.0.0a0,<4.0.0a1 || >4.0.0a1"
+fsspec = "==2024.12.0.*"
+
+[package.extras]
+awscli = ["aiobotocore[awscli] (>=2.5.4,<3.0.0)"]
+boto3 = ["aiobotocore[boto3] (>=2.5.4,<3.0.0)"]
+
+[[package]]
+name = "s3transfer"
+version = "0.13.1"
+description = "An Amazon S3 Transfer Manager"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "s3transfer-0.13.1-py3-none-any.whl", hash = "sha256:a981aa7429be23fe6dfc13e80e4020057cbab622b08c0315288758d67cabc724"},
+    {file = "s3transfer-0.13.1.tar.gz", hash = "sha256:c3fdba22ba1bd367922f27ec8032d6a1cf5f10c934fb5d68cf60fd5a23d936cf"},
+]
+
+[package.dependencies]
+botocore = ">=1.37.4,<2.0a.0"
+
+[package.extras]
+crt = ["botocore[crt] (>=1.37.4,<2.0a.0)"]
+
+[[package]]
 name = "safetensors"
 version = "0.5.3"
 description = ""
@@ -6282,6 +6447,18 @@ files = [
     {file = "tomli-2.2.1-cp313-cp313-win_amd64.whl", hash = "sha256:a38aa0308e754b0e3c67e344754dff64999ff9b513e691d0e786265c93583c69"},
     {file = "tomli-2.2.1-py3-none-any.whl", hash = "sha256:cb55c73c5f4408779d0cf3eef9f762b9c9f147a77de7b258bef0a5628adc85cc"},
     {file = "tomli-2.2.1.tar.gz", hash = "sha256:cd45e1dc79c835ce60f7404ec8119f2eb06d38b1deba146f07ced3bbc44505ff"},
+]
+
+[[package]]
+name = "tomlkit"
+version = "0.13.3"
+description = "Style preserving TOML library"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "tomlkit-0.13.3-py3-none-any.whl", hash = "sha256:c89c649d79ee40629a9fda55f8ace8c6a1b42deb912b2a8fd8d942ddadb606b0"},
+    {file = "tomlkit-0.13.3.tar.gz", hash = "sha256:430cf247ee57df2b94ee3fbe588e71d362a941ebb545dec29b53961d61add2a1"},
 ]
 
 [[package]]
@@ -7105,4 +7282,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "05c6d495d42ac8ca57eab797d1cd6abaa536ec964512b6d54e70fc6ed7b8f86d"
+content-hash = "9edd4e57a74b4f9ce7e03834ea4423ca96a27dc91c1789762ac9011480b57be1"

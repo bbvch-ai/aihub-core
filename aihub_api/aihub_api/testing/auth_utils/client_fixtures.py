@@ -23,9 +23,6 @@ async def development_auth_api_client(controller_mount_func):
     """
     Create an AsyncClient with DangerousDevelopmentOnlyAuthHandler for testing.
 
-    Args:
-        controller_mount_func: A callable that takes the auth handler and returns a controller to mount
-
     Usage:
         @pytest.mark.asyncio
         async def test_something(development_auth_api_client):
@@ -49,9 +46,6 @@ async def development_auth_api_client(controller_mount_func):
 async def token_auth_api_client(controller_mount_func):
     """
     Create an AsyncClient with TokenAuthHandler for testing.
-
-    Args:
-        controller_mount_func: A callable that takes the auth handler and returns a controller to mount
     """
     runner = ApiTestRunner()
     auth = TokenAuthHandler(identity_provider=TokenIdentityProvider())
@@ -67,9 +61,6 @@ async def token_auth_api_client(controller_mount_func):
 async def oauth2_auth_api_client(controller_mount_func):
     """
     Create an AsyncClient with OAuth2AuthHandler for testing.
-
-    Args:
-        controller_mount_func: A callable that takes the auth handler and returns a controller to mount
     """
     runner = ApiTestRunner()
     auth = OAuth2AuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())

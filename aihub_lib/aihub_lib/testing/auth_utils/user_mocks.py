@@ -51,10 +51,6 @@ def get_expected_user_data(include_dashboard=True, include_access=True):
     """
     Helper function to get expected user data for tests.
     Returns the user data that should be returned by API endpoints.
-
-    Args:
-        include_dashboard (bool): Whether to include dashboard data in the response
-        include_access (bool): Whether to include access data in the response
     """
     config = DangerousDevelopmentOnlyAuthConfig()
     data = {

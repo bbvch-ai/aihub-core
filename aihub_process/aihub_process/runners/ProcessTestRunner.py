@@ -4,7 +4,8 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from aihub_lib.infrastructure.RedisConfig import RedisConfig
+from aihub_lib.infrastructure.nats.NatsConfig import NatsConfig
+from aihub_lib.infrastructure.redis.RedisConfig import RedisConfig
 from aihub_lib.nats.events import (
     BaseEvent,
     ProcessExceptionEvent,
@@ -16,7 +17,6 @@ from aihub_lib.nats.events.discovery import (
     InstanceDiscoveryRequestEvent,
     ProcessInstanceDiscoveryResponseEvent,
 )
-from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
