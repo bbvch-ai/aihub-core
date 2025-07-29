@@ -1,17 +1,17 @@
 ---
-title: "Base Tier: Secure LLM Access"
+title: "Basic Tier: Secure LLM Access"
 index: 3
 ---
 
-# 🛡️ The Swiss AI-Hub Base Tier: Your Secure Gateway to AI
+# 🛡️ The Swiss AI-Hub Basic Tier: Your Secure Gateway to AI
 
 ::: info Foundation Layer
-The Base Tier is the foundational entry point into the Swiss AI-Hub. It is designed to empower your entire organization with direct, secure, and controlled access to the raw power of advanced Large Language Models (LLMs). This tier serves as a sandbox for learning and discovery, allowing your teams to build AI literacy and explore potential use cases in a safe, Swiss-hosted environment.
+The Basic Tier is the foundational entry point into the Swiss AI-Hub. It is designed to empower your entire organization with direct, secure, and controlled access to the raw power of advanced Large Language Models (LLMs). This tier serves as a sandbox for learning and discovery, allowing your teams to build AI literacy and explore potential use cases in a safe, Swiss-hosted environment.
 :::
 
 ## 💼 AI Where You Work: Seamless Integration into Your Daily Tools
 
-We believe that AI should adapt to your workflow, not the other way around. The Base Tier brings the power of advanced language models directly into the collaboration tools your teams use every day, such as Microsoft Teams, Slack, and email.
+We believe that AI should adapt to your workflow, not the other way around. The Basic Tier brings the power of advanced language models directly into the collaboration tools your teams use every day, such as Microsoft Teams, Slack, and email.
 
 **The Value for You:**
 * **Boosted Productivity:** Get answers, draft responses, and summarize information without ever leaving your primary workspace. This eliminates constant context-switching and keeps your focus sharp.
@@ -44,7 +44,7 @@ Beyond integrations, the Swiss AI-Hub provides its own beautiful, modern, and fe
 ## 🔐 The Foundation of Trust and Sovereignty
 
 ::: danger Swiss Values Foundation
-The Base Tier is built upon the core Swiss values of privacy, security, and independence. This provides a level of trust that is essential when deploying AI across an organization.
+The Basic Tier is built upon the core Swiss values of privacy, security, and independence. This provides a level of trust that is essential when deploying AI across an organization.
 :::
 
 * **Full Data Sovereignty:** The Swiss AI-Hub can be fully self-hosted on your own infrastructure or in a Swiss cloud. This guarantees that your data, conversations, and models remain under your control, in Switzerland, completely independent of American or other foreign corporations and their jurisdictions.
@@ -52,5 +52,5 @@ The Base Tier is built upon the core Swiss values of privacy, security, and inde
 * **A Transparent, Monitorable System:** We believe in demystifying AI. The platform is designed to be transparent. Managers can monitor usage and performance, and the underlying architecture ensures that AI agents are built from testable, auditable steps, not inscrutable black boxes.
 
 ::: tip Perfect Starting Point
-The Base Tier of the Swiss AI-Hub is the perfect, low-risk first step on your AI journey. It provides a powerful, feature-rich, and fundamentally secure platform that empowers your employees to learn, explore, and innovate with confidence.
+The Basic Tier of the Swiss AI-Hub is the perfect, low-risk first step on your AI journey. It provides a powerful, feature-rich, and fundamentally secure platform that empowers your employees to learn, explore, and innovate with confidence.
 :::
