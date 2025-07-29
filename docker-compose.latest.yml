@@ -322,6 +322,7 @@ services:
       - /dagster_home/workspace.yaml
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/dagster_home
+      - poetry_cache:/root/.cache/pypoetry
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -340,6 +341,7 @@ services:
       - run
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/dagster_home
+      - poetry_cache:/root/.cache/pypoetry
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -409,6 +411,8 @@ services:
   # <editor-fold desc="API Stack">
   api:
     image: ghcr.io/bbvch-ai/aihub-core/api:latest
+    volumes:
+      - poetry_cache:/root/.cache/pypoetry
     restart: always
     depends_on:
       - "mongo"
