@@ -25,21 +25,7 @@ class StorageResourceFactory:
         existing_blob_dns_zone: privatedns.GetPrivateZoneResult | None = None,
         existing_file_dns_zone: privatedns.GetPrivateZoneResult | None = None,
     ) -> storage.StorageAccount:
-        """
-        Create a storage account resource
-
-        Args:
-            service_name: Identifier for the service using this storage
-            subnet_id: Identifier for the subnet
-            vnet_id: Identifier for the virtual network
-            kind: Storage account kind (StorageV2, BlobStorage, etc.)
-            sku_name: Storage account SKU (Standard_LRS, Premium_LRS, etc.)
-            access_tier: Access tier (Hot, Cool)
-            is_hns_enabled: Enable hierarchical namespace
-            network_rule_set: Network rules for the storage account (service endpoints)
-        Returns:
-            The created storage account
-        """
+        """Create a storage account resource."""
         account_name = self.config.get_storage_account_name(service_name)
 
         # Set up arguments for storage account
@@ -106,19 +92,7 @@ class StorageResourceFactory:
         dns_zone_id: pulumi.Input[str] | None = None,
         group_id: str = "blob",
     ) -> network.PrivateEndpoint:
-        """
-        Create a private endpoint for a storage service
-
-        Args:
-            account_name: Storage account name
-            storage_account: Storage account resource
-            subnet_id: Subnet ID where the private endpoint will be created
-            dns_zone_id: Private DNS zone ID for the private endpoint
-            group_id: Storage service to connect (blob, file, table, queue)
-
-        Returns:
-            The created private endpoint
-        """
+        """Create a private endpoint for a storage service."""
         pe_name = f"{account_name}-{group_id}-pe"
 
         private_endpoint = network.PrivateEndpoint(
@@ -200,18 +174,7 @@ class StorageResourceFactory:
         quota: int = 100,
         enabled_protocols: str | None = None,
     ) -> storage.FileShare:
-        """
-        Create a file share resource
-
-        Args:
-            name: Name of the file share
-            storage_account: The storage account to create the share in
-            quota: Quota in GB
-            enabled_protocols: Protocol to use (SMB, NFS)
-
-        Returns:
-            The created file share
-        """
+        """Create a file share resource."""
         account_name = pulumi.Output.all(storage_account.name, storage_account.provisioning_state).apply(
             lambda args: args[0]
         )
@@ -234,17 +197,7 @@ class StorageResourceFactory:
     def create_blob_container(
         self, name: str, storage_account: storage.StorageAccount, public_access: storage.PublicAccess | None = None
     ) -> storage.BlobContainer:
-        """
-        Create a blob container
-
-        Args:
-            name: Name of the container
-            storage_account: The storage account to create the container in
-            public_access: Public access level
-
-        Returns:
-            The created blob container
-        """
+        """Create a blob container."""
         container_args = {
             "resource_name": name,
             "resource_group_name": self.config.resource_group,

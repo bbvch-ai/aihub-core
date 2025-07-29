@@ -3,7 +3,7 @@ import functools
 import inspect
 from collections.abc import Callable
 
-from aihub_lib.nats.events import ControlEvent
+from aihub_lib.nats.events import ControlEvent, WorkEvent
 
 
 class DispatchableWorkflow(abc.ABC):
@@ -55,7 +55,7 @@ class DispatchableWorkflow(abc.ABC):
 
     @classmethod
     @functools.cache
-    def get_steps_waiting_for_event(cls, event_class: type[ControlEvent]) -> list[Callable]:
+    def get_steps_waiting_for_event(cls, event_class: type[ControlEvent] | type[WorkEvent]) -> list[Callable]:
         """
         Given an event type, returns the steps that can handle it.
         This helps the dispatcher decide which steps to execute when a certain event arrives.

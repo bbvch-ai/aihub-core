@@ -88,9 +88,9 @@ async def main():
         .get_processes()
         .discover_processes()
         .get_process_start_forms()
-        .get_process_open_forms()
         .send_process_start_form()
-        .send_process_open_form(),
+        .send_process_open_form()
+        .get_process_open_forms(),
         TokenController(auth=auth).create_token().list_tokens().revoke_token(),
         RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
         OpenaiController(

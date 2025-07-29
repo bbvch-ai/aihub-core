@@ -1,7 +1,7 @@
 from .agent import AgentInstanceDiscoveryTopic
-from .process import ProcessDiscoveryTopic
+from .process import ProcessInstanceDiscoveryTopic
 
 __all__ = [
     "AgentInstanceDiscoveryTopic",
-    "ProcessDiscoveryTopic",
+    "ProcessInstanceDiscoveryTopic",
 ]

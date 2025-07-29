@@ -1,6 +1,6 @@
 from aihub_lib.nats.events import BaseEvent
-from aihub_lib.nats.topics import ProcessTopic
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics import ProcessInstanceTopic
+from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
 from aihub_lib.persistence.messaging.entities.PersistedProcessEventEntity import PersistedProcessEventEntity
 
@@ -18,10 +18,10 @@ class EventPersister:
         """Initialize the persister with a given database name."""
         self.db = db
 
-    async def persist_agent_event(self, event: BaseEvent, topic: AgentTopic) -> None:
+    async def persist_agent_event(self, event: BaseEvent, topic: AgentInstanceTopic) -> None:
         """Persist the given agent event along with its topic metadata into MongoDB."""
         PersistedAgentEventEntity.persist_event(event, topic, self.db)
 
-    async def persist_process_event(self, event: BaseEvent, topic: ProcessTopic) -> None:
+    async def persist_process_event(self, event: BaseEvent, topic: ProcessInstanceTopic) -> None:
         """Persist the given process event along with its topic metadata into MongoDB."""
         PersistedProcessEventEntity.persist_event(event, topic, self.db)

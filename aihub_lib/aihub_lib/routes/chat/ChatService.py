@@ -30,7 +30,7 @@ from aihub_lib.nats.events.utils import get_parent_classes_until_base
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
@@ -200,7 +200,7 @@ class ChatService:
             stop_event=None,
         )
 
-        async def response_aggregator(event: DisplayEvent, topic: AgentTopic):
+        async def response_aggregator(event: DisplayEvent, topic: AgentInstanceTopic):
             is_primary_agent = topic.agent_class == agent_class and topic.agent_id == agent_id
             logger.debug(f"Received display event: {event}")
             if event.is_chunk_event:
@@ -291,7 +291,7 @@ class ChatService:
             stop_event=None,
         )
 
-        async def response_aggregator(event: DisplayEvent, topic: AgentTopic):
+        async def response_aggregator(event: DisplayEvent, topic: AgentInstanceTopic):
             logger.debug(f"Received display event: {event}")
             is_primary_agent = topic.agent_class == agent_class and topic.agent_id == agent_id
             if event.is_chunk_event:

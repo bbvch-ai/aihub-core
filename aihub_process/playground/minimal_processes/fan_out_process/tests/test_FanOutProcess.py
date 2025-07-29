@@ -45,8 +45,9 @@ def agent_b_runner_fixture():
 def process_runner_fixture():
     return ProcessTestRunner(
         process_type=FanOutProcess,
-        process_config=ProcessConfig(
+        default_process_config=ProcessConfig(
             process_id="fan_out_process",
+            process_class=FanOutProcess.__name__,
             name=LocaleString(en="Fan Out Process"),
             description=LocaleString(en="Test Fan Out Process"),
         ),

@@ -4,7 +4,7 @@ from collections import defaultdict
 from llama_index.core.base.llms.types import ChatMessage, ImageBlock, TextBlock
 from llama_index.core.prompts import RichPromptTemplate
 
-from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessService import AnonymousFileAccessService
+from aihub_lib.generative_ai.document.accessor.FileAccessServiceConfig import FileAccessServiceConfig
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -96,8 +96,17 @@ def combine_nodes_in_order(
 
             if n.content_type == NODE_CONTENT_TYPE_FIGURE:
                 image_path = content.split("](")[-1][:-1]
-                container, blob_path = image_path.split("/", 1)
-                image_url = AnonymousFileAccessService.generate_sas_url(container, blob_path, lifetime_hours=1)
+
+                if image_path.startswith("s3://"):
+                    # S3 URI format: s3://bucket/path
+                    uri_parts = image_path[5:].split("/", 1)  # Remove 's3://' prefix
+                    container, blob_path = uri_parts[0], uri_parts[1] if len(uri_parts) > 1 else ""
+                else:
+                    # Azure format: container/path
+                    container, blob_path = image_path.split("/", 1)
+
+                file_access_config = FileAccessServiceConfig()
+                image_url = file_access_config.service.generate_sas_url(container, blob_path, lifetime_hours=1)
                 context_blocks.append(ImageBlock(url=image_url))
             else:
                 tag = n.type if n.type else NODE_TYPE_CONTENT

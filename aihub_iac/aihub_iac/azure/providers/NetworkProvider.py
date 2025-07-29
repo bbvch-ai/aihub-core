@@ -19,12 +19,7 @@ class NetworkProvider:
         source_prefixes: list[str],
         additional_rules: list[network.SecurityRuleArgs] = None,
     ) -> network.NetworkSecurityGroup:
-        """Create NSG for a subnet that only allows traffic from specific source subnets
-
-        Args:
-            subnet: The subnet to create NSG for
-            source_prefixes: List of source address prefixes to allow traffic from
-        """
+        """Create NSG for a subnet that only allows traffic from specific source subnets."""
         # Create security rules for each source prefix
         security_rules = []
         for idx, prefix in enumerate(source_prefixes):

@@ -2,10 +2,10 @@ from typing import Annotated
 
 from pydantic import Field
 
-from aihub_lib.nats.events.process.ProcessEvent import ProcessEvent
+from aihub_lib.nats.events.work.WorkEvent import WorkEvent
 
 
-class ProcessExceptionEvent(ProcessEvent):
+class ProcessExceptionEvent(WorkEvent):
     """
     An event signaling that an exception or error has occurred during a process walkthrough.
 

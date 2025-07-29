@@ -9,7 +9,7 @@ from aihub_lib.nats.events.control.ControlEvent import ControlEvent
 from aihub_lib.nats.events.control.start.StartEvent import StartEvent
 from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 from aihub_lib.nats.events.user.UserMessageEvent import UserMessageEvent
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 
@@ -38,7 +38,7 @@ class AgentInTheLoopRequestEvent(DisplayEvent, ControlEvent):
         Field(description="The event that will be sent to the other agent to initiate its task."),
     ]
     other_agent_topic: Annotated[
-        PartialAgentTopic | AgentTopic,
+        PartialAgentTopic | AgentInstanceTopic,
         Field(
             description="A partial or full agent topic specifying the target agent and event routing, "
             "ensuring the task is delegated to the correct agent.",
