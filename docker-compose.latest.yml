@@ -536,3 +536,5 @@ services:
     - "traefik.http.routers.traefik.middlewares=traefik-auth"
   # </editor-fold>
 
+volumes:
+  poetry_cache:
