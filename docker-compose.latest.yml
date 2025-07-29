@@ -68,6 +68,8 @@ services:
     environment:
       ETCD_ENDPOINTS: milvus-etcd:2379
       MINIO_ADDRESS: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/milvus-data:/var/lib/milvus
       - ./configs/milvus/milvus.yaml:/milvus/configs/milvus.yaml
@@ -383,6 +385,8 @@ services:
         max-file: "2"
   # </editor-fold>
 
+  # === Mongo Stack ===
+  # <editor-fold desc="Mongo Stack">
   mongo:
     image: ghcr.io/bbvch-ai/aihub-core/mongo:8.0.9
     restart: always
@@ -399,7 +403,10 @@ services:
       options:
         max-size: "10m"
         max-file: "2"
+  # </editor-fold>
 
+  # === API Stack ===
+  # <editor-fold desc="API Stack">
   api:
     image: ghcr.io/bbvch-ai/aihub-core/api:latest
     restart: always
@@ -436,7 +443,10 @@ services:
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.api.middlewares=security-headers@file"
       - "traefik.http.services.api.loadbalancer.server.port=8000"
+  # </editor-fold>
 
+  # === SUITE UI Stack ===
+  # <editor-fold desc="SUITE UI Stack">
   web:
     image: ghcr.io/bbvch-ai/aihub-core/web:latest
     restart: always
@@ -457,6 +467,7 @@ services:
       - "traefik.http.routers.web.tls.certresolver=letsencrypt"
       - "traefik.http.routers.web.middlewares=security-headers@file"
       - "traefik.http.services.web.loadbalancer.server.port=80"
+  # </editor-fold>
 
   # TODO: only use in dev , delete from latest
   # === CPU LLMs Stack ===
@@ -490,6 +501,14 @@ services:
       test: [ "CMD", "curl", "-f", "http://localhost:8183/health" ]
   # </editor-fold>
 
+  # === Common Agents ===
+  # TODO: define which common agents should always be included...
+
+  # === Common Pipelines ===
+    # TODO: define which common pipelines should always be included...
+
+  # === Traefik ===
+  # <editor-fold desc="Traefik">
   traefik:
     image: traefik:v3.4.4
     command:
@@ -531,4 +550,5 @@ services:
     - "traefik.http.routers.traefik.service=api@internal"
     - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:${ADMIN_PASSWORD_HASH}"
     - "traefik.http.routers.traefik.middlewares=traefik-auth"
+  # </editor-fold>
 
