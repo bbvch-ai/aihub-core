@@ -9,6 +9,9 @@ if TYPE_CHECKING:
     from aihub_lib.nats.events import BaseEvent
     from aihub_lib.nats.topics import ProcessInstanceTopic
 
+# MongoDB aggregation pipeline constants
+MATCH_OPERATOR = "$match"
+
 
 class PersistedProcessEventEntity(Document):
     meta = {
@@ -61,7 +64,7 @@ class PersistedProcessEventEntity(Document):
             # Stage 1: Filter for all documents that are human work requests
             # within the specified process walkthrough.
             {
-                "$match": {
+                MATCH_OPERATOR: {
                     "process_class": process_class,
                     "process_id": process_id,
                     "process_walkthrough_id": process_walkthrough_id,
@@ -81,7 +84,7 @@ class PersistedProcessEventEntity(Document):
                     },
                     "pipeline": [
                         {
-                            "$match": {
+                            MATCH_OPERATOR: {
                                 "$expr": {
                                     "$and": [
                                         {"$eq": ["$process_walkthrough_id", "$$form_process_walkthrough_id"]},
@@ -100,7 +103,7 @@ class PersistedProcessEventEntity(Document):
             # Stage 3: Filter the results to only include work requests where the $lookup
             # found no corresponding work events. An empty 'corresponding_work_events'
             # array signifies an unanswered request.
-            {"$match": {"corresponding_work_events": {"$size": 0}}},
+            {MATCH_OPERATOR: {"corresponding_work_events": {"$size": 0}}},
         ]
 
         # Execute the aggregation pipeline
