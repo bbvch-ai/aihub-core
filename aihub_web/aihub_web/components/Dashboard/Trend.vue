@@ -26,9 +26,9 @@ const props = defineProps<{
 const { t } = useI18n()
 const { isTrendingUp } = useEventTimeseriesStats(props.timeseries)
 
-const EXCEPTION_EVENT = 'ExceptionEvent';
+const EXCEPTION_EVENT = 'ExceptionEvent'
 
 const reverseLogic = computed(() => {
-  return props.timeseries.event_name === EXCEPTION_EVENT;
+  return props.timeseries.event_name === EXCEPTION_EVENT
 })
 </script>
