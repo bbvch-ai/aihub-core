@@ -8,7 +8,6 @@ from aihub_lib.persistence.user.UserEntity import UserEntity
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel, Field
 
-from aihub_api.routes.process.ProcessService import ProcessService
 from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
 from aihub_api.routes.user.dto.UserDTO import UserDTO
 
@@ -33,6 +32,7 @@ class UserWithAccessDTO(UserDTO):
     @classmethod
     async def from_user_entity(cls, user_entity: UserEntity, runner: "Runner", nc: NATS, t: LocaleHandler):
         from aihub_api.routes.agent.AgentService import AgentService
+        from aihub_api.routes.process.ProcessService import ProcessService
 
         dashboard_data = user_entity.dashboard.to_mongo()
         dashboard_dto = DashboardDTO(**dashboard_data)

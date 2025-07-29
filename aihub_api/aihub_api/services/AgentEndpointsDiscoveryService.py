@@ -1,8 +1,7 @@
 import logging
-import time
 from functools import reduce
 from operator import or_
-from typing import Annotated, Any
+from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.access.AccessChecker import AccessChecker
@@ -13,7 +12,7 @@ from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributo
     use_external_agent_event_distributor,
 )
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from aihub_lib.nats.events import BaseEvent, ExceptionEvent, InstanceDiscoveryRequestEvent
+from aihub_lib.nats.events import ExceptionEvent, InstanceDiscoveryRequestEvent, StopEvent
 from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import (
     AgentInstanceDiscoveryResponseEvent,
 )
@@ -23,7 +22,6 @@ from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics import AgentInstanceDiscoveryTopic
-from bson import ObjectId
 from fastapi import Body, Depends, FastAPI, HTTPException, Query, Security
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
@@ -62,7 +60,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         self.nc_publisher: NCPublisher[AgentInstanceDiscoveryResponseEvent] | None = None
         self.discovery_event_subscriber: NCSubscriber[InstanceDiscoveryRequestEvent] | None = None
 
-    async def discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: AgentInstanceDiscoveryTopic):
+    async def _discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: AgentInstanceDiscoveryTopic):
         """
         Responds to discovery requests by publishing an AgentDiscoveryResponseEvent that includes the basic
         agent configuration as well as some carefully crafted event specifications.
@@ -73,21 +71,25 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             topic.call_id, topic.agent_class, topic.agent_id
         )
 
-        agents: list[AgentInstanceDTO] = []
+        agent_instances: list[AgentInstanceDTO] = []
         if topic.agent_class == "*":
-            agents = await AgentService.discover_agent_instances(self.nc)
+            agent_instances = await AgentService.discover_agent_instances(self.nc)
 
             if topic.agent_id != "*":
-                agents = [agent for agent in agents if agent.agent_id == topic.agent_id]
+                agent_instances = [agent for agent in agent_instances if agent.agent_id == topic.agent_id]
 
         elif topic.agent_id == "*":
-            agents = await AgentService.discover_agent_instances_by_class(nc=self.nc, agent_class=topic.agent_class)
+            agent_instances = await AgentService.discover_agent_instances_by_class(
+                nc=self.nc, agent_class=topic.agent_class
+            )
 
         else:
-            agents.append(await AgentService.discover_agent_instance(self.nc, topic.agent_class, topic.agent_id))
+            agent_instances.append(
+                await AgentService.discover_agent_instance(self.nc, topic.agent_class, topic.agent_id)
+            )
 
-        for agent in agents:
-            agent_discovery_response_event = agent.to_discovery_response_event()
+        for agent_instance in agent_instances:
+            agent_discovery_response_event = agent_instance.to_discovery_response_event()
             await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
     @override
@@ -100,7 +102,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         self.discovery_event_subscriber = AgentNCSubscriber.for_agent_instance_discovery_request_events(
             nc=self.nc,
             topic_manager=AgentTopicManager(),
-            handler=self.discovery_handler,
+            handler=self._discovery_handler,
         )
         await self.discovery_event_subscriber.start()
         logger.info("Agent discovery service started")
@@ -172,7 +174,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
 
             self.app.add_api_route(
                 path=path,
-                endpoint=self.create_endpoint(
+                endpoint=self._create_endpoint(
                     input_type=start_event_input_type,
                     stop_event_union_type=stop_event_union_type,
                     start_event_parents=start_event_specs.event_parents,
@@ -190,7 +192,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             logger.info(f"Registered endpoint: {path}")
 
     @staticmethod
-    def create_endpoint(
+    def _create_endpoint(
         input_type: type[BaseModel],
         stop_event_union_type: type[BaseModel],
         start_event_parents: list[str],
@@ -229,32 +231,24 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 if not (user_in_thread or thread_belongs_to_users_process):
                     raise agent_controller.not_authorized_to_view_exception
 
-            json_data: dict[str, Any] = {
-                "event_id": str(ObjectId()),
-                "created_at": time.time_ns(),
-                "user": user,
-                **start_event_input.model_dump(),
-                "locale": t.locale,
-                "_parent_event_names": start_event_parents,
-                "_event_name": start_event_name,
-                "agent_config": agent_config.model_dump(),
-            }
-            event: BaseEvent = BaseEvent.deserialize_event(json_data)
-
-            stop_event = await AgentService.send_event(
-                nc,
-                external_agent_event_distributor,
-                user,
-                event,
-                agent_class,
-                agent_id,
-                thread_id,
-                display_id,
+            response_event: StopEvent | ExceptionEvent = await AgentService.send_agent_start_event(
+                nc=nc,
+                agent_class=agent_class,
+                agent_id=agent_id,
+                start_event_parents=start_event_parents,
+                start_event_name=start_event_name,
+                raw_event_data=start_event_input.model_dump(),
+                external_agent_event_distributor=external_agent_event_distributor,
+                thread_id=thread_id,
+                display_id=display_id,
+                user=user,
+                t=t,
+                agent_config=agent_config,
             )
 
-            if isinstance(stop_event, ExceptionEvent):
-                raise HTTPException(status_code=stop_event.http_status_code, detail=stop_event.message)
+            if isinstance(response_event, ExceptionEvent):
+                raise HTTPException(status_code=response_event.http_status_code, detail=response_event.message)
 
-            return stop_event
+            return response_event
 
         return send_event

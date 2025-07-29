@@ -92,9 +92,9 @@ class AgentController(Controller):
             """
             Retrieve a list of all online (discoverable) agents. Filters out agents the user cannot access.
             """
-            agents = await AgentService.discover_agent_instances(nc)
+            agents = await AgentService.discover_agents(nc, t)
             return [
-                AgentDTO.from_instance(agent, t, is_online=True)
+                agent
                 for agent in agents
                 if AccessChecker.from_user(user).has_access_to_agent(agent.agent_class, agent.agent_id)
             ]

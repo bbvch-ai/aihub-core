@@ -2,7 +2,7 @@ from typing import Annotated
 
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 
 
 class AgentThreadTopicManager(AgentInstanceTopicManager):
@@ -132,7 +132,7 @@ class AgentThreadTopicManager(AgentInstanceTopicManager):
         )
 
     @classmethod
-    def from_agent_topic(cls, topic: AgentTopic) -> "AgentThreadTopicManager":
+    def from_agent_topic(cls, topic: AgentInstanceTopic) -> "AgentThreadTopicManager":
         """Constructs an AgentThreadTopicManager directly from an AgentTopic object."""
         return cls(
             agent_class=topic.agent_class,

@@ -8,7 +8,8 @@ from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from aihub_lib.nats.topics import AgentTopic
+from aihub_lib.nats.topics import AgentInstanceTopic
+from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
 
 
 class AgentNCSubscriber(NCSubscriber):
@@ -17,7 +18,7 @@ class AgentNCSubscriber(NCSubscriber):
         cls,
         nc: NATS,
         topic_manager: AgentTopicManager,
-        handler: Callable[[DisplayEvent, AgentTopic], Awaitable[None]],
+        handler: Callable[[DisplayEvent, AgentInstanceTopic], Awaitable[None]],
     ):
         """Subscribe to all display events from all agents."""
         subject = topic_manager.get_subject_for_all_display_events_in_agent()
@@ -33,7 +34,7 @@ class AgentNCSubscriber(NCSubscriber):
         cls,
         nc: NATS,
         topic_manager: AgentThreadTopicManager,
-        handler: Callable[[DisplayEvent, AgentTopic], Awaitable[None]],
+        handler: Callable[[DisplayEvent, AgentInstanceTopic], Awaitable[None]],
     ):
         """Subscribe to all display events within a specific thread."""
         subject = topic_manager.get_subject_for_display_event_in_thread("*", "*")
@@ -49,7 +50,7 @@ class AgentNCSubscriber(NCSubscriber):
         cls,
         nc: NATS,
         topic_manager: AgentThreadTopicManager,
-        handler: Callable[[ControlEvent, AgentTopic], Awaitable[None]],
+        handler: Callable[[ControlEvent, AgentInstanceTopic], Awaitable[None]],
     ):
         """Subscribe to all events (display, control, etc.) within a specific thread."""
         subject = topic_manager.get_subject_for_all_event_in_thread("*", "*")
@@ -65,7 +66,7 @@ class AgentNCSubscriber(NCSubscriber):
         cls,
         nc: NATS,
         topic_manager: AgentTopicManager,
-        handler: Callable[[InstanceDiscoveryRequestEvent, AgentTopic], Awaitable[None]],
+        handler: Callable[[InstanceDiscoveryRequestEvent, AgentInstanceTopic], Awaitable[None]],
         call_id: str = "*",
     ):
         """Subscribe to discovery request events for agents, optionally filtered by a specific call_id."""
@@ -82,7 +83,7 @@ class AgentNCSubscriber(NCSubscriber):
         cls,
         nc: NATS,
         topic_manager: AgentTopicManager,
-        handler: Callable[[ClassDiscoveryRequestEvent, AgentTopic], Awaitable[None]],
+        handler: Callable[[ClassDiscoveryRequestEvent, AgentClassDiscoveryTopic], Awaitable[None]],
         call_id: str = "*",
     ):
         """Subscribe to discovery request events for agent classes, optionally filtered by a specific call_id."""
@@ -99,7 +100,7 @@ class AgentNCSubscriber(NCSubscriber):
         cls,
         nc: NATS,
         topic_manager: AgentTopicManager,
-        handler: Callable[[BaseEvent, AgentTopic], Awaitable[None]],
+        handler: Callable[[BaseEvent, AgentInstanceTopic], Awaitable[None]],
         call_id: str = "*",
     ):
         """Subscribe to discovery response events for agents, optionally filtered by a specific call_id."""
@@ -116,7 +117,7 @@ class AgentNCSubscriber(NCSubscriber):
         cls,
         nc: NATS,
         topic_manager: AgentTopicManager,
-        handler: Callable[[BaseEvent, AgentTopic], Awaitable[None]],
+        handler: Callable[[BaseEvent, AgentInstanceTopic], Awaitable[None]],
         call_id: str = "*",
     ):
         """Subscribe to discovery response events for agent classes, optionally filtered by a specific call_id."""
@@ -133,7 +134,7 @@ class AgentNCSubscriber(NCSubscriber):
         cls,
         nc: NATS,
         topic_manager: AgentTopicManager,
-        handler: Callable[[BaseEvent, AgentTopic], Awaitable[None]],
+        handler: Callable[[BaseEvent, AgentInstanceTopic], Awaitable[None]],
     ):
         """
         Creates a NCSubscriber for all agent events.
@@ -153,8 +154,8 @@ class AgentNCSubscriber(NCSubscriber):
         cls,
         nc: NATS,
         topic_manager: AgentInstanceTopicManager,
-        handler: Callable[[BaseEvent, AgentTopic], Awaitable[None]],
-        event: type[BaseEvent],
+        handler: Callable[[ControlEvent, AgentInstanceTopic], Awaitable[None]],
+        event: type[ControlEvent],
     ):
         """
         Creates a NCSubscriber for all agent events.

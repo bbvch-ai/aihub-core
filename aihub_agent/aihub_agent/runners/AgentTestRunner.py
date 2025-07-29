@@ -4,12 +4,12 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.infrastructure.RedisConfig import RedisConfig
+from aihub_lib.infrastructure.nats.NatsConfig import NatsConfig
+from aihub_lib.infrastructure.redis.RedisConfig import RedisConfig
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentClassDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
-from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
@@ -17,7 +17,7 @@ from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import Agent
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics import Topic
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 from bson import ObjectId
 from pydantic import BaseModel
@@ -214,14 +214,14 @@ class AgentTestRunner(AgentRunner):
         self,
         event_class: type[BaseEvent],
         exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
-    ) -> list[AgentTopic]:
+    ) -> list[AgentInstanceTopic]:
         """Returns the topics of all observed events of the specified class, if any are AgentTopic."""
         return [
             ev.topic
             for ev in self.observed_events
             if isinstance(ev.event, event_class)
             and (not exact or event_class.event_name_from_class() == ev.event.event_name)
-            and isinstance(ev.topic, AgentTopic)
+            and isinstance(ev.topic, AgentInstanceTopic)
         ]
 
     def get_events_of_class(

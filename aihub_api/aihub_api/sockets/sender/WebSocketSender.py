@@ -1,7 +1,7 @@
 import logging
 
 from aihub_lib.nats.events import DisplayEvent
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from cachetools import TTLCache, cached
 
@@ -39,7 +39,7 @@ class WebSocketSender:
         thread = ThreadEntity.get_thread_by_id(thread_id)
         return [user.user_id for user in thread.users]
 
-    async def send_event(self, event: DisplayEvent, topic: AgentTopic):
+    async def send_event(self, event: DisplayEvent, topic: AgentInstanceTopic):
         """
         Given a DisplayEvent and its topic context:
         - Find the thread's users.

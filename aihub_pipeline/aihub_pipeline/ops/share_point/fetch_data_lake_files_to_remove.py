@@ -1,6 +1,6 @@
-from azure.storage.filedatalake import FileSystemClient
 from dagster import OpExecutionContext, ResourceParam, op
 
+from aihub_pipeline.resources.data_lake.base.AbstractDataLakeClient import AbstractDataLakeClient
 from aihub_pipeline.resources.data_lake.DataLakeResource import DataLakeResource
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 from aihub_pipeline.types.SharePointFile import MinimalSharePointFile
@@ -11,7 +11,7 @@ def fetch_data_lake_files_to_remove(
     context: OpExecutionContext,
     share_point_files: list[MinimalSharePointFile],
     data_lake_resource: DataLakeResource,
-    data_lake_client: ResourceParam[FileSystemClient],
+    data_lake_client: ResourceParam[AbstractDataLakeClient],
 ) -> list[DataLakeFile]:
     """Fetches all DataLakeFiles that are in the DataLake but no longer in SharePoint."""
     uris_to_exclude = [
@@ -33,7 +33,7 @@ def fetch_data_lake_files_to_remove(
 
 
 def fetch_data_lake_files_without_excluded_uris(
-    data_lake_client: ResourceParam[FileSystemClient],
+    data_lake_client: ResourceParam[AbstractDataLakeClient],
     data_lake_container_name: str,
     data_lake_directory_name: str,
     excluded_uris: list[str] = None,
@@ -44,25 +44,14 @@ def fetch_data_lake_files_without_excluded_uris(
 
     excluded_uris_set = set(excluded_uris)
 
-    paths = data_lake_client.get_paths(path=f"{data_lake_directory_name}/", recursive=True)
+    all_files = data_lake_client.get_all_files(
+        directory_name=data_lake_directory_name, figures_directory_name=figures_directory
+    )
+
     data_lake_files: list[DataLakeFile] = []
-
-    for path in paths:
-        if path.is_directory:
+    for data_lake_file in all_files:
+        if data_lake_file.uri in excluded_uris_set:
             continue
-
-        if f"/{figures_directory}/" in path.name:
-            continue
-
-        path_parts = path.name.split("/")
-        if len(path_parts) < 2:
-            continue
-
-        document_uri = f"{data_lake_container_name}/{path.name.lstrip('/')}"
-        if document_uri in excluded_uris_set:
-            continue
-
-        data_lake_file = DataLakeFile.from_uri(uri=document_uri, fs_client=data_lake_client)
         data_lake_files.append(data_lake_file)
 
     return data_lake_files

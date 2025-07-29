@@ -3,6 +3,7 @@ import logging
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.events import (
     BaseEvent,
     ChunkEvent,
@@ -24,7 +25,6 @@ from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent i
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.InstanceDiscoveryRequestEvent import InstanceDiscoveryRequestEvent
 from aihub_lib.nats.events.semantic import Message
-from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
@@ -34,7 +34,7 @@ from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
@@ -87,6 +87,8 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         agent_class: str,
         agent_id: str,
         simulated_events: list[BaseEvent] | None = None,
+        start_events: list[EventSpecs] | None = None,
+        stop_events: list[EventSpecs] | None = None,
     ):
         super().__init__()
         self.agent_class = agent_class
@@ -104,8 +106,8 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
 
         self.simulated_events: list[BaseEvent] = simulated_events or []
 
-        self.start_events: list[EventSpecs] = []
-        self.stop_events: list[EventSpecs] = []
+        self.start_events: list[EventSpecs] | None = start_events
+        self.stop_events: list[EventSpecs] | None = stop_events
 
         self.default_agent_config: AgentConfig = AgentConfig(
             agent_class=self.agent_class,
@@ -114,7 +116,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             description=LocaleString(de="Test Agent Description"),
         )
 
-    async def simulate_agent(self, event: ControlEvent, topic: AgentTopic):
+    async def simulate_agent(self, event: ControlEvent, topic: AgentInstanceTopic):
         """
         Handler for control events targeting this agent instance. If a StartEvent arrives,
         publish the simulated events in sequence, followed by a StopEvent to conclude the run.
@@ -146,7 +148,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
-    async def publish_event(self, event: BaseEvent, topic: AgentTopic):
+    async def publish_event(self, event: BaseEvent, topic: AgentInstanceTopic):
         """
         Publish a given event (ControlEvent or DisplayEvent) to the appropriate subject based
         on the thread and run specified in the `topic`. Uses `AgentThreadTopicManager` to
@@ -185,14 +187,16 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         self.nc = NATS()
         await self.nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
 
-        self.start_events = [
-            EventSpecs.from_event_class(StartEvent),
-            EventSpecs.from_event_class(UserMessageEvent),
-        ]
-        self.stop_events = [
-            EventSpecs.from_event_class(StopEvent),
-            EventSpecs.from_event_class(LLMStopEvent),
-        ]
+        if self.start_events is None:
+            self.start_events = [
+                EventSpecs.from_event_class(StartEvent),
+                EventSpecs.from_event_class(UserMessageEvent),
+            ]
+        if self.stop_events is None:
+            self.stop_events = [
+                EventSpecs.from_event_class(StopEvent),
+                EventSpecs.from_event_class(LLMStopEvent),
+            ]
 
         self.nc_publisher = NCPublisher(self.nc)
         self.discovery_subscriber = AgentNCSubscriber.for_agent_class_discovery_request_events(
@@ -201,7 +205,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         await self.discovery_subscriber.start()
 
         self.js = self.nc.jetstream()
-        self.agent_control_event_subscriber = AgentJSSubscriber.for_agent_instance_events(
+        self.agent_control_event_subscriber = AgentJSSubscriber.for_agent_instance_control_events(
             self.nc,
             self.topic_manager,
             js=self.js,

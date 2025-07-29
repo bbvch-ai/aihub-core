@@ -15,6 +15,7 @@ from llama_index.core.base.llms.types import ChatMessage
 from stringcase import snakecase
 
 from aihub_api.routes.agent.AgentController import AgentController
+from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.runners.simulation.agent.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 from aihub_api.services.ModelCreationService import ModelCreationService
 
@@ -36,6 +37,13 @@ async def agent_api_client():
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1") as client:
             yield client
+
+
+@pytest.fixture(autouse=True)
+def cleanup_db_and_cache():
+    AgentService._clear_cache()
+    yield
+    AgentService._clear_cache()
 
 
 @pytest.mark.asyncio(loop_scope="module")
