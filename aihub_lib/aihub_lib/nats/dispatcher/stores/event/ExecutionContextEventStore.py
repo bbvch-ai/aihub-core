@@ -9,7 +9,7 @@ class ExecutionContextEventStore:
     """Store for all events within a single run"""
 
     # Maps event_name -> event_id -> event
-    events: defaultdict[str, dict[str, BaseEvent]] = None
+    events: defaultdict[str, dict[str, BaseEvent]] | None = None
 
     def __post_init__(self):
         if self.events is None:
