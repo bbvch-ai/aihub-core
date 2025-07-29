@@ -78,7 +78,7 @@ MONGODB_DIVIDE = "$divide"
 MONGODB_EVENT_PARENTS = "$event_parents"
 MONGODB_EVENT_TIME = "$event_time"
 MONGODB_EVENT_TYPE = "$event_type"
-MONGODB_FIRST = "$first"
+MONGODB_FIRST = MONGODB_FIRST
 MONGODB_FIRST_EVENT_TIME = "$first_event_time"
 MONGODB_GROUP = MONGODB_GROUP
 MONGODB_IF_NULL = "$ifNull"
@@ -211,13 +211,13 @@ class PersistedAgentEventEntity(Document):
             {
                 MONGODB_GROUP: {
                     "_id": {"run_id": "$run_id", "event_id": "$event_id"},
-                    "run_id_val": {"$first": "$run_id"},  # Keep run_id for next stage
-                    "display_id": {"$first": "$display_id"},
-                    "event_time": {"$first": "$event_time"},
-                    "event_parents": {"$first": "$event_parents"},
-                    "agent_class": {"$first": "$agent_class"},
-                    "agent_id": {"$first": "$agent_id"},
-                    "event_data": {"$first": "$event_data"},  # For LLM cost calculation
+                    "run_id_val": {MONGODB_FIRST: "$run_id"},  # Keep run_id for next stage
+                    "display_id": {MONGODB_FIRST: "$display_id"},
+                    "event_time": {MONGODB_FIRST: "$event_time"},
+                    "event_parents": {MONGODB_FIRST: "$event_parents"},
+                    "agent_class": {MONGODB_FIRST: "$agent_class"},
+                    "agent_id": {MONGODB_FIRST: "$agent_id"},
+                    "event_data": {MONGODB_FIRST: "$event_data"},  # For LLM cost calculation
                     "event_type": {MONGODB_FIRST: MONGODB_EVENT_TYPE},
                 }
             },
@@ -226,7 +226,7 @@ class PersistedAgentEventEntity(Document):
             {
                 MONGODB_GROUP: {
                     "_id": "$run_id_val",
-                    "display_id": {"$first": "$display_id"},
+                    "display_id": {MONGODB_FIRST: "$display_id"},
                     "first_event_time": {"$min": "$event_time"},
                     "latest_event_time": {"$max": "$event_time"},
                     "n_events": {"$sum": 1},
@@ -318,7 +318,7 @@ class PersistedAgentEventEntity(Document):
                     "is_aitl": {"$gt": ["$aitl_request_events", 0]},
                     "open_aitl": {"$gt": ["$aitl_request_events", "$aitl_response_events"]},
                     "start_event_info": {
-                        "$first": {
+                        MONGODB_FIRST: {
                             "$filter": {
                                 "input": "$potential_start_events",
                                 "as": "event",
@@ -525,14 +525,14 @@ class PersistedAgentEventEntity(Document):
             {
                 MONGODB_GROUP: {
                     "_id": {"time_bucket": "$time_bucket", "event_id": "$event_id"},
-                    "time_bucket_val": {"$first": "$time_bucket"},
+                    "time_bucket_val": {MONGODB_FIRST: "$time_bucket"},
                 }
             },
             # 5. Group events by time bucket and count them
             {
                 MONGODB_GROUP: {
                     "_id": "$time_bucket_val",  #
-                    "start_time": {"$first": {"$toDate": "$time_bucket_val"}},
+                    "start_time": {MONGODB_FIRST: {"$toDate": "$time_bucket_val"}},
                     "total_events": {"$sum": 1},
                 }
             },
