@@ -232,7 +232,7 @@ class PersistedAgentEventEntity(Document):
                     "n_events": {"$sum": 1},
                     "start_events": {
                         "$sum": {
-                            "$cond": [
+                            MONGODB_COND: [
                                 {
                                     "$and": [
                                         {"$in": ["StartEvent", "$event_parents"]},
@@ -244,7 +244,7 @@ class PersistedAgentEventEntity(Document):
                             ]
                         }
                     },
-                    "stop_events": {"$sum": {"$cond": [{"$in": ["StopEvent", "$event_parents"]}, 1, 0]}},
+                    "stop_events": {"$sum": {MONGODB_COND: [{"$in": ["StopEvent", MONGODB_EVENT_PARENTS]}, 1, 0]}},
                     "exception_events": {"$sum": {"$cond": [{"$in": ["ExceptionEvent", "$event_parents"]}, 1, 0]}},
                     "hitl_request_events": {
                         "$sum": {"$cond": [{"$in": ["HumanInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
