@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - ☁️ **Multi-Cloud Storage Abstraction:** Introduced a foundational `AbstractAnonymousFileAccessService` and concrete implementations for **Azure Blob Storage** and **S3/MinIO**, enabling consistent file access across various cloud providers.
-- ⚙️ **Configurable File Access Service:** Added `FileAccessServiceConfig` to dynamically configure and instantiate the appropriate file access service based on environment settings, simplifying multi-cloud deployment.
+- ⚙️ **Configurable File Access Service:** Added `AnonymousFileAccessSettings` to dynamically configure and instantiate the appropriate file access service based on environment settings, simplifying multi-cloud deployment.
 - 🛠️ **S3/MinIO Data Lake Integration:** Implemented `S3DataLakeIOManager` and supporting `S3DataLakeClient` and `S3DataLakeFileSystem` resources for Dagster pipelines, bringing robust S3-compatible storage capabilities.
 - 🏗️ **Abstracted Data Lake Clients:** Introduced base interfaces (`AbstractDataLakeClient`, `AbstractDataLakeClientResource`, `AbstractDataLakeFileSystemResource`) to standardize interactions with different data lake storage solutions.
 
@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🗑️ **Azure AI Search Vector Store:** Discontinued support for Azure AI Search as a vector store option within `aihub_pipeline`, streamlining the available vector store integrations.
 
 ### Refactor
-- 🧹 **Infrastructure Configuration Restructure:** Moved `NatsConfig` and `RedisConfig` into dedicated `infrastructure` subpackages for clearer logical grouping and improved project structure.
+- 🧹 **Infrastructure Configuration Restructure:** Moved `NatsSettings` and `RedisSettings` into dedicated `infrastructure` subpackages for clearer logical grouping and improved project structure.
 - 📄 **Improved Docstring Clarity:** Cleaned up and removed redundant parameter descriptions from various Infrastructure-as-Code (IAC) and API test fixture docstrings.
 - ⚙️ **Centralized DataLakeFile Creation:** Refactored the instantiation logic for `DataLakeFile` objects by moving the URI-based creation method into cloud-specific data lake client implementations for better encapsulation and maintainability.
 
@@ -633,7 +633,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Refactor
 - 🧹 **Simplified Docstrings Across Components**: Docstrings in numerous core components have been simplified and cleaned up, focusing on concise explanations rather than extensive examples or "why" sections.
-- ⚙️ **Pydantic Model Default Handling Alignment**: Aligned Pydantic model definitions across various components (e.g., `QuestionStartEvent`, `CreateRoleRequest`, `JudgeOutput`, Open WebUI SDK models, `DoclingConfig`, `SharePointResource`, `SharePointFile`) by moving default value assignments from `Field` annotations to direct attribute assignments.
+- ⚙️ **Pydantic Model Default Handling Alignment**: Aligned Pydantic model definitions across various components (e.g., `QuestionStartEvent`, `CreateRoleRequest`, `JudgeOutput`, Open WebUI SDK models, `DoclingSettings`, `SharePointResource`, `SharePointFile`) by moving default value assignments from `Field` annotations to direct attribute assignments.
 - 🔄 **Codebase Naming Standardization**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`) and SharePoint-related assets (`sharepoint_` to `share_point_`), improving clarity and maintainability.
 - 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure for better organization and clarity.
 - 📚 **Centralized `EventSpecs` Definition**: The `EventSpecs` class has been moved to a more general location in `aihub_lib.nats.events.discovery`, promoting reusability and reducing duplication.
@@ -779,7 +779,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🗑️ **Removed Formkit Locale Integration**: Eliminated Formkit-specific locale change logic from `UserSettings.vue`, aligning with the deprecation of Formkit from the web UI.
 - 🗑️ **Removed Formkit Nuxt Module**: Eliminated the `@sfxcode/formkit-primevue-nuxt` module integration from `nuxt.config.ts`, completing the deprecation of Formkit in the web UI.
 - 🗑️ **Removed Formkit Dependencies**: Eliminated Formkit-related development dependencies from `package.json`, confirming its removal.
-- 🗑️ **Removed Custom API Environment Variables**: Deprecated and removed the `additional_env_vars` configuration from `ApiConfig`, which previously allowed injecting custom environment variables into API deployments.
+- 🗑️ **Removed Custom API Environment Variables**: Deprecated and removed the `additional_env_vars` configuration from `AIHubSettings`, which previously allowed injecting custom environment variables into API deployments.
 - 🗑️ **Removed Process API Test Suite**: Eliminated the entire test suite for process API interactions, including fixtures and scenario tests, aligning with the deprecation of direct process API endpoints.
 - 🗑️ **Removed Process-Specific Query Methods**: Eliminated `get_open_human_work_requests` and `find_request_for_work_event` methods, as process-specific event querying is no longer supported.
 - 🗑️ **Removed Playground-Specific Work Events**: Eliminated `AgentAWorkRequest`, `HumanAWork`, `HumanBWork`, and `HumanBWorkRequest` events from the playground examples, as their underlying models have been simplified or deprecated.
@@ -833,7 +833,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🧹 **Standardized External Event Distributor Usage**: Renamed `external_agent_event_distributor` to `external_event_distributor` within `PhoenixExperimentEvaluator` for consistent dependency naming.
 - ⚙️ **Optimized Schema Copying**: Removed unnecessary `deepcopy` calls for `JudgeOutput` schema, improving efficiency.
 - ⚙️ **Clarified Optional Fields in OpenAPI Models**: Explicitly added `default=None` or `default=False` to numerous optional fields across Open WebUI SDK models (chats, files, knowledge, users), enhancing clarity in the generated OpenAPI schema.
-- ⚙️ **Refined DoclingConfig Defaults**: Explicitly set default values for `DOCLING_IMAGE_EXPORT_MODE`, `DOCLING_DO_OCR`, and `DOCLING_FORCE_OCR` in `DoclingConfig` for clearer configuration.
+- ⚙️ **Refined DoclingSettings Defaults**: Explicitly set default values for `DOCLING_IMAGE_EXPORT_MODE`, `DOCLING_DO_OCR`, and `DOCLING_FORCE_OCR` in `DoclingSettings` for clearer configuration.
 - 📄 **Comprehensive ExternalAgentEventDistributor Documentation**: Added detailed docstrings to `ExternalAgentEventDistributor`, outlining its purpose, key responsibilities, event flow, and providing usage examples.
 - 🧹 **Standardized Pydantic Annotations**: Updated `event_id` and `created_at` to use `Annotated` for consistency.
 - 🧹 **Streamlined WorkEvent Definition**: Simplified `WorkEvent` by removing specific default value setters and display name/description class methods, making it a more focused base class.
@@ -1103,7 +1103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🗑️ **Removed Milvus Stack**: The entire Milvus vector database stack and its related configurations have been removed from the standard `docker-compose` setup.
 
 ### Refactor
-- 🧹 **Pydantic Model Default Value Alignment**: Aligned numerous Pydantic model definitions (e.g., `QuestionStartEvent`, `CreateRoleRequest`, `JudgeOutput`, `DoclingConfig`, `SharePointResource`, `SharePointFile`, OpenWebUI SDK models) to explicitly use the `default` argument within `Field` for consistency and clarity.
+- 🧹 **Pydantic Model Default Value Alignment**: Aligned numerous Pydantic model definitions (e.g., `QuestionStartEvent`, `CreateRoleRequest`, `JudgeOutput`, `DoclingSettings`, `SharePointResource`, `SharePointFile`, OpenWebUI SDK models) to explicitly use the `default` argument within `Field` for consistency and clarity.
 - 🧹 **Consolidated `EventSpecs` Definition**: Centralized the `EventSpecs` model definition within `AgentDiscoveryResponseEvent` to improve discoverability and reduce redundancy.
 - 🧹 **Unified Event Persistence**: Renamed `persist_agent_event` to `persist_event` in `EventPersister` and updated the API's `lifetime_manager` to use this unified method for all agent event persistence.
 - 🧹 **Standardized External Event Distributor Naming**: Renamed `external_agent_event_distributor` to `external_event_distributor` across various components and dependencies (e.g., `AgentService`, `EvaluationService`, `OpenaiService`, `BotInTheLoopBot`, `AgentChatBot`, `AgentCompletionHandler`, `AgentChatController`, `BotInTheLoopController`, `lifetime_manager`, `AgentDiscoveryService`, `ChatService`, `WebSocketManager`, `WebSocketSender`) for improved consistency.
@@ -1690,7 +1690,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - 🔄 **Platform Version Alignment**: All core microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`, `aihub_process`) and their internal `aihub_lib` dependencies have been updated to `v0.206.0`, ensuring a unified and consistent release across the entire platform.
 - ⚠️ **Deprecated AgentConfig Fields**: Marked `color`, `voice`, and `system_prompt` fields in `AgentConfig` as deprecated, encouraging subclasses to define these properties directly for better customization and reduced coupling.
-- 📄 **Streamlined Docling and OpenWebUI Configurations**: Refined default value assignments for `DOCLING_FROM_FORMATS`, `DOCLING_TO_FORMATS` in `DoclingConfig` and various `Pipe.Valves`/`Action.Valves` settings in `webui_pipelines` for clearer and more direct configuration.
+- 📄 **Streamlined Docling and OpenWebUI Configurations**: Refined default value assignments for `DOCLING_FROM_FORMATS`, `DOCLING_TO_FORMATS` in `DoclingSettings` and various `Pipe.Valves`/`Action.Valves` settings in `webui_pipelines` for clearer and more direct configuration.
 
 ---
 
@@ -1756,7 +1756,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Refactor
 - 🧹 **Centralized User Identity Model**: The `AuthenticatedUser` model has been deprecated and replaced across the codebase with the new `UserIdentity` model, which now handles user attributes like `id` (formerly `oid`) and `email` (formerly `preferred_username`).
 - ⚙️ **Streamlined Auth Handlers**: Authentication handlers (`OAuth2AuthHandler`, `TokenAuthHandler`, `OpenWebuiAuthHandler`) have been refactored to leverage the new `IdentityProvider` abstraction, simplifying their internal logic and promoting modularity.
-- 🚨 **Renamed Development-Only Auth Components**: The `NoAuthHandler` and `NoAuthConfig` have been renamed to `DangerousDevelopmentOnlyAuthHandler` and `DangerousDevelopmentOnlyAuthConfig` respectively, providing a clearer warning about their intended use for development and testing only.
+- 🚨 **Renamed Development-Only Auth Components**: The `NoAuthHandler` and `NoAuthConfig` have been renamed to `DangerousDevelopmentOnlyAuthHandler` and `DangerousDevelopmentOnlyAuthSettings` respectively, providing a clearer warning about their intended use for development and testing only.
 - 🗑️ **Removed Redundant Identity Providers (API)**: The previously internal user information providers (`BaseUserInformationProvider`, `MultiStrategyUserInformationProvider`, `ApiTokenUserInformationProvider`, `AzureUserInformationProvider`, `DevUserInformationProvider`) from the `aihub_api` module have been removed, as their functionality is now centralized and provided by the new `IdentityProvider` layer in `aihub_lib`.
 - 📄 **Consolidated Frontend User Properties**: Frontend components (`Chat/Message.vue`, `Chat/Thread.vue`, `Event/Display/UserMessageEvent.vue`) have been updated to use the `email` property instead of `preferredUsername` for user display, aligning with the backend `UserIdentity` model.
 
@@ -1823,7 +1823,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - ✨ **New Docling Document Loader**: Introduced `DoclingLoader` to support advanced document processing via the Docling service, enabling robust conversion of various document formats to Markdown, including automated extraction and handling of figures and tables.
 - 🚀 **Docling API Integration**: Implemented `DoclingAccess` for seamless interaction with the Docling API, facilitating comprehensive document conversion capabilities such as OCR, table extraction, and embedded image handling.
-- 🛠️ **Docling Service Configuration**: Added `DoclingConfig` to centralize and manage all configurable parameters for the new Docling service integration, including API endpoints, supported formats, and processing options.
+- 🛠️ **Docling Service Configuration**: Added `DoclingSettings` to centralize and manage all configurable parameters for the new Docling service integration, including API endpoints, supported formats, and processing options.
 - 🖼️ **Automated Figure Description Generation**: Introduced the `generate_figure_descriptions` operation to automatically create detailed, context-aware alt text for figures in documents using a vision language model, significantly enhancing document accessibility and searchability.
 
 ### Changed
@@ -1832,7 +1832,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ⚙️ **Configurable Document Parsers**: Introduced `LoaderType` and a `loader_type` parameter in `DocumentParserResource`, enabling explicit selection of document parsing backends (Docling, Document Intelligence, or both) and dynamic loading of supported file extensions from their respective configurations.
 - 📄 **Streamlined Document Parsing**: Updated `parse_document_from_data_lake` to directly output `RefDocDocument` and pass figure directory information to the document loaders, simplifying subsequent pipeline steps.
 - 📄 **Simplified Figure Metadata**: Removed the `figure_url` field from `FigureMetadata` as figures are now managed via local paths within the document processing pipeline.
-- ⚙️ **Document Intelligence Configuration**: Added `DOCUMENTINTELLIGENCE_EXTENSIONS` to `DocumentIntelligenceConfig` to explicitly define supported file types for the Document Intelligence service.
+- ⚙️ **Document Intelligence Configuration**: Added `DOCUMENTINTELLIGENCE_EXTENSIONS` to `AzureDocumentIntelligenceSettings` to explicitly define supported file types for the Document Intelligence service.
 - 🧪 **Playground Document Parser Default**: Updated the playground environment to default to `DoclingLoader` for document parsing, demonstrating the new configurable loader types.
 
 ### Refactor
@@ -1967,7 +1967,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.188.0] - 2025-06-13 - Streamlined File Access and Improved Document Experience
 
 ### Added
-- 🔐 **Introduced Secure File Access**: A new API and backend infrastructure (`FileController`, `FileService`, `BlobStorageAccess`, `BlobStorageConfig`) to generate secure, time-limited Azure SAS URLs for both authenticated and anonymous file access.
+- 🔐 **Introduced Secure File Access**: A new API and backend infrastructure (`FileController`, `FileService`, `BlobStorageAccess`, `AzureBlogStorageSettings`) to generate secure, time-limited Azure SAS URLs for both authenticated and anonymous file access.
 - 🔗 **Enabled Anonymous File Sharing**: Implemented `AnonymousFileAccessService` to generate and validate secure, time-limited URLs, allowing for controlled anonymous sharing of files.
 - 🖼️ **New Markdown Components**: Added dedicated Vue components (`MarkdownFigure`, `MarkdownTable`, `ResolveImageComponent`) to enhance the rendering of figures and tables within Markdown content. The `ResolveImageComponent` dynamically fetches and displays images from secure storage using signed URLs.
 
@@ -2218,7 +2218,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🎨 **UI Design System**: Adjusted the base theme's primary color definitions to utilize `surface` tones, contributing to a refined and consistent visual design.
 
 ### Refactor
-- 🧹 **Phoenix Configuration Relocation**: Moved the `PhoenixConfig` class from `aihub_agent` to the shared `aihub_lib` module, improving code organization and reusability across components.
+- 🧹 **Phoenix Configuration Relocation**: Moved the `PhoenixSettings` class from `aihub_agent` to the shared `aihub_lib` module, improving code organization and reusability across components.
 - ♻️ **LlamaIndex Document Handling**: Updated internal document representations within LlamaIndex-based vector processing from `Document` to `TextNode`, reflecting a more precise and aligned data model.
 
 ---
@@ -3504,7 +3504,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.90.0] - 2025-03-04 - Enhanced Observability and Codebase Refinement
 
 ### Added
-- ✨ **Logging Configuration**: Introduced `LoggingConfig` in `aihub_lib` to allow log levels to be dynamically set via environment variables for more flexible control.
+- ✨ **Logging Configuration**: Introduced `LogSettings` in `aihub_lib` to allow log levels to be dynamically set via environment variables for more flexible control.
 - ⚡️ **Playground Logging**: Enabled enhanced logging in `aihub_api` and `aihub_bot` playground environments to leverage the new dynamic logging configuration.
 
 ### Changed
@@ -3549,7 +3549,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.87.0] - 2025-03-03 - Redis-Powered State Management and Workflow Optimizations
 
 ### Added
-- ✨ **Redis Configuration**: Introduced a dedicated `RedisConfig` class to centralize Redis connection settings, enabling more straightforward configuration and management of distributed storage.
+- ✨ **Redis Configuration**: Introduced a dedicated `RedisSettings` class to centralize Redis connection settings, enabling more straightforward configuration and management of distributed storage.
 
 ### Changed
 - 🚀 **Redis for Distributed State Storage**: Migrated core distributed state management for agents from NATS JetStream Key-Value stores to Redis, significantly enhancing performance and scalability for event and step execution tracking.
@@ -3981,7 +3981,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - 🔒 **API Endpoint Security**: Integrated the new `AuthHandler` interface across all `aihub_api` controllers, standardizing authentication and enforcing granular access control for chat and thread operations.
 - 🔍 **Agent Discovery Protocol**: The agent discovery response (AgentDTO) now includes a list of `stop_events`, providing more complete lifecycle information for discovered agents.
-- 🏗️ **Configuration Management**: Refactored core configuration classes, separating general `AzureBaseConfig` from API-specific settings now managed by `ApiConfig` for improved clarity and modularity.
+- 🏗️ **Configuration Management**: Refactored core configuration classes, separating general `AzureSettings` from API-specific settings now managed by `AIHubSettings` for improved clarity and modularity.
 - 🧪 **Bot Test Runner**: Enhanced the `BotTestRunner` and `SimulatedAgentBotTestRunner` to leverage `ASGIAdapter` for internal HTTP requests, making chatbot integration tests faster and more robust by eliminating external network dependencies.
 - 🧩 **User Information Retrieval**: The `UserService` in `aihub_api` now uses a `MultiStrategyUserInformationProvider` to dynamically fetch user details from Azure AD, API tokens, or a development mock, increasing flexibility.
 - 🌐 **Internationalization Endpoint**: Simplified the `/i18n/my-locale` endpoint in `aihub_api` to streamline locale information retrieval.
@@ -4013,7 +4013,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 📈 **Stop Event Discovery for Agents:** Agents can now declare `StopEvent` types, enhancing their discoverability and allowing clients to understand how agent workflows naturally conclude.
 
 ### Changed
-- 🔄 **Centralized API Configuration:** Consolidated general API-related configurations into a new `ApiConfig` class, clearly separating them from Azure-specific infrastructure settings for better organization.
+- 🔄 **Centralized API Configuration:** Consolidated general API-related configurations into a new `AIHubSettings` class, clearly separating them from Azure-specific infrastructure settings for better organization.
 - ⚡️ **Improved CI/CD Python Setup:** Updated GitHub Actions workflows to leverage more efficient Poetry caching and dependency resolution during linting and testing phases.
 - 🔒 **Enhanced Agent Access Control:** Modified the `AuthenticatedUser` to allow users with the "AllAgents" role to access any agent, simplifying role management for administrators.
 - 📊 **Auth-Protected Health Endpoint:** The health check endpoint (`/health`) is now protected by the authentication layer, allowing flexible integration with different auth strategies.
@@ -4387,7 +4387,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚀 **Formalized `bots` scope support** in the semantic pull request workflow, enhancing CI/CD validation for bot-related changes.
 
 ### Changed
-- ⚙️ **Updated NATS connection configuration** in the `aihub_bot` service to dynamically retrieve the endpoint from `NatsConfig`, replacing the previously hardcoded local address for improved deployment flexibility.
+- ⚙️ **Updated NATS connection configuration** in the `aihub_bot` service to dynamically retrieve the endpoint from `NatsSettings`, replacing the previously hardcoded local address for improved deployment flexibility.
 
 ---
 
@@ -4595,7 +4595,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 💬 **AITL Event Definitions**: Added new core event types (`AgentInTheLoopRequestEvent`, `AgentInTheLoopResponseEvent`, `AgentInTheLoopExceptionEvent`) to support robust agent-to-agent communication and error handling during delegation.
 - 🌐 **Self-Hosted LLM and Embedding Support**: Extended the RAG agent and LLM configurations to seamlessly integrate with self-hosted Large Language Models (LLMs) and embedding models. This provides greater flexibility and control over AI infrastructure, enabling local model execution.
 - 📦 **Milvus Vector Store Integration**: Introduced support for Milvus as a configurable vector store within the RAG agent, allowing for more diverse knowledge base integrations.
-- 🔌 **Centralized NATS Configuration**: Added `NatsConfig` to centralize and simplify the management of NATS endpoint configurations across all modules.
+- 🔌 **Centralized NATS Configuration**: Added `NatsSettings` to centralize and simplify the management of NATS endpoint configurations across all modules.
 - ⚙️ **Local Milvus and AI Model Docker Setup**: Provided `milvus-standalone-docker-compose.yml` and updated `docker-compose.yml` for simplified local setup of Milvus, `llama.cpp` (for LLMs), and Hugging Face TEI (for embeddings) in the playground, facilitating self-hosted AI development.
 - ✅ **New BDD Test Suites**: Expanded the test coverage with new BDD scenarios for conditional workflows, context handling, fan-out patterns, semantic events, and crucial end-to-end tests for the new Agent-in-the-Loop feature.
 

@@ -2,7 +2,7 @@ import logging
 from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager
 
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.routes.Controller import Controller
 from aihub_lib.runners.Runner import Runner
 from fastapi import FastAPI
@@ -69,8 +69,8 @@ class ApiRunner(Runner):
         app = super()._get_api_app()
 
         origins = self.origins or ["http://localhost:8080"]
-        if ApiConfig().FRONTEND_ORIGIN:
-            origins += [item.strip() for item in ApiConfig().FRONTEND_ORIGIN.split(",")]
+        if AIHubSettings().FRONTEND_ORIGIN:
+            origins += [item.strip() for item in AIHubSettings().FRONTEND_ORIGIN.split(",")]
 
         # Add CORS middleware
         app.add_middleware(

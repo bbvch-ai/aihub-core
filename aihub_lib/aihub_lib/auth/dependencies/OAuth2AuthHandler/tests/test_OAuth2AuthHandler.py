@@ -7,7 +7,7 @@ import jwt
 import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
+from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
@@ -56,27 +56,29 @@ def oauth2_context() -> dict:
     ),
     target_fixture="oauth2_config",
 )
-def oauth2_config(monkeypatch, tenant_id: str, client_id: str, authority_url: str) -> OAuth2Config:
+def oauth2_config(monkeypatch, tenant_id: str, client_id: str, authority_url: str) -> OAuth2Settings:
     """Set the OAuth2 configuration environment variables."""
-    monkeypatch.setenv("TENANT_ID", tenant_id)
-    monkeypatch.setenv("CLIENT_ID", client_id)
-    monkeypatch.setenv("AUTHORITY_URL", authority_url)
-    return OAuth2Config()
+    monkeypatch.setenv("OAUTH_TENANT_ID", tenant_id)
+    monkeypatch.setenv("OAUTH_CLIENT_ID", client_id)
+    monkeypatch.setenv("OAUTH_AUTHORITY_URL", authority_url)
+    return OAuth2Settings()
 
 
 @given(
     parsers.parse('a valid OAuth2 token is generated with name "{name}", email "{email}", and roles "{roles}"'),
     target_fixture="generated_token",
 )
-def generated_token(monkeypatch, oauth2_config: OAuth2Config, rsa_keys: dict, name: str, email: str, roles: str) -> str:
+def generated_token(
+    monkeypatch, oauth2_config: OAuth2Settings, rsa_keys: dict, name: str, email: str, roles: str
+) -> str:
     """Generate a valid OAuth2 JWT with the specified claims."""
     now = datetime.now(UTC)
     exp = now + timedelta(minutes=10)
 
-    monkeypatch.setenv("NAME", name)
-    monkeypatch.setenv("EMAIL", email)
-    monkeypatch.setenv("OID", "test-oid")
-    monkeypatch.setenv("ROLES", roles)
+    monkeypatch.setenv("DANGEROUS_DEV_ONLY_AUTH_FAKE_NAME", name)
+    monkeypatch.setenv("DANGEROUS_DEV_ONLY_AUTH_FAKE_EMAIL", email)
+    monkeypatch.setenv("DANGEROUS_DEV_ONLY_AUTH_FAKE_OID", "test-oid")
+    monkeypatch.setenv("DANGEROUS_DEV_ONLY_AUTH_FAKE_ROLES", roles)
 
     payload = {
         "name": name,
@@ -103,16 +105,16 @@ def given_invalid_token(oauth2_context: dict, token: str) -> None:
     target_fixture="generated_token",
 )
 def generated_expired_token(
-    monkeypatch, oauth2_config: OAuth2Config, rsa_keys: dict, oauth2_context: dict, name: str, email: str, roles: str
+    monkeypatch, oauth2_config: OAuth2Settings, rsa_keys: dict, oauth2_context: dict, name: str, email: str, roles: str
 ) -> str:
     """Generate an expired OAuth2 JWT and store it in the context."""
     now = datetime.now(UTC)
     exp = now - timedelta(minutes=10)
 
-    monkeypatch.setenv("NAME", name)
-    monkeypatch.setenv("EMAIL", email)
-    monkeypatch.setenv("OID", "test-oid")
-    monkeypatch.setenv("ROLES", roles)
+    monkeypatch.setenv("DANGEROUS_DEV_ONLY_AUTH_FAKE_NAME", name)
+    monkeypatch.setenv("DANGEROUS_DEV_ONLY_AUTH_FAKE_EMAIL", email)
+    monkeypatch.setenv("DANGEROUS_DEV_ONLY_AUTH_FAKE_OID", "test-oid")
+    monkeypatch.setenv("DANGEROUS_DEV_ONLY_AUTH_FAKE_ROLES", roles)
 
     payload = {
         "name": name,
@@ -145,7 +147,7 @@ def modify_token_unknown_kid(oauth2_context: dict, generated_token: str) -> None
 
 
 @given("I re-sign the token with a different private key")
-def resign_token_with_different_key(oauth2_context: dict, oauth2_config: OAuth2Config, generated_token: str) -> None:
+def resign_token_with_different_key(oauth2_context: dict, oauth2_config: OAuth2Settings, generated_token: str) -> None:
     """Re-sign the token using a different RSA private key."""
     unverified = jwt.get_unverified_header(generated_token)
     payload = jwt.decode(generated_token, options={"verify_signature": False})

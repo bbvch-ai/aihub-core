@@ -7,8 +7,8 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
-from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
 from fastapi.testclient import TestClient
@@ -25,7 +25,7 @@ DEFAULT_USER_ID = "1234567890"
 def mongodb():
     """Setup a test MongoDB connection and clear data after each test."""
     yield
-    connect(db=ApiConfig().DB_NAME, host=CosmosAccess().get_connection_string())
+    connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING)
     BearerToken.objects.delete()
     disconnect()
 

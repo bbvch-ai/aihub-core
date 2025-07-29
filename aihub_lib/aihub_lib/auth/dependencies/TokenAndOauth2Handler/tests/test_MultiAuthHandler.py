@@ -4,7 +4,7 @@ from fastapi.security import HTTPBearer
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
+from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
@@ -94,12 +94,12 @@ scenarios("features/multi_auth_handler.feature")
     ),
     target_fixture="oauth2_config",
 )
-def oauth2_config(monkeypatch, tenant_id: str, client_id: str, authority_url: str) -> OAuth2Config:
+def oauth2_config(monkeypatch, tenant_id: str, client_id: str, authority_url: str) -> OAuth2Settings:
     """Set the OAuth2 configuration environment variables."""
-    monkeypatch.setenv("TENANT_ID", tenant_id)
-    monkeypatch.setenv("CLIENT_ID", client_id)
-    monkeypatch.setenv("AUTHORITY_URL", authority_url)
-    return OAuth2Config()
+    monkeypatch.setenv("OAUTH_TENANT_ID", tenant_id)
+    monkeypatch.setenv("OAUTH_CLIENT_ID", client_id)
+    monkeypatch.setenv("OAUTH_AUTHORITY_URL", authority_url)
+    return OAuth2Settings()
 
 
 @given(parsers.parse("a multi auth handler composed of:"), target_fixture="multi_auth_instance")
@@ -135,7 +135,7 @@ async def invoke_multi_auth(
     """Invoke the multi auth handler and store the returned user."""
     try:
         bearer_security = await HTTPBearer(auto_error=False)(dummy_request)
-        oauth_security = await OAuth2Config().OPTIONAL_SCHEMA(dummy_request)
+        oauth_security = await OAuth2Settings().OPTIONAL_SCHEMA(dummy_request)
         user = await multi_auth_instance(dummy_request, bearer_security, oauth_security)
         multi_auth_result["user"] = user
     except HTTPException as e:

@@ -2,7 +2,7 @@ import asyncio
 import copy
 import logging
 
-from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.nats.events import ProcessStartEvent
 from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
@@ -158,7 +158,7 @@ class ProcessRunner:
         self._stop_signal.clear()
 
         connect(
-            host=CosmosAccess().get_connection_string(),
+            host=MongoSettings().CONNECTION_STRING,
         )
 
         self.nc = NATS()

@@ -1,13 +1,12 @@
 from typing import Annotated
 
-import httpx
-from llama_index.core.callbacks import TokenCountingHandler, CallbackManager
+from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.embeddings.openai_like import OpenAILikeEmbedding
-from pydantic import Field, BaseModel
+from pydantic import BaseModel, Field
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
 from aihub_lib.generative_ai.resources.models.llm.LiteLLMBase import LiteLLMBase
-from aihub_lib.infrastructure.litellm.LiteLLMProxyConfig import LiteLLMProxyConfig
+from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
 
 
 class EmbeddingLLMParameter(BaseModel):
@@ -18,9 +17,9 @@ class EmbeddingLLMParameter(BaseModel):
     Embedding models may not have as many parameters as generative models, but by keeping a separate class,
     we maintain consistency and facilitate extension if embedding models require parameters in the future.
     """
+
     max_retries: int = Field(default=10, description="Maximum number of retries.", ge=0)
     timeout: float = Field(default=60.0, description="Timeout for each request.", ge=0)
-
 
 
 class EmbeddingModelConfig(LiteLLMBase[OpenAILikeEmbedding]):
@@ -32,6 +31,7 @@ class EmbeddingModelConfig(LiteLLMBase[OpenAILikeEmbedding]):
     and possibly fewer parameters compared to chat models. This config ensures each embedding
     model can be integrated uniformly with llama_index and cost tracking.
     """
+
     model_name: Annotated[str, Field(description="Name of the embedding model.")]
     default_parameter: Annotated[
         EmbeddingLLMParameter,
@@ -41,7 +41,7 @@ class EmbeddingModelConfig(LiteLLMBase[OpenAILikeEmbedding]):
     ] = EmbeddingLLMParameter()
 
     def to_llama_index(self) -> tuple[OpenAILikeEmbedding, LLMCostTracker]:
-        config = LiteLLMProxyConfig()
+        config = LiteLLMProxySettings()
         model_info = self.get_model_info()
 
         token_counter = TokenCountingHandler(tokenizer=self.token_counter)
@@ -52,11 +52,9 @@ class EmbeddingModelConfig(LiteLLMBase[OpenAILikeEmbedding]):
 
         open_ai_like_embedding = OpenAILikeEmbedding(
             model_name=self.model_name,
-            api_base=config.LITE_LLM_PROXY_BASE_URL,
-            api_key=config.LITE_LLM_PROXY_API_KEY,
-
+            api_base=config.BASE_URL,
+            api_key=config.API_KEY,
             max_retries=self.default_parameter.max_retries,
-
             callback_manager=CallbackManager([token_counter]),
             timeout=self.default_parameter.timeout,
         )

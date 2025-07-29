@@ -3,7 +3,7 @@ import logging
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.infrastructure.nats.NatsConfig import NatsConfig
+from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.nats.events import (
     BaseEvent,
     ChunkEvent,
@@ -183,7 +183,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         assert len(self.simulated_events) > 0, "No simulated events provided"
 
         self.nc = NATS()
-        await self.nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
+        await self.nc.connect(servers=[NatsSettings().ENDPOINT])
 
         self.start_events = [
             EventSpecs.from_event_class(StartEvent),

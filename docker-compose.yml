@@ -6,13 +6,12 @@ services:
     image: ghcr.io/bbvch-ai/aihub-core/minio:release.2024-05-28T17-19-04Z
     restart: always
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
       - "9001:9001"
       - "9000:9000"
     volumes:
-      - ./configs/milvus/milvus.yaml:/milvus/configs/milvus.yaml
       - ${VOLUME_ROOT:-./local-volumes}/minio_data:/minio_data
     command: minio server /minio_data --console-address ":9001"
     healthcheck:
@@ -26,7 +25,7 @@ services:
 
   # === Milvus Stack ===
   # <editor-fold desc="Milvus Stack">
-  milvus-etcd:
+  etcd:
     image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.16
     restart: always
     environment:
@@ -36,7 +35,7 @@ services:
       - ETCD_SNAPSHOT_COUNT=50000
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/etcd-data:/etcd
-    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     healthcheck:
       test: ["CMD", "etcdctl", "endpoint", "health"]
     logging:
@@ -51,8 +50,10 @@ services:
     security_opt:
       - seccomp:unconfined
     environment:
-      ETCD_ENDPOINTS: milvus-etcd:2379
+      ETCD_ENDPOINTS: etcd:2379
       MINIO_ADDRESS: minio:9000
+      MINIO_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      MINIO_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/milvus-data:/var/lib/milvus
       - ./configs/milvus/milvus.yaml:/milvus/configs/milvus.yaml
@@ -66,7 +67,7 @@ services:
       - "19530:19530"
       - "9091:9091"
     depends_on:
-      - "milvus-etcd"
+      - "etcd"
       - "minio"
     logging:
       options:
@@ -103,6 +104,8 @@ services:
       - ${VOLUME_ROOT:-./local-volumes}/postgres-data:/var/lib/postgresql/data
       - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
     restart: unless-stopped
+    ports:
+      - "5432:5432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U webui" ]
       interval: 10s
@@ -151,6 +154,9 @@ services:
     volumes:
       - ./configs/nats/nats.conf:/etc/nats/nats.conf
       - ${VOLUME_ROOT:-./local-volumes}/nats-data:/data
+    ports:
+      - "4222:4222"
+      - "8222:8222"
 
   redis:
     image: ghcr.io/bbvch-ai/aihub-core/redis:8.0.1
@@ -158,6 +164,8 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/redis-data:/data
     restart: unless-stopped
+    ports:
+      - "6379:6379"
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
@@ -181,6 +189,8 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/mongo-data:/data/db
+    ports:
+      - "27017:27017"
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
     logging:

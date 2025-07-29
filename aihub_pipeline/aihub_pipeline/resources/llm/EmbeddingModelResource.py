@@ -1,7 +1,6 @@
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
 from llama_index.core.base.embeddings.base import BaseEmbedding
-
-from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 
 
 class EmbeddingModelResource(ConfigurableResource[BaseEmbedding]):

@@ -7,7 +7,7 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.generative_ai.processors.ParentSummaryPostProcessor import ParentSummaryPostProcessor
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
-from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
+from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.node_metadata import NODE_TYPE_SUMMARY, TYPE
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.milvus_vector_store_content import fill_collection

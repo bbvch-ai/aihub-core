@@ -1,5 +1,5 @@
 import s3fs
-from aihub_lib.infrastructure.s3.S3Config import S3Config
+from aihub_lib.infrastructure.s3.S3Config import S3StorageSettings
 from dagster import InitResourceContext
 
 from aihub_pipeline.resources.data_lake.base.AbstractDataLakeFileSystemResource import (
@@ -89,7 +89,7 @@ class S3DataLakeFileSystemResource(AbstractDataLakeFileSystemResource[s3fs.S3Fil
     """
 
     def create_resource(self, context: InitResourceContext) -> s3fs.S3FileSystem:
-        s3_config = S3Config()
+        s3_config = S3StorageSettings()
 
         client_kwargs = {
             "region_name": s3_config.REGION,

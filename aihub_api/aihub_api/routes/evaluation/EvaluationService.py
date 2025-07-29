@@ -10,7 +10,7 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.evaluation.PhoenixExperimentEvaluator import PhoenixExperimentEvaluator
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.infrastructure.phoenix.PhoenixConfig import PhoenixConfig
+from aihub_lib.infrastructure.phoenix.PhoenixConfig import PhoenixSettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from nats.aio.client import Client as NATS
 from phoenix.experiments.types import Dataset as PhoenixInternalDataset
@@ -66,9 +66,9 @@ class EvaluationService:
     @staticmethod
     def _get_phoenix_request_config() -> tuple[str, dict[str, str]]:
         """Resolves the Phoenix base endpoint and authentication headers."""
-        config = PhoenixConfig()
-        headers = {"authorization": f"Bearer {config.PHOENIX_AUTH_TOKEN}"} if config.PHOENIX_AUTH_TOKEN else {}
-        return config.PHOENIX_ENDPOINT, headers
+        config = PhoenixSettings()
+        headers = {"authorization": f"Bearer {config.AUTH_TOKEN}"} if config.AUTH_TOKEN else {}
+        return config.ENDPOINT, headers
 
     @staticmethod
     async def _fetch_datasets_from_phoenix() -> list[PhoenixDataset]:

@@ -63,7 +63,7 @@ jobs:
       - name: Run Tests
         uses: ./aihub_action/test_backend
         env:
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.SUBSCRIPTION_ID }}
         with:
           github_token: ${{ secrets.PAT_GITHUB_READ_PACKAGES }}
           working_directory: ${{ matrix.module }}

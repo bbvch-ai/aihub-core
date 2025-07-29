@@ -1,14 +1,14 @@
 import abc
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
-from typing import Annotated, Any, Generic, TypeVar, TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated, Any, Generic, TypeVar
 
 import httpx
 from llama_index.core.utils import Tokenizer
-from pydantic import Field, BaseModel
+from pydantic import BaseModel, Field
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
-from aihub_lib.infrastructure.litellm.LiteLLMProxyConfig import LiteLLMProxyConfig
+from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
 
 if TYPE_CHECKING:
     from aihub_lib.displayers.EventDisplayer import EventDisplayer
@@ -16,21 +16,20 @@ if TYPE_CHECKING:
 
 OpenAILike = TypeVar("OpenAILike")
 
+
 class LiteLLMBase(BaseModel, Generic[OpenAILike], abc.ABC):
     model_name: Annotated[str, Field(description="Name of the model.")]
 
-
     @property
     def token_counter(self) -> Callable[[str], list[int]]:
-        config = LiteLLMProxyConfig()
+        config = LiteLLMProxySettings()
         client = httpx.Client(
-            headers={"Authorization": f"Bearer {config.LITE_LLM_PROXY_API_KEY}"},
+            headers={"Authorization": f"Bearer {config.API_KEY}"},
         )
 
         def token_counter(content: str) -> list[int]:
             token_response = client.post(
-                f"{config.LITE_LLM_PROXY_BASE_URL}/utils/token_counter",
-                json={ "model": self.model_name, "prompt": content }
+                f"{config.BASE_URL}/utils/token_counter", json={"model": self.model_name, "prompt": content}
             ).json()
             return [0] * token_response["total_tokens"]
 
@@ -64,14 +63,14 @@ class LiteLLMBase(BaseModel, Generic[OpenAILike], abc.ABC):
         await displayer.display_llm_costs(self.name, cost_tracker)
 
     def get_model_info(self) -> dict[str, Any]:
-        config = LiteLLMProxyConfig()
+        config = LiteLLMProxySettings()
         client = httpx.Client(
-            headers={"Authorization": f"Bearer {config.LITE_LLM_PROXY_API_KEY}"},
+            headers={"Authorization": f"Bearer {config.API_KEY}"},
         )
 
         model_info = client.get(
-            f"{config.LITE_LLM_PROXY_BASE_URL}/v1/model/info",
-            headers={"Authorization": f"Bearer {config.LITE_LLM_PROXY_API_KEY}"},
+            f"{config.BASE_URL}/v1/model/info",
+            headers={"Authorization": f"Bearer {config.API_KEY}"},
         ).json()
 
         models = model_info["data"]

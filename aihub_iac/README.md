@@ -36,7 +36,7 @@ map environment variables to typed properties. These classes handle the raw load
 files and provide basic validation. They focus on a specific domain of configuration (project details, authentication, etc.) 
 and typically have no dependencies on other settings.
 
-Above the Settings layer are `Config` classes (e.g., `ApiConfig`, `PhoenixConfig`, `WebUIConfig`) which compose and 
+Above the Settings layer are `Config` classes (e.g., `AIHubSettings`, `PhoenixSettings`, `WebUIConfig`) which compose and 
 transform settings into the specific configuration needed for infrastructure components. These Config classes 
 incorporate business logic for computing derived values, setting defaults, and validating relationships between 
 configuration parameters. They typically consume multiple Settings classes and expose a unified configuration 

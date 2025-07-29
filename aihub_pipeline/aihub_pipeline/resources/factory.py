@@ -1,5 +1,6 @@
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.azure.data_lake.DataLakeAccess import DataLakeAccess
-from aihub_lib.infrastructure.s3.S3Config import S3Config
+from aihub_lib.infrastructure.s3.S3Config import S3StorageSettings
 from dagster._config.pythonic_config import ConfigurableResourceFactory
 from dagster_aws.s3 import S3PickleIOManager, S3Resource
 from dagster_azure.adls2 import ADLS2DefaultAzureCredential, ADLS2PickleIOManager, ADLS2Resource
@@ -129,7 +130,7 @@ def default_io_manager_s3_datalake_resources(
     container_name: str, directory_name: str
 ) -> dict[str, ConfigurableResourceFactory]:
     """Factory function for S3 default IO manager resources (MinIO)."""
-    s3_config = S3Config()
+    s3_config = S3StorageSettings()
 
     s3_resource = S3Resource(
         aws_access_key_id=s3_config.ACCESS_KEY,
@@ -153,9 +154,7 @@ def default_llm_resources() -> dict[str, ConfigurableResourceFactory]:
     embedding_model_resource = EmbeddingModelResource(
         embedding_config=EmbeddingModelResource(model_name="azure/text-embedding-ada-002")
     )
-    language_model = LanguageModelResource(
-        llm_config=LLMConfig(model_name="azure/gpt-4o-mini")
-    )
+    language_model = LanguageModelResource(llm_config=LLMConfig(model_name="azure/gpt-4o-mini"))
     return {
         "embedding_model": embedding_model_resource,
         "language_model": language_model,

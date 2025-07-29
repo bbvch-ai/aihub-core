@@ -12,7 +12,7 @@ from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_lib.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
-from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
+from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreConfig import AzureAISearchVectorStoreConfig
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test
@@ -114,7 +114,7 @@ def self_hosted_agent_config(event_loop):
     asyncio.set_event_loop(event_loop)
 
     llm_config = LLMConfig(model_name="local/llama-3.2-1B")
-    embedding_config = EmbeddingModelConfig(model_name="local/text-embedding-gte"),
+    embedding_config = (EmbeddingModelConfig(model_name="local/text-embedding-gte"),)
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="development",

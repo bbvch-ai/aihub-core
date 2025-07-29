@@ -7,7 +7,7 @@ from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeO
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
-from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
+from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.logging.logger import enable_logging

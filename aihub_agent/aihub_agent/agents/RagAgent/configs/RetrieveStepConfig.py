@@ -16,9 +16,7 @@ class RetrieveStepConfig(StepConfig):
     Configuration for the step retrieving documents from a vector store.
     """
 
-    embed_model: Annotated[
-        EmbeddingModelConfig, Field(description="The embedding model configuration.")
-    ]
+    embed_model: Annotated[EmbeddingModelConfig, Field(description="The embedding model configuration.")]
     index_namespaces: Annotated[list[str], Field(description="The namespaces to retrieve from.", min_length=1)]
     retrieve_k: Annotated[int, Field(description="The number of documents to retrieve.", ge=1)]
     query_mode: Annotated[

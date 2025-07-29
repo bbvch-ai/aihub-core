@@ -3,8 +3,8 @@ import logging
 from fastapi import Request
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthConfig import (
-    DangerousDevelopmentOnlyAuthConfig,
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
 )
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class DangerousDevelopmentOnlyAuthHandler(AuthHandler):
     def __init__(self, identity_provider: DangerousDevelopmentOnlyIdentityProvider):
         super().__init__(identity_provider=identity_provider)
-        self.config = DangerousDevelopmentOnlyAuthConfig()
+        self.config = DangerousDevelopmentOnlyAuthSettings()
 
     async def __call__(self, request: Request) -> UserIdentity:
         return await self.authenticate_token("")

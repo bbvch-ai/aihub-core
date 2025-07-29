@@ -23,15 +23,7 @@ EMBEDDING_MODEL = "local/text-embedding-gte"
 async def api_client():
     """Create an API client with OpenaiController endpoints mounted."""
     auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
-    controller = (
-        OpenaiController(
-            auth=auth,
-        )
-        .get_models()
-        .get_model()
-        .get_embeddings()
-        .chat_completion()
-    )
+    controller = OpenaiController(auth=auth).get_models().get_model().get_embeddings().chat_completion()
     runner = ApiTestRunner()
     runner.mount(controller)
     app = runner.get_app()

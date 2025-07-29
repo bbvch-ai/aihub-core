@@ -2,18 +2,15 @@ import logging
 
 import colorlog
 
-from aihub_lib.testing.logging.LoggingConfig import LoggingConfig
+from aihub_lib.testing.logging.LogSettings import LogSettings
 
 
-def enable_logging(level: str | int = logging.DEBUG, lib_level: str | int = logging.WARNING) -> logging.Logger:
+def enable_logging(level: int | None = None) -> logging.Logger:
     """
-    The log level will ALWAYS be set to the LOG_LEVEL specified in the environment variables, if set.
+    The log level will ALWAYS be set to the Level specified in the environment variables, if set.
     """
 
-    config = LoggingConfig()
-    if config.LOG_LEVEL is not None:
-        level = config.LOG_LEVEL
-        lib_level = config.LOG_LEVEL
+    level = level or LogSettings().level_number
 
     lib_loggers = [
         "azure.identity",
@@ -27,7 +24,7 @@ def enable_logging(level: str | int = logging.DEBUG, lib_level: str | int = logg
     ]
 
     for logger_name in lib_loggers:
-        logging.getLogger(logger_name).setLevel(lib_level)
+        logging.getLogger(logger_name).setLevel(level)
 
     handler = logging.StreamHandler()
     handler.setFormatter(

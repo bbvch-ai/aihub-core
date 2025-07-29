@@ -1,10 +1,6 @@
 import asyncio
 
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
-    AzureOpenAILLMConfig,
-    AzureOpenAIParameter,
-)
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.testing.auth_utils.fake_user import fake_user
@@ -28,7 +24,7 @@ async def main():
             agent_class=LLMWrappingAgent.__name__,
             name=LocaleString(en="Dev Agent"),
             description=LocaleString(en="This is an agent that can be used to develop the frontend"),
-            llm=LLMConfig(model_name="azure/gpt-4o-mini")
+            llm=LLMConfig(model_name="azure/gpt-4o-mini"),
         ),
     )
 
