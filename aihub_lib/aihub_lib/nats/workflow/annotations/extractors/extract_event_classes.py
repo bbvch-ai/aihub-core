@@ -50,50 +50,73 @@ def extract_event_classes(
     - `list[SomeEvent]` → event_classes={SomeEvent}, is_optional=False, required_size=None
     - `Fixedlist[AnotherEvent, 3]` (hypothetical) → event_classes={AnotherEvent}, is_optional=False, required_size=3
     """
-
-    event_classes: set[type[BaseEvent]] = set()
-    is_optional = False
-    required_size = None
     origin = get_origin(annotation)
     args = get_args(annotation)
 
-    # Check if event is wrapped in Annotated and only extract the first part if so
+    # Handle Annotated wrapper
     if origin is Annotated:
-        core_type = args[0]
-        return extract_event_classes(core_type)
+        return extract_event_classes(args[0])
 
-    # Check if annotation has a _required_size attribute indicating a fixed-size container.
+    # Process the annotation based on its type
+    return _process_annotation(annotation, origin, args)
+
+
+def _process_annotation(
+    annotation: Any, origin: Any, args: tuple[Any, ...]
+) -> tuple[set[type[BaseEvent]], bool, int | None]:
+    """Process different types of annotations to extract event information."""
+    event_classes: set[type[BaseEvent]] = set()
+    is_optional = False
+    required_size = None
+
     if hasattr(annotation, "_required_size"):
-        required_size = annotation._required_size
-        # Extract the event type from the generic base of this annotation
-        base_type = annotation._item_type  # type: ignore
-        if inspect.isclass(base_type) and issubclass(base_type, BaseEvent):
-            event_classes.add(base_type)
-
+        return _handle_fixed_size_container(annotation)
     elif origin in (Union, UnionType):
-        # Handling Union / Optional types
-        if type(None) in args:
-            # It's something like: SomeEvent | None
-            is_optional = True
-            non_none_args = [arg for arg in args if arg is not type(None)]
-            for arg in non_none_args:
-                etypes, _, _ = extract_event_classes(arg)
-                event_classes.update(etypes)
-        else:
-            # A union without None, e.g. SomeEvent | AnotherEvent
-            for arg in args:
-                etypes, _, _ = extract_event_classes(arg)
-                event_classes.update(etypes)
-
+        return _handle_union_type(args)
     elif origin in (list, list):
-        # list[...] of events
-        elem_type = args[0]
-        etypes, optional, _ = extract_event_classes(elem_type)
-        event_classes.update(etypes)
-        is_optional = optional
-
-    elif inspect.isclass(annotation) and issubclass(annotation, BaseEvent):
-        # Direct event class
+        return _handle_list_type(args)
+    elif _is_direct_event_class(annotation):
         event_classes.add(annotation)
 
     return event_classes, is_optional, required_size
+
+
+def _handle_fixed_size_container(annotation: Any) -> tuple[set[type[BaseEvent]], bool, int | None]:
+    """Handle fixed-size container annotations."""
+    event_classes: set[type[BaseEvent]] = set()
+    required_size = annotation._required_size
+    base_type = annotation._item_type  # type: ignore
+    
+    if inspect.isclass(base_type) and issubclass(base_type, BaseEvent):
+        event_classes.add(base_type)
+    
+    return event_classes, False, required_size
+
+
+def _handle_union_type(args: tuple[Any, ...]) -> tuple[set[type[BaseEvent]], bool, int | None]:
+    """Handle Union and UnionType annotations."""
+    event_classes: set[type[BaseEvent]] = set()
+    is_optional = type(None) in args
+    
+    # Filter out None types and process remaining arguments
+    relevant_args = [arg for arg in args if arg is not type(None)]
+    for arg in relevant_args:
+        etypes, _, _ = extract_event_classes(arg)
+        event_classes.update(etypes)
+    
+    return event_classes, is_optional, None
+
+
+def _handle_list_type(args: tuple[Any, ...]) -> tuple[set[type[BaseEvent]], bool, int | None]:
+    """Handle list type annotations."""
+    if not args:
+        return set(), False, None
+        
+    elem_type = args[0]
+    etypes, is_optional, _ = extract_event_classes(elem_type)
+    return etypes, is_optional, None
+
+
+def _is_direct_event_class(annotation: Any) -> bool:
+    """Check if annotation is a direct BaseEvent subclass."""
+    return inspect.isclass(annotation) and issubclass(annotation, BaseEvent)
