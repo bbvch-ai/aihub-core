@@ -5,6 +5,18 @@ model_list:
       api_base: https://aihub-dev-openai-che.openai.azure.com/
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2024-12-01-preview"
+    model_info:
+      mode: chat
+
+  - model_name: azure/dall-e-3
+    litellm_params:
+      model: azure/dall-e-3
+      api_base: https://joelb-mdotxdzc-australiaeast.cognitiveservices.azure.com/
+      api_key: os.environ/AZURE_OPENAI_KEY_IMAGE_GEN
+      api_version: "2024-02-01"
+    model_info:
+      mode: image_generation
+      base_model: azure/dall-e-3
 
   - model_name: google/gemini-2.5-flash
     litellm_params:

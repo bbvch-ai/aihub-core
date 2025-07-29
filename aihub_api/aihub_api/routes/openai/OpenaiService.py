@@ -7,10 +7,17 @@ from collections.abc import AsyncGenerator, Callable
 from datetime import UTC, datetime
 from typing import Any, Literal
 
+import httpx
+
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.generative_ai.resources.models.image.ImageModelConfig import ImageModelConfig
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig, \
+    EmbeddingLLMParameter
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
 from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
@@ -56,25 +63,29 @@ class OpenaiService:
     """
 
     @staticmethod
-    def get_models() -> ModelResponse:
+    async def get_models() -> ModelResponse:
         """
         Retrieve the list of available chat models.
         Returns a ModelResponse containing details of every configured chat model.
         """
-        models = [ModelDetails(id=model.name) for model in chat_models]
+        client = OpenaiService._litellm_client()
+        models = await client.get("/v1/model/info")
+        chat_models = [model for model in models.json()["data"] if model["model_info"]["mode"] == "chat"]
+
+        models = [ModelDetails(id=model["model_name"]) for model in chat_models]
         return ModelResponse(data=models)
 
     @staticmethod
     async def get_models_with_assistants(
         nc: NATS,
-        t: LocaleHandler,
         exclude_webui_agents: bool,
     ) -> ModelResponse:
         """
         Retrieve the list of available chat models and assistants available through NATs
         Returns a ModelResponse containing details of every configured chat model or assistant.
         """
-        chat_models = [ModelDetails(id=model.name) for model in chat_models]
+        model_response = await OpenaiService.get_models()
+        chat_models = model_response.data
         agent_instance_dtos = await AgentService.discover_agent_instances(nc)
 
         # Ensures we have no recursive webui agent discovery
@@ -95,12 +106,13 @@ class OpenaiService:
         return ModelResponse(data=[*chat_models, *assistants])
 
     @staticmethod
-    def get_model(model_name: str) -> ModelDetails:
+    async def get_model(model_name: str) -> ModelDetails:
         """
         Fetch details for a specific chat model by name.
         Scans the chat model configurations and returns the matching model's details.
         """
-        models = [ModelDetails(id=model.name) for model in chat_models if model.name == model_name]
+        model_response = await OpenaiService.get_models()
+        models = [model for model in model_response.data if model.id == model_name]
         if len(models) == 0:
             raise HTTPException(status_code=404, detail=f"Model {model_name} not found.")
         return models[0]
@@ -116,7 +128,7 @@ class OpenaiService:
         Scans the chat model configurations and returns the matching model's or agent's details.
         """
         try:
-            return OpenaiService.get_model(chat_models, model_name)
+            return await OpenaiService.get_model(model_name)
         except HTTPException:
             pass
         agent_class, agent_id = model_name.split("/")
@@ -133,7 +145,7 @@ class OpenaiService:
         )
 
     @staticmethod
-    def get_embeddings(
+    async def get_embeddings(
         model_name: str,
         input_text: str | list[str],
         dimensions: int | None = None,
@@ -143,17 +155,20 @@ class OpenaiService:
         Generate text embeddings using the specified embedding model.
         Identifies the model, prepares parameters, and returns embeddings for the input text.
         """
-        models = [model for model in embedding_models if model.name == model_name]
-        if len(models) == 0:
-            raise HTTPException(status_code=404, detail=f"Model {model_name} not found.")
-        embedding_model_config = models[0]
+        client = OpenaiService._litellm_client()
+        models = await client.get("/v1/model/info")
+        embedding_models = [model for model in models.json()["data"] if model["model_info"]["mode"] == "embedding" and model["model_name"] == model_name]
 
-        model_parameters = None
-        if isinstance(embedding_model_config, AzureOpenAIEmbeddingConfig):
-            model_parameters = AzureOpenAIEmbeddingParameter(
-                dimensions=dimensions or embedding_model_config.default_parameter.dimensions,
-                encoding_format=encoding_format or embedding_model_config.default_parameter.encoding_format,
+        if len(embedding_models) == 0:
+            raise HTTPException(status_code=404, detail=f"Model {model_name} not found.")
+
+        embedding_model_config = EmbeddingModelConfig(
+            model_name=model_name,
+            default_parameter=EmbeddingLLMParameter(
+                dimensions=dimensions,
+                encoding_format=encoding_format,
             )
+        )
         embedding_model, _ = embedding_model_config.to_llama_index()
         inputs = input_text if isinstance(input_text, list) else [input_text]
         embeddings = embedding_model.get_text_embedding_batch(inputs)
@@ -171,13 +186,11 @@ class OpenaiService:
         Execute a chat completion request with an LLM.
         Delegates to the underlying chat model; supports both synchronous and streaming responses.
         """
-        models = [model for model in chat_models if model.name == model_name]
-        if len(models) == 0:
-            raise HTTPException(status_code=404, detail=f"Model {model_name} not found.")
-        chat_model_config = models[0]
+        await OpenaiService.get_model(model_name) # Ensures model exists
 
+        chat_model_config = LLMConfig(model_name=model_name)
         chat_model, _ = chat_model_config.to_llama_index()
-        client: AsyncOpenAI | AsyncAzureOpenAI = chat_model._get_aclient()
+        client: AsyncOpenAI = chat_model._get_aclient()
 
         if chat_completion_request.stream:
 
@@ -208,12 +221,12 @@ class OpenaiService:
         Execute a chat completion request with an LLM or an assistant.
         Delegates to the underlying chat model; supports both synchronous and streaming responses.
         """
-        models = [model for model in chat_models if model.name == model_name]
-        if len(models) > 0:
-            return await OpenaiService.chat_completion(chat_models, model_name, chat_completion_request)
+        try:
+            return await OpenaiService.chat_completion(model_name, chat_completion_request)
+        except HTTPException:
+            pass
 
         agent_class, agent_id = model_name.split("/")
-
         agent_dto = await AgentService.get_agent(nc, agent_class, agent_id, t)
 
         if not agent_dto.is_conversational:
@@ -394,11 +407,16 @@ class OpenaiService:
         Generate an image using the specified image model.
         Routes the generation request to the corresponding Azure image model client.
         """
-        models = [model for model in image_models if model.name == model_name]
+        client = OpenaiService._litellm_client()
+        models = await client.get("/v1/model/info")
+        image_models = [model for model in models.json()["data"] if model["model_info"]["mode"] == "image_generation"]
+
+        models = [model for model in image_models if model["model_name"] == model_name]
         if len(models) == 0:
             raise ValueError(f"Model {model_name} not found.")
-        image_model_config = models[0]
-        client: AsyncOpenAI | AsyncAzureOpenAI = image_model_config.get_openai_client()
+
+        image_model_config = ImageModelConfig(model_name=model_name)
+        client: AsyncOpenAI | AsyncAzureOpenAI = image_model_config.get_openai_client() # TODO: Make sure this works
 
         kwargs = OpenaiService._filter_kwargs(client.images.generate, image_generation_request)
 
@@ -527,3 +545,11 @@ class OpenaiService:
                 sdk_call_kwargs[key] = value
 
         return sdk_call_kwargs
+
+    @staticmethod
+    def _litellm_client():
+        config = LiteLLMProxySettings()
+        return httpx.AsyncClient(
+            headers={"Authorization": f"Bearer {config.API_KEY}"},
+            base_url=config.BASE_URL,
+        )

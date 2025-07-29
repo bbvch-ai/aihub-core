@@ -22,14 +22,11 @@ class LiteLLMBase(BaseModel, Generic[OpenAILike], abc.ABC):
 
     @property
     def token_counter(self) -> Callable[[str], list[int]]:
-        config = LiteLLMProxySettings()
-        client = httpx.Client(
-            headers={"Authorization": f"Bearer {config.API_KEY}"},
-        )
+        client = self._get_client()
 
         def token_counter(content: str) -> list[int]:
             token_response = client.post(
-                f"{config.BASE_URL}/utils/token_counter", json={"model": self.model_name, "prompt": content}
+                "/utils/token_counter", json={"model": self.model_name, "prompt": content}
             ).json()
             return [0] * token_response["total_tokens"]
 
@@ -63,15 +60,8 @@ class LiteLLMBase(BaseModel, Generic[OpenAILike], abc.ABC):
         await displayer.display_llm_costs(self.model_name, cost_tracker)
 
     def get_model_info(self) -> dict[str, Any]:
-        config = LiteLLMProxySettings()
-        client = httpx.Client(
-            headers={"Authorization": f"Bearer {config.API_KEY}"},
-        )
-
-        model_info = client.get(
-            f"{config.BASE_URL}/v1/model/info",
-            headers={"Authorization": f"Bearer {config.API_KEY}"},
-        ).json()
+        client = self._get_client()
+        model_info = client.get("/v1/model/info").json()
 
         models = model_info["data"]
         model_info = next((model for model in models if model["model_name"] == self.model_name), None)
@@ -79,3 +69,11 @@ class LiteLLMBase(BaseModel, Generic[OpenAILike], abc.ABC):
             raise ValueError(f"Model {self.model_name} not found in LiteLLM Proxy.")
 
         return model_info
+
+    @staticmethod
+    def _get_client() -> httpx.Client:
+        config = LiteLLMProxySettings()
+        return httpx.Client(
+            headers={"Authorization": f"Bearer {config.API_KEY}"},
+            base_url=config.BASE_URL,
+        )

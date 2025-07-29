@@ -87,7 +87,7 @@ class OpenaiController(Controller):
         async def get_models(
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> ModelResponse:
-            return OpenaiService.get_models()
+            return await OpenaiService.get_models()
 
         return self
 
@@ -107,10 +107,9 @@ class OpenaiController(Controller):
         async def get_models_with_assistants(
             nc: Annotated[NATS, Depends(use_nats)],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
-            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ModelResponse:
             model_response = await OpenaiService.get_models_with_assistants(
-                nc, t, exclude_webui_agents=exclude_webui_agents
+                nc, exclude_webui_agents=exclude_webui_agents
             )
             access_checker = AccessChecker.from_user(user)
             model_response.data = [
@@ -134,7 +133,7 @@ class OpenaiController(Controller):
             full_path: str,
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> ModelDetails:
-            return OpenaiService.get_model(model_name=full_path)
+            return await OpenaiService.get_model(model_name=full_path)
 
         return self
 
@@ -172,7 +171,7 @@ class OpenaiController(Controller):
             req: Annotated[EmbeddingsRequest, Body],
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> EmbeddingsResponse:
-            return OpenaiService.get_embeddings(
+            return await OpenaiService.get_embeddings(
                 req.model,
                 req.input,
                 dimensions=req.dimensions,

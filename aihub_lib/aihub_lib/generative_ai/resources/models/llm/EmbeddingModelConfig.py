@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.embeddings.openai_like import OpenAILikeEmbedding
@@ -20,6 +20,17 @@ class EmbeddingLLMParameter(BaseModel):
 
     max_retries: int = Field(default=10, description="Maximum number of retries.", ge=0)
     timeout: float = Field(default=60.0, description="Timeout for each request.", ge=0)
+    encoding_format: Annotated[
+        Literal["float", "base64"] | None,
+        Field(description="Format of the returned embeddings. Defaults to 'float'."),
+    ] = "float"
+    dimensions: Annotated[
+        int | None,
+        Field(
+            description="Number of dimensions for output embeddings. Supported in text-embedding-3 and later models."
+        ),
+    ] = None
+
 
 
 class EmbeddingModelConfig(LiteLLMBase[OpenAILikeEmbedding]):
