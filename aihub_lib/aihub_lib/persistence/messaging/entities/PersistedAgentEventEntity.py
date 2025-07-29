@@ -80,7 +80,7 @@ MONGODB_EVENT_TIME = "$event_time"
 MONGODB_EVENT_TYPE = "$event_type"
 MONGODB_FIRST = "$first"
 MONGODB_FIRST_EVENT_TIME = "$first_event_time"
-MONGODB_GROUP = "$group"
+MONGODB_GROUP = MONGODB_GROUP
 MONGODB_IF_NULL = "$ifNull"
 MONGODB_LATEST_EVENT_TIME = "$latest_event_time"
 MONGODB_MATCH = "$match"
@@ -209,7 +209,7 @@ class PersistedAgentEventEntity(Document):
             # We take the first occurrence of each event_id within a run.
             # All fields needed for the subsequent $group stage must be preserved here.
             {
-                "$group": {
+                MONGODB_GROUP: {
                     "_id": {"run_id": "$run_id", "event_id": "$event_id"},
                     "run_id_val": {"$first": "$run_id"},  # Keep run_id for next stage
                     "display_id": {"$first": "$display_id"},
@@ -224,7 +224,7 @@ class PersistedAgentEventEntity(Document):
             # 5. Group events by run_id to calculate run-level stats
             # This stage now operates on the de-duplicated events from the previous stage.
             {
-                "$group": {
+                MONGODB_GROUP: {
                     "_id": "$run_id_val",
                     "display_id": {"$first": "$display_id"},
                     "first_event_time": {"$min": "$event_time"},
@@ -523,14 +523,14 @@ class PersistedAgentEventEntity(Document):
             },
             # 4. Group by time_bucket and event_id to de-duplicate events
             {
-                "$group": {
+                MONGODB_GROUP: {
                     "_id": {"time_bucket": "$time_bucket", "event_id": "$event_id"},
                     "time_bucket_val": {"$first": "$time_bucket"},
                 }
             },
             # 5. Group events by time bucket and count them
             {
-                "$group": {
+                MONGODB_GROUP: {
                     "_id": "$time_bucket_val",  #
                     "start_time": {"$first": {"$toDate": "$time_bucket_val"}},
                     "total_events": {"$sum": 1},
