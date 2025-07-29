@@ -170,47 +170,16 @@ class NodeCreatorFromSplits:
         metadata: dict[str, any] = None,
         id_func: Callable | None = None,
     ) -> list[TextNode]:
-        self.include_metadata = include_metadata
-        self.metadata = {**DEFAULT_METADATA, **metadata} if metadata else DEFAULT_METADATA.copy()
-        self.id_func = id_func
-
+        self._initialize_parsing_context(include_metadata, metadata, id_func)
+        
         nodes: list[TextNode] = []
         last_nodes_stack = []
-
         page = 1
+
         for split in splits:
             split.metadata.update({PAGE: page})
-
-            text_chunks: list[TextChunk] = []
-            soup = bs4.BeautifulSoup(split.content, "html.parser")
-            buffer = ""
-
-            for child in soup.children:
-                if isinstance(child, bs4.element.Tag) and child.name in [
-                    NODE_CONTENT_TYPE_TABLE,
-                    NODE_CONTENT_TYPE_FIGURE,
-                ]:
-                    if buffer.strip():
-                        text_chunks.extend(
-                            [
-                                TextChunk(text_split, NODE_CONTENT_TYPE_TEXT)
-                                for text_split in self.sentence_splitter.split_text(buffer)
-                            ]
-                        )
-                        buffer = ""
-                    text_chunks.append(TextChunk(child.text, child.name))
-                else:
-                    buffer += str(child)
-
-            if buffer.strip():
-                text_chunks.extend(
-                    [
-                        TextChunk(text_split, NODE_CONTENT_TYPE_TEXT)
-                        for text_split in self.sentence_splitter.split_text(buffer)
-                    ]
-                )
-
-            split_nodes = [self._build_node_from_split(text_chunk, node, split.metadata) for text_chunk in text_chunks]
+            split_nodes = self._process_split(split, node)
+            
             self._set_relationships_within_split(split_nodes)
             self._set_relationships_between_splits(split_nodes, split.level, last_nodes_stack)
             nodes.extend(split_nodes)
@@ -219,6 +188,50 @@ class NodeCreatorFromSplits:
                 page += 1
 
         return nodes
+
+    def _initialize_parsing_context(self, include_metadata: bool, metadata: dict[str, any] | None, id_func: Callable | None) -> None:
+        """Initialize the parsing context with metadata and ID function."""
+        self.include_metadata = include_metadata
+        self.metadata = {**DEFAULT_METADATA, **metadata} if metadata else DEFAULT_METADATA.copy()
+        self.id_func = id_func
+
+    def _process_split(self, split: Split, node: BaseNode) -> list[TextNode]:
+        """Process a single split into text nodes."""
+        text_chunks = self._extract_text_chunks_from_split(split)
+        return [self._build_node_from_split(text_chunk, node, split.metadata) for text_chunk in text_chunks]
+
+    def _extract_text_chunks_from_split(self, split: Split) -> list[TextChunk]:
+        """Extract text chunks from split content, handling tables and figures separately."""
+        text_chunks: list[TextChunk] = []
+        soup = bs4.BeautifulSoup(split.content, "html.parser")
+        buffer = ""
+
+        for child in soup.children:
+            if self._is_special_content_type(child):
+                if buffer.strip():
+                    text_chunks.extend(self._create_text_chunks_from_buffer(buffer))
+                    buffer = ""
+                text_chunks.append(TextChunk(child.text, child.name))
+            else:
+                buffer += str(child)
+
+        # Handle any remaining buffer content
+        if buffer.strip():
+            text_chunks.extend(self._create_text_chunks_from_buffer(buffer))
+
+        return text_chunks
+
+    def _is_special_content_type(self, child: bs4.element.Tag | str) -> bool:
+        """Check if child is a special content type (table or figure)."""
+        return (isinstance(child, bs4.element.Tag) and 
+                child.name in [NODE_CONTENT_TYPE_TABLE, NODE_CONTENT_TYPE_FIGURE])
+
+    def _create_text_chunks_from_buffer(self, buffer: str) -> list[TextChunk]:
+        """Create text chunks from buffer content using sentence splitter."""
+        return [
+            TextChunk(text_split, NODE_CONTENT_TYPE_TEXT)
+            for text_split in self.sentence_splitter.split_text(buffer)
+        ]
 
     def _build_node_from_split(self, text_chunk: TextChunk, node: BaseNode, metadata: dict) -> TextNode:
         node = build_nodes_from_splits([text_chunk.content], node, id_func=self.id_func)[0]
