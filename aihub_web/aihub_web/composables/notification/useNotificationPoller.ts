@@ -2,7 +2,10 @@ import { getNotifications, type NotificationDto } from '@core/sdk/client'
 import { useToast } from 'primevue/usetoast'
 import { ref, watch } from 'vue'
 
-export const useNotificationPoller = () => {
+export const useNotificationPoller = (options?: {
+  pollingInterval?: number
+  enabled?: boolean
+}) => {
   const toast = useToast()
   const queryCache = useQueryCache()
 
@@ -42,10 +45,15 @@ export const useNotificationPoller = () => {
     }
   })
 
+  const pollingInterval = options?.pollingInterval ?? 30_000 // Default 30 seconds
+  const enabled = options?.enabled ?? true
+
   onMounted(() => {
+    if (!enabled) return
+
     const intervalId = setInterval(() => {
       refetch()
-    }, 3000)
+    }, pollingInterval)
 
     onUnmounted(() => {
       clearInterval(intervalId)

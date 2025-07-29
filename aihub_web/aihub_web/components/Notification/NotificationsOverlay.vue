@@ -127,7 +127,7 @@ const togglePanel = (event: Event) => {
 
 const handleNotificationClick = (notification: NotificationDto) => {
   if (!notification.read) {
-    updateNotification({ id: notification.id, payload: { read: true } })
+    updateNotification({ id: notification.id, payload: ref({ read: true }) })
   }
   if (notification.link) {
     router.push(localeRoute(notification.link))
@@ -140,7 +140,7 @@ const markAllAsRead = () => {
   if (unreadIds.length > 0) {
     updateMultipleNotifications({
       ids: unreadIds,
-      payload: { read: true },
+      payload: ref({ read: true }),
     })
   }
 }
