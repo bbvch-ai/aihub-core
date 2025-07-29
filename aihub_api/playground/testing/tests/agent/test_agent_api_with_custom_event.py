@@ -6,13 +6,11 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
-from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from aihub_lib.testing.logging.logger import enable_logging
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
-from llama_index.core.base.llms.types import ChatMessage
 from stringcase import snakecase
 
 from aihub_api.routes.agent.AgentController import AgentController
@@ -25,6 +23,9 @@ from playground.testing.tests.agent.events.TestStopEvent import TestStopEvent
 AGENT_CLASS = "TestAgent"
 AGENT_ID = "test_agent_1"
 TEST_START_EVENT_SNAKE = snakecase(TestStartEvent.event_name_from_class())
+START_EVENT_SPECS = EventSpecs.from_event_class(TestStartEvent)
+STOP_EVENT_SPECS = EventSpecs.from_event_class(TestStopEvent)
+
 
 enable_logging()
 
@@ -36,6 +37,8 @@ async def agent_api_client():
     runner = SimulatedAgentApiTestRunner(
         agent_class=AGENT_CLASS,
         agent_id=AGENT_ID,
+        start_events=[START_EVENT_SPECS],
+        stop_events=[STOP_EVENT_SPECS],
     )
     runner.simulated_events = [
         TestStopEvent(payload="Das ist ein test."),
@@ -80,15 +83,14 @@ async def test_get_agent(agent_api_client):
     for key in ("agent_config", "start_events", "stop_events"):
         assert key in data
 
-    start_event_specs = EventSpecs.from_event_class(TestStartEvent)
-    stop_event_specs = EventSpecs.from_event_class(TestStopEvent)
-
     assert len(data.get("start_events")) == 1
-    assert data.get("start_events")[0].get("event_name") == start_event_specs.event_name
-    assert data.get("start_events")[0].get("event_class") == start_event_specs.event_class
+    assert data.get("start_events")[0].get("event_name") == START_EVENT_SPECS.event_name
+    assert data.get("start_events")[0].get("event_schema") == START_EVENT_SPECS.event_schema
+    assert data.get("start_events")[0].get("event_parents") == START_EVENT_SPECS.event_parents
     assert len(data.get("stop_events")) == 1
-    assert data.get("stop_events")[0].get("event_name") == stop_event_specs.event_name
-    assert data.get("stop_events")[0].get("event_class") == stop_event_specs.event_class
+    assert data.get("stop_events")[0].get("event_name") == STOP_EVENT_SPECS.event_name
+    assert data.get("stop_events")[0].get("event_schema") == STOP_EVENT_SPECS.event_schema
+    assert data.get("stop_events")[0].get("event_parents") == STOP_EVENT_SPECS.event_parents
 
 
 @pytest.mark.asyncio(loop_scope="module")
