@@ -87,6 +87,8 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         agent_class: str,
         agent_id: str,
         simulated_events: list[BaseEvent] | None = None,
+        start_events: list[EventSpecs] | None = None,
+        stop_events: list[EventSpecs] | None = None,
     ):
         super().__init__()
         self.agent_class = agent_class
@@ -104,8 +106,8 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
 
         self.simulated_events: list[BaseEvent] = simulated_events or []
 
-        self.start_events: list[EventSpecs] = []
-        self.stop_events: list[EventSpecs] = []
+        self.start_events: list[EventSpecs] | None = start_events
+        self.stop_events: list[EventSpecs] | None = stop_events
 
         self.default_agent_config: AgentConfig = AgentConfig(
             agent_class=self.agent_class,
@@ -185,14 +187,16 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         self.nc = NATS()
         await self.nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
 
-        self.start_events = [
-            EventSpecs.from_event_class(StartEvent),
-            EventSpecs.from_event_class(UserMessageEvent),
-        ]
-        self.stop_events = [
-            EventSpecs.from_event_class(StopEvent),
-            EventSpecs.from_event_class(LLMStopEvent),
-        ]
+        if self.start_events is None:
+            self.start_events = [
+                EventSpecs.from_event_class(StartEvent),
+                EventSpecs.from_event_class(UserMessageEvent),
+            ]
+        if self.stop_events is None:
+            self.stop_events = [
+                EventSpecs.from_event_class(StopEvent),
+                EventSpecs.from_event_class(LLMStopEvent),
+            ]
 
         self.nc_publisher = NCPublisher(self.nc)
         self.discovery_subscriber = AgentNCSubscriber.for_agent_class_discovery_request_events(
