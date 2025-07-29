@@ -69,6 +69,24 @@ TIME_RANGE_CONFIG: dict[TimeRange, TimeRangeDetailConfig] = {
 }
 
 
+# MongoDB query operator constants
+MONGODB_ADD_FIELDS = "$addFields"
+MONGODB_AGENT_CLASS = "$agent_class"
+MONGODB_AGENT_ID = "$agent_id"
+MONGODB_COND = "$cond"
+MONGODB_DIVIDE = "$divide"
+MONGODB_EVENT_PARENTS = "$event_parents"
+MONGODB_EVENT_TIME = "$event_time"
+MONGODB_EVENT_TYPE = "$event_type"
+MONGODB_FIRST = "$first"
+MONGODB_FIRST_EVENT_TIME = "$first_event_time"
+MONGODB_GROUP = "$group"
+MONGODB_IF_NULL = "$ifNull"
+MONGODB_LATEST_EVENT_TIME = "$latest_event_time"
+MONGODB_MATCH = "$match"
+MONGODB_TO_DATE = "$toDate"
+
+
 class PersistedAgentEventEntity(Document):
     meta = {
         "collection": "agent_events",
@@ -200,7 +218,7 @@ class PersistedAgentEventEntity(Document):
                     "agent_class": {"$first": "$agent_class"},
                     "agent_id": {"$first": "$agent_id"},
                     "event_data": {"$first": "$event_data"},  # For LLM cost calculation
-                    "event_type": {"$first": "$event_type"},
+                    "event_type": {MONGODB_FIRST: MONGODB_EVENT_TYPE},
                 }
             },
             # 5. Group events by run_id to calculate run-level stats
@@ -218,7 +236,7 @@ class PersistedAgentEventEntity(Document):
                                 {
                                     "$and": [
                                         {"$in": ["StartEvent", "$event_parents"]},
-                                        {"$eq": ["$event_type", AgentTopicManager.CONTROL_EVENT]},
+                                        {"$eq": [MONGODB_EVENT_TYPE, AgentTopicManager.CONTROL_EVENT]},
                                     ]
                                 },
                                 1,
@@ -273,7 +291,7 @@ class PersistedAgentEventEntity(Document):
                             "event_time": "$event_time",
                             "is_start": {"$in": ["StartEvent", "$event_parents"]},
                             "is_not_user": {"$ne": ["$agent_class", "UserAgent"]},
-                            "is_control": {"$eq": ["$event_type", AgentTopicManager.CONTROL_EVENT]},
+                            "is_control": {"$eq": [MONGODB_EVENT_TYPE, AgentTopicManager.CONTROL_EVENT]},
                         }
                     },
                 }
