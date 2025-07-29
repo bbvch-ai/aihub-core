@@ -1,18 +1,18 @@
-import {getNotifications, type PaginatedNotificationsResponse,} from '@core/sdk/client'
-import {type Ref} from 'vue'
+import { getNotifications, type PaginatedNotificationsResponse } from '@core/sdk/client'
 
+import type { Ref } from 'vue'
 
 export const useNotifications = (options: {
-  currentPage: Ref<number>,
-  pageSize: Ref<number>,
+  currentPage: Ref<number>
+  pageSize: Ref<number>
   filters?: {
-    read?: Ref<boolean | undefined>,
-    done?: Ref<boolean | undefined>,
-    types?: Ref<string[] | undefined>,
-    severities?: Ref<string[] | undefined>,
+    read?: Ref<boolean | undefined>
+    done?: Ref<boolean | undefined>
+    types?: Ref<string[] | undefined>
+    severities?: Ref<string[] | undefined>
   }
 }) => {
-  const {currentPage, pageSize, filters} = options
+  const { currentPage, pageSize, filters } = options
 
   const query = useQuery<PaginatedNotificationsResponse>({
     key: () => {

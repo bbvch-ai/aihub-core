@@ -1,12 +1,11 @@
 <template>
   <div class="flex flex-row items-center gap-5 pr-3">
-
-    <NotificationsOverlay/>
+    <NotificationsOverlay />
 
     <Button
+      v-tooltip.bottom="{ value: t('bar.toggle_dark_mode') }"
       :icon="isDark ? 'pi pi-sun' : 'pi pi-moon'"
       variant="text"
-      v-tooltip.bottom="{ value: t('bar.toggle_dark_mode') }"
       rounded
       :aria-label="t('bar.toggle_dark_mode')"
       @click="toggleDarkMode()"
@@ -55,23 +54,22 @@
 </template>
 
 <script setup lang="ts">
-import {useDark} from '@vueuse/core';
-import {computed} from 'vue';
-import {useI18n} from 'vue-i18n'
-import NotificationsOverlay from "@core/components/Notification/NotificationsOverlay.vue";
+import NotificationsOverlay from '@core/components/Notification/NotificationsOverlay.vue'
+import { useDark } from '@vueuse/core'
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-const {t} = useI18n()
-const {myUser, myUserIsLoading} = useMyUser();
+const { t } = useI18n()
+const { myUser, myUserIsLoading } = useMyUser()
 
 const userInitials = computed(() =>
   myUser.value?.name?.split(' ').map(n => n[0]).join(''),
-);
-
+)
 
 // Initialize the dark mode reactive state with persistence
-const isDark = useDark({storageKey: 'dark'});
+const isDark = useDark({ storageKey: 'dark' })
 
 function toggleDarkMode() {
-  isDark.value = !isDark.value;
+  isDark.value = !isDark.value
 }
 </script>

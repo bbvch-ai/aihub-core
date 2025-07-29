@@ -100,9 +100,9 @@
 </template>
 
 <script setup lang="ts">
-const {user, userIsLoading} = useUser()
-const {t} = useI18n()
-const {getTimeAgo} = useTimeAgo()
+const { user, userIsLoading } = useUser()
+const { t } = useI18n()
+const { getTimeAgo } = useTimeAgo()
 </script>
 
 <style scoped>

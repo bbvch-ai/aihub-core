@@ -1,22 +1,21 @@
-import {ref, watch} from 'vue'
-import {useToast} from 'primevue/usetoast'
-import {useI18n} from 'vue-i18n'
-import {getNotifications, type NotificationDto} from '@core/sdk/client'
-
+import { getNotifications, type NotificationDto } from '@core/sdk/client'
+import { useToast } from 'primevue/usetoast'
+import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 export const useNotificationPoller = () => {
   const toast = useToast()
   const queryCache = useQueryCache()
-  const {t, locale} = useI18n()
+  const { t, locale } = useI18n()
 
   const knownUnreadIds = ref(new Set<string>())
 
-  const {data: unreadResponse, refetch} = useQuery({
+  const { data: unreadResponse, refetch } = useQuery({
     key: () => ['notifications_poller_data'],
     query: () =>
       getNotifications({
         composable: '$fetch',
-        query: {read: false, page_size: 100},
+        query: { read: false, page_size: 100 },
       }),
     enabled: false,
   })
@@ -41,7 +40,7 @@ export const useNotificationPoller = () => {
     knownUnreadIds.value = new Set(newNotifications.map(n => n.id))
 
     if (hasNew) {
-      queryCache.invalidateQueries({key: ['notifications']})
+      queryCache.invalidateQueries({ key: ['notifications'] })
     }
   })
 

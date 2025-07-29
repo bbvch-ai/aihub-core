@@ -1,18 +1,21 @@
 <template>
   <StructuralScreen>
-    <StructuralColumn :title="t('notification.title')" :loading="isLoading">
+    <StructuralColumn
+      :title="t('notification.title')"
+      :loading="isLoading"
+    >
       <DataView
         :value="notifications"
         paginator
         :rows="pageSize"
         :total-records="totalRecords"
         :first="(currentPage - 1) * pageSize"
-        @page="onPage"
         lazy
+        @page="onPage"
       >
         <template #header>
-          <div class="flex flex-col sm:flex-row justify-between gap-4">
-            <div class="flex items-center gap-2 flex-wrap">
+          <div class="flex flex-col justify-between gap-4 sm:flex-row">
+            <div class="flex flex-wrap items-center gap-2">
               <Checkbox
                 v-model="selectAll"
                 :binary="true"
@@ -24,16 +27,16 @@
                 icon="pi pi-eye"
                 severity="secondary"
                 size="small"
-                @click="markSelectedAsRead"
                 :disabled="!canMarkSelectedAsRead"
+                @click="markSelectedAsRead"
               />
               <Button
                 :label="t('notification.mark_as_done')"
                 icon="pi pi-check"
                 severity="secondary"
                 size="small"
-                @click="markSelectedAsDone"
                 :disabled="!canMarkSelectedAsDone"
+                @click="markSelectedAsDone"
               />
               <Button
                 v-if="hasSelectedNotifications"
@@ -59,7 +62,10 @@
         </template>
 
         <template #list="{ items }">
-          <div class="flex flex-col" role="list">
+          <div
+            class="flex flex-col"
+            role="list"
+          >
             <NotificationItem
               v-for="item in items"
               :key="item.id"
@@ -74,8 +80,11 @@
 
         <template #empty>
           <div class="flex flex-col items-center justify-center p-8 text-center text-surface-500">
-            <i class="pi pi-bell p-4 text-4xl text-surface-400" aria-hidden="true"/>
-            <p class="text-lg font-medium mb-2">
+            <i
+              class="pi pi-bell p-4 text-4xl text-surface-400"
+              aria-hidden="true"
+            />
+            <p class="mb-2 text-lg font-medium">
               {{ getEmptyStateTitle() }}
             </p>
           </div>
@@ -86,12 +95,13 @@
 </template>
 
 <script setup lang="ts">
-import {computed, nextTick, ref, watch} from 'vue'
-import {useI18n} from 'vue-i18n'
-import {useRouter} from 'vue-router'
-import type {NotificationDto} from '@core/sdk/client'
+import { computed, nextTick, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
-const {t} = useI18n()
+import type { NotificationDto } from '@core/sdk/client'
+
+const { t } = useI18n()
 const router = useRouter()
 const localeRoute = useLocaleRoute()
 
@@ -103,9 +113,9 @@ const readFilter = ref<boolean | undefined>(false)
 const doneFilter = ref<boolean | undefined>(undefined)
 
 const filterOptions = computed(() => [
-  {label: t('notification.filter.unread'), value: 'unread'},
-  {label: t('notification.filter.not_done'), value: 'not_done'},
-  {label: t('notification.filter.all'), value: 'all'},
+  { label: t('notification.filter.unread'), value: 'unread' },
+  { label: t('notification.filter.not_done'), value: 'not_done' },
+  { label: t('notification.filter.all'), value: 'all' },
 ])
 
 const activeFilter = ref('not_done')
@@ -125,9 +135,9 @@ const {
 
 watch(() => activeFilter.value, (newPreset) => {
   const filterMap = {
-    not_done: {read: undefined, done: false},
-    all: {read: undefined, done: undefined},
-    unread: {read: false, done: undefined}
+    not_done: { read: undefined, done: false },
+    all: { read: undefined, done: undefined },
+    unread: { read: false, done: undefined },
   }
 
   const filters = filterMap[newPreset]
@@ -136,26 +146,23 @@ watch(() => activeFilter.value, (newPreset) => {
 
   currentPage.value = 1
   selectedNotifications.value = []
-}, {immediate: true})
+}, { immediate: true })
 
-const {mutate: updateNotification} = useUpdateNotification()
-const {mutate: updateMultipleNotifications} = useUpdateMultipleNotifications()
-
-const {getTimeAgo} = useTimeAgo()
-
+const { mutate: updateNotification } = useUpdateNotification()
+const { mutate: updateMultipleNotifications } = useUpdateMultipleNotifications()
 
 const hasNotifications = computed(() => notifications.value.length > 0)
 
 const hasSelectedNotifications = computed(() => selectedNotifications.value.length > 0)
 
 const canMarkSelectedAsRead = computed(() =>
-  hasSelectedNotifications.value &&
-  selectedNotifications.value.some(n => !n.read)
+  hasSelectedNotifications.value
+  && selectedNotifications.value.some(n => !n.read),
 )
 
 const canMarkSelectedAsDone = computed(() =>
-  hasSelectedNotifications.value &&
-  selectedNotifications.value.some(n => !n.done)
+  hasSelectedNotifications.value
+  && selectedNotifications.value.some(n => !n.done),
 )
 
 const selectAll = computed({
@@ -165,7 +172,7 @@ const selectAll = computed({
   },
 })
 
-const onPage = (event: any) => {
+const onPage = (event: { page: number, rows: number }) => {
   currentPage.value = event.page + 1
   pageSize.value = event.rows
   selectedNotifications.value = []
@@ -175,22 +182,20 @@ const clearSelection = () => {
   selectedNotifications.value = []
 }
 
-
 const getEmptyStateTitle = () => {
   const titles = {
     all: t('notification.no_notifications'),
     not_done: t('notification.no_pending_notifications'),
-    unread: t('notification.no_unread_notifications')
+    unread: t('notification.no_unread_notifications'),
   }
   return titles[activeFilter.value] || titles.all
 }
-
 
 const handleNotificationClick = async (notification: NotificationDto) => {
   if (!notification.read) {
     await updateNotification({
       id: notification.id,
-      payload: ref({read: true})
+      payload: ref({ read: true }),
     })
   }
   if (!notification.link) return
@@ -204,7 +209,7 @@ const markSelectedAsRead = async () => {
 
   updateMultipleNotifications({
     ids: idsToUpdate,
-    payload: ref({read: true}),
+    payload: ref({ read: true }),
   })
   selectedNotifications.value = []
 }
@@ -215,10 +220,9 @@ const markSelectedAsDone = async () => {
 
   updateMultipleNotifications({
     ids: idsToUpdate,
-    payload: ref({done: true, read: true}),
+    payload: ref({ done: true, read: true }),
   })
   selectedNotifications.value = []
-
 }
 
 const isSelected = (item: NotificationDto) => {
@@ -228,7 +232,8 @@ const isSelected = (item: NotificationDto) => {
 const toggleSelection = (item: NotificationDto) => {
   if (isSelected(item)) {
     selectedNotifications.value = selectedNotifications.value.filter(selected => selected.id !== item.id)
-  } else {
+  }
+  else {
     selectedNotifications.value.push(item)
   }
 }

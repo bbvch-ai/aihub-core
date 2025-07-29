@@ -2,8 +2,8 @@
   <div class="relative">
     <div class="relative inline-flex cursor-pointer">
       <Button
-        icon="pi pi-bell"
         v-tooltip.bottom="{ value: t('bar.show_notifications') }"
+        icon="bell"
         variant="text"
         rounded
         :aria-label="t('bar.show_notifications')"
@@ -18,9 +18,15 @@
       />
     </div>
 
-    <OverlayPanel ref="op" @hide="isPanelOpen = false">
+    <OverlayPanel
+      ref="op"
+      @hide="isPanelOpen = false"
+    >
       <ScrollPanel :style="{ minHeight: listMinHeight, maxHeight: '70vh' }">
-        <DataView :value="unreadNotifications" :loading="isLoading">
+        <DataView
+          :value="unreadNotifications"
+          :loading="isLoading"
+        >
           <template #header>
             <div class="flex items-center justify-between">
               <span class="text-xl font-bold">{{ t('notification.title') }} ({{ unreadCount }})</span>
@@ -58,7 +64,7 @@
 
           <template #empty>
             <div class="flex flex-col items-center justify-center p-8 text-center text-surface-500">
-              <i class="pi pi-bell p-4 text-4xl text-surface-400"/>
+              <i class="pi pi-bell p-4 text-4xl text-surface-400" />
               <p>{{ t('notification.no_unread_notifications') }}</p>
             </div>
           </template>
@@ -69,12 +75,13 @@
 </template>
 
 <script setup lang="ts">
-import {computed, ref, watch} from 'vue'
-import {useRouter} from 'vue-router'
-import {useI18n} from 'vue-i18n'
-import type {NotificationDto} from '@core/sdk/client'
+import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
-const {t} = useI18n()
+import type { NotificationDto } from '@core/sdk/client'
+
+const { t } = useI18n()
 const op = ref()
 const router = useRouter()
 const localeRoute = useLocaleRoute()
@@ -85,14 +92,14 @@ const currentPage = ref(1)
 const pageSize = ref(15)
 const listMinHeight = ref('auto')
 
-const {notifications, isLoading, refetch} = useNotifications({
+const { notifications, isLoading, refetch } = useNotifications({
   currentPage,
   pageSize,
-  filters: {read: readFilter},
+  filters: { read: readFilter },
 })
 
-const {mutate: updateNotification} = useUpdateNotification()
-const {mutate: updateMultipleNotifications} = useUpdateMultipleNotifications()
+const { mutate: updateNotification } = useUpdateNotification()
+const { mutate: updateMultipleNotifications } = useUpdateMultipleNotifications()
 
 const unreadNotifications = computed(() => {
   if (!notifications.value) return []
@@ -120,7 +127,7 @@ const togglePanel = (event: Event) => {
 
 const handleNotificationClick = (notification: NotificationDto) => {
   if (!notification.read) {
-    updateNotification({id: notification.id, payload: {read: true}})
+    updateNotification({ id: notification.id, payload: { read: true } })
   }
   if (notification.link) {
     router.push(localeRoute(notification.link))
@@ -133,7 +140,7 @@ const markAllAsRead = () => {
   if (unreadIds.length > 0) {
     updateMultipleNotifications({
       ids: unreadIds,
-      payload: {read: true},
+      payload: { read: true },
     })
   }
 }
