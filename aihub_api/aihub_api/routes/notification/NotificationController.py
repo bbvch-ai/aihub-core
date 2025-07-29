@@ -1,14 +1,9 @@
-from typing import Annotated
-
-from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Query, Security
 from mongoengine import DoesNotExist
+from typing import Annotated
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
+from aihub_api.routes.notification.NotificationService import NotificationService
 from aihub_api.routes.notification.dto.NotificationDTO import (
     NotificationDTO,
 )
@@ -17,7 +12,11 @@ from aihub_api.routes.notification.dto.UpdateNotificationRequest import (
     BulkUpdateNotificationRequest,
     UpdateNotificationRequest,
 )
-from aihub_api.routes.notification.NotificationService import NotificationService
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.routes.Controller import Controller
 
 
 class NotificationController(Controller):
@@ -30,7 +29,7 @@ class NotificationController(Controller):
     def __init__(self, *, auth: AuthHandler, route: str = "/notifications", **kwargs):
         super().__init__(auth=auth, route=route, **kwargs)
 
-    def get_notifications(self, route: str = "/") -> "NotificationController":
+    def get_notifications(self, route: str = "") -> "NotificationController":
         @self.router.get(route, tags=self.tags, response_model=PaginatedNotificationsResponse)
         async def get_notifications(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
