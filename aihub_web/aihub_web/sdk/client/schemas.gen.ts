@@ -592,58 +592,10 @@ export const AnnotationURLCitationSchema = {
     title: 'AnnotationURLCitation'
 } as const;
 
-export const AssistantChatMessage_InputSchema = {
+export const AssistantChatMessageSchema = {
     properties: {
         role: {
-            '$ref': '#/components/schemas/MessageRole-Input',
-            default: 'user'
-        },
-        additional_kwargs: {
-            '$ref': '#/components/schemas/additional_kwargs'
-        },
-        blocks: {
-            items: {
-                oneOf: [
-                    {
-                        '$ref': '#/components/schemas/TextBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ImageBlock-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/AudioBlock-Input'
-                    }
-                ],
-                discriminator: {
-                    propertyName: 'block_type',
-                    mapping: {
-                        audio: '#/components/schemas/AudioBlock-Input',
-                        image: '#/components/schemas/ImageBlock-Input',
-                        text: '#/components/schemas/TextBlock'
-                    }
-                }
-            },
-            type: 'array',
-            title: 'Blocks'
-        },
-        agent_id: {
-            type: 'string',
-            title: 'Agent Id'
-        },
-        agent_class: {
-            type: 'string',
-            title: 'Agent Class'
-        }
-    },
-    type: 'object',
-    required: ['additional_kwargs', 'agent_id', 'agent_class'],
-    title: 'AssistantChatMessage'
-} as const;
-
-export const AssistantChatMessage_OutputSchema = {
-    properties: {
-        role: {
-            '$ref': '#/components/schemas/MessageRole-Output',
+            '$ref': '#/components/schemas/MessageRole',
             default: 'user'
         },
         additional_kwargs: {
@@ -656,17 +608,17 @@ export const AssistantChatMessage_OutputSchema = {
                         '$ref': '#/components/schemas/TextBlock'
                     },
                     {
-                        '$ref': '#/components/schemas/ImageBlock-Output'
+                        '$ref': '#/components/schemas/ImageBlock'
                     },
                     {
-                        '$ref': '#/components/schemas/AudioBlock-Output'
+                        '$ref': '#/components/schemas/AudioBlock'
                     }
                 ],
                 discriminator: {
                     propertyName: 'block_type',
                     mapping: {
-                        audio: '#/components/schemas/AudioBlock-Output',
-                        image: '#/components/schemas/ImageBlock-Output',
+                        audio: '#/components/schemas/AudioBlock',
+                        image: '#/components/schemas/ImageBlock',
                         text: '#/components/schemas/TextBlock'
                     }
                 }
@@ -700,72 +652,7 @@ export const AudioSchema = {
     title: 'Audio'
 } as const;
 
-export const AudioBlock_InputSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'audio',
-            title: 'Block Type',
-            default: 'audio'
-        },
-        audio: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'binary'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Audio'
-        },
-        path: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'file-path'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Path'
-        },
-        url: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 2083,
-                    minLength: 1,
-                    format: 'uri'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Url'
-        },
-        format: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Format'
-        }
-    },
-    type: 'object',
-    title: 'AudioBlock'
-} as const;
-
-export const AudioBlock_OutputSchema = {
+export const AudioBlockSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -2102,50 +1989,10 @@ export const ChatCompletionUserMessageParamSchema = {
     title: 'ChatCompletionUserMessageParam'
 } as const;
 
-export const ChatMessage_InputSchema = {
+export const ChatMessageSchema = {
     properties: {
         role: {
-            '$ref': '#/components/schemas/MessageRole-Input',
-            default: 'user'
-        },
-        additional_kwargs: {
-            '$ref': '#/components/schemas/additional_kwargs'
-        },
-        blocks: {
-            items: {
-                oneOf: [
-                    {
-                        '$ref': '#/components/schemas/TextBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ImageBlock-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/AudioBlock-Input'
-                    }
-                ],
-                discriminator: {
-                    propertyName: 'block_type',
-                    mapping: {
-                        audio: '#/components/schemas/AudioBlock-Input',
-                        image: '#/components/schemas/ImageBlock-Input',
-                        text: '#/components/schemas/TextBlock'
-                    }
-                }
-            },
-            type: 'array',
-            title: 'Blocks'
-        }
-    },
-    type: 'object',
-    required: ['additional_kwargs'],
-    title: 'ChatMessage'
-} as const;
-
-export const ChatMessage_OutputSchema = {
-    properties: {
-        role: {
-            '$ref': '#/components/schemas/MessageRole-Output',
+            '$ref': '#/components/schemas/MessageRole',
             default: 'user'
         },
         additional_kwargs: {
@@ -2158,17 +2005,17 @@ export const ChatMessage_OutputSchema = {
                         '$ref': '#/components/schemas/TextBlock'
                     },
                     {
-                        '$ref': '#/components/schemas/ImageBlock-Output'
+                        '$ref': '#/components/schemas/ImageBlock'
                     },
                     {
-                        '$ref': '#/components/schemas/AudioBlock-Output'
+                        '$ref': '#/components/schemas/AudioBlock'
                     }
                 ],
                 discriminator: {
                     propertyName: 'block_type',
                     mapping: {
-                        audio: '#/components/schemas/AudioBlock-Output',
-                        image: '#/components/schemas/ImageBlock-Output',
+                        audio: '#/components/schemas/AudioBlock',
+                        image: '#/components/schemas/ImageBlock',
                         text: '#/components/schemas/TextBlock'
                     }
                 }
@@ -4818,83 +4665,7 @@ export const ImageSchema = {
     title: 'Image'
 } as const;
 
-export const ImageBlock_InputSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'image',
-            title: 'Block Type',
-            default: 'image'
-        },
-        image: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'binary'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Image'
-        },
-        path: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'file-path'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Path'
-        },
-        url: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 2083,
-                    minLength: 1,
-                    format: 'uri'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Url'
-        },
-        image_mimetype: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Image Mimetype'
-        },
-        detail: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Detail'
-        }
-    },
-    type: 'object',
-    title: 'ImageBlock'
-} as const;
-
-export const ImageBlock_OutputSchema = {
+export const ImageBlockSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -5899,7 +5670,7 @@ export const LLMEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
+                        '$ref': '#/components/schemas/Message'
                     },
                     type: 'array'
                 },
@@ -5914,7 +5685,7 @@ export const LLMEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
+                        '$ref': '#/components/schemas/Message'
                     },
                     type: 'array'
                 },
@@ -6125,7 +5896,7 @@ export const LLMStopEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
+                        '$ref': '#/components/schemas/Message'
                     },
                     type: 'array'
                 },
@@ -6140,7 +5911,7 @@ export const LLMStopEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
+                        '$ref': '#/components/schemas/Message'
                     },
                     type: 'array'
                 },
@@ -6314,198 +6085,6 @@ Used during deserialization to decide which subclass to instantiate.`,
     title: 'LLMStopEvent'
 } as const;
 
-export const LLMStopEventOutputSchema = {
-    properties: {
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        input_messages: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__Message'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Input Messages',
-            description: 'List of messages sent to the LLM as input.'
-        },
-        output_messages: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__Message'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Output Messages',
-            description: 'List of messages received from the LLM as output.'
-        },
-        invocation_parameters: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/invocation_parameters'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Parameters used during the invocation of the LLM.'
-        },
-        chat_model_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Chat Model Name',
-            description: 'The name of the language model being utilized.'
-        },
-        provider: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Provider',
-            description: 'The hosting provider of the LLM, e.g., OpenAI, Azure.'
-        },
-        system: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'System',
-            description: 'The AI product as identified by the client or server.'
-        },
-        prompt_template: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Prompt Template',
-            description: 'The prompt template as a Python f-string.'
-        },
-        prompt_template_variables: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/prompt_template_variables'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'A dictionary of input variables to the prompt template.'
-        },
-        prompt_template_version: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Prompt Template Version',
-            description: 'The version of the prompt template being used.'
-        },
-        token_count_prompt: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Token Count Prompt',
-            description: 'The number of tokens in the prompt.'
-        },
-        token_count_completion: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Token Count Completion',
-            description: 'The number of tokens in the completion.'
-        },
-        token_count_total: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Token Count Total',
-            description: 'The total number of tokens, including both prompt and completion.'
-        },
-        tools: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/tools'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tools',
-            description: 'List of tools that are advertised to the LLM to be able to call.'
-        }
-    },
-    type: 'object',
-    title: 'LLMStopEventOutput'
-} as const;
-
 export const LimitChatHistoryEventSchema = {
     properties: {
         event_id: {
@@ -6541,7 +6120,7 @@ export const LimitChatHistoryEventSchema = {
         },
         limited_history: {
             items: {
-                '$ref': '#/components/schemas/ChatMessage-Output'
+                '$ref': '#/components/schemas/ChatMessage'
             },
             type: 'array',
             title: 'Limited History',
@@ -6691,13 +6270,115 @@ export const LogprobSchema = {
     title: 'Logprob'
 } as const;
 
-export const MessageRole_InputSchema = {
-    type: 'string',
-    enum: ['system', 'developer', 'user', 'assistant', 'function', 'tool', 'chatbot', 'model'],
-    title: 'MessageRole'
+export const MessageSchema = {
+    properties: {
+        role: {
+            type: 'string',
+            title: 'Role',
+            description: "The role of the message, such as 'user', 'assistant', or 'system'."
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'The name of the function or agent generating the message.'
+        },
+        tool_calls: {
+            anyOf: [
+                {
+                    items: {
+                        additionalProperties: true,
+                        type: 'object'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tool Calls',
+            description: 'List of tool calls generated by the model, such as function calls.'
+        },
+        function_call_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Function Call Name',
+            description: 'The name of the function being called in the message.'
+        },
+        function_call_arguments_json: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Function Call Arguments Json',
+            description: 'JSON representing arguments passed to the function during a function call.'
+        },
+        tool_call_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tool Call Id',
+            description: 'The ID of the tool call, if applicable.'
+        },
+        contents: {
+            anyOf: [
+                {
+                    items: {
+                        anyOf: [
+                            {
+                                '$ref': '#/components/schemas/TextContent'
+                            },
+                            {
+                                '$ref': '#/components/schemas/ImageContent'
+                            },
+                            {
+                                '$ref': '#/components/schemas/AudioContent'
+                            }
+                        ]
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Contents',
+            description: 'The message contents as an array of content blocks (text, image, audio).'
+        },
+        content: {
+            type: 'string',
+            title: 'Content',
+            readOnly: true
+        }
+    },
+    type: 'object',
+    required: ['role', 'content'],
+    title: 'Message'
 } as const;
 
-export const MessageRole_OutputSchema = {
+export const MessageRoleSchema = {
     type: 'string',
     enum: ['system', 'developer', 'user', 'assistant', 'function', 'tool', 'chatbot', 'model'],
     title: 'MessageRole',
@@ -6746,7 +6427,7 @@ export const MetadataSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/aihub_lib__nats__events__user__UserUploadedFile__UserUploadedFile'
+                        '$ref': '#/components/schemas/UserUploadedFile'
                     },
                     type: 'array'
                 },
@@ -6955,7 +6636,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1753792582
+            default: 1753797433
         },
         owned_by: {
             type: 'string',
@@ -8432,7 +8113,7 @@ export const StandaloneQuestionCondenserEventSchema = {
             description: 'Display description for the event'
         },
         condensed_chat_message: {
-            '$ref': '#/components/schemas/ChatMessage-Output',
+            '$ref': '#/components/schemas/ChatMessage',
             description: 'Single chat message containing the condensed user question.'
         },
         _event_name: {
@@ -9508,54 +9189,10 @@ export const UserAccessSchema = {
     title: 'UserAccess'
 } as const;
 
-export const UserChatMessage_InputSchema = {
+export const UserChatMessageSchema = {
     properties: {
         role: {
-            '$ref': '#/components/schemas/MessageRole-Input',
-            default: 'user'
-        },
-        additional_kwargs: {
-            '$ref': '#/components/schemas/additional_kwargs'
-        },
-        blocks: {
-            items: {
-                oneOf: [
-                    {
-                        '$ref': '#/components/schemas/TextBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ImageBlock-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/AudioBlock-Input'
-                    }
-                ],
-                discriminator: {
-                    propertyName: 'block_type',
-                    mapping: {
-                        audio: '#/components/schemas/AudioBlock-Input',
-                        image: '#/components/schemas/ImageBlock-Input',
-                        text: '#/components/schemas/TextBlock'
-                    }
-                }
-            },
-            type: 'array',
-            title: 'Blocks'
-        },
-        user_id: {
-            type: 'string',
-            title: 'User Id'
-        }
-    },
-    type: 'object',
-    required: ['additional_kwargs', 'user_id'],
-    title: 'UserChatMessage'
-} as const;
-
-export const UserChatMessage_OutputSchema = {
-    properties: {
-        role: {
-            '$ref': '#/components/schemas/MessageRole-Output',
+            '$ref': '#/components/schemas/MessageRole',
             default: 'user'
         },
         additional_kwargs: {
@@ -9568,17 +9205,17 @@ export const UserChatMessage_OutputSchema = {
                         '$ref': '#/components/schemas/TextBlock'
                     },
                     {
-                        '$ref': '#/components/schemas/ImageBlock-Output'
+                        '$ref': '#/components/schemas/ImageBlock'
                     },
                     {
-                        '$ref': '#/components/schemas/AudioBlock-Output'
+                        '$ref': '#/components/schemas/AudioBlock'
                     }
                 ],
                 discriminator: {
                     propertyName: 'block_type',
                     mapping: {
-                        audio: '#/components/schemas/AudioBlock-Output',
-                        image: '#/components/schemas/ImageBlock-Output',
+                        audio: '#/components/schemas/AudioBlock',
+                        image: '#/components/schemas/ImageBlock',
                         text: '#/components/schemas/TextBlock'
                     }
                 }
@@ -9769,13 +9406,13 @@ export const UserMessageEventSchema = {
             items: {
                 anyOf: [
                     {
-                        '$ref': '#/components/schemas/ChatMessage-Output'
+                        '$ref': '#/components/schemas/ChatMessage'
                     },
                     {
-                        '$ref': '#/components/schemas/UserChatMessage-Output'
+                        '$ref': '#/components/schemas/UserChatMessage'
                     },
                     {
-                        '$ref': '#/components/schemas/AssistantChatMessage-Output'
+                        '$ref': '#/components/schemas/AssistantChatMessage'
                     }
                 ]
             },
@@ -9788,7 +9425,7 @@ export const UserMessageEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/UserUploadedFile-Output'
+                        '$ref': '#/components/schemas/UserUploadedFile'
                     },
                     type: 'array'
                 },
@@ -9844,47 +9481,7 @@ This flexible design allows mixing and matching start events to adapt how and wh
 are triggered, depending on the source of the event.`
 } as const;
 
-export const UserMessageEventInputSchema = {
-    properties: {
-        messages: {
-            items: {
-                anyOf: [
-                    {
-                        '$ref': '#/components/schemas/ChatMessage-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/UserChatMessage-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/AssistantChatMessage-Input'
-                    }
-                ]
-            },
-            type: 'array',
-            title: 'Messages',
-            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
-        },
-        files: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__UserUploadedFile'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Files',
-            description: 'A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.'
-        }
-    },
-    type: 'object',
-    title: 'UserMessageEventInput'
-} as const;
-
-export const UserUploadedFile_OutputSchema = {
+export const UserUploadedFileSchema = {
     properties: {
         filename: {
             type: 'string',
@@ -10053,279 +9650,6 @@ export const WorkflowGraphSchema = {
     description: 'Complete workflow graph representation.'
 } as const;
 
-export const additional_kwargsSchema = {
-    properties: {},
-    type: 'object',
-    title: 'additional_kwargs'
-} as const;
-
-export const aihub_lib__nats__events__semantic__llm__Message__MessageSchema = {
-    properties: {
-        role: {
-            type: 'string',
-            title: 'Role',
-            description: "The role of the message, such as 'user', 'assistant', or 'system'."
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'The name of the function or agent generating the message.'
-        },
-        tool_calls: {
-            anyOf: [
-                {
-                    items: {
-                        additionalProperties: true,
-                        type: 'object'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tool Calls',
-            description: 'List of tool calls generated by the model, such as function calls.'
-        },
-        function_call_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Function Call Name',
-            description: 'The name of the function being called in the message.'
-        },
-        function_call_arguments_json: {
-            anyOf: [
-                {
-                    additionalProperties: true,
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Function Call Arguments Json',
-            description: 'JSON representing arguments passed to the function during a function call.'
-        },
-        tool_call_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tool Call Id',
-            description: 'The ID of the tool call, if applicable.'
-        },
-        contents: {
-            anyOf: [
-                {
-                    items: {
-                        anyOf: [
-                            {
-                                '$ref': '#/components/schemas/TextContent'
-                            },
-                            {
-                                '$ref': '#/components/schemas/ImageContent'
-                            },
-                            {
-                                '$ref': '#/components/schemas/AudioContent'
-                            }
-                        ]
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Contents',
-            description: 'The message contents as an array of content blocks (text, image, audio).'
-        },
-        content: {
-            type: 'string',
-            title: 'Content',
-            readOnly: true
-        }
-    },
-    type: 'object',
-    required: ['role', 'content'],
-    title: 'Message'
-} as const;
-
-export const aihub_lib__nats__events__user__UserUploadedFile__UserUploadedFileSchema = {
-    properties: {
-        filename: {
-            type: 'string',
-            title: 'Filename',
-            description: 'The name of the uploaded file, including the extension.'
-        },
-        file_data: {
-            type: 'string',
-            title: 'File Data',
-            description: 'Base64 encoded content of the uploaded file.'
-        },
-        file_type: {
-            type: 'string',
-            title: 'File Type',
-            description: 'The MIME type of the uploaded file.',
-            examples: ['image/png', 'application/pdf']
-        }
-    },
-    type: 'object',
-    required: ['filename', 'file_data', 'file_type'],
-    title: 'UserUploadedFile'
-} as const;
-
-export const function_call_arguments_jsonSchema = {
-    properties: {},
-    type: 'object',
-    title: 'function_call_arguments_json'
-} as const;
-
-export const invocation_parametersSchema = {
-    properties: {},
-    type: 'object',
-    title: 'invocation_parameters'
-} as const;
-
-export const jambo__parser__object_type_parser__MessageSchema = {
-    properties: {
-        role: {
-            type: 'string',
-            title: 'Role',
-            description: "The role of the message, such as 'user', 'assistant', or 'system'."
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'The name of the function or agent generating the message.'
-        },
-        tool_calls: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/tool_calls'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tool Calls',
-            description: 'List of tool calls generated by the model, such as function calls.'
-        },
-        function_call_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Function Call Name',
-            description: 'The name of the function being called in the message.'
-        },
-        function_call_arguments_json: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/function_call_arguments_json'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'JSON representing arguments passed to the function during a function call.'
-        },
-        tool_call_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tool Call Id',
-            description: 'The ID of the tool call, if applicable.'
-        },
-        contents: {
-            anyOf: [
-                {
-                    items: {
-                        anyOf: [
-                            {
-                                '$ref': '#/components/schemas/TextContent'
-                            },
-                            {
-                                '$ref': '#/components/schemas/ImageContent'
-                            },
-                            {
-                                '$ref': '#/components/schemas/AudioContent'
-                            }
-                        ]
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Contents',
-            description: 'The message contents as an array of content blocks (text, image, audio).'
-        }
-    },
-    type: 'object',
-    required: ['role'],
-    title: 'Message'
-} as const;
-
-export const jambo__parser__object_type_parser__UserUploadedFileSchema = {
-    properties: {
-        filename: {
-            type: 'string',
-            title: 'Filename',
-            description: 'The name of the uploaded file, including the extension.'
-        },
-        file_data: {
-            type: 'string',
-            title: 'File Data',
-            description: 'Base64 encoded content of the uploaded file.'
-        },
-        file_type: {
-            type: 'string',
-            title: 'File Type',
-            description: 'The MIME type of the uploaded file.'
-        }
-    },
-    type: 'object',
-    required: ['filename', 'file_data', 'file_type'],
-    title: 'UserUploadedFile'
-} as const;
-
 export const openai__types__chat__chat_completion_message_tool_call_param__FunctionSchema = {
     properties: {
         arguments: {
@@ -10373,22 +9697,4 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
     type: 'object',
     required: ['name'],
     title: 'Function'
-} as const;
-
-export const prompt_template_variablesSchema = {
-    properties: {},
-    type: 'object',
-    title: 'prompt_template_variables'
-} as const;
-
-export const tool_callsSchema = {
-    properties: {},
-    type: 'object',
-    title: 'tool_calls'
-} as const;
-
-export const toolsSchema = {
-    properties: {},
-    type: 'object',
-    title: 'tools'
 } as const;
