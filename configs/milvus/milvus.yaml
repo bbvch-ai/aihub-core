@@ -768,7 +768,7 @@ log:
     # The default value is set empty, indicating to output log files to standard output (stdout) and standard error (stderr).
     # If this parameter is set to a valid local path, Milvus writes and stores log files in this path.
     # Set this parameter as the path that you have permission to write.
-    rootPath: /milvus-data/logs
+    rootPath: /var/lib/milvus/logs
     maxSize: 300 # The maximum size of a log file, unit: MB.
     maxAge: 10 # The maximum retention time before a log file is automatically cleared, unit: day. The minimum value is 1.
     maxBackups: 20 # The maximum number of log files to back up, unit: day. The minimum value is 1.

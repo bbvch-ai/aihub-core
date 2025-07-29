@@ -131,7 +131,7 @@ services:
       driver: "json-file"
       options:
         max-size: "10m"
-        max-file: "3"
+        max-file: "2"
   # </editor-fold>
 
   # === OpenWebUI Stack ===
@@ -236,6 +236,11 @@ services:
       OAUTH_PROVIDER_NAME: ${OAUTH_PROVIDER_NAME}
 
       ENABLE_DIRECT_CONNECTIONS: false
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.webui.rule=Host(`openwebui.${DOMAIN}`)"
@@ -301,6 +306,11 @@ services:
       OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: "https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png"
       OAUTH2_PROXY_REVERSE_PROXY: true
       OAUTH2_PROXY_REDIRECT_URL: "https://dagster.${DOMAIN}"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.dagster.rule=Host(`dagster.${DOMAIN}`)"
@@ -326,6 +336,11 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
 
   dagster-daemon:
     image: ghcr.io/bbvch-ai/aihub-core/dagster:latest
@@ -339,6 +354,11 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
 
   # === Nats & Redis Stack ===
   # <editor-fold desc="NATS & Redis Stack">
@@ -348,6 +368,11 @@ services:
     volumes:
       - ./configs/nats/nats.conf:/etc/nats/nats.conf
       - ${VOLUME_ROOT:-./local-volumes}/nats-data:/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
 
   redis:
     image: ghcr.io/bbvch-ai/aihub-core/redis:8.0.1
@@ -365,7 +390,7 @@ services:
       driver: "json-file"
       options:
         max-size: "10m"
-        max-file: "3"
+        max-file: "2"
   # </editor-fold>
 
   mongo:
@@ -430,6 +455,11 @@ services:
       AZURE_AD_TENANT_ID: ${OAUTH_TENANT_ID}
       WEBUI_URL: "https://openwebui.${DOMAIN}"
       WS_ENDPOINT: "wss://${DOMAIN}/api/v1/event/ws"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.web.rule=Host(`${DOMAIN}`)"
