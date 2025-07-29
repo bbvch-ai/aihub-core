@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Annotated, Literal
 
-from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.notification.NotificationEntity import NotificationEntity
 from pydantic import BaseModel, Field
 
@@ -18,8 +18,8 @@ class NotificationDTO(BaseModel):
     notification_group_id: Annotated[
         str | None, Field(description="The identifier of the notification group this notification belongs to.")
     ] = None
-    title: Annotated[LocaleString, Field(description="The internationalized title of the notification.")]
-    message: Annotated[LocaleString, Field(description="The internationalized content of the notification.")]
+    title: Annotated[str, Field(description="The internationalized title of the notification.")]
+    message: Annotated[str, Field(description="The internationalized content of the notification.")]
     read: Annotated[bool, Field(description="Indicates if the notification has been read by the user.")] = False
     done: Annotated[
         bool, Field(description="Indicates if the task associated with the notification has been completed.")
@@ -33,14 +33,14 @@ class NotificationDTO(BaseModel):
     created_at: Annotated[datetime, Field(description="The timestamp when the notification was created.")]
 
     @classmethod
-    def from_entity(cls, entity: NotificationEntity) -> "NotificationDTO":
+    def from_entity(cls, entity: NotificationEntity, t: LocaleHandler) -> "NotificationDTO":
         """Creates a NotificationDTO from a NotificationEntity."""
         return cls(
             id=str(entity.id),
             user_id=entity.user_id,
             notification_group_id=entity.notification_group_id,
-            title=entity.title.to_mongo().to_dict(),
-            message=entity.message.to_mongo().to_dict(),
+            title=t.extract(entity.title.to_mongo().to_dict()),
+            message=t.extract(entity.message.to_mongo().to_dict()),
             read=entity.read,
             done=entity.done,
             type=entity.type,

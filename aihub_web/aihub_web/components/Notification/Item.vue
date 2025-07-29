@@ -26,14 +26,10 @@
           @keydown.space.prevent="$emit('click', notification)"
         >
           <p class="flex items-center gap-2 truncate text-sm font-bold text-surface-800 dark:text-surface-100">
-            <i
-              :class="notificationIcon"
-              class="text-base"
-            />
-            <span>{{ notification.title.en }}</span>
+            {{ notification.title }}
           </p>
           <p class="mt-1 line-clamp-2 text-sm text-surface-600 dark:text-surface-400">
-            {{ notification.message.en }}
+            {{ notification.message }}
           </p>
           <div class="mt-2 flex flex-wrap items-center gap-2">
             <span class="text-xs text-surface-400 dark:text-surface-500">
@@ -105,20 +101,6 @@ const severityBadgeColor = computed(() => {
     case 'low':
     default:
       return 'contrast'
-  }
-})
-
-const notificationIcon = computed(() => {
-  switch (props.notification.type) {
-    case 'success':
-      return 'pi pi-check-circle'
-    case 'warn':
-      return 'pi pi-exclamation-triangle'
-    case 'error':
-      return 'pi pi-times-circle'
-    case 'info':
-    default:
-      return 'pi pi-info-circle'
   }
 })
 </script>

@@ -1,12 +1,10 @@
 import { getNotifications, type NotificationDto } from '@core/sdk/client'
 import { useToast } from 'primevue/usetoast'
 import { ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
 
 export const useNotificationPoller = () => {
   const toast = useToast()
   const queryCache = useQueryCache()
-  const { t, locale } = useI18n()
 
   const knownUnreadIds = ref(new Set<string>())
 
@@ -30,8 +28,8 @@ export const useNotificationPoller = () => {
         hasNew = true
         toast.add({
           severity: notification.type,
-          summary: notification.title[locale.value] || notification.title.en || t('notification.default_summary'),
-          detail: notification.message[locale.value] || notification.message.en,
+          summary: notification.title,
+          detail: notification.message,
           life: 5000,
         })
       }

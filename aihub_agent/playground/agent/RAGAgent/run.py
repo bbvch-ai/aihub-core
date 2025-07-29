@@ -25,8 +25,13 @@ async def main():
         default_agent_config=RAGAgentConfig(
             agent_id="dev_agent",
             agent_class=RAGAgent.__name__,
-            name=LocaleString(en="RAG Agent"),
-            description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
+            name=LocaleString(en="RAG Agent", de="RAG Agent DE", fr="RAG Agent FR", it="RAG Agent IT"),
+            description=LocaleString(
+                en="This is an agent that can be used to answer user questions using RAG",
+                de="Dies ist ein Agent, der verwendet werden kann, um Benutzerfragen mit RAG zu beantworten",
+                fr="Ceci est un agent qui peut être utilisé pour répondre aux questions des utilisateurs",
+                it="Questo è un agente che può essere utilizzato per rispondere alle domande",
+            ),
             llm=AzureOpenAILLMConfig(
                 name="gpt-4o",
                 base_url="https://bbvaihub-openai-sui.openai.azure.com",
