@@ -41,9 +41,9 @@ class NotificationService:
         if not notification:
             raise DoesNotExist("Notification not found.")
 
-        if updates.read is not None:
+        if updates.read:
             notification.mark_as_read()
-        if updates.done is not None:
+        if updates.done:
             notification.mark_as_done()
 
         return NotificationDTO.from_entity(entity=notification, t=t)
