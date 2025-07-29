@@ -17,14 +17,14 @@
 </template>
 
 <script setup lang="ts">
-import type {EventTimeseries} from '@core/sdk/client'
+import type { EventTimeseries } from '@core/sdk/client'
 
 const props = defineProps<{
   timeseries: EventTimeseries
 }>()
 
-const {t} = useI18n()
-const {isTrendingUp} = useEventTimeseriesStats(props.timeseries)
+const { t } = useI18n()
+const { isTrendingUp } = useEventTimeseriesStats(props.timeseries)
 
 const reverseLogic = computed(() => {
   return props.timeseries.event_name === 'ExceptionEvent'
