@@ -154,7 +154,7 @@ class OpenaiService:
                 dimensions=dimensions or embedding_model_config.default_parameter.dimensions,
                 encoding_format=encoding_format or embedding_model_config.default_parameter.encoding_format,
             )
-        embedding_model, _ = embedding_model_config.to_llama_index(model_parameter=model_parameters)
+        embedding_model, _ = embedding_model_config.to_llama_index()
         inputs = input_text if isinstance(input_text, list) else [input_text]
         embeddings = embedding_model.get_text_embedding_batch(inputs)
         return EmbeddingsResponse(

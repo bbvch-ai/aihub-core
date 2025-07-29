@@ -24,7 +24,6 @@ from aihub_lib.testing.asyncio_utils.bdd import async_test
 @pytest.fixture(autouse=True)
 def mongo_connection(monkeypatch) -> Generator[None, None, None]:
     """Set up a MongoDB connection for testing and disconnect after."""
-    monkeypatch.setenv("COSMOS_CONNECTION_STRING", "mongodb://admin:admin@localhost:27017/")
     connect(
         db=AIHubSettings().MONGO_MAIN_DB_NAME,
         host=MongoSettings().CONNECTION_STRING,

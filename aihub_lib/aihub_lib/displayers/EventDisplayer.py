@@ -144,16 +144,16 @@ class EventDisplayer:
             # Flush buffer at newline boundaries
             while "\n" in buffer:
                 section, buffer = buffer.split("\n", 1)
-                await self.display_chunk(section + "\n", model_name=llm_config.name)
+                await self.display_chunk(section + "\n", model_name=llm_config.model_name)
 
             # If no newline but buffer large, flush to avoid delays
             if len(buffer) > max_buffer_length:
-                await self.display_chunk(buffer, model_name=llm_config.name)
+                await self.display_chunk(buffer, model_name=llm_config.model_name)
                 buffer = ""
 
         # Flush remaining buffer after streaming finishes
         if buffer:
-            await self.display_chunk(buffer, model_name=llm_config.name)
+            await self.display_chunk(buffer, model_name=llm_config.model_name)
 
         # Extract token counts from handler if present
         handlers = llm.callback_manager.handlers
@@ -167,9 +167,9 @@ class EventDisplayer:
 
         llm_event = LLMEvent(
             input_messages=[Message.from_llama_index(msg) for msg in messages],
-            output_messages=[Message.from_string(role="assistant", content=aggregate, name=llm_config.name)],
+            output_messages=[Message.from_string(role="assistant", content=aggregate, name=llm_config.model_name)],
             invocation_parameters=llm_config.model_dump(),
-            chat_model_name=llm_config.name,
+            chat_model_name=llm_config.model_name,
             provider=llm_config.__class__.__name__,
             token_count_prompt=token_count_prompt,
             token_count_completion=token_count_completion,

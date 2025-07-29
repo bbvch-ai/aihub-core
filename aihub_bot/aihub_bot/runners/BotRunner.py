@@ -31,7 +31,7 @@ class BotRunner(Runner):
 
     ### Usage
     ```python
-    runner = BotRunner(api_path="/api/v1", title="My Bot Service", debug=True, conversation_ttl_days=30)
+    runner = BotRunner(api_path="/api/v1", title="My Bot Service", conversation_ttl_days=30)
     runner.mount(BotController())  # Mount bot controllers
     app = runner.get_app()  # Get the FastAPI instance
     ```
@@ -45,10 +45,9 @@ class BotRunner(Runner):
         title: str = "AI Hub Bot Service",
         description: str = "AI Hub Bots",
         origins: list[str] | None = None,
-        debug: bool = False,
         conversation_ttl_days: float = 30,
     ):
-        super().__init__(api_path, title, description, origins, debug)
+        super().__init__(api_path, title, description, origins)
 
         # Store TTL days in app state for lifetime manager to access
         self._base_app.state.conversation_ttl_days = conversation_ttl_days

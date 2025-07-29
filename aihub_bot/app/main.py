@@ -2,12 +2,10 @@ from aihub_bot.routes.openai.OpenaiChatController import OpenaiChatController
 from aihub_bot.runners.BotRunner import BotRunner
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
-from app.BotRunnerSettings import BotRunnerSettings
 
 enable_logging()
 
 runner = BotRunner()
-bot_runner_settings=BotRunnerSettings()
 
 runner.mount(
     HealthController().get_health(),

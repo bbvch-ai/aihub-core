@@ -32,7 +32,7 @@ class ApiTestRunner(ApiRunner):
     """
 
     def __init__(self):
-        super().__init__(title="Local AI Hub", description="Local version only", origins=[], debug=True)
+        super().__init__(title="Local AI Hub", description="Local version only", origins=[])
 
     async def run(self) -> None:
         """

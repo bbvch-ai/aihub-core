@@ -60,7 +60,7 @@ class LiteLLMBase(BaseModel, Generic[OpenAILike], abc.ABC):
         """
         llm, cost_tracker = self.to_llama_index()
         yield llm
-        await displayer.display_llm_costs(self.name, cost_tracker)
+        await displayer.display_llm_costs(self.model_name, cost_tracker)
 
     def get_model_info(self) -> dict[str, Any]:
         config = LiteLLMProxySettings()

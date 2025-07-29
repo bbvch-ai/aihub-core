@@ -113,8 +113,8 @@ def self_hosted_agent_config(event_loop):
     # Set the event loop for this function
     asyncio.set_event_loop(event_loop)
 
-    llm_config = LLMConfig(model_name="local/llama-3.2-1B")
-    embedding_config = (EmbeddingModelConfig(model_name="local/text-embedding-gte"),)
+    llm_config = LLMConfig(model_name="local/qwen3-0.6b")
+    embedding_config = EmbeddingModelConfig(model_name="local/text-embedding-gte")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="development",

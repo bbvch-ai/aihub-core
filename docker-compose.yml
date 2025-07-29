@@ -132,12 +132,7 @@ services:
       - "4317:4317"
     environment:
       PHOENIX_SQL_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix"
-      AZURE_CLIENT_ID: ${OAUTH_CLIENT_ID} # Is this really needed? Is this not duplicate to PHOENIX_OAUTH2_MICROSOFT_ENTRA_ID_CLIENT_ID
-      PHOENIX_OAUTH2_MICROSOFT_ENTRA_ID_CLIENT_ID: ${OAUTH_CLIENT_ID}
-      PHOENIX_OAUTH2_MICROSOFT_ENTRA_ID_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
-      PHOENIX_OAUTH2_MICROSOFT_ENTRA_ID_OIDC_CONFIG_URL: ${OPENID_PROVIDER_URL}
-      PHOENIX_ENABLE_AUTH: "True"
-      PHOENIX_SECRET: ${PHOENIX_SECRET}
+      PHOENIX_ENABLE_AUTH: "False"
       VERSION: ""
     logging:
       options:
@@ -210,9 +205,18 @@ services:
     ports:
       - "8182:8182"
     command: >
-      -hf unsloth/Llama-3.2-1B-Instruct-GGUF
+      -hf unsloth/Qwen3-0.6B-GGUF
       --port 8182
-      -c 8192
+      --jinja
+      -fa 
+      -sm row 
+      --temp 0.6 
+      --top-k 20 
+      --top-p 0.95 
+      --min-p 0 
+      -c 40960 
+      -n 32768 
+      --no-context-shift
     restart: always
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]

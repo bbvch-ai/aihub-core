@@ -136,7 +136,7 @@ class RAGAgent(Agent):
         Retrieves relevant nodes from the knowledge base.
         """
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
-        embedding, _ = retrieve_step_config.embed_model.to_llama_index(model_parameter=None)
+        embedding, _ = retrieve_step_config.embed_model.to_llama_index()
 
         if isinstance(event, StandaloneQuestionCondenserEvent):
             query = event.condensed_chat_message.content

@@ -13,20 +13,20 @@ model_list:
     model_info:
       mode: chat
 
-  - model_name: local/llama-3.2-1b
+  - model_name: local/qwen3-0.6b
     litellm_params:
-      model: openai/unsloth/Llama-3.2-1B-Instruct-GGUF
+      model: openai/unsloth/Qwen3-0.6B-GGUF
       api_base: http://llama-cpp:8182/v1
       api_key: None
     model_info:
       mode: chat
-      max_input_tokens: 4096
+      max_input_tokens: 32768
       supports_function_calling: true
-      max_output_tokens: 1024
+      max_output_tokens: 4096
       input_cost_per_token: 0
       output_cost_per_token: 0
       custom_tokenizer:
-        identifier: unsloth/Llama-3.2-1B-Instruct-GGUF
+        identifier: Qwen/Qwen3-0.6B
         revision: main
         auth_token: os.environ/HUGGINGFACE_API_KEY
 
