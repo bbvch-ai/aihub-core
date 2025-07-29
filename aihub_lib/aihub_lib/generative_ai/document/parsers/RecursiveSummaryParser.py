@@ -316,16 +316,24 @@ class RecursiveNodeSummarizer:
             if isinstance(level, int):
                 return level
 
+        return RecursiveSummaryParser._find_deepest_header_level(node)
+
+    @staticmethod
+    def _find_deepest_header_level(node: TextNode) -> int:
+        """Find the deepest header level that has content."""
         for i in range(1, 7):
             if node.metadata.get(f"h{i}") is not None:
-                is_deepest_at_this_h_level: bool = True
-                for j in range(i + 1, 7):
-                    if node.metadata.get(f"h{j}") is not None:
-                        is_deepest_at_this_h_level = False
-                        break
-                if is_deepest_at_this_h_level:
+                if RecursiveSummaryParser._is_deepest_header_level(node, i):
                     return i
         return 0
+
+    @staticmethod
+    def _is_deepest_header_level(node: TextNode, level: int) -> bool:
+        """Check if the given level is the deepest header level with content."""
+        for j in range(level + 1, 7):
+            if node.metadata.get(f"h{j}") is not None:
+                return False
+        return True
 
     def _group_nodes_by_level(self, nodes: list[TextNode]) -> dict[int, list[TextNode]]:
         grouped_nodes = {}
