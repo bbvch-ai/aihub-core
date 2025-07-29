@@ -214,7 +214,7 @@ class PersistedAgentEventEntity(Document):
                     "run_id_val": {MONGODB_FIRST: "$run_id"},  # Keep run_id for next stage
                     "display_id": {MONGODB_FIRST: "$display_id"},
                     "event_time": {MONGODB_FIRST: "$event_time"},
-                    "event_parents": {MONGODB_FIRST: "$event_parents"},
+                    "event_parents": {MONGODB_FIRST: MONGODB_EVENT_PARENTS},
                     "agent_class": {MONGODB_FIRST: "$agent_class"},
                     "agent_id": {MONGODB_FIRST: "$agent_id"},
                     "event_data": {MONGODB_FIRST: "$event_data"},  # For LLM cost calculation
@@ -235,7 +235,7 @@ class PersistedAgentEventEntity(Document):
                             MONGODB_COND: [
                                 {
                                     "$and": [
-                                        {"$in": ["StartEvent", "$event_parents"]},
+                                        {"$in": ["StartEvent", MONGODB_EVENT_PARENTS]},
                                         {"$eq": [MONGODB_EVENT_TYPE, AgentTopicManager.CONTROL_EVENT]},
                                     ]
                                 },
@@ -245,35 +245,35 @@ class PersistedAgentEventEntity(Document):
                         }
                     },
                     "stop_events": {"$sum": {MONGODB_COND: [{"$in": ["StopEvent", MONGODB_EVENT_PARENTS]}, 1, 0]}},
-                    "exception_events": {"$sum": {"$cond": [{"$in": ["ExceptionEvent", "$event_parents"]}, 1, 0]}},
+                    "exception_events": {"$sum": {MONGODB_COND: [{"$in": ["ExceptionEvent", MONGODB_EVENT_PARENTS]}, 1, 0]}},
                     "hitl_request_events": {
-                        "$sum": {"$cond": [{"$in": ["HumanInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
+                        "$sum": {MONGODB_COND: [{"$in": ["HumanInTheLoopRequestEvent", MONGODB_EVENT_PARENTS]}, 1, 0]}
                     },
                     "hitl_response_events": {
-                        "$sum": {"$cond": [{"$in": ["HumanInTheLoopResponseEvent", "$event_parents"]}, 1, 0]}
+                        "$sum": {MONGODB_COND: [{"$in": ["HumanInTheLoopResponseEvent", MONGODB_EVENT_PARENTS]}, 1, 0]}
                     },
                     "bitl_request_events": {
-                        "$sum": {"$cond": [{"$in": ["BotInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
+                        "$sum": {MONGODB_COND: [{"$in": ["BotInTheLoopRequestEvent", MONGODB_EVENT_PARENTS]}, 1, 0]}
                     },
                     "bitl_response_events": {
-                        "$sum": {"$cond": [{"$in": ["BotInTheLoopResponseEvent", "$event_parents"]}, 1, 0]}
+                        "$sum": {MONGODB_COND: [{"$in": ["BotInTheLoopResponseEvent", MONGODB_EVENT_PARENTS]}, 1, 0]}
                     },
                     "aitl_request_events": {
-                        "$sum": {"$cond": [{"$in": ["AgentInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
+                        "$sum": {MONGODB_COND: [{"$in": ["AgentInTheLoopRequestEvent", MONGODB_EVENT_PARENTS]}, 1, 0]}
                     },
                     "aitl_response_events": {
-                        "$sum": {"$cond": [{"$in": ["AgentInTheLoopResponseEvent", "$event_parents"]}, 1, 0]}
+                        "$sum": {MONGODB_COND: [{"$in": ["AgentInTheLoopResponseEvent", MONGODB_EVENT_PARENTS]}, 1, 0]}
                     },
                     # --- Calculate LLM Cost ---
                     "llm_cost": {
                         "$sum": {
-                            "$cond": {
-                                "if": {"$in": ["LLMCostEvent", "$event_parents"]},
+                            MONGODB_COND: {
+                                "if": {"$in": ["LLMCostEvent", MONGODB_EVENT_PARENTS]},
                                 "then": {
                                     "$add": [
-                                        {"$ifNull": ["$event_data.prompt_tokens_costs", 0]},
-                                        {"$ifNull": ["$event_data.completion_tokens_costs", 0]},
-                                        {"$ifNull": ["$event_data.embedding_tokens_costs", 0]},
+                                        {MONGODB_IF_NULL: ["$event_data.prompt_tokens_costs", 0]},
+                                        {MONGODB_IF_NULL: ["$event_data.completion_tokens_costs", 0]},
+                                        {MONGODB_IF_NULL: ["$event_data.embedding_tokens_costs", 0]},
                                     ]
                                 },
                                 "else": 0,
@@ -289,7 +289,7 @@ class PersistedAgentEventEntity(Document):
                             "agent_class": "$agent_class",
                             "agent_id": "$agent_id",
                             "event_time": "$event_time",
-                            "is_start": {"$in": ["StartEvent", "$event_parents"]},
+                            "is_start": {"$in": ["StartEvent", MONGODB_EVENT_PARENTS]},
                             "is_not_user": {"$ne": ["$agent_class", "UserAgent"]},
                             "is_control": {"$eq": [MONGODB_EVENT_TYPE, AgentTopicManager.CONTROL_EVENT]},
                         }
@@ -303,9 +303,9 @@ class PersistedAgentEventEntity(Document):
                     "started_at": "$first_event_time",
                     "ended_at": "$latest_event_time",
                     "duration": {
-                        "$cond": {
-                            "if": {"$and": ["$first_event_time", "$latest_event_time"]},
-                            "then": {"$divide": [{"$subtract": ["$latest_event_time", "$first_event_time"]}, 1000]},
+                        MONGODB_COND: {
+                            "if": {"$and": [MONGODB_FIRST_EVENT_TIME, MONGODB_LATEST_EVENT_TIME]},
+                            "then": {MONGODB_DIVIDE: [{"$subtract": [MONGODB_LATEST_EVENT_TIME, MONGODB_FIRST_EVENT_TIME]}, 1000]},
                             "else": None,
                         }
                     },
