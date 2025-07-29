@@ -202,7 +202,7 @@ class PersistedAgentEventEntity(Document):
             # 1. Match events for the given thread
             {MONGODB_MATCH: {"thread_id": thread_id}},
             # 2. Add a standardized BSON date field (simplified)
-            {"$addFields": {"event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1e6]}}}},
+            {MONGODB_ADD_FIELDS: {"event_time": {MONGODB_TO_DATE: {MONGODB_DIVIDE: ["$event_data.created_at", 1e6]}}}},
             # 3. Sort events within the thread by time
             {"$sort": {"event_time": 1}},
             # 4. Group by run_id and event_id to de-duplicate events
@@ -509,7 +509,7 @@ class PersistedAgentEventEntity(Document):
             # 1. Match events based on primary criteria
             {MONGODB_MATCH: match_filter},
             # 2. Add a standardized BSON date field
-            {"$addFields": {"event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1e6]}}}},
+            {MONGODB_ADD_FIELDS: {"event_time": {MONGODB_TO_DATE: {MONGODB_DIVIDE: ["$event_data.created_at", 1e6]}}}},
             # 3. Create time buckets (timestamp in milliseconds)
             {
                 "$addFields": {
