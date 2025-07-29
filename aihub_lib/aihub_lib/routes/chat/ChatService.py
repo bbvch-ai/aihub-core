@@ -88,6 +88,25 @@ class ChatService:
         """
         Common initialization steps for both streaming and JSON interactions.
         """
+        thread = ChatService._get_or_create_thread(user, agent_class, agent_id, thread_id)
+        event, resolved_display_id = ChatService._create_interaction_event(
+            thread, user, agent_class, agent_id, messages, display_id, files, locale
+        )
+        
+        topic_manager = AgentThreadTopicManager(
+            agent_class="*" if subscribe_to_thread else agent_class,
+            agent_id="*" if subscribe_to_thread else agent_id,
+            thread_id=event.thread_id,
+            display_id=event.display_id,
+            run_id="*",
+        )
+        return event, topic_manager
+
+    @staticmethod
+    def _get_or_create_thread(
+        user: UserIdentity, agent_class: str, agent_id: str, thread_id: ObjectId | None
+    ) -> ThreadEntity:
+        """Get existing thread or create new one."""
         thread = None
         if thread_id:
             try:
@@ -107,7 +126,20 @@ class ChatService:
                 thread_id=ObjectId(thread_id) or ObjectId(),
             )
         logger.debug(f"Created thread: {thread.id}")
+        return thread
 
+    @staticmethod
+    def _create_interaction_event(
+        thread: ThreadEntity,
+        user: UserIdentity,
+        agent_class: str,
+        agent_id: str,
+        messages: list[ChatMessage],
+        display_id: ObjectId | None,
+        files: list[UserUploadedFile] | None,
+        locale: str | None,
+    ) -> tuple[ExternalAgentEvent, str]:
+        """Create the interaction event based on HITL status."""
         hitl_requests = PersistedAgentEventEntity.human_in_the_loop_request_events_for_thread(str(thread.id))
         logger.debug(f"hitl_requests: {hitl_requests}")
 
@@ -115,53 +147,69 @@ class ChatService:
         logger.debug(f"hitl_responses: {hitl_responses}")
 
         thread_id = str(thread.id)
-        display_id = display_id or str(ObjectId())
+        resolved_display_id = display_id or str(ObjectId())
 
         if len(hitl_requests) != len(hitl_responses):
-            open_hitl_request = HumanInTheLoopRequestEvent.deserialize_event(hitl_requests[-1].event_data)
-            topic = open_hitl_request.topic
-            parent_classes = [topic.event_name, HumanInTheLoopResponseEvent.event_name_from_class()] + list(
-                get_parent_classes_until_base(HumanInTheLoopResponseEvent, BaseEvent)
+            event, resolved_display_id = ChatService._create_hitl_response_event(
+                hitl_requests, messages, resolved_display_id
             )
-            event = HumanInTheLoopResponseEvent.deserialize_event(
-                {
-                    "_event_name": topic.event_name,
-                    "_parent_event_names": parent_classes,
-                    "response": messages[-1].content,
-                    "request_event": open_hitl_request.model_dump(),
-                }
-            )
-            display_id = event.request_event.topic.display_id
         else:
-            agent_config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
-            if agent_config_entity is None:
-                logger.info(f"Agent config not found for class {agent_class} and id {agent_id}. Using default config.")
-                agent_config_dict = None
-            else:
-                agent_config_dict = AgentConfig.from_entity(agent_config_entity).model_dump()
-            event = UserMessageEvent(
-                messages=messages,
-                user=user,
-                locale=locale or LocaleHandler.DEFAULT_LOCALE,
-                files=files,
-                agent_config=agent_config_dict,
+            event = ChatService._create_user_message_event(
+                agent_class, agent_id, messages, user, locale, files
             )
 
-        event = ExternalAgentEvent(
-            thread_id=str(thread_id),
-            display_id=str(display_id),
+        external_event = ExternalAgentEvent(
+            thread_id=thread_id,
+            display_id=str(resolved_display_id),
             event=event,
         )
-        logger.debug(f"Created event: {event}")
+        logger.debug(f"Created event: {external_event}")
+        return external_event, str(resolved_display_id)
 
-        topic_manager = AgentThreadTopicManager(
-            agent_class="*" if subscribe_to_thread else agent_class,
-            agent_id="*" if subscribe_to_thread else agent_id,
-            thread_id=event.thread_id,
-            display_id=event.display_id,
-            run_id="*",
+    @staticmethod
+    def _create_hitl_response_event(
+        hitl_requests: list, messages: list[ChatMessage], display_id: str
+    ) -> tuple[HumanInTheLoopResponseEvent, str]:
+        """Create HITL response event."""
+        open_hitl_request = HumanInTheLoopRequestEvent.deserialize_event(hitl_requests[-1].event_data)
+        topic = open_hitl_request.topic
+        parent_classes = [topic.event_name, HumanInTheLoopResponseEvent.event_name_from_class()] + list(
+            get_parent_classes_until_base(HumanInTheLoopResponseEvent, BaseEvent)
         )
-        return event, topic_manager
+        event = HumanInTheLoopResponseEvent.deserialize_event(
+            {
+                "_event_name": topic.event_name,
+                "_parent_event_names": parent_classes,
+                "response": messages[-1].content,
+                "request_event": open_hitl_request.model_dump(),
+            }
+        )
+        return event, event.request_event.topic.display_id
+
+    @staticmethod
+    def _create_user_message_event(
+        agent_class: str,
+        agent_id: str,
+        messages: list[ChatMessage],
+        user: UserIdentity,
+        locale: str | None,
+        files: list[UserUploadedFile] | None,
+    ) -> UserMessageEvent:
+        """Create user message event."""
+        agent_config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+        if agent_config_entity is None:
+            logger.info(f"Agent config not found for class {agent_class} and id {agent_id}. Using default config.")
+            agent_config_dict = None
+        else:
+            agent_config_dict = AgentConfig.from_entity(agent_config_entity).model_dump()
+        
+        return UserMessageEvent(
+            messages=messages,
+            user=user,
+            locale=locale or LocaleHandler.DEFAULT_LOCALE,
+            files=files,
+            agent_config=agent_config_dict,
+        )
 
     @staticmethod
     async def start_stream_chat_interaction(
