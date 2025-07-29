@@ -30,7 +30,7 @@ class AgentWorkEvent(WorkEvent, Generic[TEvent]):
         """
         if cls is AgentWorkEvent:
             raise TypeError(
-                "Cannot get stop event type from the non-specialized " "generic base class 'AgentWorkEvent'."
+                "Cannot get stop event type from the non-specialized generic base class 'AgentWorkEvent'."
             )
 
         field_info = cls.model_fields.get("agent_stop_event")
@@ -48,6 +48,6 @@ class AgentWorkEvent(WorkEvent, Generic[TEvent]):
 
         for t in base_types:
             if not inspect.isclass(t):
-                raise TypeError(f"Extracted type '{t}' is not a class. " f"Full annotation was '{field_annotation}'.")
+                raise TypeError(f"Extracted type '{t}' is not a class. Full annotation was '{field_annotation}'.")
 
         return cast(tuple[type[StopEvent], ...], base_types)
