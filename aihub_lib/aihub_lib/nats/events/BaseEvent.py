@@ -243,80 +243,108 @@ class BaseEvent(BaseModel):
         Given raw event data, deserializes it into the most specific event class possible
         based on inheritance hierarchy, while preserving original type information.
         """
+        json_data = cls._parse_input_data(data)
+        json_data = cls._process_nested_events(json_data)
+        
+        event_name: str = json_data.get("_event_name")
+        parent_classes: list[str] = json_data.get("_parent_event_names", [])
+        
+        # Try exact match first
+        exact_event = cls._try_exact_event_match(event_name, json_data)
+        if exact_event:
+            return exact_event
+        
+        # Try parent class match
+        parent_event = cls._try_parent_class_match(event_name, parent_classes, json_data)
+        if parent_event:
+            return parent_event
+        
+        # Fallback to BaseEvent
+        return cls._create_fallback_event(event_name, parent_classes, json_data)
+
+    @classmethod
+    def _parse_input_data(cls, data: bytes | str | dict[str, Any]) -> dict[str, Any]:
+        """Parse input data into a dictionary format."""
         if isinstance(data, dict):
-            json_data = data.copy()
+            return data.copy()
         elif isinstance(data, str):
-            json_data = json.loads(data)
+            return json.loads(data)
         elif isinstance(data, bytes):
-            json_data = json.loads(data.decode())
+            return json.loads(data.decode())
         else:
             raise ValueError(f"Cannot deserialize data of type {type(data)}")
 
-        # First, process any nested events recursively
+    @classmethod
+    def _process_nested_events(cls, json_data: dict[str, Any]) -> dict[str, Any]:
+        """Process nested events recursively."""
         for key, value in list(json_data.items()):
             if isinstance(value, dict) and "_event_name" in value:
                 json_data[key] = cls.deserialize_event(value)
-            # Handle lists containing events
             elif isinstance(value, list):
                 json_data[key] = [
                     cls.deserialize_event(item) if isinstance(item, dict) and "_event_name" in item else item
                     for item in value
                 ]
+        return json_data
 
-        # Get event type and parent classes
-        event_name: str = json_data.get("_event_name")
-        parent_classes: list[str] = json_data.get("_parent_event_names", [])
-
-        # If the exact class is registered, try to instantiate it and propagate any validation errors
+    @classmethod
+    def _try_exact_event_match(cls, event_name: str, json_data: dict[str, Any]) -> "BaseEvent" | None:
+        """Try to instantiate the exact event class if it exists in registry."""
         if event_name and isinstance(event_name, str):
             event_class = cls._event_registry.get(event_name)
             if event_class:
                 return event_class(**json_data)
+        return None
 
-        # If we get here, either:
-        # 1. The event type wasn't in our registry, or
-        # 2. The event type was null/invalid
+    @classmethod
+    def _try_parent_class_match(cls, event_name: str, parent_classes: list[str], json_data: dict[str, Any]) -> "BaseEvent" | None:
+        """Try to find and instantiate the most specific parent class."""
+        if not parent_classes or not isinstance(parent_classes, list):
+            return None
+            
+        for class_name in parent_classes:
+            event_class = cls._event_registry.get(class_name)
+            if event_class:
+                try:
+                    # Handle special case for control and display events
+                    event_class = cls._resolve_control_display_event_class(event_class, parent_classes)
+                    
+                    # Create the instance with the parent class
+                    event = event_class(**json_data)
+                    cls._set_unknown_event_attributes(event, event_name, parent_classes, json_data)
+                    
+                    logger.warning(
+                        f"{event_name} not found in registry. Using closest parent {event_class.__name__}."
+                    )
+                    return event
+                except Exception as e:
+                    logger.warning(f"Failed to create {event_class.__name__} instance: {e}. Trying next candidate.")
+        return None
 
-        # Try to find the most specific parent class
-        if parent_classes and isinstance(parent_classes, list):
-            for class_name in parent_classes:
-                event_class = cls._event_registry.get(class_name)
-                if event_class:
-                    try:
-                        # Special case handling for control and display events
-                        if event_class.__name__ == "ControlEvent" and "DisplayEvent" in parent_classes:
-                            event_class = cls._event_registry.get("ControlAndDisplayEvent")
+    @classmethod
+    def _resolve_control_display_event_class(cls, event_class: type, parent_classes: list[str]) -> type:
+        """Resolve special case handling for control and display events."""
+        if event_class.__name__ == "ControlEvent" and "DisplayEvent" in parent_classes:
+            return cls._event_registry.get("ControlAndDisplayEvent") or event_class
+        if event_class.__name__ == "DisplayEvent" and "ControlEvent" in parent_classes:
+            return cls._event_registry.get("ControlAndDisplayEvent") or event_class
+        return event_class
 
-                        if event_class.__name__ == "DisplayEvent" and "ControlEvent" in parent_classes:
-                            event_class = cls._event_registry.get("ControlAndDisplayEvent")
-
-                        # Create the instance with the parent class
-                        event = event_class(**json_data)
-
-                        # Set the private attributes since this isn't the exact original class
-                        event._unknown_event_name = event_name
-                        event._unknown_data = json_data
-                        event._unknown_parent_classes = parent_classes
-
-                        logger.warning(
-                            f"{event_name} not found in registry. Using closest parent {event_class.__name__}."
-                        )
-
-                        return event
-                    except Exception as e:
-                        logger.warning(f"Failed to create {event_class.__name__} instance: {e}. Trying next candidate.")
-
-        # If all else fails, fall back to BaseEvent
+    @classmethod
+    def _create_fallback_event(cls, event_name: str, parent_classes: list[str], json_data: dict[str, Any]) -> "BaseEvent":
+        """Create fallback BaseEvent when no specific class can be found."""
         logger.warning(f"{event_name} not found in registry. Using fallback {cls.__name__}.")
-
+        
         event = cls(**json_data)
+        cls._set_unknown_event_attributes(event, event_name, parent_classes, json_data)
+        return event
 
-        # Set private attributes for BaseEvent fallback
+    @classmethod
+    def _set_unknown_event_attributes(cls, event: "BaseEvent", event_name: str, parent_classes: list[str], json_data: dict[str, Any]) -> None:
+        """Set private attributes for unknown/fallback events."""
         event._unknown_event_name = event_name
         event._unknown_data = json_data
         event._unknown_parent_classes = parent_classes
-
-        return event
 
     def to_trace_dict(self) -> dict[str, Any]:
         """
