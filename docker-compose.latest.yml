@@ -275,7 +275,7 @@ services:
   # </editor-fold">
 
   # === Dagster Stack ===
-
+  # <editor-fold desc="Dagster Stack">
   oauth2proxy:
     image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
     environment:
@@ -348,6 +348,7 @@ services:
       options:
         max-size: "10m"
         max-file: "2"
+  # </editor-fold>
 
   # === Nats & Redis Stack ===
   # <editor-fold desc="NATS & Redis Stack">

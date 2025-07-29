@@ -31,6 +31,14 @@ from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
 from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
+from app.default_rag_pipeline.PipelineRunnerSettings import PipelineRunnerSettings
+
+# Requires the following env variables to be set:
+# - S3_ENDPOINT_URL
+# - S3_ACCESS_KEY
+# - S3_SECRET_KEY
+# - S3_REGION
+
 
 # Configuration: Change this to switch between cloud providers
 DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
@@ -69,6 +77,8 @@ remove_job = materialize_asset_job(
     asset_selection=AssetSelection.keys(REMOVED_DOCUMENTS_KEY),
 )
 
+runner = PipelineRunnerSettings()
+
 defs = Definitions(
     assets=assets,
     resources={
@@ -79,7 +89,7 @@ defs = Definitions(
         "node_parser": MarkdownStructuralNodeParserResource(),
         "summary_parser": RecursiveSummaryParserResource(),
         **local_mongo_milvus_storage_context_resource(
-            vector_store_uri="http://localhost:19530",
+            vector_store_uri=runner.VECTOR_STORE_URI,
             store_name=STORE_NAME,
             namespace_name=NAMESPACE_NAME,
         ),
@@ -91,7 +101,8 @@ defs = Definitions(
         "embedding_model": EmbeddingModelResource(
             embedding_config=AzureOpenAIEmbeddingConfig(
                 name="text-embedding-3-large",
-                base_url="https://bbvaihub-openai-sui.openai.azure.com/",
+                base_url=runner.MODEL_SUI_URL,
+                api_key=runner.MODEL_SUI_API_KEY,
                 api_version="2023-05-15",
                 embedding_tokens_costs_per_thousand=0.000118,
                 default_parameter=AzureOpenAIEmbeddingParameter(),
@@ -100,7 +111,8 @@ defs = Definitions(
         "language_model": LanguageModelResource(
             llm_config=AzureOpenAILLMConfig(
                 name="gpt-4o-mini",
-                base_url="https://bbvaihub-openai-sui.openai.azure.com/",
+                base_url=runner.MODEL_SUI_URL,
+                api_key=runner.MODEL_SUI_API_KEY,
                 api_version="2024-12-01-preview",
                 prompt_tokens_costs_per_thousand=0.00013599,
                 completion_tokens_costs_per_thousand=0.0005440,
