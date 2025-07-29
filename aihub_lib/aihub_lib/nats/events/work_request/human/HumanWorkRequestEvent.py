@@ -65,51 +65,63 @@ class HumanWorkRequestEvent(WorkRequestEvent):
 
     forms: Annotated[list[HumanWorkEvent], Field(description="The list of forms.")]
 
-    @model_validator(mode="after")
-    def validate_forms_and_attributes(self) -> "HumanWorkRequestEvent":
-        """Ensures that the forms provided exactly match all work event options placed on the work request event."""
-        cls = self.__class__
-        forms = self.forms
-        all_errors = []
-
-        # Part 1: Validate that custom form attributes are FormkitElements
-        # Define the set of fields inherited from the base HumanWorkEvent to ignore.
+    def _validate_form_attributes(self, forms: list[HumanWorkEvent]) -> list[str]:
+        """Validate that custom form attributes are FormkitElements."""
+        errors = []
         base_form_fields = set(HumanWorkEvent.model_fields.keys())
 
         for i, form in enumerate(forms):
-            # Isolate fields specific to the subclass (e.g., in HumanBWork)
-            # by removing the base event fields.
             custom_fields = set(form.model_fields.keys()) - base_form_fields
-
             for field_name in custom_fields:
                 field_value = getattr(form, field_name)
                 if not isinstance(field_value, FormkitElement):
-                    all_errors.append(
+                    errors.append(
                         f"Attribute Error: In form {i} ({type(form).__name__}), "
                         f"field '{field_name}' must be a FormkitElement, "
                         f"but received type '{type(field_value).__name__}'."
                     )
+        return errors
 
-        # Part 2: Validate form types and counts against ClassVars
+    def _get_expected_form_types(self) -> list[type]:
+        """Extract expected form types from ClassVars."""
         expected_types = []
-        # Find all ClassVars on this class (e.g., HumanBWorkRequest) that
-        # define an expected form type.
+        cls = self.__class__
+        
         for key in cls.__annotations__:
             if get_origin(getattr(cls, "__annotations__", {}).get(key)) is ClassVar:
                 class_var_value = getattr(cls, key, None)
-                # Check if the ClassVar's value is a class that inherits from HumanWorkEvent
                 if isinstance(class_var_value, type) and issubclass(class_var_value, HumanWorkEvent):
                     expected_types.append(class_var_value)
+        
+        return expected_types
 
-        # This check only runs if the class has defined expected forms via ClassVars.
+    def _validate_form_types(self, forms: list[HumanWorkEvent], expected_types: list[type]) -> list[str]:
+        """Validate form types and counts against expected types."""
+        errors = []
+        
         if expected_types:
             actual_types = [type(form) for form in forms]
             if Counter(actual_types) != Counter(expected_types):
                 expected = sorted([t.__name__ for t in expected_types])
                 actual = sorted([t.__name__ for t in actual_types])
-                all_errors.append(
+                errors.append(
                     f"Form List Error: The list of forms is incorrect. Expected: {expected}, Got: {actual}."
                 )
+        
+        return errors
+
+    @model_validator(mode="after")
+    def validate_forms_and_attributes(self) -> "HumanWorkRequestEvent":
+        """Ensures that the forms provided exactly match all work event options placed on the work request event."""
+        forms = self.forms
+        all_errors = []
+
+        # Part 1: Validate that custom form attributes are FormkitElements
+        all_errors.extend(self._validate_form_attributes(forms))
+
+        # Part 2: Validate form types and counts against ClassVars
+        expected_types = self._get_expected_form_types()
+        all_errors.extend(self._validate_form_types(forms, expected_types))
 
         # Raise a single error with all collected messages
         if all_errors:
