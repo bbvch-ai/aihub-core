@@ -119,75 +119,144 @@ class RecursiveNodeSummarizer:
         level: int,
         summarizer: LLMSummarizer,
     ) -> list[TextNode]:
+        if not level_nodes:
+            return self._handle_empty_level_nodes(direct_child_summaries, level, summarizer)
+
         summarized_nodes_for_this_level: list[TextNode] = []
         processed_original_node_ids: set[str] = set()
         current_index_for_level: int = 0
 
-        if not level_nodes:
-            if direct_child_summaries:
-                summary_node_from_children: TextNode | None = self._summarize_summaries(
-                    direct_child_summaries, level, summarizer, index=current_index_for_level
-                )
-                if summary_node_from_children:
-                    summarized_nodes_for_this_level.append(summary_node_from_children)
-            return summarized_nodes_for_this_level
-
-        for node_idx, node in enumerate(level_nodes):
+        for node in level_nodes:
             if node.node_id in processed_original_node_ids:
                 continue
 
-            current_group_original_nodes: list[TextNode] = [node]
-            processed_original_node_ids.add(node.node_id)
-            temp_curr: TextNode = node
-
-            while NodeRelationship.NEXT in temp_curr.relationships:
-                next_node_id: str = temp_curr.relationships[NodeRelationship.NEXT].node_id
-                next_node_obj: TextNode | None = self.node_id_to_node.get(next_node_id)
-
-                if (
-                    next_node_obj
-                    and isinstance(next_node_obj, TextNode)
-                    and self._get_summary_level(next_node_obj) == level
-                    and self._headers_match_for_grouping(node, next_node_obj, level)
-                ):
-                    if next_node_obj.node_id in processed_original_node_ids:
-                        break
-                    current_group_original_nodes.append(next_node_obj)
-                    processed_original_node_ids.add(next_node_obj.node_id)
-                    temp_curr = next_node_obj
-                else:
-                    break
-
-            relevant_hierarchical_children: list[TextNode] = self._get_relevant_child_summaries(
-                node, direct_child_summaries
+            summary_node = self._process_node_group(
+                node, processed_original_node_ids, direct_child_summaries, 
+                level, summarizer, current_index_for_level
             )
-
-            combined_text_sources: list[TextNode] = current_group_original_nodes + relevant_hierarchical_children
-            combined_text: str = "\n\n".join(n.text for n in combined_text_sources if n.text and n.text.strip()).strip()
-
-            if not combined_text:
-                continue
-
-            summary_text: str = combined_text
-            if len(combined_text) >= self.min_summarization_length or level == 0:
-                summary_text = summarizer.summarize(combined_text)
-                if not summary_text.strip() and combined_text:
-                    summary_text = combined_text
-
-            if not summary_text.strip():
-                continue
-
-            summary_node: TextNode = self._create_summary_node(node, summary_text, level, index=current_index_for_level)
-            current_index_for_level += 1
-
-            for source_node in current_group_original_nodes:
-                self._set_parent_child(source_node, summary_node)
-            for child_sum_source in relevant_hierarchical_children:
-                self._set_parent_child(child_sum_source, summary_node)
-
-            summarized_nodes_for_this_level.append(summary_node)
+            
+            if summary_node:
+                summarized_nodes_for_this_level.append(summary_node)
+                current_index_for_level += 1
 
         return summarized_nodes_for_this_level
+
+    def _handle_empty_level_nodes(
+        self, direct_child_summaries: list[TextNode], level: int, summarizer: LLMSummarizer
+    ) -> list[TextNode]:
+        """Handle the case when level_nodes is empty."""
+        if not direct_child_summaries:
+            return []
+            
+        summary_node = self._summarize_summaries(direct_child_summaries, level, summarizer, index=0)
+        return [summary_node] if summary_node else []
+
+    def _process_node_group(
+        self,
+        node: TextNode,
+        processed_original_node_ids: set[str],
+        direct_child_summaries: list[TextNode],
+        level: int,
+        summarizer: LLMSummarizer,
+        current_index: int,
+    ) -> TextNode | None:
+        """Process a group of nodes that should be summarized together."""
+        # Collect all nodes in the current group
+        current_group_original_nodes = self._collect_grouped_nodes(node, processed_original_node_ids, level)
+        
+        # Get relevant child summaries
+        relevant_hierarchical_children = self._get_relevant_child_summaries(node, direct_child_summaries)
+        
+        # Create summary text
+        summary_text = self._create_summary_text(
+            current_group_original_nodes, relevant_hierarchical_children, level, summarizer
+        )
+        
+        if not summary_text.strip():
+            return None
+
+        # Create and configure summary node
+        summary_node = self._create_summary_node(node, summary_text, level, index=current_index)
+        self._establish_parent_child_relationships(
+            summary_node, current_group_original_nodes, relevant_hierarchical_children
+        )
+        
+        return summary_node
+
+    def _collect_grouped_nodes(
+        self, start_node: TextNode, processed_original_node_ids: set[str], level: int
+    ) -> list[TextNode]:
+        """Collect all nodes that should be grouped together for summarization."""
+        current_group_original_nodes: list[TextNode] = [start_node]
+        processed_original_node_ids.add(start_node.node_id)
+        temp_curr: TextNode = start_node
+
+        while NodeRelationship.NEXT in temp_curr.relationships:
+            next_node = self._get_next_groupable_node(temp_curr, start_node, level, processed_original_node_ids)
+            if not next_node:
+                break
+                
+            current_group_original_nodes.append(next_node)
+            processed_original_node_ids.add(next_node.node_id)
+            temp_curr = next_node
+
+        return current_group_original_nodes
+
+    def _get_next_groupable_node(
+        self, current_node: TextNode, start_node: TextNode, level: int, processed_ids: set[str]
+    ) -> TextNode | None:
+        """Get the next node that can be grouped with the current node."""
+        next_node_id = current_node.relationships[NodeRelationship.NEXT].node_id
+        next_node_obj = self.node_id_to_node.get(next_node_id)
+
+        if not self._is_node_groupable(next_node_obj, start_node, level, processed_ids):
+            return None
+            
+        return next_node_obj
+
+    def _is_node_groupable(
+        self, node: TextNode | None, reference_node: TextNode, level: int, processed_ids: set[str]
+    ) -> bool:
+        """Check if a node can be grouped with the reference node."""
+        return (
+            node is not None
+            and isinstance(node, TextNode)
+            and node.node_id not in processed_ids
+            and self._get_summary_level(node) == level
+            and self._headers_match_for_grouping(reference_node, node, level)
+        )
+
+    def _create_summary_text(
+        self,
+        original_nodes: list[TextNode],
+        child_summaries: list[TextNode],
+        level: int,
+        summarizer: LLMSummarizer,
+    ) -> str:
+        """Create summary text from original nodes and child summaries."""
+        combined_text_sources = original_nodes + child_summaries
+        combined_text = "\n\n".join(
+            n.text for n in combined_text_sources if n.text and n.text.strip()
+        ).strip()
+
+        if not combined_text:
+            return ""
+
+        # Apply summarization if needed
+        if len(combined_text) >= self.min_summarization_length or level == 0:
+            summary_text = summarizer.summarize(combined_text)
+            return summary_text if summary_text.strip() else combined_text
+        
+        return combined_text
+
+    def _establish_parent_child_relationships(
+        self, summary_node: TextNode, original_nodes: list[TextNode], child_summaries: list[TextNode]
+    ) -> None:
+        """Establish parent-child relationships between summary node and its sources."""
+        for source_node in original_nodes:
+            self._set_parent_child(source_node, summary_node)
+        for child_sum_source in child_summaries:
+            self._set_parent_child(child_sum_source, summary_node)
 
     @staticmethod
     def _is_node_truly_headerless(node: TextNode) -> bool:
