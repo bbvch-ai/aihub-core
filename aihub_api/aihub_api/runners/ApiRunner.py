@@ -1,12 +1,17 @@
 import logging
 from collections.abc import Callable
-from contextlib import AbstractAsyncContextManager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 
 from aihub_lib.infrastructure.ApiConfig import ApiConfig
 from aihub_lib.routes.Controller import Controller
 from aihub_lib.runners.Runner import Runner
 from fastapi import FastAPI
+from fastmcp import FastMCP
+from fastmcp.server.openapi import MCPType, RouteMap
+from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
+from starlette.routing import Mount
+from typing_extensions import override
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.i18n.middleware.I18nMiddleware import I18nMiddleware
@@ -61,6 +66,50 @@ class ApiRunner(Runner):
     def lifetime_manager(self) -> Callable[[FastAPI], AbstractAsyncContextManager]:
         return lifetime_manager
 
+    @override
+    def get_app(self) -> Starlette:
+        mcp = FastMCP.from_fastapi(
+            app=self._api_app,
+            route_maps=[
+                RouteMap(methods=["GET"], pattern=r".*\{.*\}.*", mcp_type=MCPType.RESOURCE_TEMPLATE),
+                RouteMap(methods=["GET"], pattern=r".*", mcp_type=MCPType.RESOURCE),
+                RouteMap(methods=["POST"], pattern=r".*", mcp_type=MCPType.EXCLUDE),
+                RouteMap(methods=["PUT"], pattern=r".*", mcp_type=MCPType.EXCLUDE),
+                RouteMap(methods=["PATCH"], pattern=r".*", mcp_type=MCPType.EXCLUDE),
+                RouteMap(methods=["DELETE"], pattern=r".*", mcp_type=MCPType.EXCLUDE),
+            ],
+        )
+        mcp_app = mcp.http_app(path="/")
+
+        @asynccontextmanager
+        async def combined_lifespan(app):
+            # Start API lifespan first
+            api_lifespan = self.lifetime_manager(self._api_app)
+
+            async with api_lifespan:
+                # Then start MCP lifespan
+                mcp_lifespan = mcp_app.lifespan(mcp_app)
+                async with mcp_lifespan:
+                    yield
+
+        app = Starlette(
+            routes=[Mount(self.api_path, app=self._api_app), Mount("/mcp", app=mcp_app)],
+            lifespan=combined_lifespan,
+        )
+
+        app.state.api_app = self._api_app
+        for controller in self.controllers:
+            if isinstance(controller, AgentController):
+                app.state.agent_controller = controller
+
+            if isinstance(controller, ProcessController):
+                app.state.process_controller = controller
+
+        self._api_app.state = app.state
+        mcp_app.state = app.state
+
+        return app
+
     def _get_api_app(self) -> FastAPI:
         """
         Creates the API FastAPI application that will be mounted under `api_path`.
@@ -92,13 +141,6 @@ class ApiRunner(Runner):
         This attaches the controller’s routes under the prefix defined in the controller itself.
         """
         super().mount(*controllers)
-
-        for controller in controllers:
-            if isinstance(controller, AgentController):
-                self._api_app.state.agent_controller = controller
-
-            if isinstance(controller, ProcessController):
-                self._api_app.state.process_controller = controller
 
         self._api_app.openapi_tags = [
             {

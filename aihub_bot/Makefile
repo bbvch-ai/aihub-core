@@ -24,5 +24,9 @@ test-cov:
 	                  --junitxml=pytest.xml \
 	                   || echo "No tests found. Skipping..."
 
+test:
+	@echo "Running tests in aihub_bot..."
+	poetry run pytest || echo "No tests found. Skipping..."
+
 pr-ready: format lint
 	@echo "Running full check (format, lint)..."
