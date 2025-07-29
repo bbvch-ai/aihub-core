@@ -75,43 +75,70 @@ class Message(BaseModel):
 
     def to_semantic_convention(self, key: str, i: int) -> dict[str, Any]:
         result: dict[str, Any] = {}
-        result[f"{key}.{i}.{MessageAttributes.MESSAGE_ROLE}"] = self.role
-        if self.content is not None:
-            result[f"{key}.{i}.{MessageAttributes.MESSAGE_CONTENT}"] = self.content
-        if self.name is not None:
-            result[f"{key}.{i}.{MessageAttributes.MESSAGE_NAME}"] = self.name
+        
+        # Add basic message attributes
+        self._add_basic_attributes(result, key, i)
+        
+        # Add content blocks
+        self._add_content_blocks(result, key, i)
+        
+        return result
+
+    def _add_basic_attributes(self, result: dict[str, Any], key: str, i: int) -> None:
+        """Add basic message attributes to the result dictionary."""
+        base_key = f"{key}.{i}"
+        result[f"{base_key}.{MessageAttributes.MESSAGE_ROLE}"] = self.role
+        
+        # Add optional attributes if they exist
+        optional_attrs = [
+            (self.content, MessageAttributes.MESSAGE_CONTENT),
+            (self.name, MessageAttributes.MESSAGE_NAME),
+            (self.function_call_name, MessageAttributes.MESSAGE_FUNCTION_CALL_NAME),
+            (self.tool_call_id, MessageAttributes.MESSAGE_TOOL_CALL_ID),
+        ]
+        
+        for value, attr in optional_attrs:
+            if value is not None:
+                result[f"{base_key}.{attr}"] = value
+        
+        # Add JSON-serialized attributes
         if self.tool_calls is not None:
-            result[f"{key}.{i}.{MessageAttributes.MESSAGE_TOOL_CALLS}"] = json.dumps(self.tool_calls)
-        if self.function_call_name is not None:
-            result[f"{key}.{i}.{MessageAttributes.MESSAGE_FUNCTION_CALL_NAME}"] = self.function_call_name
+            result[f"{base_key}.{MessageAttributes.MESSAGE_TOOL_CALLS}"] = json.dumps(self.tool_calls)
         if self.function_call_arguments_json is not None:
-            result[f"{key}.{i}.{MessageAttributes.MESSAGE_FUNCTION_CALL_ARGUMENTS_JSON}"] = json.dumps(
+            result[f"{base_key}.{MessageAttributes.MESSAGE_FUNCTION_CALL_ARGUMENTS_JSON}"] = json.dumps(
                 self.function_call_arguments_json
             )
-        if self.tool_call_id is not None:
-            result[f"{key}.{i}.{MessageAttributes.MESSAGE_TOOL_CALL_ID}"] = self.tool_call_id
 
-        # flatten contents
+    def _add_content_blocks(self, result: dict[str, Any], key: str, i: int) -> None:
+        """Add content blocks to the result dictionary."""
         if not self.contents:
-            return result
-
+            return
+            
         for j, block in enumerate(self.contents):
             base = f"{key}.{i}.{MessageAttributes.MESSAGE_CONTENTS}.{j}"
             result[f"{base}.{MessageContentAttributes.MESSAGE_CONTENT_TYPE}"] = block.type
-            if isinstance(block, TextContent):
-                result[f"{base}.{MessageContentAttributes.MESSAGE_CONTENT_TEXT}"] = block.text
-            elif isinstance(block, ImageContent):
-                if block.url:
-                    result[f"{base}.{MessageContentAttributes.MESSAGE_CONTENT_IMAGE}.{ImageAttributes.IMAGE_URL}"] = (
-                        block.url
-                    )
-            elif isinstance(block, AudioContent):
-                if block.url:
-                    result[f"{base}.{AudioAttributes.AUDIO_URL}"] = block.url
-                if block.mime_type:
-                    result[f"{base}.{AudioAttributes.AUDIO_MIME_TYPE}"] = block.mime_type
+            self._add_content_block_data(result, base, block)
 
-        return result
+    def _add_content_block_data(self, result: dict[str, Any], base: str, block: ContentBlock) -> None:
+        """Add specific content block data based on block type."""
+        if isinstance(block, TextContent):
+            result[f"{base}.{MessageContentAttributes.MESSAGE_CONTENT_TEXT}"] = block.text
+        elif isinstance(block, ImageContent):
+            self._add_image_content(result, base, block)
+        elif isinstance(block, AudioContent):
+            self._add_audio_content(result, base, block)
+
+    def _add_image_content(self, result: dict[str, Any], base: str, block: ImageContent) -> None:
+        """Add image content data to the result dictionary."""
+        if block.url:
+            result[f"{base}.{MessageContentAttributes.MESSAGE_CONTENT_IMAGE}.{ImageAttributes.IMAGE_URL}"] = block.url
+
+    def _add_audio_content(self, result: dict[str, Any], base: str, block: AudioContent) -> None:
+        """Add audio content data to the result dictionary."""
+        if block.url:
+            result[f"{base}.{AudioAttributes.AUDIO_URL}"] = block.url
+        if block.mime_type:
+            result[f"{base}.{AudioAttributes.AUDIO_MIME_TYPE}"] = block.mime_type
 
     @classmethod
     def from_llama_index(cls, msg: ChatMessage) -> "Message":
