@@ -151,7 +151,7 @@ services:
       WEBUI_NAME: "bbv AI-Hub"
       CORS_ALLOW_ORIGIN: "http://localhost:8080"
       ENABLE_SIGNUP: true
-      ENABLE_LOGIN_FORM: false
+      ENABLE_LOGIN_FORM: true
       ENABLE_ADMIN_EXPORT: true
       ENABLE_ADMIN_CHAT_ACCESS: true
       ENABLE_CHANNELS: false
@@ -228,9 +228,6 @@ services:
       OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
       OPENID_PROVIDER_URL: ${OPENID_PROVIDER_URL}
       OAUTH_PROVIDER_NAME: ${OAUTH_PROVIDER_NAME}
-      OAUTH_SCOPES: "openid email profile"
-      OAUTH_CODE_CHALLENGE_METHOD: "S256"
-      OPENID_REDIRECT_URI: "https://openwebui.${DOMAIN}/oauth/oidc/callback"
 
       ENABLE_DIRECT_CONNECTIONS: false
     logging:
@@ -268,6 +265,7 @@ services:
 
       # --- Allow Iframe Middleware ---
       - "traefik.http.middlewares.allow-iframe.headers.customResponseHeaders.Content-Security-Policy=frame-ancestors 'self' https://${DOMAIN}"
+      - "traefik.http.middlewares.allow-iframe.headers.customResponseHeaders.X-Frame-Options=SAMEORIGIN"
 
   # </editor-fold>
 
@@ -294,6 +292,8 @@ services:
         max-file: "2"
     labels:
       - "traefik.enable=true"
+
+      # --- phoenix Subdomain ---
       - "traefik.http.routers.phoenix.rule=Host(`phoenix.${DOMAIN}`)"
       - "traefik.http.routers.phoenix.entrypoints=websecure"
       - "traefik.http.routers.phoenix.tls.certresolver=letsencrypt"
