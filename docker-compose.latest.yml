@@ -262,7 +262,7 @@ services:
 
       # --- /api Route ---
       - "traefik.http.routers.openwebui-api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.openwebui-api.priority=200"
+      - "traefik.http.routers.openwebui-api.priority=210"
       - "traefik.http.routers.openwebui-api.entrypoints=websecure"
       - "traefik.http.routers.openwebui-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui-api.middlewares=strip-api,security-headers@file,allow-iframe"
