@@ -470,7 +470,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/v1`)"
-      - "traefik.http.routers.api.priority=100"
+      - "traefik.http.routers.api.priority=300"
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.api.middlewares=security-headers@file"
@@ -504,11 +504,15 @@ services:
         max-file: "2"
     labels:
       - "traefik.enable=true"
+
+      # --- Index / Catch-All Route ---
       - "traefik.http.routers.web.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.web.priority=200"
       - "traefik.http.routers.web.entrypoints=websecure"
       - "traefik.http.routers.web.tls.certresolver=letsencrypt"
       - "traefik.http.routers.web.middlewares=security-headers@file"
+
+      # --- Shared Service ---
       - "traefik.http.services.web.loadbalancer.server.port=80"
   # </editor-fold>
 
