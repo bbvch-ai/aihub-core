@@ -151,7 +151,7 @@ services:
       WEBUI_NAME: "bbv AI-Hub"
       CORS_ALLOW_ORIGIN: "http://localhost:8080"
       ENABLE_SIGNUP: true
-      ENABLE_LOGIN_FORM: true
+      ENABLE_LOGIN_FORM: false
       ENABLE_ADMIN_EXPORT: true
       ENABLE_ADMIN_CHAT_ACCESS: true
       ENABLE_CHANNELS: false
