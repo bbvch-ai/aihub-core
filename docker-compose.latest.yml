@@ -149,7 +149,7 @@ services:
       GLOBAL_LOG_LEVEL: "debug"
 
       WEBUI_NAME: "bbv AI-Hub"
-      CORS_ALLOW_ORIGIN: "${DOMAIN}"
+      CORS_ALLOW_ORIGIN: "https://${DOMAIN}"
       ENABLE_SIGNUP: true
       ENABLE_LOGIN_FORM: true
       ENABLE_ADMIN_EXPORT: true
