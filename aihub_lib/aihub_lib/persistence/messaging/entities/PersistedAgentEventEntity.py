@@ -74,7 +74,10 @@ MONGODB_ADD_FIELDS = "$addFields"
 MONGODB_AGENT_CLASS = "$agent_class"
 MONGODB_AGENT_ID = "$agent_id"
 MONGODB_COND = "$cond"
+MONGODB_DISPLAY_ID = "$display_id"
 MONGODB_DIVIDE = "$divide"
+MONGODB_EVENT_DATA = "$event_data"
+MONGODB_EVENT_ID = "$event_id"
 MONGODB_EVENT_PARENTS = "$event_parents"
 MONGODB_EVENT_TIME = "$event_time"
 MONGODB_EVENT_TYPE = "$event_type"
@@ -84,6 +87,8 @@ MONGODB_GROUP = MONGODB_GROUP
 MONGODB_IF_NULL = "$ifNull"
 MONGODB_LATEST_EVENT_TIME = "$latest_event_time"
 MONGODB_MATCH = "$match"
+MONGODB_RUN_ID = "$run_id"
+MONGODB_SORT = "$sort"
 MONGODB_TO_DATE = "$toDate"
 
 
@@ -202,22 +207,22 @@ class PersistedAgentEventEntity(Document):
             # 1. Match events for the given thread
             {MONGODB_MATCH: {"thread_id": thread_id}},
             # 2. Add a standardized BSON date field (simplified)
-            {MONGODB_ADD_FIELDS: {"event_time": {MONGODB_TO_DATE: {MONGODB_DIVIDE: ["$event_data.created_at", 1e6]}}}},
+            {MONGODB_ADD_FIELDS: {"event_time": {MONGODB_TO_DATE: {MONGODB_DIVIDE: [f"{MONGODB_EVENT_DATA}.created_at", 1e6]}}}},
             # 3. Sort events within the thread by time
-            {"$sort": {"event_time": 1}},
+            {MONGODB_SORT: {"event_time": 1}},
             # 4. Group by run_id and event_id to de-duplicate events
             # We take the first occurrence of each event_id within a run.
             # All fields needed for the subsequent $group stage must be preserved here.
             {
                 MONGODB_GROUP: {
-                    "_id": {"run_id": "$run_id", "event_id": "$event_id"},
-                    "run_id_val": {MONGODB_FIRST: "$run_id"},  # Keep run_id for next stage
-                    "display_id": {MONGODB_FIRST: "$display_id"},
-                    "event_time": {MONGODB_FIRST: "$event_time"},
+                    "_id": {"run_id": MONGODB_RUN_ID, "event_id": MONGODB_EVENT_ID},
+                    "run_id_val": {MONGODB_FIRST: MONGODB_RUN_ID},  # Keep run_id for next stage
+                    "display_id": {MONGODB_FIRST: MONGODB_DISPLAY_ID},
+                    "event_time": {MONGODB_FIRST: MONGODB_EVENT_TIME},
                     "event_parents": {MONGODB_FIRST: MONGODB_EVENT_PARENTS},
-                    "agent_class": {MONGODB_FIRST: "$agent_class"},
-                    "agent_id": {MONGODB_FIRST: "$agent_id"},
-                    "event_data": {MONGODB_FIRST: "$event_data"},  # For LLM cost calculation
+                    "agent_class": {MONGODB_FIRST: MONGODB_AGENT_CLASS},
+                    "agent_id": {MONGODB_FIRST: MONGODB_AGENT_ID},
+                    "event_data": {MONGODB_FIRST: MONGODB_EVENT_DATA},  # For LLM cost calculation
                     "event_type": {MONGODB_FIRST: MONGODB_EVENT_TYPE},
                 }
             },
@@ -509,7 +514,7 @@ class PersistedAgentEventEntity(Document):
             # 1. Match events based on primary criteria
             {MONGODB_MATCH: match_filter},
             # 2. Add a standardized BSON date field
-            {MONGODB_ADD_FIELDS: {"event_time": {MONGODB_TO_DATE: {MONGODB_DIVIDE: ["$event_data.created_at", 1e6]}}}},
+            {MONGODB_ADD_FIELDS: {"event_time": {MONGODB_TO_DATE: {MONGODB_DIVIDE: [f"{MONGODB_EVENT_DATA}.created_at", 1e6]}}}},
             # 3. Create time buckets (timestamp in milliseconds)
             {
                 "$addFields": {
