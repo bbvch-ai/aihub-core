@@ -269,14 +269,14 @@ services:
 
       # --- /api Route ---
       - "traefik.http.routers.openwebui-api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.openwebui-api.priority=210"
+      - "traefik.http.routers.openwebui-api.priority=220"
       - "traefik.http.routers.openwebui-api.entrypoints=websecure"
       - "traefik.http.routers.openwebui-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui-api.middlewares=security-headers@file,allow-iframe"
 
       # --- Index / Catch-All Route ---
       - "traefik.http.routers.openwebui-index.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.openwebui-index.priority=10"
+      - "traefik.http.routers.openwebui-index.priority=210"
       - "traefik.http.routers.openwebui-index.entrypoints=websecure"
       - "traefik.http.routers.openwebui-index.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui-index.middlewares=security-headers@file,allow-iframe"
