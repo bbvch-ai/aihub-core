@@ -207,19 +207,25 @@ class NodeCreatorFromSplits:
         buffer = ""
 
         for child in soup.children:
-            if self._is_special_content_type(child):
-                if buffer.strip():
-                    text_chunks.extend(self._create_text_chunks_from_buffer(buffer))
-                    buffer = ""
-                text_chunks.append(TextChunk(child.text, child.name))
-            else:
-                buffer += str(child)
+            buffer, text_chunks = self._process_soup_child(child, buffer, text_chunks)
 
         # Handle any remaining buffer content
+        self._flush_buffer_to_chunks(buffer, text_chunks)
+        return text_chunks
+
+    def _process_soup_child(self, child: bs4.element.Tag | str, buffer: str, text_chunks: list[TextChunk]) -> tuple[str, list[TextChunk]]:
+        """Process a single soup child element."""
+        if self._is_special_content_type(child):
+            self._flush_buffer_to_chunks(buffer, text_chunks)
+            text_chunks.append(TextChunk(child.text, child.name))
+            return "", text_chunks
+        else:
+            return buffer + str(child), text_chunks
+
+    def _flush_buffer_to_chunks(self, buffer: str, text_chunks: list[TextChunk]) -> None:
+        """Flush buffer content to text chunks if buffer has content."""
         if buffer.strip():
             text_chunks.extend(self._create_text_chunks_from_buffer(buffer))
-
-        return text_chunks
 
     def _is_special_content_type(self, child: bs4.element.Tag | str) -> bool:
         """Check if child is a special content type (table or figure)."""
