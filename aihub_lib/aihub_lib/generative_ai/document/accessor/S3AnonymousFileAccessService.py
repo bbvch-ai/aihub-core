@@ -78,7 +78,7 @@ class S3AnonymousFileAccessService(AbstractAnonymousFileAccessService):
             logger.debug(f"Generated presigned URL for {container}/{file_path}, expires in {lifetime_hours}h")
             return presigned_url
         except ClientError as e:
-            raise Exception(f"Failed to generate presigned URL: {e}")
+            raise RuntimeError(f"Failed to generate presigned URL: {e}") from e
 
     def get_url_signing_secret(self) -> str:
         """
