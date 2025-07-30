@@ -95,9 +95,7 @@ def build_rag_agent_config(
         ),
         number_of_input_tokens=8192,
         check_context_sufficiency=False,
-        system_prompt=LocaleString(
-            en="You are a helpful AI assistant that answers questions based on provided context."
-        ),
+        system_prompt=LocaleString(en=""),
     )
 
 
