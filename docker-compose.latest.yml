@@ -240,19 +240,34 @@ services:
         max-file: "2"
     labels:
       - "traefik.enable=true"
+
+      # --- /openwebui Route ---
       - "traefik.http.routers.openwebui.rule=Host(`${DOMAIN}`) && PathPrefix(`/openwebui`)"
-      - "traefik.http.routers.openwebui-api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.openwebui.priority=200"
       - "traefik.http.routers.openwebui.entrypoints=websecure"
       - "traefik.http.routers.openwebui.tls.certresolver=letsencrypt"
-      - "traefik.http.services.openwebui.loadbalancer.server.port=8080"
-      - "traefik.http.middlewares.allow-iframe.headers.customResponseHeaders.Content-Security-Policy=frame-ancestors 'self' https://${DOMAIN}"
-      - "traefik.http.routers.openwebui.middlewares=security-headers@file,allow-iframe, strip-openwebui"
+      - "traefik.http.routers.openwebui.middlewares=strip-openwebui,security-headers@file,allow-iframe,strip-openwebui"
+      - "traefik.http.middlewares.strip-openwebui.stripprefix.prefixes=/openwebui"
+
+      # --- /api Route ---
+      - "traefik.http.routers.openwebui-api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.openwebui-api.priority=200"
+      - "traefik.http.routers.openwebui-api.entrypoints=websecure"
+      - "traefik.http.routers.openwebui-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openwebui-api.middlewares=strip-api,security-headers@file,allow-iframe"
+
+      # --- Index / Catch-All Route ---
       - "traefik.http.routers.openwebui-index.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.openwebui-index.priority=100"
+      - "traefik.http.routers.openwebui-index.priority=10"
       - "traefik.http.routers.openwebui-index.entrypoints=websecure"
       - "traefik.http.routers.openwebui-index.tls.certresolver=letsencrypt"
-      - "traefik.http.services.openwebui-index.loadbalancer.server.port=8080"
       - "traefik.http.routers.openwebui-index.middlewares=security-headers@file,allow-iframe"
+
+      # --- Shared Service ---
+      - "traefik.http.services.openwebui.loadbalancer.server.port=8080"
+
+      # --- Allow Iframe Middleware ---
+      - "traefik.http.middlewares.allow-iframe.headers.customResponseHeaders.Content-Security-Policy=frame-ancestors 'self' https://${DOMAIN}"
 
   # </editor-fold>
 
