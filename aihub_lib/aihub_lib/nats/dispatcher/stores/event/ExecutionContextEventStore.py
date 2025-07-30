@@ -1,5 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
+from typing import Optional
 
 from aihub_lib.nats.events import BaseEvent
 
@@ -9,7 +10,7 @@ class ExecutionContextEventStore:
     """Store for all events within a single run"""
 
     # Maps event_name -> event_id -> event
-    events: defaultdict[str, dict[str, BaseEvent]] | None = None
+    events: Optional[defaultdict[str, dict[str, BaseEvent]]] = None
 
     def __post_init__(self):
         if self.events is None:
