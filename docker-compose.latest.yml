@@ -538,6 +538,20 @@ services:
       - "traefik.enable=true"
 
       # --- Index / Catch-All Route ---
+      - "traefik.http.routers.web-nuxt.rule=PathPrefix(`/_nuxt`)"
+      - "traefik.http.routers.web-nuxt.priority=500"
+      - "traefik.http.routers.web-nuxt.entrypoints=websecure"
+      - "traefik.http.routers.web-nuxt.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web-nuxt.middlewares=security-headers@file"
+
+      # --- Index / Catch-All Route ---
+      - "traefik.http.routers.web-auth.rule=PathPrefix(`/auth`)"
+      - "traefik.http.routers.web-auth.priority=500"
+      - "traefik.http.routers.web-auth.entrypoints=websecure"
+      - "traefik.http.routers.web-auth.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web-auth.middlewares=security-headers@file"
+
+      # --- Index / Catch-All Route ---
       - "traefik.http.routers.web-index.rule=Path(`/`)"
       - "traefik.http.routers.web-index.priority=500"
       - "traefik.http.routers.web-index.entrypoints=websecure"
