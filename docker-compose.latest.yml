@@ -323,7 +323,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/dagster_home
       - dagster-venv:/app/.venv
-      - dagster-venv:/app/aihub_pipeline/.venv
+      - dagster-pipeline-venv:/app/aihub_pipeline/.venv
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -343,7 +343,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/dagster_home
       - dagster-venv:/app/.venv
-      - dagster-venv:/app/aihub_pipeline/.venv
+      - dagster-pipeline-venv:/app/aihub_pipeline/.venv
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -420,7 +420,7 @@ services:
       - "traefik"
     volumes:
       - api-venv:/app/.venv
-      - api-venv:/app/aihub_api/.venv
+      - api-api-venv:/app/aihub_api/.venv
     environment:
       NATS_ENDPOINT: "nats://nats:4222"
       COSMOS_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
@@ -542,4 +542,6 @@ services:
 
 volumes:
   api-venv:
+  api-api-venv:
   dagster-venv:
+  dagster-pipeline-venv:
