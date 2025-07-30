@@ -374,8 +374,20 @@ class PersistedAgentEventEntity(Document):
 
     @classmethod
     def to_message_history(cls, thread_id: str) -> list[UserChatMessage | AssistantChatMessage]:
-        # Retrieve and filter events from the database
-        events = (
+        events = cls._get_message_events(thread_id)
+        context = cls._MessageContext()
+        message_history: list[UserChatMessage | AssistantChatMessage] = []
+
+        for event in events:
+            cls._process_event(event, context, message_history)
+
+        cls._finalize_assistant_message(context, message_history)
+        return message_history
+
+    @classmethod
+    def _get_message_events(cls, thread_id: str):
+        """Retrieve and filter message events from the database."""
+        return (
             cls.objects()
             .filter(
                 thread_id=thread_id,
@@ -391,78 +403,85 @@ class PersistedAgentEventEntity(Document):
             .only("event_name", "event_data", "agent_id", "agent_class", "run_id")
         )
 
-        message_history: list[UserChatMessage | AssistantChatMessage] = []
-        assistant_content_buffer = ""
-        current_run_id = None
-        current_agent_id = None
-        current_agent_class = None
+    @classmethod
+    def _process_event(cls, event, context: "_MessageContext", message_history: list):
+        """Process a single event and update message history."""
+        if cls._is_user_event(event):
+            cls._handle_user_event(event, context, message_history)
+        elif cls._is_assistant_event(event):
+            cls._handle_assistant_event(event, context, message_history)
 
-        for event in events:
-            if event.event_name in ["UserMessageEvent", "HumanInTheLoopResponseEvent"]:
-                # Finalize any ongoing assistant message
-                if assistant_content_buffer:
-                    message_history.append(
-                        AssistantChatMessage(
-                            role=MessageRole.ASSISTANT,
-                            content=assistant_content_buffer,
-                            agent_id=current_agent_id,
-                            agent_class=current_agent_class,
-                        )
-                    )
-                    assistant_content_buffer = ""
-                    current_run_id = None
-                    current_agent_id = None
-                    current_agent_class = None
+    @classmethod
+    def _is_user_event(cls, event) -> bool:
+        """Check if event is a user message event."""
+        return event.event_name in ["UserMessageEvent", "HumanInTheLoopResponseEvent"]
 
-                # Create and append user message
-                content = event.event_data.get("content", "") or event.event_data.get("response", "")
-                message_history.append(
-                    UserChatMessage(
-                        role=MessageRole.USER,
-                        content=content,
-                        user_id=event.agent_id,
-                    )
-                )
+    @classmethod
+    def _is_assistant_event(cls, event) -> bool:
+        """Check if event is an assistant message event."""
+        return event.event_name in ["ChunkEvent", "HumanInTheLoopRequestEvent"]
 
-            elif event.event_name in ["ChunkEvent", "HumanInTheLoopRequestEvent"]:
-                # Check if we are continuing the same assistant message
-                if current_run_id == event.run_id and current_agent_id == event.agent_id:
-                    assistant_content_buffer = event.event_data.get("content", "") or event.event_data.get(
-                        "question", ""
-                    )
-                else:
-                    # Finalize previous assistant message if it exists
-                    if assistant_content_buffer:
-                        message_history.append(
-                            AssistantChatMessage(
-                                role=MessageRole.ASSISTANT,
-                                content=assistant_content_buffer,
-                                agent_id=current_agent_id,
-                                agent_class=current_agent_class,
-                            )
-                        )
-                    # Start a new assistant message
-                    assistant_content_buffer = event.event_data.get("content", "") or event.event_data.get(
-                        "question", ""
-                    )
-                    current_run_id = event.run_id
-                    current_agent_id = event.agent_id
-                    current_agent_class = event.agent_class
-            else:
-                continue  # Skip other event types
+    @classmethod
+    def _handle_user_event(cls, event, context: "_MessageContext", message_history: list):
+        """Handle user message events."""
+        cls._finalize_assistant_message(context, message_history)
+        content = event.event_data.get("content", "") or event.event_data.get("response", "")
+        message_history.append(
+            UserChatMessage(role=MessageRole.USER, content=content, user_id=event.agent_id)
+        )
 
-        # Finalize any remaining assistant message
-        if assistant_content_buffer:
+    @classmethod
+    def _handle_assistant_event(cls, event, context: "_MessageContext", message_history: list):
+        """Handle assistant message events."""
+        if context.is_same_assistant(event.run_id, event.agent_id):
+            context.update_content(event)
+        else:
+            cls._finalize_assistant_message(context, message_history)
+            context.start_new_message(event)
+
+    @classmethod
+    def _finalize_assistant_message(cls, context: "_MessageContext", message_history: list):
+        """Add buffered assistant message to history if exists."""
+        if context.assistant_content_buffer:
             message_history.append(
                 AssistantChatMessage(
                     role=MessageRole.ASSISTANT,
-                    content=assistant_content_buffer,
-                    agent_id=current_agent_id,
-                    agent_class=current_agent_class,
+                    content=context.assistant_content_buffer,
+                    agent_id=context.current_agent_id,
+                    agent_class=context.current_agent_class,
                 )
             )
+            context.reset()
 
-        return message_history
+    class _MessageContext:
+        """Context for tracking assistant message state during processing."""
+        def __init__(self):
+            self.assistant_content_buffer = ""
+            self.current_run_id = None
+            self.current_agent_id = None
+            self.current_agent_class = None
+
+        def is_same_assistant(self, run_id: str, agent_id: str) -> bool:
+            """Check if event belongs to current assistant message."""
+            return self.current_run_id == run_id and self.current_agent_id == agent_id
+
+        def update_content(self, event):
+            """Update content for current assistant message."""
+            self.assistant_content_buffer = event.event_data.get("content", "") or event.event_data.get("question", "")
+
+        def start_new_message(self, event):
+            """Start a new assistant message."""
+            self.assistant_content_buffer = event.event_data.get("content", "") or event.event_data.get("question", "")
+            self.current_run_id = event.run_id
+            self.current_agent_id = event.agent_id
+            self.current_agent_class = event.agent_class
+
+        def reset(self):
+            """Reset context state."""
+            self.assistant_content_buffer = ""
+            self.current_run_id = None
+            self.current_agent_id = None
+            self.current_agent_class = None
 
     @classmethod
     def get_event_timeseries(
