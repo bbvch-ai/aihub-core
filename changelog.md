@@ -5,6 +5,2704 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [web-v0.229.0] - 2025-07-28 - Multi-Cloud Storage for Files and Pipelines
+
+### Added
+- ☁️ **Multi-Cloud Storage Abstraction:** Introduced a foundational `AbstractAnonymousFileAccessService` and concrete implementations for **Azure Blob Storage** and **S3/MinIO**, enabling consistent file access across various cloud providers.
+- ⚙️ **Configurable File Access Service:** Added `FileAccessServiceConfig` to dynamically configure and instantiate the appropriate file access service based on environment settings, simplifying multi-cloud deployment.
+- 🛠️ **S3/MinIO Data Lake Integration:** Implemented `S3DataLakeIOManager` and supporting `S3DataLakeClient` and `S3DataLakeFileSystem` resources for Dagster pipelines, bringing robust S3-compatible storage capabilities.
+- 🏗️ **Abstracted Data Lake Clients:** Introduced base interfaces (`AbstractDataLakeClient`, `AbstractDataLakeClientResource`, `AbstractDataLakeFileSystemResource`) to standardize interactions with different data lake storage solutions.
+- 🦾 **Introduced `LLMWrappingAgent`**: A new agent designed to wrap and interact with Large Language Models, providing a flexible interface for LLM integrations. This includes its dedicated Dockerfile, configuration settings, and main application entry point.
+- 🚀 **Automated CI/CD Workflows**: Added new GitHub Actions workflows to automate Docker image builds and releases for agents, Dagster, and pipelines, improving deployment efficiency and consistency.
+- 🗄️ **Process Configuration Persistence**: Introduced `ProcessConfigEntity`, `ProcessConfigEntityDocument`, and `ProcessConfigEntityEmbeddedDocument` to enable robust storage and retrieval of process configurations in the database.
+- 🧪 **Comprehensive Test Utilities**: Added extensive new unit and integration tests for agent and process dispatchers and services, enhancing test coverage and ensuring reliability.
+- ⚙️ **Dagster Configuration**: Added `dagster.yaml` for configuring Dagster's run, event log, and schedule storage to use PostgreSQL, and setting up a queued run coordinator.
+- 🗄️ **Process Walkthrough Context**: Introduced `WalkthroughContext` to provide dedicated storage and retrieval for state and configuration specific to a process walkthrough.
+- 🔗 **New Process Topic Hierarchy**: Introduced `PartialProcessTopic`, `ProcessClassTopic`, and `ProcessInstanceTopic` to provide a more structured and granular representation of NATS subjects for process-related events.
+
+### Changed
+- 🔄 **Unified File URL Generation:** Updated `aihub_api` and `aihub_lib` to leverage the newly introduced multi-cloud file access services for generating secure, temporary file URLs.
+- 🖼️ **Enhanced Image Resolution:** Improved the `combine_nodes_in_order` utility in `aihub_lib` and the frontend image component to correctly resolve and display images from both Azure and S3/MinIO storage.
+- 🚀 **Cloud-Agnostic Pipeline Operations:** Migrated core pipeline operations (e.g., fetching, deleting files) and their associated resources to utilize the new abstract data lake client, improving flexibility and maintainability.
+- 🧪 **Playground Configuration:** Adjusted playground examples to showcase the new S3/MinIO data lake capabilities and switched the default document parser to `DOCUMENT_INTELLIGENCE`.
+- ⬆️ **Dependency Updates:** Upgraded Dagster and related dependencies, and added `boto3` and `s3fs` to support comprehensive S3/MinIO integrations.
+- 🔗 **Refined NATS Topic Hierarchy**: Updated agent and process dispatchers, runners, subscribers, and delegators to leverage the new `AgentClassTopic`, `AgentInstanceTopic`, `ProcessClassTopic`, and `ProcessInstanceTopic` for more precise event routing and identification.
+- 🌐 **Enhanced Agent & Process Discovery**: Major overhaul of discovery mechanisms to distinguish between *class* and *instance* levels, providing more granular control and comprehensive responses, including `ProcessConfigSpecs`.
+- 🐳 **Comprehensive Docker Compose Update**: Significant updates to `docker-compose.latest.yml`, including:
+    *   Updated MinIO configuration and added Traefik labels.
+    *   Added `dagster` database to PostgreSQL and removed external port exposure for internal services (Postgres, Milvus, Prometheus, Grafana, Phoenix, NATS, Redis, MongoDB), enhancing security.
+    *   Introduced a new **Dagster stack** (webserver, daemon, and OAuth2 Proxy integration).
+    *   Set API `LOG_LEVEL` to `DEBUG` for increased verbosity.
+- ⚙️ **NATS Operational Enhancements**: Enabled debug and trace logging for NATS and configured JetStream to use a persistent store directory, improving operational visibility and data durability.
+- 🛠️ **Dynamic Process Config Injection**: Implemented logic to inject `ProcessConfig` into process steps at runtime, allowing steps to access the current process configuration.
+- ⬆️ **SDK Schema Update**: Updated the generated SDK schema for `ModelDetailsSchema` to reflect a new default timestamp.
+
+### Fixed
+- 🐛 **Improved Dispatcher Shutdown**: Ensured `BaseDispatcher`'s `stop` method correctly handles uninitialized states, preventing errors during shutdown.
+
+### Removed
+- 🗑️ **Azure AI Search Vector Store:** Discontinued support for Azure AI Search as a vector store option within `aihub_pipeline`, streamlining the available vector store integrations.
+- 🗑️ **Replaced Legacy File Access Service**: Deprecated `AnonymousFileAccessService` in favor of the new, more flexible multi-cloud `FileAccessServiceConfig` and its specialized implementations.
+- 🗑️ **Removed Generic Discovery Event**: Eliminated the broad `DiscoveryRequestEvent` in favor of more specific `ClassDiscoveryRequestEvent` and `InstanceDiscoveryRequestEvent` for clearer discovery patterns.
+- 🗑️ **Removed Legacy Process Topic**: Eliminated the old `ProcessTopic` in favor of the new hierarchical topic models (`PartialProcessTopic`, `ProcessClassTopic`, `ProcessInstanceTopic`).
+- 🗑️ **Removed Redundant Agent Event Subscriber**: Eliminated `for_agent_instance_events` from `AgentJSSubscriber` to streamline subscriptions to control events.
+- 🗑️ **Removed Redundant Agent Config Tests**: Eliminated outdated test files related to agent configuration handling in `StartEvent`, as this logic is now integrated and tested elsewhere.
+
+### Refactor
+- 🧹 **Infrastructure Configuration Restructure**: Moved `NatsConfig` and `RedisConfig` into dedicated `infrastructure` subpackages for clearer logical grouping and improved project structure.
+- 📄 **Improved Docstring Clarity**: Cleaned up and removed redundant parameter descriptions from various Infrastructure-as-Code (IAC) and API test fixture docstrings.
+- ⚙️ **Centralized DataLakeFile Creation**: Refactored the instantiation logic for `DataLakeFile` objects by moving the URI-based creation method into cloud-specific data lake client implementations for better encapsulation and maintainability.
+- 🔄 **Updated Azure Document Intelligence Key Access**: Aligned the method for retrieving primary keys from Azure Document Intelligence services with recent API changes, ensuring robust and consistent authentication.
+- 🧹 **Consolidated Base Context**: Moved `BaseContext` from `aihub_agent` to `aihub_lib` for better reusability across different modules.
+- 🏗️ **Reorganized API DTOs**: Introduced dedicated DTOs (`MinimalProcessDTO`, `ProcessClassDTO`, `ProcessInstanceDTO`) for process representation to clearly separate concept definition from instances in the API.
+- 🗄️ **Enhanced Process Entity Management**: Updated `ProcessEntity` to use the new `ProcessConfigEntityDocument` and `ProcessConfigEntityEmbeddedDocument` for managing process configurations, and refactored `create_or_update` for clearer parameter handling.
+
+---
+
+
+
+## [v0.231.0] - 2025-07-29 - Enhanced Agent Testing with Custom Events
+
+### Added
+- 🚀 **Customizable Agent Simulation Events:** Introduced the ability to specify custom `start_events` and `stop_events` for the `SimulatedAgentApiTestRunner`, greatly expanding the flexibility for testing agent behavior and API interactions under diverse conditions.
+- 🧪 **New Test Event Definitions:** Added `TestStartEvent` and `TestStopEvent` classes to facilitate the creation of unique testing scenarios for agent event processing.
+- ✨ **Comprehensive Custom Event Test Suite:** Implemented a new test suite (`test_agent_api_with_custom_event.py`) to thoroughly validate the handling of custom start and stop events within the agent API, ensuring robust and predictable agent responses.
+
+### Removed
+- 🗑️ **Internal Claude AI Integration Scripts:** Removed development-specific scripts related to Claude AI integration, streamlining the project's internal tooling.
+
+---
+
+
+
+## [v0.229.0] - 2025-07-25 - Multi-Cloud Storage for Files and Pipelines
+
+### Added
+- ☁️ **Multi-Cloud Storage Abstraction**: Introduced a foundational `AbstractAnonymousFileAccessService` and concrete implementations for **Azure Blob Storage** and **S3/MinIO**, enabling consistent file access across various cloud providers.
+- ⚙️ **Configurable File Access Service**: Added `FileAccessServiceConfig` to dynamically configure and instantiate the appropriate file access service based on environment settings, simplifying multi-cloud deployment.
+- 🛠️ **S3/MinIO Data Lake Integration**: Implemented `S3DataLakeIOManager` and supporting `S3DataLakeClient` and `S3DataLakeFileSystem` resources for Dagster pipelines, bringing robust S3-compatible storage capabilities.
+- 🏗️ **Abstracted Data Lake Clients**: Introduced base interfaces (`AbstractDataLakeClient`, `AbstractDataLakeClientResource`, `AbstractDataLakeFileSystemResource`) to standardize interactions with different data lake storage solutions.
+- ⚙️ **S3/MinIO Configuration**: Added `S3Config` to manage connection parameters for S3-compatible storage services, supporting new data lake integrations.
+- 🚀 **Dagster and Pipeline Build Workflows**: New GitHub Actions workflows automate the Docker image build and release process for Dagster and pipelines.
+- 🛠️ **IDE Docker Run Configurations**: Added new IntelliJ IDEA run configurations for building Dagster and pipeline Docker images, streamlining local development.
+- 🏗️ **Standardized `StartEvent` Creation**: Added a new `from_raw_data` class method to `StartEvent`, simplifying its creation from raw API inputs and ensuring consistent event instantiation.
+- 📄 **Process Configuration Specifications**: Introduced `ProcessConfigSpecs` to provide a clear schema and parameters for process configurations during discovery, aiding external consumers.
+- 🚀 **Process Instance Discovery Response**: Added `ProcessInstanceDiscoveryResponseEvent` to provide detailed information about specific process instances, including their configuration, during discovery.
+- 🗄️ **Process Configuration Persistence**: Introduced new database entities (`ProcessConfigEntity`, `ProcessConfigEntityDocument`, `ProcessConfigEntityEmbeddedDocument`) to enable persistent storage and retrieval of process configurations, supporting both standalone and embedded document patterns.
+- 🗄️ **Agent Config Deletion Utility**: Added `delete_if_exists_for_class_and_id` method to `AgentConfigEntityDocument` for targeted cleanup of agent configurations in the database.
+- 🧪 **Tested Custom Agent Configurations**: Added a new test case to verify that custom agent configurations are correctly applied during chat completions.
+- 🧪 **New Process Configuration and Service Tests**: Introduced comprehensive unit and integration tests for process configuration database operations and process service logic, ensuring robustness and correctness.
+- 🧪 **New Process Dispatcher Tests**: Introduced comprehensive unit and integration tests for `ProcessDispatcher`, covering `WalkthroughContext` integration and dynamic configuration handling.
+- 🏗️ **Process Walkthrough Context**: Introduced `WalkthroughContext` to manage state and configuration specifically for individual process walkthroughs, enhancing process execution isolation.
+- ⚙️ **Dagster PostgreSQL Configuration**: Added a default `dagster.yaml` to configure Dagster to use PostgreSQL for run, event, and schedule storage.
+- 🐳 **Docker Compose Updates**: Added new services for **Dagster webserver** and **daemon**, integrated **OAuth2 Proxy** for Dagster.
+- 🏗️ **Process Class Topic Manager**: Introduced `ProcessClassTopicManager` to manage event subjects at the process class level, enabling more granular topic hierarchy.
+- ⚙️ **Enhanced Process Discovery Topic Management**: Introduced new methods (`get_process_class_discovery_subject_request`, `get_process_class_discovery_subject_response`) to `ProcessTopicManager`, enabling distinct class-level process discovery.
+- 🏗️ **New Agent Class Topic**: Introduced `AgentClassTopic` to define subjects at the agent class level, complementing `AgentInstanceTopic` for a clearer agent topic hierarchy.
+- 🏗️ **New Process Class Discovery Topic**: Introduced `ProcessClassDiscoveryTopic` for class-level process discovery requests and responses, providing a more granular discovery mechanism.
+- 🏗️ **New Hierarchical Process Topics**: Introduced a comprehensive topic hierarchy for processes with `PartialProcessTopic`, `ProcessClassTopic`, and `ProcessInstanceTopic`, replacing the single `ProcessTopic` for more precise subject management.
+
+### Changed
+- 🔄 **Unified File URL Generation**: Updated `aihub_api` and `aihub_lib` to leverage the newly introduced multi-cloud file access services for generating secure, temporary file URLs.
+- 🖼️ **Enhanced Image Resolution**: Improved the `combine_nodes_in_order` utility in `aihub_lib` and the frontend image component to correctly resolve and display images from both Azure and S3/MinIO storage.
+- 🚀 **Cloud-Agnostic Pipeline Operations**: Migrated core pipeline operations (e.g., fetching, deleting files) and their associated resources to utilize the new abstract data lake client, improving flexibility and maintainability.
+- 🧪 **Playground Configuration**: Adjusted playground examples to showcase the new S3/MinIO data lake capabilities and switched the default document parser to `DOCUMENT_INTELLIGENCE`.
+- ⬆️ **Dependency Updates**: Upgraded Dagster and related dependencies (`dagster-webserver`, `dagster-postgres`, `dagster-azure`), and added `boto3` and `s3fs` to support comprehensive S3/MinIO integrations.
+- ⚙️ **Dockerfile Entrypoint Update**: Modified `LLMWrappingAgent`'s Dockerfile to use an `AGENT_NAME` environment variable and `exec` for improved process management.
+- ⚙️ **Process Start Form Enhancements**: Updated `ProcessController` to fetch the process configuration from discovered instances and pass it during submission of start forms, improving data flow.
+- ⚙️ **Added `process_id` to Work Request Events**: Included a `process_id` field in `WorkRequestEvent` to ensure proper identification of the associated process instance.
+- ⚙️ **Process Configuration Enhancements**: Added a `process_class` field to `ProcessConfig` for better identification and introduced a `from_entity` method to facilitate conversion from database entities.
+- ⚙️ **Improved Dispatcher Shutdown**: Enhanced `BaseDispatcher`'s `stop` method to prevent redundant shutdowns and provide clearer logging.
+- ⚙️ **Process Runner Modernization**: Updated `ProcessRunner` to use `default_process_config` and `ProcessClassTopicManager`, enabling class-level process discovery via `ProcessClassDiscoveryResponseEvent` and simplifying queue group naming.
+- ⚙️ **Expanded Dispatchable Workflow Trigger Events**: Updated `DispatchableWorkflow` to allow steps to be triggered by both `ControlEvent` and `WorkEvent` types, increasing flexibility for process automation.
+- ⚙️ **Enhanced Process Start Event**: Added `process_config` field and `from_raw_data` method to `ProcessStartEvent`, enabling dynamic configuration at process initiation.
+- 🐳 **Docker Compose Updates**: Upgraded MinIO configuration and its image tag, added new services for **Dagster webserver** and **daemon**, integrated **OAuth2 Proxy** for Dagster, removed direct PostgreSQL port exposure for enhanced security, and refined Traefik labels.
+- 📈 **Enhanced Event Store Logging**: Added detailed debug logging to `JetStreamEventStore` for received messages and deserialized events, improving observability and troubleshooting.
+- 📈 **Improved JetStream Subscriber**: Added debug logging for unsubscription and switched to named parameters for subscription calls, enhancing clarity and observability.
+- 🐛 **API Endpoint Reordering**: Minor reordering of API endpoints in the development playground for consistency.
+- ⬆️ **SDK Schema Update**: Updated the default `created` timestamp in `ModelDetailsSchema` within the generated SDK.
+
+### Fixed
+- 🐛 **Azure Document Intelligence Key Access**: Aligned the method for retrieving primary keys from Azure Document Intelligence services (`keys.key1` instead of `keys.primary_key`) with recent API changes.
+- 🐛 **Fixed Circular Dependency**: Resolved a circular import issue in `UserWithAccessDTO` by lazy-loading the `ProcessService` import.
+- 🧹 **Standardized Agent Runner Initialization**: Corrected the Azure OpenAI API key reference in `LLMWrappingAgent`'s main entry point.
+
+### Removed
+- 🗑️ **Azure AI Search Vector Store**: Discontinued support for Azure AI Search as a vector store option within `aihub_pipeline`, streamlining the available vector store integrations.
+- 🗑️ **Removed Obsolete Test File**: Deleted `test_agent_config_start_event.py` as its functionality is now covered by other tests or made obsolete by architectural changes.
+- 🗑️ **Removed Generic Discovery Event**: Eliminated the broad `DiscoveryRequestEvent`, replaced by more specific `ClassDiscoveryRequestEvent` and `InstanceDiscoveryRequestEvent` for clearer discovery patterns.
+- 🗑️ **Streamlined Agent JetStream Subscriber**: Removed redundant `for_agent_instance_events` method, simplifying the agent subscription API.
+- 🗑️ **Deprecated Process Topic**: Eliminated the single `ProcessTopic` in favor of a new hierarchical structure.
+
+### Refactor
+- 🧹 **Consolidated Base Context**: Moved `BaseContext` from `aihub_agent` to `aihub_lib` for improved reusability and architectural clarity.
+- 🧹 **Standardized Package Structure**: Added `__init__.py` files to various new or reorganized packages (`aihub_lib.context`, `aihub_lib.infrastructure.nats`, `aihub_lib.infrastructure.redis`, `aihub_lib.infrastructure.s3`, `aihub_pipeline.io.base`, `aihub_pipeline.resources.data_lake.azure`, `aihub_pipeline.resources.data_lake.base`, `aihub_pipeline.resources.data_lake.s3`, `aihub_pipeline.app`, `aihub_process.context`, `aihub_process.context.walkthrough`, `aihub_process.playground.testing`, `aihub_process.playground.testing.tests`).
+- 🧹 **Infrastructure Configuration Restructure**: Moved `NatsConfig` and `RedisConfig` into dedicated `infrastructure` subpackages for clearer logical grouping and improved project structure.
+- 🧹 **Docstring Cleanup**: Removed redundant parameter descriptions from various Infrastructure-as-Code (IaC) and API test fixture docstrings.
+- 🧹 **Centralized `DataLakeFile` Creation**: Removed the `from_uri` static method from `DataLakeFile`, delegating its instantiation based on URI to cloud-specific data lake client implementations for better encapsulation.
+- 🧹 **Streamlined Process Event Hierarchy**: Refactored `ProcessExceptionEvent` and `ProcessStopEvent` to directly inherit from `WorkEvent`, simplifying the event hierarchy and removing a redundant `process_id` field from `ProcessStopEvent`.
+- 🔄 **Updated Agent Topic Hierarchy**: Refactored `AgentDispatcher` to align with new topic naming conventions, using `AgentClassTopic` and `AgentInstanceTopic` from `aihub_lib` for clearer subject management.
+- 🔄 **Comprehensive Process Discovery Overhaul**: Implemented a new hierarchical process discovery mechanism (`_discover_process_class`, `discover_process_instances_by_class`, `discover_process_instances`), aligning with agent discovery changes to support both class-level and instance-level process configurations. This includes updated caching strategies, new private helper methods (`_send_event`, `_clear_cache`), and refined process start form submissions.
+- 🔄 **Simplified Agent Discovery API Response**: The `discover_agents` API endpoint now directly returns `AgentDTO` objects, streamlining the response and reducing redundant DTO conversions.
+- 🔄 **Process Simulation Alignment**: Updated `SimulatedProcessApiTestRunner` to match the new `aihub_lib` process discovery events (`ProcessClassDiscoveryResponseEvent`, `ProcessInstanceDiscoveryResponseEvent`), topic naming, and now uses `default_process_config` for clarity.
+- 🔄 **Process Endpoint Discovery Enhancement**: Significantly refactored `ProcessEndpointsDiscoveryService` to leverage the new hierarchical process configuration, privatized internal endpoint creation methods, and now passes `process_config` to form submission logic.
+- 🔄 **Azure Data Lake IO Manager Updates**: Refactored `AzureDataLakeIOManager` to leverage the new `AzureDataLakeClient` abstraction, improving file handling and metadata operations within pipelines.
+- 🔄 **Process Dispatcher Overhaul**: Reworked `ProcessDispatcher` to integrate `WalkthroughContext` for per-walkthrough state, enable dynamic process configuration injection into steps, and align with the new hierarchical process topic structure (`ProcessClassTopic`, `ProcessInstanceTopic`).
+- 🔄 **Updated NATS Topic Exports**: Aligned `aihub_lib.nats.topics` exports to reflect the new, refined topic hierarchy, including `AgentInstanceTopic`, `ProcessInstanceTopic`, and `ProcessInstanceDiscoveryTopic`.
+
+---
+
+
+
+## [v0.229.0] - 2025-07-25 - Multi-Cloud Storage for Files and Pipelines
+
+### Added
+- ☁️ **Multi-Cloud Storage Abstraction:** Introduced a foundational `AbstractAnonymousFileAccessService` and concrete implementations for **Azure Blob Storage** and **S3/MinIO**, enabling consistent file access across various cloud providers.
+- ⚙️ **Configurable File Access Service:** Added `FileAccessServiceConfig` to dynamically configure and instantiate the appropriate file access service based on environment settings, simplifying multi-cloud deployment.
+- 🛠️ **S3/MinIO Data Lake Integration:** Implemented `S3DataLakeIOManager` and supporting `S3DataLakeClient` and `S3DataLakeFileSystem` resources for Dagster pipelines, bringing robust S3-compatible storage capabilities.
+- 🏗️ **Abstracted Data Lake Clients:** Introduced base interfaces (`AbstractDataLakeClient`, `AbstractDataLakeClientResource`, `AbstractDataLakeFileSystemResource`) to standardize interactions with different data lake storage solutions.
+- 📄 **New Process DTOs:** Introduced `MinimalProcessDTO`, `ProcessClassDTO`, and `ProcessInstanceDTO` to provide clearer and more granular representations of process information within the API.
+- 🏷️ **Hierarchical NATS Topic Models:** Added new NATS topic models (`AgentClassTopic`, `ProcessClassDiscoveryTopic`, `ProcessInstanceTopic`, `ProcessClassTopic`, `PartialProcessTopic`) to establish a more structured and hierarchical topic system for agents and processes.
+- 🔄 **Walkthrough Context:** Introduced `WalkthroughContext` to provide dedicated per-walkthrough state storage for process execution.
+- 🗄️ **Utility for Agent Config Deletion:** Added `delete_if_exists_for_class_and_id` to `AgentConfigEntityDocument` for cleaner management of agent configurations.
+- 🚀 **Event Creation Utilities:** Implemented `from_raw_data` class methods for `StartEvent` and `ProcessStartEvent` to streamline event instantiation from raw input data.
+- 💬 **Process ID in Work Events:** Added a `process_id` field to `WorkRequestEvent` to enhance traceability of work requests within processes.
+- 🗄️ **Process Configuration Entities:** Introduced new persistence entities (`ProcessConfigEntity`, `ProcessConfigEntityDocument`, `ProcessConfigEntityEmbeddedDocument`) for robust storage and management of process configurations.
+- 🏷️ **Process Class in Process Config:** Added a `process_class` field to `ProcessConfig` for more explicit process classification.
+- 📦 **S3 Client Dependencies:** Included `boto3` and `s3fs` as new Python dependencies to support S3/MinIO integration in pipelines.
+- 🐳 **Dagster Docker Integration:** Integrated Dagster services (`oauth2proxy`, `dagster-webserver`, `dagster-daemon`) into the `docker-compose.latest.yml` for unified deployment.
+- 🧪 **Comprehensive Process Testing:** Added new test files for `ProcessConfig` database operations, `ProcessService` database integration, and `ProcessDispatcher` unit tests to ensure robust process management.
+- 🎛️ **Process Class Topic Manager:** Introduced `ProcessClassTopicManager` and associated methods to support class-level process topic management.
+- 🚀 **Delegator Event Publishing Helper:** Added `_publish_work_event` helper method to `AbstractEntityDelegator` for standardized work event publishing.
+- 🧪 **Test Cache Cleanup:** Added explicit `_clear_cache` methods to `AgentService` and `ProcessService` for improved test isolation and cleanup.
+
+### Changed
+- 🔄 **Unified File URL Generation:** Updated `aihub_api` and `aihub_lib` to leverage the newly introduced multi-cloud file access services for generating secure, temporary file URLs.
+- 🖼️ **Enhanced Image Resolution:** Improved the `combine_nodes_in_order` utility in `aihub_lib` and the frontend image component to correctly resolve and display images from both Azure and S3/MinIO storage.
+- 🚀 **Cloud-Agnostic Pipeline Operations:** Migrated core pipeline operations (e.g., fetching, deleting files) and their associated resources to utilize the new abstract data lake client, improving flexibility and maintainability.
+- 🧪 **Playground Configuration:** Adjusted playground examples to showcase the new S3/MinIO data lake capabilities and switched the default document parser to `DOCUMENT_INTELLIGENCE`.
+- ⚙️ **Process API Flow:** `ProcessService` now fetches `ProcessInstanceDTO` including its configuration when submitting forms, ensuring the correct process config is used for new walkthroughs.
+- 💬 **Workflow Event Handling:** `DispatchableWorkflow.get_steps_waiting_for_event` now accepts `WorkEvent` types, increasing flexibility in workflow step triggering.
+- ⚙️ **Dispatcher Robustness:** Enhanced `BaseDispatcher.stop` method for more robust shutdown handling.
+- 📈 **JetStream Event Logging:** Added more detailed debug logging to `JetStreamEventStore` for received and deserialized messages, improving observability.
+- 📝 **JSSubscriber Clarity:** Improved clarity in `JSSubscriber` by explicitly passing `subject` and `queue` arguments to `js.subscribe`.
+- 🧪 **Simulated Process Runner:** Updated `SimulatedProcessApiTestRunner` to handle `WorkEvent` types for simulating process execution and to include `process_config` in `ProcessStartEvent`.
+- ⚙️ **Process Runner Initialization:** `ProcessRunner` now accepts a `default_process_config` and operates more explicitly at the process class level for discovery and delegator initialization.
+- ⚙️ **Process Dispatcher Logic:** `ProcessDispatcher` now utilizes `WalkthroughContext` for state management, injects dynamic process configurations into steps, and ensures proper cleanup on process stop.
+- 📊 **Dagster Configuration:** Updated `dagster.yaml` to explicitly define `run_storage`, `event_log_storage`, and `schedule_storage`, and increased `max_concurrent_runs` for improved performance.
+- 🐳 **Dagster Docker Paths:** Adjusted `DAGSTER_HOME` and entrypoint paths in Dagster Dockerfiles for consistency.
+- 🧪 **Test Cache Cleanup Automation:** Added `cleanup_db_and_cache` fixtures to various API and process test files for automatic database and cache clearing.
+- 🌐 **API and Process DTOs:** Agent and Process controllers and services now utilize the newly introduced NATS topic models and DTOs for improved clarity and consistency in API communication.
+
+### Fixed
+- 🐛 **JetStream Message Handling:** Improved error logging in `JetStreamEventStore`'s message handler for better debugging.
+- 🔑 **Azure Document Intelligence Key Access:** Aligned the method for retrieving primary keys from Azure Document Intelligence services (`keys.key1` instead of `keys.primary_key`), ensuring robust and consistent authentication.
+
+### Removed
+- 🗑️ **Deprecated Test File:** Removed `aihub_agent/playground/testing/tests/test_agent_config_start_event.py`, as its functionality is now covered by more integrated tests.
+- 🗑️ **Generic Discovery Event:** Removed `DiscoveryRequestEvent` as a general NATS event, replaced by more specific class and instance discovery events.
+- 🗑️ **Old Process Discovery Event:** Removed `ProcessDiscoveryResponseEvent` in favor of more granular `ProcessClassDiscoveryResponseEvent` and `ProcessInstanceDiscoveryResponseEvent`.
+- 🗑️ **Deprecated Process Topic:** Removed the generic `ProcessTopic` in favor of more specific and hierarchical topic models.
+- 🗑️ **Agent Event Subscriber:** Removed the `for_agent_instance_events` method from `AgentJSSubscriber`, streamlining agent event subscription.
+- 🗑️ **Azure AI Search Vector Store Support:** Discontinued `aisearch_vector_store_resource` and `mongo_aisearch_storage_context_resources` from the pipeline factory, streamlining vector store integrations.
+- 🗑️ **Data Lake File Creation Method:** Removed the `from_uri` method from `DataLakeFile`, centralizing URI-based file creation within specific `DataLakeClient` implementations.
+
+### Refactor
+- 🧹 **Infrastructure Configuration Restructure:** Moved `BaseContext`, `NatsConfig`, and `RedisConfig` into dedicated `infrastructure` subpackages for clearer logical grouping and improved project structure.
+- 🔄 **NATS Topic Model Overhaul:** Performed a comprehensive refactoring of NATS topic models for both agents and processes, introducing a hierarchical structure (`AgentClassTopic`, `AgentInstanceTopic`, `ProcessClassTopic`, `ProcessInstanceTopic`) and updating their usage across all relevant services.
+- 🧹 **API Service Refinements:** Refactored `AgentService` and `ProcessService` discovery methods by making internal helpers private (e.g., `_discover_agent_class`) and creating public methods that return the new, granular DTOs.
+- ⚙️ **Cloud-Agnostic File Access:** Rearchitected `FileController` and `FileService` to leverage the new `AbstractAnonymousFileAccessService` abstraction, enabling multi-cloud storage support.
+- 🏗️ **API Process DTO Hierarchy:** Restructured API Process DTOs into a more organized hierarchy (`MinimalProcessDTO`, `ProcessClassDTO`, `ProcessInstanceDTO`) for better data representation.
+- 📝 **API Endpoint Naming Consistency:** Renamed internal API endpoint creation methods to use `_create_endpoint` for improved naming consistency.
+- 📄 **Improved Docstring Clarity:** Cleaned up and removed redundant parameter descriptions from various Infrastructure-as-Code (IAC) and API test fixture docstrings.
+- ⚙️ **Process Delegator Scoping:** Refactored `ProcessDelegator` and `AgentDelegator` to operate at the process class level initially, simplifying their initialization and logic.
+- 🧹 **Process Dispatcher Internal Logic:** Major refactoring of `ProcessDispatcher` to integrate `WalkthroughContext`, manage dynamic configuration injection, and align with the new topic hierarchy.
+- 📦 **Data Lake Client Abstraction:** Migrated `DataLakeIOManager` and related pipeline operations (`fetch_all_files_in_data_lake`, `delete_figures_for_many_ref_doc`, `fetch_data_lake_files_to_remove`) to use the new `AbstractDataLakeClient` abstraction.
+- 🏷️ **Azure Data Lake Resource Renaming:** Renamed Azure Data Lake-specific resources (e.g., `DataLakeClientResource` to `AzureDataLakeClientResource`) and introduced a `base` package for abstract data lake clients and resources.
+- 🗄️ **Process Configuration Persistence:** Rearchitected process configuration persistence in `ProcessEntity` to utilize new `ProcessConfigEntityDocument` and `ProcessConfigEntityEmbeddedDocument` for better data management.
+- ⚙️ **Process Configuration Model:** Added `process_class` to `ProcessConfig` and included a `from_entity` method for consistent object creation from persistence entities.
+
+---
+
+
+
+## [v0.226.0] - 2025-07-25 - Focused Core Alignment and Data Ecosystem Streamlining
+
+### Added
+- ✨ **Consolidated Process Topic**: Introduced a new `ProcessTopic` model to unify and simplify the representation of process-related event topics, improving message routing clarity.
+- ✨ **Generalized Discovery Request Event**: Added `DiscoveryRequestEvent` as a universal base class for all discovery-related queries, promoting consistency across system discovery mechanisms.
+- ✨ **Streamlined `DataLakeFile` Instantiation**: Implemented a static `from_uri` method on `DataLakeFile` for direct creation from URIs using the `FileSystemClient`, simplifying file object construction.
+- ✨ **Agent Configuration Precedence Tests**: Included `test_agent_config_start_event.py` to thoroughly validate the priority and application of `AgentConfig` provided via `StartEvent`.
+- ✨ **Azure AI Search Vector Store Support**: Re-integrated `AzureAISearchVectorStoreResource` and its factory functions, enabling pipelines to utilize Azure AI Search as a vector store backend.
+
+### Changed
+- ⚡️ **Refined Process Dispatcher Event Publishing**: The `ProcessDispatcher` now strictly enforces that only `WorkRequestEvent`, `ProcessExceptionEvent`, or `ProcessStopEvent` types can be published, ensuring a more predictable event flow.
+- ⚙️ **Dagster Concurrency Adjustment**: Reduced the maximum concurrent runs in Dagster's `QueuedRunCoordinator` from 10 to 3, potentially optimizing resource allocation and stability for pipeline executions.
+- ⚙️ **Simplified Process Discovery Response**: Updated the `ProcessDiscoveryResponseEvent` schema to directly include `process_id` and `process_config`, removing older, less direct fields like `process_config_specs` and `default_process_config`.
+- ⚙️ **Direct Data Lake Client Usage in Pipelines**: Modified pipeline operations and resources to directly utilize the `azure.storage.filedatalake.FileSystemClient`, removing an intermediate abstraction layer and simplifying data lake interactions.
+- ⚙️ **Default Document Parser in Pipelines**: Changed the default `loader_type` for the `document_parser` in `default_rag_pipeline` from `DOCUMENT_INTELLIGENCE` to `DOCLING`.
+- ⚙️ **Namespace Naming Convention**: Updated `NAMESPACE_NAME` and `STORE_NAME` in the default RAG pipeline to use generic "test" values instead of deriving from data lake container/directory names, promoting cleaner separation.
+- 🌐 **Frontend Image URL Resolution**: Adjusted the `ResolveImageComponent.vue` to handle image URLs more directly, reflecting the streamlined file access strategy.
+- ⚙️ **Agent Dispatcher Initialization**: The `AgentDispatcher` now initializes with `PartialAgentTopic` for its base class, aligning with the new consolidated agent topic structure.
+
+### Removed
+- 🗑️ **Multi-Cloud Data Lake Abstraction**: Removed the generic `AbstractDataLakeClient` and `AbstractDataLakeFileSystemResource` interfaces, along with their S3/MinIO-specific implementations (`S3DataLakeIOManager`, `S3DataLakeClient`, `S3DataLakeFileSystemResource`), streamlining the data lake strategy to focus on Azure Data Lake Storage.
+- 🗑️ **Generic File Access Service**: Discontinued the multi-cloud `FileAccessServiceConfig` and its related `AbstractAnonymousFileAccessService`, `S3AnonymousFileAccessService` components, standardizing file URL generation on Azure Blob Storage.
+- 🗑️ **Legacy Process Configuration Management**: Eliminated the independent `ProcessConfigEntity` system, including `ProcessConfigEntityDocument` and `ProcessConfigEntityEmbeddedDocument`, simplifying how process configurations are stored and managed.
+- 🗑️ **Old Process Topic Models**: Removed `PartialProcessTopic`, `ProcessClassTopic`, and `ProcessInstanceTopic`, replaced by a single, consolidated `ProcessTopic`.
+- 🗑️ **Deprecated Process Discovery Topics**: Discontinued `ProcessClassDiscoveryTopic` and `ProcessInstanceDiscoveryTopic` for a unified `ProcessDiscoveryTopic`.
+- 🗑️ **Redundant Process Topic Managers**: Removed `ProcessClassTopicManager` and streamlined other process topic managers.
+- 🗑️ **Python S3 Dependencies**: Removed `boto3` and `s3fs` libraries, reflecting the shift away from S3/MinIO storage support.
+- 🗑️ **Agent Config Deletion Utility**: Removed `AgentConfigEntityDocument.delete_if_exists_for_class_and_id`.
+- 🗑️ **Deprecated Test Cases**: Cleaned up various outdated or superseded test cases, including a chat completions test with custom agent config and specific process service database tests.
+
+### Refactor
+- 🧹 **Internal Context Relocation**: Moved `BaseContext` from the general `aihub_lib` to the more specific `aihub_agent` module, improving package cohesion.
+- 🔄 **Unified Agent Topic Handling**: Streamlined agent topic management by consolidating `AgentClassTopic` and `AgentInstanceTopic` into flexible `AgentTopic` and `PartialAgentTopic` models across agent dispatchers and NATS interactions.
+- 🧹 **Infrastructure Configuration Import Consolidation**: Standardized import paths for `NatsConfig` and `RedisConfig` across services and playground examples.
+- 🧹 **Internal Service Method Renaming**: Standardized naming for various internal service methods (e.g., `_discover_agent_class` to `discover_agent_class`, `_send_event` to `send_event`) within `AgentService` and `ProcessService` for improved consistency.
+- 🧹 **Agent Runner Cleanup**: Removed explicit `_background_tasks` sets from agent dispatchers and runners, as task management is now handled more implicitly by `asyncio.Task`.
+- 🧹 **Simplified `ProcessConfig` Structure**: Removed the `process_class` field from `ProcessConfig`, along with its `from_entity` and `update_from_process_config` methods, promoting a more focused data model.
+- 🧹 **Consolidated NATS Process Topics**: Replaced a hierarchy of `Process` NATS topic models with a single, unified `ProcessTopic`, simplifying topic construction and parsing.
+- 🧹 **Streamlined Process Configuration Persistence**: `ProcessEntity` now directly embeds `ProcessConfig` instead of using a reference to a separate document, simplifying the persistence model.
+- 🧹 **Simplified `ProcessDispatcher` Initialization**: The `ProcessDispatcher` no longer requires a `default_process_config` parameter, as process configuration handling has been refined to be more dynamic.
+- 🧹 **Decoupled Process Runner Initialization**: `ProcessRunner` now accepts `process_config` directly instead of `default_process_config`, aligning with the streamlined process configuration approach.
+- 🧹 **Dagster Storage Configuration Unification**: Unified Dagster's storage configuration in `dagster.yaml` by using a single `storage.postgres` block instead of separate entries for run, event, and schedule storage.
+- 🧹 **Python Project Version Alignment**: Explicitly set project versions in `pyproject.toml` files to `v0.226.0` for various modules, aligning dependencies and ensuring consistency.
+
+---
+
+
+
+## [v0.229.0] - 2025-07-28 - Multi-Cloud Storage for Files and Pipelines
+
+### Added
+- ☁️ **Multi-Cloud Storage Abstraction:** Introduced a foundational `AbstractAnonymousFileAccessService` and concrete implementations for **Azure Blob Storage** and **S3/MinIO**, enabling consistent file access across various cloud providers.
+- ⚙️ **Configurable File Access Service:** Added `FileAccessServiceConfig` to dynamically configure and instantiate the appropriate file access service based on environment settings, simplifying multi-cloud deployment.
+- 🛠️ **S3/MinIO Data Lake Integration:** Implemented `S3DataLakeIOManager` and supporting `S3DataLakeClient` and `S3DataLakeFileSystem` resources for Dagster pipelines, bringing robust S3-compatible storage capabilities.
+- 🏗️ **Abstracted Data Lake Clients:** Introduced base interfaces (`AbstractDataLakeClient`, `AbstractDataLakeClientResource`, `AbstractDataLakeFileSystemResource`) to standardize interactions with different data lake storage solutions.
+- 🧪 **Enhanced Process Dispatcher Testing:** Added comprehensive unit and integration tests for `ProcessDispatcher`, covering configuration handling, event triggering, and error scenarios.
+- 🗄️ **Database Persistence for Process Configurations:** Introduced new database entities (`ProcessConfigEntity`, `ProcessConfigEntityDocument`, `ProcessConfigEntityEmbeddedDocument`) for robustly storing and managing process configurations.
+- ✨ **Process Walkthrough Context:** Added `WalkthroughContext` for managing per-walkthrough state within agentic processes.
+
+### Changed
+- 🔄 **Unified File URL Generation:** Updated `aihub_api` and `aihub_lib` to leverage the newly introduced multi-cloud file access services for generating secure, temporary file URLs.
+- 🖼️ **Enhanced Image Resolution:** Improved the `combine_nodes_in_order` utility in `aihub_lib` and the frontend image component to correctly resolve and display images from both Azure and S3/MinIO storage.
+- 🚀 **Cloud-Agnostic Pipeline Operations:** Migrated core pipeline operations (e.g., fetching, deleting files) and their associated resources to utilize the new abstract data lake client, improving flexibility and maintainability.
+- ⚙️ **Refined Process Configuration Loading:** The `ProcessDispatcher` now dynamically loads and injects process configurations, prioritizing those from `ProcessStartEvent` or falling back to defaults.
+- 💡 **Streamlined NATS Topic Hierarchy:** Overhauled NATS topics and their managers across agents and processes, introducing clearer `Class`, `Instance`, and `Partial` distinctions (e.g., `AgentTopic` -> `AgentInstanceTopic`, `ProcessTopic` -> `ProcessInstanceTopic`).
+- 📚 **Process Entity Configuration Model:** `ProcessEntity` now uses reference fields for process configurations and supports a dedicated `default_process_config`.
+- 🚀 **Dagster Infrastructure Updates:** Updated Dagster's Dockerfile paths, `dagster.yaml` for Postgres storage and run concurrency, and adjusted the default pipeline playground to use S3/MinIO.
+- 🧪 **Playground Configuration:** Adjusted playground examples to showcase the new S3/MinIO data lake capabilities and switched the default document parser to `DOCUMENT_INTELLIGENCE`.
+- ⚙️ **Dispatcher Shutdown Logic:** Improved `BaseDispatcher` to ensure proper shutdown of event stores during a stop operation.
+- 📦 **Process Event Inheritance:** `ProcessExceptionEvent` and `ProcessStopEvent` now directly inherit from `WorkEvent`, streamlining the process event hierarchy.
+
+### Fixed
+- 🔄 **Azure Document Intelligence Key Access:** Aligned the method for retrieving primary keys from Azure Document Intelligence services with recent API changes, ensuring robust and consistent authentication.
+
+### Removed
+- 🗑️ **Azure AI Search Vector Store:** Discontinued support for Azure AI Search as a vector store option within `aihub_pipeline`, streamlining the available vector store integrations.
+- 🗑️ **Deprecated Discovery Events:** Removed generic `DiscoveryRequestEvent` and older `ProcessDiscoveryResponseEvent`, replaced by more granular class- and instance-specific discovery events.
+- 🗑️ **Obsolete File Access Service:** Removed the monolithic `AnonymousFileAccessService` in favor of the new, more modular and cloud-agnostic file access abstraction.
+- 🗑️ **Redundant Process Topic:** Removed the old `ProcessTopic` class, superseded by the new hierarchical topic structure.
+- 🗑️ **Outdated Agent Configuration Test:** Removed `test_agent_config_start_event.py` as its logic is covered by the refined agent dispatcher tests.
+
+### Refactor
+- 🧹 **Infrastructure Configuration Restructure:** Moved `NatsConfig` and `RedisConfig` into dedicated `infrastructure` subpackages for clearer logical grouping and improved project structure.
+- 📄 **Improved Docstring Clarity:** Cleaned up and removed redundant parameter descriptions from various Infrastructure-as-Code (IAC) and API test fixture docstrings.
+- ⚙️ **Centralized DataLakeFile Creation:** Refactored the instantiation logic for `DataLakeFile` objects by moving the URI-based creation method into cloud-specific data lake client implementations for better encapsulation and maintainability.
+- 🧹 **Standardized Persistence Entity Naming:** Renamed `from_dto` to `from_specs` in process-related persistence entities (`ProgramInSpecsEntity`, `HumanInSpecsEntity`, `AgentInSpecsEntity`) for consistency.
+
+---
+
+
+
+## [bot-v0.229.0] - 2025-07-28 - Multi-Cloud Storage for Files and Pipelines
+
+### Added
+- ☁️ **Multi-Cloud Storage Abstraction:** Introduced a foundational `AbstractAnonymousFileAccessService` and concrete implementations for **Azure Blob Storage** and **S3/MinIO**, enabling consistent file access across various cloud providers.
+- ⚙️ **Configurable File Access Service:** Added `FileAccessServiceConfig` to dynamically configure and instantiate the appropriate file access service based on environment settings, simplifying multi-cloud deployment.
+- 🛠️ **S3/MinIO Data Lake Integration:** Implemented `S3DataLakeIOManager` and supporting `S3DataLakeClient` and `S3DataLakeFileSystem` resources for Dagster pipelines, bringing robust S3-compatible storage capabilities.
+- 🏗️ **Abstracted Data Lake Clients:** Introduced base interfaces (`AbstractDataLakeClient`, `AbstractDataLakeClientResource`, `AbstractDataLakeFileSystemResource`) to standardize interactions with different data lake storage solutions.
+- 🚀 **New LLM Wrapping Agent:** Introduced the `LLMWrappingAgent` with its dedicated Dockerfile, configuration, and main entry point, providing a flexible interface for LLM integrations.
+- ✨ **Enhanced Process Configuration Persistence:** Added new persistence entities (`ProcessConfigEntity`, `ProcessConfigEntityDocument`, `ProcessConfigEntityEmbeddedDocument`) for storing process configurations in MongoDB.
+- 📄 **Structured Process Discovery DTOs:** Introduced `MinimalProcessDTO`, `ProcessClassDTO`, and `ProcessInstanceDTO` for clearer, hierarchical representation of process information.
+- 🔗 **Hierarchical NATS Process Topics:** Implemented new NATS topic models (`PartialProcessTopic`, `ProcessClassTopic`, `ProcessInstanceTopic`) to support a more granular and flexible topic hierarchy for processes.
+- 🛠️ **Process Class Topic Manager:** Added `ProcessClassTopicManager` to streamline NATS subject management for process classes.
+- 🚀 **Automated Build & Release Workflows:** New GitHub Actions workflows (`build-agents.yml`, `build-dagster.yml`, `build-pipelines.yml`) automate Docker image builds and releases for agents, Dagster, and pipelines, supporting multiple trigger types.
+- ⚙️ **Dagster Configuration for Postgres:** Added `dagster.yaml` for PostgreSQL-backed run, event log, and schedule storage in Dagster.
+- 🧪 **Comprehensive Process Testing:** Introduced extensive unit and integration tests for `ProcessService` and `ProcessDispatcher`, improving test coverage and reliability for process configuration and management.
+
+### Changed
+- 🔄 **Unified File URL Generation:** Updated `aihub_api` and `aihub_lib` to leverage the newly introduced multi-cloud file access services for generating secure, temporary file URLs.
+- 🖼️ **Enhanced Image Resolution:** Improved the `combine_nodes_in_order` utility in `aihub_lib` and the frontend image component to correctly resolve and display images from both Azure and S3/MinIO storage.
+- 🚀 **Cloud-Agnostic Pipeline Operations:** Migrated core pipeline operations (e.g., fetching, deleting files) and their associated resources to utilize the new abstract data lake client, improving flexibility and maintainability.
+- 🧪 **Playground Configuration:** Adjusted playground examples to showcase the new S3/MinIO data lake capabilities and switched the default document parser to `DOCUMENT_INTELLIGENCE`.
+- ⚙️ **Docker Compose Enhancements:** MinIO environment variables updated, Postgres now includes `dagster` database, and crucial services (Postgres, NATS, Redis, Mongo) no longer expose their ports externally, enhancing security. Dagster services are now integrated into the `docker-compose.latest.yml`.
+- 📊 **NATS Logging & Persistence:** Increased NATS `debug`, `trace`, and `trace_verbose` logging levels and configured JetStream to use persistent storage at `/data/nats/js-store`.
+- 💡 **API Log Level:** Increased `aihub_api` service's default logging level to `DEBUG` in `docker-compose.latest.yml` for more verbose output.
+- 🚀 **Agent Service API Refinements:** Agent discovery and event sending in `aihub_api` updated to use new internal helpers and return `AgentDTO` directly, streamlining API interactions.
+- ⚙️ **Process Management Overhaul:** `ProcessService` and `ProcessController` in `aihub_api` underwent significant changes, adopting new DTOs and distinguishing between class-level and instance-level process discovery and management, including passing `process_config` for start forms.
+- 🚦 **Event Structure & Handling:** `StartEvent` and `ProcessStartEvent` now include `from_raw_data` methods for easier construction. `ProcessStopEvent` and `ProcessExceptionEvent` now derive from `WorkEvent`, with the `process_id` field moved to `WorkRequestEvent` for improved consistency.
+- 🔗 **NATS Topic & Subscriber Alignment:** Extensive changes across NATS subscribers and topic managers to align with the new hierarchical topic structure for both agents and processes.
+- 🏃 **Process Runner & Dispatcher Setup:** `ProcessRunner` now uses `default_process_config` and `ProcessClassTopicManager`, with delegators and the dispatcher deriving instance-specific details at runtime.
+- ⚙️ **Process Configuration Schema:** `ProcessConfig` now includes a `process_class` field.
+- 🗄️ **Process Entity Persistence Model:** `ProcessEntity` now uses reference fields to `ProcessConfigEntityDocument` and embedded fields for `ProcessConfigEntityEmbeddedDocument` for a more flexible persistence model.
+- 🧪 **Test Suite Enhancements:** Added `cleanup_db_and_cache` fixtures for agent and process API tests to ensure clean database states.
+- 🚀 **StartEvent Utility:** `StartEvent` now includes a `from_raw_data` class method for easier construction.
+
+### Removed
+- 🗑️ **Azure AI Search Vector Store:** Discontinued support for Azure AI Search as a vector store option within `aihub_pipeline`, streamlining the available vector store integrations.
+- 🗑️ **Legacy Discovery Events:** Removed `DiscoveryRequestEvent` and `ProcessTopic` files, as their functionalities are superseded by new, hierarchical discovery and topic models.
+- 🗑️ **Redundant Agent JSSubscriber:** Removed `AgentJSSubscriber.for_agent_instance_events` as its functionality is now covered by other, more specific subscription methods.
+- 🗑️ **Obsolete Agent Test File:** Cleaned up `aihub_agent/playground/testing/tests/test_agent_config_start_event.py`, as its test logic is now integrated or obsolete.
+
+### Refactor
+- 🧹 **Infrastructure Configuration Restructure:** Moved `NatsConfig` and `RedisConfig` into dedicated `infrastructure` subpackages for clearer logical grouping and improved project structure.
+- 📄 **Improved Docstring Clarity:** Cleaned up and removed redundant parameter descriptions from various Infrastructure-as-Code (IAC) and API test fixture docstrings.
+- ⚙️ **Centralized DataLakeFile Creation:** Refactored the instantiation logic for `DataLakeFile` objects by moving the URI-based creation method into cloud-specific data lake client implementations for better encapsulation and maintainability.
+- 🧹 **Docker Image Optimization:** Removed `ca-certificates` from the `aihub_api` Dockerfile for a slightly leaner runtime image.
+- 🔄 **Topic Naming Standardization:** Consistent renaming of NATS topics, topic managers, and subscribers (e.g., `AgentTopic` to `AgentInstanceTopic`, `ProcessTopic` to `ProcessInstanceTopic`) to clearly differentiate between class-level and instance-level topics.
+- 🪵 **Enhanced Logging:** Added more detailed debug logging in the NATS dispatcher and JetStream event store for improved observability.
+- ⚙️ **Azure Key Access Alignment:** Updated `DocumentIntelligenceAccess` to use `keys.key1` instead of `keys.primary_key` for retrieving primary keys.
+- 🧹 **Internal API Naming Conventions:** Renamed internal methods in `AgentEndpointsDiscoveryService` and `ProcessEndpointsDiscoveryService` (e.g., `create_endpoint` to `_create_endpoint`) for better clarity.
+- 🧹 **Pydantic Configuration Best Practices:** Added `model_config` to `ProcessConfig` for Pydantic V2 compatibility and improved consistency.
+
+---
+
+
+
+## [v0.226.0] - 2025-07-24 - Next-Gen Agents: Dynamic Configuration, Granular Discovery, and Rich Document Rendering
+
+### Added
+- ✨ **Dynamic Agent Configuration:** Agent configurations can now be dynamically provided via a `StartEvent` or loaded from a database, offering greater flexibility and allowing custom overrides of default agent settings.
+- 🚀 **Granular Agent Discovery:** Implemented distinct discovery mechanisms for agent *classes* and specific agent *instances*, enabling systems to distinguish between an agent's base definition and its runnable, configured versions.
+- 🗄️ **Persistent Agent Configurations:** Custom agent configurations can now be saved and retrieved from the database, enabling persistent and shareable agent setups across deployments.
+- 📄 **Structured Document Rendering:** Implemented the dynamic rendering of hierarchical document headings (H1-H6) and content wrapped in semantic tags (`<content>`, `<summary>`) directly within the RAG context, significantly improving readability and structural clarity.
+- 🔌 **Standardized Vector Store Configurations:** Introduced dedicated Pydantic configuration models (`AzureAISearchVectorStoreConfig`, `MilvusVectorStoreConfig`) for vector stores, allowing direct embedding and validation of retrieval settings within agent configurations.
+- 🧪 **Expanded Testing Infrastructure:** Added comprehensive unit and integration tests for `AgentDispatcher`, agent configuration precedence, and `AgentService` database integration, enhancing system robustness.
+- 🦾 **New Pipeline Job Utility:** Introduced `materialize_asset_job` to simplify the creation of jobs for materializing specific selections of assets within pipelines.
+- 🐳 **Comprehensive Docker Compose Setup:** A new `docker-compose.latest.yml` now provides a complete, integrated setup for all core AI Hub services, including authentication and the web UI, for streamlined local and production deployments.
+
+### Changed
+- ⚙️ **Refined Agent Configuration Loading:** The agent dispatcher now intelligently loads configurations, prioritizing those provided in a `StartEvent`, then database-persisted configurations, and finally falling back to the `default_agent_config` defined in the runner.
+- 💡 **Improved Type Specificity for LLM/Embedding Models:** Agent configurations now utilize more precise type unions for LLMs and embedding models (e.g., `AzureOpenAILLMConfig | GeminiLLMConfig | OpenaiLikeLLMConfig`), enhancing type safety and clarity.
+- 🔗 **Streamlined Vector Store Integration:** RAG and Retrieval agents now leverage the `.to_llama_index()` method directly from the new Pydantic vector store configurations for more consistent and encapsulated integration.
+- 🌐 **Updated API Agent Discovery:** The API now discovers and exposes full agent *instances* (including their specific configurations) instead of just class definitions, reflecting the new dynamic configuration capabilities.
+- ⚙️ **Updated Default Document Language:** The default language for newly ingested nodes has been updated from English to German, better aligning with regional configurations.
+- ⚡️ **Pipeline Automation Strategy:** Document and data lake file removal assets (`removed_documents_factory`, `removed_data_lake_files_factory`) now transition from eager conditions to more explicit job-driven scheduling.
+- 💻 **Web UI SDK Updates:** The generated API SDK has been updated to reflect changes in `AgentConfigDTO` (removal of fields, addition to events) and fix a typo in `ProcessDTO` description.
+- 📜 **Agent Documentation Alignment:** Agent examples in the documentation have been revised to reflect the updated `AgentConfig` and `default_agent_config` usage.
+
+### Fixed
+- 🐛 **Robust Figure Deletion:** Improved the data lake figure deletion process in pipelines to gracefully handle cases where associated figure directories do not exist, preventing unnecessary errors.
+- 💬 **SDK Description Typo:** Corrected a minor typo in the `ProcessDTO` description within the generated SDK schema, improving clarity.
+- ℹ️ **Azure Profile Image Fetching:** Enhanced error handling for fetching Azure user profile images to specifically log non-404 errors, making debugging more effective.
+
+### Removed
+- 🗑️ **Deprecated Agent Configuration Fields:** The `system_prompt`, `color`, and `voice` fields have been removed from the base `AgentConfig` and `AgentConfigDTO`, streamlining the core configuration and allowing for more flexible, agent-specific customization in subclasses.
+- 🗑️ **Legacy Discovery Event Types:** Old class- and instance-specific discovery events and topic managers have been removed, unifying agent discovery under a single, simplified model.
+- 🗑️ **Direct Agent Config Persistence Script:** The `save_config.py` example script has been removed, as the new dynamic configuration and database persistence mechanisms are now integrated into the core framework.
+- 🗑️ **Dedicated Locale String Persistence Entity:** `LocaleStringEntity` has been removed, implying localized string persistence is now handled more directly within other models or through generic data structures.
+- 🗑️ **Unused Timestamp Formatting Utility:** An internal utility for formatting Unix timestamps has been removed from RAG context generation, as date and time handling is now managed by the underlying system.
+
+### Refactor
+- 🧹 **Agent Orchestration Overhaul:** Performed a major refactor of `AgentDispatcher` and `AgentRunner` components, streamlining internal logic, simplifying argument injection, and refining background task management across all dispatchers and subscribers.
+- 🔄 **Unified Agent Persistence Layer:** Re-architected agent configuration persistence using new base `AgentConfigEntity` and specialized `AgentConfigEntityDocument`/`AgentConfigEntityEmbeddedDocument`, enabling a clear separation of default and overridden configurations stored in the database.
+- 📦 **Consolidated API DTOs:** Restructured agent-related Data Transfer Objects (DTOs) in the API, introducing `AgentClassDTO` and `AgentInstanceDTO` to clearly separate the concept of an agent's definition from its configured, runnable instances.
+- 📁 **Centralized Model Creation Service:** Renamed `EventModelCreationService` to `ModelCreationService` and expanded its scope to include creating models for agent configurations, centralizing schema-based model generation.
+- 🔗 **Streamlined Topic Management:** Overhauled NATS topic management for agents, introducing a hierarchical structure with `AgentClassTopicManager` and `AgentInstanceTopicManager` to align with the new class/instance discovery paradigm.
+- 💻 **Standardized Project Structure:** Renamed `aihub_web/.playground` to `aihub_web/.app` for clearer project organization and moved shared testing utilities from `aihub_api` to `aihub_agent`.
+- ⚙️ **Optimized Build Processes:** Streamlined Dockerfiles and Makefiles for API and Bot services, improving build efficiency and consistency.
+
+---
+
+
+
+## [v0.222.0] - 2025-07-21 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
+
+### Added
+- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
+- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
+- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
+- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
+- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
+- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
+- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
+- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
+- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
+- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
+- 🐳 **Full Deployable Stack with Docker Compose**: Introduced a comprehensive `docker-compose.latest.yml` providing a complete local development and production-ready environment including MinIO, Milvus, Postgres, OpenWebUI, Nats, Redis, Mongo, API, and a Traefik reverse proxy.
+- 🗄️ **Database Setup Utilities and Configurations**: Added scripts for initializing multiple PostgreSQL databases and new configuration files for Milvus and NATS.
+- ✨ **Custom Environment Variable Configuration for API**: This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, significantly increasing configuration flexibility and integration possibilities.
+- 🖥️ **Web Docker Image for Production**: A new multi-stage Dockerfile for the web application with Nginx serving static files and runtime configuration injection via `envsubst`, enabling robust production deployments.
+- 🧑‍💻 **Local Web Development Docker Compose**: Added `swiss-aihub.local.docker-compose.yml` for simplified local development of the web frontend.
+
+### Changed
+- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
+- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
+- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance for frequently requested agent lists.
+- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
+- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
+- ⚙️ **RAG Context Prompt Role Update**: The `chat` role for RAG context prompts has been adjusted from `system` to `user` across all supported languages (German, English, French, Italian) for improved model interaction.
+- ⚡️ **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
+- 🌐 **Web UI Configuration Loading**: Updated the Nuxt.js web application to load runtime configuration from environment variables during development and from a `config.json` file in production, enabling more flexible deployment.
+
+### Fixed
+- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found.
+- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context.
+- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
+- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
+- 🖼️ **Image URL Handling in RAG Prompts**: Corrected an issue where image URLs were not consistently processed in English RAG prompts, ensuring images are properly referenced.
+- ⚠️ **Minor CSS in Markdown Renderer**: Removed a trailing semicolon in CSS that could cause linting issues.
+- 📝 **Typo in Process Topic Manager Docstring**: Corrected a typo from "all processs" to "all processes".
+
+### Refactor
+- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`), improving clarity and maintainability.
+- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
+- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
+- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure within the API project.
+- ♻️ **SharePoint Integration Naming Consistency**: Standardized naming conventions for all SharePoint-related assets, operations, and I/O managers, enhancing readability and maintainability across the data pipeline.
+- 🐳 **Docker Image Optimization**: Streamlined Dockerfiles for `aihub_api` and `aihub_bot` by removing unnecessary virtual environment copying and simplifying `poetry install` steps.
+- ✂️ **Removed Redundant Health Page**: A basic placeholder health page in the frontend was removed.
+- 🗂️ **Frontend Project Structure**: Restructured the Nuxt.js application from a `.playground` directory to a more standard `.app` directory, simplifying development and deployment workflows.
+- 🛠️ **Agent Runner Event Responsibility**: Refactored the `send_event` method from the generic `AgentRunner` to `AgentTestRunner`, centralizing event injection logic specifically for testing scenarios.
+
+### Removed
+- 🗑️ **Automatic Draft PR Workflow:** The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
+- 🗑️ **Old Generic Event Distributor Dependency**: Removed the `use_external_event_distributor.py` file, as its functionality has been replaced by more specific agent and process event distributors.
+- 🗑️ **Old Docker Compose File**: Removed `docker-compose-mnt.yml`, which has been superseded by new and more comprehensive Docker Compose configurations.
+
+---
+
+
+
+## [v0.229.0] - 2025-07-28 - Multi-Cloud Storage & Dynamic Process Orchestration
+
+### Added
+- 🚀 **Automated Docker Image Build & Release Workflows:** Introduced new GitHub Actions workflows (`build-agents.yml`, `build-dagster.yml`, `build-pipelines.yml`) to automate the Docker image build and release process for agents, Dagster, and pipelines upon new tags, manual dispatch, or specific feature branch pushes.
+- ✨ **Introduced `LLMWrappingAgent`:** A new agent designed to wrap and interact with Large Language Models, including its dedicated Dockerfile, configurable settings (`LLMWrappingAgentSettings`), and main application entry point.
+- ⚙️ **Configurable LLM Wrapping Agent Settings:** Introduced `LLMWrappingAgentSettings` to manage LLM-related configurations such as API URL, key, and model name, enhancing agent flexibility.
+- ☁️ **Multi-Cloud Storage Abstraction:** Introduced `AbstractAnonymousFileAccessService` and concrete implementations for **Azure Blob Storage** (`AzureAnonymousFileAccessService`) and **S3/MinIO** (`S3AnonymousFileAccessService`), enabling consistent file access across various cloud providers.
+- ⚙️ **Configurable File Access Service:** Added `FileAccessServiceConfig` to dynamically configure and instantiate the appropriate file access service based on environment settings, simplifying multi-cloud deployment.
+- ⚙️ **S3 Configuration Settings:** Introduced `S3Config` to centralize and manage connection parameters for S3-compatible storage services, including MinIO and AWS S3.
+- 🛠️ **S3/MinIO Data Lake IO Manager:** Implemented `S3DataLakeIOManager` for Dagster pipelines, providing robust loading and storage of files from S3-compatible storage with metadata awareness.
+- 🏗️ **Abstract Data Lake Client Interface:** Introduced `AbstractDataLakeClient` to define a cloud-agnostic interface for interacting with various data lake services (Azure, S3, MinIO), ensuring consistent file operations.
+- 🏗️ **Abstract Data Lake Client Resource:** Introduced `AbstractDataLakeClientResource` as a base class for Dagster data lake client resources, providing a unified interface for different cloud providers.
+- 🏗️ **Abstract Data Lake File System Resource:** Introduced `AbstractDataLakeFileSystemResource` as a base class for Dagster data lake file system resources, enabling a common interface for cloud file systems.
+- 🏗️ **Azure Data Lake Client Implementation:** Introduced `AzureDataLakeClient` as a concrete implementation of `AbstractDataLakeClient`, providing Azure-specific methods for file operations and metadata retrieval.
+- 🏗️ **S3 Data Lake Client Implementation:** Introduced `S3DataLakeClient` as a concrete implementation of `AbstractDataLakeClient`, providing S3-specific methods for file operations and metadata retrieval using `boto3`.
+- 🛠️ **S3 Data Lake Client Resource:** Added `S3DataLakeClientResource` to provide a `boto3` S3 client as a Dagster resource, enabling granular control over S3 storage operations within pipelines.
+- 🛠️ **S3 Data Lake File System Resource:** Introduced `S3DataLakeFileSystemResource` to provide an `s3fs` file system as a Dagster resource, allowing pipelines to interact with S3-compatible storage as a local file system.
+- ⚙️ **S3 Data Lake Resource Factories:** Introduced `s3_data_lake_resources` and `default_io_manager_s3_datalake_resources` factory functions to simplify configuration of S3-compatible data lake resources for Dagster pipelines.
+- 🚀 **New Dagster Pipeline Dockerfile:** Introduced a dedicated Dockerfile for `aihub_pipeline`, enabling its containerization for Dagster deployments and streamlining the build process.
+- 🚀 **New Default RAG Pipeline Dockerfile:** Introduced a dedicated Dockerfile for the `default_rag_pipeline`, enabling its containerization for independent deployment.
+- 🤖 **New Default RAG Pipeline Definition:** Introduced the `default_rag_pipeline` application, defining its Dagster assets, jobs, resources, and schedules for automated RAG processes.
+- ⚙️ **S3/MinIO Integration in Default Pipeline:** Configured the `default_rag_pipeline` to use S3/MinIO for data lake resources and `DOCUMENT_INTELLIGENCE` for document parsing.
+- ⚙️ **New Process Walkthrough Context:** Introduced `WalkthroughContext` to manage state and configuration specific to individual process walkthroughs, improving process state management.
+- 🏗️ **New Process Class Topic Manager:** Introduced `ProcessClassTopicManager` to manage NATS subjects at the process class level, enabling broader subscriptions and broadcasts for all instances of a given process type.
+- 🏗️ **New Agent Class Topic:** Introduced `AgentClassTopic` to represent NATS event topics at the agent class level, enabling event routing and subscription for all instances of a given agent type.
+- 📦 **New Process Instance Discovery Response Event:** Introduced `ProcessInstanceDiscoveryResponseEvent` to provide specific details about individual process instances, including their unique ID and configuration.
+- 📄 **New Process Configuration Specifications:** Introduced `ProcessConfigSpecs` to define the schema and parameters of process configurations, enabling external consumers to understand and validate process settings.
+- 🏗️ **New Process Class Discovery Topic:** Introduced `ProcessClassDiscoveryTopic` to represent NATS subjects for discovering process class information, enabling broader discovery requests.
+- 🏗️ **New Partial Process Topic:** Introduced `PartialProcessTopic` to represent partially defined NATS event topics for processes, accommodating subscriptions with wildcards.
+- 🏗️ **New Process Class Topic:** Introduced `ProcessClassTopic` to represent NATS event topics at the process class level, enabling event routing for all instances of a given process type.
+- 🏗️ **New Process Instance Topic:** Introduced `ProcessInstanceTopic` to represent fully defined NATS event topics for specific process instances, inheriting from `ProcessClassTopic`.
+- 🗄️ **New Process Configuration Entity Base Class:** Introduced `ProcessConfigEntity` as a foundational class for storing process configurations, promoting reusability across different persistence strategies.
+- 🗄️ **New Process Configuration Document:** Added `ProcessConfigEntityDocument` for persisting process configurations as a standalone MongoDB collection, supporting discoverable and customizable process instances.
+- 🗄️ **New Embedded Process Configuration Document:** Introduced `ProcessConfigEntityEmbeddedDocument` for embedding process configurations within other documents (e.g., `ProcessEntity`), useful for default configurations.
+- 🗄️ **New Agent Configuration Deletion Method:** Added `delete_if_exists_for_class_and_id` to `AgentConfigEntityDocument`, enabling more precise cleanup of agent configurations from the database.
+- 🧪 **New Process Configuration Database Tests:** Added comprehensive tests for `ProcessConfig` database operations, ensuring correct persistence, retrieval, and override logic for process configurations.
+- 🧪 **New Process Service Database Integration Tests:** Implemented integration tests for `ProcessService` focusing on how process instances and classes interact with database-persisted configurations and caching.
+- 🧪 **New Process Service Unit Tests:** Added detailed unit tests for `ProcessService`, covering process discovery, event handling, and cache management.
+- 🧪 **New Process Dispatcher Tests:** Added comprehensive unit and integration tests for `ProcessDispatcher`, verifying its handling of process configurations, lifecycle events, and step execution.
+- ⚙️ **Dagster PostgreSQL Storage Configuration:** Introduced `dagster.yaml` to configure Dagster to use PostgreSQL for run, event log, and schedule storage, enhancing data persistence for pipelines.
+
+### Changed
+- 🛠️ **Improved Local Docker Development Setup:** Added new IDE run configurations for building individual Docker images for pipelines (Dagster, `default_rag_pipeline`) and agents (`llm_wrapping_agent`), streamlining local development workflows.
+- 🌐 **Simplified Agent Discovery API:** The agent discovery endpoint (`AgentController`) now directly returns `AgentDTO` objects, streamlining API responses by removing a redundant conversion step.
+- 🚀 **Enhanced Agent Start Event Handling:** Introduced `send_agent_start_event` in `AgentService` to streamline the process of initiating agent runs with specific configurations and user context.
+- 🌐 **Refined Agent Discovery Logic:** Improved the internal agent discovery flow in `AgentService` by reorganizing methods and adjusting caching, leading to more precise and performant agent retrieval.
+- ☁️ **Cloud-Agnostic File URL Generation:** Updated `FileController` to use the new `FileAccessServiceConfig` for generating signed file URLs, enabling multi-cloud storage support.
+- ☁️ **Unified File Access Service Integration:** Migrated `FileService` to leverage the new `FileAccessServiceConfig` for all temporary file URL generation and signature handling, supporting diverse storage backends.
+- ⚙️ **Process Configuration during Start:** Modified `ProcessController` to explicitly discover and pass the `process_config` to the `submit_process_start_form` endpoint, ensuring correct process initialization.
+- 🔄 **Enhanced Process Discovery and Configuration Management:** Overhauled `ProcessService` to introduce distinct `ProcessClassDTO` and `ProcessInstanceDTO` for more granular process discovery, alongside improved caching strategies and configuration loading from the database.
+- 🚀 **Streamlined Process Start Event Creation:** Updated `submit_process_start_form` in `ProcessService` to utilize `ProcessStartEvent.from_raw_data`, simplifying event object creation.
+- ⚙️ **Cloud-Agnostic Azure Data Lake IO Manager:** Updated `AzureDataLakeIOManager` to use the new `AzureDataLakeClient` interface, abstracting away direct Azure SDK calls and aligning with multi-cloud strategy.
+- 🚀 **Cloud-Agnostic Data Lake File Fetching:** Migrated `fetch_all_files_in_data_lake` to use the `AbstractDataLakeClient` interface, making the operation cloud-agnostic and more maintainable.
+- 🚀 **Cloud-Agnostic Figure Deletion:** Updated `delete_figures_for_many_ref_doc` to use the `AbstractDataLakeClient` interface, ensuring cloud-agnostic deletion of figures from the data lake.
+- 🚀 **Cloud-Agnostic File Removal Logic:** Migrated `fetch_data_lake_files_to_remove` to utilize the `AbstractDataLakeClient`, enabling cloud-agnostic determination of files no longer present in SharePoint.
+- ⚙️ **Unified Data Lake Resource Configuration:** Updated resource factories to use the new `AzureDataLakeClientResource` and `AzureDataLakeFileSystemResource` names, ensuring consistent naming across the pipeline.
+- ⚙️ **Process Runner Configuration Refinement:** Updated `ProcessRunner` to accept `default_process_config`, enabling a base configuration while allowing dynamic overrides.
+- 🚀 **Streamlined Process Discovery:** Enhanced `ProcessRunner` to use `ProcessClassDiscoveryResponseEvent` and `ProcessConfigSpecs`, providing more detailed process class information during discovery.
+- ⚙️ **Streamlined Delegator Initialization:** Refactored delegator instantiation within `ProcessRunner` by removing redundant `process_id` arguments and updating queue group naming.
+- ⚙️ **Process Test Runner Configuration Update:** Modified `ProcessTestRunner` to use `default_process_config` and explicitly set `ProcessInstanceTopicManager`, aligning with new process configuration patterns.
+- 🧪 **Enhanced Process Test Observation:** Updated test runner to observe both `ProcessClassDiscoveryRequestEvent` and `ProcessClassDiscoveryResponseEvent`, providing more granular insights into process discovery during testing.
+- ⚙️ **Playground Process Configuration Update:** Updated all playground process examples to use `default_process_config` and explicitly include `process_class` in `ProcessConfig`, aligning with new configuration requirements.
+- ⚙️ **Pipeline Playground Migration to S3/MinIO:** Updated the pipeline playground to default to S3/MinIO data lake resources and `DOCUMENT_INTELLIGENCE` for document parsing, showcasing multi-cloud capabilities.
+- 💬 **Configurable Cloud Provider Comment:** Added a comment to the pipeline playground configuration, guiding users on how to switch between cloud providers.
+- ⬆️ **Updated Pipeline Dependencies:** Upgraded Dagster and Dagster-postgres versions, and added `s3fs` and `boto3` to support S3-compatible data lake integrations.
+- ⚙️ **Enhanced Entity Delegator Flexibility:** Updated `AbstractEntityDelegator` to use `ProcessClassTopicManager` and `ProcessClassTopic`, improving flexibility in process type handling and enabling internal `_publish_work_event` calls.
+- ⚙️ **Streamlined Agent Delegator Event Publishing:** Refactored `AgentDelegator` to use the new `_publish_work_event` helper, centralizing work event publishing logic.
+- ⚙️ **Dynamic Process ID in Agent Delegation:** Updated agent delegator to use the `process_id` from the incoming event when creating threads, ensuring dynamic and accurate process associations.
+- ⚙️ **Streamlined Process Delegator Event Publishing:** Refactored `ProcessDelegator` to use the new `_publish_work_event` helper, centralizing work event publishing logic.
+- ⚙️ **Dynamic Process Configuration Loading:** Implemented dynamic loading of `ProcessConfig` in `ProcessDispatcher`, prioritizing configurations from `ProcessStartEvent` or `WalkthroughContext`.
+- 🚀 **New Process Lifecycle Management:** Enhanced `ProcessDispatcher` to manage process lifecycle events (`ProcessStopEvent`, `ProcessExceptionEvent`) by cleaning up `WalkthroughContext` and stores.
+- ⚙️ **Flexible Step Argument Injection:** Introduced `_build_method_kwargs` to enable dynamic injection of `ProcessConfig` objects into process steps based on their type hints.
+- 💬 **Dual Event Publishing for Processes:** Updated `ProcessDispatcher` to publish both `WorkRequestEvent` and generic `WorkEvent` types, accommodating diverse event patterns within processes.
+- ⚙️ **New Process Class Field in Configuration:** Added `process_class` to `ProcessConfig` for clearer identification of the process type.
+- ⚙️ **Enhanced ProcessConfig Flexibility:** Introduced `model_config` with `extra="allow"` and added a `from_entity` class method to `ProcessConfig`, enabling more robust deserialization and extensibility.
+- ⚙️ **Broadened Workflow Event Handling:** Expanded `DispatchableWorkflow` to allow `process_steps` to respond to both `ControlEvent` and `WorkEvent` types, increasing workflow flexibility.
+- 🗄️ **Enhanced Process Entity Configuration:** Reworked `ProcessEntity` to support both referenced (`process_config`) and embedded (`default_process_config`) process configurations, enabling flexible override mechanisms and database persistence for discoverable processes.
+- ⚙️ **Explicit JetStream Subscription Arguments:** Updated `JSSubscriber` to explicitly pass `subject`, `stream`, and `queue` to `js.subscribe`, improving clarity and robustness.
+- 💬 **Enhanced NATS Debugging and Persistence:** Enabled detailed debugging and tracing in NATS configuration and set up persistent storage for JetStream data, improving operational visibility and data durability.
+- 🐳 **Comprehensive Docker Compose Stack Update:** Significantly updated `docker-compose.latest.yml` to:
+    - Use a newer MinIO image and updated environment variable names for authentication.
+    - Integrate MinIO with Traefik for external access.
+    - Include Dagster services (`dagster-webserver`, `dagster-daemon`) and PostgreSQL database for Dagster.
+    - Add `oauth2proxy` for Dagster authentication.
+    - Set `api` service log level to `DEBUG` for more verbose logging.
+    - Corrected NATS endpoint format for `api` service.
+- 🖼️ **Enhanced Image Resolution for Multi-Cloud:** Updated `combine_nodes_in_order` and `ResolveImageComponent` (frontend) to correctly parse and resolve image URLs from both Azure and S3/MinIO storage, ensuring proper display of embedded images.
+
+### Fixed
+- 🧪 **Improved Agent Test Isolation:** Introduced `cleanup_db_and_cache` fixtures in `aihub_api` agent tests to ensure isolated execution by clearing database and in-memory caches.
+- 🧪 **Expanded OpenAI Assistant Tests:** Added new test cases for OpenAI assistant interactions to verify custom agent configurations are correctly loaded and applied from the database.
+- 🧪 **Improved Process Test Isolation:** Introduced a `cleanup_db_and_cache` fixture in `aihub_api` process tests to ensure isolated execution by clearing database and in-memory caches.
+
+### Removed
+- 🗑️ **Obsolete Agent Configuration Test:** Removed `test_agent_config_start_event.py`, as its functionality is now covered by more integrated tests.
+- 🗑️ **Azure AI Search Vector Store Deprecation:** Removed `aisearch_vector_store_resource` and `mongo_aisearch_storage_context_resources` from `aihub_pipeline`, discontinuing support for Azure AI Search as a vector store.
+- 🗑️ **Removed Generic Discovery Request Event:** Eliminated `DiscoveryRequestEvent` from `aihub_lib`, which is now superseded by more specific `ClassDiscoveryRequestEvent` and `InstanceDiscoveryRequestEvent`.
+- 🗑️ **Removed Redundant Agent Instance Event Subscriber:** Eliminated `for_agent_instance_events` from `AgentJSSubscriber`, as its functionality is covered by other, more specific control event subscriptions.
+- 🗑️ **Removed Old Process Topic:** Eliminated the old `ProcessTopic` from `aihub_lib` as it has been replaced by the more granular `PartialProcessTopic`, `ProcessClassTopic`, and `ProcessInstanceTopic`.
+
+### Security
+- 🔒 **Internalized Core Services in Docker Compose:** Removed external port mappings for NATS, Redis, and MongoDB in `docker-compose.latest.yml`, enhancing security by limiting direct external access to these internal components.
+
+### Refactor
+- 🧹 **Improved Local Docker Development Setup:** Updated SDK name in `.idea/misc.xml` for `aihub_agent` for consistency.
+- 🧹 **Consolidated Base Context:** Moved the core `BaseContext` class from `aihub_agent` to `aihub_lib` for better reusability across agent and process modules.
+- 🔄 **Refined Agent Topic Hierarchy:** Updated `AgentDispatcher`, `AgentTestRunner`, `RunTraceCoordinator`, `AgentJSSubscriber`, `AgentNCSubscriber`, `AgentThreadTopicManager`, `AgentInTheLoopRequestEvent`, `BotInTheLoopRequestEvent`, `HumanInTheLoopRequestEvent`, `WebSocketManager`, `WebSocketSender`, and NATS `topics` exports to align with the new, more granular `AgentClassTopic` and `AgentInstanceTopic` structure.
+- 🧹 **Minor Docker Image Optimization:** Removed `ca-certificates` from the `aihub_api` Dockerfile for a slightly leaner runtime image.
+- 🔄 **Refined Topic Type Usage in Event Persistence:** Updated `EventPersister` in `aihub_api` to use `AgentInstanceTopic` and `ProcessInstanceTopic`, aligning with the new granular topic structure.
+- 🧹 **Standardized Cache Management:** Renamed internal caches and introduced `_clear_cache` methods across agent and process services (`AgentService`, `ProcessService`) for consistency in cache invalidation.
+- 🧹 **Internal Method Renaming:** Renamed `send_event` to `_send_event` and `discovery_handler` to `_discovery_handler` in various services (`AgentService`, `ProcessService`, `AgentEndpointsDiscoveryService`, `ProcessEndpointsDiscoveryService`) to signify their internal helper nature.
+- 🏗️ **Introduced Minimal Process DTO:** Added `MinimalProcessDTO` for lightweight process information transfer, improving API response efficiency.
+- 🏗️ **New Process Class DTO:** Introduced `ProcessClassDTO` to represent process class definitions, including configuration specifications and input types, for clearer API communication.
+- 🏗️ **Refined Process DTO Hierarchy:** Restructured `ProcessDTO` to inherit from `MinimalProcessDTO` and added `from_instance` and updated `from_entity` methods, improving data model consistency.
+- 🏗️ **New Process Instance DTO:** Introduced `ProcessInstanceDTO` to represent specific process instances, including their unique ID and configuration, enhancing the granularity of process data.
+- 🔄 **Encapsulated Process Instance Logic:** Added methods to `ProcessInstanceDTO` for converting to discovery events and managing persistence (`create_or_update_process_entity`), centralizing data model responsibilities.
+- 🧹 **Circular Dependency Resolution:** Moved `ProcessService` import within `UserWithAccessDTO` to resolve a circular dependency, improving module load order.
+- 🔄 **Refined Process Topic Hierarchy:** Updated process test runner, process subscriber, and process topic managers (`ProcessTopicManager`, `ProcessInstanceTopicManager`, `ProcessWalkthroughTopicManager`) to align with new topic hierarchy (`ProcessClassDiscoveryTopic`, `ProcessInstanceTopic`).
+- ⚙️ **Refined Agent Subscriber Naming:** Renamed `for_agent_instance_events` to `for_agent_instance_control_events` in `AgentJSSubscriber` for clearer intent on which event types are handled.
+- 🔄 **Streamlined Process Exception Event:** Changed `ProcessExceptionEvent` to inherit directly from `WorkEvent`, simplifying its hierarchy and aligning with general event patterns.
+- 🔄 **Streamlined Process Stop Event:** Changed `ProcessStopEvent` to inherit directly from `WorkEvent` and removed the redundant `process_id` field, as it's now handled by the topic context.
+- ⚙️ **Centralized DataLakeFile Creation:** Moved the URI-based `from_uri` creation method for `DataLakeFile` into specific cloud data lake client implementations (`AzureDataLakeClient`, `S3DataLakeClient`), improving encapsulation.
+- 🔄 **Refined Azure Data Lake Client Resource:** Renamed `DataLakeClientResource` to `AzureDataLakeClientResource` and updated its inheritance to `AbstractDataLakeClientResource`, aligning with the new multi-cloud data lake architecture.
+- 🔄 **Refined Azure Data Lake File System Resource:** Renamed `DataLakeFileSystemResource` to `AzureDataLakeFileSystemResource` and updated its inheritance to `AbstractDataLakeFileSystemResource`, aligning with the new multi-cloud data lake architecture.
+- 🔄 **Refined Event Persistence Topic Types:** Updated `PersistedAgentEventEntity` and `PersistedProcessEventEntity` to use `AgentInstanceTopic` and `ProcessInstanceTopic` respectively, ensuring data consistency with the new topic models.
+- ⚙️ **Streamlined Process Entity Management:** Refactored `ProcessEntity` to use new `create_or_update` methods and standardized `from_specs` conversions, improving data handling and consistency.
+- 💬 **Improved Logging:** Added `logging` import to `AbstractEntityDelegator` for better internal debugging.
+- 🔄 **Refined Agent Delegator Topic Handling:** Updated agent delegator to align with `AgentInstanceTopic` and `ProcessClassTopic`, improving type safety and topic consistency.
+- 🔄 **Refined Process Delegator Topic Handling:** Updated process delegator to align with `ProcessInstanceTopic` and `ProcessClassTopic`, improving type safety and topic consistency.
+- 🔄 **Refined Process Dispatcher Topic Handling:** Updated `ProcessDispatcher` to align with the new `ProcessClassTopic`, `ProcessInstanceTopic`, and `ProcessWalkthroughTopicManager` for improved topic management and event routing.
+- 🔄 **Refined Process Runner Topic Management:** Updated `ProcessRunner` to align with `ProcessClassTopicManager` and `ProcessClassDiscoveryTopic`, improving topic handling and event subscriptions.
+- 📄 **Improved Docstring Clarity:** Cleaned up and removed redundant parameter descriptions from various Infrastructure-as-Code (IAC) and API test fixture docstrings for better readability.
+
+---
+
+
+
+## [v0.222.0] - 2025-07-21 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
+
+### Added
+- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
+- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
+- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
+- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
+- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
+- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
+- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
+- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
+- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
+- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
+- 📦 **New Docker Compose Setups**: Introduced new comprehensive `docker-compose.latest.yml` and other environment-specific compose files (`docker-compose.dev.yml`, `docker-compose-gpu.*.yml`, `swiss-aihub.local.docker-compose.yml`) along with supporting configs (`milvus.yaml`, `nats.conf`, `init-multiple-dbs.sh`) for a complete local deployment stack, enhancing ease of setup and development.
+- 🐳 **Web UI Dockerfile**: Added a dedicated `Dockerfile` for the web user interface, streamlining its build and deployment process.
+- ⚙️ **Web UI Nginx Configuration**: Included a `nginx.conf` and `config.template.json` for the web UI, enabling robust serving of static assets and dynamic environment variable injection in production.
+- 🗂️ **New `.dockerignore` for Web UI**: Added a `.dockerignore` file to optimize Docker builds for the web UI by excluding unnecessary files.
+- ✨ **API Configuration Extensibility**: Enabled custom environment variable configuration for API services, allowing users to define and inject additional environment variables, including secret references, directly into API deployments, significantly increasing configuration flexibility and integration possibilities.
+
+### Changed
+- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
+- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
+- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance for frequently requested agent lists.
+- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
+- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
+- 📦 **Docker Build Process Optimization**: Optimized Dockerfiles for API and Bot services by removing redundant `poetry install` steps and virtual environment copying, leading to faster and more efficient image builds.
+- ⚙️ **Agent Runner `send_event` Relocation**: The `send_event` method was moved from `AgentRunner` to `AgentTestRunner`, centralizing testing-specific event sending logic.
+- 🔌 **Internal Naming Consistency**: Standardized internal variable and parameter names, such as renaming `external_event_distributor` to `external_agent_event_distributor` across various services and handlers for improved clarity.
+- 📈 **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
+- 🔄 **Updated RAG Context Prompt Role**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages (German, English, French, and Italian) to better align with prompt engineering best practices and enhance model interpretation of contextual information.
+- 🧹 **Standardized SharePoint Naming Conventions**: Refactored variable names, function parameters, and internal asset definitions across SharePoint-related assets, ops, and IO managers for improved consistency and readability (e.g., `sharepoint_` was consistently renamed to `share_point_`).
+
+### Fixed
+- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found.
+- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context.
+- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
+- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
+- 🎨 **Frontend Markdown Rendering**: Corrected CSS styling for `h3` through `h6` headings in the Markdown renderer, ensuring consistent and visually appealing content display.
+- 🌐 **Frontend i18n for ExceptionEvent**: Added a missing `label` for `ExceptionEvent` in the Italian localization, improving clarity in error messages for Italian users.
+- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Resolved an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring that images are now correctly referenced and displayed by explicitly converting their URL object to a string representation.
+
+### Removed
+- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
+- 🧹 **Old Docker Compose Mount File**: The `docker-compose-mnt.yml` file, likely an older or temporary setup, has been removed.
+- ✂️ **Redundant Frontend Health Page**: A basic placeholder health page in the frontend was removed.
+- 🗑️ **Deprecated External Event Distributor**: The `use_external_event_distributor.py` file and its related dependencies were removed, replaced by more specific external agent and process event distributors.
+
+### Refactor
+- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`), improving clarity and maintainability.
+- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
+- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
+- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure.
+- 🔄 **Frontend Application Structure**: Migrated the Nuxt.js application from the `.playground` directory to a new `.app` directory, standardizing the project structure for clearer development and deployment.
+- 🔄 **Optimized Error Message for SPA Routes**: Improved the error message returned when a static file request unexpectedly hits an API route in the Single Page Application (SPA) runner.
+- 🧹 **Cleaned Up SharePoint Utilities**: Standardized naming within metadata utility functions related to SharePoint files, contributing to a more coherent codebase.
+
+---
+
+
+
+## [v0.229.0] - 2025-07-25 - Multi-Cloud Storage for Files and Pipelines
+
+### Added
+- ☁️ **Multi-Cloud Storage Abstraction:** Introduced a foundational `AbstractAnonymousFileAccessService` and concrete implementations for **Azure Blob Storage** and **S3/MinIO**, enabling consistent file access across various cloud providers.
+- ⚙️ **Configurable File Access Service:** Added `FileAccessServiceConfig` to dynamically configure and instantiate the appropriate file access service based on environment settings, simplifying multi-cloud deployment.
+- 🛠️ **S3/MinIO Data Lake Integration:** Implemented `S3DataLakeIOManager` and supporting `S3DataLakeClient` and `S3DataLakeFileSystem` resources for Dagster pipelines, bringing robust S3-compatible storage capabilities.
+- 🏗️ **Abstracted Data Lake Clients:** Introduced base interfaces (`AbstractDataLakeClient`, `AbstractDataLakeClientResource`, `AbstractDataLakeFileSystemResource`) to standardize interactions with different data lake storage solutions.
+- 🚀 **Pipeline Build & Release Workflows:** New GitHub Actions workflows now automate Docker image builds and releases for **agents**, **pipelines**, and the new **LLM Wrapping Agent**, streamlining CI/CD.
+- 📦 **Dagster Deployment Stack:** Added a comprehensive Dagster stack to `docker-compose.latest.yml`, including `dagster-webserver`, `dagster-daemon`, and `oauth2proxy` for a complete local pipeline orchestration environment.
+- 🗄️ **Persistent Dagster Metadata:** Introduced `configs/dagster/dagster.yaml` to configure **Postgres-backed storage** for Dagster run, event, and schedule metadata, ensuring data durability and history.
+- 📂 **Process Configuration Persistence:** Implemented new persistence entities (`ProcessConfigEntity`, `ProcessConfigEntityDocument`, `ProcessConfigEntityEmbeddedDocument`) to allow **process configurations** to be saved and retrieved from the database.
+- ✨ **New LLM Wrapping Agent:** Introduced the `LLMWrappingAgent` including its **Dockerfile**, **configuration settings**, and application entry point, providing a flexible interface for LLM integrations.
+- 🧪 **New Test Fixtures:** Added `cleanup_db_and_cache` fixtures for agent and process services to **improve test isolation** and ensure clean state in integration and unit tests.
+- 📝 **Process Dispatcher Tests:** Comprehensive new test suites for `ProcessDispatcher` covering **event handling**, **configuration precedence**, **context cleanup**, and **error handling**.
+- 💡 **IDE Docker Run Configurations:** Added new `.idea/runConfigurations` XML files to simplify **Docker image building directly from IDE** for agents and pipelines.
+- 📈 **Process Configuration Tests:** New test files for **process configuration database operations** and **process service database integration** to ensure robust persistence and retrieval of process settings.
+- 📝 **Process Service Unit Tests:** New **unit tests for `ProcessService`** methods, including discovery, event sending, and cache management.
+
+### Changed
+- 🔄 **Unified File URL Generation:** Updated `aihub_api` and `aihub_lib` to leverage the newly introduced **multi-cloud file access services** for generating secure, temporary file URLs.
+- 🖼️ **Enhanced Image Resolution:** Improved the `combine_nodes_in_order` utility in `aihub_lib` and the frontend image component to correctly resolve and display images from **both Azure and S3/MinIO storage**.
+- 🚀 **Cloud-Agnostic Pipeline Operations:** Migrated core pipeline operations (e.g., fetching, deleting files) and their associated resources to utilize the new **abstract data lake client**, improving flexibility and maintainability.
+- 🧪 **Playground Configuration:** Adjusted pipeline playground examples to showcase the new **S3/MinIO data lake capabilities** and switched the default document parser to `DOCUMENT_INTELLIGENCE`.
+- 🛡️ **Internalized Docker Compose Ports:** NATS, Redis, and Postgres services in `docker-compose.latest.yml` no longer expose their ports externally, **enhancing security** by limiting external access to internal components.
+- 📝 **Increased API Logging Verbosity:** The `aihub_api` service's `LOG_LEVEL` in `docker-compose.latest.yml` has been set to `DEBUG`, providing more **verbose output** for development and troubleshooting.
+- ⚙️ **NATS Persistent Storage & Logging:** Configured NATS to use a **persistent store directory** for JetStream data (`/data/nats/js-store`) and enabled **verbose debug/trace logging** in `nats.conf`, improving operational visibility and data durability.
+- 📦 **MinIO Environment Variables:** Updated `minio` service in `docker-compose.latest.yml` to use `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD`, aligning with **newer MinIO image configurations**.
+- 🌐 **Process Controller Submission:** Process start form submissions in the API now dynamically retrieve and pass the **process configuration from the discovered process instance**, ensuring consistency.
+- 📊 **Workflow Event Dispatching:** `DispatchableWorkflow` now dispatches based on a broader range of `WorkEvent` types, **increasing flexibility** in defining process steps.
+- ⚙️ **Process Runner Configuration:** `ProcessRunner` now accepts `default_process_config` and dynamically handles **process configuration loading**, distinguishing between class and instance-specific settings.
+- 💬 **NATS Subscriber Debugging:** Added detailed **debug logging** to `JetStreamEventStore` for incoming messages and deserialized events, and improved exception logging, enhancing observability.
+- 🏷️ **Process ID in Work Events:** The `process_id` field has been moved from `ProcessStopEvent` to the more general `WorkRequestEvent`, improving **event data consistency** for process tracking.
+- 🚀 **Dagster Version Update:** Upgraded Dagster to version 1.11.2, bringing **latest features and improvements** to the pipeline orchestration framework.
+
+### Fixed
+- 🐞 **Azure Document Intelligence Key Access:** Aligned the method for retrieving primary keys from Azure Document Intelligence services to `keys.key1`, ensuring **robust and consistent authentication**.
+
+### Refactor
+- 🧹 **Infrastructure Configuration Restructure:** Moved `NatsConfig` and `RedisConfig` into dedicated `infrastructure` subpackages (`aihub_lib/infrastructure/nats` and `aihub_lib/infrastructure/redis`) for **clearer logical grouping** and improved project structure.
+- 📄 **Improved Docstring Clarity:** Cleaned up and removed **redundant parameter descriptions** from various Infrastructure-as-Code (IAC) and API test fixture docstrings.
+- ⚙️ **Centralized DataLakeFile Creation:** Refactored the instantiation logic for `DataLakeFile` objects by moving the URI-based creation method into **cloud-specific data lake client implementations** for better encapsulation and maintainability.
+- 🔄 **NATS Topic Model Evolution:** Significant refactoring of NATS topic hierarchy for **agents** and **processes**, introducing `AgentClassTopic`, `AgentInstanceTopic`, `ProcessClassTopic`, `ProcessInstanceTopic`, and `PartialProcessTopic` for more granular and consistent messaging.
+- 🧹 **Unified Base Context:** Moved the common `BaseContext` class from `aihub_agent` to `aihub_lib` for **centralized management** and reusability across services.
+- 🏗️ **Agent and Process Dispatcher Overhaul:** Major refactoring of `AgentDispatcher` and `ProcessDispatcher` to align with the new NATS topic hierarchy, improve **parameter injection**, and streamline event handling logic.
+- 📦 **Agent & Process Service Cleanup:** Streamlined internal methods in `AgentService` and `ProcessService` by adding `_` prefix to denote **private helper methods** and cleaning up redundant caching calls in tests.
+- 🛠️ **Process Entity Persistence:** Updated `ProcessEntity` to use `ProcessConfigEntityDocument` for referenced configurations and `ProcessConfigEntityEmbeddedDocument` for default configurations, enhancing **process config persistence**.
+- 💡 **Process Runner Initialization:** Refined `ProcessRunner` initialization to better leverage the new **process class/instance topic managers** and pass explicit default configurations.
+- 🧹 **Docker Image Optimization:** Removed `ca-certificates` from `aihub_api` Dockerfile for a slightly **leaner runtime image**.
+
+### Removed
+- 🗑️ **Azure AI Search Vector Store:** Discontinued support for **Azure AI Search** as a vector store option within `aihub_pipeline`, streamlining the available vector store integrations.
+- 🗑️ **Obsolete NATS Events & Topics:** Removed generic `DiscoveryRequestEvent` and the old `ProcessTopic` as they have been **superseded by new, more granular event and topic models**.
+- 🗑️ **Deprecated Test Files:** Cleaned up outdated test files related to **agent config start event handling** that are now covered by more integrated tests.
+
+---
+
+
+
+## [v0.230.0] - 2025-07-29 - NATS Topic Management and Refined Process Configurations
+
+### Added
+- ✨ **Introduced `WalkthroughContext` for Processes**: A new Redis-backed context specifically designed for process walkthroughs, enabling robust and persistent state management across complex, multi-step processes.
+- 📦 **New Process Configuration Persistence Model**: Implemented dedicated persistence entities (`ProcessConfigEntity`, `ProcessConfigEntityDocument`, `ProcessConfigEntityEmbeddedDocument`) to support flexible storage and retrieval of process configurations. This includes both class-level defaults and instance-specific overrides stored in the database.
+- 🚀 **`ProcessConfigSpecs` for Discovery**: Incorporated `ProcessConfigSpecs` into process discovery events, allowing clients to programmatically inspect the schema and parameters required for process configurations, enhancing dynamic integration.
+- 💡 **Direct Event Creation Utilities**: Added `from_raw_data` class methods to `StartEvent` and `ProcessStartEvent`, simplifying the creation of these events from raw input data within API and runner contexts.
+- ✅ **Comprehensive Process Dispatcher Tests**: Introduced a new, extensive test suite for `ProcessDispatcher` to ensure reliable event handling, configuration management, and step execution within processes.
+- 🧪 **Enhanced Process Service Database Integration Tests**: Added new tests for `ProcessService` and `ProcessConfig` database operations, validating correct interactions with the new persistence model.
+- 🤖 **API Endpoint for Agent `StartEvent`**: Exposed a new API endpoint enabling the direct sending of `StartEvent` to agents, which facilitates programmatically initiating agent runs with specified configurations.
+
+### Changed
+- 📈 **Refined Agent and Process API Discovery**: Updated the API discovery mechanisms in `AgentController` and `AgentService` to simplify agent listing, and revamped process discovery in `ProcessService` to provide more detailed and cache-aware retrieval of process instances and classes.
+- 📄 **Event Deserialization Flexibility**: Modified `DispatchableWorkflow` to allow its `get_steps_waiting_for_event` method to accept `WorkEvent` types, broadening the dispatcher's capability to react to various process-related events.
+- 🗄️ **Improved Event Persistence Logic**: Updated `PersistedAgentEventEntity` and `PersistedProcessEventEntity` to correctly utilize the new `AgentInstanceTopic` and `ProcessInstanceTopic` respectively, ensuring accurate data storage with the refined topic structure.
+- 🧩 **Extended `WorkRequestEvent` with `process_id`**: Added a `process_id` field to `WorkRequestEvent` to enhance clarity and provide a direct association with the relevant process instance.
+- ✍️ **Enhanced Logging for Subscribers**: Improved logging for `JSSubscriber` to provide more detailed information during subscription lifecycle events (start and stop).
+
+### Refactor
+- 🔄 **NATS Topic Hierarchy Refinement**: Restructured NATS topics for Agents and Processes to introduce clear distinctions between class-level and instance-level communication. This included renaming existing topics (e.g., `AgentTopic` to `AgentInstanceTopic`, `ProcessTopic` to `ProcessInstanceTopic`) and introducing new ones (`AgentClassTopic`, `ProcessClassTopic`, `PartialProcessTopic`). Related `TopicManager` and `Subscriber` classes were updated to align with this new hierarchy.
+- 🧹 **Streamlined Process Discovery Events**: Consolidated and refined process discovery events, replacing a monolithic `ProcessDiscoveryResponseEvent` with `ProcessClassDiscoveryResponseEvent` and `ProcessInstanceDiscoveryResponseEvent` for more granular information exchange during discovery.
+- ⚡️ **Improved Dispatcher `stop` Method**: Enhanced `BaseDispatcher`'s `stop` method to ensure more robust cleanup of event stores upon dispatcher termination, improving resource management.
+- ⚙️ **Centralized Process Configuration Handling**: Modified `ProcessDispatcher` to robustly manage process configurations by prioritizing explicit configurations provided in `ProcessStartEvent` and gracefully falling back to default process configurations, leveraging the new `WalkthroughContext`.
+- 🏗️ **Core Context Relocation**: Relocated the foundational `BaseContext` class from `aihub_agent` to `aihub_lib`, promoting its reusability across all core service modules.
+- 🗑️ **Delegator Topic Manager Alignment**: Refactored Agent and Process delegators to align their topic management with the new `ProcessClassTopicManager` and `ProcessInstanceTopicManager`, improving consistency and maintainability.
+
+### Removed
+- 🗑️ **Deprecated Generic Discovery Events**: Eliminated the generic `DiscoveryRequestEvent` and the monolithic `ProcessTopic` class. These have been superseded by more specific and granular event and topic types, improving type safety and clarity in discovery and messaging workflows.
+- 🧹 **Redundant Agent Config Start Event Test**: Removed a test file (`test_agent_config_start_event.py`) as its functionality is now fully covered by updated and more comprehensive dispatcher tests.
+
+---
+
+
+
+## [v0.229.0] - 2025-07-28 - Multi-Cloud Storage for Files and Pipelines
+
+### Added
+- ☁️ **Multi-Cloud Storage Abstraction:** Introduced a foundational `AbstractAnonymousFileAccessService` and concrete implementations for **Azure Blob Storage** and **S3/MinIO**, enabling consistent file access across various cloud providers.
+- ⚙️ **Configurable File Access Service:** Added `FileAccessServiceConfig` to dynamically configure and instantiate the appropriate file access service based on environment settings, simplifying multi-cloud deployment.
+- 🛠️ **S3/MinIO Data Lake Integration:** Implemented `S3DataLakeIOManager` and supporting `S3DataLakeClient` and `S3DataLakeFileSystem` resources for Dagster pipelines, bringing robust S3-compatible storage capabilities.
+- 🏗️ **Abstracted Data Lake Clients:** Introduced base interfaces (`AbstractDataLakeClient`, `AbstractDataLakeClientResource`, `AbstractDataLakeFileSystemResource`) to standardize interactions with different data lake storage solutions.
+- ⚙️ **S3 Configuration:** Added `S3Config` to centralize environment-based configuration for S3-compatible storage services.
+- ✨ **Event Construction Utilities:** Implemented new `from_raw_data` class methods for `StartEvent` and `ProcessStartEvent`, simplifying event creation from raw data with injected context.
+- ✨ **Enhanced Process Discovery Events:** Introduced `ProcessConfigSpecs`, `ProcessInstanceDiscoveryResponseEvent`, and `ProcessClassDiscoveryResponseEvent` to provide more granular and structured information during process discovery.
+- ✨ **Detailed Process DTOs:** Added new Data Transfer Objects (`MinimalProcessDTO`, `ProcessClassDTO`, `ProcessInstanceDTO`) to represent process information with enhanced clarity and detail in API responses.
+- ✨ **Agent Config Deletion Utility:** Implemented `delete_if_exists_for_class_and_id` in `AgentConfigEntityDocument` for more controlled cleanup of agent configurations in the database.
+- ✨ **Process Configuration Persistence:** Introduced new database entities (`ProcessConfigEntity`, `ProcessConfigEntityDocument`, `ProcessConfigEntityEmbeddedDocument`) to enable persistent storage and retrieval of process configurations.
+- ✨ **Process Config Conversion:** Added a `from_entity` class method to `ProcessConfig`, facilitating seamless conversion from database entities.
+- ✨ **Dagster Deployment Tools:** Introduced new Dockerfiles for Dagster and default RAG pipelines, along with a comprehensive `dagster.yaml` for production-ready Dagster deployments via PostgreSQL.
+- ✨ **Process Walkthrough Context:** Implemented `WalkthroughContext` to manage transient, per-walkthrough state within agentic processes using Redis.
+- ✨ **New Process Topic Managers & Topics:** Added `ProcessClassTopicManager` and new NATS topic classes (`PartialProcessTopic`, `ProcessClassTopic`, `ProcessInstanceTopic`) for a more hierarchical and granular process messaging structure.
+- ✨ **New Agent Topic Class:** Introduced `AgentClassTopic` to represent agent definitions at a class level within NATS messaging.
+- 🧪 **Comprehensive Test Coverage:** Added extensive unit and integration tests for `ProcessDispatcher`, `ProcessService`, and related database operations, significantly improving testing robustness for agentic processes.
+- 🧪 **Test Utilities:** Introduced new fixtures (`cleanup_db_and_cache`) to streamline database and cache cleanup in API tests, ensuring isolated test environments.
+- 📦 **Dagster Services in Docker Compose:** Integrated `oauth2proxy`, `dagster-webserver`, and `dagster-daemon` as new services in `docker-compose.latest.yml` for a complete local Dagster stack.
+
+### Changed
+- ⚙️ **CI/CD Workflows:** Updated GitHub Actions to use new dedicated workflows for building and releasing Dagster and pipeline Docker images.
+- ⚙️ **Agent Dispatcher Logic:** Refined agent dispatcher to dynamically inject `process_config` into steps, and adapted to the new NATS topic hierarchy for `AgentClassTopic` and `AgentInstanceTopic`.
+- ⚙️ **Runner Initialization:** Updated `AgentRunner`, `ProcessRunner`, and `ProcessTestRunner` to accept `default_process_config` and utilize the new topic hierarchy for improved clarity and flexibility.
+- ⚙️ **LLM Wrapping Agent Deployment:** Minor improvements to the LLM Wrapping Agent's Dockerfile entrypoint and `main.py` runner initialization for better containerization.
+- ⚙️ **API Agent Discovery:** `AgentController` and `AgentService` now use `discover_agents` which directly returns `AgentDTO` instances, reflecting richer discovered data.
+- ☁️ **Unified File Access in API:** `FileController` and `FileService` now leverage the new multi-cloud `FileAccessServiceConfig` for generating secure, temporary file URLs, abstracting storage backend details.
+- ⚙️ **Process Form Submission:** `ProcessController` and `ProcessService` now pass `process_config` to `submit_process_start_form`, ensuring process-specific configurations are respected.
+- ⚙️ **Dispatcher Shutdown:** Improved the `stop()` method in `BaseDispatcher` for more robust shutdown sequences, including explicit event store stopping.
+- ⚡️ **Enhanced Event Logging:** Increased verbosity and clarity of logging in `JetStreamEventStore` for better debugging of NATS message handling.
+- ⚙️ **Process Event Fields:** `ProcessStartEvent` now includes an optional `process_config` field, and `WorkRequestEvent` re-includes the `process_id` field for better data propagation.
+- ⚙️ **JSSubscriber Robustness:** Improved `JSSubscriber` with explicit keyword arguments for subscriptions and added debug logs for lifecycle events.
+- ⚙️ **Flexible Workflow Step Inputs:** `DispatchableWorkflow.get_steps_waiting_for_event` now correctly identifies and accepts `WorkEvent` types as valid triggers for workflow steps.
+- ⚙️ **ProcessConfig Enhancements:** Added a `process_class` field to `ProcessConfig` for better identification and updated the Pydantic model configuration for improved compatibility and flexibility.
+- ⚙️ **Cloud-Agnostic Data Lake I/O:** `AzureDataLakeIOManager` was updated to use the new `AzureDataLakeClient` interface for unified file operations, and `DataLakeFile.from_uri` creation logic was centralized into data lake clients.
+- ⚙️ **Cloud-Agnostic Pipeline Operations:** Core pipeline operations (`fetch_all_files_in_data_lake`, `delete_figures_for_many_ref_doc`, `fetch_data_lake_files_to_remove`) now utilize the `AbstractDataLakeClient` interface, enabling seamless switching between Azure and S3/MinIO.
+- ⚙️ **Playground Configuration:** `aihub_pipeline/playground/__init__.py` now defaults to S3/MinIO data lake resources and uses `DOCUMENT_INTELLIGENCE` as the default document parser.
+- ⬆️ **Dependency Updates:** Upgraded `dagster-webserver`, `dagster-postgres`, `dagster-azure`, and added `dagster-aws`, `s3fs`, and `boto3` to `aihub_pipeline/pyproject.toml` for expanded cloud support.
+- ⚙️ **Delegator Logic:** `AgentDelegator` and `ProcessDelegator` adjusted to rely on `process_class` for delegation logic and adapted to the new NATS topic hierarchy.
+- ⚙️ **Process Dispatcher Orchestration:** `ProcessDispatcher` significantly updated to leverage `WalkthroughContext` for state management, dynamically inject `process_config`, and convert topics to `ProcessInstanceTopic` for execution.
+- 🖼️ **Frontend Image Resolution:** The `ResolveImageComponent.vue` now correctly handles `s3://` prefixed URLs for image display, ensuring compatibility with S3-based storage.
+- ⬆️ **Docker Compose Infrastructure:** Updated MinIO image and its environment variables, configured PostgreSQL to support Dagster, and internalized NATS/Redis ports within `docker-compose.latest.yml` for enhanced security.
+
+### Fixed
+- 🔄 **Azure Document Intelligence Key Access:** Aligned the retrieval of primary keys from Azure Document Intelligence services to `keys.key1`, ensuring robust authentication.
+
+### Removed
+- 🗑️ **Outdated Test File:** Deleted `aihub_agent/playground/testing/tests/test_agent_config_start_event.py`, as its functionality is now covered by more integrated tests.
+- 🗑️ **Deprecated Discovery Event:** Removed `DiscoveryRequestEvent` from `aihub_lib`, replaced by more specific class- and instance-level discovery requests.
+- 🗑️ **Redundant Agent Subscriber Method:** Eliminated `for_agent_instance_events` from `AgentJSSubscriber`, streamlining agent event subscription.
+- 🗑️ **Legacy Process Topic:** Removed the old `ProcessTopic` class, superseded by the new hierarchical process topic model.
+- 🗑️ **Azure AI Search Integration:** Discontinued support for Azure AI Search as a vector store by removing its associated resources and factory functions (`aisearch_vector_store_resource`, `mongo_aisearch_storage_context_resources`).
+
+### Refactor
+- 🧹 **Infrastructure Configuration Restructure:** Moved `BaseContext`, `NatsConfig`, and `RedisConfig` into dedicated `infrastructure` subpackages within `aihub_lib` for clearer logical grouping.
+- 🔄 **Unified NATS Topic Hierarchy:** Overhauled agent and process NATS topics, transitioning from generic `AgentTopic` and `ProcessTopic` to granular `AgentInstanceTopic` and `ProcessInstanceTopic`, and introducing `*ClassTopic` concepts for improved messaging structure.
+- 🧹 **Consolidated API DTOs:** Streamlined the API's process-related DTOs into a more consistent hierarchy (`MinimalProcessDTO`, `ProcessClassDTO`, `ProcessInstanceDTO`).
+- ⚙️ **Centralized DataLakeFile Creation:** Refactored `DataLakeFile` instantiation by moving URI-based creation logic into cloud-specific `DataLakeClient` implementations for better encapsulation and maintainability.
+- 📄 **Improved Docstring Clarity:** Cleaned up and removed redundant parameter descriptions from various Infrastructure-as-Code (IAC) and API test fixture docstrings.
+- 🧹 **Internal API Method Naming:** Renamed several internal API service methods (e.g., `_discover_agent_class`, `_send_event`, `_clear_cache`) for improved consistency and clarity.
+- 🔄 **Streamlined Subscriber Methods:** Renamed and reorganized various NATS subscriber methods (e.g., `for_process_instance_work_events` to `for_process_class_work_events`) to align with the new topic hierarchy.
+- 🧹 **Pipeline Project Structure:** Reorganized `aihub_pipeline/app` and `aihub_pipeline/resources/data_lake` into more logical subpackages (`azure`, `s3`, `base`) for enhanced modularity.
+- 🔄 **Process Persistence Rearchitecture:** Refactored process configuration persistence in `aihub_lib/persistence/process` to use a more robust reference model (`ProcessConfigEntityDocument`) and embedded defaults (`ProcessConfigEntityEmbeddedDocument`).
+- 🧹 **Unified Type Hinting:** Updated numerous type hints across `aihub_agent`, `aihub_api`, `aihub_bot`, and `aihub_process` to reflect the new topic and configuration models, improving type safety.
+- ⚙️ **Process Dispatcher Event Emission:** Adjusted the process dispatcher's `publish_event` method to explicitly emit events based on specific event types (work request or work events) for clearer control flow.
+
+---
+
+
+
+## [v0.229.0] - 2025-07-25 - Multi-Cloud Storage for Files and Pipelines
+
+### Added
+- ☁️ **Multi-Cloud Storage Abstraction:** Introduced a foundational `AbstractAnonymousFileAccessService` and concrete implementations for **Azure Blob Storage** and **S3/MinIO**, enabling consistent file access across various cloud providers.
+- ⚙️ **Configurable File Access Service:** Added `FileAccessServiceConfig` to dynamically configure and instantiate the appropriate file access service based on environment settings, simplifying multi-cloud deployment.
+- 🛠️ **S3/MinIO Data Lake Integration:** Implemented `S3DataLakeIOManager` and supporting `S3DataLakeClient` and `S3DataLakeFileSystem` resources for Dagster pipelines, bringing robust S3-compatible storage capabilities.
+- 🏗️ **Abstracted Data Lake Clients:** Introduced base interfaces (`AbstractDataLakeClient`, `AbstractDataLakeClientResource`, `AbstractDataLakeFileSystemResource`) to standardize interactions with different data lake storage solutions.
+- 🐳 **Dagster Orchestration Stack:** Integrated the **Dagster webserver and daemon** into `docker-compose.latest.yml`, allowing for robust pipeline orchestration directly within the unified deployment.
+- 🗄️ **Process Configuration Persistence:** Implemented new database entities (`ProcessConfigEntity`, `ProcessConfigEntityDocument`, `ProcessConfigEntityEmbeddedDocument`) to allow **process configurations to be saved and retrieved**, supporting persistent and shareable process setups.
+- 🧪 **Comprehensive Test Coverage:** Added **extensive unit and integration tests** for `ProcessDispatcher`, `ProcessService`, and `ProcessConfig` database operations, ensuring the reliability of new process management features.
+- 🧩 **Hierarchical NATS Topics for Agents and Processes:** Introduced a **new hierarchy of NATS topic models** (`AgentClassTopic`, `AgentInstanceTopic`, `ProcessClassTopic`, `ProcessInstanceTopic`, `PartialProcessTopic`) and corresponding topic managers, enabling more granular event routing and discovery.
+- ✨ **Process Walkthrough Context:** Added a dedicated `WalkthroughContext` for managing **per-walkthrough state and configuration** in process execution, improving state isolation and management.
+- 🚀 **New Process Event Fields:** Enhanced `ProcessStartEvent` to explicitly include `process_config` and `WorkRequestEvent` to include `process_id`, improving clarity and data flow in process events.
+
+### Changed
+- 🔄 **Unified File URL Generation:** Updated `aihub_api` and `aihub_lib` to leverage the newly introduced multi-cloud file access services for generating **secure, temporary file URLs**.
+- 🖼️ **Enhanced Image Resolution:** Improved the `combine_nodes_in_order` utility in `aihub_lib` and the frontend image component to correctly resolve and display **images from both Azure and S3/MinIO storage**.
+- 🚀 **Cloud-Agnostic Pipeline Operations:** Migrated core pipeline operations (e.g., fetching, deleting files) and their associated resources to utilize the new **abstract data lake client**, improving flexibility and maintainability.
+- ⚙️ **Process Dispatcher Logic Refinement:** The `ProcessDispatcher` now dynamically resolves **process configurations** from `ProcessStartEvent` or `WalkthroughContext`, and integrates with the new topic hierarchy for more robust event handling.
+- 🧑‍💻 **Delegator Operations at Class Level:** Agent and Process delegators now primarily operate at the **process class level**, supporting dynamic process instance resolution and utilizing a new `_publish_work_event` utility for consistent event publishing.
+- ⬆️ **Dagster Dependency Updates:** Upgraded **Dagster and related dependencies** (e.g., `dagster-webserver`, `dagster-postgres`, `dagster-azure`), and added `dagster-aws` to support comprehensive S3/MinIO integrations.
+- 🌐 **Internal Port Exposure for Core Services:** **NATS, Redis, and Postgres services** in `docker-compose.latest.yml` no longer expose their ports externally, enhancing security by limiting external access to internal components within the Docker network.
+- 🧪 **Playground Configuration:** Adjusted playground examples to showcase the new S3/MinIO data lake capabilities and switched the default document parser to `DOCUMENT_INTELLIGENCE`.
+- 📊 **Dagster Concurrency Increase:** Increased `max_concurrent_runs` in Dagster from 3 to 10 in `configs/dagster/dagster.yaml`, allowing for higher parallel execution of pipelines.
+- 📝 **Improved Debug Logging for NATS:** Enhanced logging for `JetStreamEventStore` and `JSSubscriber` to provide **more detailed debug information** on received messages and subscription lifecycles.
+
+### Fixed
+- 🐛 **Process Thread Entity Creation:** Corrected `AgentDelegator` to correctly pass the `process_id` when **creating new `ThreadEntity` instances**, ensuring proper association of delegated agents with their originating processes.
+
+### Removed
+- 🗑️ **Azure AI Search Vector Store:** Discontinued support for **Azure AI Search** as a vector store option within `aihub_pipeline`, streamlining the available vector store integrations.
+- 🚫 **Generic Discovery Event:** Removed the generic `DiscoveryRequestEvent` in favor of more specific `ClassDiscoveryRequestEvent` and `InstanceDiscoveryRequestEvent`, streamlining discovery patterns.
+- 🗑️ **Outdated Process Topic Model:** Eliminated the old `ProcessTopic` model, which has been superseded by the new hierarchical topic structure (`PartialProcessTopic`, `ProcessClassTopic`, `ProcessInstanceTopic`).
+- 🧹 **Redundant Test Files:** Deleted `test_agent_config_start_event.py` from `aihub_agent` playground tests as its logic is now covered by more integrated tests.
+
+### Refactor
+- 🧹 **Infrastructure Configuration Restructure:** Moved `NatsConfig` and `RedisConfig` into dedicated `infrastructure` subpackages for clearer logical grouping and improved project structure.
+- 📄 **Improved Docstring Clarity:** Cleaned up and removed redundant parameter descriptions from various Infrastructure-as-Code (IAC) and API test fixture docstrings.
+- ⚙️ **Centralized DataLakeFile Creation:** Refactored the instantiation logic for `DataLakeFile` objects by moving the URI-based creation method into **cloud-specific data lake client implementations** for better encapsulation and maintainability.
+- 🔄 **Unified Base Context Location:** Moved `BaseContext` from `aihub_agent` to `aihub_lib`, promoting its reuse as a common utility across modules.
+- 🛠️ **Agent & Process Topic Renaming:** Standardized naming of NATS topics and their associated types (e.g., `AgentTopic` to `AgentInstanceTopic`, `ProcessDiscoveryTopic` to `ProcessInstanceDiscoveryTopic`) across `aihub_agent`, `aihub_api`, `aihub_bot`, and `aihub_lib` for improved clarity and consistency.
+- 🗄️ **Agent & Process Service Interface Simplification:** Refactored `AgentService` and `ProcessService` in `aihub_api` to use private helper methods (e.g., `_discover_agent_class`, `_send_event`, `_clear_cache`) and return DTOs directly from public discovery methods, simplifying their public interfaces.
+- ⚙️ **Event Construction Delegation:** Delegated the construction of `StartEvent` and `ProcessStartEvent` from raw data to their respective class methods, simplifying event generation logic in API services.
+- 🔄 **Azure Document Intelligence Key Access:** Updated the method for retrieving primary keys from Azure Document Intelligence services to `keys.key1`, aligning with recent API changes.
+- 📦 **Dagster `DAGSTER_HOME` Path:** Optimized the `DAGSTER_HOME` path within Dockerfiles for Dagster pipelines, leading to cleaner container setups.
+- 🧹 **API Endpoint Discovery Refinement:** Refactored endpoint creation and registration logic in `AgentEndpointsDiscoveryService` and `ProcessEndpointsDiscoveryService` to use private helper methods (e.g., `_create_endpoint`, `_register_human_endpoint`) for better modularity.
+- 🧪 **Enhanced Test Hygiene:** Implemented automated **cache clearing fixtures** for `AgentService` and `ProcessService` in API tests, ensuring isolated and reliable test runs.
+
+---
+
+
+
+## [v0.226.0] - 2025-07-25 - Core Platform Streamlining: NATS, Process, and Data Lake Refinements
+
+### Added
+- ✨ **Unified Process Topic Model:** Introduced a new `ProcessTopic` model and `DiscoveryRequestEvent` to consolidate all process-related messaging, simplifying topic management and discovery for agentic processes.
+- 🔗 **Direct File Access Service:** Implemented `AnonymousFileAccessService` for direct generation of secure, temporary file URLs, streamlining multi-cloud file access logic by removing the previous configurable service.
+- 📊 **Azure AI Search Vector Store Resource:** Re-introduced and provided a dedicated `AzureAISearchVectorStoreResource` and its associated IO Manager for pipeline integration.
+- 🧪 **Agent Configuration Precedence Test:** Added a new test to validate the precedence logic for agent configurations when provided via a `StartEvent` or loaded from defaults.
+
+### Changed
+- 🔄 **Unified Agent and Process Messaging Topics:** Overhauled NATS topic structures, consolidating `AgentClassTopic` and `AgentInstanceTopic` into `AgentTopic`, and similarly for processes (`ProcessTopic`), resulting in a simpler and more consistent messaging architecture.
+- ⚙️ **Streamlined Agent and Process Configuration Handling:** Refined how agent and process configurations are managed, simplifying dispatcher logic by removing the separate `WalkthroughContext` and externalizing `StartEvent` construction.
+- 🚀 **Simplified Agent and Process Discovery:** Simplified discovery responses (`ProcessDiscoveryResponseEvent` no longer contains detailed `ProcessConfigSpecs` or `default_process_config`) to reflect a unified model where process configuration is directly included within the entity.
+- 🗄️ **Embedded Process Configuration:** Process configurations (`ProcessConfig`) are now directly embedded within the `ProcessEntity` in the database, simplifying data relationships and removing the need for separate configuration documents.
+- 🛠️ **Refined Data Lake File Management:** Replaced abstract data lake client interfaces and S3/MinIO-specific implementations with direct Azure SDK usage for file operations within pipelines. `DataLakeFile.from_uri` is now a static method, centralizing URI parsing.
+- 📦 **Dagster Deployment Configuration:** Simplified Dagster's `dagster.yaml` storage configuration and reduced the default maximum concurrent runs. The `DAGSTER_HOME` path in Dockerfiles has been updated.
+- 🐳 **Docker Compose Simplification:** Removed the entire Dagster stack (webserver, daemon, oauth2proxy) from `docker-compose.latest.yml`, streamlining the default local deployment setup. Postgres `dagster` database is no longer initialized.
+- 🖼️ **Consolidated Image URL Resolution:** The frontend image component and backend `combine_nodes_in_order` utility now rely solely on `AnonymousFileAccessService` for URL generation, removing S3-specific logic.
+- ⚡️ **Optimized Dispatcher Stopping:** Streamlined the dispatcher's stop logic by removing redundant initialization checks.
+- 📦 **Python Dependency Alignment:** Dagster and its Postgres/Azure dependencies were downgraded to align with a previous version (`v0.226.0`), and several S3-related Python packages were removed. The default document parser for pipelines was changed from `DOCUMENT_INTELLIGENCE` to `DOCLING`.
+- ⚙️ **Process Runner Queue Groups:** Process runner queue groups now include the `process_id` for more specific identification.
+
+### Fixed
+- 🐛 **Azure Document Intelligence Key Access:** Corrected the method for retrieving primary keys from Azure Document Intelligence services, ensuring robust authentication.
+- 🧹 **Minor Logging Cleanup:** Removed excessive debug logging in `JetStreamEventStore` for cleaner logs.
+
+### Removed
+- 🗑️ **S3/MinIO Data Lake Support:** Eliminated all S3/MinIO-specific data lake IO managers and resources from the pipeline, as well as related S3 configuration and client implementations.
+- 🗑️ **Deprecated Process/Agent Topic Managers & DTOs:** Removed `ProcessClassTopicManager`, `ProcessConfigSpecs`, `PartialProcessTopic`, `ProcessClassTopic`, `ProcessInstanceTopic`, and `AgentClassTopic` as they are superseded by the unified `ProcessTopic` and `AgentTopic` models.
+- 🗑️ **Legacy Process/Agent Persistence Models:** Removed `ProcessConfigEntity`, `ProcessConfigEntityDocument`, and `ProcessConfigEntityEmbeddedDocument`, consolidating `ProcessConfig` directly into `ProcessEntity`.
+- 🗑️ **Redundant `WalkthroughContext`:** The Redis-backed `WalkthroughContext` for process dispatchers has been removed, simplifying process state management.
+- 🗑️ **Direct Agent/Process Start Event Construction:** Removed `from_raw_data` methods from `StartEvent` and `ProcessStartEvent`, centralizing event construction logic.
+- 🗑️ **Obsolete Test Files:** Cleaned up various outdated test files related to process dispatcher, process config, and agent/process service database integrations that are no longer relevant after architectural changes.
+- 🗑️ **Direct Agent Config Deletion Utility:** Removed `AgentConfigEntityDocument.delete_if_exists_for_class_and_id`.
+- 🗑️ **Abstract File Access Services:** Removed `AbstractAnonymousFileAccessService`, `AzureAnonymousFileAccessService`, `S3AnonymousFileAccessService`, and `FileAccessServiceConfig`, streamlining to a direct `AnonymousFileAccessService` implementation.
+- 🗑️ **Abstract Data Lake Clients:** Removed `AbstractDataLakeClient` and its resource/filesystem resource abstractions, simplifying data lake interaction patterns.
+
+### Refactor
+- 🧹 **Unified Context and Infrastructure Module Paths:** Consolidated `aihub_lib`'s `context` and `infrastructure` subpackages, streamlining import paths and logical grouping of common utilities.
+- ✏️ **Improved Docstrings for IAC Resources:** Added more detailed and helpful docstrings to Azure IAC networking and storage resource factories.
+- 🧹 **Centralized `DataLakeFile` Creation:** Moved `create_data_lake_file_from_uri` logic into a static method on `DataLakeFile` itself for better encapsulation.
+
+---
+
+
+
+## [v0.229.0] - 2025-07-28 - Multi-Cloud Storage for Files and Pipelines
+
+### Added
+- ☁️ **Multi-Cloud Storage Abstraction:** Introduced a foundational `AbstractAnonymousFileAccessService` and concrete implementations for **Azure Blob Storage** and **S3/MinIO**, enabling consistent file access across various cloud providers.
+- ⚙️ **Configurable File Access Service:** Added `FileAccessServiceConfig` to dynamically configure and instantiate the appropriate file access service based on environment settings, simplifying multi-cloud deployment.
+- 🛠️ **S3/MinIO Data Lake Integration:** Implemented `S3DataLakeIOManager` and supporting `S3DataLakeClient` and `S3DataLakeFileSystem` resources for Dagster pipelines, bringing robust S3-compatible storage capabilities.
+- 🏗️ **Abstracted Data Lake Clients:** Introduced base interfaces (`AbstractDataLakeClient`, `AbstractDataLakeClientResource`, `AbstractDataLakeFileSystemResource`) to standardize interactions with different data lake storage solutions.
+- ✅ **Dagster Orchestration Integration:** Integrated Dagster's webserver and daemon into the main Docker Compose setup, allowing for centralized orchestration and monitoring of data pipelines alongside other AI Hub services.
+- 📄 **Process Configuration Persistence:** Introduced new database entities (`ProcessConfigEntity`, `ProcessConfigEntityDocument`, `ProcessConfigEntityEmbeddedDocument`) for robustly storing and managing custom process configurations in MongoDB.
+- ✨ **Process Walkthrough Context:** Added `WalkthroughContext` in `aihub_process` to manage per-walkthrough state, ensuring consistent configuration and data flow for process instances.
+- 💡 **NATS Process Class/Instance Topics:** Implemented new NATS topics (`ProcessClassDiscoveryTopic`, `ProcessInstanceDiscoveryResponseEvent`, `PartialProcessTopic`, `ProcessClassTopic`, `ProcessInstanceTopic`) to support granular discovery and messaging for process classes and instances.
+- 🔑 **NATS Agent Class Topic:** Introduced `AgentClassTopic` in `aihub_lib` to support class-level discovery and routing for agents.
+- 🧪 **New Process Dispatcher Tests:** Added a comprehensive test suite for `ProcessDispatcher` to ensure robust handling of process configurations and event processing.
+- 🧪 **New Process Config Database Tests:** Included new tests for process configuration database operations and service-level integration, verifying persistence and retrieval logic.
+
+### Changed
+- 🚀 **Multi-Cloud File URL Generation:** Updated `aihub_api` and `aihub_lib` to leverage the newly introduced multi-cloud file access services for generating secure, temporary file URLs, abstracting away cloud-specific implementations.
+- 🖼️ **Enhanced Image Resolution:** Improved the `combine_nodes_in_order` utility in `aihub_lib` and the frontend image component to correctly resolve and display images from both Azure and S3/MinIO storage.
+- ⚙️ **Cloud-Agnostic Pipeline Operations:** Migrated core pipeline operations (e.g., fetching, deleting files) and their associated resources to utilize the new abstract data lake client, improving flexibility and maintainability across cloud providers.
+- ⬆️ **Dependency Updates:** Upgraded Dagster to `1.11.2` and related dependencies, and added `boto3` and `s3fs` to support comprehensive S3/MinIO integrations.
+- 📦 **Internalized Core Services in Docker Compose:** NATS, Redis, and MongoDB services in `docker-compose.latest.yml` no longer expose their ports externally, enhancing security by limiting external access to these internal components.
+- 📝 **Adjusted API and Bot Logging:** The default `LOG_LEVEL` for `aihub_api` and `aihub_bot` services in `docker-compose.latest.yml` has been set to `WARNING`, reducing log verbosity for clearer operational insights.
+- 🔄 **Refined NATS Topic Hierarchy:** Agent (`AgentTopic` to `AgentInstanceTopic`) and Process (`ProcessTopic` to `ProcessInstanceTopic`) topics and their respective managers, subscribers, and publishers have been heavily refactored to explicitly distinguish between 'class' and 'instance' levels, improving clarity and modularity.
+- ⚙️ **Dynamic Process Configuration Handling:** `ProcessDispatcher` and `ProcessRunner` now dynamically manage process configurations, prioritizing configurations provided in a `StartEvent`, then database-persisted configurations, and finally falling back to the default process configuration.
+- 💡 **Centralized StartEvent Creation:** Added `from_raw_data` class methods to `StartEvent` and `ProcessStartEvent` for standardized event creation from raw data.
+- ⚙️ **API Process Discovery:** The API's process discovery (`ProcessService`) now aligns with the new class/instance model, exposing `ProcessInstanceDTO` and `ProcessClassDTO` for more granular information.
+- 📦 **Dockerfile Paths:** Adjusted `DAGSTER_HOME` and `ENTRYPOINT` paths in `aihub_pipeline` Dockerfiles for improved consistency and deployment.
+- 🧪 **Playground Defaults:** The `aihub_pipeline` playground now defaults to using S3 resources and the `DOCUMENT_INTELLIGENCE` parser, showcasing new multi-cloud capabilities.
+- 🗄️ **Process Persistence Schema:** The `ProcessEntity` schema has been updated to use `ProcessConfigEntityDocument` (ReferenceField) for custom configurations and embed `ProcessConfigEntityEmbeddedDocument` for default configurations, enhancing data modeling flexibility.
+- ⚡️ **Concurrency in Dagster:** Increased `max_concurrent_runs` in `dagster.yaml` from 3 to 10, allowing for more concurrent pipeline executions.
+- 🤖 **Bot Service Logging:** Reduced the default logging level for the bot service to `WARNING` in Docker Compose configurations.
+
+### Fixed
+- 🐛 **Azure Document Intelligence Key Access:** Corrected the method for retrieving primary keys from Azure Document Intelligence services to use `keys.key1` instead of `keys.primary_key`, ensuring robust and consistent authentication.
+
+### Removed
+- 🗑️ **Azure AI Search Vector Store:** Discontinued support for Azure AI Search as a vector store option within `aihub_pipeline` by removing its related resources and factory functions.
+- 🗑️ **Generic Discovery Event:** The generic `DiscoveryRequestEvent` has been removed from `aihub_lib.nats.events.discovery`, as discovery mechanisms are now more specialized.
+- 🗑️ **Legacy Process Topic:** The `ProcessTopic` has been removed from `aihub_lib.nats.topics.process`, superseded by the new hierarchical process topics.
+- 🗑️ **Legacy Anonymous File Access Service:** The `AnonymousFileAccessService` has been removed from `aihub_lib.generative_ai.document.accessor`, replaced by the new multi-cloud abstraction.
+- 🗑️ **Redundant DataLakeFile Creation Method:** The static `from_uri` method has been removed from `DataLakeFile` as its logic is now encapsulated within specific `AbstractDataLakeClient` implementations.
+- 🗑️ **Obsolete Test File:** The `test_agent_config_start_event.py` test file has been removed, as its functionality is now covered by more integrated tests or made obsolete by architectural changes.
+
+### Refactor
+- 🧹 **Infrastructure Configuration Restructure:** `NatsConfig` and `RedisConfig` have been moved into dedicated `infrastructure` subpackages within `aihub_lib` for clearer logical grouping and improved project structure.
+- 📄 **Improved Docstring Clarity:** Cleaned up and removed redundant parameter descriptions from various Infrastructure-as-Code (IAC) and API test fixture docstrings for better readability.
+- ⚙️ **Centralized DataLakeFile Creation:** The logic for creating `DataLakeFile` objects from URIs has been refactored and moved into cloud-specific data lake client implementations, ensuring better encapsulation and maintainability.
+- 🔄 **Consolidated NATS Topic Managers:** `ProcessInstanceTopicManager` and `ProcessWalkthroughTopicManager` now inherit from `ProcessClassTopicManager`, streamlining the topic manager hierarchy for processes.
+- 📦 **API DTO Hierarchy:** The API's Data Transfer Objects (DTOs) for processes have been reorganized into a clearer hierarchy, with `ProcessDTO` now inheriting from `MinimalProcessDTO`, and new `ProcessClassDTO` and `ProcessInstanceDTO` introduced for explicit representation.
+- 🧹 **Test Runner Simplification:** Test runners and their associated imports have been updated to align with the new NATS topic hierarchy and the restructured `infrastructure` modules.
+
+---
+
+
+
+## [dagster-v0.226.0] - 2025-07-25 - API & Core Simplification: Streamlined Topics, Unified Discovery & Azure-Only Storage
+
+### Added
+- ✨ **Azure AI Search Vector Store Re-integration**: Re-enabled Azure AI Search as a vector store option within the pipeline, including new factory functions for its setup (`aisearch_vector_store_resource`, `mongo_aisearch_storage_context_resources`).
+- 🚀 **Agent Instance Event Subscription**: Introduced a new class method `for_agent_instance_events` to `AgentJSSubscriber`, enabling more granular subscriptions to all events within a specific agent instance.
+
+### Changed
+- ⬆️ **Dagster Version Rollback**: Downgraded core Dagster, PostgreSQL, and Azure dependencies to align with an earlier version (e.g., `dagster-webserver` from `1.11.2` to `1.9.6`).
+- ⚙️ **Dagster Home Path**: Updated the default `DAGSTER_HOME` path in Dockerfiles from `/app/aihub_pipeline` to `/opt/dagster/dagster_home` for improved consistency with Dagster best practices.
+- ⚡️ **Process Stop Event Information**: The `ProcessStopEvent` now explicitly includes the `process_id` field for better traceability.
+- ⚙️ **Docker Compose Postgres Port Exposure**: The PostgreSQL service in `docker-compose.latest.yml` now explicitly exposes port `5432` to the host.
+- ⚙️ **Dagster Postgres Storage Configuration**: Simplified the `dagster.yaml` configuration for PostgreSQL storage, transitioning from explicit `run_storage`, `event_log_storage`, and `schedule_storage` definitions to a consolidated `storage.postgres` entry.
+- ⚙️ **Dagster Concurrent Runs Limit**: Reduced the `max_concurrent_runs` for the Dagster queued run coordinator from `10` to `3`.
+- ⚙️ **Default Document Parser in Pipeline**: Changed the default document parser from `DOCUMENT_INTELLIGENCE` to `DOCLING` in the default RAG pipeline.
+- 🧪 **Playground `ProcessConfig` Instantiation**: Updated playground examples to align with the simplified `ProcessConfig` structure, removing the `process_class` parameter from its instantiation.
+
+### Removed
+- 🗑️ **Multi-Cloud Data Lake Support (S3/MinIO)**: Completely removed the multi-cloud data lake abstraction layer, including all S3/MinIO-specific IO managers and client resources for Dagster pipelines, along with related `boto3`, `s3fs`, and `S3Config` dependencies. This change streamlines data lake integration to focus solely on Azure.
+- 🗑️ **Process Configuration Persistence Entities**: Eliminated dedicated MongoDB entities and collections (`ProcessConfigEntityDocument`, `ProcessConfigEntityEmbeddedDocument`) previously used for process configurations. Process configurations are now directly embedded within the `ProcessEntity` for simplified data management.
+- 🗑️ **Deprecated NATS Topic Managers and Topics**: Removed redundant and overlapping NATS topic managers (`ProcessClassTopicManager`, `AgentClassTopic`) and their corresponding topic models (`ProcessClassTopic`, `ProcessInstanceTopic`, `AgentClassTopic`, `PartialProcessTopic`, `ProcessInstanceDiscoveryTopic`). This streamlines event routing and simplifies the topic hierarchy.
+- 🗑️ **`WalkthroughContext`**: The Redis-backed `WalkthroughContext` for process walkthrough state management has been removed from `aihub_process`, simplifying process dispatcher state handling.
+- 🗑️ **Obsolete `from_raw_data` Event Constructors**: Removed the `from_raw_data` class methods from `StartEvent` and `ProcessStartEvent`, centralizing event construction logic and promoting generic event deserialization.
+- 🗑️ **Redundant Test Files**: Cleaned up various obsolete unit and integration test files related to agent and process services and dispatchers.
+
+### Refactor
+- 🧹 **Unified NATS Topic Structure**: Consolidated `AgentInstanceTopic` into a single `AgentTopic` and `ProcessInstanceTopic` into a single `ProcessTopic`, providing a comprehensive topic model for event subjects. This includes updated references throughout `aihub_agent`, `aihub_api`, and `aihub_process`.
+- 🔄 **Streamlined NATS Discovery Events**: Consolidated various process discovery request and response events (e.g., `ProcessClassDiscoveryResponseEvent`, `ProcessInstanceDiscoveryResponseEvent`) into a single `ProcessDiscoveryResponseEvent` and introduced a generic `DiscoveryRequestEvent`, simplifying the discovery mechanism across services.
+- ⚙️ **Simplified Data Lake Client Integration**: Replaced custom data lake client wrappers (`AzureDataLakeClient`, `AbstractDataLakeClient`) with direct usage of the Azure SDK's `FileSystemClient` in Dagster resources and operations. The `DataLakeFile.from_uri` method was also made static for centralized instantiation.
+- 🔗 **Refined Process Event Dispatching**: The `ProcessDispatcher` no longer directly manages `WalkthroughContext` and has simplified its event publishing and argument injection logic by removing `_build_method_kwargs` and `_publish_work_event`.
+- 📦 **Core Infrastructure Package Restructure**: Relocated `NatsConfig` and `RedisConfig` to the top-level `aihub_lib/infrastructure` package for a cleaner and more centralized configuration structure.
+- 🧹 **DTO Consolidation**: Consolidated `MinimalProcessDTO`, `ProcessClassDTO`, and `ProcessInstanceDTO` into a single, comprehensive `ProcessDTO`, streamlining data transfer objects in the API.
+- ⚙️ **Process Configuration Simplification**: `ProcessConfig` no longer includes `process_class` and its `from_entity` method has been removed, making it a pure instance-specific configuration.
+- 🧹 **Test Runner Organization**: Refactored test runner and playground directory structures for better modularity and clarity.
+- 📄 **Docstring Enhancements**: Improved clarity and conciseness in various docstrings across IAC and API components.
+
+---
+
+
+
+## [v0.229.0] - 2025-07-28 - Multi-Cloud Storage for Files and Pipelines
+
+### Added
+- ☁️ **Multi-Cloud Storage Abstraction:** Introduced a foundational `AbstractAnonymousFileAccessService` and concrete implementations for **Azure Blob Storage** and **S3/MinIO**, enabling consistent file access across various cloud providers.
+- ⚙️ **Configurable File Access Service:** Added `FileAccessServiceConfig` to dynamically configure and instantiate the appropriate file access service based on environment settings, simplifying multi-cloud deployment.
+- 🛠️ **S3/MinIO Data Lake Integration:** Implemented `S3DataLakeIOManager` and supporting `S3DataLakeClient` and `S3DataLakeFileSystem` resources for Dagster pipelines, bringing robust S3-compatible storage capabilities.
+- 🏗️ **Abstracted Data Lake Clients:** Introduced base interfaces (`AbstractDataLakeClient`, `AbstractDataLakeClientResource`, `AbstractDataLakeFileSystemResource`) to standardize interactions with different data lake storage solutions.
+- 🦾 **Introduced `LLMWrappingAgent`**: A new agent designed to wrap and interact with Large Language Models, providing a flexible interface for LLM integrations. This includes its dedicated Dockerfile, configuration settings, and main application entry point.
+- 🚀 **Implemented Agent, Dagster, and Pipeline Build & Release Workflows**: New GitHub Actions workflows automate Docker image builds and releases for agents, Dagster, and pipelines, enabling triggers from new tags, manual dispatch, and specific feature branches.
+- 🗄️ **Database Persistence for Process Configurations**: New document and embedded document classes (`ProcessConfigEntityDocument`, `ProcessConfigEntityEmbeddedDocument`) allow process configurations to be saved and retrieved from the database, enabling persistent process setups.
+- 🧪 **Comprehensive Process Dispatcher Testing**: Added new unit and integration tests for the `ProcessDispatcher`, ensuring robust handling of process configurations, event flow, and context management.
+- 📦 **Dagster Configuration**: Introduced a new `dagster.yaml` configuration file to define PostgreSQL-based storage for runs, events, and schedules, streamlining Dagster deployments.
+- ⚙️ **S3/MinIO Configuration**: Added a new `S3Config` class for centralizing S3-compatible storage connection parameters, supporting both AWS S3 and MinIO.
+- 📋 **Process DTOs**: Introduced `MinimalProcessDTO`, `ProcessClassDTO`, and `ProcessInstanceDTO` for clearer representation of process information in API responses and internal data transfer.
+- 📚 **Process Configuration Specifications**: Added `ProcessConfigSpecs` to define and expose the schema of process configurations during discovery.
+- 🚶 **Process Walkthrough Context**: Introduced `WalkthroughContext` for managing process-specific state and configuration within individual process walkthroughs using Redis.
+- 🏷️ **New NATS Topic Managers and Topics**: Implemented `ProcessClassTopicManager`, `ProcessClassTopic`, `ProcessInstanceTopic`, and `PartialProcessTopic` to establish a clearer and more granular hierarchy for NATS process subjects.
+- 🏷️ **Agent Class Topic**: Introduced `AgentClassTopic` to provide a class-level abstraction for agent topics in NATS, enhancing topic hierarchy.
+
+### Changed
+- 🔄 **Unified File URL Generation:** Updated `aihub_api` and `aihub_lib` to leverage the newly introduced multi-cloud file access services for generating secure, temporary file URLs.
+- 🖼️ **Enhanced Image Resolution:** Improved the `combine_nodes_in_order` utility in `aihub_lib` and the frontend image component to correctly resolve and display images from both Azure and S3/MinIO storage.
+- 🚀 **Cloud-Agnostic Pipeline Operations:** Migrated core pipeline operations (e.g., fetching, deleting files) and their associated resources to utilize the new abstract data lake client, improving flexibility and maintainability.
+- 🧪 **Playground Configuration:** Adjusted playground examples to showcase the new S3/MinIO data lake capabilities and switched the default document parser to `DOCUMENT_INTELLIGENCE`.
+- ⬆️ **Dependency Updates:** Upgraded Dagster and related dependencies, and added `boto3` and `s3fs` to support comprehensive S3/MinIO integrations.
+- ⚙️ **Refined Agent/Process Configuration Loading Logic**: Dispatchers now intelligently load configurations, prioritizing those provided in a `StartEvent` or `ProcessStartEvent`, then database-persisted configurations, and finally falling back to the `default_config` defined in the runner.
+- 🚀 **Enhanced Agent Discovery Mechanism**: The API and internal agent services now use a more granular discovery mechanism, distinguishing between agent *classes* and specific agent *instances* (including their specific configurations).
+- 💡 **Improved Type Specificity for Topics**: Updated numerous type hints across agent and process components (`AgentTopic` to `AgentInstanceTopic`, `ProcessTopic` to `ProcessInstanceTopic` or `ProcessClassTopic`) to align with the new NATS topic hierarchy.
+- 🔄 **Process Runner and Dispatcher Overhaul**: Significant refactoring of process runners and dispatchers to align with the new process configuration handling, topic hierarchy, and walkthrough context.
+- ⚡️ **Improved Dispatcher Robustness**: The base dispatcher's `stop` method now checks for initialization status and explicitly marks itself as stopped, ensuring proper shutdown.
+- 📈 **Enhanced NATS Debugging and Persistence**: NATS server configuration in `nats.conf` now enables detailed debugging and tracing, and `store_dir` is configured for persistent JetStream storage.
+- 🛡️ **Internalized Core Services in Docker Compose**: NATS, Redis, and MongoDB services in `docker-compose.latest.yml` are no longer exposing their ports externally, enhancing security by limiting external access to these internal components within the Docker network.
+- 🐳 **Dagster Stack in Docker Compose**: Added a complete Dagster stack (`dagster-webserver`, `dagster-daemon`) to `docker-compose.latest.yml`, integrated with OAuth2 Proxy for secure access.
+- 📝 **Increased AIHub API Logging**: The `aihub_api` service's logging level in `docker-compose.latest.yml` has been set to `DEBUG`, providing more verbose output for development and troubleshooting.
+- ⚙️ **MinIO Credentials in Docker Compose**: Updated MinIO environment variables in `docker-compose.latest.yml` to use `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` for new MinIO versions.
+- 📦 **Playground Dockerfiles**: Added new Dockerfiles for `aihub_pipeline` and `default_rag_pipeline`, streamlining their containerization.
+- 💬 **Improved Event Debugging**: Added more debug logging for message handling in `JetStreamEventStore` for enhanced observability.
+- 📄 **New `from_raw_data` for Start Events**: `StartEvent` and `ProcessStartEvent` now include a factory method `from_raw_data` for more convenient creation from raw input.
+- 📚 **Expanded Dispatchable Workflow Event Acceptance**: `DispatchableWorkflow` now accepts `WorkEvent` types in `get_steps_waiting_for_event`, allowing workflow steps to be triggered by a broader range of events.
+- ➕ **Process ID in WorkRequestEvent**: Added `process_id` field to `WorkRequestEvent` for enhanced traceability of work requests within a process.
+- 🛠️ **Process Entity Persistence Overhaul**: The `ProcessEntity` now stores a reference to `ProcessConfigEntityDocument` for its primary configuration and an embedded `ProcessConfigEntityEmbeddedDocument` for its default configuration, improving persistence flexibility.
+- ⚙️ **ProcessConfig Enhancements**: `ProcessConfig` now includes a `process_class` field and `model_config` for Pydantic v2 compatibility, along with a `from_entity` factory.
+
+### Fixed
+- 🔄 **Updated Azure Document Intelligence Key Access:** Aligned the method for retrieving primary keys from Azure Document Intelligence services with recent API changes, ensuring robust and consistent authentication.
+
+### Removed
+- 🗑️ **Azure AI Search Vector Store:** Discontinued support for Azure AI Search as a vector store option within `aihub_pipeline`, streamlining the available vector store integrations.
+- 🗑️ **Deprecated Test Files**: Cleaned up outdated test files related to agent and process configuration and dispatcher behavior, as their functionality is now covered by new, more integrated tests.
+- 🗑️ **Redundant NATS Discovery Event**: Removed `DiscoveryRequestEvent` and `ProcessTopic`, replaced by a more granular and hierarchical set of new topics.
+- 🗑️ **Legacy `from_uri` Method**: The static `from_uri` method has been removed from `DataLakeFile`, as its logic has been moved into cloud-specific data lake client implementations for better encapsulation.
+- 🗑️ **Old Process Topic**: The generic `ProcessTopic` has been removed, replaced by `ProcessClassTopic` and `ProcessInstanceTopic` for clearer subject semantics.
+
+### Refactor
+- 🧹 **Infrastructure Configuration Restructure:** Moved `NatsConfig` and `RedisConfig` into dedicated `infrastructure` subpackages for clearer logical grouping and improved project structure.
+- 📄 **Improved Docstring Clarity:** Cleaned up and removed redundant parameter descriptions from various Infrastructure-as-Code (IAC) and API test fixture docstrings.
+- ⚙️ **Centralized DataLakeFile Creation:** Refactored the instantiation logic for `DataLakeFile` objects by moving the URI-based creation method into cloud-specific data lake client implementations for better encapsulation and maintainability.
+- 🧹 **Minor Docker Image Optimization**: Removed `ca-certificates` from the `aihub_api` Dockerfile for a slightly leaner runtime image.
+- 🔄 **Agent/Process Service Internal Naming**: Renamed many internal methods in `AgentService` and `ProcessService` (e.g., `discover_agent_class` to `_discover_agent_class`, `send_event` to `_send_event`) for better encapsulation and clarity.
+- 🧹 **API Endpoint Discovery Renaming**: Renamed endpoint creation methods in `AgentEndpointsDiscoveryService` and `ProcessEndpointsDiscoveryService` (e.g., `create_endpoint` to `_create_endpoint`) to signify their internal utility.
+- 📦 **Consolidated Base Context**: The `BaseContext` class was moved from `aihub_agent` to `aihub_lib`, centralizing common context management logic.
+- ⚙️ **Streamlined NATS Subscription Logic**: `JSSubscriber`'s `stop` method and `subscribe` call now include more explicit logging and parameter passing for improved clarity.
+- 📚 **Process Persistence Entities**: Renamed `from_dto` to `from_specs` for consistency in `HumanInSpecsEntity`, `ProgramInSpecsEntity`, and `AgentInSpecsEntity`.
+- ⚙️ **Process Delegator Updates**: `AbstractEntityDelegator` and its subclasses (AgentDelegator, ProcessDelegator) were refactored to use the new process topic hierarchy and a new internal `_publish_work_event` method.
+- 🧹 **NATS Topic Manager Cleanup**: Streamlined various topic manager methods to align with the new, more granular topic hierarchy.
+- 🗂️ **New Python Package Structures**: Added new `__init__.py` files to reflect new module structures (e.g., `aihub_lib/generative_ai/document/accessor`, `aihub_lib/infrastructure/nats`, `aihub_pipeline/resources/data_lake/base`).
+
+---
+
+
+
+## [v0.226.0] - 2025-07-24 - Dynamic Agent Configurations and Richer RAG Context
+
+### Added
+- ✨ **Dynamic Agent Configuration**: Agents can now be dynamically configured through the `StartEvent` payload, allowing for custom overrides of default agent settings at runtime.
+- 🚀 **Granular Agent Discovery**: Implemented new class-level and instance-level discovery mechanisms for agents, enabling systems to distinguish between an agent's abstract definition and its specific runnable configurations.
+- 🗄️ **Persistent Agent Configurations**: Introduced the ability to save and load custom agent configurations directly from the database, allowing for persistent and shareable agent setups.
+- 🔌 **Standardized Vector Store Configurations**: Added new Pydantic configurations for `AzureAISearchVectorStore` and `MilvusVectorStore`, enabling direct embedding and validation of vector store settings within agent configurations.
+- 📄 **`agent_class` Field in `AgentConfig`**: A new `agent_class` field has been added to `AgentConfig` for consistent agent class identification across the system.
+- 🧪 **Comprehensive Agent Configuration Tests**: New tests have been added to validate the dynamic agent configuration, database persistence, and discovery logic.
+- 💻 **`save_config.py` Example**: A new example script demonstrates how to persist custom agent configurations to the database.
+- 📈 **Hierarchical Document Headings in RAG**: RAG context now dynamically renders document headings (H1-H6) and wraps content with `<content>` or `<summary>` tags for clearer hierarchical structure and improved model interpretation.
+- 🔒 **HTML Escaping for RAG Content**: HTML special characters in RAG context headings and content are now automatically escaped for enhanced integrity and security.
+
+### Changed
+- ⚙️ **Refined Agent Configuration Loading**: The agent dispatcher now prioritizes configurations provided in a `StartEvent`, falling back to database-persisted configurations, and then to the `default_agent_config` defined in the runner.
+- 🏗️ **Updated Agent Runner Initialization**: Agent runners now explicitly accept a `default_agent_config` parameter, clearly defining the base configuration for new agent runs.
+- 💡 **Improved LLM and Vector Store Type Specificity**: Agent configurations now use more precise type unions for LLMs, embedding models, and vector stores, enhancing type safety and clarity.
+- 🔗 **Streamlined Vector Store Integration**: RAG and Retrieval agents now leverage a new `.to_llama_index()` method directly from their Pydantic vector store configurations for consistent integration.
+- 🌐 **API Agent Discovery**: The API now discovers and exposes full agent *instances* (including their specific configurations) instead of just class definitions, reflecting the new dynamic configuration capabilities.
+- 🌎 **Updated Default Ingested Node Language**: The default language for newly ingested nodes has been updated from English to German.
+- ⚡️ **Improved `asyncio.Task` Management**: Enhanced handling of `asyncio.Task` instances within dispatchers and subscribers to ensure proper lifecycle management.
+- 📄 **`StartEvent` Carries Agent Configuration**: The `StartEvent` now includes an `agent_config` dictionary, allowing it to carry the specific configuration for a given agent run.
+- 🗎 **Gunicorn Module Path Correction**: Corrected the Gunicorn module path in the API Makefile for accurate application serving.
+
+### Fixed
+- 🐛 **Robust Profile Image Fetching**: Corrected the logic for fetching user profile images from Azure Graph Service, improving error handling for missing images.
+- 🐞 **Process DTO Description Typo**: Corrected a minor typo in the `ProcessDTO` description in the generated SDK.
+
+### Removed
+- 🗑️ **Deprecated `system_prompt`, `color`, `voice` from `AgentConfig`**: These fields have been removed from the base `AgentConfig` and `AgentConfigDTO` to streamline core configuration, allowing for agent-specific prompt and UI customizations in subclasses.
+- 🗑️ **Legacy Agent Configuration Persistence Classes**: Eliminated standalone MongoDB documents (`AgentConfigEntityDocument`) and embedded documents (`AgentConfigEntityEmbeddedDocument`) used for agent configurations, consolidating persistence directly within the `AgentEntity` via references.
+- 🗑️ **Dedicated `LocaleStringEntity`**: The `LocaleStringEntity` used for persisting localized strings has been removed, as localization is now handled more directly within other models.
+- 🗑️ **Obsolete `EventModelCreationService`**: Replaced by `ModelCreationService` for broader utility.
+- 🗑️ **Redundant RAG Context Timestamp Formatting**: An internal utility for formatting Unix timestamps has been removed from the RAG context combination logic.
+
+### Refactor
+- 🧹 **Agent Dispatcher & Runner Overhaul**: Major refactor of `AgentDispatcher` and `AgentRunner` components, streamlining internal logic, simplifying argument injection, and improving background task management.
+- 🔄 **Unified Agent Discovery Architecture**: Overhauled the discovery mechanism, merging class and instance-level discovery events and topic managers into a single, consistent model.
+- 🗄️ **Streamlined Agent Persistence**: Re-architected agent configuration persistence by storing a reference to standalone `AgentConfigEntityDocument` for user-defined configs and an embedded `AgentConfigEntityEmbeddedDocument` for default configs within `AgentEntity`.
+- 📦 **Consolidated API DTOs for Agents**: Introduced dedicated DTOs (`AgentClassDTO`, `AgentInstanceDTO`, `MinimalAgentDTO`) to clearly separate agent definitions from their configured instances and minimal representations in the API.
+- 🧹 **Renamed Model Creation Service**: `EventModelCreationService` was renamed to `ModelCreationService` to reflect its broader scope.
+- 📁 **Test and Playground Restructuring**: Reorganized test runners into `simulation/agent` and `simulation/process` directories, and moved/renamed the web application's `.playground` to `.app`.
+- ⚙️ **Refined RAG Node Sorting**: Improved the internal sorting mechanism for nodes within a document based on section start lines and node type.
+- 📦 **Standardized Docker Builds**: Streamlined Dockerfiles for API and Bot services, ensuring dependencies are installed efficiently and reducing image sizes.
+- 🧹 **Codebase Naming Consistency**: Renamed internal `_get_endpoint_name` to `_get_endpoint_base_path` in endpoint discovery services for improved clarity.
+
+---
+
+
+
+## [v0.222.0] - 2025-07-15 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
+
+### Added
+- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
+- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
+- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
+- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
+- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
+- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
+- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
+- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
+- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
+- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
+- ✨ **Enabled custom environment variable configuration for API services**: This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, significantly increasing configuration flexibility and integration possibilities.
+
+### Changed
+- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
+- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
+- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance for frequently requested agent lists.
+- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
+- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
+- 📦 **Docker Build Process Simplification**: Streamlined Dockerfiles for API and Bot services by removing redundant virtual environment copying, leading to more efficient builds.
+- ⚙️ **Docker Compose Configurations**: Updated Docker Compose configurations, including a new `docker-compose.latest.yml` for comprehensive service deployment and streamlined local development setup.
+- 🔄 **Updated RAG Context Prompt Role**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages for better model interpretation.
+- ⚡️ **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
+
+### Fixed
+- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found.
+- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context.
+- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
+- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
+- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Resolved an issue where image URLs in RAG prompts were not consistently processed, ensuring images are now correctly referenced and displayed.
+- 🐛 **`JudgeOutput` Schema Immutability**: Ensured the `JudgeOutput` schema is deeply copied before being passed to LLM for structured prediction, preventing unintended mutations.
+
+### Refactor
+- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`), improving clarity and maintainability.
+- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
+- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
+- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure.
+- 🧹 **Standardized SharePoint Naming Conventions**: Refactored variable names, function parameters, and internal asset definitions across SharePoint-related assets, ops, and IO managers for improved consistency and readability.
+
+### Removed
+- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
+- 🗑️ **Redundant Health Page**: A basic placeholder health page in the frontend was removed.
+- 🗑️ **Deprecated Docker Compose for Mounted Volumes**: Removed `docker-compose-mnt.yml` as part of streamlining Docker Compose strategy.
+
+---
+
+
+
+## [v0.229.0] - 2025-07-28 - Multi-Cloud Storage for Files and Pipelines
+
+### Added
+- ☁️ **Multi-Cloud Storage Abstraction:** Introduced a foundational `AbstractAnonymousFileAccessService` and concrete implementations for **Azure Blob Storage** and **S3/MinIO**, enabling consistent file access across various cloud providers.
+- ⚙️ **Configurable File Access Service:** Added `FileAccessServiceConfig` to dynamically configure and instantiate the appropriate file access service based on environment settings, simplifying multi-cloud deployment.
+- 🛠️ **S3/MinIO Data Lake Integration:** Implemented `S3DataLakeIOManager` and supporting `S3DataLakeClient` and `S3DataLakeFileSystem` resources for Dagster pipelines, bringing robust S3-compatible storage capabilities.
+- 🏗️ **Abstracted Data Lake Clients:** Introduced base interfaces (`AbstractDataLakeClient`, `AbstractDataLakeClientResource`, `AbstractDataLakeFileSystemResource`) to standardize interactions with different data lake storage solutions.
+- 📦 **New Docker Infrastructure Configuration:** Added `dagster.yaml` for Dagster's persistent storage setup, enabling more robust pipeline execution.
+- 🚀 **Automated Build & Release Workflows:** New GitHub Actions workflows have been added to automate the Docker image build and release process for **Agents**, **Dagster**, and **Pipelines**, enabling triggers from new tags, manual dispatch, and specific feature branches.
+- ✨ **Introduced `LLMWrappingAgent`:** A new agent designed to wrap and interact with Large Language Models, complete with its Dockerfile, configuration settings, and main application entry point, providing a flexible interface for LLM integrations.
+- 🗄️ **Database Persistence for Process Configurations:** Custom process configurations can now be saved and retrieved from the database via new entities (`ProcessConfigEntity`, `ProcessConfigEntityDocument`, `ProcessConfigEntityEmbeddedDocument`), enabling persistent and shareable process setups.
+- 🧪 **Comprehensive Process Testing Infrastructure:** Added extensive unit and integration tests for `ProcessDispatcher` and `ProcessService`, focusing on new configuration loading logic, discovery, and database interactions.
+- 📄 **Process Configuration Schema Definition:** Introduced `ProcessConfigSpecs` to define the schema of process configurations, enabling dynamic form generation for process inputs in the API.
+- 👥 **New Process DTOs:** Introduced `MinimalProcessDTO`, `ProcessClassDTO`, and `ProcessInstanceDTO` to clearly distinguish between process definitions and their configured, runnable instances in the API.
+- 📚 **New Context Scope for Processes:** Added `WalkthroughContext` for managing per-walkthrough state in Redis, allowing processes to maintain state across execution steps.
+
+### Changed
+- 🔄 **Unified File URL Generation:** Updated `aihub_api` and `aihub_lib` to leverage the newly introduced multi-cloud file access services for generating secure, temporary file URLs.
+- 🖼️ **Enhanced Image Resolution:** Improved the `combine_nodes_in_order` utility in `aihub_lib` and the frontend image component to correctly resolve and display images from both Azure and S3/MinIO storage.
+- 🚀 **Cloud-Agnostic Pipeline Operations:** Migrated core pipeline operations (e.g., fetching, deleting files) and their associated resources to utilize the new abstract data lake client, improving flexibility and maintainability.
+- 🧪 **Playground Configuration:** Adjusted pipeline playground examples to showcase the new S3/MinIO data lake capabilities and switched the default document parser to `DOCUMENT_INTELLIGENCE`.
+- ⬆️ **Dependency Updates:** Upgraded Dagster and related dependencies, and added `boto3` and `s3fs` to support comprehensive S3/MinIO integrations.
+- ⚙️ **Refined Agent Discovery and Event Dispatch:** Updated agent dispatchers, test runners, and delegators to align with the new `AgentInstanceTopic` hierarchy, enhancing consistency and clarity in event routing.
+- ⚙️ **Process Configuration Loading Logic:** The process dispatcher now intelligently loads configurations, prioritizing those provided in a `ProcessStartEvent` or from `WalkthroughContext`, falling back to `default_process_config`.
+- 🌐 **Revised API Process Discovery:** The API now discovers and exposes full process *instances* (including their specific configurations) instead of just class definitions, reflecting the new dynamic configuration capabilities.
+- 🛡️ **Internalized Core Services in Docker Compose:** NATS, Redis, MongoDB, and Postgres services in `docker-compose.latest.yml` are no longer exposing their ports externally, enhancing security by limiting external access to these internal components within the Docker network.
+- 📝 **Increased AIHub API Logging:** The `aihub_api` service's logging level in `docker-compose.latest.yml` has been set to `DEBUG`, providing more verbose output for development and troubleshooting.
+- 💡 **Updated NATS Configuration:** The NATS server configuration now explicitly enables `debug`, `trace`, and `trace_verbose` logging, and uses a persistent `store_dir` for JetStream data, improving operational visibility and data durability.
+- 🚀 **Dagster Deployment in Docker Compose:** Integrated Dagster webserver and daemon into `docker-compose.latest.yml`, enabling full Dagster functionality within the stack, including S3-compatible object storage via Traefik.
+- 🔑 **MinIO Authentication:** Updated MinIO environment variables to `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` for consistency with recent MinIO versions.
+
+### Fixed
+- 🐛 **Robust Dispatcher Logging:** Enhanced JetStream event store message handling to log exceptions properly without re-raising, ensuring message acknowledgment and preventing redelivery loops.
+- 🐛 **Dockerfile Optimization:** Removed redundant `ca-certificates` package from `aihub_api` Dockerfile for a slightly leaner image.
+
+### Removed
+- 🗑️ **Azure AI Search Vector Store:** Discontinued support for Azure AI Search as a vector store option within `aihub_pipeline`, streamlining the available vector store integrations.
+- 🗑️ **Generic Discovery Events:** Removed generic `DiscoveryRequestEvent` and old `ProcessDiscoveryResponseEvent` as they have been superseded by more specific class and instance discovery events.
+- 🗑️ **Obsolete Process Topic:** The generic `ProcessTopic` has been removed, replaced by a more granular hierarchy of process topics (`PartialProcessTopic`, `ProcessClassTopic`, `ProcessInstanceTopic`).
+- 🗑️ **Old Agent Config Test File:** Removed `test_agent_config_start_event.py` as its logic is now covered by more comprehensive tests or integrated into core components.
+- 🗑️ **Deprecated DataLakeFile Creation:** The `DataLakeFile.from_uri` static method was removed, with its functionality now handled by cloud-specific data lake client implementations.
+
+### Refactor
+- 🧹 **Infrastructure Configuration Restructure:** Moved `NatsConfig` and `RedisConfig` into dedicated `infrastructure` subpackages for clearer logical grouping and improved project structure.
+- 📄 **Improved Docstring Clarity:** Cleaned up and removed redundant parameter descriptions from various Infrastructure-as-Code (IAC) and API test fixture docstrings.
+- ⚙️ **Centralized DataLakeFile Creation:** Refactored the instantiation logic for `DataLakeFile` objects by moving the URI-based creation method into cloud-specific data lake client implementations for better encapsulation and maintainability.
+- ⚙️ **Updated Azure Document Intelligence Key Access:** Aligned the method for retrieving primary keys from Azure Document Intelligence services with recent API changes, ensuring robust and consistent authentication.
+- 🧹 **Centralized Base Context:** Moved `BaseContext` from `aihub_agent` to `aihub_lib`, promoting reusability and reducing duplication across service cores.
+- 🔄 **Streamlined Agent Topic Hierarchy:** Refactored agent NATS topics (`AgentTopic` renamed to `AgentInstanceTopic`) and introduced `AgentClassTopic` to establish a clearer hierarchy between agent classes and instances.
+- 🔄 **Streamlined Process Topic Hierarchy:** Refactored process NATS topics, introducing `PartialProcessTopic`, `ProcessClassTopic`, and `ProcessInstanceTopic` for a more granular and consistent topic structure.
+- ⚙️ **Unified Event Creation for Start Events:** Consolidated `StartEvent` and `ProcessStartEvent` creation logic into `from_raw_data` class methods, improving consistency and encapsulation.
+- 🧹 **Standardized Internal Method Naming:** Renamed several internal `AgentService` and `ProcessService` methods (e.g., `discover_agent_class` to `_discover_agent_class`, `send_event` to `_send_event`) to explicitly mark them as private.
+- 🧹 **Cleaned up Internal Dispatcher State:** Removed explicit `_initialized` and `_init_lock` flags from `BaseDispatcher` as their management is now handled implicitly by context managers or other lifecycle hooks.
+- 🧹 **Streamlined Dispatcher Shutdown:** Improved `BaseDispatcher.stop()` to explicitly stop the event store and update its initialization flag, ensuring a clean shutdown.
+
+---
+
+
+
+## [v0.222.0] - 2025-07-21 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
+
+### Added
+- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
+- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
+- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
+- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
+- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
+- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
+- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
+- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
+- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
+- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
+- ✨ **Enabled custom environment variable configuration for API services**: This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, significantly increasing configuration flexibility and integration possibilities.
+- 💡 **New Docker Infrastructure Components**: Added `docker-compose.latest.yml` and related configurations for Milvus, NATS, and PostgreSQL, providing a streamlined and comprehensive deployment environment.
+
+### Changed
+- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
+- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
+- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance for frequently requested agent lists.
+- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
+- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
+- 🔄 **Updated RAG Context Prompt Role**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages (German, English, French, and Italian) to better align with prompt engineering best practices and enhance model interpretation of contextual information.
+- ✨ **Enhanced `Human` Delegator in Processes**: Refined input/output specifications for the `Human` delegator, adding support for initial forms (`start_form`) and more granular user targeting (e.g., `user_ids`, `user_emails`).
+- 📈 **Improved Database Indexing**: Added new database indexes to `PersistedAgentEventEntity`, `PersistedProcessEventEntity`, `ThreadEntity`, and `UserEntity` for enhanced query performance.
+- 📊 **Enhanced Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
+
+### Fixed
+- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found.
+- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context.
+- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
+- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
+- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Resolved an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring that images are now correctly referenced and displayed by explicitly converting their URL object to a string representation.
+
+### Removed
+- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
+- ✂️ **Deprecated Health Service Page**: A basic placeholder health page in the frontend was removed.
+- 🗑️ **Outdated Docker Compose Configuration**: Removed the old `docker-compose-mnt.yml` file, which has been superseded by a more comprehensive and updated `docker-compose.latest.yml`.
+
+### Refactor
+- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`) and SharePoint-related assets, improving clarity and maintainability.
+- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
+- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
+- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure.
+- ✂️ **Streamlined Dockerfiles**: Optimized Dockerfiles for various services by removing redundant `poetry install` and virtual environment copy steps, resulting in smaller and more efficient images.
+- 🗂️ **Web Application Structure**: Restructured the Nuxt.js development environment from `.playground` to `.app` for better organization and consistency.
+
+---
+
+
+
+## [v0.229.0] - 2025-07-25 - Multi-Cloud Storage for Files and Pipelines
+
+### Added
+- ☁️ **Multi-Cloud Storage Abstraction:** Introduced a foundational `AbstractAnonymousFileAccessService` and concrete implementations for **Azure Blob Storage** and **S3/MinIO**, enabling consistent file access across various cloud providers.
+- ⚙️ **Configurable File Access Service:** Added `FileAccessServiceConfig` to dynamically configure and instantiate the appropriate file access service based on environment settings, simplifying multi-cloud deployment.
+- 🛠️ **S3/MinIO Data Lake Integration:** Implemented `S3DataLakeIOManager` and supporting `S3DataLakeClient` and `S3DataLakeFileSystem` resources for Dagster pipelines, bringing robust S3-compatible storage capabilities.
+- 🏗️ **Abstracted Data Lake Clients:** Introduced base interfaces (`AbstractDataLakeClient`, `AbstractDataLakeClientResource`, `AbstractDataLakeFileSystemResource`) to standardize interactions with different data lake storage solutions.
+
+### Changed
+- 🔄 **Unified File URL Generation:** Updated `aihub_api` and `aihub_lib` to leverage the newly introduced multi-cloud file access services for generating secure, temporary file URLs.
+- 🖼️ **Enhanced Image Resolution:** Improved the `combine_nodes_in_order` utility in `aihub_lib` and the frontend image component to correctly resolve and display images from both Azure and S3/MinIO storage.
+- 🚀 **Cloud-Agnostic Pipeline Operations:** Migrated core pipeline operations (e.g., fetching, deleting files) and their associated resources to utilize the new abstract data lake client, improving flexibility and maintainability.
+- 🧪 **Playground Configuration:** Adjusted playground examples to showcase the new S3/MinIO data lake capabilities and switched the default document parser to `DOCUMENT_INTELLIGENCE`.
+- ⬆️ **Dependency Updates:** Upgraded Dagster and related dependencies, and added `boto3` and `s3fs` to support comprehensive S3/MinIO integrations.
+
+### Removed
+- 🗑️ **Azure AI Search Vector Store:** Discontinued support for Azure AI Search as a vector store option within `aihub_pipeline`, streamlining the available vector store integrations.
+
+### Refactor
+- 🧹 **Infrastructure Configuration Restructure:** Moved `NatsConfig` and `RedisConfig` into dedicated `infrastructure` subpackages for clearer logical grouping and improved project structure.
+- 📄 **Improved Docstring Clarity:** Cleaned up and removed redundant parameter descriptions from various Infrastructure-as-Code (IAC) and API test fixture docstrings.
+- ⚙️ **Centralized DataLakeFile Creation:** Refactored the instantiation logic for `DataLakeFile` objects by moving the URI-based creation method into cloud-specific data lake client implementations for better encapsulation and maintainability.
+
+---
+
+
+
+## [llm_wrapping_agent-v0.226.0] - 2025-07-25 - Introducing the LLM Wrapping Agent and CI/CD Enhancements
+
+### Added
+- ✨ **Introduced `LLMWrappingAgent`**: A new agent designed to wrap and interact with Large Language Models, providing a flexible interface for LLM integrations. This includes its dedicated Dockerfile, configuration settings, and main application entry point.
+- 🚀 **Implemented Agent Build & Release Workflow**: A new GitHub Actions workflow has been added to automate the Docker image build and release process for agents, enabling triggers from new tags, manual dispatch, and specific feature branches.
+
+### Changed
+- ⚙️ **Updated NATS Configuration**: The NATS server configuration now includes enhanced debugging and tracing capabilities, and utilizes persistent storage for JetStream data, improving operational visibility and data durability.
+- 🛡️ **Internalized Core Services in Docker Compose**: NATS, Redis, and MongoDB services in `docker-compose.latest.yml` are no longer exposing their ports externally, enhancing security by limiting external access to these internal components within the Docker network.
+- 📝 **Increased AIHub API Logging**: The `aihub_api` service's logging level in `docker-compose.latest.yml` has been set to `DEBUG`, providing more verbose output for development and troubleshooting.
+
+### Refactor
+- 🧹 **Minor Docker Image Optimization**: Removed `ca-certificates` from the `aihub_api` Dockerfile for a slightly leaner runtime image.
+
+---
+
+
+
+## [v0.226.0] - 2025-07-22 - Agent Configuration Overhaul and Enhanced Document Context
+
+### Added
+- ✨ **Dynamic Agent Configuration**: Agent configurations can now be dynamically provided via a `StartEvent` or loaded from a database, offering greater flexibility and allowing custom overrides of default agent settings.
+- 🚀 **Enhanced Agent Discovery Mechanism**: Implemented granular discovery for agent *classes* and specific agent *instances*, enabling the system to distinguish between an agent's base definition and its runnable, configured versions.
+- 🗄️ **Database Persistence for Agent Configurations**: Custom agent configurations can now be saved and retrieved from the database, enabling persistent and shareable agent setups across deployments.
+- 🔌 **New Pydantic Models for Vector Store Configurations**: Introduced dedicated Pydantic configurations for `AzureAISearchVectorStore` and `MilvusVectorStore`, allowing for direct embedding and validation of vector store settings within agent configs.
+- 📈 **`agent_class` Field in `AgentConfig`**: A new `agent_class` field has been added to `AgentConfig` for consistent agent class identification throughout the system.
+- ✨ **Hierarchical Document Headings**: Implemented the dynamic rendering of document headings (H1-H6) directly within the context, providing clearer hierarchical structure and improved readability.
+- 📄 **Structured Content and Summary Tags**: Individual node content is now explicitly wrapped in XML-like tags (`<content>` or `<summary>`) based on its type, providing more precise semantic context.
+- 🔒 **HTML Escaping for Content**: Enhanced the integrity and security of rendered content by automatically escaping HTML special characters in both headings and content, preventing unintended rendering issues.
+- 🦾 **New Job Creation Utility**: Introduced `materialize_asset_job` to simplify the creation of jobs for materializing specific selections of assets within pipelines.
+- 📅 **Automated Playground Workflows**: Implemented new daily jobs and schedules within the playground environment to automatically observe source data and manage document removal processes.
+- 📚 **New Database Entities for Localization**: Introduced `LocaleStringEntity` for standardizing the storage of localized strings in the database.
+
+### Changed
+- ⚙️ **Refined Agent Configuration Loading Logic**: The agent dispatcher now intelligently loads configurations, prioritizing those provided in a `StartEvent`, then database-persisted configurations, and finally falling back to the `default_agent_config` defined in the runner.
+- 🏗️ **Updated Agent Runner Initialization**: Agent runners now explicitly accept a `default_agent_config` parameter, clearly defining the base configuration for new agent runs.
+- 💡 **Improved Type Specificity for LLM and Vector Store Configs**: Agent configurations now utilize more precise type unions for LLMs, embedding models, and vector stores, enhancing type safety and clarity.
+- 🔗 **Streamlined Vector Store Integration**: RAG and Retrieval agents now leverage the `.to_llama_index()` method directly from the new Pydantic vector store configurations for more consistent and encapsulated integration.
+- ⚡️ **Enhanced Background Task Management**: Improved handling of `asyncio.Task` instances within dispatchers and subscribers to ensure proper lifecycle management and prevent premature garbage collection.
+- 🌐 **Revised API Agent Discovery**: The API now discovers and exposes full agent *instances* (including their specific configurations) instead of just class definitions, reflecting the new dynamic configuration capabilities.
+- ⚙️ **Updated Default Document Language**: The default language for newly ingested nodes has been updated from English to German, better aligning with regional configurations.
+- ⚡️ **Refined Node Sorting Logic**: Improved the internal sorting mechanism for nodes within a document. Nodes are now ordered more accurately based on their section start lines and type.
+- ⚙️ **Refined Asset Automation**: Adjusted automation configurations for document and data lake file removal assets, transitioning from eager conditions to more explicit job-driven scheduling.
+- 🔗 **Specialized I/O Manager**: Updated the SharePoint observable asset to utilize a dedicated `sharepoint_io_manager`, ensuring more appropriate handling of SharePoint data interactions.
+- 📄 **Agent Configuration Data Format**: The `ChatService` now passes agent configuration data as a dictionary instead of a Pydantic object when publishing `UserMessageEvent`, standardizing data exchange.
+
+### Fixed
+- 🐛 **Robust Figure Deletion in Pipelines**: Improved the data lake figure deletion process in pipelines by adding an existence check, preventing potential errors when a figures directory is already absent.
+- 🖼️ **Robust User Profile Image Retrieval**: Enhanced `AzureGraphService` to gracefully handle cases where a user's profile image is not found, preventing errors.
+
+### Refactor
+- 🔄 **Consolidated Agent Configuration Management**: Standardized agent configuration handling across the system, enabling dynamic overrides and database persistence for agent instances.
+- ✨ **Refined Agent and Event Discovery Architecture**: Overhauled the discovery mechanism to support both class-level and instance-level agent introspection, providing more granular control and information.
+- 🏗️ **Reorganized API DTOs for Agent Representation**: Introduced dedicated DTOs (`AgentClassDTO`, `AgentInstanceDTO`, `MinimalAgentDTO`) to clearly separate the concept of an agent's definition from its configured, runnable instances in the API.
+- 🧹 **Internal API Service Renaming**: Renamed `EventModelCreationService` to `ModelCreationService` to reflect its broader utility beyond just event models.
+- 🧹 **Standardized Agent Configuration Model**: Revised `AgentConfig` by removing deprecated fields (`system_prompt`, `color`, `voice`) and promoting its general use across agent and process configurations.
+- 🧹 **Streamlined Timestamp Handling**: Removed an internal utility for formatting Unix timestamps as date and time handling for document metadata is now managed more efficiently by the underlying system.
+- 🧹 **Consolidated Data Transfer Objects (DTOs)**: Relocated all agent-related DTOs into a dedicated `dto` subdirectory for improved organization and clarity.
+- 🔄 **Enhanced DTO Encapsulation**: `AgentInstanceDTO` now manages its own persistence by handling entity creation/updates and generating discovery response events directly, improving data model autonomy.
+- 🗄️ **Decoupled Agent Persistence**: The `AgentEntity` creation and update logic was refactored to accept explicit parameters instead of DTO objects, enhancing the reusability and flexibility of the persistence layer.
+- ⚙️ **Standardized Event Specification Handling**: Updated `EventSpec` creation methods to consistently use `EventSpecs` objects, improving internal data handling.
+- 🔗 **Streamlined Topic Inheritance**: `AgentInstanceDiscoveryTopic` now correctly inherits from `AgentClassDiscoveryTopic`, reducing redundancy and clarifying topic structure.
+
+### Removed
+- 🗑️ **Deprecated Configuration Fields**: The `system_prompt`, `color`, and `voice` fields have been removed from the base `AgentConfig` and `AgentConfigDTO`, streamlining the core configuration.
+- 🗑️ **Direct Agent Config Persistence Example**: Eliminated `save_config.py` from playground examples, indicating a shift away from direct saving of agent configurations to the database via this script.
+- 🗑️ **Obsolete Test Files**: Cleaned up several outdated test files related to agent dispatcher, agent config, and agent service database integration.
+- 🧹 **Redundant NATS Topic Managers**: Cleaned up unused and overlapping topic management methods within `AgentClassTopicManager` for a leaner API.
+- 🚫 **Transferred Discovery Event Logic**: Removed the `from_agent_instance` method from `AgentInstanceDiscoveryResponseEvent` as its functionality has been moved to the `AgentInstanceDTO` for better encapsulation.
+
+---
+
+
+
+## [v0.222.0] - 2025-07-15 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
+
+### Added
+- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
+- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
+- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
+- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
+- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
+- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
+- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
+- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
+- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
+- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
+- ✨ **Enabled Custom Environment Variable Configuration for API Services**: This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, significantly increasing configuration flexibility and integration possibilities.
+- 📦 **New Docker Infrastructure Configuration**: Added new `docker-compose.latest.yml` providing a complete, ready-to-run local environment including Milvus, OpenWebUI, Phoenix, Postgres, NATS, Redis, MongoDB, and Traefik.
+- 📦 **New Web Image Build Workflow**: Added a new GitHub Actions workflow to build and release the web frontend Docker image, streamlining deployment processes.
+
+### Changed
+- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
+- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
+- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses and JWKS keys, improving performance for frequently requested agent lists and authentication.
+- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
+- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
+- ⚡️ **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
+- 🔄 **Updated RAG Context Prompt Role**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages (German, English, French, and Italian) to better align with prompt engineering best practices and enhance model interpretation of contextual information.
+- 📦 **Updated Python Dependency Management**: Migrated Python Docker image builds from a `poetry install --no-root` and virtual environment copy approach to a simpler `poetry install` directly in the final runtime image, reducing build complexity and image size.
+
+### Fixed
+- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found.
+- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context.
+- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
+- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
+- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Resolved an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring that images are now correctly referenced and displayed by explicitly converting their URL object to a string representation.
+
+### Removed
+- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
+- 🗑️ **Deprecated Docker Compose Setup**: Removed the `docker-compose-mnt.yml` file, which has been superseded by a more comprehensive and updated Docker Compose setup.
+- 🗑️ **Removed Redundant Health Page**: A basic placeholder health page in the frontend was removed.
+- 🗑️ **Old Frontend Playground**: The `.playground` directory for frontend development has been removed, replaced by the standardized `.app` directory.
+
+### Refactor
+- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`), improving clarity and maintainability.
+- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
+- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
+- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure.
+- 🧹 **Standardized SharePoint Naming Conventions**: Refactored variable names, function parameters, and internal asset definitions across SharePoint-related assets, ops, and IO managers for improved consistency and readability (e.g., `sharepoint_` was consistently renamed to `share_point_`).
+
+---
+
+
+
+## [v0.222.0] - 2025-07-15 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
+
+### Added
+- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
+- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
+- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
+- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
+- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
+- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
+- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
+- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
+- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
+- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
+- ✨ **Enhanced API Configuration and Extensibility**: This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, significantly increasing configuration flexibility and integration possibilities.
+- 🐳 **Comprehensive Docker Compose Deployment**: Introduced a new `docker-compose.latest.yml` for unified deployment of all core AI Hub services, including Milvus, Postgres, OpenWebUI, Phoenix, and API, simplifying local and production setups.
+- 📦 **Optimized Web Application Deployment**: Introduced a new multi-stage `Dockerfile` for the web application, optimizing build times and final image size, along with `nginx.conf` and `config.template.json` for robust production serving.
+- ⚙️ **New Infrastructure Configuration Files**: Added new configuration files for Milvus (`milvus.yaml`), NATS (`nats.conf`), and PostgreSQL initialization (`init-multiple-dbs.sh`), streamlining infrastructure setup.
+
+### Changed
+- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
+- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated all related API routes and frontend client-side composables to clearly distinguish between agent and process events.
+- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance for frequently requested agent lists.
+- 🧑‍💻 **Enhanced Human-in-the-Loop Interactions**: Significantly redesigned human interaction mechanisms, enabling granular targeting of users (`user_ids`, `user_emails`, `user_roles`) for work requests, and introduced the ability to define and render dynamic forms for human input directly within process steps.
+- 📊 **Expanded Process Discovery Information**: Enhanced `ProcessDiscoveryResponseEvent` and `ProcessRunner` to provide a richer set of details on human, program, and agent inputs for each process, including dynamic form schemas for human interactions.
+- 📝 **Improved Work Event Traceability**: Integrated `HumanWorkEvent` with the new `Form` base class for dynamic UI generation and extended both `HumanWorkEvent` and `ProgramWorkEvent` to include `submitted_by` user information for enhanced traceability.
+- 📈 **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
+- 🔄 **Updated RAG Context Prompt Role**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages (German, English, French, and Italian) to better align with prompt engineering best practices and enhance model interpretation of contextual information.
+- 📦 **Frontend Build and Dependency Updates**: Updated build scripts and integrated new Formkit-related modules and dependencies to support the new dynamic form generation and improved localization capabilities.
+
+### Fixed
+- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic to gracefully handle cases where a specific agent might not be found in the database, ensuring `is_online` status is accurately reflected.
+- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context and that NATS process discovery topics are strictly validated.
+- 🧰 **Improved Serialization and Schema Handling**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, preventing data loss, and ensured deep copying of schemas in the evaluation framework to avoid unintended modifications.
+- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Resolved an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring that images are now correctly referenced and displayed by explicitly converting their URL object to a string representation.
+
+### Refactor
+- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`), improving clarity and maintainability.
+- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
+- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
+- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure for better modularity.
+- 🌐 **Standardized SharePoint Naming Conventions**: Refactored variable names, function parameters, and internal asset definitions across SharePoint-related components for improved consistency and readability.
+- 🏠 **Frontend Directory Renaming**: Renamed the primary frontend application directory from `.playground` to `.app` to better distinguish it as the main application source, updating all related configurations.
+- 🐳 **Optimized Dockerfiles**: Streamlined API and `aihub_bot` Dockerfiles by removing redundant virtual environment copying and poetry installation steps, leading to smaller and faster image builds.
+
+### Removed
+- 🗑️ **Automatic Draft PR Workflow:** The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
+- 🗑️ **Deprecated Docker Compose for Mounted Volumes**: Removed `docker-compose-mnt.yml` as it is superseded by updated Docker Compose strategies that better handle volume management and local development.
+- 🗑️ **Deprecated Event Distributor Dependency**: Removed the generic `use_external_event_distributor` dependency helper, which is now replaced by more specific `use_external_agent_event_distributor` and `use_external_process_event_distributor`.
+- ✂️ **Redundant Health Page**: A basic placeholder health page in the frontend was removed.
+
+---
+
+
+
+## [web-v0.227.0] - 2025-07-23 - Configuration Adjustments
+
+### Changed
+- ⚡️ **Adjusted Default Log Level:** Set the default `LOG_LEVEL` for the API service in the `latest` Docker Compose configuration from `DEBUG` to `WARNING` to reduce log verbosity and focus on more critical messages.
+
+---
+
+
+
+## [web-v0.226.0] - 2025-07-24 - Advanced Agent Management & Structured RAG Output
+
+### Added
+- ✨ **Dynamic Agent Configuration**: Agent configurations can now be dynamically provided via a `StartEvent` or loaded from a database, offering greater flexibility and allowing custom overrides of default settings.
+- 🚀 **Hierarchical Agent Discovery**: Implemented granular discovery for agent *classes* and specific agent *instances*, enabling the system to distinguish between an agent's base definition and its runnable, configured versions.
+- 🗄️ **Database Persistence for Agent Configurations**: Custom agent configurations can now be saved and retrieved from the database, enabling persistent and shareable agent setups.
+- 📚 **Structured RAG Context Output**: Introduced hierarchical heading rendering (H1-H6) and explicit `<content>` / `<summary>` tags for RAG nodes, significantly improving the readability and structure of contextual information.
+- 🔐 **Secure HTML Escaping in RAG Context**: Automatically escapes HTML special characters in rendered RAG context (headings and content) to prevent rendering issues and potential injection vulnerabilities.
+- 🔗 **Standardized Vector Store Configurations**: Introduced new Pydantic configurations (`AzureAISearchVectorStoreConfig`, `MilvusVectorStoreConfig`) for vector stores, enabling their direct embedding and validation within agent configs.
+- 🧩 **Modular API Controllers**: Exposed new API controllers for `Suite`, `Token`, and `Role` management, expanding the system's external capabilities.
+- 📄 **New Persistence for Localized Strings**: Introduced `LocaleStringEntity` for storing localized strings in the database, enhancing internationalization support.
+- 🧪 **Pipeline Job Creation Utility**: Added `materialize_asset_job` to simplify the creation of jobs for materializing specific selections of assets.
+- ⏱️ **Automated Pipeline Schedules**: Implemented new daily jobs and schedules within the playground environment to automatically observe source data and manage document removal processes.
+
+### Changed
+- ⚙️ **Refined Agent Configuration Loading Logic**: The agent dispatcher now prioritizes `StartEvent` configurations, then database-persisted configurations, and finally falls back to the `default_agent_config` defined in the runner.
+- 🔄 **Updated Agent Runner Initialization**: Agent runners now explicitly accept a `default_agent_config` parameter, clearly defining the base configuration for new agent runs.
+- 🎯 **Precise LLM & Vector Store Typing**: Agent configurations now use more specific type unions for LLMs, embedding models, and vector stores, enhancing type safety and clarity.
+- 🔄 **Streamlined Vector Store Integration**: RAG and Retrieval agents now convert vector store configurations to LlamaIndex objects via a `.to_llama_index()` method, ensuring consistent integration.
+- 🚀 **Enhanced Asynchronous Task Management**: Improved handling of `asyncio.Task` instances across dispatchers and subscribers to ensure proper lifecycle management and prevent premature garbage collection.
+- 🌐 **Granular API Agent Discovery**: The API now discovers and exposes full agent *instances* (including their specific configurations) instead of just class definitions, reflecting the new dynamic configuration capabilities.
+- ⚙️ **Updated Default RAG Language**: The default language for newly ingested RAG nodes has been changed from English to German.
+- 📊 **Pipeline Automation Conditions**: Adjusted automation configurations for document and data lake file removal assets from eager conditions to job-driven scheduling.
+- 🔗 **Dedicated SharePoint I/O Manager**: The SharePoint observable asset now utilizes a dedicated `sharepoint_io_manager` for more appropriate data handling.
+- 🖼️ **Graceful User Profile Image Fetching**: Enhanced `AzureGraphService` to gracefully handle cases where user profile images are not found (HTTP 404), preventing unnecessary warnings.
+- 🏷️ **API Endpoint Renaming for Agent Events**: Renamed API endpoints for agent events (e.g., `/events/threads` to `/events/agent/threads`) for clearer distinction.
+- 📦 **Docker Compose and Environment Updates**: Updated `docker-compose.latest.yml` with more comprehensive service configurations, including environment variables for OAuth, improved Traefik rules, and web service.
+
+### Fixed
+- 🐛 **Robust Pipeline Figure Deletion**: Improved the data lake figure deletion process in pipelines by adding an explicit directory existence check, preventing errors when figures directories are absent.
+- 💬 **API SDK Typo**: Corrected a minor typo in the `ProcessDTO` description in the generated SDK, changing "processis" to "process is online".
+
+### Removed
+- 🗑️ **Deprecated Agent Configuration Fields**: The `system_prompt`, `color`, and `voice` fields have been removed from the base `AgentConfig` and `AgentConfigDTO`, streamlining the core configuration.
+- 🗑️ **Legacy Discovery Events and Topic Managers**: Removed old class- and instance-specific discovery events and topic managers, unifying agent discovery under a new, hierarchical model.
+- 🗑️ **Outdated Unix Timestamp Formatting Utility**: The internal `format_unix_timestamp` utility for RAG context has been removed.
+
+### Refactor
+- 🔄 **Consolidated Agent Configuration Management**: Standardized agent configuration handling across the system, enabling dynamic overrides and database persistence for agent instances.
+- ✨ **Refined Agent Discovery Architecture**: Overhauled the discovery mechanism to support both class-level and instance-level agent introspection, providing more granular control and information.
+- 🏗️ **Reorganized API DTOs for Agent Representation**: Introduced dedicated DTOs (`AgentClassDTO`, `AgentInstanceDTO`, `MinimalAgentDTO`) to clearly separate the concept of an agent's definition from its configured, runnable instances in the API.
+- 📦 **Streamlined Vector Store Configuration**: Replaced direct usage of `llama_index` vector store objects with internal Pydantic configuration objects that can convert to `llama_index` types.
+- 🧹 **Test File Reorganization**: Reorganized API test runners and related test files into more logical `simulation/agent` and `simulation/process` directories.
+- 🧹 **Internal API Naming Consistency**: Renamed the internal `_get_endpoint_name` to `_get_endpoint_base_path` in endpoint discovery services for improved clarity and consistency.
+- 🧹 **API Service Renaming**: Renamed `EventModelCreationService` to `ModelCreationService` to reflect its broader utility beyond just event models.
+- 🧹 **Python Module Import Consistency**: Corrected `gunicorn` entrypoint in `Makefile` from `app/main:app` to `app.main:app` for standard Python module import.
+- 🧹 **Cleaned up Agent Playground Examples**: Updated various agent playground examples to align with the new `default_agent_config` and the removal of deprecated fields.
+
+---
+
+
+
+## [v0.228.0] - 2025-07-25 - Azure Document Intelligence Key Access Alignment
+
+### Refactor
+- 🔄 **Updated Azure Document Intelligence Key Access:** Aligned the method for retrieving primary keys from Azure Document Intelligence services with recent API changes, ensuring robust and consistent authentication.
+
+---
+
+
+
+## [bot-v0.227.0] - 2025-07-23 - Operational Adjustments
+
+### Changed
+- ⚙️ **Optimized Default Logging Level:** Reduced the default log verbosity for the bot service from `DEBUG` to `WARNING` in the `docker-compose.latest.yml` configuration, leading to less noise in logs and improved operational clarity.
+
+---
+
+
+
+## [v0.226.0] - 2025-07-24 - Next-Gen Agent Management & Data Context
+
+### Added
+- ✨ **Dynamic Agent Configuration:** Agent configurations can now be dynamically provided via `StartEvent` or loaded from the database, enabling custom overrides of default agent settings for flexible deployments.
+- 🗄️ **Persistent Agent Configurations:** Introduced new database entities (`AgentConfigEntityDocument`, `AgentConfigEntityEmbeddedDocument`) to allow custom agent configurations to be saved and retrieved, enhancing reusability.
+- 🚀 **Granular Agent Discovery:** Implemented explicit discovery mechanisms for both agent *classes* (`ClassDiscoveryRequestEvent`, `AgentClassDiscoveryResponseEvent`) and specific agent *instances* (`InstanceDiscoveryRequestEvent`, `AgentInstanceDiscoveryResponseEvent`), providing richer metadata.
+- ⚙️ **Typed Vector Store Configurations:** Introduced dedicated Pydantic configuration models (`AzureAISearchVectorStoreConfig`, `MilvusVectorStoreConfig`) for vector stores, enabling their direct embedding and validation within agent configurations.
+- 📄 **Structured Document Rendering:** Enhanced `combine_nodes_in_order` to dynamically render hierarchical headings (H1-H6) and semantic tags (`<content>`, `<summary>`) for improved RAG context readability.
+- 🔒 **Secure Content Escaping:** Implemented automatic HTML escaping for text within rendered headings and content blocks, preventing unintended rendering issues and potential injection vulnerabilities.
+- 🧪 **Comprehensive Agent Testing:** Added extensive unit and integration tests for `AgentDispatcher` and `AgentService`, focusing on new configuration loading logic, discovery, and database interactions.
+- 🏭 **Pipeline Job Factory:** Introduced `materialize_asset_job` utility to simplify creating jobs for specific asset materialization in data pipelines.
+- 🗓️ **Automated Pipeline Workflows:** Implemented new daily jobs and schedules in the pipeline playground for automated data processing and document cleanup.
+- ➕ **New API Controllers:** Expanded the API with new controllers for `Suite`, `Process`, `Token`, and `Role` management, diversifying available endpoints.
+- 🐳 **Enhanced Docker Compose Stack:** Updated `docker-compose.latest.yml` to include the `web` service and more comprehensive environment variables for API and Phoenix, providing a more integrated deployment experience.
+
+### Changed
+- 🔄 **Agent Configuration Handling:** Agent configuration is now dynamically resolved at runtime (from `StartEvent`, database, or default), and `AgentRunner` uses a `default_agent_config` parameter.
+- 🏷️ **Agent Config Schema Refinement:** `AgentConfig` now includes an explicit `agent_class` field and applies a stricter regex pattern to `agent_id` for enhanced validation.
+- 💧 **LLM and Embedding Model Specificity:** Agent configurations now use more precise type unions for LLMs and embedding models, improving type safety and clarity.
+- 📚 **API Discovery Response:** The API now discovers and exposes full agent *instances* (including their specific configurations) rather than just class definitions.
+- 🗺️ **Default Ingested Language:** The default language for newly ingested nodes is now German (`de`).
+- 🧭 **API Route Renaming:** Event retrieval API routes have been renamed to explicitly refer to agent events (e.g., `get_agent_events_in_thread`).
+- 🌐 **Web SDK Updates:** Generated SDK schemas for `AgentConfigDTO` reflect the removal of deprecated fields, and `StartEvent` and `UserMessageEvent` now include the new `agent_config` field.
+- ⚡ **Pipeline Automation Strategy:** Document and data lake file removal assets transitioned from eager automation conditions to job-driven scheduling.
+- 📦 **SharePoint IO Manager:** The SharePoint observable asset in pipelines now uses a dedicated `sharepoint_io_manager`.
+- 🔐 **OAuth2 Integration:** The API's OAuth2 authentication now supports `OAuth2AuthHandler`.
+- 🧪 **Test Runner Configuration:** Agent and process playground examples and their test runners have been updated to align with the new `default_agent_config` and `agent_class` fields.
+
+### Fixed
+- 🐛 **Robust Figure Deletion:** Improved the data lake figure deletion process in pipelines by adding a check for directory existence, preventing unnecessary errors.
+- 🖼️ **Image Loading in RAG Prompts:** Corrected the image URL handling in RAG prompts within `combine_nodes_in_order`, ensuring images are correctly referenced.
+- 🐞 **Gunicorn Path:** Corrected the Gunicorn application path in the Makefile.
+- 💬 **SDK Description Typo:** Fixed a minor typo in the `ProcessDTO` description within the generated SDK.
+- 📸 **User Profile Image Fetching:** Improved error handling for fetching user profile images from Azure Graph, gracefully handling 404 responses.
+
+### Refactor
+- 🧹 **Agent Dispatcher & Runner Overhaul:** Major refactoring of `AgentDispatcher` and `AgentRunner` components to streamline internal logic, simplify argument injection, and refine background task management.
+- 🔄 **Unified Agent Discovery Architecture:** Streamlined the agent discovery mechanism by merging class and instance-level discovery concepts into a more consistent model, centralizing logic in new topic managers.
+- 🗄️ **Decoupled Agent Persistence:** Re-architected agent configuration persistence to use a reference model (`AgentConfigEntityDocument`) and an embedded default (`AgentConfigEntityEmbeddedDocument`), enhancing data co-location and simplifying relationships.
+- 📦 **Streamlined Vector Store Integration:** Standardized vector store integration using the new Pydantic configuration models' `.to_llama_index()` method for cleaner instantiation.
+- 📁 **Project Structure Alignment:** Reorganized testing directories for `aihub_agent` and `aihub_api` for better module structure.
+- ✏️ **Service Naming Consistency:** `EventModelCreationService` was renamed to `ModelCreationService` to reflect its broader utility beyond just event models.
+- 🧹 **Codebase Naming Alignment:** Standardized field names (`name`, `description`, `icon`) in `AgentConfig` and refactored internal endpoint path generation methods for clarity.
+
+### Removed
+- 🗑️ **Deprecated Agent Config Fields:** Eliminated `system_prompt`, `color`, and `voice` fields from the base `AgentConfig` and `AgentConfigDTO`, allowing for more flexible, agent-specific prompt and UI customization in subclasses.
+- 🗑️ **Legacy Discovery Methods:** Removed old generic `discover_agent` and `discover_agents` methods in `AgentService` in favor of the new, more granular discovery.
+- 🗑️ **Timestamp Formatting Utility:** Removed the internal `format_unix_timestamp` utility from `combine_nodes_in_order`.
+- 🗑️ **Redundant Topic Management:** Cleaned up unused and overlapping topic management methods in `AgentInstanceTopicManager` and `ProcessInstanceTopicManager`.
+
+---
+
+
+
+## [v0.222.0] - 2025-07-15 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
+
+### Added
+- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
+- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
+- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
+- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
+- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
+- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
+- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
+- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
+- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
+- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
+- 📦 **Local Development & Deployment Configurations**: Added new Docker Compose files (`milvus.yaml`, `nats.conf`, `init-multiple-dbs.sh`, `docker-compose-gpu.*`, `docker-compose.dev.yml`, `docker-compose.nightly.yml`, `swiss-aihub.local.docker-compose.yml`) for setting up local development and production-like environments, including configurations for Milvus, NATS, and PostgreSQL.
+- ✨ **Enabled Custom API Environment Variables**: This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, increasing configuration flexibility.
+- 🐳 **Web Application Dockerfile and Nginx Setup**: Introduced a new Dockerfile, Nginx configuration (`nginx.conf`), and client-side configuration loader (`config-loader.client.ts`) for building and serving the web UI, optimizing deployment and environment variable handling.
+
+### Changed
+- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
+- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance for frequently requested agent lists.
+- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
+- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
+- ⚙️ **Optimized Docker Build Processes**: Improved Dockerfile efficiency for `aihub_api` and `aihub_bot` by streamlining Poetry installation and virtual environment handling.
+- 🔄 **Updated RAG Context Prompt Role**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages (German, English, French, and Italian) to better align with prompt engineering best practices.
+- ⚡️ **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
+- 🧰 **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments for improved consistency.
+- 👥 **Expanded Human Delegator Definition**: Enhanced the `Human` delegator to allow requesting work from specific user IDs, emails, or roles, and to define whether notifications should be sent.
+- 📈 **Database Indexing Enhancements**: Added new indexes to `PersistedAgentEventEntity`, `ThreadEntity`, and `UserEntity` for improved query performance and data retrieval efficiency.
+- 📦 **Unified Docker Compose for Latest Release**: Significantly refactored `docker-compose.latest.yml` to consolidate and centralize the deployment of core services, including MinIO, Milvus, PostgreSQL, OpenWebUI, NATS, Redis, MongoDB, and the AI Hub API, along with Traefik for routing.
+
+### Fixed
+- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found by using `.first()` instead of `.get()`.
+- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context in `PersistedProcessEventEntity`.
+- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Ensured that images are now correctly referenced and displayed by explicitly converting their URL object to a string representation in RAG prompts.
+- 🔐 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
+- 🎨 **Frontend Markdown Renderer Styling**: Applied a minor CSS fix to the Markdown renderer for improved display consistency.
+
+### Removed
+- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
+- 🧹 **Deprecated Docker Compose File**: The `docker-compose-mnt.yml` file, which was used for mounting local volumes, has been removed.
+- ⛔ **Old External Event Distributor Dependency**: The `use_external_event_distributor` dependency file has been removed as it has been superseded by more specific agent and process event distributors.
+- 📄 **Redundant Frontend Health Page**: A basic placeholder health page (`pages/service/health.vue`) in the frontend was removed.
+- 🏷️ **Obsolete WebSocket Event Type**: The `WsServerEvent` type has been removed from the SDK, replaced by the more semantically clear `ContextualizedAgentEvent` to better distinguish event origins.
+
+### Refactor
+- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`) and SharePoint-related assets for improved clarity and maintainability.
+- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components (`ThreadContext`, `RunTraceCoordinator`, `AgentService`, `EvaluationService`, `EventService`, `OpenaiController`, `OpenaiService`, `ExternalAgentEventDistributor`, `WebSocketManager`, `WebSocketSender`, `AgentDiscoveryTopic`, `ProcessDiscoveryTopic`), focusing on concise explanations.
+- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure for better organization and clarity.
+- 🔄 **Frontend Playground Folder Renaming**: The `.playground` folder in `aihub_web` has been renamed to `.app` to better reflect its purpose as the primary application source.
+- 📦 **SharePoint Integration Naming Consistency**: Standardized naming conventions across SharePoint-related assets, ops, and IO managers to `share_point_` for improved consistency and readability.
+- 🔗 **API External Event Deserialization**: Simplified the deserialization logic for external agent events by removing redundant `thread_id` and `display_id` validation.
+
+---
+
+
+
+## [api-v0.227.0] - 2025-07-23 - Operational Refinements
+
+### Changed
+- ⚙️ Optimized the **default log level** in `docker-compose.latest.yml` from `DEBUG` to `WARNING`, reducing log verbosity and improving clarity in standard operational environments.
+
+---
+
+
+
+## [api-v0.226.0] - 2025-07-24 - Unlocking Agent Flexibility: Dynamic Configurations, Enhanced Knowledge Context, and Structured Discovery
+
+### Added
+- ✨ **Dynamic Agent Configuration**: Introduced the ability to dynamically provide agent configurations via a `StartEvent` or load them from the database, offering greater flexibility and custom overrides for default agent settings.
+- 🚀 **Granular Agent Discovery**: Implemented distinct discovery mechanisms for agent *classes* and specific agent *instances*, allowing the system to differentiate between an agent's base definition and its runnable, configured versions.
+- 🗄️ **Database Persistence for Agent Configurations**: Enabled custom agent configurations to be saved and retrieved from the database, allowing for persistent and shareable agent setups.
+- 📄 **Structured RAG Context**: Enhanced the RAG context generation to include hierarchical headings (H1-H6) and explicitly tag content with `<content>` or `<summary>` tags, significantly improving prompt quality and model understanding.
+- 🔒 **HTML Escaping for Context Content**: Implemented automatic HTML escaping for content within RAG context documents, preventing rendering issues and potential injection vulnerabilities.
+- 🦾 **New Vector Store Configuration Models**: Introduced dedicated Pydantic models for `AzureAISearchVectorStoreConfig` and `MilvusVectorStoreConfig`, allowing direct embedding and validation of vector store settings within agent configurations.
+- ⚙️ **Pipeline Job Utility**: Added the `materialize_asset_job` utility to simplify the creation of jobs for materializing specific asset selections in the pipeline.
+- 📅 **Automated Pipeline Workflows**: Implemented new daily jobs and schedules within the playground environment to automatically observe source data and manage document removal processes.
+- ✨ **Agent Class Identification**: A new `agent_class` field has been added to `AgentConfig` for consistent agent class identification throughout the system.
+
+### Changed
+- ⚙️ **Refined Agent Configuration Loading**: The agent dispatcher now prioritizes configurations provided in a `StartEvent`, then database-persisted configurations, and finally falls back to the `default_agent_config` defined in the runner.
+- 💡 **Improved LLM and Embedding Model Specificity**: Agent configurations (e.g., in `RAGAgent`) now utilize more precise type unions for LLMs and embedding models, enhancing type safety and clarity.
+- 📈 **API Agent Discovery**: The API now discovers and exposes full agent *instances* (including their specific configurations) instead of just class definitions, reflecting the new dynamic configuration capabilities.
+- 📄 **Updated RAG Context Language Default**: The default language for newly ingested nodes has been updated from English to German, better aligning with regional configurations.
+- ⚡️ **Pipeline Asset Automation**: Automation configurations for document and data lake file removal assets were adjusted from eager conditions to more explicit job-driven scheduling.
+- 🔗 **Specialized SharePoint I/O Manager**: The SharePoint observable asset now uses a dedicated `sharepoint_io_manager`, ensuring more appropriate handling of SharePoint data interactions.
+- 📚 **Documentation Examples**: Revised agent examples in `aihub_doc/5_agents_in_detail.md` to reflect the updated `AgentConfig` structure and removed `system_prompt`.
+- 🔄 **Event Data Flow**: `ChatService` now passes agent configuration data as a dictionary within `UserMessageEvent` for standardized data exchange.
+- 🌐 **SDK Updates**: Generated SDK schemas and types now reflect the updated agent configuration model, including removed and added fields.
+- 🐛 **ProcessDTO Description**: Corrected a minor typo in the `ProcessDTO` description in the generated SDK.
+
+### Fixed
+- 🐛 **Robust Figure Deletion**: Improved the data lake figure deletion process in pipelines by adding an existence check for figures directories, preventing unnecessary errors and log messages when a directory is already absent.
+- 🐞 **Azure Profile Image Retrieval**: Corrected error handling when fetching user profile images from Azure Graph Service to gracefully handle 404 responses.
+- 📦 **Gunicorn Path in Dockerfile**: Fixed the path to `app.main:app` in `aihub_api/Makefile` for Gunicorn, ensuring correct application startup.
+
+### Refactor
+- 🧹 **Agent Dispatcher & Runner Overhaul**: Performed a major refactor of the `AgentDispatcher` and `AgentRunner` components, streamlining internal logic, simplifying argument injection, and refining background task management.
+- 🔄 **Consolidated Agent Discovery Architecture**: Unified and streamlined the agent discovery mechanism by introducing distinct class-level and instance-level concepts and consolidating events and topic managers into a single, consistent model.
+- 🗄️ **Embedded Agent Configuration Persistence**: Re-architected agent configuration persistence by embedding agent configuration details directly within `AgentEntity` and introducing a reference to `AgentConfigEntityDocument`, enhancing data co-location and simplifying object relationships.
+- 📦 **Streamlined Vector Store Integration**: Replaced direct vector store instantiation with a standardized approach using Pydantic configuration models that expose a `.to_llama_index()` method for cleaner integration.
+- ⚡️ **Improved Background Task Management**: Centralized management of `asyncio.Task` instances within dispatchers and subscribers to ensure proper lifecycle management and prevent premature garbage collection.
+- 🧹 **Renamed Core Services**: Renamed `EventModelCreationService` to `ModelCreationService` and updated its excluded fields to reflect broader utility beyond just event models.
+- 🧹 **Consolidated Agent DTOs**: Relocated all agent-related Data Transfer Objects (DTOs) into a dedicated `dto` subdirectory for improved organization and clarity, along with refinements to their encapsulation and persistence logic.
+- ⚙️ **Standardized Event Specification Handling**: Updated `EventSpec` creation methods to consistently use `EventSpecs` objects, improving internal data handling.
+- 🔗 **Streamlined Topic Inheritance**: `AgentInstanceDiscoveryTopic` now correctly inherits from `AgentClassDiscoveryTopic`, reducing redundancy and clarifying topic structure.
+- 🧹 **Cleaned Up Topic Managers**: Removed unused and overlapping topic management methods within `AgentClassTopicManager` for a leaner API.
+- 📁 **Test Runner Restructuring**: Reorganized API test runners into a more logical `simulation/agent` and `simulation/process` directory structure.
+
+### Removed
+- 🗑️ **Deprecated Agent Configuration Fields**: The `system_prompt`, `color`, and `voice` fields have been removed from the base `AgentConfig` and `AgentConfigDTO` as they are now intended to be defined in agent subclasses if needed.
+- 🗑️ **Outdated Discovery Events and Topic Managers**: Eliminated legacy class- and instance-specific discovery events and topic managers, as their functionality has been superseded by a new, unified model.
+- 🗑️ **Legacy Agent Configuration Persistence Scripts**: Removed the `save_config.py` example script, as direct saving of agent configurations to the database is now handled internally.
+- 🗑️ **Redundant Locale String Entity**: Eliminated `LocaleStringEntity`, as localized strings are now managed directly within other persistence models.
+- 🗑️ **Specific Pipeline Materialization Jobs**: Removed the `materialize_asset_job` utility from the pipeline factory to simplify job creation and encourage asset-level automation.
+- 🗑️ **Outdated Test Files**: Cleaned up several old test files related to agent dispatcher, agent config, and agent service database integration, as their functionalities are now covered by more integrated tests or made obsolete by architectural changes.
+- 🗑️ **Redundant `_background_tasks` Sets**: Explicit `_background_tasks` sets were removed from various dispatchers and subscribers as task management is now handled more implicitly by `asyncio.create_task`.
+- 🗑️ **Transferred Discovery Event Logic**: Removed the `from_agent_instance` method from `AgentInstanceDiscoveryResponseEvent` as its functionality has been moved to the `AgentInstanceDTO` for better encapsulation.
+
+---
+
+
+
+## [v0.222.0] - 2025-07-21 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
+
+### Added
+- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
+- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
+- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
+- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services to durably store and manage all events and metadata related to agentic processes.
+- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
+- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
+- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
+- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
+- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
+- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
+- 🐳 **Comprehensive Docker Compose Setups**: Introduced new `docker-compose` files for various deployment environments (e.g., GPU, dev, latest, nightly, local), providing a more flexible and production-ready infrastructure.
+- 📦 **New Core Configurations**: Added default configurations for essential services like Milvus, NATS, and PostgreSQL, simplifying environment setup.
+
+### Changed
+- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
+- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
+- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance for frequently requested agent lists.
+- ⚙️ **Streamlined Python Docker Builds**: Optimized Dockerfiles for Python services by refining virtual environment handling and build processes.
+- 🌐 **RAG Prompt Enhancements**: Updated the chat role for RAG context prompts from `system` to `user` and corrected image URL handling in English prompts for better model interpretation.
+- 💬 **`WorkEvent` Display Handling**: Improved how `WorkEvent` details are displayed by adding new class methods for `display_name` and `display_description`.
+- 👥 **`HumanWorkEvent` Overhaul**: Redefined `HumanWorkEvent` to support dynamic form generation and user attribution, enabling more flexible human-in-the-loop interactions.
+- 💻 **`ProgramWorkEvent` Attribution**: Added user attribution to `ProgramWorkEvent` for better tracking of who initiated a programmatic action.
+- 📈 **Database Indexing Improvements**: Added new database indexes for agent events, thread agents, and user names, enhancing query performance for these entities.
+- 📄 **Clarified HTTP 404 Messages**: Updated HTTP 404 error messages for API paths to provide more specific debugging information.
+- 📊 **Enhanced Data Lake Logging**: Added a new log statement to output the Data Lake file URI during document parsing, improving observability.
+- 📦 **Frontend Dependencies and Build Process**: Updated frontend `package.json` with new Formkit dependencies and adjusted build commands to align with the new `.app` directory structure.
+- 🇮🇹 **Italian Localization**: Improved the Italian localization for `ExceptionEvent` messages in the frontend.
+- 🌍 **Formkit Locale Integration**: Ensured that dynamically rendered Formkit forms in the frontend correctly reflect the user's selected locale.
+- 🚀 **API Deployment with Gunicorn**: Integrated `gunicorn` as a dependency for API and bot services, suggesting a shift towards more robust production server setups.
+
+### Fixed
+- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found, preventing errors.
+- 🐞 **Schema Immutability in Evaluation**: Ensured that the `JudgeOutput` schema is deep-copied during evaluation to prevent unintended mutations.
+- 💾 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization in `BaseEvent` to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
+- ✅ **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context, and improved query methods for open work requests.
+- 🚦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
+
+### Removed
+- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
+- 🧹 **Deprecated Docker Compose File**: An older `docker-compose` file for volume mounting (`docker-compose-mnt.yml`) has been removed.
+- ✂️ **Redundant Health Page**: A basic placeholder health page in the frontend was removed.
+
+### Refactor
+- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`), improving clarity and maintainability.
+- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
+- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
+- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure.
+- 🌐 **Frontend Directory Rename**: Renamed the internal web development directory from `.playground` to `.app` for consistency.
+- 🧽 **Standardized SharePoint Naming**: Consistently renamed variables, parameters, and asset definitions related to SharePoint for improved consistency and readability.
+- 🎛️ **Clarified Delegator Fields**: Enhanced Pydantic annotations for delegator fields in `aihub_process` for better clarity.
+
+---
+
+
+
+## [v0.227.0] - 2025-07-23 - Improved Azure Identity Service Robustness
+
+### Fixed
+- 🖼️ **Azure User Profile Image Fetching**: Enhanced the retrieval of user profile images from the Azure Graph API to be more resilient to various API errors. The service now gracefully handles non-404 errors by logging warnings and consistently returns `None` when an image cannot be fetched, preventing unexpected exceptions and improving stability.
+
+### Refactor
+- 🧹 **Import Statement Placement**: Relocated the `asyncio` import to the top-level of the `AzureGraphService` module, aligning with best practices for improved code readability and organization.
+
+---
+
+
+
+## [v0.222.0] - 2025-07-21 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
+
+### Added
+- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
+- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
+- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
+- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
+- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
+- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
+- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
+- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
+- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
+- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
+- ✨ **Custom Environment Variables for API Deployments**: Enabled custom environment variable injection for API deployments in Azure IaC, allowing users to define and inject additional environment variables, including secret references.
+
+### Changed
+- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
+- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes (e.g., `/events/threads` to `/events/agents/threads`) and client-side composables to clearly distinguish between agent and process events.
+- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses from 1 to 100 entries, improving performance for frequently requested agent lists.
+- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
+- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
+- ⚡️ **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
+- 📦 **Docker Compose Refinements**: Introduced a new comprehensive `docker-compose.latest.yml` file, consolidating service definitions and streamlining local deployments with various service dependencies.
+- 💡 **Adjusted RAG Context Prompt Role**: Changed the chat role for RAG context prompts from `system` to `user` in all supported languages for better model interpretation.
+- 🐍 **Python Dependency for Production**: Added `gunicorn` as a direct dependency for API and Bot services, supporting robust production deployments.
+
+### Fixed
+- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer (`AgentEntity`) to gracefully handle cases where a specific agent might not be found, preventing exceptions.
+- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context in `PersistedProcessEventEntity`.
+- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed by `ProcessDiscoveryTopic`.
+- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization in `BaseEvent` to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
+- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Resolved an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring images are now correctly referenced and displayed.
+- 📝 **External Event Deserialization Robustness**: Improved deserialization logic for `ExternalAgentEvent` to directly extract `thread_id` and `display_id`, enhancing robustness against malformed data.
+- 🚧 **Human Delegator Validation**: Implemented validation in `Human.Out` to ensure at least one user targeting method (ID, email, or role) is specified when requesting human input, preventing invalid configurations.
+
+### Refactor
+- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`), improving clarity and maintainability.
+- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
+- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments where appropriate, improving code consistency and Pydantic v2 compatibility.
+- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure for improved test organization.
+- 🏗️ **Web UI Project Structure**: Restructured the web UI source code from a generic `.playground` to a more semantically clear `.app` directory for better organization.
+- 🧹 **Standardized SharePoint Naming Conventions**: Refactored variable names, function parameters, and internal asset definitions across SharePoint-related assets, ops, and IO managers for improved consistency and readability.
+
+### Removed
+- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
+- 🗑️ **Generic External Event Distributor Dependency**: Removed the generic `use_external_event_distributor` dependency, replacing it with more specific agent and process event distributors for clearer separation of concerns.
+- 🗑️ **Outdated Docker Compose Mounting File**: Removed `docker-compose-mnt.yml` file, as its functionality is now superseded by new Docker Compose patterns for volume management.
+- 🗑️ **Redundant Frontend Health Page**: Removed a basic placeholder health page from the frontend, as core health checks are handled at the API level.
+
+---
+
+
+
+## [v0.222.0] - 2025-07-21 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
+
+### Added
+- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs. This includes new API endpoints for discovery and interaction, dedicated persistence, and real-time event streaming for processes.
+- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
+- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
+- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
+- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
+- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
+- ✨ **Custom Environment Variable Configuration for API Services**: This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, significantly increasing configuration flexibility and integration possibilities.
+- 🚀 **New Web Image Build and Release Workflow**: A new GitHub Actions workflow has been added to automate the building and releasing of web application Docker images.
+- 📄 **New Infrastructure Configuration Files**: Added new configuration files for Milvus, NATS, and PostgreSQL, enhancing control and configurability of infrastructure deployments.
+- 📦 **Simplified Local Production Deployments**: Introduced `docker-compose.latest.yml` for unified, production-ready local deployments, bundling key services.
+- 🌐 **Local Development Docker Compose**: Added `swiss-aihub.local.docker-compose.yml` for specific local development environment configurations, including the frontend web service.
+
+### Changed
+- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
+- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
+- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses from 1 to 100, improving performance for frequently requested agent lists.
+- 🐳 **Streamlined Dockerfile Builds**: Optimized API and Bot Dockerfiles by removing redundant virtual environment copying and internal Poetry installation steps, resulting in more efficient container builds.
+- 🔄 **Updated RAG Context Prompt Role**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages to better align with prompt engineering best practices.
+- 📚 **Enhanced API Documentation Clarity**: Improved Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
+- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
+- ⚡️ **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
+- ⚙️ **Refined `Human` Delegator for Process Interactions**: Expanded the `Human` delegator to support more granular user targeting (by ID, email, role) and notification options for human work requests in agentic processes.
+- 🚦 **`ProcessRunner` Now Exposes Detailed Discovery Information**: The `ProcessRunner` has been enhanced to include comprehensive specifications for human, program, and agent inputs (including form definitions) in its `ProcessDiscoveryResponseEvent`.
+
+### Fixed
+- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found, returning `None` instead of raising an exception.
+- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context, including accurate topic field mappings.
+- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
+- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization in `BaseEvent` to correctly handle nested Pydantic models and `ChatMessage` objects, preventing data loss or incorrect data transfer.
+- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Resolved an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring images are now correctly referenced and displayed.
+- 💅 **Minor CSS and Docstring Typo Fixes**: Corrected a minor CSS syntax issue in the Markdown renderer and fixed a typo in `ProcessTopicManager` docstrings.
+
+### Removed
+- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
+- 🧹 **Deprecated External Event Distributor Dependencies**: Removed outdated `use_external_event_distributor` dependencies, replaced by more specific agent-focused ones.
+- 📦 **Removed Old Docker Compose File**: The `docker-compose-mnt.yml` file has been removed, simplifying the local development environment setup.
+- ✂️ **Removed Redundant Frontend Health Page**: A basic placeholder health page in the frontend was removed.
+- 🗂️ **Deprecated Frontend Playground Directory**: The `.playground` directory and its configuration files have been removed, as the main frontend application now resides in a streamlined `.app` directory.
+
+### Refactor
+- 🧹 **Simplified Docstrings Across Components**: Docstrings in numerous core components have been simplified and cleaned up, focusing on concise explanations rather than extensive examples or "why" sections.
+- ⚙️ **Pydantic Model Default Handling Alignment**: Aligned Pydantic model definitions across various components (e.g., `QuestionStartEvent`, `CreateRoleRequest`, `JudgeOutput`, Open WebUI SDK models, `DoclingConfig`, `SharePointResource`, `SharePointFile`) by moving default value assignments from `Field` annotations to direct attribute assignments.
+- 🔄 **Codebase Naming Standardization**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`) and SharePoint-related assets (`sharepoint_` to `share_point_`), improving clarity and maintainability.
+- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure for better organization and clarity.
+- 📚 **Centralized `EventSpecs` Definition**: The `EventSpecs` class has been moved to a more general location in `aihub_lib.nats.events.discovery`, promoting reusability and reducing duplication.
+- 🪞 **Refined `AcceptRejectRequest` Type Specificity**: Made class variable types more specific (`AcceptCV` instead of generic `HumanWorkEvent`) in `AcceptRejectRequest` for improved type safety and clarity.
+- 🌐 **Frontend Application Directory Restructuring**: Migrated the main frontend application from the `.playground` directory to a new, streamlined `.app` directory for improved project structure.
+
+---
+
+
+
+## [v0.226.0] - 2025-07-22 - API Refinements and DTO Consolidation
+
+### Refactor
+- 🧹 **Consolidated Data Transfer Objects (DTOs):** Renamed `AgentClass` to `AgentClassDTO` and introduced `AgentInstanceDTO`, relocating all agent-related DTOs into a dedicated `dto` subdirectory for improved organization and clarity.
+- 🔄 **Enhanced DTO Encapsulation:** `AgentInstanceDTO` now manages its own persistence by handling entity creation/updates and generating discovery response events directly, improving data model autonomy.
+- 🗄️ **Decoupled Agent Persistence:** The `AgentEntity` creation and update logic was refactored to accept explicit parameters instead of DTO objects, enhancing the reusability and flexibility of the persistence layer.
+- ⚙️ **Standardized Event Specification Handling:** Updated `EventSpec` creation methods to consistently use `EventSpecs` objects, improving internal data handling.
+- 🔗 **Streamlined Topic Inheritance:** `AgentInstanceDiscoveryTopic` now correctly inherits from `AgentClassDiscoveryTopic`, reducing redundancy and clarifying topic structure.
+
+### Changed
+- 📄 **Agent Configuration Data Format:** The `ChatService` now passes agent configuration data as a dictionary instead of a Pydantic object when publishing `UserMessageEvent`, standardizing data exchange.
+
+### Removed
+- 🗑️ **Deprecated Agent DTO Files:** Removed the old `AgentInstance.py` and `aihub_api/aihub_api/agents/__init__.py` files as part of the DTO consolidation and relocation effort.
+- 🧹 **Redundant NATS Topic Managers:** Cleaned up unused and overlapping topic management methods within `AgentClassTopicManager` for a leaner API.
+- 🚫 **Transferred Discovery Event Logic:** Removed the `from_agent_instance` method from `AgentInstanceDiscoveryResponseEvent` as its functionality has been moved to the `AgentInstanceDTO` for better encapsulation.
+
+---
+
+
+
+## [v0.222.0] - 2025-07-21 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
+
+### Added
+- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
+- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
+- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
+- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
+- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
+- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
+- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
+- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
+- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
+- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
+- ✨ **Enabled custom environment variable configuration for API services**: This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, significantly increasing configuration flexibility and integration possibilities.
+- 🚀 **Web Image Build and Release Workflow**: Introduced a new GitHub Actions workflow for building and releasing the web image, improving CI/CD.
+- 📦 **New Core Service Configurations**: Added comprehensive configuration files for Milvus and NATS, alongside a PostgreSQL initialization script, facilitating easier deployment and setup of core services.
+- 🐳 **New Comprehensive Docker Compose for Latest Deployments**: Introduced a new `docker-compose.latest.yml` file, providing a complete, integrated setup for all core AI Hub services, including MinIO, Milvus, PostgreSQL, OpenWebUI, Phoenix, NATS, Redis, MongoDB, API, and optional LLM/embedding models.
+- ⚡️ **Performance Enhancements**: Added new database indexes for agent event, thread, and user entities to improve query performance for common event retrieval patterns.
+
+### Changed
+- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
+- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
+- 🚀 **Caching Enhancements**: Increased the cache size for agent discovery responses and OAuth JSON Web Key Set (JWKS) cache, improving performance for frequently requested data.
+- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
+- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
+- 🔄 **Updated RAG Context Prompt Role**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages (German, English, French, and Italian) to better align with prompt engineering best practices and enhance model interpretation of contextual information.
+- ⚡️ **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
+
+### Fixed
+- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found.
+- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context.
+- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
+- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
+- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Resolved an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring that images are now correctly referenced and displayed by explicitly converting their URL object to a string representation.
+
+### Removed
+- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
+- ✂️ **Removed Redundant Health Page**: A basic placeholder health page in the frontend was removed.
+
+### Refactor
+- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`) and SharePoint-related components, improving clarity and maintainability.
+- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
+- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
+- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure.
+- 📦 **Optimized Docker Image Builds**: Streamlined the Dockerfile for API and Bot services by directly copying the virtual environment from the build stage, reducing image size and build time.
+- 🔄 **Frontend Directory Renaming**: Renamed the `.playground` directory to `.app` in the web frontend for clearer project structure.
+
+---
+
+
+
+## [bot-v0.217.0] - 2025-07-18 - Consolidating the Platform: Focus on Agent-Centric Workflows
+
+### Added
+- 🚀 **Automated Draft PR Creation**: Introduced a new GitHub Actions workflow to automatically create draft pull requests for new branches, streamlining the development process.
+- ⚡️ **Added `send_event` to AgentRunner**: Enabled external code to directly trigger new agent runs by sending `StartEvent`s via the `AgentRunner`, simplifying programmatic initiation.
+- ✨ **Introduced Unified External Event Distributor**: Added new dependency injection functions (`use_external_event_distributor` and `_ws`) for the consolidated `ExternalAgentEventDistributor`, simplifying its usage.
+- ⚡️ **Enabled Two-Way WebSocket Communication**: The `/events/ws` endpoint now supports bidirectional messaging, allowing users to send `ExternalAgentEvent`s in addition to receiving real-time event streams.
+- ⚡️ **Implemented WebSocket Event Handling**: Introduced `handle_external_event` to `EventService`, enabling the processing of user-sent WebSocket events and immediate error feedback.
+- ✨ **Introduced New LLM Stop Event Output**: Added `LLMStopEventOutput` and `UserMessageEventInput` schemas for richer event details and user input structures in the API.
+- ✨ **Added Basic Health Service Page**: Introduced a new `/service/health` page in the web UI for basic service health checks.
+
+### Changed
+- 📦 **Optimized Docker Builds for API**: Implemented multi-stage Docker builds for the API service, enhancing build efficiency and reducing image size by copying the virtual environment. Removed `gunicorn` as web server.
+- 📈 **Adjusted Agent Discovery Cache Size**: Modified the in-memory cache for discovered agents to `maxsize=1`, impacting how frequently the entire agent list is re-fetched.
+- 🔄 **Streamlined Event API Routes**: Renamed `/agents/threads` to `/threads` and `/agents/timeseries` to `/timeseries`, simplifying event-related API paths.
+- 📈 **Optimized JWKS Cache for OAuth2**: Adjusted the JWKS cache size in `OAuth2AuthHandler` to `maxsize=1`, focusing on caching the most recently used JWKS.
+- 🔄 **Adjusted RAG Context Prompt Role**: Changed the chat role for RAG context prompts from `user` to `system` across all languages for improved model interpretation.
+- 🔒 **Stricter Validation for ExternalAgentEvent**: Introduced a mandatory `thread_id` check during deserialization of `ExternalAgentEvent`, improving data integrity.
+- 🔄 **Centralized EventSpecs Definition**: The `EventSpecs` class, which defines event schemas, has been moved and is now part of `AgentDiscoveryResponseEvent` for a more logical grouping.
+- 🗄️ **Optimized Event Persistence Indexes**: Removed specific database indexes on `display_id` and compound `thread_id`/`event_type`/`event_parents` fields in `PersistedAgentEventEntity`, potentially improving write performance.
+- 🗄️ **Optimized Thread Entity Indexes**: Removed the compound index on `agents.agent_id` and `agents.agent_class` in `ThreadEntity`, potentially improving write performance.
+- 🗄️ **Optimized User Entity Indexes**: Removed the index on the `name` field in `UserEntity`, potentially improving write performance.
+- 📦 **Optimized Docker Builds for Bots**: Implemented multi-stage Docker builds for the Bot service, enhancing build efficiency and reducing image size. Removed `gunicorn`.
+- 📈 **Optimized JWKS Cache for OAuth2**: Adjusted the JWKS cache size in `OAuth2AuthHandler` to `maxsize=1`, focusing on caching the most recently used JWKS.
+- 📦 **Optimized Docker Builds for Bots**: Implemented multi-stage Docker builds for the Bot service, enhancing build efficiency and reducing image size.
+- 🔄 **Refined Chat Message Schemas**: Introduced distinct `_Input` and `_Output` suffixes for `AssistantChatMessage`, `ChatMessage`, and `UserChatMessage` to clearly delineate their usage contexts.
+- ⚙️ **Updated Web UI Development Scripts**: Modified `dev`, `build`, and `preview` scripts to target the new `.playground` directory.
+- ⬆️ **Updated Frontend Peer Dependencies**: Bumped `primevue` and `vue` peer dependency versions for the web UI.
+
+### Fixed
+- 🖼️ **Fixed Image Path in English RAG Prompt**: Corrected the image rendering logic in the English RAG context prompt to use `block.path` for accurate image display.
+- 🐛 **Improved Event Serialization Consistency**: Ensured consistent serialization of events to JSON by directly using `json.dumps(event.model_dump())`, which was previously causing issues with `serialize_as_any`.
+- 🐛 **Improved Event Serialization for Testing**: Updated test cases to use `json.dumps(event.model_dump())` for event serialization, ensuring accurate and consistent behavior during testing.
+- 🐛 **Stricter Agent Retrieval**: Changed agent retrieval from `first()` to `get()` in `AgentEntity`, ensuring an error is raised if a specific agent is not found, preventing unexpected `None` returns.
+- 🐛 **Corrected Process Pluralization**: Fixed a minor typo in docstrings by changing "all processes" to "all processs" for pluralization consistency.
+
+### Removed
+- 🗑️ **Removed Dedicated Web Build Workflow**: Deprecated the standalone `build-web.yml` workflow, indicating a consolidation or update of the web image build and release process.
+- 🗑️ **Removed Gunicorn Dependency**: Eliminated the `gunicorn` dependency from `aihub_api` and `aihub_bot`, as it is no longer used for serving the applications.
+- 🗑️ **Removed Process Management API**: Fully deprecated and removed the `/processes` API endpoints and `ProcessController`, indicating a shift away from direct external interaction with process orchestration via the API.
+- 🗑️ **Removed Process Service Logic**: Eliminated `ProcessService`, which previously handled business logic for process discovery, form management, and event distribution.
+- 🗑️ **Removed Process-Related DTOs**: Deleted all Data Transfer Objects (DTOs) specifically designed for process management, including `ProcessConfigDTO`, `ProcessDTO`, `ProcessHumanInDto`, and `SubmittedFormDTO`.
+- 🗑️ **Removed Process Access from User Dashboard**: User access levels for processes are no longer displayed in the `UserWithAccessDTO`, aligning with the deprecation of direct process API interaction.
+- 🗑️ **Removed Process Controller Integration**: The `ApiRunner` no longer initializes or integrates the `ProcessController`, aligning with the deprecation of direct process API endpoints.
+- 🗑️ **Removed Process Simulation Infrastructure**: Eliminated the entire `simulation/process` directory, including `SimulatedProcessApiTestRunner` and its associated mock event definitions, as direct process API interaction has been deprecated.
+- 🗑️ **Removed Generic Endpoint Discovery Service**: Deprecated and removed the `EndpointsDiscoveryService` abstract base class, as its functionality has been integrated directly into specific discovery services.
+- 🗑️ **Removed Process Endpoint Discovery Service**: Eliminated `ProcessEndpointsDiscoveryService`, which handled dynamic registration of API endpoints for processes, aligning with the deprecation of direct process API interaction.
+- 🗑️ **Removed Process-Specific WebSocket Event Model**: Eliminated `ContextualizedProcessEvent`, consolidating all server-to-user WebSocket events under a single, unified agent event model.
+- 🗑️ **Removed External Agent Event Distributor Dependencies**: Eliminated the specific dependency injection functions for `ExternalAgentEventDistributor` as part of the refactoring to a unified distributor.
+- 🗑️ **Removed External Process Event Distributor**: Eliminated `ExternalProcessEventDistributor`, which previously handled distributing external events to processes, as this functionality is no longer directly exposed.
+- 🗑️ **Removed External Process Event Distributor Dependencies**: Eliminated dependency injection functions for `ExternalProcessEventDistributor` due to its removal.
+- 🗑️ **Removed External Process Event Model**: Eliminated `ExternalProcessEvent` as part of the deprecation of direct process API interaction.
+- 🗑️ **Removed Specific Work Event Properties**: Eliminated `is_human_work_event` and `is_program_work_event` properties from `BaseEvent`.
+- 🗑️ **Relocated EventSpecs Definition**: The `EventSpecs` model has been moved and is now defined directly within `AgentDiscoveryResponseEvent` for better contextualization.
+- 🗑️ **Simplified Process Discovery Response**: Removed `human_inputs`, `program_inputs`, and `agent_inputs` fields from `ProcessDiscoveryResponseEvent`, streamlining the process discovery response.
+- 🗑️ **Removed Process Input Specification Models**: Eliminated `AgentInSpecs`, `HumanInSpecs`, and `ProgramInSpecs` models, which defined how different entities could provide input to processes.
+- 🗑️ **Removed Dynamic Form Generation**: Deprecated and removed the entire dynamic form generation capability, including `Form` models and `Formkit` elements, which previously allowed processes to define and expose forms for human input.
+- 🗑️ **Removed Process Discovery Response Subscriber**: Eliminated the `for_process_discovery_response_events` subscriber, as process discovery responses are no longer handled as distinct events.
+- 🗑️ **Removed Process Entity Models**: Eliminated `ProcessEntity` and all its associated embedded document models, completely deprecating the direct persistence of process definitions in the database.
+- 🗑️ **Removed Process Management Composables**: Eliminated `useProcess` and `useProcesses` composables, aligning with the deprecation of direct process API interaction.
+- 🗑️ **Removed Formkit Locale Integration**: Eliminated Formkit-specific locale change logic from `UserSettings.vue`, aligning with the deprecation of Formkit from the web UI.
+- 🗑️ **Removed Formkit Nuxt Module**: Eliminated the `@sfxcode/formkit-primevue-nuxt` module integration from `nuxt.config.ts`, completing the deprecation of Formkit in the web UI.
+- 🗑️ **Removed Formkit Dependencies**: Eliminated Formkit-related development dependencies from `package.json`, confirming its removal.
+- 🗑️ **Removed Custom API Environment Variables**: Deprecated and removed the `additional_env_vars` configuration from `ApiConfig`, which previously allowed injecting custom environment variables into API deployments.
+- 🗑️ **Removed Process API Test Suite**: Eliminated the entire test suite for process API interactions, including fixtures and scenario tests, aligning with the deprecation of direct process API endpoints.
+- 🗑️ **Removed Process-Specific Query Methods**: Eliminated `get_open_human_work_requests` and `find_request_for_work_event` methods, as process-specific event querying is no longer supported.
+- 🗑️ **Removed Playground-Specific Work Events**: Eliminated `AgentAWorkRequest`, `HumanAWork`, `HumanBWork`, and `HumanBWorkRequest` events from the playground examples, as their underlying models have been simplified or deprecated.
+- 🗑️ **Removed Agent-Only Process Runner**: Eliminated the `agent_only_process` playground runner, as its example scenario is no longer relevant to the simplified process interaction model.
+- 🗑️ **Removed Legacy Process Interaction Examples**: Eliminated `agent_to_human_process`, `human_only_process`, and `human_to_agent_process` examples and their associated test suites, as they are no longer compatible with the simplified process interaction model.
+- 🗑️ **Removed Frontend Config Loader**: Eliminated the client-side configuration loader and its related `config.json` and `config.template.json` files, simplifying frontend environment management.
+- 🗑️ **Removed Nginx Configuration for Web UI**: Deprecated and removed the Nginx configuration file for serving the web UI, indicating a shift in deployment strategy.
+- 🗑️ **Removed Formkit Configuration**: Eliminated `formkit.config.ts`, confirming the removal of Formkit-based dynamic forms from the web user interface.
+- 🗑️ **Removed Processes Overview Page**: Eliminated the `/service/processes` page from the web UI, as direct process management through the UI has been deprecated.
+
+### Refactor
+- ⚙️ **Refined Default Locale Handling**: Explicitly set the default locale to "en" within `QuestionStartEvent` using Pydantic's `default` argument for clarity.
+- 📄 **Enhanced ThreadContext Documentation**: Added detailed explanations to the `ThreadContext` class, clarifying its purpose, features, and providing usage examples.
+- 🧹 **Consolidated Event Sending Logic**: Moved the `send_event` method from `AgentTestRunner` to its parent class `AgentRunner` to centralize event sending functionality.
+- 📄 **Improved RunTraceCoordinator Documentation**: Enhanced the docstrings for `RunTraceCoordinator` to better explain its role in OpenTelemetry-based tracing and its key features.
+- 🧹 **Standardized EventSpecs Import**: Updated `EventModelCreationService` to import `EventSpecs` from the centralized `AgentDiscoveryResponseEvent` module for consistency.
+- 📄 **Enhanced EventPersister Documentation**: Added detailed docstrings to `EventPersister`, explaining its purpose, features, and usage for clearer understanding.
+- ✂️ **Simplified Event Persistence**: Consolidated event persistence logic under a single `persist_event` method, removing the distinction between agent and process events in the API's persistence layer.
+- 🧹 **Streamlined AgentDTO Conversion**: Removed the `is_online` parameter from `AgentDTO` factory methods, simplifying the data transfer object creation.
+- 📄 **Enhanced AgentService Documentation**: Improved `AgentService` docstrings with detailed explanations of its purpose, operations, and caching mechanisms.
+- 🧹 **Standardized EventSpecs Import**: Updated `AgentDTO` to import `EventSpecs` from the centralized `AgentDiscoveryResponseEvent` module.
+- 📄 **Improved AgentDTO Documentation**: Added docstrings to `AgentDTO` explaining its purpose in standardizing API responses.
+- 🧹 **Renamed External Event Distributor Dependency**: Updated imports and parameter names from `use_external_agent_event_distributor` to `use_external_event_distributor` for consistency.
+- 📄 **Enriched EvaluationController Documentation**: Added detailed docstrings outlining the controller's purpose and authentication requirements.
+- 🧹 **Standardized External Event Distributor Usage**: Renamed `external_agent_event_distributor` to `external_event_distributor` in `EvaluationService` for consistent API usage.
+- 📄 **Comprehensive EvaluationService Documentation**: Added detailed docstrings and section headers to `EvaluationService`, improving clarity on its responsibilities and internal organization.
+- 📄 **Enhanced EventController Documentation**: Added detailed docstrings to `EventController`, explaining its dual role in historical and real-time event management.
+- 🔄 **Unified WebSocket Event Types**: Updated `get_user_events` and `event_websocket_connection` to use `WSServerEvent`, standardizing event representation for WebSocket clients.
+- 📄 **Improved EventService Documentation**: Provided comprehensive docstrings for `EventService`, detailing its role in event retrieval, external event handling, and error management.
+- 🧹 **Standardized External Event Distributor Usage**: Renamed `use_external_agent_event_distributor` to `use_external_event_distributor` in `OpenaiController` for consistent dependency injection.
+- 📄 **Expanded OpenaiController Documentation**: Added detailed docstrings to `OpenaiController`, clarifying its purpose in emulating the OpenAI API and its key design intentions.
+- 📄 **Clarified OpenaiService Purpose**: Added docstrings to `OpenaiService` detailing its core operations and mirroring of OpenAI's API functionality.
+- ⚙️ **Refined Role Creation Defaults**: Explicitly set the default for `access_rules` in `CreateRoleRequest` to an empty list, improving API schema clarity.
+- 📄 **Comprehensive ThreadController Documentation**: Added detailed docstrings to `ThreadController`, explaining its purpose, specific endpoints, authentication model, and providing usage examples.
+- 📄 **Improved ThreadService Documentation**: Provided detailed docstrings for `ThreadService`, clarifying its business logic and responsibilities within thread operations.
+- 🧹 **Standardized WebSocket Event Types**: Updated event conversion in `thread_as_message_history` to use `WSServerEvent` for consistency.
+- 🧹 **Renamed Agent Simulation Runner**: Moved and renamed `SimulatedAgentApiTestRunner` to a more central location.
+- 🧹 **Updated Agent Discovery Service Reference**: Aligned usage with the renamed `AgentDiscoveryService` for consistency.
+- 🧹 **Consolidated Event Distributors**: Replaced `ExternalProcessEventDistributor` with `ExternalAgentEventDistributor` to unify event distribution.
+- 🧹 **Unified Event Persistence**: Migrated process event persistence to use `AgentNCSubscriber`, storing all events as agent events.
+- 🧹 **Renamed and Refactored Agent Discovery Service**: `AgentEndpointsDiscoveryService` was renamed to `AgentDiscoveryService` and refactored to encapsulate its own discovery loop logic, removing its dependency on the now-removed `EndpointsDiscoveryService`.
+- 🧹 **Renamed WebSocket Event Model**: `ContextualizedAgentEvent` was renamed to `WSServerEvent` to reflect its broader role as a generic server-to-user event container.
+- 📄 **Enhanced WSServerEvent Documentation**: Added detailed docstrings to `WSServerEvent`, explaining its purpose and conversion from persisted events.
+- 🧹 **Standardized WebSocket Event Types in Manager**: Updated `WebSocketManager` to use `WSServerEvent` and renamed `send_agent_event` to `send_event` for consistency.
+- 📄 **Improved WebSocketManager Documentation**: Added comprehensive docstrings, including explanations of its purpose, usage, and examples.
+- 🧹 **Standardized External Event Distributor Import**: Updated `WebSocketManager` dependencies to use the new `use_external_event_distributor` name.
+- 🧹 **Standardized WebSocket Event Types in Sender**: Updated `WebSocketSender` to use `WSServerEvent` for consistent event handling.
+- 📄 **Improved WebSocketSender Documentation**: Added detailed docstrings, explaining its purpose, event flow, and providing usage examples.
+- 🧹 **Updated Simulated Agent Runner Imports**: Test files referencing `SimulatedAgentApiTestRunner` were updated to reflect its new location.
+- ⚙️ **Refined JudgeOutput Default**: Explicitly set the default for the `error` field in `JudgeOutput` to `False` using Pydantic's `default` argument.
+- 🧹 **Standardized External Event Distributor Usage**: Renamed `external_agent_event_distributor` to `external_event_distributor` within `PhoenixExperimentEvaluator` for consistent dependency naming.
+- ⚙️ **Optimized Schema Copying**: Removed unnecessary `deepcopy` calls for `JudgeOutput` schema, improving efficiency.
+- ⚙️ **Clarified Optional Fields in OpenAPI Models**: Explicitly added `default=None` or `default=False` to numerous optional fields across Open WebUI SDK models (chats, files, knowledge, users), enhancing clarity in the generated OpenAPI schema.
+- ⚙️ **Refined DoclingConfig Defaults**: Explicitly set default values for `DOCLING_IMAGE_EXPORT_MODE`, `DOCLING_DO_OCR`, and `DOCLING_FORCE_OCR` in `DoclingConfig` for clearer configuration.
+- 📄 **Comprehensive ExternalAgentEventDistributor Documentation**: Added detailed docstrings to `ExternalAgentEventDistributor`, outlining its purpose, key responsibilities, event flow, and providing usage examples.
+- 🧹 **Standardized Pydantic Annotations**: Updated `event_id` and `created_at` to use `Annotated` for consistency.
+- 🧹 **Streamlined WorkEvent Definition**: Simplified `WorkEvent` by removing specific default value setters and display name/description class methods, making it a more focused base class.
+- 🧹 **Simplified HumanWorkEvent**: Removed `Form` inheritance and the `submitted_by` field from `HumanWorkEvent`, making it a simpler, more abstract work event base, aligning with the removal of dynamic form generation.
+- 🧹 **Simplified ProgramWorkEvent**: Removed the `submitted_by` field from `ProgramWorkEvent`, streamlining its definition.
+- 🧹 **Simplified HumanWorkRequestEvent**: Removed complex form validation and fields (`endpoint`, `method`, `user_emails`, `user_roles`, `notify`, `forms`), streamlining `HumanWorkRequestEvent` to a simpler event marker.
+- 🧹 **Simplified ProgramWorkRequestEvent Fields**: Made `endpoint` and `method` fields optional in `ProgramWorkRequestEvent`, reducing their strictness.
+- 📄 **Improved AgentDiscoveryTopic Documentation**: Added detailed docstrings to `AgentDiscoveryTopic`, clarifying its purpose in agent-specific discovery.
+- 🧹 **Simplified ProcessDiscoveryTopic**: Removed extensive docstrings and adjusted internal assertions to rely on a more generic `TopicManager`, streamlining its definition.
+- 🧹 **Re-purposed Process Event Persistence Entity**: `PersistedProcessEventEntity` has been re-purposed to store events using agent-centric topic details, effectively consolidating process events under the agent event model.
+- ⚙️ **Refined SPA Route Not Found Message**: Simplified the HTTP 404 detail message for SPA routes to "Not Found" for better consistency.
+- 🧹 **Standardized SharePoint Naming**: Renamed client, file, and function parameters from `share_point_` to `sharepoint_` within `observable_share_point_factory` for naming consistency.
+- 🧹 **Standardized SharePoint Naming**: Renamed factory function and file parameters from `share_point_` to `sharepoint_` within `sharepoint_files_to_data_lake_files_factory` for naming consistency.
+- 🧹 **Standardized SharePoint Naming**: Renamed client and file parameters from `share_point_` to `sharepoint_` within `SharePointIOManager` for naming consistency.
+- ⚙️ **Refined Data Lake Parsing Logging**: Removed a redundant log statement for Data Lake file URI during document parsing to streamline logging output.
+- 🧹 **Standardized SharePoint Naming**: Renamed file parameters and metadata table function from `share_point_` to `sharepoint_` within `data_version_by_partition_for_share_point_files_no_op` for naming consistency.
+- 🧹 **Standardized SharePoint Naming**: Renamed file parameter from `share_point_file` to `sharepoint_file` within `extract_content_from_share_point_file` for naming consistency.
+- 🧹 **Standardized SharePoint Naming**: Renamed file and parameter from `share_point_` to `sharepoint_` within `extract_metadata_from_sharepoint_file` for consistent naming.
+- ⚙️ **Refined SharePointResource Defaults**: Explicitly set default `None` values for `target_folders` and `exclude_folders` in `SharePointResource` for clearer configuration.
+- ⚙️ **Refined SharePointFile Defaults**: Explicitly set default `None` values for `content_type` and `download_url` in `SharePointFile` for clearer type definitions.
+- 🧹 **Standardized SharePoint Naming**: Renamed functions from `share_point_` to `sharepoint_` within metadata utility functions for naming consistency.
+- 🧹 **Simplified Agent Delegator Definitions**: Streamlined `Agent.In` and `Agent.Out` class attributes by removing verbose `Annotated` and `Field` declarations, and condensed docstrings for brevity.
+- 🧹 **Simplified Human Delegator Definitions**: Drastically streamlined `Human.In` and `Human.Out` classes by removing explicit form handling, user/role targeting, and notification configurations, reducing complexity.
+- 🧹 **Simplified Process Delegator Definitions**: Streamlined `Process.In` and `Process.Out` class attributes by removing verbose `Annotated` and `Field` declarations.
+- 🧹 **Streamlined Human Work Request Dispatching**: Simplified the dispatching of `HumanWorkRequestEvent` by consolidating user targeting to a single `event.users` field, aligning with the updated `Human.Out` definition.
+- 🧹 **Simplified ProcessRunner Discovery Responses**: Streamlined the `ProcessRunner`'s discovery handler by removing detailed input specifications (`human_inputs`, `program_inputs`, `agent_inputs`), aligning with the simplified process API.
+- 🧹 **Streamlined ProcessTestRunner**: Drastically simplified `ProcessTestRunner` by removing redundant event sending methods (`send_event`, `send_event_from_topic`) and topic-centric event retrieval, streamlining test capabilities.
+- 🧹 **Simplified AgenticCVProcess Steps**: Updated `AgenticCVProcess` to align with the streamlined `Human.Out` definition, removing explicit form instantiation and related `InputTextElement` usage.
+- 🧹 **Simplified AnalyzedCV Event**: Removed the `cv_name` field from the `AnalyzedCV` event, streamlining its data structure.
+- 🧹 **Simplified Human Response Events**: Streamlined `AcceptCV` and `RejectCV` events by changing the `reason` field type to a simple string, aligning with the removal of explicit form elements.
+- 🧹 **Generalized AcceptRejectRequest**: Updated `AcceptRejectRequest` to use a more generic `HumanWorkEvent` type for its `accept` and `reject` class variables, enhancing flexibility.
+- 🧹 **Standardized SharePoint Naming**: Renamed file and parameter from `share_point_` to `sharepoint_` within `extract_metadata_from_sharepoint_file` for consistent naming.
+- 🧹 **Updated Gitignore for Playground Directory**: Modified `.gitignore` to exclude build artifacts from the new `.playground` directory.
+- 🧹 **Standardized WebSocket Event Types in UI Components**: Updated numerous Vue components to consistently use `WsServerEventReadable` instead of `WsServerAgentEventReadable`, reflecting the unified server-to-user WebSocket event model.
+- 🧹 **Standardized WebSocket Event Types in Composables**: Updated `useAgentIconFromThread` and `useEventComponent` composables to consistently use `WsServerEventReadable`.
+- 🧹 **Standardized Event Timeseries API Usage**: Updated `useEventTimeseries` composable to use the new `/events/timeseries` endpoint, reflecting the simplified event API.
+- 🧹 **Standardized Thread Events API Usage**: Updated `useThreadEvents` composable to use `getEventsInThread` and `WsServerEventReadable`, reflecting the unified event API.
+- 🧹 **Standardized WebSocket Event Types in Thread Utilities**: Updated `useThreadUtils` composable to consistently use `WsServerEventReadable`.
+- ⚙️ **Refined ExceptionEvent Localization**: Removed a redundant label for `ExceptionEvent` in the Italian localization file.
+- 🧹 **Standardized WebSocket Event Types in Sources Page**: Updated the sources page to consistently use `WsServerEventReadable` for event data.
+
+---
+
+
+
+## [v0.222.0] - 2025-07-21 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
+
+### Added
+- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
+- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
+- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
+- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
+- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
+- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
+- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
+- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
+- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
+- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
+- ✨ **Enabled Custom Environment Variable Configuration for API Services**: This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, significantly increasing configuration flexibility and integration possibilities.
+- 📦 **New Docker Compose Files and Configurations**: Introduced new Docker Compose files for more structured and flexible development and deployment setups, including new default configurations for Milvus, NATS, and PostgreSQL.
+- 🐳 **New Web Dockerfile and Nginx Setup**: Added a new multi-stage Dockerfile for the web application and an Nginx configuration, optimizing web deployment.
+
+### Changed
+- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
+- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
+- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance for frequently requested agent lists.
+- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
+- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
+- ⚙️ **Optimized Dockerfile for Microservices**: Streamlined Dockerfiles for `aihub_api` and `aihub_bot` by refining virtual environment handling during build.
+- ⚙️ **Enhanced Logging for Data Lake Document Parsing**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
+- ⚙️ **Refined `WorkEvent` Default Handling**: Enhanced `WorkEvent` with a model validator to automatically set display metadata and new properties for clearer event classification.
+- ⚙️ **Improved `Human` Delegator Configuration**: Enhanced the `Human` delegator to support detailed audience targeting (user IDs, emails, roles), notification options, and the inclusion of an initial form for process start events.
+- ⚙️ **Updated `ProcessDispatcher` for Human Inputs**: Updated `ProcessDispatcher` to correctly assign new user targeting and notification parameters for `HumanWorkRequestEvent`.
+- ⚙️ **Expanded Process Runner for Discovery**: Extended `ProcessRunner` to dynamically generate and include detailed human, program, and agent input specifications in `ProcessDiscoveryResponseEvent`.
+- ⚙️ **Enhanced `HumanWorkRequestEvent` Validation**: Significantly enhanced `HumanWorkRequestEvent` to support detailed audience targeting and dynamic form definitions, ensuring strict validation against expected work event types.
+- ⚙️ **Improved Agent Entity Persistence**: Ensured `network_graph` is always stored as a dictionary in `AgentEntity`.
+- ⚙️ **Enhanced Database Indexes**: Added new database indexes across `PersistedAgentEventEntity`, `ThreadEntity`, and `UserEntity` for improved query performance.
+- ⚙️ **Updated RAG Context Prompt Role**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages (German, English, French, and Italian) to better align with prompt engineering best practices and enhance model interpretation of contextual information.
+
+### Fixed
+- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found.
+- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context.
+- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
+- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
+- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Resolved an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring that images are now correctly referenced and displayed by explicitly converting their URL object to a string representation.
+- 🐞 **Missing Italian Translation for ExceptionEvent**: Added missing translation for the `ExceptionEvent` label in Italian.
+
+### Refactor
+- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`), event types, and associated components, improving clarity and maintainability.
+- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
+- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
+- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure.
+- 🧹 **Standardized SharePoint Naming Conventions**: Refactored variable names, function parameters, and internal asset definitions across SharePoint-related assets, ops, and IO managers for improved consistency and readability.
+- ✂️ **Removed Redundant Health Page**: A basic placeholder health page in the frontend was removed.
+- 📦 **Frontend Application Directory Restructure**: Migrated Nuxt application configuration and source from `.playground` to a new `.app` directory for production readiness.
+
+### Removed
+- 🗑️ **Automatic Draft PR Workflow:** The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
+- 🗑️ **Deprecated Generic Event Distributor**: Removed the generic `use_external_event_distributor` in favor of more specific agent and process-scoped distributors.
+- 🗑️ **Old Docker Compose Mount Configuration**: Removed the `docker-compose-mnt.yml` file, likely superseded by new, more structured Docker Compose configurations.
+
+---
+
+
+
+## [web-v0.222.0] - 2025-07-21 - Full-Stack Deployment and Streamlined Agent Architecture
+
+### Added
+- 🚀 **Full-Stack Containerization**: Introduced comprehensive Docker Compose configurations for streamlined deployment of API, Bot, and Web components, including MinIO, Milvus, PostgreSQL, Redis, MongoDB, and NATS.
+- ⚙️ **New Service Dockerfiles**: Added dedicated Dockerfiles for building production-ready Docker images of API, Bot, and Web services using multi-stage builds and Gunicorn for Python services.
+- 🌐 **Web Frontend Production Setup**: Implemented a robust Nginx-based Docker setup for the web UI, enabling static file serving, runtime configuration loading, and optimized caching.
+- 📦 **Core Component Applications**: Introduced `app/main.py` entrypoints and new settings classes (`ApiRunnerSettings.py`, `BotRunnerSettings.py`) for API and Bot services, centralizing application bootstrapping and configuration.
+- 📄 **New Database & Messaging Configurations**: Included detailed configuration files for Milvus (`milvus.yaml`), NATS (`nats.conf`), and a PostgreSQL initialization script (`init-multiple-dbs.sh`), supporting the new Docker Compose environments.
+- 🧪 **OpenWebUI Integration for Local Dev**: Added a `docker-compose-webui-mnt.yml` for simplified local development of OpenWebUI with volume mounts.
+- 🚀 **Automated Build Workflows**: Introduced new GitHub Actions workflows (`build-api-and-bot.yml`, `build-web.yml`) to automate the build and release of Docker images for API, Bot, and Web services.
+
+### Changed
+- ⚙️ **Refined Agent Configuration Model**: Revised the `AgentConfig` structure by removing the `agent_class` field, making `agent_id` the primary instance identifier. Added `system_prompt`, `color`, and `voice` attributes to the base configuration for broader applicability (though deprecated for future removal).
+- 💡 **Unified LLM and Vector Store Configurations**: Agent configurations now utilize consolidated base types (`ChatLLMConfig`, `EmbeddingLLMConfig`, `BasePydanticVectorStore`) for LLMs, embedding models, and vector stores, enhancing type safety and abstraction.
+- 🚧 **Streamlined StartEvent**: The `StartEvent` no longer directly carries agent configuration, simplifying event payload and centralizing configuration management within the agent dispatcher.
+- 🔗 **Simplified RAG Node Combining**: The `combine_nodes_in_order` utility for RAG context now omits HTML-like tags (e.g., `<h1>`, `<content>`) and uses simpler text formatting, reducing prompt complexity.
+- ⚡️ **CI/CD Workflow Enhancements**: Updated GitHub Actions build workflows for Docker images to allow optional `ssh_key` usage.
+- 📚 **Documentation and SDK Updates**: Revised agent examples in documentation and updated the generated API SDK to reflect the new `AgentConfig` structure, including the removal of `agent_class` and the addition of `system_prompt`, `color`, and `voice`.
+- 📊 **Pipeline Automation Triggers**: Updated pipeline assets for document and data lake file removal to use `AutomationCondition.eager()`, ensuring data cleanup tasks are triggered more responsively.
+- 📦 **Pipeline I/O Manager**: The SharePoint observable asset now uses `data_lake_io_manager` for more consistent interaction with the data lake.
+- 🌐 **Web Frontend Build Configuration**: The Nuxt build configuration was moved and adjusted to explicitly differentiate development and production runtime configurations for OIDC, WebUI, and WebSocket endpoints.
+- ⬆️ **Dependency Updates**: Updated `primevue` and `vue` versions in the web application's `package.json`.
+
+### Fixed
+- 🐛 **Robust Figure Deletion in Pipelines**: Improved the data lake figure deletion process in pipelines by removing a redundant existence check, preventing potential errors when a figures directory is already absent.
+- 💬 **Localization for Exception Events**: Added a missing translation label for `ExceptionEvent` in the Italian locale.
+- ℹ️ **Process DTO Description Typo**: Corrected a minor typo in the `ProcessDTO` description in the generated SDK.
+
+### Removed
+- 🗑️ **Legacy Agent Configuration Persistence**: Eliminated standalone MongoDB documents and embedded documents for agent configurations, consolidating persistence directly within the `AgentEntity`. Also removed the `save_config.py` example script.
+- 🗑️ **Deprecated Discovery Events and Topic Managers**: Removed old class- and instance-specific discovery events and topic managers, unifying agent discovery under a single, simplified model.
+- 🗑️ **Legacy Pydantic Vector Store Configs**: Removed explicit Pydantic models for vector store configurations, which are now replaced by direct factory functions.
+- 🗑️ **Obsolete Model Creation Service**: Removed `ModelCreationService`, replaced by `EventModelCreationService` for a more focused approach to event model generation.
+- 🗑️ **Dedicated Locale String Entity**: Removed `LocaleStringEntity`, as localized strings are now handled more directly within other models.
+- 🗑️ **Specific Pipeline Jobs**: Removed the `materialize_asset_job` utility from the pipeline factory and associated playground jobs, simplifying job creation and encouraging asset-level automation.
+- 🗑️ **Outdated Test Files**: Cleaned up several old test files related to agent dispatcher, agent config, and agent service database integration, as their functionalities are now covered by more integrated tests or made obsolete by architectural changes.
+
+### Refactor
+- 🧹 **Agent Dispatcher & Runner Overhaul**: Performed a major refactor of the `AgentDispatcher` and `AgentRunner` components, streamlining internal logic, simplifying argument injection, and refining background task management by removing explicit `_background_tasks` sets.
+- 🔄 **Unified Agent Discovery**: Consolidated and streamlined the agent discovery mechanism by merging class and instance-level discovery events and topic managers into a single, consistent model.
+- 🗄️ **Embedded Agent Persistence**: Re-architected agent configuration persistence by embedding agent configuration directly within `AgentEntity`, enhancing data co-location and simplifying object relationships.
+- 📦 **Streamlined Vector Store Integration**: Replaced explicit vector store configuration objects with direct factory functions for cleaner instantiation and use.
+- 📁 **Project Structure Alignment**: Renamed `aihub_web/aihub_web/.playground` to `aihub_web/aihub_web/.app` to better reflect its role as the primary application directory. Also reorganized API test runners into `simulation/agent` and `simulation/process` directories.
+- 🧹 **Internal API Naming Consistency**: Renamed the internal `_get_endpoint_base_path` to `_get_endpoint_name` in endpoint discovery services for improved clarity and consistency.
+
+---
+
+
+
+## [v0.225.0] - 2025-07-21 - Enhanced Document Structure and Content Rendering
+
+### Added
+- ✨ **Hierarchical Document Headings**: Implemented the dynamic rendering of document headings (H1-H6) directly within the context. This provides a clearer hierarchical structure and significantly improves readability and navigation for complex documents by showing heading changes as content progresses.
+- 📄 **Structured Content and Summary Tags**: Individual node content is now explicitly wrapped in XML-like tags (`<content>` or `<summary>`) based on its type. This provides more precise semantic context and better structural clarity for each block of text.
+- 🔒 **HTML Escaping for Content**: Enhanced the integrity and security of rendered content by automatically escaping HTML special characters in both headings and content. This prevents unintended rendering issues and potential injection vulnerabilities in the generated output.
+
+### Changed
+- ⚙️ **Updated Default Document Language**: The default language for newly ingested nodes has been updated from English to German, better aligning with regional configurations.
+- ⚡️ **Refined Node Sorting Logic**: Improved the internal sorting mechanism for nodes within a document. Nodes are now ordered more accurately based on their section start lines and type, which is crucial for the correct presentation of the new hierarchical structure.
+- 🧹 **Streamlined Timestamp Handling**: An internal utility for formatting Unix timestamps has been removed, as date and time handling for document metadata is now managed more efficiently by the underlying system.
+
+---
+
+
+
+## [v0.222.0] - 2025-07-21 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
+
+### Added
+- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
+- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
+- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
+- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
+- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
+- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
+- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
+- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
+- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
+- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
+- ✨ **Enabled custom environment variable configuration for API services**: This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, significantly increasing configuration flexibility and integration possibilities.
+- 📦 **Complete Local Deployment Stack**: Added new `docker-compose.latest.yml` providing a full local deployment including MinIO, Milvus, Postgres, OpenWebUI, and AI Hub services.
+
+### Changed
+- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
+- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
+- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance for frequently requested agent lists.
+- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
+- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
+- 🐳 **Improved Docker Build Processes**: Refactored Dockerfiles for `aihub_api` and `aihub_bot` to optimize image size and build efficiency, including using `gunicorn` for serving and streamlining dependency installation.
+- ⚙️ **Process Delegator Configuration**: Updated `Human` delegator configuration to support richer user-based targeting (user IDs, emails, roles) and notification options for human-in-the-loop requests.
+- 📈 **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
+- 🔄 **Updated RAG Context Prompt Role**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages (German, English, French, and Italian) to better align with prompt engineering best practices and enhance model interpretation of contextual information.
+
+### Fixed
+- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found.
+- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context.
+- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
+- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
+- 💅 **Frontend Markdown Renderer Styling**: Corrected minor CSS issues in the Markdown renderer to ensure consistent display of headings.
+- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Resolved an issue where image URLs in RAG prompts were not consistently processed, ensuring images are correctly referenced.
+
+### Refactor
+- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`), improving clarity and maintainability.
+- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
+- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
+- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure.
+- ✂️ **Frontend Build Environment Migration**: Migrated the frontend development and build environment from `.playground` to `.app`, streamlining project structure.
+- 🧼 **Standardized SharePoint Naming Conventions**: Refactored variable names, function parameters, and internal asset definitions across SharePoint-related assets, ops, and IO managers for improved consistency and readability (e.g., `sharepoint_` was consistently renamed to `share_point_`).
+
+### Removed
+- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
+- 🗑️ **Deprecated Docker Compose File**: Removed the `docker-compose-mnt.yml` file, simplifying local deployment options.
+- 🗑️ **Redundant Frontend Health Page**: A basic placeholder health page (`pages/service/health.vue`) in the frontend was removed.
+
+---
+
+
+
+## [v0.217.0] - 2025-07-18 - Agent-Centric Refocus & Infrastructure Streamlining
+
+### Added
+- ✨ **Automated Draft Pull Request Creation**: Introduced a new GitHub Actions workflow to automatically create draft pull requests for new branches, streamlining development and ensuring consistent PR titles.
+- ⚡️ **External Event Triggering for Agent Runs**: Implemented a new `send_event` method in `AgentRunner` to allow external systems to programmatically initiate agent runs with a `StartEvent`.
+- ✨ **Introduced Generalized External Event Distributor Dependency**: Created a new `use_external_event_distributor` dependency for consistent access to event distribution functionality across the API and bots.
+- 🚀 **Real-time User Event Processing**: Transformed the API's event WebSocket endpoint (`/ws`) to support bi-directional communication, enabling users to send commands and receive real-time event streams from agents.
+- 🚀 **Self-Managing Agent Endpoint Discovery**: The `AgentDiscoveryService` now autonomously discovers and registers/deregisters agent API endpoints on a periodic interval, improving API dynamism.
+- ✨ **Added Basic Health Service Page**: Introduced a new, simple health service page in the frontend for basic status checks.
+- ✨ **New Consolidated Local Development Environment**: Introduced a new `docker-compose-mnt.yml` for local development, providing persistent volume mounts for all core services including Phoenix, NATS, Redis, Mongo, and local LLM/embedding models.
+- 🚀 **Introduced Dynamic Agent Event Sending**: Added a new client endpoint for sending events to dynamically discovered agent endpoints, enabling more direct interaction from the frontend.
+
+### Changed
+- 📚 **Enhanced Documentation Across Core Components**: Significantly improved docstrings and inline comments for various services and models including `ThreadContext`, `RunTraceCoordinator`, `AgentService`, `EvaluationService`, `EventController`, `ThreadController`, `ExternalAgentEventDistributor`, `AgentDiscoveryTopic`, `AgentDiscoveryService`, `WebSocketManager`, and `WebSocketSender` for better clarity and understanding.
+- 📦 **Optimized Docker Images**: Reworked Dockerfiles for API and Bot services (`aihub_api` and `aihub_bot`) to install Poetry dependencies `--no-root` and copy the virtual environment, leading to smaller and more efficient container images.
+- ⚡️ **Adjusted Agent Discovery Caching**: Modified the `DISCOVER_AGENTS_CACHE` max size to potentially increase the frequency of agent re-discovery, aiming for quicker reflection of live agent status.
+- ⚡️ **Improved Agent Status Reflection**: Adjusted `AgentDTO` creation to accurately reflect the `is_online` status of agents, removing redundant explicit `False` assignments in `AgentService`.
+- ⚡️ **Optimized JWKS Caching**: Reduced `_jwks_cache` size to 1 in `OAuth2AuthHandler`, ensuring more frequent fetching of JSON Web Key Sets for enhanced security and freshness.
+- 🔄 **Updated RAG Context Prompt Role**: Changed the chat role for the RAG context prompt from `user` to `system` in all supported languages (German, English, French, and Italian) for better alignment with prompt engineering practices.
+- 🔒 **Strict Validation for External Agent Events**: Added a mandatory check for `thread_id` during `ExternalAgentEvent` deserialization to ensure proper event routing and prevent errors.
+- 📚 **Simplified API Route Not Found Message**: Shortened the HTTP 404 detail message for API routes in `Runner`, making it more generic.
+- 💥 **Stricter Agent Retrieval Behavior**: Modified `AgentEntity.get_agent` to use `get()` which raises an exception if an agent is not found, providing clearer error handling.
+- 🔄 **Flexible Agent Network Graph Storage**: Changed `network_graph` in `AgentEntity` to be stored as a flexible dictionary rather than a rigid embedded document, improving adaptability.
+- ⚙️ **Standardized Frontend Configuration**: Updated the Nuxt.js configuration in the new `.playground` directory to directly use environment variables and hardcode local endpoints for development simplicity.
+- ⚡️ **Client-Side Rendering Enabled**: Configured Nuxt.js for client-side rendering only (`ssr: false`), optimizing frontend load.
+
+### Fixed
+- 🐛 **Fixed RAG Image URL Handling**: Corrected an issue in the English RAG context prompt (`en.yml`) to ensure image URLs are properly referenced using `block.path`, resolving image display problems.
+- 🐛 **Corrected Pluralization in Process Topic Docstrings**: Fixed a minor typo in `ProcessTopicManager` docstrings, ensuring consistent pluralization of "process."
+
+### Removed
+- 🗑️ **Deprecated Legacy Web Build Workflow**: The `build-web.yml` GitHub Actions workflow for building and releasing web images has been removed, simplifying CI/CD processes.
+- 🗑️ **Removed Direct Process Management API**: Eliminated the entire `/processes` API endpoints and associated services (`ProcessController`, `ProcessService`, DTOs), streamlining the API surface and focusing on agent-centric interactions.
+- 🗑️ **Removed Process Event Persistence**: Discontinued the persistence of process-specific events and entities, unifying event storage under agent-centric models.
+- 🗑️ **Removed Process-Related API Schemas and Frontend Components**: Drastically reduced the API surface and frontend footprint by removing schemas, pages, and composables related to process management and dynamic form generation.
+- 🗑️ **Removed Dynamic Form Generation Models**: Eliminated all `Formkit` and `PrimeVue` related models for dynamic UI generation (e.g., `Form`, `InputTextElement`), streamlining the event schema and decoupling form definitions from core events.
+- 🗑️ **Removed Process-Related Lifetime Management**: Eliminated all process-related setup and shutdown logic from the API's `lifetime_manager`, including event distributors, subscribers, and discovery services.
+- 🗑️ **Removed Process Simulation Runners and Tests**: Deprecated and removed the entire process simulation infrastructure from the API, including `SimulatedProcessApiTestRunner` and mock process events, along with all process-related API tests.
+- 🗑️ **Removed `ExternalProcessEventDistributor`**: Eliminated the external event distributor for processes, aligning with the deprecation of direct process interactions.
+- 🗑️ **Removed Redundant Work Event Properties**: Eliminated `is_human_work_event` and `is_program_work_event` properties from `BaseEvent`, simplifying event type checks.
+- 🗑️ **Simplified Process Discovery Response**: Streamlined `ProcessRunner`'s discovery response to no longer include detailed `human_inputs`, `program_inputs`, or `agent_inputs` specifications, reducing overhead.
+- 🗑️ **Removed `gunicorn` Dependency**: `gunicorn` has been removed from `aihub_api` and `aihub_bot` dependencies, simplifying the production deployment stack.
+- 🗑️ **Simplified Docker Compose Landscape**: Drastically reduced the number of `docker-compose` files (e.g., removed `*-dev.yml`, `*-latest.yml`, `*-gpu.yml` variants) and associated service configurations (Milvus, PostgreSQL initialization scripts, NATS config, Nginx web serving), streamlining the deployment infrastructure.
+- 🗑️ **Removed OpenWebUI and Traefik Integration**: Discontinued direct integration with OpenWebUI and Traefik in the consolidated Docker Compose setup, allowing for more flexible external UI and ingress solutions.
+- 🗑️ **Removed Milvus Stack**: The entire Milvus vector database stack and its related configurations have been removed from the standard `docker-compose` setup.
+
+### Refactor
+- 🧹 **Pydantic Model Default Value Alignment**: Aligned numerous Pydantic model definitions (e.g., `QuestionStartEvent`, `CreateRoleRequest`, `JudgeOutput`, `DoclingConfig`, `SharePointResource`, `SharePointFile`, OpenWebUI SDK models) to explicitly use the `default` argument within `Field` for consistency and clarity.
+- 🧹 **Consolidated `EventSpecs` Definition**: Centralized the `EventSpecs` model definition within `AgentDiscoveryResponseEvent` to improve discoverability and reduce redundancy.
+- 🧹 **Unified Event Persistence**: Renamed `persist_agent_event` to `persist_event` in `EventPersister` and updated the API's `lifetime_manager` to use this unified method for all agent event persistence.
+- 🧹 **Standardized External Event Distributor Naming**: Renamed `external_agent_event_distributor` to `external_event_distributor` across various components and dependencies (e.g., `AgentService`, `EvaluationService`, `OpenaiService`, `BotInTheLoopBot`, `AgentChatBot`, `AgentCompletionHandler`, `AgentChatController`, `BotInTheLoopController`, `lifetime_manager`, `AgentDiscoveryService`, `ChatService`, `WebSocketManager`, `WebSocketSender`) for improved consistency.
+- 🧹 **Unified WebSocket Event Typing**: Renamed `ContextualizedAgentEvent` to `WSServerEvent` and updated all relevant API components, frontend components, and composables to use this new type for consistent server-to-user event communication over WebSockets.
+- 🧹 **Refactored Agent Discovery Service**: Significantly refactored the agent discovery mechanism into a new `AgentDiscoveryService` class, making it standalone, self-managing its discovery loop, and aligning its internal naming conventions.
+- 🧹 **Streamlined Event Serialization**: Optimized event serialization logic in `BaseEvent` and `test_Events` by removing unnecessary `**kwargs` and `serialize_as_any=True` from `model_dump` calls for cleaner Pydantic v2 compatibility.
+- 🧹 **Standardized SharePoint Naming**: Conducted a broad refactoring effort to standardize naming conventions for SharePoint-related assets, ops, IO managers, and utility functions from `share_point_` to `sharepoint_` across the `aihub_pipeline` project for improved consistency and readability.
+- 🧹 **Streamlined Process Delegator Definitions**: Simplified Pydantic field definitions in `Agent`, `Human`, and `Process` delegators (`aihub_process/delegators`) by removing redundant `Annotated` and `Field` usages.
+- 🧹 **Refactored `aihub_process` Test Runner**: Streamlined `ProcessTestRunner` by removing redundant event sending methods and simplifying event observation for clearer API and easier test assertions.
+- 🧹 **Refined `aihub_process` Playground Examples**: Simplified and updated the remaining `AgenticCVProcess` example to align with the new human delegator and work event models.
+- 🧹 **Restructured Frontend Development Environment**: Migrated Nuxt configuration and app settings from a legacy `.app` directory to a new `.playground` directory for better project organization and updated associated package.json scripts and gitignore rules.
+- 📦 **Version Alignment**: Synchronized the version tags across `aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, and `aihub_pipeline` to `v0.217.0` for consistent releases.
+
+---
+
+
+
+## [v0.222.0] - 2025-07-21 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
+
+### Added
+- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs. This includes new API endpoints for discovery, interaction, and data submission.
+- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose interactive forms (using Formkit elements) directly within their structure, allowing frontend applications to dynamically render UIs for human input, eliminating the need for manual UI development for common interactions.
+- ⚡️ **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes, ensuring historical traceability.
+- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications, similar to existing agent event streams.
+- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes), promoting architectural consistency.
+- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust and isolated testing of agentic processes.
+- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities and serve as starting points.
+- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication and external integrations.
+- 👥 **User Access to Processes in Dashboard**: Users can now view their granular access levels to specific processes directly within their dashboard interface, improving transparency and control.
+- 🐳 **New Docker Build for Frontend**: Introduced a dedicated Dockerfile and Nginx configuration for building and serving the frontend application, streamlining deployment of the web UI.
+
+### Changed
+- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
+- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance and reducing NATS load for frequently requested agent lists.
+- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's internationalization capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
+- 🚦 **RAG Context Prompt Role Adjustment**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages to better align with prompt engineering best practices.
+- 📊 **Database Indexing Improvements**: Added new indexes to `PersistedAgentEventEntity`, `ThreadEntity`, and `UserEntity` for improved query performance and data retrieval efficiency.
+
+### Fixed
+- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found, preventing potential errors.
+- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context, improving data integrity.
+- 📦 **NATS Topic Validation for Processes**: Implemented stricter validation for NATS process discovery topics, ensuring that only correctly formatted subjects are processed and preventing malformed messages.
+- 🛠️ **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing unintended data loss.
+- 🏞️ **Image URL Handling in RAG Prompts**: Corrected an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring images are now correctly referenced and displayed.
+
+### Refactor
+- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`) and frontend display event components, improving clarity and maintainability.
+- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components and API DTOs, focusing on concise explanations of purpose and functionality.
+- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by standardizing how default values are assigned, in line with Pydantic v2 conventions.
+- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure, enhancing test organization.
+- 🔄 **SharePoint Naming Consistency**: Standardized variable names, function parameters, and internal asset definitions across SharePoint-related components for improved consistency and readability.
+
+### Removed
+- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed, streamlining development processes.
+- ✂️ **Redundant Health Page**: A basic placeholder health page in the frontend was removed.
+
+---
+
+
+
+## [v0.224.0] - 2025-07-21 - Comprehensive Agent Rework and Production-Ready Deployment
+
+### Added
+- 🚀 **Full-Stack Containerization**: Introduced comprehensive Dockerfiles and multi-service Docker Compose configurations for streamlined deployment of API, Bot, and Web components, including MinIO, Milvus, PostgreSQL, Redis, MongoDB, and NATS.
+- ⚙️ **New Configuration Settings**: Added dedicated `ApiRunnerSettings` and `BotRunnerSettings` for externalizing and managing core API and Bot configurations, such as model URLs and API keys.
+- 🌐 **Web Frontend Production Setup**: Implemented a robust Nginx-based Docker setup for the web UI, enabling static file serving, runtime configuration loading, and optimized caching for production environments.
+- 📦 **Core Component Applications**: Introduced `app/main.py` entrypoints for API and Bot services, standardizing their application bootstrapping and controller mounting.
+- 📄 **New Database & Messaging Configurations**: Included detailed configuration files for Milvus (`milvus.yaml`), NATS (`nats.conf`), and a PostgreSQL initialization script (`init-multiple-dbs.sh`), supporting the new Docker Compose environments.
+
+### Changed
+- ♻️ **Unified Agent Configuration Model**: Revised the `AgentConfig` structure, removing the `agent_class` field, and adding `system_prompt`, `color`, and `voice` attributes, providing a more consistent and flexible agent definition.
+- 🚧 **StartEvent Structure**: The `StartEvent` no longer carries agent configuration directly, simplifying event payload and centralizing configuration management within the agent dispatcher.
+- ⚡️ **CI/CD Workflow Enhancements**: Updated GitHub Actions workflows for building and releasing Docker images, including more flexible `ssh_key` handling and explicit triggers for API, Bot, and Web builds.
+- 🗃️ **Agent & Process DTOs**: Modified API-facing Data Transfer Objects (DTOs) for agents and processes to align with internal refactoring, including `AgentConfigDTO` with new fields.
+- 📊 **Pipeline Automation Conditions**: Updated pipeline assets (`removed_documents_factory`, `removed_data_lake_files_factory`) to leverage `AutomationCondition.eager()`, influencing how data cleanup tasks are triggered.
+- 📚 **Documentation Updates**: Revised agent examples in `aihub_doc/5_agents_in_detail.md` to reflect the updated `AgentConfig` and `system_prompt` usage.
+
+### Fixed
+- 🐛 **Robust Figure Deletion in Pipelines**: Improved the data lake figure deletion process in pipelines by removing a redundant existence check, preventing potential errors when a figures directory is already absent.
+
+### Refactor
+- 🧹 **Agent Dispatcher & Runner Overhaul**: Performed a major refactor of the `AgentDispatcher` and `AgentRunner` components, streamlining internal logic, simplifying argument injection, and refining background task management.
+- 🔄 **Simplified Agent Discovery**: Unified the agent discovery mechanism by merging class and instance-level discovery events and topic managers into a single, more consistent model (`AgentDiscoveryResponseEvent`, `DiscoveryRequestEvent`).
+- 🗄️ **Embedded Agent Persistence**: Re-architected agent configuration persistence by embedding `AgentConfigEntity` directly within `AgentEntity` and removing standalone `AgentConfigEntityDocument` and `AgentConfigEntityEmbeddedDocument`, enhancing data co-location and simplifying object relationships.
+- 📦 **Streamlined Vector Store Configuration**: Replaced explicit `MilvusVectorStoreConfig` and `AzureAISearchVectorStoreConfig` objects with factory functions (`create_milvus_vector_store`, `create_azure_ai_search_vector_store`), simplifying vector store instantiation.
+- 🗑️ **Removed Legacy Model Creation Service**: Deprecated and removed `ModelCreationService`, replaced by `EventModelCreationService` for cleaner event model generation.
+- 🎛️ **Centralized Task Management**: Removed `_background_tasks` collections from various dispatchers and subscribers, opting for direct `asyncio.create_task` calls for more straightforward background task initiation.
+- 📁 **Project Structure Alignment**: Renamed `aihub_web/.playground` to `aihub_web/.app` to better reflect its role as the primary application directory, alongside other minor file re-organizations across the codebase.
+- 🗑️ **Removed Obsolete Tests**: Cleaned up and removed several outdated test files related to agent dispatcher, agent config, and agent service database integration, as their functionalities are now covered by more integrated tests or made obsolete by architectural changes.
+
+### Removed
+- 🗑️ **Direct Agent Config Persistence Logic**: Eliminated `save_config.py` from playground examples, indicating a shift away from direct saving of agent configurations to the database via this script.
+- 🗑️ **Dedicated Locale String Entity**: Removed `LocaleStringEntity`, implying that localized strings are now handled more directly within relevant models or through other mechanisms.
+- 🗑️ **Explicit Pipeline Materialization Jobs**: Removed the `materialize_asset_job` utility from the pipeline factory, simplifying job creation and encouraging asset-level automation.
+
+---
+
+
+
+## [v0.224.0] - 2025-07-21 - Flexible Agent Configuration and Advanced Discovery
+
+### Added
+- ✨ **Dynamic Agent Configuration:** Agent configurations can now be dynamically provided via a `StartEvent` or loaded from a database, offering greater flexibility and allowing custom overrides of default agent settings.
+- 🚀 **Enhanced Agent Discovery Mechanism:** Implemented granular discovery for agent *classes* and specific agent *instances*, enabling the system to distinguish between an agent's base definition and its runnable, configured versions.
+- 🗄️ **Database Persistence for Agent Configurations:** Custom agent configurations can now be saved and retrieved from the database, enabling persistent and shareable agent setups across deployments.
+- 🔌 **New Pydantic Models for Vector Store Configurations:** Introduced dedicated Pydantic configurations for `AzureAISearchVectorStore` and `MilvusVectorStore` (`AzureAISearchVectorStoreConfig`, `MilvusVectorStoreConfig`), allowing for direct embedding and validation of vector store settings within agent configs.
+- 📈 **`agent_class` Field in `AgentConfig`:** A new `agent_class` field has been added to `AgentConfig` for consistent agent class identification throughout the system.
+- 📄 **`save_config.py` Example:** A new example demonstrating how to persist agent configurations to the database for custom or production deployments.
+
+### Changed
+- ⚙️ **Refined Agent Configuration Loading Logic:** The agent dispatcher now intelligently loads configurations, prioritizing those provided in a `StartEvent`, then database-persisted configurations, and finally falling back to the `default_agent_config` defined in the runner.
+- 🏗️ **Updated Agent Runner Initialization:** Agent runners now explicitly accept a `default_agent_config` parameter, clearly defining the base configuration for new agent runs.
+- 💡 **Improved Type Specificity for LLM and Vector Store Configs:** Agent configurations (e.g., in `RAGAgent`) now utilize more precise type unions for LLMs, embedding models, and vector stores, enhancing type safety and clarity.
+- 🔗 **Streamlined Vector Store Integration:** RAG and Retrieval agents now leverage the `.to_llama_index()` method directly from the new Pydantic vector store configurations for more consistent and encapsulated integration.
+- ⚡️ **Enhanced Background Task Management:** Improved handling of `asyncio.Task` instances within dispatchers and tracers to ensure proper lifecycle management and prevent premature garbage collection.
+- 🌐 **Revised API Agent Discovery:** The API now discovers and exposes full agent *instances* (including their specific configurations) instead of just class definitions, reflecting the new dynamic configuration capabilities.
+- 🧹 **Renamed `EventModelCreationService` to `ModelCreationService`:** This service has been renamed to reflect its broader utility beyond just event models, with adjustments to excluded fields to accommodate the new `agent_config`.
+
+### Refactor
+- 🔄 **Consolidated Agent Configuration Management:** Standardized agent configuration handling across the system, enabling dynamic overrides and database persistence for agent instances.
+- ✨ **Refined Agent and Event Discovery Architecture:** Overhauled the discovery mechanism to support both class-level and instance-level agent introspection, providing more granular control and information.
+- 🏗️ **Reorganized API DTOs for Agent Representation:** Introduced dedicated DTOs (`AgentClass`, `AgentInstance`) to clearly separate the concept of an agent's definition from its configured, runnable instances in the API.
+
+### Removed
+- 🗑️ **Deprecated Configuration Fields:** The `system_prompt`, `color`, and `voice` fields have been removed from the base `AgentConfig` and `AgentConfigDTO`, streamlining the core configuration and allowing for more flexible, agent-specific prompt and UI customization to be defined in agent subclasses.
+
+---
+
+
+
+## [v0.222.0] - 2025-07-15 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
+
+### Added
+- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
+- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
+- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
+- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
+- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
+- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
+- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
+- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
+- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
+- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
+- ✨ **Enabled Custom Environment Variable Configuration for API Services**: This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, significantly increasing configuration flexibility and integration possibilities.
+
+### Changed
+- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
+- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
+- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance for frequently requested agent lists.
+- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
+- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
+- 📦 **Optimized Docker Image Builds**: Streamlined Dockerfiles for `aihub_api` and `aihub_bot` services, resulting in smaller image sizes and faster build times.
+- 📊 **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
+- ⚙️ **Prompt Engineering Adjustment**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages (German, English, French, and Italian) to better align with prompt engineering best practices.
+- 🔑 **OAuth2 JWKS Cache Improvement**: Increased the maximum size of the JSON Web Key Set (JWKS) cache to `100` entries, which can improve performance and reliability for authentication lookups.
+- 🛡️ **External Agent Event Deserialization**: Adjusted the deserialization logic for external agent events to no longer perform implicit validation of `thread_id` and `display_id`, expecting these to always be present in incoming data for stricter contract enforcement.
+- 🔄 **Human Workflow Request Refinement**: The `HumanWorkRequestEvent` now uses explicit `user_ids`, `user_emails`, and `user_roles` for more granular targeting of human participants in workflows, replacing the previous generic `users` field.
+
+### Fixed
+- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found.
+- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context.
+- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
+- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization (`BaseEvent.model_dump`) to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
+- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Resolved an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring that images are now correctly referenced and displayed.
+- 🧪 **Phoenix Experiment Evaluator Robustness**: Fixed a potential bug in `PhoenixExperimentEvaluator` by ensuring that `JudgeOutput.model_json_schema()` is deep-copied before modification, preventing unintended side effects.
+- 💬 **Open WebUI i18n Fix**: Corrected a missing translation label for `ExceptionEvent` in the Italian locale.
+
+### Removed
+- 🗑️ **Automatic Draft PR Workflow:** The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
+- 🗑️ **Deprecated Health Page**: A basic placeholder health page in the frontend was removed.
+
+### Refactor
+- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`), improving clarity and maintainability. This includes renaming `WsServerEvent` and associated frontend components/composables.
+- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
+- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
+- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure.
+- 🧹 **Standardized SharePoint Naming Conventions**: Refactored variable names, function parameters, and internal asset definitions across SharePoint-related assets, ops, and IO managers for improved consistency and readability (e.g., `sharepoint_` was consistently renamed to `share_point_`).
+
+---
+
+
+
+## [v0.217.0] - 2025-07-10 - Streamlined Platform: Agent-Centric Workflows and API Unification
+
+### Added
+- 🚀 **Introduced Automatic Draft PRs**: A new GitHub Actions workflow automatically creates draft pull requests upon new branch creation, streamlining the development and review process.
+- 👂 **Enabled Two-Way WebSocket Communication**: The `/events/ws` endpoint now supports sending user-originated events (`ExternalAgentEvent`) to the system, transforming it into a full two-way communication channel for real-time interaction.
+- 🔌 **New Dynamic Agent Endpoint**: A new dynamically generated API endpoint (`/agents/l_l_m_wrapping_agent/dev_agent/send_event`) is now available, allowing direct communication with specific agent instances.
+- ⚙️ **Introduced `docker-compose-mnt.yml` for Volume Mounting**: A new Docker Compose configuration is available, simplifying local development by explicitly mounting volumes for all core services, ensuring data persistence and easier management.
+- 🌐 **Configured WebUI Development Defaults**: Updated `nuxt.config.ts` in the playground to explicitly define local development URLs for OIDC, WebUI, and WebSocket endpoints, simplifying local setup.
+- 🩺 **Added Health Service Page**: A new health service page has been introduced in the frontend for monitoring system status.
+
+### Changed
+- 📝 **Improved Documentation Across Core Components**: Enhanced docstrings for `ThreadContext`, `RunTraceCoordinator`, `AgentService`, `EventPersister`, `ThreadController`, `ThreadService`, `ExternalAgentEventDistributor`, `AgentDiscoveryService`, and `AgentDiscoveryResponseEvent` for better clarity and understanding.
+- ⚡️ **Optimized Core Caching and Indexing**: Adjusted caching for agent discovery and streamlined database indexes in `PersistedAgentEventEntity`, `ThreadEntity`, and `UserEntity` for improved performance.
+- 🗄️ **Stricter Agent Retrieval**: Modified `AgentEntity`'s `get_agent` method to use `.get()` instead of `.first()`, ensuring that attempts to retrieve non-existent agents now raise an exception.
+- 🖼️ **Refined RAG Image Path Handling**: Adjusted image path references in English RAG context prompts, improving image rendering consistency.
+- 🔄 **Reverted RAG Context Prompt Role**: The chat role for RAG context prompts has been reverted from `user` back to `system` across all languages, restoring previous prompt engineering best practices.
+- 📦 **Optimized Docker Image Builds**: Refactored API and Bot Dockerfiles to leverage multi-stage builds and virtual environment copying, resulting in more efficient and smaller production images.
+
+### Fixed
+- 🐛 **Improved `ExternalAgentEvent` Deserialization**: Added validation to ensure `thread_id` is present during `ExternalAgentEvent` deserialization, preventing errors for missing thread identifiers.
+
+### Removed
+- 🗑️ **Deprecated Process Management**: The entire suite of process management features has been removed, including:
+    - Dedicated `/processes` API endpoints and their associated controllers, services, and DTOs (`ProcessController`, `ProcessService`, `ProcessDTO`, `ProcessHumanInDto`, `SubmittedFormDTO`).
+    - Process-specific persistence entities (`ProcessEntity`, `PersistedProcessEventEntity`'s process-specific methods).
+    - Related NATS components for process discovery and event distribution (`ExternalProcessEventDistributor`, `ProcessNCSubscriber` methods).
+    - Playground examples and test infrastructure for processes (`SimulatedProcessApiTestRunner`, `HumanWorkEvent` forms).
+- 🗑️ **Removed Legacy Build & Deployment Configurations**: Eliminated outdated Docker Compose files (`docker-compose.latest.yml`, `docker-compose.dev.yml`, `docker-compose-gpu.*.yml`), legacy Nginx configs, and environment loading plugins.
+- 🗑️ **Removed `gunicorn` Dependency**: The `gunicorn` dependency has been removed from `aihub_api` and `aihub_bot`.
+- 🗑️ **Removed Legacy Web Build Workflow**: The old GitHub Actions workflow for building and releasing web Docker images has been deprecated.
+- 🗑️ **Removed Custom API Environment Variable Configuration**: The ability to define and inject additional environment variables directly into API deployments has been removed.
+
+### Refactor
+- 🧹 **Consolidated Event Distribution Logic**: Centralized event distribution and handling, renaming `ExternalAgentEventDistributor` to `ExternalEventDistributor` and standardizing its usage across the API and Bot services.
+- 🧹 **Streamlined Event Persistence**: Unified event persistence in `EventPersister` to a single `persist_event` method for agent events, and re-purposed `PersistedProcessEventEntity` for agent-centric workflows.
+- 🧹 **Unified WebSocket Event Types**: Standardized the event types sent over WebSocket connections from `ContextualizedAgentEvent` to `WSServerEvent` for better frontend consistency.
+- 🧹 **Codebase Naming Alignment**: Standardized naming conventions for many classes, methods, and parameters (e.g., `AgentEndpointsDiscoveryService` to `AgentDiscoveryService`, `share_point_` to `sharepoint_`).
+- 🧹 **Refined Pydantic Model Definitions**: Aligned Pydantic model definitions with best practices by explicitly setting `default` values within `Field` for optional attributes and streamlining `BaseEvent` serialization.
+- 🧹 **Simplified `HumanWorkEvent` Structure**: Restructured `HumanWorkEvent` by removing its direct integration with form elements and user-targeting specifics, making it a pure data event.
+- 🧹 **Test Runner Simplification**: Refactored `AgentTestRunner` and `ProcessTestRunner` by consolidating `send_event` methods into base classes and simplifying event retrieval for clearer testing.
+- 🧹 **Frontend Structure Adjustment**: Renamed `.app` directory to `.playground` in the web application for clearer separation of development environments.
+
+---
+
+
+
+## [v0.222.0] - 2025-07-21 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
+
+### Added
+- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
+- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
+- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
+- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
+- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
+- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
+- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
+- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
+- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
+- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
+- 🌐 **Web Build and Deployment Infrastructure**: New Dockerfile, Nginx configuration, and dynamic config loading for the `aihub_web` application, streamlining production deployments.
+- ✨ **Custom Environment Variables for API**: Enabled the definition and injection of additional environment variables, including secret references, directly into API deployments.
+
+### Changed
+- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
+- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
+- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance for frequently requested agent lists.
+- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
+- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
+- 🔄 **Updated RAG Context Prompt Role**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages to better align with prompt engineering best practices.
+- ⚡️ **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
+
+### Fixed
+- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found.
+- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context.
+- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
+- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, preventing data loss.
+- 🖼️ **Image URL Handling in RAG Prompts**: Corrected an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring images are correctly referenced.
+- 🚦 **ExternalAgentEvent Deserialization**: Adjusted validation logic during deserialization of `ExternalAgentEvent` to prevent premature errors.
+
+### Removed
+- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
+- ✂️ **Deprecated Frontend Health Page**: A basic placeholder health page in the frontend was removed.
+
+### Refactor
+- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`) and SharePoint-related components.
+- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
+- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
+- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure.
+- 🧹 **Dockerfile Streamlining**: Cleaned up Dockerfiles for API and Bot services, removing redundant steps.
+- 💻 **Frontend Project Structure**: Renamed the main Nuxt application directory from `.playground` to `.app`.
+
+---
+
+
+
+## [v0.223.0] - 2025-07-18 - Streamlined Pipeline Operations and Enhanced Robustness
+
+### Added
+- 🦾 **New Job Creation Utility**: Introduced `materialize_asset_job` to simplify the creation of jobs for materializing specific selections of assets.
+- 📅 **Automated Playground Workflows**: Implemented new daily jobs and schedules within the playground environment to automatically observe source data and manage document removal processes.
+
+### Changed
+- ⚙️ **Refined Asset Automation**: Adjusted automation configurations for document and data lake file removal assets, transitioning from eager conditions to more explicit job-driven scheduling.
+- 🔗 **Specialized I/O Manager**: Updated the SharePoint observable asset to utilize a dedicated `sharepoint_io_manager`, ensuring more appropriate handling of SharePoint data interactions.
+
+### Fixed
+- 🐛 **Robust Figure Deletion**: Improved the document figure deletion process to gracefully handle cases where associated figure directories do not exist, preventing unnecessary errors and log messages.
+
+---
+
+
+
 ## [v0.222.0] - 2025-07-15 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
 
 ### Added

@@ -2,10 +2,10 @@ from typing import Annotated
 
 from pydantic import Field
 
-from aihub_lib.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
+from aihub_lib.nats.events.work.WorkEvent import WorkEvent
 
 
-class ProcessStopEvent(WorkRequestEvent):
+class ProcessStopEvent(WorkEvent):
     """
     Signals the successful termination of a process walkthrough.
     """
@@ -14,13 +14,6 @@ class ProcessStopEvent(WorkRequestEvent):
         str | None,
         Field(
             description="Process class associated with this Stop Event. "
-            "This field will be auto-ingested by the process dispatcher."
-        ),
-    ] = None
-    process_id: Annotated[
-        str | None,
-        Field(
-            description="Process ID associated with this Stop Event. "
             "This field will be auto-ingested by the process dispatcher."
         ),
     ] = None

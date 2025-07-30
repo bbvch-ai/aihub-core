@@ -86,23 +86,6 @@ export const AgentConfigDTOSchema = {
             title: 'Description',
             description: 'The description of the agent.'
         },
-        system_prompt: {
-            type: 'string',
-            title: 'System Prompt',
-            description: 'The system prompt of the agent.'
-        },
-        color: {
-            type: 'string',
-            title: 'Color',
-            description: 'The color of the agent UI theme.',
-            default: '#10A37F'
-        },
-        voice: {
-            type: 'string',
-            title: 'Voice',
-            description: 'The TTS voice ID the agent uses.',
-            default: 'de-DE-ChristophNeural'
-        },
         icon: {
             type: 'string',
             title: 'Icon',
@@ -111,7 +94,7 @@ export const AgentConfigDTOSchema = {
         }
     },
     type: 'object',
-    required: ['agent_id', 'name', 'description', 'system_prompt'],
+    required: ['agent_id', 'name', 'description'],
     title: 'AgentConfigDTO'
 } as const;
 
@@ -6632,7 +6615,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1752581125
+            default: 1753435984
         },
         owned_by: {
             type: 'string',
@@ -7166,7 +7149,7 @@ export const ProcessDTOSchema = {
                 }
             ],
             title: 'Is Online',
-            description: 'Indicates whether the processis online and reachable.'
+            description: 'Indicates whether the process is online and reachable.'
         }
     },
     type: 'object',
@@ -8055,6 +8038,19 @@ export const StartEventSchema = {
                 }
             ],
             description: 'Display description for the event'
+        },
+        agent_config: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Agent Config',
+            description: 'Agent configuration'
         },
         _event_name: {
             type: 'string',
@@ -9216,6 +9212,19 @@ export const UserMessageEventSchema = {
                 }
             ],
             description: 'Display description for the event'
+        },
+        agent_config: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Agent Config',
+            description: 'Agent configuration'
         },
         locale: {
             type: 'string',

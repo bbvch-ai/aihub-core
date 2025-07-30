@@ -5,8 +5,8 @@ from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfi
     AzureOpenAIParameter,
 )
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.infrastructure.RedisConfig import RedisConfig
-from aihub_lib.nats.NatsConfig import NatsConfig
+from aihub_lib.infrastructure.nats.NatsConfig import NatsConfig
+from aihub_lib.infrastructure.redis.RedisConfig import RedisConfig
 from aihub_lib.testing.logging.logger import enable_logging
 
 from aihub_agent.runners.MultiprocessAgentRunner import MultiprocessAgentRunner
@@ -23,9 +23,9 @@ async def main():
         agent_type=FrontendTestingAgent,
         agent_config=FrontendTestingAgentConfig(
             agent_id="frontend_testing",
+            agent_class=FrontendTestingAgent.__name__,
             name=LocaleString(en="Frontend Testing Agent"),
             description=LocaleString(en="This is an agent that can be used to develop the frontend"),
-            system_prompt=LocaleString(en="You are an agent"),
             llm=AzureOpenAILLMConfig(
                 name="gpt-4o",
                 base_url="https://aihub-dev-openai-che.openai.azure.com/",

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_api"
-version = "v0.222.0"
+version = "v0.231.0"
 description = "api core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -29,7 +29,6 @@ python-multipart = "^0.0.20"
 stringcase = "^1.2.0"
 pydub = "^0.25.1"
 arize-phoenix = "^10.0.0"
-fastmcp = "^2.10.5"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
@@ -47,8 +46,9 @@ git = "https://github.com/bbvch-ai/jambo.git"
 tag = "v0.4.0"
 
 [tool.poetry.dependencies.aihub_lib]
-path = "../aihub_lib"
-develop = true
+git = "https://github.com/bbvch-ai/aihub-core.git"
+tag = "v0.231.0"
+subdirectory = "aihub_lib"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

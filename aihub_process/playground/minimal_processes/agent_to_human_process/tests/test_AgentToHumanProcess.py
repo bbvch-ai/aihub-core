@@ -20,8 +20,9 @@ scenarios("./features/agent_to_human_process.feature")
 def process_runner_fixture():
     return ProcessTestRunner(
         process_type=AgentToHumanProcess,
-        process_config=ProcessConfig(
+        default_process_config=ProcessConfig(
             process_id="agent_to_human_process",
+            process_class=AgentToHumanProcess.__name__,
             name=LocaleString(en="Agent To Human Process"),
             description=LocaleString(en="Test Process with Agent and Human"),
         ),
@@ -32,11 +33,11 @@ def process_runner_fixture():
 def agent_a_runner_fixture():
     return AgentTestRunner(
         agent_type=AgentA,
-        agent_config=AgentConfig(
+        default_agent_config=AgentConfig(
             agent_id="agent_a",
+            agent_class=AgentA.__name__,
             name=LocaleString(en="Agent A"),
             description=LocaleString(en="Test Agent A for AgentToHumanProcess"),
-            system_prompt=LocaleString(en="You are Agent A"),
         ),
     )
 

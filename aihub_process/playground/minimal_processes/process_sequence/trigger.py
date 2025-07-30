@@ -18,18 +18,19 @@ enable_logging()
 async def main():
     agent_runner_a = AgentTestRunner(
         agent_type=AgentA,
-        agent_config=AgentConfig(
+        default_agent_config=AgentConfig(
             agent_id="agent_a",
+            agent_class=AgentA.__name__,
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
-            system_prompt=LocaleString(en="..."),
         ),
     )
 
     initial_process_runner = ProcessTestRunner(
         process_type=InitialProcess,
-        process_config=ProcessConfig(
+        default_process_config=ProcessConfig(
             process_id="initial_process",
+            process_class=InitialProcess.__name__,
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
         ),
@@ -37,8 +38,9 @@ async def main():
 
     subsequent_process_runner = ProcessTestRunner(
         process_type=SubsequentProcess,
-        process_config=ProcessConfig(
+        default_process_config=ProcessConfig(
             process_id="subsequent_process",
+            process_class=SubsequentProcess.__name__,
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
         ),

@@ -4,22 +4,23 @@ import logging
 
 from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
 from aihub_lib.nats.events import ProcessStartEvent
-from aihub_lib.nats.events.discovery.DiscoveryRequestEvent import DiscoveryRequestEvent
+from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
 from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
-from aihub_lib.nats.events.discovery.process.ProcessDiscoveryResponseEvent import (
-    ProcessDiscoveryResponseEvent,
+from aihub_lib.nats.events.discovery.process.ProcessClassDiscoveryResponseEvent import (
+    ProcessClassDiscoveryResponseEvent,
 )
+from aihub_lib.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.subscribers.process.ProcessJSSubscriber import ProcessJSSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
-from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
+from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
-from aihub_lib.nats.topics import ProcessDiscoveryTopic
+from aihub_lib.nats.topics.discovery.process.ProcessClassDiscoveryTopic import ProcessClassDiscoveryTopic
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 from mongoengine import connect
 from nats.aio.client import Client as NATS
@@ -47,7 +48,7 @@ class ProcessRunner:
         servers: list[str],
         redis_url: str,
         process_type: type[AgenticProcess],
-        process_config: ProcessConfig,
+        default_process_config: ProcessConfig,
         locale_paths: list[str] | None = None,
     ):
         if not isinstance(process_type, type):
@@ -58,13 +59,15 @@ class ProcessRunner:
         self.servers = servers
         self.redis_url = redis_url
         self.process_type = process_type
-        self.process_config = process_config
+        self.default_process_config = default_process_config
+        self.process_config_type = default_process_config.__class__
 
         self.running = False
         self._stop_signal = asyncio.Event()
+        self._loop_task: asyncio.Task | None = None
 
         self.process_class = self.process_type.__name__
-        self.topic_manager = ProcessInstanceTopicManager(self.process_class, self.process_config.process_id)
+        self.topic_manager = ProcessClassTopicManager(self.process_class)
 
         self.nc: NATS | None = None
         self.js: JetStreamContext | None = None
@@ -74,28 +77,25 @@ class ProcessRunner:
         self.agent_delegator: AgentDelegator | None = None
         self.process_delegator: ProcessDelegator | None = None
 
-        self.discovery_event_subscriber: NCSubscriber[DiscoveryRequestEvent] | None = None
+        self.discovery_event_subscriber: NCSubscriber[ClassDiscoveryRequestEvent] | None = None
         self.work_event_subscriber: JSSubscriber | None = None
-        self.nc_publisher: NCPublisher[ProcessDiscoveryResponseEvent] | None = None
+        self.nc_publisher: NCPublisher[ProcessClassDiscoveryResponseEvent] | None = None
 
         self.locale_handler = ProcessLocaleHandler(locale_paths=locale_paths)
 
-    async def discovery_handler(self, event: DiscoveryRequestEvent, topic: ProcessDiscoveryTopic):
+    async def discovery_handler(self, event: ClassDiscoveryRequestEvent, topic: ProcessClassDiscoveryTopic):
         """
         Responds to discovery requests by publishing a ProcessDiscoveryResponseEvent that includes the basic
         process configuration.
         """
-        if topic.process_class not in [self.process_class, "*"] or topic.process_id not in [
-            self.process_config.process_id,
-            "*",
-        ]:
+        if topic.process_class not in [self.process_class, "*"]:
             logger.debug(
                 f"Discovery request for {topic.process_class} with id {topic.process_id} does not match this process."
             )
             return
 
         logger.debug(f"Received discovery request for {topic.process_class} with id {topic.process_id}.")
-        subject = self.topic_manager.get_process_discovery_subject_response(topic.call_id)
+        subject = self.topic_manager.get_process_class_discovery_subject_response(topic.call_id)
 
         human_inputs: list[HumanInSpecs] = [
             HumanInSpecs(
@@ -134,13 +134,15 @@ class ProcessRunner:
             for agent_work_event, agent_in in self.process_type.get_events_with_agent_in()
         ]
 
-        process_discovery_response_event = ProcessDiscoveryResponseEvent(
+        process_config_specs = ProcessConfigSpecs.from_process_config_class(self.process_config_type)
+
+        process_discovery_response_event = ProcessClassDiscoveryResponseEvent(
             process_class=self.process_class,
-            process_id=self.process_config.process_id,
-            process_config=self.process_config,
+            process_config_specs=process_config_specs,
             human_inputs=human_inputs,
             program_inputs=program_inputs,
             agent_inputs=agent_inputs,
+            default_process_config=self.default_process_config,
         )
         await self.nc_publisher.publish_event(process_discovery_response_event, subject)
 
@@ -170,6 +172,7 @@ class ProcessRunner:
         # Initialize dispatcher
         self.dispatcher = ProcessDispatcher(
             self.process_type,
+            self.default_process_config,
             self.nc,
             self.js,
             self.redis,
@@ -179,42 +182,40 @@ class ProcessRunner:
         await self.dispatcher.start()
 
         self.agent_delegator = AgentDelegator(
-            self.process_type,
-            self.process_config.process_id,
-            self.nc,
-            self.js,
-            self.topic_manager,
-            queue_group=f"agent_delegator_{self.process_class}_{self.process_config.process_id}",
+            process_type=self.process_type,
+            nc=self.nc,
+            js=self.js,
+            topic_manager=self.topic_manager,
+            queue_group=f"agent_delegator_{self.process_class}",
         )
         await self.agent_delegator.start()
 
         self.process_delegator = ProcessDelegator(
             self.process_type,
-            self.process_config.process_id,
             self.nc,
             self.js,
             self.topic_manager,
-            queue_group=f"process_delegator_{self.process_class}_{self.process_config.process_id}",
+            queue_group=f"process_delegator_{self.process_class}",
         )
         await self.process_delegator.start()
 
         self.nc_publisher = NCPublisher(self.nc)
-        self.discovery_event_subscriber = ProcessNCSubscriber.for_process_discovery_request_events(
+        self.discovery_event_subscriber = ProcessNCSubscriber.for_process_class_discovery_request_events(
             self.nc, ProcessTopicManager(), self.discovery_handler
         )
         await self.discovery_event_subscriber.start()
 
-        self.work_event_subscriber = ProcessJSSubscriber.for_process_instance_work_events(
+        self.work_event_subscriber = ProcessJSSubscriber.for_process_class_work_events(
             self.nc,
             self.topic_manager,
             handler=self.dispatcher.handle_event,
             js=self.js,
-            queue_group=f"process_runner_{self.process_class}_{self.process_config.process_id}",
+            queue_group=f"process_runner_{self.process_class}",
         )
         await self.work_event_subscriber.start()
 
         logger.debug(f"{self.process_class} is now running and subscribed to incoming messages.")
-        asyncio.create_task(self._run_loop())
+        self._loop_task = asyncio.create_task(self._run_loop())
 
     async def stop(self):
         """
@@ -227,6 +228,15 @@ class ProcessRunner:
 
         logger.debug(f"Shutting down {self.process_class}...")
         self._stop_signal.set()
+
+        if self._loop_task is not None:
+            try:
+                await self._loop_task
+            except asyncio.CancelledError:
+                pass
+        else:
+            logger.exception(f"Loop task was not running for {self.process_class}.")
+
         self.running = False
 
         await self.work_event_subscriber.stop()
@@ -255,7 +265,7 @@ class ProcessRunner:
         Starts the process and waits indefinitely (or until a stop event is triggered).
         Useful for production usage where the process should run until manually stopped.
         """
-        logger.debug(f"Starting {self.process_class}.{self.process_config.process_id}")
+        logger.debug(f"Starting {self.process_class}.{self.default_process_config.process_id}")
         await self.start()
         try:
             await self._stop_signal.wait()

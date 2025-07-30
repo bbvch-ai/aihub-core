@@ -1,0 +1,61 @@
+from typing import Annotated
+
+from aihub_lib.nats.events.discovery import ProcessClassDiscoveryResponseEvent
+from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
+from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
+from aihub_lib.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
+from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
+from aihub_lib.processes.ProcessConfig import ProcessConfig
+from pydantic import BaseModel, Field
+
+
+class ProcessClassDTO(BaseModel):
+    """
+    Encapsulates the data transfer object (DTO) for a process class.
+    Contains information about the process class, including its name and configuration specifications.
+    """
+
+    process_class: Annotated[str, Field(description="The process's class identifier (e.g., 'my_process_class').")]
+    process_config_specs: Annotated[
+        ProcessConfigSpecs,
+        Field(description="Configuration specifications of the process class, including schema and parameters."),
+    ]
+    human_inputs: Annotated[
+        list[HumanInSpecs], Field(description="List of human work events that the process can receive.")
+    ]
+    program_inputs: Annotated[
+        list[ProgramInSpecs], Field(description="List of program work events that the process can receive.")
+    ]
+    agent_inputs: Annotated[
+        list[AgentInSpecs],
+        Field(
+            description="List of agent work events that the process can receive. "
+            "Agent work events are used to trigger the execution of an agent."
+        ),
+    ]
+    is_online: Annotated[
+        bool | None, Field(description="Indicates whether the process class is online and reachable.")
+    ] = None
+    default_process_config: Annotated[
+        ProcessConfig,
+        Field(
+            description="The default process configuration for this process class. "
+            "This is the configuration that will be used if no specific configuration is provided.",
+        ),
+    ]
+
+    @classmethod
+    def from_discovery_event(
+        cls,
+        event: ProcessClassDiscoveryResponseEvent,
+    ) -> "ProcessClassDTO":
+        """Converts a ProcessClassDiscoveryResponseEvent to a ProcessClassDTO."""
+        return cls(
+            process_class=event.process_class,
+            process_config_specs=event.process_config_specs,
+            human_inputs=event.human_inputs,
+            program_inputs=event.program_inputs,
+            agent_inputs=event.agent_inputs,
+            is_online=True,
+            default_process_config=event.default_process_config,
+        )

@@ -2,19 +2,20 @@ import asyncio
 import inspect
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Annotated
+from typing import Annotated, Any, cast
 
-from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.agents.AgentConfig import AgentConfig, StepConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
-from aihub_lib.nats.events import BaseEvent, ControlEvent, ExceptionEvent
+from aihub_lib.nats.events import BaseEvent, ControlEvent, ExceptionEvent, StartEvent
 from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
-from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
+from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics import Topic
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics.agents.AgentClassTopic import AgentClassTopic
+from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from bson import ObjectId
 from cachetools import TTLCache
 from nats.aio.client import Client as NATS
@@ -50,31 +51,28 @@ class AgentDispatcher(BaseDispatcher):
     def __init__(
         self,
         agent: Annotated[type[Agent], "The agent class defining steps and logic."],
-        agent_config: Annotated[AgentConfig, "Configuration object for the agent, including step configs."],
+        default_agent_config: Annotated[AgentConfig, "Configuration object for the agent, including step configs."],
         nc: Annotated[NATS, "NATS client for messaging."],
         js: Annotated[
             JetStreamContext,
             "JetStream context for persistent storage and event streams.",
         ],
         redis: Annotated[Redis, "Redis client for distributed storage."],
-        topic_manager: Annotated[AgentInstanceTopicManager, "Manages event subjects for this agent instance."],
+        topic_manager: Annotated[AgentClassTopicManager, "Manages event subjects for this agent instance."],
         locale_handler: Annotated[AgentLocaleHandler, "Manages localization for the agent."],
     ):
-        super().__init__(nc, js, redis, topic_manager, AgentTopic)
+        super().__init__(nc, js, redis, topic_manager, AgentClassTopic)
         self.agent = agent
-        self.agent_config = agent_config
+        self.default_agent_config = default_agent_config
         self.locale_handler = locale_handler
 
-        self.tracer = RunTraceCoordinator(
-            self.nc, project_name=locale_handler.extract_multi_locale(agent_config.name, "en")
-        )
-        self.step_configs = agent_config.get_step_configs()
+        self.agent_config_type: type[AgentConfig] = self.default_agent_config.__class__
 
     @override
     async def handle_event(
         self,
         event: Annotated[ControlEvent, "The incoming control event to handle."],
-        topic: Annotated[AgentTopic, "The parsed topic of the event."],
+        topic: Annotated[AgentClassTopic, "The parsed topic of the event."],
     ):
         """
         Called whenever a new event arrives. This method:
@@ -90,10 +88,34 @@ class AgentDispatcher(BaseDispatcher):
         # Retrieve contexts (run and thread)
         run_context = RunContext(self.redis, topic.thread_id, topic.run_id)
         thread_context = ThreadContext(self.redis, topic.thread_id)
+        agent_config_dict: dict[str, Any] | None = None
 
         if event.is_start_event:
+            agent_config_dict: dict[str, Any] = event.agent_config or self.default_agent_config.model_dump()
+            await run_context.set("_agent_config", agent_config_dict)
+
+        if agent_config_dict is None:
+            agent_config_dict: dict[str, Any] = await run_context.get("_agent_config")
+            if agent_config_dict is None:
+                raise ValueError(f"No agent config found for event {event.event_name} and topic {topic}")
+
+        run_agent_config = self.agent_config_type.model_validate(agent_config_dict)
+        topic = AgentInstanceTopic.from_agent_class_topic(
+            agent_class_topic=topic,
+            agent_id=run_agent_config.agent_id,
+        )
+        tracer = RunTraceCoordinator(
+            nc=self.nc,
+            project_name=self.locale_handler.extract_multi_locale(
+                locale_data=run_agent_config.name,
+                locale="en",
+            ),
+        )
+
+        if event.is_start_event:
+            event = cast(StartEvent, event)
             logger.debug(f"Handling StartEvent: {event.event_name}")
-            telemetry_headers = self.tracer.trace_run_start(topic, event)
+            telemetry_headers = tracer.trace_run_start(topic, event)
             await run_context.set("telemetry_headers", telemetry_headers)
 
             # Store any initial data from the StartEvent into run_context
@@ -104,7 +126,6 @@ class AgentDispatcher(BaseDispatcher):
 
         if event.is_stop_event:
             logger.debug(f"Handling StopEvent: {event.event_name}")
-            # Clean up run-specific data
             await run_context.delete_all()
             await self.event_store.delete_all(topic.execution_context_id)
             await self.step_store.delete_all(topic.execution_context_id)
@@ -112,11 +133,9 @@ class AgentDispatcher(BaseDispatcher):
 
         if event.is_exception_event:
             logger.debug(f"Handling ExceptionEvent: {event.event_name}")
-            # Mark run as crashed so no further steps are executed
             await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
             return
 
-        # Determine which steps need to be executed due to this event
         steps = self.agent.get_steps_waiting_for_event(type(event))
         for step_method in steps:
             logger.debug(f"Checking step '{step_method.__name__}' for readiness")
@@ -125,9 +144,17 @@ class AgentDispatcher(BaseDispatcher):
             events = await self.event_store.get_events_of_multiple_types(
                 topic.execution_context_id, input_event_class_names, until_event=event
             )
-            if await self.is_step_ready(event, step_method, events, run_context, thread_context, topic):
+            if await self.is_step_ready(
+                event, step_method, events, run_context, thread_context, topic, run_agent_config
+            ):
                 logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.event_name}'")
-                asyncio.create_task(self.execute_step(event, step_method, events, run_context, thread_context, topic))
+                task = asyncio.create_task(
+                    self.execute_step(
+                        event, step_method, events, run_context, thread_context, topic, run_agent_config, tracer
+                    )
+                )
+                self._background_tasks.add(task)
+                task.add_done_callback(self._background_tasks.discard)
 
     @override
     async def is_step_ready(
@@ -137,7 +164,8 @@ class AgentDispatcher(BaseDispatcher):
         events: Annotated[dict[str, list[ControlEvent]], "All events for this run, keyed by event name."],
         run_context: Annotated[RunContext, "Per-run context for state and configuration."],
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
-        topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
+        topic: Annotated[AgentInstanceTopic, "Topic info for the current run and thread."],
+        agent_config: Annotated[AgentConfig, "The agent configuration for this run."],
     ) -> bool:
         """
         Checks if a step can be run given the current state (events available, max executions, etc.).
@@ -169,7 +197,7 @@ class AgentDispatcher(BaseDispatcher):
 
         if precondition_fn:
             precondition_events_and_kwargs = await self._build_method_kwargs(
-                trigger_event, precondition_fn, events, run_context, thread_context, topic
+                trigger_event, precondition_fn, events, run_context, thread_context, topic, agent_config
             )
             is_ready = await precondition_fn(**precondition_events_and_kwargs.kwargs)
             if not is_ready:
@@ -187,7 +215,9 @@ class AgentDispatcher(BaseDispatcher):
         events: Annotated[dict[str, list[ControlEvent]], "All events for this run, keyed by event name."],
         run_context: Annotated[RunContext, "Per-run context for state and configuration."],
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
-        topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
+        topic: Annotated[AgentInstanceTopic, "Topic info for the current run and thread."],
+        agent_config: Annotated[AgentConfig, "The agent configuration for this run."],
+        tracer: Annotated[RunTraceCoordinator, "Tracing coordinator for this run."],
     ):
         """
         Executes a step method:
@@ -212,6 +242,7 @@ class AgentDispatcher(BaseDispatcher):
             run_context,
             thread_context,
             topic,
+            agent_config,
         )
 
         # Ensure step is not executed twice with the exact same input events
@@ -234,13 +265,13 @@ class AgentDispatcher(BaseDispatcher):
         else:
             telemetry_headers = self._telemetry_header_cache[topic.run_id]
 
-        async with self.tracer.trace_step_start(
+        async with tracer.trace_step_start(
             telemetry_headers, topic, step_method, events_and_kwargs.kwargs
         ) as step_span:
             try:
                 result = await step_method(agent_instance, **events_and_kwargs.kwargs)
             except Exception as e:
-                await self.tracer.trace_step_error(step_span, e)
+                await tracer.trace_step_error(step_span, e)
                 if getattr(step_method, Agent.STOP_ON_ERROR_ANNOTATION, False):
                     event = ExceptionEvent(message=str(e))
                     await self.publish_event(event, topic)
@@ -253,13 +284,13 @@ class AgentDispatcher(BaseDispatcher):
                 if not isinstance(result, list):
                     result = [result]
 
-                await self.tracer.trace_step_stop(step_span, result)
+                await tracer.trace_step_stop(step_span, result)
 
                 for event in result:
                     if event.is_hitl_request_event:
                         logger.debug(f"Handling special event: HumanInTheLoopRequestEvent: {event}")
                         # Complete the event's topic info
-                        event.topic = AgentTopic.from_partial_topic(
+                        event.topic = AgentInstanceTopic.from_partial_topic(
                             partial_topic=event.topic,
                             agent_class=topic.agent_class,
                             agent_id=topic.agent_id,
@@ -272,7 +303,7 @@ class AgentDispatcher(BaseDispatcher):
                     if event.is_bitl_request_event:
                         logger.debug(f"Handling special event: BotInTheLoopRequestEvent: {event}")
                         # Complete the event's topic info
-                        event.topic = AgentTopic.from_partial_topic(
+                        event.topic = AgentInstanceTopic.from_partial_topic(
                             partial_topic=event.topic,
                             agent_class=topic.agent_class,
                             agent_id=topic.agent_id,
@@ -292,7 +323,7 @@ class AgentDispatcher(BaseDispatcher):
     async def publish_event(
         self,
         event: Annotated[BaseEvent, "The event to publish."],
-        topic: Annotated[AgentTopic, "Current run/thread topic context."],
+        topic: Annotated[AgentInstanceTopic, "Current run/thread topic context."],
     ):
         """
         Publishes a given event (Control or Display) to the correct subject.
@@ -313,61 +344,81 @@ class AgentDispatcher(BaseDispatcher):
         events: Annotated[dict[str, list[ControlEvent]], "All events for this run, keyed by event name."],
         run_context: Annotated[RunContext, "Per-run context for state and configuration."],
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
-        topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
+        topic: Annotated[AgentInstanceTopic, "Topic info for the current run and thread."],
+        agent_config: Annotated[AgentConfig, "The agent configuration for this run."],
     ) -> EventsAndKwargs:
         step_signature = inspect.signature(method)
         events_and_kwargs: EventsAndKwargs = await self._build_event_kwargs(trigger_event, method, events)
+        step_configs: dict[type[StepConfig], StepConfig] = agent_config.get_step_configs()
 
-        # Prepare arguments
         for param in step_signature.parameters.values():
-            # Handle special configurations injected by agent_config.get_step_configs()
-            if self.step_configs.get(param.annotation):
-                events_and_kwargs.kwargs[param.name] = self.step_configs[param.annotation]
-                continue
-
-            # Handle AgentConfig if requested
-            if inspect.isclass(param.annotation) and issubclass(param.annotation, AgentConfig):
-                events_and_kwargs.kwargs[param.name] = self.agent_config
-                continue
-
-            # Handle RunContext / ThreadContext
-            if param.annotation == RunContext:
-                events_and_kwargs.kwargs[param.name] = run_context
-                continue
-            if param.annotation == ThreadContext:
-                events_and_kwargs.kwargs[param.name] = thread_context
-                continue
-
-            # Handle EventDisplayer
-            if param.annotation == EventDisplayer:
-                events_and_kwargs.kwargs[param.name] = EventDisplayer(
-                    self.js_publisher,
-                    topic_manager=self.get_topic_manager_for_thread(topic),
-                )
-                continue
-
-            # Handle LocaleHandler
-            if param.annotation in [LocaleHandler, AgentLocaleHandler]:
-                locale = await run_context.get("locale", LocaleHandler.DEFAULT_LOCALE)
-                events_and_kwargs.kwargs[param.name] = self.locale_handler.in_locale(locale)
+            param_value = await self._get_parameter_value(
+                param, step_configs, agent_config, run_context, thread_context, topic
+            )
+            if param_value is not None:
+                events_and_kwargs.kwargs[param.name] = param_value
 
         return events_and_kwargs
 
+    async def _get_parameter_value(
+        self,
+        param: Annotated[inspect.Parameter, "Parameter from the step method signature."],
+        step_configs: Annotated[dict[type[StepConfig], StepConfig], "Step configurations for the agent."],
+        agent_config: Annotated[AgentConfig, "The agent configuration for this run."],
+        run_context: Annotated[RunContext, "Per-run context for state and configuration."],
+        thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
+        topic: Annotated[AgentInstanceTopic, "Topic info for the current run and thread."],
+    ) -> Annotated[Any, "The value to inject for the parameter."]:
+        if step_configs.get(param.annotation):
+            return step_configs[param.annotation]
+
+        if inspect.isclass(param.annotation) and issubclass(param.annotation, AgentConfig):
+            if param.annotation != self.agent_config_type:
+                raise ValueError(
+                    f"Expected AgentConfig type '{self.agent_config_type.__name__}', "
+                    f"but got '{param.annotation.__name__}' for parameter '{param.name}'."
+                )
+            logger.debug(
+                f"Injected dynamic configuration for parameter '{param.name}' of type '{param.annotation.__name__}'"
+            )
+            return agent_config
+
+        if param.annotation == RunContext:
+            return run_context
+
+        if param.annotation == ThreadContext:
+            return thread_context
+
+        if param.annotation == EventDisplayer:
+            return EventDisplayer(
+                self.js_publisher,
+                topic_manager=self.get_topic_manager_for_thread(topic),
+            )
+
+        if param.annotation in [LocaleHandler, AgentLocaleHandler]:
+            locale = await run_context.get("locale", LocaleHandler.DEFAULT_LOCALE)
+            return self.locale_handler.in_locale(locale)
+
+        return None
+
     def get_topic_manager_for_thread(
-        self, topic: Annotated[AgentTopic, "Topic identifying the run/thread."]
+        self, topic: Annotated[AgentInstanceTopic, "Topic identifying the run/thread."]
     ) -> AgentThreadTopicManager:
         """
         Returns a thread-specific topic manager derived from the agent's instance topic manager.
         Useful for publishing thread-scoped events.
         """
-        return AgentThreadTopicManager.from_agent_instance_topic_manager(
+        return AgentThreadTopicManager.from_agent_class_topic_manager(
             topic_manager=self.topic_manager,
+            agent_id=topic.agent_id,
             thread_id=topic.thread_id,
             display_id=topic.display_id,
             run_id=topic.run_id,
         )
 
-    async def trigger_agent_in_the_loop(self, aitl_request_event: AgentInTheLoopRequestEvent, topic: AgentTopic):
+    async def trigger_agent_in_the_loop(
+        self, aitl_request_event: AgentInTheLoopRequestEvent, topic: AgentInstanceTopic
+    ):
         """
         Orchestrates agent-to-agent delegation by creating a temporary subscription to the delegated agent.
         When agents collaborate, we need a way to route responses back to the requesting agent.
@@ -398,7 +449,7 @@ class AgentDispatcher(BaseDispatcher):
         aitl_thread_id = topic.thread_id if aitl_request_event.share_thread_id else str(ObjectId())
         aitl_display_id = topic.display_id if aitl_request_event.share_display_id else str(ObjectId())
 
-        aitl_request_event.other_agent_topic = AgentTopic.from_partial_topic(
+        aitl_request_event.other_agent_topic = AgentInstanceTopic.from_partial_topic(
             partial_topic=aitl_request_event.other_agent_topic,
             thread_id=aitl_thread_id,
             display_id=aitl_display_id,
