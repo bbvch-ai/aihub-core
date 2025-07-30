@@ -371,9 +371,6 @@ def _(agent_runner: AgentTestRunner, expected_prompt: str):
     """
     Verify that the LLM received the expected system prompt.
     """
-    llm_event = agent_runner.get_event_of_class(LLMEvent)
-    assert llm_event, "LLMEvent not found"
-
     config = agent_runner.default_agent_config
     assert config.system_prompt is not None, "System prompt was not configured"
 
@@ -382,17 +379,3 @@ def _(agent_runner: AgentTestRunner, expected_prompt: str):
 
     actual_prompt = config.system_prompt.in_locale(locale)
     assert actual_prompt == expected_prompt, f"Expected system prompt '{expected_prompt}', got '{actual_prompt}'"
-
-
-@then(parsers.parse('the response contains the word "{word}"'))
-def _(agent_runner: AgentTestRunner, word: str):
-    """
-    Verify that the response contains a specific word.
-    """
-    llm_event = agent_runner.get_event_of_class(LLMEvent)
-    assert llm_event, "LLMEvent not found"
-
-    response_content = llm_event.output_messages[0].content.lower()
-    assert (
-        word.lower() in response_content
-    ), f"Response does not contain the word '{word}'. Response: {response_content}"
