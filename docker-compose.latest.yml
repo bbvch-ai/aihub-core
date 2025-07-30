@@ -230,7 +230,7 @@ services:
       OAUTH_PROVIDER_NAME: ${OAUTH_PROVIDER_NAME}
       OAUTH_SCOPES: "openid email profile"
       OAUTH_CODE_CHALLENGE_METHOD: "S256"
-      OPENID_REDIRECT_URI: "https://openwebui.${DOMAIN}/auth/oidc/callback"
+      OPENID_REDIRECT_URI: "https://openwebui.${DOMAIN}/oauth/oidc/callback"
 
       ENABLE_DIRECT_CONNECTIONS: false
     logging:
