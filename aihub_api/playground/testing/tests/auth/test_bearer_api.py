@@ -3,9 +3,9 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 import pytest_asyncio
-
-from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import \
-    DangerousDevelopmentOnlyAuthSettings
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.auth.identity.TokenIdentityProvider.TokenIdentityProvider import TokenIdentityProvider
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings

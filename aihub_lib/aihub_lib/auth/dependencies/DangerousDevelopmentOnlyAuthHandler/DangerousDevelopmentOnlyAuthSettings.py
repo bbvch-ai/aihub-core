@@ -3,6 +3,7 @@ from typing import Annotated
 from pydantic import Field, field_validator
 from pydantic_settings import NoDecode
 
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
 
 
@@ -41,3 +42,11 @@ class DangerousDevelopmentOnlyAuthSettings(EnvironmentSettings):
         if isinstance(v, list):
             return v
         return v.split(",")
+
+    def get_user_identity(self) -> UserIdentity:
+        return UserIdentity(
+            name=DangerousDevelopmentOnlyAuthSettings().NAME,
+            email=DangerousDevelopmentOnlyAuthSettings().EMAIL,
+            id=DangerousDevelopmentOnlyAuthSettings().OID,
+            roles=DangerousDevelopmentOnlyAuthSettings().ROLES,
+        )

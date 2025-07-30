@@ -1,6 +1,9 @@
 import io
 
 import pytest
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from fastapi import UploadFile
 from pydub import AudioSegment
 from pydub.generators import Sine
@@ -124,6 +127,7 @@ async def test_full_stt_with_chunking(create_test_audio):
 
     result = await OpenaiService.stt(
         file=large_file,
+        user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
         model_name="azure/gpt-4o-mini-transcribe",
         language="en",
         prompt=None,

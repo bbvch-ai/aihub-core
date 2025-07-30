@@ -3,7 +3,6 @@ from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Annotated, Any, Generic, TypeVar
 
-import httpx
 from llama_index.core.utils import Tokenizer
 from pydantic import BaseModel, Field
 

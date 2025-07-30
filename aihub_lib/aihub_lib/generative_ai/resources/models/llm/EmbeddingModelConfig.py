@@ -32,7 +32,6 @@ class EmbeddingLLMParameter(BaseModel):
     ] = None
 
 
-
 class EmbeddingModelConfig(LiteLLMBase[OpenAILikeEmbedding]):
     """
     Configuration for an embedding model.

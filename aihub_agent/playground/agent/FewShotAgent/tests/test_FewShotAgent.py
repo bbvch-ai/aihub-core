@@ -1,4 +1,7 @@
 import pytest
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -6,7 +9,6 @@ from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_lib.nats.events.guard.GuardRejectionEvent import GuardRejectionEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.logging.logger import enable_logging
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
@@ -164,7 +166,7 @@ async def when_start_event_sent(agent_runner: AgentTestRunner, query: str):
             topic=topic,
             start_event=UserMessageEvent(
                 locale="en",
-                user=fake_user(),
+                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
                 messages=[ChatMessage(content=query, role=MessageRole.USER)],
             ),
         )

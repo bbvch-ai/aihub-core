@@ -2,6 +2,9 @@ import asyncio
 from pathlib import Path
 
 import pytest
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
@@ -16,7 +19,6 @@ from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_doc
 from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreConfig import AzureAISearchVectorStoreConfig
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.logging.logger import enable_logging
 from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection
 from dotenv import load_dotenv
@@ -176,7 +178,7 @@ async def _(agent_runner: AgentTestRunner, query: str):
             topic=topic,
             start_event=UserMessageEvent(
                 messages=[ChatMessage(content=query, role=MessageRole.USER)],
-                user=fake_user(),
+                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
                 locale="en",
             ),
         )
@@ -262,7 +264,7 @@ async def _(agent_runner: AgentTestRunner, query: str, locale: str):
             topic=topic,
             start_event=UserMessageEvent(
                 locale=locale,
-                user=fake_user(),
+                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
                 messages=[ChatMessage(content=query, role=MessageRole.USER)],
             ),
         )

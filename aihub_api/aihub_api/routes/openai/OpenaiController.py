@@ -103,7 +103,8 @@ class OpenaiController(Controller):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> ModelResponse:
             model_response = await OpenaiService.get_models_with_assistants(
-                nc, exclude_webui_agents=exclude_webui_agents
+                nc=nc,
+                exclude_webui_agents=exclude_webui_agents
             )
             access_checker = AccessChecker.from_user(user)
             model_response.data = [
@@ -163,11 +164,12 @@ class OpenaiController(Controller):
         )
         async def get_embeddings(
             req: Annotated[EmbeddingsRequest, Body],
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> EmbeddingsResponse:
             return await OpenaiService.get_embeddings(
-                req.model,
-                req.input,
+                model_name=req.model,
+                input_text=req.input,
+                user=user,
                 dimensions=req.dimensions,
                 encoding_format=req.encoding_format,
             )
@@ -191,7 +193,11 @@ class OpenaiController(Controller):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> ChatCompletion | StreamingResponse:
             completion_request.user = completion_request.user or user.id
-            return await OpenaiService.chat_completion(completion_request.model, completion_request)
+            return await OpenaiService.chat_completion(
+                model_name=completion_request.model,
+                chat_completion_request=completion_request,
+                user=user,
+            )
 
         return self
 
@@ -225,7 +231,12 @@ class OpenaiController(Controller):
                     raise ValueError(f"User {user.id} does not have permission to access model {model_name}")
 
             return await OpenaiService.chat_completion_with_assistants(
-                model_name, completion_request, user, nc, external_agent_event_distributor, t
+                model_name=model_name,
+                chat_completion_request=completion_request,
+                user=user,
+                nc=nc,
+                external_agent_event_distributor=external_agent_event_distributor,
+                t=t
             )
 
         return self
@@ -234,9 +245,13 @@ class OpenaiController(Controller):
         @self.router.post(route, summary="Create image", description="Creates an image given a prompt.", tags=self.tags)
         async def generate_image(
             generation_request: Annotated[ImageGenerationRequest, Body],
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> ImagesResponse:
-            return await OpenaiService.generate_image(str(generation_request.model), generation_request)
+            return await OpenaiService.generate_image(
+                model_name=str(generation_request.model),
+                image_generation_request=generation_request,
+                user=user,
+            )
 
         return self
 
@@ -248,7 +263,7 @@ class OpenaiController(Controller):
             tags=self.tags,
         )
         async def create_transcription(
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             file: UploadFile = File(..., description="The audio file to transcribe"),
             model: str = Form(..., description="ID of the model to use"),
             language: str | None = Form(None, description="ISO-639-1 language code"),
@@ -262,13 +277,14 @@ class OpenaiController(Controller):
             ),
         ) -> Transcription | TranscriptionVerbose | str:
             return await OpenaiService.stt(
-                model,
-                file,
-                language,
-                prompt,
-                response_format,
-                temperature,
-                timestamp_granularities,
+                model_name=model,
+                file=file,
+                user=user,
+                language=language,
+                prompt=prompt,
+                response_format=response_format,
+                temperature=temperature,
+                timestamp_granularities=timestamp_granularities,
             )
 
         return self
@@ -279,10 +295,13 @@ class OpenaiController(Controller):
         )
         async def create_speech(
             speech_request: Annotated[TextToSpeechRequest, Body],
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> StreamingResponse:
             tts_response = await OpenaiService.tts(
-                speech_request.model, speech_request.input, speech_request
+                model_name=speech_request.model,
+                input_text=speech_request.input,
+                tts_request=speech_request,
+                user=user,
             )
 
             async def stream_generator() -> AsyncIterator[bytes]:
