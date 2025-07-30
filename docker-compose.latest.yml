@@ -538,11 +538,11 @@ services:
       - "traefik.enable=true"
 
       # --- Index / Catch-All Route ---
-      - "traefik.http.routers.web.rule=Path(`/`)"
-      - "traefik.http.routers.web.priority=500"
-      - "traefik.http.routers.web.entrypoints=websecure"
-      - "traefik.http.routers.web.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.web.middlewares=security-headers@file"
+      - "traefik.http.routers.web-index.rule=Path(`/`)"
+      - "traefik.http.routers.web-index.priority=500"
+      - "traefik.http.routers.web-index.entrypoints=websecure"
+      - "traefik.http.routers.web-index.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web-index.middlewares=security-headers@file"
 
       # --- Index / Catch-All Route ---
       - "traefik.http.routers.web.rule=Host(`${DOMAIN}`)"
