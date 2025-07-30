@@ -44,7 +44,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-agent"
-version = "v0.232.0"
+version = "v0.233.0"
 description = "agents core"
 optional = false
 python-versions = ">=3.11, <3.12"
@@ -53,7 +53,7 @@ files = []
 develop = true
 
 [package.dependencies]
-aihub_lib = {git = "https://github.com/bbvch-ai/aihub-core.git", tag = "v0.232.0", subdirectory = "aihub_lib"}
+aihub_lib = {git = "https://github.com/bbvch-ai/aihub-core.git", tag = "v0.233.0", subdirectory = "aihub_lib"}
 cachetools = "^5.5.2"
 colorlog = "^6.9.0"
 flatdict = "^4.0.1"
@@ -80,7 +80,7 @@ url = "../aihub_agent"
 
 [[package]]
 name = "aihub-lib"
-version = "v0.232.0"
+version = "v0.233.0"
 description = ""
 optional = false
 python-versions = ">=3.11, <3.12"
@@ -116,7 +116,7 @@ llama-index-llms-openai-like = "^0.3.4"
 llama-index-readers-file = "^0.4.1"
 llama-index-storage-docstore-mongodb = "^0.3.0"
 llama-index-vector-stores-azureaisearch = "^0.3.0"
-llama-index-vector-stores-milvus = "^0.7.3"
+llama-index-vector-stores-milvus = "^0.8.7"
 mongoengine = "^0.29.1"
 nats-py = "^2.9.0"
 networkx = "^3.4.2"
@@ -140,8 +140,8 @@ transformers = "^4.48.1"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.232.0"
-resolved_reference = "b3584b95f5fa0c84e7eb72d21f854b493c1b9b2a"
+reference = "v0.233.0"
+resolved_reference = "c9d703263ce5005d5b0ae62672eb3918f3467e37"
 subdirectory = "aihub_lib"
 
 [[package]]
@@ -2785,19 +2785,19 @@ llama-index-core = ">=0.12.0,<0.13.0"
 
 [[package]]
 name = "llama-index-vector-stores-milvus"
-version = "0.7.3"
+version = "0.8.7"
 description = "llama-index vector_stores milvus integration"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main", "dev"]
 files = [
-    {file = "llama_index_vector_stores_milvus-0.7.3-py3-none-any.whl", hash = "sha256:911dd2b7ecef659fb2e860949806b2cc05977f24185b620d6bf2bcf114727db7"},
-    {file = "llama_index_vector_stores_milvus-0.7.3.tar.gz", hash = "sha256:bd0131862150c6f7800c98d72dd71dd0dc1df3de9f1d1b9ac9005a7f03940b52"},
+    {file = "llama_index_vector_stores_milvus-0.8.7-py3-none-any.whl", hash = "sha256:9768cd41d2929a2cd2ba32b9417594f00e8e3545feb2bf9edffb284a75adbdb9"},
+    {file = "llama_index_vector_stores_milvus-0.8.7.tar.gz", hash = "sha256:cb254e141767b98b72cf1f650da30b84272790df3ddee38fac244839d248a536"},
 ]
 
 [package.dependencies]
-llama-index-core = ">=0.12.0,<0.13.0"
-pymilvus = ">=2.5.2,<3.0.0"
+llama-index-core = ">=0.12.0,<0.13"
+pymilvus = ">=2.5.10,<3"
 
 [[package]]
 name = "mako"
@@ -6616,4 +6616,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.12"
-content-hash = "e23b13176c3d7a6385959a1203cb5afb5a450d672a075de1aae5874ad25547a0"
+content-hash = "432b6eb8b6922aa163c81fc0ae7e4d1a5e089f33c375b0212af06740ed7feb3b"
