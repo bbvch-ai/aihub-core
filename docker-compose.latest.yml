@@ -276,7 +276,7 @@ services:
 
       # --- Index / Catch-All Route ---
       - "traefik.http.routers.openwebui-index.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.openwebui-index.priority=210"
+      - "traefik.http.routers.openwebui-index.priority=10"
       - "traefik.http.routers.openwebui-index.entrypoints=websecure"
       - "traefik.http.routers.openwebui-index.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui-index.middlewares=security-headers@file,allow-iframe"
