@@ -242,35 +242,35 @@ services:
 
       # --- /oauth Route ---
       - "traefik.http.routers.openwebui-oauth.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/oauth`)"
-      - "traefik.http.routers.openwebui-oauth.priority=300"
+      - "traefik.http.routers.openwebui-oauth.priority=3000"
       - "traefik.http.routers.openwebui-oauth.entrypoints=websecure"
       - "traefik.http.routers.openwebui-oauth.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui-oauth.middlewares=security-headers@file,allow-iframe,forwarded-headers"
 
       # --- /assets Route ---
       - "traefik.http.routers.openwebui-assets.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/assets`)"
-      - "traefik.http.routers.openwebui-assets.priority=300"
+      - "traefik.http.routers.openwebui-assets.priority=3000"
       - "traefik.http.routers.openwebui-assets.entrypoints=websecure"
       - "traefik.http.routers.openwebui-assets.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui-assets.middlewares=security-headers@file,allow-iframe,forwarded-headers"
 
       # --- /_app Route ---
       - "traefik.http.routers.openwebui-app.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/_app`)"
-      - "traefik.http.routers.openwebui-app.priority=300"
+      - "traefik.http.routers.openwebui-app.priority=3000"
       - "traefik.http.routers.openwebui-app.entrypoints=websecure"
       - "traefik.http.routers.openwebui-app.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui-app.middlewares=security-headers@file,allow-iframe,forwarded-headers"
 
       # --- /static Route ---
       - "traefik.http.routers.openwebui-static.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/static`)"
-      - "traefik.http.routers.openwebui-static.priority=300"
+      - "traefik.http.routers.openwebui-static.priority=3000"
       - "traefik.http.routers.openwebui-static.entrypoints=websecure"
       - "traefik.http.routers.openwebui-static.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui-static.middlewares=security-headers@file,allow-iframe"
 
       # --- /openwebui Route ---
       - "traefik.http.routers.openwebui.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/openwebui`)"
-      - "traefik.http.routers.openwebui.priority=300"
+      - "traefik.http.routers.openwebui.priority=3000"
       - "traefik.http.routers.openwebui.entrypoints=websecure"
       - "traefik.http.routers.openwebui.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui.middlewares=strip-openwebui,security-headers@file,allow-iframe,strip-openwebui"
@@ -278,21 +278,21 @@ services:
 
       # --- /api Route ---
       - "traefik.http.routers.openwebui-api.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.openwebui-api.priority=220"
+      - "traefik.http.routers.openwebui-api.priority=2200"
       - "traefik.http.routers.openwebui-api.entrypoints=websecure"
       - "traefik.http.routers.openwebui-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui-api.middlewares=security-headers@file,allow-iframe,forwarded-headers"
 
       # --- /api Route ---
       - "traefik.http.routers.openwebui-api.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/api/v1/auths`)"
-      - "traefik.http.routers.openwebui-api.priority=400"
+      - "traefik.http.routers.openwebui-api.priority=4000"
       - "traefik.http.routers.openwebui-api.entrypoints=websecure"
       - "traefik.http.routers.openwebui-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui-api.middlewares=security-headers@file,allow-iframe,forwarded-headers"
 
       # --- Index / Catch-All Route ---
       - "traefik.http.routers.openwebui-index.rule=Host(`openwebui.${DOMAIN}`)"
-      - "traefik.http.routers.openwebui-index.priority=210"
+      - "traefik.http.routers.openwebui-index.priority=2100"
       - "traefik.http.routers.openwebui-index.entrypoints=websecure"
       - "traefik.http.routers.openwebui-index.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui-index.middlewares=security-headers@file,allow-iframe,forwarded-headers"
@@ -304,7 +304,7 @@ services:
       - "traefik.http.middlewares.allow-iframe.headers.customResponseHeaders.Content-Security-Policy=frame-ancestors 'self' https://${DOMAIN}"
       - "traefik.http.middlewares.allow-iframe.headers.customResponseHeaders.X-Frame-Options=SAMEORIGIN"
       - "traefik.http.middlewares.forwarded-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
-      - "traefik.http.middlewares.forwarded-headers.headers.customrequestheaders.X-Forwarded-Host=${DOMAIN}"
+      - "traefik.http.middlewares.forwarded-headers.headers.customrequestheaders.X-Forwarded-Host=openwebui.${DOMAIN}"
       - "traefik.http.middlewares.forwarded-headers.headers.customRequestHeaders.X-Forwarded-Port=443"
       - "traefik.http.middlewares.forwarded-headers.headers.customRequestHeaders.X-Real-IP=%{remote_addr}"
 
