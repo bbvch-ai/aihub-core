@@ -238,6 +238,13 @@ services:
     labels:
       - "traefik.enable=true"
 
+      # --- /assets Route ---
+      - "traefik.http.routers.openwebui-assets.rule=Host(`${DOMAIN}`) && PathPrefix(`/assets`)"
+      - "traefik.http.routers.openwebui-assets.priority=300"
+      - "traefik.http.routers.openwebui-assets.entrypoints=websecure"
+      - "traefik.http.routers.openwebui-assets.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openwebui-assets.middlewares=security-headers@file,allow-iframe"
+
       # --- /_app Route ---
       - "traefik.http.routers.openwebui-app.rule=Host(`${DOMAIN}`) && PathPrefix(`/_app`)"
       - "traefik.http.routers.openwebui-app.priority=300"
