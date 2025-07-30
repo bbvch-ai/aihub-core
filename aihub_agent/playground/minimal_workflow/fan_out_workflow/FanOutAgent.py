@@ -1,5 +1,5 @@
 from aihub_lib.nats.events import StartEvent, StopEvent
-from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import FixedList
+from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import fixed_list
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
@@ -20,6 +20,6 @@ class FanOutAgent(Agent):
         return FanOutB(payload=event.payload)
 
     @step()
-    async def stop_step(self, _: FixedList(FanOutB, N)) -> StopEvent:
+    async def stop_step(self, _: fixed_list(FanOutB, N)) -> StopEvent:
         print("[stop_step]")
         return StopEvent()

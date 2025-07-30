@@ -41,7 +41,7 @@ class ListOfSize(Generic[T]):
         return f"ListOfSize<{self.required_size}, {self.items}>"
 
 
-def FixedList(
+def fixed_list(
     type_: Annotated[type[T], "The type of items in the fixed-size list"],
     size: Annotated[int, "The fixed size of the list"],
 ) -> type[ListOfSize[T]]:

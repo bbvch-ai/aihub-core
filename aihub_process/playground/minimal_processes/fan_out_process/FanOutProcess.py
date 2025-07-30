@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import FixedList
+from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import fixed_list
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.delegators.agent.Agent import Agent
@@ -41,7 +41,7 @@ class FanOutProcess(AgenticProcess):
     async def aggregate_and_stop(
         self,
         work_from_agent_b_list: Annotated[
-            FixedList(AgentBWorkRequest.work, 2), Agent.In(agent_class="AgentB", agent_id="agent_b")
+            fixed_list(AgentBWorkRequest.work, 2), Agent.In(agent_class="AgentB", agent_id="agent_b")
         ],
     ) -> Annotated[CustomProcessStopEvent, Process.Out()]:
         payload_b1 = work_from_agent_b_list[0].agent_stop_event.payload
