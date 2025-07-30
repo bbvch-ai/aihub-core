@@ -29,9 +29,9 @@ class DangerousDevelopmentOnlyAuthConfig(BaseSettings):
             description="A unique OID (Object ID) for the user. Defaults to a UUID.",
         ),
     ] = "e07b0ebf-fd9f-485a-aa17-c1385d202f5b"
-    ROLES: Annotated[list[str], NoDecode, Field(description="A list of roles this user possesses.")] = (
+    ROLES: Annotated[list[str], NoDecode, Field(description="A list of roles this user possesses.")] = [
         "TestOnlyFullAdminAccess"
-    )
+    ]
 
     model_config = SettingsConfigDict(
         env_file=".env",
