@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -102,7 +102,7 @@ class ChatData(BaseModel):
     title: Annotated[str, Field(description="Title of the chat")]
     models: Annotated[list[str], Field(description="Models available for this chat")] = []
     params: Annotated[dict[str, Any], Field(description="Additional parameters")] = {}
-    history: Annotated[ChatHistory | None, Field(description="Chat message history map")] = None
+    history: Annotated[Optional[ChatHistory], Field(description="Chat message history map")] = None
     messages: Annotated[list[ChatMessageContent] | None, Field(description="Messages in array format")] = None
     tags: Annotated[list[str], Field(description="Tags associated with this chat")] = []
     timestamp: Annotated[int | None, Field(description="Chat timestamp")] = None
