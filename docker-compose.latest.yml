@@ -272,7 +272,7 @@ services:
       - "traefik.http.routers.openwebui-api.priority=210"
       - "traefik.http.routers.openwebui-api.entrypoints=websecure"
       - "traefik.http.routers.openwebui-api.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.openwebui-api.middlewares=strip-api,security-headers@file,allow-iframe"
+      - "traefik.http.routers.openwebui-api.middlewares=security-headers@file,allow-iframe"
 
       # --- Index / Catch-All Route ---
       - "traefik.http.routers.openwebui-index.rule=Host(`${DOMAIN}`)"
