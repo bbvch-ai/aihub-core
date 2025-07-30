@@ -329,6 +329,8 @@ services:
         max-file: "2"
     labels:
       - "traefik.enable=true"
+
+      # --- dagster Subdomain ---
       - "traefik.http.routers.dagster.rule=Host(`dagster.${DOMAIN}`)"
       - "traefik.http.routers.dagster.entrypoints=websecure"
       - "traefik.http.routers.dagster.tls.certresolver=letsencrypt"
@@ -469,6 +471,8 @@ services:
         max-file: "2"
     labels:
       - "traefik.enable=true"
+
+      # --- /api/v1 Route ---
       - "traefik.http.routers.api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/v1`)"
       - "traefik.http.routers.api.priority=300"
       - "traefik.http.routers.api.entrypoints=websecure"
@@ -495,7 +499,7 @@ services:
     environment:
       AZURE_AD_CLIENT_ID: ${OAUTH_CLIENT_ID}
       AZURE_AD_TENANT_ID: ${OAUTH_TENANT_ID}
-      WEBUI_URL: "https://openwebui.${DOMAIN}"
+      WEBUI_URL: "https://${DOMAIN}/openwebui"
       WS_ENDPOINT: "wss://${DOMAIN}/api/v1/event/ws"
     logging:
       driver: "json-file"
