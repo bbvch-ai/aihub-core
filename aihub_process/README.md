@@ -7,15 +7,20 @@ index: 5
 
 ## 1. 🎯 Foundational Knowledge of Process Development
 
-This section covers the foundational architecture, patterns, and terminology you need to know before building agentic processes.
+This section covers the foundational architecture, patterns, and terminology you need to know before building agentic
+processes.
 
 ::: info
-This documentation assumes you have completed the general AI-Hub setup as described in the main README.md. Make sure you have the required infrastructure running before proceeding.
+This documentation assumes you have completed the general AI-Hub setup as described in the main README.md. Make sure you
+have the required infrastructure running before proceeding.
 :::
 
 ### 📚 Introduction to `aihub_process`
 
-You are contributing to the **aihub_process** scope, which orchestrates high-level business processes that involve collaboration between agents, humans, and programs within the AI-Hub platform. This scope implements the highest tier of AI-Hub's evolution—**Agentic Process Automation**—where workflows are redesigned as dynamic collaborations between different actors.
+You are contributing to the **aihub_process** scope, which orchestrates high-level business processes that involve
+collaboration between agents, humans, and programs within the AI-Hub platform. This scope implements the highest tier of
+AI-Hub's evolution—**Agentic Process Automation**—where workflows are redesigned as dynamic collaborations between
+different actors.
 
 ### 📁 Project Structure
 
@@ -23,9 +28,9 @@ The `aihub_process` scope is organized as follows:
 
 ```
 aihub_process/
-├── aihub_process/              # Main package source
-│   ├── agentic_processes/      # Core AgenticProcess base class
-│   ├── delegators/             # Entity delegation system
+├── aihub_process/             # Main package source
+│   ├── agentic_processes/     # Core AgenticProcess base class
+│   ├── delegators/            # Entity delegation system
 │   │   ├── agent/             # Agent work delegation
 │   │   ├── human/             # Human work delegation
 │   │   ├── process/           # Process work delegation
@@ -53,7 +58,9 @@ aihub_process/
 ### 🤖 The AgenticProcess: A Collaborative Workflow Orchestrator
 
 ::: info Core Concept
-An agentic process is a **dispatchable workflow** that orchestrates high-level business processes through collaboration between agents, humans, and programs. Processes follow a delegation-based approach where work is distributed to the most appropriate actors.
+An agentic process is a **dispatchable workflow** that orchestrates high-level business processes through collaboration
+between agents, humans, and programs. Processes follow a delegation-based approach where work is distributed to the most
+appropriate actors.
 :::
 
 ```python
@@ -81,14 +88,15 @@ class AgenticProcess(DispatchableWorkflow):
 ### 🏷️ The `@process_step` Decorator: Delegation Points
 
 ::: tip Process Steps
-Process steps are defined using the `@process_step()` decorator, which creates delegation points where work is assigned to specific entities.
+Process steps are defined using the `@process_step()` decorator, which creates delegation points where work is assigned
+to specific entities.
 :::
 
 ```python
 @process_step()
 def received_cv_2_analyzed_cv(
-    self,
-    cv: Annotated[SubmittedCV, Program.In(route="/cv", method="POST")],
+        self,
+        cv: Annotated[SubmittedCV, Program.In(route="/cv", method="POST")],
 ) -> Annotated[AnalyzeCVRequest, Agent.Out(agent_class="LLMWrappingAgent", agent_id="dev_agent")]:
     return AnalyzeCVRequest(start_event=UserMessageEvent(...))
 ```
@@ -121,7 +129,8 @@ This section provides a practical, step-by-step guide to building, testing, and 
 Before you begin, ensure you have completed the infrastructure setup from the root project documentation.
 
 ::: warning
-Always activate the Poetry environment before working. All subsequent commands must be run from within this activated shell.
+Always activate the Poetry environment before working. All subsequent commands must be run from within this activated
+shell.
 :::
 
 ```bash
@@ -137,10 +146,12 @@ poetry shell
 ### 🛠️ Step 1: Create the Process, Configuration, and Events
 
 ::: info
-Follow this three-part process to define a new agentic process. Each part builds on the previous one to create a complete process implementation.
+Follow this three-part process to define a new agentic process. Each part builds on the previous one to create a
+complete process implementation.
 :::
 
-1. **Create the Process Class**: Define the process workflow by creating a class that inherits from `AgenticProcess` and uses the `@process_step` decorator.
+1. **Create the Process Class**: Define the process workflow by creating a class that inherits from `AgenticProcess` and
+   uses the `@process_step` decorator.
    ```python
    # my_process/MyProcess.py
    from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
@@ -200,7 +211,8 @@ Follow this three-part process to define a new agentic process. Each part builds
 ### 🧪 Step 2: Write and Run Tests
 
 ::: tip Testing with BDD
-Process testing uses BDD with `pytest-bdd` and the `ProcessTestRunner`. This provides a natural language description of process behavior.
+Process testing uses BDD with `pytest-bdd` and the `ProcessTestRunner`. This provides a natural language description of
+process behavior.
 :::
 
 1. **Write a Feature File**: Describe the process behavior in Gherkin syntax.
@@ -266,7 +278,8 @@ Process testing uses BDD with `pytest-bdd` and the `ProcessTestRunner`. This pro
 #### 🔍 The Debugging Mindset: Event Flow Analysis
 
 ::: tip Debugging Approach
-Process debugging focuses on understanding the flow of work events between entities. Use **structured logging** and **Phoenix tracing** to visualize process execution.
+Process debugging focuses on understanding the flow of work events between entities. Use **structured logging** and
+**Phoenix tracing** to visualize process execution.
 :::
 
 #### 🛠️ Essential Debugging Tools
@@ -340,7 +353,8 @@ make typecheck   # MyPy type checking
 ```
 
 ::: danger
-All process code must use strict Python type annotations and follow the delegation-based design pattern. This is enforced by CI/CD.
+All process code must use strict Python type annotations and follow the delegation-based design pattern. This is
+enforced by CI/CD.
 :::
 
 ---
@@ -352,52 +366,58 @@ This section provides a library of established patterns for building robust agen
 ### 📎 Basic Delegation Patterns
 
 #### 🤖 Agent-Only Process
+
 ::: info Agent-Only Process
+
 * **Concept**: A process that delegates work exclusively to agents in a sequential chain.
 * **Reference**: `/playground/minimal_processes/agent_only_process/`
 * **Use Case**: Automated processing pipelines where no human intervention is needed.
-:::
+  :::
 
 ```python
 class AgentOnlyProcess(AgenticProcess):
     @process_step()
     async def agent_a_to_agent_b(
-        self,
-        work_from_agent_a: Annotated[AgentAWork, Agent.In(agent_class="AgentA", agent_id="agent_a")],
+            self,
+            work_from_agent_a: Annotated[AgentAWork, Agent.In(agent_class="AgentA", agent_id="agent_a")],
     ) -> Annotated[AgentBWorkRequest, Agent.Out(agent_class="AgentB", agent_id="agent_b")]:
         return AgentBWorkRequest(start_event=AgentBStartEvent(payload=work_from_agent_a.result))
 ```
 
 #### 👥 Human-Only Process
+
 ::: info Human-Only Process
+
 * **Concept**: A process that delegates work exclusively to humans for decision-making workflows.
 * **Reference**: `/playground/minimal_processes/human_only_process/`
 * **Use Case**: Approval workflows, manual review processes, complex decision chains.
-:::
+  :::
 
 ```python
 class HumanOnlyProcess(AgenticProcess):
     @process_step()
     def initial_review(
-        self,
-        request: Annotated[ReviewRequest, Human.In(route="/review", method="POST")],
+            self,
+            request: Annotated[ReviewRequest, Human.In(route="/review", method="POST")],
     ) -> Annotated[ApprovalRequest, Human.Out(users=["manager@company.com"])]:
         return ApprovalRequest(data=request.data, urgency="high")
 ```
 
 #### 🤝 Mixed Agent-Human Process
+
 ::: info Mixed Agent-Human Process
+
 * **Concept**: A process that combines agent automation with human oversight and decision-making.
 * **Reference**: `/playground/minimal_processes/agent_to_human_process/`
 * **Use Case**: Most production processes where AI provides analysis and humans make final decisions.
-:::
+  :::
 
 ```python
 class AgentToHumanProcess(AgenticProcess):
     @process_step()
     def agent_analysis(
-        self,
-        agent_result: Annotated[AnalysisResult, Agent.In(agent_class="AnalystAgent", agent_id="analyst")],
+            self,
+            agent_result: Annotated[AnalysisResult, Agent.In(agent_class="AnalystAgent", agent_id="analyst")],
     ) -> Annotated[HumanReviewRequest, Human.Out(users=[])]:
         return HumanReviewRequest(
             analysis=agent_result.analysis,
@@ -409,43 +429,47 @@ class AgentToHumanProcess(AgenticProcess):
 ### 🔀 Advanced Flow Control Patterns
 
 #### 🔀 Fan-Out Process
+
 ::: info Fan-Out Process
+
 * **Concept**: A process that distributes work to multiple entities in parallel and collects results.
 * **Reference**: `/playground/minimal_processes/fan_out_process/`
 * **Use Case**: Batch processing, parallel analysis, distributed work execution.
-:::
+  :::
 
 ```python
 class FanOutProcess(AgenticProcess):
     @process_step()
     def distribute_work(
-        self,
-        initial_data: Annotated[InitialData, Process.In()],
+            self,
+            initial_data: Annotated[InitialData, Process.In()],
     ) -> Annotated[list[WorkItem], Agent.Out(agent_class="WorkerAgent", agent_id="worker_pool")]:
         return [WorkItem(data=chunk) for chunk in initial_data.chunks]
-    
+
     @process_step()
     def collect_results(
-        self,
-        results: Annotated[list[WorkResult], Agent.In(agent_class="WorkerAgent", agent_id="worker_pool")],
+            self,
+            results: Annotated[list[WorkResult], Agent.In(agent_class="WorkerAgent", agent_id="worker_pool")],
     ) -> Annotated[AggregatedResult, Process.Out()]:
         return AggregatedResult(combined_results=results)
 ```
 
 #### 🔀 Multi-Input Process
+
 ::: info Multi-Input Process
+
 * **Concept**: A process that waits for multiple inputs before proceeding, enabling synchronization.
 * **Reference**: `/playground/minimal_processes/multi_input_process/`
 * **Use Case**: Processes requiring coordination between multiple data sources or entity types.
-:::
+  :::
 
 ```python
 class MultiInputProcess(AgenticProcess):
     @process_step()
     def combine_inputs(
-        self,
-        agent_input: Annotated[AgentData, Agent.In(agent_class="DataAgent", agent_id="data_agent")],
-        human_input: Annotated[HumanData, Human.In(route="/input", method="POST")],
+            self,
+            agent_input: Annotated[AgentData, Agent.In(agent_class="DataAgent", agent_id="data_agent")],
+            human_input: Annotated[HumanData, Human.In(route="/input", method="POST")],
     ) -> Annotated[CombinedResult, Process.Out()]:
         return CombinedResult(
             agent_data=agent_input.data,
@@ -455,18 +479,20 @@ class MultiInputProcess(AgenticProcess):
 ```
 
 #### 🔗 Process Sequence
+
 ::: info Process Sequence
+
 * **Concept**: A process that triggers other processes in sequence, creating process chains.
 * **Reference**: `/playground/minimal_processes/process_sequence/`
 * **Use Case**: Complex workflows that span multiple process boundaries.
-:::
+  :::
 
 ```python
 class InitialProcess(AgenticProcess):
     @process_step()
     def delegate_to_next_process(
-        self,
-        initial_work: Annotated[InitialWork, Agent.In(agent_class="StartAgent", agent_id="start")],
+            self,
+            initial_work: Annotated[InitialWork, Agent.In(agent_class="StartAgent", agent_id="start")],
     ) -> Annotated[NextProcessTrigger, Process.Out(process_class="SubsequentProcess", process_id="subsequent")]:
         return NextProcessTrigger(data=initial_work.result)
 ```
@@ -474,16 +500,18 @@ class InitialProcess(AgenticProcess):
 ### 📎 Entity-Specific Patterns
 
 #### 🤖 Agent Integration
+
 ::: tip Agent Integration
+
 * **Best Practice**: Use specific agent classes and IDs for clear delegation.
 * **Configuration**: Define agent capabilities and expected input/output formats.
-:::
+  :::
 
 ```python
 @process_step()
 def delegate_to_agent(
-    self,
-    input_data: Annotated[InputData, Program.In(route="/data", method="POST")],
+        self,
+        input_data: Annotated[InputData, Program.In(route="/data", method="POST")],
 ) -> Annotated[AgentWorkRequest, Agent.Out(agent_class="SpecializedAgent", agent_id="instance_1")]:
     return AgentWorkRequest(
         start_event=AgentStartEvent(
@@ -494,16 +522,18 @@ def delegate_to_agent(
 ```
 
 #### 👥 Human Integration
+
 ::: tip Human Integration
+
 * **Best Practice**: Use form-based interfaces for structured human input.
 * **Configuration**: Define specific user groups and input validation.
-:::
+  :::
 
 ```python
 @process_step()
 def request_human_decision(
-    self,
-    analysis: Annotated[AnalysisResult, Agent.In(agent_class="AnalystAgent", agent_id="analyst")],
+        self,
+        analysis: Annotated[AnalysisResult, Agent.In(agent_class="AnalystAgent", agent_id="analyst")],
 ) -> Annotated[DecisionRequest, Human.Out(users=["decision_maker@company.com"])]:
     return DecisionRequest(
         forms=[
@@ -523,23 +553,24 @@ def request_human_decision(
 
 ### 📖 Glossary of Process-Specific Terms
 
-This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_process` scope, building upon the core AI-Hub terminology.
+This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_process` scope,
+building upon the core AI-Hub terminology.
 
-| Term | Definition |
-| :--- | :--- |
-| **Agentic Process** | A dispatchable workflow that orchestrates high-level business processes through collaboration between agents, humans, and programs. The core abstraction that inherits from `DispatchableWorkflow`. |
-| **Process Step** | A method decorated with `@process_step()` that defines a single transformation and delegation point in a process. Steps consume work from one entity and delegate work to another. |
-| **Entity Delegation** | The pattern where process steps delegate work to specific entities (agents, humans, or programs) and wait for results. Core to the process orchestration model. |
-| **Work Event** | Events that signal successful completion of work by entities. Include `AgentWorkEvent`, `HumanWorkEvent`, `ProcessWorkEvent`, and `ProgramWorkEvent`. |
-| **Work Request Event** | Events that delegate work to specific entities. Include `AgentWorkRequestEvent`, `HumanWorkRequestEvent`, and `ProgramWorkRequestEvent`. |
-| **Process Configuration** | A `ProcessConfig` object that defines process metadata including ID, name, and description for process identification and discovery. |
-| **Process Runner** | Production infrastructure (`ProcessRunner`) for running processes in live environments with NATS integration and event handling. |
-| **Process Test Runner** | Testing infrastructure (`ProcessTestRunner`) that provides a sandboxed environment for testing processes with event observation and assertion capabilities. |
-| **Entity Delegator** | Abstract base classes (`Agent`, `Human`, `Program`, `Process`) that define input/output configurations for work delegation to specific entity types. |
-| **Process Discovery** | System for discovering available processes and their input/output specifications through `ProcessDiscoveryResponseEvent` broadcasts. |
-| **Process Walkthrough** | A single execution instance of a process, tracked through a unique walkthrough ID for event correlation and monitoring. |
-| **Process Dispatcher** | Event dispatching system that routes work events to the appropriate process steps based on event types and delegation configurations. |
-| **Collaborative Workflow** | The fundamental design pattern where processes orchestrate work between different actor types (agents, humans, programs) rather than executing work directly. |
-| **Work Transformation** | The light data processing that occurs within process steps to transform the output of one entity into valid input for the next entity. |
-| **Process Annotation** | Metadata attached to process steps via the `@process_step()` decorator, including step names, descriptions, and entity delegation configurations. |
-| **Minimal Process** | Simple, focused process examples in the playground that demonstrate specific patterns (agent-only, human-only, fan-out, etc.) for learning and reference. |
+| Term                       | Definition                                                                                                                                                                                          |
+|:---------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Agentic Process**        | A dispatchable workflow that orchestrates high-level business processes through collaboration between agents, humans, and programs. The core abstraction that inherits from `DispatchableWorkflow`. |
+| **Process Step**           | A method decorated with `@process_step()` that defines a single transformation and delegation point in a process. Steps consume work from one entity and delegate work to another.                  |
+| **Entity Delegation**      | The pattern where process steps delegate work to specific entities (agents, humans, or programs) and wait for results. Core to the process orchestration model.                                     |
+| **Work Event**             | Events that signal successful completion of work by entities. Include `AgentWorkEvent`, `HumanWorkEvent`, `ProcessWorkEvent`, and `ProgramWorkEvent`.                                               |
+| **Work Request Event**     | Events that delegate work to specific entities. Include `AgentWorkRequestEvent`, `HumanWorkRequestEvent`, and `ProgramWorkRequestEvent`.                                                            |
+| **Process Configuration**  | A `ProcessConfig` object that defines process metadata including ID, name, and description for process identification and discovery.                                                                |
+| **Process Runner**         | Production infrastructure (`ProcessRunner`) for running processes in live environments with NATS integration and event handling.                                                                    |
+| **Process Test Runner**    | Testing infrastructure (`ProcessTestRunner`) that provides a sandboxed environment for testing processes with event observation and assertion capabilities.                                         |
+| **Entity Delegator**       | Abstract base classes (`Agent`, `Human`, `Program`, `Process`) that define input/output configurations for work delegation to specific entity types.                                                |
+| **Process Discovery**      | System for discovering available processes and their input/output specifications through `ProcessDiscoveryResponseEvent` broadcasts.                                                                |
+| **Process Walkthrough**    | A single execution instance of a process, tracked through a unique walkthrough ID for event correlation and monitoring.                                                                             |
+| **Process Dispatcher**     | Event dispatching system that routes work events to the appropriate process steps based on event types and delegation configurations.                                                               |
+| **Collaborative Workflow** | The fundamental design pattern where processes orchestrate work between different actor types (agents, humans, programs) rather than executing work directly.                                       |
+| **Work Transformation**    | The light data processing that occurs within process steps to transform the output of one entity into valid input for the next entity.                                                              |
+| **Process Annotation**     | Metadata attached to process steps via the `@process_step()` decorator, including step names, descriptions, and entity delegation configurations.                                                   |
+| **Minimal Process**        | Simple, focused process examples in the playground that demonstrate specific patterns (agent-only, human-only, fan-out, etc.) for learning and reference.                                           |

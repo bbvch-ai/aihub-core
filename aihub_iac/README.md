@@ -6,43 +6,63 @@ index: 8
 # 🏢 AIHub Infrastructure as Code (IaC)
 
 ::: info
-This repository contains the Infrastructure as Code implementation for the AIHub platform, using Pulumi with Python to define and manage Azure cloud resources.
+This repository contains the Infrastructure as Code implementation for the AIHub platform, using Pulumi with Python to
+define and manage Azure cloud resources.
 :::
 
 ## 🏗️ Core Architecture
 
 ::: tip Architecture Overview
-The IaC code follows a modular, component-based architecture designed to be extensible, maintainable, and to promote reusability. The following core architectural principles shape the design:
+The IaC code follows a modular, component-based architecture designed to be extensible, maintainable, and to promote
+reusability. The following core architectural principles shape the design:
 :::
 
 ### 🧩 1. Component-Based Design
 
 ::: info Component Architecture
-The infrastructure is organized into logical components, each represented as a Pulumi `ComponentResource`. Each component encapsulates its internal resources and dependencies while exposing well-defined inputs and outputs. This approach enables components to be composed into larger infrastructures while maintaining a clear separation of concerns, making the code easier to understand and maintain. Components handle their own dependency graph internally, reducing the need for manual dependency management at higher levels.
+The infrastructure is organized into logical components, each represented as a Pulumi `ComponentResource`. Each
+component encapsulates its internal resources and dependencies while exposing well-defined inputs and outputs. This
+approach enables components to be composed into larger infrastructures while maintaining a clear separation of concerns,
+making the code easier to understand and maintain. Components handle their own dependency graph internally, reducing the
+need for manual dependency management at higher levels.
 :::
 
 ### 🏭 2. Provider Pattern
 
 ::: tip Provider Pattern
-The codebase implements a provider pattern to abstract service creation and dependency injection. The `NetworkProvider` manages network-related resources and naming conventions, `IdentityProvider` handles Azure managed identities and role assignments, `StorageResourceFactory` creates and configures storage resources, and `WebAppCreator` standardizes web application deployment. These providers deliver a consistent approach to resource creation across components and reduce code duplication. Providers act as factories for common resource types, ensuring consistency and reducing boilerplate.
+The codebase implements a provider pattern to abstract service creation and dependency injection. The `NetworkProvider`
+manages network-related resources and naming conventions, `IdentityProvider` handles Azure managed identities and role
+assignments, `StorageResourceFactory` creates and configures storage resources, and `WebAppCreator` standardizes web
+application deployment. These providers deliver a consistent approach to resource creation across components and reduce
+code duplication. Providers act as factories for common resource types, ensuring consistency and reducing boilerplate.
 :::
 
 ### ⚙️ 3. Configuration Management System
 
 ::: info Configuration System
-The configuration system is a core strength of the architecture, built on a layered approach with Pydantic models and environment variables:
+The configuration system is a core strength of the architecture, built on a layered approach with Pydantic models and
+environment variables:
 :::
 
 ::: details Settings Layer
-At the foundation are `Settings` classes (e.g., `ProjectSettings`, `OAuthSettings`, `PostgresAuthSettings`) that directly map environment variables to typed properties. These classes handle the raw loading of configuration from environment files and provide basic validation. They focus on a specific domain of configuration (project details, authentication, etc.) and typically have no dependencies on other settings.
+At the foundation are `Settings` classes (e.g., `ProjectSettings`, `OAuthSettings`, `PostgresAuthSettings`) that
+directly map environment variables to typed properties. These classes handle the raw loading of configuration from
+environment files and provide basic validation. They focus on a specific domain of configuration (project details,
+authentication, etc.) and typically have no dependencies on other settings.
 :::
 
 ::: details Config Layer
-Above the Settings layer are `Config` classes (e.g., `ApiConfig`, `PhoenixConfig`, `WebUIConfig`) which compose and transform settings into the specific configuration needed for infrastructure components. These Config classes incorporate business logic for computing derived values, setting defaults, and validating relationships between configuration parameters. They typically consume multiple Settings classes and expose a unified configuration interface to components.
+Above the Settings layer are `Config` classes (e.g., `ApiConfig`, `PhoenixConfig`, `WebUIConfig`) which compose and
+transform settings into the specific configuration needed for infrastructure components. These Config classes
+incorporate business logic for computing derived values, setting defaults, and validating relationships between
+configuration parameters. They typically consume multiple Settings classes and expose a unified configuration interface
+to components.
 :::
 
 ::: tip Configuration Benefits
-This layered approach provides clear separation between raw environment variables and the business logic that transforms them into usable configuration. The `from_env()` static factory method pattern enables comprehensive configuration construction from environment variables with domain-specific defaulting logic.
+This layered approach provides clear separation between raw environment variables and the business logic that transforms
+them into usable configuration. The `from_env()` static factory method pattern enables comprehensive configuration
+construction from environment variables with domain-specific defaulting logic.
 :::
 
 ## 📁 Directory Structure
