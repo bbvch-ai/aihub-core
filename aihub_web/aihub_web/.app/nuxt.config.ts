@@ -1,13 +1,11 @@
-import { resolve } from 'path'
-
-import { config } from 'dotenv'
 import { defineNuxtConfig } from 'nuxt/config'
-
-config({ path: resolve(__dirname, '../../../.env') })
 
 export default defineNuxtConfig({
   extends: ['..'],
   modules: ['@nuxt/eslint'],
+  app: {
+    baseURL: '/aihub/',
+  },
   runtimeConfig: {
     public: {
       mode: process.env.MODE,
@@ -25,4 +23,7 @@ export default defineNuxtConfig({
     },
   },
   compatibilityDate: '2024-12-03',
+  robots: {
+    robotsTxt: false,
+  },
 })
