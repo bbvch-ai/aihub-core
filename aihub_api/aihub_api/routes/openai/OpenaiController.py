@@ -5,8 +5,6 @@ from typing import Annotated, Literal
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
-from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
@@ -68,12 +66,8 @@ class OpenaiController(Controller):
         auth: AuthHandler,
         route: str = "/openai",
         additionally_required_permission: str | None = None,
-        stt_models: list[AzureOpenaiSTTConfig] | None = None,
-        tts_models: list[AzureOpenaiTTSConfig] | None = None,
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
-        self.tts_models = tts_models or []
-        self.stt_models = stt_models or []
 
     def get_models(self, route: str = "/models") -> "OpenaiController":
         @self.router.get(
@@ -268,9 +262,8 @@ class OpenaiController(Controller):
             ),
         ) -> Transcription | TranscriptionVerbose | str:
             return await OpenaiService.stt(
-                self.stt_models,
-                file,
                 model,
+                file,
                 language,
                 prompt,
                 response_format,
@@ -289,7 +282,7 @@ class OpenaiController(Controller):
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> StreamingResponse:
             tts_response = await OpenaiService.tts(
-                self.tts_models, speech_request.model, speech_request.input, speech_request
+                speech_request.model, speech_request.input, speech_request
             )
 
             async def stream_generator() -> AsyncIterator[bytes]:

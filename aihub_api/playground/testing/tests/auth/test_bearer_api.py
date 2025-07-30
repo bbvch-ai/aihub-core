@@ -3,6 +3,9 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 import pytest_asyncio
+
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import \
+    DangerousDevelopmentOnlyAuthSettings
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.auth.identity.TokenIdentityProvider.TokenIdentityProvider import TokenIdentityProvider
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
@@ -34,10 +37,10 @@ def mongo_db():
 def valid_token(mongo_db):
     """Insert a valid token document and return its token string."""
     user = UserEntity.create_user(
-        oid=os.getenv("OID", "1234567890"),
-        name=os.getenv("NAME", "Melanie Musterfrau"),
-        email=os.getenv("EMAIL", "melanie.musterfrau@bbv.ch"),
-        roles=["TestOnlyFullAdminAccess"],
+        oid=os.getenv("OID", DangerousDevelopmentOnlyAuthSettings().OID),
+        name=os.getenv("NAME", DangerousDevelopmentOnlyAuthSettings().NAME),
+        email=os.getenv("EMAIL", DangerousDevelopmentOnlyAuthSettings().EMAIL),
+        roles=DangerousDevelopmentOnlyAuthSettings().ROLES,
     )
     expiry = datetime.now(UTC) + timedelta(hours=1)
     token_obj = BearerToken.create_new_token(name="token-name", expiry_date=expiry, user_oid=user.id)
@@ -50,11 +53,11 @@ def valid_token(mongo_db):
 def expected_user_data():
     """Return the expected user data based on environment variables."""
     return {
-        "id": os.getenv("OID", "1234567890"),
-        "name": os.getenv("NAME", "Melanie Musterfrau"),
-        "email": os.getenv("EMAIL", "melanie.musterfrau@bbv.ch"),
+        "id": os.getenv("OID", DangerousDevelopmentOnlyAuthSettings().OID),
+        "name": os.getenv("NAME", DangerousDevelopmentOnlyAuthSettings().NAME),
+        "email": os.getenv("EMAIL", DangerousDevelopmentOnlyAuthSettings().EMAIL),
         "profile_image": None,
-        "roles": ["TestOnlyFullAdminAccess"],
+        "roles": DangerousDevelopmentOnlyAuthSettings().ROLES,
         "favorite_modules": [],
     }
 

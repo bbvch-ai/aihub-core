@@ -7,15 +7,10 @@ from collections.abc import AsyncGenerator, Callable
 from datetime import UTC, datetime
 from typing import Any, Literal
 
-import httpx
-
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.generative_ai.resources.models.image.ImageModelConfig import ImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig, \
     EmbeddingLLMParameter
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
-from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
@@ -23,7 +18,7 @@ from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from fastapi import HTTPException, UploadFile
 from nats.aio.client import Client as NATS
-from openai import AsyncAzureOpenAI, AsyncOpenAI, HttpxBinaryResponseContent
+from openai import AsyncOpenAI, HttpxBinaryResponseContent
 from openai.types import CompletionUsage, ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
 from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionMessage, ChatCompletionMessageParam
@@ -68,11 +63,8 @@ class OpenaiService:
         Retrieve the list of available chat models.
         Returns a ModelResponse containing details of every configured chat model.
         """
-        client = OpenaiService._litellm_client()
-        models = await client.get("/v1/model/info")
-        chat_models = [model for model in models.json()["data"] if model["model_info"]["mode"] == "chat"]
-
-        models = [ModelDetails(id=model["model_name"]) for model in chat_models]
+        chat_model_names = await OpenaiService._model_names_by_type("chat")
+        models = [ModelDetails(id=model_name) for model_name in chat_model_names]
         return ModelResponse(data=models)
 
     @staticmethod
@@ -155,11 +147,9 @@ class OpenaiService:
         Generate text embeddings using the specified embedding model.
         Identifies the model, prepares parameters, and returns embeddings for the input text.
         """
-        client = OpenaiService._litellm_client()
-        models = await client.get("/v1/model/info")
-        embedding_models = [model for model in models.json()["data"] if model["model_info"]["mode"] == "embedding" and model["model_name"] == model_name]
+        embedding_model_names = await OpenaiService._model_names_by_type("embedding", model_name)
 
-        if len(embedding_models) == 0:
+        if len(embedding_model_names) == 0:
             raise HTTPException(status_code=404, detail=f"Model {model_name} not found.")
 
         embedding_model_config = EmbeddingModelConfig(
@@ -407,26 +397,18 @@ class OpenaiService:
         Generate an image using the specified image model.
         Routes the generation request to the corresponding Azure image model client.
         """
-        client = OpenaiService._litellm_client()
-        models = await client.get("/v1/model/info")
-        image_models = [model for model in models.json()["data"] if model["model_info"]["mode"] == "image_generation"]
-
-        models = [model for model in image_models if model["model_name"] == model_name]
-        if len(models) == 0:
+        image_model_names = OpenaiService._model_names_by_type("image_generation", model_name)
+        if len(image_model_names) == 0:
             raise ValueError(f"Model {model_name} not found.")
 
-        image_model_config = ImageModelConfig(model_name=model_name)
-        client: AsyncOpenAI | AsyncAzureOpenAI = image_model_config.get_openai_client() # TODO: Make sure this works
-
+        client: AsyncOpenAI = LiteLLMProxySettings().openai_aclient
         kwargs = OpenaiService._filter_kwargs(client.images.generate, image_generation_request)
-
         return await client.images.generate(**kwargs)
 
     @staticmethod
     async def stt(
-        stt_models: list[AzureOpenaiSTTConfig],
-        file: UploadFile,
         model_name: str,
+        file: UploadFile,
         language: str | None,
         prompt: str | None,
         response_format: str | None,
@@ -438,12 +420,11 @@ class OpenaiService:
         Utilizes the specified speech-to-text model and parameters to convert audio into transcription.
         Handles chunking of large audio files to comply with API size limits.
         """
-        models = [model for model in stt_models if model.name == model_name]
-        if len(models) == 0:
+        tts_model_names = await OpenaiService._model_names_by_type("audio_transcription", model_name)
+        if len(tts_model_names) == 0:
             raise ValueError(f"Model {model_name} not found.")
 
-        stt_model_config = models[0]
-        client: AsyncOpenAI | AsyncAzureOpenAI = stt_model_config.get_openai_client()
+        client: AsyncOpenAI = LiteLLMProxySettings().openai_aclient
 
         file_ext = file.filename.rsplit(".", 1)[-1].lower()
         audio = AudioSegment.from_file(file.file, format=file_ext)
@@ -487,7 +468,6 @@ class OpenaiService:
 
     @staticmethod
     async def tts(
-        tts_models: list[AzureOpenaiTTSConfig],
         model_name: str,
         input_text: str,
         tts_request: TextToSpeechRequest,
@@ -496,12 +476,11 @@ class OpenaiService:
         Convert text to speech and return the audio content.
         Sends a TTS request to the designated model and streams the resulting audio bytes.
         """
-        models = [model for model in tts_models if model.name == model_name]
-        if len(models) == 0:
+        tts_model_names = await OpenaiService._model_names_by_type("audio_speech", model_name)
+        if len(tts_model_names) == 0:
             raise ValueError(f"Model {model_name} not found.")
 
-        tts_model_config = models[0]
-        client: AsyncOpenAI | AsyncAzureOpenAI = tts_model_config.get_openai_client()
+        client: AsyncOpenAI = LiteLLMProxySettings().openai_aclient
         kwargs = OpenaiService._filter_kwargs(client.audio.speech.create, tts_request)
 
         return await client.audio.speech.create(input=input_text, **kwargs)
@@ -547,9 +526,8 @@ class OpenaiService:
         return sdk_call_kwargs
 
     @staticmethod
-    def _litellm_client():
-        config = LiteLLMProxySettings()
-        return httpx.AsyncClient(
-            headers={"Authorization": f"Bearer {config.API_KEY}"},
-            base_url=config.BASE_URL,
-        )
+    async def _model_names_by_type(model_type: Literal["chat", "embedding", "image_generation"], model_name: str | None = None) -> list[str]:
+        litellm_client = LiteLLMProxySettings().httpx_aclient
+        models = await litellm_client.get("/v1/model/info")
+        candidates = [model["model_name"] for model in models.json()["data"] if model["model_info"]["mode"] == model_type]
+        return [name for name in candidates if not model_name or model_name == name]

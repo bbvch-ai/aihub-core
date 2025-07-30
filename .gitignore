@@ -4,4 +4,8 @@ __pycache__/
 /aihub_pipeline/.env
 /aihub_agent/playground/agent/RAGAgent/.env
 .env
-.local-volumes
+local-volumes
+aihub_doc/node_modules
+aihub_doc/.vitepress/cache
+aihub_doc/.vitepress/dist
+aihub_doc/aihub

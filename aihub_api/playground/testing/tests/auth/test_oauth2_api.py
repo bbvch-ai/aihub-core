@@ -4,6 +4,9 @@ import httpx
 import jwt
 import pytest
 import pytest_asyncio
+
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import \
+    DangerousDevelopmentOnlyAuthSettings
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
@@ -83,11 +86,11 @@ def valid_oauth2_token(oauth2_config, rsa_keys):
     now = datetime.now(UTC)
     exp = now + timedelta(minutes=TOKEN_EXPIRY_MINUTES)
     payload = {
-        "name": "Melanie Musterfrau",
-        "preferred_username": "melanie.musterfrau@bbv.ch",
-        "roles": ["user"],
+        "name": DangerousDevelopmentOnlyAuthSettings().NAME,
+        "preferred_username": DangerousDevelopmentOnlyAuthSettings().EMAIL,
+        "roles": DangerousDevelopmentOnlyAuthSettings().ROLES,
         "aud": oauth2_config.CLIENT_ID,
-        "oid": "1234567890",
+        "oid": DangerousDevelopmentOnlyAuthSettings().OID,
         "iss": f"{oauth2_config.AUTHORITY}/v2.0",
         "exp": exp,
     }
@@ -100,11 +103,11 @@ def valid_oauth2_token(oauth2_config, rsa_keys):
 def expected_user_data():
     """Return the expected user data from token claims."""
     return {
-        "id": "1234567890",
-        "name": "Melanie Musterfrau",
-        "email": "melanie.musterfrau@bbv.ch",
+        "id": DangerousDevelopmentOnlyAuthSettings().OID,
+        "name": DangerousDevelopmentOnlyAuthSettings().NAME,
+        "email": DangerousDevelopmentOnlyAuthSettings().EMAIL,
         "profile_image": None,
-        "roles": ["TestOnlyFullAdminAccess"],
+        "roles": DangerousDevelopmentOnlyAuthSettings().ROLES,
         "favorite_modules": [],
     }
 

@@ -123,7 +123,6 @@ async def test_full_stt_with_chunking(create_test_audio):
     from aihub_api.routes.openai.OpenaiService import OpenaiService
 
     result = await OpenaiService.stt(
-        stt_models=[mock_model_config],
         file=large_file,
         model_name="test-model",
         language="en",

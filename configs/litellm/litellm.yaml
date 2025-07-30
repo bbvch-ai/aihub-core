@@ -8,15 +8,44 @@ model_list:
     model_info:
       mode: chat
 
+  - model_name: text-embedding-3-large
+    litellm_params:
+      model: text-embedding-3-large
+      api_base: https://aihub-dev-openai-che.openai.azure.com/
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_version: "2024-02-01"
+    model_info:
+      mode: embedding
+
   - model_name: azure/dall-e-3
     litellm_params:
       model: azure/dall-e-3
       api_base: https://joelb-mdotxdzc-australiaeast.cognitiveservices.azure.com/
-      api_key: os.environ/AZURE_OPENAI_KEY_IMAGE_GEN
+      api_key: os.environ/AZURE_OPENAI_KEY_IMAGE
       api_version: "2024-02-01"
     model_info:
       mode: image_generation
       base_model: azure/dall-e-3
+
+  - model_name: azure/gpt-4o-mini-transcribe
+    litellm_params:
+      model: azure/gpt-4o-mini-transcribe
+      api_base: https://joelb-mdpmzqib-eastus2.cognitiveservices.azure.com/
+      api_key: os.environ/AZURE_OPENAI_KEY_AUDIO
+      api_version: "2025-03-01-preview"
+    model_info:
+      mode: audio_transcription
+      base_model: azure/gpt-4o-mini-transcribe
+
+  - model_name: azure/gpt-4o-mini-tts
+    litellm_params:
+      model: azure/gpt-4o-mini-tts
+      api_base: https://joelb-mdpmzqib-eastus2.cognitiveservices.azure.com/
+      api_key: os.environ/AZURE_OPENAI_KEY_AUDIO
+      api_version: "2025-03-01-preview"
+    model_info:
+      mode: audio_speech
+      base_model: azure/gpt-4o-mini-tts
 
   - model_name: google/gemini-2.5-flash
     litellm_params:
@@ -35,8 +64,8 @@ model_list:
       max_input_tokens: 32768
       supports_function_calling: true
       max_output_tokens: 4096
-      input_cost_per_token: 0
-      output_cost_per_token: 0
+      input_cost_per_token: 0.00001
+      output_cost_per_token: 0.0002
       custom_tokenizer:
         identifier: Qwen/Qwen3-0.6B
         revision: main
@@ -49,7 +78,7 @@ model_list:
       api_key: None
     model_info:
       mode: embedding
-      input_cost_per_token: 0
+      input_cost_per_token: 0.000000001
       custom_tokenizer:
         identifier: Alibaba-NLP/gte-base-en-v1.5
         revision: main
