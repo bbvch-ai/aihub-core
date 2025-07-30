@@ -537,6 +537,13 @@ services:
       - "traefik.http.routers.web-nuxt.tls.certresolver=letsencrypt"
       - "traefik.http.routers.web-nuxt.middlewares=security-headers@file"
 
+      # --- /auth Route ---
+      - "traefik.http.routers.web-auth.rule=Host(`${DOMAIN}`) && PathPrefix(`/auth`)"
+      - "traefik.http.routers.web-auth.priority=310"
+      - "traefik.http.routers.web-auth.entrypoints=websecure"
+      - "traefik.http.routers.web-auth.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web-auth.middlewares=security-headers@file"
+
       # --- Index / Catch-All Route ---
       - "traefik.http.routers.web.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.web.priority=200"
