@@ -253,13 +253,13 @@ class JetStreamEventStore:
         self,
         store_execution_context_id: Annotated[str, "Unique identifier for the jetstream store context"],
         event: Annotated[BaseEvent, "The event to ensure is stored"],
-        timeout: Annotated[float, "Maximum time to wait in seconds"] = 10.0,
     ) -> bool:
         """
         Ensures that the event is stored in the event store.
         If not already stored, waits until it is stored or the timeout expires.
 
         Returns True if the event is stored, False if the timeout expired.
+        Note: Use a timeout context manager to control maximum wait time.
         """
         event_name = event.event_name
         event_id = event.event_id
@@ -287,7 +287,8 @@ class JetStreamEventStore:
 
                 # Wait for the condition to be notified
                 try:
-                    await asyncio.wait_for(condition.wait(), timeout=timeout)
+                    async with asyncio.timeout(10.0):
+                        await condition.wait()
                     return True
                 except TimeoutError:
                     logger.warning(f"Timeout waiting for event {event_key} to be stored")
