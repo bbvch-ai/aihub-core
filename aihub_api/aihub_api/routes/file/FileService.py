@@ -4,7 +4,7 @@ import math
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
-from aihub_lib.generative_ai.document.accessor.FileAccessServiceConfig import AnonymousFileAccessSettings
+from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings import AnonymousFileAccessSettings
 from fastapi import HTTPException, status
 from fastapi.responses import RedirectResponse
 
