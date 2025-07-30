@@ -6636,7 +6636,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1753797433
+            default: 1753892110
         },
         owned_by: {
             type: 'string',
@@ -6912,7 +6912,8 @@ export const NotificationDTOSchema = {
             type: 'string',
             enum: ['success', 'info', 'warn', 'error'],
             title: 'Type',
-            description: 'Categorizes the notification for visual representation (e.g., icon and color).'
+            description: 'Categorizes the notification for visual representation (e.g., icon and color).',
+            default: 'info'
         },
         severity: {
             type: 'string',
@@ -6933,7 +6934,7 @@ export const NotificationDTOSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'user_id', 'title', 'message', 'type', 'severity', 'link', 'created_at'],
+    required: ['id', 'user_id', 'title', 'message', 'severity', 'link', 'created_at'],
     title: 'NotificationDTO',
     description: 'Data Transfer Object for a notification.'
 } as const;

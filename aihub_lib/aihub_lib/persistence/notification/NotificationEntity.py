@@ -27,7 +27,7 @@ class NotificationEntity(Document):
     message = EmbeddedDocumentField(LocaleStringEntity)
     read = BooleanField(default=False)
     done = BooleanField(default=False)
-    type = StringField(choices=("info", "warn", "success", "error"), default="info")  # TODO: Add more types as needed
+    type = StringField(choices=("info", "warn", "success", "error"), default="info")
     severity = StringField(choices=("low", "medium", "high", "critical"), default="medium")
     link = StringField()
     created_at = DateTimeField(default=lambda: datetime.now(UTC))

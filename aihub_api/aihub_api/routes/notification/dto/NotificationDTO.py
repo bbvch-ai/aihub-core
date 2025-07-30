@@ -27,7 +27,7 @@ class NotificationDTO(BaseModel):
     type: Annotated[
         NotificationTypeAPI,
         Field(description="Categorizes the notification for visual representation (e.g., icon and color)."),
-    ]
+    ] = "info"
     severity: Annotated[NotificationSeverityAPI, Field(description="The priority level of the notification.")]
     link: Annotated[str, Field(description="A relative internal link to navigate to the relevant resource.")]
     created_at: Annotated[datetime, Field(description="The timestamp when the notification was created.")]

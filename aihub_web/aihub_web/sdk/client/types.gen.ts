@@ -5097,7 +5097,7 @@ export type NotificationDto = {
      * Type
      * Categorizes the notification for visual representation (e.g., icon and color).
      */
-    type: 'success' | 'info' | 'warn' | 'error';
+    type?: 'success' | 'info' | 'warn' | 'error';
     /**
      * Severity
      * The priority level of the notification.
