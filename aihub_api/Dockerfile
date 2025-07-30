@@ -38,6 +38,8 @@ RUN rm Makefile switch_dependencies.py pyproject.toml
 WORKDIR /app/aihub_api
 RUN poetry install
 
+RUN rm -rf ~/.cache/pypoetry ~/.cache/pip /tmp/poetry_cache
+
 
 # Runtime stage
 FROM python:3.11-slim AS runtime

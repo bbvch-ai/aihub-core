@@ -322,7 +322,8 @@ services:
       - /dagster_home/workspace.yaml
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/dagster_home
-      - poetry_cache:/root/.cache/pypoetry
+      - dagster-venv:/app/.venv
+      - dagster-venv:/app/aihub_pipeline/.venv
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -341,7 +342,8 @@ services:
       - run
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/dagster_home
-      - poetry_cache:/root/.cache/pypoetry
+      - dagster-venv:/app/.venv
+      - dagster-venv:/app/aihub_pipeline/.venv
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -411,13 +413,14 @@ services:
   # <editor-fold desc="API Stack">
   api:
     image: ghcr.io/bbvch-ai/aihub-core/api:latest
-    volumes:
-      - poetry_cache:/root/.cache/pypoetry
     restart: always
     depends_on:
       - "mongo"
       - "nats"
       - "traefik"
+    volumes:
+      - api-venv:/app/.venv
+      - api-venv:/app/aihub_api/.venv
     environment:
       NATS_ENDPOINT: "nats://nats:4222"
       COSMOS_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
@@ -536,5 +539,7 @@ services:
     - "traefik.http.routers.traefik.middlewares=traefik-auth"
   # </editor-fold>
 
+
 volumes:
-  poetry_cache:
+  api-venv:
+  dagster-venv:
