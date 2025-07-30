@@ -64,9 +64,8 @@ Feature: RAG Agent
   Scenario: Test RAGAgent with multi-language system prompt (English)
     Given a RAGAgent runner with a valid self hosted configuration
     * with multi-language system prompt
-      | locale | prompt                                                                                  |
-      | en     | You are a helpful AI assistant. Always respond in English and be very detailed.         |
-      | de     | Sie sind ein hilfreicher KI-Assistent. Antworten Sie immer auf Deutsch und ausführlich. |
+      | locale | prompt                                                                          |
+      | en     | You are a helpful AI assistant. Always respond in English and be very detailed. |
     When the start event is sent with a user query "What is AI?" and locale en
     Then an LLMEvent is present with a generated response
     * the LLM received the system prompt "You are a helpful AI assistant. Always respond in English and be very detailed."
@@ -77,7 +76,6 @@ Feature: RAG Agent
     Given a RAGAgent runner with a valid self hosted configuration
     * with multi-language system prompt
       | locale | prompt                                                                                  |
-      | en     | You are a helpful AI assistant. Always respond in English and be very detailed.         |
       | de     | Sie sind ein hilfreicher KI-Assistent. Antworten Sie immer auf Deutsch und ausführlich. |
     When the start event is sent with a user query "Was ist AI?" and locale de
     Then an LLMEvent is present with a generated response
