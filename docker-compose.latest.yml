@@ -238,9 +238,23 @@ services:
     labels:
       - "traefik.enable=true"
 
+      # --- /_app Route ---
+      - "traefik.http.routers.openwebui-app.rule=Host(`${DOMAIN}`) && PathPrefix(`/_app`)"
+      - "traefik.http.routers.openwebui-app.priority=300"
+      - "traefik.http.routers.openwebui-app.entrypoints=websecure"
+      - "traefik.http.routers.openwebui-app.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openwebui-app.middlewares=security-headers@file,allow-iframe"
+
+      # --- /static Route ---
+      - "traefik.http.routers.openwebui-static.rule=Host(`${DOMAIN}`) && PathPrefix(`/static`)"
+      - "traefik.http.routers.openwebui-static.priority=300"
+      - "traefik.http.routers.openwebui-static.entrypoints=websecure"
+      - "traefik.http.routers.openwebui-static.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openwebui-static.middlewares=security-headers@file,allow-iframe"
+
       # --- /openwebui Route ---
       - "traefik.http.routers.openwebui.rule=Host(`${DOMAIN}`) && PathPrefix(`/openwebui`)"
-      - "traefik.http.routers.openwebui.priority=200"
+      - "traefik.http.routers.openwebui.priority=300"
       - "traefik.http.routers.openwebui.entrypoints=websecure"
       - "traefik.http.routers.openwebui.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui.middlewares=strip-openwebui,security-headers@file,allow-iframe,strip-openwebui"
