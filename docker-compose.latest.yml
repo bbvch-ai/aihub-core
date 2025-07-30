@@ -552,7 +552,7 @@ services:
       - "traefik.http.routers.web-auth.middlewares=security-headers@file"
 
       # --- Index / Catch-All Route ---
-      - "traefik.http.routers.web-index.rule=Path(`/`)"
+      - "traefik.http.routers.web-index.rule=Path(`/`) || Path(`/index.html`) || Path(`/config.json`)"
       - "traefik.http.routers.web-index.priority=500"
       - "traefik.http.routers.web-index.entrypoints=websecure"
       - "traefik.http.routers.web-index.tls.certresolver=letsencrypt"
