@@ -1,77 +1,86 @@
 <template>
-  <div class="relative">
-    <div class="relative inline-flex cursor-pointer">
-      <Button
-        v-tooltip.bottom="{ value: t('bar.show_notifications') }"
-        icon="pi pi-bell"
-        variant="text"
-        rounded
-        :aria-label="t('bar.show_notifications')"
-        @click="togglePanel"
-      />
-      <Badge
-        v-if="unreadCount > 0"
-        :value="unreadCount"
-        size="small"
-        severity="danger"
-        class="absolute right-0 top-0 flex -translate-y-1 translate-x-1"
-      />
-    </div>
-
-    <OverlayPanel
-      ref="op"
-      @hide="isPanelOpen = false"
-    >
-      <ScrollPanel :style="{ minHeight: listMinHeight, maxHeight: '70vh' }">
-        <DataView
-          :value="unreadNotifications"
-          :loading="isLoading"
-        >
-          <template #header>
-            <div class="flex items-center justify-between">
-              <span class="text-xl font-bold">{{ t('notification.title') }} ({{ unreadCount }})</span>
-              <Button
-                v-if="unreadCount > 0"
-                :label="t('notification.mark_all_as_read')"
-                severity="secondary"
-                text
-                size="small"
-                @click="markAllAsRead"
-              />
-            </div>
-          </template>
-
-          <template #list="{ items }">
-            <div class="flex flex-col">
-              <NotificationItem
-                v-for="item in items"
-                :key="item.id"
-                :notification="item"
-                @click="handleNotificationClick"
-              />
-            </div>
-          </template>
-
-          <template #footer>
-            <div class="text-center dark:border-surface-700">
-              <Button
-                :label="t('notification.view_all')"
-                link
-                @click="viewAll"
-              />
-            </div>
-          </template>
-
-          <template #empty>
-            <div class="flex flex-col items-center justify-center p-8 text-center text-surface-500">
-              <i class="pi pi-bell-slash p-4 text-4xl text-surface-400" />
-              <p>{{ t('notification.no_unread_notifications') }}</p>
-            </div>
-          </template>
-        </DataView>
-      </ScrollPanel>
-    </OverlayPanel>
+  <div class="relative inline-flex cursor-pointer">
+    <Button
+      v-tooltip.bottom="{ value: t('bar.show_notifications') }"
+      icon="pi pi-bell"
+      variant="text"
+      rounded
+      :aria-label="t('bar.show_notifications')"
+      @click="togglePanel"
+    />
+    <Badge
+      v-if="unreadCount > 0"
+      :value="unreadCount"
+      size="small"
+      severity="danger"
+      class="absolute right-0 top-0 flex -translate-y-1 translate-x-1"
+    />
   </div>
+
+  <Popover
+    ref="op"
+    class="bg-surface-50 text-black dark:bg-surface-950 dark:text-white"
+    @hide="isPanelOpen = false"
+  >
+    <ScrollPanel>
+      <DataView
+        :value="unreadNotifications"
+        :loading="isLoading"
+        :style="{
+          '--p-dataview-content-background': 'transparent',
+          '--p-dataview-header-background': 'transparent',
+          '--p-dataview-footer-background': 'transparent',
+        }"
+      >
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl">
+              {{ t('notification.title') }} ({{ unreadCount }})
+            </h2>
+            <Button
+              v-if="unreadCount > 0"
+              :label="t('notification.mark_all_as_read')"
+              severity="secondary"
+              variant="text"
+              size="small"
+              @click="markAllAsRead"
+            />
+          </div>
+        </template>
+
+        <template #list="{ items }">
+          <div class="flex flex-col">
+            <NotificationItem
+              v-for="item in items"
+              :key="item.id"
+              :notification="item"
+              @click="handleNotificationClick"
+            />
+          </div>
+        </template>
+
+        <template #empty>
+          <div class="flex flex-col items-center justify-center p-8 text-center">
+            <i class="pi pi-bell-slash p-4 text-2xl text-surface-400" />
+            <p class="text-sm text-surface-500 dark:text-surface-400">
+              {{ t('notification.no_unread_notifications') }}
+            </p>
+          </div>
+        </template>
+
+        <template #footer>
+          <div class="text-center dark:border-surface-700">
+            <Button
+              :label="t('notification.view_all')"
+              class="w-full"
+              variant="text"
+              @click="viewAll"
+            />
+          </div>
+        </template>
+      </DataView>
+    </ScrollPanel>
+  </Popover>
 </template>
 
 <script setup lang="ts">
@@ -142,6 +151,7 @@ const markAllAsRead = () => {
       ids: unreadIds,
       payload: ref({ read: true }),
     })
+    op.value.hide()
   }
 }
 

@@ -13,7 +13,7 @@
   </Button>
   <Popover
     ref="op"
-    class="bg-white text-black dark:bg-surface-900 dark:text-white"
+    class="bg-surface-50 text-black dark:bg-surface-950 dark:text-white"
   >
     <div
       v-focustrap

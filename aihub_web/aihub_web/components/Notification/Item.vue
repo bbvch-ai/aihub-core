@@ -1,7 +1,7 @@
 <template>
   <div
-    class="flex items-start gap-4 p-4 transition-colors duration-200"
-    :class="notificationClasses"
+    class="flex cursor-pointer items-start gap-4 border-b border-surface-100 p-4 transition-colors duration-200 hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800"
+    :class="notification.done ? 'opacity-60' : ''"
     role="listitem"
   >
     <Checkbox
@@ -11,10 +11,13 @@
       class="mt-1 shrink-0"
       @change="$emit('toggle-selection', notification)"
     />
-    <div
-      v-if="!notification.read"
-      class="size-2.5 shrink-0 self-center rounded-full bg-primary-500"
-    />
+    <div class="size-2.5 shrink-0 self-center">
+      <div
+        v-if="!notification.read"
+        class="size-full rounded-full"
+        :class="unreadCircleClasses"
+      />
+    </div>
     <div class="min-w-0 grow">
       <div class="flex items-start justify-between gap-2">
         <div
@@ -25,24 +28,15 @@
           @keydown.enter="$emit('click', notification)"
           @keydown.space.prevent="$emit('click', notification)"
         >
-          <p class="flex items-center gap-2 truncate text-sm font-bold text-surface-800 dark:text-surface-100">
-            {{ notification.title }}
+          <p class="mb-1 text-xs font-light opacity-70">
+            {{ timeAgoText }}
           </p>
-          <p class="mt-1 line-clamp-2 text-sm text-surface-600 dark:text-surface-400">
+          <h3 class="font-semibold opacity-80">
+            {{ notification.title }}
+          </h3>
+          <p class="text-xs font-light opacity-70">
             {{ notification.message }}
           </p>
-          <div class="mt-2 flex flex-wrap items-center gap-2">
-            <span class="text-xs text-surface-400 dark:text-surface-500">
-              {{ timeAgoText }}
-            </span>
-            <div class="flex items-center gap-1">
-              <Badge
-                :value="t(`notification.severities.${notification.severity}`)"
-                :severity="severityBadgeColor"
-                size="small"
-              />
-            </div>
-          </div>
         </div>
 
         <Button
@@ -82,25 +76,17 @@ const { getTimeAgo } = useTimeAgo()
 
 const timeAgoText = computed(() => getTimeAgo(new Date(props.notification.created_at)).text)
 
-const notificationClasses = computed(() => [
-  'border-b border-surface-200 dark:border-surface-700 cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800',
-  {
-    'bg-primary-100 dark:bg-primary-800': !props.notification.read && !props.notification.done,
-    'opacity-60': props.notification.done,
-  },
-])
-
-const severityBadgeColor = computed(() => {
+const unreadCircleClasses = computed(() => {
   switch (props.notification.severity) {
     case 'critical':
-      return 'danger'
+      return 'bg-red-500'
     case 'high':
-      return 'warn'
+      return 'bg-orange-500'
     case 'medium':
-      return 'info'
+      return 'bg-blue-500'
     case 'low':
     default:
-      return 'contrast'
+      return 'bg-surface-500'
   }
 })
 </script>

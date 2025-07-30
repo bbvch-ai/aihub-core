@@ -79,9 +79,9 @@
         </template>
 
         <template #empty>
-          <div class="flex flex-col items-center justify-center p-8 text-center text-surface-500">
-            <i class="pi pi-bell-slash p-4 text-4xl text-surface-400" />
-            <p class="mb-2 text-lg font-medium">
+          <div class="flex flex-col items-center justify-center p-8 text-center">
+            <i class="pi pi-bell-slash p-4 text-xl opacity-70" />
+            <p class="text-sm font-light opacity-70">
               {{ getEmptyStateTitle() }}
             </p>
           </div>
