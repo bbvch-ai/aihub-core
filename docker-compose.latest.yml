@@ -283,7 +283,7 @@ services:
 
       # --- Index / Catch-All Route ---
       - "traefik.http.routers.openwebui-index.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.openwebui-index.priority=10"
+      - "traefik.http.routers.openwebui-index.priority=210"
       - "traefik.http.routers.openwebui-index.entrypoints=websecure"
       - "traefik.http.routers.openwebui-index.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui-index.middlewares=security-headers@file,allow-iframe"
@@ -538,8 +538,15 @@ services:
       - "traefik.enable=true"
 
       # --- Index / Catch-All Route ---
+      - "traefik.http.routers.web.rule=Path(`/`)"
+      - "traefik.http.routers.web.priority=500"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.routers.web.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web.middlewares=security-headers@file"
+
+      # --- Index / Catch-All Route ---
       - "traefik.http.routers.web.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.web.priority=200"
+      - "traefik.http.routers.web.priority=100"
       - "traefik.http.routers.web.entrypoints=websecure"
       - "traefik.http.routers.web.tls.certresolver=letsencrypt"
       - "traefik.http.routers.web.middlewares=security-headers@file"
