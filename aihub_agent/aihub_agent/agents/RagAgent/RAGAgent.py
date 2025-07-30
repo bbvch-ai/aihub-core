@@ -293,5 +293,13 @@ class RAGAgent(Agent):
         else:
             messages = event.limited_history_with_context
         await displayer.display_thought(t("agent.thought.write_answer_based_on_information"))
+
+        # Add system prompt as the first system message
+        system_prompt_text = t.extract(agent_config.system_prompt)
+        await displayer.display_thought(f"Using system prompt: {system_prompt_text}")
+        # Prepend system prompt as a system message to make it visible in Phoenix traces
+        system_message = ChatMessage(role=MessageRole.SYSTEM, content=system_prompt_text)
+        messages.insert(0, system_message)
+
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             return await displayer.display_llm_stream(agent_config.llm, llm, messages, as_stop_step=True)

@@ -95,6 +95,9 @@ def build_rag_agent_config(
         ),
         number_of_input_tokens=8192,
         check_context_sufficiency=False,
+        system_prompt=LocaleString(
+            en="You are a helpful AI assistant that answers questions based on provided context."
+        ),
     )
 
 
@@ -132,7 +135,7 @@ def azure_agent_config():
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def self_hosted_agent_config(event_loop):
     """
     Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
@@ -345,3 +348,53 @@ def _(agent_runner: AgentTestRunner):
     llm_event = agent_runner.get_event_of_class(LLMEvent)
     response_content = llm_event.output_messages[0].content
     assert response_content, "No generated response was returned for a valid user query"
+
+
+@given("with multi-language system prompt")
+def _(agent_runner: AgentTestRunner, datatable):
+    """
+    Given multi-language system prompt provided as a table.
+    The table should have columns: 'locale' and 'prompt'
+    """
+    prompts = {}
+    for row in datatable[1:]:
+        locale = row[0]
+        prompt = row[1]
+        prompts[locale] = prompt
+
+    agent_runner.default_agent_config.system_prompt = LocaleString(**prompts)
+    return agent_runner
+
+
+@then(parsers.parse('the LLM received the system prompt "{expected_prompt}"'))
+def _(agent_runner: AgentTestRunner, expected_prompt: str):
+    """
+    Verify that the LLM received the expected system prompt.
+    """
+    llm_event = agent_runner.get_event_of_class(LLMEvent)
+    assert llm_event, "LLMEvent not found"
+
+    config = agent_runner.default_agent_config
+    assert config.system_prompt is not None, "System prompt was not configured"
+
+    # Get the last used locale from the UserMessageEvent
+    start_event = agent_runner.get_start_event()
+    locale = start_event.locale
+
+    # Get the system prompt in the appropriate locale
+    actual_prompt = config.system_prompt.in_locale(locale)
+    assert actual_prompt == expected_prompt, f"Expected system prompt '{expected_prompt}', got '{actual_prompt}'"
+
+
+@then(parsers.parse('the response contains the word "{word}"'))
+def _(agent_runner: AgentTestRunner, word: str):
+    """
+    Verify that the response contains a specific word.
+    """
+    llm_event = agent_runner.get_event_of_class(LLMEvent)
+    assert llm_event, "LLMEvent not found"
+
+    response_content = llm_event.output_messages[0].content.lower()
+    assert (
+        word.lower() in response_content
+    ), f"Response does not contain the word '{word}'. Response: {response_content}"

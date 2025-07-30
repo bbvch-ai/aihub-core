@@ -49,3 +49,7 @@ class RAGAgentConfig(AgentConfig):
             ge=1,
         ),
     ] = 1
+    system_prompt: Annotated[
+        LocaleString,
+        Field(description="System prompt to guide the agent's behavior and responses."),
+    ]
