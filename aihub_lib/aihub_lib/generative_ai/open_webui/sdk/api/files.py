@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from typing import Any, BinaryIO
 
+import aiofiles
 import httpx
 
 from ..client import BaseClient
@@ -59,8 +60,8 @@ class FilesClient(BaseClient):
             if not path.exists():
                 raise FileNotFoundError(f"File not found: {path}")
             filename = filename or path.name
-            with open(path, "rb") as f:
-                file_content = f.read()
+            async with aiofiles.open(path, "rb") as f:
+                file_content = await f.read()
         elif isinstance(file, bytes):
             file_content = file
             filename = filename or "file"
