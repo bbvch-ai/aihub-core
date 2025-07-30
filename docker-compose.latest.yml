@@ -551,7 +551,7 @@ services:
       - "traefik.http.routers.web-nuxt.middlewares=security-headers@file"
 
       # --- Index / Catch-All Route ---
-      - "traefik.http.routers.web-auth.rule=PathPrefix(`/auth`)"
+      - "traefik.http.routers.web-auth.rule=PathPrefix(`/en/auth`) || PathPrefix(`/de/auth`) || PathPrefix(`/fr/auth`) || PathPrefix(`/it/auth`)"
       - "traefik.http.routers.web-auth.priority=500"
       - "traefik.http.routers.web-auth.entrypoints=websecure"
       - "traefik.http.routers.web-auth.tls.certresolver=letsencrypt"
