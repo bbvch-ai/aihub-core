@@ -14,19 +14,6 @@ Feature: RAG Agent
     * an LLMEvent is present with a generated response
     * a StopEvent is present
 
-  @self_hosted
-  Scenario: Test RAGAgent with valid self hosted configuration
-    Given a RAGAgent runner with a valid self hosted configuration
-    When the start event is sent with a user query "What is AI?"
-    Then a StartEvent is present with payload "What is AI?"
-    * a LimitChatHistoryEvent is present
-    * a StandaloneQuestionCondenserEvent is present with condensed question
-    * a RetrieverEvent is present with retrieved nodes
-    * an InOrderNodeCombinerEvent is present with ordered context message
-    * a LimitChatHistoryWithContextEvent is present with limited history and context
-    * an LLMEvent is present with a generated response
-    * a StopEvent is present
-
   @azure
   Scenario: Test the RAGAgent with few shot guard examples when sending an invalid user query
     Given a RAGAgent runner with a valid azure configuration
@@ -80,4 +67,17 @@ Feature: RAG Agent
     When the start event is sent with a user query "Was ist AI?" and locale de
     Then an LLMEvent is present with a generated response
     * the LLM received the system prompt "Sie sind ein hilfreicher KI-Assistent. Antworten Sie immer auf Deutsch und ausführlich."
+    * a StopEvent is present
+
+  @self_hosted
+  Scenario: Test RAGAgent with valid self hosted configuration
+    Given a RAGAgent runner with a valid self hosted configuration
+    When the start event is sent with a user query "What is AI?"
+    Then a StartEvent is present with payload "What is AI?"
+    * a LimitChatHistoryEvent is present
+    * a StandaloneQuestionCondenserEvent is present with condensed question
+    * a RetrieverEvent is present with retrieved nodes
+    * an InOrderNodeCombinerEvent is present with ordered context message
+    * a LimitChatHistoryWithContextEvent is present with limited history and context
+    * an LLMEvent is present with a generated response
     * a StopEvent is present
