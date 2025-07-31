@@ -103,7 +103,7 @@ In this reimagined process, each component—human, AI agent, and automation too
 
 ## 🏗️ The Swiss AI-Hub Architecture: Built on Trust and Control
 
-To deliver on this vision, the Swiss AI-Hub is built on a philosophy of **controlled autonomy**. We understand that for businesses to embrace AI, it cannot be a "black box."
+To deliver on this vision, the Swiss AI-Hub is built on a philosophy of **controlled autonomy**. We understand that for businesses to embrace AI, it cannot be a "black box".
 
 ::: danger AI Agents as Structured Workflows
 Our agents are not monolithic, unpredictable entities. They are implemented as clear, step-by-step workflows. This approach ensures that every agent action is testable, traceable, and auditable. You get the benefits of autonomy without relinquishing control.
