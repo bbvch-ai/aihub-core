@@ -102,84 +102,100 @@ class JetStreamEventStore:
             if self.is_initialized:
                 return
 
-            logger.debug(f"Starting JetStream Event Store with stream name {self.stream_name}")
-            logger.debug(f"Starting JetStream Event Store with stream subject {self.stream_subject}")
-            logger.debug(f"Starting JetStream Event Store with control subject {self.control_subject}")
+            self._log_startup_info()
+            await self._ensure_stream_exists()
+            await self._setup_new_event_subscription()
+            await self._replay_historical_events()
 
-            # Step 1: Ensure the stream exists
-            stream_manager = StreamManager(self.js, self.stream_name, self.stream_subject)
-            await stream_manager.ensure_stream_exists()
-            logger.debug(f"Ensured stream {self.stream_name} exists")
+    def _log_startup_info(self) -> None:
+        """Log startup information for debugging."""
+        logger.debug(f"Starting JetStream Event Store with stream name {self.stream_name}")
+        logger.debug(f"Starting JetStream Event Store with stream subject {self.stream_subject}")
+        logger.debug(f"Starting JetStream Event Store with control subject {self.control_subject}")
 
-            # Step 2: Subscribe to new events
-            # Generate a unique durable name for this instance
-            self.subscription = await self.js.subscribe(
-                subject=self.control_subject,
-                durable=self.subscription_durable_name,
-                stream=self.stream_name,
-                cb=self._handle_new_event,
-            )
+    async def _ensure_stream_exists(self) -> None:
+        """Ensure the required stream exists."""
+        stream_manager = StreamManager(self.js, self.stream_name, self.stream_subject)
+        await stream_manager.ensure_stream_exists()
+        logger.debug(f"Ensured stream {self.stream_name} exists")
 
-            logger.debug(f"Subscribed to {self.control_subject} for new events")
+    async def _setup_new_event_subscription(self) -> None:
+        """Subscribe to new events."""
+        self.subscription = await self.js.subscribe(
+            subject=self.control_subject,
+            durable=self.subscription_durable_name,
+            stream=self.stream_name,
+            cb=self._handle_new_event,
+        )
+        logger.debug(f"Subscribed to {self.control_subject} for new events")
 
-            # Step 3: Replay historical events
+    async def _replay_historical_events(self) -> None:
+        """Replay historical events from JetStream."""
+        try:
+            pull_sub = await self._setup_replay_subscription()
+            msg_count = await self._process_historical_messages(pull_sub)
+            logger.info(f"Replayed {msg_count} historical events")
+            await self._cleanup_replay_consumer()
+            self.is_initialized = True
+            logger.info("Event store initialization complete")
+        except Exception as e:
+            logger.exception(f"Error initializing event store: {e}")
+            raise
+
+    async def _setup_replay_subscription(self):
+        """Setup pull subscription for historical replay."""
+        replay_config = ConsumerConfig(
+            name=self.replay_durable_name,
+            filter_subject=self.control_subject,
+            ack_policy=AckPolicy.NONE,
+            deliver_policy=DeliverPolicy.ALL,
+        )
+        
+        await self.js.add_consumer(self.stream_name, config=replay_config)
+        
+        return await self.js.pull_subscribe(
+            subject=self.control_subject,
+            durable=self.replay_durable_name,
+            stream=self.stream_name,
+        )
+
+    async def _process_historical_messages(self, pull_sub) -> int:
+        """Process all historical messages and return count."""
+        msg_count = 0
+        while True:
             try:
-                # Create a pull subscription for historical replay
-                replay_config = ConsumerConfig(
-                    name=self.replay_durable_name,
-                    filter_subject=self.control_subject,
-                    ack_policy=AckPolicy.NONE,
-                    deliver_policy=DeliverPolicy.ALL,
-                )
-
-                # Create the consumer for replay
-                await self.js.add_consumer(self.stream_name, config=replay_config)
-
-                # Create a pull subscription
-                pull_sub = await self.js.pull_subscribe(
-                    subject=self.control_subject,
-                    durable=self.replay_durable_name,
-                    stream=self.stream_name,
-                )
-
-                # Fetch and process all historical events
-                msg_count = 0
-                while True:
-                    try:
-                        # Fetch a batch of messages
-                        messages = await pull_sub.fetch(batch=100, timeout=1)
-                        if not messages:
-                            break  # No more messages
-
-                        for msg in messages:
-                            try:
-                                topic = self.topic.from_subject(msg.subject)
-                                event = BaseEvent.deserialize_event(msg.data)
-                                event._jetstream_sequence = msg.metadata.sequence.stream
-                                self._add_event_to_store(topic.execution_context_id, event)
-                                msg_count += 1
-                            except Exception as e:
-                                logger.exception(f"Error processing replayed message: {e}")
-                    except Exception as e:
-                        if "timeout" in str(e).lower():
-                            break  # No more messages
-                        logger.exception(f"Error fetching messages: {e}")
-                        break
-
-                logger.info(f"Replayed {msg_count} historical events")
-
-                # Clean up the temporary consumer
-                try:
-                    await self.js.delete_consumer(self.stream_name, self.replay_durable_name)
-                except Exception as e:
-                    logger.warning(f"Error deleting temporary consumer: {e}")
-
-                self.is_initialized = True
-                logger.info("Event store initialization complete")
-
+                messages = await pull_sub.fetch(batch=100, timeout=1)
+                if not messages:
+                    break
+                
+                msg_count += self._process_message_batch(messages)
             except Exception as e:
-                logger.exception(f"Error initializing event store: {e}")
-                raise
+                if "timeout" in str(e).lower():
+                    break
+                logger.exception(f"Error fetching messages: {e}")
+                break
+        return msg_count
+
+    def _process_message_batch(self, messages) -> int:
+        """Process a batch of messages and return processed count."""
+        processed_count = 0
+        for msg in messages:
+            try:
+                topic = self.topic.from_subject(msg.subject)
+                event = BaseEvent.deserialize_event(msg.data)
+                event._jetstream_sequence = msg.metadata.sequence.stream
+                self._add_event_to_store(topic.execution_context_id, event)
+                processed_count += 1
+            except Exception as e:
+                logger.exception(f"Error processing replayed message: {e}")
+        return processed_count
+
+    async def _cleanup_replay_consumer(self) -> None:
+        """Clean up the temporary replay consumer."""
+        try:
+            await self.js.delete_consumer(self.stream_name, self.replay_durable_name)
+        except Exception as e:
+            logger.warning(f"Error deleting temporary consumer: {e}")
 
     async def stop(self):
         """
