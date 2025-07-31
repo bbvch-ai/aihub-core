@@ -122,7 +122,7 @@ class OAuth2AuthHandler(AuthHandler):
                 rsa_key,
                 algorithms=["RS256"],
                 audience=OAuth2Settings().CLIENT_ID,
-                issuer=f"{OAuth2Settings().AUTHORITY}/v2.0",
+                issuer=f"{OAuth2Settings().AUTHORITY_URL}/v2.0",
             )
 
             # Parse token claims into UserIdentity

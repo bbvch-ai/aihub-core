@@ -51,14 +51,12 @@ def oauth2_context() -> dict:
 
 @given(
     parsers.parse(
-        'an OAuth2 configuration with tenant_id "{tenant_id}", '
-        'client_id "{client_id}", and authority_url "{authority_url}"'
+        'an OAuth2 configuration client_id "{client_id}", and authority_url "{authority_url}"'
     ),
     target_fixture="oauth2_config",
 )
-def oauth2_config(monkeypatch, tenant_id: str, client_id: str, authority_url: str) -> OAuth2Settings:
+def oauth2_config(monkeypatch, client_id: str, authority_url: str) -> OAuth2Settings:
     """Set the OAuth2 configuration environment variables."""
-    monkeypatch.setenv("OAUTH_TENANT_ID", tenant_id)
     monkeypatch.setenv("OAUTH_CLIENT_ID", client_id)
     monkeypatch.setenv("OAUTH_AUTHORITY_URL", authority_url)
     return OAuth2Settings()
@@ -86,7 +84,7 @@ def generated_token(
         "roles": [r.strip() for r in roles.split(",")],
         "aud": oauth2_config.CLIENT_ID,
         "oid": "test-oid",
-        "iss": f"{oauth2_config.AUTHORITY}/v2.0",
+        "iss": f"{oauth2_config.AUTHORITY_URL}/v2.0",
         "exp": exp,
     }
     headers = {"kid": rsa_keys["kid"]}
@@ -122,7 +120,7 @@ def generated_expired_token(
         "roles": [r.strip() for r in roles.split(",")],
         "aud": oauth2_config.CLIENT_ID,
         "oid": "expired-oid",
-        "iss": f"{oauth2_config.AUTHORITY}/v2.0",
+        "iss": f"{oauth2_config.AUTHORITY_URL}/v2.0",
         "exp": exp,
     }
     headers = {"kid": rsa_keys["kid"]}

@@ -278,7 +278,7 @@ services:
       - ./configs/open-webui/config.json:/app/backend/data/config.json
     environment:
       WEBUI_NAME: "Swiss AI-Hub"
-      WEBUI_URL: XXX
+      WEBUI_URL: 'localhost:3000'
 
       ENABLE_FORWARD_USER_INFO_HEADERS: True
       ENABLE_VERSION_UPDATE_CHECK: False
@@ -288,7 +288,7 @@ services:
       GLOBAL_LOG_LEVEL: "DEBUG"     # CRITICAL, FATAL, ERROR, WARN, WARNING, INFO, DEBUG
 
       # Telemetry
-      ENABLE_OTEL: True
+      ENABLE_OTEL: False
       ENABLE_OTEL_METRICS: True
       OTEL_EXPORTER_OTLP_ENDPOINT: XXX
       OTEL_SERVICE_NAME: "open-webui"
@@ -302,9 +302,9 @@ services:
 
       # Oauth
       ENABLE_OAUTH_SIGNUP: True
-      OAUTH_CLIENT_ID: XXX
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_CLIENT_SECRET: XXX
-      OPENID_PROVIDER_URL: XXX
+      OPENID_PROVIDER_URL: ${OAUTH_AUTHORITY_URL}
       OPENID_REDIRECT_URI: XXX
 
       # Data storage
@@ -316,26 +316,29 @@ services:
       S3_ENDPOINT_URL: minio:9000
 
       # Model config
-      OPENAI_API_KEY: XXX
-      OPENAI_API_BASE_URL: XXX
+      OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      OPENAI_API_BASE_URL: "litellm:4000/v1"
       MODELS_CACHE_TTL: 60
       TASK_MODEL: azure/gpt-4o-mini
       TASK_MODEL_EXTERNAL: azure/gpt-4o-mini
 
       # Database
-      DATABASE_TYPE: XXX
-      DATABASE_URL: XXX
-      DATABASE_PASSWORD: XXX
+      DATABASE_TYPE: 'postgres'
+      DATABASE_USER: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: openwebui
 
       # Redis
-      REDIS_URL: XXX
+      REDIS_URL: 'redis://redis:6379/1'
       REDIS_KEY_PREFIX: "open-webui"
 
       # Web server
       UVICORN_WORKERS: 8
       ENABLE_WEBSOCKET_SUPPORT: True
       WEBSOCKET_MANAGER: "redis"
-      WEBSOCKET_REDIS_URL: XXX
+      WEBSOCKET_REDIS_URL: 'redis://redis:6379/1'
       THREAD_POOL_SIZE: 32
       CORS_ALLOW_ORIGIN: "*"
 
@@ -361,7 +364,7 @@ services:
 
       # RAG
       CONTENT_EXTRACTION_ENGINE: 'docling'
-      DOCLING_SERVER_URL: XXX
+      DOCLING_SERVER_URL: 'http://docling:5001'
 
       # Web search
       JINA_API_KEY: XXX

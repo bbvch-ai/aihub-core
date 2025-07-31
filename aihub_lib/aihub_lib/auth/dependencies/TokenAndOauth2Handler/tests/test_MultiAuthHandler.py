@@ -89,14 +89,12 @@ scenarios("features/multi_auth_handler.feature")
 
 @given(
     parsers.parse(
-        'an OAuth2 configuration with tenant_id "{tenant_id}", '
-        'client_id "{client_id}", and authority_url "{authority_url}"'
+        'an OAuth2 configuration with client_id "{client_id}", and authority_url "{authority_url}"'
     ),
     target_fixture="oauth2_config",
 )
-def oauth2_config(monkeypatch, tenant_id: str, client_id: str, authority_url: str) -> OAuth2Settings:
+def oauth2_config(monkeypatch, client_id: str, authority_url: str) -> OAuth2Settings:
     """Set the OAuth2 configuration environment variables."""
-    monkeypatch.setenv("OAUTH_TENANT_ID", tenant_id)
     monkeypatch.setenv("OAUTH_CLIENT_ID", client_id)
     monkeypatch.setenv("OAUTH_AUTHORITY_URL", authority_url)
     return OAuth2Settings()

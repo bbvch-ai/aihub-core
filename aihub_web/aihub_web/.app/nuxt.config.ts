@@ -8,7 +8,6 @@ export default defineNuxtConfig({
       mode: process.env.MODE,
       oidc: {
         clientId: process.env.MODE == 'development' ? process.env.OAUTH_CLIENT_ID : '',
-        tenantId: process.env.MODE == 'development' ? process.env.OAUTH_TENANT_ID : '',
         authorityUrl: process.env.MODE == 'development' ? process.env.OAUTH_AUTHORITY_URL : '',
       },
       webui: {

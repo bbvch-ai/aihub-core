@@ -32,27 +32,21 @@ class OAuth2Settings(EnvironmentSettings):
 
     model_config = EnvironmentSettings.create_settings_config("OAUTH_")
 
-    TENANT_ID: Annotated[str, Field(description="The tenant ID of the Azure AD tenant.")]
     CLIENT_ID: Annotated[str, Field(description="The client ID of the application.")]
     AUTHORITY_URL: Annotated[str, Field(description="The authority URL of the Azure AD tenant.")]
 
-    @computed_field
-    @property
-    def AUTHORITY(self) -> str:
-        """Constructs the full Authority URL combining AUTHORITY_URL and TENANT_ID."""
-        return f"{self.AUTHORITY_URL}/{self.TENANT_ID}"
 
     @computed_field
     @property
     def TOKEN_URL(self) -> str:
         """Provides the token endpoint for OAuth2 token retrieval."""
-        return f"{self.AUTHORITY}/oauth2/v2.0/token"
+        return f"{self.AUTHORITY_URL}/oauth2/v2.0/token"
 
     @computed_field
     @property
     def JWKS_URL(self) -> str:
         """Provides the JWKS endpoint for obtaining the public keys used to sign tokens."""
-        return f"{self.AUTHORITY}/discovery/v2.0/keys"
+        return f"{self.AUTHORITY_URL}/discovery/v2.0/keys"
 
     @computed_field
     @property
@@ -62,7 +56,7 @@ class OAuth2Settings(EnvironmentSettings):
         This is used as a FastAPI dependency to handle the OAuth2 code flow.
         """
         return OAuth2AuthorizationCodeBearer(
-            authorizationUrl=f"{self.AUTHORITY}/oauth2/v2.0/authorize",
+            authorizationUrl=f"{self.AUTHORITY_URL}/oauth2/v2.0/authorize",
             tokenUrl=self.TOKEN_URL,
             scopes={"User.Read": "Read user profile data"},
         )
@@ -75,7 +69,7 @@ class OAuth2Settings(EnvironmentSettings):
         Raises no error when not authenticated, only use in when other auth methods are provided as well
         """
         return OAuth2AuthorizationCodeBearer(
-            authorizationUrl=f"{self.AUTHORITY}/oauth2/v2.0/authorize",
+            authorizationUrl=f"{self.AUTHORITY_URL}/oauth2/v2.0/authorize",
             tokenUrl=self.TOKEN_URL,
             scopes={"User.Read": "Read user profile data"},
             auto_error=False,

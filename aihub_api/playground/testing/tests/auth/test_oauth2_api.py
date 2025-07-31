@@ -91,7 +91,7 @@ def valid_oauth2_token(oauth2_config, rsa_keys):
         "roles": DangerousDevelopmentOnlyAuthSettings().ROLES,
         "aud": oauth2_config.CLIENT_ID,
         "oid": DangerousDevelopmentOnlyAuthSettings().OID,
-        "iss": f"{oauth2_config.AUTHORITY}/v2.0",
+        "iss": f"{oauth2_config.AUTHORITY_URL}/v2.0",
         "exp": exp,
     }
     headers = {"kid": rsa_keys["kid"]}

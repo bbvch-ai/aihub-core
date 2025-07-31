@@ -16,7 +16,6 @@ export default defineNuxtPlugin(async () => {
 
     // Merge the fetched config into the runtimeConfig
     publicConfig.oidc.clientId = appConfig.OAUTH_CLIENT_ID
-    publicConfig.oidc.tenantId = appConfig.OAUTH_TENANT_ID
     publicConfig.oidc.authorityUrl = appConfig.OAUTH_AUTHORITY_URL
     publicConfig.webui.url = appConfig.WEBUI_URL
     publicConfig.ws.endpoint = appConfig.WS_ENDPOINT
