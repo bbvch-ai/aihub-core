@@ -30,3 +30,12 @@ mirror-image:
 	@docker tag $(SOURCE) $(TARGET)
 	@docker push $(TARGET)
 	@echo "Successfully mirrored $(SOURCE) to $(TARGET)"
+
+mirror-image-win:
+	@powershell -Command "if (-not '$(SOURCE)' -or -not '$(TARGET)') { Write-Host 'Error: SOURCE and TARGET parameters are required' -ForegroundColor Red; Write-Host 'Usage: make mirror-image SOURCE=source/image:tag TARGET=target/image:tag' -ForegroundColor Yellow; exit 1 }"
+	@echo Mirroring $(SOURCE) to $(TARGET)...
+	@docker login ghcr.io
+	@docker pull $(SOURCE)
+	@docker tag $(SOURCE) $(TARGET)
+	@docker push $(TARGET)
+	@echo Successfully mirrored $(SOURCE) to $(TARGET)

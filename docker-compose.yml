@@ -40,7 +40,7 @@ services:
         max-file: "2"
 
   milvus-standalone:
-    image: milvusdb/milvus:v2.4.7
+    image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.5.15
     container_name: milvus
     restart: always
     command: ["milvus", "run", "standalone"]
@@ -72,7 +72,7 @@ services:
         max-file: "2"
 
   attu:
-    image: zilliz/attu:v2.5.6
+    image: ghcr.io/bbvch-ai/aihub-core/attu:v2.5.12
     container_name: attu
     restart: always
     ports:
@@ -226,17 +226,17 @@ services:
       test: [ "CMD", "curl", "-f", "http://localhost:8183/health" ]
 
   presidio-analyzer:
-    image: mcr.microsoft.com/presidio-analyzer:latest
+    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359
     container_name: presidio-analyzer
     restart: unless-stopped
 
   presidio-anonymizer:
-    image: mcr.microsoft.com/presidio-anonymizer:latest
+    image: ghcr.io/bbvch-ai/aihub-core/presidio-anonymizer:2.2.359
     container_name: presidio-anonymizer
     restart: unless-stopped
 
   litellm:
-    image: ghcr.io/berriai/litellm:main-latest
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:main-v1.74.8-nightly
     container_name: lite-llm
     ports:
       - "4000:4000"
@@ -384,7 +384,7 @@ services:
       PLAYWRIGHT_WS_URL: ws://playwright:3000/ws
 
   jupyter:
-    image: jupyter/minimal-notebook:latest
+    image: ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6
     container_name: jupyter-lab
     ports:
       - "8888:8888"
@@ -395,7 +395,7 @@ services:
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
   playwright:
-    image: mcr.microsoft.com/playwright:v1.50.0-noble
+    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy
     container_name: playwright-server
     command: npx playwright run-server --port 3000 --host 0.0.0.0
     ports:
@@ -410,7 +410,7 @@ services:
       start_period: 40s
 
   docling:
-    image: quay.io/docling-project/docling-serve:v1.1.0
+    image: ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.1.0
     container_name: docling
     ports:
       - "5001:5001"
