@@ -218,7 +218,7 @@ class AzureGraphService:
             app_role_definitions[role_id] for role_id in assigned_role_ids if role_id in app_role_definitions
         ]
 
-        return sorted(list(set(effective_roles)))
+        return sorted(set(effective_roles))
 
     async def get_user_identity_by_oid(self, user_oid: str) -> UserIdentity:
         """
