@@ -13,7 +13,7 @@
   </Button>
   <Popover
     ref="op"
-    class="bg-surface-50 text-black dark:bg-surface-950 dark:text-white"
+    class="border-surface-200 bg-surface-50 text-black dark:border-surface-800 dark:bg-surface-950 dark:text-white"
   >
     <div
       v-focustrap
@@ -29,7 +29,7 @@
       </div>
       <IconField>
         <InputIcon>
-          <i class="pi pi-search" />
+          <i class="pi pi-search"/>
         </InputIcon>
         <InputText
           id="input"
@@ -82,7 +82,7 @@
           :key="i"
           class="px-3"
         >
-          <div class="h-0 min-w-[80px]" />
+          <div class="h-0 min-w-[80px]"/>
         </div>
       </template>
     </div>
@@ -90,14 +90,14 @@
 </template>
 
 <script setup lang="ts">
-import type { MenuItem } from 'primevue/menuitem'
+import type {MenuItem} from 'primevue/menuitem'
 
 const router = useRouter()
 const localeRoute = useLocaleRoute()
 const route = useRoute()
 
-const { apps, appsLoading } = useApps()
-const { t } = useI18n()
+const {apps, appsLoading} = useApps()
+const {t} = useI18n()
 
 const shownApps = computed(() => {
   return search.value ? apps.value.filter((app: MenuItem) => app.label?.toLowerCase().includes(search.value.toLowerCase())) : apps.value

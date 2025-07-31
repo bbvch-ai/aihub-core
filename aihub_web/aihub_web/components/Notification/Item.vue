@@ -1,7 +1,7 @@
 <template>
   <div
     class="flex cursor-pointer items-start gap-4 border-b border-surface-100 p-4 transition-colors duration-200 hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800"
-    :class="notification.done ? 'opacity-60' : ''"
+    :class="notification.done ? 'opacity-40' : ''"
     role="listitem"
   >
     <Checkbox
