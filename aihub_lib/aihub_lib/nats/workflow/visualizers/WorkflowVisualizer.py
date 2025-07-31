@@ -257,43 +257,75 @@ class WorkflowVisualizer:
         END_NODE: str,
     ) -> None:
         """Add edges to the graph based on event flow."""
-        for event_class in set(event_producers.keys()) | set(event_consumers.keys()):
-            is_start_event = issubclass(event_class, StartEvent)
-            is_stop_event = issubclass(event_class, StopEvent)
-            producers = event_producers[event_class]
-            consumers = event_consumers.get(event_class, set())
-
-            # Extract payload info
-            try:
-                payload_fields = self._extract_event_payload_info(event_class)
-            except Exception as e:
-                logger.warning(f"Failed to extract payload info for {event_class.event_name_from_class()}: {str(e)}")
-                payload_fields = {}
-
-            # Create a base edge model for this event type
-            edge_attrs = {
-                "event_name": event_class.event_name_from_class(),
-                "event_full_name": f"{event_class.__module__}.{event_class.event_name_from_class()}",
-                "is_start_event": False,
-                "is_stop_event": False,
-                "payload": payload_fields,
-            }
-
-            if is_start_event:
-                edge_attrs["is_start_event"] = True
-                for consumer in consumers:
-                    self._add_edge(G, START_NODE, consumer, **edge_attrs)
-            elif is_stop_event:
-                edge_attrs["is_stop_event"] = True
-                for producer in producers:
-                    self._add_edge(G, producer, END_NODE, **edge_attrs)
-            else:
-                for producer in producers:
-                    for consumer in consumers:
-                        self._add_edge(G, producer, consumer, **edge_attrs)
+        all_event_classes = set(event_producers.keys()) | set(event_consumers.keys())
+        
+        for event_class in all_event_classes:
+            self._process_event_class_edges(G, event_class, event_producers, event_consumers, START_NODE, END_NODE)
 
         # Add special connections for "in the loop" patterns
         self._add_in_the_loop_edges(G, event_producers, event_consumers)
+
+    def _process_event_class_edges(
+        self,
+        G: nx.DiGraph,
+        event_class: EventType,
+        event_producers: dict[EventType, set[str]],
+        event_consumers: dict[EventType, set[str]],
+        START_NODE: str,
+        END_NODE: str,
+    ) -> None:
+        """Process edges for a single event class."""
+        is_start_event = issubclass(event_class, StartEvent)
+        is_stop_event = issubclass(event_class, StopEvent)
+        producers = event_producers[event_class]
+        consumers = event_consumers.get(event_class, set())
+        
+        edge_attrs = self._create_edge_attributes(event_class)
+        
+        if is_start_event:
+            self._add_start_event_edges(G, consumers, START_NODE, edge_attrs)
+        elif is_stop_event:
+            self._add_stop_event_edges(G, producers, END_NODE, edge_attrs)
+        else:
+            self._add_regular_event_edges(G, producers, consumers, edge_attrs)
+
+    def _create_edge_attributes(self, event_class: EventType) -> dict[str, Any]:
+        """Create base edge attributes for an event class."""
+        payload_fields = self._get_event_payload_info(event_class)
+        
+        return {
+            "event_name": event_class.event_name_from_class(),
+            "event_full_name": f"{event_class.__module__}.{event_class.event_name_from_class()}",
+            "is_start_event": False,
+            "is_stop_event": False,
+            "payload": payload_fields,
+        }
+
+    def _get_event_payload_info(self, event_class: EventType) -> dict[str, Any]:
+        """Extract payload info with error handling."""
+        try:
+            return self._extract_event_payload_info(event_class)
+        except Exception as e:
+            logger.warning(f"Failed to extract payload info for {event_class.event_name_from_class()}: {str(e)}")
+            return {}
+
+    def _add_start_event_edges(self, G: nx.DiGraph, consumers: set[str], START_NODE: str, edge_attrs: dict[str, Any]) -> None:
+        """Add edges for start events."""
+        edge_attrs["is_start_event"] = True
+        for consumer in consumers:
+            self._add_edge(G, START_NODE, consumer, **edge_attrs)
+
+    def _add_stop_event_edges(self, G: nx.DiGraph, producers: set[str], END_NODE: str, edge_attrs: dict[str, Any]) -> None:
+        """Add edges for stop events."""
+        edge_attrs["is_stop_event"] = True
+        for producer in producers:
+            self._add_edge(G, producer, END_NODE, **edge_attrs)
+
+    def _add_regular_event_edges(self, G: nx.DiGraph, producers: set[str], consumers: set[str], edge_attrs: dict[str, Any]) -> None:
+        """Add edges for regular events between producers and consumers."""
+        for producer in producers:
+            for consumer in consumers:
+                self._add_edge(G, producer, consumer, **edge_attrs)
 
     def _add_in_the_loop_edges(
         self,
