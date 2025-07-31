@@ -55,8 +55,15 @@ class BotRunner(Runner):
         # Store TTL days in app state for lifetime manager to access
         self.conversation_ttl_days = conversation_ttl_days
 
+        # Create the base and API apps
+        self._base_app = self._get_base_app()
+        self._api_app.state = self._base_app.state
+
     @override
     def get_app(self) -> Starlette:
+        return self._base_app
+
+    def _get_base_app(self) -> Starlette:
         app = super().get_app()
         app.state.conversation_ttl_days = self.conversation_ttl_days
         return app
