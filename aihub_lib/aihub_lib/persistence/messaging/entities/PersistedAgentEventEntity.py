@@ -500,7 +500,20 @@ class PersistedAgentEventEntity(Document):
         the overall start time, end time, and resolution of the analysis.
         """
         config = TIME_RANGE_CONFIG.get(time_range)
+        start_time, end_time_boundary = cls._calculate_time_boundaries(config, time_range)
+        match_filter = cls._build_match_filter(start_time, end_time_boundary, thread_id, agent_id, agent_class, event_name)
+        pipeline = cls._build_aggregation_pipeline(config, match_filter)
+        
+        results = list(cls.objects.aggregate(pipeline))
+        cls._normalize_timezone_info(results)
+        
+        filled_results = cls._fill_time_buckets(results, start_time, end_time_boundary, config)
+        
+        return filled_results, start_time, end_time_boundary, config.resolution
 
+    @classmethod
+    def _calculate_time_boundaries(cls, config, time_range: TimeRange) -> tuple[datetime, datetime]:
+        """Calculate start and end time boundaries for the time range."""
         current_utc_time = datetime.now(UTC)
         if config.align_to_end_of_day:
             end_time_boundary = current_utc_time.replace(hour=23, minute=59, second=59, microsecond=999999)
@@ -508,10 +521,23 @@ class PersistedAgentEventEntity(Document):
             end_time_boundary = current_utc_time
 
         start_time = end_time_boundary - config.delta
-        if time_range == TimeRange.ONE_HOUR:  # Compare with Enum member
+        if time_range == TimeRange.ONE_HOUR:
             start_time = current_utc_time - config.delta
             end_time_boundary = current_utc_time
+            
+        return start_time, end_time_boundary
 
+    @classmethod
+    def _build_match_filter(
+        cls, 
+        start_time: datetime, 
+        end_time_boundary: datetime,
+        thread_id: ObjectId | None,
+        agent_id: ObjectId | None,
+        agent_class: str | None,
+        event_name: str | None
+    ) -> dict[str, Any]:
+        """Build the MongoDB match filter for the aggregation pipeline."""
         match_filter: dict[str, Any] = {
             "event_data.created_at": {
                 "$gte": int(start_time.timestamp() * 1e9),
@@ -528,8 +554,13 @@ class PersistedAgentEventEntity(Document):
 
         if event_name:
             match_filter["event_parents"] = event_name
+            
+        return match_filter
 
-        pipeline: list[dict[str, Any]] = [
+    @classmethod
+    def _build_aggregation_pipeline(cls, config, match_filter: dict[str, Any]) -> list[dict[str, Any]]:
+        """Build the MongoDB aggregation pipeline for event timeseries."""
+        return [
             # 1. Match events based on primary criteria
             {MONGODB_MATCH: match_filter},
             # 2. Add a standardized BSON date field
@@ -555,7 +586,7 @@ class PersistedAgentEventEntity(Document):
             # 5. Group events by time bucket and count them
             {
                 MONGODB_GROUP: {
-                    "_id": "$time_bucket_val",  #
+                    "_id": "$time_bucket_val",
                     "start_time": {MONGODB_FIRST: {"$toDate": "$time_bucket_val"}},
                     "total_events": {"$sum": 1},
                 }
@@ -565,7 +596,7 @@ class PersistedAgentEventEntity(Document):
                 "$addFields": {
                     "end_time": {
                         "$toDate": {"$add": ["$_id", config.interval_seconds * 1000]}
-                    }  # $_id is time_bucket (ms)
+                    }
                 }
             },
             # 7. Project the final simplified fields
@@ -581,33 +612,32 @@ class PersistedAgentEventEntity(Document):
             {"$sort": {"start_time": 1}},
         ]
 
-        results = list(cls.objects.aggregate(pipeline))
-
+    @classmethod
+    def _normalize_timezone_info(cls, results: list[dict[str, Any]]) -> None:
+        """Normalize timezone information in the results."""
         for result in results:
             if result["start_time"].tzinfo is None:
                 result["start_time"] = result["start_time"].replace(tzinfo=UTC)
             if result["end_time"].tzinfo is None:
                 result["end_time"] = result["end_time"].replace(tzinfo=UTC)
 
+    @classmethod
+    def _fill_time_buckets(
+        cls, 
+        results: list[dict[str, Any]], 
+        start_time: datetime, 
+        end_time_boundary: datetime, 
+        config
+    ) -> list[EventBucket]:
+        """Fill time buckets with data, creating empty buckets where needed."""
         filled_results: list[EventBucket] = []
-        current_loop_time = start_time
-
-        if config.interval_seconds >= 3600:
-            current_loop_time = current_loop_time.replace(minute=0, second=0, microsecond=0)
-        if config.interval_seconds >= 86400:
-            current_loop_time = current_loop_time.replace(hour=0)
-
+        current_loop_time = cls._align_start_time(start_time, config)
+        
         idx = 0
         while current_loop_time < end_time_boundary:
             current_bucket_end_time = current_loop_time + timedelta(seconds=config.interval_seconds)
-            bucket_data = None
-
-            if idx < len(results):
-                res_start_time = results[idx]["start_time"]
-                if res_start_time >= current_loop_time and res_start_time < current_bucket_end_time:
-                    bucket_data = results[idx]
-                    idx += 1
-
+            bucket_data = cls._find_matching_bucket(results, idx, current_loop_time, current_bucket_end_time)
+            
             if bucket_data:
                 filled_results.append(
                     EventBucket(
@@ -616,29 +646,60 @@ class PersistedAgentEventEntity(Document):
                         total_events=bucket_data["total_events"],
                     )
                 )
+                idx += 1
             else:
-                actual_end_time = min(current_bucket_end_time, end_time_boundary)
-                if current_loop_time < end_time_boundary:
-                    filled_results.append(
-                        EventBucket(
-                            start_time=current_loop_time,
-                            end_time=actual_end_time,
-                            total_events=0,
-                        )
-                    )
+                cls._add_empty_bucket(filled_results, current_loop_time, current_bucket_end_time, end_time_boundary)
 
             current_loop_time = current_bucket_end_time
-            # Safety break for the unlikely event that 'end_time_boundary' isn't reached
-            # due to floating point issues with many small intervals
-            if (
-                len(filled_results) > ((end_time_boundary - start_time).total_seconds() / config.interval_seconds) + 10
-                and config.interval_seconds > 0
-            ):
-                # This condition suggests we've created significantly more buckets than expected
-                logger.warning(
-                    f"Exiting fill loop early due to excessive bucket count. Current loop time: "
-                    f"{current_loop_time}, end_time_boundary: {end_time_boundary}"
-                )
+            
+            if cls._should_break_loop(filled_results, start_time, end_time_boundary, config):
                 break
+                
+        return filled_results
 
-        return filled_results, start_time, end_time_boundary, config.resolution
+    @classmethod
+    def _align_start_time(cls, start_time: datetime, config) -> datetime:
+        """Align start time to appropriate boundaries based on interval."""
+        current_loop_time = start_time
+        if config.interval_seconds >= 3600:
+            current_loop_time = current_loop_time.replace(minute=0, second=0, microsecond=0)
+        if config.interval_seconds >= 86400:
+            current_loop_time = current_loop_time.replace(hour=0)
+        return current_loop_time
+
+    @classmethod
+    def _find_matching_bucket(cls, results: list[dict[str, Any]], idx: int, current_loop_time: datetime, current_bucket_end_time: datetime) -> dict[str, Any] | None:
+        """Find a matching bucket in results for the current time range."""
+        if idx < len(results):
+            res_start_time = results[idx]["start_time"]
+            if res_start_time >= current_loop_time and res_start_time < current_bucket_end_time:
+                return results[idx]
+        return None
+
+    @classmethod
+    def _add_empty_bucket(cls, filled_results: list[EventBucket], current_loop_time: datetime, current_bucket_end_time: datetime, end_time_boundary: datetime) -> None:
+        """Add an empty bucket to the results."""
+        actual_end_time = min(current_bucket_end_time, end_time_boundary)
+        if current_loop_time < end_time_boundary:
+            filled_results.append(
+                EventBucket(
+                    start_time=current_loop_time,
+                    end_time=actual_end_time,
+                    total_events=0,
+                )
+            )
+
+    @classmethod
+    def _should_break_loop(cls, filled_results: list[EventBucket], start_time: datetime, end_time_boundary: datetime, config) -> bool:
+        """Check if the loop should be broken due to excessive bucket count."""
+        if (
+            len(filled_results) > ((end_time_boundary - start_time).total_seconds() / config.interval_seconds) + 10
+            and config.interval_seconds > 0
+        ):
+            logger.warning(
+                f"Exiting fill loop early due to excessive bucket count. "
+                f"Expected max buckets: {((end_time_boundary - start_time).total_seconds() / config.interval_seconds) + 10}, "
+                f"Current count: {len(filled_results)}"
+            )
+            return True
+        return False
