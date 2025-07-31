@@ -245,20 +245,20 @@ class BaseEvent(BaseModel):
         """
         json_data = cls._parse_input_data(data)
         json_data = cls._process_nested_events(json_data)
-        
+
         event_name: str = json_data.get("_event_name")
         parent_classes: list[str] = json_data.get("_parent_event_names", [])
-        
+
         # Try exact match first
         exact_event = cls._try_exact_event_match(event_name, json_data)
         if exact_event:
             return exact_event
-        
+
         # Try parent class match
         parent_event = cls._try_parent_class_match(event_name, parent_classes, json_data)
         if parent_event:
             return parent_event
-        
+
         # Fallback to BaseEvent
         return cls._create_fallback_event(event_name, parent_classes, json_data)
 
@@ -288,7 +288,7 @@ class BaseEvent(BaseModel):
         return json_data
 
     @classmethod
-    def _try_exact_event_match(cls, event_name: str, json_data: dict[str, Any]) -> "BaseEvent" | None:
+    def _try_exact_event_match(cls, event_name: str, json_data: dict[str, Any]) -> "BaseEvent | None":
         """Try to instantiate the exact event class if it exists in registry."""
         if event_name and isinstance(event_name, str):
             event_class = cls._event_registry.get(event_name)
@@ -297,25 +297,25 @@ class BaseEvent(BaseModel):
         return None
 
     @classmethod
-    def _try_parent_class_match(cls, event_name: str, parent_classes: list[str], json_data: dict[str, Any]) -> "BaseEvent" | None:
+    def _try_parent_class_match(
+        cls, event_name: str, parent_classes: list[str], json_data: dict[str, Any]
+    ) -> "BaseEvent | None":
         """Try to find and instantiate the most specific parent class."""
         if not parent_classes or not isinstance(parent_classes, list):
             return None
-            
+
         for class_name in parent_classes:
             event_class = cls._event_registry.get(class_name)
             if event_class:
                 try:
                     # Handle special case for control and display events
                     event_class = cls._resolve_control_display_event_class(event_class, parent_classes)
-                    
+
                     # Create the instance with the parent class
                     event = event_class(**json_data)
                     cls._set_unknown_event_attributes(event, event_name, parent_classes, json_data)
-                    
-                    logger.warning(
-                        f"{event_name} not found in registry. Using closest parent {event_class.__name__}."
-                    )
+
+                    logger.warning(f"{event_name} not found in registry. Using closest parent {event_class.__name__}.")
                     return event
                 except Exception as e:
                     logger.warning(f"Failed to create {event_class.__name__} instance: {e}. Trying next candidate.")
@@ -331,16 +331,20 @@ class BaseEvent(BaseModel):
         return event_class
 
     @classmethod
-    def _create_fallback_event(cls, event_name: str, parent_classes: list[str], json_data: dict[str, Any]) -> "BaseEvent":
+    def _create_fallback_event(
+        cls, event_name: str, parent_classes: list[str], json_data: dict[str, Any]
+    ) -> "BaseEvent":
         """Create fallback BaseEvent when no specific class can be found."""
         logger.warning(f"{event_name} not found in registry. Using fallback {cls.__name__}.")
-        
+
         event = cls(**json_data)
         cls._set_unknown_event_attributes(event, event_name, parent_classes, json_data)
         return event
 
     @classmethod
-    def _set_unknown_event_attributes(cls, event: "BaseEvent", event_name: str, parent_classes: list[str], json_data: dict[str, Any]) -> None:
+    def _set_unknown_event_attributes(
+        cls, event: "BaseEvent", event_name: str, parent_classes: list[str], json_data: dict[str, Any]
+    ) -> None:
         """Set private attributes for unknown/fallback events."""
         event._unknown_event_name = event_name
         event._unknown_data = json_data
