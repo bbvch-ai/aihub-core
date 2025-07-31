@@ -19,7 +19,7 @@ Azure Bot Service Integration leverages **Microsoft Bot Framework** to provide u
 - **Web Chat** - Browser-based interface for testing and development
 - **Extensible Channel Support** - Any Bot Framework-supported platform
 
-**Bot-in-the-Loop Infrastructure** powers sophisticated human-AI collaboration by enabling AI agents to pause their workflows and seamlessly request human input through Slack channels. When agents need expert knowledge or approval, they automatically post structured questions to designated channels, capture responses, and continue processing with human-provided context.
+**[Bot-in-the-Loop Infrastructure](../bot-in-the-loop/)** powers sophisticated human-AI collaboration by enabling AI agents to pause their workflows and seamlessly request human input through Slack channels. When agents need expert knowledge or approval, they automatically post structured questions to designated channels, capture responses, and continue processing with human-provided context.
 
 **Intelligent Chat Bot Implementations** provide multiple completion strategies:
 - **Agent Chat Bots** connect directly to AI-Hub agents via NATS messaging for complex workflows
@@ -47,7 +47,7 @@ Azure Bot Service Integration eliminates the friction between AI capabilities an
 
 **🛡️ Enterprise Security and Compliance**: Built on Azure AD authentication with comprehensive conversation audit trails, configurable retention policies, and secure credential management. All bot interactions are logged and traceable, meeting enterprise security and compliance requirements.
 
-**🤝 Seamless Human-AI Collaboration**: Bot-in-the-Loop infrastructure enables AI agents to naturally escalate to human experts through structured Slack workflows. Complex decisions, approvals, and knowledge gaps are handled smoothly without breaking user experience or losing conversation context.
+**🤝 Seamless Human-AI Collaboration**: [Bot-in-the-Loop infrastructure](../bot-in-the-loop/) enables AI agents to naturally escalate to human experts through structured Slack workflows. Complex decisions, approvals, and knowledge gaps are handled smoothly without breaking user experience or losing conversation context.
 
 ::: details **Setting Up and Using Azure Bot Service Integration**
 
@@ -117,21 +117,7 @@ Azure Bot Service Integration eliminates the friction between AI capabilities an
 
 ### Slack Bot-in-the-Loop Workflows
 
-**Expert Consultation Process:**
-1. **AI Agent Decision Point**: Agent encounters question requiring human expertise
-2. **Automatic Slack Posting**: Question appears in designated expert channel
-3. **Expert Response**: Subject matter expert replies in Slack thread  
-4. **Knowledge Capture**: Response automatically processed and stored
-5. **Workflow Continuation**: AI agent resumes with expert knowledge
-
-**Channel Configuration:**
-```yaml
-# Expert channel setup for different domains
-channels:
-  technical: "C08MK7Z8GU9"  # Technical questions
-  legal: "C08NK8Y9HV0"     # Legal and compliance
-  business: "C08PL9Z0IW1"  # Business strategy
-```
+For detailed information on Bot-in-the-Loop workflows, including expert consultation processes, channel configuration, and agent integration patterns, see the dedicated [Bot-in-the-Loop documentation](../bot-in-the-loop/).
 
 ### Multi-Bot Deployment
 
@@ -163,7 +149,7 @@ OpenaiChatBot(
 - **Rich Message Support**: Cards, buttons, attachments, and interactive elements
 - **Conversation Management**: Persistent state with configurable TTL (default 30 days)
 
-**Bot-in-the-Loop Infrastructure:**
+**[Bot-in-the-Loop Infrastructure](../bot-in-the-loop/):**
 - **Slack Channel Integration**: Direct posting to expert channels with thread support
 - **Response Capture**: Automatic detection and processing of human responses
 - **Conversation Threading**: Maintain context across multi-turn expert consultations
@@ -206,4 +192,4 @@ To implement Azure Bot Service Integration in your AI-Hub deployment:
 2. **Configure Channels**: Set up Microsoft Teams and/or Slack integrations through Azure Portal channel configuration
 3. **Deploy Bot Implementations**: Choose between agent-based bots for complex workflows or OpenAI-based bots for simpler interactions, with streaming support for enhanced user experience
 
-For detailed setup instructions, troubleshooting guidance, and advanced configuration options, refer to the [Expert Agents documentation](../expert-agents/) for Bot-in-the-Loop workflows and the AI-Hub Bot Developer's Guide for implementation details.
+For detailed setup instructions, troubleshooting guidance, and advanced configuration options, refer to the [Bot-in-the-Loop documentation](../bot-in-the-loop/) for human-AI collaboration workflows, the [Expert Agents documentation](../expert-agents/) for knowledge consultation patterns, and the AI-Hub Bot Developer's Guide for implementation details.
