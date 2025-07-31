@@ -273,8 +273,20 @@ services:
     image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.13
     network_mode: "host"
     container_name: open-webui
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      litellm:
+        condition: service_healthy
+      jupyter:
+        condition: service_healthy
+      playwright:
+        condition: service_healthy
+      docling:
+        condition: service_healthy
     volumes:
-      - open-webui:/app/backend/data
       - ./configs/open-webui/config.json:/app/backend/data/config.json
     environment:
       WEBUI_NAME: "Swiss AI-Hub"
@@ -302,10 +314,11 @@ services:
 
       # Oauth
       ENABLE_OAUTH_SIGNUP: True
+      OAUTH_PROVIDER_NAME: "azure"
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
-      OAUTH_CLIENT_SECRET: XXX
-      OPENID_PROVIDER_URL: ${OAUTH_AUTHORITY_URL}
-      OPENID_REDIRECT_URI: XXX
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OPENID_PROVIDER_URL: "${OAUTH_AUTHORITY_URL}/v2.0/.well-known/openid-configuration"
+      # OPENID_REDIRECT_URI: XXX
 
       # Data storage
       STORAGE_PROVIDER: "s3"
@@ -360,14 +373,14 @@ services:
       MILVUS_INDEX_TYPE: 'HNSW'
       MILVUS_METRIC_TYPE: 'COSINE'
       MILVUS_HNSW_M: '16'
-      MILVUS_HNSW_EFCONSTRUCTION: '100'
+      MILVUS_HNSW_EFCONSTRUCTION: '256'
 
       # RAG
       CONTENT_EXTRACTION_ENGINE: 'docling'
       DOCLING_SERVER_URL: 'http://docling:5001'
 
       # Web search
-      JINA_API_KEY: XXX
+      JINA_API_KEY: ${JINA_API_KEY}
       PLAYWRIGHT_WS_URL: ws://playwright:3000/ws
 
   jupyter:
