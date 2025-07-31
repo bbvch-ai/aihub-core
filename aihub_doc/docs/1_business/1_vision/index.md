@@ -31,11 +31,11 @@ Our approach ensures a gradual, low-risk adoption, moving from secure experiment
 
 ### 🔐 Tier 1: Basic Tier – Your Secure Gateway to AI
 
-It all starts with a secure foundation. This tier provides your entire company with access to advanced large language models (LLMs) like GPT through a modern, secure web interface. It’s a safe, experimental environment where your team can begin to explore the power of generative AI, all within your company's secure perimeter.
+It all starts with a secure foundation. This tier provides your entire company with access to advanced large language models (LLMs) like GPT through a modern, secure web interface. It's a safe, experimental environment where your team can begin to explore the power of generative AI, all within your company's secure perimeter.
 
 ### 🔗 Tier 2: Basic+ Tier – AI in Your Daily Workflow
 
-Next, we embed AI directly into your daily workflows. This tier extends the platform’s reach with API integrations into the collaboration tools your employees already use, such as Microsoft Teams, Slack, and email. This step makes AI a readily available resource, removing friction and increasing adoption.
+Next, we embed AI directly into your daily workflows. This tier extends the platform's reach with API integrations into the collaboration tools your employees already use, such as Microsoft Teams, Slack, and email. This step makes AI a readily available resource, removing friction and increasing adoption.
 
 ### 🤖 Tier 3: Assistant Package – Specialized Expertise on Demand
 
@@ -46,6 +46,10 @@ In this stage, we move from general-purpose AI to highly specialized, custom **A
 :::
 
 We work with you to build a powerful ecosystem of specialists, such as a finance assistant or an HR assistant. They are deeply integrated with your data and include a transparency module so users can always trace how an answer was generated.
+
+**The human remains firmly in control.** Each AI Assistant is designed as a powerful tool that amplifies human expertise rather than replacing human judgment. Users decide when to engage their assistants, what questions to ask, and how to interpret and act on the responses. The assistants provide recommendations and insights, but the human always makes the final decisions on business processes and outcomes.
+
+This human-centered approach ensures that while AI Assistants bring specialized knowledge and rapid analysis to your fingertips, your team retains full autonomy over strategic decisions, process modifications, and business direction. The technology serves your people, not the other way around.
 
 :::details Click here to see an example Assistant scenario
 A product team discusses an issue in a Microsoft Teams channel:
@@ -61,7 +65,7 @@ A product team discusses an issue in a Microsoft Teams channel:
 In this scenario, each AI Assistant acts as a domain expert, providing precise, auditable information while acknowledging its limitations, allowing the human team to make the final strategic decisions.
 :::
 
-### 🌟 Tier 4: Agentic Process Automation – Redefining How Work Gets Done {#agentic-process-automation}
+🌟### 🌟 Tier 4: Agentic Process Automation – Redefining How Work Gets Done {#agentic-process-automation}
 
 This is the most advanced tier, where we go beyond reactive assistance to fundamentally rethink your business processes. This stage introduces autonomous **AI Agents** that proactively participate in and drive workflows.
 
@@ -70,6 +74,14 @@ This is the most advanced tier, where we go beyond reactive assistance to fundam
 :::
 
 We don't just automate old processes; we redesign them as a deep, collaborative interplay between humans, specialized AI agents, and your existing programs and software.
+
+**In this tier, AI agents take the lead in driving business processes**, but always within controlled and strictly defined parameters. Unlike Tier 3 where humans initiate every interaction, here the AI proactively manages process progression, identifies next steps, and coordinates tasks across the process timeline. However, this leadership operates within carefully established guardrails and escalation protocols that ensure human oversight remains meaningful and accessible.
+
+**True human-agent collaboration is at our core.** We firmly believe that the future of work isn't about fully autonomous agents operating in isolation, but about creating seamless, intuitive partnerships between humans and AI. Our approach ensures that while agents lead process execution and coordination, humans retain strategic oversight, creative problem-solving, and final decision-making authority on critical junctures.
+
+We've designed our agentic systems to make this collaboration feel natural and empowering. The interplay between humans and agents is transparent, with clear handoff points where humans can step in, modify directions, or take full control. We focus intensively on making these interactions not just functional, but genuinely enjoyable and accessible to users at all technical levels.
+
+**The result is a workflow where technology amplifies human capabilities without overwhelming them.** Users can easily understand what their AI agents are doing, why they're doing it, and how to guide them toward better outcomes. This creates an environment where the combined intelligence of humans and AI far exceeds what either could achieve alone, while keeping the human experience engaging and comprehensible.
 
 A scenario example: The HR application process, redesigned with Agentic Process Automation.
 
