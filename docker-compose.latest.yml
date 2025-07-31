@@ -20,7 +20,7 @@ services:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     volumes:
-      - ./configs/milvus/milvus.yaml:/milvus/configs/milvus.yaml
+      - ./configs/milvus/milvus.latest.yaml:/milvus/configs/milvus.yaml
       - ${VOLUME_ROOT:-./local-volumes}/minio_data:/minio_data
     command: minio server /minio_data --console-address ":9001"
     healthcheck:
@@ -140,6 +140,7 @@ services:
     container_name: openwebui
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/open-webui:/app/backend/data
+      - ./configs/openwebui/config.latest.json:/app/backend/data/config.json
     environment:
       ENV: "dev"
       ENABLE_PERSISTENT_CONFIG: false
@@ -342,7 +343,7 @@ services:
       - "traefik.http.routers.phoenix.tls.certresolver=letsencrypt"
       - "traefik.http.services.phoenix.loadbalancer.server.port=6006"
       - "traefik.http.routers.phoenix.middlewares=security-headers@file"
-  # </editor-fold">
+  # </editor-fold>
 
   # === Dagster Stack ===
   # <editor-fold desc="Dagster Stack">
@@ -395,6 +396,7 @@ services:
       - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/dagster_home
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
+      - ./configs/dagster/dagster.latest.yaml/dagster_home/dagster.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -415,6 +417,7 @@ services:
       - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/dagster_home
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
+      - ./configs/dagster/dagster.latest.yaml/dagster_home/dagster.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -433,7 +436,7 @@ services:
     image: ghcr.io/bbvch-ai/aihub-core/nats:2.11.4
     command: -c /etc/nats/nats.conf
     volumes:
-      - ./configs/nats/nats.conf:/etc/nats/nats.conf
+      - ./configs/nats/nats.latest.conf:/etc/nats/nats.conf
       - ${VOLUME_ROOT:-./local-volumes}/nats-data:/data
     logging:
       driver: "json-file"
@@ -536,7 +539,7 @@ services:
   # </editor-fold>
 
   # === SUITE UI Stack ===
-  # <editor-fold desc="Suite UI Stack">
+  # <editor-fold desc="SUITE UI Stack">
   web:
     image: ghcr.io/bbvch-ai/aihub-core/web:latest
     restart: always
@@ -583,7 +586,9 @@ services:
 
       # --- Shared Service ---
       - "traefik.http.services.web.loadbalancer.server.port=80"
+
   # </editor-fold>
+
 
   # === Common Agents ===
   # TODO: define which common agents should always be included...
@@ -591,6 +596,9 @@ services:
   # </editor-fold>
   # === Common Pipelines ===
     # TODO: define which common pipelines should always be included...
+
+  # </editor-fold>
+
   # <editor-fold desc="Common Pipelines">
   # </editor-fold>
   # === Traefik ===
