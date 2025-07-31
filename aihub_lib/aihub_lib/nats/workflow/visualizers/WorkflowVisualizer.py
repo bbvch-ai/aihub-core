@@ -420,64 +420,82 @@ class WorkflowVisualizer:
             self.build_workflow_graph()
 
         graph = cast(nx.DiGraph, self.graph)  # We know it's not None at this point
+        
+        nodes = self._convert_nodes_to_pydantic(graph)
+        links = self._convert_edges_to_pydantic(graph)
+        
+        return WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=nodes, links=links)
 
-        # Prepare node data models
+    def _convert_nodes_to_pydantic(self, graph: nx.DiGraph) -> list[NodeData]:
+        """Convert graph nodes to Pydantic models."""
         nodes = []
         for node, attrs in graph.nodes(data=True):
-            # Create a copy of attributes and add the id
-            node_attrs = dict(attrs)
-            node_attrs["id"] = node
-
-            # Convert any nested dicts to appropriate Pydantic models
-            if "input_events" in node_attrs and node_attrs["input_events"]:
-                input_events = {}
-                for param, event_data in node_attrs["input_events"].items():
-                    # If it's already a Pydantic model, use it directly
-                    if isinstance(event_data, InputEventInfo):
-                        input_events[param] = event_data
-                    else:
-                        # Otherwise, construct the model
-                        input_events[param] = InputEventInfo.model_validate(event_data)
-                node_attrs["input_events"] = input_events
-
-            if "output_events" in node_attrs and node_attrs["output_events"]:
-                output_events = []
-                for event_data in node_attrs["output_events"]:
-                    # If it's already a Pydantic model, use it directly
-                    if isinstance(event_data, EventInfo):
-                        output_events.append(event_data)
-                    else:
-                        # Otherwise, construct the model
-                        output_events.append(EventInfo.model_validate(event_data))
-                node_attrs["output_events"] = output_events
-
-            # Create the node model
+            node_attrs = self._prepare_node_attributes(node, attrs)
             node_model = NodeData.model_validate(node_attrs)
             nodes.append(node_model)
+        return nodes
 
-        # Prepare edge data models
+    def _prepare_node_attributes(self, node: str, attrs: dict[str, Any]) -> dict[str, Any]:
+        """Prepare node attributes for Pydantic model creation."""
+        node_attrs = dict(attrs)
+        node_attrs["id"] = node
+        
+        node_attrs = self._convert_input_events(node_attrs)
+        node_attrs = self._convert_output_events(node_attrs)
+        
+        return node_attrs
+
+    def _convert_input_events(self, node_attrs: dict[str, Any]) -> dict[str, Any]:
+        """Convert input events to Pydantic models."""
+        if "input_events" in node_attrs and node_attrs["input_events"]:
+            input_events = {}
+            for param, event_data in node_attrs["input_events"].items():
+                if isinstance(event_data, InputEventInfo):
+                    input_events[param] = event_data
+                else:
+                    input_events[param] = InputEventInfo.model_validate(event_data)
+            node_attrs["input_events"] = input_events
+        return node_attrs
+
+    def _convert_output_events(self, node_attrs: dict[str, Any]) -> dict[str, Any]:
+        """Convert output events to Pydantic models."""
+        if "output_events" in node_attrs and node_attrs["output_events"]:
+            output_events = []
+            for event_data in node_attrs["output_events"]:
+                if isinstance(event_data, EventInfo):
+                    output_events.append(event_data)
+                else:
+                    output_events.append(EventInfo.model_validate(event_data))
+            node_attrs["output_events"] = output_events
+        return node_attrs
+
+    def _convert_edges_to_pydantic(self, graph: nx.DiGraph) -> list[EdgeData]:
+        """Convert graph edges to Pydantic models."""
         links = []
         for source, target, attrs in graph.edges(data=True):
-            # Create a copy of attributes and add source/target
-            edge_attrs = dict(attrs)
-            edge_attrs["source"] = source
-            edge_attrs["target"] = target
-
-            # Convert payload to Pydantic models if needed
-            if "payload" in edge_attrs and edge_attrs["payload"]:
-                payload = {}
-                for field_name, field_data in edge_attrs["payload"].items():
-                    # If it's already a Pydantic model, use it directly
-                    if isinstance(field_data, EventPayloadField):
-                        payload[field_name] = field_data
-                    else:
-                        # Otherwise, construct the model
-                        payload[field_name] = EventPayloadField.model_validate(field_data)
-                edge_attrs["payload"] = payload
-
-            # Create the edge model
+            edge_attrs = self._prepare_edge_attributes(source, target, attrs)
             edge_model = EdgeData.model_validate(edge_attrs)
             links.append(edge_model)
+        return links
 
-        # Create and return the workflow graph model
-        return WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=nodes, links=links)
+    def _prepare_edge_attributes(self, source: str, target: str, attrs: dict[str, Any]) -> dict[str, Any]:
+        """Prepare edge attributes for Pydantic model creation."""
+        edge_attrs = dict(attrs)
+        edge_attrs["source"] = source
+        edge_attrs["target"] = target
+        
+        edge_attrs = self._convert_edge_payload(edge_attrs)
+        
+        return edge_attrs
+
+    def _convert_edge_payload(self, edge_attrs: dict[str, Any]) -> dict[str, Any]:
+        """Convert edge payload to Pydantic models."""
+        if "payload" in edge_attrs and edge_attrs["payload"]:
+            payload = {}
+            for field_name, field_data in edge_attrs["payload"].items():
+                if isinstance(field_data, EventPayloadField):
+                    payload[field_name] = field_data
+                else:
+                    payload[field_name] = EventPayloadField.model_validate(field_data)
+            edge_attrs["payload"] = payload
+        return edge_attrs
