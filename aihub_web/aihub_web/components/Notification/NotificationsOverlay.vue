@@ -19,7 +19,7 @@
 
   <Popover
     ref="op"
-    class="border-surface-200 bg-surface-50 text-black dark:border-surface-800 dark:bg-surface-950 dark:text-white"
+    class="[--p-popover-background:#f9f9f9] [--p-popover-border-color:#e3e3e3] dark:[--p-popover-background:#0d0d0d] dark:[--p-popover-border-color:#333]"
     @hide="isPanelOpen = false"
   >
     <ScrollPanel>
