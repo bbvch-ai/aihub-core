@@ -546,7 +546,8 @@ To maintain a clean and manageable repository, we follow a simple branching stra
 
     * Example feature branch: `feat/new-agent-workflow`
     * Example fix branch: `fix/login-bug-incorrect-redirect`
-      :::
+
+:::
 
 ### :label: Conventional Commits & Pull Request (PR) Titles
 
@@ -749,13 +750,15 @@ activated Poetry shell.
     * Example directory: `workflow_steps`
 * **Test Files**: All test files must be prefixed with `test_` and follow the `snake_case` convention.
     * Example: `test_agent_workflow_manager.py`
-      :::
+
+:::
 
 ::: info :camel: Camel Case Rules
 
 * **Classes**: All class names must use `CamelCase`.
-    * Example: `AgentWorkflowManager`, `ProcessExecutor`, `UserIdentity`
-      :::
+    * Example: `AgentWorkflowManager.py`, `ProcessExecutor.py`, `UserIdentity.py`
+
+:::
 
 ### :speech_balloon: Docstrings and Comments
 
@@ -880,7 +883,8 @@ Before writing any code, check your local environment.
    in Chapter 6 (e.g., `feat/new-process-feature`).
 2. **Review existing work**. If you are already on a feature branch, run `git diff main...` to see what changes have
    already been made on that branch.
-   :::
+
+:::
 
 ### :bulb: Step 3: Plan and Implement Your Solution
 
@@ -891,7 +895,8 @@ Before writing any code, check your local environment.
    `aihub_agent`, `aihub_api`, etc.). If code is used by more than one service, it belongs in `aihub_lib`.
 3. **Write the code**. As you implement your solution, rigorously follow all rules defined in **Chapter 9: Code
    Conventions**.
-   :::
+
+:::
 
 ### :white_check_mark: Step 4: Verify Code Quality
 
@@ -949,7 +954,8 @@ We follow a **README.md-only** documentation principle. All project documentatio
    docstrings directly in the implementation file. This is the most common form of documentation.
 2. **README.md Files**: For documentation that holds true for a larger part of the codebase (a specific folder, a scope,
    or the entire project), we use `README.md` files.
-   :::
+
+:::
 
 ::: tip :file_folder: Hierarchical Structure
 These README files are hierarchical. A `README.md` can exist at the project root, within each scope (e.g.,

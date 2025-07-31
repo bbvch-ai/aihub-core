@@ -355,7 +355,8 @@ Key characteristics:
 5. **Observability**: Semantic events provide rich tracing integration
 6. **Internationalization**: Display events support multi-language interfaces
 7. **Resilience**: Unknown event fallback preserves system functionality
-   :::
+
+:::
 
 ### 🧪 Step 3: Write Comprehensive Tests
 
