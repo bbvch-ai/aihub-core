@@ -29,6 +29,7 @@ python-multipart = "^0.0.20"
 stringcase = "^1.2.0"
 pydub = "^0.25.1"
 arize-phoenix = "^10.0.0"
+fastmcp = "^2.10.6"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
