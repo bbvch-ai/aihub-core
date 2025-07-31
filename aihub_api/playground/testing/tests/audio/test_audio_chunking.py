@@ -1,6 +1,9 @@
 import io
 
 import pytest
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from fastapi import UploadFile
 from pydub import AudioSegment
 from pydub.generators import Sine
@@ -117,15 +120,15 @@ async def test_full_stt_with_chunking(create_test_audio):
     # Mock the STT model config
     mock_model_config = MagicMock()
     mock_model_config.get_openai_client.return_value = mock_client
-    mock_model_config.name = "test-model"
+    mock_model_config.name = "azure/gpt-4o-mini-transcribe"
 
     # Test the service
     from aihub_api.routes.openai.OpenaiService import OpenaiService
 
     result = await OpenaiService.stt(
-        stt_models=[mock_model_config],
         file=large_file,
-        model_name="test-model",
+        user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
+        model_name="azure/gpt-4o-mini-transcribe",
         language="en",
         prompt=None,
         response_format="json",

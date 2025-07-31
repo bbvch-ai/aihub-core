@@ -7,17 +7,6 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
-from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
-from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
-    AzureOpenAIEmbeddingConfig,
-)
-from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
-    SelfHostedEmbeddingConfig,
-)
-from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
-from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
 
@@ -42,8 +31,6 @@ async def main():
 
     auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
 
-    OPENAI_URL = "https://aihub-dev-openai-swe-whisper.openai.azure.com"
-
     runner.mount(
         HealthController(auth=auth).get_health(),
         UserController(auth=auth).get_my_user().get_my_dashboard().update_my_dashboard(),
@@ -58,64 +45,7 @@ async def main():
         .add_user_to_thread()
         .remove_user_from_thread(),
         AgentController(auth=auth).get_agent().discover_agents(),
-        OpenaiController(
-            auth=auth,
-            embedding_models=[
-                SelfHostedEmbeddingConfig(
-                    name="Alibaba-NLP/gte-base-en-v1.5",
-                    base_url="http://localhost:8183",
-                ),
-                AzureOpenAIEmbeddingConfig(
-                    name="text-embedding-3-large",
-                    base_url=OPENAI_URL,
-                    api_version="2024-12-01-preview",
-                    embedding_tokens_costs_per_thousand=0.0,
-                ),
-            ],
-            chat_models=[
-                OpenaiLikeLLMConfig(
-                    name="unsloth/Llama-3.2-1B-Instruct",
-                    base_url="http://localhost:8182/v1",
-                    is_function_calling_model=False,
-                    context_size=512,
-                ),
-                AzureOpenAILLMConfig(
-                    name="gpt-4o",
-                    base_url=OPENAI_URL,
-                    api_version="2024-08-01-preview",
-                    prompt_tokens_costs_per_thousand=0.0045,
-                    completion_tokens_costs_per_thousand=0.0133,
-                ),
-                AzureOpenAILLMConfig(
-                    name="o1-mini",
-                    base_url=OPENAI_URL,
-                    api_version="2024-08-01-preview",
-                    prompt_tokens_costs_per_thousand=0.0045,
-                    completion_tokens_costs_per_thousand=0.0133,
-                ),
-            ],
-            image_models=[
-                AzureOpenaiImageModelConfig(
-                    name="dall-e-3",
-                    base_url=OPENAI_URL,
-                    api_version="2024-02-01",
-                )
-            ],
-            stt_models=[
-                AzureOpenaiSTTConfig(
-                    name="whisper-1",
-                    base_url=OPENAI_URL,
-                    api_version="2024-06-01",
-                )
-            ],
-            tts_models=[
-                AzureOpenaiTTSConfig(
-                    name="tts-1-hd",
-                    base_url=OPENAI_URL,
-                    api_version="2024-05-01-preview",
-                )
-            ],
-        )
+        OpenaiController(auth=auth)
         .get_models()
         .get_model()
         .get_embeddings()

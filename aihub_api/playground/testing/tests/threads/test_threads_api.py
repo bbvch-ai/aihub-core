@@ -2,17 +2,17 @@ from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
-from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthConfig import (
-    DangerousDevelopmentOnlyAuthConfig,
-)
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
 )
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
-from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
 from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
@@ -27,14 +27,14 @@ from aihub_api.runners.simulation.agent.SimulatedAgentApiTestRunner import Simul
 enable_logging()
 
 THREAD_BASE = "/api/v1/threads"
-DEFAULT_USER_ID = DangerousDevelopmentOnlyAuthConfig().OID
+DEFAULT_USER_ID = DangerousDevelopmentOnlyAuthSettings().OID
 
 
 @pytest.fixture(scope="module")
 def mongodb():
     """Setup MongoDB connection and clear data after tests."""
     yield
-    connect(db=ApiConfig().DB_NAME, host=CosmosAccess().get_connection_string())
+    connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING)
     ThreadEntity.objects.delete()
     disconnect()
 

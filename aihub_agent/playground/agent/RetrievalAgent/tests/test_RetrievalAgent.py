@@ -4,13 +4,10 @@ from pathlib import Path
 import pytest
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
-from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
-    SelfHostedEmbeddingConfig,
-    SelfHostedEmbeddingParameter,
-)
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
-from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
+from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.logging.logger import enable_logging
@@ -80,18 +77,7 @@ def self_hosted_agent_config(event_loop):
     # Set the event loop for this function
     asyncio.set_event_loop(event_loop)
 
-    embedding_config = SelfHostedEmbeddingConfig(
-        name="Alibaba-NLP/gte-base-en-v1.5",
-        base_url="http://localhost:8183",
-        api_key=None,
-        timeout=60,
-        embed_batch_size=32,
-        default_parameter=SelfHostedEmbeddingParameter(
-            text_instruction=None,
-            query_instruction=None,
-            truncate_text=False,
-        ),
-    )
+    embedding_config = EmbeddingModelConfig(model_name="local/text-embedding-gte")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="retrieval_agent_development",

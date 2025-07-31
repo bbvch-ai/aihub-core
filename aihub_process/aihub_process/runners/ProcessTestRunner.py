@@ -4,8 +4,8 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from aihub_lib.infrastructure.nats.NatsConfig import NatsConfig
-from aihub_lib.infrastructure.redis.RedisConfig import RedisConfig
+from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
+from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.nats.events import (
     BaseEvent,
     ProcessExceptionEvent,
@@ -60,8 +60,8 @@ class ProcessTestRunner(ProcessRunner):
         locale_paths: list[str] | None = None,
     ):
         super().__init__(
-            servers=[NatsConfig().NATS_ENDPOINT],
-            redis_url=RedisConfig().REDIS_URL,
+            servers=[NatsSettings().ENDPOINT],
+            redis_url=RedisSettings().URL,
             process_type=process_type,
             default_process_config=default_process_config,
             locale_paths=locale_paths,

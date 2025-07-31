@@ -3,7 +3,7 @@
 # - MODEL_SUI_API_KEY: Respective API key for the SUI model
 # - MODEL_EUR_URL: The base URL for a language model API (here bound to region EUR or SWE)
 # - MODEL_EUR_API_KEY: Respective API key for the EUR model
-# - MINIO_ACCESS_KEY: The MinIO access key
+# - MINIO_ROOT_USER: The MinIO access key
 # - MINIO_SECRET_KEY: The MinIO secret key
 # - POSTGRES_USER: The Postgres user
 # - POSTGRES_PASSWORD: The Postgres password
@@ -17,7 +17,7 @@ services:
     image: ghcr.io/bbvch-ai/aihub-core/minio:release.2025-05-24t17-08-30z
     restart: always
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     volumes:
       - ./configs/milvus/milvus.latest.yaml:/milvus/configs/milvus.yaml
@@ -68,7 +68,7 @@ services:
     environment:
       ETCD_ENDPOINTS: milvus-etcd:2379
       MINIO_ADDRESS: minio:9000
-      MINIO_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY}
+      MINIO_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
       MINIO_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY}
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/milvus-data:/var/lib/milvus
@@ -506,7 +506,6 @@ services:
       MODEL_EUR_API_KEY: ${MODEL_EUR_API_KEY}
       CLIENT_ID: ${OAUTH_CLIENT_ID}
       AZURE_CLIENT_ID: ${OAUTH_CLIENT_ID}
-      TENANT_ID: ${OAUTH_TENANT_ID}
       AZURE_TENANT_ID: ${OAUTH_TENANT_ID}
       AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
       AZURE_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
@@ -601,6 +600,20 @@ services:
 
   # <editor-fold desc="Common Pipelines">
   # </editor-fold>
+
+  huggingface-text-embedding-inference:
+    image: ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cpu-1.6
+    volumes:
+      - ${VOLUME_ROOT:-./local-volumes}/hf-tei-data:/data
+    ports:
+      - "8183:8183"
+    command: >
+      --port 8183
+      --model-id Alibaba-NLP/gte-base-en-v1.5
+    restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8183/health" ]
+
   # === Traefik ===
   # <editor-fold desc="Traefik">
   traefik:

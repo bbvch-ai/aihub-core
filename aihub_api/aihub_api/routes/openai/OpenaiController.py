@@ -5,11 +5,6 @@ from typing import Annotated, Literal
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
-from aihub_lib.generative_ai.resources.models.llm.embedding.EmbeddingLLMConfig import EmbeddingLLMConfig
-from aihub_lib.generative_ai.resources.models.stt.azure.AzureSTTConfig import AzureOpenaiSTTConfig
-from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import AzureOpenaiTTSConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
@@ -19,7 +14,6 @@ from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributo
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.Controller import Controller
 from fastapi import Body, Depends, File, Form, Security, UploadFile
-from llama_index.llms.openai import OpenAI
 from nats.aio.client import Client as NATS
 from openai.types import ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
@@ -72,24 +66,8 @@ class OpenaiController(Controller):
         auth: AuthHandler,
         route: str = "/openai",
         additionally_required_permission: str | None = None,
-        embedding_models: list[EmbeddingLLMConfig] | None = None,
-        chat_models: list[ChatLLMConfig] | None = None,
-        image_models: list[AzureOpenaiImageModelConfig] | None = None,
-        stt_models: list[AzureOpenaiSTTConfig] | None = None,
-        tts_models: list[AzureOpenaiTTSConfig] | None = None,
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
-        self.embedding_models = embedding_models or []
-        self.chat_models = chat_models or []
-        self.image_models = image_models or []
-        self.tts_models = tts_models or []
-        self.stt_models = stt_models or []
-
-        # Validate that all chat models are OpenAI compatible
-        for chat_model in self.chat_models:
-            model, _ = chat_model.to_llama_index()
-            if not isinstance(model, OpenAI):
-                raise ValueError(f"Chat model {chat_model.name} is not an OpenAI compatible model.")
 
     def get_models(self, route: str = "/models") -> "OpenaiController":
         @self.router.get(
@@ -103,7 +81,7 @@ class OpenaiController(Controller):
         async def get_models(
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> ModelResponse:
-            return OpenaiService.get_models(self.chat_models)
+            return await OpenaiService.get_models()
 
         return self
 
@@ -123,10 +101,10 @@ class OpenaiController(Controller):
         async def get_models_with_assistants(
             nc: Annotated[NATS, Depends(use_nats)],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
-            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ModelResponse:
             model_response = await OpenaiService.get_models_with_assistants(
-                self.chat_models, nc, t, exclude_webui_agents=exclude_webui_agents
+                nc=nc,
+                exclude_webui_agents=exclude_webui_agents
             )
             access_checker = AccessChecker.from_user(user)
             model_response.data = [
@@ -150,7 +128,7 @@ class OpenaiController(Controller):
             full_path: str,
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> ModelDetails:
-            return OpenaiService.get_model(self.chat_models, model_name=full_path)
+            return await OpenaiService.get_model(model_name=full_path)
 
         return self
 
@@ -168,7 +146,7 @@ class OpenaiController(Controller):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ModelDetails:
-            model = await OpenaiService.get_model_with_assistants(self.chat_models, model_name=full_path, nc=nc, t=t)
+            model = await OpenaiService.get_model_with_assistants(model_name=full_path, nc=nc, t=t)
             access_checker = AccessChecker.from_user(user)
             if not access_checker.has_access_to_agent(model.agent_class, model.agent_id):
                 raise ValueError(f"User {user.id} does not have permission to access model {model.name}")
@@ -186,12 +164,12 @@ class OpenaiController(Controller):
         )
         async def get_embeddings(
             req: Annotated[EmbeddingsRequest, Body],
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> EmbeddingsResponse:
-            return OpenaiService.get_embeddings(
-                self.embedding_models,
-                req.model,
-                req.input,
+            return await OpenaiService.get_embeddings(
+                model_name=req.model,
+                input_text=req.input,
+                user=user,
                 dimensions=req.dimensions,
                 encoding_format=req.encoding_format,
             )
@@ -215,7 +193,11 @@ class OpenaiController(Controller):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> ChatCompletion | StreamingResponse:
             completion_request.user = completion_request.user or user.id
-            return await OpenaiService.chat_completion(self.chat_models, completion_request.model, completion_request)
+            return await OpenaiService.chat_completion(
+                model_name=completion_request.model,
+                chat_completion_request=completion_request,
+                user=user,
+            )
 
         return self
 
@@ -249,7 +231,12 @@ class OpenaiController(Controller):
                     raise ValueError(f"User {user.id} does not have permission to access model {model_name}")
 
             return await OpenaiService.chat_completion_with_assistants(
-                self.chat_models, model_name, completion_request, user, nc, external_agent_event_distributor, t
+                model_name=model_name,
+                chat_completion_request=completion_request,
+                user=user,
+                nc=nc,
+                external_agent_event_distributor=external_agent_event_distributor,
+                t=t
             )
 
         return self
@@ -258,10 +245,12 @@ class OpenaiController(Controller):
         @self.router.post(route, summary="Create image", description="Creates an image given a prompt.", tags=self.tags)
         async def generate_image(
             generation_request: Annotated[ImageGenerationRequest, Body],
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> ImagesResponse:
             return await OpenaiService.generate_image(
-                self.image_models, str(generation_request.model), generation_request
+                model_name=str(generation_request.model),
+                image_generation_request=generation_request,
+                user=user,
             )
 
         return self
@@ -274,7 +263,7 @@ class OpenaiController(Controller):
             tags=self.tags,
         )
         async def create_transcription(
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             file: UploadFile = File(..., description="The audio file to transcribe"),
             model: str = Form(..., description="ID of the model to use"),
             language: str | None = Form(None, description="ISO-639-1 language code"),
@@ -288,14 +277,14 @@ class OpenaiController(Controller):
             ),
         ) -> Transcription | TranscriptionVerbose | str:
             return await OpenaiService.stt(
-                self.stt_models,
-                file,
-                model,
-                language,
-                prompt,
-                response_format,
-                temperature,
-                timestamp_granularities,
+                model_name=model,
+                file=file,
+                user=user,
+                language=language,
+                prompt=prompt,
+                response_format=response_format,
+                temperature=temperature,
+                timestamp_granularities=timestamp_granularities,
             )
 
         return self
@@ -306,10 +295,13 @@ class OpenaiController(Controller):
         )
         async def create_speech(
             speech_request: Annotated[TextToSpeechRequest, Body],
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> StreamingResponse:
             tts_response = await OpenaiService.tts(
-                self.tts_models, speech_request.model, speech_request.input, speech_request
+                model_name=speech_request.model,
+                input_text=speech_request.input,
+                tts_request=speech_request,
+                user=user,
             )
 
             async def stream_generator() -> AsyncIterator[bytes]:

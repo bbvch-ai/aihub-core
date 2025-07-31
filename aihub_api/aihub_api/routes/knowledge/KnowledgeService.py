@@ -3,7 +3,7 @@ import logging
 import mongoengine
 from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
-from aihub_lib.infrastructure.azure.cosmos.docstore.CosmosDocstoreAccess import CosmosDocstoreAccess
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
 from aihub_lib.persistence.rag.documents.entities.types.Namespace import Namespace
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
@@ -29,7 +29,7 @@ class KnowledgeService:
     @staticmethod
     def _ensure_db_exists(db: str):
         if db not in mongoengine.connection._connections:
-            register_connection(alias=db, name=db, host=CosmosDocstoreAccess().get_connection_string())
+            register_connection(alias=db, name=db, host=MongoSettings().CONNECTION_STRING)
 
     @staticmethod
     def get_paginated_documents(

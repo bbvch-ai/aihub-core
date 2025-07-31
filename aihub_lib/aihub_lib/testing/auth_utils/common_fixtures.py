@@ -3,17 +3,15 @@
 import pytest
 from mongoengine import connect, disconnect
 
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
-from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 
 
 @pytest.fixture(scope="module")
 def mongo_db():
     """Set up MongoDB connection for testing."""
-    config = ApiConfig()
-    cosmos_access = CosmosAccess(config)
-    host = cosmos_access.get_cosmos_connection_string()
-    connect(db=config.DB_NAME, host=host)
+    config = AIHubSettings()
+    connect(db=config.MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING)
     yield
     disconnect()
 

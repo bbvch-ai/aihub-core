@@ -6,8 +6,8 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
-from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from aihub_lib.testing.auth_utils.user_mocks import get_expected_user_data, mock_user_entity_autouse  # noqa: F401
 from asgi_lifespan import LifespanManager
@@ -25,7 +25,7 @@ EXPECTED_USER_FIELDS = ["id", "name", "email"]
 @pytest.fixture(scope="module", autouse=True)
 def mongo_db():
     """Set up and tear down the MongoDB connection for tests."""
-    connect(db=ApiConfig().DB_NAME, host=CosmosAccess().get_connection_string())
+    connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING)
     yield
     disconnect()
 

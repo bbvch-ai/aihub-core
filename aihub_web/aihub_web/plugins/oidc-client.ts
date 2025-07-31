@@ -10,7 +10,7 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
   Log.setLevel(Log.INFO)
 
   const auth = new UserManager({
-    authority: `https://login.microsoftonline.com/${config.public.oidc.tenantId}/v2.0`,
+    authority: `${config.public.oidc.authorityUrl}/v2.0`,
     client_id: config.public.oidc.clientId,
     redirect_uri: `${window.location.origin}/${$i18n.locale.value}/auth/callback`,
     silent_redirect_uri: `${window.location.origin}/${$i18n.locale.value}/auth/renew`,

@@ -4,13 +4,16 @@ import httpx
 import jwt
 import pytest
 import pytest_asyncio
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
+from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
-from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
     DummyResponse,
     generate_rsa_keypair,
@@ -35,15 +38,15 @@ TOKEN_EXPIRY_MINUTES = 10
 @pytest.fixture(scope="module", autouse=True)
 def mongo_db():
     """Set up and tear down the MongoDB connection for tests."""
-    connect(db=ApiConfig().DB_NAME, host=CosmosAccess().get_connection_string())
+    connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING)
     yield
     disconnect()
 
 
 @pytest.fixture(autouse=True)
 def oauth2_config(monkeypatch):
-    """Set OAuth2 env vars and return an OAuth2Config instance."""
-    return OAuth2Config()
+    """Set OAuth2 env vars and return an OAuth2Settings instance."""
+    return OAuth2Settings()
 
 
 @pytest.fixture
@@ -83,12 +86,12 @@ def valid_oauth2_token(oauth2_config, rsa_keys):
     now = datetime.now(UTC)
     exp = now + timedelta(minutes=TOKEN_EXPIRY_MINUTES)
     payload = {
-        "name": "Melanie Musterfrau",
-        "preferred_username": "melanie.musterfrau@bbv.ch",
-        "roles": ["user"],
+        "name": DangerousDevelopmentOnlyAuthSettings().NAME,
+        "preferred_username": DangerousDevelopmentOnlyAuthSettings().EMAIL,
+        "roles": DangerousDevelopmentOnlyAuthSettings().ROLES,
         "aud": oauth2_config.CLIENT_ID,
-        "oid": "1234567890",
-        "iss": f"{oauth2_config.AUTHORITY}/v2.0",
+        "oid": DangerousDevelopmentOnlyAuthSettings().OID,
+        "iss": f"{oauth2_config.AUTHORITY_URL}/v2.0",
         "exp": exp,
     }
     headers = {"kid": rsa_keys["kid"]}
@@ -100,11 +103,11 @@ def valid_oauth2_token(oauth2_config, rsa_keys):
 def expected_user_data():
     """Return the expected user data from token claims."""
     return {
-        "id": "1234567890",
-        "name": "Melanie Musterfrau",
-        "email": "melanie.musterfrau@bbv.ch",
+        "id": DangerousDevelopmentOnlyAuthSettings().OID,
+        "name": DangerousDevelopmentOnlyAuthSettings().NAME,
+        "email": DangerousDevelopmentOnlyAuthSettings().EMAIL,
         "profile_image": None,
-        "roles": ["TestOnlyFullAdminAccess"],
+        "roles": DangerousDevelopmentOnlyAuthSettings().ROLES,
         "favorite_modules": [],
     }
 

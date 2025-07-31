@@ -1,19 +1,14 @@
 import pytest
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
-from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
-    AzureOpenAILLMConfig,
-    AzureOpenAIParameter,
-)
-from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import (
-    OpenaiLikeLLMConfig,
-    OpenaiLikeLLMParameter,
-)
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_lib.nats.events.guard.GuardRejectionEvent import GuardRejectionEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.logging.logger import enable_logging
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
@@ -47,18 +42,7 @@ def self_hosted_llm_config():
     """
     Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
     """
-    return OpenaiLikeLLMConfig(
-        name="unsloth/Llama-3.2-1B-Instruct",
-        base_url="http://localhost:8182/v1",
-        api_key=None,
-        context_size=512,
-        is_chat_model=True,
-        is_function_calling_model=False,
-        default_parameter=OpenaiLikeLLMParameter(
-            logit_bias=None,
-            logprobs=None,
-        ),
-    )
+    return LLMConfig(model_name="local/qwen3-0.6b")
 
 
 @pytest.fixture
@@ -66,14 +50,7 @@ def azure_llm_config():
     """
     Return a RAGAgentConfig that uses Azure OpenAI for both the LLM and embeddings.
     """
-    return AzureOpenAILLMConfig(
-        name="gpt-4o",
-        base_url="https://aihub-dev-openai-che.openai.azure.com/",
-        api_version="2024-08-01-preview",
-        prompt_tokens_costs_per_thousand=0.0045,
-        completion_tokens_costs_per_thousand=0.0133,
-        default_parameter=AzureOpenAIParameter(temperature=0.0),
-    )
+    return LLMConfig(model_name="azure/gpt-4o-mini")
 
 
 @given("I have an empty agent config")
@@ -189,7 +166,7 @@ async def when_start_event_sent(agent_runner: AgentTestRunner, query: str):
             topic=topic,
             start_event=UserMessageEvent(
                 locale="en",
-                user=fake_user(),
+                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
                 messages=[ChatMessage(content=query, role=MessageRole.USER)],
             ),
         )

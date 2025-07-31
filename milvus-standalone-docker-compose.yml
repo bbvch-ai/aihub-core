@@ -20,7 +20,7 @@ services:
     container_name: milvus-minio
     image: ghcr.io/bbvch-ai/aihub-core/minio:RELEASE.2023-03-20T20-16-18Z
     environment:
-      MINIO_ACCESS_KEY: minioadmin
+      MINIO_ROOT_USER: minioadmin
       MINIO_SECRET_KEY: minioadmin
     ports:
       - "9001:9001"

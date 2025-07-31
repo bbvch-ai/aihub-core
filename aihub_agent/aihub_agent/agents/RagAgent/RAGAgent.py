@@ -136,7 +136,7 @@ class RAGAgent(Agent):
         Retrieves relevant nodes from the knowledge base.
         """
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
-        embedding, _ = retrieve_step_config.embed_model.to_llama_index(model_parameter=None)
+        embedding, _ = retrieve_step_config.embed_model.to_llama_index()
 
         if isinstance(event, StandaloneQuestionCondenserEvent):
             query = event.condensed_chat_message.content
@@ -263,7 +263,7 @@ class RAGAgent(Agent):
             context_messages=[nodes_event.context_message],
             system_messages=system_messages,
             last_user_message=ChatMessage(role=MessageRole.USER, content=start_event.user_query),
-            tokenizer=agent_config.llm.tokenizer,
+            tokenizer=agent_config.llm.token_counter,
             number_of_input_tokens=agent_config.number_of_input_tokens,
         )
         return LimitChatHistoryWithContextEvent(limited_history_with_context=limited_chat_history)

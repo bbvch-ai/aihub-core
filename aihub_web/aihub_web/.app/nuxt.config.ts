@@ -5,17 +5,21 @@ export default defineNuxtConfig({
   modules: ['@nuxt/eslint'],
   runtimeConfig: {
     public: {
+      mode: process.env.MODE,
       oidc: {
-        clientId: process.env.DEV ? process.env.AZURE_AD_CLIENT_ID : '',
-        tenantId: process.env.DEV ? process.env.AZURE_AD_TENANT_ID : '',
+        clientId: process.env.MODE == 'development' ? process.env.OAUTH_CLIENT_ID : '',
+        authorityUrl: process.env.MODE == 'development' ? process.env.OAUTH_AUTHORITY_URL : '',
       },
       webui: {
-        url: process.env.DEV ? process.env.WEBUI_URL : '',
+        url: process.env.MODE == 'development' ? process.env.WEBUI_URL : '',
       },
       ws: {
-        endpoint: process.env.DEV ? process.env.WS_ENDPOINT : '',
+        endpoint: process.env.MODE == 'development' ? process.env.WS_ENDPOINT : '',
       },
     },
   },
   compatibilityDate: '2024-12-03',
+  robots: {
+    robotsTxt: false,
+  },
 })

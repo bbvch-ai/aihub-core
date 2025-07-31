@@ -2,10 +2,8 @@ import asyncio
 
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
-from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
-from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
-    AzureOpenAIEmbeddingConfig,
-)
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.logging.logger import enable_logging
@@ -27,20 +25,9 @@ async def main():
             agent_class=RAGAgent.__name__,
             name=LocaleString(en="RAG Agent"),
             description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
-            llm=AzureOpenAILLMConfig(
-                name="gpt-4o",
-                base_url="https://bbvaihub-openai-sui.openai.azure.com",
-                api_version="2025-01-01-preview",
-                prompt_tokens_costs_per_thousand=0.0045,
-                completion_tokens_costs_per_thousand=0.0133,
-            ),
+            llm=LLMConfig(model_name="azure/gpt-4o-mini"),
             retrieve_step_config=RetrieveStepConfig(
-                embed_model=AzureOpenAIEmbeddingConfig(
-                    name="text-embedding-3-large",
-                    base_url="https://bbvaihub-openai-sui.openai.azure.com",
-                    api_version="2024-12-01-preview",
-                    embedding_tokens_costs_per_thousand=0.0,
-                ),
+                embed_model=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
                 index_namespaces=["test"],
                 retrieve_k=5,
                 query_mode=VectorStoreQueryMode.DEFAULT,

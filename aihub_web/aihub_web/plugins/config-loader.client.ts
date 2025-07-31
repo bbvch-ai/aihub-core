@@ -1,9 +1,9 @@
-// plugins/config-loader.client.ts
 export default defineNuxtPlugin(async () => {
   const isConfigLoaded = useState('isConfigLoaded', () => false)
+  const publicConfig = useRuntimeConfig().public
 
   // In dev, config is already loaded from .env. We just set loading to complete.
-  if (process.env.DEV) {
+  if (publicConfig.mode === 'development') {
     isConfigLoaded.value = true
     return
   }
@@ -11,11 +11,12 @@ export default defineNuxtPlugin(async () => {
   // This part now only runs in the production container
   try {
     const appConfig = await $fetch('/config.json')
-    const publicConfig = useRuntimeConfig().public
+
+    console.log('Loaded runtime configuration:', appConfig, publicConfig)
 
     // Merge the fetched config into the runtimeConfig
-    publicConfig.oidc.clientId = appConfig.AZURE_AD_CLIENT_ID
-    publicConfig.oidc.tenantId = appConfig.AZURE_AD_TENANT_ID
+    publicConfig.oidc.clientId = appConfig.OAUTH_CLIENT_ID
+    publicConfig.oidc.authorityUrl = appConfig.OAUTH_AUTHORITY_URL
     publicConfig.webui.url = appConfig.WEBUI_URL
     publicConfig.ws.endpoint = appConfig.WS_ENDPOINT
   }

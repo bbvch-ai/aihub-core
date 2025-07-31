@@ -1,11 +1,5 @@
-from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
-    AzureOpenAILLMConfig,
-    AzureOpenAIParameter,
-)
-from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
-    AzureOpenAIEmbeddingConfig,
-    AzureOpenAIEmbeddingParameter,
-)
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from dagster import AssetKey, AssetSelection, Definitions, DynamicPartitionsDefinition
 
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
@@ -99,26 +93,9 @@ defs = Definitions(
             figures_directory_name=FIGURES_DIRECTORY_NAME,
         ),
         "embedding_model": EmbeddingModelResource(
-            embedding_config=AzureOpenAIEmbeddingConfig(
-                name="text-embedding-3-large",
-                base_url=runner.MODEL_SUI_URL,
-                api_key=runner.MODEL_SUI_API_KEY,
-                api_version="2023-05-15",
-                embedding_tokens_costs_per_thousand=0.000118,
-                default_parameter=AzureOpenAIEmbeddingParameter(),
-            ),
+            embedding_config=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
         ),
-        "language_model": LanguageModelResource(
-            llm_config=AzureOpenAILLMConfig(
-                name="gpt-4o-mini",
-                base_url=runner.MODEL_SUI_URL,
-                api_key=runner.MODEL_SUI_API_KEY,
-                api_version="2024-12-01-preview",
-                prompt_tokens_costs_per_thousand=0.00013599,
-                completion_tokens_costs_per_thousand=0.0005440,
-                default_parameter=AzureOpenAIParameter(temperature=0.0),
-            )
-        ),
+        "language_model": LanguageModelResource(llm_config=LLMConfig(model_name="azure/gpt-4o-mini")),
     },
     sensors=[default_automation_sensor(assets)],
     executor=default_process_executor(),

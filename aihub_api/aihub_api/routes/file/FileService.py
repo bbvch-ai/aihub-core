@@ -4,7 +4,7 @@ import math
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
-from aihub_lib.generative_ai.document.accessor.FileAccessServiceConfig import FileAccessServiceConfig
+from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings import AnonymousFileAccessSettings
 from fastapi import HTTPException, status
 from fastapi.responses import RedirectResponse
 
@@ -21,7 +21,7 @@ class FileService:
         """
         For logged-in users. Generates a temporary URL and returns a redirect response.
         """
-        file_access_config = FileAccessServiceConfig()
+        file_access_config = AnonymousFileAccessSettings()
         sas_url = file_access_config.service.generate_sas_url(container, file_path)
         return RedirectResponse(url=sas_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
@@ -45,7 +45,7 @@ class FileService:
         remaining_seconds = expires - now_timestamp
         lifetime_hours = math.ceil(remaining_seconds / 3600)
 
-        file_access_config = FileAccessServiceConfig()
+        file_access_config = AnonymousFileAccessSettings()
         return file_access_config.service.generate_sas_url(container, file_path, lifetime_hours=lifetime_hours)
 
     @staticmethod
@@ -60,7 +60,7 @@ class FileService:
     @staticmethod
     def _generate_internal_signature(container: str, path: str, expires: int) -> str:
         """Generates an HMAC signature for our internal anonymous URL."""
-        file_access_config = FileAccessServiceConfig()
+        file_access_config = AnonymousFileAccessSettings()
         secret = file_access_config.service.get_url_signing_secret()
         msg = f"{container}{path}{expires}".encode()
         return hmac.new(secret.encode("utf-8"), msg, hashlib.sha256).hexdigest()

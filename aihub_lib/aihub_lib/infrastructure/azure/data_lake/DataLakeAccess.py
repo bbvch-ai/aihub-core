@@ -2,8 +2,8 @@ from adlfs import AzureBlobFileSystem
 from azure.identity import DefaultAzureCredential
 from azure.storage.filedatalake import DataLakeServiceClient
 
-from aihub_lib.infrastructure.azure.AzureBaseConfig import AzureBaseConfig
-from aihub_lib.infrastructure.azure.data_lake.DataLakeConfig import DataLakeConfig
+from aihub_lib.infrastructure.azure.AzureSettings import AzureSettings
+from aihub_lib.infrastructure.azure.data_lake.AzureDataLakeSettings import AzureDataLakeSettings
 
 
 class DataLakeAccess:
@@ -22,11 +22,11 @@ class DataLakeAccess:
         return cls._instance
 
     def _initialize(self):
-        self._app = AzureBaseConfig().APP_NAME
-        self._region = AzureBaseConfig().REGION_SHORT
-        self._storage_service_name = DataLakeConfig().DATA_LAKE_NAME or f"{self._app}st{self._region}datalake"
+        self._app = AzureSettings().APP_NAME
+        self._region = AzureSettings().REGION_SHORT
+        self._storage_service_name = AzureDataLakeSettings().NAME or f"{self._app}st{self._region}datalake"
         self._service_endpoint = (
-            DataLakeConfig().DATA_LAKE_ENDPOINT or f"https://{self._storage_service_name}.dfs.core.windows.net"
+            AzureDataLakeSettings().ENDPOINT or f"https://{self._storage_service_name}.dfs.core.windows.net"
         )
 
         self._credential = DefaultAzureCredential()

@@ -6,7 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.dependencies.BearerAuthHandler import BearerAuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
+from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
 from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
 from aihub_lib.auth.identity.MultiStrategyIdentityProvider.MultiStrategyIdentityProvider import (
     MultiStrategyTokenIdentityProvider,
@@ -36,7 +36,7 @@ class TokenAndOauth2Handler(AuthHandler):
         self,
         request: Request,
         bearer_token: HTTPAuthorizationCredentials | None = Security(HTTPBearer(auto_error=False)),
-        oauth_token: str | None = Security(OAuth2Config().OPTIONAL_SCHEMA),
+        oauth_token: str | None = Security(OAuth2Settings().OPTIONAL_SCHEMA),
     ) -> UserIdentity:
         errors = []
 

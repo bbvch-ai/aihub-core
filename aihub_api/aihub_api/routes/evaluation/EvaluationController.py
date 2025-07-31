@@ -4,7 +4,7 @@ from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.access.AccessLevel import AccessLevel
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
@@ -46,7 +46,7 @@ class EvaluationController(Controller):
         self,
         *,
         auth: AuthHandler,
-        judge: ChatLLMConfig,
+        judge: LLMConfig,
         route: str = "/evaluations",
         additionally_required_permission: str | None = None,
     ):

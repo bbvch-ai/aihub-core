@@ -1,27 +1,20 @@
 import asyncio
 
-from aihub_agent.runners.AgentRunner import AgentRunner
-from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
-    AzureOpenAILLMConfig,
-    AzureOpenAIParameter,
-)
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.infrastructure.RedisConfig import RedisConfig
-from aihub_lib.nats.NatsConfig import NatsConfig
+from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
+from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.testing.logging.logger import enable_logging
 
 from aihub_agent.agents.LLMWrappingAgent.LLMWrappingAgent import LLMWrappingAgent
 from aihub_agent.agents.LLMWrappingAgent.LLMWrappingAgentConfig import LLMWrappingAgentConfig
-from app.llm_wrapping_agent.LLMWrappingAgentSettings import LLMWrappingAgentSettings
+from aihub_agent.runners.AgentRunner import AgentRunner
 
 enable_logging()
 
 
 async def main():
-    settings = LLMWrappingAgentSettings()
-    redis = RedisConfig()
-    nats = NatsConfig().NATS_ENDPOINT
-    servers_list = [nats]
+    servers_list = [NatsSettings().ENDPOINT]
     runner = AgentRunner(
         agent_type=LLMWrappingAgent,
         default_agent_config=LLMWrappingAgentConfig(
@@ -29,17 +22,9 @@ async def main():
             agent_id="dev_agent",
             name=LocaleString(en="Dev Agent"),
             description=LocaleString(en="This is the default Dev Agent config"),
-            llm=AzureOpenAILLMConfig(
-                name=settings.MODEL_NAME,
-                base_url=settings.MODEL_SUI_URL,
-                api_key=settings.MODEL_SUI_API_KEY,
-                api_version="2024-12-01-preview",
-                prompt_tokens_costs_per_thousand=0.0045,
-                completion_tokens_costs_per_thousand=0.0133,
-                default_parameter=AzureOpenAIParameter(temperature=0.0),
-            ),
+            llm=LLMConfig(model_name="azure/gpt-4o-mini"),
         ),
-        redis_url=redis.REDIS_URL,
+        redis_url=RedisSettings().REDIS_URL,
         servers=servers_list,
     )
 

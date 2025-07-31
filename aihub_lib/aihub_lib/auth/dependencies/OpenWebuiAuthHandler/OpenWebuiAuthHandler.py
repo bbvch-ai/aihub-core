@@ -4,7 +4,7 @@ import logging
 from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
+from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.auth.identity.AzureIdentityProvider.AzureIdentityProvider import AzureIdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -24,7 +24,7 @@ def hash_string_sha1(input_string):
 class OpenWebuiAuthHandler(TokenAuthHandler):
     def __init__(self, identity_provider: AzureIdentityProvider):
         super().__init__(identity_provider)
-        self.config = OAuth2Config()
+        self.config = OAuth2Settings()
         self.app_client_id_for_roles: str | None = self.config.CLIENT_ID
 
     async def __call__(
