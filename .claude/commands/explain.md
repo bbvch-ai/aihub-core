@@ -1,10 +1,12 @@
 # Explain Code - Understand and Document
 
-Explain what's happening in a specific folder or file. This cookbook guides you through analyzing code, reading documentation, and creating comprehensive explanations.
+Explain what's happening in a specific folder or file. This cookbook guides you through analyzing code, reading
+documentation, and creating comprehensive explanations.
 
 ## Overview
 
 Here's your analysis process:
+
 1. Navigate to $FOLDER
 2. Read all existing README files hierarchically
 3. Analyze the code structure and content
@@ -44,21 +46,25 @@ Now examine the actual code to understand what's happening:
 As you examine the code and documentation, ask yourself:
 
 #### 🔍 What is the primary purpose?
+
 - What problem does this code solve?
 - How does it fit into the larger system?
 - What are the key responsibilities?
 
 #### 🏗️ What is the architecture?
+
 - How is the code organized?
 - What are the main components/classes?
 - What are the key dependencies?
 
 #### 🔄 What are the key workflows?
+
 - How does data flow through the system?
 - What are the main entry points?
 - What are the typical usage patterns?
 
 #### 📋 What's missing from documentation?
+
 - Are there README files where you'd expect them?
 - Do existing READMEs accurately describe the code?
 - What would have helped you understand faster?
@@ -68,6 +74,7 @@ As you examine the code and documentation, ask yourself:
 If you find gaps in documentation, create the missing README files
 
 #### When to create a new README:
+
 - Folder with multiple Python files but no README
 - Complex component that needs dedicated explanation
 - Standalone functionality within a scope
@@ -75,8 +82,9 @@ If you find gaps in documentation, create the missing README files
 - Information from multiple files is worth aggregating and explaining on a higher level
 
 ### When to NOT create a new README:
+
 - When the folder contains only very few files or just one file
-- When the code is so easy to read that the developer should just read it themselves 
+- When the code is so easy to read that the developer should just read it themselves
 - When the docstrings are so good that there is simply little of value to add
 
 #### README Creation Process:
@@ -85,25 +93,30 @@ Create a new README in the appropriate location
 Follow these documentation standards:
 
 #### 📝 Writing Style for READMEs
+
 - **Be VERY concise but complete**: Every word should add value
 - **Write for your future self**: Assume you'll forget everything
 - **Include "why" not just "what"**: Context matters
 
 #### 🎯 Scope Rules for Documentation
+
 - **Root README**: Platform-wide information only
 - **Scope-level README**: Broad overview of the entire package
 - **Subdirectory README**: Specific to that component
 - **Deep folder README**: Very specific functionality
-- 
+-
+
 #### DOs and DONTs
 
 - **DO** keep it as brief as possible. Documentation is hard to maintain, so we should keep it useful but minimal
 - **DO** assume developers can just write the code themselves if they want to go into more details
 - **DO** aggregate information from multiple files within a README
-- **DO** Talk on a high-level: What are we trying to achieve here, why do we need that, what's the general philosophy and idea
+- **DO** Talk on a high-level: What are we trying to achieve here, why do we need that, what's the general philosophy
+  and idea
 
 - **DO NOT** Copy over code, as this is guaranteed to fall out of sync very quickly
-- **DO NOT** include ANY markdown code blocks that show how this code can be imported or used. That is an indication that your documentation is too low-level
+- **DO NOT** include ANY markdown code blocks that show how this code can be imported or used. That is an indication
+  that your documentation is too low-level
 - **DO NOT** Talk on a low level about specific code files
 - **DO NOT** simply state what is going on in the code - add higher level info and context
 - **DO NOT** state the obvious or repeat what the docstring say
@@ -124,4 +137,5 @@ explanation to the user.
 ✅ A new developer could understand the component from your explanation  
 ✅ You've documented any gotchas or important context you discovered
 
-Remember: Good documentation is an investment in the future of the codebase and should smartly extend the code, not explain it! 📖
+Remember: Good documentation is an investment in the future of the codebase and should smartly extend the code, not
+explain it! 📖
