@@ -50,6 +50,6 @@ class RAGAgentConfig(AgentConfig):
         ),
     ] = 1
     system_prompt: Annotated[
-        LocaleString,
+        LocaleString | None,
         Field(description="System prompt to guide the agent's behavior and responses."),
-    ]
+    ] = None

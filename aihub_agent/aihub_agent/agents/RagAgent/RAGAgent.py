@@ -1,18 +1,3 @@
-from llama_index.core import PromptTemplate
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-
-from aihub_agent.agents.Agent import Agent
-from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.RagAgent.events.ContextInsufficientEvent import ContextInsufficientEvent
-from aihub_agent.agents.RagAgent.events.ContextInsufficientWithQueryEvent import ContextInsufficientWithQueryEvent
-from aihub_agent.agents.RagAgent.events.ContextSufficientEvent import ContextSufficientEvent
-from aihub_agent.agents.RagAgent.events.FewShotAcceptEvent import FewShotAcceptEvent
-from aihub_agent.agents.RagAgent.events.FewShotRejectEvent import FewShotRejectEvent
-from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
-from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
-from aihub_agent.context.run.RunContext import RunContext
-from aihub_agent.workflow.decorators.step import step
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
 from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
@@ -29,6 +14,21 @@ from aihub_lib.nats.events import LimitChatHistoryEvent, StandaloneQuestionConde
 from aihub_lib.nats.events.semantic.llm import LLMStopEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
+from llama_index.core import PromptTemplate
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+
+from aihub_agent.agents.Agent import Agent
+from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.RagAgent.events.ContextInsufficientEvent import ContextInsufficientEvent
+from aihub_agent.agents.RagAgent.events.ContextInsufficientWithQueryEvent import ContextInsufficientWithQueryEvent
+from aihub_agent.agents.RagAgent.events.ContextSufficientEvent import ContextSufficientEvent
+from aihub_agent.agents.RagAgent.events.FewShotAcceptEvent import FewShotAcceptEvent
+from aihub_agent.agents.RagAgent.events.FewShotRejectEvent import FewShotRejectEvent
+from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
+from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
+from aihub_agent.context.run.RunContext import RunContext
+from aihub_agent.workflow.decorators.step import step
 
 
 class RAGAgent(Agent):
@@ -294,9 +294,10 @@ class RAGAgent(Agent):
             messages = event.limited_history_with_context
         await displayer.display_thought(t("agent.thought.write_answer_based_on_information"))
 
-        system_prompt_text = t.extract(agent_config.system_prompt)
-        system_message = ChatMessage(role=MessageRole.SYSTEM, content=system_prompt_text)
-        messages.insert(0, system_message)
+        system_prompt_text = t.extract(agent_config.system_prompt) if agent_config.system_prompt else None
+        if system_prompt_text:
+            system_message = ChatMessage(role=MessageRole.SYSTEM, content=system_prompt_text)
+            messages.insert(0, system_message)
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             return await displayer.display_llm_stream(agent_config.llm, llm, messages, as_stop_step=True)
