@@ -1,9 +1,8 @@
 
 services:
-  # === MinIO Stack (self-hosted S3-compatible) ===
-  # <editor-fold desc="Minio Stack">
   minio:
     image: ghcr.io/bbvch-ai/aihub-core/minio:release.2024-05-28T17-19-04Z
+    container_name: minio
     restart: always
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
@@ -21,18 +20,15 @@ services:
         max-size: "10m"
         max-file: "2"
 
-  # </editor-fold>
-
-  # === Milvus Stack ===
-  # <editor-fold desc="Milvus Stack">
   etcd:
     image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.16
+    container_name: etcd
     restart: always
     environment:
-      - ETCD_AUTO_COMPACTION_MODE=revision
-      - ETCD_AUTO_COMPACTION_RETENTION=1000
-      - ETCD_QUOTA_BACKEND_BYTES=4294967296
-      - ETCD_SNAPSHOT_COUNT=50000
+      ETCD_AUTO_COMPACTION_MODE: revision
+      ETCD_AUTO_COMPACTION_RETENTION: 1000
+      ETCD_QUOTA_BACKEND_BYTES: 4294967296
+      ETCD_SNAPSHOT_COUNT: 50000
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/etcd-data:/etcd
     command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
@@ -45,6 +41,7 @@ services:
 
   milvus-standalone:
     image: milvusdb/milvus:v2.4.7
+    container_name: milvus
     restart: always
     command: ["milvus", "run", "standalone"]
     security_opt:
@@ -74,25 +71,21 @@ services:
         max-size: "10m"
         max-file: "2"
 
-
-  # TODO: only use in dev , delete from latest
   attu:
     image: zilliz/attu:v2.5.6
+    container_name: attu
     restart: always
     ports:
       - "3003:3000"
     depends_on:
       - "milvus-standalone"
     environment:
-      - MILVUS_URL=milvus-standalone:19530
+     MILVUS_URL: milvus-standalone:19530
     logging:
       options:
         max-size: "10m"
         max-file: "2"
-  # </editor-fold>
 
-  # === Postgres Stack ===
-  # <editor-fold desc="Postgres Stack">
   postgres:
     image: ghcr.io/bbvch-ai/aihub-core/pgvector:pg17
     container_name: postgres
@@ -117,13 +110,10 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-  # </editor-fold>
 
-
-  # === Phoenix Stack ===
-  # <editor-fold desc="Phoenix Stack">
   phoenix:
     image: ghcr.io/bbvch-ai/aihub-core/phoenix:version-10.0.4
+    container_name: phoenix
     restart: always
     depends_on:
       - "postgres"
@@ -138,13 +128,10 @@ services:
       options:
         max-size: "10m"
         max-file: "2"
-  # </editor-fold">
 
-
-  # === Nats & Redis Stack ===
-  # <editor-fold desc="NATS & Redis Stack">
   nats:
     image: ghcr.io/bbvch-ai/aihub-core/nats:2.11.4
+    container_name: nats
     command: -c /etc/nats/nats.conf
     volumes:
       - ./configs/nats/nats.conf:/etc/nats/nats.conf
@@ -155,6 +142,7 @@ services:
 
   redis:
     image: ghcr.io/bbvch-ai/aihub-core/redis:8.0.1
+    container_name: redis
     command: "redis-server --save 30 1 --loglevel warning"
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/redis-data:/data
@@ -172,10 +160,10 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-  # </editor-fold>
 
   mongo:
     image: ghcr.io/bbvch-ai/aihub-core/mongo:8.0.9
+    container_name: mongo
     restart: always
     command: >
       --quiet
@@ -194,11 +182,9 @@ services:
         max-file: "2"
 
 
-  # TODO: only use in dev , delete from latest
-  # === CPU LLMs Stack ===
-  # <editor-fold desc="CPU LLMs Stack">
   llama-cpp:
     image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b5490
+    container_name: llama-cpp
     platform: linux/amd64
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/llama-data:/data
@@ -227,6 +213,7 @@ services:
 
   huggingface-text-embedding-inference:
     image: ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cpu-1.6
+    container_name: huggingface-text-embedding-inference
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/hf-tei-data:/data
     ports:
@@ -237,10 +224,7 @@ services:
     restart: always
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8183/health" ]
-  # </editor-fold>
 
-  # === LiteLLM Stack ===
-  # <editor-fold desc="LiteLLM Stack">
   presidio-analyzer:
     image: mcr.microsoft.com/presidio-analyzer:latest
     container_name: presidio-analyzer
@@ -253,7 +237,7 @@ services:
 
   litellm:
     image: ghcr.io/berriai/litellm:main-latest
-    container_name: litellm-proxy
+    container_name: lite-llm
     ports:
       - "4000:4000"
     environment:
@@ -284,4 +268,133 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-  # </editor-fold">
+
+  open-webui:
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.13
+    network_mode: "host"
+    container_name: open-webui
+    volumes:
+      - open-webui:/app/backend/data
+      - ./configs/open-webui/config.json:/app/backend/data/config.json
+    environment:
+      WEBUI_NAME: "Swiss AI-Hub"
+      WEBUI_URL: XXX
+
+      ENABLE_FORWARD_USER_INFO_HEADERS: True
+      ENABLE_VERSION_UPDATE_CHECK: False
+
+      # Development
+      ENV: "dev"                    # dev,test,prod
+      GLOBAL_LOG_LEVEL: "DEBUG"     # CRITICAL, FATAL, ERROR, WARN, WARNING, INFO, DEBUG
+
+      # Telemetry
+      ENABLE_OTEL: True
+      ENABLE_OTEL_METRICS: True
+      OTEL_EXPORTER_OTLP_ENDPOINT: XXX
+      OTEL_SERVICE_NAME: "open-webui"
+      OTEL_BASIC_AUTH_USERNAME: XXX
+      OTEL_BASIC_AUTH_PASSWORD: XXX
+
+      # Auth
+      WEBUI_AUTH: True
+      WEBUI_SESSION_COOKIE_SAME_SITE: "lax"
+      WEBUI_SESSION_COOKIE_SECURE: False
+
+      # Oauth
+      ENABLE_OAUTH_SIGNUP: True
+      OAUTH_CLIENT_ID: XXX
+      OAUTH_CLIENT_SECRET: XXX
+      OPENID_PROVIDER_URL: XXX
+      OPENID_REDIRECT_URI: XXX
+
+      # Data storage
+      STORAGE_PROVIDER: "s3"
+      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_REGION_NAME: "us-east-1"
+      S3_BUCKET_NAME: "open-webui"
+      S3_ENDPOINT_URL: minio:9000
+
+      # Model config
+      OPENAI_API_KEY: XXX
+      OPENAI_API_BASE_URL: XXX
+      MODELS_CACHE_TTL: 60
+      TASK_MODEL: azure/gpt-4o-mini
+      TASK_MODEL_EXTERNAL: azure/gpt-4o-mini
+
+      # Database
+      DATABASE_TYPE: XXX
+      DATABASE_URL: XXX
+      DATABASE_PASSWORD: XXX
+
+      # Redis
+      REDIS_URL: XXX
+      REDIS_KEY_PREFIX: "open-webui"
+
+      # Web server
+      UVICORN_WORKERS: 8
+      ENABLE_WEBSOCKET_SUPPORT: True
+      WEBSOCKET_MANAGER: "redis"
+      WEBSOCKET_REDIS_URL: XXX
+      THREAD_POOL_SIZE: 32
+      CORS_ALLOW_ORIGIN: "*"
+
+      # Admin
+      ENABLE_ADMIN_EXPORT: True
+      ENABLE_ADMIN_CHAT_ACCESS: True
+      SHOW_ADMIN_DETAILS: true
+      ADMIN_EMAIL: admin@ai-hub.bbv.ch
+
+      # Code execution
+      CODE_EXECUTION_JUPYTER_URL: http://jupyter:88888
+      CODE_EXECUTION_JUPYTER_AUTH: 'token'
+      CODE_EXECUTION_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
+
+      # Vector DB
+      VECTOR_DB: 'milvus'
+      MILVUS_DB: 'open-webui'
+      MILVUS_URI: milvus-standalone:19530
+      MILVUS_INDEX_TYPE: 'HNSW'
+      MILVUS_METRIC_TYPE: 'COSINE'
+      MILVUS_HNSW_M: '16'
+      MILVUS_HNSW_EFCONSTRUCTION: '100'
+
+      # RAG
+      CONTENT_EXTRACTION_ENGINE: 'docling'
+      DOCLING_SERVER_URL: XXX
+
+      # Web search
+      JINA_API_KEY: XXX
+      PLAYWRIGHT_WS_URL: ws://playwright:3000/ws
+
+  jupyter:
+    image: jupyter/minimal-notebook:latest
+    container_name: jupyter-lab
+    ports:
+      - "8888:8888"
+    volumes:
+      - ${VOLUME_ROOT:-./local-volumes}/llama-data:/home/jovyan/work
+    environment:
+      JUPYTER_ENABLE_LAB: yes
+      JUPYTER_TOKEN: ${JUPYTER_TOKEN}
+
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.50.0-noble
+    container_name: playwright-server
+    command: npx playwright run-server --port 3000 --host 0.0.0.0
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  docling:
+    image: quay.io/docling-project/docling-serve:v1.1.0
+    container_name: docling
+    ports:
+      - "5001:5001"

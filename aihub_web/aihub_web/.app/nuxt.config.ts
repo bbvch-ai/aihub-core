@@ -3,9 +3,6 @@ import { defineNuxtConfig } from 'nuxt/config'
 export default defineNuxtConfig({
   extends: ['..'],
   modules: ['@nuxt/eslint'],
-  app: {
-    baseURL: '/aihub/',
-  },
   runtimeConfig: {
     public: {
       mode: process.env.MODE,
