@@ -83,7 +83,7 @@ class WorkflowVisualizer:
         self.graph = G
         return G
 
-    def _add_step_node(self, G: nx.DiGraph, step_name: str, step_method: Any) -> None:
+    def _add_step_node(self, graph: nx.DiGraph, step_name: str, step_method: Any) -> None:
         """Add a step node to the graph with all its attributes."""
         step_name_localized = self._get_localized_step_name(step_method, step_name)
         step_description = self._get_localized_step_description(step_method)
@@ -93,7 +93,7 @@ class WorkflowVisualizer:
         input_events = self._get_step_input_events(step_method)
         output_events = self._get_step_output_events(step_method)
 
-        G.add_node(
+        graph.add_node(
             step_name,
             type="step",
             node_id=f"step_{step_name}",
@@ -219,13 +219,13 @@ class WorkflowVisualizer:
         else:
             return " | ".join(self._get_human_readable_type(arg) for arg in args)
 
-    def _create_event_mappings(self, G: nx.DiGraph, step_names: dict[str, Any], START_NODE: str, END_NODE: str) -> None:
+    def _create_event_mappings(self, graph: nx.DiGraph, step_names: dict[str, Any], start_node: str, end_node: str) -> None:
         """Create direct step-to-step connections based on event flow."""
         event_producers: dict[EventType, set[str]] = defaultdict(set)
         event_consumers: dict[EventType, set[str]] = defaultdict(set)
 
         self._build_event_mappings(step_names, event_producers, event_consumers)
-        self._add_event_edges(G, event_producers, event_consumers, START_NODE, END_NODE)
+        self._add_event_edges(graph, event_producers, event_consumers, start_node, end_node)
 
     def _build_event_mappings(
         self,
@@ -395,22 +395,22 @@ class WorkflowVisualizer:
                 }
                 self._add_edge(G, producer, consumer, **edge_attrs)
 
-    def _add_edge(self, G: nx.DiGraph, source: str, target: str, **attributes: Any) -> None:
+    def _add_edge(self, graph: nx.DiGraph, source: str, target: str, **attributes: Any) -> None:
         """
         Add an edge to the graph with the given attributes.
         Handle potential parallel edges between the same nodes.
         """
         # If there's already an edge between these nodes, make this a multi-edge
-        if G.has_edge(source, target):
+        if graph.has_edge(source, target):
             # Get existing edges between these nodes
-            existing_edges = [data for _, _, data in G.edges(data=True) if _ == source]
+            existing_edges = [data for _, _, data in graph.edges(data=True) if _ == source]
 
             # Add counter to edge ID to make it unique
             edge_id = len(existing_edges)
-            G.add_edge(source, target, edge_id=edge_id, **attributes)
+            graph.add_edge(source, target, edge_id=edge_id, **attributes)
         else:
             # First edge between these nodes
-            G.add_edge(source, target, edge_id=0, **attributes)
+            graph.add_edge(source, target, edge_id=0, **attributes)
 
     def to_pydantic(self) -> WorkflowGraph:
         """
