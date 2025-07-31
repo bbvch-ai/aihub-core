@@ -337,6 +337,7 @@ services:
 
       # --- phoenix Subdomain ---
       - "traefik.http.routers.phoenix.rule=Host(`phoenix.${DOMAIN}`)"
+      - "traefik.http.routers.phoenix.priority=500"
       - "traefik.http.routers.phoenix.entrypoints=websecure"
       - "traefik.http.routers.phoenix.tls.certresolver=letsencrypt"
       - "traefik.http.services.phoenix.loadbalancer.server.port=6006"
@@ -374,6 +375,7 @@ services:
 
       # --- dagster Subdomain ---
       - "traefik.http.routers.dagster.rule=Host(`dagster.${DOMAIN}`)"
+      - "traefik.http.routers.dagster.priority=500"
       - "traefik.http.routers.dagster.entrypoints=websecure"
       - "traefik.http.routers.dagster.tls.certresolver=letsencrypt"
       - "traefik.http.services.dagster.loadbalancer.server.port=4180"
@@ -629,6 +631,7 @@ services:
 
     # Dashboard
     - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
+    - "traefik.http.routers.web.priority=500"
     - "traefik.http.routers.traefik.entrypoints=websecure"
     - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
     - "traefik.http.routers.traefik.service=api@internal"
