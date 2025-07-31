@@ -58,7 +58,8 @@ class Agent(DispatchableWorkflow):
 * **Single Responsibility**: Each agent should do one thing and do it well.
 * **Transparency**: All operations are explicit steps that can be traced and debugged.
 * **Flexibility**: Agents can function as assistants, process components, or services for other agents.
-  :::
+
+:::
 
 ### 📶 The Event-Driven Architecture
 
@@ -664,7 +665,8 @@ python run.py
 * **Debug with Phoenix**: Always have `http://localhost:6006` open during development.
 * **Test with BDD**: Follow the `pytest-bdd` and `AgentTestRunner` patterns for all new agents.
 * **Compose Patterns**: Advanced agents are built by combining the simple patterns outlined in this guide.
-  :::
+
+:::
 
 ::: warning Essential Files to Read
 
@@ -672,7 +674,8 @@ python run.py
 * `/aihub_agent/workflow/decorators/step.py`: The implementation of the core `@step` decorator.
 * `/aihub_agent/runners/AgentTestRunner.py`: The foundation for all agent testing.
 * `/aihub_agent/context/`: The context management system.
-  :::
+
+:::
 
 ### 📖 Glossary of Agent-Specific Terms
 

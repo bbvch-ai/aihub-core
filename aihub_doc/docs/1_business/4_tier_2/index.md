@@ -72,7 +72,8 @@ With a robust data pipeline and trustworthy agents, the possibilities are vast:
   user.
 * **Automated First Drafts:** An assistant can draft legal documents, financial reports, or marketing copy based on
   internal templates and data, which a human expert then reviews and finalizes.
-  :::
+
+:::
 
 ::: tip The Definitive Solution
 The Assistant Tier is the definitive solution for organizations that are serious about leveraging AI with their own

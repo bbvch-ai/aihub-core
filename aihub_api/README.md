@@ -91,7 +91,8 @@ class AgentDTO(BaseModel):
 - **Services** contain business logic and external system integration
 - **DTOs** define data structures with validation and documentation
 - **Clear boundaries** between layers for maintainability and testing
-  :::
+
+:::
 
 ### ⚡ FastAPI Integration
 
@@ -393,14 +394,16 @@ enable_logging()
 - **Network Tab**: Browser developer tools for HTTP requests
 - **Logs**: Structured logging for request/response debugging
 - **Phoenix Traces**: Agent interaction visualization
-  :::
+
+:::
 
 ::: warning Common Debugging Patterns
 
 - Check NATS connection status and message flow
 - Verify authentication and permission issues
 - Test with different user roles and permissions
-  :::
+
+:::
 
 ### ✅ Step 5: Ensure Code Quality
 

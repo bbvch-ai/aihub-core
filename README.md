@@ -36,7 +36,8 @@ including:
 * A user interface
 * Scalable data ingestion pipelines
 * Pre-configured Docker containers for deployment
-  :::
+
+:::
 
 This allows developers to focus on creating business value by designing an agent's logic, while the platform handles
 security, scalability, and infrastructure.
@@ -58,7 +59,8 @@ Our architecture is built on a set of non-negotiable principles that reflect the
   step-by-step workflows, making them inherently transparent and testable. Every step can be visually monitored and
   audited using tools like Phoenix Tracing, which is crucial for gaining the trust of employees, managers, and
   regulators.
-  :::
+
+:::
 
 ### The Vision: From Assistants to Autonomous Agents
 
@@ -103,7 +105,8 @@ foster collaboration without risking data leakage.
 * **Customer Repositories (`aihub-<CUSTOMER>`)**: These repositories are where you bring the Hub to life for a specific
   context. They build on the powerful foundation of `aihub-core`, allowing you to add or override components—like
   agents, pipelines, or processes—for a specific customer's needs.
-  :::
+
+:::
 
 ### An Architecture for Speed and Extensibility
 
@@ -120,7 +123,8 @@ on this, we provide a base layer for the core AI components:
 * **`aihub_agents`**: Contains all agent-specific logic and workflow definitions.
 * **`aihub_process`**: Orchestrates high-level business processes that involve collaboration between agents, humans, and
   external programs.
-  :::
+
+:::
 
 ::: details :electric_plug: The Integration & Interaction Layer
 This layer provides a full-stack experience for interacting with the core logic.
@@ -128,7 +132,8 @@ This layer provides a full-stack experience for interacting with the core logic.
 * **`aihub_api`**: The main user-facing REST API and WebSocket gateway, built with FastAPI.
 * **`aihub_web`**: The complete frontend application, built with Nuxt.js, providing the user interface.
 * **`aihub_bot`**: The core logic for integrating with collaboration platforms like MS Teams.
-  :::
+
+:::
 
 ::: details :toolbox: The Operational & Best Practices Layer
 We provide tools to ensure your solutions are robust, maintainable, and easy to deploy.
@@ -136,7 +141,8 @@ We provide tools to ensure your solutions are robust, maintainable, and easy to 
 * **`aihub_action`**: Contains reusable GitHub Actions to standardize CI/CD pipelines and avoid duplication.
 * **`aihub_iac`**: (Infrastructure-as-Code) Defines reusable cloud infrastructure resources for deployment.
 * **`aihub_doc`**: Holds all project documentation, including arc42 and Architectural Decision Records (ADRs).
-  :::
+
+:::
 
 ### Use It Out-of-the-Box or Make It Your Own
 
@@ -189,7 +195,8 @@ environment.
 * **pnpm**: Fast package manager for node.js.
 * **Other Tools**: For specific tasks, developers may also need tools like **Postman** for API testing, **MongoDB
   Compass** for database management, and the **Bot Framework Emulator** for testing chatbots.
-  :::
+
+:::
 
 #### :robot: AI & LLM Orchestration
 
@@ -253,7 +260,8 @@ We enforce strict standards to ensure our code is clean, consistent, and bug-fre
 First, clone the necessary repositories into your local workspace.
 
 * **aihub-core** (this repo): `git clone https://github.com/bbvch-ai/aihub-core`
-  :::
+
+:::
 
 #### Install Project Dependencies
 
@@ -286,7 +294,8 @@ or `poetry.lock` files manually.
 * `poetry add <package>`: Adds a new package as a dependency.
 * `poetry remove <package>`: Removes a package.
 * `poetry update`: Updates all dependencies to their latest allowed versions.
-  :::
+
+:::
 
 ### :whale: Starting the Infrastructure Stack (Docker)
 
@@ -332,7 +341,8 @@ MCP integration provides AI coding assistants with:
 - **Direct access** to development databases for debugging
 - **API interaction** capabilities for testing and validation
 - **Observability integration** with Phoenix tracing and monitoring
-  :::
+
+:::
 
 #### :gear: MCP Configuration
 
@@ -563,13 +573,15 @@ The format is: `<type>(<scope>): <subject>`
 * **`scope`**: Describes what part of the codebase is affected, such as a package name, customer, or initiative (e.g.,
   `aihub`, `api`, `bbv`).
 * **`subject`**: A short, imperative-tense description of the change.
-  :::
+
+:::
 
 ::: tip :memo: Examples
 
 * `fix(aihub): Fix bug where old messages can't be edited anymore`
 * `feat(ci-cd): Add new feature to ci-cd pipeline`
-  :::
+
+:::
 
 ### :computer: GitHub CLI Integration
 
@@ -638,7 +650,8 @@ To ensure the stability and integrity of our codebase, the `main` branch is prot
 * **Block Force Pushes and Deletions**: Force pushing to `main` is denied to preserve commit history. Deleting the
   `main`
   branch is also restricted.
-  :::
+
+:::
 
 -----
 
@@ -662,7 +675,8 @@ tests. Common markers include:
 * `self_hosted`
 * `slow`
 * `integration`
-  :::
+
+:::
 
 ### :cucumber: Behavior-Driven Development (BDD) with pytest-bdd
 
@@ -694,7 +708,8 @@ When possible, we favor BDD for several key reasons:
 * **Faster Iterations**: New test cases can often be added by writing new Gherkin scenarios without needing new Python
   code.
 * **Closer Collaboration**: The process encourages collaboration between business, QA, and development teams.
-  :::
+
+:::
 
 -----
 
@@ -720,7 +735,8 @@ We use a specific set of tools to automate code formatting, enforce style rules,
 * `E`/`F`: Catches errors and warnings from Pyflakes (e.g., unused imports, undefined names).
 * `UP`: Includes rules from `pyupgrade` to enforce modern Python syntax.
 * `I`: Enforces import sorting, handled automatically by Ruff.
-  :::
+
+:::
 
 ::: details :mag: Static Type Checker: MyPy
 **Rule**: We use `mypy` for static type checking to catch type-related errors before runtime.
@@ -739,7 +755,8 @@ activated Poetry shell.
 * `make pr-ready`: This is the **most important command**. It runs both `make format` and `make lint` with auto-fixing
   capabilities (`ruff check --fix`). Run this command to ensure your code is 100% compliant before creating a pull
   request.
-  :::
+
+:::
 
 ### :abc: Naming Conventions
 
@@ -925,7 +942,8 @@ Our approach to testing is pragmatic.
 * **Running all tests**: Whether you have written a new test or not, you **must** run the entire local test suite to
   ensure your changes have not broken any existing functionality. Tests must always pass before you consider your work
   complete.
-  :::
+
+:::
 
 ::: tip :test_tube: Run Tests
 To run the local test suite, use the command:
@@ -988,7 +1006,8 @@ After implementing your changes, ask yourself the following questions:
 * **Did the documentation conflict with the code?**
   If you found information in a `README.md` that was wrong, you must correct or remove it. In this project, the **code
   is always the ground truth.**
-  :::
+
+:::
 
 -----
 
@@ -1008,7 +1027,8 @@ The AI Hub consists of multiple packages that handle specific functionalities:
 * `aihub_process`: Contains common code for process development.
 * `aihub_lib`: A foundational library containing code that is relevant for multiple other packages. The `aihub_lib`
   package is used by all other packages.
-  :::
+
+:::
 
 ::: tip :tag: Versioning and Referencing
 All packages have versions that are increased in sync with the tags in the repository. This means a package's version is

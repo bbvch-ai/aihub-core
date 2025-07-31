@@ -372,7 +372,8 @@ This section provides a library of established patterns for building robust agen
 * **Concept**: A process that delegates work exclusively to agents in a sequential chain.
 * **Reference**: `/playground/minimal_processes/agent_only_process/`
 * **Use Case**: Automated processing pipelines where no human intervention is needed.
-  :::
+
+:::
 
 ```python
 class AgentOnlyProcess(AgenticProcess):
@@ -391,7 +392,8 @@ class AgentOnlyProcess(AgenticProcess):
 * **Concept**: A process that delegates work exclusively to humans for decision-making workflows.
 * **Reference**: `/playground/minimal_processes/human_only_process/`
 * **Use Case**: Approval workflows, manual review processes, complex decision chains.
-  :::
+
+:::
 
 ```python
 class HumanOnlyProcess(AgenticProcess):
@@ -410,7 +412,8 @@ class HumanOnlyProcess(AgenticProcess):
 * **Concept**: A process that combines agent automation with human oversight and decision-making.
 * **Reference**: `/playground/minimal_processes/agent_to_human_process/`
 * **Use Case**: Most production processes where AI provides analysis and humans make final decisions.
-  :::
+
+:::
 
 ```python
 class AgentToHumanProcess(AgenticProcess):
@@ -435,7 +438,8 @@ class AgentToHumanProcess(AgenticProcess):
 * **Concept**: A process that distributes work to multiple entities in parallel and collects results.
 * **Reference**: `/playground/minimal_processes/fan_out_process/`
 * **Use Case**: Batch processing, parallel analysis, distributed work execution.
-  :::
+
+:::
 
 ```python
 class FanOutProcess(AgenticProcess):
@@ -461,7 +465,8 @@ class FanOutProcess(AgenticProcess):
 * **Concept**: A process that waits for multiple inputs before proceeding, enabling synchronization.
 * **Reference**: `/playground/minimal_processes/multi_input_process/`
 * **Use Case**: Processes requiring coordination between multiple data sources or entity types.
-  :::
+
+:::
 
 ```python
 class MultiInputProcess(AgenticProcess):
@@ -485,7 +490,8 @@ class MultiInputProcess(AgenticProcess):
 * **Concept**: A process that triggers other processes in sequence, creating process chains.
 * **Reference**: `/playground/minimal_processes/process_sequence/`
 * **Use Case**: Complex workflows that span multiple process boundaries.
-  :::
+
+:::
 
 ```python
 class InitialProcess(AgenticProcess):
@@ -505,7 +511,8 @@ class InitialProcess(AgenticProcess):
 
 * **Best Practice**: Use specific agent classes and IDs for clear delegation.
 * **Configuration**: Define agent capabilities and expected input/output formats.
-  :::
+
+:::
 
 ```python
 @process_step()
@@ -527,7 +534,8 @@ def delegate_to_agent(
 
 * **Best Practice**: Use form-based interfaces for structured human input.
 * **Configuration**: Define specific user groups and input validation.
-  :::
+
+:::
 
 ```python
 @process_step()

@@ -667,7 +667,8 @@ Now that you have the page, start extracting fitting sections as re-usable compo
   service
 - **Do** check the primevue page regularly and find components that fit your needs
 - **Do** find inspiration in their component library or their [PrimeBlocks](https://primeblocks.org/) website
-  :::
+
+:::
 
 ::: warning Don'ts
 
@@ -676,7 +677,8 @@ Now that you have the page, start extracting fitting sections as re-usable compo
 - **Don't** like custom css classes, use tailwind
 - **Don't** overabstract components - we don't want to build a super complex data table ourselves. If we have one table
   for service X and a duplicate for service Y, that's fine.
-  :::
+
+:::
 
 ### Step 5: Add Internationalization
 

@@ -344,7 +344,8 @@ Key characteristics:
 - Request/response patterns that pause and resume workflows
 - Helper classes with `invoke()` methods for easy integration
 - Examples: `HumanInTheLoop`, `AgentInTheLoop`, `BotInTheLoop`
-  :::
+
+:::
 
 ::: tip Event Architecture Principles
 
@@ -452,7 +453,8 @@ make test-cov    # Run tests with coverage reporting
 - All public classes and methods must have comprehensive docstrings
 - Breaking changes must be documented and communicated
 - Tests must cover both success and failure scenarios
-  :::
+
+:::
 
 ---
 

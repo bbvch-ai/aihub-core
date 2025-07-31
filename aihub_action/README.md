@@ -123,5 +123,6 @@ jobs:
 - Use descriptive names and clear documentation in `action.yml` files.
 - Use tagged versions (`@v1.0.0`) instead of `@main` in workflows for stability.
 - Store sensitive data, such as `GITHUB_TOKEN`, in the repository's Secrets.
-  :::
+
+:::
 
