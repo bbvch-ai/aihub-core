@@ -79,13 +79,13 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
     // Store access token
     if (user.access_token) {
       setCookie('access_token', user.access_token, currentDomain, expirationMinutes)
-      setCookie('oauth_id_token', user.access_token, currentDomain, expirationMinutes)
+      setCookie('token', user.access_token, currentDomain, expirationMinutes)
     }
 
     // Store ID token
     if (user.id_token) {
       setCookie('id_token', user.id_token, currentDomain, expirationMinutes)
-      setCookie('token', user.id_token, currentDomain, expirationMinutes)
+      setCookie('oauth_id_token', user.id_token, currentDomain, expirationMinutes)
     }
 
     // Store refresh token (if available)
