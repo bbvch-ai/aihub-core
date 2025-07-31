@@ -70,38 +70,49 @@ class BaseClient:
         Raises exceptions for error status codes
         """
         if self.debug:
-            logger.debug(f"Response status: {response.status_code}")
-            logger.debug(f"Response headers: {response.headers}")
+            self._log_response_debug_info(response)
 
-            # Log response body but truncate if too large
-            body = response.text
-            if len(body) > 1000:
-                logger.debug(f"Response body (truncated): {body[:1000]}...")
-            else:
-                logger.debug(f"Response body: {body}")
-
-        # Handle error responses
         if response.status_code >= 400:
-            detail = "Unknown error"
-
-            # Try to extract error details from response
-            try:
-                error_data = response.json()
-                if isinstance(error_data, dict):
-                    if "detail" in error_data:
-                        if isinstance(error_data["detail"], str):
-                            detail = error_data["detail"]
-                        else:
-                            detail = json.dumps(error_data["detail"])
-                    else:
-                        detail = json.dumps(error_data)
-            except Exception as e:
-                detail = response.text or str(e)
-
-            logger.exception(f"API error {response.status_code}: {detail}")
-            raise OpenWebuiAPIError(response.status_code, detail, response.text)
+            self._handle_error_response(response)
 
         return response
+
+    def _log_response_debug_info(self, response: httpx.Response) -> None:
+        """Log response information in debug mode."""
+        logger.debug(f"Response status: {response.status_code}")
+        logger.debug(f"Response headers: {response.headers}")
+        
+        body = response.text
+        if len(body) > 1000:
+            logger.debug(f"Response body (truncated): {body[:1000]}...")
+        else:
+            logger.debug(f"Response body: {body}")
+
+    def _handle_error_response(self, response: httpx.Response) -> None:
+        """Handle error responses by extracting details and raising appropriate exception."""
+        detail = self._extract_error_detail(response)
+        logger.exception(f"API error {response.status_code}: {detail}")
+        raise OpenWebuiAPIError(response.status_code, detail, response.text)
+
+    def _extract_error_detail(self, response: httpx.Response) -> str:
+        """Extract error detail from response JSON or fallback to text."""
+        try:
+            error_data = response.json()
+            if isinstance(error_data, dict):
+                return self._process_error_data_dict(error_data)
+            return json.dumps(error_data)
+        except Exception as e:
+            return response.text or str(e)
+
+    def _process_error_data_dict(self, error_data: dict) -> str:
+        """Process error data dictionary to extract detail string."""
+        if "detail" in error_data:
+            if isinstance(error_data["detail"], str):
+                return error_data["detail"]
+            else:
+                return json.dumps(error_data["detail"])
+        else:
+            return json.dumps(error_data)
 
     async def _request(
         self,
