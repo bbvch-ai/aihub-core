@@ -5,16 +5,16 @@ export default defineNuxtConfig({
   modules: ['@nuxt/eslint'],
   runtimeConfig: {
     public: {
-      mode: process.env.MODE,
+      mode: process.env.ENV,
       oidc: {
-        clientId: process.env.MODE == 'development' ? process.env.OAUTH_CLIENT_ID : '',
-        authorityUrl: process.env.MODE == 'development' ? process.env.OAUTH_AUTHORITY_URL : '',
+        clientId: process.env.ENV == 'dev' ? process.env.OAUTH_CLIENT_ID : '',
+        authorityUrl: process.env.ENV == 'dev' ? process.env.OAUTH_AUTHORITY_URL : '',
       },
       webui: {
-        url: process.env.MODE == 'development' ? process.env.WEBUI_URL : '',
+        url: process.env.ENV == 'dev' ? process.env.WEBUI_URL : '',
       },
       ws: {
-        endpoint: process.env.MODE == 'development' ? process.env.WS_ENDPOINT : '',
+        endpoint: process.env.ENV == 'dev' ? process.env.WS_ENDPOINT : '',
       },
     },
   },

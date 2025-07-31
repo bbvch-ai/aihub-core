@@ -574,7 +574,13 @@ indexCoord:
 indexNode:
   scheduler:
     buildParallel: 1
-
+  ip:
+  port: 21121
+  grpc:
+    serverMaxSendSize: 536870912
+    serverMaxRecvSize: 268435456
+    clientMaxSendSize: 268435456
+    clientMaxRecvSize: 536870912
 dataCoord:
   channel:
     watchTimeoutInterval: 300 # Timeout on watching channels (in seconds). Datanode tickler update watch progress will reset timeout timer.
