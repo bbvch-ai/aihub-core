@@ -56,7 +56,7 @@ Before you begin, you need to install several tools. Follow the instructions for
             see [this solution](https://stackoverflow.com/questions/78879806/docker-desktop-wsl-update-failed)
 
       - **Option 3: Linux: Docker Engine**
-            - Follow the [Docker Engine installation guide](https://docs.docker.com/engine/install/).
+        - Follow the [Docker Engine installation guide](https://docs.docker.com/engine/install/).
 
     **Verify installation**: `docker --version` and `docker-compose --version`
 
