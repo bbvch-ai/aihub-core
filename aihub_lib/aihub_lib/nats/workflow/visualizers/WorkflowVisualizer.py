@@ -304,42 +304,64 @@ class WorkflowVisualizer:
         """
         Add special edges for request-response pairs in "in the loop" patterns.
         """
-        # Find all request event producers and response event consumers
-        request_events = {}
-        response_events = {}
+        request_events = self._collect_request_events(event_producers)
+        response_events = self._collect_response_events(event_consumers)
+        self._create_request_response_edges(G, request_events, response_events)
 
-        # Collect all events by name
+    def _collect_request_events(self, event_producers: dict[EventType, set[str]]) -> dict[str, tuple[EventType, set[str]]]:
+        """Collect all request event producers."""
+        request_events = {}
         for event_class, producers in event_producers.items():
             name = event_class.__name__
             if "Request" in name and "Response" not in name:
                 request_events[name] = (event_class, producers)
+        return request_events
 
+    def _collect_response_events(self, event_consumers: dict[EventType, set[str]]) -> dict[str, tuple[EventType, set[str]]]:
+        """Collect all response event consumers."""
+        response_events = {}
         for event_class, consumers in event_consumers.items():
             name = event_class.__name__
             if "Response" in name and "Request" not in name:
                 response_events[name] = (event_class, consumers)
+        return response_events
 
-        # Match request-response pairs using direct name transformation
+    def _create_request_response_edges(
+        self,
+        G: nx.DiGraph,
+        request_events: dict[str, tuple[EventType, set[str]]],
+        response_events: dict[str, tuple[EventType, set[str]]],
+    ) -> None:
+        """Create edges between matching request-response pairs."""
         for req_name, (req_class, producers) in request_events.items():
-            # Get expected response name by replacing "Request" with "Response"
             expected_resp_name = req_name.replace("Request", "Response")
-
-            # If we have a matching response event, create edges
+            
             if expected_resp_name in response_events:
                 resp_class, consumers = response_events[expected_resp_name]
+                self._connect_producers_to_consumers(G, req_name, req_class, expected_resp_name, resp_class, producers, consumers)
 
-                # Connect all producers to all consumers
-                for producer in producers:
-                    for consumer in consumers:
-                        edge_attrs = {
-                            "event_name": f"{req_name[:req_name.rfind('Request')]}",
-                            "event_full_name": f"{req_class.__module__}.{req_name} → "
-                            f"{resp_class.__module__}.{expected_resp_name}",
-                            "is_start_event": False,
-                            "is_stop_event": False,
-                            "payload": {},
-                        }
-                        self._add_edge(G, producer, consumer, **edge_attrs)
+    def _connect_producers_to_consumers(
+        self,
+        G: nx.DiGraph,
+        req_name: str,
+        req_class: EventType,
+        expected_resp_name: str,
+        resp_class: EventType,
+        producers: set[str],
+        consumers: set[str],
+    ) -> None:
+        """Connect all producers to all consumers with appropriate edge attributes."""
+        for producer in producers:
+            for consumer in consumers:
+                edge_attrs = {
+                    "event_name": f"{req_name[:req_name.rfind('Request')]}",
+                    "event_full_name": f"{req_class.__module__}.{req_name} → "
+                    f"{resp_class.__module__}.{expected_resp_name}",
+                    "is_start_event": False,
+                    "is_stop_event": False,
+                    "payload": {},
+                }
+                self._add_edge(G, producer, consumer, **edge_attrs)
 
     def _add_edge(self, G: nx.DiGraph, source: str, target: str, **attributes: Any) -> None:
         """
