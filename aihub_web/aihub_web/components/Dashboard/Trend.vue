@@ -1,7 +1,7 @@
 <template>
   <Tag
     v-if="isTrendingUp"
-    severity="success"
+    :severity="reverseLogic ? 'danger' : 'success'"
     :value="t('chart.trending_up')"
     size="small"
     icon="pi pi-arrow-up-right"
@@ -9,7 +9,7 @@
   />
   <Tag
     v-else
-    severity="danger"
+    :severity="reverseLogic ? 'success' : 'danger'"
     :value="t('chart.trending_down')"
     icon="pi pi-arrow-down-right"
     rounded
@@ -25,4 +25,10 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const { isTrendingUp } = useEventTimeseriesStats(props.timeseries)
+
+const EXCEPTION_EVENT = 'ExceptionEvent'
+
+const reverseLogic = computed(() => {
+  return props.timeseries.event_name === EXCEPTION_EVENT
+})
 </script>
