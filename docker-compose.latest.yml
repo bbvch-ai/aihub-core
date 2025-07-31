@@ -142,6 +142,7 @@ services:
       - ${VOLUME_ROOT:-./local-volumes}/open-webui:/app/backend/data
     environment:
       ENV: "dev"
+      ENABLE_PERSISTENT_CONFIG: false
 
       SCARF_NO_ANALYTICS: true
       DO_NOT_TRACK: true
