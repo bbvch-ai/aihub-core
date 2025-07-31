@@ -125,16 +125,6 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
     })
   })
 
-  // Event handler for silent renew success
-  auth.events.addSilentRenewSuccess(() => {
-    console.log('Silent renew successful, updating token cookies')
-    auth.getUser().then(user => {
-      if (user) {
-        storeTokensAsCookies(user)
-      }
-    })
-  })
-
 
   // Add event handlers for token lifecycle events
   auth.events.addAccessTokenExpiring(() => {
@@ -143,6 +133,7 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
 
   auth.events.addAccessTokenExpired(() => {
     console.log('Access token expired')
+    removeTokenCookies()
     // Redirect to login when token expires and cannot be renewed
     const locale = $i18n.locale.value
     $router.push(`/${locale}/auth/login`)
@@ -151,6 +142,7 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
   auth.events.addSilentRenewError((error) => {
     console.error('Silent renew error:', error)
     // You could implement a retry logic here or redirect to login
+    removeTokenCookies()
   })
 
   // Check for user session on startup
@@ -158,14 +150,19 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
     const user = await auth.getUser()
     if (user && !user.expired) {
       console.log('User already logged in')
+      storeTokensAsCookies(user)
     }
     else if (user && user.expired) {
       console.log('User session expired, attempting renewal')
       try {
-        await auth.signinSilent()
+        const renewedUser = await auth.signinSilent()
+        if (renewedUser) {
+          storeTokensAsCookies(renewedUser)
+        }
       }
       catch (e) {
         console.error('Failed to renew session:', e)
+        removeTokenCookies()
       }
     }
   }
