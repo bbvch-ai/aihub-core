@@ -3,8 +3,6 @@
 # - MODEL_SUI_API_KEY: Respective API key for the SUI model
 # - MODEL_EUR_URL: The base URL for a language model API (here bound to region EUR or SWE)
 # - MODEL_EUR_API_KEY: Respective API key for the EUR model
-# - MINIO_ROOT_USER: The MinIO access key
-# - MINIO_SECRET_KEY: The MinIO secret key
 # - POSTGRES_USER: The Postgres user
 # - POSTGRES_PASSWORD: The Postgres password
 # - MONGO_USERNAME: The MongoDB root username
@@ -656,7 +654,7 @@ services:
     <<: *restart-policy
     environment:
       AZURE_AD_CLIENT_ID: ${OAUTH_CLIENT_ID}
-      AZURE_AD_TENANT_ID: ${OAUTH_TENANT_ID}
+      OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
       WEBUI_URL: "https://openwebui.${DOMAIN}"
       WS_ENDPOINT: "wss://${DOMAIN}/api/v1/event/ws"
     logging: *default-logging
