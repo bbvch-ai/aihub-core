@@ -25,7 +25,7 @@ For managers, the Swiss AI-Hub is a framework for governance and performance. It
 :::
 
 * **Full Transparency and Testability:** The hub ensures that AI is not a "black box." Agents and assistants are built as structured, step-by-step workflows, making them inherently transparent and testable. With tools like **Phoenix Tracing**, you can visually monitor every step an agent takes, ensuring its actions are understandable and auditable.
-* **Robust Governance and Security:** You are in full control. The platform provides secure, monitorable access to AI for your employees. You can manage exactly what data each assistant has access to and fine-tune its behavior based on real-time performance metrics. With dedicated testing frameworks like the `AgentTestRunner` and `ProcessTestRunner`, you can validate agent behavior before deployment and conduct audits on running processes to ensure compliance and quality.
+* **Robust Governance and Security:** You are in full control. The platform provides secure, monitorable access to AI for your employees. You can manage exactly what data each assistant has access to and fine-tune its behavior based on real-time performance metrics.
 * **Performance and Cost Management:** The Swiss AI-Hub provides the tools to measure the value AI brings to your team. You can monitor performance, manage costs, and ensure that every assistant and agent deployed is contributing effectively to your business goals.
 
 

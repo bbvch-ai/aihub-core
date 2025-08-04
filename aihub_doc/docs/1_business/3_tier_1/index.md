@@ -20,7 +20,7 @@ We believe that AI should adapt to your workflow, not the other way around. The 
 
 ## 💬 A World-Class Chat Experience: More Than Just a Text Box
 
-Beyond integrations, the Swiss AI-Hub provides its own beautiful, modern, and feature-rich chat interface. This is not a simple command line; it's an enterprise-grade platform designed for productivity, collaboration, and deep interaction with AI.
+Beyond integrations, the Swiss AI-Hub provides its own beautiful, modern, and feature-rich chat interface. It's an enterprise-grade platform designed for productivity, collaboration, and deep interaction with AI.
 
 ### 📁 Organize Your Work, Collaborate with Your Team
 

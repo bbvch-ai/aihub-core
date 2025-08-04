@@ -29,6 +29,7 @@ python-multipart = "^0.0.20"
 stringcase = "^1.2.0"
 pydub = "^0.25.1"
 arize-phoenix = "^10.0.0"
+fastmcp = "^2.11.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
@@ -46,9 +47,8 @@ git = "https://github.com/bbvch-ai/jambo.git"
 tag = "v0.4.0"
 
 [tool.poetry.dependencies.aihub_lib]
-git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.233.0"
-subdirectory = "aihub_lib"
+path = "../aihub_lib"
+develop = true
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

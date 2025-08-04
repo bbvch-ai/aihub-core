@@ -6,7 +6,7 @@ You're about to prepare your code for a pull request. Follow this comprehensive 
 
 Here's what you need to do:
 1. Commit your current work using semantic commits
-2. Format and lint all code across every Python scope
+2. Format and lint all code across every scope
 3. Run all tests and fix any failures
 4. Review your changes against the main branch
 5. Validate adherence to our coding standards
