@@ -643,6 +643,8 @@ services:
     environment:
       DOCLING_SERVE_ENABLE_UI: false
       DOCLING_SERVE_MAX_SYNC_WAIT: 120
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
     logging: *default-logging
   # </editor-fold>
 
