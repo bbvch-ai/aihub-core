@@ -12,30 +12,32 @@ export const useNotifications = (options: {
 }) => {
   const { currentPage, pageSize, filters } = options
 
-  const query = useQuery<PaginatedNotificationsResponse>({
-    key: () => {
-      const keyArray = [
-        'notifications',
-        currentPage.value,
-        pageSize.value,
-        ...(filters?.read?.value !== undefined ? ['read', filters.read.value] : []),
-        ...(filters?.done?.value !== undefined ? ['done', filters.done.value] : []),
-        ...(filters?.types?.value ? ['types', ...filters.types.value] : []),
-        ...(filters?.severities?.value ? ['severities', ...filters.severities.value] : []),
-      ]
-      return keyArray
+  const key = () => [
+    'notifications',
+    {
+      page: currentPage.value,
+      pageSize: pageSize.value,
+      read: filters?.read?.value,
+      done: filters?.done?.value,
+      types: filters?.types?.value,
+      severities: filters?.severities?.value,
     },
-    query: () => getNotifications({
-      composable: '$fetch',
-      query: {
-        page: currentPage.value,
-        page_size: pageSize.value,
-        types: filters?.types?.value,
-        severities: filters?.severities?.value,
-        read: filters?.read?.value,
-        done: filters?.done?.value,
-      },
-    }),
+  ]
+
+  const query = useQuery<PaginatedNotificationsResponse>({
+    key,
+    query: () =>
+      getNotifications({
+        composable: '$fetch',
+        query: {
+          page: currentPage.value,
+          page_size: pageSize.value,
+          read: filters?.read?.value,
+          done: filters?.done?.value,
+          types: filters?.types?.value,
+          severities: filters?.severities?.value,
+        },
+      }),
   })
 
   const notifications = computed(() => query.data.value?.notifications ?? [])
