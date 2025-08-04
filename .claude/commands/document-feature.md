@@ -16,7 +16,7 @@ Here's your feature documentation journey:
 ### Step 1: Understand Your Feature Inside and Out
 
 Before writing anything, you need to become the world's expert on "$FEATURE". Time to investigate!
-Start by searching for your feature across all scopes. Find all files related to your feature. 
+Start by searching for your feature across all scopes. Find all files and commits related to your feature. 
 Search in specific scopes systematically
 
 **Deep Investigation Questions:**
