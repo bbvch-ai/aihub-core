@@ -76,7 +76,7 @@ services:
       MINIO_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/milvus-data:/var/lib/milvus
-      - ./configs/milvus/milvus.yaml:/milvus/configs/milvus.yaml
+      - ./configs/milvus/milvus.latest.yaml:/milvus/configs/milvus.yaml
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
       start_period: 90s
