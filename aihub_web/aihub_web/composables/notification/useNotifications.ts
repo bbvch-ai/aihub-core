@@ -1,7 +1,5 @@
 import { getNotifications, type PaginatedNotificationsResponse } from '@core/sdk/client'
 
-import type { Ref } from 'vue'
-
 export const useNotifications = (options: {
   currentPage: Ref<number>
   pageSize: Ref<number>

@@ -179,14 +179,15 @@ const clearSelection = () => {
   selectedNotifications.value = []
 }
 
-const getEmptyStateTitle = () => {
+const getEmptyStateTitle = computed(() => {
   const titles = {
     all: t('notification.no_notifications'),
     not_done: t('notification.no_pending_notifications'),
     unread: t('notification.no_unread_notifications'),
-  }
-  return titles[activeFilter.value] || titles.all
-}
+  } as const
+
+  return titles[activeFilter.value as keyof typeof titles] || titles.all
+})
 
 const handleNotificationClick = async (notification: NotificationDto) => {
   if (!notification.read) {

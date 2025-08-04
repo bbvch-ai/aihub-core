@@ -1,7 +1,5 @@
 import { updateNotification, type UpdateNotificationRequest } from '@core/sdk/client'
 
-import type { Ref } from 'vue'
-
 export const useUpdateNotification = defineMutation(() => {
   const queryCache = useQueryCache()
   return useMutation({

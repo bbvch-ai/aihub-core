@@ -1,7 +1,5 @@
 import { type UpdateNotificationRequest, updateNotificationsBulk } from '@core/sdk/client'
 
-import type { Ref } from 'vue'
-
 export const useUpdateMultipleNotifications = defineMutation(() => {
   const queryCache = useQueryCache()
   return useMutation({

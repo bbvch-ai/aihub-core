@@ -1,6 +1,6 @@
 import { getNotifications, type NotificationDto } from '@core/sdk/client'
+import { useQuery, useQueryCache } from '@pinia/colada'
 import { useToast } from 'primevue/usetoast'
-import { ref, watch } from 'vue'
 
 export const useNotificationPoller = (options?: {
   pollingInterval?: number
