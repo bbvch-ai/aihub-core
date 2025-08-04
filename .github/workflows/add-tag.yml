@@ -61,10 +61,10 @@ jobs:
         run: |
           echo "directories=aihub_pipeline aihub_agent aihub_api aihub_bot aihub_iac aihub_process" >> $GITHUB_OUTPUT
 
-      - name: Set up Python 3.11 and Poetry
+      - name: Set up Python 3.13 and Poetry
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: Increment version-tag in project files
         run: |
