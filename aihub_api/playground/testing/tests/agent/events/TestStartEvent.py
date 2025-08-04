@@ -1,8 +1,7 @@
 from typing import Annotated
 
-from pydantic import Field
-
 from aihub_lib.nats.events import StartEvent
+from pydantic import Field
 
 
 class TestStartEvent(StartEvent):
