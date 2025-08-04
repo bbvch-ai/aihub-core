@@ -8,6 +8,7 @@
   />
   <Popover
     ref="op"
+    class="[--p-popover-background:var(--p-surface-50)] [--p-popover-border-color:var(--p-surface-200)] dark:[--p-popover-background:var(--p-surface-950)] dark:[--p-popover-border-color:var(--p-surface-800)]"
   >
     <div class="flex flex-col gap-4 p-2">
       <div class="flex flex-col gap-2">

@@ -40,6 +40,7 @@ pr-ready:
 	@(cd aihub_api &&  make pr-ready)
 	@(cd aihub_bot &&  make pr-ready)
 	@(cd aihub_iac &&  make pr-ready)
+	@(cd aihub_web && make pr-ready)
 
 # Use local cores for development
 use-local-core:
