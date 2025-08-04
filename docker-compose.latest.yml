@@ -103,7 +103,7 @@ services:
   postgres:
     image: ghcr.io/bbvch-ai/aihub-core/pgvector:pg17
     container_name: postgres
-    restart: unless-stopped # TODO: Why unless-stopped? Should be always?
+    <<: *restart-policy
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -217,7 +217,7 @@ services:
         condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
-    logging: *default-logging #TODO: OK?
+    logging: *default-logging
   # </editor-fold>
 
   # === OpenWebUI Stack ===
@@ -241,7 +241,6 @@ services:
         condition: service_healthy
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/open-webui:/app/backend/data
-      - ./configs/openwebui/config.latest.json:/app/backend/data/config.json
     environment:
       WEBUI_NAME: "Swiss AI-Hub"
       WEBUI_URL: 'localhost:8080'

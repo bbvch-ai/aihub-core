@@ -327,13 +327,13 @@ services:
 
       # Code execution
       CODE_EXECUTION_ENGINE: 'jupyter'
-      CODE_EXECUTION_JUPYTER_URL: 'http://localhost:88888'
+      CODE_EXECUTION_JUPYTER_URL: 'http://localhost:8888'
       CODE_EXECUTION_JUPYTER_AUTH: 'token'
       CODE_EXECUTION_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
 
       # Code Interpreter
       CODE_INTERPRETER_ENGINE: 'jupyter'
-      CODE_INTERPRETER_JUPYTER_URL: 'http://localhost:88888'
+      CODE_INTERPRETER_JUPYTER_URL: 'http://localhost:8888'
       CODE_INTERPRETER_JUPYTER_AUTH: 'token'
       CODE_INTERPRETER_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
 
