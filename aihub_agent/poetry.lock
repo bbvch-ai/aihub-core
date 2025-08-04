@@ -44,7 +44,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-lib"
-version = "v0.233.0"
+version = "v0.234.0"
 description = ""
 optional = false
 python-versions = ">=3.13, <3.14"
@@ -6898,4 +6898,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13, <3.14"
-content-hash = "ea20fc0cb89f2328525b74a056d92ab16c90bf99d5f74d4c11e6c08c76ff673b"
+content-hash = "f1694a015e1c16214300b5f1795656f591c143facd31c94f68622b811520192e"
