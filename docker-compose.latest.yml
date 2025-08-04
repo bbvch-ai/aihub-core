@@ -749,7 +749,7 @@ services:
 
     # Dashboard
     - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
-    - "traefik.http.routers.web.priority=500"
+    - "traefik.http.routers.traefik.priority=500"
     - "traefik.http.routers.traefik.entrypoints=websecure"
     - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
     - "traefik.http.routers.traefik.service=api@internal"
