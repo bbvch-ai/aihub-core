@@ -169,19 +169,46 @@ jobs:
         # we still want to proceed to publish the final tag.
         continue-on-error: true
 
-      - name: Commit Changelog and Finalize Tag
+      - name: Install additional dependencies for license check
+        run: |
+          sudo apt-get install -y jq
+          npm install -g pnpm
+
+      - name: Update License Report
+        id: license_generator
+        run: |
+          chmod +x ./license-check.sh
+          make license-check
+        continue-on-error: true
+
+      - name: Commit Changelog and License Report, Finalize Tag
         run: |
           VERSION="${{ steps.create-tag.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Only amend the commit if the changelog step was successful and the file has changed.
+          # Check if either changelog or license report have been updated
+          changelog_changed=false
+          license_changed=false
+          
           if [[ "${{ steps.changelog_generator.outcome }}" == "success" && -n $(git status --porcelain changelog.md) ]]; then
-            echo "Changelog updated, amending previous commit."
-            git add changelog.md
+            changelog_changed=true
+            echo "Changelog updated."
+          fi
+          
+          if [[ "${{ steps.license_generator.outcome }}" == "success" && -n $(git status --porcelain LICENSES.md) ]]; then
+            license_changed=true
+            echo "License report updated."
+          fi
+
+          # Only amend the commit if either file has changed
+          if [[ "$changelog_changed" == "true" || "$license_changed" == "true" ]]; then
+            echo "Amending previous commit with updated files."
+            [[ "$changelog_changed" == "true" ]] && git add changelog.md
+            [[ "$license_changed" == "true" ]] && git add LICENSES.md
             git commit --amend --no-edit
           else
-            echo "No new changelog entries were generated, or the step failed. Proceeding without changelog update."
+            echo "No new changelog or license report entries were generated, or the steps failed. Proceeding without updates."
           fi
           
           echo "Creating final tag ${VERSION} and pushing..."

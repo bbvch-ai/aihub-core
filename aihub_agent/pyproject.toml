@@ -10,7 +10,7 @@ authors = [
 license = "Proprietary"
 
 [tool.poetry.dependencies]
-python = ">=3.11, <3.12"
+python = ">=3.13, <3.14"
 pydantic = "^2.10.3"
 nats-py = "^2.9.0"
 openinference-instrumentation-llama-index = "^4.2.1"
@@ -32,9 +32,8 @@ redis = "^5.2.1"
 stringcase = "^1.2.0"
 
 [tool.poetry.dependencies.aihub_lib]
-git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.233.0"
-subdirectory = "aihub_lib"
+path = "../aihub_lib"
+develop = true
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
@@ -55,14 +54,14 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 line-length = 120
-target-version = 'py311'
+target-version = 'py313'
 
 [tool.ruff.lint]
 select = ["E", "F", "UP", "I"]
 
 [tool.black]
 line-length = 120
-target-version = ['py311']
+target-version = ['py313']
 include = '\.pyi?$'
 extend-exclude = '''
 /(

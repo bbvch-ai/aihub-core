@@ -12,7 +12,7 @@ authors = [
 license = "Proprietary"
 
 [tool.poetry.dependencies]
-python = ">=3.11, <3.12"
+python = ">=3.13, <3.14"
 pydantic = "^2.10.3"
 pulumi-azure-native = "^3.5.0"
 pydantic-settings = "^2.9.1"
@@ -31,14 +31,14 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 line-length = 120
-target-version = 'py311'
+target-version = 'py313'
 
 [tool.ruff.lint]
 select = ["E", "F", "UP", "I"]
 
 [tool.black]
 line-length = 120
-target-version = ['py311']
+target-version = ['py313']
 include = '\.pyi?$'
 extend-exclude = '''
 /(

@@ -40,6 +40,8 @@ pr-ready:
 	@(cd aihub_api &&  make pr-ready)
 	@(cd aihub_bot &&  make pr-ready)
 	@(cd aihub_iac &&  make pr-ready)
+	@echo "Checking licenses..."
+	@/bin/bash ./license-check.sh
 
 # Use local cores for development
 use-local-core:
@@ -55,3 +57,8 @@ use-remote-core:
 changelog:
 	@echo "Generating changelog"
 	/bin/bash ./generate-changelog.sh
+
+# Check licenses across all dependencies
+license-check:
+	@echo "Checking licenses..."
+	/bin/bash ./license-check.sh
