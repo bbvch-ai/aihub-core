@@ -2,21 +2,8 @@ import asyncio
 from pathlib import Path
 
 import pytest
-from dotenv import load_dotenv
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.vector_stores.types import VectorStoreQueryMode
-from pytest_bdd import given, parsers, scenarios, then, when
-
-from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
-from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.RagAgent.events.FewShotAcceptEvent import FewShotAcceptEvent
-from aihub_agent.agents.RagAgent.events.FewShotRejectEvent import FewShotRejectEvent
-from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
-from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
+from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
     AzureOpenAILLMConfig,
@@ -46,6 +33,19 @@ from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.logging.logger import enable_logging
 from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection
+from dotenv import load_dotenv
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.vector_stores.types import VectorStoreQueryMode
+from pytest_bdd import given, parsers, scenarios, then, when
+
+from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.RagAgent.events.FewShotAcceptEvent import FewShotAcceptEvent
+from aihub_agent.agents.RagAgent.events.FewShotRejectEvent import FewShotRejectEvent
+from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
+from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
+from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
 
@@ -360,6 +360,16 @@ def _(agent_runner: AgentTestRunner, datatable):
         prompts[locale] = prompt
 
     agent_runner.default_agent_config.system_prompt = LocaleString(**prompts)
+    return agent_runner
+
+
+@given(parsers.parse('with multi-language system prompt for locale {locale} and prompt "{prompt}"'))
+def _(agent_runner: AgentTestRunner, locale: str, prompt: str):
+    """
+    Given multi-language system prompt for a specific locale and prompt.
+    Used for parameterized Scenario Outline with Examples.
+    """
+    agent_runner.default_agent_config.system_prompt = LocaleString(**{locale: prompt})
     return agent_runner
 
 

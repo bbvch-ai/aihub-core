@@ -48,26 +48,19 @@ Feature: RAG Agent
     * a StopEvent is present
 
   @self_hosted
-  Scenario: Test RAGAgent with multi-language system prompt (English)
+  Scenario Outline: Test RAGAgent with multi-language system prompt
     Given a RAGAgent runner with a valid self hosted configuration
-    * with multi-language system prompt
-      | locale | prompt                                                                          |
-      | en     | You are a helpful AI assistant. Always respond in English and be very detailed. |
-    When the start event is sent with a user query "What is AI?" and locale en
+    * with multi-language system prompt for locale <locale> and prompt "<prompt>"
+    When the start event is sent with a user query "<query>" and locale <locale>
     Then an LLMEvent is present with a generated response
-    * the LLM received the system prompt "You are a helpful AI assistant. Always respond in English and be very detailed."
+    * the LLM received the system prompt "<prompt>"
     * a StopEvent is present
 
-  @self_hosted
-  Scenario: Test RAGAgent with multi-language system prompt (German)
-    Given a RAGAgent runner with a valid self hosted configuration
-    * with multi-language system prompt
-      | locale | prompt                                                                                  |
-      | de     | Sie sind ein hilfreicher KI-Assistent. Antworten Sie immer auf Deutsch und ausführlich. |
-    When the start event is sent with a user query "Was ist AI?" and locale de
-    Then an LLMEvent is present with a generated response
-    * the LLM received the system prompt "Sie sind ein hilfreicher KI-Assistent. Antworten Sie immer auf Deutsch und ausführlich."
-    * a StopEvent is present
+    Examples:
+    | locale | prompt                                                                                  | query        |
+    | en     | You are a helpful AI assistant. Always respond in English and be very detailed.        | What is AI?  |
+    | de     | Sie sind ein hilfreicher KI-Assistent. Antworten Sie immer auf Deutsch und ausführlich. | Was ist AI?  |
+    | fr     | Vous êtes un assistant IA utile. Répondez toujours en français et soyez complet.       | Qu'est-ce que l'IA? |
 
   @self_hosted
   Scenario: Test RAGAgent with valid self hosted configuration

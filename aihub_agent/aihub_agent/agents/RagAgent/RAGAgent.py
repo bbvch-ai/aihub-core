@@ -297,7 +297,7 @@ class RAGAgent(Agent):
         system_prompt_text = t.extract(agent_config.system_prompt) if agent_config.system_prompt else None
         if system_prompt_text:
             system_message = ChatMessage(role=MessageRole.SYSTEM, content=system_prompt_text)
-            messages.insert(0, system_message)
+            messages = [system_message] + messages
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             return await displayer.display_llm_stream(agent_config.llm, llm, messages, as_stop_step=True)
