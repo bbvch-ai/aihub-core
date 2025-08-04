@@ -31,7 +31,6 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
-      - ./configs/milvus/milvus.latest.yaml:/milvus/configs/milvus.yaml
       - ${VOLUME_ROOT:-./local-volumes}/minio_data:/minio_data
     command: minio server /minio_data --console-address ":9001"
     healthcheck:
@@ -82,10 +81,7 @@ services:
       - ./configs/milvus/milvus.yaml:/milvus/configs/milvus.yaml
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
-      interval: 30s
       start_period: 90s
-      timeout: 20s
-      retries: 3
     depends_on:
       - "etcd"
       - "minio"
@@ -117,119 +113,318 @@ services:
       - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U webui" ]
-      interval: 10s
-      timeout: 5s
-      retries: 3
       start_period: 5s
     logging: *default-logging
   # </editor-fold>
 
-  # === OpenWebUI Stack ===
-  # <editor-fold desc="OpenWebUI Stack">
-  openwebui:
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.13
-    container_name: openwebui
+  # === Phoenix Stack ===
+  # <editor-fold desc="Phoenix Stack">
+  phoenix:
+    image: ghcr.io/bbvch-ai/aihub-core/phoenix:version-10.0.4
+    container_name: phoenix
     <<: *restart-policy
     depends_on:
       - "postgres"
-      - "redis"
-      - "traefik"
+    environment:
+      PHOENIX_SQL_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix"
+      PHOENIX_ENABLE_AUTH: "False"
+      VERSION: ""
+    logging: *default-logging
+    # </editor-fold>
+
+  # === Nats & Redis Stack ===
+  # <editor-fold desc="NATS & Redis Stack">
+  nats:
+    image: ghcr.io/bbvch-ai/aihub-core/nats:2.11.4
+    container_name: nats
+    <<: *restart-policy
+    command: -c /etc/nats/nats.conf
+    volumes:
+      - ./configs/nats/nats.latest.conf:/etc/nats/nats.conf
+      - ${VOLUME_ROOT:-./local-volumes}/nats-data:/data
+    logging: *default-logging
+
+  redis:
+    image: ghcr.io/bbvch-ai/aihub-core/redis:8.0.1
+    container_name: redis
+    <<: *restart-policy
+    command: "redis-server --save 30 1 --loglevel warning"
+    volumes:
+      - ${VOLUME_ROOT:-./local-volumes}/redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      start_period: 5s
+    logging: *default-logging
+  # </editor-fold>
+
+  # === Mongo Stack ===
+  # <editor-fold desc="Mongo Stack">
+  mongo:
+    image: ghcr.io/bbvch-ai/aihub-core/mongo:8.0.9
+    container_name: mongo
+    <<: *restart-policy
+    command: >
+      --quiet
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    volumes:
+      - ${VOLUME_ROOT:-./local-volumes}/mongo-data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+    logging: *default-logging
+  # </editor-fold>
+
+  # === LiteLLM Stack ===
+  # <editor-fold desc="LiteLLM Stack">
+  presidio-analyzer:
+    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359
+    container_name: presidio-analyzer
+    <<: *restart-policy
+    logging: *default-logging
+
+  presidio-anonymizer:
+    image: ghcr.io/bbvch-ai/aihub-core/presidio-anonymizer:2.2.359
+    container_name: presidio-anonymizer
+    <<: *restart-policy
+    logging: *default-logging
+
+  litellm:
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:main-v1.74.8-nightly
+    container_name: lite-llm
+    <<: *restart-policy
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/litellm"
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
+      UI_USERNAME: ${LITELLM_UI_USERNAME}
+      UI_PASSWORD: ${LITELLM_UI_PASSWORD}
+      AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY}
+      AZURE_OPENAI_KEY_IMAGE: ${AZURE_OPENAI_KEY_IMAGE}
+      AZURE_OPENAI_KEY_AUDIO: ${AZURE_OPENAI_KEY_AUDIO}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      PRESIDIO_ANALYZER_API_BASE: "http://presidio-analyzer:3000"
+      PRESIDIO_ANONYMIZER_API_BASE: "http://presidio-anonymizer:3000"
+      SET_VERBOSE: "false"
+    volumes:
+      - ./configs/litellm/litellm.latest.yaml:/app/config.yaml
+    command: --config /app/config.yaml --detailed_debug
+    depends_on:
+      postgres:
+        condition: service_healthy
+      presidio-analyzer:
+        condition: service_started
+      presidio-anonymizer:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+    logging: *default-logging #TODO: OK?
+  # </editor-fold>
+
+  # === OpenWebUI Stack ===
+  # <editor-fold desc="OpenWebUI Stack">
+  open-webui:
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.13
+    container_name: open-webui
+    <<: *restart-policy
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      litellm:
+        condition: service_started
+      jupyter:
+        condition: service_healthy
+      playwright:
+        condition: service_healthy
+      docling:
+        condition: service_healthy
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/open-webui:/app/backend/data
       - ./configs/openwebui/config.latest.json:/app/backend/data/config.json
     environment:
-      ENV: "dev"
-      ENABLE_PERSISTENT_CONFIG: false
+      WEBUI_NAME: "Swiss AI-Hub"
+      WEBUI_URL: 'localhost:8080'
+      DEFAULT_LOCALE: 'de'
+      ENABLE_BASE_MODELS_CACHE: True
 
-      SCARF_NO_ANALYTICS: true
-      DO_NOT_TRACK: true
-      ANONYMIZED_TELEMETRY: true
-      GLOBAL_LOG_LEVEL: "debug"
+      # Development
+      ENV: "dev" # TODO: what is this for?
+      GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
 
-      WEBUI_NAME: "bbv AI-Hub"
-      CORS_ALLOW_ORIGIN: "https://${DOMAIN}"
-      ENABLE_SIGNUP: true
-      ENABLE_LOGIN_FORM: true
-      ENABLE_ADMIN_EXPORT: true
-      ENABLE_ADMIN_CHAT_ACCESS: true
-      ENABLE_CHANNELS: false
-      ADMIN_EMAIL: "ai@bbv.ch"
-      SHOW_ADMIN_DETAILS: true
-      DEFAULT_USER_ROLE: "user"
-      DEFAULT_LOCALE: "de"
-      ENABLE_OLLAMA_API: false
-      ENABLE_OPENAI_API: true
-      ENABLE_FORWARD_USER_INFO_HEADERS: true
-      PRESERVE_METADATA_IN_OPENAI_API_CALLS: true
+      # Privacy
+      ENABLE_COMMUNITY_SHARING: False
+      ENABLE_USER_WEBHOOKS: False
+      ENABLE_LOGIN_FORM: False
+      ENABLE_FORWARD_USER_INFO_HEADERS: True
+      ENABLE_VERSION_UPDATE_CHECK: False
 
+      # Telemetry
+      ENABLE_OTEL: False
+      ENABLE_OTEL_METRICS: True
+      OTEL_EXPORTER_OTLP_ENDPOINT: XXX # TODO: define
+      OTEL_SERVICE_NAME: "open-webui"
+      OTEL_BASIC_AUTH_USERNAME: XXX # TODO: define
+      OTEL_BASIC_AUTH_PASSWORD: XXX # TODO: define
+
+      # Auth
+      WEBUI_AUTH: True
+      DEFAULT_USER_ROLE: 'user'
+      OAUTH_MERGE_ACCOUNTS_BY_EMAIL: True
+      ENABLE_API_KEY: False
       WEBUI_SESSION_COOKIE_SAME_SITE: "lax"
-      WEBUI_AUTH_COOKIE_SAME_SITE: "lax"
+      WEBUI_SESSION_COOKIE_SECURE: False
 
-      ENABLE_WEBSOCKET_SUPPORT: true
-      WEBSOCKET_MANAGER: "redis"
-      WEBSOCKET_REDIS_URL: "redis://redis:6379/1"
-      WEB_CONCURRENCY: 4
-
-      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/openwebui"
-
-      OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
-      RAG_OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
-      AUDIO_STT_OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
-      AUDIO_TTS_OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
-      IMAGES_OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
-
-      ENABLE_IMAGE_GENERATION: true
-      IMAGE_GENERATION_ENGINE: "openai"
-      IMAGE_SIZE: "1792x1024"
-      IMAGE_GENERATION_MODEL: "dall-e-3"
-
-      TASK_MODEL_EXTERNAL: "aihub/gpt-4o"
-
-      ENABLE_AUTOCOMPLETE_GENERATION: false
-      AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH: 60
-
-      VECTOR_DB: "pgvector"
-      RAG_EMBEDDING_ENGINE: "openai"
-      RAG_EMBEDDING_MODEL: "text-embedding-3-large"
-      RAG_EMBEDDING_OPENAI_BATCH_SIZE: 8
-      RAG_TOP_K: 3
-      RAG_RELEVANCE_THRESHOLD: 0.5
-      CHUNK_SIZE: 1024
-      CHUNK_OVERLAP: 256
-      PDF_EXTRACT_IMAGES: true
-      RAG_FILE_MAX_SIZE: 1024
-      RAG_FILE_MAX_COUNT: 10
-      ENABLE_RETRIEVAL_QUERY_GENERATION: true
-
-      ENABLE_RAG_WEB_SEARCH: true
-      ENABLE_SEARCH_QUERY_GENERATION: true
-
-      RAG_WEB_SEARCH_FULL_CONTEXT: true
-      RAG_WEB_SEARCH_RESULT_COUNT: 3
-      RAG_WEB_SEARCH_ENGINE: "jina"
-      JINA_API_KEY: "jina_d77fa4cacc3c4ac1a7bf560370b148d1xkZBcDksnOL0K6xpXtd3E9dWQR5I"
-
-      AUDIO_STT_ENGINE: "openai"
-      AUDIO_STT_MODEL: "whisper-1"
-
-      AUDIO_TTS_ENGINE: "openai"
-      AUDIO_TTS_MODEL: "tts-1-hd"
-      AUDIO_TTS_VOICE: "alloy"
-
-      ENABLE_API_KEY: true
-      RAG_EMBEDDING_BATCH_SIZE: 64
-
-      WEBUI_URL: "https://openwebui.${DOMAIN}"
-
-      ENABLE_OAUTH_SIGNUP: true
+      # Oauth
+      ENABLE_OAUTH_SIGNUP: True
+      OAUTH_PROVIDER_NAME: ${OAUTH_PROVIDER_NAME}
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
-      OPENID_PROVIDER_URL: ${OPENID_PROVIDER_URL}
-      OAUTH_PROVIDER_NAME: ${OAUTH_PROVIDER_NAME}
-      # OAUTH_SCOPES: "openid email profile"
-      # OAUTH_CODE_CHALLENGE_METHOD: "S256"
+      OPENID_PROVIDER_URL: "${OAUTH_AUTHORITY_URL}/v2.0/.well-known/openid-configuration"
+      # OPENID_REDIRECT_URI: XXX
+      OAUTH_ALLOWED_DOMAINS: '*'
+      OAUTH_SCOPES: 'openid email profile'
+      OAUTH_TIMEOUT: 60
+      OAUTH_CODE_CHALLENGE_METHOD: 'S256'
+      OAUTH_USERNAME_CLAIM: 'name'
+      OAUTH_PICTURE_CLAIM: 'picture'
+      OAUTH_EMAIL_CLAIM: 'email'
+      OAUTH_GROUP_CLAIM: 'email'
 
-      ENABLE_DIRECT_CONNECTIONS: false
+      # Data storage
+      STORAGE_PROVIDER: "s3"
+      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_REGION_NAME: "us-east-1"
+      S3_BUCKET_NAME: "open-webui"
+      S3_ENDPOINT_URL: 'http://minio:9000'
+
+      # Model config
+      OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      OPENAI_API_BASE_URL: "litellm:4000/v1"
+      MODELS_CACHE_TTL: 60
+      TASK_MODEL: 'azure/gpt-4o-mini'
+      TASK_MODEL_EXTERNAL: 'azure/gpt-4o-mini'
+
+      # Database
+      DATABASE_TYPE: 'postgres'
+      DATABASE_USER: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_HOST: 'postgres'
+      DATABASE_PORT: 5432
+      DATABASE_NAME: 'openwebui'
+
+      # Redis
+      REDIS_URL: 'redis://redis:6379/1'
+      REDIS_KEY_PREFIX: "open-webui"
+
+      # Web server
+      UVICORN_WORKERS: 1
+      ENABLE_WEBSOCKET_SUPPORT: True
+      WEBSOCKET_MANAGER: "redis"
+      WEBSOCKET_REDIS_URL: 'redis://redis:6379/1'
+      THREAD_POOL_SIZE: 32
+      CORS_ALLOW_ORIGIN: "*"
+
+      # Admin
+      ENABLE_ADMIN_EXPORT: True
+      ENABLE_ADMIN_CHAT_ACCESS: True
+      SHOW_ADMIN_DETAILS: True
+      ADMIN_EMAIL: 'admin@ai-hub.bbv.ch'
+
+      # Code execution
+      CODE_EXECUTION_ENGINE: 'jupyter'
+      CODE_EXECUTION_JUPYTER_URL: 'http://jupyter:8888'
+      CODE_EXECUTION_JUPYTER_AUTH: 'token'
+      CODE_EXECUTION_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
+
+      # Code Interpreter
+      CODE_INTERPRETER_ENGINE: 'jupyter'
+      CODE_INTERPRETER_JUPYTER_URL: 'http://jupyter:88888'
+      CODE_INTERPRETER_JUPYTER_AUTH: 'token'
+      CODE_INTERPRETER_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
+
+      # Vector DB
+      VECTOR_DB: 'milvus'
+      MILVUS_DB: 'default'
+      MILVUS_URI: 'http://milvus:19530'
+      MILVUS_INDEX_TYPE: 'HNSW'
+      MILVUS_METRIC_TYPE: 'COSINE'
+      MILVUS_HNSW_M: '16'
+      MILVUS_HNSW_EFCONSTRUCTION: '256'
+
+      # RAG
+      RAG_FULL_CONTEXT: True
+      RAG_EMBEDDING_BATCH_SIZE: 64
+      PDF_EXTRACT_IMAGES: True
+      RAG_FILE_MAX_COUNT: 4
+
+      # Docling
+      CONTENT_EXTRACTION_ENGINE: 'docling'
+      DOCLING_SERVER_URL: 'http://docling:5001'
+      DOCLING_OCR_ENGINE: 'easyocr'
+      DOCLING_OCR_LANG: 'en,de,fr,it'
+
+      # Web search
+      ENABLE_WEB_SEARCH: True
+      WEB_SEARCH_ENGINE: 'jina'
+      JINA_API_KEY: ${JINA_API_KEY}
+      WEB_SEARCH_RESULT_COUNT: 6
+      WEB_SEARCH_CONCURRENT_REQUESTS: 6
+      BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: True
+      WEB_LOADER_ENGINE: 'playwright'
+      PLAYWRIGHT_WS_URL: 'ws://playwright:3000/ws'
+      FILE_IMAGE_COMPRESSION_WIDTH: 796
+      FILE_IMAGE_COMPRESSION_HEIGHT: 796
+
+      # Image Generation
+      IMAGE_GENERATION_MODEL: 'azure/dall-e-3'
+      IMAGE_SIZE: '1024x1024'
+
+      # Audio
+      AUDIO_STT_ENGINE: 'openai'
+      AUDIO_TTS_ENGINE: 'openai'
+      AUDIO_STT_MODEL: 'azure/gpt-4o-mini-transcribe'
+      AUDIO_TTS_MODEL: 'azure/gpt-4o-mini-tts'
+      AUDIO_TTS_VOICE: 'alloy'
+
+      # User Permissions
+      # Workspace
+      USER_PERMISSIONS_WORKSPACE_MODELS_ACCESS: False
+      USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ACCESS: False
+      USER_PERMISSIONS_WORKSPACE_PROMPTS_ACCESS: False
+      USER_PERMISSIONS_WORKSPACE_TOOLS_ACCESS: False
+      # Sharing
+      USER_PERMISSIONS_WORKSPACE_MODELS_ALLOW_PUBLIC_SHARING: False
+      USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ALLOW_PUBLIC_SHARING: False
+      USER_PERMISSIONS_WORKSPACE_PROMPTS_ALLOW_PUBLIC_SHARING: False
+      USER_PERMISSIONS_WORKSPACE_TOOLS_ALLOW_PUBLIC_SHARING: False
+      # Chat
+      USER_PERMISSIONS_CHAT_CONTROLS: True
+      USER_PERMISSIONS_CHAT_SYSTEM_PROMPT: True
+      USER_PERMISSIONS_CHAT_FILE_UPLOAD: True
+      USER_PERMISSIONS_CHAT_DELETE: True
+      USER_PERMISSIONS_CHAT_EDIT: True
+      USER_PERMISSIONS_CHAT_SHARE: False
+      USER_PERMISSIONS_CHAT_EXPORT: False
+      USER_PERMISSIONS_CHAT_STT: True
+      USER_PERMISSIONS_CHAT_TTS: True
+      USER_PERMISSIONS_CHAT_CALL: True
+      USER_PERMISSIONS_CHAT_MULTIPLE_MODELS: True
+      USER_PERMISSIONS_CHAT_TEMPORARY: True
+      USER_PERMISSIONS_CHAT_TEMPORARY_ENFORCED: False
+      # Features
+      USER_PERMISSIONS_FEATURES_DIRECT_TOOL_SERVERS: False
+      USER_PERMISSIONS_FEATURES_WEB_SEARCH: True
+      USER_PERMISSIONS_FEATURES_IMAGE_GENERATION: True
+      USER_PERMISSIONS_FEATURES_CODE_INTERPRETER: True
+      USER_PERMISSIONS_FEATURES_NOTES: True
+
+
+
+
+
+
     logging: *default-logging
     labels:
       - "traefik.enable=true"
@@ -327,23 +522,6 @@ services:
       start_period: 40s
 
   # </editor-fold>
-
-  # === Phoenix Stack ===
-  # <editor-fold desc="Phoenix Stack">
-  phoenix:
-    image: ghcr.io/bbvch-ai/aihub-core/phoenix:version-10.0.4
-    container_name: phoenix
-    <<: *restart-policy
-    depends_on:
-      - "postgres"
-      - "traefik"
-    environment:
-      PHOENIX_SQL_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix"
-      PHOENIX_ENABLE_AUTH: "False"
-      VERSION: ""
-    logging: *default-logging
-    # </editor-fold>
-
   # === Dagster Stack ===
   # <editor-fold desc="Dagster Stack">
   oauth2proxy:
@@ -358,9 +536,9 @@ services:
       OAUTH2_PROXY_ALLOWED_GROUPS: "DagsterAdmin"
       OAUTH2_PROXY_OIDC_GROUPS_CLAIM: "roles"
       OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
-      OAUTH2_PROXY_AZURE_TENANT: ${OAUTH_TENANT_ID}
-      OAUTH2_PROXY_PROVIDER: "azure"
-      OAUTH2_PROXY_OIDC_ISSUER_URL: "https://login.microsoftonline.com/${OAUTH_TENANT_ID}/v2.0"
+      OAUTH2_PROXY_PROVIDER: "oidc"
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
+      OAUTH2_PROXY_OIDC_ISSUER_URL: "${OAUTH_AUTHORITY_URL}/v2.0"
       OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET}
       OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
@@ -423,51 +601,6 @@ services:
     logging: *default-logging
   # </editor-fold>
 
-  # === Nats & Redis Stack ===
-  # <editor-fold desc="NATS & Redis Stack">
-  nats:
-    image: ghcr.io/bbvch-ai/aihub-core/nats:2.11.4
-    container_name: nats
-    command: -c /etc/nats/nats.conf
-    volumes:
-      - ./configs/nats/nats.latest.conf:/etc/nats/nats.conf
-      - ${VOLUME_ROOT:-./local-volumes}/nats-data:/data
-    logging: *default-logging
-
-  redis:
-    image: ghcr.io/bbvch-ai/aihub-core/redis:8.0.1
-    container_name: redis
-    restart: unless-stopped # TODO: Why unless-stopped? Should be always?
-    command: "redis-server --save 30 1 --loglevel warning"
-    volumes:
-      - ${VOLUME_ROOT:-./local-volumes}/redis-data:/data
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
-    logging: *default-logging
-  # </editor-fold>
-
-  # === Mongo Stack ===
-  # <editor-fold desc="Mongo Stack">
-  mongo:
-    image: ghcr.io/bbvch-ai/aihub-core/mongo:8.0.9
-    container_name: mongo
-    <<: *restart-policy
-    command: >
-      --quiet
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
-    volumes:
-      - ${VOLUME_ROOT:-./local-volumes}/mongo-data:/data/db
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-    logging: *default-logging
-  # </editor-fold>
-
   # === API Stack ===
   # <editor-fold desc="API Stack">
   api:
@@ -485,14 +618,8 @@ services:
       NATS_ENDPOINT: "nats://nats:4222"
       COSMOS_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
       NUM_WORKERS: 1
-      LOG_LEVEL: "DEBUG"
-      MODEL_SUI_URL: ${MODEL_SUI_URL}
-      MODEL_SUI_API_KEY: ${MODEL_SUI_API_KEY}
-      MODEL_EUR_URL: ${MODEL_EUR_URL}
-      MODEL_EUR_API_KEY: ${MODEL_EUR_API_KEY}
+      LOG_LEVEL: ${LOG_LEVEL}
       CLIENT_ID: ${OAUTH_CLIENT_ID}
-      AZURE_CLIENT_ID: ${OAUTH_CLIENT_ID}
-      AZURE_TENANT_ID: ${OAUTH_TENANT_ID}
       AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
       AZURE_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
     healthcheck:
@@ -521,52 +648,6 @@ services:
       DOCLING_SERVE_MAX_SYNC_WAIT: 120
     logging: *default-logging
   # </editor-fold>
-
-  presidio-analyzer:
-    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359
-    container_name: presidio-analyzer
-    <<: *restart-policy
-    logging: *default-logging #TODO: OK?
-
-  presidio-anonymizer:
-    image: ghcr.io/bbvch-ai/aihub-core/presidio-anonymizer:2.2.359
-    container_name: presidio-anonymizer
-    <<: *restart-policy
-    logging: *default-logging #TODO: OK?
-
-  litellm:
-    image: ghcr.io/bbvch-ai/aihub-core/litellm:main-v1.74.8-nightly
-    container_name: lite-llm
-    restart: unless-stopped #TODO : Why unless-stopped? Should be always?
-    environment:
-      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/litellm"
-      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
-      UI_USERNAME: ${LITELLM_UI_USERNAME}
-      UI_PASSWORD: ${LITELLM_UI_PASSWORD}
-      AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY}
-      AZURE_OPENAI_KEY_IMAGE: ${AZURE_OPENAI_KEY_IMAGE}
-      AZURE_OPENAI_KEY_AUDIO: ${AZURE_OPENAI_KEY_AUDIO}
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
-      PRESIDIO_ANALYZER_API_BASE: "http://presidio-analyzer:3000"
-      PRESIDIO_ANONYMIZER_API_BASE: "http://presidio-anonymizer:3000"
-      SET_VERBOSE: "false"
-    volumes:
-      - ./configs/litellm/litellm.latest.yaml:/app/config.yaml
-    command: --config /app/config.yaml --detailed_debug
-    depends_on:
-      postgres:
-        condition: service_healthy
-      presidio-analyzer:
-        condition: service_started
-      presidio-anonymizer:
-        condition: service_started
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    logging: *default-logging #TODO: OK?
-
 
   # === SUITE UI Stack ===
   # <editor-fold desc="SUITE UI Stack">
@@ -628,21 +709,6 @@ services:
 
   # <editor-fold desc="Common Pipelines">
   # </editor-fold>
-
-  huggingface-text-embedding-inference:
-    image: ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cpu-1.6
-    container_name: huggingface-text-embedding-inference
-    <<: *restart-policy
-    volumes:
-      - ${VOLUME_ROOT:-./local-volumes}/hf-tei-data:/data
-    ports:
-      - "8183:8183"
-    command: >
-      --port 8183
-      --model-id Alibaba-NLP/gte-base-en-v1.5
-    restart: always
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8183/health" ]
 
   # === Traefik ===
   # <editor-fold desc="Traefik">
