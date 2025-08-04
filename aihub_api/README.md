@@ -7,7 +7,7 @@ index: 2
 
 ## 1. 🎯 Foundational Knowledge of API Development
 
-This section covers the foundational architecture, patterns, and terminology you need to know before building API endpoints.
+This section covers the foundational architecture, patterns, and terminology you need to know before building API endpoints. 
 
 ::: info
 This documentation assumes you have completed the general AI-Hub setup as described in the main README.md. Make sure you have the required infrastructure running before proceeding.
@@ -23,8 +23,8 @@ The `aihub_api` scope is organized as follows:
 
 ```
 aihub_api/
-├── aihub_api/                  # Main package source
-│   ├── routes/                 # HTTP endpoint controllers and services
+├── aihub_api/                 # Main package source
+│   ├── routes/                # HTTP endpoint controllers and services
 │   │   ├── agent/             # Agent management endpoints
 │   │   ├── thread/            # Thread/conversation management
 │   │   ├── user/              # User management endpoints
@@ -424,6 +424,7 @@ class SecureController(Controller):
             t: Annotated[LocaleHandler, Depends(use_locale)]
         ) -> dict:
             return {"message": "Access granted", "user_id": user.id}
+
         return self
 
     def agent_specific_endpoint(self, route: str = "/{agent_class}/{agent_id}") -> "SecureController":
@@ -435,6 +436,7 @@ class SecureController(Controller):
             t: Annotated[LocaleHandler, Depends(use_locale)]
         ) -> dict:
             return {"message": "Access granted to specific agent", "agent_class": agent_class, "agent_id": agent_id}
+
         return self
 
     def admin_endpoint(self, route: str = "/admin") -> "SecureController":
@@ -502,6 +504,7 @@ The API uses a consistent pagination approach across all endpoints that return l
 :::
 
 #### 📊 Standard Pagination
+
 ```python
 class ListController(Controller):
     def get_resources(self, route: str = "/") -> "ListController":
@@ -602,6 +605,7 @@ WebSockets provide real-time communication between the frontend and backend, pri
 :::
 
 #### 🔴 Real-time Event Streaming
+
 ```python
 class EventController(Controller):
     def websocket_endpoint(self, route: str = "/ws") -> "EventController":

@@ -253,7 +253,7 @@ We enforce strict standards to ensure our code is clean, consistent, and bug-fre
 First, clone the necessary repositories into your local workspace.
 
 * **aihub-core** (this repo): `git clone https://github.com/bbvch-ai/aihub-core`
-* **aihub-bbv**: `git clone https://github.com/bbvch-ai/aihub-bbv`
+
   :::
 
 #### Install Project Dependencies
@@ -266,6 +266,8 @@ To work on a specific scope, you must first activate its environment:
 
 1. Navigate into the scope's directory (e.g., `cd aihub_agent`).
 2. Activate the environment using the command: `poetry shell`.
+   Poetry shell was moved to a separate plugin, so you may need to install it first with:
+   `poetry self add poetry-plugin-shell`.
 3. Once the shell is activated, install the dependencies with: `poetry install`.
 
 You must run commands from within the correct scope's activated environment. This process needs to be repeated for each
@@ -542,7 +544,7 @@ To maintain a clean and manageable repository, we follow a simple branching stra
 
     * `type/short-description`
 
-  Where `type` must be one of `feat`, `fix`, or `chore`.
+  Where `type` must be one of `feat`, `fix`, `chore`, `test` or `doc`.
 
     * Example feature branch: `feat/new-agent-workflow`
     * Example fix branch: `fix/login-bug-incorrect-redirect`
@@ -560,7 +562,7 @@ The format is: `<type>(<scope>): <subject>`
 
 * **`type`**: Must be one of: `fix`, `feat`, `test`, `doc`, `chore`.
 * **`scope`**: Describes what part of the codebase is affected, such as a package name, customer, or initiative (e.g.,
-  `aihub`, `api`, `fmh`).
+  `aihub`, `api`, `bbv`).
 * **`subject`**: A short, imperative-tense description of the change.
   :::
 
@@ -748,6 +750,11 @@ activated Poetry shell.
 * **Test Files**: All test files must be prefixed with `test_` and follow the `snake_case` convention.
     * Example: `test_agent_workflow_manager.py`
       :::
+
+::: info :camel: Camel Case Rules
+* **Classes**: All class names must use `CamelCase`.
+    * Example: `AgentWorkflowManager.py`, `ProcessExecutor.py`, `UserIdentity.py`
+:::
 
 ### :speech_balloon: Docstrings and Comments
 
@@ -988,10 +995,11 @@ This chapter provides a reference for the project's package management strategy 
 ::: details :package: Package Structure
 The AI Hub consists of multiple packages that handle specific functionalities:
 
-* `aihub_agents`: Contains common code for agent development.
+* `aihub_agent`: Contains common code for agent development.
 * `aihub_api`: Contains common code for API implementation.
 * `aihub_bot`: Contains common code for bot development.
 * `aihub_pipeline`: Contains common code for pipeline development.
+* `aihub_process`: Contains common code for process development.
 * `aihub_lib`: A foundational library containing code that is relevant for multiple other packages. The `aihub_lib`
   package is used by all other packages.
   :::

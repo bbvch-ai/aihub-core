@@ -10,7 +10,7 @@ index: 3
 This section covers the foundational architecture, patterns, and terminology you need to know before building data
 ingestion and processing pipelines.
 
-::: info
+::: info 
 This documentation assumes you have completed the general AI-Hub setup as described in the main README.md. Make sure you
 have the required infrastructure running before proceeding.
 :::

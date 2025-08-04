@@ -5,7 +5,7 @@ index: 1
 
 # 🚀 Why AI-Hub?
 
-::: tip Welcome to the Business Section
+::: tip Welcome to the Business Section 
 Discover how the Swiss AI-Hub transforms organizations through intelligent automation and sovereign AI solutions. This
 section provides a comprehensive overview from a business perspective, covering our vision, stakeholders, and the
 different service tiers we offer.

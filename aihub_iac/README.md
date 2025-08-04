@@ -11,7 +11,7 @@ This repository contains the Infrastructure as Code implementation for the AIHub
 
 ## 🏗️ Core Architecture
 
-::: tip Architecture Overview
+::: tip Architecture Overview 
 The IaC code follows a modular, component-based architecture designed to be extensible, maintainable, and to promote reusability. The following core architectural principles shape the design:
 :::
 

@@ -6,7 +6,9 @@ index: 7
 # 🚀 AI Hub Actions - Reusable Actions for CI/CD (GitHub workflows)
 
 ::: info
-These actions are a collection of modular GitHub Actions designed to automate and standardize CI/CD workflows across customer repositories. Each action is focused on a specific task such as building images, linting code, running tests, posting coverage comments, and more.
+These actions are a collection of modular GitHub Actions designed to automate and standardize CI/CD workflows across
+customer repositories. Each action is focused on a specific task such as building images, linting code, running tests,
+posting coverage comments, and more.
 :::
 
 ## 📁 Directory Structure
@@ -41,7 +43,8 @@ aihub_action/
 ## 📝 Defining an Action (`action.yml`)
 
 ::: tip Action Definition
-Here's an example of how to define an action to lint backend code using Black. This reusable action installs Python, checks out the repository, and runs the linter.
+Here's an example of how to define an action to lint backend code using Black. This reusable action installs Python,
+checks out the repository, and runs the linter.
 :::
 
 ### 📝 Example: `lint_backend/action.yml`
@@ -104,18 +107,22 @@ jobs:
 ```
 
 ::: tip Key Points
+
 1. The reusable action is stored in `aihub_action/lint_backend/action.yml`.
 2. The workflow file references this action using the `uses` keyword.
 3. Inputs like `github_token` and `working_directory` are passed to the action.
+
 :::
 
 ## ✅ Best Practices
 
 ::: warning Best Practices
+
 - Ensure each action is focused on a single task.
 - Test actions thoroughly before integrating them into repositories.
 - Use descriptive names and clear documentation in `action.yml` files.
 - Use tagged versions (`@v1.0.0`) instead of `@main` in workflows for stability.
 - Store sensitive data, such as `GITHUB_TOKEN`, in the repository's Secrets.
+
 :::
 

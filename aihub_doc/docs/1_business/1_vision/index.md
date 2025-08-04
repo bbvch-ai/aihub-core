@@ -5,7 +5,7 @@ index: 1
 
 # Vision of the Swiss AI-Hub :rocket:
 
-## 🏢 A New Form of Enterprise Organization
+## 🏢 A New Form of Enterprise Organization 
 
 In today's business world, organizations face the challenge of effectively utilizing their growing amount of data, knowledge, and digital tools. This is precisely where our vision for the **Swiss AI-Hub** comes into play: a central platform that serves as a bridge between people, enterprise knowledge, and digital processes.
 
@@ -110,7 +110,7 @@ Consider how a traditional HR application process is transformed through Agentic
 
 When a job application arrives via email, an existing automation tool (such as Power Automate) extracts the application and routes it into the HR system. At this point, the intelligent orchestration begins: a **Document Analysis Agent** reviews the CV and cover letter, extracting key qualifications and flagging any potential issues or inconsistencies. Next, a **Job Matching Agent** compares the candidate's profile against open positions, calculating match scores and identifying the most suitable roles.
 
-The HR employee then receives a comprehensive analysis with clear recommendations, allowing them to make an Tinformed hiring decision quickly. Once the decision is made, a **Communication Agent** drafts a personalized response—whether an interview invitation or a polite decline—tailored to the specific candidate and position. The HR employee reviews and approves this communication before the original automation tool sends the final email.
+The HR employee then receives a comprehensive analysis with clear recommendations, allowing them to make an informed hiring decision quickly. Once the decision is made, a **Communication Agent** drafts a personalized response—whether an interview invitation or a polite decline—tailored to the specific candidate and position. The HR employee reviews and approves this communication before the original automation tool sends the final email.
 
 Throughout this process, each component handles the task for which it is best suited: automation tools manage data flow, AI agents provide intelligent analysis and content generation, and the HR employee maintains complete strategic control over hiring decisions. This creates a workflow that is faster, more intelligent, and more efficient while keeping humans firmly in control of critical business decisions.
 :::

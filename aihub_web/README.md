@@ -49,8 +49,8 @@ The `aihub_web` scope is organized as follows:
 
 ```
 aihub_web/
-├── aihub_web/                  # Main application source
-│   ├── components/             # Vue components organized by domain
+├── aihub_web/                 # Main application source
+│   ├── components/            # Vue components organized by domain
 │   │   ├── Agent/             # Agent-related components
 │   │   ├── Chat/              # Chat interface components
 │   │   ├── Dashboard/         # Dashboard and analytics components
@@ -79,7 +79,7 @@ aihub_web/
 │   ├── sdk/                   # Generated API client SDK
 │   ├── i18n/                  # Internationalization files
 │   └── themes/                # Custom PrimeVue themes
-├── package.json                # Dependencies and scripts
+├── package.json               # Dependencies and scripts
 ├── nuxt.config.ts             # Nuxt configuration
 ├── tailwind.config.mjs        # Tailwind CSS configuration
 └── eslint.config.js           # ESLint configuration
@@ -433,7 +433,7 @@ docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml -f 
 **Critical: Navigate to the aihub_web directory and install dependencies.** The frontend uses pnpm as the package manager.
 
 ```bash
-cd aihub_web
+cd aihub_web/aihub_web
 pnpm install
 ```
 
@@ -463,8 +463,7 @@ Wrap your API endpoints in composables like documented above.
 
 ### Step 3: Create Page
 
-Now, start with the service page. In the `pages` directory,
-each service has its dediacted page. 
+Now, start with the service page. In the `pages` directory, each service has its dedicated page.
 
 Usually, the root page like `/agents.vue` fetching all agents using a composable like `useAgents()`, where
 nested pages like `/agents/agent-[agent_id]-[agent_class].vue` use a composable like `useAgent()` to fetch a specific
@@ -649,7 +648,7 @@ Now that you have the page, start extracting fitting sections as re-usable compo
 
 ### Step 5: Add Internationalization
 
-All user components must be transalted into at least **german**, **english**, **french** and **italian**. 
+All user components must be translated into at least **German**, **English**, *French** and **Italian**.
 We have dedicated locale yaml files for these languages.
 
 ::: code-group

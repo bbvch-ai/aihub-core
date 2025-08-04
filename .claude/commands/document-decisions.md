@@ -1,12 +1,12 @@
 # Document Architecture Decisions - Capture the "Why" Behind Your Design
 
 You've made some significant changes to the codebase. But did you make any architecture decisions that future developers
-need to understand? This cookbook guides you through documenting important technica decisions using our ADR (
+need to understand? This cookbook guides you through documenting important technical decisions using our ADR (
 Architecture Decision Records) process.
 
 ## Overview
 
-Here's your explenation documentation journey:
+Here's your explanation documentation journey:
 
 1. Review your changes against main
 2. Check existing architecture decisions
@@ -170,7 +170,7 @@ Describe exactly what you have chosen to do.
 ## Consequences
 
 Describe the results of your decision.
-List both positive outcomes and any potentianegative trade-offs.
+List both positive outcomes and any negative trade-offs.
 ```
 
 ### Step 6: Reference Superseded Decisions

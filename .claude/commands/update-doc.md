@@ -142,7 +142,7 @@ What warrants a new README?
 - **Scope-level README**: Broad overview of the entire package
 - **Subdirectory README**: Specific to that component
 - **Deep folder README**: Very specific functionality
-- 
+
 #### DOs and DONTs
 
 - **DO** keep it as brief as possible. Documentation is hard to maintain, so we should keep it useful but minimal
@@ -166,7 +166,6 @@ Follow these rules religiously:
 - Use examples liberally
 - Write for your future self who forgot everything
 - Include "why" not just "what"
-
 
 #### 🎯 Scope Rules
 - **Scope-level README**: Broad overview of the entire package

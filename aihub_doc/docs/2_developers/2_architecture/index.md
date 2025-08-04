@@ -409,11 +409,11 @@ Each component can be tested in isolation with comprehensive test suites. Integr
 Built-in monitoring and tracing across all components means you always know what's happening in your system. Performance issues, bottlenecks, and errors are visible and actionable.
 :::
 
-## :star: The Architectural Revolution
+## :gear: Architectural Principles in Action
 
-The Swiss AI-Hub's architecture represents a fundamental shift in how AI systems are built. By embracing event-driven, discovery-based design principles, we've created a platform that doesn't just scale—it evolves.
+The Swiss AI-Hub's architecture puts several key principles into practice to create a system that's both powerful and maintainable. By combining event-driven messaging with service discovery, we've built a platform that adapts to changing needs without requiring complex reconfiguration.
 
-**The Result**: A system where intelligence emerges from the collaboration between loosely coupled components, where adding new capabilities is as simple as deploying a new service, and where every interaction is transparent, auditable, and trustworthy.
+**The Result**: A system where components collaborate through well-defined interfaces, where new capabilities integrate seamlessly with existing services, and where every operation maintains transparency and auditability.
 
-This is more than just a technical design—it's a foundation for building intelligent, collaborative systems that users love, administrators trust, and organizations can rely on for their most critical workflows.
+This architecture serves as a solid foundation for building intelligent systems that can grow with your organization's needs while maintaining the reliability and security required for business-critical applications.
 
