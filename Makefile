@@ -40,6 +40,7 @@ pr-ready:
 	@(cd aihub_api &&  make pr-ready)
 	@(cd aihub_bot &&  make pr-ready)
 	@(cd aihub_iac &&  make pr-ready)
+	@(cd aihub_web && make pr-ready)
 	@echo "Checking licenses..."
 	@/bin/bash ./license-check.sh
 
@@ -48,7 +49,7 @@ use-local-core:
 	@echo "Switching to local cores..."
 	poetry run python switch_dependencies.py local
 
-TAG ?= v0.233.0
+TAG ?= v0.234.0
 
 use-remote-core:
 	@echo "Switching all microservices to remote with tag: $(TAG)"
