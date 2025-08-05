@@ -474,11 +474,11 @@ services:
       - "traefik.http.routers.openwebui-api.middlewares=security-headers@file,allow-iframe,forwarded-headers"
 
       # --- /api Route ---
-      - "traefik.http.routers.openwebui-api.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/api/v1/auths`)"
-      - "traefik.http.routers.openwebui-api.priority=4000"
-      - "traefik.http.routers.openwebui-api.entrypoints=websecure"
-      - "traefik.http.routers.openwebui-api.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.openwebui-api.middlewares=security-headers@file,allow-iframe,forwarded-headers"
+      - "traefik.http.routers.openwebui-api-v1.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/api/v1/auths`)"
+      - "traefik.http.routers.openwebui-api-v1.priority=4000"
+      - "traefik.http.routers.openwebui-api-v1.entrypoints=websecure"
+      - "traefik.http.routers.openwebui-api-v1.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openwebui-api-v1.middlewares=security-headers@file,allow-iframe,forwarded-headers"
 
       # --- Index / Catch-All Route ---
       - "traefik.http.routers.openwebui-index.rule=Host(`openwebui.${DOMAIN}`)"
@@ -670,21 +670,21 @@ services:
       - "traefik.enable=true"
 
       # --- Index / Catch-All Route ---
-      - "traefik.http.routers.web-nuxt.rule=PathPrefix(`/_nuxt`)"
+      - "traefik.http.routers.web-nuxt.rule=Host(`${DOMAIN}`) && PathPrefix(`/_nuxt`)"
       - "traefik.http.routers.web-nuxt.priority=500"
       - "traefik.http.routers.web-nuxt.entrypoints=websecure"
       - "traefik.http.routers.web-nuxt.tls.certresolver=letsencrypt"
       - "traefik.http.routers.web-nuxt.middlewares=security-headers@file"
 
       # --- Index / Catch-All Route ---
-      - "traefik.http.routers.web-auth.rule=PathPrefix(`/en/auth`) || PathPrefix(`/de/auth`) || PathPrefix(`/fr/auth`) || PathPrefix(`/it/auth`)"
+      - "traefik.http.routers.web-auth.rule=Host(`${DOMAIN}`) && PathPrefix(`/en/auth`) || Host(`${DOMAIN}`) && PathPrefix(`/de/auth`) || Host(`${DOMAIN}`) && PathPrefix(`/fr/auth`) || Host(`${DOMAIN}`) && PathPrefix(`/it/auth`)"
       - "traefik.http.routers.web-auth.priority=500"
       - "traefik.http.routers.web-auth.entrypoints=websecure"
       - "traefik.http.routers.web-auth.tls.certresolver=letsencrypt"
       - "traefik.http.routers.web-auth.middlewares=security-headers@file"
 
       # --- Index / Catch-All Route ---
-      - "traefik.http.routers.web-index.rule=Path(`/`) || Path(`/index.html`) || Path(`/config.json`)"
+      - "traefik.http.routers.web-index.rule=Host(`${DOMAIN}`) && Path(`/`) || Host(`${DOMAIN}`) && Path(`/index.html`) || Host(`${DOMAIN}`) && Path(`/config.json`)"
       - "traefik.http.routers.web-index.priority=500"
       - "traefik.http.routers.web-index.entrypoints=websecure"
       - "traefik.http.routers.web-index.tls.certresolver=letsencrypt"
