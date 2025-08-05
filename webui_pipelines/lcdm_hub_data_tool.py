@@ -11,6 +11,7 @@ import logging
 from datetime import datetime
 from typing import Optional, Callable, Any, List, Dict, Type
 
+import itertools
 import requests
 from pydantic import BaseModel, Field, create_model, ValidationError
 
@@ -309,7 +310,7 @@ class Tools:
         except Exception:
             return None
 
-    def _format_data_for_display(self, raw_data: List[Dict], gto_schema: Dict, count: int = -1) -> List[Dict]:
+    def _format_data_for_display(self, raw_data: List[Dict], gto_schema: Dict, count: int = -1) -> Dict:
         """
         Formats raw Hub data for frontend display.
         Only includes essential fields for readability.
@@ -322,37 +323,26 @@ class Tools:
         if not raw_data:
             return []
 
-        formatted_entries = []
-        attribute_definitions = gto_schema.get("gtoAttributeDefinitions", {})
-        entries_dict = {}
+        # First, aggregate raw data by objId
+        instances_by_id = {}
         gto_type = raw_data[0].get("gtoTyp", "") if raw_data else ""
 
         for item in raw_data:
+            if count > 0 and len(instances_by_id) > count:
+                break
+
             obj_id = item.get("objId")
-            if obj_id not in entries_dict:
-                display_entry = {
-                    "objId": obj_id,
-                    "gtoType": gto_type,
-                }
-                for attr_key, attr_def in attribute_definitions.items():
-                    field_name = attr_def.get("key", attr_key)
-                    display_entry[field_name] = ""
-
-                entries_dict[obj_id] = display_entry
-                formatted_entries.append(display_entry)
-
-                # Apply count limit if specified
-                if count > 0 and len(formatted_entries) >= count:
-                    break
+            if obj_id not in instances_by_id:
+                instances_by_id[obj_id] = {}
 
             key_id = item.get("keyId")
             manual_value = item.get("manualValue", item.get("sourceValue", ""))
-            entries_dict[obj_id][key_id] = manual_value
+            instances_by_id[obj_id][key_id] = manual_value
 
         if count > 0:
-            return formatted_entries[:count]
+            return dict(itertools.islice(instances_by_id.items(), count))
 
-        return formatted_entries
+        return instances_by_id
 
     def _extract_display_schema(self, gto_schema: Dict) -> Dict:
         """
