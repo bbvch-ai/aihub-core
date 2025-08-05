@@ -724,6 +724,7 @@ services:
     command:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
+      - "--providers.file.filename=/etc/traefik/middlewares.yml"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
