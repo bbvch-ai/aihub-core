@@ -1,6 +1,4 @@
-from typing import Annotated
-
-from typing_extensions import override
+from typing import Annotated, override
 
 from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
 
