@@ -561,15 +561,16 @@ class Tools:
             for attr_key, attr_def in attribute_definitions.items():
                 field_name = attr_def.get("key", attr_key)
                 value = entry.get(field_name, "")
+                value_str = str(value)
 
                 hub_entry = {
                     "id": 0,
                     "gtoTyp": gto_name,
                     "objId": obj_id,
                     "keyId": field_name,
-                    "sourceValue": value,
+                    "sourceValue": value_str,
                     "targetValue": "",
-                    "manualValue": value,
+                    "manualValue": value_str,
                     "gtoId": gto_id,
                     "manuallyModified": True,
                     "released": False,
@@ -980,18 +981,14 @@ class Tools:
             if field not in gto_data:
                 raise ValueError(f"Required field '{field}' missing from GTO data")
 
-        # Set defaults
         gto_data["id"] = 0
 
-        # Validate attributes
         for attr_key, attr_def in gto_data["gtoAttributeDefinitions"].items():
             attr_def["id"] = 0
             if "key" not in attr_def:
                 raise ValueError(f"Attribute '{attr_key}' missing 'key' field")
-            if "valueType" not in attr_def:
-                raise ValueError(f"Attribute '{attr_key}' missing 'valueType' field")
 
-            # Set defaults for optional fields
+            attr_def.setdefault("valueType", "str")
             attr_def.setdefault("dataType", "MANUAL_VALUE_TYPE")
             attr_def.setdefault("unitOfMeasurement", "")
             attr_def.setdefault("leadOfData", "SOURCE")
@@ -1018,8 +1015,6 @@ class Tools:
 
         gto["gtoAttributeDefinitions"] = new_definitions
         return gto
-
-    # Helper Methods for Instance Ingestion
 
     def _create_dynamic_model(self, gto_schema: Dict) -> Type[BaseModel]:
         """Creates a dynamic Pydantic model from GTO schema."""
