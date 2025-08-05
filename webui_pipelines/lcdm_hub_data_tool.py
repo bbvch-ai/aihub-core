@@ -11,7 +11,6 @@ import logging
 from datetime import datetime
 from typing import Optional, Callable, Any, List, Dict, Type
 
-import itertools
 import requests
 from pydantic import BaseModel, Field, create_model, ValidationError
 
@@ -272,6 +271,141 @@ class Tools:
                 await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
             return f"Error: {error_msg}"
 
+    async def update_gto_data(
+        self,
+        gto_id: str,
+        updated_data: List[Dict],
+        __event_emitter__: Optional[Callable[[dict], Any]] = None,
+    ) -> str:
+        """
+        Updates existing GTO data in the LCDM Hub using PUT request.
+
+        Args:
+            gto_id (str): The GTO identifier
+            updated_data (List[Dict]): List of updated data entries with objId and field values
+
+        Returns:
+            str: Success or error message
+        """
+        if not self.valves.LCDM_HUB_TOKEN:
+            error_msg = "Das LCDM Hub Token ist nicht konfiguriert. Bitte hinterlegen Sie ihn in den Einstellungen."
+            if __event_emitter__:
+                await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
+            return f"Error: {error_msg}"
+
+        if not updated_data:
+            error_msg = "Keine Daten zum Aktualisieren bereitgestellt."
+            if __event_emitter__:
+                await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
+            return f"Error: {error_msg}"
+
+        try:
+            if __event_emitter__:
+                await __event_emitter__(
+                    {
+                        "type": "status",
+                        "data": {
+                            "description": f"Lade GTO Schema für '{gto_id}'...",
+                            "done": False,
+                        },
+                    }
+                )
+
+            gto_schema = await self._fetch_gto_schema(gto_id)
+            if not gto_schema:
+                error_msg = f"GTO Schema für '{gto_id}' nicht gefunden."
+                if __event_emitter__:
+                    await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
+                return f"Error: {error_msg}"
+
+            if __event_emitter__:
+                await __event_emitter__(
+                    {
+                        "type": "status",
+                        "data": {
+                            "description": f"Validiere und transformiere {len(updated_data)} Einträge...",
+                            "done": False,
+                        },
+                    }
+                )
+
+            # Validate the updated data against schema
+            validation_errors = self._validate_data_against_schema(updated_data, gto_schema)
+            if validation_errors:
+                error_msg = f"Validierungsfehler: {'; '.join(validation_errors)}"
+                if __event_emitter__:
+                    await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
+                return f"Validation Error: {error_msg}"
+
+            # Transform data to Hub format
+            hub_formatted_data = self._transform_data_for_hub(updated_data, gto_schema)
+
+            if __event_emitter__:
+                await __event_emitter__(
+                    {
+                        "type": "status",
+                        "data": {
+                            "description": f"Aktualisiere Daten im LCDM Hub...",
+                            "done": False,
+                        },
+                    }
+                )
+
+            headers = {
+                "Authorization": f"Bearer {self.valves.LCDM_HUB_TOKEN}",
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            }
+
+            # Use PUT request to update data
+            update_url = f"{self.valves.LCDM_HUB_BASE_URL}{gto_id}/aihub-data"
+            response = requests.put(
+                update_url,
+                json=hub_formatted_data,
+                headers=headers,
+                timeout=self.valves.timeout_seconds,
+            )
+
+            if response.status_code in [200, 201]:
+                success_msg = f"Erfolgreich {len(updated_data)} Einträge für GTO '{gto_id}' aktualisiert."
+                if __event_emitter__:
+                    await __event_emitter__(
+                        {
+                            "type": "status",
+                            "data": {"description": success_msg, "done": True},
+                        }
+                    )
+                    await __event_emitter__(
+                        {
+                            "type": "message",
+                            "data": {"content": f"✅ **Erfolg!** {success_msg}"},
+                        }
+                    )
+                return f"Success: {success_msg}"
+            else:
+                error_msg = f"Aktualisierung fehlgeschlagen: Status {response.status_code} - {response.text}"
+                if __event_emitter__:
+                    await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
+                return f"API Error: {error_msg}"
+
+        except requests.exceptions.Timeout:
+            error_msg = f"Anfrage timeout nach {self.valves.timeout_seconds} Sekunden."
+            if __event_emitter__:
+                await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
+            return f"Timeout Error: {error_msg}"
+
+        except requests.exceptions.ConnectionError:
+            error_msg = "Verbindung zur LCDM Hub API fehlgeschlagen."
+            if __event_emitter__:
+                await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
+            return f"Connection Error: {error_msg}"
+
+        except Exception as e:
+            error_msg = f"Unerwarteter Fehler beim Aktualisieren: {str(e)}"
+            if __event_emitter__:
+                await __event_emitter__({"type": "status", "data": {"description": error_msg, "done": True}})
+            return f"Error: {error_msg}"
+
     async def _fetch_gto_schema(self, gto_id: str) -> Optional[Dict]:
         """Fetches GTO schema from the LCDM Hub API."""
         try:
@@ -310,7 +444,7 @@ class Tools:
         except Exception:
             return None
 
-    def _format_data_for_display(self, raw_data: List[Dict], gto_schema: Dict, count: int = -1) -> Dict:
+    def _format_data_for_display(self, raw_data: List[Dict], gto_schema: Dict, count: int = -1) -> List[Dict]:
         """
         Formats raw Hub data for frontend display.
         Only includes essential fields for readability.
@@ -339,10 +473,26 @@ class Tools:
             manual_value = item.get("manualValue", item.get("sourceValue", ""))
             instances_by_id[obj_id][key_id] = manual_value
 
-        if count > 0:
-            return dict(itertools.islice(instances_by_id.items(), count))
+        # unified format for the agent
+        formatted_entries = []
+        attribute_definitions = gto_schema.get("gtoAttributeDefinitions", {})
 
-        return instances_by_id
+        for obj_id, instance_data in instances_by_id.items():
+            display_entry = {
+                "objId": obj_id,
+                "gtoType": gto_type,
+            }
+
+            for attr_key, attr_def in attribute_definitions.items():
+                field_name = attr_def.get("key", attr_key)
+                display_entry[field_name] = instance_data.get(field_name, "")
+
+            formatted_entries.append(display_entry)
+
+        if count > 0:
+            return formatted_entries[:count]
+
+        return formatted_entries
 
     def _extract_display_schema(self, gto_schema: Dict) -> Dict:
         """
