@@ -298,6 +298,10 @@ services:
 
       # Model config
       OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      RAG_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      AUDIO_STT_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      AUDIO_TTS_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      IMAGES_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
       OPENAI_API_BASE_URL: "litellm:4000/v1"
       MODELS_CACHE_TTL: 60
       TASK_MODEL: 'azure/gpt-4o-mini'
@@ -619,6 +623,8 @@ services:
       LOG_LEVEL: ${LOG_LEVEL}
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
+      API_VERSION: "dev"
+      FRONTEND_ORIGIN: "${DOMAIN}"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
     logging: *default-logging
