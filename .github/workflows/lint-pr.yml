@@ -73,7 +73,7 @@ jobs:
         run: npm install -g pnpm
 
       - name: Make license check script executable
-        run: chmod +x ./license-check.sh
+        run: chmod +x ./generate-license.sh
 
       - name: Run license check
         run: make license-check

@@ -177,7 +177,7 @@ jobs:
       - name: Update License Report
         id: license_generator
         run: |
-          chmod +x ./license-check.sh
+          chmod +x ./generate-license.sh
           make license-check
         continue-on-error: true
 
