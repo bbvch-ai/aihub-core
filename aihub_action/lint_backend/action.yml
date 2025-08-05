@@ -20,11 +20,6 @@ runs:
       with:
         python-version: '3.13'
 
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
-      with:
-        version: '2.1.1'
-
     - name: Configure Git to Use `GITHUB_TOKEN`
       shell: bash
       run: git config --global url."https://${{ inputs.github_token }}@github.com/".insteadOf "https://github.com/"
