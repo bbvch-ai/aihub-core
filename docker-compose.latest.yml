@@ -623,8 +623,8 @@ services:
       LOG_LEVEL: ${LOG_LEVEL}
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
-      API_VERSION: "dev"
-      FRONTEND_ORIGIN: "${DOMAIN}"
+      AIHUB_API_VERSION: "dev"
+      AIHUB_FRONTEND_ORIGIN: "${DOMAIN}"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
     logging: *default-logging
