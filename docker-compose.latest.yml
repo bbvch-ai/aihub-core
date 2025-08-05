@@ -128,7 +128,7 @@ services:
       PHOENIX_ENABLE_AUTH: "False"
       VERSION: ""
     logging: *default-logging
-    # </editor-fold>
+  # </editor-fold>
 
   # === Nats & Redis Stack ===
   # <editor-fold desc="NATS & Redis Stack">
@@ -519,6 +519,7 @@ services:
       start_period: 40s
 
   # </editor-fold>
+
   # === Dagster Stack ===
   # <editor-fold desc="Dagster Stack">
   oauth2proxy:
@@ -616,9 +617,8 @@ services:
       COSMOS_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
       NUM_WORKERS: 1
       LOG_LEVEL: ${LOG_LEVEL}
-      CLIENT_ID: ${OAUTH_CLIENT_ID}
-      AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
-      AZURE_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
     logging: *default-logging
@@ -635,7 +635,7 @@ services:
   # </editor-fold>
 
   # === Docling ===
-  # <editor-fold desc="API Stack">
+  # <editor-fold desc="Docling Stack">
   docling:
     image: ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.1.0
     container_name: docling-serve
