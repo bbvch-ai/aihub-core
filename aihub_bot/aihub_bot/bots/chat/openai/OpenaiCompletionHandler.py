@@ -4,6 +4,7 @@ import re
 import unicodedata
 from asyncio import Event, Task
 from collections.abc import AsyncGenerator
+from typing import override
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from botbuilder.core import TurnContext
@@ -19,7 +20,6 @@ from openai.types.chat import (
     ChatCompletionUserMessageParam,
 )
 from openai.types.chat.chat_completion_content_part_image_param import ChatCompletionContentPartImageParam, ImageURL
-from typing_extensions import override
 
 from aihub_bot.bots.chat.CompletionHandler import CompletionHandler
 from aihub_bot.persistence.entities.ConversationEntity import Content, Message
@@ -56,7 +56,7 @@ class OpenaiCompletionHandler(CompletionHandler):
         model_name: str,
         client: AsyncOpenAI | AsyncAzureOpenAI,
         **kwargs,
-    ) -> AsyncGenerator[str, None]:
+    ) -> AsyncGenerator[str]:
         """Get a streaming OpenAI completion."""
         chat_completion: AsyncStream[ChatCompletionChunk] = await OpenaiCompletionHandler.chat_completion(
             turn_context=turn_context,
@@ -66,7 +66,7 @@ class OpenaiCompletionHandler(CompletionHandler):
             stream=True,
         )
 
-        async def response_generator() -> AsyncGenerator[str, None]:
+        async def response_generator() -> AsyncGenerator[str]:
             async for chunk in chat_completion:
                 if len(chunk.choices) == 0:
                     continue

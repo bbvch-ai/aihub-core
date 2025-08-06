@@ -40,13 +40,14 @@ pr-ready:
 	@(cd aihub_api &&  make pr-ready)
 	@(cd aihub_bot &&  make pr-ready)
 	@(cd aihub_iac &&  make pr-ready)
+	@(cd aihub_web && make pr-ready)
 
 # Use local cores for development
 use-local-core:
 	@echo "Switching to local cores..."
 	poetry run python switch_dependencies.py local
 
-TAG ?= v0.233.0
+TAG ?= v0.235.0
 
 use-remote-core:
 	@echo "Switching all microservices to remote with tag: $(TAG)"
@@ -55,3 +56,8 @@ use-remote-core:
 changelog:
 	@echo "Generating changelog"
 	/bin/bash ./generate-changelog.sh
+
+# Check licenses across all dependencies
+license-check:
+	@echo "Checking licenses..."
+	/bin/bash ./generate-license.sh

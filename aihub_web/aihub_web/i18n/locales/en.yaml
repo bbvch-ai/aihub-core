@@ -332,3 +332,41 @@ role:
   role_saved:
     summary: "Role saved"
     detail: "Role saved successfully, the new access rules take effect immediately."
+
+notification:
+  title: "Notifications"
+  no_unread_notifications: "No unread notifications"
+  no_notifications: "No notifications available"
+  no_pending_notifications: "No pending notifications"
+  mark_all_as_read: "Mark all as read"
+  mark_as_read: "Mark as read"
+  mark_as_done: "Mark as done"
+  view_all: "View all notifications"
+  click_to_view: "Click to view notification"
+  clear_selection: "Clear selection"
+  select_all: "Select all notifications"
+  filter_notifications: "Filter notifications"
+  select_notification: "Select notification"
+  view_button: "View"
+  default_summary: "New Notification"
+  filter:
+    all: "All"
+    unread: "Unread"
+    not_done: "To Do"
+  types:
+    info: "Info"
+    success: "Success"
+    warn: "Warning"
+    error: "Error"
+  severities:
+    low: "Low"
+    medium: "Medium"
+    high: "High"
+    critical: "Critical"
+
+bar:
+  toggle_dark_mode: "Toggle dark mode"
+  show_notifications: "Show notifications"
+
+process:
+  title: "Processes"
