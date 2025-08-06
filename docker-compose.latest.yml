@@ -278,7 +278,7 @@ services:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
       OPENID_PROVIDER_URL: "${OAUTH_AUTHORITY_URL}/v2.0/.well-known/openid-configuration"
-      # OPENID_REDIRECT_URI: XXX
+      OPENID_REDIRECT_URI: "$openwebui.{DOMAIN}.ai-agents.ch/oauth/oidc/callback"
       OAUTH_ALLOWED_DOMAINS: '*'
       OAUTH_SCOPES: 'openid email profile'
       OAUTH_TIMEOUT: 60
