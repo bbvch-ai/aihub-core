@@ -27,13 +27,9 @@
       "EUPL"
     ],
     "review": [
-      "LGPL",
-      "MPL",
-      "Mozilla Public License",
       "EPL",
       "CDDL",
-      "CC-BY-SA",
-      "Elastic-2.0"
+      "CC-BY-SA"
     ],
     "permissive": [
       "MIT",
@@ -43,7 +39,11 @@
       "PSF",
       "Python Software Foundation",
       "Unlicense",
-      "zlib"
+      "zlib",
+      "Elastic-2.0",
+      "Mozilla Public License",
+      "MPL",
+      "LGPL"
     ],
     "unknown": [
       "UNKNOWN",
@@ -85,8 +85,18 @@
     "urllib3": "MIT",
     "zipp": "MIT",
     "click": "BSD-3-Clause",
-    "jsonschema-specifications": "MIT"
+    "jsonschema-specifications": "MIT",
+    "tiktoken": "MIT",
+    "argparse":  "Python Software Foundation License"
   },
+  "reviewed_packages": [
+    {
+      "name": "azure-cognitiveservices-speech",
+      "license": "Proprietary",
+      "status": "✅",
+      "notes": "Approved for use per Microsoft's terms of service."
+    }
+  ],
   "docker_licenses": [
     {
       "service": "postgres",

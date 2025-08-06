@@ -65,15 +65,22 @@ while IFS= read -r line; do
     status=$(echo "$line" | jq -r '.status')
     notes=$(echo "$line" | jq -r '.notes')
     DOCKER_LICENSES["$service"]="$license|$status|$notes"
-done < <(jq -c '.docker_licenses[]' "$CONFIG_FILE")
+done < <(jq -c '.docker_licenses[]' "$CONFIG_FILE" 2>/dev/null || true)
 
-# Load license overrides into an associative array
+# Load license NAME overrides into an associative array
 declare -A LICENSE_OVERRIDES
 while IFS='=' read -r key value; do
     key=$(echo "$key" | tr -d '"')
     value=$(echo "$value" | tr -d '"')
     LICENSE_OVERRIDES["$key"]="$value"
 done < <(jq -r '.license_overrides | to_entries | .[] | "\(.key)=\(.value)"' "$CONFIG_FILE" 2>/dev/null || true)
+
+# Load full manual REVIEW overrides (for status, notes, etc.)
+declare -A REVIEWED_OVERRIDES
+while IFS= read -r line; do
+    name=$(echo "$line" | jq -r '.name')
+    REVIEWED_OVERRIDES["$name"]="$line"
+done < <(jq -c '.reviewed_packages[]' "$CONFIG_FILE" 2>/dev/null || true)
 
 
 # Initialize report
@@ -143,8 +150,8 @@ check_python_project() {
 
     echo "### $project" >> "$OUTPUT_FILE_ABS"
     echo "" >> "$OUTPUT_FILE_ABS"
-    echo "| Status | Package | Version | License |" >> "$OUTPUT_FILE_ABS"
-    echo "|--------|---------|---------|---------|" >> "$OUTPUT_FILE_ABS"
+    echo "| Status | Package | Version | License | Notes |" >> "$OUTPUT_FILE_ABS"
+    echo "|--------|---------|---------|---------|-------|" >> "$OUTPUT_FILE_ABS"
 
     echo "$license_data" | jq -c '.[]' | sort | while IFS= read -r line; do
         local name=$(echo "$line" | jq -r '.Name')
@@ -152,51 +159,64 @@ check_python_project() {
         if [[ -v IGNORE_PACKAGES[$name] ]]; then continue; fi
 
         local version=$(echo "$line" | jq -r '.Version')
-        local license=$(echo "$line" | jq -r '.License')
-        # Remove newlines from license string to prevent breaking markdown table
-        license=$(echo "$license" | tr '\n' ' ')
+        local raw_license=$(echo "$line" | jq -r '.License')
+
+        # Create a clean display version from the first line only, and trim whitespace
+        local display_license
+        display_license=$(echo "$raw_license" | head -n 1)
+        if [ ${#display_license} -gt 100 ]; then
+            display_license="${display_license:0:97}..."
+        fi
+        display_license=$(echo "$display_license" | xargs)
+
+
+        # Create a single-line, trimmed version for classification logic
+        local license=$(echo "$raw_license" | tr '\n' ' ')
+        license=$(echo "$license" | xargs)
+
         local override_note=""
 
-        if echo "$license" | grep -qiE "$UNKNOWN_LICENSES"; then
-            if [[ -v LICENSE_OVERRIDES[$name] ]]; then
-                license="${LICENSE_OVERRIDES[$name]}"
-                override_note=" (override)"
+        # Unconditionally apply license name override if it exists.
+        if [[ -v LICENSE_OVERRIDES[$name] ]]; then
+            license="${LICENSE_OVERRIDES[$name]}"
+            override_note=" (override)"
+            display_license="$license" # Update display license as well
+        fi
+
+        local status=""
+        local final_notes=""
+
+        # Check for a manual "reviewed" override first.
+        if [[ -v REVIEWED_OVERRIDES[$name] ]]; then
+            local override_data=${REVIEWED_OVERRIDES[$name]}
+            status=$(echo "$override_data" | jq -r '.status')
+            display_license=$(echo "$override_data" | jq -r '.license') # Use the license from the override
+            final_notes=$(echo "$override_data" | jq -r '.notes')
+            echo -e "${GREEN}Manually reviewed: $name${NC}"
+        else
+            # If no manual override, run the standard classification logic
+            if echo "$license" | grep -qE "$PERMISSIVE_LICENSES"; then
+                status="✅"
+            elif echo "$license" | grep -qE "$REVIEW_LICENSES"; then
+                status="⚠️"
+                echo -e "${YELLOW}⚠️  Review needed: $name uses $display_license${NC}"
+                echo "python:$project:$name:$license" >> "$REVIEW_FILE"
+            elif echo "$license" | grep -qE "$RESTRICTIVE_LICENSES"; then
+                status="❌"
+                echo -e "${RED}❌ RESTRICTIVE LICENSE: $name uses $display_license${NC}"
+                echo "python:$project:$name:$license" >> "$RESTRICTIVE_FILE"
+            elif echo "$license" | grep -qiE "$UNKNOWN_LICENSES"; then
+                status="❌"
+                echo -e "${RED}❌ UNKNOWN LICENSE: $name has '$license'${NC}"
+                echo "python:$project:$name:$license" >> "$UNKNOWN_FILE"
+            else
+                status="❌"
+                echo -e "${RED}❌ UNLISTED/UNKNOWN LICENSE: $name has '$license'${NC}"
+                echo "python:$project:$name:$license" >> "$UNKNOWN_FILE"
             fi
         fi
 
-        local display_license
-        if [ ${#license} -gt 100 ]; then
-            display_license=$(echo "$license" | head -n 1)...
-        else
-            display_license="$license"
-        fi
-
-        local status="" # Start with no status
-
-        if echo "$license" | grep -qE "$REVIEW_LICENSES"; then
-            status="⚠️"
-            echo -e "${YELLOW}⚠️  Review needed: $name uses $display_license${NC}"
-            echo "python:$project:$name:$license" >> "$REVIEW_FILE"
-        elif echo "$license" | grep -qE "$RESTRICTIVE_LICENSES"; then
-            status="❌"
-            echo -e "${RED}❌ RESTRICTIVE LICENSE: $name uses $display_license${NC}"
-            echo "python:$project:$name:$license" >> "$RESTRICTIVE_FILE"
-        elif echo "$license" | grep -qE "$PERMISSIVE_LICENSES"; then
-            status="✅"
-            # This is an approved permissive license. No console log needed.
-        elif echo "$license" | grep -qiE "$UNKNOWN_LICENSES"; then
-            # This specifically catches licenses that scanners explicitly mark as UNKNOWN
-            status="❌"
-            echo -e "${RED}❌ UNKNOWN LICENSE: $name has $license${NC}"
-            echo "python:$project:$name:$license" >> "$UNKNOWN_FILE"
-        else
-            # This catches any license not in the lists above
-            status="❌"
-            echo -e "${RED}❌ UNLISTED/UNKNOWN LICENSE: $name has '$license'${NC}"
-            echo "python:$project:$name:$license" >> "$UNKNOWN_FILE"
-        fi
-
-        echo "| $status | $name | $version | $display_license$override_note |" >> "$OUTPUT_FILE_ABS"
+        echo "| $status | $name | $version | $display_license$override_note | $final_notes |" >> "$OUTPUT_FILE_ABS"
     done
 
     echo "" >> "$OUTPUT_FILE_ABS"
@@ -225,60 +245,73 @@ check_web_project() {
     fi
 
     echo "Analyzing licenses with 'pnpm licenses'..."
-    pnpm licenses ls --json --prod > /tmp/web_licenses.json 2>/dev/null || {
+    local pnpm_license_file
+    pnpm_license_file=$(mktemp)
+    pnpm licenses ls --json --prod > "$pnpm_license_file" 2>/dev/null || {
         echo -e "${RED}Failed to analyze web dependencies with pnpm.${NC}"
         cd ../..
         return 1
     }
 
-    local web_total=$(jq '[.[] | .[]] | length' /tmp/web_licenses.json)
+    local web_total=$(jq '[.. | objects | select(has("name") and has("versions"))] | unique_by(.name) | length' "$pnpm_license_file")
     TOTAL_NODE_DEPS=$((TOTAL_NODE_DEPS + web_total))
 
     echo "### aihub_web (Node.js)" >> "$OUTPUT_FILE_ABS"
     echo "" >> "$OUTPUT_FILE_ABS"
-    echo "| Status | Package | Version | License |" >> "$OUTPUT_FILE_ABS"
-    echo "|--------|---------|---------|---------|" >> "$OUTPUT_FILE_ABS"
+    echo "| Status | Package | Version | License | Notes |" >> "$OUTPUT_FILE_ABS"
+    echo "|--------|---------|---------|---------|-------|" >> "$OUTPUT_FILE_ABS"
 
-    jq -r 'to_entries[] | .key as $license | .value[] | [.name, .version, $license] | @tsv' /tmp/web_licenses.json | sort | while IFS=$'\t' read -r name version license; do
+    jq -r 'to_entries[] | .key as $license | .value[] | [.name, .versions[0], $license] | @tsv' "$pnpm_license_file" | sort | while IFS=$'\t' read -r name version license; do
         # Skip internal packages
         if [[ -v IGNORE_PACKAGES[$name] ]]; then continue; fi
         if [ -z "$name" ]; then continue; fi
-        local override_note=""
 
-        if echo "$license" | grep -qiE "$UNKNOWN_LICENSES"; then
-            if [[ -v LICENSE_OVERRIDES[$name] ]]; then
-                license="${LICENSE_OVERRIDES[$name]}"
-                override_note=" (override)"
+        local override_note=""
+        local display_license="$license"
+
+        # Unconditionally apply license name override if it exists.
+        if [[ -v LICENSE_OVERRIDES[$name] ]]; then
+            license="${LICENSE_OVERRIDES[$name]}"
+            override_note=" (override)"
+            display_license="$license"
+        fi
+
+        local status=""
+        local final_notes=""
+
+        # Check for a manual "reviewed" override first.
+        if [[ -v REVIEWED_OVERRIDES[$name] ]]; then
+            local override_data=${REVIEWED_OVERRIDES[$name]}
+            status=$(echo "$override_data" | jq -r '.status')
+            display_license=$(echo "$override_data" | jq -r '.license')
+            final_notes=$(echo "$override_data" | jq -r '.notes')
+            echo -e "${GREEN}Manually reviewed: $name${NC}"
+        else
+            # If no manual override, run the standard classification logic
+            if echo "$license" | grep -qE "$REVIEW_LICENSES"; then
+                status="⚠️"
+                echo -e "${YELLOW}⚠️  Review needed: $name uses $license${NC}"
+                echo "node:aihub_web:$name:$license" >> "$REVIEW_FILE"
+            elif echo "$license" | grep -qE "$RESTRICTIVE_LICENSES"; then
+                status="❌"
+                echo -e "${RED}❌ RESTRICTIVE LICENSE: $name uses $license${NC}"
+                echo "node:aihub_web:$name:$license" >> "$RESTRICTIVE_FILE"
+            elif echo "$license" | grep -qE "$PERMISSIVE_LICENSES"; then
+                status="✅"
+            elif echo "$license" | grep -qiE "$UNKNOWN_LICENSES"; then
+                status="❌"
+                echo -e "${RED}❌ UNKNOWN LICENSE: $name has $license${NC}"
+                echo "node:aihub_web:$name:$license" >> "$UNKNOWN_FILE"
+            else
+                status="❌"
+                echo -e "${RED}❌ UNLISTED/UNKNOWN LICENSE: $name has '$license'${NC}"
+                echo "node:aihub_web:$name:$license" >> "$UNKNOWN_FILE"
             fi
         fi
 
-        local status="" # Start with no status
-
-        if echo "$license" | grep -qE "$REVIEW_LICENSES"; then
-            status="⚠️"
-            echo -e "${YELLOW}⚠️  Review needed: $name uses $license${NC}"
-            echo "node:aihub_web:$name:$license" >> "$REVIEW_FILE"
-        elif echo "$license" | grep -qE "$RESTRICTIVE_LICENSES"; then
-            status="❌"
-            echo -e "${RED}❌ RESTRICTIVE LICENSE: $name uses $license${NC}"
-            echo "node:aihub_web:$name:$license" >> "$RESTRICTIVE_FILE"
-        elif echo "$license" | grep -qE "$PERMISSIVE_LICENSES"; then
-            status="✅"
-            # This is an approved permissive license. No console log needed.
-        elif echo "$license" | grep -qiE "$UNKNOWN_LICENSES"; then
-            # This specifically catches licenses that scanners explicitly mark as UNKNOWN
-            status="❌"
-            echo -e "${RED}❌ UNKNOWN LICENSE: $name has $license${NC}"
-            echo "node:aihub_web:$name:$license" >> "$UNKNOWN_FILE"
-        else
-            # This catches any license not in the lists above
-            status="❌"
-            echo -e "${RED}❌ UNLISTED/UNKNOWN LICENSE: $name has '$license'${NC}"
-            echo "node:aihub_web:$name:$license" >> "$UNKNOWN_FILE"
-        fi
-
-        echo "| $status | $name | $version | $license$override_note |" >> "$OUTPUT_FILE_ABS"
+        echo "| $status | $name | $version | $display_license$override_note | $final_notes |" >> "$OUTPUT_FILE_ABS"
     done
+    rm "$pnpm_license_file"
 
     echo "" >> "$OUTPUT_FILE_ABS"
     cd ../..
@@ -286,8 +319,6 @@ check_web_project() {
 
 # check_docker_images function
 check_docker_images() {
-    # This function does not `cd`, so its paths were already correct.
-    # For consistency, we'll update it to use the absolute path variable.
     echo -e "${BLUE}Checking Docker images...${NC}"
 
     local compose_files=(docker-compose*.yml docker-compose*.yaml)
@@ -384,7 +415,6 @@ check_docker_images() {
     fi
 }
 
-# (extract_service_name and is_own_image are unchanged)
 extract_service_name() { local image="$1"; local cleaned=$(echo "$image" | sed 's|^[^/]*/||'); if [[ "$cleaned" == *"/"* ]]; then cleaned=$(echo "$cleaned" | sed 's|^[^/]*/||'); fi; if [[ "$cleaned" == *"/"* ]]; then cleaned=$(echo "$cleaned" | awk -F'/' '{print $NF}'); fi; cleaned=$(echo "$cleaned" | cut -d':' -f1); echo "$cleaned"; }
 is_own_image() { local service_name="$1"; for own in "${OWN_IMAGES[@]}"; do if [[ "$service_name" == "$own" ]]; then return 0; fi; done; return 1; }
 
@@ -398,6 +428,8 @@ generate_summary() {
     [ -f "$DOCKER_RESTRICTIVE_FILE" ] && docker_restrictive_count=$(wc -l < "$DOCKER_RESTRICTIVE_FILE")
 
     tail -n +10 "$OUTPUT_FILE_ABS" > "$temp_file"
+
+    local total_issues=$((restrictive_count + review_count + unknown_count))
 
     cat > "$OUTPUT_FILE_ABS" << EOF
 # License Report
@@ -413,28 +445,28 @@ This document contains license information for all dependencies across the monor
 
 EOF
 
-    if [ "$restrictive_count" -eq 0 ] && [ "$unknown_count" -eq 0 ]; then
+    if [ "$total_issues" -eq 0 ]; then
         cat >> "$OUTPUT_FILE_ABS" << EOF
-✅ **No restrictive licenses found in your code dependencies!**
+✅ **All dependencies have approved licenses!**
 
 EOF
     else
         cat >> "$OUTPUT_FILE_ABS" << EOF
-❌ **License issues found!** Please review and resolve:
+❌ **License issues found!** All licenses must be permissive or explicitly approved via the 'reviewed_packages' configuration. Please review and resolve the items below:
 
 EOF
     fi
 
     cat >> "$OUTPUT_FILE_ABS" << EOF
 ### Legend
-- ✅ = Permissive license (MIT, BSD, Apache, etc.)
-- ⚠️ = Weak copyleft or needs review (MPL, LGPL, etc.)
-- ❌ = Restrictive or unknown license
+- ✅ = Permissive or Manually Approved License
+- ⚠️ = License requires manual review and approval
+- ❌ = Restrictive or Unknown License
 
 EOF
 
     if [ "$restrictive_count" -gt 0 ]; then
-        echo "### ❌ Restrictive Licenses in Code (Must Remove or Replace)" >> "$OUTPUT_FILE_ABS"; echo "" >> "$OUTPUT_FILE_ABS"
+        echo "### ❌ Restrictive Licenses (Must Remove or Replace)" >> "$OUTPUT_FILE_ABS"; echo "" >> "$OUTPUT_FILE_ABS"
         echo "The following dependencies use restrictive copyleft licenses:" >> "$OUTPUT_FILE_ABS"; echo "" >> "$OUTPUT_FILE_ABS"
         while IFS=: read -r type project package license; do
             echo "- **$package** in $project ($type) uses *$license*" >> "$OUTPUT_FILE_ABS"
@@ -444,6 +476,8 @@ EOF
 
     if [ "$unknown_count" -gt 0 ]; then
         echo "### ❌ Unknown Licenses (Must Investigate)" >> "$OUTPUT_FILE_ABS"; echo "" >> "$OUTPUT_FILE_ABS"
+        echo "The following packages have licenses that are not recognized or are proprietary." >> "$OUTPUT_FILE_ABS"
+        echo "Please add them to the 'reviewed_packages' list in the config if they are approved for use." >> "$OUTPUT_FILE_ABS"; echo "" >> "$OUTPUT_FILE_ABS"
         while IFS=: read -r type project package license; do
             echo "- **$package** in $project ($type) has *$license*" >> "$OUTPUT_FILE_ABS"
         done < "$UNKNOWN_FILE"
@@ -451,8 +485,8 @@ EOF
     fi
 
     if [ "$review_count" -gt 0 ]; then
-        echo "### ⚠️ Licenses Requiring Review" >> "$OUTPUT_FILE_ABS"; echo "" >> "$OUTPUT_FILE_ABS"
-        echo "These licenses are generally compatible but should be reviewed:" >> "$OUTPUT_FILE_ABS"; echo "" >> "$OUTPUT_FILE_ABS"
+        echo "### ⚠️ Licenses Requiring Review (Must be Approved)" >> "$OUTPUT_FILE_ABS"; echo "" >> "$OUTPUT_FILE_ABS"
+        echo "These licenses require manual approval. Add an entry to the 'reviewed_packages' list in the config to approve them:" >> "$OUTPUT_FILE_ABS"; echo "" >> "$OUTPUT_FILE_ABS"
         while IFS=: read -r type project package license; do
             echo "- **$package** in $project ($type) uses *$license*" >> "$OUTPUT_FILE_ABS"
         done < "$REVIEW_FILE"
@@ -487,9 +521,11 @@ main() {
     check_docker_images || true
     generate_summary
 
-    local restrictive_count=0; local unknown_count=0
+    local restrictive_count=0; local review_count=0; local unknown_count=0
     [ -f "$RESTRICTIVE_FILE" ] && restrictive_count=$(wc -l < "$RESTRICTIVE_FILE")
+    [ -f "$REVIEW_FILE" ] && review_count=$(wc -l < "$REVIEW_FILE")
     [ -f "$UNKNOWN_FILE" ] && unknown_count=$(wc -l < "$UNKNOWN_FILE")
+
 
     echo ""
     echo -e "${GREEN}License report generated: $OUTPUT_FILE${NC}"
@@ -498,16 +534,17 @@ main() {
     echo "- Python dependencies: $TOTAL_PYTHON_DEPS"
     echo "- Node.js dependencies: $TOTAL_NODE_DEPS"
     echo "- External Docker images: $TOTAL_DOCKER_IMAGES"
-    echo "- Restrictive licenses in code: $restrictive_count"
+    echo "- Restrictive licenses: $restrictive_count"
     echo "- Unknown licenses: $unknown_count"
+    echo "- Licenses needing review: $review_count"
 
-    if [ "$restrictive_count" -gt 0 ] || [ "$unknown_count" -gt 0 ]; then
-        echo ""; echo -e "${RED}❌ FAILED: Found $restrictive_count restrictive and $unknown_count unknown licenses${NC}"
-        echo -e "${RED}Please review $OUTPUT_FILE for details${NC}"; exit 1
+    if [ "$restrictive_count" -gt 0 ] || [ "$unknown_count" -gt 0 ] || [ "$review_count" -gt 0 ]; then
+        echo ""; echo -e "${RED}❌ FAILED: Found $restrictive_count restrictive, $unknown_count unknown, and $review_count unreviewed licenses.${NC}"
+        echo -e "${RED}All licenses must be permissive or explicitly approved in 'reviewed_packages'.${NC}"
+        echo -e "${RED}Please review $OUTPUT_FILE for details.${NC}"; exit 1
     else
-        echo ""; echo -e "${GREEN}✅ SUCCESS: No restrictive licenses found in your code dependencies!${NC}"
-        echo -e "${YELLOW}⚠️  Note: Review Docker services with AGPL/SSPL for SaaS compatibility${NC}"
-        echo -e "${GREEN}You can use BSL 1.1 or any other license for your code.${NC}"; exit 0
+        echo ""; echo -e "${GREEN}✅ SUCCESS: All dependencies have approved licenses!${NC}"
+        echo -e "${YELLOW}⚠️  Note: Review Docker services with AGPL/SSPL for SaaS compatibility if applicable.${NC}"; exit 0
     fi
 }
 
