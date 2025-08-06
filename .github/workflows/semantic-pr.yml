@@ -97,14 +97,8 @@ jobs:
           # Check if at least one version label exists
           has_version_label=false
           
-          if echo "$PR_LABELS" | grep -q '"major"'; then
-            echo "✅ Found 'major' label"
-            has_version_label=true
-          elif echo "$PR_LABELS" | grep -q '"minor"'; then
-            echo "✅ Found 'minor' label"
-            has_version_label=true
-          elif echo "$PR_LABELS" | grep -q '"patch"'; then
-            echo "✅ Found 'patch' label"
+          if echo "$PR_LABELS" | grep -qE '"(major|minor|patch)"'; then
+            echo "✅ Found version label (major, minor, or patch)"
             has_version_label=true
           fi
           
