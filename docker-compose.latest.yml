@@ -220,12 +220,12 @@ services:
       - "traefik.enable=true"
 
       # --- dagster Subdomain ---
-      - "traefik.http.routers.dagster.rule=Host(`litellm.${DOMAIN}`)"
-      - "traefik.http.routers.dagster.priority=500"
-      - "traefik.http.routers.dagster.entrypoints=websecure"
-      - "traefik.http.routers.dagster.tls.certresolver=letsencrypt"
-      - "traefik.http.services.dagster.loadbalancer.server.port=4000"
-      - "traefik.http.routers.dagster.middlewares=security-headers@file"
+      - "traefik.http.routers.litellm.rule=Host(`litellm.${DOMAIN}`)"
+      - "traefik.http.routers.litellm.priority=500"
+      - "traefik.http.routers.litellm.entrypoints=websecure"
+      - "traefik.http.routers.litellm.tls.certresolver=letsencrypt"
+      - "traefik.http.services.litellm.loadbalancer.server.port=4000"
+      - "traefik.http.routers.litellm.middlewares=security-headers@file"
 
   # </editor-fold>
 
