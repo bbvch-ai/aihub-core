@@ -189,7 +189,7 @@ services:
 
   litellm:
     image: ghcr.io/bbvch-ai/aihub-core/litellm:main-v1.74.8-nightly
-    container_name: lite-llm
+    container_name: litellm
     <<: *restart-policy
     environment:
       DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/litellm"
@@ -219,7 +219,7 @@ services:
     labels:
       - "traefik.enable=true"
 
-      # --- dagster Subdomain ---
+      # --- litellm Subdomain ---
       - "traefik.http.routers.litellm.rule=Host(`litellm.${DOMAIN}`)"
       - "traefik.http.routers.litellm.priority=500"
       - "traefik.http.routers.litellm.entrypoints=websecure"
