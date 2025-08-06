@@ -740,6 +740,7 @@ services:
       - "--entrypoints.websecure.address=:443"
       - "--providers.file.filename=/etc/traefik/middlewares.yml"
       - "--providers.docker=true"
+      - "--providers.docker.watch=true"
       - "--providers.docker.exposedbydefault=false"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
       - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
