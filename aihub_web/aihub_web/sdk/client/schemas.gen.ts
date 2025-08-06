@@ -367,7 +367,7 @@ export const AgentInTheLoopRequestEventSchema = {
                     '$ref': '#/components/schemas/PartialAgentTopic'
                 },
                 {
-                    '$ref': '#/components/schemas/AgentTopic'
+                    '$ref': '#/components/schemas/AgentInstanceTopic'
                 }
             ],
             title: 'Other Agent Topic',
@@ -488,7 +488,7 @@ When an agent completes a task delegated through an \`AgentInTheLoopRequestEvent
 - Is visible to the UI (since it's also a \`DisplayEvent\`), enabling monitoring of agent interactions`
 } as const;
 
-export const AgentTopicSchema = {
+export const AgentInstanceTopicSchema = {
     properties: {
         agent_class: {
             type: 'string',
@@ -533,7 +533,7 @@ export const AgentTopicSchema = {
     },
     type: 'object',
     required: ['agent_class', 'agent_id', 'run_id', 'thread_id', 'display_id', 'event_type', 'event_name', 'event_id'],
-    title: 'AgentTopic',
+    title: 'AgentInstanceTopic',
     description: `Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
 to be present. This includes identifiers for agent_class, agent_id, and the event itself.
 
@@ -836,6 +836,27 @@ export const Body_create_transcription_openai_audio_transcriptions_postSchema = 
     type: 'object',
     required: ['file', 'model'],
     title: 'Body_create_transcription_openai_audio_transcriptions_post'
+} as const;
+
+export const BulkUpdateNotificationRequestSchema = {
+    properties: {
+        notification_ids: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Notification Ids',
+            description: 'The IDs of the notifications to update.'
+        },
+        updates: {
+            '$ref': '#/components/schemas/UpdateNotificationRequest',
+            description: 'The updates to apply to each notification.'
+        }
+    },
+    type: 'object',
+    required: ['notification_ids', 'updates'],
+    title: 'BulkUpdateNotificationRequest',
+    description: 'Request model for updating multiple notifications at once.'
 } as const;
 
 export const ChainEventSchema = {
@@ -4497,7 +4518,7 @@ export const HumanInTheLoopRequestEventSchema = {
                     '$ref': '#/components/schemas/PartialAgentTopic'
                 },
                 {
-                    '$ref': '#/components/schemas/AgentTopic'
+                    '$ref': '#/components/schemas/AgentInstanceTopic'
                 }
             ],
             title: 'Topic',
@@ -6615,7 +6636,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1753435984
+            default: 1753892110
         },
         owned_by: {
             type: 'string',
@@ -6841,6 +6862,83 @@ export const NodeSummaryDTOSchema = {
     title: 'NodeSummaryDTO'
 } as const;
 
+export const NotificationDTOSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the notification.'
+        },
+        user_id: {
+            type: 'string',
+            title: 'User Id',
+            description: 'The unique identifier of the user associated with the notification.'
+        },
+        notification_group_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Notification Group Id',
+            description: 'The identifier of the notification group this notification belongs to.'
+        },
+        title: {
+            type: 'string',
+            title: 'Title',
+            description: 'The internationalized title of the notification.'
+        },
+        message: {
+            type: 'string',
+            title: 'Message',
+            description: 'The internationalized content of the notification.'
+        },
+        read: {
+            type: 'boolean',
+            title: 'Read',
+            description: 'Indicates if the notification has been read by the user.',
+            default: false
+        },
+        done: {
+            type: 'boolean',
+            title: 'Done',
+            description: 'Indicates if the task associated with the notification has been completed.',
+            default: false
+        },
+        type: {
+            type: 'string',
+            enum: ['success', 'info', 'warn', 'error'],
+            title: 'Type',
+            description: 'Categorizes the notification for visual representation (e.g., icon and color).',
+            default: 'info'
+        },
+        severity: {
+            type: 'string',
+            enum: ['low', 'medium', 'high', 'critical'],
+            title: 'Severity',
+            description: 'The priority level of the notification.'
+        },
+        link: {
+            type: 'string',
+            title: 'Link',
+            description: 'A relative internal link to navigate to the relevant resource.'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At',
+            description: 'The timestamp when the notification was created.'
+        }
+    },
+    type: 'object',
+    required: ['id', 'user_id', 'title', 'message', 'severity', 'link', 'created_at'],
+    title: 'NotificationDTO',
+    description: 'Data Transfer Object for a notification.'
+} as const;
+
 export const PaginatedDocumentsResponseSchema = {
     properties: {
         total: {
@@ -6875,6 +6973,43 @@ export const PaginatedDocumentsResponseSchema = {
     type: 'object',
     required: ['total', 'page', 'page_size', 'total_pages', 'documents'],
     title: 'PaginatedDocumentsResponse'
+} as const;
+
+export const PaginatedNotificationsResponseSchema = {
+    properties: {
+        total: {
+            type: 'integer',
+            title: 'Total',
+            description: 'The total number of notifications matching the filter criteria.'
+        },
+        page: {
+            type: 'integer',
+            title: 'Page',
+            description: 'The current page number (1-indexed).'
+        },
+        page_size: {
+            type: 'integer',
+            title: 'Page Size',
+            description: 'The number of notifications requested per page.'
+        },
+        total_pages: {
+            type: 'integer',
+            title: 'Total Pages',
+            description: 'The total number of pages available based on the page size.'
+        },
+        notifications: {
+            items: {
+                '$ref': '#/components/schemas/NotificationDTO'
+            },
+            type: 'array',
+            title: 'Notifications',
+            description: 'The list of notifications for the current page.'
+        }
+    },
+    type: 'object',
+    required: ['total', 'page', 'page_size', 'total_pages', 'notifications'],
+    title: 'PaginatedNotificationsResponse',
+    description: 'A paginated response container for notifications.'
 } as const;
 
 export const PaginatedThreadsResponseSchema = {
@@ -7155,11 +7290,11 @@ export const ProcessDTOSchema = {
     type: 'object',
     required: ['process_class', 'process_id', 'process_config', 'human_inputs', 'program_inputs', 'agent_inputs'],
     title: 'ProcessDTO',
-    description: `An agentic process is a process in which humans, agents and programs interact with each other to achieve a
-common goal.
-To interact with the process, it is necessary to know which entity (human, agent, program) can and must submit
-what kind of work to start / continue the process.
-Hence, this object offers information about the inputs (work events) that these entities can contribute.`
+    description: `A data transfer object for representing process information in responses.
+This DTO standardizes how process data is returned from the service layer to the controller,
+and subsequently to the API response. It helps maintain a clean separation between the internal
+event models and the publicly exposed fields in HTTP responses.
+By using \`ProcessDTO\`, the API can evolve independently from the internal event representations.`
 } as const;
 
 export const ProcessHumanInDtoSchema = {
@@ -8916,6 +9051,38 @@ export const TranscriptionWordSchema = {
     type: 'object',
     required: ['end', 'start', 'word'],
     title: 'TranscriptionWord'
+} as const;
+
+export const UpdateNotificationRequestSchema = {
+    properties: {
+        read: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Read',
+            description: "The new 'read' status of the notification."
+        },
+        done: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Done',
+            description: "The new 'done' status for the notification's task."
+        }
+    },
+    type: 'object',
+    title: 'UpdateNotificationRequest',
+    description: 'Request model for partially updating a notification.'
 } as const;
 
 export const UpdateRoleRequestSchema = {

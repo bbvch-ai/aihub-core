@@ -111,7 +111,7 @@ class ProcessTestRunner(ProcessRunner):
         self.observed_events.append(ObservedEvent(event=event, topic=topic))
 
     @asynccontextmanager
-    async def test_run(self, delay_before_stop: int = 1) -> AsyncGenerator[None, None]:
+    async def test_run(self, delay_before_stop: int = 1) -> AsyncGenerator[None]:
         await self.test_run_start()
         yield
         await sleep(delay_before_stop)

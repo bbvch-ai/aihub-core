@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Process Tests" type="tests" factoryName="Autodetect">
+  <configuration default="false" name="Process Tests" type="tests" factoryName="py.test">
     <module name="aihub_process" />
     <option name="ENV_FILES" value="" />
     <option name="INTERPRETER_OPTIONS" value="" />
