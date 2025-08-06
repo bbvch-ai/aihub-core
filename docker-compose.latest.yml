@@ -636,7 +636,7 @@ services:
 
       # --- /api/v1 Route ---
       - "traefik.http.routers.api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/v1`)"
-      - "traefik.http.routers.api.priority=300"
+      - "traefik.http.routers.api.priority=600"
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.api.middlewares=security-headers@file"
