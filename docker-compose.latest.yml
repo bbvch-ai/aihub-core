@@ -218,10 +218,7 @@ services:
     logging: *default-logging
     labels:
       - "traefik.enable=true"
-
-      # --- litellm Subdomain ---
       - "traefik.http.routers.litellm.rule=Host(`litellm.${DOMAIN}`)"
-      - "traefik.http.routers.litellm.priority=500"
       - "traefik.http.routers.litellm.entrypoints=websecure"
       - "traefik.http.routers.litellm.tls.certresolver=letsencrypt"
       - "traefik.http.services.litellm.loadbalancer.server.port=4000"
