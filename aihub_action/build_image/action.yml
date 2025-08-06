@@ -60,6 +60,8 @@ runs:
         context: ${{ inputs.context }}
         file: ${{ inputs.file }}
         push: true
+        build-args: |
+          VERSION=${{ inputs.release_version }}
         secrets: |
             "ssh_key=${{ inputs.ssh_key }}"
         tags: |

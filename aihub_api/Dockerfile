@@ -1,5 +1,6 @@
 # Build stage
 FROM python:3.11-slim AS builder
+ARG VERSION
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -44,6 +45,8 @@ RUN rm -rf ~/.cache/pypoetry ~/.cache/pip /tmp/poetry_cache
 # Runtime stage
 FROM python:3.11-slim AS runtime
 
+ARG VERSION
+
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     POETRY_VERSION=2.1.1 \
@@ -53,7 +56,8 @@ ENV PYTHONUNBUFFERED=1 \
     POETRY_VIRTUALENVS_CREATE=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache \
     PYTHONPATH=/app \
-    PATH="/app/.venv/bin:/opt/poetry/bin:$PATH"
+    PATH="/app/.venv/bin:/opt/poetry/bin:$PATH"\
+    AIHUB_API_VERSION=${VERSION}
 
 # Setup users
 ARG USERNAME=user

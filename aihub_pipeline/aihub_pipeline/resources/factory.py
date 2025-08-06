@@ -1,10 +1,10 @@
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.azure.data_lake.DataLakeAccess import DataLakeAccess
-from aihub_lib.infrastructure.s3.S3Config import S3StorageSettings
 from dagster._config.pythonic_config import ConfigurableResourceFactory
 from dagster_aws.s3 import S3PickleIOManager, S3Resource
 from dagster_azure.adls2 import ADLS2DefaultAzureCredential, ADLS2PickleIOManager, ADLS2Resource
 
+from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
 from aihub_pipeline.io.AzureDataLakeIOManager import AzureDataLakeIOManager
 from aihub_pipeline.io.DocStoreIOManager import DocStoreIOManager
 from aihub_pipeline.io.S3DataLakeIOManager import S3DataLakeIOManager

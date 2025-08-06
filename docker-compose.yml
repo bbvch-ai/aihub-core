@@ -67,7 +67,7 @@ services:
      MILVUS_URL: 'http://milvus-standalone:19530'
 
   postgres:
-    image: ghcr.io/bbvch-ai/aihub-core/pgvector:pg17
+    image: postgres:14.18
     container_name: postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -237,7 +237,7 @@ services:
       ENABLE_PERSISTENT_CONFIG: False # REMOVE THIS FOR PRODUCTION SETTING
 
       WEBUI_NAME: "Swiss AI-Hub"
-      WEBUI_URL: 'localhost:8080'
+      WEBUI_URL: 'http://localhost:8080'
       DEFAULT_LOCALE: 'de'
       ENABLE_BASE_MODELS_CACHE: True
 
@@ -274,7 +274,7 @@ services:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
       OPENID_PROVIDER_URL: "${OAUTH_AUTHORITY_URL}/v2.0/.well-known/openid-configuration"
-      # OPENID_REDIRECT_URI: XXX
+      #OPENID_REDIRECT_URI: XXX
       OAUTH_ALLOWED_DOMAINS: '*'
       OAUTH_SCOPES: 'openid email profile'
       OAUTH_TIMEOUT: 60
@@ -294,7 +294,12 @@ services:
 
       # Model config
       OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
-      OPENAI_API_BASE_URL: "litellm:4000/v1"
+      RAG_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      AUDIO_STT_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      AUDIO_TTS_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      IMAGES_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+
+      OPENAI_API_BASE_URL: "http://localhost:4000/v1"
       MODELS_CACHE_TTL: 60
       TASK_MODEL: 'azure/gpt-4o-mini'
       TASK_MODEL_EXTERNAL: 'azure/gpt-4o-mini'
@@ -366,7 +371,7 @@ services:
       WEB_SEARCH_CONCURRENT_REQUESTS: 6
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: True
       WEB_LOADER_ENGINE: 'playwright'
-      PLAYWRIGHT_WS_URL: 'ws://localhost:3000/ws'
+      PLAYWRIGHT_WS_URL: 'ws://localhost:3030'
       FILE_IMAGE_COMPRESSION_WIDTH: 796
       FILE_IMAGE_COMPRESSION_HEIGHT: 796
 
@@ -425,15 +430,15 @@ services:
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
   playwright:
-    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy
+    image: mcr.microsoft.com/playwright:v1.49.0-jammy
     container_name: playwright-server
-    command: npx playwright run-server --port 3000 --host 0.0.0.0
+    command: npx playwright@v1.49.0 run-server --port 3036 --host 0.0.0.0
     ports:
-      - "3000:3000"
+      - "3036:3036"
     environment:
       NODE_ENV: production
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:3000/health" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:3036/health" ]
 
   docling:
     image: ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.1.0
