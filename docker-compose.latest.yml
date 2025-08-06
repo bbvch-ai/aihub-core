@@ -214,7 +214,7 @@ services:
       presidio-anonymizer:
         condition: service_started
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health/readiness"]
     logging: *default-logging
     labels:
       - "traefik.enable=true"
