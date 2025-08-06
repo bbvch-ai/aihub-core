@@ -10,8 +10,6 @@ on:
           description: 'Docker image release version'
           required: true
           default: "manual"
-  push:
-    branches: [ feat/mnt-vol-in-compose ]
 
 
 permissions:
