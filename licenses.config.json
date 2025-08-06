@@ -15,8 +15,7 @@
     "bot",
     "agent",
     "process",
-    "pipeline",
-    "processes"
+    "pipeline"
   ],
   "license_categories": {
     "restrictive": [
