@@ -100,7 +100,6 @@ jobs:
           python -m pip install --user pipx
           python -m pipx ensurepath
           pipx install poetry
-          # Configure Poetry to use in-project virtual environments for consistency
           poetry config virtualenvs.in-project true
           poetry install --no-interaction --no-root
 

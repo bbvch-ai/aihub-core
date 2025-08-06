@@ -119,16 +119,11 @@ check_python_project() {
     cd "$project"
 
     echo "Installing dependencies to ensure venv is current..."
-    # Only install if dependencies are not already installed
-    if ! poetry run python -c "import sys" 2>/dev/null; then
-        echo "Virtual environment not ready, installing dependencies..."
-        if ! poetry install --no-interaction 2>&1 | tail -n 20; then
-            echo -e "${RED}Failed to install dependencies for $project${NC}"
-            echo "Attempting to continue anyway..."
-        fi
-    else
-        echo "Virtual environment already exists, skipping install"
-    fi
+    poetry install --no-interaction --sync >/dev/null 2>&1 || {
+        echo -e "${RED}Failed to install dependencies for $project${NC}"
+        cd ..
+        return 1
+    }
 
     echo "Finding virtual environment for $project..."
     local venv_path
