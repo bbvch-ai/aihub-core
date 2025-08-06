@@ -56,3 +56,8 @@ use-remote-core:
 changelog:
 	@echo "Generating changelog"
 	/bin/bash ./generate-changelog.sh
+
+# Check licenses across all dependencies
+license-check:
+	@echo "Checking licenses..."
+	/bin/bash ./generate-license.sh

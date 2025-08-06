@@ -323,7 +323,7 @@ once all features are done.
   it [directly](https://git-scm.com/))).
   JetBrain IDEs have built-in support for Git. You can use the Git integration to commit, push, and pull changes
   directly from the IDE.
-- **Python (3.11)** via Miniconda: Download and install [Miniconda](https://docs.conda.io/en/latest/miniconda.html).
+- **Python (3.13)** via Miniconda: Download and install [Miniconda](https://docs.conda.io/en/latest/miniconda.html).
   Miniconda is a package manager for Python. It is a lightweight version of Anaconda, which is a distribution of Python
   for scientific computing.
 

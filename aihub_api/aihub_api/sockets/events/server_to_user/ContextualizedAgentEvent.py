@@ -1,5 +1,5 @@
 import json
-from typing import Annotated, Any
+from typing import Annotated, Any, override
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import (
@@ -33,7 +33,6 @@ from aihub_lib.nats.events.semantic import SemanticEvent
 from aihub_lib.nats.events.semantic.guard import GuardEvent
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
 from pydantic import BaseModel, Discriminator, Field, Tag
-from typing_extensions import override
 
 # Import all events here that the frontend should be able to display
 DisplayEvents = (

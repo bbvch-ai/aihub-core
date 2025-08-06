@@ -109,7 +109,7 @@ class AgentTestRunner(AgentRunner):
     @asynccontextmanager
     async def test_run(
         self, delay_before_stop: int = 1, thread_id: str | None = None
-    ) -> AsyncGenerator[PartialAgentTopic, None]:
+    ) -> AsyncGenerator[PartialAgentTopic]:
         """
         A context manager that:
         1. Starts the agent runner.

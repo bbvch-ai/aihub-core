@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import logging
 from collections.abc import Callable
-from typing import Annotated, Any
+from typing import Annotated, Any, override
 
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
 from aihub_lib.nats.events import (
@@ -22,7 +22,6 @@ from aihub_lib.processes.ProcessConfig import ProcessConfig
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
-from typing_extensions import override
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.context.walkthrough.WalkthroughContext import WalkthroughContext
