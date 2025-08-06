@@ -1,4 +1,6 @@
 [config]
+custom_reasoning_model = true
+reasoning_efffort = "high"
 enable_auto_approval = true
 auto_approve_for_no_suggestions = true
 allow_dynamic_context=true
