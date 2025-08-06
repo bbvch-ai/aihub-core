@@ -88,7 +88,7 @@ init_report() {
     cat > "$OUTPUT_FILE_ABS" << EOF
 # License Report
 
-Generated on: $(date)
+Generated on: $(date +%d.%m.%Y)
 
 This document contains license information for all dependencies across the monorepo:
 - Python packages (Poetry)
@@ -119,11 +119,16 @@ check_python_project() {
     cd "$project"
 
     echo "Installing dependencies to ensure venv is current..."
-    poetry install --no-interaction --sync >/dev/null 2>&1 || {
-        echo -e "${RED}Failed to install dependencies for $project${NC}"
-        cd ..
-        return 1
-    }
+    # Only install if dependencies are not already installed
+    if ! poetry run python -c "import sys" 2>/dev/null; then
+        echo "Virtual environment not ready, installing dependencies..."
+        if ! poetry install --no-interaction 2>&1 | tail -n 20; then
+            echo -e "${RED}Failed to install dependencies for $project${NC}"
+            echo "Attempting to continue anyway..."
+        fi
+    else
+        echo "Virtual environment already exists, skipping install"
+    fi
 
     echo "Finding virtual environment for $project..."
     local venv_path
@@ -138,11 +143,14 @@ check_python_project() {
 
     local license_data
     license_data=$(poetry run pip-licenses \
-        --python="$python_executable" \
-        --from=mix \
+        --from=mixed \
         --format=json \
         --ignore-packages pip pip-licenses setuptools wheel tomli prettytable wcwidth \
-        2>/dev/null || echo "[]")
+        2>&1) || {
+        echo -e "${RED}Failed to run pip-licenses in $project${NC}"
+        echo "Error output: $license_data"
+        license_data="[]"
+    }
 
     local project_total
     project_total=$(echo "$license_data" | jq '. | length')
@@ -434,7 +442,7 @@ generate_summary() {
     cat > "$OUTPUT_FILE_ABS" << EOF
 # License Report
 
-Generated on: $(date)
+Generated on: $(date +%d.%m.%Y)
 
 This document contains license information for all dependencies across the monorepo:
 - Python packages (Poetry): **$TOTAL_PYTHON_DEPS packages**
