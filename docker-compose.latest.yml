@@ -270,7 +270,7 @@ services:
       presidio-anonymizer:
         condition: service_started
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4000/health/liveliness"]
+      test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:4000/health/liveliness" ]
     logging: *default-logging
     labels:
       - "traefik.enable=true"
