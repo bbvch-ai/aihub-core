@@ -1,4 +1,4 @@
-# This docker-compos file requires the following environment variables to be set:
+# This docker-compose file requires the following environment variables to be set:
 # - MODEL_SUI_URL: The base URL for a language model API (here bound to region SUI)
 # - MODEL_SUI_API_KEY: Respective API key for the SUI model
 # - MODEL_EUR_URL: The base URL for a language model API (here bound to region EUR or SWE)
@@ -7,6 +7,61 @@
 # - POSTGRES_PASSWORD: The Postgres password
 # - MONGO_USERNAME: The MongoDB root username
 # - MONGO_PASSWORD: The MongoDB root password
+
+#############################################################################
+# TRAEFIK PRIORITY RULES
+#############################################################################
+#
+# This file follows state-of-the-art Traefik routing priority best practices:
+# 
+# RULE: Higher priority numbers = more specific routes (evaluated first)
+# RULE: Leave gaps of 100-500 between priority tiers for future expansion
+# RULE: Use consistent ranges for similar route types across services
+#
+# PRIORITY HIERARCHY (10000 → 1):
+#
+# 10000-9000: SYSTEM & INFRASTRUCTURE
+#   - 10000: Emergency overrides
+#   - 9500:  Health checks, monitoring endpoints  
+#   - 9000:  ACME/Let's Encrypt challenges
+#
+# 8000-7000: SECURITY & AUTHENTICATION  
+#   - 8000:  Rate limiting, IP blocking
+#   - 7500:  OAuth callbacks, OIDC endpoints
+#   - 7000:  Authentication APIs, login endpoints
+#
+# 6000-5000: APPLICATION APIs
+#   - 6000:  Specific API endpoints (e.g., /api/v1/auth)
+#   - 5500:  Versioned API routes (e.g., /api/v2)
+#   - 5000:  General API routes (e.g., /api)
+#
+# 4000-3000: APPLICATION FEATURES
+#   - 4000:  Admin interfaces, management UIs
+#   - 3500:  User-specific routes (e.g., /user/profile)
+#   - 3000:  Feature-specific paths (e.g., /reports, /dashboard)
+#
+# 2500-1500: STATIC CONTENT & ASSETS
+#   - 2500:  CDN, external assets
+#   - 2000:  Static files (JS, CSS, images)
+#   - 1500:  Application-specific assets, uploads
+#
+# 1000-500: GENERAL ROUTES
+#   - 1000:  Service-specific catch-all routes
+#   - 750:   Language/locale routing (e.g., /en, /de)
+#   - 500:   Subdomain routing (service.domain.com)
+#
+# 400-1: FALLBACK & DEFAULT
+#   - 400:   Domain catch-all with path restrictions
+#   - 100:   Default domain catch-all
+#   - 50:    Global fallback handlers
+#   - 10:    HTTP to HTTPS redirect (non-ACME)
+#
+# NAMING CONVENTIONS:
+#   - Router names: {service}-{type}-{variant}
+#   - Examples: openwebui-api-auth, web-static-assets, minio-admin-ui
+#   - Middleware chains: {service}-{purpose}-middleware
+#
+#############################################################################
 
 # YAML Anchors for common configurations
 x-logging: &default-logging
@@ -17,6 +72,7 @@ x-logging: &default-logging
 
 x-restart-policy: &restart-policy
   restart: always
+
 
 services:
   # === MinIO Stack (self-hosted S3-compatible) ===
@@ -39,8 +95,8 @@ services:
       - "traefik.http.routers.minio.rule=Host(`datalake.${DOMAIN}`)"
       - "traefik.http.routers.minio.entrypoints=websecure"
       - "traefik.http.routers.minio.tls.certresolver=letsencrypt"
-      - "traefik.http.services.minio.loadbalancer.server.port=9001"
       - "traefik.http.routers.minio.middlewares=security-headers@file"
+      - "traefik.http.services.minio.loadbalancer.server.port=9001"
 
   # </editor-fold>
 
@@ -221,8 +277,8 @@ services:
       - "traefik.http.routers.litellm.rule=Host(`litellm.${DOMAIN}`)"
       - "traefik.http.routers.litellm.entrypoints=websecure"
       - "traefik.http.routers.litellm.tls.certresolver=letsencrypt"
-      - "traefik.http.services.litellm.loadbalancer.server.port=4000"
       - "traefik.http.routers.litellm.middlewares=security-headers@file"
+      - "traefik.http.services.litellm.loadbalancer.server.port=4000"
 
   # </editor-fold>
 
@@ -438,73 +494,69 @@ services:
     labels:
       - "traefik.enable=true"
 
-      # --- /oauth Route ---
-      - "traefik.http.routers.openwebui-oauth.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/oauth`)"
-      - "traefik.http.routers.openwebui-oauth.priority=3000"
-      - "traefik.http.routers.openwebui-oauth.entrypoints=websecure"
-      - "traefik.http.routers.openwebui-oauth.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.openwebui-oauth.middlewares=security-headers@file,allow-iframe,forwarded-headers"
+      # === ROUTERS (by priority) ===
 
-      # --- /assets Route ---
-      - "traefik.http.routers.openwebui-assets.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/assets`)"
-      - "traefik.http.routers.openwebui-assets.priority=3000"
-      - "traefik.http.routers.openwebui-assets.entrypoints=websecure"
-      - "traefik.http.routers.openwebui-assets.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.openwebui-assets.middlewares=security-headers@file,allow-iframe,forwarded-headers"
+      # Specific API auth endpoint (priority 7000 - Authentication APIs)
+      - "traefik.http.routers.openwebui-api-auth.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/api/v1/auths`)"
+      - "traefik.http.routers.openwebui-api-auth.priority=7000"
+      - "traefik.http.routers.openwebui-api-auth.entrypoints=websecure"
+      - "traefik.http.routers.openwebui-api-auth.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openwebui-api-auth.middlewares=openwebui-api-middleware"
 
-      # --- /_app Route ---
-      - "traefik.http.routers.openwebui-app.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/_app`)"
-      - "traefik.http.routers.openwebui-app.priority=3000"
-      - "traefik.http.routers.openwebui-app.entrypoints=websecure"
-      - "traefik.http.routers.openwebui-app.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.openwebui-app.middlewares=security-headers@file,allow-iframe,forwarded-headers"
-
-      # --- /static Route ---
-      - "traefik.http.routers.openwebui-static.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/static`)"
-      - "traefik.http.routers.openwebui-static.priority=3000"
-      - "traefik.http.routers.openwebui-static.entrypoints=websecure"
-      - "traefik.http.routers.openwebui-static.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.openwebui-static.middlewares=security-headers@file,allow-iframe"
-
-      # --- /openwebui Route ---
-      - "traefik.http.routers.openwebui.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/openwebui`)"
-      - "traefik.http.routers.openwebui.priority=3000"
-      - "traefik.http.routers.openwebui.entrypoints=websecure"
-      - "traefik.http.routers.openwebui.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.openwebui.middlewares=strip-openwebui,security-headers@file,allow-iframe,strip-openwebui"
-      - "traefik.http.middlewares.strip-openwebui.stripprefix.prefixes=/openwebui"
-
-      # --- /api Route ---
+      # General API routes (priority 6000 - Specific API endpoints)
       - "traefik.http.routers.openwebui-api.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.openwebui-api.priority=2200"
+      - "traefik.http.routers.openwebui-api.priority=6000"
       - "traefik.http.routers.openwebui-api.entrypoints=websecure"
       - "traefik.http.routers.openwebui-api.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.openwebui-api.middlewares=security-headers@file,allow-iframe,forwarded-headers"
+      - "traefik.http.routers.openwebui-api.middlewares=openwebui-api-middleware"
 
-      # --- /api Route ---
-      - "traefik.http.routers.openwebui-api-v1.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/api/v1/auths`)"
-      - "traefik.http.routers.openwebui-api-v1.priority=4000"
-      - "traefik.http.routers.openwebui-api-v1.entrypoints=websecure"
-      - "traefik.http.routers.openwebui-api-v1.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.openwebui-api-v1.middlewares=security-headers@file,allow-iframe,forwarded-headers"
+      # Static assets (priority 2000 - Static files)
+      - "traefik.http.routers.openwebui-static.rule=Host(`openwebui.${DOMAIN}`) && (PathPrefix(`/oauth`) || PathPrefix(`/assets`) || PathPrefix(`/_app`) || PathPrefix(`/static`))"
+      - "traefik.http.routers.openwebui-static.priority=2000"
+      - "traefik.http.routers.openwebui-static.entrypoints=websecure"
+      - "traefik.http.routers.openwebui-static.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openwebui-static.middlewares=openwebui-static-middleware"
 
-      # --- Index / Catch-All Route ---
-      - "traefik.http.routers.openwebui-index.rule=Host(`openwebui.${DOMAIN}`)"
-      - "traefik.http.routers.openwebui-index.priority=2100"
-      - "traefik.http.routers.openwebui-index.entrypoints=websecure"
-      - "traefik.http.routers.openwebui-index.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.openwebui-index.middlewares=security-headers@file,allow-iframe,forwarded-headers"
+      # OpenWebUI path with prefix stripping (priority 3000 - Feature-specific paths)
+      - "traefik.http.routers.openwebui-path.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/openwebui`)"
+      - "traefik.http.routers.openwebui-path.priority=3000"
+      - "traefik.http.routers.openwebui-path.entrypoints=websecure"
+      - "traefik.http.routers.openwebui-path.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openwebui-path.middlewares=openwebui-strip-middleware"
 
-      # --- Shared Service ---
+      # Default catch-all (priority 500 - Subdomain routing)
+      - "traefik.http.routers.openwebui-default.rule=Host(`openwebui.${DOMAIN}`)"
+      - "traefik.http.routers.openwebui-default.priority=500"
+      - "traefik.http.routers.openwebui-default.entrypoints=websecure"
+      - "traefik.http.routers.openwebui-default.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openwebui-default.middlewares=openwebui-default-middleware"
+
+      # === SERVICE ===
       - "traefik.http.services.openwebui.loadbalancer.server.port=8080"
 
-      # --- Allow Iframe Middleware ---
-      - "traefik.http.middlewares.allow-iframe.headers.customResponseHeaders.Content-Security-Policy=frame-ancestors 'self' https://${DOMAIN}"
-      - "traefik.http.middlewares.allow-iframe.headers.customResponseHeaders.X-Frame-Options=SAMEORIGIN"
-      - "traefik.http.middlewares.forwarded-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
-      - "traefik.http.middlewares.forwarded-headers.headers.customrequestheaders.X-Forwarded-Host=openwebui.${DOMAIN}"
-      - "traefik.http.middlewares.forwarded-headers.headers.customRequestHeaders.X-Forwarded-Port=443"
-      - "traefik.http.middlewares.forwarded-headers.headers.customRequestHeaders.X-Real-IP=%{remote_addr}"
+      # === MIDDLEWARES ===
+      # API middleware (security + iframe + forwarded headers)
+      - "traefik.http.middlewares.openwebui-api-middleware.chain.middlewares=security-headers@file,openwebui-iframe,openwebui-forwarded-headers"
+
+      # Static assets middleware (security + iframe only)
+      - "traefik.http.middlewares.openwebui-static-middleware.chain.middlewares=security-headers@file,openwebui-iframe"
+
+      # Path stripping middleware (strip + security + iframe)
+      - "traefik.http.middlewares.openwebui-strip-middleware.chain.middlewares=openwebui-strip-prefix,security-headers@file,openwebui-iframe"
+      - "traefik.http.middlewares.openwebui-strip-prefix.stripprefix.prefixes=/openwebui"
+
+      # Default middleware (security + iframe + forwarded headers)
+      - "traefik.http.middlewares.openwebui-default-middleware.chain.middlewares=security-headers@file,openwebui-iframe,openwebui-forwarded-headers"
+
+      # Shared iframe middleware
+      - "traefik.http.middlewares.openwebui-iframe.headers.customResponseHeaders.Content-Security-Policy=frame-ancestors 'self' https://${DOMAIN}"
+      - "traefik.http.middlewares.openwebui-iframe.headers.customResponseHeaders.X-Frame-Options=SAMEORIGIN"
+
+      # Shared forwarded headers middleware
+      - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customrequestheaders.X-Forwarded-Host=openwebui.${DOMAIN}"
+      - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Forwarded-Port=443"
+      - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Real-IP=%{remote_addr}"
 
   jupyter:
     image: ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6
@@ -561,11 +613,10 @@ services:
 
       # --- dagster Subdomain ---
       - "traefik.http.routers.dagster.rule=Host(`dagster.${DOMAIN}`)"
-      - "traefik.http.routers.dagster.priority=500"
       - "traefik.http.routers.dagster.entrypoints=websecure"
       - "traefik.http.routers.dagster.tls.certresolver=letsencrypt"
-      - "traefik.http.services.dagster.loadbalancer.server.port=4180"
       - "traefik.http.routers.dagster.middlewares=security-headers@file"
+      - "traefik.http.services.dagster.loadbalancer.server.port=4180"
 
   dagster-webserver:
     image: ghcr.io/bbvch-ai/aihub-core/dagster:latest
@@ -642,9 +693,9 @@ services:
     labels:
       - "traefik.enable=true"
 
-      # --- /api/v1 Route ---
+      # API endpoint (priority 6000 - Specific API endpoints)
       - "traefik.http.routers.api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/v1`)"
-      - "traefik.http.routers.api.priority=600"
+      - "traefik.http.routers.api.priority=6000"
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.api.middlewares=security-headers@file"
@@ -680,36 +731,41 @@ services:
     labels:
       - "traefik.enable=true"
 
-      # --- Index / Catch-All Route ---
-      - "traefik.http.routers.web-nuxt.rule=Host(`${DOMAIN}`) && PathPrefix(`/_nuxt`)"
-      - "traefik.http.routers.web-nuxt.priority=500"
-      - "traefik.http.routers.web-nuxt.entrypoints=websecure"
-      - "traefik.http.routers.web-nuxt.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.web-nuxt.middlewares=security-headers@file"
+      # === ROUTERS (by priority) ===
+      
+      # Static assets (priority 2000 - Static files)
+      - "traefik.http.routers.web-static.rule=Host(`${DOMAIN}`) && PathPrefix(`/_nuxt`)"
+      - "traefik.http.routers.web-static.priority=2000"
+      - "traefik.http.routers.web-static.entrypoints=websecure"
+      - "traefik.http.routers.web-static.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web-static.middlewares=web-standard-middleware"
 
-      # --- Index / Catch-All Route ---
-      - "traefik.http.routers.web-auth.rule=Host(`${DOMAIN}`) && PathPrefix(`/en/auth`) || Host(`${DOMAIN}`) && PathPrefix(`/de/auth`) || Host(`${DOMAIN}`) && PathPrefix(`/fr/auth`) || Host(`${DOMAIN}`) && PathPrefix(`/it/auth`)"
-      - "traefik.http.routers.web-auth.priority=500"
+      # Authentication routes (priority 750 - Language/locale routing)
+      - "traefik.http.routers.web-auth.rule=Host(`${DOMAIN}`) && (PathPrefix(`/en/auth`) || PathPrefix(`/de/auth`) || PathPrefix(`/fr/auth`) || PathPrefix(`/it/auth`))"
+      - "traefik.http.routers.web-auth.priority=750"
       - "traefik.http.routers.web-auth.entrypoints=websecure"
       - "traefik.http.routers.web-auth.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.web-auth.middlewares=security-headers@file"
+      - "traefik.http.routers.web-auth.middlewares=web-standard-middleware"
 
-      # --- Index / Catch-All Route ---
-      - "traefik.http.routers.web-index.rule=Host(`${DOMAIN}`) && Path(`/`) || Host(`${DOMAIN}`) && Path(`/index.html`) || Host(`${DOMAIN}`) && Path(`/config.json`)"
-      - "traefik.http.routers.web-index.priority=500"
+      # Specific index pages (priority 400 - Domain catch-all with path restrictions)
+      - "traefik.http.routers.web-index.rule=Host(`${DOMAIN}`) && (Path(`/`) || Path(`/index.html`) || Path(`/config.json`))"
+      - "traefik.http.routers.web-index.priority=400"
       - "traefik.http.routers.web-index.entrypoints=websecure"
       - "traefik.http.routers.web-index.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.web-index.middlewares=security-headers@file"
+      - "traefik.http.routers.web-index.middlewares=web-standard-middleware"
 
-      # --- Index / Catch-All Route ---
-      - "traefik.http.routers.web.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.web.priority=100"
-      - "traefik.http.routers.web.entrypoints=websecure"
-      - "traefik.http.routers.web.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.web.middlewares=security-headers@file"
+      # Default catch-all (priority 100)
+      - "traefik.http.routers.web-default.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.web-default.priority=100"
+      - "traefik.http.routers.web-default.entrypoints=websecure"
+      - "traefik.http.routers.web-default.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web-default.middlewares=web-standard-middleware"
 
-      # --- Shared Service ---
+      # === SERVICE ===
       - "traefik.http.services.web.loadbalancer.server.port=80"
+
+      # === MIDDLEWARE ===
+      - "traefik.http.middlewares.web-standard-middleware.chain.middlewares=security-headers@file"
 
   # </editor-fold>
 
@@ -769,7 +825,6 @@ services:
 
     # Dashboard
     - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
-    - "traefik.http.routers.traefik.priority=500"
     - "traefik.http.routers.traefik.entrypoints=websecure"
     - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
     - "traefik.http.routers.traefik.service=api@internal"
