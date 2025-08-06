@@ -618,7 +618,7 @@ services:
       - api-api-venv:/app/aihub_api/.venv
     environment:
       NATS_ENDPOINT: "nats://nats:4222"
-      COSMOS_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
+      MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
       NUM_WORKERS: 1
       LOG_LEVEL: ${LOG_LEVEL}
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
