@@ -100,6 +100,7 @@ jobs:
           python -m pip install --user pipx
           python -m pipx ensurepath
           pipx install poetry
+          poetry config virtualenvs.in-project true
           poetry install --no-interaction --no-root
 
       - name: Set up SSH for GitHub private dependencies
