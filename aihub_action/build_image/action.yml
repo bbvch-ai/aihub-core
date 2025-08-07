@@ -24,7 +24,7 @@ inputs:
     required: true
   ssh_key:
     description: 'ssh key to access private aihub core repository'
-    required: true
+    required: false
 
 runs:
   using: "composite"
@@ -40,12 +40,28 @@ runs:
         username: ${{ github.actor }}
         password: ${{ inputs.github_token }}
 
-    - name: Build and push Docker image
+    - name: Build and push Docker image with ssh_key
+      if: ${{ inputs.ssh_key != '' }}
       uses: docker/build-push-action@v6
       with:
         context: ${{ inputs.context }}
         file: ${{ inputs.file }}
         push: true
+        secrets: |
+            "ssh_key=${{ inputs.ssh_key }}"
+        tags: |
+          ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:${{ inputs.release_version }}
+          ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:latest
+
+    - name: Build and push Docker image
+      if: ${{ inputs.ssh_key == '' }}
+      uses: docker/build-push-action@v6
+      with:
+        context: ${{ inputs.context }}
+        file: ${{ inputs.file }}
+        push: true
+        build-args: |
+          VERSION=${{ inputs.release_version }}
         secrets: |
             "ssh_key=${{ inputs.ssh_key }}"
         tags: |
