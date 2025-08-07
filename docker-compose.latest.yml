@@ -84,9 +84,11 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_DEFAULT_BUCKETS: "open-webui,a-bucket"  # Comma-separated list
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/minio_data:/minio_data
-    command: minio server /minio_data --console-address ":9001"
+      - ./configs/minio/minio-entrypoint.sh:/usr/local/bin/minio-entrypoint.sh:ro
+    command: /usr/local/bin/minio-entrypoint.sh
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
     logging: *default-logging
@@ -365,6 +367,7 @@ services:
       RAG_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
       AUDIO_STT_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
       AUDIO_TTS_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      ENABLE_IMAGE_GENERATION: True
       IMAGES_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
       OPENAI_API_BASE_URL: "http://litellm:4000/v1"
       MODELS_CACHE_TTL: 60
