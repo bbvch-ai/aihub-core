@@ -1,0 +1,56 @@
+name: Build and Release Dagster
+
+on:
+  workflow_run:
+    workflows: ["Auto Tag on Push"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      release_version:
+          description: 'Docker image release version'
+          required: true
+          default: "manual"
+
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract Tag Name
+        id: get_tag
+        run: |
+          if [ -n "${{ github.event.inputs.release_version }}" ]; then
+            TAG_NAME="${{ github.event.inputs.release_version }}"
+            echo "Using release version from input: $TAG_NAME"
+          else
+            # Ensure we have all tags
+            git fetch --tags
+            # Use git describe to find the latest tag that matches "v*"
+            TAG_NAME=$(git describe --tags --match "v*" --abbrev=0)
+            echo "No valid release version input provided; using latest tag: $TAG_NAME"
+          fi
+          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+
+      - name: build and release docker image
+        uses: ./aihub_action/build_image
+        with:
+          release_version: ${{ inputs.release_version || steps.get_tag.outputs.tag || format('testing-{0}', github.run_number) }}
+          image_name: dagster
+          github_repository_owner: ${{ github.repository_owner }}
+          github_event_repository_name: ${{ github.event.repository.name }}
+          context: .
+          file: ./aihub_pipeline/Dockerfile
+          github_token: ${{ secrets.GITHUB_TOKEN }}
