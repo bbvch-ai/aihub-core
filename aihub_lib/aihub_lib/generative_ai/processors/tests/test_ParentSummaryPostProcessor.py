@@ -53,12 +53,12 @@ def milvus_vector_store(nodes_with_relationships, event_loop):
     # Use event_loop fixture to ensure there's an active event loop
     asyncio.set_event_loop(event_loop)
 
-    embedding_config = EmbeddingModelConfig(model_name="local/text-embedding-gte")
+    embedding_config = EmbeddingModelConfig(model_name="local/qwen-embedding")
 
     vector_store = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="parent_summary_test",
-        dimensions=768,
+        dimensions=1024,
     )
     doc_store = create_mongo_document_store(document_store_name="development")
 

@@ -38,17 +38,17 @@ jobs:
       matrix:
         include:
           - module: aihub_lib
-            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm,presidio-analyzer,presidio-anonymizer,minio,etcd,milvus-standalone,attu"
+            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm,minio,etcd,milvus-standalone"
           - module: aihub_api
-            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm,presidio-analyzer,presidio-anonymizer"
+            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm"
           - module: aihub_pipeline
             docker_compose_services: ""
           - module: aihub_agent
-            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm,presidio-analyzer,presidio-anonymizer,minio,etcd,milvus-standalone,attu"
+            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm,minio,etcd,milvus-standalone"
           - module: aihub_bot
-            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm,presidio-analyzer,presidio-anonymizer"
+            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm"
           - module: aihub_process
-            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm,presidio-analyzer,presidio-anonymizer"
+            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm"
 
     steps:
       - name: Checkout repository

@@ -77,11 +77,11 @@ def self_hosted_agent_config(event_loop):
     # Set the event loop for this function
     asyncio.set_event_loop(event_loop)
 
-    embedding_config = EmbeddingModelConfig(model_name="local/text-embedding-gte")
+    embedding_config = EmbeddingModelConfig(model_name="local/qwen-embedding")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="retrieval_agent_development",
-        dimensions=768,
+        dimensions=1024,
     )
     doc_store = create_mongo_document_store(document_store_name="retrieval_agent_development")
 

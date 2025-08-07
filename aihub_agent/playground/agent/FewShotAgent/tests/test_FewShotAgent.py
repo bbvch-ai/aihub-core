@@ -42,7 +42,7 @@ def self_hosted_llm_config():
     """
     Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
     """
-    return LLMConfig(model_name="local/qwen3-0.6b")
+    return LLMConfig(model_name="local/qwen3-small")
 
 
 @pytest.fixture

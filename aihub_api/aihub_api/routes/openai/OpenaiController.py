@@ -190,12 +190,14 @@ class OpenaiController(Controller):
         async def chat_completion(
             completion_request: Annotated[ChatCompletionRequest, Body],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ChatCompletion | StreamingResponse:
             completion_request.user = completion_request.user or user.id
             return await OpenaiService.chat_completion(
                 model_name=completion_request.model,
                 chat_completion_request=completion_request,
                 user=user,
+                t=t,
             )
 
         return self

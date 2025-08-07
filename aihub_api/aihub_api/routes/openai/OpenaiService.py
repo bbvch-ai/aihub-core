@@ -174,6 +174,7 @@ class OpenaiService:
         model_name: str,
         chat_completion_request: ChatCompletionRequest,
         user: UserIdentity,
+        t: LocaleHandler,
     ) -> ChatCompletion | StreamingResponse:
         """
         Execute a chat completion request with an LLM.
@@ -182,12 +183,19 @@ class OpenaiService:
         await OpenaiService.get_model(model_name)  # Ensures model exists
         client: AsyncOpenAI = await LiteLLMService.openai_aclient_for_user(user)
 
+        thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
+
         if chat_completion_request.stream:
 
             async def stream_chat_completion() -> AsyncGenerator[str]:
                 """Handles streaming responses from OpenAI's API."""
                 kwargs = OpenaiService._filter_kwargs(
-                    client.chat.completions.create, chat_completion_request, user=user
+                    client.chat.completions.create,
+                    chat_completion_request,
+                    user=user,
+                    locale=t.locale,
+                    thread_id=thread_id,
+                    display_id=display_id,
                 )
                 response = await client.chat.completions.create(**kwargs)
 
@@ -197,7 +205,14 @@ class OpenaiService:
 
             return StreamingResponse(stream_chat_completion(), media_type="text/event-stream")
         else:
-            kwargs = OpenaiService._filter_kwargs(client.chat.completions.create, chat_completion_request, user=user)
+            kwargs = OpenaiService._filter_kwargs(
+                client.chat.completions.create,
+                chat_completion_request,
+                user=user,
+                locale=t.locale,
+                thread_id=thread_id,
+                display_id=display_id,
+            )
             return await client.chat.completions.create(**kwargs)
 
     @staticmethod
@@ -219,6 +234,7 @@ class OpenaiService:
                 model_name=model_name,
                 chat_completion_request=chat_completion_request,
                 user=user,
+                t=t,
             )
         except HTTPException:
             pass
@@ -524,7 +540,12 @@ class OpenaiService:
 
     @staticmethod
     def _filter_kwargs(
-        sdk_fn: Callable, fn_kwargs_model: BaseModel, user: UserIdentity | None = None
+        sdk_fn: Callable,
+        fn_kwargs_model: BaseModel,
+        user: UserIdentity | None = None,
+        thread_id: str | None = None,
+        display_id: str | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
         """
         Wraps an SDK client's `chat.completions.create` method, intelligently preparing
@@ -542,6 +563,13 @@ class OpenaiService:
         for key, value in payload_dict.items():
             if key in sdk_known_param_names and key != "metadata":
                 sdk_call_kwargs[key] = value
+
+        sdk_call_kwargs["extra_body"] = {
+            "thread_id": thread_id,
+            "display_id": display_id,
+            "litellm_session_id": thread_id,
+            "guardrail_config": {"language": locale},
+        }
 
         return sdk_call_kwargs
 

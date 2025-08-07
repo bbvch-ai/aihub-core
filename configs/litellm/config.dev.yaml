@@ -54,14 +54,14 @@ model_list:
     model_info:
       mode: chat
 
-  - model_name: local/qwen3-0.6b
+  - model_name: local/qwen3-small
     litellm_params:
-      model: openai/unsloth/Qwen3-0.6B-GGUF
+      model: openai/unsloth/Qwen3-1.7B-GGUF
       api_base: http://llama-cpp:8182/v1
       api_key: None
     model_info:
       mode: chat
-      max_input_tokens: 32768
+      max_input_tokens: 8196
       supports_function_calling: true
       max_output_tokens: 4096
       input_cost_per_token: 0.00001
@@ -71,16 +71,16 @@ model_list:
         revision: main
         auth_token: os.environ/HUGGINGFACE_API_KEY
 
-  - model_name: local/text-embedding-gte
+  - model_name: local/qwen-embedding
     litellm_params:
-      model: openai/Alibaba-NLP/gte-base-en-v1.5
+      model: openai/Qwen/Qwen3-Embedding-0.6B
       api_base: http://huggingface-text-embedding-inference:8183/v1
       api_key: None
     model_info:
       mode: embedding
       input_cost_per_token: 0.000000001
       custom_tokenizer:
-        identifier: Alibaba-NLP/gte-base-en-v1.5
+        identifier: Qwen/Qwen3-Embedding-0.6B
         revision: main
         auth_token: os.environ/HUGGINGFACE_API_KEY
 
@@ -88,9 +88,9 @@ guardrails:
   - guardrail_name: "presidio-mask-guard"
     litellm_params:
       guardrail: presidio
-      default_on: true
+      default_on: false
       mode: "pre_call"
-      presidio_language: "en"
+      presidio_language: "de"
       presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
       presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
       output_parse_pii: true
@@ -101,9 +101,9 @@ guardrails:
   - guardrail_name: "presidio-block-guard"
     litellm_params:
       guardrail: presidio
-      default_on: true
+      default_on: false
       mode: "pre_call"
-      presidio_language: "en"
+      presidio_language: "de"
       presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
       presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
       output_parse_pii: true
@@ -120,7 +120,7 @@ general_settings:
 
 litellm_settings:
   callbacks: ["detect_prompt_injection"]
-  default_fallbacks: ["azure/gpt-4o-mini"]
+  default_fallbacks: []
   telemetry: false
   json_logs: true
 
