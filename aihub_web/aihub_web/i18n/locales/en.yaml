@@ -1,6 +1,22 @@
 test: "This is test"
 welcome: "Welcome to bbv ai-hub"
 
+litellm:
+  title: "LiteLLM Models"
+  error: "Error loading models"
+  maxTokens: "Max Tokens"
+  maxInput: "Max Input"
+  maxOutput: "Max Output"
+  vectorSize: "Vector Size"
+  pricing: "Pricing (per token)"
+  inputCost: "Input Cost"
+  outputCost: "Output Cost"
+  cacheReadCost: "Cache Read Cost"
+  rateLimits: "Rate Limits"
+  apiDetails: "API Details"
+  apiBase: "API Base"
+  apiVersion: "API Version"
+
 languages:
   en: "English"
   de: "German"
