@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException, Security
 from nats.aio.client import Client as NATS
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
-from aihub_api.routes.litellm.dto.LLMDTO import LLMDTO, LiteLLMParamsDTO, ModelInfoDTO
+from aihub_api.routes.litellm.dto.LLMDTO import LLMDTO, LiteLLMParamsDTO, ModelInfoDTO, CustomTokenizerDTO
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -61,9 +61,14 @@ class LiteLLMController(Controller):
                     litellm_params=LiteLLMParamsDTO(
                         api_base="https://aihub-dev-openai-che.openai.azure.com/",
                         api_version="2024-12-01-preview",
+                        use_in_pass_through=False,
+                        use_litellm_proxy=False,
+                        merge_reasoning_content_in_choices=False,
                         model="azure/gpt-4o-mini",
                     ),
                     model_info=ModelInfoDTO(
+                        id="b7461b83483516c44bdd1081929323c456b2b82a5927d5ee482804baf58f535e",
+                        db_model=False,
                         mode="chat",
                         key="azure/gpt-4o-mini",
                         max_tokens=16384,
@@ -72,6 +77,20 @@ class LiteLLMController(Controller):
                         input_cost_per_token=1.65e-07,
                         cache_read_input_token_cost=7.5e-08,
                         output_cost_per_token=6.6e-07,
+                        litellm_provider="azure",
+                        supports_response_schema=True,
+                        supports_vision=True,
+                        supports_function_calling=True,
+                        supports_tool_choice=True,
+                        supports_prompt_caching=True,
+                        supported_openai_params=[
+                            "temperature", "n", "stream", "stream_options", "stop", "max_tokens",
+                            "max_completion_tokens", "tools", "tool_choice", "presence_penalty",
+                            "frequency_penalty", "logit_bias", "user", "function_call", "functions",
+                            "top_p", "logprobs", "top_logprobs", "response_format", "seed",
+                            "extra_headers", "parallel_tool_calls", "prediction", "modalities",
+                            "audio", "web_search_options"
+                        ],
                     ),
                 ),
                 LLMDTO(
@@ -79,9 +98,14 @@ class LiteLLMController(Controller):
                     litellm_params=LiteLLMParamsDTO(
                         api_base="https://aihub-dev-openai-che.openai.azure.com/",
                         api_version="2024-02-01",
+                        use_in_pass_through=False,
+                        use_litellm_proxy=False,
+                        merge_reasoning_content_in_choices=False,
                         model="text-embedding-3-large",
                     ),
                     model_info=ModelInfoDTO(
+                        id="436d8403029f4dd6fcbaa6b0a17f2332781a37d0a514657936491080dda836a0",
+                        db_model=False,
                         mode="embedding",
                         key="text-embedding-3-large",
                         max_tokens=8191,
@@ -91,12 +115,20 @@ class LiteLLMController(Controller):
                         output_cost_per_token_batches=0.0,
                         output_cost_per_token=0.0,
                         output_vector_size=3072,
+                        litellm_provider="openai",
                     ),
                 ),
                 LLMDTO(
                     model_name="google/gemini-2.5-flash",
-                    litellm_params=LiteLLMParamsDTO(model="gemini/gemini-2.5-flash"),
+                    litellm_params=LiteLLMParamsDTO(
+                        use_in_pass_through=False,
+                        use_litellm_proxy=False,
+                        merge_reasoning_content_in_choices=False,
+                        model="gemini/gemini-2.5-flash",
+                    ),
                     model_info=ModelInfoDTO(
+                        id="796a6f6210a513ed68a5a34f4c66997e49072f665c035dec8a4024e7d60796e3",
+                        db_model=False,
                         mode="chat",
                         key="gemini/gemini-2.5-flash",
                         max_tokens=65535,
@@ -107,8 +139,67 @@ class LiteLLMController(Controller):
                         input_cost_per_audio_token=1e-06,
                         output_cost_per_token=2.5e-06,
                         output_cost_per_reasoning_token=2.5e-06,
+                        litellm_provider="gemini",
+                        supports_system_messages=True,
+                        supports_response_schema=True,
+                        supports_vision=True,
+                        supports_function_calling=True,
+                        supports_tool_choice=True,
+                        supports_prompt_caching=True,
+                        supports_audio_output=False,
+                        supports_pdf_input=True,
+                        supports_web_search=True,
+                        supports_url_context=True,
+                        supports_reasoning=True,
                         tpm=8000000,
                         rpm=100000,
+                    ),
+                ),
+                LLMDTO(
+                    model_name="azure/dall-e-3",
+                    litellm_params=LiteLLMParamsDTO(
+                        api_base="https://joelb-mdotxdzc-australiaeast.cognitiveservices.azure.com/",
+                        api_version="2024-02-01",
+                        use_in_pass_through=False,
+                        use_litellm_proxy=False,
+                        merge_reasoning_content_in_choices=False,
+                        model="azure/dall-e-3",
+                    ),
+                    model_info=ModelInfoDTO(
+                        id="1c81c0109d0450d2a9bbca4ded2db0ac8c3773b416912699ebebc4777654c79e",
+                        db_model=False,
+                        base_model="azure/dall-e-3",
+                        mode="image_generation",
+                        key="azure/dall-e-3",
+                        input_cost_per_token=0,
+                        output_cost_per_token=0,
+                        litellm_provider="azure",
+                    ),
+                ),
+                LLMDTO(
+                    model_name="local/qwen3-0.6b",
+                    litellm_params=LiteLLMParamsDTO(
+                        api_base="http://llama-cpp:8182/v1",
+                        use_in_pass_through=False,
+                        use_litellm_proxy=False,
+                        merge_reasoning_content_in_choices=False,
+                        model="openai/unsloth/Qwen3-0.6B-GGUF",
+                    ),
+                    model_info=ModelInfoDTO(
+                        id="7b5627a69223af7fca319f51964386f154eb008c6c6bc659c1ef655090d3258b",
+                        db_model=False,
+                        mode="chat",
+                        key="openai/unsloth/Qwen3-0.6B-GGUF",
+                        max_input_tokens=32768,
+                        max_output_tokens=4096,
+                        input_cost_per_token=1e-05,
+                        output_cost_per_token=0.0002,
+                        litellm_provider="openai",
+                        supports_function_calling=True,
+                        custom_tokenizer=CustomTokenizerDTO(
+                            identifier="Qwen/Qwen3-0.6B",
+                            revision="main",
+                        ),
                     ),
                 ),
             ]

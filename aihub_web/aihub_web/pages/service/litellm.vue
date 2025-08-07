@@ -44,7 +44,7 @@
                   />
                 </div>
                 <div class="md:hidden">
-                  <p class="text-xs opacity-60">{{ getProvider(data.model_name) }}</p>
+                  <p class="text-xs opacity-60">{{ getProvider(data) }}</p>
                 </div>
               </div>
             </template>
@@ -59,8 +59,8 @@
           >
             <template #body="{ data }">
               <Tag
-                :value="getProvider(data.model_name)"
-                :severity="getProviderSeverity(getProvider(data.model_name))"
+                :value="getProvider(data)"
+                :severity="getProviderSeverity(getProvider(data))"
               />
             </template>
           </Column>
@@ -189,28 +189,91 @@
 </template>
 
 <script setup lang="ts">
+interface CustomTokenizer {
+  identifier: string
+  revision: string
+  auth_token?: string
+}
+
 interface LiteLLMParams {
   api_base?: string
   api_version?: string
+  use_in_pass_through?: boolean
+  use_litellm_proxy?: boolean
+  merge_reasoning_content_in_choices?: boolean
   model: string
 }
 
 interface ModelInfo {
+  // Core identification
+  id?: string
+  db_model?: boolean
+  base_model?: string
   mode: string
   key: string
+
+  // Token limits
   max_tokens?: number
   max_input_tokens?: number
   max_output_tokens?: number
+
+  // Cost information - basic
   input_cost_per_token?: number
-  cache_read_input_token_cost?: number
   output_cost_per_token?: number
+
+  // Cost information - extended
+  cache_creation_input_token_cost?: number
+  cache_read_input_token_cost?: number
+  input_cost_per_character?: number
+  input_cost_per_token_above_128k_tokens?: number
+  input_cost_per_token_above_200k_tokens?: number
+  input_cost_per_query?: number
+  input_cost_per_second?: number
+  input_cost_per_audio_token?: number
   input_cost_per_token_batches?: number
   output_cost_per_token_batches?: number
-  output_vector_size?: number
-  input_cost_per_audio_token?: number
+  output_cost_per_audio_token?: number
+  output_cost_per_character?: number
   output_cost_per_reasoning_token?: number
+  output_cost_per_token_above_128k_tokens?: number
+  output_cost_per_character_above_128k_tokens?: number
+  output_cost_per_token_above_200k_tokens?: number
+  output_cost_per_second?: number
+  output_cost_per_image?: number
+  citation_cost_per_token?: number
+  search_context_cost_per_query?: number
+
+  // Vector information
+  output_vector_size?: number
+
+  // Provider and tokenizer
+  litellm_provider?: string
+  custom_tokenizer?: CustomTokenizer
+
+  // Capability flags
+  supports_system_messages?: boolean
+  supports_response_schema?: boolean
+  supports_vision?: boolean
+  supports_function_calling?: boolean
+  supports_tool_choice?: boolean
+  supports_assistant_prefill?: boolean
+  supports_prompt_caching?: boolean
+  supports_audio_input?: boolean
+  supports_audio_output?: boolean
+  supports_pdf_input?: boolean
+  supports_embedding_image_input?: boolean
+  supports_native_streaming?: boolean
+  supports_web_search?: boolean
+  supports_url_context?: boolean
+  supports_reasoning?: boolean
+  supports_computer_use?: boolean
+
+  // Rate limits
   tpm?: number
   rpm?: number
+
+  // Supported parameters
+  supported_openai_params?: string[]
 }
 
 interface LLMModel {
@@ -228,7 +291,12 @@ const toast = useToast()
 
 const {data: models, pending, error} = await useFetch<LLMModel[]>('/api/v1/litellm/model_info')
 
-function getProvider(modelName: string): string {
+function getProvider(model: LLMModel): string {
+  if (model.model_info.litellm_provider) {
+    return model.model_info.litellm_provider
+  }
+
+  const modelName = model.model_name
   if (modelName.includes('azure/')) return 'azure'
   if (modelName.includes('google/') || modelName.includes('gemini')) return 'google'
   if (modelName.includes('openai/')) return 'openai'
@@ -294,21 +362,41 @@ function formatCostPer1M(costPerToken?: number): string {
 function getModelFeatures(model: LLMModel): Array<{ name: string, severity: string }> {
   const features: Array<{ name: string, severity: string }> = []
 
-  if (model.model_name.includes('vision') || model.model_name.includes('4o')) {
+  // Use actual capability flags from the model_info
+  if (model.model_info.supports_vision) {
     features.push({name: 'Vision', severity: 'success'})
   }
 
-  if (model.model_info.mode === 'chat') {
+  if (model.model_info.supports_function_calling) {
     features.push({name: 'Function Calling', severity: 'info'})
   }
 
-  if (model.model_name.includes('gemini')) {
+  if (model.model_info.supports_web_search) {
     features.push({name: 'Web Search', severity: 'help'})
+  }
+
+  if (model.model_info.supports_reasoning) {
     features.push({name: 'Reasoning', severity: 'warn'})
   }
 
-  if (model.model_info.cache_read_input_token_cost) {
+  if (model.model_info.supports_prompt_caching) {
     features.push({name: 'Caching', severity: 'secondary'})
+  }
+
+  if (model.model_info.supports_audio_input) {
+    features.push({name: 'Audio Input', severity: 'info'})
+  }
+
+  if (model.model_info.supports_audio_output) {
+    features.push({name: 'Audio Output', severity: 'info'})
+  }
+
+  if (model.model_info.supports_pdf_input) {
+    features.push({name: 'PDF Input', severity: 'success'})
+  }
+
+  if (model.model_info.supports_computer_use) {
+    features.push({name: 'Computer Use', severity: 'danger'})
   }
 
   if (model.model_info.output_vector_size) {
