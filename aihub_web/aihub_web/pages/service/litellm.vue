@@ -185,7 +185,6 @@
         </DataTable>
       </div>
 
-      <!-- Model Details Dialog -->
       <Dialog
         v-model:visible="modelDialogVisible"
         modal
@@ -195,7 +194,6 @@
         class="model-details-dialog"
       >
         <div v-if="selectedModel" class="space-y-6">
-          <!-- Model Overview -->
           <div>
             <h3 class="text-lg font-semibold mb-4">{{ t('litellm.modelDetails.overview') }}</h3>
             <div class="grid grid-cols-2 gap-4 mb-4">
@@ -226,25 +224,32 @@
             </div>
           </div>
 
-          <!-- Token & Cost Information -->
           <div>
             <h3 class="text-lg font-semibold mb-4">{{ t('litellm.modelDetails.tokenCost') }}</h3>
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <p class="font-medium mb-1">{{ t('litellm.modelDetails.maxInputTokens') }}:</p>
-                <p>{{ selectedModel.model_info.max_input_tokens ? formatNumber(selectedModel.model_info.max_input_tokens) : t('litellm.modelDetails.notSpecified') }}</p>
+                <p>{{
+                    selectedModel.model_info.max_input_tokens ? formatNumber(selectedModel.model_info.max_input_tokens) : t('litellm.modelDetails.notSpecified')
+                  }}</p>
               </div>
               <div>
                 <p class="font-medium mb-1">{{ t('litellm.modelDetails.maxOutputTokens') }}:</p>
-                <p>{{ selectedModel.model_info.max_output_tokens ? formatNumber(selectedModel.model_info.max_output_tokens) : t('litellm.modelDetails.notSpecified') }}</p>
+                <p>{{
+                    selectedModel.model_info.max_output_tokens ? formatNumber(selectedModel.model_info.max_output_tokens) : t('litellm.modelDetails.notSpecified')
+                  }}</p>
               </div>
               <div>
                 <p class="font-medium mb-1">{{ t('litellm.modelDetails.inputCostPer1M') }}:</p>
-                <p>{{ selectedModel.model_info.input_cost_per_token ? formatCostPer1M(selectedModel.model_info.input_cost_per_token) : t('litellm.modelDetails.notSpecified') }}</p>
+                <p>{{
+                    selectedModel.model_info.input_cost_per_token ? formatCostPer1M(selectedModel.model_info.input_cost_per_token) : t('litellm.modelDetails.notSpecified')
+                  }}</p>
               </div>
               <div>
                 <p class="font-medium mb-1">{{ t('litellm.modelDetails.outputCostPer1M') }}:</p>
-                <p>{{ selectedModel.model_info.output_cost_per_token ? formatCostPer1M(selectedModel.model_info.output_cost_per_token) : t('litellm.modelDetails.notSpecified') }}</p>
+                <p>{{
+                    selectedModel.model_info.output_cost_per_token ? formatCostPer1M(selectedModel.model_info.output_cost_per_token) : t('litellm.modelDetails.notSpecified')
+                  }}</p>
               </div>
               <div v-if="selectedModel.model_info.cache_read_input_token_cost">
                 <p class="font-medium mb-1">{{ t('litellm.modelDetails.cacheReadCostPer1M') }}:</p>
@@ -257,7 +262,6 @@
             </div>
           </div>
 
-          <!-- Rate Limits -->
           <div v-if="selectedModel.model_info.tpm || selectedModel.model_info.rpm">
             <h3 class="text-lg font-semibold mb-4">{{ t('litellm.modelDetails.rateLimits') }}</h3>
             <div class="grid grid-cols-2 gap-4">
@@ -272,7 +276,6 @@
             </div>
           </div>
 
-          <!-- Capabilities -->
           <div>
             <h3 class="text-lg font-semibold mb-4">{{ t('litellm.modelDetails.capabilities') }}</h3>
             <div class="flex flex-wrap gap-2">
@@ -292,7 +295,6 @@
             </div>
           </div>
 
-          <!-- Supported OpenAI Parameters -->
           <div>
             <h3 class="text-lg font-semibold mb-4">{{ t('litellm.modelDetails.supportedParams') }}</h3>
             <div class="flex flex-wrap gap-2">
@@ -312,10 +314,11 @@
             </div>
           </div>
 
-          <!-- Usage Example -->
           <div>
             <h3 class="text-lg font-semibold mb-4">{{ t('litellm.modelDetails.usageExample') }}</h3>
-            <pre class="bg-gray-100 dark:bg-gray-800 p-4 rounded text-sm overflow-x-auto"><code>{{ getUsageExample(selectedModel) }}</code></pre>
+            <pre class="bg-gray-100 dark:bg-gray-800 p-4 rounded text-sm overflow-x-auto"><code>{{
+                getUsageExample(selectedModel)
+              }}</code></pre>
           </div>
         </div>
       </Dialog>
@@ -340,23 +343,16 @@ interface LiteLLMParams {
 }
 
 interface ModelInfo {
-  // Core identification
   id?: string
   db_model?: boolean
   base_model?: string
   mode: string
   key: string
-
-  // Token limits
   max_tokens?: number
   max_input_tokens?: number
   max_output_tokens?: number
-
-  // Cost information - basic
   input_cost_per_token?: number
   output_cost_per_token?: number
-
-  // Cost information - extended
   cache_creation_input_token_cost?: number
   cache_read_input_token_cost?: number
   input_cost_per_character?: number
@@ -377,15 +373,9 @@ interface ModelInfo {
   output_cost_per_image?: number
   citation_cost_per_token?: number
   search_context_cost_per_query?: number
-
-  // Vector information
   output_vector_size?: number
-
-  // Provider and tokenizer
   litellm_provider?: string
   custom_tokenizer?: CustomTokenizer
-
-  // Capability flags
   supports_system_messages?: boolean
   supports_response_schema?: boolean
   supports_vision?: boolean
@@ -402,12 +392,8 @@ interface ModelInfo {
   supports_url_context?: boolean
   supports_reasoning?: boolean
   supports_computer_use?: boolean
-
-  // Rate limits
   tpm?: number
   rpm?: number
-
-  // Supported parameters
   supported_openai_params?: string[]
 }
 
@@ -426,7 +412,6 @@ const toast = useToast()
 
 const {data: models, pending, error} = await useFetch<LLMModel[]>('/api/v1/litellm/model_info')
 
-// Modal state
 const modelDialogVisible = ref(false)
 const selectedModel = ref<LLMModel | null>(null)
 
@@ -501,7 +486,6 @@ function formatCostPer1M(costPerToken?: number): string {
 function getModelFeatures(model: LLMModel): Array<{ name: string, severity: string }> {
   const features: Array<{ name: string, severity: string }> = []
 
-  // Use actual capability flags from the model_info
   if (model.model_info.supports_vision) {
     features.push({name: 'Vision', severity: 'success'})
   }
@@ -571,7 +555,7 @@ async function copyToClipboard(text: string) {
 function getUsageExample(model: LLMModel): string {
   const isImageGeneration = model.model_info.mode === 'image_generation'
   const isEmbedding = model.model_info.mode === 'embedding'
-  
+
   if (isImageGeneration) {
     return `import openai
 
@@ -589,7 +573,7 @@ response = client.images.generate(
 
 print(response.data[0].url)`
   }
-  
+
   if (isEmbedding) {
     return `import openai
 
@@ -605,8 +589,7 @@ response = client.embeddings.create(
 
 print(response.data[0].embedding)`
   }
-  
-  // Default to chat completion
+
   return `import openai
 
 client = openai.OpenAI(
