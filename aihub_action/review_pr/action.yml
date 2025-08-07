@@ -30,9 +30,6 @@ runs:
     - name: PR Agent action step
       uses: qodo-ai/pr-agent@main
       env:
-        GITHUB_ACTION.AUTO_REVIEW: true
-        GITHUB_ACTION.AUTO_DESCRIBE: true
-        GITHUB_ACTION.AUTO_IMPROVE: true
         OPENAI_KEY: ${{ inputs.azure_openai_key }}
         GITHUB_TOKEN: ${{ inputs.github_token }}
         CONFIG.MODEL: ${{ inputs.model }}

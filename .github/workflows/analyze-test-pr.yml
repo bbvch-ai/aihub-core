@@ -34,6 +34,7 @@ jobs:
       test_report_url_html: ${{ steps.test_report.outputs.url_html }}
 
     strategy:
+      fail-fast: false
       matrix:
         include:
           - module: aihub_lib
@@ -89,6 +90,7 @@ jobs:
       checks: write
 
     strategy:
+      fail-fast: false
       matrix:
         module: [ aihub_lib, aihub_api, aihub_agent, aihub_pipeline, aihub_bot, aihub_process ]
 
@@ -109,6 +111,7 @@ jobs:
       security-events: write
 
     strategy:
+      fail-fast: false
       matrix:
         include:
           - folder: aihub_agent

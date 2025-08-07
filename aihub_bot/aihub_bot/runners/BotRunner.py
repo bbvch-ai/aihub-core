@@ -4,6 +4,8 @@ from contextlib import AbstractAsyncContextManager
 
 from aihub_lib.runners.Runner import Runner
 from fastapi import FastAPI
+from starlette.applications import Starlette
+from typing_extensions import override
 
 from aihub_bot.runners.lifetime.lifetime_manager import lifetime_manager
 
@@ -50,7 +52,20 @@ class BotRunner(Runner):
         super().__init__(api_path, title, description, origins)
 
         # Store TTL days in app state for lifetime manager to access
-        self._base_app.state.conversation_ttl_days = conversation_ttl_days
+        self.conversation_ttl_days = conversation_ttl_days
+
+        # Create the base and API apps
+        self._base_app = self._get_base_app()
+        self._api_app.state = self._base_app.state
+
+    @override
+    def get_app(self) -> Starlette:
+        return self._base_app
+
+    def _get_base_app(self) -> Starlette:
+        app = super().get_app()
+        app.state.conversation_ttl_days = self.conversation_ttl_days
+        return app
 
     @property
     def lifetime_manager(self) -> Callable[[FastAPI], AbstractAsyncContextManager]:
