@@ -1,6 +1,7 @@
 import logging
 from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
+from typing import override
 
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.routes.Controller import Controller
@@ -11,7 +12,6 @@ from fastmcp.server.openapi import MCPType, RouteMap
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Mount
-from typing_extensions import override
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.i18n.middleware.I18nMiddleware import I18nMiddleware

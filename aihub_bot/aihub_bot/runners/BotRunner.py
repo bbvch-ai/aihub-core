@@ -1,11 +1,11 @@
 import logging
 from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager
+from typing import override
 
 from aihub_lib.runners.Runner import Runner
 from fastapi import FastAPI
 from starlette.applications import Starlette
-from typing_extensions import override
 
 from aihub_bot.runners.lifetime.lifetime_manager import lifetime_manager
 
