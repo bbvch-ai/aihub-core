@@ -86,7 +86,8 @@
     "click": "BSD-3-Clause",
     "jsonschema-specifications": "MIT",
     "tiktoken": "MIT",
-    "argparse":  "Python Software Foundation License"
+    "argparse":  "Python Software Foundation License",
+    "sse-starlette": "BSD-3-Clause"
   },
   "reviewed_packages": [
     {

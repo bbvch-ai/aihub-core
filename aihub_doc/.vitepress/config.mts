@@ -98,6 +98,20 @@ function generateSidebar() {
       items: generateSidebarItems(aihubBasePath, '/aihub/'),
       index: rootFrontmatter.index,
     });
+
+    allTopLevelGroups.push({
+      text: 'Changelog',
+      link: '/changelog/',
+      collapsible: true,
+      index: 1000,
+    });
+
+    allTopLevelGroups.push({
+      text: 'Licenses',
+      link: '/licenses/',
+      collapsible: true,
+      index: 1001,
+    });
   } catch (e) {
     console.warn(`[VitePress] Could not process 'aihub' section. Is aihub/index.md missing?`);
   }

@@ -9,6 +9,13 @@ echo "🔄 Syncing README files..."
 
 # First, remove the aihub folder
 rm -rf aihub
+rm -f LICENSES.md
+rm -f changelog.md
+
+mkdir -p "licenses"
+mkdir -p "changelog"
+cp "../LICENSES.md" "./licenses/index.md"
+cp "../changelog.md" "./changelog/index.md"
 
 # Find all 'README.md' files in the parent directory (../),
 # while excluding 'node_modules' and the current 'aihub_doc' directory.
