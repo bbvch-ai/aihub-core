@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.234.2] - 2025-08-07 - Enhanced PR Agent Configuration and Performance Updates
+
+### Added
+- ✨ **Introduced `pr_agent.toml` configuration file:** Enables comprehensive customization of the PR agent's behavior, including advanced settings for auto-approval, reasoning effort, code suggestions, and best practices, empowering users with greater control over automated reviews.
+
+### Changed
+- 🚀 **Updated AI Model and API Versions:** Upgraded the `review-pr` workflow to utilize the `o4-mini` AI model and the `2024-12-01-preview` API version, enhancing performance and ensuring compatibility with the latest service capabilities.
+
+### Refactor
+- 🧹 **Centralized PR Agent Settings:** Migrated several hardcoded PR agent configurations from `action.yml` into the new `pr_agent.toml` file, streamlining configuration management and improving overall maintainability.
+
+---
+
+
+
 ## [v0.234.1] - 2025-08-07 - Platform Evolution: Python 3.13, Automated Compliance, and RAG Agent Enhancements
 
 ### Added

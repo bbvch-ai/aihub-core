@@ -23,7 +23,7 @@ jobs:
         with:
           azure_openai_key: ${{ secrets.AZURE_OPENAI_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          model: "gpt-4o"
-          openai_api_version: "2024-08-01-preview"
-          azure_api_version: "2024-08-01-preview"
+          model: "o4-mini"
+          openai_api_version: "2024-12-01-preview"
+          azure_api_version: "2024-12-01-preview"
           azure_openai_api_base: ${{ vars.AZURE_OPENAI_API_BASE }}
