@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_agent"
-version = "v0.229.0"
+version = "v0.234.1"
 description = "agents core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -10,7 +10,7 @@ authors = [
 license = "Proprietary"
 
 [tool.poetry.dependencies]
-python = ">=3.11, <3.12"
+python = ">=3.13, <3.14"
 pydantic = "^2.10.3"
 nats-py = "^2.9.0"
 openinference-instrumentation-llama-index = "^4.2.1"
@@ -32,11 +32,12 @@ redis = "^5.2.1"
 stringcase = "^1.2.0"
 
 [tool.poetry.dependencies.aihub_lib]
-path = "../aihub_lib"
-develop = true
+git = "https://github.com/bbvch-ai/aihub-core.git"
+tag = "v0.234.1"
+subdirectory = "aihub_lib"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.3.2"
+pytest = "^8.4.1"
 pytest-asyncio = "^0.24.0"
 ruff = "^0.8.1"
 mypy = "^1.13.0"
@@ -47,6 +48,7 @@ pytest-cov = "^6.0.0"
 tabulate = "^0.9.0"
 matplotlib = "^3.10.1"
 seaborn = "^0.13.2"
+pip-licenses = "^5.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -54,14 +56,14 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 line-length = 120
-target-version = 'py311'
+target-version = 'py313'
 
 [tool.ruff.lint]
 select = ["E", "F", "UP", "I"]
 
 [tool.black]
 line-length = 120
-target-version = ['py311']
+target-version = ['py313']
 include = '\.pyi?$'
 extend-exclude = '''
 /(

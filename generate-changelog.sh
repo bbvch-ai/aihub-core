@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# This script automatically generates changelog entries for new git tags
-# by diffing against the previous tag and using an LLM to summarize the changes.
+# This script automatically generates changelog entries for new git tags that start with 'v'
+# by diffing against the previous 'v*' tag and using an LLM to summarize the changes.
 # Adheres to the "Keep a Changelog" format.
 
 # Exit on error, undefined variable, or pipe failure
@@ -58,14 +58,15 @@ initialize_changelog
 
 # --- Main Logic ---
 
-mapfile -t sorted_tags < <(git tag --sort=v:refname)
+# Only find tags that start with 'v' using the -l flag.
+mapfile -t sorted_tags < <(git tag -l "v*" --sort=v:refname)
 
 if [ ${#sorted_tags[@]} -lt 2 ]; then
-    echo "Need at least two tags to generate a changelog entry. Exiting."
+    echo "Need at least two 'v*' tags to generate a changelog entry. Exiting."
     exit 0
 fi
 
-echo "Found ${#sorted_tags[@]} tags. Checking for new entries to generate..."
+echo "Found ${#sorted_tags[@]} 'v*' tags. Checking for new entries to generate..."
 
 # Iterate through tags, starting from the second one.
 for i in "${!sorted_tags[@]}"; do
@@ -99,8 +100,6 @@ for i in "${!sorted_tags[@]}"; do
     prompt_content=$(cat "$SYSTEM_PROMPT_FILE")
 
     # Attempt to generate the changelog entry using the LLM.
-    # The `if ! ...` construct prevents the script from exiting due to `set -e`
-    # if the llm command fails.
     if ! llm_output=$(llm --no-stream -m "$LLM_MODEL" --system - "$prompt_content" <<EOF
 Here is the git diff from version $prev_tag to $current_tag. Please generate the changelog entry based on these changes.
 $diff_output

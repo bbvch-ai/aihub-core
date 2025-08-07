@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_iac"
-version = "v0.229.0"
+version = "v0.234.1"
 description = "iac core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -12,14 +12,14 @@ authors = [
 license = "Proprietary"
 
 [tool.poetry.dependencies]
-python = ">=3.11, <3.12"
+python = ">=3.13, <3.14"
 pydantic = "^2.10.3"
 pulumi-azure-native = "^3.5.0"
 pydantic-settings = "^2.9.1"
 pulumi-command = "^1.0.5"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.3.2"
+pytest = "^8.4.1"
 pytest-asyncio = "^0.24.0"
 ruff = "^0.8.1"
 mypy = "^1.13.0"
@@ -31,14 +31,14 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 line-length = 120
-target-version = 'py311'
+target-version = 'py313'
 
 [tool.ruff.lint]
 select = ["E", "F", "UP", "I"]
 
 [tool.black]
 line-length = 120
-target-version = ['py311']
+target-version = ['py313']
 include = '\.pyi?$'
 extend-exclude = '''
 /(

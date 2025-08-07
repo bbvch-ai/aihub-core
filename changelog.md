@@ -5,13 +5,311 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.234.1] - 2025-08-07 - Platform Evolution: Python 3.13, Automated Compliance, and RAG Agent Enhancements
+
+### Added
+- ✨ **Automated License Compliance Reporting**: Introduced a comprehensive system to scan, categorize, and report on all Python, Node.js, and Docker image dependencies, generating a detailed `LICENSES.md` file for improved transparency and compliance.
+- 🔊 **Python 3.13 Audio Compatibility**: Added the `audioop-lts` dependency to the API service to ensure seamless audio processing compatibility with Python 3.13.
+- 🦾 **RAGAgent System Prompt Configuration**: Introduced the capability to configure the `RAGAgent` with a system prompt, allowing for more precise guidance of the underlying Large Language Model's behavior and responses. This includes support for multi-language prompts and comprehensive testing.
+- 🛡️ **Enforced Main Branch Protection**: Implemented Git settings to explicitly prohibit force pushes to the `main` branch, enhancing codebase integrity and preventing accidental history rewrites.
+- ✅ **Automated PR Version Label Check**: Introduced a new CI check that ensures all pull requests targeting `main` have a `major`, `minor`, or `patch` label, streamlining version management and release predictability.
+
+### Changed
+- ⬆️ **Python 3.13 Platform Upgrade**: All core Python projects and CI/CD workflows (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`, `aihub_process`) have been upgraded to officially support and leverage Python 3.13, enabling access to the latest language features and performance improvements.
+- ⚙️ **Refined CI/CD Versioning Strategy**: The automated release workflow now triggers only on *merged pull requests* to `main` and determines the version bump (major, minor, or patch) based on PR labels, providing more granular control over releases.
+- ⚡️ **Increased RAGAgent Test Timeout**: Extended the default timeout for RAGAgent test runs to provide more stability and accommodate longer LLM response times in complex scenarios.
+- 🔗 **Internal Dependency Tag Synchronization**: Synchronized all internal `aihub_lib` dependency tags across microservices to align with the latest versioning, ensuring consistent module integration.
+- 🧪 **IntelliJ/PyCharm Test Runner Updates**: Updated various IntelliJ/PyCharm run configurations for Python tests, aligning them with `pytest` and modern Poetry virtual environment practices.
+- 📝 **Documentation Python Version**: Updated `README.md` to reflect the new Python 3.13 requirement.
+- 🌐 **Web Project Name**: Renamed the `aihub_web` project in `package.json` for consistency.
+
+### Removed
+- 🗑️ **Deprecated GitHub Release Creation**: Eliminated the automated step within the build image GitHub Action that previously created a GitHub Release for each built Docker image, streamlining CI/CD processes.
+
+### Refactor
+- 🧹 **Python 3.13 Type Hint Modernization**: Migrated `typing_extensions.override` annotations to Python's built-in `typing.override` and simplified `AsyncGenerator` type hints for cleaner and more consistent type declarations, aligning with Python 3.13 standards.
+- 🧪 **Optimized Agent Test Fixture Scope**: Changed the `self_hosted_agent_config` pytest fixture to be session-scoped, improving test execution performance by setting up the configuration once per test session instead of per function.
+- 📦 **Streamlined Poetry Setup in CI**: Refined the Poetry installation and caching steps in GitHub Actions workflows, improving CI efficiency and consistency.
+
+---
+
+
+
+## [v0.201.0] - 2025-06-30 - Unified User Identity & Authentication Overhaul
+
+### Refactor
+- 🔄 **Unified User Identity Management**: Implemented a comprehensive overhaul of user identity handling, centralizing the **`UserIdentity`** model in `aihub_lib` and replacing the deprecated `AuthenticatedUser` across all services (`aihub_api`, `aihub_agent`, `aihub_bot`). This standardizes how user information is represented and accessed.
+- 🧹 **Decoupled Authentication from Identity Resolution**: Introduced a new **`IdentityProvider`** interface and various concrete implementations (e.g., `AzureIdentityProvider`, `TokenIdentityProvider`). Authentication handlers (`OAuth2AuthHandler`, `TokenAuthHandler`, `OpenWebuiAuthHandler`) now leverage these providers, significantly improving modularity and allowing for easier integration of new identity sources.
+- 🔐 **Enhanced Security Development Experience**: Renamed `NoAuthHandler` to **`DangerousDevelopmentOnlyAuthHandler`** and introduced a dedicated **`DangerousDevelopmentOnlyIdentityProvider`** to clearly delineate and manage authentication in non-production environments, making it more explicit when security is bypassed for development.
+
+### Changed
+- ⚡️ **Standardized Controller Initialization**: The **`auth`** parameter in all `Controller` constructors is now a required keyword-only argument, promoting clearer and more consistent API initialization.
+- 🚀 **Unauthenticated Health Checks**: The **health check endpoint** (`/health`) no longer requires authentication, making it easier to monitor service availability.
+- 📄 **API Token Generation Improvements**: Updated the **`generate_api_token.py`** script with clearer CLI parameter names (`--token-path`, `--token-url`) to better reflect their purpose.
+- 🛣️ **Bot API Path Update**: Changed the base API path for **bot-in-the-loop interactions** from `/api/v1` to `/bearer_token/v1` in `aihub_bot` to align with specific authentication routing.
+- 🌐 **Frontend User Profile Update**: Renamed the **`preferredUsername`** property to **`email`** in frontend user components and SDK schemas to align with the new `UserIdentity` model, reflecting a more direct and generic user email representation.
+
+### Removed
+- 🗑️ **Deprecated User Information Providers**: Eliminated several specific user information provider classes from `aihub_api` (`BaseUserInformationProvider`, `MultiStrategyUserInformationProvider`, `ApiTokenUserInformationProvider`, `AzureUserInformationProvider`, `DevUserInformationProvider`) as their functionality is now superseded by the new **`IdentityProvider`** architecture in `aihub_lib`.
+- 🗑️ **Legacy `AuthenticatedUser` Model**: The outdated **`AuthenticatedUser`** model has been fully removed from `aihub_lib`, completing the transition to `UserIdentity`.
+
+---
+
+
+
+## [v0.176.0] - 2025-06-04 - Introducing Advanced Document Intelligence with Visual Content Processing
+
+### Added
+- 🖼️ **Multimodal Document Processing**: Introduced the capability to extract figures from documents, generate detailed alt-text descriptions using an AI vision model (GPT-4o), and re-inject these descriptions and image URLs back into the document content.
+- ⚡️ **Table Reformatting**: Added functionality to automatically convert HTML tables within documents into a structured Markdown format for improved readability and processing.
+- 📄 **Page Number Metadata**: Document nodes now include a `page` metadata field, enabling precise contextual retrieval based on original page numbers.
+- ✨ **Dedicated Figure Storage**: Implemented a dedicated directory in the data lake for storing extracted raw figure data, ensuring efficient management of visual assets.
+- 🦾 **New Prompt Templates for Figure Descriptions**: Added specialized prompt templates to guide the AI vision model in generating high-quality, accessible alt-text for figures.
+
+### Changed
+- 🔄 **Revamped Document Processing Pipeline**: The entire document ingestion pipeline has been significantly refactored to support multimodal capabilities, including new stages for figure extraction, description generation, and table reformatting.
+- 🧠 **Upgraded Language Model**: The default language model for the playground environment has been upgraded to `gpt-4o`, enhancing its capabilities, especially for vision-related tasks.
+- 🧹 **Refined Data Lake File Handling**: Updated the logic for fetching files from the data lake to exclude figure directories, streamlining document processing.
+- 🌍 **Improved Summarizer Localization**: The summarizer prompt now explicitly instructs the model to generate summaries in the same language as the input text, improving language consistency.
+
+### Refactor
+- ⚙️ **Modularized Document Parsing**: The core document parsing operation was refactored to separate the initial parsing from the final `RefDocDocument` creation, improving pipeline clarity and flexibility for multimodal steps.
+- 🗑️ **Automated Figure Cleanup**: Implemented automatic deletion of associated figure data from the data lake when a document is removed, ensuring data hygiene.
+
+---
+
+
+
+## [v0.149.0] - 2025-05-04 - Enhanced LLM Flexibility with Gemini Support
+
+### Added
+- ✨ **Google Gemini LLM Support**: Introduced `GeminiLLMConfig` and associated configurations, enabling seamless integration and usage of Google Gemini chat models via their OpenAI-compatible API.
+
+### Refactor
+- 🧹 **Standardized OpenAI-like LLM Configuration**: Renamed `SelfHostedLLMConfig` to `OpenaiLikeLLMConfig` to more accurately reflect its compatibility with various OpenAI-like API endpoints, improving clarity and broad applicability across the codebase.
+- 🔄 **Updated RAG Agent Module Path**: The `RAGAgent` and its related configuration files have been reorganized and moved to a new, more logical module path (`aihub_agent.agents.RagAgent`), streamlining the internal structure of agent implementations.
+
+---
+
+
+
+## [v0.53.0] - 2025-02-19 - Enhanced Security & Scalable Platform Foundations
+
+### Added
+- ✨ **New API Token Management:** Introduced comprehensive API endpoints and a dedicated `BearerToken` entity for creating, listing, and revoking API tokens, enabling secure programmatic access to the platform.
+- 🚀 **Flexible Authentication Strategies:** Implemented a new `AuthHandler` abstraction and a `MultiAuthHandler` composite, allowing the API to support multiple authentication methods (e.g., OAuth2, API tokens, or no-auth for development) seamlessly.
+- 🧪 **Enhanced Testing Infrastructure:** Added `ASGIAdapter` to enable direct in-memory testing of HTTP requests within the ASGI application, significantly enhancing test reliability and performance.
+- 📄 **Dedicated API Configuration:** Introduced `ApiConfig` to centralize API-specific settings, separating them from general Azure infrastructure configurations for clearer management.
+- 🛠️ **Developer User Information Provider:** Added `DevUserInformationProvider` to simplify local development and testing by providing a configurable user identity without requiring external authentication services.
+
+### Changed
+- 🔄 **Extended Agent Discovery:** Agent discovery responses now include `stop_events` alongside `start_events`, providing a more complete picture of an agent's lifecycle and supported termination events. The corresponding `StartEventSpecs` type was renamed to `EventSpecs` for broader applicability.
+- 🗓️ **Thread Creation Timestamp:** Thread entities now automatically record their `created_at` timestamp upon creation, improving traceability and data management.
+- ⚙️ **Updated CI/CD Workflows:** Adjusted backend linting and testing actions, including the `aihub_api` Docker Compose configuration and Poetry lock command, for improved reliability and efficiency in continuous integration.
+
+### Fixed
+- 🐛 **Refined Azure User Information Error Handling:** Improved error handling in `AzureUserInformationProvider` to raise a `ValueError` for failed user information fetches from Microsoft Graph, providing more precise feedback.
+- 🐞 **Corrected Thread User ID Access:** Addressed an issue where thread access checks incorrectly used `user_id` instead of `id` for user validation within thread operations.
+
+### Security
+- 🔑 **Enhanced Agent Access Control:** The `AuthenticatedUser` now properly recognizes the `AllAgents` role, providing more flexible and robust permissions for agent interactions.
+- 🔒 **Authenticated Health Checks:** The `/health` endpoint now requires proper authentication, preventing unauthorized access to application status information and ensuring a more secure deployment.
+- 🛡️ **Agent Access Validation for Chat:** Chat completion endpoints now perform explicit authorization checks, ensuring users only communicate with agents they are permitted to access.
+
+### Refactor
+- 🧹 **Streamlined Authentication Modules:** Restructured and consolidated authentication-related modules, moving core components to `aihub_lib` and adopting a unified `AuthHandler` interface across the application. This includes the removal of legacy `use_oauth2_user` and `use_no_auth_user` dependencies.
+- 🗑️ **Removed Legacy AccessToken System:** The outdated `AccessToken` persistence entity and its associated code have been removed in favor of the new, more flexible `BearerToken` system.
+- 📦 **Centralized API Testing:** Migrated various `.http` integration test files to comprehensive Python-based `pytest` suites, improving test maintainability, automation, and reliability.
+- 🧹 **Simplified MongoDB Document Access:** Refactored `RefDoc` querying methods to remove the `organization_shortname` parameter, streamlining data access and consistency.
+- ⚙️ **Improved Configuration Clarity:** Renamed `BaseConfig` to `AzureBaseConfig` and adjusted its usage to better reflect its Azure-specific nature, separating it from general `ApiConfig`.
+- 🧹 **General Code Cleanup:** Removed extraneous SonarLint settings from project files and performed minor import reordering for better code hygiene.
+
+---
+
+
+
+## [v0.46.0] - 2025-02-18 - Streamlined Azure Integration and Configuration
+
+### Changed
+- 🔄 **Azure Subscription Identification:** Transitioned all Azure infrastructure access from using Azure Subscription Names to more robust and direct Azure Subscription IDs, enhancing reliability and security.
+- ⚡️ **Azure Resource Naming Convention:** Simplified the naming convention for Azure resources by removing the environment-specific slug, promoting a cleaner and more consistent resource management approach.
+
+### Refactor
+- 🧹 **Configuration Base Class:** Restructured the `BaseConfig` by removing the explicit `ENVIRONMENT` field, streamlining the configuration process and abstracting environment specificity across the platform.
+- ⚙️ **Azure Service Access Logic:** Refactored the internal logic for accessing various Azure services (AI Search, Cognitive Services, Cosmos DB, Data Lake) to directly utilize Azure Subscription IDs, improving efficiency and removing reliance on potentially ambiguous subscription name lookups.
+- 🗂️ **Internal Module Naming:** Standardized internal module naming conventions for configuration files from `Configs` to `configs` (lowercase) for improved consistency within the codebase.
+
+### Added
+- ⬆️ **Azure Management Dependencies:** Incorporated new `azure-mgmt-cognitiveservices`, `azure-storage-file-datalake`, and `adlfs` dependencies to support the updated Azure integration patterns and access methods.
+- 🔐 **CI/CD Azure Subscription ID Support:** Updated CI/CD workflows to pass the `AZURE_SUBSCRIPTION_ID` secret, ensuring alignment of testing environments with the new Azure configuration standards.
+
+---
+
+
+
+## [v0.238.0] - 2025-08-06 - Internal Version Alignment
+
+### Changed
+- ⬆️ **Internal Version Alignment:** Updated the version numbers across all core microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`, `aihub_process`) and synchronized internal dependency tags to `v0.238.0`, ensuring consistent versioning for the new release.
+
+---
+
+
+
+## [v0.237.0] - 2025-08-06 - GitHub Action Streamlining
+
+### Removed
+- 🗑️ **Removed GitHub Release creation:** The automated step within the build image action that previously created a GitHub Release for the built Docker image has been removed.
+
+---
+
+
+
+## [v0.236.0] - 2025-08-06 - RAGAgent: Enhanced Control with System Prompts
+
+### Added
+- ✨ **System Prompt Configuration for RAGAgent**: Introduced the capability to configure the `RAGAgent` with a system prompt. This allows for more precise guidance of the underlying Large Language Model's behavior and responses, with built-in support for multi-language prompts using `LocaleString`.
+- 🧪 **Comprehensive System Prompt Testing**: Added new test scenarios to validate the `RAGAgent`'s multi-language system prompt functionality, ensuring accurate prompt application and response generation.
+
+### Changed
+- 🔗 **Streamlined Monorepo Dependency Resolution**: Python microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_pipeline`, `aihub_process`) now reference the `aihub_lib` core library using Git tags instead of local paths, simplifying CI/CD and enhancing production deployment consistency. This change affects how Python dependencies are reported in the `LICENSES.md` file.
+- ⚡️ **Extended RAGAgent Test Timeout**: Increased the default delay before stopping RAGAgent test runs to provide more robustness and accommodate longer LLM response times.
+
+### Refactor
+- 🧹 **Optimized Test Fixture Scope**: Changed the `self_hosted_agent_config` pytest fixture to be session-scoped, improving test execution performance by setting up the configuration once per test session instead of per function.
+
+---
+
+
+
+## [v0.235.0] - 2025-08-06 - Platform Upgrade and Enhanced License Compliance
+
+### Added
+- ✨ **Automated License Compliance Reporting**: Introduced a new, comprehensive system to automatically scan, categorize, and report on all Python, Node.js, and Docker image dependencies, generating a detailed `LICENSES.md` file for improved transparency and compliance.
+- 🔊 **Python 3.13 Audio Compatibility**: Added the `audioop-lts` dependency to the API service to ensure seamless audio processing compatibility with Python 3.13.
+
+### Changed
+- 🚀 **Python 3.13 Support**: Upgraded all core Python projects to officially support and leverage Python 3.13, enabling access to the latest language features and performance improvements.
+- ⚙️ **Updated CI/CD Workflows**: Enhanced GitHub Actions workflows for tagging, linting, and testing to align with Python 3.13 and integrate the new license checking processes, improving build reliability and compliance checks on pull requests.
+- 📄 **Documentation Updates**: Reflected the new Python 3.13 requirement in the main `README.md` and action documentation for clearer setup instructions.
+
+### Refactor
+- 🧹 **Type Hint Modernization**: Migrated `typing_extensions.override` annotations to Python's built-in `typing.override` for cleaner and more consistent type declarations, aligning with Python 3.13 standards.
+
+---
+
+
+
+## [v0.234.0] - 2025-08-04 - Major Notification System Overhaul and Web Experience Improvements
+
+### Added
+- 🚀 **Comprehensive User Notification System:** Introduced a robust notification system to keep users informed with real-time updates and an intuitive interface for managing alerts. This major addition includes:
+    - ✨ **New Notification API Endpoints:** Established a full suite of API endpoints for retrieving paginated notifications, updating individual notification statuses, and performing bulk actions (e.g., marking multiple as read or done).
+    - 🔔 **Dedicated Web User Interface:** Launched a new "Notifications" page on the web application, offering a centralized view with advanced filtering options (unread, to-do, all), pagination, and bulk management capabilities.
+    - 🚨 **Real-time Notification Overlay and Poller:** Integrated a dynamic notification poller and an interactive overlay component (a bell icon with a counter badge) directly into the top navigation bar. New notifications are now highlighted via toast messages for immediate awareness and quick access.
+    - 📚 **Persistent Notification Data Model:** Developed a new database entity and associated service logic for efficient storage and management of all user notifications.
+- 🌍 **Expanded Internationalization for RAG Agent:** Added German, French, and Italian translations for the RAG Agent's name and description, broadening language support for core functionalities.
+- ✅ **Enhanced Web Application Readiness Checks:** Incorporated `pnpm lint` into the `aihub_web` Makefile's `pr-ready` target, strengthening automated code quality and consistency checks for web changes.
+
+### Changed
+- 💬 **Improved API Error Messaging:** Enhanced the web client's error handling to provide more detailed and user-friendly error messages in toast notifications, pulling `detail` information directly from API responses.
+- 🎨 **Refined Popover Component Styling:** Updated the visual styling of Popover components across the web UI to ensure a consistent and modern aesthetic.
+- 🌐 **Improved User Experience and Accessibility for Top Bar:** Added tooltips and enhanced `aria-label` attributes to the dark mode toggle and notifications icon in the top navigation bar, improving user guidance and accessibility.
+
+### Refactor
+- 🔄 **Standardized Agent Event Topic Naming:** Renamed the `AgentTopic` schema and its associated types in the web SDK to `AgentInstanceTopic` for clearer terminology and improved consistency within the event topic structure.
+
+### Fixed
+- 📄 **Corrected Localization for Process Title:** Addressed an issue where the "Processes" heading on the user detail page was not correctly localized, ensuring proper display across all supported languages.
+
+### Removed
+- 🗑️ **Deprecated User Avatar Component:** Removed the standalone `User/Avatar.vue` component, as its functionality has been streamlined and integrated directly into the `User/Bar.vue` component for better modularity.
+
+---
+
+
+
+## [v0.233.0] - 2025-07-30 - Internal Dependency Enhancements
+
+### Changed
+- ⚡️ **Internal Dependency Updates:** Upgraded core libraries to enhance stability and prepare for future improvements.
+
+---
+
+
+
+## [v0.232.0] - 2025-07-29 - Enhanced Dashboard Trend Clarity
+
+### Changed
+- 💡 **Adjusted Trend Indicator Logic:** The trending up/down visual indicators for **Exception Events** on dashboards now correctly reflect their severity, displaying green for trending down (good) and red for trending up (bad) to provide more intuitive visual feedback.
+
+---
+
+
+
+## [v0.231.0] - 2025-07-29 - Enhanced Agent Testing with Custom Events
+
+### Added
+- 🚀 **Customizable Agent Simulation Events:** Introduced the ability to specify custom `start_events` and `stop_events` for the `SimulatedAgentApiTestRunner`, greatly expanding the flexibility for testing agent behavior and API interactions under diverse conditions.
+- 🧪 **New Test Event Definitions:** Added `TestStartEvent` and `TestStopEvent` classes to facilitate the creation of unique testing scenarios for agent event processing.
+- ✨ **Comprehensive Custom Event Test Suite:** Implemented a new test suite (`test_agent_api_with_custom_event.py`) to thoroughly validate the handling of custom start and stop events within the agent API, ensuring robust and predictable agent responses.
+
+### Changed
+- ⬆️ **Version Updates:** Bumped project versions across all core components (aihub_agent, aihub_api, aihub_bot, aihub_iac, aihub_lib, aihub_pipeline, aihub_process) and their internal `aihub_lib` dependencies to `v0.231.0`, ensuring consistent dependency alignment.
+
+### Removed
+- 🗑️ **Internal Claude AI Integration Scripts:** Removed development-specific scripts related to Claude AI integration, streamlining the project's internal tooling.
+
+---
+
+
+
+## [v0.230.0] - 2025-07-29 - NATS Topic Management and Refined Process Configurations
+
+### Added
+- ✨ **Introduced `WalkthroughContext` for Processes**: A new Redis-backed context specifically designed for process walkthroughs, enabling robust and persistent state management across complex, multi-step processes.
+- 📦 **New Process Configuration Persistence Model**: Implemented dedicated persistence entities (`ProcessConfigEntity`, `ProcessConfigEntityDocument`, `ProcessConfigEntityEmbeddedDocument`) to support flexible storage and retrieval of process configurations. This includes both class-level defaults and instance-specific overrides stored in the database.
+- 🚀 **`ProcessConfigSpecs` for Discovery**: Incorporated `ProcessConfigSpecs` into process discovery events, allowing clients to programmatically inspect the schema and parameters required for process configurations, enhancing dynamic integration.
+- 💡 **Direct Event Creation Utilities**: Added `from_raw_data` class methods to `StartEvent` and `ProcessStartEvent`, simplifying the creation of these events from raw input data within API and runner contexts.
+- ✅ **Comprehensive Process Dispatcher Tests**: Introduced a new, extensive test suite for `ProcessDispatcher` to ensure reliable event handling, configuration management, and step execution within processes.
+- 🧪 **Enhanced Process Service Database Integration Tests**: Added new tests for `ProcessService` and `ProcessConfig` database operations, validating correct interactions with the new persistence model.
+- 🤖 **API Endpoint for Agent `StartEvent`**: Exposed a new API endpoint enabling the direct sending of `StartEvent` to agents, which facilitates programmatically initiating agent runs with specified configurations.
+- 🧪 **New Test Fixtures**: Added `cleanup_db_and_cache` fixtures for agent and process services to improve test isolation and ensure clean state in integration and unit tests.
+
+### Changed
+- 📈 **Refined Agent and Process API Discovery**: Updated the API discovery mechanisms in `AgentController` and `AgentService` to simplify agent listing, and revamped process discovery in `ProcessService` to provide more detailed and cache-aware retrieval of process instances and classes.
+- 📄 **Event Deserialization Flexibility**: Modified `DispatchableWorkflow` to allow its `get_steps_waiting_for_event` method to accept `WorkEvent` types, broadening the dispatcher's capability to react to various process-related events.
+- 🗄️ **Improved Event Persistence Logic**: Updated `PersistedAgentEventEntity` and `PersistedProcessEventEntity` to correctly utilize the new `AgentInstanceTopic` and `ProcessInstanceTopic` respectively, ensuring accurate data storage with the refined topic structure.
+- 🧩 **Extended `WorkRequestEvent` with `process_id`**: Added a `process_id` field to `WorkRequestEvent` to enhance clarity and provide a direct association with the relevant process instance.
+- ✍️ **Enhanced Logging for Subscribers**: Improved logging for `JSSubscriber` to provide more detailed information during subscription lifecycle events (start and stop).
+- ⚙️ **Process Runner Configuration**: `ProcessRunner` now accepts `default_process_config` and dynamically handles process configuration loading, distinguishing between class and instance-specific settings.
+
+### Refactor
+- 🔄 **NATS Topic Hierarchy Refinement**: Restructured NATS topics for Agents and Processes to introduce clear distinctions between class-level and instance-level communication. This included renaming existing topics (e.g., `AgentTopic` to `AgentInstanceTopic`, `ProcessTopic` to `ProcessInstanceTopic`) and introducing new ones (`AgentClassTopic`, `ProcessClassTopic`, `PartialProcessTopic`). Related `TopicManager` and `Subscriber` classes were updated to align with this new hierarchy.
+- 🧹 **Streamlined Process Discovery Events**: Consolidated and refined process discovery events, replacing a monolithic `ProcessDiscoveryResponseEvent` with `ProcessClassDiscoveryResponseEvent` and `ProcessInstanceDiscoveryResponseEvent` for more granular information exchange during discovery.
+- ⚡️ **Improved Dispatcher `stop` Method**: Enhanced `BaseDispatcher`'s `stop` method to ensure more robust cleanup of event stores upon dispatcher termination, improving resource management.
+- ⚙️ **Centralized Process Configuration Handling**: Modified `ProcessDispatcher` to robustly manage process configurations by prioritizing explicit configurations provided in `ProcessStartEvent` and gracefully falling back to default process configurations, leveraging the new `WalkthroughContext`.
+- 🏗️ **Core Context Relocation**: Relocated the foundational `BaseContext` class from `aihub_agent` to `aihub_lib`, promoting its reusability across all core service modules.
+- 🗑️ **Delegator Topic Manager Alignment**: Refactored Agent and Process delegators to align their topic management with the new `ProcessClassTopicManager` and `ProcessInstanceTopicManager`, improving consistency and maintainability.
+- 🧹 **Agent & Process Service Cleanup**: Streamlined internal methods in `AgentService` and `ProcessService` by adding `_` prefix to denote private helper methods and cleaning up redundant caching calls in tests.
+- 🛠️ **Process Entity Persistence**: Updated `ProcessEntity` to use `ProcessConfigEntityDocument` for referenced configurations and `ProcessConfigEntityEmbeddedDocument` for default configurations, enhancing process config persistence.
+
+### Removed
+- 🗑️ **Deprecated Generic Discovery Events**: Eliminated the generic `DiscoveryRequestEvent` and the monolithic `ProcessTopic` class. These have been superseded by more specific and granular event and topic types, improving type safety and clarity in discovery and messaging workflows.
+- 🧹 **Redundant Agent Config Start Event Test**: Removed a test file (`test_agent_config_start_event.py`) as its functionality is now fully covered by updated and more comprehensive dispatcher tests.
+
+---
+
+
+
 ## [v0.229.0] - 2025-07-25 - Multi-Cloud Storage for Files and Pipelines
 
 ### Added
 - ☁️ **Multi-Cloud Storage Abstraction:** Introduced a foundational `AbstractAnonymousFileAccessService` and concrete implementations for **Azure Blob Storage** and **S3/MinIO**, enabling consistent file access across various cloud providers.
-- ⚙️ **Configurable File Access Service:** Added `AnonymousFileAccessSettings` to dynamically configure and instantiate the appropriate file access service based on environment settings, simplifying multi-cloud deployment.
+- ⚙️ **Configurable File Access Service:** Added `FileAccessServiceConfig` to dynamically configure and instantiate the appropriate file access service based on environment settings, simplifying multi-cloud deployment.
 - 🛠️ **S3/MinIO Data Lake Integration:** Implemented `S3DataLakeIOManager` and supporting `S3DataLakeClient` and `S3DataLakeFileSystem` resources for Dagster pipelines, bringing robust S3-compatible storage capabilities.
 - 🏗️ **Abstracted Data Lake Clients:** Introduced base interfaces (`AbstractDataLakeClient`, `AbstractDataLakeClientResource`, `AbstractDataLakeFileSystemResource`) to standardize interactions with different data lake storage solutions.
+- ⚙️ **S3 Configuration:** Added a new `S3Config` for centralizing MinIO/S3 connection parameters and credentials.
 
 ### Changed
 - 🔄 **Unified File URL Generation:** Updated `aihub_api` and `aihub_lib` to leverage the newly introduced multi-cloud file access services for generating secure, temporary file URLs.
@@ -22,251 +320,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - 🗑️ **Azure AI Search Vector Store:** Discontinued support for Azure AI Search as a vector store option within `aihub_pipeline`, streamlining the available vector store integrations.
+- 🗑️ **Deprecated `DataLakeFile.from_uri` Static Method:** Removed the static method for creating `DataLakeFile` from a URI, as its logic is now encapsulated within cloud-specific `DataLakeClient` implementations.
 
 ### Refactor
-- 🧹 **Infrastructure Configuration Restructure:** Moved `NatsSettings` and `RedisSettings` into dedicated `infrastructure` subpackages for clearer logical grouping and improved project structure.
+- 🧹 **Infrastructure Configuration Restructure:** Moved `NatsConfig` and `RedisConfig` into dedicated `infrastructure` subpackages for clearer logical grouping and improved project structure.
 - 📄 **Improved Docstring Clarity:** Cleaned up and removed redundant parameter descriptions from various Infrastructure-as-Code (IAC) and API test fixture docstrings.
 - ⚙️ **Centralized DataLakeFile Creation:** Refactored the instantiation logic for `DataLakeFile` objects by moving the URI-based creation method into cloud-specific data lake client implementations for better encapsulation and maintainability.
-
----
-
-
-
-## [llm_wrapping_agent-v0.226.0] - 2025-07-25 - Introducing the LLM Wrapping Agent and CI/CD Enhancements
-
-### Added
-- ✨ **Introduced `LLMWrappingAgent`**: A new agent designed to wrap and interact with Large Language Models, providing a flexible interface for LLM integrations. This includes its dedicated Dockerfile, configuration settings, and main application entry point.
-- 🚀 **Implemented Agent Build & Release Workflow**: A new GitHub Actions workflow has been added to automate the Docker image build and release process for agents, enabling triggers from new tags, manual dispatch, and specific feature branches.
-
-### Changed
-- ⚙️ **Updated NATS Configuration**: The NATS server configuration now includes enhanced debugging and tracing capabilities, and utilizes persistent storage for JetStream data, improving operational visibility and data durability.
-- 🛡️ **Internalized Core Services in Docker Compose**: NATS, Redis, and MongoDB services in `docker-compose.latest.yml` are no longer exposing their ports externally, enhancing security by limiting external access to these internal components within the Docker network.
-- 📝 **Increased AIHub API Logging**: The `aihub_api` service's logging level in `docker-compose.latest.yml` has been set to `DEBUG`, providing more verbose output for development and troubleshooting.
-
-### Refactor
-- 🧹 **Minor Docker Image Optimization**: Removed `ca-certificates` from the `aihub_api` Dockerfile for a slightly leaner runtime image.
-
----
-
-
-
-## [v0.226.0] - 2025-07-22 - Agent Configuration Overhaul and Enhanced Document Context
-
-### Added
-- ✨ **Dynamic Agent Configuration**: Agent configurations can now be dynamically provided via a `StartEvent` or loaded from a database, offering greater flexibility and allowing custom overrides of default agent settings.
-- 🚀 **Enhanced Agent Discovery Mechanism**: Implemented granular discovery for agent *classes* and specific agent *instances*, enabling the system to distinguish between an agent's base definition and its runnable, configured versions.
-- 🗄️ **Database Persistence for Agent Configurations**: Custom agent configurations can now be saved and retrieved from the database, enabling persistent and shareable agent setups across deployments.
-- 🔌 **New Pydantic Models for Vector Store Configurations**: Introduced dedicated Pydantic configurations for `AzureAISearchVectorStore` and `MilvusVectorStore`, allowing for direct embedding and validation of vector store settings within agent configs.
-- 📈 **`agent_class` Field in `AgentConfig`**: A new `agent_class` field has been added to `AgentConfig` for consistent agent class identification throughout the system.
-- ✨ **Hierarchical Document Headings**: Implemented the dynamic rendering of document headings (H1-H6) directly within the context, providing clearer hierarchical structure and improved readability.
-- 📄 **Structured Content and Summary Tags**: Individual node content is now explicitly wrapped in XML-like tags (`<content>` or `<summary>`) based on its type, providing more precise semantic context.
-- 🔒 **HTML Escaping for Content**: Enhanced the integrity and security of rendered content by automatically escaping HTML special characters in both headings and content, preventing unintended rendering issues.
-- 🦾 **New Job Creation Utility**: Introduced `materialize_asset_job` to simplify the creation of jobs for materializing specific selections of assets within pipelines.
-- 📅 **Automated Playground Workflows**: Implemented new daily jobs and schedules within the playground environment to automatically observe source data and manage document removal processes.
-- 📚 **New Database Entities for Localization**: Introduced `LocaleStringEntity` for standardizing the storage of localized strings in the database.
-
-### Changed
-- ⚙️ **Refined Agent Configuration Loading Logic**: The agent dispatcher now intelligently loads configurations, prioritizing those provided in a `StartEvent`, then database-persisted configurations, and finally falling back to the `default_agent_config` defined in the runner.
-- 🏗️ **Updated Agent Runner Initialization**: Agent runners now explicitly accept a `default_agent_config` parameter, clearly defining the base configuration for new agent runs.
-- 💡 **Improved Type Specificity for LLM and Vector Store Configs**: Agent configurations now utilize more precise type unions for LLMs, embedding models, and vector stores, enhancing type safety and clarity.
-- 🔗 **Streamlined Vector Store Integration**: RAG and Retrieval agents now leverage the `.to_llama_index()` method directly from the new Pydantic vector store configurations for more consistent and encapsulated integration.
-- ⚡️ **Enhanced Background Task Management**: Improved handling of `asyncio.Task` instances within dispatchers and subscribers to ensure proper lifecycle management and prevent premature garbage collection.
-- 🌐 **Revised API Agent Discovery**: The API now discovers and exposes full agent *instances* (including their specific configurations) instead of just class definitions, reflecting the new dynamic configuration capabilities.
-- ⚙️ **Updated Default Document Language**: The default language for newly ingested nodes has been updated from English to German, better aligning with regional configurations.
-- ⚡️ **Refined Node Sorting Logic**: Improved the internal sorting mechanism for nodes within a document. Nodes are now ordered more accurately based on their section start lines and type.
-- ⚙️ **Refined Asset Automation**: Adjusted automation configurations for document and data lake file removal assets, transitioning from eager conditions to more explicit job-driven scheduling.
-- 🔗 **Specialized I/O Manager**: Updated the SharePoint observable asset to utilize a dedicated `sharepoint_io_manager`, ensuring more appropriate handling of SharePoint data interactions.
-- 📄 **Agent Configuration Data Format**: The `ChatService` now passes agent configuration data as a dictionary instead of a Pydantic object when publishing `UserMessageEvent`, standardizing data exchange.
-
-### Fixed
-- 🐛 **Robust Figure Deletion in Pipelines**: Improved the data lake figure deletion process in pipelines by adding an existence check, preventing potential errors when a figures directory is already absent.
-- 🖼️ **Robust User Profile Image Retrieval**: Enhanced `AzureGraphService` to gracefully handle cases where a user's profile image is not found, preventing errors.
-
-### Refactor
-- 🔄 **Consolidated Agent Configuration Management**: Standardized agent configuration handling across the system, enabling dynamic overrides and database persistence for agent instances.
-- ✨ **Refined Agent and Event Discovery Architecture**: Overhauled the discovery mechanism to support both class-level and instance-level agent introspection, providing more granular control and information.
-- 🏗️ **Reorganized API DTOs for Agent Representation**: Introduced dedicated DTOs (`AgentClassDTO`, `AgentInstanceDTO`, `MinimalAgentDTO`) to clearly separate the concept of an agent's definition from its configured, runnable instances in the API.
-- 🧹 **Internal API Service Renaming**: Renamed `EventModelCreationService` to `ModelCreationService` to reflect its broader utility beyond just event models.
-- 🧹 **Standardized Agent Configuration Model**: Revised `AgentConfig` by removing deprecated fields (`system_prompt`, `color`, `voice`) and promoting its general use across agent and process configurations.
-- 🧹 **Streamlined Timestamp Handling**: Removed an internal utility for formatting Unix timestamps as date and time handling for document metadata is now managed more efficiently by the underlying system.
-- 🧹 **Consolidated Data Transfer Objects (DTOs)**: Relocated all agent-related DTOs into a dedicated `dto` subdirectory for improved organization and clarity.
-- 🔄 **Enhanced DTO Encapsulation**: `AgentInstanceDTO` now manages its own persistence by handling entity creation/updates and generating discovery response events directly, improving data model autonomy.
-- 🗄️ **Decoupled Agent Persistence**: The `AgentEntity` creation and update logic was refactored to accept explicit parameters instead of DTO objects, enhancing the reusability and flexibility of the persistence layer.
-- ⚙️ **Standardized Event Specification Handling**: Updated `EventSpec` creation methods to consistently use `EventSpecs` objects, improving internal data handling.
-- 🔗 **Streamlined Topic Inheritance**: `AgentInstanceDiscoveryTopic` now correctly inherits from `AgentClassDiscoveryTopic`, reducing redundancy and clarifying topic structure.
-
-### Removed
-- 🗑️ **Deprecated Configuration Fields**: The `system_prompt`, `color`, and `voice` fields have been removed from the base `AgentConfig` and `AgentConfigDTO`, streamlining the core configuration.
-- 🗑️ **Direct Agent Config Persistence Example**: Eliminated `save_config.py` from playground examples, indicating a shift away from direct saving of agent configurations to the database via this script.
-- 🗑️ **Obsolete Test Files**: Cleaned up several outdated test files related to agent dispatcher, agent config, and agent service database integration.
-- 🧹 **Redundant NATS Topic Managers**: Cleaned up unused and overlapping topic management methods within `AgentClassTopicManager` for a leaner API.
-- 🚫 **Transferred Discovery Event Logic**: Removed the `from_agent_instance` method from `AgentInstanceDiscoveryResponseEvent` as its functionality has been moved to the `AgentInstanceDTO` for better encapsulation.
-
----
-
-
-
-## [v0.222.0] - 2025-07-15 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
-
-### Added
-- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
-- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
-- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
-- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
-- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
-- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
-- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
-- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
-- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
-- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
-- ✨ **Enabled Custom Environment Variable Configuration for API Services**: This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, significantly increasing configuration flexibility and integration possibilities.
-- 📦 **New Docker Infrastructure Configuration**: Added new `docker-compose.latest.yml` providing a complete, ready-to-run local environment including Milvus, OpenWebUI, Phoenix, Postgres, NATS, Redis, MongoDB, and Traefik.
-- 📦 **New Web Image Build Workflow**: Added a new GitHub Actions workflow to build and release the web frontend Docker image, streamlining deployment processes.
-
-### Changed
-- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
-- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
-- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses and JWKS keys, improving performance for frequently requested agent lists and authentication.
-- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
-- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
-- ⚡️ **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
-- 🔄 **Updated RAG Context Prompt Role**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages (German, English, French, and Italian) to better align with prompt engineering best practices and enhance model interpretation of contextual information.
-- 📦 **Updated Python Dependency Management**: Migrated Python Docker image builds from a `poetry install --no-root` and virtual environment copy approach to a simpler `poetry install` directly in the final runtime image, reducing build complexity and image size.
-
-### Fixed
-- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found.
-- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context.
-- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
-- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
-- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Resolved an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring that images are now correctly referenced and displayed by explicitly converting their URL object to a string representation.
-
-### Removed
-- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
-- 🗑️ **Deprecated Docker Compose Setup**: Removed the `docker-compose-mnt.yml` file, which has been superseded by a more comprehensive and updated Docker Compose setup.
-- 🗑️ **Removed Redundant Health Page**: A basic placeholder health page in the frontend was removed.
-- 🗑️ **Old Frontend Playground**: The `.playground` directory for frontend development has been removed, replaced by the standardized `.app` directory.
-
-### Refactor
-- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`), improving clarity and maintainability.
-- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
-- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
-- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure.
-- 🧹 **Standardized SharePoint Naming Conventions**: Refactored variable names, function parameters, and internal asset definitions across SharePoint-related assets, ops, and IO managers for improved consistency and readability (e.g., `sharepoint_` was consistently renamed to `share_point_`).
-
----
-
-
-
-## [v0.222.0] - 2025-07-15 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
-
-### Added
-- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
-- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
-- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
-- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
-- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
-- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
-- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
-- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
-- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
-- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
-- ✨ **Enhanced API Configuration and Extensibility**: This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, significantly increasing configuration flexibility and integration possibilities.
-- 🐳 **Comprehensive Docker Compose Deployment**: Introduced a new `docker-compose.latest.yml` for unified deployment of all core AI Hub services, including Milvus, Postgres, OpenWebUI, Phoenix, and API, simplifying local and production setups.
-- 📦 **Optimized Web Application Deployment**: Introduced a new multi-stage `Dockerfile` for the web application, optimizing build times and final image size, along with `nginx.conf` and `config.template.json` for robust production serving.
-- ⚙️ **New Infrastructure Configuration Files**: Added new configuration files for Milvus (`milvus.yaml`), NATS (`nats.conf`), and PostgreSQL initialization (`init-multiple-dbs.sh`), streamlining infrastructure setup.
-
-### Changed
-- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
-- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated all related API routes and frontend client-side composables to clearly distinguish between agent and process events.
-- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance for frequently requested agent lists.
-- 🧑‍💻 **Enhanced Human-in-the-Loop Interactions**: Significantly redesigned human interaction mechanisms, enabling granular targeting of users (`user_ids`, `user_emails`, `user_roles`) for work requests, and introduced the ability to define and render dynamic forms for human input directly within process steps.
-- 📊 **Expanded Process Discovery Information**: Enhanced `ProcessDiscoveryResponseEvent` and `ProcessRunner` to provide a richer set of details on human, program, and agent inputs for each process, including dynamic form schemas for human interactions.
-- 📝 **Improved Work Event Traceability**: Integrated `HumanWorkEvent` with the new `Form` base class for dynamic UI generation and extended both `HumanWorkEvent` and `ProgramWorkEvent` to include `submitted_by` user information for enhanced traceability.
-- 📈 **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
-- 🔄 **Updated RAG Context Prompt Role**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages (German, English, French, and Italian) to better align with prompt engineering best practices and enhance model interpretation of contextual information.
-- 📦 **Frontend Build and Dependency Updates**: Updated build scripts and integrated new Formkit-related modules and dependencies to support the new dynamic form generation and improved localization capabilities.
-
-### Fixed
-- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic to gracefully handle cases where a specific agent might not be found in the database, ensuring `is_online` status is accurately reflected.
-- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context and that NATS process discovery topics are strictly validated.
-- 🧰 **Improved Serialization and Schema Handling**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, preventing data loss, and ensured deep copying of schemas in the evaluation framework to avoid unintended modifications.
-- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Resolved an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring that images are now correctly referenced and displayed by explicitly converting their URL object to a string representation.
-
-### Refactor
-- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`), improving clarity and maintainability.
-- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
-- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
-- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure for better modularity.
-- 🌐 **Standardized SharePoint Naming Conventions**: Refactored variable names, function parameters, and internal asset definitions across SharePoint-related components for improved consistency and readability.
-- 🏠 **Frontend Directory Renaming**: Renamed the primary frontend application directory from `.playground` to `.app` to better distinguish it as the main application source, updating all related configurations.
-- 🐳 **Optimized Dockerfiles**: Streamlined API and `aihub_bot` Dockerfiles by removing redundant virtual environment copying and poetry installation steps, leading to smaller and faster image builds.
-
-### Removed
-- 🗑️ **Automatic Draft PR Workflow:** The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
-- 🗑️ **Deprecated Docker Compose for Mounted Volumes**: Removed `docker-compose-mnt.yml` as it is superseded by updated Docker Compose strategies that better handle volume management and local development.
-- 🗑️ **Deprecated Event Distributor Dependency**: Removed the generic `use_external_event_distributor` dependency helper, which is now replaced by more specific `use_external_agent_event_distributor` and `use_external_process_event_distributor`.
-- ✂️ **Redundant Health Page**: A basic placeholder health page in the frontend was removed.
-
----
-
-
-
-## [web-v0.227.0] - 2025-07-23 - Configuration Adjustments
-
-### Changed
-- ⚡️ **Adjusted Default Log Level:** Set the default `LOG_LEVEL` for the API service in the `latest` Docker Compose configuration from `DEBUG` to `WARNING` to reduce log verbosity and focus on more critical messages.
-
----
-
-
-
-## [web-v0.226.0] - 2025-07-24 - Advanced Agent Management & Structured RAG Output
-
-### Added
-- ✨ **Dynamic Agent Configuration**: Agent configurations can now be dynamically provided via a `StartEvent` or loaded from a database, offering greater flexibility and allowing custom overrides of default settings.
-- 🚀 **Hierarchical Agent Discovery**: Implemented granular discovery for agent *classes* and specific agent *instances*, enabling the system to distinguish between an agent's base definition and its runnable, configured versions.
-- 🗄️ **Database Persistence for Agent Configurations**: Custom agent configurations can now be saved and retrieved from the database, enabling persistent and shareable agent setups.
-- 📚 **Structured RAG Context Output**: Introduced hierarchical heading rendering (H1-H6) and explicit `<content>` / `<summary>` tags for RAG nodes, significantly improving the readability and structure of contextual information.
-- 🔐 **Secure HTML Escaping in RAG Context**: Automatically escapes HTML special characters in rendered RAG context (headings and content) to prevent rendering issues and potential injection vulnerabilities.
-- 🔗 **Standardized Vector Store Configurations**: Introduced new Pydantic configurations (`AzureAISearchVectorStoreConfig`, `MilvusVectorStoreConfig`) for vector stores, enabling their direct embedding and validation within agent configs.
-- 🧩 **Modular API Controllers**: Exposed new API controllers for `Suite`, `Token`, and `Role` management, expanding the system's external capabilities.
-- 📄 **New Persistence for Localized Strings**: Introduced `LocaleStringEntity` for storing localized strings in the database, enhancing internationalization support.
-- 🧪 **Pipeline Job Creation Utility**: Added `materialize_asset_job` to simplify the creation of jobs for materializing specific selections of assets.
-- ⏱️ **Automated Pipeline Schedules**: Implemented new daily jobs and schedules within the playground environment to automatically observe source data and manage document removal processes.
-
-### Changed
-- ⚙️ **Refined Agent Configuration Loading Logic**: The agent dispatcher now prioritizes `StartEvent` configurations, then database-persisted configurations, and finally falls back to the `default_agent_config` defined in the runner.
-- 🔄 **Updated Agent Runner Initialization**: Agent runners now explicitly accept a `default_agent_config` parameter, clearly defining the base configuration for new agent runs.
-- 🎯 **Precise LLM & Vector Store Typing**: Agent configurations now use more specific type unions for LLMs, embedding models, and vector stores, enhancing type safety and clarity.
-- 🔄 **Streamlined Vector Store Integration**: RAG and Retrieval agents now convert vector store configurations to LlamaIndex objects via a `.to_llama_index()` method, ensuring consistent integration.
-- 🚀 **Enhanced Asynchronous Task Management**: Improved handling of `asyncio.Task` instances across dispatchers and subscribers to ensure proper lifecycle management and prevent premature garbage collection.
-- 🌐 **Granular API Agent Discovery**: The API now discovers and exposes full agent *instances* (including their specific configurations) instead of just class definitions, reflecting the new dynamic configuration capabilities.
-- ⚙️ **Updated Default RAG Language**: The default language for newly ingested RAG nodes has been changed from English to German.
-- 📊 **Pipeline Automation Conditions**: Adjusted automation configurations for document and data lake file removal assets from eager conditions to job-driven scheduling.
-- 🔗 **Dedicated SharePoint I/O Manager**: The SharePoint observable asset now utilizes a dedicated `sharepoint_io_manager` for more appropriate data handling.
-- 🖼️ **Graceful User Profile Image Fetching**: Enhanced `AzureGraphService` to gracefully handle cases where user profile images are not found (HTTP 404), preventing unnecessary warnings.
-- 🏷️ **API Endpoint Renaming for Agent Events**: Renamed API endpoints for agent events (e.g., `/events/threads` to `/events/agent/threads`) for clearer distinction.
-- 📦 **Docker Compose and Environment Updates**: Updated `docker-compose.latest.yml` with more comprehensive service configurations, including environment variables for OAuth, improved Traefik rules, and web service.
-
-### Fixed
-- 🐛 **Robust Pipeline Figure Deletion**: Improved the data lake figure deletion process in pipelines by adding an explicit directory existence check, preventing errors when figures directories are absent.
-- 💬 **API SDK Typo**: Corrected a minor typo in the `ProcessDTO` description in the generated SDK, changing "processis" to "process is online".
-
-### Removed
-- 🗑️ **Deprecated Agent Configuration Fields**: The `system_prompt`, `color`, and `voice` fields have been removed from the base `AgentConfig` and `AgentConfigDTO`, streamlining the core configuration.
-- 🗑️ **Legacy Discovery Events and Topic Managers**: Removed old class- and instance-specific discovery events and topic managers, unifying agent discovery under a new, hierarchical model.
-- 🗑️ **Outdated Unix Timestamp Formatting Utility**: The internal `format_unix_timestamp` utility for RAG context has been removed.
-
-### Refactor
-- 🔄 **Consolidated Agent Configuration Management**: Standardized agent configuration handling across the system, enabling dynamic overrides and database persistence for agent instances.
-- ✨ **Refined Agent Discovery Architecture**: Overhauled the discovery mechanism to support both class-level and instance-level agent introspection, providing more granular control and information.
-- 🏗️ **Reorganized API DTOs for Agent Representation**: Introduced dedicated DTOs (`AgentClassDTO`, `AgentInstanceDTO`, `MinimalAgentDTO`) to clearly separate the concept of an agent's definition from its configured, runnable instances in the API.
-- 📦 **Streamlined Vector Store Configuration**: Replaced direct usage of `llama_index` vector store objects with internal Pydantic configuration objects that can convert to `llama_index` types.
-- 🧹 **Test File Reorganization**: Reorganized API test runners and related test files into more logical `simulation/agent` and `simulation/process` directories.
-- 🧹 **Internal API Naming Consistency**: Renamed the internal `_get_endpoint_name` to `_get_endpoint_base_path` in endpoint discovery services for improved clarity and consistency.
-- 🧹 **API Service Renaming**: Renamed `EventModelCreationService` to `ModelCreationService` to reflect its broader utility beyond just event models.
-- 🧹 **Python Module Import Consistency**: Corrected `gunicorn` entrypoint in `Makefile` from `app/main:app` to `app.main:app` for standard Python module import.
-- 🧹 **Cleaned up Agent Playground Examples**: Updated various agent playground examples to align with the new `default_agent_config` and the removal of deprecated fields.
 
 ---
 
@@ -281,249 +340,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-## [bot-v0.227.0] - 2025-07-23 - Operational Adjustments
-
-### Changed
-- ⚙️ **Optimized Default Logging Level:** Reduced the default log verbosity for the bot service from `DEBUG` to `WARNING` in the `docker-compose.latest.yml` configuration, leading to less noise in logs and improved operational clarity.
-
----
-
-
-
-## [v0.226.0] - 2025-07-24 - Next-Gen Agent Management & Data Context
-
-### Added
-- ✨ **Dynamic Agent Configuration:** Agent configurations can now be dynamically provided via `StartEvent` or loaded from the database, enabling custom overrides of default agent settings for flexible deployments.
-- 🗄️ **Persistent Agent Configurations:** Introduced new database entities (`AgentConfigEntityDocument`, `AgentConfigEntityEmbeddedDocument`) to allow custom agent configurations to be saved and retrieved, enhancing reusability.
-- 🚀 **Granular Agent Discovery:** Implemented explicit discovery mechanisms for both agent *classes* (`ClassDiscoveryRequestEvent`, `AgentClassDiscoveryResponseEvent`) and specific agent *instances* (`InstanceDiscoveryRequestEvent`, `AgentInstanceDiscoveryResponseEvent`), providing richer metadata.
-- ⚙️ **Typed Vector Store Configurations:** Introduced dedicated Pydantic configuration models (`AzureAISearchVectorStoreConfig`, `MilvusVectorStoreConfig`) for vector stores, enabling their direct embedding and validation within agent configurations.
-- 📄 **Structured Document Rendering:** Enhanced `combine_nodes_in_order` to dynamically render hierarchical headings (H1-H6) and semantic tags (`<content>`, `<summary>`) for improved RAG context readability.
-- 🔒 **Secure Content Escaping:** Implemented automatic HTML escaping for text within rendered headings and content blocks, preventing unintended rendering issues and potential injection vulnerabilities.
-- 🧪 **Comprehensive Agent Testing:** Added extensive unit and integration tests for `AgentDispatcher` and `AgentService`, focusing on new configuration loading logic, discovery, and database interactions.
-- 🏭 **Pipeline Job Factory:** Introduced `materialize_asset_job` utility to simplify creating jobs for specific asset materialization in data pipelines.
-- 🗓️ **Automated Pipeline Workflows:** Implemented new daily jobs and schedules in the pipeline playground for automated data processing and document cleanup.
-- ➕ **New API Controllers:** Expanded the API with new controllers for `Suite`, `Process`, `Token`, and `Role` management, diversifying available endpoints.
-- 🐳 **Enhanced Docker Compose Stack:** Updated `docker-compose.latest.yml` to include the `web` service and more comprehensive environment variables for API and Phoenix, providing a more integrated deployment experience.
-
-### Changed
-- 🔄 **Agent Configuration Handling:** Agent configuration is now dynamically resolved at runtime (from `StartEvent`, database, or default), and `AgentRunner` uses a `default_agent_config` parameter.
-- 🏷️ **Agent Config Schema Refinement:** `AgentConfig` now includes an explicit `agent_class` field and applies a stricter regex pattern to `agent_id` for enhanced validation.
-- 💧 **LLM and Embedding Model Specificity:** Agent configurations now use more precise type unions for LLMs and embedding models, improving type safety and clarity.
-- 📚 **API Discovery Response:** The API now discovers and exposes full agent *instances* (including their specific configurations) rather than just class definitions.
-- 🗺️ **Default Ingested Language:** The default language for newly ingested nodes is now German (`de`).
-- 🧭 **API Route Renaming:** Event retrieval API routes have been renamed to explicitly refer to agent events (e.g., `get_agent_events_in_thread`).
-- 🌐 **Web SDK Updates:** Generated SDK schemas for `AgentConfigDTO` reflect the removal of deprecated fields, and `StartEvent` and `UserMessageEvent` now include the new `agent_config` field.
-- ⚡ **Pipeline Automation Strategy:** Document and data lake file removal assets transitioned from eager automation conditions to job-driven scheduling.
-- 📦 **SharePoint IO Manager:** The SharePoint observable asset in pipelines now uses a dedicated `sharepoint_io_manager`.
-- 🔐 **OAuth2 Integration:** The API's OAuth2 authentication now supports `OAuth2AuthHandler`.
-- 🧪 **Test Runner Configuration:** Agent and process playground examples and their test runners have been updated to align with the new `default_agent_config` and `agent_class` fields.
-
-### Fixed
-- 🐛 **Robust Figure Deletion:** Improved the data lake figure deletion process in pipelines by adding a check for directory existence, preventing unnecessary errors.
-- 🖼️ **Image Loading in RAG Prompts:** Corrected the image URL handling in RAG prompts within `combine_nodes_in_order`, ensuring images are correctly referenced.
-- 🐞 **Gunicorn Path:** Corrected the Gunicorn application path in the Makefile.
-- 💬 **SDK Description Typo:** Fixed a minor typo in the `ProcessDTO` description within the generated SDK.
-- 📸 **User Profile Image Fetching:** Improved error handling for fetching user profile images from Azure Graph, gracefully handling 404 responses.
-
-### Refactor
-- 🧹 **Agent Dispatcher & Runner Overhaul:** Major refactoring of `AgentDispatcher` and `AgentRunner` components to streamline internal logic, simplify argument injection, and refine background task management.
-- 🔄 **Unified Agent Discovery Architecture:** Streamlined the agent discovery mechanism by merging class and instance-level discovery concepts into a more consistent model, centralizing logic in new topic managers.
-- 🗄️ **Decoupled Agent Persistence:** Re-architected agent configuration persistence to use a reference model (`AgentConfigEntityDocument`) and an embedded default (`AgentConfigEntityEmbeddedDocument`), enhancing data co-location and simplifying relationships.
-- 📦 **Streamlined Vector Store Integration:** Standardized vector store integration using the new Pydantic configuration models' `.to_llama_index()` method for cleaner instantiation.
-- 📁 **Project Structure Alignment:** Reorganized testing directories for `aihub_agent` and `aihub_api` for better module structure.
-- ✏️ **Service Naming Consistency:** `EventModelCreationService` was renamed to `ModelCreationService` to reflect its broader utility beyond just event models.
-- 🧹 **Codebase Naming Alignment:** Standardized field names (`name`, `description`, `icon`) in `AgentConfig` and refactored internal endpoint path generation methods for clarity.
-
-### Removed
-- 🗑️ **Deprecated Agent Config Fields:** Eliminated `system_prompt`, `color`, and `voice` fields from the base `AgentConfig` and `AgentConfigDTO`, allowing for more flexible, agent-specific prompt and UI customization in subclasses.
-- 🗑️ **Legacy Discovery Methods:** Removed old generic `discover_agent` and `discover_agents` methods in `AgentService` in favor of the new, more granular discovery.
-- 🗑️ **Timestamp Formatting Utility:** Removed the internal `format_unix_timestamp` utility from `combine_nodes_in_order`.
-- 🗑️ **Redundant Topic Management:** Cleaned up unused and overlapping topic management methods in `AgentInstanceTopicManager` and `ProcessInstanceTopicManager`.
-
----
-
-
-
-## [v0.222.0] - 2025-07-15 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
-
-### Added
-- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
-- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
-- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
-- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
-- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
-- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
-- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
-- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
-- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
-- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
-- 📦 **Local Development & Deployment Configurations**: Added new Docker Compose files (`milvus.yaml`, `nats.conf`, `init-multiple-dbs.sh`, `docker-compose-gpu.*`, `docker-compose.dev.yml`, `docker-compose.nightly.yml`, `swiss-aihub.local.docker-compose.yml`) for setting up local development and production-like environments, including configurations for Milvus, NATS, and PostgreSQL.
-- ✨ **Enabled Custom API Environment Variables**: This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, increasing configuration flexibility.
-- 🐳 **Web Application Dockerfile and Nginx Setup**: Introduced a new Dockerfile, Nginx configuration (`nginx.conf`), and client-side configuration loader (`config-loader.client.ts`) for building and serving the web UI, optimizing deployment and environment variable handling.
-
-### Changed
-- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
-- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance for frequently requested agent lists.
-- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
-- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
-- ⚙️ **Optimized Docker Build Processes**: Improved Dockerfile efficiency for `aihub_api` and `aihub_bot` by streamlining Poetry installation and virtual environment handling.
-- 🔄 **Updated RAG Context Prompt Role**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages (German, English, French, and Italian) to better align with prompt engineering best practices.
-- ⚡️ **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
-- 🧰 **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments for improved consistency.
-- 👥 **Expanded Human Delegator Definition**: Enhanced the `Human` delegator to allow requesting work from specific user IDs, emails, or roles, and to define whether notifications should be sent.
-- 📈 **Database Indexing Enhancements**: Added new indexes to `PersistedAgentEventEntity`, `ThreadEntity`, and `UserEntity` for improved query performance and data retrieval efficiency.
-- 📦 **Unified Docker Compose for Latest Release**: Significantly refactored `docker-compose.latest.yml` to consolidate and centralize the deployment of core services, including MinIO, Milvus, PostgreSQL, OpenWebUI, NATS, Redis, MongoDB, and the AI Hub API, along with Traefik for routing.
-
-### Fixed
-- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found by using `.first()` instead of `.get()`.
-- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context in `PersistedProcessEventEntity`.
-- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Ensured that images are now correctly referenced and displayed by explicitly converting their URL object to a string representation in RAG prompts.
-- 🔐 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
-- 🎨 **Frontend Markdown Renderer Styling**: Applied a minor CSS fix to the Markdown renderer for improved display consistency.
-
-### Removed
-- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
-- 🧹 **Deprecated Docker Compose File**: The `docker-compose-mnt.yml` file, which was used for mounting local volumes, has been removed.
-- ⛔ **Old External Event Distributor Dependency**: The `use_external_event_distributor` dependency file has been removed as it has been superseded by more specific agent and process event distributors.
-- 📄 **Redundant Frontend Health Page**: A basic placeholder health page (`pages/service/health.vue`) in the frontend was removed.
-- 🏷️ **Obsolete WebSocket Event Type**: The `WsServerEvent` type has been removed from the SDK, replaced by the more semantically clear `ContextualizedAgentEvent` to better distinguish event origins.
-
-### Refactor
-- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`) and SharePoint-related assets for improved clarity and maintainability.
-- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components (`ThreadContext`, `RunTraceCoordinator`, `AgentService`, `EvaluationService`, `EventService`, `OpenaiController`, `OpenaiService`, `ExternalAgentEventDistributor`, `WebSocketManager`, `WebSocketSender`, `AgentDiscoveryTopic`, `ProcessDiscoveryTopic`), focusing on concise explanations.
-- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure for better organization and clarity.
-- 🔄 **Frontend Playground Folder Renaming**: The `.playground` folder in `aihub_web` has been renamed to `.app` to better reflect its purpose as the primary application source.
-- 📦 **SharePoint Integration Naming Consistency**: Standardized naming conventions across SharePoint-related assets, ops, and IO managers to `share_point_` for improved consistency and readability.
-- 🔗 **API External Event Deserialization**: Simplified the deserialization logic for external agent events by removing redundant `thread_id` and `display_id` validation.
-
----
-
-
-
-## [api-v0.227.0] - 2025-07-23 - Operational Refinements
-
-### Changed
-- ⚙️ Optimized the **default log level** in `docker-compose.latest.yml` from `DEBUG` to `WARNING`, reducing log verbosity and improving clarity in standard operational environments.
-
----
-
-
-
-## [api-v0.226.0] - 2025-07-24 - Unlocking Agent Flexibility: Dynamic Configurations, Enhanced Knowledge Context, and Structured Discovery
-
-### Added
-- ✨ **Dynamic Agent Configuration**: Introduced the ability to dynamically provide agent configurations via a `StartEvent` or load them from the database, offering greater flexibility and custom overrides for default agent settings.
-- 🚀 **Granular Agent Discovery**: Implemented distinct discovery mechanisms for agent *classes* and specific agent *instances*, allowing the system to differentiate between an agent's base definition and its runnable, configured versions.
-- 🗄️ **Database Persistence for Agent Configurations**: Enabled custom agent configurations to be saved and retrieved from the database, allowing for persistent and shareable agent setups.
-- 📄 **Structured RAG Context**: Enhanced the RAG context generation to include hierarchical headings (H1-H6) and explicitly tag content with `<content>` or `<summary>` tags, significantly improving prompt quality and model understanding.
-- 🔒 **HTML Escaping for Context Content**: Implemented automatic HTML escaping for content within RAG context documents, preventing rendering issues and potential injection vulnerabilities.
-- 🦾 **New Vector Store Configuration Models**: Introduced dedicated Pydantic models for `AzureAISearchVectorStoreConfig` and `MilvusVectorStoreConfig`, allowing direct embedding and validation of vector store settings within agent configurations.
-- ⚙️ **Pipeline Job Utility**: Added the `materialize_asset_job` utility to simplify the creation of jobs for materializing specific asset selections in the pipeline.
-- 📅 **Automated Pipeline Workflows**: Implemented new daily jobs and schedules within the playground environment to automatically observe source data and manage document removal processes.
-- ✨ **Agent Class Identification**: A new `agent_class` field has been added to `AgentConfig` for consistent agent class identification throughout the system.
-
-### Changed
-- ⚙️ **Refined Agent Configuration Loading**: The agent dispatcher now prioritizes configurations provided in a `StartEvent`, then database-persisted configurations, and finally falls back to the `default_agent_config` defined in the runner.
-- 💡 **Improved LLM and Embedding Model Specificity**: Agent configurations (e.g., in `RAGAgent`) now utilize more precise type unions for LLMs and embedding models, enhancing type safety and clarity.
-- 📈 **API Agent Discovery**: The API now discovers and exposes full agent *instances* (including their specific configurations) instead of just class definitions, reflecting the new dynamic configuration capabilities.
-- 📄 **Updated RAG Context Language Default**: The default language for newly ingested nodes has been updated from English to German, better aligning with regional configurations.
-- ⚡️ **Pipeline Asset Automation**: Automation configurations for document and data lake file removal assets were adjusted from eager conditions to more explicit job-driven scheduling.
-- 🔗 **Specialized SharePoint I/O Manager**: The SharePoint observable asset now uses a dedicated `sharepoint_io_manager`, ensuring more appropriate handling of SharePoint data interactions.
-- 📚 **Documentation Examples**: Revised agent examples in `aihub_doc/5_agents_in_detail.md` to reflect the updated `AgentConfig` structure and removed `system_prompt`.
-- 🔄 **Event Data Flow**: `ChatService` now passes agent configuration data as a dictionary within `UserMessageEvent` for standardized data exchange.
-- 🌐 **SDK Updates**: Generated SDK schemas and types now reflect the updated agent configuration model, including removed and added fields.
-- 🐛 **ProcessDTO Description**: Corrected a minor typo in the `ProcessDTO` description in the generated SDK.
-
-### Fixed
-- 🐛 **Robust Figure Deletion**: Improved the data lake figure deletion process in pipelines by adding an existence check for figures directories, preventing unnecessary errors and log messages when a directory is already absent.
-- 🐞 **Azure Profile Image Retrieval**: Corrected error handling when fetching user profile images from Azure Graph Service to gracefully handle 404 responses.
-- 📦 **Gunicorn Path in Dockerfile**: Fixed the path to `app.main:app` in `aihub_api/Makefile` for Gunicorn, ensuring correct application startup.
-
-### Refactor
-- 🧹 **Agent Dispatcher & Runner Overhaul**: Performed a major refactor of the `AgentDispatcher` and `AgentRunner` components, streamlining internal logic, simplifying argument injection, and refining background task management.
-- 🔄 **Consolidated Agent Discovery Architecture**: Unified and streamlined the agent discovery mechanism by introducing distinct class-level and instance-level concepts and consolidating events and topic managers into a single, consistent model.
-- 🗄️ **Embedded Agent Configuration Persistence**: Re-architected agent configuration persistence by embedding agent configuration details directly within `AgentEntity` and introducing a reference to `AgentConfigEntityDocument`, enhancing data co-location and simplifying object relationships.
-- 📦 **Streamlined Vector Store Integration**: Replaced direct vector store instantiation with a standardized approach using Pydantic configuration models that expose a `.to_llama_index()` method for cleaner integration.
-- ⚡️ **Improved Background Task Management**: Centralized management of `asyncio.Task` instances within dispatchers and subscribers to ensure proper lifecycle management and prevent premature garbage collection.
-- 🧹 **Renamed Core Services**: Renamed `EventModelCreationService` to `ModelCreationService` and updated its excluded fields to reflect broader utility beyond just event models.
-- 🧹 **Consolidated Agent DTOs**: Relocated all agent-related Data Transfer Objects (DTOs) into a dedicated `dto` subdirectory for improved organization and clarity, along with refinements to their encapsulation and persistence logic.
-- ⚙️ **Standardized Event Specification Handling**: Updated `EventSpec` creation methods to consistently use `EventSpecs` objects, improving internal data handling.
-- 🔗 **Streamlined Topic Inheritance**: `AgentInstanceDiscoveryTopic` now correctly inherits from `AgentClassDiscoveryTopic`, reducing redundancy and clarifying topic structure.
-- 🧹 **Cleaned Up Topic Managers**: Removed unused and overlapping topic management methods within `AgentClassTopicManager` for a leaner API.
-- 📁 **Test Runner Restructuring**: Reorganized API test runners into a more logical `simulation/agent` and `simulation/process` directory structure.
-
-### Removed
-- 🗑️ **Deprecated Agent Configuration Fields**: The `system_prompt`, `color`, and `voice` fields have been removed from the base `AgentConfig` and `AgentConfigDTO` as they are now intended to be defined in agent subclasses if needed.
-- 🗑️ **Outdated Discovery Events and Topic Managers**: Eliminated legacy class- and instance-specific discovery events and topic managers, as their functionality has been superseded by a new, unified model.
-- 🗑️ **Legacy Agent Configuration Persistence Scripts**: Removed the `save_config.py` example script, as direct saving of agent configurations to the database is now handled internally.
-- 🗑️ **Redundant Locale String Entity**: Eliminated `LocaleStringEntity`, as localized strings are now managed directly within other persistence models.
-- 🗑️ **Specific Pipeline Materialization Jobs**: Removed the `materialize_asset_job` utility from the pipeline factory to simplify job creation and encourage asset-level automation.
-- 🗑️ **Outdated Test Files**: Cleaned up several old test files related to agent dispatcher, agent config, and agent service database integration, as their functionalities are now covered by more integrated tests or made obsolete by architectural changes.
-- 🗑️ **Redundant `_background_tasks` Sets**: Explicit `_background_tasks` sets were removed from various dispatchers and subscribers as task management is now handled more implicitly by `asyncio.create_task`.
-- 🗑️ **Transferred Discovery Event Logic**: Removed the `from_agent_instance` method from `AgentInstanceDiscoveryResponseEvent` as its functionality has been moved to the `AgentInstanceDTO` for better encapsulation.
-
----
-
-
-
-## [v0.222.0] - 2025-07-21 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
-
-### Added
-- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
-- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
-- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
-- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services to durably store and manage all events and metadata related to agentic processes.
-- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
-- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
-- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
-- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
-- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
-- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
-- 🐳 **Comprehensive Docker Compose Setups**: Introduced new `docker-compose` files for various deployment environments (e.g., GPU, dev, latest, nightly, local), providing a more flexible and production-ready infrastructure.
-- 📦 **New Core Configurations**: Added default configurations for essential services like Milvus, NATS, and PostgreSQL, simplifying environment setup.
-
-### Changed
-- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
-- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
-- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance for frequently requested agent lists.
-- ⚙️ **Streamlined Python Docker Builds**: Optimized Dockerfiles for Python services by refining virtual environment handling and build processes.
-- 🌐 **RAG Prompt Enhancements**: Updated the chat role for RAG context prompts from `system` to `user` and corrected image URL handling in English prompts for better model interpretation.
-- 💬 **`WorkEvent` Display Handling**: Improved how `WorkEvent` details are displayed by adding new class methods for `display_name` and `display_description`.
-- 👥 **`HumanWorkEvent` Overhaul**: Redefined `HumanWorkEvent` to support dynamic form generation and user attribution, enabling more flexible human-in-the-loop interactions.
-- 💻 **`ProgramWorkEvent` Attribution**: Added user attribution to `ProgramWorkEvent` for better tracking of who initiated a programmatic action.
-- 📈 **Database Indexing Improvements**: Added new database indexes for agent events, thread agents, and user names, enhancing query performance for these entities.
-- 📄 **Clarified HTTP 404 Messages**: Updated HTTP 404 error messages for API paths to provide more specific debugging information.
-- 📊 **Enhanced Data Lake Logging**: Added a new log statement to output the Data Lake file URI during document parsing, improving observability.
-- 📦 **Frontend Dependencies and Build Process**: Updated frontend `package.json` with new Formkit dependencies and adjusted build commands to align with the new `.app` directory structure.
-- 🇮🇹 **Italian Localization**: Improved the Italian localization for `ExceptionEvent` messages in the frontend.
-- 🌍 **Formkit Locale Integration**: Ensured that dynamically rendered Formkit forms in the frontend correctly reflect the user's selected locale.
-- 🚀 **API Deployment with Gunicorn**: Integrated `gunicorn` as a dependency for API and bot services, suggesting a shift towards more robust production server setups.
-
-### Fixed
-- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found, preventing errors.
-- 🐞 **Schema Immutability in Evaluation**: Ensured that the `JudgeOutput` schema is deep-copied during evaluation to prevent unintended mutations.
-- 💾 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization in `BaseEvent` to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
-- ✅ **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context, and improved query methods for open work requests.
-- 🚦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
-
-### Removed
-- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
-- 🧹 **Deprecated Docker Compose File**: An older `docker-compose` file for volume mounting (`docker-compose-mnt.yml`) has been removed.
-- ✂️ **Redundant Health Page**: A basic placeholder health page in the frontend was removed.
-
-### Refactor
-- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`), improving clarity and maintainability.
-- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
-- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
-- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure.
-- 🌐 **Frontend Directory Rename**: Renamed the internal web development directory from `.playground` to `.app` for consistency.
-- 🧽 **Standardized SharePoint Naming**: Consistently renamed variables, parameters, and asset definitions related to SharePoint for improved consistency and readability.
-- 🎛️ **Clarified Delegator Fields**: Enhanced Pydantic annotations for delegator fields in `aihub_process` for better clarity.
-
----
-
-
-
 ## [v0.227.0] - 2025-07-23 - Improved Azure Identity Service Robustness
 
 ### Fixed
@@ -531,114 +347,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Refactor
 - 🧹 **Import Statement Placement**: Relocated the `asyncio` import to the top-level of the `AzureGraphService` module, aligning with best practices for improved code readability and organization.
-
----
-
-
-
-## [v0.222.0] - 2025-07-21 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
-
-### Added
-- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
-- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
-- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
-- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
-- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
-- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
-- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
-- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
-- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
-- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
-- ✨ **Custom Environment Variables for API Deployments**: Enabled custom environment variable injection for API deployments in Azure IaC, allowing users to define and inject additional environment variables, including secret references.
-
-### Changed
-- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
-- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes (e.g., `/events/threads` to `/events/agents/threads`) and client-side composables to clearly distinguish between agent and process events.
-- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses from 1 to 100 entries, improving performance for frequently requested agent lists.
-- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
-- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
-- ⚡️ **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
-- 📦 **Docker Compose Refinements**: Introduced a new comprehensive `docker-compose.latest.yml` file, consolidating service definitions and streamlining local deployments with various service dependencies.
-- 💡 **Adjusted RAG Context Prompt Role**: Changed the chat role for RAG context prompts from `system` to `user` in all supported languages for better model interpretation.
-- 🐍 **Python Dependency for Production**: Added `gunicorn` as a direct dependency for API and Bot services, supporting robust production deployments.
-
-### Fixed
-- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer (`AgentEntity`) to gracefully handle cases where a specific agent might not be found, preventing exceptions.
-- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context in `PersistedProcessEventEntity`.
-- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed by `ProcessDiscoveryTopic`.
-- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization in `BaseEvent` to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
-- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Resolved an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring images are now correctly referenced and displayed.
-- 📝 **External Event Deserialization Robustness**: Improved deserialization logic for `ExternalAgentEvent` to directly extract `thread_id` and `display_id`, enhancing robustness against malformed data.
-- 🚧 **Human Delegator Validation**: Implemented validation in `Human.Out` to ensure at least one user targeting method (ID, email, or role) is specified when requesting human input, preventing invalid configurations.
-
-### Refactor
-- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`), improving clarity and maintainability.
-- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
-- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments where appropriate, improving code consistency and Pydantic v2 compatibility.
-- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure for improved test organization.
-- 🏗️ **Web UI Project Structure**: Restructured the web UI source code from a generic `.playground` to a more semantically clear `.app` directory for better organization.
-- 🧹 **Standardized SharePoint Naming Conventions**: Refactored variable names, function parameters, and internal asset definitions across SharePoint-related assets, ops, and IO managers for improved consistency and readability.
-
-### Removed
-- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
-- 🗑️ **Generic External Event Distributor Dependency**: Removed the generic `use_external_event_distributor` dependency, replacing it with more specific agent and process event distributors for clearer separation of concerns.
-- 🗑️ **Outdated Docker Compose Mounting File**: Removed `docker-compose-mnt.yml` file, as its functionality is now superseded by new Docker Compose patterns for volume management.
-- 🗑️ **Redundant Frontend Health Page**: Removed a basic placeholder health page from the frontend, as core health checks are handled at the API level.
-
----
-
-
-
-## [v0.222.0] - 2025-07-21 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
-
-### Added
-- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs. This includes new API endpoints for discovery and interaction, dedicated persistence, and real-time event streaming for processes.
-- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
-- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
-- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
-- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
-- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
-- ✨ **Custom Environment Variable Configuration for API Services**: This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, significantly increasing configuration flexibility and integration possibilities.
-- 🚀 **New Web Image Build and Release Workflow**: A new GitHub Actions workflow has been added to automate the building and releasing of web application Docker images.
-- 📄 **New Infrastructure Configuration Files**: Added new configuration files for Milvus, NATS, and PostgreSQL, enhancing control and configurability of infrastructure deployments.
-- 📦 **Simplified Local Production Deployments**: Introduced `docker-compose.latest.yml` for unified, production-ready local deployments, bundling key services.
-- 🌐 **Local Development Docker Compose**: Added `swiss-aihub.local.docker-compose.yml` for specific local development environment configurations, including the frontend web service.
-
-### Changed
-- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
-- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
-- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses from 1 to 100, improving performance for frequently requested agent lists.
-- 🐳 **Streamlined Dockerfile Builds**: Optimized API and Bot Dockerfiles by removing redundant virtual environment copying and internal Poetry installation steps, resulting in more efficient container builds.
-- 🔄 **Updated RAG Context Prompt Role**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages to better align with prompt engineering best practices.
-- 📚 **Enhanced API Documentation Clarity**: Improved Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
-- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
-- ⚡️ **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
-- ⚙️ **Refined `Human` Delegator for Process Interactions**: Expanded the `Human` delegator to support more granular user targeting (by ID, email, role) and notification options for human work requests in agentic processes.
-- 🚦 **`ProcessRunner` Now Exposes Detailed Discovery Information**: The `ProcessRunner` has been enhanced to include comprehensive specifications for human, program, and agent inputs (including form definitions) in its `ProcessDiscoveryResponseEvent`.
-
-### Fixed
-- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found, returning `None` instead of raising an exception.
-- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context, including accurate topic field mappings.
-- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
-- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization in `BaseEvent` to correctly handle nested Pydantic models and `ChatMessage` objects, preventing data loss or incorrect data transfer.
-- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Resolved an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring images are now correctly referenced and displayed.
-- 💅 **Minor CSS and Docstring Typo Fixes**: Corrected a minor CSS syntax issue in the Markdown renderer and fixed a typo in `ProcessTopicManager` docstrings.
-
-### Removed
-- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
-- 🧹 **Deprecated External Event Distributor Dependencies**: Removed outdated `use_external_event_distributor` dependencies, replaced by more specific agent-focused ones.
-- 📦 **Removed Old Docker Compose File**: The `docker-compose-mnt.yml` file has been removed, simplifying the local development environment setup.
-- ✂️ **Removed Redundant Frontend Health Page**: A basic placeholder health page in the frontend was removed.
-- 🗂️ **Deprecated Frontend Playground Directory**: The `.playground` directory and its configuration files have been removed, as the main frontend application now resides in a streamlined `.app` directory.
-
-### Refactor
-- 🧹 **Simplified Docstrings Across Components**: Docstrings in numerous core components have been simplified and cleaned up, focusing on concise explanations rather than extensive examples or "why" sections.
-- ⚙️ **Pydantic Model Default Handling Alignment**: Aligned Pydantic model definitions across various components (e.g., `QuestionStartEvent`, `CreateRoleRequest`, `JudgeOutput`, Open WebUI SDK models, `DoclingSettings`, `SharePointResource`, `SharePointFile`) by moving default value assignments from `Field` annotations to direct attribute assignments.
-- 🔄 **Codebase Naming Standardization**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`) and SharePoint-related assets (`sharepoint_` to `share_point_`), improving clarity and maintainability.
-- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure for better organization and clarity.
-- 📚 **Centralized `EventSpecs` Definition**: The `EventSpecs` class has been moved to a more general location in `aihub_lib.nats.events.discovery`, promoting reusability and reducing duplication.
-- 🪞 **Refined `AcceptRejectRequest` Type Specificity**: Made class variable types more specific (`AcceptCV` instead of generic `HumanWorkEvent`) in `AcceptRejectRequest` for improved type safety and clarity.
-- 🌐 **Frontend Application Directory Restructuring**: Migrated the main frontend application from the `.playground` directory to a new, streamlined `.app` directory for improved project structure.
 
 ---
 
@@ -665,329 +373,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-## [v0.222.0] - 2025-07-21 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
-
-### Added
-- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
-- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
-- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
-- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
-- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
-- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
-- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
-- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
-- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
-- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
-- ✨ **Enabled custom environment variable configuration for API services**: This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, significantly increasing configuration flexibility and integration possibilities.
-- 🚀 **Web Image Build and Release Workflow**: Introduced a new GitHub Actions workflow for building and releasing the web image, improving CI/CD.
-- 📦 **New Core Service Configurations**: Added comprehensive configuration files for Milvus and NATS, alongside a PostgreSQL initialization script, facilitating easier deployment and setup of core services.
-- 🐳 **New Comprehensive Docker Compose for Latest Deployments**: Introduced a new `docker-compose.latest.yml` file, providing a complete, integrated setup for all core AI Hub services, including MinIO, Milvus, PostgreSQL, OpenWebUI, Phoenix, NATS, Redis, MongoDB, API, and optional LLM/embedding models.
-- ⚡️ **Performance Enhancements**: Added new database indexes for agent event, thread, and user entities to improve query performance for common event retrieval patterns.
-
-### Changed
-- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
-- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
-- 🚀 **Caching Enhancements**: Increased the cache size for agent discovery responses and OAuth JSON Web Key Set (JWKS) cache, improving performance for frequently requested data.
-- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
-- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
-- 🔄 **Updated RAG Context Prompt Role**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages (German, English, French, and Italian) to better align with prompt engineering best practices and enhance model interpretation of contextual information.
-- ⚡️ **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
-
-### Fixed
-- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found.
-- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context.
-- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
-- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
-- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Resolved an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring that images are now correctly referenced and displayed by explicitly converting their URL object to a string representation.
-
-### Removed
-- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
-- ✂️ **Removed Redundant Health Page**: A basic placeholder health page in the frontend was removed.
-
-### Refactor
-- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`) and SharePoint-related components, improving clarity and maintainability.
-- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
-- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
-- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure.
-- 📦 **Optimized Docker Image Builds**: Streamlined the Dockerfile for API and Bot services by directly copying the virtual environment from the build stage, reducing image size and build time.
-- 🔄 **Frontend Directory Renaming**: Renamed the `.playground` directory to `.app` in the web frontend for clearer project structure.
-
----
-
-
-
-## [bot-v0.217.0] - 2025-07-18 - Consolidating the Platform: Focus on Agent-Centric Workflows
-
-### Added
-- 🚀 **Automated Draft PR Creation**: Introduced a new GitHub Actions workflow to automatically create draft pull requests for new branches, streamlining the development process.
-- ⚡️ **Added `send_event` to AgentRunner**: Enabled external code to directly trigger new agent runs by sending `StartEvent`s via the `AgentRunner`, simplifying programmatic initiation.
-- ✨ **Introduced Unified External Event Distributor**: Added new dependency injection functions (`use_external_event_distributor` and `_ws`) for the consolidated `ExternalAgentEventDistributor`, simplifying its usage.
-- ⚡️ **Enabled Two-Way WebSocket Communication**: The `/events/ws` endpoint now supports bidirectional messaging, allowing users to send `ExternalAgentEvent`s in addition to receiving real-time event streams.
-- ⚡️ **Implemented WebSocket Event Handling**: Introduced `handle_external_event` to `EventService`, enabling the processing of user-sent WebSocket events and immediate error feedback.
-- ✨ **Introduced New LLM Stop Event Output**: Added `LLMStopEventOutput` and `UserMessageEventInput` schemas for richer event details and user input structures in the API.
-- ✨ **Added Basic Health Service Page**: Introduced a new `/service/health` page in the web UI for basic service health checks.
-
-### Changed
-- 📦 **Optimized Docker Builds for API**: Implemented multi-stage Docker builds for the API service, enhancing build efficiency and reducing image size by copying the virtual environment. Removed `gunicorn` as web server.
-- 📈 **Adjusted Agent Discovery Cache Size**: Modified the in-memory cache for discovered agents to `maxsize=1`, impacting how frequently the entire agent list is re-fetched.
-- 🔄 **Streamlined Event API Routes**: Renamed `/agents/threads` to `/threads` and `/agents/timeseries` to `/timeseries`, simplifying event-related API paths.
-- 📈 **Optimized JWKS Cache for OAuth2**: Adjusted the JWKS cache size in `OAuth2AuthHandler` to `maxsize=1`, focusing on caching the most recently used JWKS.
-- 🔄 **Adjusted RAG Context Prompt Role**: Changed the chat role for RAG context prompts from `user` to `system` across all languages for improved model interpretation.
-- 🔒 **Stricter Validation for ExternalAgentEvent**: Introduced a mandatory `thread_id` check during deserialization of `ExternalAgentEvent`, improving data integrity.
-- 🔄 **Centralized EventSpecs Definition**: The `EventSpecs` class, which defines event schemas, has been moved and is now part of `AgentDiscoveryResponseEvent` for a more logical grouping.
-- 🗄️ **Optimized Event Persistence Indexes**: Removed specific database indexes on `display_id` and compound `thread_id`/`event_type`/`event_parents` fields in `PersistedAgentEventEntity`, potentially improving write performance.
-- 🗄️ **Optimized Thread Entity Indexes**: Removed the compound index on `agents.agent_id` and `agents.agent_class` in `ThreadEntity`, potentially improving write performance.
-- 🗄️ **Optimized User Entity Indexes**: Removed the index on the `name` field in `UserEntity`, potentially improving write performance.
-- 📦 **Optimized Docker Builds for Bots**: Implemented multi-stage Docker builds for the Bot service, enhancing build efficiency and reducing image size. Removed `gunicorn`.
-- 📈 **Optimized JWKS Cache for OAuth2**: Adjusted the JWKS cache size in `OAuth2AuthHandler` to `maxsize=1`, focusing on caching the most recently used JWKS.
-- 📦 **Optimized Docker Builds for Bots**: Implemented multi-stage Docker builds for the Bot service, enhancing build efficiency and reducing image size.
-- 🔄 **Refined Chat Message Schemas**: Introduced distinct `_Input` and `_Output` suffixes for `AssistantChatMessage`, `ChatMessage`, and `UserChatMessage` to clearly delineate their usage contexts.
-- ⚙️ **Updated Web UI Development Scripts**: Modified `dev`, `build`, and `preview` scripts to target the new `.playground` directory.
-- ⬆️ **Updated Frontend Peer Dependencies**: Bumped `primevue` and `vue` peer dependency versions for the web UI.
-
-### Fixed
-- 🖼️ **Fixed Image Path in English RAG Prompt**: Corrected the image rendering logic in the English RAG context prompt to use `block.path` for accurate image display.
-- 🐛 **Improved Event Serialization Consistency**: Ensured consistent serialization of events to JSON by directly using `json.dumps(event.model_dump())`, which was previously causing issues with `serialize_as_any`.
-- 🐛 **Improved Event Serialization for Testing**: Updated test cases to use `json.dumps(event.model_dump())` for event serialization, ensuring accurate and consistent behavior during testing.
-- 🐛 **Stricter Agent Retrieval**: Changed agent retrieval from `first()` to `get()` in `AgentEntity`, ensuring an error is raised if a specific agent is not found, preventing unexpected `None` returns.
-- 🐛 **Corrected Process Pluralization**: Fixed a minor typo in docstrings by changing "all processes" to "all processs" for pluralization consistency.
-
-### Removed
-- 🗑️ **Removed Dedicated Web Build Workflow**: Deprecated the standalone `build-web.yml` workflow, indicating a consolidation or update of the web image build and release process.
-- 🗑️ **Removed Gunicorn Dependency**: Eliminated the `gunicorn` dependency from `aihub_api` and `aihub_bot`, as it is no longer used for serving the applications.
-- 🗑️ **Removed Process Management API**: Fully deprecated and removed the `/processes` API endpoints and `ProcessController`, indicating a shift away from direct external interaction with process orchestration via the API.
-- 🗑️ **Removed Process Service Logic**: Eliminated `ProcessService`, which previously handled business logic for process discovery, form management, and event distribution.
-- 🗑️ **Removed Process-Related DTOs**: Deleted all Data Transfer Objects (DTOs) specifically designed for process management, including `ProcessConfigDTO`, `ProcessDTO`, `ProcessHumanInDto`, and `SubmittedFormDTO`.
-- 🗑️ **Removed Process Access from User Dashboard**: User access levels for processes are no longer displayed in the `UserWithAccessDTO`, aligning with the deprecation of direct process API interaction.
-- 🗑️ **Removed Process Controller Integration**: The `ApiRunner` no longer initializes or integrates the `ProcessController`, aligning with the deprecation of direct process API endpoints.
-- 🗑️ **Removed Process Simulation Infrastructure**: Eliminated the entire `simulation/process` directory, including `SimulatedProcessApiTestRunner` and its associated mock event definitions, as direct process API interaction has been deprecated.
-- 🗑️ **Removed Generic Endpoint Discovery Service**: Deprecated and removed the `EndpointsDiscoveryService` abstract base class, as its functionality has been integrated directly into specific discovery services.
-- 🗑️ **Removed Process Endpoint Discovery Service**: Eliminated `ProcessEndpointsDiscoveryService`, which handled dynamic registration of API endpoints for processes, aligning with the deprecation of direct process API interaction.
-- 🗑️ **Removed Process-Specific WebSocket Event Model**: Eliminated `ContextualizedProcessEvent`, consolidating all server-to-user WebSocket events under a single, unified agent event model.
-- 🗑️ **Removed External Agent Event Distributor Dependencies**: Eliminated the specific dependency injection functions for `ExternalAgentEventDistributor` as part of the refactoring to a unified distributor.
-- 🗑️ **Removed External Process Event Distributor**: Eliminated `ExternalProcessEventDistributor`, which previously handled distributing external events to processes, as this functionality is no longer directly exposed.
-- 🗑️ **Removed External Process Event Distributor Dependencies**: Eliminated dependency injection functions for `ExternalProcessEventDistributor` due to its removal.
-- 🗑️ **Removed External Process Event Model**: Eliminated `ExternalProcessEvent` as part of the deprecation of direct process API interaction.
-- 🗑️ **Removed Specific Work Event Properties**: Eliminated `is_human_work_event` and `is_program_work_event` properties from `BaseEvent`.
-- 🗑️ **Relocated EventSpecs Definition**: The `EventSpecs` model has been moved and is now defined directly within `AgentDiscoveryResponseEvent` for better contextualization.
-- 🗑️ **Simplified Process Discovery Response**: Removed `human_inputs`, `program_inputs`, and `agent_inputs` fields from `ProcessDiscoveryResponseEvent`, streamlining the process discovery response.
-- 🗑️ **Removed Process Input Specification Models**: Eliminated `AgentInSpecs`, `HumanInSpecs`, and `ProgramInSpecs` models, which defined how different entities could provide input to processes.
-- 🗑️ **Removed Dynamic Form Generation**: Deprecated and removed the entire dynamic form generation capability, including `Form` models and `Formkit` elements, which previously allowed processes to define and expose forms for human input.
-- 🗑️ **Removed Process Discovery Response Subscriber**: Eliminated the `for_process_discovery_response_events` subscriber, as process discovery responses are no longer handled as distinct events.
-- 🗑️ **Removed Process Entity Models**: Eliminated `ProcessEntity` and all its associated embedded document models, completely deprecating the direct persistence of process definitions in the database.
-- 🗑️ **Removed Process Management Composables**: Eliminated `useProcess` and `useProcesses` composables, aligning with the deprecation of direct process API interaction.
-- 🗑️ **Removed Formkit Locale Integration**: Eliminated Formkit-specific locale change logic from `UserSettings.vue`, aligning with the deprecation of Formkit from the web UI.
-- 🗑️ **Removed Formkit Nuxt Module**: Eliminated the `@sfxcode/formkit-primevue-nuxt` module integration from `nuxt.config.ts`, completing the deprecation of Formkit in the web UI.
-- 🗑️ **Removed Formkit Dependencies**: Eliminated Formkit-related development dependencies from `package.json`, confirming its removal.
-- 🗑️ **Removed Custom API Environment Variables**: Deprecated and removed the `additional_env_vars` configuration from `AIHubSettings`, which previously allowed injecting custom environment variables into API deployments.
-- 🗑️ **Removed Process API Test Suite**: Eliminated the entire test suite for process API interactions, including fixtures and scenario tests, aligning with the deprecation of direct process API endpoints.
-- 🗑️ **Removed Process-Specific Query Methods**: Eliminated `get_open_human_work_requests` and `find_request_for_work_event` methods, as process-specific event querying is no longer supported.
-- 🗑️ **Removed Playground-Specific Work Events**: Eliminated `AgentAWorkRequest`, `HumanAWork`, `HumanBWork`, and `HumanBWorkRequest` events from the playground examples, as their underlying models have been simplified or deprecated.
-- 🗑️ **Removed Agent-Only Process Runner**: Eliminated the `agent_only_process` playground runner, as its example scenario is no longer relevant to the simplified process interaction model.
-- 🗑️ **Removed Legacy Process Interaction Examples**: Eliminated `agent_to_human_process`, `human_only_process`, and `human_to_agent_process` examples and their associated test suites, as they are no longer compatible with the simplified process interaction model.
-- 🗑️ **Removed Frontend Config Loader**: Eliminated the client-side configuration loader and its related `config.json` and `config.template.json` files, simplifying frontend environment management.
-- 🗑️ **Removed Nginx Configuration for Web UI**: Deprecated and removed the Nginx configuration file for serving the web UI, indicating a shift in deployment strategy.
-- 🗑️ **Removed Formkit Configuration**: Eliminated `formkit.config.ts`, confirming the removal of Formkit-based dynamic forms from the web user interface.
-- 🗑️ **Removed Processes Overview Page**: Eliminated the `/service/processes` page from the web UI, as direct process management through the UI has been deprecated.
-
-### Refactor
-- ⚙️ **Refined Default Locale Handling**: Explicitly set the default locale to "en" within `QuestionStartEvent` using Pydantic's `default` argument for clarity.
-- 📄 **Enhanced ThreadContext Documentation**: Added detailed explanations to the `ThreadContext` class, clarifying its purpose, features, and providing usage examples.
-- 🧹 **Consolidated Event Sending Logic**: Moved the `send_event` method from `AgentTestRunner` to its parent class `AgentRunner` to centralize event sending functionality.
-- 📄 **Improved RunTraceCoordinator Documentation**: Enhanced the docstrings for `RunTraceCoordinator` to better explain its role in OpenTelemetry-based tracing and its key features.
-- 🧹 **Standardized EventSpecs Import**: Updated `EventModelCreationService` to import `EventSpecs` from the centralized `AgentDiscoveryResponseEvent` module for consistency.
-- 📄 **Enhanced EventPersister Documentation**: Added detailed docstrings to `EventPersister`, explaining its purpose, features, and usage for clearer understanding.
-- ✂️ **Simplified Event Persistence**: Consolidated event persistence logic under a single `persist_event` method, removing the distinction between agent and process events in the API's persistence layer.
-- 🧹 **Streamlined AgentDTO Conversion**: Removed the `is_online` parameter from `AgentDTO` factory methods, simplifying the data transfer object creation.
-- 📄 **Enhanced AgentService Documentation**: Improved `AgentService` docstrings with detailed explanations of its purpose, operations, and caching mechanisms.
-- 🧹 **Standardized EventSpecs Import**: Updated `AgentDTO` to import `EventSpecs` from the centralized `AgentDiscoveryResponseEvent` module.
-- 📄 **Improved AgentDTO Documentation**: Added docstrings to `AgentDTO` explaining its purpose in standardizing API responses.
-- 🧹 **Renamed External Event Distributor Dependency**: Updated imports and parameter names from `use_external_agent_event_distributor` to `use_external_event_distributor` for consistency.
-- 📄 **Enriched EvaluationController Documentation**: Added detailed docstrings outlining the controller's purpose and authentication requirements.
-- 🧹 **Standardized External Event Distributor Usage**: Renamed `external_agent_event_distributor` to `external_event_distributor` in `EvaluationService` for consistent API usage.
-- 📄 **Comprehensive EvaluationService Documentation**: Added detailed docstrings and section headers to `EvaluationService`, improving clarity on its responsibilities and internal organization.
-- 📄 **Enhanced EventController Documentation**: Added detailed docstrings to `EventController`, explaining its dual role in historical and real-time event management.
-- 🔄 **Unified WebSocket Event Types**: Updated `get_user_events` and `event_websocket_connection` to use `WSServerEvent`, standardizing event representation for WebSocket clients.
-- 📄 **Improved EventService Documentation**: Provided comprehensive docstrings for `EventService`, detailing its role in event retrieval, external event handling, and error management.
-- 🧹 **Standardized External Event Distributor Usage**: Renamed `use_external_agent_event_distributor` to `use_external_event_distributor` in `OpenaiController` for consistent dependency injection.
-- 📄 **Expanded OpenaiController Documentation**: Added detailed docstrings to `OpenaiController`, clarifying its purpose in emulating the OpenAI API and its key design intentions.
-- 📄 **Clarified OpenaiService Purpose**: Added docstrings to `OpenaiService` detailing its core operations and mirroring of OpenAI's API functionality.
-- ⚙️ **Refined Role Creation Defaults**: Explicitly set the default for `access_rules` in `CreateRoleRequest` to an empty list, improving API schema clarity.
-- 📄 **Comprehensive ThreadController Documentation**: Added detailed docstrings to `ThreadController`, explaining its purpose, specific endpoints, authentication model, and providing usage examples.
-- 📄 **Improved ThreadService Documentation**: Provided detailed docstrings for `ThreadService`, clarifying its business logic and responsibilities within thread operations.
-- 🧹 **Standardized WebSocket Event Types**: Updated event conversion in `thread_as_message_history` to use `WSServerEvent` for consistency.
-- 🧹 **Renamed Agent Simulation Runner**: Moved and renamed `SimulatedAgentApiTestRunner` to a more central location.
-- 🧹 **Updated Agent Discovery Service Reference**: Aligned usage with the renamed `AgentDiscoveryService` for consistency.
-- 🧹 **Consolidated Event Distributors**: Replaced `ExternalProcessEventDistributor` with `ExternalAgentEventDistributor` to unify event distribution.
-- 🧹 **Unified Event Persistence**: Migrated process event persistence to use `AgentNCSubscriber`, storing all events as agent events.
-- 🧹 **Renamed and Refactored Agent Discovery Service**: `AgentEndpointsDiscoveryService` was renamed to `AgentDiscoveryService` and refactored to encapsulate its own discovery loop logic, removing its dependency on the now-removed `EndpointsDiscoveryService`.
-- 🧹 **Renamed WebSocket Event Model**: `ContextualizedAgentEvent` was renamed to `WSServerEvent` to reflect its broader role as a generic server-to-user event container.
-- 📄 **Enhanced WSServerEvent Documentation**: Added detailed docstrings to `WSServerEvent`, explaining its purpose and conversion from persisted events.
-- 🧹 **Standardized WebSocket Event Types in Manager**: Updated `WebSocketManager` to use `WSServerEvent` and renamed `send_agent_event` to `send_event` for consistency.
-- 📄 **Improved WebSocketManager Documentation**: Added comprehensive docstrings, including explanations of its purpose, usage, and examples.
-- 🧹 **Standardized External Event Distributor Import**: Updated `WebSocketManager` dependencies to use the new `use_external_event_distributor` name.
-- 🧹 **Standardized WebSocket Event Types in Sender**: Updated `WebSocketSender` to use `WSServerEvent` for consistent event handling.
-- 📄 **Improved WebSocketSender Documentation**: Added detailed docstrings, explaining its purpose, event flow, and providing usage examples.
-- 🧹 **Updated Simulated Agent Runner Imports**: Test files referencing `SimulatedAgentApiTestRunner` were updated to reflect its new location.
-- ⚙️ **Refined JudgeOutput Default**: Explicitly set the default for the `error` field in `JudgeOutput` to `False` using Pydantic's `default` argument.
-- 🧹 **Standardized External Event Distributor Usage**: Renamed `external_agent_event_distributor` to `external_event_distributor` within `PhoenixExperimentEvaluator` for consistent dependency naming.
-- ⚙️ **Optimized Schema Copying**: Removed unnecessary `deepcopy` calls for `JudgeOutput` schema, improving efficiency.
-- ⚙️ **Clarified Optional Fields in OpenAPI Models**: Explicitly added `default=None` or `default=False` to numerous optional fields across Open WebUI SDK models (chats, files, knowledge, users), enhancing clarity in the generated OpenAPI schema.
-- ⚙️ **Refined DoclingSettings Defaults**: Explicitly set default values for `DOCLING_IMAGE_EXPORT_MODE`, `DOCLING_DO_OCR`, and `DOCLING_FORCE_OCR` in `DoclingSettings` for clearer configuration.
-- 📄 **Comprehensive ExternalAgentEventDistributor Documentation**: Added detailed docstrings to `ExternalAgentEventDistributor`, outlining its purpose, key responsibilities, event flow, and providing usage examples.
-- 🧹 **Standardized Pydantic Annotations**: Updated `event_id` and `created_at` to use `Annotated` for consistency.
-- 🧹 **Streamlined WorkEvent Definition**: Simplified `WorkEvent` by removing specific default value setters and display name/description class methods, making it a more focused base class.
-- 🧹 **Simplified HumanWorkEvent**: Removed `Form` inheritance and the `submitted_by` field from `HumanWorkEvent`, making it a simpler, more abstract work event base, aligning with the removal of dynamic form generation.
-- 🧹 **Simplified ProgramWorkEvent**: Removed the `submitted_by` field from `ProgramWorkEvent`, streamlining its definition.
-- 🧹 **Simplified HumanWorkRequestEvent**: Removed complex form validation and fields (`endpoint`, `method`, `user_emails`, `user_roles`, `notify`, `forms`), streamlining `HumanWorkRequestEvent` to a simpler event marker.
-- 🧹 **Simplified ProgramWorkRequestEvent Fields**: Made `endpoint` and `method` fields optional in `ProgramWorkRequestEvent`, reducing their strictness.
-- 📄 **Improved AgentDiscoveryTopic Documentation**: Added detailed docstrings to `AgentDiscoveryTopic`, clarifying its purpose in agent-specific discovery.
-- 🧹 **Simplified ProcessDiscoveryTopic**: Removed extensive docstrings and adjusted internal assertions to rely on a more generic `TopicManager`, streamlining its definition.
-- 🧹 **Re-purposed Process Event Persistence Entity**: `PersistedProcessEventEntity` has been re-purposed to store events using agent-centric topic details, effectively consolidating process events under the agent event model.
-- ⚙️ **Refined SPA Route Not Found Message**: Simplified the HTTP 404 detail message for SPA routes to "Not Found" for better consistency.
-- 🧹 **Standardized SharePoint Naming**: Renamed client, file, and function parameters from `share_point_` to `sharepoint_` within `observable_share_point_factory` for naming consistency.
-- 🧹 **Standardized SharePoint Naming**: Renamed factory function and file parameters from `share_point_` to `sharepoint_` within `sharepoint_files_to_data_lake_files_factory` for naming consistency.
-- 🧹 **Standardized SharePoint Naming**: Renamed client and file parameters from `share_point_` to `sharepoint_` within `SharePointIOManager` for naming consistency.
-- ⚙️ **Refined Data Lake Parsing Logging**: Removed a redundant log statement for Data Lake file URI during document parsing to streamline logging output.
-- 🧹 **Standardized SharePoint Naming**: Renamed file parameters and metadata table function from `share_point_` to `sharepoint_` within `data_version_by_partition_for_share_point_files_no_op` for naming consistency.
-- 🧹 **Standardized SharePoint Naming**: Renamed file parameter from `share_point_file` to `sharepoint_file` within `extract_content_from_share_point_file` for naming consistency.
-- 🧹 **Standardized SharePoint Naming**: Renamed file and parameter from `share_point_` to `sharepoint_` within `extract_metadata_from_sharepoint_file` for consistent naming.
-- ⚙️ **Refined SharePointResource Defaults**: Explicitly set default `None` values for `target_folders` and `exclude_folders` in `SharePointResource` for clearer configuration.
-- ⚙️ **Refined SharePointFile Defaults**: Explicitly set default `None` values for `content_type` and `download_url` in `SharePointFile` for clearer type definitions.
-- 🧹 **Standardized SharePoint Naming**: Renamed functions from `share_point_` to `sharepoint_` within metadata utility functions for naming consistency.
-- 🧹 **Simplified Agent Delegator Definitions**: Streamlined `Agent.In` and `Agent.Out` class attributes by removing verbose `Annotated` and `Field` declarations, and condensed docstrings for brevity.
-- 🧹 **Simplified Human Delegator Definitions**: Drastically streamlined `Human.In` and `Human.Out` classes by removing explicit form handling, user/role targeting, and notification configurations, reducing complexity.
-- 🧹 **Simplified Process Delegator Definitions**: Streamlined `Process.In` and `Process.Out` class attributes by removing verbose `Annotated` and `Field` declarations.
-- 🧹 **Streamlined Human Work Request Dispatching**: Simplified the dispatching of `HumanWorkRequestEvent` by consolidating user targeting to a single `event.users` field, aligning with the updated `Human.Out` definition.
-- 🧹 **Simplified ProcessRunner Discovery Responses**: Streamlined the `ProcessRunner`'s discovery handler by removing detailed input specifications (`human_inputs`, `program_inputs`, `agent_inputs`), aligning with the simplified process API.
-- 🧹 **Streamlined ProcessTestRunner**: Drastically simplified `ProcessTestRunner` by removing redundant event sending methods (`send_event`, `send_event_from_topic`) and topic-centric event retrieval, streamlining test capabilities.
-- 🧹 **Simplified AgenticCVProcess Steps**: Updated `AgenticCVProcess` to align with the streamlined `Human.Out` definition, removing explicit form instantiation and related `InputTextElement` usage.
-- 🧹 **Simplified AnalyzedCV Event**: Removed the `cv_name` field from the `AnalyzedCV` event, streamlining its data structure.
-- 🧹 **Simplified Human Response Events**: Streamlined `AcceptCV` and `RejectCV` events by changing the `reason` field type to a simple string, aligning with the removal of explicit form elements.
-- 🧹 **Generalized AcceptRejectRequest**: Updated `AcceptRejectRequest` to use a more generic `HumanWorkEvent` type for its `accept` and `reject` class variables, enhancing flexibility.
-- 🧹 **Standardized SharePoint Naming**: Renamed file and parameter from `share_point_` to `sharepoint_` within `extract_metadata_from_sharepoint_file` for consistent naming.
-- 🧹 **Updated Gitignore for Playground Directory**: Modified `.gitignore` to exclude build artifacts from the new `.playground` directory.
-- 🧹 **Standardized WebSocket Event Types in UI Components**: Updated numerous Vue components to consistently use `WsServerEventReadable` instead of `WsServerAgentEventReadable`, reflecting the unified server-to-user WebSocket event model.
-- 🧹 **Standardized WebSocket Event Types in Composables**: Updated `useAgentIconFromThread` and `useEventComponent` composables to consistently use `WsServerEventReadable`.
-- 🧹 **Standardized Event Timeseries API Usage**: Updated `useEventTimeseries` composable to use the new `/events/timeseries` endpoint, reflecting the simplified event API.
-- 🧹 **Standardized Thread Events API Usage**: Updated `useThreadEvents` composable to use `getEventsInThread` and `WsServerEventReadable`, reflecting the unified event API.
-- 🧹 **Standardized WebSocket Event Types in Thread Utilities**: Updated `useThreadUtils` composable to consistently use `WsServerEventReadable`.
-- ⚙️ **Refined ExceptionEvent Localization**: Removed a redundant label for `ExceptionEvent` in the Italian localization file.
-- 🧹 **Standardized WebSocket Event Types in Sources Page**: Updated the sources page to consistently use `WsServerEventReadable` for event data.
-
----
-
-
-
-## [v0.222.0] - 2025-07-21 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
-
-### Added
-- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
-- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
-- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
-- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
-- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
-- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
-- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
-- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
-- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
-- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
-- ✨ **Enabled Custom Environment Variable Configuration for API Services**: This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, significantly increasing configuration flexibility and integration possibilities.
-- 📦 **New Docker Compose Files and Configurations**: Introduced new Docker Compose files for more structured and flexible development and deployment setups, including new default configurations for Milvus, NATS, and PostgreSQL.
-- 🐳 **New Web Dockerfile and Nginx Setup**: Added a new multi-stage Dockerfile for the web application and an Nginx configuration, optimizing web deployment.
-
-### Changed
-- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
-- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
-- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance for frequently requested agent lists.
-- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
-- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
-- ⚙️ **Optimized Dockerfile for Microservices**: Streamlined Dockerfiles for `aihub_api` and `aihub_bot` by refining virtual environment handling during build.
-- ⚙️ **Enhanced Logging for Data Lake Document Parsing**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
-- ⚙️ **Refined `WorkEvent` Default Handling**: Enhanced `WorkEvent` with a model validator to automatically set display metadata and new properties for clearer event classification.
-- ⚙️ **Improved `Human` Delegator Configuration**: Enhanced the `Human` delegator to support detailed audience targeting (user IDs, emails, roles), notification options, and the inclusion of an initial form for process start events.
-- ⚙️ **Updated `ProcessDispatcher` for Human Inputs**: Updated `ProcessDispatcher` to correctly assign new user targeting and notification parameters for `HumanWorkRequestEvent`.
-- ⚙️ **Expanded Process Runner for Discovery**: Extended `ProcessRunner` to dynamically generate and include detailed human, program, and agent input specifications in `ProcessDiscoveryResponseEvent`.
-- ⚙️ **Enhanced `HumanWorkRequestEvent` Validation**: Significantly enhanced `HumanWorkRequestEvent` to support detailed audience targeting and dynamic form definitions, ensuring strict validation against expected work event types.
-- ⚙️ **Improved Agent Entity Persistence**: Ensured `network_graph` is always stored as a dictionary in `AgentEntity`.
-- ⚙️ **Enhanced Database Indexes**: Added new database indexes across `PersistedAgentEventEntity`, `ThreadEntity`, and `UserEntity` for improved query performance.
-- ⚙️ **Updated RAG Context Prompt Role**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages (German, English, French, and Italian) to better align with prompt engineering best practices and enhance model interpretation of contextual information.
-
-### Fixed
-- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found.
-- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context.
-- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
-- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
-- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Resolved an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring that images are now correctly referenced and displayed by explicitly converting their URL object to a string representation.
-- 🐞 **Missing Italian Translation for ExceptionEvent**: Added missing translation for the `ExceptionEvent` label in Italian.
-
-### Refactor
-- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`), event types, and associated components, improving clarity and maintainability.
-- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
-- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
-- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure.
-- 🧹 **Standardized SharePoint Naming Conventions**: Refactored variable names, function parameters, and internal asset definitions across SharePoint-related assets, ops, and IO managers for improved consistency and readability.
-- ✂️ **Removed Redundant Health Page**: A basic placeholder health page in the frontend was removed.
-- 📦 **Frontend Application Directory Restructure**: Migrated Nuxt application configuration and source from `.playground` to a new `.app` directory for production readiness.
-
-### Removed
-- 🗑️ **Automatic Draft PR Workflow:** The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
-- 🗑️ **Deprecated Generic Event Distributor**: Removed the generic `use_external_event_distributor` in favor of more specific agent and process-scoped distributors.
-- 🗑️ **Old Docker Compose Mount Configuration**: Removed the `docker-compose-mnt.yml` file, likely superseded by new, more structured Docker Compose configurations.
-
----
-
-
-
-## [web-v0.222.0] - 2025-07-21 - Full-Stack Deployment and Streamlined Agent Architecture
-
-### Added
-- 🚀 **Full-Stack Containerization**: Introduced comprehensive Docker Compose configurations for streamlined deployment of API, Bot, and Web components, including MinIO, Milvus, PostgreSQL, Redis, MongoDB, and NATS.
-- ⚙️ **New Service Dockerfiles**: Added dedicated Dockerfiles for building production-ready Docker images of API, Bot, and Web services using multi-stage builds and Gunicorn for Python services.
-- 🌐 **Web Frontend Production Setup**: Implemented a robust Nginx-based Docker setup for the web UI, enabling static file serving, runtime configuration loading, and optimized caching.
-- 📦 **Core Component Applications**: Introduced `app/main.py` entrypoints and new settings classes (`ApiRunnerSettings.py`, `BotRunnerSettings.py`) for API and Bot services, centralizing application bootstrapping and configuration.
-- 📄 **New Database & Messaging Configurations**: Included detailed configuration files for Milvus (`milvus.yaml`), NATS (`nats.conf`), and a PostgreSQL initialization script (`init-multiple-dbs.sh`), supporting the new Docker Compose environments.
-- 🧪 **OpenWebUI Integration for Local Dev**: Added a `docker-compose-webui-mnt.yml` for simplified local development of OpenWebUI with volume mounts.
-- 🚀 **Automated Build Workflows**: Introduced new GitHub Actions workflows (`build-api-and-bot.yml`, `build-web.yml`) to automate the build and release of Docker images for API, Bot, and Web services.
-
-### Changed
-- ⚙️ **Refined Agent Configuration Model**: Revised the `AgentConfig` structure by removing the `agent_class` field, making `agent_id` the primary instance identifier. Added `system_prompt`, `color`, and `voice` attributes to the base configuration for broader applicability (though deprecated for future removal).
-- 💡 **Unified LLM and Vector Store Configurations**: Agent configurations now utilize consolidated base types (`LLMConfig`, `EmbeddingModelConfig`, `BasePydanticVectorStore`) for LLMs, embedding models, and vector stores, enhancing type safety and abstraction.
-- 🚧 **Streamlined StartEvent**: The `StartEvent` no longer directly carries agent configuration, simplifying event payload and centralizing configuration management within the agent dispatcher.
-- 🔗 **Simplified RAG Node Combining**: The `combine_nodes_in_order` utility for RAG context now omits HTML-like tags (e.g., `<h1>`, `<content>`) and uses simpler text formatting, reducing prompt complexity.
-- ⚡️ **CI/CD Workflow Enhancements**: Updated GitHub Actions build workflows for Docker images to allow optional `ssh_key` usage.
-- 📚 **Documentation and SDK Updates**: Revised agent examples in documentation and updated the generated API SDK to reflect the new `AgentConfig` structure, including the removal of `agent_class` and the addition of `system_prompt`, `color`, and `voice`.
-- 📊 **Pipeline Automation Triggers**: Updated pipeline assets for document and data lake file removal to use `AutomationCondition.eager()`, ensuring data cleanup tasks are triggered more responsively.
-- 📦 **Pipeline I/O Manager**: The SharePoint observable asset now uses `data_lake_io_manager` for more consistent interaction with the data lake.
-- 🌐 **Web Frontend Build Configuration**: The Nuxt build configuration was moved and adjusted to explicitly differentiate development and production runtime configurations for OIDC, WebUI, and WebSocket endpoints.
-- ⬆️ **Dependency Updates**: Updated `primevue` and `vue` versions in the web application's `package.json`.
-
-### Fixed
-- 🐛 **Robust Figure Deletion in Pipelines**: Improved the data lake figure deletion process in pipelines by removing a redundant existence check, preventing potential errors when a figures directory is already absent.
-- 💬 **Localization for Exception Events**: Added a missing translation label for `ExceptionEvent` in the Italian locale.
-- ℹ️ **Process DTO Description Typo**: Corrected a minor typo in the `ProcessDTO` description in the generated SDK.
-
-### Removed
-- 🗑️ **Legacy Agent Configuration Persistence**: Eliminated standalone MongoDB documents and embedded documents for agent configurations, consolidating persistence directly within the `AgentEntity`. Also removed the `save_config.py` example script.
-- 🗑️ **Deprecated Discovery Events and Topic Managers**: Removed old class- and instance-specific discovery events and topic managers, unifying agent discovery under a single, simplified model.
-- 🗑️ **Legacy Pydantic Vector Store Configs**: Removed explicit Pydantic models for vector store configurations, which are now replaced by direct factory functions.
-- 🗑️ **Obsolete Model Creation Service**: Removed `ModelCreationService`, replaced by `EventModelCreationService` for a more focused approach to event model generation.
-- 🗑️ **Dedicated Locale String Entity**: Removed `LocaleStringEntity`, as localized strings are now handled more directly within other models.
-- 🗑️ **Specific Pipeline Jobs**: Removed the `materialize_asset_job` utility from the pipeline factory and associated playground jobs, simplifying job creation and encouraging asset-level automation.
-- 🗑️ **Outdated Test Files**: Cleaned up several old test files related to agent dispatcher, agent config, and agent service database integration, as their functionalities are now covered by more integrated tests or made obsolete by architectural changes.
-
-### Refactor
-- 🧹 **Agent Dispatcher & Runner Overhaul**: Performed a major refactor of the `AgentDispatcher` and `AgentRunner` components, streamlining internal logic, simplifying argument injection, and refining background task management by removing explicit `_background_tasks` sets.
-- 🔄 **Unified Agent Discovery**: Consolidated and streamlined the agent discovery mechanism by merging class and instance-level discovery events and topic managers into a single, consistent model.
-- 🗄️ **Embedded Agent Persistence**: Re-architected agent configuration persistence by embedding agent configuration directly within `AgentEntity`, enhancing data co-location and simplifying object relationships.
-- 📦 **Streamlined Vector Store Integration**: Replaced explicit vector store configuration objects with direct factory functions for cleaner instantiation and use.
-- 📁 **Project Structure Alignment**: Renamed `aihub_web/aihub_web/.playground` to `aihub_web/aihub_web/.app` to better reflect its role as the primary application directory. Also reorganized API test runners into `simulation/agent` and `simulation/process` directories.
-- 🧹 **Internal API Naming Consistency**: Renamed the internal `_get_endpoint_base_path` to `_get_endpoint_name` in endpoint discovery services for improved clarity and consistency.
-
----
-
-
-
 ## [v0.225.0] - 2025-07-21 - Enhanced Document Structure and Content Rendering
 
 ### Added
@@ -1004,205 +389,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-## [v0.222.0] - 2025-07-21 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
-
-### Added
-- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
-- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
-- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
-- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
-- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
-- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
-- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
-- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
-- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
-- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
-- ✨ **Enabled custom environment variable configuration for API services**: This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, significantly increasing configuration flexibility and integration possibilities.
-- 📦 **Complete Local Deployment Stack**: Added new `docker-compose.latest.yml` providing a full local deployment including MinIO, Milvus, Postgres, OpenWebUI, and AI Hub services.
-
-### Changed
-- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
-- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
-- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance for frequently requested agent lists.
-- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
-- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
-- 🐳 **Improved Docker Build Processes**: Refactored Dockerfiles for `aihub_api` and `aihub_bot` to optimize image size and build efficiency, including using `gunicorn` for serving and streamlining dependency installation.
-- ⚙️ **Process Delegator Configuration**: Updated `Human` delegator configuration to support richer user-based targeting (user IDs, emails, roles) and notification options for human-in-the-loop requests.
-- 📈 **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
-- 🔄 **Updated RAG Context Prompt Role**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages (German, English, French, and Italian) to better align with prompt engineering best practices and enhance model interpretation of contextual information.
-
-### Fixed
-- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found.
-- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context.
-- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
-- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
-- 💅 **Frontend Markdown Renderer Styling**: Corrected minor CSS issues in the Markdown renderer to ensure consistent display of headings.
-- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Resolved an issue where image URLs in RAG prompts were not consistently processed, ensuring images are correctly referenced.
-
-### Refactor
-- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`), improving clarity and maintainability.
-- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
-- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
-- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure.
-- ✂️ **Frontend Build Environment Migration**: Migrated the frontend development and build environment from `.playground` to `.app`, streamlining project structure.
-- 🧼 **Standardized SharePoint Naming Conventions**: Refactored variable names, function parameters, and internal asset definitions across SharePoint-related assets, ops, and IO managers for improved consistency and readability (e.g., `sharepoint_` was consistently renamed to `share_point_`).
-
-### Removed
-- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
-- 🗑️ **Deprecated Docker Compose File**: Removed the `docker-compose-mnt.yml` file, simplifying local deployment options.
-- 🗑️ **Redundant Frontend Health Page**: A basic placeholder health page (`pages/service/health.vue`) in the frontend was removed.
-
----
-
-
-
-## [v0.217.0] - 2025-07-18 - Agent-Centric Refocus & Infrastructure Streamlining
-
-### Added
-- ✨ **Automated Draft Pull Request Creation**: Introduced a new GitHub Actions workflow to automatically create draft pull requests for new branches, streamlining development and ensuring consistent PR titles.
-- ⚡️ **External Event Triggering for Agent Runs**: Implemented a new `send_event` method in `AgentRunner` to allow external systems to programmatically initiate agent runs with a `StartEvent`.
-- ✨ **Introduced Generalized External Event Distributor Dependency**: Created a new `use_external_event_distributor` dependency for consistent access to event distribution functionality across the API and bots.
-- 🚀 **Real-time User Event Processing**: Transformed the API's event WebSocket endpoint (`/ws`) to support bi-directional communication, enabling users to send commands and receive real-time event streams from agents.
-- 🚀 **Self-Managing Agent Endpoint Discovery**: The `AgentDiscoveryService` now autonomously discovers and registers/deregisters agent API endpoints on a periodic interval, improving API dynamism.
-- ✨ **Added Basic Health Service Page**: Introduced a new, simple health service page in the frontend for basic status checks.
-- ✨ **New Consolidated Local Development Environment**: Introduced a new `docker-compose-mnt.yml` for local development, providing persistent volume mounts for all core services including Phoenix, NATS, Redis, Mongo, and local LLM/embedding models.
-- 🚀 **Introduced Dynamic Agent Event Sending**: Added a new client endpoint for sending events to dynamically discovered agent endpoints, enabling more direct interaction from the frontend.
-
-### Changed
-- 📚 **Enhanced Documentation Across Core Components**: Significantly improved docstrings and inline comments for various services and models including `ThreadContext`, `RunTraceCoordinator`, `AgentService`, `EvaluationService`, `EventController`, `ThreadController`, `ExternalAgentEventDistributor`, `AgentDiscoveryTopic`, `AgentDiscoveryService`, `WebSocketManager`, and `WebSocketSender` for better clarity and understanding.
-- 📦 **Optimized Docker Images**: Reworked Dockerfiles for API and Bot services (`aihub_api` and `aihub_bot`) to install Poetry dependencies `--no-root` and copy the virtual environment, leading to smaller and more efficient container images.
-- ⚡️ **Adjusted Agent Discovery Caching**: Modified the `DISCOVER_AGENTS_CACHE` max size to potentially increase the frequency of agent re-discovery, aiming for quicker reflection of live agent status.
-- ⚡️ **Improved Agent Status Reflection**: Adjusted `AgentDTO` creation to accurately reflect the `is_online` status of agents, removing redundant explicit `False` assignments in `AgentService`.
-- ⚡️ **Optimized JWKS Caching**: Reduced `_jwks_cache` size to 1 in `OAuth2AuthHandler`, ensuring more frequent fetching of JSON Web Key Sets for enhanced security and freshness.
-- 🔄 **Updated RAG Context Prompt Role**: Changed the chat role for the RAG context prompt from `user` to `system` in all supported languages (German, English, French, and Italian) for better alignment with prompt engineering practices.
-- 🔒 **Strict Validation for External Agent Events**: Added a mandatory check for `thread_id` during `ExternalAgentEvent` deserialization to ensure proper event routing and prevent errors.
-- 📚 **Simplified API Route Not Found Message**: Shortened the HTTP 404 detail message for API routes in `Runner`, making it more generic.
-- 💥 **Stricter Agent Retrieval Behavior**: Modified `AgentEntity.get_agent` to use `get()` which raises an exception if an agent is not found, providing clearer error handling.
-- 🔄 **Flexible Agent Network Graph Storage**: Changed `network_graph` in `AgentEntity` to be stored as a flexible dictionary rather than a rigid embedded document, improving adaptability.
-- ⚙️ **Standardized Frontend Configuration**: Updated the Nuxt.js configuration in the new `.playground` directory to directly use environment variables and hardcode local endpoints for development simplicity.
-- ⚡️ **Client-Side Rendering Enabled**: Configured Nuxt.js for client-side rendering only (`ssr: false`), optimizing frontend load.
-
-### Fixed
-- 🐛 **Fixed RAG Image URL Handling**: Corrected an issue in the English RAG context prompt (`en.yml`) to ensure image URLs are properly referenced using `block.path`, resolving image display problems.
-- 🐛 **Corrected Pluralization in Process Topic Docstrings**: Fixed a minor typo in `ProcessTopicManager` docstrings, ensuring consistent pluralization of "process."
-
-### Removed
-- 🗑️ **Deprecated Legacy Web Build Workflow**: The `build-web.yml` GitHub Actions workflow for building and releasing web images has been removed, simplifying CI/CD processes.
-- 🗑️ **Removed Direct Process Management API**: Eliminated the entire `/processes` API endpoints and associated services (`ProcessController`, `ProcessService`, DTOs), streamlining the API surface and focusing on agent-centric interactions.
-- 🗑️ **Removed Process Event Persistence**: Discontinued the persistence of process-specific events and entities, unifying event storage under agent-centric models.
-- 🗑️ **Removed Process-Related API Schemas and Frontend Components**: Drastically reduced the API surface and frontend footprint by removing schemas, pages, and composables related to process management and dynamic form generation.
-- 🗑️ **Removed Dynamic Form Generation Models**: Eliminated all `Formkit` and `PrimeVue` related models for dynamic UI generation (e.g., `Form`, `InputTextElement`), streamlining the event schema and decoupling form definitions from core events.
-- 🗑️ **Removed Process-Related Lifetime Management**: Eliminated all process-related setup and shutdown logic from the API's `lifetime_manager`, including event distributors, subscribers, and discovery services.
-- 🗑️ **Removed Process Simulation Runners and Tests**: Deprecated and removed the entire process simulation infrastructure from the API, including `SimulatedProcessApiTestRunner` and mock process events, along with all process-related API tests.
-- 🗑️ **Removed `ExternalProcessEventDistributor`**: Eliminated the external event distributor for processes, aligning with the deprecation of direct process interactions.
-- 🗑️ **Removed Redundant Work Event Properties**: Eliminated `is_human_work_event` and `is_program_work_event` properties from `BaseEvent`, simplifying event type checks.
-- 🗑️ **Simplified Process Discovery Response**: Streamlined `ProcessRunner`'s discovery response to no longer include detailed `human_inputs`, `program_inputs`, or `agent_inputs` specifications, reducing overhead.
-- 🗑️ **Removed `gunicorn` Dependency**: `gunicorn` has been removed from `aihub_api` and `aihub_bot` dependencies, simplifying the production deployment stack.
-- 🗑️ **Simplified Docker Compose Landscape**: Drastically reduced the number of `docker-compose` files (e.g., removed `*-dev.yml`, `*-latest.yml`, `*-gpu.yml` variants) and associated service configurations (Milvus, PostgreSQL initialization scripts, NATS config, Nginx web serving), streamlining the deployment infrastructure.
-- 🗑️ **Removed OpenWebUI and Traefik Integration**: Discontinued direct integration with OpenWebUI and Traefik in the consolidated Docker Compose setup, allowing for more flexible external UI and ingress solutions.
-- 🗑️ **Removed Milvus Stack**: The entire Milvus vector database stack and its related configurations have been removed from the standard `docker-compose` setup.
-
-### Refactor
-- 🧹 **Pydantic Model Default Value Alignment**: Aligned numerous Pydantic model definitions (e.g., `QuestionStartEvent`, `CreateRoleRequest`, `JudgeOutput`, `DoclingSettings`, `SharePointResource`, `SharePointFile`, OpenWebUI SDK models) to explicitly use the `default` argument within `Field` for consistency and clarity.
-- 🧹 **Consolidated `EventSpecs` Definition**: Centralized the `EventSpecs` model definition within `AgentDiscoveryResponseEvent` to improve discoverability and reduce redundancy.
-- 🧹 **Unified Event Persistence**: Renamed `persist_agent_event` to `persist_event` in `EventPersister` and updated the API's `lifetime_manager` to use this unified method for all agent event persistence.
-- 🧹 **Standardized External Event Distributor Naming**: Renamed `external_agent_event_distributor` to `external_event_distributor` across various components and dependencies (e.g., `AgentService`, `EvaluationService`, `OpenaiService`, `BotInTheLoopBot`, `AgentChatBot`, `AgentCompletionHandler`, `AgentChatController`, `BotInTheLoopController`, `lifetime_manager`, `AgentDiscoveryService`, `ChatService`, `WebSocketManager`, `WebSocketSender`) for improved consistency.
-- 🧹 **Unified WebSocket Event Typing**: Renamed `ContextualizedAgentEvent` to `WSServerEvent` and updated all relevant API components, frontend components, and composables to use this new type for consistent server-to-user event communication over WebSockets.
-- 🧹 **Refactored Agent Discovery Service**: Significantly refactored the agent discovery mechanism into a new `AgentDiscoveryService` class, making it standalone, self-managing its discovery loop, and aligning its internal naming conventions.
-- 🧹 **Streamlined Event Serialization**: Optimized event serialization logic in `BaseEvent` and `test_Events` by removing unnecessary `**kwargs` and `serialize_as_any=True` from `model_dump` calls for cleaner Pydantic v2 compatibility.
-- 🧹 **Standardized SharePoint Naming**: Conducted a broad refactoring effort to standardize naming conventions for SharePoint-related assets, ops, IO managers, and utility functions from `share_point_` to `sharepoint_` across the `aihub_pipeline` project for improved consistency and readability.
-- 🧹 **Streamlined Process Delegator Definitions**: Simplified Pydantic field definitions in `Agent`, `Human`, and `Process` delegators (`aihub_process/delegators`) by removing redundant `Annotated` and `Field` usages.
-- 🧹 **Refactored `aihub_process` Test Runner**: Streamlined `ProcessTestRunner` by removing redundant event sending methods and simplifying event observation for clearer API and easier test assertions.
-- 🧹 **Refined `aihub_process` Playground Examples**: Simplified and updated the remaining `AgenticCVProcess` example to align with the new human delegator and work event models.
-- 🧹 **Restructured Frontend Development Environment**: Migrated Nuxt configuration and app settings from a legacy `.app` directory to a new `.playground` directory for better project organization and updated associated package.json scripts and gitignore rules.
-- 📦 **Version Alignment**: Synchronized the version tags across `aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, and `aihub_pipeline` to `v0.217.0` for consistent releases.
-
----
-
-
-
-## [v0.222.0] - 2025-07-21 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
-
-### Added
-- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs. This includes new API endpoints for discovery, interaction, and data submission.
-- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose interactive forms (using Formkit elements) directly within their structure, allowing frontend applications to dynamically render UIs for human input, eliminating the need for manual UI development for common interactions.
-- ⚡️ **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes, ensuring historical traceability.
-- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications, similar to existing agent event streams.
-- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes), promoting architectural consistency.
-- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust and isolated testing of agentic processes.
-- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities and serve as starting points.
-- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication and external integrations.
-- 👥 **User Access to Processes in Dashboard**: Users can now view their granular access levels to specific processes directly within their dashboard interface, improving transparency and control.
-- 🐳 **New Docker Build for Frontend**: Introduced a dedicated Dockerfile and Nginx configuration for building and serving the frontend application, streamlining deployment of the web UI.
-
-### Changed
-- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
-- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance and reducing NATS load for frequently requested agent lists.
-- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's internationalization capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
-- 🚦 **RAG Context Prompt Role Adjustment**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages to better align with prompt engineering best practices.
-- 📊 **Database Indexing Improvements**: Added new indexes to `PersistedAgentEventEntity`, `ThreadEntity`, and `UserEntity` for improved query performance and data retrieval efficiency.
-
-### Fixed
-- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found, preventing potential errors.
-- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context, improving data integrity.
-- 📦 **NATS Topic Validation for Processes**: Implemented stricter validation for NATS process discovery topics, ensuring that only correctly formatted subjects are processed and preventing malformed messages.
-- 🛠️ **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing unintended data loss.
-- 🏞️ **Image URL Handling in RAG Prompts**: Corrected an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring images are now correctly referenced and displayed.
-
-### Refactor
-- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`) and frontend display event components, improving clarity and maintainability.
-- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components and API DTOs, focusing on concise explanations of purpose and functionality.
-- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by standardizing how default values are assigned, in line with Pydantic v2 conventions.
-- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure, enhancing test organization.
-- 🔄 **SharePoint Naming Consistency**: Standardized variable names, function parameters, and internal asset definitions across SharePoint-related components for improved consistency and readability.
-
-### Removed
-- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed, streamlining development processes.
-- ✂️ **Redundant Health Page**: A basic placeholder health page in the frontend was removed.
-
----
-
-
-
-## [v0.224.0] - 2025-07-21 - Comprehensive Agent Rework and Production-Ready Deployment
-
-### Added
-- 🚀 **Full-Stack Containerization**: Introduced comprehensive Dockerfiles and multi-service Docker Compose configurations for streamlined deployment of API, Bot, and Web components, including MinIO, Milvus, PostgreSQL, Redis, MongoDB, and NATS.
-- ⚙️ **New Configuration Settings**: Added dedicated `ApiRunnerSettings` and `BotRunnerSettings` for externalizing and managing core API and Bot configurations, such as model URLs and API keys.
-- 🌐 **Web Frontend Production Setup**: Implemented a robust Nginx-based Docker setup for the web UI, enabling static file serving, runtime configuration loading, and optimized caching for production environments.
-- 📦 **Core Component Applications**: Introduced `app/main.py` entrypoints for API and Bot services, standardizing their application bootstrapping and controller mounting.
-- 📄 **New Database & Messaging Configurations**: Included detailed configuration files for Milvus (`milvus.yaml`), NATS (`nats.conf`), and a PostgreSQL initialization script (`init-multiple-dbs.sh`), supporting the new Docker Compose environments.
-
-### Changed
-- ♻️ **Unified Agent Configuration Model**: Revised the `AgentConfig` structure, removing the `agent_class` field, and adding `system_prompt`, `color`, and `voice` attributes, providing a more consistent and flexible agent definition.
-- 🚧 **StartEvent Structure**: The `StartEvent` no longer carries agent configuration directly, simplifying event payload and centralizing configuration management within the agent dispatcher.
-- ⚡️ **CI/CD Workflow Enhancements**: Updated GitHub Actions workflows for building and releasing Docker images, including more flexible `ssh_key` handling and explicit triggers for API, Bot, and Web builds.
-- 🗃️ **Agent & Process DTOs**: Modified API-facing Data Transfer Objects (DTOs) for agents and processes to align with internal refactoring, including `AgentConfigDTO` with new fields.
-- 📊 **Pipeline Automation Conditions**: Updated pipeline assets (`removed_documents_factory`, `removed_data_lake_files_factory`) to leverage `AutomationCondition.eager()`, influencing how data cleanup tasks are triggered.
-- 📚 **Documentation Updates**: Revised agent examples in `aihub_doc/5_agents_in_detail.md` to reflect the updated `AgentConfig` and `system_prompt` usage.
-
-### Fixed
-- 🐛 **Robust Figure Deletion in Pipelines**: Improved the data lake figure deletion process in pipelines by removing a redundant existence check, preventing potential errors when a figures directory is already absent.
-
-### Refactor
-- 🧹 **Agent Dispatcher & Runner Overhaul**: Performed a major refactor of the `AgentDispatcher` and `AgentRunner` components, streamlining internal logic, simplifying argument injection, and refining background task management.
-- 🔄 **Simplified Agent Discovery**: Unified the agent discovery mechanism by merging class and instance-level discovery events and topic managers into a single, more consistent model (`AgentDiscoveryResponseEvent`, `DiscoveryRequestEvent`).
-- 🗄️ **Embedded Agent Persistence**: Re-architected agent configuration persistence by embedding `AgentConfigEntity` directly within `AgentEntity` and removing standalone `AgentConfigEntityDocument` and `AgentConfigEntityEmbeddedDocument`, enhancing data co-location and simplifying object relationships.
-- 📦 **Streamlined Vector Store Configuration**: Replaced explicit `MilvusVectorStoreConfig` and `AzureAISearchVectorStoreConfig` objects with factory functions (`create_milvus_vector_store`, `create_azure_ai_search_vector_store`), simplifying vector store instantiation.
-- 🗑️ **Removed Legacy Model Creation Service**: Deprecated and removed `ModelCreationService`, replaced by `EventModelCreationService` for cleaner event model generation.
-- 🎛️ **Centralized Task Management**: Removed `_background_tasks` collections from various dispatchers and subscribers, opting for direct `asyncio.create_task` calls for more straightforward background task initiation.
-- 📁 **Project Structure Alignment**: Renamed `aihub_web/.playground` to `aihub_web/.app` to better reflect its role as the primary application directory, alongside other minor file re-organizations across the codebase.
-- 🗑️ **Removed Obsolete Tests**: Cleaned up and removed several outdated test files related to agent dispatcher, agent config, and agent service database integration, as their functionalities are now covered by more integrated tests or made obsolete by architectural changes.
-
-### Removed
-- 🗑️ **Direct Agent Config Persistence Logic**: Eliminated `save_config.py` from playground examples, indicating a shift away from direct saving of agent configurations to the database via this script.
-- 🗑️ **Dedicated Locale String Entity**: Removed `LocaleStringEntity`, implying that localized strings are now handled more directly within relevant models or through other mechanisms.
-- 🗑️ **Explicit Pipeline Materialization Jobs**: Removed the `materialize_asset_job` utility from the pipeline factory, simplifying job creation and encouraging asset-level automation.
-
----
-
-
-
 ## [v0.224.0] - 2025-07-21 - Flexible Agent Configuration and Advanced Discovery
 
 ### Added
@@ -1212,170 +398,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🔌 **New Pydantic Models for Vector Store Configurations:** Introduced dedicated Pydantic configurations for `AzureAISearchVectorStore` and `MilvusVectorStore` (`AzureAISearchVectorStoreConfig`, `MilvusVectorStoreConfig`), allowing for direct embedding and validation of vector store settings within agent configs.
 - 📈 **`agent_class` Field in `AgentConfig`:** A new `agent_class` field has been added to `AgentConfig` for consistent agent class identification throughout the system.
 - 📄 **`save_config.py` Example:** A new example demonstrating how to persist agent configurations to the database for custom or production deployments.
+- 🧪 **Comprehensive Tests for Agent Config/Discovery:** Added extensive new tests covering the new dynamic configuration and discovery mechanisms within the `AgentDispatcher` and `AgentService`.
+- 🌐 **API Acts as a Discoverable Agent Instance:** The API now actively participates in the instance-level agent discovery, allowing it to expose configured agent instances dynamically.
+- 🌍 **`LocaleStringEntity` for Database Localization:** Introduced a dedicated persistence entity for localized strings, enabling more robust internationalization within the database.
 
 ### Changed
 - ⚙️ **Refined Agent Configuration Loading Logic:** The agent dispatcher now intelligently loads configurations, prioritizing those provided in a `StartEvent`, then database-persisted configurations, and finally falling back to the `default_agent_config` defined in the runner.
 - 🏗️ **Updated Agent Runner Initialization:** Agent runners now explicitly accept a `default_agent_config` parameter, clearly defining the base configuration for new agent runs.
-- 💡 **Improved Type Specificity for LLM and Vector Store Configs:** Agent configurations (e.g., in `RAGAgent`) now utilize more precise type unions for LLMs, embedding models, and vector stores, enhancing type safety and clarity.
+- 💡 **Improved Type Specificity for LLM and Embedding Configs:** Agent configurations (e.g., in `RAGAgent`) now utilize more precise type unions for LLMs and embedding models, enhancing type safety and clarity.
 - 🔗 **Streamlined Vector Store Integration:** RAG and Retrieval agents now leverage the `.to_llama_index()` method directly from the new Pydantic vector store configurations for more consistent and encapsulated integration.
-- ⚡️ **Enhanced Background Task Management:** Improved handling of `asyncio.Task` instances within dispatchers and tracers to ensure proper lifecycle management and prevent premature garbage collection.
+- ⚡️ **Enhanced Background Task Management:** Improved handling of `asyncio.Task` instances within dispatchers, subscribers, and tracers to ensure proper lifecycle management and prevent premature garbage collection.
 - 🌐 **Revised API Agent Discovery:** The API now discovers and exposes full agent *instances* (including their specific configurations) instead of just class definitions, reflecting the new dynamic configuration capabilities.
-- 🧹 **Renamed `EventModelCreationService` to `ModelCreationService`:** This service has been renamed to reflect its broader utility beyond just event models, with adjustments to excluded fields to accommodate the new `agent_config`.
+- 📚 **Documentation Updates:** Agent examples in `aihub_doc/5_agents_in_detail.md` revised to reflect updated `AgentConfig` and removed `system_prompt`.
+- 🏷️ **Agent Class Naming Consistency:** Agent class names are now consistently PascalCase in API tests for improved standardization.
+
+### Fixed
+- 🐛 **Robust Profile Image Fetching:** Improved `AzureGraphService` to gracefully handle 404 responses when fetching user profile images, preventing errors for users without an image.
+- 📝 **Typo in Process Description:** Corrected a minor typo in the `ProcessDTOSchema` description within the web SDK.
 
 ### Refactor
 - 🔄 **Consolidated Agent Configuration Management:** Standardized agent configuration handling across the system, enabling dynamic overrides and database persistence for agent instances.
 - ✨ **Refined Agent and Event Discovery Architecture:** Overhauled the discovery mechanism to support both class-level and instance-level agent introspection, providing more granular control and information.
-- 🏗️ **Reorganized API DTOs for Agent Representation:** Introduced dedicated DTOs (`AgentClass`, `AgentInstance`) to clearly separate the concept of an agent's definition from its configured, runnable instances in the API.
+- 🏗️ **Reorganized API DTOs for Agent Representation:** Introduced dedicated DTOs (`AgentClass`, `AgentInstance`, `MinimalAgentDTO`) to clearly separate the concept of an agent's definition from its configured, runnable instances in the API.
+- 📦 **Streamlined Vector Store Configuration:** Replaced direct factory calls for `MilvusVectorStore` and `AzureAISearchVectorStore` with new Pydantic-based `*VectorStoreConfig` models and their `to_llama_index()` method, simplifying configuration.
+- 🧹 **Renamed Discovery Topic Types:** Renamed `DISCOVERY_TOPIC` to `INSTANCE_DISCOVERY_TOPIC` and added `CLASS_DISCOVERY_TOPIC` for clearer distinction in NATS topics.
+- 🧹 **API Endpoint Path Naming:** Renamed `_get_endpoint_name` to `_get_endpoint_base_path` for clarity in API endpoint construction.
+- 📁 **Project Structure Alignment:** Reorganized test file directories under `aihub_api/playground/testing/tests` for better logical grouping.
 
 ### Removed
 - 🗑️ **Deprecated Configuration Fields:** The `system_prompt`, `color`, and `voice` fields have been removed from the base `AgentConfig` and `AgentConfigDTO`, streamlining the core configuration and allowing for more flexible, agent-specific prompt and UI customization to be defined in agent subclasses.
-
----
-
-
-
-## [v0.222.0] - 2025-07-15 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
-
-### Added
-- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
-- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
-- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
-- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
-- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
-- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
-- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
-- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
-- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
-- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
-- ✨ **Enabled Custom Environment Variable Configuration for API Services**: This new capability allows users to define and inject additional environment variables, including secret references, directly into API deployments, significantly increasing configuration flexibility and integration possibilities.
-
-### Changed
-- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
-- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
-- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance for frequently requested agent lists.
-- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
-- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
-- 📦 **Optimized Docker Image Builds**: Streamlined Dockerfiles for `aihub_api` and `aihub_bot` services, resulting in smaller image sizes and faster build times.
-- 📊 **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
-- ⚙️ **Prompt Engineering Adjustment**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages (German, English, French, and Italian) to better align with prompt engineering best practices.
-- 🔑 **OAuth2 JWKS Cache Improvement**: Increased the maximum size of the JSON Web Key Set (JWKS) cache to `100` entries, which can improve performance and reliability for authentication lookups.
-- 🛡️ **External Agent Event Deserialization**: Adjusted the deserialization logic for external agent events to no longer perform implicit validation of `thread_id` and `display_id`, expecting these to always be present in incoming data for stricter contract enforcement.
-- 🔄 **Human Workflow Request Refinement**: The `HumanWorkRequestEvent` now uses explicit `user_ids`, `user_emails`, and `user_roles` for more granular targeting of human participants in workflows, replacing the previous generic `users` field.
-
-### Fixed
-- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found.
-- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context.
-- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
-- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization (`BaseEvent.model_dump`) to correctly handle nested Pydantic models and ChatMessages, especially when `serialize_as_any` is used, preventing data loss.
-- 🖼️ **Corrected Image URL Handling in RAG Prompts**: Resolved an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring that images are now correctly referenced and displayed.
-- 🧪 **Phoenix Experiment Evaluator Robustness**: Fixed a potential bug in `PhoenixExperimentEvaluator` by ensuring that `JudgeOutput.model_json_schema()` is deep-copied before modification, preventing unintended side effects.
-- 💬 **Open WebUI i18n Fix**: Corrected a missing translation label for `ExceptionEvent` in the Italian locale.
-
-### Removed
-- 🗑️ **Automatic Draft PR Workflow:** The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
-- 🗑️ **Deprecated Health Page**: A basic placeholder health page in the frontend was removed.
-
-### Refactor
-- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`), improving clarity and maintainability. This includes renaming `WsServerEvent` and associated frontend components/composables.
-- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
-- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
-- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure.
-- 🧹 **Standardized SharePoint Naming Conventions**: Refactored variable names, function parameters, and internal asset definitions across SharePoint-related assets, ops, and IO managers for improved consistency and readability (e.g., `sharepoint_` was consistently renamed to `share_point_`).
-
----
-
-
-
-## [v0.217.0] - 2025-07-10 - Streamlined Platform: Agent-Centric Workflows and API Unification
-
-### Added
-- 🚀 **Introduced Automatic Draft PRs**: A new GitHub Actions workflow automatically creates draft pull requests upon new branch creation, streamlining the development and review process.
-- 👂 **Enabled Two-Way WebSocket Communication**: The `/events/ws` endpoint now supports sending user-originated events (`ExternalAgentEvent`) to the system, transforming it into a full two-way communication channel for real-time interaction.
-- 🔌 **New Dynamic Agent Endpoint**: A new dynamically generated API endpoint (`/agents/l_l_m_wrapping_agent/dev_agent/send_event`) is now available, allowing direct communication with specific agent instances.
-- ⚙️ **Introduced `docker-compose-mnt.yml` for Volume Mounting**: A new Docker Compose configuration is available, simplifying local development by explicitly mounting volumes for all core services, ensuring data persistence and easier management.
-- 🌐 **Configured WebUI Development Defaults**: Updated `nuxt.config.ts` in the playground to explicitly define local development URLs for OIDC, WebUI, and WebSocket endpoints, simplifying local setup.
-- 🩺 **Added Health Service Page**: A new health service page has been introduced in the frontend for monitoring system status.
-
-### Changed
-- 📝 **Improved Documentation Across Core Components**: Enhanced docstrings for `ThreadContext`, `RunTraceCoordinator`, `AgentService`, `EventPersister`, `ThreadController`, `ThreadService`, `ExternalAgentEventDistributor`, `AgentDiscoveryService`, and `AgentDiscoveryResponseEvent` for better clarity and understanding.
-- ⚡️ **Optimized Core Caching and Indexing**: Adjusted caching for agent discovery and streamlined database indexes in `PersistedAgentEventEntity`, `ThreadEntity`, and `UserEntity` for improved performance.
-- 🗄️ **Stricter Agent Retrieval**: Modified `AgentEntity`'s `get_agent` method to use `.get()` instead of `.first()`, ensuring that attempts to retrieve non-existent agents now raise an exception.
-- 🖼️ **Refined RAG Image Path Handling**: Adjusted image path references in English RAG context prompts, improving image rendering consistency.
-- 🔄 **Reverted RAG Context Prompt Role**: The chat role for RAG context prompts has been reverted from `user` back to `system` across all languages, restoring previous prompt engineering best practices.
-- 📦 **Optimized Docker Image Builds**: Refactored API and Bot Dockerfiles to leverage multi-stage builds and virtual environment copying, resulting in more efficient and smaller production images.
-
-### Fixed
-- 🐛 **Improved `ExternalAgentEvent` Deserialization**: Added validation to ensure `thread_id` is present during `ExternalAgentEvent` deserialization, preventing errors for missing thread identifiers.
-
-### Removed
-- 🗑️ **Deprecated Process Management**: The entire suite of process management features has been removed, including:
-    - Dedicated `/processes` API endpoints and their associated controllers, services, and DTOs (`ProcessController`, `ProcessService`, `ProcessDTO`, `ProcessHumanInDto`, `SubmittedFormDTO`).
-    - Process-specific persistence entities (`ProcessEntity`, `PersistedProcessEventEntity`'s process-specific methods).
-    - Related NATS components for process discovery and event distribution (`ExternalProcessEventDistributor`, `ProcessNCSubscriber` methods).
-    - Playground examples and test infrastructure for processes (`SimulatedProcessApiTestRunner`, `HumanWorkEvent` forms).
-- 🗑️ **Removed Legacy Build & Deployment Configurations**: Eliminated outdated Docker Compose files (`docker-compose.latest.yml`, `docker-compose.dev.yml`, `docker-compose-gpu.*.yml`), legacy Nginx configs, and environment loading plugins.
-- 🗑️ **Removed `gunicorn` Dependency**: The `gunicorn` dependency has been removed from `aihub_api` and `aihub_bot`.
-- 🗑️ **Removed Legacy Web Build Workflow**: The old GitHub Actions workflow for building and releasing web Docker images has been deprecated.
-- 🗑️ **Removed Custom API Environment Variable Configuration**: The ability to define and inject additional environment variables directly into API deployments has been removed.
-
-### Refactor
-- 🧹 **Consolidated Event Distribution Logic**: Centralized event distribution and handling, renaming `ExternalAgentEventDistributor` to `ExternalEventDistributor` and standardizing its usage across the API and Bot services.
-- 🧹 **Streamlined Event Persistence**: Unified event persistence in `EventPersister` to a single `persist_event` method for agent events, and re-purposed `PersistedProcessEventEntity` for agent-centric workflows.
-- 🧹 **Unified WebSocket Event Types**: Standardized the event types sent over WebSocket connections from `ContextualizedAgentEvent` to `WSServerEvent` for better frontend consistency.
-- 🧹 **Codebase Naming Alignment**: Standardized naming conventions for many classes, methods, and parameters (e.g., `AgentEndpointsDiscoveryService` to `AgentDiscoveryService`, `share_point_` to `sharepoint_`).
-- 🧹 **Refined Pydantic Model Definitions**: Aligned Pydantic model definitions with best practices by explicitly setting `default` values within `Field` for optional attributes and streamlining `BaseEvent` serialization.
-- 🧹 **Simplified `HumanWorkEvent` Structure**: Restructured `HumanWorkEvent` by removing its direct integration with form elements and user-targeting specifics, making it a pure data event.
-- 🧹 **Test Runner Simplification**: Refactored `AgentTestRunner` and `ProcessTestRunner` by consolidating `send_event` methods into base classes and simplifying event retrieval for clearer testing.
-- 🧹 **Frontend Structure Adjustment**: Renamed `.app` directory to `.playground` in the web application for clearer separation of development environments.
-
----
-
-
-
-## [v0.222.0] - 2025-07-21 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
-
-### Added
-- 🦾 **Introduced Agentic Process Management**: A major new capability enabling the definition, execution, and monitoring of complex, multi-step workflows involving humans, agents, and external programs.
-- 🖼️ **Dynamic Form Generation for Human-in-the-Loop**: Processes can now define and expose forms (using Formkit elements) directly within their structure, allowing frontends to dynamically render UIs for human input, eliminating manual UI development for common interactions.
-- ⚡️ **New Process API Endpoints**: A comprehensive set of new API endpoints under `/processes` for discovering available processes, retrieving their details, and submitting data via dynamic forms to start or continue process walkthroughs.
-- 🔄 **Dedicated Process Event Persistence**: Implemented new database entities and services (`PersistedProcessEventEntity`, `ProcessEntity`) to durably store and manage all events and metadata related to agentic processes.
-- 🚀 **Real-time Process Event Streaming**: Introduced new WebSocket event streams for processes, enabling real-time updates and visualization of process execution in client applications.
-- 🏗️ **Generalized Endpoint Discovery Service**: A new abstract base class `EndpointsDiscoveryService` provides a reusable foundation for dynamically registering API endpoints based on discovered entities (like agents and processes).
-- 🧪 **Comprehensive Process Testing Infrastructure**: Added `SimulatedProcessApiTestRunner` and enhanced `ProcessTestRunner` with capabilities to inject events and observe process behavior, facilitating robust testing of agentic processes.
-- 📂 **Rich Process Playground Examples**: Included new, self-contained examples for various process interaction patterns (agent-only, human-only, agent-to-human, human-to-agent) to demonstrate the new capabilities.
-- 📄 **Expanded Event Specifications (`EventSpecs`)**: Generalized event schema definitions for both agents and processes, enhancing reusability and clarity in API communication.
-- 👥 **User Access to Processes in Dashboard**: Users can now view their access levels to specific processes directly within their dashboard interface.
-- 🌐 **Web Build and Deployment Infrastructure**: New Dockerfile, Nginx configuration, and dynamic config loading for the `aihub_web` application, streamlining production deployments.
-- ✨ **Custom Environment Variables for API**: Enabled the definition and injection of additional environment variables, including secret references, directly into API deployments.
-
-### Changed
-- 🎛️ **WebSocket Event Handling Refinement**: The main WebSocket endpoint (`/ws`) is now read-only for agent events, providing a more secure and streamlined channel for receiving real-time updates from agents. User-initiated agent events should now be sent through dedicated API endpoints.
-- 🏷️ **Improved Event Naming Consistency**: Renamed `WsServerEvent` to `ContextualizedAgentEvent` and updated related API routes and client-side composables to clearly distinguish between agent and process events.
-- 🚀 **Agent Discovery Caching Enhancement**: Increased the cache size for agent discovery responses, improving performance for frequently requested agent lists.
-- 📚 **API Documentation Clarity**: Enhanced Pydantic annotations for various API DTOs and event models, providing more precise descriptions and examples in the OpenAPI documentation.
-- 🌐 **Frontend Localization for Dynamic Forms**: Integrated Formkit's i18n capabilities to ensure dynamically rendered forms correctly reflect the user's selected locale.
-- 🔄 **Updated RAG Context Prompt Role**: The chat role for the RAG context prompt has been adjusted from `system` to `user` across all supported languages to better align with prompt engineering best practices.
-- ⚡️ **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during the document parsing process, enhancing observability and assisting with debugging.
-
-### Fixed
-- 🐛 **Robust Agent Retrieval**: Corrected agent retrieval logic in the persistence layer to gracefully handle cases where a specific agent might not be found.
-- 🐞 **Process Event Persistence Accuracy**: Resolved issues ensuring that process-related events are correctly persisted with their associated process context.
-- 📦 **NATS Topic Validation for Processes**: Stricter validation for NATS process discovery topics ensures that only correctly formatted subjects are processed.
-- 🧰 **Improved Serialization of Nested Pydantic Models**: Enhanced event serialization to correctly handle nested Pydantic models and ChatMessages, preventing data loss.
-- 🖼️ **Image URL Handling in RAG Prompts**: Corrected an issue in the English RAG context prompt where image URLs were not consistently processed, ensuring images are correctly referenced.
-- 🚦 **ExternalAgentEvent Deserialization**: Adjusted validation logic during deserialization of `ExternalAgentEvent` to prevent premature errors.
-
-### Removed
-- 🗑️ **Automatic Draft PR Workflow**: The GitHub Actions workflow that previously created automatic draft pull requests for new branches has been removed.
-- ✂️ **Deprecated Frontend Health Page**: A basic placeholder health page in the frontend was removed.
-
-### Refactor
-- 🧹 **Codebase Naming Alignment**: Standardized naming conventions across the codebase, particularly for "event distributors" (e.g., `ExternalEventDistributor` is now `ExternalAgentEventDistributor`) and SharePoint-related components.
-- 📄 **Documentation Cleanup**: Removed redundant or outdated comments and simplified docstrings in several core components, focusing on concise explanations.
-- ⚙️ **Pydantic Model Default Handling**: Aligned Pydantic model definitions with best practices by moving default value assignments from `Field` annotations to direct attribute assignments.
-- 🗂️ **Test Runner Restructuring**: Reorganized test runners into a more logical `simulation/agent` and `simulation/process` directory structure.
-- 🧹 **Dockerfile Streamlining**: Cleaned up Dockerfiles for API and Bot services, removing redundant steps.
-- 💻 **Frontend Project Structure**: Renamed the main Nuxt application directory from `.playground` to `.app`.
 
 ---
 
@@ -1488,17 +539,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🦾 **Event Inheritance Tracking**: `EventSpecs` now include an `event_parents` field, providing a hierarchical view of event types. This new metadata enhances dynamic model generation and event handling capabilities.
 - 📄 **EventSpecs Creation Helper**: Added a convenient `EventSpecs.from_event_class` method to simplify and standardize the generation of event specifications from event classes.
 - 🔑 **Role Provisioning for API Tokens**: The `generate_api_token` script has been enhanced to automatically create specified roles if they do not already exist, improving the initial setup experience for new environments.
+- ⚠️ **Refined Unauthorized Access Handling**: Introduced a specific HTTP exception to provide clearer and more precise error responses when a user lacks authorization to view a particular thread.
 
 ### Changed
 - ⚡️ **Flexible Agent Event Dispatch**: The `AgentService.send_event` method now universally accepts any `BaseEvent` as input, offering greater flexibility in initiating diverse agent interactions.
 - 🔄 **Dynamic Agent Endpoint Management**: Transitioned the agent event endpoint management from static, hardcoded definitions in `AgentController` to a dynamic, discovery-driven approach powered by the new `AgentDiscoveryService`.
 - 📚 **Event Model Creation Encapsulation**: Internal methods within `EventModelCreationService` have been refactored for improved code organization and clearer encapsulation.
 - 🏗️ **API State Access for Services**: The `ApiRunner` now stores the `AgentController` and API application instance directly in FastAPI's state, enabling seamless access for new services like `AgentDiscoveryService`.
-- ⚠️ **Refined Unauthorized Access Handling**: Introduced a specific HTTP exception to provide clearer and more precise error responses when a user lacks authorization to view a particular thread.
 
 ### Refactor
 - 🧹 **Unified Event Specification Creation**: Standardized the process of creating `EventSpecs` across `AgentRunner` and `SimulatedAgentBotTestRunner` to consistently use the new `EventSpecs.from_event_class` helper.
 - 🏷️ **Agent Configuration Entity Renaming**: The `AgentConfig` embedded document within the persistence layer was renamed to `AgentConfigEntity` for improved naming consistency across the codebase.
+- ✂️ **Base Event Serialization Helper**: Extracted common item dumping logic into a dedicated static method `_item_dump` within `BaseEvent` for improved code cleanliness.
 
 ### Removed
 - 🗑️ **Static Agent Event Endpoint Configuration**: Eliminated the manual and hardcoded API endpoint generation logic for agent events from `AgentController` and related playground examples, fully transitioning to the dynamic agent discovery service.
@@ -1516,7 +568,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🔄 **Standardized Datetime Handling:** Updated datetime operations to consistently use timezone-aware UTC for improved time-based accuracy and consistency across the platform.
 - 🔄 **Improved Subprocess Execution:** Enhanced `subprocess.run` calls in internal scripts for more robust and secure execution, particularly within bot setup processes.
 - 🔄 **`jambo` Library Update:** Upgraded the `jambo` schema conversion library to `v0.4.0`, bringing internal improvements for dynamic model creation and API event handling.
-- 🔄 **Refined Docstrings and Comments:** Various docstrings and inline comments across the codebase were updated for greater clarity and precision, especially concerning complex components like dispatchers and service methods.
+- 📄 **Refined Docstrings and Comments:** Various docstrings and inline comments across the codebase were updated for greater clarity and precision, especially concerning complex components like dispatchers and service methods.
 
 ### Fixed
 - 🐛 **Clarified Error Messages:** Enhanced error messages in several API endpoints (e.g., thread and role management) to provide more informative feedback to users.
@@ -1610,12 +662,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🔑 **Centralized OpenAI API Key Configuration**: Added a new base `OpenaiResourceSettings` class for consistent management of OpenAI API keys across different services and environments.
 
 ### Changed
-- 🔄 **Generalized Resource Configuration**: Extended the base `LiteLLMProxyResourceConfig` to include an optional `api_key` field, enabling API key authentication for all derived generative AI resource configurations.
+- 🔄 **Generalized Resource Configuration**: Extended the base `ResourceConfig` to include an optional `api_key` field, enabling API key authentication for all derived generative AI resource configurations.
 - 🚀 **Improved Azure OpenAI Client Initialization**: Updated the Azure OpenAI client instantiation logic to intelligently use either an API key or Azure AD token provider based on the provided configuration, simplifying setup.
 - 📄 **Updated Development Playground Models**: Renamed the `o1-mini` model to `gpt-4o-mini` in the development environment configuration for improved clarity and alignment with current model names.
 
 ### Refactor
-- 🧹 **Streamlined API Key Definitions**: Removed redundant `api_key` fields from specific model configurations (e.g., chat LLMs, embedding LLMs, image models) as they are now managed centrally by the generalized `LiteLLMProxyResourceConfig`.
+- 🧹 **Streamlined API Key Definitions**: Removed redundant `api_key` fields from specific model configurations (e.g., chat LLMs, embedding LLMs, image models) as they are now managed centrally by the generalized `ResourceConfig`.
 
 ---
 
@@ -1677,946 +729,922 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - 🗑️ **Streamlined Release Tagging**: Removed the redundant step of deleting existing Git tags in the CI/CD workflow, simplifying the release automation process.
 
+### Changed
+- 🔄 **Platform Version Alignment**: All core microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`, `aihub_process`) and their internal `aihub_lib` dependencies have been updated to `v0.207.0`, ensuring a unified and consistent release across the entire platform.
+
 ---
 
 
 
-## [v0.206.0] - 2025-07-01 - Core System Refinement: Pydantic V2 and Type Clarity
+## [v0.206.0] - 2025-07-01 - Core System Modernization: Enhanced Model Definitions
 
 ### Refactor
-- 🧹 **Pydantic Model Modernization**: Migrated numerous Pydantic models across `aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, and `aihub_pipeline` to leverage Pydantic V2's `Annotated` type hinting. This significantly improves type safety, explicit default value handling, and prepares the codebase for future Pydantic enhancements.
-- ⚙️ **Explicit Default Values**: Updated all `Optional` fields and collections (lists, dictionaries, sets) in Pydantic models to use explicit default values (e.g., `= None`, `= []`, `= {}`, `= set()`) instead of `default_factory`. This enhances code readability and consistency.
-
-### Changed
-- 🔄 **Platform Version Alignment**: All core microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`, `aihub_process`) and their internal `aihub_lib` dependencies have been updated to `v0.206.0`, ensuring a unified and consistent release across the entire platform.
-- ⚠️ **Deprecated AgentConfig Fields**: Marked `color`, `voice`, and `system_prompt` fields in `AgentConfig` as deprecated, encouraging subclasses to define these properties directly for better customization and reduced coupling.
-- 📄 **Streamlined Docling and OpenWebUI Configurations**: Refined default value assignments for `DOCLING_FROM_FORMATS`, `DOCLING_TO_FORMATS` in `DoclingSettings` and various `Pipe.Valves`/`Action.Valves` settings in `webui_pipelines` for clearer and more direct configuration.
+- 🧹 **Updated Pydantic Model Definitions**: Migrated numerous internal data models across all core services (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`, `aihub_process`, `webui_pipelines`) to leverage Pydantic v2's `Annotated` type hint and explicit default value assignments. This enhances code clarity, type safety, and aligns the codebase with modern Python best practices.
 
 ---
 
 
 
-## [v0.205.0] - 2025-07-01 - Core System Version Synchronization
+## [v0.205.0] - 2025-07-01 - Core Module Version Synchronization
 
 ### Changed
-- 🔄 **Platform Version Alignment**: All core microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`, `aihub_process`) and their internal `aihub_lib` dependencies have been updated to `v0.205.0`, ensuring a unified and consistent release across the entire platform.
+- 🔄 **Core Module Version Alignment**: All internal microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`, `aihub_process`) and their `aihub_lib` dependencies have been updated to `v0.205.0`, ensuring consistent versioning across the platform.
+- ⚙️ **Build Tag Update**: The default build tag in the `Makefile` has been updated to `v0.205.0` to reflect the latest release version.
 
 ---
 
 
 
-## [v0.204.0] - 2025-07-01 - Streamlined Release Automation and Core Service Alignment
+## [v0.204.0] - 2025-07-01 - Release Workflow Enhancements and Changelog Automation Robustness
+
+### Added
+- ✨ **Robust Changelog Generation:** Implemented error handling within the changelog generation script, allowing the release process to continue gracefully even if the Large Language Model fails to produce an entry.
+- 📝 **Detailed Changelog Logging:** Enhanced logging in the CI/CD pipeline to provide clearer feedback on whether the `changelog.md` file was successfully updated or skipped during the automated generation process.
 
 ### Changed
-- 🔄 **Core Service Version Alignment**: All core microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`, `aihub_process`) and their internal `aihub_lib` dependencies have been updated to version `v0.204.0`, ensuring consistent and current builds across the platform.
-- ⚡️ **Robust Changelog Generation**: The automated changelog generation process in the CI/CD pipeline is now more resilient; the workflow will continue even if changelog generation encounters an error, and the changelog file will only be committed if its generation was successful.
-- 📝 **Updated `llm` CLI Syntax**: The `llm keys set` command used in the release workflow now explicitly requires the `--value` flag (e.g., `llm keys set gemini --value "$API_KEY"`), aligning with recent updates to the `llm` tool.
+- ⚡️ **CI/CD Workflow Resilience:** The automated tag and release workflow now allows the changelog generation step to `continue-on-error`, prioritizing the overall release completion over a potential failure in AI-powered changelog creation.
+- 🔄 **Conditional Changelog Commit:** The final commit of the `changelog.md` file is now dependent on the successful execution of the changelog generation step, preventing the amendment of the release commit with an incomplete or erroneous changelog.
+- ⚙️ **Gemini API Key Command:** Updated the command-line syntax for setting the Gemini API key in the CI/CD pipeline to use the `--value` flag, aligning with the `llm` tool's latest requirements.
 
 ### Refactor
-- 🧹 **Optimized CI/CD Workflow**: Removed redundant Poetry caching from the Python setup step in the GitHub Actions workflow, streamlining environment setup.
-- ⚙️ **Script Robustness**: Improved the internal logic of the changelog generation script by adding specific error handling for LLM calls, preventing a complete script failure if the language model service is unreachable or returns an error.
+- 🧹 **Python Poetry Cache Removal:** Streamlined the GitHub Actions Python setup by removing the explicit Poetry cache configuration, potentially improving caching efficiency or addressing previous issues.
 
 ---
 
 
 
-## [v0.203.0] - 2025-06-30 - AI-Powered Release Automation
+## [v0.203.0] - 2025-06-30 - Automated Changelog Generation & Enhanced Release Workflow
 
 ### Added
-- ✨ **Automated Changelog Generation:** Introduced a new CI/CD workflow and accompanying scripts (`generate-changelog.sh`, `changelog-prompt.md`) to automatically generate changelog entries using an LLM based on git diffs between tags.
-- 🚀 **AI-Powered Release Notes:** Integrated `llm` and `llm-gemini` into the release workflow, enabling the use of Large Language Models to summarize code changes into human-readable changelog entries.
-- 📄 **Changelog Prompt Template:** Added a dedicated Markdown file (`changelog-prompt.md`) to define the instructions and format for LLM-generated changelog entries, ensuring consistent output.
-- ⚙️ **Makefile Integration for Changelog:** A new `changelog` target has been added to the `Makefile` to simplify the execution of the changelog generation process.
+- ✨ **Automated Changelog Generation**: Introduced a new system to automatically generate changelog entries for releases, leveraging an LLM to summarize git diffs. This includes a dedicated script (`generate-changelog.sh`), an LLM prompt file (`changelog-prompt.md`), and a new `make changelog` target.
+- 📄 **Centralized Changelog File**: A new `changelog.md` file is now part of the repository, serving as the official documentation for all notable changes in a standardized format, automatically updated during the release process.
 
 ### Changed
-- 🔄 **Enhanced Release Workflow:** The `add-tag.yml` GitHub Actions workflow has been significantly restructured and renamed to "Auto Tag, Gen-Changelog & Release," encompassing version bumping, changelog generation, and final tag/commit operations for a more robust release pipeline.
-- ⚡️ **Refined Versioning and Tagging Logic:** Updated the CI/CD's commit and tagging process to amend the version update commit with the newly generated changelog entry, ensuring that release tags accurately reflect the complete changes.
-- 🧹 **Streamlined Python/Poetry Setup in CI:** Optimized the Python and Poetry installation and caching steps in GitHub Actions for improved efficiency and dependency management during the build process.
+- 🚀 **Enhanced Release Automation Workflow**: The GitHub Actions workflow (`add-tag.yml`) has been significantly upgraded to seamlessly integrate the new automatic changelog generation, ensuring comprehensive release notes are created and committed as a core part of the tagging and release process.
+- ⚙️ **Streamlined CI/CD Setup**: Improved the efficiency and robustness of Python and Poetry setup within the CI/CD pipeline, including a more reliable method for installing Poetry via `pipx` and consolidating global dependency installation steps.
+- 🔄 **Refined Commit and Tagging Logic**: The release workflow now intelligently handles version updates and changelog changes, amending the previous commit with generated changelog entries and ensuring more robust force pushes for tags.
+
+### Refactor
+- 🧹 **Optimized CI/CD Workflow Steps**: Internal steps within the `add-tag.yml` workflow have been reorganized and renamed for better clarity and maintainability, streamlining the automated release pipeline.
 
 ---
 
 
 
-## [v0.202.0] - 2025-06-30 - Revamped User Identity and API Authentication
+## [v0.202.0] - 2025-06-30 - Unified Identity & Auth: Stronger, Smarter, Safer
 
-### Added
-- ✨ **Introduced `IdentityProvider` Abstraction**: A new, flexible `IdentityProvider` interface and its concrete implementations (`AzureIdentityProvider`, `TokenIdentityProvider`, `DangerousDevelopmentOnlyIdentityProvider`) have been added to centralize and standardize user information retrieval across the platform. This allows for easier integration of various authentication sources.
-- ⚡️ **Unauthenticated Health Endpoint**: The `/health` endpoint no longer requires authentication, making it easier to monitor service availability in secure environments.
-- 📄 **User Entity Email Lookup**: Added a new `by_email` class method to `UserEntity` for direct retrieval of user entities by their email address, improving data access efficiency.
+### Refactor
+- 🧹 **Unified User Identity Management:** Replaced the disparate `AuthenticatedUser` model and various API-specific user information providers with a new, centralized `UserIdentity` model and a consistent `IdentityProvider` framework within `aihub_lib`. This significantly improves modularity, consistency, and extensibility for handling user identities across all services (`aihub_api`, `aihub_bot`).
+- 🧹 **Streamlined Authentication Handlers:** Refactored core authentication handlers (`AuthHandler`, `OAuth2AuthHandler`, `TokenAuthHandler`, `OpenWebuiAuthHandler`, `TokenAndOauth2Handler`) to seamlessly integrate with the new `IdentityProvider` framework, simplifying their internal logic and promoting dependency injection for clearer authentication flows.
+- 🧹 **Renamed Development-Only Authentication:** Renamed `NoAuthHandler` and its associated configurations to `DangerousDevelopmentOnlyAuthHandler` and `DangerousDevelopmentOnlyAuthConfig` respectively. This clearer naming strictly communicates that these components are intended for development and testing environments only, preventing their accidental use in production.
 
 ### Changed
-- 🔄 **Refined Image Description Prompts**: Updated prompts for figure description generation to ensure that descriptions are solely based on visual content and are not influenced by surrounding document context, leading to more factual and accurate alt-text.
-- 🔌 **Explicit Authentication Handler Injection**: All API and Bot controllers now explicitly require an `AuthHandler` instance in their constructors, enforcing clearer dependency management and configuration.
-- 🤖 **Azure Bot API Path**: The API path for the Azure Bot's bot-in-the-loop functionality has been updated to `/bearer_token/v1/bot-in-the-loop/response` for better alignment with the token-based authentication scheme.
-- 🚀 **Azure Bot Setup Parameters**: Renamed `--api-path` and `--api-url` to `--token-path` and `--token-url` respectively in the Azure Bot setup script for clearer naming conventions.
+- 🔄 **Updated User Representation in API & UI:** The `preferredUsername` field in various API responses and UI components (such as chat messages and event displays) has been consistently renamed to `email` to more accurately reflect the user's email address.
+- ⚙️ **API Controllers Initialization Refinement:** All API controllers now explicitly require an `AuthHandler` during initialization, enforcing clearer dependency management and simplifying security configuration across the application.
+- 📄 **Refined Image Description Prompting:** The internal prompt used for generating figure descriptions has been updated with more precise instructions on how to leverage surrounding text for context without altering the factual, visual description of the image.
 
 ### Fixed
-- 🐛 **Robust Figure Description Generation**: Implemented enhanced error handling for the figure description generation process in the data pipeline, specifically addressing `BadRequestError` (e.g., content safety filter issues) by retrying without surrounding text to ensure documents are processed successfully.
-
-### Refactor
-- 🧹 **Centralized User Identity Model**: The `AuthenticatedUser` model has been deprecated and replaced across the codebase with the new `UserIdentity` model, which now handles user attributes like `id` (formerly `oid`) and `email` (formerly `preferred_username`).
-- ⚙️ **Streamlined Auth Handlers**: Authentication handlers (`OAuth2AuthHandler`, `TokenAuthHandler`, `OpenWebuiAuthHandler`) have been refactored to leverage the new `IdentityProvider` abstraction, simplifying their internal logic and promoting modularity.
-- 🚨 **Renamed Development-Only Auth Components**: The `NoAuthHandler` and `NoAuthConfig` have been renamed to `DangerousDevelopmentOnlyAuthHandler` and `DangerousDevelopmentOnlyAuthSettings` respectively, providing a clearer warning about their intended use for development and testing only.
-- 🗑️ **Removed Redundant Identity Providers (API)**: The previously internal user information providers (`BaseUserInformationProvider`, `MultiStrategyUserInformationProvider`, `ApiTokenUserInformationProvider`, `AzureUserInformationProvider`, `DevUserInformationProvider`) from the `aihub_api` module have been removed, as their functionality is now centralized and provided by the new `IdentityProvider` layer in `aihub_lib`.
-- 📄 **Consolidated Frontend User Properties**: Frontend components (`Chat/Message.vue`, `Chat/Thread.vue`, `Event/Display/UserMessageEvent.vue`) have been updated to use the `email` property instead of `preferredUsername` for user display, aligning with the backend `UserIdentity` model.
-
----
-
-
-
-## [v0.201.0] - 2025-06-30 - Next-Gen Identity: A Core Authentication Rearchitecture
-
-### Refactor
-- 🔄 **Core Identity System Rearchitected**: Replaced the legacy `AuthenticatedUser` model with a new, more robust `UserIdentity` model, establishing a clearer and more extensible foundation for user representation across the system.
-- 🧹 **Unified Identity Providers**: Introduced a standardized `IdentityProvider` interface and migrated existing user information retrieval logic into concrete implementations (e.g., `AzureIdentityProvider`, `TokenIdentityProvider`), centralizing how user details are fetched from various sources.
-- 🔐 **Enhanced Authentication Handlers**: Updated all authentication handlers (`OAuth2AuthHandler`, `TokenAuthHandler`, `OpenWebuiAuthHandler`) to leverage the new identity provider pattern, ensuring consistent user identity resolution and improving security.
-- ⚡️ **Improved Development-Only Auth**: Renamed `NoAuthHandler` to `DangerousDevelopmentOnlyAuthHandler` and integrated it with the new identity provider system, clearly signaling its purpose as a development-only tool and emphasizing its security implications.
-- ⚙️ **Refined Controller Initialization**: Standardized how authentication handlers are injected into API and Bot controllers, making `AuthHandler` a mandatory keyword argument for clearer dependency management and increased type safety.
-- 📄 **Synchronized User Attributes**: Updated all internal and external references from `user.oid` to `user.id` and `user.preferred_username` to `user.email` to align with the new `UserIdentity` model.
+- 🐛 **Improved Figure Description Generation Robustness:** Enhanced the image description generation process in the data pipeline with robust error handling for `BadRequestError` (often triggered by content safety filters). The system now automatically retries generating descriptions without surrounding text and falls back to an empty string if necessary, preventing pipeline failures.
 
 ### Added
-- ✨ **User Lookup by Email**: Introduced a new `UserEntity.by_email` method, enabling direct retrieval of user entities from the database using their email address.
-
-### Changed
-- 📝 **CLI Parameter Renaming**: Renamed command-line interface parameters for Azure Bot setup from `--api-path` to `--token-path` and `--api-url` to `--token-url` for improved clarity and consistency with the new authentication flows.
-
-### Improved
-- 🚀 **Unauthenticated Health Checks**: Removed the authentication requirement for the `/health` endpoint, allowing for simpler and more robust health monitoring of services without needing a valid user context.
-
----
-
-
-
-## [v0.200.0] - 2025-06-30 - Introducing Process Orchestration and Core Workflow Refinements
-
-### Added
-- ✨ **Process Orchestration Microservice (`aihub_process`)**: A new dedicated microservice is introduced, enabling the creation and management of complex, multi-entity workflows that orchestrate AI agents, human tasks, and external programs.
-- 🚀 **Generalized Workflow Abstractions**: Core concepts like `DispatchableWorkflow` (base for agents and processes) and `BaseDispatcher` are added to `aihub_lib`, providing a robust, extensible framework for event-driven execution across the platform.
-- ⚙️ **Process-Specific Eventing System**: A comprehensive set of new NATS event types (`WorkEvent`, `WorkRequestEvent`, `ProcessStartEvent`, `ProcessStopEvent`, `ProcessExceptionEvent`), along with specialized topic managers and subscribers, are added to facilitate seamless communication within process workflows.
-- 📚 **Dedicated Process Event Persistence**: Introduced `PersistedProcessEventEntity` for reliable storage and retrieval of all process-related events, crucial for auditing, debugging, and visualization of long-running workflows.
-- 🛠️ **Process Configuration and Step Definition**: New `ProcessConfig` and the `@process_step` decorator are added, allowing developers to define process-level settings and structure process logic, clearly articulating interactions with various entities.
-- 🤝 **Entity Delegators**: Developed specialized delegators for agents, humans, and external programs, which act as intelligent bridges, translating generic process work requests into entity-specific actions and converting entity outputs back into process-consumable work events.
-- 🧪 **Streamlined Process Testing Infrastructure**: New `ProcessRunner` and `ProcessTestRunner` classes are provided to simplify the development, testing, and deployment of new process definitions.
-- 🌎 **Extended Internationalization Support**: New localization strings have been integrated to support process-specific events and concepts across multiple languages.
-- 💡 **Developer Convenience Run Configurations**: Added new IntelliJ IDEA run configurations to easily launch GPU infrastructure and execute process-specific tests, enhancing the local development experience.
-
-### Changed
-- 🔄 **Unified Workflow Architecture**: Existing `aihub_agent` and related `aihub_lib` components have been refactored to align with the new generalized `DispatchableWorkflow` and `BaseDispatcher` abstractions, improving modularity and consistency across agent and process implementations.
-- 📄 **Enhanced Thread Management**: The `ThreadEntity` now includes fields (`process_class`, `process_id`, `process_walkthrough_id`) to explicitly link conversation threads with specific process executions, enabling better tracking and context.
-- 🧰 **Refined NATS Infrastructure Components**: Core NATS components such as `StreamManager`, `AbstractPublisher`, and `AbstractSubscriber` within `aihub_lib` are now more generic and flexible, supporting diverse eventing patterns for both agent and process workflows.
-- ⚠️ **Agent Configuration Field Deprecation**: Certain generic fields (`color`, `voice`, `system_prompt`) in `AgentConfig` have been marked as deprecated, encouraging more specialized and customizable configurations within agent subclasses.
-- 🏷️ **Improved Localization Metadata**: `LocaleString` fields now include explicit `Annotated` types and descriptions, enhancing clarity and maintainability for internationalization efforts.
-- 🏗️ **CI/CD Pipeline Integration**: The continuous integration and delivery (CI/CD) pipelines and local development Makefiles have been updated to seamlessly incorporate the new `aihub_process` module for linting, testing, and tagging.
-- 📊 **Synchronized Frontend SDK**: The frontend SDK has been updated to reflect all backend API changes, including new event schemas, refined `LocaleString` handling, and updated metadata structures for ingested documents and nodes.
-
-### Fixed
-- 🐛 **Corrected API Type Checking**: Resolved a configuration error in the `aihub_api` Makefile where type checks were incorrectly applied to the `aihub_agent` module.
-- 🔑 **Optimized Database Indexing**: Added unique and performance-enhancing indexes to `ConversationEntity`, `PathEntity`, and `UserEntity` for improved data integrity and faster query execution.
-- 📦 **Resolved Module Source Root Configuration**: Corrected the `.idea/aihub_lib.iml` file to accurately define `aihub_lib` as a source root, improving project setup and dependency resolution.
-
----
-
-
-
-## [v0.199.0] - 2025-06-27 - Streamlined Document Ingestion: Introducing Docling and AI-Powered Figure Descriptions
-
-### Added
-- ✨ **New Docling Document Loader**: Introduced `DoclingLoader` to support advanced document processing via the Docling service, enabling robust conversion of various document formats to Markdown, including automated extraction and handling of figures and tables.
-- 🚀 **Docling API Integration**: Implemented `DoclingAccess` for seamless interaction with the Docling API, facilitating comprehensive document conversion capabilities such as OCR, table extraction, and embedded image handling.
-- 🛠️ **Docling Service Configuration**: Added `DoclingSettings` to centralize and manage all configurable parameters for the new Docling service integration, including API endpoints, supported formats, and processing options.
-- 🖼️ **Automated Figure Description Generation**: Introduced the `generate_figure_descriptions` operation to automatically create detailed, context-aware alt text for figures in documents using a vision language model, significantly enhancing document accessibility and searchability.
-
-### Changed
-- 🔄 **Enhanced Document Intelligence Loader**: Improved `DocumentIntelligenceLoader` to directly handle figure extraction and table reformatting (converting HTML tables to Markdown and tagging them), simplifying the document processing pipeline by reducing external dependencies for these steps.
-- 💬 **Prompt Template Alignment**: Updated `figure_description_generator` prompts across all supported languages (`de`, `en`, `fr`, `it`) to utilize `{% chat role="..." %}` syntax and `RichPromptTemplate` for more flexible and powerful prompt engineering.
-- ⚙️ **Configurable Document Parsers**: Introduced `LoaderType` and a `loader_type` parameter in `DocumentParserResource`, enabling explicit selection of document parsing backends (Docling, Document Intelligence, or both) and dynamic loading of supported file extensions from their respective configurations.
-- 📄 **Streamlined Document Parsing**: Updated `parse_document_from_data_lake` to directly output `RefDocDocument` and pass figure directory information to the document loaders, simplifying subsequent pipeline steps.
-- 📄 **Simplified Figure Metadata**: Removed the `figure_url` field from `FigureMetadata` as figures are now managed via local paths within the document processing pipeline.
-- ⚙️ **Document Intelligence Configuration**: Added `DOCUMENTINTELLIGENCE_EXTENSIONS` to `AzureDocumentIntelligenceSettings` to explicitly define supported file types for the Document Intelligence service.
-- 🧪 **Playground Document Parser Default**: Updated the playground environment to default to `DoclingLoader` for document parsing, demonstrating the new configurable loader types.
-
-### Refactor
-- 🧹 **Streamlined Document Ingestion Pipeline**: Refactored the document ingestion process within `documents_factory` by removing intermediate figure and table handling operations, consolidating figure description generation into a new dedicated operation, and simplifying the overall data flow.
-- 🧹 **Path Utility Relocation**: Moved and renamed `path_utils.py` from `aihub_pipeline` to `aihub_lib/generative_ai/utils` and generalized `create_data_lake_figures_folder_name` to `create_figures_folder_name` for broader utility across document loaders.
-- 🧹 **Figure Deletion Path Update**: Updated `delete_figures_for_many_ref_doc` to use the relocated and generalized path utility for figure folder name generation.
+- ✨ **Introduced `by_email` User Lookup:** Added a new `by_email` class method to `UserEntity`, enabling direct and efficient retrieval of user entities by their email address from the database.
+- 🚀 **Enhanced OAuth2 Token Verification Caching:** Implemented internal caching mechanisms for JWKS (JSON Web Key Sets) and RSA keys within `OAuth2AuthHandler`, significantly improving the performance and reducing external API calls during OAuth2 token validation.
 
 ### Removed
-- 🗑️ **Deprecated Document Conversion Operations**: Eliminated `doc_with_figures_to_ref_doc`, `inject_figures`, `reformat_tables`, and `save_figures_to_data_lake` operations. Their functionalities have been integrated directly into the new document loaders and the `generate_figure_descriptions` op for a more efficient and consolidated pipeline.
+- 🗑️ **Deprecated `AuthenticatedUser` Model:** The `AuthenticatedUser` data model has been entirely removed, succeeded by the more versatile and centrally managed `UserIdentity` model.
+- 🗑️ **Removed Redundant Identity Provider Implementations:** Obsolete, API-specific identity provider implementations (`ApiTokenUserInformationProvider`, `AzureUserInformationProvider`, `DevUserInformationProvider`) have been removed, replaced by the new, unified `IdentityProvider` framework in `aihub_lib`.
+- 🗑️ **Unauthenticated Health Endpoint:** The health endpoint no longer requires user authentication, simplifying its use for external readiness and liveness probes.
 
 ---
 
 
 
-## [v0.198.0] - 2025-06-24 - Enhanced Embedding Content Preparation
-
-### Changed
-- ✨ **Improved Node Embedding:** The `embed_nodes` operation now utilizes `get_content(metadata_mode=MetadataMode.EMBED)` for extracting node content, ensuring that vector embeddings are generated from a more comprehensive and contextually relevant representation of the text, potentially including optimized metadata.
-
----
-
-
-
-## [v0.197.0] - 2025-06-24 - Azure Data Lake Storage Integration
+## [v0.200.0] - 2025-06-30 - Process Orchestration and Core Refinements for Enhanced Modularity
 
 ### Added
-- ✨ **Introduced new Azure roles** for Data Lake Storage, including `STORAGE_BLOB_DATA_READER` and `STORAGE_BLOB_DELEGATOR`, to facilitate enhanced access control.
-- 📝 **Defined a default suffix for Data Lake Storage** resources, ensuring consistent naming conventions within the infrastructure.
-- 🚀 **Added a dedicated Data Lake Storage resource definition**, allowing for programmatic provisioning of Azure Data Lake Storage Gen2 accounts through Infrastructure as Code (IaC).
-- 🔑 **Enabled role assignment for Data Lake Storage access** to user-assigned identities, providing necessary permissions for generating Shared Access Signatures (SAS) tokens and managing data.
-
----
-
-
-
-## [v0.196.0] - 2025-06-20 - Workflow Enhancements
+- 🦾 **Introduced Agentic Processes (`aihub_process`)**: A new top-level module is added to enable sophisticated orchestration of work across diverse entities, including AI agents, human collaborators, programs, and even other processes. This foundational change allows for building complex, multi-entity workflows.
+- ⚡️ **Generic Dispatcher (`BaseDispatcher`)**: A new abstract base class `BaseDispatcher` is introduced in `aihub_lib`, centralizing common logic for handling events, managing execution contexts, and executing workflow steps across all dispatchable entities (agents and processes).
+- ⚙️ **Generalized Event and Step Stores**: Core event storage (`JetStreamEventStore`) and step execution tracking (`StepStore`) are moved and refactored into `aihub_lib`, providing a unified, distributed persistence layer for all workflow types.
+- 🔗 **New Event Types for Process Communication**: A comprehensive set of `WorkEvent` and `WorkRequestEvent` hierarchies are introduced (`AgentWorkEvent`, `HumanWorkEvent`, `ProgramWorkEvent`, `ProcessWorkEvent` and their `WorkRequest` counterparts) to standardize how different entities interact within a process.
+- 📚 **Process-Specific Topics and Subscribers**: Dedicated topic managers (`ProcessTopicManager`, `ProcessInstanceTopicManager`, `ProcessWalkthroughTopicManager`) and NATS subscribers (`ProcessJSSubscriber`, `ProcessNCSubscriber`) are added to define and manage communication channels for process-specific events.
+- 📝 **Process Configuration (`ProcessConfig`)**: A new configuration class is introduced to define metadata and settings for process instances, enabling flexible deployment and management.
+- 🌐 **Process Locale Support**: New localization files are added to support process-related terms and messages.
 
 ### Changed
-- 🚀 **Automated Pull Request Creation:** Enhanced the GitHub Actions workflow responsible for creating draft pull requests. This update ensures the workflow automatically fills the pull request description and improves repository checkout for better reliability during the automation process.
-
----
-
-
-
-## [v0.195.0] - 2025-06-20 - Optimized Dynamic Partition Management
-
-### Changed
-- ⚡️ **Improved Dynamic Partition Management:** The `replace_partition_keys` utility in the pipeline module now efficiently updates dynamic partitions by only adding new keys and removing obsolete ones, significantly reducing overhead compared to the previous full recreation method.
-
----
-
-
-
-## [v0.194.0] - 2025-06-19 - Streamlined Data Lake Operations
-
-### Refactor
-- 🧹 **Optimized Data Lake File Fetching**: Streamlined the internal operations of data lake file fetching functions by removing direct dependencies on the Dagster `OpExecutionContext`, simplifying their interfaces and internal logging.
-
----
-
-
-
-## [v0.193.0] - 2025-06-19 - Improved Auto-Draft PR Workflow with Branch Validation
-
-### Added
-- ✨ **Introduced Branch Naming Validation:** Implemented stricter validation and parsing for new branch names (requiring a `base/scope` format) to ensure consistent and informative draft Pull Request titles.
-- 🔑 **Enhanced GitHub App Authentication:** Switched to generating a temporary GitHub App token for improved security and more granular permissions when creating Pull Requests.
-- 🛡️ **Duplicate PR Prevention:** Added a check to prevent the creation of redundant draft Pull Requests for branches that already have an open PR.
-
-### Changed
-- 📝 **Dynamic Draft PR Titles:** Updated the automatic draft Pull Request titles to dynamically include parsed base and scope information from the branch name, providing clearer context.
-- 🔄 **Standardized Base Branch:** All auto-drafted Pull Requests now consistently target the `main` branch as their base.
-
-### Refactor
-- 🧹 **Workflow Trigger Simplification:** Refined the workflow trigger to be more concise and explicit about running only on branch creation events.
-- ⚡️ **Optimized GitHub CLI Setup:** Removed the explicit GitHub CLI installation step, leveraging the pre-installed version on runner environments for efficiency.
-
----
-
-
-
-## [v0.192.0] - 2025-06-18 - Streamlined Development Workflows
-
-### Changed
-- ⚙️ **Simplified PR Branch Naming Conventions:** Relaxed and generalized the allowed branch naming patterns for pull requests within the semantic PR workflow, providing developers with greater flexibility in feature and bugfix branch naming.
-
----
-
-
-
-## [v0.191.0] - 2025-06-18 - Enhanced LLM Event Logging and Integration
-
-### Added
-- 📈 **Streamlined LLM Event Creation:** Introduced a new utility method (`from_chat_response`) on the **LLMEvent** class, enabling easier generation of LLM events directly from LlamaIndex chat responses. This includes automatic token counting and integration of agent configuration details for more comprehensive logging.
-
----
-
-
-
-## [v0.190.0] - 2025-06-16 - Enhanced Pipeline Path Handling
+- 🔄 **Unified Workflow Base (`DispatchableWorkflow`)**: The `Agent` class now inherits from `DispatchableWorkflow`, establishing a common architectural pattern for all event-driven entities and centralizing step discovery and event handling logic.
+- 🧹 **Refactored Agent Dispatcher**: The `AgentDispatcher` is renamed and refactored to extend the new `BaseDispatcher`, streamlining its implementation by leveraging shared core dispatcher functionalities.
+- 🧩 **Modularized NATS Communication Components**: `TopicManager`, `JSPublisher`, and `NCPublisher` are refined into more generic base classes, while agent-specific logic is migrated to new, dedicated `AgentTopicManager` and `AgentNCSubscriber`/`AgentJSSubscriber` classes for better modularity.
+- 🛠️ **Updated CI/CD and Build Configuration**: GitHub Actions workflows and the main `Makefile` are updated to incorporate linting, testing, and deployment steps for the new `aihub_process` module.
+- 📦 **API and Bot Module Alignments**: The `aihub_api` and `aihub_bot` modules are updated to utilize the new `ExternalAgentEventDistributor` and other agent-specific communication components, ensuring compatibility with the refined messaging architecture.
+- 🎨 **Enhanced `LocaleString` Flexibility**: `display_name` and `display_description` fields in display events now support `None` values in `LocaleString`, providing greater flexibility in event schema definition.
+- 🚧 **Agent Configuration Enhancements**: Improved validation for `agent_id` with regex pattern constraints. `color`, `voice`, and `system_prompt` fields in `AgentConfig` are deprecated, encouraging more granular, domain-specific configuration for agents.
+- 📄 **Documentation Updates**: The agent documentation is updated to reflect the `AgentDispatcher` renaming and the new architectural patterns.
 
 ### Fixed
-- 🐛 **Improved Data Lake Folder Naming:** Addressed an issue in the pipeline's data lake folder creation logic, leveraging `os.path.splitext` for more robust and accurate parsing of file names and extensions, preventing errors with certain URI formats.
+- 🐛 **API Typecheck Issue**: Corrected a typo in the `aihub_api/Makefile` to ensure proper type checking for the `aihub_api` module.
+- 🔒 **Database Uniqueness Constraints**: Added `unique=True` indexes to `conversation_id` in `ConversationEntity` and `path` in `PathEntity` within `aihub_bot`, and `email` in `UserEntity` to enforce data integrity and improve query performance.
+
+### Refactor
+- 🧹 **Consolidated Context Management**: `RunContext` and `ThreadContext` are moved to `aihub_agent/context`, making their scope agent-specific and aligning with the new modular structure.
+- 🏷️ **Explicit External Event Naming**: `ExternalEvent` and `ExternalEventDistributor` are renamed to `ExternalAgentEvent` and `ExternalAgentEventDistributor` respectively, clarifying their specific role in handling external communication for agents.
+- 🧹 **Streamlined Type Extraction**: The `extract_event_classes` utility is enhanced to properly unwrap `Annotated` types, ensuring more accurate type introspection for workflow steps.
+- 🗑️ **Cleaned Up `Topic` Hierarchy**: The base `Topic` class is made abstract, and `TopicManager` is stripped down to its core, generic functionality, with all agent-specific topic logic moving to the new `AgentTopicManager` and its subclasses.
 
 ---
 
 
 
-## [v0.189.0] - 2025-06-16 - Empowering RAG with Multi-modal Context and Secure File Sharing
+## [v0.199.0] - 2025-06-27 - Enhanced Document Processing and New Docling Integration
 
 ### Added
-- ✨ **Multi-modal Content Recognition:** Introduced new capabilities to the Markdown parser to identify and tag different content types within documents, including **text, figures, and tables**, enabling richer RAG interactions.
-- 🖼️ **Secure Anonymous File URLs:** Added a new mechanism to generate secure, time-limited URLs for anonymous access to files, particularly for displaying images within multi-modal contexts.
+- ✨ **Introduced Docling Document Loader:** Added a new `DoclingLoader` to integrate with the Docling API, expanding support for parsing various document types including PDFs, office documents, and images.
+- 🦾 **LLM-Powered Figure Description Generation:** Implemented a new pipeline operation (`generate_figure_descriptions`) that uses Large Language Models to automatically create detailed, accessible alt-text descriptions for figures within documents.
+- ⚙️ **Configurable Document Parsing Engines:** Introduced `LoaderType` in `DocumentParserResource`, allowing explicit selection between Docling, Azure Document Intelligence, or using both for document processing, providing greater flexibility.
+- 📚 **Docling API Integration:** Added core components (`DoclingAccess` and `DoclingConfig`) for seamless interaction and configuration with the Docling document conversion API.
+- 📄 **Expanded Document Intelligence Supported Formats:** Configured the `DocumentIntelligenceLoader` with an explicit list of supported file extensions, enhancing its capability to parse various document formats.
 
 ### Changed
-- 🚀 **Enhanced RAG Context Generation:** The core RAG context generation logic has been significantly updated to support **multi-modal inputs (text and images)**, leveraging LlamaIndex's `RichPromptTemplate` to dynamically construct prompts that can include direct image references.
-- 📄 **Updated RAG Prompt Templates:** Localized RAG system prompt templates across German, English, French, and Italian have been revised to accommodate **multi-modal context blocks**, ensuring seamless integration of images and structured data.
-- ⚙️ **Refined `IngestedNode` Schema:** The `IngestedNode` data model now includes a distinct `content_type` field, allowing precise classification of node content as **text, figure, or table** for improved RAG processing.
-- 🛠️ **Pipeline Content Tagging:** The document processing pipeline now explicitly tags injected figures and reformatted tables with their respective content types, enhancing downstream RAG capabilities.
-
-### Fixed
-- 🐛 **NATS ChatMessage Serialization:** Resolved an issue where `ChatMessage` objects containing `AnyUrl` (e.g., image paths) were not correctly serialized when sent over NATS, ensuring reliable transmission of multi-modal messages.
+- 🔄 **Streamlined Document Intelligence Processing:** The `DocumentIntelligenceLoader` now directly handles table reformatting and figure extraction/saving, simplifying the document processing flow by embedding this logic within the loader itself.
+- 💬 **Updated Figure Description Prompts:** Revised the prompt structure for figure description generation to better leverage multi-modal LLMs and improve the quality of generated alt-text.
+- 📝 **Simplified Figure Metadata:** The `FigureMetadata` model has been streamlined by removing the `figure_url` field, focusing on essential file path information.
+- 🚧 **Playground Default Loader:** Updated the playground environment to default to the `DoclingLoader`, showcasing the new integration.
 
 ### Refactor
-- 🧹 **Streamlined File Access Services:** Reorganized and centralized the logic for generating Azure Blob Storage SAS URLs and managing anonymous file access within dedicated services, improving modularity and security.
-- 🔄 **Simplified RAG Agent Methods:** Simplified the method signatures within the RAG Agent for improved maintainability and cleaner code.
-
----
-
-
-
-## [v0.188.0] - 2025-06-13 - Streamlined File Access and Improved Document Experience
-
-### Added
-- 🔐 **Introduced Secure File Access**: A new API and backend infrastructure (`FileController`, `FileService`, `BlobStorageAccess`, `AzureBlogStorageSettings`) to generate secure, time-limited Azure SAS URLs for both authenticated and anonymous file access.
-- 🔗 **Enabled Anonymous File Sharing**: Implemented `AnonymousFileAccessService` to generate and validate secure, time-limited URLs, allowing for controlled anonymous sharing of files.
-- 🖼️ **New Markdown Components**: Added dedicated Vue components (`MarkdownFigure`, `MarkdownTable`, `ResolveImageComponent`) to enhance the rendering of figures and tables within Markdown content. The `ResolveImageComponent` dynamically fetches and displays images from secure storage using signed URLs.
-
-### Changed
-- 📊 **Enhanced Document Metadata**: The `IngestedDocument` data model now includes the **number of pages**, providing richer information for each document.
-- ⬇️ **Improved Document List UI**: The document list interface now features a prominent **"Download" button**, enabling direct secure download of files from the document overview.
-- 🎨 **Refined Markdown Rendering**: Updated Markdown rendering styles and component integration for improved visual consistency and readability of documents. This includes adjusted heading spacing and link appearances.
-- ⚙️ **API and Client Updates**: Expanded API schemas and client SDK to support the new file access functionalities, including handling uploaded files in messages and providing signed URL responses.
-- 🌐 **Internationalization Updates**: Updated translation strings across various languages to support new UI elements and document properties.
-
----
-
-
-
-## [v0.187.0] - 2025-06-12 - Improved Document Processing Robustness
-
-### Fixed
-- 🐛 **Markdown Parser Robustness**: The Markdown structural node parser now gracefully handles empty content, preventing errors during document splitting.
-- 🐛 **Table Reformatting Stability**: Enhanced the table reformatting process to include checks for documents without text content, ensuring more robust and efficient processing.
-
-### Refactor
-- 🧹 **Document Factory Clarity**: Improved code readability within the document factory by explicitly naming arguments in function calls, contributing to better maintainability.
-
----
-
-
-
-## [v0.186.0] - 2025-06-12 - Enhanced Core Capabilities: Flexible Ingestion and Azure OpenAI Improvements
-
-### Changed
-- ✨ **Flexible Document Data Models**: Updated core document ingestion models (`IngestedBase`) to support arbitrary additional fields, enhancing flexibility for future data attributes.
-- 🚀 **Comprehensive Node Metadata Ingestion**: Ensured that all custom and additional metadata from LlamaIndex nodes are fully preserved during the ingestion process, improving context richness for RAG.
-
-### Fixed
-- 🐛 **Azure OpenAI Embeddings Authentication**: Resolved an issue to ensure proper utilization of Azure AD token providers for Azure OpenAI embedding models.
-
----
-
-
-
-## [v0.185.0] - 2025-06-11 - Internal Build Enhancements
-
-### Refactor
-- 🧹 **Optimized Build Image Action**: Streamlined the internal `build_image` GitHub Action by removing a redundant code checkout step, contributing to more efficient CI/CD pipelines.
-
----
-
-
-
-## [v0.184.0] - 2025-06-11 - Streamlined Web Development and Infrastructure Updates
-
-### Changed
-- ⚙️ **Updated Web UI Local Development Port:** The default local development port for the web user interface in `docker-compose` has been updated from `5173` to `8080`.
+- 🧹 **Optimized Document Processing Pipeline:** Significantly refactored the document processing asset graph by removing redundant intermediate operations and consolidating logic directly within document loaders for a more efficient and cleaner pipeline.
+- 📦 **Reorganized Path Utilities:** Moved and renamed the `path_utils` module from `aihub_pipeline` to `aihub_lib` and updated function names for better modularity and broader utility across the `aihub_lib`.
 
 ### Removed
-- 🗑️ **Storybook Development Environment:** The Storybook configuration and associated development scripts for the web UI have been removed, streamlining the frontend development workflow.
-- 🔑 **Externalized OIDC Client Configuration:** Direct OIDC client configuration has been removed from `nuxt.config.ts`, indicating a more centralized or externalized approach to authentication settings.
-- 🧹 **Deprecated Shadcn-Vue Makefile:** The dedicated Makefile for managing `shadcn-vue` components in the web UI has been removed.
-
-### Refactor
-- 🔄 **Enhanced Route Query Handling:** Improved the robustness of `useRouteQuery` in web UI composables and pages by explicitly passing `route` and `router` parameters.
+- 🗑️ **Deprecated Document Processing Operations:** Eliminated several no-longer-needed pipeline operations, including `doc_with_figures_to_ref_doc`, `inject_figures`, `reformat_tables`, and `save_figures_to_data_lake`, as their functionalities have been integrated directly into document loaders.
 
 ---
 
 
 
-## [v0.183.0] - 2025-06-11 - Smarter Summaries and Enhanced Document Parsing
+## [v0.198.0] - 2025-06-24 - Pipeline Embedding Enhancements
 
 ### Changed
-- 🔄 **Improved Recursive Document Summarization:** The core logic for recursively summarizing documents has been significantly refined, leading to more coherent and contextually relevant summaries. This includes smarter grouping of content nodes and more robust handling of complex document structures.
-- 💬 **Updated Summarizer Prompts:** The prompt templates for document summarization have been revised across all supported languages (English, German, French, Italian) to guide the LLM towards producing concise, "TL;DR" style summaries.
-- 📄 **Enhanced Summary Node Relationships:** Generated summary nodes now include `PREVIOUS` and `NEXT` relationships, along with an `INDEX` field, ensuring proper sequential ordering and navigability within the vector store.
-- ⚙️ **Refined Node Parsing with Document Store Name:** The document parsing pipeline now automatically tags generated nodes with their originating document store name, improving data traceability.
-- 🧪 **Playground Environment Configuration:** The default Azure Data Lake storage paths for the playground environment have been updated, and the default LLM for the playground has been switched to `gpt-4o-mini` to optimize local development and testing.
-
-### Added
-- ✨ **New `DOCUMENT_STORE_NAME` Metadata Field:** A new metadata field has been introduced to explicitly link document nodes back to their specific document store, enhancing data provenance and filtering capabilities.
-
-### Refactor
-- 🧹 **Streamlined Recursive Summarizer Internals:** Key internal methods within the `RecursiveSummaryParser` have been refactored and integrated for improved code clarity and maintainability.
+- 🦾 Improved **node embedding content** within pipelines by transitioning from `get_text()` to `get_content(metadata_mode=MetadataMode.EMBED)` for extracting text. This ensures that relevant metadata is also considered, leading to potentially richer and more accurate vector embeddings.
 
 ---
 
 
 
-## [v0.182.0] - 2025-06-11 - Enhanced Bot Responsiveness and Typing Indicator Logic
+## [v0.197.0] - 2025-06-24 - Enhanced Infrastructure with Azure Data Lake Storage Support
+
+### Added
+- ✨ **Introduced Azure Data Lake Storage Management:** Added new Infrastructure as Code (IaC) components to provision and manage Azure Data Lake Storage accounts, expanding the platform's data storage capabilities.
+- 🔑 **New Azure Data Lake Roles:** Incorporated specific Azure role definitions (`Storage Blob Data Reader` and `Storage Blob Delegator`) to facilitate secure and controlled access to data within Data Lake Storage.
+- 🦾 **Automated Data Lake Role Assignment:** Implemented a new method within `UserAssignedIdentity` to automatically assign the necessary permissions for Data Lake Storage, specifically enabling the generation of Shared Access Signatures (SAS) tokens for temporary data access.
+- 📄 **Standardized Data Lake Naming:** Defined a consistent naming convention for Azure Data Lake Storage resources, improving resource organization and clarity within the infrastructure.
+
+---
+
+
+
+## [v0.196.0] - 2025-06-20 - Automation Enhancements and Version Synchronization
+
+### Added
+- ✨ **Enhanced Automated Pull Request Creation:** Improved the CI/CD workflow for generating automatic draft pull requests by incorporating full Git history fetching and enabling automatic population of PR descriptions from commit messages, streamlining development processes.
+
+### Changed
+- 🔄 **Project Version Synchronization:** Aligned all microservices and core libraries, including `aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, and `aihub_pipeline`, to version `v0.196.0` for consistent dependency management and release coordination.
+
+---
+
+
+
+## [v0.195.0] - 2025-06-20 - Enhanced Pipeline Efficiency
+
+### Changed
+- ⚡️ **Optimized Dynamic Partition Management**: The `replace_partition_keys` utility in the pipeline core has been significantly improved to efficiently add and delete only the necessary dynamic partitions, thereby reducing unnecessary operations and enhancing overall performance for data pipeline execution.
+
+---
+
+
+
+## [v0.194.0] - 2025-06-19 - Core System Alignment and Pipeline Operation Streamlining
+
+### Changed
+- 🔄 **Core Service Version Alignment:** Updated internal dependency versions across all `aihub_` services (agent, api, bot, iac, lib, pipeline) and the Makefile to `v0.194.0` for consistent build and deployment.
+
+### Refactor
+- 🧹 **Simplified Data Lake File Fetching:** Refactored `fetch_all_files_in_data_lake` operations within the pipeline module to remove direct `OpExecutionContext` dependency and internal logging, promoting cleaner, more focused data retrieval logic.
+
+---
+
+
+
+## [v0.193.0] - 2025-06-19 - Enhanced Draft PR Automation with Structured Branching
+
+### Added
+- ✨ **New Branch Naming Conventions:** Implemented strict `base/scope` naming validation for new branches, ensuring consistency and clarity. This includes a predefined list of allowed scope prefixes.
+- 🔒 **Improved GitHub App Token Usage:** Switched to using a dedicated GitHub App Token for creating draft pull requests, enhancing security and permissions management for automated workflows.
+- 🚀 **Duplicate PR Prevention:** Added a check to prevent the creation of redundant draft pull requests if one already exists for the branch, streamlining workflow execution.
+
+### Changed
+- ⚙️ **Dynamic Draft PR Titles:** Automated draft pull requests now generate more informative titles, incorporating the parsed `base` and `scope` from the branch name, along with the author's username, for immediate context.
+- ➡️ **Default Base Branch for Draft PRs:** Standardized the base branch for automatically created draft pull requests to `main`, simplifying the initial setup for new feature or bugfix branches.
+- 🧹 **Streamlined Workflow Authentication:** The workflow now utilizes a more secure and efficient method for authenticating with the GitHub API.
+
+---
+
+
+
+## [v0.192.0] - 2025-06-18 - Streamlined Branch Naming and Project Alignment
+
+### Changed
+- 🔄 **Relaxed Branch Naming Conventions:** Updated the semantic PR GitHub workflow to allow more flexible and generic branch names (e.g., `feature/my-feature`, `bugfix/issue-123`) by replacing specific initiative branch patterns with a broader regular expression. This simplifies development workflows and enhances consistency.
+- ⬆️ **Project Version Alignment:** Aligned all internal project and library dependencies across microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`) to the new `v0.192.0` release tag, ensuring consistent versioning throughout the codebase.
+
+---
+
+
+
+## [v0.191.0] - 2025-06-18 - LLM Event Reporting Enhancements
+
+### Added
+- ✨ **Improved LLM Event Reporting**: Introduced a new `from_chat_response` method to `LLMEvent` for easier creation of LLM events directly from LlamaIndex chat responses, automatically capturing token usage for enhanced observability.
+
+---
+
+
+
+## [v0.190.0] - 2025-06-16 - Core Updates and Path Robustness
 
 ### Fixed
-- 🐛 **Improved Bot Typing Indicator Logic:** The bot's "typing..." indicator is now only displayed after confirming the bot will respond, preventing misleading typing statuses for ignored or expired messages.
+- 🐛 **Enhanced Data Lake Path Generation:** Improved the utility for creating data lake figure folder names by transitioning to a more robust file name parsing method (`os.path.splitext`), ensuring accurate and reliable folder structures regardless of complex file naming conventions.
 
 ---
 
 
 
-## [v0.181.0] - 2025-06-10 - Bot Interaction and Stability Improvements
+## [v0.189.0] - 2025-06-16 - Multimodal RAG and Enhanced File Access
+
+### Added
+- ✨ **Multimodal RAG Capabilities**: The RAG Agent now supports incorporating images alongside text in its context, enabling it to answer questions that require visual information. This includes the dynamic generation of secure, time-limited URLs for embedded figures.
+- 🔗 **Extended Anonymous File Link Lifetime**: Anonymous file sharing links can now be configured to remain valid for up to 30 days, providing increased flexibility for long-term access to shared content.
+
+### Changed
+- 🦾 **Improved RAG Agent System Prompt**: The RAG Agent's core instructions have been refined to enhance its ability to analyze and provide detailed answers using both document and image context, and to explicitly state when it cannot find an answer.
+- 🔄 **Standardized Anonymous File Access**: The generation and validation of secure, temporary file URLs have been centralized and streamlined within the `AnonymousFileAccessService`, improving consistency and security for file access.
+- 📄 **Enhanced Document Parsing for Multimodal Content**: The Markdown parser now intelligently identifies and categorizes content within documents as text, figures, or tables, enriching the metadata for RAG processing.
+- 🧩 **Updated RAG Node Data Model**: The `IngestedNode` data model now includes explicit `content_type` fields (text, figure, table) to support the new multimodal RAG capabilities, ensuring detailed content classification.
+- 📝 **Modernized RAG Context Prompt Templating**: RAG context prompts now leverage a more advanced templating system (`RichPromptTemplate`) to natively support the inclusion of both text and image blocks, improving prompt construction and multimodal reasoning.
+- ⚙️ **Refined Figure and Table Injection in Pipelines**: Document processing pipelines now inject figures and tables into markdown using specific XML-like tags (`<figure>` and `<table>`), enabling the downstream RAG system to correctly identify and process these content types.
+- 🧹 **Centralized ChatMessage Serialization**: Serialization logic for `ChatMessage` objects, particularly for handling URLs in image and audio blocks, has been consolidated into the `BaseEvent` model for improved consistency across all events.
+
+### Refactor
+- 📦 **Reorganized File Access Logic**: The internal logic for generating and validating anonymous file signatures and SAS tokens has been refactored and moved to dedicated services for better module separation and maintainability.
+
+---
+
+
+
+## [v0.188.0] - 2025-06-13 - Advanced Document Handling: Secure Access & Improved Markdown Rendering
+
+### Added
+- ✨ **Secure File Access API:** Introduced new API endpoints (`/file`) for secure access to files stored in Azure Blob Storage, supporting both logged-in users and temporary anonymous sharing via signed URLs.
+- 📄 **Azure Blob Storage Integration:** Added core services and configuration for seamless integration with Azure Blob Storage, enabling centralized and secure file management across the platform.
+- 🚀 **Anonymous File Access Service:** Implemented a new service to generate secure, time-limited URLs for anonymous file sharing, enhancing the platform's ability to share documents securely.
+- 🖼️ **Markdown Rich Content Components:** Introduced dedicated Vue components (`MarkdownFigure`, `MarkdownTable`) to significantly improve the rendering and styling of figures and tables within markdown content.
+- 🔗 **Dynamic Image Resolution for Markdown:** Added a `ResolveImageComponent` to dynamically fetch and display images from secure internal storage within markdown content using signed URLs.
+- ⬇️ **Document Download Capability:** Enabled users to download original documents directly from the knowledge base list in the web interface, improving usability and accessibility.
+- 📝 **File Attachment Support:** Extended API schemas to allow attaching files to `Metadata` and `UserMessageEvent` for richer interaction capabilities with agents.
+
+### Changed
+- 🔄 **Event Schema Refinement:** Refactored event schemas into `Readable` and `Writable` types to provide clearer distinctions between data models for API input and output, enhancing type safety and API clarity.
+- 📊 **Knowledge Base Document Display:** Adjusted the web interface display for knowledge base documents to prominently feature the number of pages and improved column ordering for better readability.
+- 📄 **Figure Reference Handling:** Updated the document processing pipeline to handle figure references using file paths instead of direct URLs, aligning with the new on-demand URL generation for secure access.
+- 🎨 **Markdown Styling Enhancements:** Refined markdown rendering styles, including adjusted heading margins and link appearances, for a more consistent and polished visual experience.
+- 📚 **Ingested Document Metadata:** Enhanced the `IngestedDocument` model to accurately capture and display the `number_of_pages` from source document metadata, providing more comprehensive document details.
+- 📦 **New Dependency:** Added `lxml` to the pipeline dependencies, which is likely used for improved parsing and processing of document structures, supporting richer content extraction.
+
+### Refactor
+- 🧹 **Azure Storage Access Standardization:** Centralized Azure Blob Storage access through a new singleton `BlobStorageAccess` class, ensuring consistent and maintainable interactions with storage services.
 
 ### Fixed
-- 🐛 **Enhanced file content extraction reliability**: Added robust checks for `content_type` in the `ContentExtractor` to prevent potential errors during file processing, ensuring more stable handling of various file types.
-- 🐞 **Corrected agent display ID assignment**: Addressed an issue in the `AgentCompletionHandler` to ensure that the `display_id` is correctly passed and utilized when initiating agent interactions.
-
-### Changed
-- ⚙️ **Improved localized error handling**: The `OpenaiCompletionHandler` now integrates with the `LocaleHandler` to support localized error messages, providing more user-friendly feedback during exceptions.
-
-### Refactor
-- 🧹 **Streamlined completion handler calls**: Removed a redundant `service` parameter from the `get_stream_completion` and `get_completion` methods in `BaseChatBot` for cleaner and more efficient code.
-- 📦 **Consolidated `CompletionHandler` logic**: The core completion handling logic was refined and extracted into a dedicated `CompletionHandler` module, improving modularity and updating import paths across `AgentCompletionHandler` and `OpenaiCompletionHandler`.
-- 🔄 **Standardized channel ID usage**: Replaced the hardcoded "webchat" string with the `Channels.webchat` constant from `botframework.connector` in `StreamAgentChatBot`, enhancing consistency and maintainability.
+- 🐛 **API Base URL Configuration:** Ensured correct API base URL configuration for the web client, standardizing API access and preventing potential routing issues.
 
 ---
 
 
 
-## [v0.180.0] - 2025-06-10 - Chat Bot Robustness and Version Alignment
+## [v0.187.0] - 2025-06-12 - Core Refinements and Stability Updates
 
 ### Fixed
-- 🐛 **Enhanced Chat Bot Locale Handling:** Improved the `BaseChatBot` to gracefully handle situations where the user's locale is not provided, falling back to a default locale to prevent errors and ensure stable operation.
-
----
-
-
-
-## [v0.179.0] - 2025-06-10 - Enhanced Assistant Interactions with File Uploads
-
-### Added
-- ✨ **File Upload Support**: Introduced core infrastructure to enable attaching user-uploaded files (e.g., documents, images) to chat completion requests, allowing for richer and more contextual interactions with AI-Hub assistants.
-- 📄 **Open WebUI File Sending Pipeline**: Implemented a new pipeline script specifically for Open WebUI, which facilitates the seamless transfer of user-uploaded files from the UI to AI-Hub assistants during chat interactions.
-- 🦾 **UserUploadedFile Data Model**: Defined a new, dedicated data model for standardizing the representation of user-uploaded files, encapsulating their filename, base64-encoded content, and MIME type.
-
-### Fixed
-- 🐛 **Azure CLI Command Execution**: Addressed an issue in the API token generation script by ensuring Azure CLI commands are executed reliably, improving the token generation process.
-
----
-
-
-
-## [v0.178.0] - 2025-06-05 - Infrastructure & WebUI Enhancements
-
-### Added
-- ✨ Introduced **Azure Container Apps workload profiles** (Consumption and D4), enabling more granular control over resource allocation and cost optimization for deployed services.
-- ⚡️ Enhanced **Azure Container App environment integration** by adding subnet delegations for Dagster and WebUI components, improving network configuration and future capabilities.
-- 🔑 Added **`WEBUI_SECRET_KEY` configuration** for OpenWebUI, enhancing the security of the user interface.
-- 🚀 Implemented **performance tuning environment variables** for OpenWebUI (Uvicorn workers, thread pool size), optimizing web UI responsiveness and throughput.
+- 🐛 **Document Parsing Robustness:** Enhanced the Markdown structural node parser to gracefully handle empty content, preventing potential processing errors during document ingestion.
+- 🛡️ **Table Reformatting Stability:** Improved the document table reformatting process within the pipeline to prevent errors when encountering documents with missing or empty text content.
 
 ### Changed
-- ⚙️ Improved **WebUI deployment scalability** by making `min_replicas` and `max_replicas` configurable, allowing dynamic scaling based on demand.
-- 🔄 Updated **OpenWebUI Redis integration** to explicitly set `REDIS_URL`, ensuring consistent and reliable caching and session management.
-- 💾 Configured **Dagster PostgreSQL database to retain data on deletion**, preventing accidental data loss when tearing down infrastructure.
+- ⚙️ **Pipeline Function Clarity:** Updated function calls within the `documents_factory` in the pipeline to consistently use keyword arguments, improving code readability and maintainability.
+
+---
+
+
+
+## [v0.186.0] - 2025-06-12 - Enhanced Data Flexibility and Azure AI Integration
+
+### Changed
+- 🔄 **Improved Document Metadata Handling:** The `IngestedBase` and `IngestedNode` document types now dynamically capture and retain all additional, non-standardized metadata fields present in source documents, significantly enriching the information available for RAG pipelines.
+- 🔑 **Enhanced Azure OpenAI Embedding Authentication:** Explicitly enabled Azure Active Directory (AAD) authentication for Azure OpenAI embedding models, providing more secure and robust integration with Azure environments.
+
+---
+
+
+
+## [v0.185.0] - 2025-06-11 - Internal Updates and CI/CD Streamlining
 
 ### Refactor
-- 🧹 Cleaned up **unused imports** within Infrastructure as Code (IaC) configurations, improving code clarity and reducing clutter.
+- 🧹 **Optimized Build Process:** Removed the explicit code checkout step within the `build_image` GitHub Action, streamlining the image building process and potentially reducing redundant operations.
 
 ---
 
 
 
-## [v0.177.0] - 2025-06-04 - Enhanced Document Processing with Figure and Table Support
-
-### Added
-- 🖼️ **Introduced Figure Extraction and Description Generation:** The document intelligence loader now extracts figures and their IDs from documents. A new pipeline flow is implemented to save these figures to the data lake, generate descriptive alt-text using a vision-enabled Large Language Model, and inject them back into the document as Markdown, significantly improving content accessibility and searchability.
-- 📄 **Added Page Number Tracking to Document Nodes:** Document nodes now include a `page` metadata field, providing more granular location information and context within a document.
-- ✨ **New Prompts for Figure Descriptions:** Integrated specialized prompts to guide LLMs in generating high-quality, concise alt-text for figures based on their visual content and surrounding document context.
-- 🗑️ **Automated Figure Cleanup:** When a document is removed from the document store, its associated extracted figures are now automatically deleted from the data lake, ensuring data hygiene and efficient storage management.
+## [v0.184.0] - 2025-06-11 - Web UI Streamlining and Configuration Updates
 
 ### Changed
-- 🔄 **Improved Markdown Parsing for Figures and Tables:** The Markdown structural node parser now intelligently handles HTML `<table>` and `<figure>` tags by splitting them into separate nodes or reformatting tables to Markdown for better representation and search indexing.
-- 🧹 **Centralized Azure Resource Naming Suffixes (IaC):** Refactored Azure Infrastructure-as-Code to use a centralized set of constants for resource naming suffixes, improving consistency and maintainability across deployments.
-- 🦾 **Updated Summarizer Prompt:** Enhanced the summarizer prompt to explicitly instruct the model to produce summaries in the same language as the input text, improving multi-lingual support and output quality.
-- 🚀 **Upgraded Playground LLM:** The default language model for the playground environment has been updated to `gpt-4o`, leveraging its latest capabilities for better performance and accuracy.
+- 🔄 **Web UI Default Development Port**: Updated the default local development port for the Web UI from `5173` to `8080` in `docker-compose-webui.yml`, affecting local setup and direct access URLs.
+- ⚙️ **OIDC Configuration Management**: Removed hardcoded OIDC client and tenant IDs from `nuxt.config.ts`, indicating a shift towards more dynamic or externalized authentication configuration.
 
 ### Refactor
-- ⚙️ **Refined Document Processing Pipeline:** Overhauled the document processing pipeline to support a multi-stage approach for handling figures and tables, including dedicated steps for parsing, saving figures, injecting descriptions, and reformatting tables before final ingestion.
-
----
-
-
-
-## [v0.176.0] - 2025-06-04 - Enhanced Document Processing with Figure and Table Intelligence
-
-### Added
-- ✨ Introduced **advanced document parsing capabilities** to extract and process figures and tables from documents.
-- 🖼️ Implemented **automatic figure extraction and storage** in Azure Data Lake, saving image data alongside document content.
-- ✍️ Added **AI-powered figure description generation** using vision models, enhancing document accessibility and providing richer context for RAG.
-- 📊 Integrated **HTML table conversion to Markdown** within documents, improving readability and data extraction for structured content.
-- 📄 Introduced **page number tracking** during document parsing, adding granular metadata to document nodes for better context.
-- 🚀 New **`DocumentWithFigureInfo` and `FigureMetadata` types** to facilitate comprehensive processing of rich document content.
-- 🗑️ Enhanced the document deletion workflow to **automatically remove associated figures** from Data Lake when a document is deleted.
-
-### Changed
-- 🔄 Revamped the **document processing pipeline** for more modular and robust handling of documents, figures, and tables.
-- ⚙️ Updated the **Document Intelligence Loader** to leverage native figure extraction capabilities and provide `operation_id` for subsequent processing steps.
-- 🧹 Enhanced the **Markdown Structural Node Parser** to intelligently split content based on page breaks and extract tables and figures into distinct nodes for improved chunking.
-- 🗣️ Improved **summarizer prompts** across all supported languages to ensure generated summaries maintain the original text's language.
-- 📦 Adjusted **Data Lake file fetching** to correctly exclude dedicated figure storage folders, streamlining document ingestion.
-- ⚡️ Upgraded the **playground environment's language model** to `gpt-4o`, providing enhanced performance and capabilities for development and testing.
-
-### Refactor
-- ♻️ Restructured core document parsing logic by **renaming and repurposing `data_lake_file_to_ref_doc`** into `parse_document_from_data_lake`, streamlining the initial document load into the new figure-aware pipeline.
-
----
-
-
-
-## [v0.175.0] - 2025-06-02 - Enhanced API Integration and Environment Stability
-
-### Changed
-- 🐳 **Docker Image Updates**: Updated `docker-compose-webui.yml` to utilize organization-specific and versioned Docker images for **PostgreSQL with pgvector** and **Open WebUI**. This provides greater control and stability for development and deployment environments.
-
-### Refactor
-- 🧹 **Streamlined OpenAI API Calls**: Refactored the internal handling of OpenAI API requests for chat completions, image generation, and text-to-speech. This change intelligently filters and prepares arguments based on the OpenAI SDK's method signatures, improving robustness and simplifying future API integrations.
-
----
-
-
-
-## [v0.174.0] - 2025-05-30 - Infrastructure Refinements and Core Updates
-
-### Refactor
-- 🧹 **Centralized Azure Resource Naming Constants:** The `DEFAULT_DOCSTORE_SUFFIX` constant has been moved to a new, dedicated `suffix.py` file within the `aihub_iac` module. This improves code organization and maintainability by centralizing constants used for Azure resource naming.
-
----
-
-
-
-## [v0.173.0] - 2025-05-30 - Expanding Azure Infrastructure with Cosmos DB Support
-
-### Added
-- ✨ **Cosmos DB Document Store Integration:** Introduced comprehensive support for deploying and configuring Azure Cosmos DB as a document store, including resource naming conventions and necessary role assignments for managed identities.
-
----
-
-
-
-## [v0.172.0] - 2025-05-28 - Enhanced LLM Evaluation and API Consistency
-
-### Added
-- ✨ **LLM Evaluation Framework**: Introduced a comprehensive framework for evaluating LLM agent performance using Arize Phoenix. This includes:
-    - 📊 **Evaluation APIs**: New API endpoints (`/evaluations`) for managing evaluation datasets and running experiments, complete with detailed DTOs for data and results.
-    - 🧠 **LLM Judge**: Implemented LLM-based judges (`PhoenixExperimentEvaluator`) to automatically score agent responses on criteria like correctness, completeness, and conciseness, leveraging structured prompts and multi-language support.
-    - 🧪 **Dedicated Evaluation UI**: New administrative pages and components for creating, viewing, and managing evaluation datasets and experiments, providing a dedicated interface for analyzing agent performance.
-- 🔐 **GitHub Actions Permissions**: Added `packages: read` permissions to GitHub Actions workflows to enable seamless integration with private package repositories.
-- 🚀 **Updated Docker Images**: Upgraded several core service Docker images (including Phoenix, NATS, Redis, MongoDB, Llama.cpp, HF-TEI, OpenWebUI, etcd, MinIO, Milvus, and Attu) to their latest stable versions, enhancing performance, security, and stability.
-- 💚 **Docker Service Health Checks**: Introduced comprehensive health checks and persistent volume configurations for key Docker services (Phoenix, NATS, Redis, MongoDB, Llama.cpp, HF-TEI, Attu) to improve system reliability and data persistence.
-
-### Changed
-- 🔄 **API Route Standardization**: Renamed API endpoints for Agent, Event, Suite, Thread, and User controllers from singular to plural forms (e.g., `/agent` to `/agents`, `/thread` to `/threads`) to align with RESTful API best practices.
-- 🌐 **UI Navigation Alignment**: Updated the web application's routes and navigation structures to consistently reflect the new pluralized API endpoints, ensuring a cohesive user experience.
-- 📄 **Improved I18n File Loading**: Enhanced the internationalization (i18n) `t_object` method to dynamically locate and load translation files based on configured paths, increasing flexibility for new language additions.
-- 🎨 **UI Design System**: Adjusted the base theme's primary color definitions to utilize `surface` tones, contributing to a refined and consistent visual design.
-
-### Refactor
-- 🧹 **Phoenix Configuration Relocation**: Moved the `PhoenixSettings` class from `aihub_agent` to the shared `aihub_lib` module, improving code organization and reusability across components.
-- ♻️ **LlamaIndex Document Handling**: Updated internal document representations within LlamaIndex-based vector processing from `Document` to `TextNode`, reflecting a more precise and aligned data model.
-
----
-
-
-
-## [v0.171.0] - 2025-05-27 - Streamlined Azure Infrastructure and Performance Boosts
-
-### Added
-- ✨ **New Azure Role:** Introduced `STORAGE_BLOB_DATA_CONTRIBUTOR` for finer-grained access control to Azure Storage Blobs.
-- 🔑 **Dagster Role Assignment:** Automatically assigns the `STORAGE_BLOB_DATA_CONTRIBUTOR` role to Dagster's managed identity, ensuring proper permissions for data operations within the platform.
-
-### Changed
-- 🚀 **Dagster Webserver Resources:** Increased CPU and memory allocation for the Dagster webserver (CPU from 0.5 to 1.5, Memory from 1Gi to 3Gi) to enhance performance and responsiveness.
-- 📈 **PostgreSQL Database Scaling:** Upgraded PostgreSQL database resources by increasing storage from 32GB to 64GB and the SKU from `Standard_B1ms` to `Standard_B2s`, providing improved performance and capacity for database operations.
-- 🛡️ **Network Security Group Rules:** Fine-tuned NSG rules for the **Dagster storage subnet** to allow inbound traffic on port 4180 for proxy access, and for the **API Cosmos DB subnet** to permit specific VPN IP access, enhancing connectivity and security.
-- ✏️ **NATS File Share Naming:** Corrected the NATS file share name from "blob" to "nats" for improved clarity and accuracy in resource identification.
-
-### Refactor
-- 🧹 **Infrastructure Network Architecture:** Re-architected Azure networking by decentralizing subnet creation and Network Security Group (NSG) management to their respective service modules (Dagster, NATS, Phoenix, Stores, WebUI), significantly improving modularity and maintainability of the infrastructure code.
-- 🔄 **Pulumi Provider Module Alignment:** Updated Pulumi Azure Native imports to utilize dedicated modules like `cosmosdb` and `privatedns` instead of deprecated ones, ensuring alignment with the latest provider best practices and improved resource definition accuracy.
-- ⚙️ **Pulumi Resource Orchestration:** Improved handling of Pulumi resource dependencies by refactoring resource creation with `pulumi.Output.all().apply()`, leading to more robust and reliable deployments.
-- 📄 **Centralized Network Configurations:** Moved Virtual Network and Subnet CIDR definitions from hardcoded values into dedicated configuration classes, centralizing network planning and making it easier to manage and update.
-
----
-
-
-
-## [v0.170.0] - 2025-05-26 - Infrastructure Utility Enhancements
-
-### Added
-- ✨ **Introduced `mirror-image` Makefile target:** Added a new utility command within the infrastructure (IaC) module to simplify mirroring Docker images from one registry to another (e.g., from public to private), enhancing deployment flexibility and security.
-
----
-
-
-
-## [v0.169.0] - 2025-05-26 - Core Service Synchronization and DataLakeFile Robustness
-
-### Changed
-- 🔄 **DataLakeFile Owner Determination:** Enhanced the logic for automatically assigning the owner of a **DataLakeFile**. The system now robustly checks for the `USER` and `USERNAME` environment variables as fallbacks and defaults to "pipeline-user" if no user can be identified, improving reliability in diverse environments.
-
----
-
-
-
-## [v0.168.0] - 2025-05-24 - NATS Network Configuration Update
-
-### Changed
-- ⚙️ **Configured Static IP for NATS:** Assigned a fixed private IP address (`10.0.1.4`) to the NATS container instance within the Azure infrastructure, enhancing network predictability and stability for internal service communication.
-
----
-
-
-
-## [v0.167.0] - 2025-05-23 - Enhanced Knowledge Management & Data Model Refinements
-
-### Added
-- ✨ **Knowledge Management API & UI**: Introduced a comprehensive API and user interface for managing knowledge bases, enabling users to explore databases, view documents, and inspect individual nodes and their summaries within the platform.
-- 🧱 **Standardized Ingested Content Models**: New `IngestedBase`, `IngestedDocument`, `IngestedNode`, `Namespace`, and `NodeSummaryDto` data models were added to provide a consistent and enriched representation of processed documents and their granular chunks across the entire system.
-- 🚀 **Retrieve Previous/Next Node Configuration**: Enhanced the RAG agent with `RetrievePrevNextConfig`, allowing for more comprehensive context retrieval by including neighboring nodes.
-- 🛠️ **Automated Pipeline Metadata Operations**: Integrated new pipeline operations (`ensure_refdoc_default_metadata`, `ensure_node_default_metadata`) to automatically validate and inject default metadata into documents and nodes during the ingestion process, ensuring data consistency.
-- 📈 **OpenWebUI Integration Actions**: Introduced new OpenWebUI actions that enable direct navigation from OpenWebUI chat to AI-Hub's detailed source document view and the new event tracing view for deeper analysis.
-- 📊 **Milvus GUI (Attu) Support**: Added the `attu` service to the Milvus Docker Compose setup, providing a user-friendly graphical interface for managing Milvus vector stores.
-- 🎨 **Markdown Rendering Component**: A new, reusable Markdown rendering component (`MarkdownRenderer.vue`) was developed and integrated, enhancing the display of rich text content across chat messages and knowledge views.
-- 🔑 **Data Lake Account Key Authentication**: Introduced a new configuration option (`DATA_LAKE_ACCOUNT_KEY`) for authenticating with Azure Data Lake, offering more flexible access control.
-
-### Changed
-- 🔄 **RAG Agent Configuration Update**: The default RAG agent now leverages Azure OpenAI for both LLM and embedding models in its playground setup, and Milvus connection parameters (port, dimension, collection name) have been updated.
-- 💬 **Improved Chat Message Formatting**: Chat messages now support Markdown rendering, significantly improving the readability and structure of responses in the UI.
-- 🏷️ **Updated Context Prompt Tagging**: The RAG agent's context prompt template was updated to use `<REFERENCE_DOCUMENT>` tags instead of `<DOCUMENT>`, standardizing how external knowledge is referenced in prompts.
-- 🔑 **Relaxed API Token Access Control**: The API endpoint for managing tokens (`/tokens`) is now accessible to all authenticated users, removing the previous admin-only restriction.
-- 🧪 **Enriched Test Document Metadata**: Default test documents in `aihub_lib` have been updated to include more comprehensive metadata fields, such as `DOCUMENT_ID`, `CREATED_AT`, `UPDATED_AT`, and `INSERTED_AT`.
-- 📊 **Refined Event Statistics Accuracy**: The calculation of start events in persisted event entities has been improved by incorporating `event_type` filtering, leading to more accurate run statistics.
-- 🌍 **Expanded Internationalization**: Comprehensive updates to French, German, and Italian translations have been applied across the application, especially for new Knowledge Management features.
-
-### Refactor
-- 🧹 **Unified Data Model for Ingested Content**: The internal `Document` type was deprecated and replaced with the more specific `IngestedNode` and `IngestedDocument` models across agents, API, and library for improved consistency and expressiveness.
-- ⚙️ **Dedicated Cosmos Document Store Access**: CosmosDB access for the document store has been refactored into a dedicated `CosmosDocstoreAccess` and `CosmosDocstoreConfig`, improving module separation and configuration clarity.
-- 📦 **Modular Pipeline Resource Management**: The `aihub_pipeline` now features a reorganized and more modular approach to resource factories, enabling clearer and more explicit management of document stores and various vector store types (e.g., Milvus, Azure AI Search).
-- 🌐 **Frontend Component Streamlining**: Replaced the `ChatSourceDocument` component with `ChatSourceNodes` and `KnowledgeNodeContent` to enhance UI modularity and ensure consistent display of retrieved knowledge elements.
-- ⚙️ **Unique Event ID Generation**: The `ExternalEventDistributor` now deep copies events and regenerates unique `event_id`s for each agent, ensuring distinct traceability per agent run.
-- 📊 **Tracing Page URL Restructure**: The OpenAI service's tracing page URL has been refactored to explicitly include `/tracing`, improving URL structure and semantic clarity.
+- 🧹 **`useRouteQuery` Hook Usage**: Refactored the usage of `useRouteQuery` in Web UI composables and pages to explicitly pass `route` and `router` instances, aligning with recommended practices and improving compatibility.
 
 ### Removed
-- 🗑️ **Deprecated RAG Trigger Script**: The standalone `aihub_agent/playground/agent/RAGAgent/trigger.py` script has been removed, as its functionality has been integrated into other parts of the agent framework.
-- 🗑️ **Legacy Generic Document Type**: The generic `Document` Pydantic model previously used in `aihub_lib.nats.events.semantic.retriever` has been completely removed, superseded by the new, more descriptive `IngestedNode` and `IngestedDocument` types.
+- 🗑️ **Storybook Integration**: Completely removed Storybook development tooling and all related configurations from the web UI project, streamlining the frontend development environment.
+- 🗑️ **Deprecated `shad` Makefile Command**: Removed the `shad` command from the `aihub_web` Makefile, simplifying build scripts.
 
 ---
 
 
 
-## [v0.166.0] - 2025-05-20 - Refined Data Processing and System Robustness
+## [v0.183.0] - 2025-06-11 - Smarter Document Summarization and Enhanced Data Traceability
 
 ### Added
-- ✨ **Introduced Dedicated Summary Node Pipeline**: A new `summary_nodes_factory` graph asset has been added to provide a distinct pipeline step for generating and processing summary nodes, separate from general document node creation.
-- 🚀 **New Playground Shortcut for Development**: Added a `playground` command to the Makefile for easier local Dagster development and exploration of pipeline assets.
+- 📄 **Introduced `document_store_name` Metadata:** Nodes now include `document_store_name` metadata, enhancing traceability and organization by indicating their origin.
+- 🔗 **Integrated `document_store_name` into Chunking Pipeline:** The document chunking process now automatically populates the `document_store_name` metadata field for all generated nodes.
 
 ### Changed
-- 🔐 **Improved Azure Data Lake Authentication**: The `DataLakeAccess` component now explicitly passes credentials when initializing `AzureBlobFileSystem`, enhancing secure and reliable connections to Azure Data Lake.
-- ⚡️ **Enhanced Vector Store Query Robustness**: Implemented retry logic in the `VectorStoreIOManager` when querying for nodes, significantly improving the reliability of data retrieval from vector stores, especially in transient error scenarios.
-- ⚙️ **Updated Playground Configuration**: Modified playground settings to align with the new summary node processing, preparing it for dedicated testing and development.
+- 🧠 **Revamped Recursive Summary Parser:** A major overhaul of the recursive summary parser to generate more logical and accurate document summaries. This includes improved content grouping, robust handling of sequential sections, and precise relationship management between original and summary nodes.
+- 🌳 **Enhanced Summary Node Relationships:** Summary nodes now maintain a more coherent hierarchical context within the document structure, including new `PREVIOUS` and `NEXT` pointers, and refined `PARENT`/`CHILD` relationships.
+- 📝 **Improved Summary Prompting:** The underlying prompt for summarization has been updated across multiple languages (DE, EN, FR, IT) to generate more concise, direct, and "TL;DR" style summaries.
+- ⚡️ **Updated Playground Environment Configuration:** Internal variable names have been updated for clarity, and default settings now utilize "papers" for data lake containers and namespaces, streamlining demonstration and testing.
+- 🚀 **Switched Playground LLM to `gpt-4o-mini`:** The default language model for the playground environment has been updated to `gpt-4o-mini`, potentially offering more cost-effective or faster experimentation.
 
 ### Fixed
-- 🐛 **Ensured Document ID Indexing for Azure AI Search**: Corrected the `AzureAISearchVectorStoreFactory` to ensure that `DOCUMENT_ID` is consistently included and properly typed as a filterable field in Azure AI Search indexes, improving search and filtering capabilities.
+- 🐛 **Improved Empty Text Handling in Summarizer:** The LLM summarizer now gracefully handles empty or whitespace-only input, returning an empty string to prevent potential errors or irrelevant output.
 
 ### Refactor
-- 🔄 **Refactored Node Generation Workflows**: Extracted summary node generation from the primary `nodes_factory` into a dedicated `summary_nodes_factory` graph asset, allowing for more flexible and explicit control over the processing of summary nodes.
+- 🧹 **Cleaned `RecursiveSummaryParser` Internals:** Streamlined internal logic by integrating previously separate helper methods directly, improving code readability and maintainability.
 
 ---
 
 
 
-## [v0.165.0] - 2025-05-16 - Personalized Dashboards and Enhanced User Management
-
-### Added
-- ✨ **Personalized Dashboards**: Introduced a new, customizable dashboard feature allowing users to add, configure, and arrange widgets to visualize agent event statistics (e.g., started runs, successful runs, errors, human-in-the-loop requests) directly on their homepage.
-- 🚀 **Persistent User Profiles**: Implemented persistent storage for user profiles in a dedicated `UserEntity` within the database. This allows for storing user-specific settings like dashboard configurations and favorite modules.
-- 🔐 **Azure Graph Service**: Added a new core service, `AzureGraphService`, to centralize and manage interactions with the Microsoft Graph API, enabling more comprehensive and efficient retrieval of user profiles, images, and application-specific roles from Azure AD.
-- 📊 **New Dashboard Components**: Introduced various UI components for dashboard widgets, including number displays, line charts, and bar charts, powered by ApexCharts for robust data visualization.
-
-### Changed
-- ⚡️ **Asynchronous API Operations**: Migrated numerous core API services and endpoints (including Thread management, OpenAI interactions, and User information retrieval) to asynchronous operations, significantly improving application responsiveness and scalability under load.
-- 🔄 **API Token Role Resolution**: Updated API token authentication such that roles are no longer stored directly within the token. Instead, user roles are dynamically resolved at authentication time from the newly introduced `UserEntity`, ensuring permissions are always up-to-date.
-- 🔑 **Enhanced OpenWebUI Integration**: Strengthened the authentication flow for OpenWebUI by adding hash validation for user identification headers and leveraging Azure Graph for authoritative resolution of user roles, improving security and data consistency.
-- 📄 **Improved User Profile Management**: Refactored the internal handling of user information, introducing a distinct `UserIdentity` for internal system use and updating `UserDTO` for data transfer. User data is now consistently retrieved and updated in the `UserEntity`.
-- 🌐 **Expanded Internationalization**: Added new localization keys for time ranges, chart messages, and various dashboard elements across supported languages.
-
-### Refactor
-- 🧹 **Unified User Data Model**: Consolidated the user data model by deprecating the embedded `ApiUser` in `BearerToken` and centralizing user profile information and roles within the new `UserEntity`.
-- ⚙️ **Modular Authentication Handlers**: Enhanced the `TokenAndOauth2Handler` to support a list of multiple bearer and OAuth2 authentication strategies, improving flexibility and extensibility.
-- 📈 **Refined Event Timeseries Querying**: Updated the event timeseries composable to allow querying event statistics for specific agents and threads, enabling more granular data analysis.
+## [v0.182.0] - 2025-06-11 - Enhanced Bot Responsiveness
 
 ### Fixed
-- 🐛 **Query Invalidation Logic**: Adjusted the logic for invalidating cached queries on `StopEvent` and `ExceptionEvent` to ensure related threads and agent data are refreshed reliably.
+- 🐛 **Resolved Bot Typing Behavior:** Corrected the timing of the bot's "typing" indicator to ensure it only appears when the bot is actively processing a response, preventing misleading indicators for interactions the bot is configured not to respond to (e.g., expired conversations).
 
 ---
 
 
 
-## [v0.164.0] - 2025-05-15 - Infrastructure Consistency Update
-
-### Refactor
-- 🧹 **Pulumi Azure Agent Configuration:** Corrected the type definition for environment variables from `EnvironmentVarArgs` to `EnvironmentVariableArgs` within the Azure Agent deployment module for improved consistency and alignment with the Pulumi Azure Native SDK.
-
----
-
-
-
-## [v0.163.0] - 2025-05-15 - Enhanced Agent Deployment Configuration and Developer Tooling
-
-### Added
-- ✨ **Customizable Agent Environment Variables**: Introduced the ability to specify additional environment variables for agent containers during deployment, including support for secret references, providing greater flexibility for custom configurations.
+## [v0.181.0] - 2025-06-10 - Core Enhancements and Stability Improvements
 
 ### Changed
-- 🔄 **Infrastructure Development Enhancements**: Updated development dependencies for `aihub_iac` to include new testing and linting tools such as `pytest`, `ruff`, `mypy`, and `isort`, improving code quality and development workflows.
-
-### Refactor
-- 🧹 **Improved AI Search Naming Logic**: Refined the internal logic for generating AI Search service names in infrastructure deployments, ensuring more consistent and robust resource naming.
-- 📄 **Minor Library Cleanups**: Performed small refactorings in the `aihub_lib` related to import statements and type annotations for improved code clarity and maintainability.
-
----
-
-
-
-## [v0.162.0] - 2025-05-14 - Azure Bot Setup Enhancements and Core Updates
-
-### Changed
-- 🚀 **Improved Azure Bot Setup**: Enhanced the `setup_azure_bot` script to automatically create a **service principal** for the Azure AD application, ensuring proper authentication and authorization for bot operations.
-
----
-
-
-
-## [v0.161.0] - 2025-05-13 - Revamped Admin Experience: Structured Views and Event Displays
-
-### Added
-- 🆕 **New Structural Components**: Introduced `StructuralColumn` and `StructuralScreen` to provide a consistent and modern layout across various administration pages.
-- 🖼️ **Agent List Component**: Added a dedicated `Agent/List.vue` component for displaying available agents, enhancing clarity in the Agent Admin section.
-- 📊 **Interaction Display List**: Implemented a new `Display/List/DisplayList.vue` component and corresponding page (`/admin/thread/[thread_id]/display`) to group and navigate through different interaction "displays" within a thread.
-- 📄 **Thread Details View**: Introduced the `Thread/Details.vue` component, which consolidates display-level statistics and event viewing within a thread's comprehensive overview.
-- 🔄 **Infinite Scroll Re-extraction**: Extracted the infinite scrolling logic into a new `useThreadsInfinite.ts` composable, maintaining the functionality for potential future use cases.
-- 🌐 **New Internationalization Keys**: Added new i18n keys to support the new Agent List and Display List components, improving multi-language support.
-
-### Changed
-- 🚀 **Thread List Pagination**: Switched the main thread listing from infinite scrolling to a paginated table (`useThreads`), offering better control and performance for managing large numbers of threads.
-- 🗺️ **Updated Thread and Agent Navigation**: Replaced custom top navigation bars on thread and agent detail pages with `SelectButton` for a more consistent and user-friendly sub-navigation experience.
-- ⚡️ **Event View Rework**: Simplified the `Event/List/EventList.vue` component by moving its tabbed display and summary statistics into the new `Thread/Details.vue`, streamlining event visualization.
-- 🎨 **Enhanced UI Styling**: Applied various minor styling adjustments across components like `Event/Display/Base.vue`, `Event/Statistics.vue`, and `Service/Selection.vue` to improve visual consistency and user experience.
-- 🔗 **Updated Thread Navigation Paths**: Adjusted routing for thread hierarchy and chat messages to align with the new "Display" concept, now linking to `/admin/thread/[id]/display/[display_id]`.
-- 📊 **Timeseries Chart Y-axis Labels**: Improved readability of timeseries charts by adjusting the Y-axis label positioning.
-
-### Refactor
-- 🧹 **Unified Internationalization (i18n) Key Structure**: Refactored numerous i18n keys across the application (e.g., from `eventList` to `event.list`, `threadUtils` to `thread.utils`) for better organization and consistency.
-- ⚙️ **Optimized Data Lake Access**: Implemented lazy loading for the `AzureBlobFileSystem` client within `DataLakeAccess` to improve resource utilization and startup performance.
-- 📚 **Consolidated Layout Logic**: Moved core layout logic and `ProgressBar` management into the new `StructuralColumn` component, reducing duplication and simplifying page implementations.
-- 🔄 **ESLint Configuration Update**: Adjusted ESLint rules to support Vue 3 template roots and whitelisted new PrimeIcons classes for Tailwind CSS.
+- 🚀 **Enhanced Agent Event Distribution:** The `AgentCompletionHandler` now supports a custom `display_id` for agent events, providing greater flexibility in event tracking and display.
+- 💬 **Flexible OpenAI Completion Parameters:** OpenAI completion methods (`get_completion`, `get_stream_completion`) have been extended to accept additional keyword arguments, allowing for more diverse model interactions.
+- 🌍 **Localized Error Handling:** Integrated `LocaleHandler` into the `OpenaiCompletionHandler`'s exception handling, paving the way for more user-friendly and localized error messages.
 
 ### Fixed
-- 🐛 **Workflow Visualization Loading**: Ensured the workflow visualization component only attempts to render when `network_graph` data is available, preventing potential display issues.
-
----
-
-
-
-## [v0.160.0] - 2025-05-13 - Embedding Model Configuration Improvements
-
-### Changed
-- ⚡️ **Refined Azure OpenAI Embedding Configuration**: Enhanced the handling of the `dimensions` parameter for Azure OpenAI embedding models, ensuring more accurate and flexible integration with models that support specific embedding vector sizes, such as `text-embedding-3`.
-
----
-
-
-
-## [v0.159.0] - 2025-05-13 - Core Enhancements: Embedding Control & Faster Event Retrieval
-
-### Added
-- ✨ **Expanded Embedding Model Configuration:** Introduced a `dimensions` parameter for embedding models (e.g., text-embedding-3) to allow specifying the desired output vector size, offering finer control over embeddings.
-- 🚀 **Improved Event Query Performance:** Added a new database index on `event_data.created_at` for `PersistedEventEntity`, significantly enhancing the efficiency of querying events by their creation timestamp.
-
----
-
-
-
-## [v0.158.0] - 2025-05-12 - Internal API Model Refinements
+- 🐛 **Improved Content Type Robustness:** Added checks for `file_info.content_type` in the `ContentExtractor` to prevent potential errors when processing file attachments with undefined or missing content types.
 
 ### Refactor
-- 🧹 Streamlined **API Model Creation**: Removed redundant `__base__=BaseModel` parameter when dynamically generating input and output Pydantic models for events, simplifying the codebase.
+- 🧹 **Streamlined Completion Handler Calls:** Removed redundant `service` parameters from `get_stream_completion` and `get_completion` calls within the `BaseChatBot`, simplifying internal API usage.
+- 🔄 **Centralized Completion Handler Import:** Adjusted import paths for the `CompletionHandler` to reflect its dedicated module, improving code organization and maintainability.
+- ⚙️ **Standardized Channel ID Usage:** Replaced a hardcoded string with the `Channels.webchat` constant in `StreamAgentChatBot` for improved consistency and maintainability.
 
 ---
 
 
 
-## [v0.157.0] - 2025-05-08 - Infrastructure and Configuration Refinements
-
-### Refactor
-- 🧹 **WebUI Configuration Clarity:** Explicitly set `None` as the default value for optional API key fields within the OpenWebUI configuration, enhancing readability and consistency.
-- ⚙️ **Improved WebUI Infrastructure Naming:** Refined the naming convention for WebUI container applications and integrated registry settings, contributing to more robust and consistent infrastructure deployments.
-
----
-
-
-
-## [v0.156.0] - 2025-05-08 - Deeper Insights: Event Timeseries and UI Refinements
-
-### Added
-- ✨ **Event Timeseries API and UI**: Introduced new API endpoints and comprehensive frontend components to visualize time-based event statistics, offering insights into event trends, agent invocations, and various interaction types (Start, Stop, HITL, BITL, AITL).
-- 📈 **Interactive Charts**: Integrated the ApexCharts library to render interactive timeseries charts for event data on both agent and thread overview pages, allowing users to select different time ranges (1h, 24h, 30d, 365d).
-- 💰 **LLM Cost & Run Duration Metrics**: Added explicit display of LLM costs and overall run duration directly on the thread overview for better performance tracking.
-- ℹ️ **Detailed Agent Overview**: Enhanced the agent overview page to prominently display key agent information such as name, class, ID, and online status.
-
-### Changed
-- 🔄 **Consistent Terminology**: Renamed "latency" to "**duration**" across all API responses, data transfer objects (DTOs), and user interfaces for improved clarity and consistency in performance metrics.
-- 🎨 **UI/UX Improvements**: Refined the visual presentation and responsiveness of various UI elements, including chat message styling, event list layouts, and overall agent/thread overview pages.
-- ⚙️ **Optimized Data Handling**: Implemented more robust timezone handling for datetime objects in API responses, ensuring consistent and accurate time representation across the platform.
-- ⚡️ **Improved Caching & Real-time Updates**: Adjusted frontend query caching strategies and introduced intelligent cache invalidation to provide more immediate updates for thread and agent statistics upon event completion.
-- 📝 **Message Content Structure**: Revised the internal representation of **message content** to support a flexible block-based structure (e.g., text, image, audio) while maintaining a simplified `content` property for basic text.
+## [v0.180.0] - 2025-06-10 - Enhanced Bot Robustness and Core Version Alignment
 
 ### Fixed
-- 🐛 **Accurate Run Statistics**: Corrected the backend aggregation logic for run statistics to prevent duplicate counting of events within a single run, ensuring more precise data for performance analysis.
-
-### Refactor
-- 🧹 **Centralized User Access Checks**: Consolidated user membership verification within threads into a dedicated helper function for cleaner and more maintainable code.
-- ⚙️ **Standardized Frontend Query States**: Standardized the naming convention for query loading states from `isLoading` to `isPending` across frontend composables for consistency with the underlying query library.
+- 🐛 **Improved Chat Bot Locale Handling:** Addressed an issue in the `BaseChatBot` to gracefully handle scenarios where user locale information might be missing, ensuring robust locale resolution by falling back to a default.
 
 ---
 
 
 
-## [v0.155.0] - 2025-05-08 - Revolutionizing Speech-to-Text and Data Persistence
+## [v0.179.0] - 2025-06-10 - Next-Gen Chat: File Uploads & Seamless WebUI Integration
 
 ### Added
-- ✨ **Introduced Audio Chunking Service:** A new `AudioChunkingService` has been added to `aihub_api`, providing intelligent methods to split large audio files at silence points and seamlessly merge their transcriptions, enabling robust processing of files that exceed API size limits.
-- 🎙️ **Enhanced Speech-to-Text (STT) for Large Files:** The STT service within `aihub_api` now automatically chunks large audio inputs, processes them in segments, and merges the resulting transcriptions, significantly increasing the maximum supported audio file size.
-- 🗄️ **Persistent MongoDB Storage:** Added a dedicated Docker volume for MongoDB, ensuring that all database data is permanently stored and persists across container restarts.
-- 📦 **FFmpeg Requirement for Audio Processing:** Integrated `ffmpeg` as a new dependency for `aihub_api` to power advanced audio manipulation capabilities, crucial for the new chunking service.
-
----
-
-
-
-## [v0.154.0] - 2025-05-08 - Enhanced Release Process and IAC Integration
+- ✨ Introduced comprehensive **file upload support** for chat completion requests, enabling richer contextual interactions with AI agents.
+- 📝 Defined a new `**UserUploadedFile**` data model to standardize the representation of uploaded files across the platform.
+- 🌐 Launched a new **Open WebUI pipeline** that seamlessly integrates file sending to AI-Hub assistants and visualizes retrieved sources within the UI.
 
 ### Changed
-- 🚀 **Aligned `aihub_iac` Versioning:** The `aihub_iac` (Infrastructure as Code) component's version has been significantly synchronized with the main project release cadence, bringing it up to `v0.154.0`.
-- ⚙️ **Integrated `aihub_iac` into Release Workflow:** The `aihub_iac` component is now included in the automated GitHub Actions workflow for version tagging, streamlining its release management.
-- 📦 **Standardized Microservice Versions:** All core microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_lib`, `aihub_pipeline`) have been updated to `v0.154.0` to ensure consistent versioning across the platform.
-
----
-
-
-
-## [v0.153.0] - 2025-05-08 - Core Version Updates and CI/CD Enhancements
-
-### Added
-- ✨ **Expanded Semantic PR Scopes**: Introduced `iac` and `ci-cd` as new validation scopes for semantic pull requests, improving categorization and consistency for contributions related to Infrastructure as Code and Continuous Integration/Delivery.
-
-### Changed
-- 🔄 **Core Version Alignment**: Synchronized the version across `aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_lib`, and `aihub_pipeline` to `v0.153.0`, ensuring all core components reflect the latest release.
-
----
-
-
-
-## [v0.152.0] - 2025-05-08 - Introducing Pulumi-Powered Azure IaC for AIHub
-
-### Added
-- 🚀 **New Infrastructure as Code (IaC) Module**: Introduced `aihub_iac`, a comprehensive Pulumi-based solution for deploying and managing AIHub's Azure infrastructure. This enables automated, reproducible, and secure provisioning of resources.
-- 🌐 **Automated Network Setup**: Implemented Infrastructure as Code for creating and managing Azure Virtual Networks (VNet), subnets, and Network Security Groups (NSGs) with predefined access rules.
-- 💻 **Centralized Microservice Deployment**: Added IaC definitions for deploying core AIHub microservices, including **Agents**, **API**, **Bots**, **Phoenix**, **Dagster**, and **OpenWebUI**, ensuring consistent and efficient deployments.
-- 💾 **Managed Data Stores**: Integrated IaC for configuring and deploying essential data stores such as **Azure Cognitive Search** (for vector search), **Cosmos DB** (for document and API data), and **PostgreSQL** (with pgvector support for relational data).
-- 🔑 **Enhanced Security with Private Endpoints and Identities**: Incorporated private endpoints for secure access to data services and automated user-assigned managed identity creation for granular access control.
-- 📄 **Updated On-Premises Technology Documentation**: Expanded the `README.md` to include **PG-vector**, **Postgres**, and **Docker** as supported on-premises technologies.
-
-### Changed
-- 🔄 **Integrated CI/CD Workflows**: Updated the project's `Makefile` to include linting, formatting, and type-checking for the newly introduced `aihub_iac` module, ensuring code quality across the entire codebase.
-
----
-
-
-
-## [v0.151.0] - 2025-05-06 - AI-Hub Evolution: Persistent Agents, Enriched Thread Details, and Multilingual UI
-
-### Added
-- 🦾 **Persistent Agent Profiles:** Introduced a new persistence layer for agents (`AgentEntity`), allowing their configurations, workflow graphs, and event specifications to be stored in the database. This enables the display of agent information even when agents are offline.
-- 📊 **Advanced Thread Analytics:** Implemented comprehensive thread statistics, including turn counts, event counts, LLM costs, and various "in-the-loop" states (Human-In-The-Loop, Agent-In-The-Loop, Bot-In-The-Loop). This provides a deeper understanding of conversation flows and agent performance.
-- 📄 **Paginated Thread and Agent Views:** Introduced pagination for listing user threads and agent-specific threads, improving performance and user experience for large datasets.
-- 🌐 **Comprehensive UI Localization:** Added extensive new localization keys across the user interface, enabling a fully multilingual experience for various UI elements, including dynamic event names and descriptions.
-- 📈 **Enhanced Workflow Visualization:** Improved the workflow visualizer to accurately represent "in-the-loop" request-response patterns (AITL, HITL, BITL), offering a clearer understanding of complex agent interactions.
-- 🔌 **Live Event Streaming via WebSockets:** Implemented WebSocket support for real-time event updates to the UI, providing live feedback on agent activities and thread progression.
-- ✨ **Multimodal Message Support:** Updated internal message structures to support diverse content types, including text, images, and audio, paving the way for richer interactions.
-- 🛣️ **Router Event Visualization:** Introduced a new event type and UI component to visualize routing decisions made by LLMs within a workflow, detailing chosen paths and reasons.
-- 🚨 **Dedicated Exception Event Display:** Added a specific event and UI component for displaying exceptions, providing immediate visibility into errors during agent runs.
-- 🚀 **Frontend Testing Events:** Expanded the `FrontendTestingAgent` with new events and patterns to facilitate more robust UI testing of complex workflows.
-- 🧩 **Modular UI Components:** Introduced new reusable Vue components for Agent and User Avatars, and generic Navigation bars (Left and Top), enhancing UI consistency and development speed.
-
-### Changed
-- 🔄 **Refactored Thread Management:** Migrated core thread management logic from real-time NATS interactions to a database-driven persistence model, enabling richer query capabilities and historical data analysis.
-- 🏷️ **Localization Key Renaming:** Standardized localization keys by changing the `agents.` prefix to `agent.` for consistency across the application.
-- 💬 **API Endpoint Naming:** Renamed OpenAI-compatible endpoints (e.g., `get_models` to `get_models_with_assistants`) to clarify that they also include AI-Hub assistants.
-- 🖥️ **Centralized WebSocket Event Localization:** Refactored WebSocket event processing to localize display names and descriptions directly on the backend before sending to the client, simplifying frontend logic.
-- 🗺️ **Dynamic Event Display Logic:** Updated event display components to dynamically render localized event names and descriptions directly from the backend, reducing hardcoded strings.
-- 📇 **UI Layout for Admin Pages:** Redesigned the agent and thread administration pages to leverage new navigation components, providing a more structured and intuitive user experience.
+- 🔄 Extended **core chat services** (`ChatService` and `OpenaiService`) to process and manage user-uploaded files within conversations.
+- ⚡️ Enhanced **internal event handling** to propagate `UserUploadedFile` data, ensuring consistent context across agents and services.
 
 ### Fixed
-- 🐛 **Improved Error Logging:** Replaced numerous `logger.error` calls with `logger.exception` across the codebase, ensuring that stack traces are consistently captured for better debugging.
-- 🩹 **Event Deserialization Robustness:** Enhanced event deserialization logic to correctly handle complex inheritance hierarchies, particularly for events with multiple parent classes, preventing data integrity issues.
-- 🛡️ **Stricter Event Validation:** Implemented stricter validation for incoming `ExternalEvent`s, ensuring `thread_id` is always present and setting default `display_id` values.
-- 📐 **UI Layout Correction:** Addressed a UI issue in the default layout where content was partially hidden by the fixed top navigation bar.
-- 🔒 **Enhanced WebSocket Security:** Improved WebSocket connection handling with more specific `PermissionError` for unauthorized users.
-- 🔗 **API Client Regeneration:** Updated the generated OpenAPI client to reflect all new DTOs, endpoints, and changes across the API, ensuring seamless communication.
+- 🛠️ Addressed a compatibility issue in the **API token generation script** (`generate_api_token.py`) for improved reliability with Azure CLI.
+
+---
+
+
+
+## [v0.178.0] - 2025-06-05 - Infrastructure Control and WebUI Scalability
+
+### Added
+- ✨ **Introduced `webui_secret_key`**: A new secret key can now be configured for OpenWebUI, enhancing security for the user interface.
+- 🚀 **Configurable WebUI Scaling**: Enabled configuration of minimum and maximum replicas for the WebUI container, allowing for more flexible resource allocation and scalability.
+
+### Changed
+- ⚙️ **Azure Container Apps Subnet Delegation**: Implemented subnet delegations for Dagster and WebUI modules, improving integration with Azure Container Apps managed environments.
+- 💾 **Dagster PostgreSQL Data Retention**: Configured the Dagster PostgreSQL database to retain data upon deletion, preventing accidental data loss during infrastructure changes.
+- ⚡️ **WebUI Performance Optimizations**: Enhanced WebUI performance by dynamically setting UVicorn workers and thread pool size based on allocated CPU, and integrated the new `WEBUI_SECRET_KEY` and Redis URL.
+- 📊 **Managed Environment Workload Profiles**: Defined explicit workload profiles for Azure Container Apps, optimizing resource allocation and cost efficiency.
+
+### Refactor
+- 🧹 **Codebase Cleanup**: Removed several unused imports across Agent, API, Bot, and WebUI configurations for cleaner and more efficient code.
+
+---
+
+
+
+## [v0.177.0] - 2025-06-04 - Enhanced Document Processing with AI-Powered Figure & Table Management
+
+### Added
+- ✨ **Automated Figure Description Generation:** Introduced AI-powered generation of detailed alt text for figures in documents, leveraging vision models to describe visual content for improved accessibility.
+- 🖼️ **Figure and Table Extraction in Document Processing:** Implemented robust extraction and handling of figures and tables from documents, allowing them to be processed as distinct, enriched content elements.
+- 📄 **Page Number Metadata:** Added functionality to extract and store page numbers as metadata for document nodes, significantly improving context and precise referencing within documents.
+- 🗑️ **Figure Cleanup for Deleted Documents:** Introduced automatic deletion of associated figure data from the data lake when reference documents are removed, ensuring data consistency and storage efficiency.
+- ⚡️ **Prompt for Figure Description Generation:** Added new multi-language prompts specifically designed for generating high-quality, accessible descriptions for figures.
+
+### Changed
+- 🔄 **Enhanced Document Processing Pipeline:** Significantly restructured and enhanced the document ingestion pipeline to support comprehensive figure and table extraction, reformatting, and injection of AI-generated descriptions.
+- 📈 **Improved Table Reformatting:** Updated the pipeline to convert HTML tables within documents to Markdown format, improving readability and data consistency for processed content.
+- 🗣️ **Summarizer Prompt Language Consistency:** Modified summarization prompts to explicitly ensure the output summary is generated in the same language as the input text.
+- ⚙️ **Data Lake Resource Configuration:** Updated data lake resources to include dedicated directories for storing extracted figures, streamlining content organization.
+
+### Refactor
+- 🧹 **Centralized Azure Suffix Constants:** Moved various Azure resource suffix constants into a single, dedicated constant file for improved maintainability and consistency across Infrastructure as Code (IAC) modules.
+- 🗂️ **Refactored Document Parsing Logic:** Reworked the core document parsing operations to support the new figure and table extraction capabilities, separating concerns more clearly for better modularity.
+
+### Fixed
+- 🐛 **Typo in Document Store Removal Logic:** Corrected a minor typo in the logic for fetching reference documents to be removed from the document store.
+
+---
+
+
+
+## [v0.175.0] - 2025-06-02 - Refined OpenAI Integrations and Infrastructure Control
+
+### Refactor
+- 🦾 **Improved OpenAI API Integration:** Centralized and streamlined how request parameters are handled for OpenAI SDK calls (Chat Completions, Image Generation, Text-to-Speech). This enhancement intelligently filters and prepares arguments from Pydantic models, ensuring robust and error-free communication with the OpenAI API.
+- ⚡️ **Enhanced Internal API Consistency:** API controllers now directly pass full Pydantic request models to service layers, improving type safety and internal consistency across the codebase.
+
+### Changed
+- 🔄 **Updated Core Docker Images:** Switched `docker-compose` configurations to utilize custom-built `ghcr.io` images for **PostgreSQL with PgVector** and **Open WebUI**, providing greater control and consistency over deployment environments.
+
+---
+
+
+
+## [v0.174.0] - 2025-05-30 - Infrastructure Constant Refinement
+
+### Refactor
+- 🧹 **Centralized Document Store Suffix:** Extracted the `DEFAULT_DOCSTORE_SUFFIX` constant from the `StoresConfig` module into a new, dedicated constants file, enhancing code organization and maintainability within the infrastructure components.
+
+---
+
+
+
+## [v0.173.0] - 2025-05-30 - Infrastructure Enhancements: Cosmos DB Document Store Support
+
+### Added
+- ✨ **Cosmos DB Document Store Integration:** Introduced full support for provisioning and managing Cosmos DB as a document store within the Azure Infrastructure as Code (IaC) layer.
+- 🚀 **Standardized Cosmos DB Naming:** Implemented a new utility to ensure consistent and predictable naming conventions for Cosmos DB document store instances.
+- 🔑 **Automated Identity Permissions for Cosmos DB:** Enhanced user-assigned identity management to automatically assign the necessary roles for secure interaction with Cosmos DB document stores.
+
+---
+
+
+
+## [v0.172.0] - 2025-05-28 - Revolutionizing LLM Evaluation: New Suite, API Refinements, and Core Infrastructure Upgrades
+
+### Added
+- ✨ **Comprehensive LLM Evaluation Suite**: Introduced a new, full-fledged module for evaluating Large Language Models (LLMs) and agents. This includes dedicated API endpoints, backend services, LLM-based judging (via Arize Phoenix), and a complete user interface.
+- 🦾 **LLM-Powered Evaluation Judges**: Integrated an LLM-powered judging mechanism for automated evaluation of agent responses on dimensions such as correctness, completeness, and conciseness, configurable via internationalization (i18n) prompts.
+- 📄 **Multilingual Evaluation Prompts**: Added new i18n translations for LLM judge prompts, enabling multilingual evaluation capabilities for agent responses and ensuring broader applicability.
+- 🚀 **Arize Phoenix Integration**: Integrated Arize Phoenix as the core framework for managing and visualizing LLM evaluation datasets and experiment results, providing powerful insights into agent performance.
+- 📚 **New UI Components for Evaluation**: Introduced a suite of new user interface components to support the evaluation module, including intuitive cards for datasets and experiments, and detailed results views for comprehensive analysis.
+- ⚙️ **New UI Composables for Evaluation**: Added dedicated Vue composables to streamline data fetching and mutation for the new evaluation features, simplifying frontend development and maintenance.
+- 📦 **Core Dependency: `arize-phoenix`**: Incorporated `arize-phoenix` as a primary dependency, providing the underlying capabilities for robust LLM evaluation.
+
+### Changed
+- 🌐 **API Route Pluralization**: Renamed key API routes (e.g., `/agent` to `/agents`, `/thread` to `/threads`, `/event` to `/events`, `/suite` to `/suites`, `/user` to `/users`) for improved consistency and clarity across the API surface.
+- 🖥️ **UI Navigation and Path Updates**: Aligned frontend navigation paths and URLs with the new pluralized API routes, ensuring a consistent user experience.
+- ⚡️ **Infrastructure Component Upgrades**: Updated Docker images for core services, including Phoenix (to v10.0.4), NATS (to 2.11.4), Redis (to 8.0.1), Mongo (to 8.0.9), Llama.cpp, HuggingFace TEI, and Attu, enhancing overall stability and performance.
+- 🛡️ **GitHub Actions Permissions**: Refined GitHub Actions workflows to use specific `PAT_GITHUB_READ_PACKAGES` for package access, improving security and clarity in CI/CD processes.
+- ✅ **Enhanced Docker Health Checks**: Added or improved health checks for several Docker services (Phoenix, Mongo, Llama.cpp, HF-TEI, Attu) to ensure better service readiness and reliability.
+- 💾 **Persistent Data Volumes for Databases**: Configured data volumes for Redis and MongoDB in Docker Compose files, ensuring data persistence across container restarts.
+- 🎨 **UI Theming Consistency**: Updated the primary color scheme in the UI theme to leverage `surface` colors, promoting a more cohesive and modern visual design.
+- 📈 **Improved Dashboard Layout Responsiveness**: Adjusted grid column layouts in the dashboard for enhanced responsiveness on a wider range of screen sizes.
+- 🔄 **Asynchronous Context Handling in Playground**: Applied `nest_asyncio` in the API playground to better manage asynchronous contexts, improving the local development experience.
+- 📝 **Updated Localization Strings**: Revised several localization strings across German, French, and Italian translations for improved clarity and consistency, including a change from "Rounds" to "Turns" for thread interactions.
+
+### Refactor
+- 🧹 **Centralized Phoenix Configuration**: Relocated the `PhoenixConfig` module from `aihub_agent` to `aihub_lib`, centralizing infrastructure-related configurations for better maintainability.
+- ♻️ **Improved i18n Object Loading**: Refactored the `LocaleHandler`'s `t_object` method to dynamically use configured load paths, making i18n resource loading more flexible and robust.
+- 🌱 **LlamaIndex Schema Alignment**: Updated the `VectorPrevNextPostProcessor` tests to replace `Document` with `TextNode`, aligning with recent schema changes in the LlamaIndex library.
+
+---
+
+
+
+## [v0.171.0] - 2025-05-27 - Granular Network Control and Performance Boosts
+
+### Added
+- ✨ **Introduced `Storage Blob Data Contributor` Role**: A new Azure built-in role is now available, enabling fine-grained permissions for blob storage.
+- 🗺️ **Defined Dedicated Subnet CIDRs**: Explicit CIDR blocks for Dagster, NATS, Phoenix, WebUI, and core data stores (Cosmos DB, Search, PostgreSQL) have been added, improving network segmentation.
+- 🔑 **Granted Storage Blob Access to Dagster**: The Dagster identity is now explicitly assigned the `Storage Blob Data Contributor` role, ensuring proper access to its data lake.
+
+### Changed
+- 🚀 **Increased Resource Allocations**:
+    - The **Dagster webserver** now benefits from increased CPU (from 0.5 to 1.5 cores) and memory (from 1Gi to 3Gi) for enhanced performance.
+    - The **PostgreSQL database** has been upgraded with larger storage capacity (from 32GB to 64GB) and a more powerful SKU (`Standard_B1ms` to `Standard_B2s`) to support demanding workloads.
+- 🌐 **Refined Network Provider Initialization**: Network providers now receive more comprehensive location details for improved consistency and accuracy in resource deployment.
+
+### Refactor
+- 🧹 **Decentralized Subnet and NSG Management**: The logic for creating subnets and Network Security Groups (NSGs) has been moved from the central `Network` module into the respective application modules (Dagster, NATS, Phoenix, Stores, WebUI). This change promotes more localized and application-specific network configurations, making the overall infrastructure more modular and easier to manage.
+- ⬆️ **Pulumi Azure Native Provider Updates**: Updated internal Pulumi provider imports for Cosmos DB (now using `cosmosdb` instead of `documentdb`) and Private DNS zones (now using `privatedns` instead of `network`), aligning with the latest provider structure.
+- ⚙️ **Improved Resource Dependency Handling**: Enhanced the provisioning logic for storage accounts and private endpoints to ensure robust and correct dependency resolution during deployment.
+- 🔄 **Standardized NATS File Share Naming**: Corrected the file share name used for NATS to align with its intended purpose, improving clarity and maintainability.
+
+### Fixed
+- 🐛 **Resolved Storage Account Name Resolution**: Addressed an issue in file share creation where the storage account name might not be fully resolved, ensuring reliable provisioning.
+
+---
+
+
+
+## [v0.170.0] - 2025-05-26 - Infrastructure Tooling Enhancements
+
+### Added
+- 🚀 **New `mirror-image` Makefile Target:** Introduced a utility in `aihub_iac` to easily pull, retag, and push Docker images between registries, streamlining image management and distribution for internal consumption.
+
+---
+
+
+
+## [v0.169.0] - 2025-05-26 - Enhanced DataLakeFile Handling
+
+### Fixed
+- 🐛 **Improved DataLakeFile Owner Detection**: Enhanced the logic for determining the owner of a `DataLakeFile` to be more robust across different environments. The system now checks the `USER` environment variable (Unix), `USERNAME` environment variable (Windows), and falls back to a default `pipeline-user` if no specific user is found, ensuring proper ownership assignment in varied execution contexts.
+
+---
+
+
+
+## [v0.168.0] - 2025-05-24 - Infrastructure Refinements for Enhanced Stability
+
+### Changed
+- 🔄 **NATS Container IP Address**: Assigned a fixed private IP address to the NATS container instance in Azure deployments. This enhancement improves network stability and predictability for NATS within the infrastructure.
+
+---
+
+
+
+## [v0.167.0] - 2025-05-23 - Knowledge Base and RAG System Evolution
+
+### Added
+- ✨ **Knowledge Base Management UI**: Introduced a comprehensive new section in the Admin UI for managing and viewing ingested documents, their individual nodes (chunks), and generated summaries, providing deep insights into RAG data.
+- 📄 **Standardized Ingested Data Models**: Implemented new Pydantic models (`IngestedDocument`, `IngestedNode`) to provide a consistent and rich structure for all ingested data and its metadata, improving data quality and UI display capabilities.
+- 🚀 **Milvus Vector Store Integration**: Added explicit support and resources for Milvus as a vector store option within the ingestion pipelines, enhancing flexibility for vector database choices.
+- 🤖 **Agent Card Component**: Introduced a new UI component for displaying agents in a card format, improving the visual presentation and navigation of available agents.
+- 🖼️ **Dedicated Markdown Renderer**: Added a new UI component for rendering markdown content, enhancing readability and consistency across the application, especially for LLM responses and document nodes.
+- ⚡️ **Open WebUI Actions**: Implemented new actions (`Sources` and `Tracing`) for Open WebUI, allowing users to directly navigate from Open WebUI conversations to detailed source documents and event traces in the AI-Hub Suite.
+- 🛠️ **`attu` Service**: Included the `attu` service in the Milvus Docker Compose setup, providing a web-based GUI for Milvus for easier management and debugging.
+- 🧩 **Pipeline Metadata Operations**: Added new pipeline operations to ensure default metadata compatibility for `RefDoc` documents and `TextNode` objects, standardizing data during ingestion.
+
+### Changed
+- 🔄 **Core RAG Data Model**: Renamed and restructured internal data types from generic `Document` to more granular `IngestedNode` across RAG agents, retriever, and reranker events, providing more precise information about retrieved content.
+- 📖 **Context Prompt Format**: Updated the RAG agent's context prompt format from `<DOCUMENT [metadata]>` to `<REFERENCE_DOCUMENT [metadata]>` for clearer demarcation of contextual information from retrieved sources.
+- 📈 **Enriched Document & Node Metadata**: Expanded the metadata stored with documents and nodes to include fields like `number_of_pages`, `document_title`, `language`, and more detailed timestamp information, improving data richness for UI and analytics.
+- ⚙️ **Configurable Document Store Connection**: Separated and standardized the CosmosDB connection for the document store, allowing for more robust configuration and isolation from other database connections.
+- 🔑 **API Token Controller Permissions**: Adjusted permissions for the API Token Controller, making it accessible to a wider range of users instead of being admin-only.
+- 🔗 **Data Lake Authentication**: Added support for authentication towards Azure Data Lake using an account key, providing an alternative to implicit Azure login for pipeline operations.
+- 🌐 **Localization Updates**: Comprehensive updates to French, German, and Italian translations to reflect new features and terminology across the application.
+- 📊 **Agent & Thread List Enhancements**: Implemented selection and visual highlighting for agents and threads in their respective lists within the Admin UI, improving user navigation and context.
+- ⚡️ **Azure Document Intelligence API Version**: Updated the default API version for Azure Document Intelligence to `2024-11-30`.
+
+### Fixed
+- 🐛 **Event ID Uniqueness in Distribution**: Ensured that distributed events to multiple agents in a thread receive unique event IDs, preventing potential tracing inaccuracies and improving the reliability of event tracking.
+- 📏 **Metrics Accuracy in Event Summaries**: Corrected the aggregation logic for run summaries in `PersistedEventEntity` to accurately count `StartEvent`s and `control_events`, ensuring more precise event statistics.
+
+### Refactor
+- 🧹 **Unified MongoDB Connection Handling**: Consolidated MongoDB connection logic across the API, Agent, and Lib components to consistently use `ApiConfig().DB_NAME` and `CosmosDocstoreAccess`, simplifying database access management.
+- ♻️ **Modular Pipeline Resources**: Reorganized pipeline resource factories into more modular functions (e.g., `mongo_document_store_resource`, `milvus_vector_store_resource`) to improve clarity and reusability.
+- 🗑️ **Removed `Document` Class**: Deprecated and removed the generic `Document` data model in `aihub_lib/nats/events/semantic/retriever`, standardizing on the new `IngestedNode` for all retrieval and reranking contexts.
+- ⚙️ **UI Component Specificity**: Refined CSS class names and component structure in the web UI for better styling consistency and maintainability.
+- 🗑️ **Removed RAG Agent Trigger Script**: Removed an outdated trigger script for the RAG agent in the playground environment.
+
+---
+
+
+
+## [v0.166.0] - 2025-05-20 - Enhanced RAG Pipelines and System Reliability
+
+### Added
+- 🦾 **Introduced Dedicated Summary Nodes Processing:** A new `summary_nodes_factory` asset has been added to provide a dedicated, modular pipeline for generating, embedding, and storing summary nodes, enhancing the flexibility of RAG workflows.
+- ⚡️ **Convenience Target for Dagster Playground:** A new `playground` target was added to the Makefile, simplifying the setup and execution of the Dagster development environment.
+
+### Changed
+- 🔄 **Refactored Node Generation Workflow:** The primary `nodes_factory` asset no longer directly creates summary nodes, instead delegating this specialized task to the new `summary_nodes_factory` for improved modularity and clarity.
+- ⚙️ **Updated Playground Configurations:** Adjusted default directory, namespace, and vector/document store names within the playground environment for better organization and consistency.
+
+### Fixed
+- 🐛 **Improved Azure Data Lake Authentication:** Corrected an issue where `DataLakeAccess` was not always passing credentials to `AzureBlobFileSystem`, ensuring more reliable access to Azure Data Lake resources.
+- 🐞 **Ensured Document ID Filterability in Azure AI Search:** Fixed an oversight by guaranteeing that the `DOCUMENT_ID` field is always included in filterable metadata for Azure AI Search vector stores, enabling consistent document-specific queries.
+- 📈 **Enhanced Vector Store Query Reliability:** Implemented a retry mechanism within `VectorStoreIOManager` when fetching nodes, making the pipeline more robust against transient issues and improving data retrieval stability.
+
+---
+
+
+
+## [v0.165.0] - 2025-05-16 - Enhanced User Experience with Dashboards and Revamped Identity Management
+
+### Added
+- ✨ **Introduced Customizable User Dashboards:** Users can now personalize their home screen with interactive widgets (number, line chart, and bar chart) to visualize key event timeseries data and track agent performance.
+- 🚀 **New `UserEntity` for Comprehensive User Profiles:** A dedicated persistence layer has been added to store detailed user information, including names, emails, roles, profile images, and favorite modules, ensuring consistent data across the platform.
+- 🔑 **Centralized Azure Graph Service:** A new service (`AzureGraphService`) is introduced to streamline asynchronous interactions with Microsoft Graph API, providing robust and cached retrieval of user profiles, images, and app-specific roles for improved performance and reliability.
+- 📄 **New Localization Strings:** Added translations for new dashboard, chart, and time range terminology to support multi-language environments.
+
+### Changed
+- 🔄 **Revamped User Identity Retrieval:** The system now prioritizes fetching user details from the new `UserEntity` for faster access, falling back to external identity providers (like Azure AD) and updating the `UserEntity` as needed, ensuring user data is always fresh and complete.
+- ⚡️ **Optimized Asynchronous API Operations:** Numerous API service and controller methods across agent, OpenAI, and thread management functionalities have been updated to use the `async/await` pattern, significantly improving application responsiveness and resource utilization.
+- 🤖 **Flexible API Token Management:** API tokens no longer directly store user roles, enhancing security and allowing roles to be dynamically retrieved from the user's primary identity source during authentication.
+- 🔒 **Improved OpenWebUI Authentication Integration:** The `OpenWebuiAuthHandler` now leverages the new `AzureGraphService` to fetch richer user data, including roles, directly from Azure AD, and updated its hash validation mechanism for enhanced security.
+- 🧩 **Extensible Multi-Authentication Handler:** The `TokenAndOauth2Handler` now supports a list of authentication handlers for both Bearer and OAuth2 types, allowing for more flexible and layered authentication strategies.
+- ⚡️ **Enhanced UI Responsiveness for Thread Updates:** The frontend now invalidates relevant queries for thread lists and details upon `StopEvent` or `ExceptionEvent`, ensuring immediate reflection of thread status changes in the user interface.
+- 📊 **Dynamic Event Timeseries Filtering:** Event timeseries queries in the frontend now support optional filtering by `agentClass` and `agentId`, enabling more granular insights on dashboard widgets and analytics views.
+- 📄 **Updated CLI Token Generation:** The `generate_api_token.py` script has been updated to use Azure CLI for fetching current user information and integrates with the new token creation service, aligning with the revamped token management.
+
+### Refactor
+- 🧹 **Unified Internal User Representation:** Introduced a new `UserIdentity` object to serve as the canonical internal representation of a user, decoupling it from external DTOs and internal API token structures for cleaner code and better maintainability.
+- 🗑️ **Centralized Token User Data:** Removed the embedded `ApiUser` document and `roles` field directly from the `BearerToken` entity, streamlining token data to only store the `user_oid` and relying on the `UserEntity` for comprehensive user details.
 
 ### Removed
-- 🗑️ **Deprecated Thread Management UI:** Removed outdated and less flexible thread management UI components and pages, superseded by the new, more comprehensive administration views.
-- 🧹 **Legacy Data Stores:** Migrated away from old Pinia stores for agents, events, and threads, replacing them with new composables using Pinia Colada for improved data fetching and state management patterns.
-- 🚫 **Unused Gemini Configuration:** Cleaned up unused and deprecated Gemini LLM configurations from the development environment.
+- 🗑️ **Direct User Details in Bearer Tokens:** The practice of embedding full user details and roles within `BearerToken` documents has been removed, enhancing data normalization and security by centralizing user information in the new `UserEntity`.
 
 ---
 
 
 
-## [v0.150.0] - 2025-05-04 - Enhancing LLM Capabilities with Gemini Integration and Recursive Summarization
-
-### Added
-- 🚀 **Google Gemini LLM Integration:** Introduced native support for Google Gemini Large Language Models, expanding the range of available conversational AI capabilities and model choices.
-- 📄 **Recursive Document Summarization:** Implemented a new recursive summarization feature within the data ingestion pipeline, enabling the generation of multi-level document summaries for enhanced Retrieval-Augmented Generation (RAG).
-- ⚙️ **New Data Pipeline Playground:** Added a comprehensive playground example that demonstrates the new recursive summarization and data ingestion pipeline for easier experimentation and setup.
-
-### Changed
-- 📝 **Improved Agent Description Guard Prompt:** Refined the prompt for the agent description guard to enforce a stricter JSON output format, enhancing the reliability and consistency of LLM responses for structured parsing.
-- 📏 **Adjusted Summarization Minimum Length:** Modified the minimum character length required for text summarization in the recursive parser, optimizing the granularity of generated summaries.
+## [v0.164.0] - 2025-05-15 - Dependency and Infrastructure Alignment
 
 ### Refactor
-- 🔄 **Standardized OpenAI-like LLM Configuration:** Renamed `SelfHostedLLMConfig` and its associated parameters to `OpenaiLikeLLMConfig` for more accurate representation of Large Language Models that adhere to OpenAI-compatible APIs, improving clarity and consistency across the configuration.
-- 🧹 **Streamlined RAG Agent Structure:** Reorganized internal directories and imports for the RAG agent components, enhancing codebase maintainability and logical grouping.
+- 🔄 **Refined Infrastructure Type Definitions:** Updated environment variable argument types in the Azure Container Instance module for improved consistency and clarity in infrastructure-as-code deployments.
 
 ---
 
 
 
-## [v0.149.0] - 2025-05-04 - Gemini Integration and LLM Configuration Standardisation
+## [v0.163.0] - 2025-05-15 - Enhanced Agent Configuration and Infrastructure Tools
 
 ### Added
-- ✨ **Google Gemini LLM Integration:** Introduced native support for Google Gemini Large Language Models, allowing seamless integration and usage of Gemini models (e.g., `gemini-2.0-flash`) within the platform. This includes new configuration classes and API key management.
+- ✨ **Flexible Agent Environment Variables**: Introduced support for defining `additional_env_vars` in agent configurations within the Infrastructure as Code (IAC), allowing users to pass custom environment variables, including secret references, to agent containers for greater operational control.
+- 🛠️ **Improved IAC Development Experience**: Integrated new development dependencies such as `pytest`, `ruff`, `mypy`, and `isort` into the `aihub_iac` project to enhance code quality, testing, and overall developer workflow.
 
 ### Refactor
-- 🧹 **Standardized LLM Configurations to OpenAI-like:** Renamed `SelfHostedLLMConfig` and `SelfHostedLLMParameter` to `OpenaiLikeLLMConfig` and `OpenaiLikeLLMParameter` respectively. This change broadens the scope to encompass any LLM that adheres to the OpenAI API standard, enhancing flexibility and clarity for model integrations.
-- 🔄 **Updated LLM Configuration References:** All internal components and examples (including `RAGAgent`, `FewShotAgent`, and `LlamaIndexAgent` playgrounds) have been updated to utilize the new `OpenaiLikeLLMConfig` naming convention, ensuring consistency across the codebase.
-- 📦 **Agent Import Path Refinement:** Adjusted internal import paths for `RAGAgent` components for improved module naming consistency.
+- ⚙️ **IAC Resource Naming Refinement**: Updated the internal logic for generating AI search resource names within the IAC module for improved consistency.
 
 ---
 
 
 
-## [v0.148.0] - 2025-04-24 - Smarter Context Sufficiency for RAG Agent
+## [v0.162.0] - 2025-05-14 - Enhanced Azure Bot Setup for Improved Integration
+
+### Added
+- ⚙️ **Azure Bot Setup**: The `setup_azure_bot.py` script now automatically creates a service principal for Azure AD app registrations, streamlining the setup process and ensuring smoother integration with Azure resources.
+
+---
+
+
+
+## [v0.161.0] - 2025-05-13 - Streamlined Admin Experience & Data Lake Optimization
+
+### Added
+- ✨ **Agent Listing Component**: Introduced a new component to display available agents in a sortable table, including their name, description, conversational status, and online status.
+- ✨ **Display List Component**: Added a new component for listing thread displays, offering statistics such as start time, duration, event count, and overall status.
+- 🏗️ **Column Layout Component**: Implemented a reusable `Structural/Column` component to provide a consistent visual structure for content columns across the application, including loading indicators and titles.
+- 🖥️ **Screen Layout Component**: Introduced a new `Structural/Screen` component to standardize the overall screen layout and background for administrative pages.
+- 📄 **Thread Details Component**: Added a dedicated component to consolidate and present comprehensive thread details, including integrated display selection and event lists.
+- 🚀 **Infinite Thread Scrolling**: Introduced a new composable for managing infinite scrolling of threads, complementing the existing standard pagination logic.
+- 🌐 **New Translations**: Added new internationalization strings for agent lists and thread display details across all supported languages (German, English, French, Italian).
 
 ### Changed
-- 🦾 **Improved RAG Agent Context Assessment**: The RAG Agent's ability to determine if it has sufficient context has been enhanced. The underlying guard now intelligently adapts its assessment and feedback based on whether additional retrieval attempts (hops) are available, leading to more refined decision-making and clearer indications when no further context can be obtained.
+- ⚙️ **Refined Admin Interface Navigation**: Overhauled navigation and layout for Agent and Thread administration pages, leveraging new structural components and a `SelectButton` for sub-navigation, enhancing consistency and user experience.
+- 🔗 **Updated Thread Display URLs**: Modified the URL structure for navigating to specific thread displays, improving consistency and clarity (e.g., from `/events` to `/display/[display_id]`).
+- 🎨 **Improved Service Selection UI**: Enhanced the visual design and layout of the service selection popover for a more polished appearance and better usability.
+- 💅 **Minor UI Adjustments**: Applied various small visual tweaks to component layouts, including panel headers, text sizes, and item alignment for improved aesthetics across the application.
+- 🔄 **Switched Thread Display Component**: Replaced the direct use of `EventList` with the new `ThreadDetails` component for OpenAI service thread views, ensuring consistent feature presentation.
+- 📈 **Timeseries Chart Library**: Switched to `VueApexChart` for event timeseries visualizations, providing enhanced charting capabilities.
+
+### Refactor
+- ⚡️ **Optimized Data Lake Access**: Refactored `DataLakeAccess` to cache the `AzureBlobFileSystem` client, reducing redundant object creation and improving performance when interacting with Azure Data Lake Storage.
+- 🧹 **Streamlined Event List Component**: Simplified the `EventList` component by externalizing display selection logic into a parent component, making it more focused and reusable.
+- 🔄 **Thread List Pagination Refactor**: Reworked the `useThreads` composable to use standard pagination instead of infinite scrolling for the main thread list, improving control and user experience for large datasets.
+- 🗺️ **Dynamic Breadcrumb Generation**: Refactored the default layout to dynamically generate breadcrumbs based on the current route path, providing more accurate and flexible navigation.
+- 🧹 **Standardized I18n Keys**: Performed a significant cleanup and restructuring of internationalization keys across all language files for better consistency and maintainability.
+- 📄 **I18n Usage Consistency**: Standardized the way internationalization functions are called (from `$t()` to `t()`) throughout numerous web components and pages for improved consistency.
+
+---
+
+
+
+## [v0.160.0] - 2025-05-13 - Refined Embedding Model Configuration
+
+### Changed
+- 🔄 **Enhanced Azure OpenAI Embedding Parameter Handling:** The `dimensions` parameter for Azure OpenAI embeddings now robustly supports the `NotGiven` type, enabling more precise control over API requests and aligning better with the underlying OpenAI library's parameter conventions.
+
+### Refactor
+- 🧹 **Streamlined Embedding Model Configuration:** The `dimensions` parameter has been moved from the generic embedding model configuration to specific provider configurations, improving modularity and ensuring parameters are only present where relevant.
+
+---
+
+
+
+## [v0.159.0] - 2025-05-13 - Enhanced LLM Embeddings and Event Query Performance
+
+### Added
+- ✨ **Enhanced Embedding LLM Configuration:** Introduced support for specifying the `dimensions` parameter in embedding LLM configurations, allowing for more control over the output vector size, particularly for models like `text-embedding-3` and later.
+- ⚡️ **Improved Event Persistence Querying:** Added a new index on `event_data.created_at` for `PersistedEventEntity`, significantly enhancing the performance of time-based queries on persisted event data.
+
+---
+
+
+
+## [v0.158.0] - 2025-05-12 - Core API Simplifications
+
+### Refactor
+- 🧹 **Streamlined Pydantic Model Creation**: Removed redundant `__base__=BaseModel` arguments from `create_model` calls in the API event model generation, simplifying the code while maintaining full functionality.
+
+---
+
+
+
+## [v0.157.0] - 2025-05-08 - Infrastructure Enhancements for WebUI Deployment
+
+### Refactor
+- 🧹 **Refined WebUI API Key Configuration**: Explicitly set optional API key fields to `None` by default in `OpenWebUIConfig` for improved clarity in infrastructure deployments.
+- ⚙️ **Standardized WebUI Container Naming**: Renamed an internal method to `container_app_name` within `WebUIConfig` for consistent resource naming conventions.
+- 🔗 **Integrated Registry Settings for WebUI**: Added `RegistrySettings` to `WebUIConfig`, allowing for more robust and configurable container registry management for WebUI deployments.
+
+---
+
+
+
+## [v0.156.0] - 2025-05-08 - Introducing Comprehensive Event Statistics & UI Overhaul
+
+### Added
+- ✨ **Event Timeseries API**: Introduced a new API endpoint (`/event/timeseries/{time_range}`) to retrieve time-based statistics for events, allowing for detailed analysis of event counts over various periods (1h, 24h, 30d, 365d) with adaptive resolution.
+- 📊 **Dynamic Event Charts**: Implemented new UI components and composables (`EventStatistics`, `EventTimeseries`) to visualize event data, including agent invocations, end events (success, human/bot/agent in the loop, errors), and delegations, with interactive time range selection.
+- 📈 **Core Timeseries Aggregation**: Added robust MongoDB aggregation logic within `aihub_lib` to efficiently calculate event counts across defined time buckets, supporting the new analytics capabilities.
+- 🗺️ **Localization for Analytics**: Extended internationalization support to include new translation keys for event statistics chart titles and metrics (costs, duration).
+- 🎨 **Charting Library Integration**: Incorporated ApexCharts into the web UI, enabling rich and interactive data visualizations.
+
+### Changed
+- 💅 **Improved Chat Message Styling**: Enhanced the visual presentation of user chat messages for better readability and distinction.
+- 🚀 **Overhauled Agent & Thread Overview Pages**: Redesigned the agent and thread overview pages to prominently feature new event statistics, duration, and cost metrics, replacing older status indicators with more comprehensive data.
+- ⏱️ **Adjusted Thread Data Stale Time**: Increased the cache stale time for thread data fetching to 5 minutes, improving performance by reducing redundant API calls for frequently accessed thread information.
+- 🔄 **Refined Thread Event Updates**: Optimized thread event fetching and added cache invalidation on `StopEvent` or `ExceptionEvent` to ensure more immediate updates for thread status and statistics.
+- 🗓️ **Standardized Date Handling**: Improved date formatting and ensured consistent UTC ISO format with timezone awareness for all thread-related timestamps in API responses.
+- ↔️ **Enhanced Thread Panel UX**: Adjusted the positioning and styling of the thread panel close button for improved user experience and accessibility.
+
+### Fixed
+- 🐛 **Corrected Event Aggregation Logic**: Resolved an issue in `PersistedEventEntity`'s aggregation pipeline to ensure accurate counting of events by de-duplicating entries, leading to more reliable run statistics.
+
+### Refactor
+- 🧹 **Terminology Standardization**: Renamed "latency" to "**duration**" across the API DTOs, database models, and UI components for clearer and more consistent terminology.
+- ⚙️ **Centralized Thread Access Checks**: Refactored user access validation for threads into a dedicated utility method within `ThreadService`, promoting code reusability and maintainability.
+- 🔄 **Updated Query Naming Conventions**: Standardized query keys and transitioned from `isLoading` to `isPending` in various Vue composables for consistency with `pinia/colada`'s query state management.
+
+---
+
+
+
+## [v0.155.0] - 2025-05-08 - Enhanced Speech-to-Text Capabilities and Infrastructure Updates
+
+### Added
+- 🚀 **Enhanced Speech-to-Text (STT)**: Introduced intelligent audio chunking to seamlessly process and transcribe large audio files by splitting them at silence points and merging the results, overcoming typical API size limitations. This significantly improves the reliability and reach of STT services.
+- 📦 **FFmpeg Requirement**: Integrated the necessary `pydub` library and **FFmpeg** installation steps within `aihub_api` and the CI/CD pipeline to support advanced audio processing functionalities.
+- 💾 **Persistent MongoDB Data**: Ensured data durability for **MongoDB** by adding a persistent volume to the `docker-compose.yml` configuration, preventing data loss across container restarts.
+- 🧪 **Comprehensive Audio Tests**: Added extensive test coverage for the new audio chunking and transcription merging functionalities to guarantee robust performance and accuracy.
+
+---
+
+
+
+## [v0.154.0] - 2025-05-08 - Streamlined Versioning and IAC Integration
+
+### Changed
+- 🔄 **Automated Versioning Scope**: The `aihub_iac` project has been fully integrated into the automated version tagging workflow, ensuring consistent release management and version alignment across all core components.
+
+---
+
+
+
+## [v0.153.0] - 2025-05-08 - Internal Tooling and CI/CD Scope Expansion
+
+### Changed
+- ⚙️ **Expanded Semantic PR Scopes:** Added `iac` (Infrastructure as Code) and `ci-cd` as recognized scopes for semantic pull requests, enhancing consistency and automation for relevant contributions.
+
+---
+
+
+
+## [v0.152.0] - 2025-05-08 - Introducing Comprehensive Azure Infrastructure as Code
+
+### Added
+- ✨ **Comprehensive Azure IaC Module**: Introduced `aihub_iac`, a new Pulumi-based Infrastructure as Code module for deploying the entire AIHub platform on Azure. This enables consistent, automated, and version-controlled provisioning of all necessary cloud resources.
+- 🚀 **Modular and Secure Infrastructure Deployment**: The new IaC module features a component-based design with dedicated providers for network, identity, and resource creation, ensuring modularity, reusability, and secure private networking for core services.
+- 🌐 **Automated Microservice Deployment**: Integrated Pulumi resources for automated deployment of all AIHub microservices, including **API**, **Bot**, and **Phoenix** (as Azure App Services) and **Agents**, **NATS**, **Redis**, **Dagster**, and **OpenWebUI** (as Azure Container Instances or Container Apps).
+- 💾 **Managed Data Stores**: Provisioned and configured managed data services, including **Azure Cognitive Search** for vector capabilities, **Azure Cosmos DB** for document and API storage, and **Azure PostgreSQL Flexible Server** with `pgvector` extension for relational and vector data.
+- ⚙️ **Core Infrastructure Services**: Established foundational infrastructure components such as a private **Virtual Network** with segmented subnets, **Network Security Groups**, and **Private Endpoints** to enhance security and isolation.
+- 📄 **Expanded On-Premises Technology Overview**: Enhanced the `README.md` to reflect the newly supported and integrated on-premises technologies, specifically detailing **Postgres (SQL DB)**, **PG-vector** for vector capabilities, and **Docker** for application environments.
+
+---
+
+
+
+## [v0.151.0] - 2025-05-06 - Comprehensive Thread Management & Enhanced Agent Insights
+
+### Added
+- ✨ **Comprehensive Thread Statistics**: Introduced detailed metrics for each thread, including event counts, conversation turns, pending operations, error states, total LLM costs, and interaction latency. These statistics are aggregated per display and individual runs for granular insights.
+- 🦾 **Agent Persistence**: Agents are now persisted in the database, allowing for discovery and retrieval of both online and offline agents and their configurations.
+- 📄 **Paginated Thread Views**: New API endpoints and UI sections to retrieve paginated lists of threads associated with users and specific agents, improving navigability for large datasets.
+- 🔄 **Thread History Reconstruction**: Enabled the API to reconstruct full chat message history for OpenAI API calls based on persisted thread events, facilitating seamless conversation continuity.
+- 🗺️ **Workflow Hierarchy Visualization**: Introduced a new visual component to display the hierarchical structure of thread executions, illustrating how displays and runs are nested.
+- 🌐 **Locale-Aware Event Display**: Implemented internationalization for event names and descriptions in the UI, ensuring that event details are displayed in the user's preferred language.
+- 💬 **Multimodal Chat Message Support**: Extended the backend and frontend to properly handle and display chat messages containing various content types, including images and audio.
+- 🛡️ **`GuardEvent` for Tracing**: A new event type (`GuardEvent`) has been added to provide better tracing and visibility into security and policy guardrail evaluations within agent workflows.
+- 🚦 **`RouterEvent` for Decision Visibility**: Introduced `RouterEvent` to clearly mark and visualize points in the workflow where an LLM makes a decision on the optimal next path.
+- 💥 **`ExceptionEvent` as Semantic Event**: The `ExceptionEvent` now inherits from `SemanticEvent`, enabling its data to be reported to OpenInference-compatible tracing systems for enhanced error monitoring.
+- 🧪 **Playground Testing Agents**: Added new test agents in the playground to demonstrate and validate complex workflow patterns, including explicit routing and bot-in-the-loop interactions.
+- 🧩 **`ControlAndDisplayEvent` Base Class**: Introduced a new helper base class to simplify the creation of events that serve both as workflow control signals and user-facing display messages.
+- 👤 **New UI Components**: Added dedicated UI components for displaying Agent and User Avatars, enhancing visual consistency and clarity.
+
+### Changed
+- 🧹 **Internal i18n Key Refactoring**: Standardized internationalization keys across agents from `agents.<scope>` to `agent.<scope>` for improved consistency.
+- ⚡️ **Optimized Agent Workflow Control**: Refactored `ExpertGroundedAgent` and `LLMWrappingAgent` to return direct `StopEvent` or `AgentInTheLoop.request` where appropriate, streamlining their workflow integration.
+- 🚀 **Streamlined API Thread Operations**: Refactored thread management operations in `aihub_api` to directly interact with the persistence layer (MongoDB), removing NATS as an intermediary for these specific tasks, which simplifies the architecture and improves performance.
+- 🌐 **Improved WebSocket Locale Handling**: The WebSocket connection now explicitly extracts the user's locale from request headers for more accurate language presentation of real-time events.
+- 🧰 **Updated UI Components**: Enhanced existing UI components, including `ChatMessage`, `CostsTable`, and event display components, to integrate with new data structures and internationalization.
+- 📦 **Dependency Updates**: Updated numerous core dependencies, including OpenTelemetry, LlamaIndex, and OpenAI libraries, for improved performance, stability, and new features.
+- 🧹 **Refactored Frontend Data Management**: Migrated existing Pinia stores to use `@pinia/colada` queries and standard Nuxt composables for a more modern and efficient data fetching and state management pattern.
+- 📈 **Enhanced Logging**: Replaced numerous `logger.error` calls with `logger.exception` across the codebase to ensure full stack trace capture for better debugging.
+
+### Fixed
+- 🐛 **Robust Event Deserialization**: Improved the `BaseEvent` deserialization logic to more accurately handle events with multiple inheritance paths, preventing potential data interpretation issues.
+- 🪲 **AnyUrl Serialization in Events**: Addressed an issue where `AnyUrl` fields within chat messages were not correctly serialized in `UserMessageEvent`, ensuring proper display of embedded URLs.
+
+### Removed
+- 🗑️ **Deprecated Thread & Agent UI Pages**: Replaced outdated thread and agent management pages with new, more robust, and feature-rich implementations.
+- 🗑️ **Redundant Playground Components**: Removed legacy playground components like `UserMessageEvent` form and `Thread/Chat` that are superseded by new UI and testing features.
+
+---
+
+
+
+## [v0.150.0] - 2025-05-04 - LLM Evolution: Introducing Gemini and Intelligent Content Summarization
+
+### Added
+- ✨ **Google Gemini LLM Support**: Introduced `GeminiLLMConfig` and integrated Google Gemini models into the `aihub_api` and `aihub_lib`, allowing for more diverse LLM choices.
+- 📄 **Recursive Document Summarization**: Added a new `RecursiveNodeSummarizer` and integrated it into the RAG pipeline (`aihub_pipeline`), enabling hierarchical summarization of documents to improve retrieval and context understanding.
+- 🚀 **New Pipeline Playground**: A comprehensive Dagster pipeline playground (`aihub_pipeline/playground`) was introduced to facilitate testing and development of RAG ingestion workflows with new features like recursive summarization.
+
+### Changed
+- 🦾 **Stricter Agent Description Guard Prompt**: Updated the prompt for the agent description guard across all languages to enforce a stricter JSON output format, ensuring more reliable structured responses.
+- ⚡️ **Improved Recursive Summarization Parameters**: Adjusted the minimum summarization length and enhanced locale handling within the `RecursiveNodeSummarizer` for more flexible and accurate document summaries.
+
+### Refactor
+- 🔄 **Standardized OpenAI-like LLM Naming**: Renamed `SelfHostedLLMConfig` and `SelfHostedLLMParameter` to `OpenaiLikeLLMConfig` and `OpenaiLikeLLMParameter` across the codebase. This standardizes the configuration for models that adhere to the OpenAI API specification but are hosted locally or externally.
+- 🧹 **Internal Module Reorganization**: Reorganized internal imports and module structures within `aihub_agent` and `aihub_bot` to improve code clarity and maintainability.
+
+---
+
+
+
+## [v0.148.0] - 2025-04-24 - Enhanced RAG Agent Context Sufficiency
+
+### Changed
+- 🦾 Refined **RAG Agent's context handling**: The RAG Agent now provides more precise information to its context sufficiency guard regarding the availability of further retrieval attempts (hops), allowing for more informed decision-making.
+- ⚙️ Improved **Context Sufficiency Guard**: The guard's response structure and internal logic now adapt dynamically based on whether more retrieval hops are available. This leads to more accurate reasoning and a tailored output, providing clearer indications when the maximum retrieval attempts have been reached or when further queries are still possible.
 
 ---
 
@@ -2625,775 +1653,788 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.147.0] - 2025-04-24 - Enhanced Azure AI Search Vector Store Configuration
 
 ### Added
-- ✨ **Configurable Azure AI Search Vector Dimensions**: Introduced a new `dimensions` parameter for Azure AI Search vector stores, allowing explicit control over the `embedding_dimensionality` when creating or configuring vector indexes. This enhancement provides greater flexibility and precision for vector search operations across `aihub_lib` and `aihub_pipeline` resources.
+- ✨ **Configurable Azure AI Search Embedding Dimensions:** Introduced a new `dimensions` parameter for Azure AI Search vector stores, allowing users to specify the embedding dimensionality (defaulting to 3072). This feature ensures better compatibility and performance by enabling the vector store to precisely match the output dimensions of different embedding models used for RAG operations. This enhancement is available through `aihub_lib` and integrated into `aihub_pipeline` resources and definitions for seamless configuration.
 
 ---
 
 
 
-## [v0.146.0] - 2025-04-17 - Enhanced Conversation Lifecycle Management
+## [v0.146.0] - 2025-04-17 - Enhanced Conversation Management and Bot Persistence
 
 ### Added
-- ✨ **Conversation Expiration Management**: Implemented a comprehensive Time-To-Live (TTL) mechanism for conversations, enabling automatic cleanup of inactive chat histories in the database and freeing up resources.
-- 🦾 **User-Friendly Expiration Notifications**: Introduced a new feature to inform users when a conversation has expired due to inactivity, providing clarity on chat history availability.
-- 🔄 **Teams Conversation Reset Handling**: Added intelligent tracking to differentiate between naturally expired conversations and those explicitly deleted or reset by users in platforms like Microsoft Teams, preventing incorrect "expired" messages after a user-initiated reset.
-- ⚡️ **Configurable Typing Indicator Duration**: Introduced a `typing_timeout_seconds` parameter, allowing for customization of how long the bot's "typing" indicator is shown to the user before a response is delivered.
-- 🧪 **New Test Suite for Conversation TTL**: Added comprehensive integration tests to ensure the robustness and correctness of the new conversation expiration and tracking features.
+- ✨ **Introduced Conversation Tracking**: Added a new `ConversationTracker` entity to distinguish between conversations that automatically expire due to inactivity and those explicitly deleted by users (e.g., in Microsoft Teams).
+- 💾 **Configurable Conversation Time-To-Live (TTL)**: Implemented MongoDB TTL indexing for `ConversationEntity` based on conversation inactivity, allowing for automatic cleanup of old conversations.
+- 🗣️ **Expired Conversation Notification**: Bots now inform users when they resume an expired conversation, providing clarity that previous messages are no longer available.
+- ⚙️ **Customizable Typing Indicator Timeout**: Added a `typing_timeout_seconds` parameter, allowing configuration of how long the bot's "typing" indicator is shown before it times out.
 
 ### Changed
-- 🧹 **Centralized TTL Configuration**: The `BotRunner` now provides a central place to configure the conversation Time-To-Live (TTL) duration in days, simplifying deployment and management of conversation data lifecycle.
-- 📄 **Updated Conversation Persistence**: Modified conversation persistence logic to automatically update the `last_activity` timestamp on every message, ensuring conversations are correctly identified for TTL expiration based on recent user interaction.
+- ⏱️ **Conversation Inactivity Tracking**: The `ConversationEntity` now automatically updates a `last_activity` timestamp with every user message, crucial for the new TTL mechanism.
+- 🚀 **Bot Runner Configuration**: The `BotRunner` now accepts a `conversation_ttl_days` parameter to easily configure conversation persistence across all mounted bots.
+- 💬 **Bot Route Configuration**: Agent and OpenAI chat controllers now allow specifying `typing_timeout_seconds` for fine-grained control over the typing indicator behavior for specific chat endpoints.
+- 🧹 **Conversation Reset Logic**: Improved handling of conversation resets in platforms like Microsoft Teams by explicitly marking conversations as deleted when a user initiates a new chat session with the same conversation ID.
 
 ---
 
 
 
-## [v0.145.0] - 2025-04-16 - Improved Streaming and New Agent Patterns
+## [v0.145.0] - 2025-04-16 - Streamlined AI Hub Connections and Agent Playgrounds
 
 ### Added
-- 🦾 **New Playground Example: Long-Running Agent:** Introduced a comprehensive example demonstrating how to build and run an agent that operates over an extended period, showcasing asynchronous operations and continuous output streaming capabilities.
+- ✨ **New Long-Running Agent Example:** Introduced a new playground example demonstrating how to create and manage agents that stream output incrementally over an extended period, showcasing real-time progress.
 
 ### Changed
-- ⚡️ **Asynchronous API Integration for WebUI:** Transitioned the WebUI connection to utilize the `httpx` library for all API requests, enabling fully asynchronous and more efficient handling of both streaming and non-streaming interactions with the AIHub API.
-- 🚀 **Robust Model Fetching:** Enhanced the `pipes` method in the WebUI connection to include improved error handling and more informative error messages, increasing reliability when fetching available models.
+- 🔄 **Improved AI Hub Connection Handling:** The `pipe` function in `webui_pipelines/aihub_connection.py` now dispatches to dedicated handlers for streaming and non-streaming chat completion requests, ensuring more robust and explicit management of different response types.
+- 📈 **Enhanced Model Fetching Error Reporting:** Improved error handling and reporting when fetching available models from the AI Hub API, providing clearer feedback on connection issues.
 
 ### Refactor
-- 🧹 **WebUI Streaming and Non-Streaming Logic:** Rearchitected the main `pipe` function in the WebUI connection by separating the logic into distinct `pipe_stream` and `pipe_non_stream` methods, along with a new dispatcher `pipe`. This significantly improves code organization, maintainability, and ensures proper asynchronous behavior for different request types.
+- 🧹 **Asynchronous HTTP Client Migration:** Switched the underlying HTTP client in `webui_pipelines/aihub_connection.py` from `requests` to `httpx.AsyncClient` for improved asynchronous performance and reliability in handling API requests.
+- ⚡️ **Consistent Source Event Retrieval:** Refactored the logic to consistently query and emit source events (retrieved documents) after both streaming and non-streaming chat completions are finished, providing more reliable RAG context in the UI.
+- ⚙️ **Stream and Non-Stream Request Specialization:** Separated the core logic for handling streaming and non-streaming chat completion requests into distinct, specialized functions (`pipe_stream` and `pipe_non_stream`) for better code organization and maintainability.
 
 ---
 
 
 
-## [v0.144.0] - 2025-04-15 - RAG Agent Multi-Hop Retrieval and Contextual Enhancements
+## [v0.144.0] - 2025-04-15 - Introducing Adaptive Context Retrieval for RAG Agents
 
 ### Added
-- ✨ **Introduced Multi-Hop Retrieval for RAG Agent:** The RAG agent can now perform multiple retrieval attempts (hops) to gather more relevant context if the initial information is insufficient. This significantly improves the agent's ability to answer complex questions requiring deeper knowledge base exploration.
-- ⚙️ **Configurable `max_hops` for RAG Agent:** A new `max_hops` parameter has been added to the RAG Agent configuration, allowing users to control the maximum number of retrieval attempts the agent can make when seeking sufficient context.
-- 🚀 **Dynamic Query Generation for Context Guard:** The `context_sufficient_guard` has been enhanced to intelligently generate a new, distinct query when the current context is insufficient. This new query guides subsequent retrieval hops, improving the quality of retrieved information.
-- 📄 **New `ContextInsufficientWithQueryEvent`:** A new event type was introduced to facilitate the multi-hop retrieval process, allowing the RAG Agent to signal the need for further context retrieval with a revised query.
+- ✨ **Introduced Multi-Hop Retrieval for RAG Agents:** RAG agents can now perform multiple retrieval attempts (hops) with dynamically generated and refined queries if the initial context is insufficient, significantly improving the chances of finding relevant information.
+- 📄 **New `ContextInsufficientWithQueryEvent`:** This event has been added to facilitate the multi-hop retrieval process by carrying a revised query for subsequent retrieval attempts when the initial context is deemed insufficient.
 
 ### Changed
-- 🔄 **Refined Azure AI Search Integration:** The configuration for Azure AI Search Vector Store now explicitly includes `semantic_configuration_name`, leading to more robust and accurate semantic searches.
-- ⚡️ **Expanded LLM Context Window:** The default context size for self-hosted LLMs in development environments (docker-compose) has been significantly increased from 512 to 8192 tokens, enabling the models to handle much longer conversations and more extensive contexts.
-- ⬆️ **Updated Example/Trigger LLM to Azure OpenAI:** The RAG Agent's example usage has been updated to utilize Azure OpenAI models, showcasing the agent's compatibility with cloud-based LLM services and demonstrating the new multi-hop feature.
-- 🧹 **Standardized NATS Event Imports:** Refactored internal NATS event imports within the RAG Agent for improved code organization and readability.
-- ➡️ **Switched to `UserMessageEvent` in RAG Agent Trigger:** The example trigger now uses `UserMessageEvent` instead of `StartEvent`, providing richer user and locale metadata for agent interactions.
+- 🔄 **Enhanced Context Sufficiency Guard:** The `context_sufficient_guard` now intelligently generates new, distinct queries for further context retrieval. It considers previous query attempts to avoid repetition and guides the LLM to explore higher-level conceptual hierarchies when direct approaches fail.
+- 📈 **Increased LLM Context Window:** The default context size for self-hosted LLMs (e.g., Llama-3.2-1B-Instruct-GGUF) in `docker-compose` configurations and tests has been significantly increased from 512 to 8192 tokens, enabling the processing of more extensive context.
+- ⚙️ **RAG Agent Configuration for Hops:** A `max_hops` configuration option has been added to `RAGAgentConfig`, allowing users to control the maximum number of retrieval attempts the RAG agent will perform.
+- 🧪 **Updated RAG Agent Playground:** The RAG Agent playground now defaults to using Azure OpenAI LLM and includes a new scenario demonstrating the multi-hop retrieval capability.
 
 ### Refactor
-- ♻️ **Renamed Context Guard Results:** Internal data models and factory functions related to the `context_sufficient_guard` have been renamed from `GuardResult` to `ContextGuardResult` for clearer naming conventions and improved code clarity.
+- 🧹 **Refined Guard Result Naming:** Renamed the `GuardResult` class to `ContextGuardResult` within `aihub_lib` for improved clarity and semantic consistency.
+- 🗑️ **Cleaned Azure OpenAI Embedding Parameters:** Removed the `dimensions` field from `AzureOpenAIEmbeddingParameter` for schema simplification, as it was not actively used.
+
+---
+
+
+
+## [v0.143.0] - 2025-04-11 - Agent Evolution, Advanced Routing, and Integration Enhancements
+
+### Added
+- ✨ **Expert-Asking Agent**: Introduced a new agent that automates posing questions to designated experts via Slack, manages follow-up questions for insufficient answers, and stores sufficient responses as knowledge snippets in OpenWebUI.
+- 🦾 **Expert-Grounded Agent**: Added a new agent that leverages existing context and conversation history to answer user queries. If knowledge is insufficient, it intelligently prompts the user for consent to consult a human expert via the new Expert-Asking Agent.
+- 🚀 **OpenWebUI SDK Integration**: Integrated a comprehensive Software Development Kit (SDK) for OpenWebUI within `aihub_lib`, enabling direct programmatic interaction with OpenWebUI's chat, file management, and knowledge base functionalities.
+- ⚡️ **LLM-Based Routing Framework**: Implemented a new dynamic routing mechanism that allows agents to use Large Language Models (LLMs) to make intelligent decisions on the next step in a workflow, enhancing agent adaptability and complexity.
+- 📈 **RAG Embedding Batch Size Configuration**: Added a new configuration option for the RAG agent within `docker-compose-webui.yml` to specify the batch size for embedding generation, potentially improving performance.
+- 📦 **New Dependency**: Included the `stringcase` library to support advanced string manipulation for improved filename generation in agents.
+
+### Changed
+- 🌐 **Enhanced Internationalization (i18n) Support**: Improved locale handling across the API, bot, and pipeline components, allowing user language preferences to be passed consistently to agents for more localized responses.
+- 🔄 **LLM API Version Update**: Updated the Azure OpenAI LLM API version to `2024-12-01-preview` across all configurations and playground examples for improved compatibility and access to the latest features.
+- 🚨 **Improved Error Logging**: Replaced `traceback.print_exc()` with `logger.exception(e)` for more structured and robust error logging within the dispatcher and NATS subscribers, enhancing debugging and system stability.
+- 📄 **Displayable Workflow Events**: Made key internal workflow events, such as **Limit Chat History** and **Standalone Question Condenser**, displayable in the user interface to provide greater transparency into agent processing. The **Start Event** is also now explicitly displayable.
+- 🛑 **Streamed LLM Responses**: Enhanced the LLM event displayer to allow streamed Large Language Model responses to directly signal the conclusion of a workflow run, streamlining agent completion.
+- 🔧 **Agent Runner Validation**: Added robust type and subclass validation for agent types during initialization of the `AgentRunner`, preventing common misconfigurations.
+- ⚙️ **OpenWebUI Docker Compose Configuration**: Modified default OpenWebUI settings in `docker-compose-webui.yml` to disable automatic configuration resets and channels on startup, and enabled API key authentication by default.
+- 📝 **Context Event Documentation**: Updated the `ContextInsufficientEvent` and `ContextSufficientEvent` with clearer docstrings and improved field definitions for better understanding and usage.
+- 💬 **Playground BotInTheLoopAgent Update**: Updated the playground `BotInTheLoopAgent` to explicitly include the Slack channel ID when invoking bot interactions.
+
+### Refactor
+- 🧹 **Agent Base Class Simplification**: The core `Agent` base class has been moved and simplified, removing its previous `abstract` categorization for a more direct and accessible inheritance model.
+- 📂 **Agent Directory Restructuring**: Reorganized agent modules and their associated files (e.g., `FewShotAgent`, `LLMWrappingAgent`, `RagAgent`, `WebuiAgent`) into flatter, more intuitive directory structures for improved discoverability and maintainability.
+- 📦 **Centralized Common Events**: Relocated frequently used control events, such as `LimitChatHistoryEvent` and `StandaloneQuestionCondenserEvent`, from `aihub_agent` to `aihub_lib` to centralize common event definitions and promote reuse across components.
+- 🏷️ **Prompt Template Naming Consistency**: Renamed the `user_question` variable to `user_query` within prompt templates for better consistency and clarity.
+- 🔗 **Robust Event Serialization**: Improved the event serialization and deserialization logic to correctly handle lists containing embedded event or model instances, enhancing the reliability of complex event structures.
+
+### Fixed
+- 🐛 **Thought Event Formatting**: Corrected an issue where `ThoughtEvent` content might have leading/trailing whitespace in display tests, ensuring consistent formatting.
+- 🛠️ **Event Naming Consistency**: Rectified an inconsistency in event naming for `HumanInTheLoopResponseEvent` within the chat service, improving internal consistency.
+
+---
+
+
+
+## [v0.142.0] - 2025-04-10 - Streamlined Bot-in-the-Loop Interactions and Improved Azure Bot Setup
+
+### Changed
+- 🔄 **Bot-in-the-Loop Request API Update:** The `BotInTheLoop.invoke` method now exclusively requires the **Slack channel ID** (e.g., `C08MCK6LEBY`) instead of the full conversation ID. The bot automatically derives the complete conversation identifier, simplifying agent configuration.
+- ⚙️ **Internal Slack Conversation ID Management:** The bot now dynamically retrieves and caches Slack bot and team IDs using the `auth.test` API, which are then used to construct full conversation identifiers. This enhances flexibility and reduces manual configuration requirements.
+- 🧹 **Refined Bot-in-the-Loop Thread Tracking:** Internal thread management for Bot-in-the-Loop interactions now utilizes Slack's `thread_ts` (timestamp) for more robust and accurate tracking of conversations.
+- 🛠️ **Improved Azure Bot Setup Script Robustness:** The `setup_azure_bot.py` script now automatically checks for existing Azure AD app registrations, parses command output more robustly, and includes auto-confirmation for deletions, streamlining the Azure Bot deployment process.
+
+### Added
+- 🗣️ **Responder Information in Bot-in-the-Loop Responses:** `BotInTheLoop.response` events now include an optional `responder` field, providing details such as `user_id` and `user_name` of the Slack user who provided the input, enabling better accountability and context.
+- 📄 **New Slack Utilities Module:** Introduced `SlackUtils` to encapsulate logic for interacting with the Slack API, specifically for fetching essential bot and team IDs, supporting the new conversation ID management.
+
+---
+
+
+
+## [v0.141.0] - 2025-04-09 - Enhanced Test Infrastructure and Core Library Updates
+
+### Changed
+- 🚀 **Improved CI/CD Docker Health Checks:** Enhanced the GitHub Actions backend test workflow with more robust Docker service health checks. This includes added timeout mechanisms, checks for Docker availability, and clearer diagnostics, leading to greater test reliability and better troubleshooting.
+- ⬆️ **Upgraded `llama-index-vector-stores-milvus`:** Updated the core `aihub_lib` dependency for Milvus vector store integration from version `0.6.0` to `0.7.3`, incorporating upstream improvements and increased stability.
+
+### Fixed
+- 🐛 **Stabilized Milvus Vector Store Tests:** Addressed intermittent test failures related to Milvus vector store operations by introducing a small, strategic delay after data ingestion, ensuring that the vector store is fully ready for subsequent test queries.
+
+---
+
+
+
+## [v0.140.0] - 2025-04-09 - Enhanced Agent-Bot Interaction with Bot-in-the-Loop Capabilities
+
+### Added
+- 🤖 **Bot-in-the-Loop (BiTL) Workflows**: Introduced a powerful new capability allowing agents to pause execution and solicit direct input or approval from human operators via a bot, currently integrated with Slack.
+- ✨ **New `BotInTheLoopAgent`**: A dedicated agent now available in the playground to demonstrate and initiate these interactive Bot-in-the-Loop requests.
+- 💬 **`BotInTheLoopBot`**: A specialized bot has been added to handle and relay responses from human operators back into ongoing agent workflows, ensuring seamless interaction.
+- 📬 **BiTL Event Framework**: Implemented new NATS event types (`BotInTheLoopRequestEvent` and `BotInTheLoopResponseEvent`) within `aihub_lib` to standardize communication for human intervention steps.
+- 🚀 **Core System Support for BiTL**: Updated the agent dispatcher and external event distributor to fully support the routing and processing of Bot-in-the-Loop events.
+- ⚙️ **IntelliJ Run Configuration for BiTL Agent**: Added a convenient run configuration for developers to easily run and debug the `BotInTheLoopAgent` within IntelliJ.
+
+### Refactor
+- 🧹 **Unified Chat Bot Architecture**: Reorganized the `aihub_bot`'s internal structure by consolidating chat-related bots (Agent and OpenAI) into a new `chat` subdirectory, enhancing code organization and maintainability.
+- ♻️ **Routes Service Enhancements**: Minor internal refactoring within `RoutesService` to streamline credential retrieval.
+
+### Changed
+- 🛠️ **Improved Dependency Management**: The `switch_dependencies.py` script now automatically runs `poetry install` after `poetry lock`, simplifying environment setup for developers.
+
+---
+
+
+
+## [v0.139.0] - 2025-04-08 - Visualizing Agent Journeys: UI Refresh and Event System Evolution
+
+### Added
+- ✨ **Enhanced Frontend Event Visualization:** Introduced a comprehensive set of new Vue components (`AgentInTheLoopRequestEvent`, `ChunkEvent`, `EmbeddingEvent`, `LLMCostEvent`, `LLMEvent`, `RerankerEvent`, `RetrieverEvent`, `ThoughtEvent`, `ToolEvent`, `UserMessageEvent`, `StopEvent`, `HumanInTheLoopRequestEvent`, `HumanInTheLoopResponseEvent`, and more) to provide rich, type-safe, and user-friendly displays for various event types in the UI, offering deeper insights into agent behavior.
+- 🚀 **Integrated Open WebUI as a Core Frontend:** Shipped a full integration of Open WebUI as a powerful chat interface, including dedicated Docker Compose configurations (`docker-compose-webui.yml`) and pipeline scripts (`webui_pipelines/aihub_connection.py`, `webui_pipelines/suite_connection.py`) to connect it to the AI-Hub backend.
+- 📈 **New Event Tracing & Source Display:** Implemented a new "Sources" drawer in the UI (accessible via Open WebUI integration) that visualizes detailed backend events (like retrieved documents) for any given chat session, significantly improving observability and debugging capabilities.
+- 🦾 **Dedicated Frontend Testing Agent:** Introduced `FrontendTestingAgent` and its associated configurations, providing a specialized agent to simplify and accelerate the development and testing of new frontend event display features.
+- 🔑 **Azure AD Integration for Open WebUI Users:** Enhanced Open WebUI authentication to leverage Azure Active Directory for user and role information, providing more robust security and role-based access control.
+- ⚡️ **Performance Improvements for User & Thread Data:** Added caching for Azure AD user information and thread-user lookups, reducing database load and improving response times for common operations.
+- 📚 **Comprehensive Product Pitch Documentation:** Included a new `0_product_pitch.md` document along with supporting media, offering a high-level overview of the AI-Hub's vision, architecture, and benefits.
+- 🔌 **Standardized WebSocket Dependencies:** Introduced new dependency injection utilities (`use_ws_manager_ws`, `use_ws_sender_ws`, `use_external_event_distributor_ws`, `use_nats_ws`) to streamline the integration of NATS, WebSocket management, and external event distribution in WebSocket contexts.
+
+### Changed
+- 🔄 **Core Event System Revitalization:** Undertook a major refactor of the internal event system across `aihub_agent` and `aihub_lib`, standardizing event identification using `event_name` (string identifier) and `event_class` (Python type). This improves clarity, consistency, and robustness in event processing and serialization.
+- 🛡️ **Refined `AuthHandler` for WebSocket Authentication:** Updated the `AuthHandler` interface to include a direct `authenticate_token` method, improving flexibility and consistency for WebSocket connections and other non-HTTP authentication scenarios.
+- 🧹 **Unified ID Conversion Utility:** Centralized string-to-ObjectId conversion into a new `str_to_object_id` utility, eliminating redundant logic in `ThreadEntity` and other modules.
+- 💬 **Enhanced Chat Service Context Handling:** Improved the chat service's ability to handle and pass `thread_id` and `display_id` for better context tracking in conversational flows.
+- 🧠 **Structured Reasoning Content in Responses:** Modified `ChunkEvent` to include an optional `reasoning_content` field and updated the chat service to expose this in responses, allowing for streaming of internal agent thoughts directly to the frontend.
+- 📊 **Granular Event Filtering for API:** Expanded the `GET /event/` API endpoint to support filtering by `thread_id`, `display_id`, and `event_class`, enabling more precise retrieval of historical events.
+- 📦 **API Payload Structure for WS Events:** Reworked the `WSServerEvent` payload to use a polymorphic `event` field instead of a generic `event_data` dictionary, providing strong typing and easier consumption for frontend clients.
+- 🐛 **Fixed Duplicate Agent Discovery Entries:** Addressed an issue where agent discovery could lead to duplicate agent entries in the API response.
+- 📃 **Updated Documentation Examples:** Aligned code examples in `aihub_doc/5_agents_in_detail.md` to reflect the new `event.event_name` property usage.
+- 🚀 **Improved Frontend Serving:** Enhanced the `Runner.mount_frontend` method to better serve Nuxt.js SPAs, including specific handling for `_nuxt` and `_fonts` static assets and a catch-all route for client-side routing.
+- ⚙️ **Development Environment Updates:** Updated `CLIENT_ID` in development environment configurations and adjusted OpenAI base URLs.
 
 ### Removed
-- 🗑️ **Simplified Azure OpenAI Embedding Parameters:** The explicit `dimensions` field has been removed from the `AzureOpenAIEmbeddingParameter` configuration, streamlining the setup for Azure embedding models.
+- 🗑️ **Deprecated Open WebUI Page:** Removed the previous `aihub_web/pages/module/webui/index.vue` page, replaced by the new, more robust integration.
+- 🗑️ **Redundant `ThreadEntity.to_thread_id`:** Eliminated the now-obsolete `to_thread_id` method from `ThreadEntity` following the introduction of a centralized ID conversion utility.
+- 🗑️ **Consolidated `ExternalEvent` Export:** Removed a redundant `__init__.py` file related to `ExternalEvent` as its definition is now centrally managed.
+- 🗑️ **Outdated WebSocket Receiver Modules:** Cleaned up and removed old `aihub_api/aihub_api/sockets/receiver` modules, replaced by the new, refactored WebSocket architecture.
 
 ---
 
 
 
-## [v0.143.0] - 2025-04-11 - Unleash Expert Knowledge: Introducing Collaborative Agents and Intelligent Workflow Routing
-
-### Added
-- 🦾 **Expert Asking Agent:** Introduced a new agent capable of posing questions to dedicated expert channels (e.g., Slack), validating responses, asking follow-up questions, and saving sufficient answers as knowledge snippets to OpenWebUI.
-- 🧠 **Expert Grounded Agent:** Implemented a new agent that grounds its answers in available context and, if knowledge is missing, seeks user consent to forward queries to the Expert Asking Agent for external expertise.
-- 🔗 **OpenWebUI Python SDK:** A comprehensive new Python SDK is now available for programmatic interaction with the OpenWebUI API, enabling direct management of chats, files, and knowledge bases.
-- 🛣️ **LLM-Based Routing Utility:** Introduced a new utility for dynamic workflow routing using Large Language Models, allowing agents to intelligently select the next step based on instructions and available options.
-- 👁️ **Enhanced Event Display for Frontend:** `LimitChatHistoryEvent`, `StandaloneQuestionCondenserEvent`, and `StartEvent` are now explicitly displayable in the frontend, providing greater transparency into agent workflow execution.
+## [v0.138.0] - 2025-04-07 - Core Infrastructure and Testing Improvements
 
 ### Changed
-- 🔄 **Agent Directory Restructuring:** Streamlined the agent directory structure by moving `FewShotAgent`, `LLMWrappingAgent`, `RAGAgent`, and `WebuiAgent` to top-level agent directories for improved organization and discoverability.
-- 🚀 **Azure OpenAI API Version Update:** Updated the Azure OpenAI API version from `2023-12-01-preview` to `2024-12-01-preview` across agent configurations and pipeline resources.
-- 🌐 **Locale Forwarding in OpenAI Endpoints:** OpenAI API endpoints now correctly forward user locale information to agents, enabling more accurate and localized responses.
-- 📦 **Event Serialization Enhancements:** Improved the serialization and deserialization of NATS events to robustly handle nested events and lists containing event objects, increasing data integrity.
-- 💬 **Thought Event Formatting:** Adjusted `ThoughtEvent` display to ensure consistent newlines, improving readability of agent thought processes.
-- 📄 **WebUI Docker Compose Configuration:** Updated the default Docker Compose configuration for OpenWebUI, enabling API key usage, disabling channels, and adding RAG embedding batch size for improved performance.
-- ⚙️ **WebUI Pipeline Request Headers:** Added `Accept-Language` header to requests originating from WebUI pipelines, ensuring proper locale propagation.
+- 🚀 **Upgraded Milvus Vector Store Integration:** Updated the `llama-index-vector-stores-milvus` dependency from `0.3.0` to `0.6.0`, bringing the latest enhancements and fixes for vector store operations.
+- 🧪 **Enhanced Asynchronous Test Stability:** Introduced session-scoped asyncio event loops within test fixtures to ensure more reliable and consistent execution of asynchronous tests.
+- ⚙️ **Streamlined Local Development Setup:** Refined the NATS service configuration in `docker-compose.yml` by removing the health check, which helps optimize the local development environment startup.
+
+---
+
+
+
+## [v0.137.0] - 2025-04-07 - Core Event System Enhancements
+
+### Changed
+- 🔄 **Improved Human-in-the-Loop (HITL) Event Handling:** Enhanced the serialization and deserialization of `HumanInTheLoopResponseEvent` within the chat service to ensure proper type information is consistently included, leading to more robust and reliable event processing.
+
+---
+
+
+
+## [v0.136.0] - 2025-04-02 - Improved LLM Guarding and Structured Output
 
 ### Refactor
-- 🧹 **Agent Base Class Relocation:** The core `Agent` base class was refactored and moved out of the `abstract` subdirectory for a flatter, more intuitive directory structure.
-- 📦 **Consolidated Common Events:** Moved `LimitChatHistoryEvent` and `StandaloneQuestionCondenserEvent` from `aihub_agent` to `aihub_lib`, centralizing common event definitions for broader reuse.
-- 📝 **Improved Internal Logging:** Replaced direct `traceback.print_exc()` calls with `logger.exception(e)` across Dispatcher, EventController, EventService, and NATS Subscribers for standardized and more effective error reporting.
+- 🧹 **Refactored `ContextSufficientGuard`**: The internal implementation of the `context_sufficient_guard` has been updated to leverage `llm.structured_predict` for more robust and localized structured output parsing, enhancing the reliability of context sufficiency checks.
+- ⚙️ **Modernized LLM Interaction**: Switched from `LLMTextCompletionProgram` to direct `llm.structured_predict` calls, improving how structured data is extracted from LLM responses and enabling dynamic Pydantic model generation for better internationalization.
 
-### Fixed
-- 🐛 **BotInTheLoopAgent Playground Example:** Corrected `slack_channel_id` example and `UserMessageEvent` signature in the BotInTheLoopAgent playground example.
+### Changed
+- 📄 **Updated Internationalization Definitions**: Adjusted translation files for `context_sufficient_guard` to support the new structured output fields and streamline prompt templates, improving clarity and consistency across languages.
 
 ---
 
 
 
-## [v0.142.0] - 2025-04-10 - Enhanced Bot-in-the-Loop & Azure Bot Setup
-
-### Added
-- ✨ **Responder Information in Bot-in-the-Loop Responses**: The `BotInTheLoopResponseEvent` now includes detailed information about the human responder (e.g., Slack user ID, name), enabling agents to track and react to specific user inputs.
-- ⚡️ **Dynamic Slack ID Retrieval & Caching**: Introduced an internal mechanism in the `aihub_bot` to dynamically fetch and cache Slack bot and team IDs using the Slack `auth.test` API, improving reliability and reducing manual configuration.
-
-### Changed
-- 🚀 **Simplified Bot-in-the-Loop Request API**: The `BotInTheLoop.invoke` method (and `BotInTheLoopRequestEvent`) now only requires the Slack channel ID for initiating a request, automatically handling the full conversation ID internally. This streamlines integration for agents.
-- ⚙️ **Improved Internal Bot-in-the-Loop Slack Handling**: Refactored the internal handling of Slack conversation IDs and thread timestamps within the `aihub_bot` to better manage human-in-the-loop interactions.
-
-### Fixed
-- 🐛 **Robust Azure Bot Setup Script**: The Azure bot setup script has been made more resilient by checking for existing Azure AD app registrations before creation and improving JSON parsing for command outputs.
-
----
-
-
-
-## [v0.141.0] - 2025-04-09 - Enhanced Test Stability and Core Dependency Updates
-
-### Changed
-- 🚀 **Improved Backend Test Reliability:** Enhanced the CI/CD backend test action by implementing more robust Docker service health checks, including detailed status output, a timeout mechanism, and clearer error handling, to ensure test environments are consistently ready.
-- 🔄 **Updated Milvus Vector Store Dependency:** Upgraded the `llama-index-vector-stores-milvus` library to version `0.7.3`, incorporating the latest features and stability improvements for Milvus integration.
-
-### Fixed
-- 🐛 **Resolved Milvus Test Instability:** Addressed intermittent test failures related to Milvus vector store initialization by introducing a small delay in the test setup, ensuring the store is fully ready before operations begin.
-
----
-
-
-
-## [v0.140.0] - 2025-04-09 - Introducing Bot-in-the-Loop and Core Refinements
-
-### Added
-- ✨ **New Bot-in-the-Loop (BiTL) Feature:** Introduced a robust mechanism allowing agents to interact with bots (e.g., Slack) to solicit human input or approval at critical workflow junctures, enhancing guided automation and error handling. This includes new event definitions (`BotInTheLoopRequestEvent`, `BotInTheLoopResponseEvent`) and a helper class in `aihub_lib`.
-- 🦾 **`BotInTheLoopAgent`:** A new example agent has been added to the playground, demonstrating how to effectively integrate and utilize the Bot-in-the-Loop functionality within agent workflows.
-- 🚀 **Dedicated BiTL Bot and Controller:** Core components (`BotInTheLoopBot` and `BotInTheLoopController`) have been integrated into the `aihub_bot` service to facilitate communication and handle responses from bot-in-the-loop interactions, including a handler for managing conversation threads.
-
-### Changed
-- 🔄 **Enhanced Event Dispatching:** The `ExternalEventDistributor` in `aihub_lib` now explicitly supports processing `BotInTheLoopResponseEvent`, enabling agent workflows to seamlessly resume after receiving input from a bot interaction.
-- 📄 **Improved Dependency Management Script:** The `switch_dependencies.py` script now automatically executes `poetry install` after locking dependencies, streamlining the setup process for both local and remote core development environments.
+## [v0.135.0] - 2025-04-01 - Bot Core Overhaul: Architecture Refinements and Localized Messaging
 
 ### Refactor
-- 🧹 **Streamlined Chat Bot Architecture:** The `aihub_bot`'s chat-related modules (including `BaseChatBot`, `CompletionHandler`, `ContentExtractor`, and their `agent`/`openai` specific implementations) have been reorganized into a dedicated `aihub_bot/bots/chat` subdirectory. This improves code structure, modularity, and maintainability across different chat bot implementations.
+- 🧹 **Unified Bot Logic with `BaseChatBot`:** Introduced a new base class, `BaseChatBot`, to centralize and standardize common functionalities across all chatbot types, including message processing, typing indicators, and conversation management.
+- 🔄 **Redesigned Completion Handling:** Refactored the core `Service` into a more abstract `CompletionHandler` to implement a strategy pattern, streamlining how different AI models (e.g., Agents, OpenAI) generate responses.
+- 🚚 **Restructured Bot Modules:** Reorganized bot-related files and modules (e.g., `ContentExtractor`, `AgentChatService`, `OpenaiChatService`) into a clearer, more maintainable directory structure.
+- 🧹 **Streamlined Bot Implementations:** Simplified `AgentChatBot`, `StreamAgentChatBot`, `OpenaiChatBot`, and `StreamOpenaiChatBot` classes by migrating shared logic to the new `BaseChatBot`.
+- ⚙️ **Standardized Database Naming:** Aligned database and collection names for bot paths (`aihub_bot` to `aihub`, `paths` to `bot_paths`) for consistency.
+
+### Added
+- 🌍 **Internationalization for Bot Error Messages:** Implemented support for localized error messages, providing users with clearer and more relevant feedback in their preferred language.
+
+### Fixed
+- 🐛 **Improved OpenAI API Error Handling:** Enhanced the `OpenaiCompletionHandler` to specifically catch and display detailed error messages from OpenAI's API, offering better transparency for API-related issues.
+
+### Changed
+- 📝 **Flexible Locale Handling:** Updated `LocaleHandler.t_object` to allow optional locale arguments, providing more flexible usage when retrieving translated objects.
 
 ---
 
 
 
-## [v0.139.0] - 2025-04-08 - Deepened Frontend Integration with Advanced Event Tracing and Core Event System Refinements
-
-### Added
-- ✨ **New Frontend Testing Agent**: Introduced `FrontendTestingAgent` and its configurations, providing a dedicated agent for testing and developing frontend components that display various event types (e.g., embeddings, retrievers, rerankers, tool calls, Human-in-the-Loop interactions).
-- ⚙️ **Open Web UI Docker Integration**: Provided a new `docker-compose-webui.yml` to easily run Open Web UI alongside AI-Hub, offering a comprehensive local development environment.
-- 🤝 **Open Web UI Custom Pipeline**: Implemented a new custom pipeline for Open Web UI (`webui_pipelines/aihub_connection.py`) to seamlessly integrate AI-Hub agents as models, enabling direct interaction and transparent proxying of chat completions.
-- 🕵️ **Open Web UI Tracing Action**: Introduced a new Open Web UI action (`webui_pipelines/suite_connection.py`), allowing users to directly open the detailed AI-Hub event tracing view for specific chat interactions from within Open Web UI.
-- 🚀 **Advanced Event Display Components**: Developed a suite of new UI components for granular event visualization, including dedicated displays for agent delegations, LLM costs, embedding searches, document retrievals, reranking, tool calls, internal thoughts, and Human-in-the-Loop requests/responses.
-- 📈 **LLM Cost Visualization**: Implemented a new UI component (`Costs/Table.vue`) to display LLM token usage and associated costs within the event trace, enhancing transparency for resource consumption.
-- 📄 **New Product Pitch Documentation**: Added a comprehensive `0_product_pitch.md` document, detailing the vision, core concepts, evolutionary stages, architecture, benefits, and security principles of the AI-Hub.
-- ⚡️ **Performance Caching for User & Thread Data**: Implemented `TTLCache` in `AzureUserInformationProvider` and `WebSocketSender` to cache user and thread information, significantly improving performance for frequently accessed data.
-- 📦 **Centralized ID Conversion Utility**: Introduced `aihub_lib.persistence.utils.str_to_object_id` to centralize the conversion of string IDs to MongoDB `ObjectId` across the codebase, ensuring consistency.
-- 🔌 **WebSocket Dependency Injection**: Added new dependencies to properly inject core services (Locale, NATS, External Event Distributor, WebSocket Manager, WebSocket Sender) into WebSocket contexts, standardizing their usage.
+## [v0.134.0] - 2025-04-01 - Core Component Synchronization
 
 ### Changed
-- 🔄 **Core Event Model Overhaul**: Refactored the fundamental `BaseEvent` model to use `_event_name` and `_parent_event_names` for more robust and flexible event identification and deserialization across microservices, improving cross-service communication.
-- 📢 **Test Runner API**: Updated the `AgentTestRunner` API (e.g., `get_events_of_class`, `has_event_of_class`) to provide more precise control over event class matching in tests, enabling stricter assertions.
-- 🌐 **WebSocket Event Payload Structure**: Modified the `WSServerEvent` payload to use strongly-typed Pydantic models for the `event` field, enhancing data integrity and enabling the frontend to dynamically render diverse event types with full data.
-- ⚙️ **Chat Service Output**: The chat service's `build_json_response_content` now returns a `ChatContent` object, which includes both the LLM's final response and any streamed reasoning content, providing richer output for conversational agents.
-- 💡 **ThoughtEvent Hierarchy**: `ThoughtEvent` now inherits from `ChunkEvent`, allowing internal reasoning to be streamed and displayed as partial content, aligning with the incremental nature of LLM processing.
-- 🔑 **Authentication Handler API**: Broadened the `AuthHandler` interface to include an `authenticate_token` method, enabling direct token validation for WebSocket connections and other non-HTTP contexts across all authentication strategies.
-- 📊 **Agent Discovery Deduplication**: Ensured that the agent discovery process correctly deduplicates agent entries by `(agent_class, agent_id)`, preventing redundant listings of the same agent.
-- 📈 **Granular Event Retrieval**: Enhanced the event retrieval API (`/event/`) to support filtering by `thread_id`, `display_id`, and `event_class`, providing more control over the events fetched from persistence.
-- 🩺 **Health Check Response**: Extended the `/health` endpoint response to include an HTTP status `code` field, providing more explicit health information.
-- 🎨 **UI Styling and Layout**: Adjusted various UI components and layouts to improve visual consistency and responsiveness, including updates to the default layout, admin pages, and chat message display.
-- ⚙️ **OpenAI API Compatibility**: Refined the OpenAI service to handle messages and tool calls more robustly, improving compatibility with various OpenAI models and their features.
-- 🖼️ **Frontend Serving Capabilities**: Enhanced the `Runner` to serve Nuxt.js assets and implement Single Page Application (SPA) routing fallback, improving frontend serving alongside the backend.
+- 🔄 **Synchronized Component Versions:** All core microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_pipeline`) and the shared `aihub_lib` have been updated to `v0.134.0`, ensuring consistent internal dependency alignment across the platform.
+- ⚙️ **Makefile Tag Update:** The `Makefile`'s default `TAG` for remote core operations has been updated to `v0.134.0` to reflect the new coordinated release version.
+
+---
+
+
+
+## [v0.133.0] - 2025-04-01 - Improved API Error Handling with Custom Status Codes
+
+### Added
+- ✨ **`ExceptionEvent` Custom Status Code:** Introduced a new `http_status_code` field to the `ExceptionEvent` to allow services to specify precise HTTP status codes for exceptions.
+
+### Changed
+- 🚀 **API Error Response Precision:** The API now leverages the `http_status_code` from `ExceptionEvent` to return more accurate and specific HTTP status codes to clients, enhancing error visibility beyond a generic 500 internal server error.
+- 🔄 **Agent Service Error Propagation:** The `AgentService` has been updated to explicitly allow the return of an `ExceptionEvent`, ensuring more detailed error information is propagated from agent operations.
+
+---
+
+
+
+## [v0.132.0] - 2025-04-01 - Improved Chatbot Reliability and User Feedback
+
+### Changed
+- 🔄 **Enhanced Chatbot Error Handling:** Standardized and centralized the handling of unexpected errors across all chatbot types (Agent and OpenAI, streaming and non-streaming) to provide more consistent user feedback and better internal logging.
+- ⚡️ **Introduced Response Timeout for Chatbots:** Chatbots now detect and notify users if a response takes an unusually long time, preventing indefinite waiting and indicating potential issues.
+- 🔗 **Improved Internal Exception Propagation:** Enhanced the system's ability to propagate specific `ExceptionEvent` types from core services, allowing for more precise and robust error management within the chatbot framework.
+
+---
+
+
+
+## [v0.131.0] - 2025-04-01 - Enhanced Markdown Parsing Accuracy
+
+### Fixed
+- 🐛 **Markdown Parsing:** Improved the accuracy of Markdown document parsing by automatically unescaping HTML entities, ensuring that content extracted from Markdown files is correctly represented without escaped characters.
+
+---
+
+
+
+## [v0.130.0] - 2025-03-31 - Visual Workflows, Dynamic APIs, and UX Polish
+
+### Added
+- ✨ **Agent Workflow Visualization**: Introduced a comprehensive system for visualizing agent workflows, including detailed step information, input/output events, and event flow. This is exposed via the API and rendered in the web UI.
+- 🦾 **Dynamic Service Discovery**: A new `/suite` API endpoint and associated DTOs allow frontends to dynamically discover and display all available services (e.g., Agents, Threads, Tokens) with their localized names, descriptions, and icons.
+- 🖼️ **Agent Icon Support**: Agents can now define a specific icon in their configuration, which is displayed in the UI and discovery endpoints.
+- 📄 **New Admin Agent Page**: A dedicated administration page for agents has been added to the web UI, allowing users to browse and inspect discovered agents and their workflows.
+- ⚙️ **Refined Controller Metadata**: All API controllers now include localized names, descriptions, and icons, enhancing discoverability and documentation in the OpenAPI specification.
+- 🖥️ **Workflow Visualization Components**: New UI components (`EventEdge`, `StartNode`, `StepNode`, `StopNode`, `Visualization`) have been added to render interactive agent workflow graphs in the web application.
+- 📝 **`UserMessageEvent` Form Component**: A dedicated component for rendering `UserMessageEvent` forms in the web UI has been introduced.
+- 👤 **User Settings Component**: A new `UserSettings` component in the web UI provides quick access to user-specific options, including logout.
+- ⚡️ **Health Service Page**: A basic health service page has been added to the web UI.
+
+### Changed
+- 🔄 **Unified Runner Architecture**: The `ApiRunner` and `BotRunner` now inherit from a new abstract `Runner` base class, centralizing core application setup and lifecycle management for better consistency.
+- 🌐 **Enhanced Locale Handling in API**: Agent and Thread services now consistently pass `LocaleHandler` to DTOs, ensuring localized data for agent names, descriptions, and other metadata is correctly returned to clients.
+- 🗂️ **Improved Module Organization**: Renamed the `EventPersister` module for better code structure and clarity.
+- 🧩 **Updated Agent DTOs**: The `AgentDTO` now utilizes a new `AgentConfigDTO` and incorporates the `network_graph` for a more comprehensive representation of agent capabilities.
+- 🧑‍💻 **User Data Structure**: The DTO for logged-in users has been renamed from `UserDTO` to `MyUserDTO` for clearer distinction and specificity.
+- 🎨 **UI Theme Colors**: Adjusted primary colors in the AI Hub theme for a refreshed visual appearance.
+- 📊 **UI Agent List**: The agent list in the web UI now dynamically adapts its display (table or data view) based on available screen width, and explicitly shows agent icons and conversational status.
+- 🚀 **OIDC Authentication Flow**: Improved OIDC silent renewal and error handling in the web application for a more robust and seamless authentication experience.
+- 📦 **Dependency Updates**: Updated numerous dependencies across `aihub_agent`, `aihub_api`, `aihub_bot`, and `aihub_web` for improved performance, security, and stability.
+
+### Fixed
+- 🐛 **Robust Authentication Handling**: Improved the `TokenAndOauth2Handler` to be more resilient to non-401 HTTP exceptions from individual authentication strategies, ensuring more graceful fallback and user experience.
 
 ### Refactor
-- 🧹 **Event Naming Consistency**: Standardized event naming conventions across the codebase, consistently using `event_name` instead of `event_type` or `__class__.__name__` in internal logic, logging, and method signatures for improved clarity and maintainability.
-- 🔗 **Internal Event Routing**: Streamlined how event subjects are constructed and validated in NATS publishers and dispatchers, enforcing correct routing patterns.
-- 📦 **Core Library Structure**: Reorganized internal modules within `aihub_lib` and `aihub_agent` for better logical separation of concerns (e.g., consolidating `ExternalEventDistributor` and ID utilities).
-- 🧹 **Test Code Adaptations**: Updated numerous test files across agents and APIs to align with new event naming conventions and API changes.
+- 🧹 **Codebase Simplification**: Removed outdated or redundant event and agent type definitions in the web UI, streamlining the codebase and relying more heavily on OpenAPI-generated types for consistency.
+- 🧹 **Web UI Component Capitalization**: Standardized component naming by changing `thread/Chat.vue` to `Thread/Chat.vue` and `thread/ThreadList.vue` to `Thread/ThreadList.vue` for consistency.
+- ⚙️ **Decorator Metadata Extraction**: Refactored internal `step` and `precondition` decorators to accurately extract output events and step icons from agent methods.
 
 ### Removed
-- 🗑️ **Deprecated External Event Module**: Removed the outdated `aihub_api/aihub_api/sockets/events/user_to_server/__init__.py` and `aihub_api/aihub_api/sockets/receiver/__init__.py` modules, as their functionality has been refactored and consolidated into the `aihub_lib.nats.distributor` module.
-- 🗑️ **Legacy Thread ID Conversion**: Removed the `ThreadEntity.to_thread_id` static method in favor of the new centralized `aihub_lib.persistence.utils.str_to_object_id` utility.
-- 🗑️ **Dedicated Open Web UI Page**: Removed the isolated Open Web UI page (`pages/module/webui/index.vue`) in the AI-Hub frontend, as its functionality is now seamlessly integrated into the new OpenAI service page.
+- 🗑️ **Deprecated Workflow Visualizer**: Removed the old `NetworkXVisualizer` class, which has been entirely superseded by the new, more capable `WorkflowVisualizer`.
 
 ---
 
 
 
-## [v0.138.0] - 2025-04-07 - Vector Store Upgrades and Test Infrastructure Improvements
-
-### Changed
-- 🔄 **Updated Milvus Integration:** Upgraded `llama-index-vector-stores-milvus` and `pymilvus` to their latest stable versions, enhancing compatibility and performance with Milvus vector stores.
-- ⚙️ **RAGAgent Environment Configuration:** Adjusted RAGAgent environment variables, including Azure subscription ID and regional settings, to align with updated deployment configurations.
-- 🐳 **Streamlined Docker Compose for NATS:** Removed the health check configuration for the NATS service in `docker-compose.yml` to simplify the local development environment.
-
-### Refactor
-- 🧪 **Improved Asynchronous Test Setup:** Implemented a session-scoped `asyncio` event loop fixture for tests, significantly enhancing the stability and reliability of asynchronous test execution across agents and processors.
-
----
-
-
-
-## [v0.137.0] - 2025-04-07 - Improved Event Handling for Human-in-the-Loop Workflows
-
-### Changed
-- 🔄 **Refined Human-in-the-Loop Response Event Handling:** Enhanced the serialization and deserialization logic for `HumanInTheLoopResponseEvent` in the `ChatService` to ensure robust and accurate event reconstruction, particularly for complex event inheritance structures.
-
----
-
-
-
-## [v0.136.0] - 2025-04-02 - AIHub Library Enhancements: Smarter Guards and Localization
-
-### Refactor
-- 🦾 **Modernized `context_sufficient_guard` Implementation**: Re-engineered the core logic of the context sufficiency guard to directly leverage `llm.structured_predict`. This significantly improves the robustness and efficiency of structured output parsing and enhances compatibility with diverse Large Language Model capabilities, including non-function-calling models.
-
-### Changed
-- 🌐 **Enhanced Localization for Guard Results**: Introduced dynamic Pydantic model generation for `GuardResult` within `context_sufficient_guard`, allowing for fully localized field descriptions and improved clarity in guard decision explanations across all supported languages.
-- ⚙️ **Streamlined Prompt Structure**: Simplified the internal prompt template for the `context_sufficient_guard` by removing redundant message elements, leading to cleaner code and improved maintainability.
-- 📝 **Improved German Translation**: Corrected a minor typo in the German translation file for guard-related text.
-
----
-
-
-
-## [v0.135.0] - 2025-04-01 - Streamlined Bot Architecture and Enhanced User Experience
+## [v0.129.0] - 2025-03-28 - Introducing Bounded Loop Workflows and Enhanced Agent Examples
 
 ### Added
-- 🌐 **Internationalized Error Messages:** Implemented support for localized error messages (timeout and generic errors) within bots across English, German, French, and Italian, enhancing the user experience.
-
-### Changed
-- 🐛 **Improved OpenAI Error Handling:** Enhanced error handling for OpenAI API status errors, providing more specific and user-friendly messages directly from the API.
-- ⚙️ **Standardized Database Connection:** Updated bot database connections to use a configurable database name and collection name (`bot_paths`), improving consistency and flexibility.
-- 📡 **Refined Channel Detection:** Improved detection of specific channels, specifically for "webchat", by using the `Channels.webchat` enum.
-
-### Refactor
-- 🧹 **Unified Bot Architecture:** Introduced `BaseChatBot` to centralize common chatbot functionalities like conversation handling, message processing, typing indicators, and error management, simplifying individual bot implementations.
-- 🔄 **Refactored Completion Handling:** Renamed the core `Service` class to `CompletionHandler` and restructured it as an abstract strategy interface, allowing for clear separation and consistent handling of different completion types (e.g., OpenAI, Agent).
-- ⚡️ **Centralized Route Management:** Extracted and consolidated route-specific logic, such as path retrieval and adapter management, into a new `RoutesService` for cleaner separation of concerns.
-- 🧹 **Streamlined Bot Implementations:** Agent and OpenAI chatbots (`AgentChatBot`, `OpenaiChatBot`, `StreamAgentChatBot`, `StreamOpenaiChatBot`) have been significantly simplified by leveraging the new `BaseChatBot` and `CompletionHandler` architecture.
-- 📄 **Code Organization:** Performed extensive renaming and relocation of core bot files to improve modularity and readability.
+- ✨ **Introduced `BoundedLoopAgent`:** A new example agent demonstrating a controlled, iterative workflow that loops a configurable number of times, showcasing advanced agent design patterns.
+- 📄 **Added `BoundedLoopAgentConfig`:** Provides a dedicated configuration class for the `BoundedLoopAgent`, enabling easy customization of the loop's maximum iterations.
+- ⚙️ **Defined Custom Events for Loop Control:** Introduced `BeginEvent`, `ProcessEvent`, and `DecisionEvent` to meticulously manage the state and flow within the `BoundedLoopAgent`'s iterative process.
+- 🧪 **Implemented BDD Tests for Bounded Loop Workflow:** Comprehensive behavior-driven development tests were added to ensure the precise functioning and iterative behavior of the `BoundedLoopAgent`.
+- 🚀 **Provided a `trigger.py` example:** A simple script to easily run and observe the `BoundedLoopAgent` in action, aiding in understanding and demonstration.
 
 ---
 
 
 
-## [v0.134.0] - 2025-04-01 - Core Library Update and Version Synchronization
-
-### Changed
-- 🔄 **Synchronized Core Library:** All services (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_pipeline`) have been updated to use the latest `aihub-lib` version `v0.134.0`.
-- 🚀 **Version Increment:** The version of all core services and the main `aihub_lib` has been bumped to `v0.134.0` to reflect the latest release.
-
----
-
-
-
-## [v0.133.0] - 2025-04-01 - Enhanced API Error Reporting
-
-### Changed
-- ⚡️ **Improved API Error Handling:** The `ExceptionEvent` now includes an `http_status_code` field, enabling API endpoints to propagate specific HTTP status codes (e.g., 4xx, 5xx) from internal exceptions, leading to more precise error responses for client applications.
-
----
-
-
-
-## [v0.132.0] - 2025-04-01 - Improved Chatbot Reliability and User Experience
-
-### Added
-- 🚀 **Introduced Comprehensive Exception Handling:** Implemented a new shared `handle_exception` method within the `Service` class to centralize and standardize error reporting and user feedback across all chatbot types.
-- ⏱️ **Added Chatbot Response Timeout:** Implemented a timeout mechanism for the "typing" indicator, automatically informing users with a friendly message if a chatbot takes too long to respond.
-
-### Changed
-- 🦾 **Enhanced Chatbot Error Resilience:** Integrated the new centralized exception handling into `AgentChatBot`, `StreamAgentChatBot`, `OpenaiChatBot`, and `StreamOpenaiChatBot` to gracefully manage various errors and provide clearer feedback to users.
+## [v0.128.0] - 2025-03-27 - Improved Embedding Reliability
 
 ### Fixed
-- 🐛 **Corrected Agent Service Exception Propagation:** Ensured that underlying exceptions (represented as `ExceptionEvent`s) from core agent services are properly caught and re-raised, allowing for consistent and robust error handling by the chatbots.
+- 🐛 **Enhanced Embedding Robustness**: Implemented a recursive batch splitting strategy within the embedding process to gracefully handle validation errors that might occur during batch embedding generation, improving the reliability of vector generation for large inputs.
 
 ---
 
 
 
-## [v0.131.0] - 2025-04-01 - Enhanced Markdown Parsing and Core Library Update
-
-### Fixed
-- 🐛 **Improved Markdown Parsing Robustness:** The `MarkdownStructuralNodeParser` now correctly unescapes HTML entities within Markdown content, ensuring accurate processing and splitting of documents that may contain such characters.
+## [v0.127.0] - 2025-03-25 - Enhanced Bot Chat Interactions
 
 ### Changed
-- 🔄 **Updated Core Library Dependency:** All microservices, including the Agent, API, Bot, and Pipeline, have been updated to utilize the latest `aihub-lib` core library (`v0.131.0`).
+- ⚡️ **Enhanced Typing Indicators**: Implemented continuous and stoppable typing indicators for agent and OpenAI chat bots, providing a more responsive and fluid user experience during bot message processing.
 
 ---
 
 
 
-## [v0.130.0] - 2025-03-31 - Unleash Agent Insights: Workflow Visualization and Dynamic API Discovery
+## [v0.126.0] - 2025-03-24 - Enhanced LLM Call Reliability
 
 ### Added
-- ✨ **Agent Workflow Visualization**: Agents now expose their internal step-by-step logic as a comprehensive network graph, viewable in a new dedicated admin panel in the Web UI. This includes detailed insights into step inputs, outputs, and event schemas.
-- 🚀 **Dynamic API Service Discovery**: A new `/suite` API endpoint provides a structured list of all available API services (controllers), including their localized names, descriptions, and icons. The Web UI now leverages this for dynamic service navigation.
-- ⚙️ **New Agent Admin Pages**: Introduces dedicated admin pages in the Web UI for comprehensive agent management and inspection, displaying detailed configurations and interactive workflow visualizations.
-- 🎨 **Step Icons**: Agent steps can now define a visual `icon` which is displayed in the new workflow visualization, improving clarity and intuitiveness.
-- ℹ️ **Localized Agent Configuration**: Agent configurations (`AgentConfigDTO`) now support localized names, descriptions, and system prompts, providing a more tailored experience across different languages.
-- 👤 **User Settings Interface**: A basic user settings component has been added to the Web UI, including a logout option.
-- 📄 **Dedicated Event Form Components**: Initial components for displaying event forms, such as `UserMessageEvent.vue`, have been introduced to the Web UI.
+- ✨ **Configurable LLM Request Timeout:** Introduced a new `timeout` parameter in `ChatLLMConfig`, enabling users to specify a maximum duration for chat-based Large Language Model requests, with a default of 30 seconds.
+- ⚙️ **Applied Timeout to Chat LLM Implementations:** The newly added timeout configuration is now actively utilized by both **Azure OpenAI** and **Self-Hosted LLM** integrations, providing greater control and improved reliability for API call durations.
+
+---
+
+
+
+## [v0.125.0] - 2025-03-21 - Introducing WebUI Agent and API Modernization
+
+### Added
+- ✨ **New WebUI Agent**: Introduced a new `WebuiAgent` enabling seamless integration with OpenAI-compatible Web UI APIs, supporting streaming chat responses and configurable features like web search.
+- ⚡️ **WebUI Agent Utilities**: Added dedicated utility functions and configuration for the `WebuiAgent` to handle Server-Sent Events (SSE) streaming and flexible setup.
+- 📚 **WebUI Agent Playground**: Included a new playground example to demonstrate the `WebuiAgent`'s functionality and ease of use.
+- 📦 **OpenAI Library Dependency**: Incorporated the `openai` library into `aihub_lib` to support new integrations and future features.
 
 ### Changed
-- 🌐 **Comprehensive API Localization**: All API controllers (`AgentController`, `EventController`, `I18nController`, `OpenaiController`, `ThreadController`, `TokenController`, `UserController`) now define localized names, descriptions, and icons for improved OpenAPI documentation and client-side discoverability.
-- 🧩 **Enhanced Agent Definition**: The `Agent` abstract base class now explicitly aggregates and exposes all output event types (`get_output_events`) produced by its steps, enabling more accurate workflow analysis and visualization.
-- 🤖 **Improved Agent Step Decorator**: The `@step` decorator now supports `name`, `description`, and `icon` attributes for better UI representation and clarity of individual agent steps.
-- 🔑 **Robust Authentication Flow**: The OIDC authentication middleware has been improved to handle silent token renewal more robustly, enhancing session management and reducing unexpected logouts.
-- 💅 **Updated Web UI Theming**: The default primary color scheme of the Web UI theme has been updated for a fresh visual appearance.
-- ⚡️ **Dynamic Web UI Navigation**: The main layout and navigation of the Web UI have been refactored to dynamically load and display services based on the new `/suite` API endpoint.
-- 👤 **Simplified User Data Access**: The `UserController.get_user` endpoint has been renamed to `get_my_user` and now returns a dedicated `MyUserDTO` for the authenticated user, streamlining user profile handling.
-
-### Fixed
-- 🐛 **Reliable Function Signature Extraction**: Improved the extraction of return event types from function signatures within the agent workflow system for increased accuracy and stability.
+- 🔄 **OpenAI API `chat_id` Handling**: Modified `ChatCompletionRequest` to move the `chat_id` from a top-level field into the `metadata` dictionary, aligning with broader API conventions.
+- 🚫 **Recursive Agent Exclusion**: Enhanced the `/models` endpoint in the OpenAI API to allow excluding `WebuiAgent` types, preventing potential recursive loops during agent discovery.
+- 🖼️ **Default Image Model Update**: Updated the default image generation model to DALL-E 3 for improved quality and capabilities.
+- 🚀 **Azure OpenAI API Version**: Upgraded the Azure OpenAI API version in development environments to `2025-01-01-preview` for access to the latest features.
+- 📊 **Performance Report Enhancement**: Improved performance test reporting by adding an explicit 'Error' column, providing clearer insights into test failures.
 
 ### Refactor
-- 🔄 **Standardized Runner Architecture**: Introduced a new abstract `Runner` base class to provide a consistent and extensible foundation for building all FastAPI applications (API and Bot services), improving code reusability and maintainability.
-- 🧹 **Unified Frontend Types**: The Web UI now exclusively relies on OpenAPI generated SDK types, removing redundant manual type definitions and ensuring strict consistency with the backend API.
-- 🗑️ **Consolidated Persistence Modules**: The `EventPersister` module has been reorganized into a dedicated `events` subpackage for better modularity.
-- 🔠 **Component Naming Conventions**: Web UI components under `components/thread` have been renamed to follow PascalCase (`Thread/Chat.vue`, `Thread/ThreadList.vue`) for consistency.
-- ⚙️ **Updated ESLint Configuration**: The Web UI's ESLint setup has been enhanced with new rules for import sorting, SonarJS quality checks, and Tailwind CSS linting for improved code quality.
+- 🧹 **Function Argument Cleaning**: Refactored internal handling of function arguments to filter out `None` values, improving robustness and consistency.
+- ⚙️ **Internal Model Naming**: Streamlined the derivation of `model_name` within the chat service for better clarity and maintainability.
+- 📄 **Type Hint Refinement**: Improved type annotations for `asturn_llm_for_cost_reporting` to enhance code clarity and correctness.
 
 ---
 
 
 
-## [v0.129.0] - 2025-03-28 - New Iterative Agent Example and Workflow Testing Capabilities
+## [v0.124.0] - 2025-03-21 - Core Service Refinements and Enhanced Agent Interactions
+
+### Changed
+- 🚀 **Streamlined Agent Event Processing:** Relaxed the validation for external agent events, allowing for more flexible event distribution to agents without requiring explicit listing within a thread's agent list, enhancing dynamic agent interactions.
+
+### Refactor
+- 🧹 **Unified Bot Database Structure:** Standardized MongoDB collection names to `bot_conversations` and `bot_paths` and unified the database name to `aihub` for the bot service. This improves database organization and consistency across services.
+
+---
+
+
+
+## [v0.123.0] - 2025-03-21 - Enhanced Document Processing and Metadata Management
 
 ### Added
-- ✨ **Introduced `BoundedLoopAgent` example:** A new comprehensive playground example demonstrating how to build agents with **bounded iterative workflows**. This includes the agent itself, utilizing `RunContext` for state management, and showing how to define agent-specific configurations.
-- 🦾 **Enhanced workflow testing with BDD:** Added dedicated **BDD feature files and Pytest tests** for the `BoundedLoopAgent` to validate its iterative behavior and event flow, providing a clear example of testing complex agent workflows.
-- 📄 **Custom workflow events and configuration:** Implemented **`BoundedLoopAgentConfig`** to allow dynamic control over the loop iterations and defined **custom events (`BeginEvent`, `DecisionEvent`, `ProcessEvent`)** to orchestrate the iterative process within the `BoundedLoopAgent`.
+- ✨ **Introduced `MetadataExtractor` Interface:** Added a new abstract class (`MetadataExtractor`) that allows for custom logic to extract and enrich metadata from document splits during processing, enabling more flexible and powerful document understanding.
+- 🏷️ **Extended Node Metadata:** New metadata fields, **`REFERENCE_NAME`** and **`REFERENCE_URL`**, have been added to document nodes, facilitating richer attribution and precise source linking for retrieved content.
+
+### Changed
+- 📄 **Improved Markdown Parser Extensibility:** The `MarkdownStructuralNodeParser` now integrates the new `MetadataExtractor`, allowing for a pluggable approach to extracting detailed metadata directly during markdown content parsing.
+- 📊 **Updated Metadata Table Display:** The nodes metadata table now includes the newly introduced `REFERENCE_NAME` and `REFERENCE_URL` fields, providing comprehensive insights into document sources and references.
+
+### Refactor
+- 🧹 **Module Reorganization for `Split` Class:** The `Split` dataclass, a core component in document parsing, has been moved to its own dedicated file for improved modularity and code clarity.
+- ⚙️ **Pydantic v2 Migration:** The `MarkdownStructuralNodeParser` has been updated to align with Pydantic v2, enhancing type handling and configuration management for improved stability and future compatibility.
 
 ---
 
 
 
-## [v0.128.0] - 2025-03-27 - Pipeline Embedding Robustness Enhancement
+## [v0.122.0] - 2025-03-21 - Enhanced Error Handling and System Stability
+
+### Added
+- ✨ **Introduced Robust Exception Handling:** The system now proactively captures and processes `ExceptionEvent`s originating from core services, enhancing error propagation and system stability.
+- 🚀 **Improved API Error Reporting:** The Agent API (`aihub_api`) now correctly translates internal `ExceptionEvent`s received from agent operations into HTTP 500 errors, providing clearer feedback on operational failures.
+- 🛡️ **Enhanced Chat Service Reliability:** The Chat Service (`aihub_lib`) now gracefully terminates ongoing chat operations when an `ExceptionEvent` is encountered, preventing stalled processes and ensuring consistent state.
+
+### Changed
+- 🔄 **Extended Event Handling Signature:** The `stop_event` mechanism within the Chat Service (`aihub_lib`) has been updated to explicitly recognize and store `ExceptionEvent`s, allowing for more comprehensive error state management.
+
+---
+
+
+
+## [v0.121.0] - 2025-03-20 - Enhanced Event Causality and Dispatching Reliability
+
+### Changed
+- 🔄 **Improved Event Ordering and Filtering**: The system now utilizes JetStream's native sequence numbers instead of event creation timestamps for filtering and retrieving events. This change significantly enhances the precision and reliability of event causality, ensuring steps are triggered based on the exact sequence of events in the workflow.
+
+### Refactor
+- ⚙️ **Core Event Store Logic Update**: The internal logic within the `Dispatcher`, `JetStreamEventStore`, and `RunEventStore` has been updated to fully leverage JetStream sequence numbers for all event-related operations. This provides a more robust and accurate foundation for event processing.
+- 📚 **Event Metadata Enrichment**: All base events now automatically store their corresponding JetStream sequence number upon reception, providing a foundational improvement for strictly ordered event processing and dependency resolution within the agent framework.
+
+---
+
+
+
+## [v0.120.0] - 2025-03-20 - Introducing Language Detection for Enhanced Processing
+
+### Added
+- ✨ **Introduced Language Detection**: A new utility has been added to automatically detect the language (German, English, French, Italian, or other) of user queries using an LLM, enabling more language-aware processing capabilities.
+
+### Refactor
+- 🧹 **Streamlined IDE Module Configuration**: Optimized internal `.idea` project files to improve module referencing and overall development environment setup.
+
+---
+
+
+
+## [v0.119.0] - 2025-03-19 - API Routing Improvements
+
+### Changed
+- 🔄 **Enhanced dynamic route naming for agent event controllers** to incorporate a route postfix, which improves the uniqueness and clarity of dynamically generated API endpoints.
+
+---
+
+
+
+## [v0.118.0] - 2025-03-19 - Improved Event Handling and Core Updates
+
+### Added
+- ✨ **Enhanced Event Serialization:** Introduced a new `model_dump_json` method within `BaseEvent` to provide robust serialization of event data to JSON strings, ensuring all data, including previously unknown fields, is fully preserved.
+
+### Changed
+- 🧹 **Refined Event Method Overrides:** Added the `@override` decorator to the `model_dump` method in `BaseEvent` for improved code clarity and maintainability.
+
+---
+
+
+
+## [v0.117.0] - 2025-03-19 - Empowering Custom Workflow Control
+
+### Added
+- ✨ **Custom Start and Stop Event Support**: Introduced the ability to define and utilize custom `StartEvent` and `StopEvent` types, enabling more tailored and application-specific workflow initiation and termination for agents.
+- 🚀 **New Playground Example for Custom Events**: Added a comprehensive playground example (`CustomStartStopEventAgent`) that demonstrates how to implement and integrate custom start and stop events into agent workflows, providing a practical guide for developers.
+- 🧪 **Dedicated Tests for Custom Workflows**: Included new BDD tests to validate the functionality of custom start and stop events, ensuring reliability and providing a robust example for extending agent capabilities.
+
+---
+
+
+
+## [v0.116.0] - 2025-03-19 - Enhanced Chat Control and Event Visibility
+
+### Added
+- ✨ **Enhanced Chat Interaction Control:** Introduced a new `subscribe_to_thread` parameter in chat services, allowing users to choose between subscribing to events only from specific agents or all events within a thread for comprehensive visibility.
+
+### Changed
+- 🔄 **Broadened Default Chat Visibility:** Streaming and JSON chat interactions now default to subscribing to all events within a thread, providing a more complete view of multi-agent conversations without explicit configuration.
+- 🚀 **Contextualized JSON Event Interactions:** The `start_json_event_interaction` API now explicitly receives `agent_class` and `agent_id`, allowing for more contextual and precise handling of JSON-based conversations.
+- ⚡️ **Refined Interaction Termination Logic:** Chat interactions now precisely terminate only when the *primary* agent sends a stop event, preventing premature endings in complex multi-agent scenarios where multiple agents might be active.
+- 🏷️ **Dynamic Model Naming for JSON Interactions:** The reported model name for JSON interactions now dynamically reflects the specific `agent_class/agent_id`, providing clearer identification in logs and metrics.
+- 📄 **Improved Human-in-the-Loop Event Handling:** Enhanced the deserialization of Human-in-the-Loop request events for increased robustness and accuracy in handling user interventions.
 
 ### Fixed
-- 🐛 **Improved Embedding Node Resilience:** The `embed_nodes` operation in the pipeline now includes enhanced error handling for `ValidationError` during batch processing. If an embedding model encounters a validation error for a batch of nodes, the operation will automatically attempt to split the batch and process it in smaller chunks, increasing the robustness and reliability of embedding pipelines.
+- 🐛 **Corrected `display_id` for Human-in-the-Loop:** Ensured that `display_id` for Human-in-the-Loop (HITL) response events correctly reuses the `display_id` from the original HITL request, maintaining conversation context.
+
+### Refactor
+- 🧹 **Streamlined NATS Event Imports:** Cleaned up and reorganized NATS event-related imports in `ExternalEventDistributor` and `OpenaiService` for improved code clarity and maintainability.
 
 ---
 
 
 
-## [v0.127.0] - 2025-03-25 - Enhanced Chat Bot Responsiveness
+## [v0.115.0] - 2025-03-19 - Enhanced Event Distribution
 
-### Changed
-- ⚡️ **Improved chat bot responsiveness** by implementing a continuous typing indicator, providing users with dynamic feedback while the bot processes their requests.
+### Refactor
+- 🔄 **Unified External Event Handling:** The core mechanism for processing incoming user events has been significantly refactored. The `WebSocketReceiver` component and `WSUserEvent` have been renamed to `ExternalEventDistributor` and `ExternalEvent`, respectively. This change broadens the system's capability to handle user events originating from diverse external sources, including APIs, bot frameworks, and WebSockets, moving beyond a WebSocket-specific focus.
+- 🧹 **Reorganized Event Distribution Modules:** Related modules and dependencies for external event distribution have been moved from the legacy `sockets` package into a new, more logically structured `nats/distributor` pathway. This improves the architectural clarity and modularity of the event handling system.
+- 🦾 **Updated API and Bot Integrations:** All API endpoints and bot services responsible for receiving and processing user input have been updated to seamlessly integrate with the new `ExternalEventDistributor`, ensuring consistent and channel-agnostic event flow across the platform.
 
 ---
 
 
 
-## [v0.126.0] - 2025-03-24 - Enhanced LLM Control with Configurable Timeouts
+## [v0.114.0] - 2025-03-19 - Enhanced Event Robustness and API Output Control
 
 ### Added
-- ✨ **Introduced LLM Request Timeout:** Added a new `timeout` parameter to `LLMConfig`, allowing users to specify a timeout in seconds (defaulting to 30.0s) for LLM model requests. This provides finer control over model interactions and helps manage long-running requests.
+- 🛡️ **Robust Event Deserialization**: Introduced a new mechanism for deserializing NATS events that allows a receiving application to process events even if their exact class is not locally registered. This enhances forward compatibility and inter-service communication by intelligently falling back to the most specific known parent class and preserving unknown data.
+- ⚙️ **Event Utility Functions**: Added `get_inheritance_depth` and `get_parent_classes_until_base` to precisely determine event hierarchies, critical for the new robust deserialization logic.
+- 📤 **Dynamic API Output Model Generation**: Implemented `create_output_model` to dynamically generate Pydantic models for API responses, ensuring cleaner and more controlled exposure of event data by filtering internal metadata.
 
 ### Changed
-- ⚙️ **Applied Configurable Timeouts to LLMs:** Integrated the new `timeout` parameter into the underlying LLM calls for `AzureOpenAILLMConfig` and `SelfHostedLLMConfig`. This ensures that all LLM interactions leveraging these configurations will respect the defined timeout duration.
+- 🔄 **Standardized Event Type Checking**: Refactored all event type checks across the codebase from `isinstance(event, EventType)` to explicit `event.is_event_type` properties (e.g., `event.is_start_event`, `event.is_control_event`) on `BaseEvent`. This improves code readability and leverages the new robust deserialization.
+- 📄 **API Event Response Refinement**: API endpoints now utilize the new output model generation to present a more focused and cleaner representation of event data in responses.
+- 🛠️ **Pydantic Model Configuration**: Updated `BaseEvent` Pydantic configuration to allow extra fields, supporting the new robust deserialization of unknown event types without validation errors.
+
+### Refactor
+- 🧹 **Internal Event Type Handling**: Consolidated and improved the internal handling of event types across dispatchers, tracing coordinators, and publishers to align with the new property-based type checking.
 
 ---
 
 
 
-## [v0.125.0] - 2025-03-21 - New WebUI Agent and Core API Improvements
+## [v0.113.0] - 2025-03-17 - Enhanced Event Persistence and Querying
 
 ### Added
-- 🦾 **WebuiAgent Integration:** Introduced a new `WebuiAgent` that enables seamless integration with Open WebUI, allowing chat completions and streamed responses from WebUI-backed models.
-- 🧪 **WebuiAgent Playground Examples:** Provided new playground examples to demonstrate the setup and usage of the `WebuiAgent`, facilitating easier testing and development.
+- ✨ **Event Inheritance Tracking**: Introduced a new `_parent_class_names` computed field in `BaseEvent` to automatically capture the inheritance hierarchy of each event, providing deeper introspection capabilities.
+- 📄 **Persisted Event Parentage**: Added an `event_parents` field to `PersistedEventEntity` to store the inheritance chain of events, enabling more flexible and robust querying based on event types.
 
 ### Changed
-- 🔄 **OpenAI API Model Listing:** Enhanced the `/models` endpoint of the OpenAI API to include an option (`exclude_webui_agents`) to prevent recursive discovery of WebuiAgents, improving API stability.
-- 💬 **Chat Completion Request Handling:** Refined the processing of chat completion requests, now expecting the `chat_id` to be passed within the `metadata` dictionary instead of as a top-level field.
-- 🎨 **Image Generation Default Model:** Updated the default model for image generation requests to **DALL-E 3**, ensuring users benefit from the latest capabilities.
-- 📊 **Performance Test Output:** Improved the performance test results table by adding an "Error" column, providing clearer insights into test failures.
+- 🚀 **Robust Event Querying**: Updated event retrieval methods in `PersistedEventEntity` to leverage the new `event_parents` field, allowing queries to filter events based on their entire class hierarchy, leading to more resilient and accurate results.
+- ⚙️ **Simplified Local API Development**: The `aihub_api` playground environment now defaults to using `NoAuthHandler`, simplifying local development and testing by removing authentication requirements.
+
+### Refactor
+- 🧹 **Streamlined Event Persistence**: The core logic for persisting events has been moved from `EventPersister` to a new class method `PersistedEventEntity.persist_event`, centralizing persistence responsibilities within the entity itself.
+
+---
+
+
+
+## [v0.112.0] - 2025-03-17 - Deeper Conversations: Human-in-the-Loop and Extended API Capabilities
+
+### Added
+- ✨ **Introduced Human-in-the-Loop (HITL) Capabilities**: Seamlessly integrate human intervention into AI conversations, allowing for pauses to gather user input and resume interactions with the provided response.
+- 💬 **Expanded OpenAI Chat Completion Parameters**: Added support for a comprehensive set of OpenAI Chat Completion request parameters, including `chat_id`, `user`, `audio`, `frequency_penalty`, `function_call`, `functions`, `logit_bias`, `logprobs`, `max_completion_tokens`, `max_tokens`, `metadata`, `modalities`, `n`, `parallel_tool_calls`, `prediction`, `presence_penalty`, `reasoning_effort`, `response_format`, `seed`, `service_tier`, `stop`, `store`, `stream_options`, `temperature`, `tool_choice`, `tools`, `top_logprobs`, and `top_p`.
+- 🖼️ **Extended OpenAI Image Generation Parameters**: Enabled additional options for image generation requests, including `n`, `quality`, `response_format`, `size`, and `style`.
+- 🏷️ **Explicit Thread ID Assignment**: Added the ability to assign explicit thread IDs when creating new conversation threads, allowing for more precise control over conversation history and state.
+- 📈 **New Human-in-the-Loop Event Retrieval**: Introduced dedicated methods to retrieve specific Human-in-the-Loop request and response events from persisted history.
+
+### Changed
+- 🔄 **Refined Chat Conversation Management**: Updated the core chat service logic to better handle conversation threads, supporting the continuation of existing chats and more robust linking of bot interactions to specific threads.
+- 👤 **Improved User Context in Chat Completions**: Automatically populates the `user` field in OpenAI chat completion requests, enhancing user traceability and context within conversations.
+- 📊 **Enhanced Message History Reconstruction**: Modified the process for building message history to accurately include and display Human-in-the-Loop interactions, providing a more complete conversation log.
+- ⚡️ **Streamlined OpenAI API Request Arguments**: Optimized the handling of chat completion arguments by removing redundant `chat_id` from core function arguments before passing to the OpenAI client.
+- 🗣️ **Unified Content Building for Responses**: Updated response content building to integrate potential Human-in-the-Loop questions into the final output when a stop event is triggered by an HITL request.
+
+### Fixed
+- ⏱️ **Corrected Chronological Ordering of Display Events**: Ensured all persisted display events, including chat messages and Human-in-the-Loop requests, are retrieved and ordered chronologically for accurate conversation playback.
+
+---
+
+
+
+## [v0.111.0] - 2025-03-17 - Optimized NATS Message Routing for Display Events
+
+### Changed
+- ⚡️ **WebSocketReceiver** now leverages both NATS core and JetStream publishers, routing display events through NATS core for enhanced real-time performance and reduced latency.
+- 🔄 Updated **API** and **Bot** services to align with the new **WebSocketReceiver** architecture, passing the NATS client instance during initialization.
+
+---
+
+
+
+## [v0.110.0] - 2025-03-14 - Improved Bot Message Handling with Dedicated Content Extraction
+
+### Added
+- 🚀 **Unified Message Content Handling:** Introduced a new **`ContentExtractor`** module that centralizes and standardizes the processing of diverse incoming message content, including text, images, and various file types from platforms like Slack and Microsoft Teams.
+- 🖼️ **Enhanced File and Image Attachment Support:** The bot can now more reliably process and normalize attached files and images, converting images to base64 data URLs and handling text files to ensure seamless integration into conversations.
+- 📄 **Standardized File Information Model:** Implemented a **`FileInfo`** model to provide a consistent representation of file details across different communication channels, improving the robustness of content ingestion.
+
+### Refactor
+- 🧹 **Refactored Bot Content Processing:** Extracted all message content extraction logic from the main `Service` module into a dedicated `ContentExtractor` class, significantly improving code modularity, readability, and maintainability within the bot service.
+
+---
+
+
+
+## [v0.109.0] - 2025-03-14 - Enhanced Chat Bot Interactions and Attachment Processing
+
+### Fixed
+- 🐛 **Resolved MS Teams Conversation Context Issues:** Implemented logic to automatically clear previous conversation context for bots in Microsoft Teams when the bot is added to a new or existing chat, ensuring a fresh start and preventing stale interactions.
+
+### Changed
+- 🖼️ **Improved Image Attachment Handling:** Switched to fetching and base64 encoding image attachments from Slack and Microsoft Teams. This enhancement ensures images are consistently processed as data URLs, improving compatibility and reliability for multimodal model interactions.
+
+### Refactor
+- 🧹 **Streamlined Attachment Processing:** Introduced a new internal utility method `_fetch_and_encode_to_base64` to centralize and simplify the fetching and encoding of file attachments, leading to cleaner and more maintainable code for handling various file types.
+
+---
+
+
+
+## [v0.108.0] - 2025-03-13 - Asynchronous Preconditions for Flexible Workflow Control
+
+### Changed
+- ⚡️ **Enhanced Workflow Preconditions**: Step precondition functions (`precondition` argument in `@step` decorator) can now be asynchronous (`async def`). This allows for more dynamic and non-blocking checks before a workflow step executes, such as waiting for external events or performing asynchronous data lookups.
+- 🔄 **Updated Dispatcher Logic**: The internal dispatcher has been updated to correctly handle and await asynchronous precondition functions, ensuring seamless integration and execution of the new capability.
+
+---
+
+
+
+## [v0.107.0] - 2025-03-13 - API Enhancements and Internal Utilities
+
+### Added
+- ✨ **Introduced `clear_cache` method for `AgentService`:** A new static method has been added to allow clearing in-memory caches used for agent discovery, primarily beneficial for testing purposes to ensure fresh discovery requests.
+
+---
+
+
+
+## [v0.106.0] - 2025-03-11 - Core Event System Refinements
+
+### Refactor
+- 🔄 **Promoted `LLMStopEvent` to Core Library**: The `LLMStopEvent` has been moved from the `playground` experimental area into the central `aihub_lib.nats.events` module, making it a fully integrated and accessible part of the core event system.
+- 🧹 **Formalized `GuardRejectionEvent` Exposure**: The `GuardRejectionEvent` is now directly exposed and importable from `aihub_lib.nats.events`, improving consistency and ease of use for guard-related event handling.
+- ⚡️ **Streamlined Event Imports**: Optimized internal import paths within `aihub_lib.nats.events` to centralize and simplify how various event types are accessed throughout the codebase.
 
 ### Removed
-- 🗑️ **Direct `chat_id` Field:** The direct `chat_id` field has been removed from the `ChatCompletionRequest` DTO, as its functionality is now handled via the `metadata` field for consistency.
-
-### Refactor
-- 🧹 **Internal LLM Context Manager:** Adjusted the `LLMConfig` context manager's type signature to explicitly return an `AsyncIterator[LLM]`, improving type consistency and internal API clarity.
-- ⚡️ **Chat Service Model Naming:** Streamlined the internal derivation of model names within the `ChatService` to directly utilize `agent_class` and `agent_id` parameters, enhancing code readability.
+- 🗑️ **Deprecated Playground Event Files**: The `LLMStopEvent` file and its associated `__init__.py` have been removed from the `playground` directory, reflecting its migration to the core `aihub_lib`.
 
 ---
 
 
 
-## [v0.124.0] - 2025-03-21 - Streamlined Bot Data Management and Core Library Updates
+## [v0.105.0] - 2025-03-11 - Core Component Version Alignment and Documentation Refinement
 
 ### Changed
-- 🚀 **Updated Core Library Dependencies:** All core microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_pipeline`) have been updated to use the latest `aihub-lib` (v0.124.0), ensuring consistency and access to the newest features.
-- 💬 **Enhanced Chat Service Message Processing:** Adjusted the chat service's message content extraction logic to improve compatibility with updated message structures.
-- 📡 **Flexible External Event Distribution:** Removed the requirement for an explicit agent-in-thread check during external event distribution, allowing for more dynamic and flexible event handling.
-
-### Refactor
-- 🗄️ **Consolidated Bot Database Connection:** The `aihub_bot` service now connects to a unified `aihub` database, streamlining data storage and management across services.
-- 🏷️ **Renamed Bot Data Collections:** Persistence collections within `aihub_bot` have been renamed from `conversations` to `bot_conversations` and `paths` to `bot_paths` for clearer identification and organization.
+- 🔄 **Component Version Synchronization**: All core components, including **aihub_agent**, **aihub_api**, **aihub_bot**, **aihub_lib**, and **aihub_pipeline**, have been updated and synchronized to version `v0.105.0`.
+- 📄 **Documentation Formatting**: Minor cosmetic adjustments were made to the Mermaid flowchart syntax within the introduction documentation for improved clarity.
 
 ---
 
 
 
-## [v0.123.0] - 2025-03-21 - Enhanced Document Parsing and Metadata Management
+## [v0.104.0] - 2025-03-10 - Enhanced Bot Attachment Handling and Slack Integration
 
 ### Added
-- ✨ **New `MetadataExtractor` Interface:** Introduced an abstract interface for custom metadata extraction from document splits, allowing for more flexible and powerful document processing.
-- 📄 **Expanded Node Metadata:** Added `reference_name` and `reference_url` fields to document node metadata, enabling richer source attribution and traceability for retrieved information.
+- ✨ **Introduced Slack File Attachment Support:** Bots can now process image and text file attachments from Slack messages by utilizing a configured Slack OAuth token, significantly enhancing conversational capabilities with files.
+- 🚀 **Enabled Microsoft Teams File Attachment Handling:** The bot now intelligently processes file attachments (including images and text files) from Microsoft Teams conversations, ensuring richer interactions.
+- 🔑 **Added Slack Token Configuration:** A new `slack_token` field has been introduced to the bot's path-specific configuration, allowing for persistent and secure storage of Slack OAuth tokens.
+- ⚙️ **New CLI Option for Slack Token Setup:** The `setup_azure_bot.py` script now includes a `--slack-token` option, simplifying the configuration of Slack OAuth tokens during bot deployment.
 
 ### Changed
-- 🔄 **Improved Markdown Parsing:** The `MarkdownStructuralNodeParser` now integrates with the new `MetadataExtractor`, allowing for dynamic metadata enrichment during the document splitting process.
-- 📊 **Enhanced Metadata Reporting:** The `aihub_pipeline` now includes `reference_name` and `reference_url` in generated metadata tables, providing better visibility into document sources.
+- 🔄 **Refactored Conversation Message Handling:** The `path` parameter is now consistently passed to methods responsible for adding user and bot messages to conversations, enabling more granular and path-specific message processing and credential retrieval.
+- 🧹 **Improved Attachment Processing Robustness:** The bot's attachment handling has been enhanced to provide clearer logging and error handling for various attachment types, including explicitly ignoring redundant HTML attachments from Teams and warning about unsupported file types.
+
+---
+
+
+
+## [v0.103.0] - 2025-03-10 - Streamlined Agent Interactions: API Endpoints and Event System Enhancements
+
+### Added
+- 🚀 **New Agent Interaction API:** Introduced a new API endpoint (`POST /agent/{agent_class}/{agent_id}/send_event`) that allows external systems to directly initiate conversations with specific agents by sending a `StartEvent` and receiving a corresponding `StopEvent`.
+- ⚙️ **Dynamic Input Model Generation:** Added a utility (`create_input_model`) to dynamically create Pydantic input models for API endpoints, automatically excluding generated event fields (like IDs and timestamps) for cleaner API usage.
+
+### Changed
+- 🔄 **Refined LLM Stop Event Handling:** The `LLMWrappingAgent` now utilizes a more specific **`LLMStopEvent`** to signal the completion of LLM interactions, providing richer context than the generic `StopEvent`.
+- 💬 **Expanded WebSocket Event Support:** The WebSocket receiver now supports **`StartEvent`** payloads within `WSUserEvent`, enabling more diverse interaction initiation patterns from the client side for agent interactions.
+- ⚡️ **Improved Event Signal Management:** Internal **`ChatService`** logic was updated to clearly distinguish between an asynchronous stop signal (`stop_signal`) and the final received stop event object (`stop_event`), enhancing clarity and control over event streams.
 
 ### Refactor
-- 🧹 **Modular `Split` Definition:** The `Split` dataclass, used in document parsing, has been moved to its own dedicated module for improved code organization and reusability.
-- ⚙️ **Internal Parser Improvements:** Refined the initialization logic of `MarkdownStructuralNodeParser` to leverage Pydantic v2 features, enhancing internal robustness and maintainability.
+- 🧹 **Event Stop Signal Renaming:** Renamed internal `_stop_event` variables to `_stop_signal` across agent runners and performance tests for improved clarity and consistency in signaling asynchronous task completion.
+- 📦 **Centralized LLMStopEvent:** Moved the **`LLMStopEvent`** definition from agent-specific folders to the `aihub_lib` package under a new `semantic/llm` namespace, centralizing event definitions and improving modularity.
 
 ---
 
 
 
-## [v0.122.0] - 2025-03-21 - Improved Exception Handling and Core Updates
-
-### Changed
-- ⚡️ **Enhanced Agent Event Handling**: The Agent Controller in the API now robustly handles `ExceptionEvent`s originating from agent operations, translating them into clear HTTP 500 errors to provide better feedback for API consumers.
-- ⚠️ **Improved Chat Service Stability**: The `ChatService` in the core library has been updated to explicitly listen for and process `ExceptionEvent`s, ensuring that chat interactions gracefully terminate and log warnings when an underlying process encounters an error.
-- 🔄 **Core Library Update**: All core services (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_pipeline`) have been updated to depend on the latest `aihub-lib` version, incorporating the aforementioned exception handling improvements across the platform.
-
----
-
-
-
-## [v0.121.0] - 2025-03-20 - Enhanced Event Stream Ordering and Dispatching
-
-### Added
-- ✨ **Event Sequence Numbers:** Events now capture and expose their JetStream sequence number via a new `sequence_number` property, providing a guaranteed ordered stream for all event processing.
-
-### Changed
-- 🔄 **Precise Event Dispatching and Retrieval:** The agent's event dispatching and retrieval logic has been significantly updated. It now utilizes the reliable JetStream sequence numbers instead of timestamps, ensuring more accurate and consistent step triggering based on the exact order of events in the stream.
-
----
-
-
-
-## [v0.120.0] - 2025-03-20 - Introducing Language Detection and Core Synchronization
-
-### Added
-- ✨ **Introduced Language Detection Utility:** Added a new `check_language` function within `aihub_lib` to intelligently detect the language of user queries (German, English, French, Italian, or other) using an LLM. This enables language-aware processing and prompt routing.
-
-### Changed
-- 🔄 **Synchronized Core Library Versions:** Updated all microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_pipeline`) to use the latest `aihub-lib` version, ensuring consistent functionality and access to new features.
-
-### Refactor
-- 🧹 **Streamlined IDE Project Configurations:** Cleaned up internal `.iml` project configuration files for `aihub_api` and `aihub_lib` to improve project setup and consistency.
-
----
-
-
-
-## [v0.119.0] - 2025-03-19 - Enhanced Agent Event Naming and Core Updates
-
-### Changed
-- 🔄 **Improved Agent Event Naming**: Enhanced the dynamic naming of agent event endpoints by incorporating a route-based postfix. This refinement increases clarity and reduces potential naming conflicts for agents managing multiple event routes.
-
----
-
-
-
-## [v0.118.0] - 2025-03-19 - Improved Event Serialization & Core Updates
-
-### Added
-- ✨ **Introduced `model_dump_json` to `BaseEvent`**: A new method for robust JSON serialization of events, ensuring that all data, including previously unknown fields, is correctly merged and preserved during serialization.
-
----
-
-
-
-## [v0.117.0] - 2025-03-19 - Workflow Customization with Custom Events
-
-### Added
-- ✨ **New Playground Example for Custom Events:** Introduced a comprehensive example demonstrating how to create and utilize agents with custom `StartEvent` and `StopEvent` types, enabling more flexible and domain-specific workflow definitions.
-- ⚙️ **Showcased Custom Start/Stop Event Agent:** Added `CustomStartStopEventAgent` as part of the new example, illustrating an agent capable of processing a custom start event and emitting a custom stop event with a defined payload.
-- 📄 **Custom Event Definitions:** Included `MyCustomStartEvent` and `MyCustomStopEvent` to exemplify how to define application-specific `StartEvent` and `StopEvent` structures using Pydantic for robust data validation.
-- 🧪 **Dedicated Test Suite for Custom Events:** Provided a full test suite using `pytest-bdd` and `AgentTestRunner` for the custom start/stop event agent, ensuring reliability and serving as a blueprint for testing custom event flows.
-
----
-
-
-
-## [v0.116.0] - 2025-03-19 - Enhanced Thread Interaction and Agent Event Management
-
-### Changed
-- ✨ **Enhanced Thread Event Subscription**: Introduced a new `subscribe_to_thread` option in `ChatService`, allowing clients to receive all events within a chat thread. This provides a more comprehensive view and better control over multi-agent interactions by receiving events from any agent in the thread, not just the initially requested one.
-- 🔄 **Refined Agent Interaction Initialization**: Updated `ChatService` and `AgentService` to consistently pass `agent_class` and `agent_id` parameters during JSON event interactions, improving clarity and control over agent communication flows.
-- 🎯 **Precise Stop Event Handling**: Modified the stop event logic in `ChatService` (for both streaming and JSON interactions) to ensure that event processing gracefully ceases only when a stop signal is received from the *primary* agent requested by the user, preventing premature interruptions from other agents within complex multi-agent threads.
-- 📊 **Dynamic Agent Reporting**: The `model_name` reported in `JsonResources` for JSON interactions now dynamically reflects the specific `agent_class` and `agent_id`, enabling more granular tracking and logging for agent activities.
-- 🦾 **Robust Human-in-the-Loop Handling**: Improved the processing of Human-in-the-Loop (HITL) responses by correctly deserializing the request event and reusing its `display_id`, enhancing the continuity and traceability of HITL interactions.
-
-### Refactor
-- 🧹 **Codebase Cleanup**: Removed unnecessary imports from `OpenaiService` and `ExternalEventDistributor`, contributing to a cleaner and more efficient codebase.
-
----
-
-
-
-## [v0.115.0] - 2025-03-19 - Enhanced Event Handling for Broader Integration
-
-### Refactor
-- 🔄 **Generalized Event Distribution**: The `WebSocketReceiver` component has been refactored and renamed to `ExternalEventDistributor`. This change broadens its scope, enabling it to process and route events from diverse external sources, including APIs, web sockets, and bot frameworks, instead of being limited to WebSocket-specific interactions.
-- ⚡️ **Standardized External Events**: The `WSUserEvent` class has been renamed to `ExternalEvent`. This standardizes the event structure for all user-initiated inputs, ensuring a consistent approach regardless of the origin system.
-- 🧹 **Updated Event Flow Across Services**: Core services like `aihub_api` and `aihub_bot` have been updated to utilize the new `ExternalEventDistributor` and `ExternalEvent` components, ensuring a unified and more extensible event processing architecture.
-- 📄 **Improved Internal Documentation**: Updated docstrings and comments across the codebase to accurately reflect the generalized event handling system and its expanded capabilities.
-
-### Removed
-- 🗑️ **Deprecated WebSocket Receiver Modules**: Obsolete `WebSocketReceiver` specific files and dependencies have been removed. These components were superseded by the new, generalized `ExternalEventDistributor` architecture.
-
----
-
-
-
-## [v0.114.0] - 2025-03-19 - Smarter Events, Safer APIs
-
-### Added
-- 🛡️ **Enhanced API Output Model Generation**: Introduced a new utility (`create_output_model`) to dynamically create Pydantic models for API responses, ensuring sensitive fields are automatically excluded, improving data security.
-- 🧪 **Improved Event Deserialization Utilities**: Added new helper functions (`get_inheritance_depth`, `get_parent_classes_until_base`) to intelligently determine event inheritance hierarchies, crucial for robust deserialization.
-- ✅ **Expanded Event System Test Coverage**: Integrated comprehensive new tests for `BaseEvent`'s enhanced deserialization, `is_*_event` properties, and handling of unknown and nested event types, ensuring the reliability of the new event architecture.
-- 🚀 **New Playground Scenario for Unknown Events**: Included a new test scenario in the Agent-in-the-Loop workflow playground to validate the orchestrator's ability to gracefully handle and process events with unknown types from worker agents.
-- 📄 **Enabled Logging in Playground Examples**: Added `enable_logging()` to various playground triggers for easier debugging and observation of workflow execution.
-
-### Changed
-- 🔒 **Secure Agent API Responses**: The Agent API now leverages the new output model generation to filter sensitive information from event responses, enhancing data privacy and security.
-- 🔄 **Standardized Optional Workflow Start Event**: The optional workflow example now consistently uses a `StartEvent` instead of a `UserMessageEvent`, aligning with typical agent initiation patterns.
-
-### Refactor
-- 🧬 **Overhauled Core Event Handling with Type Properties**: Replaced numerous `isinstance()` checks across the codebase with new, declarative `is_*_event` properties (e.g., `is_start_event`, `is_display_event`, `is_control_event`) within the `BaseEvent`. This significantly improves type checking consistency, readability, and future extensibility of event handling logic.
-- 🧩 **Intelligent Event Deserialization Fallback**: Enhanced `BaseEvent.deserialize_event` to intelligently identify the most specific known parent class when encountering an unknown event type, preserving data and context while ensuring forward compatibility. This includes support for extra fields.
-- 🧹 **Streamlined Orchestrator Agent Logic**: Simplified the `OrchestratorAgent`'s step logic by leveraging the new generic event handling capabilities, reducing specific type checks for incoming agent-in-the-loop responses.
-- ⚙️ **Optimized Event Publishing Checks**: Updated `JSPublisher` and `NCPublisher` to use the new `is_control_event` and `is_display_event` properties for more consistent event type validation during publishing.
-
----
-
-
-
-## [v0.113.0] - 2025-03-17 - Smarter Event Persistence with Inheritance Support
-
-### Refactor
-- 🧹 **Streamlined Event Persistence:** The process of persisting events has been refactored, moving the core logic from `EventPersister` into a static method within the `PersistedEventEntity` itself for better encapsulation.
-
-### Added
-- ✨ **Introduced Event Inheritance Tracking:** A new computed property, `_parent_class_names`, has been added to `BaseEvent` to automatically record the full inheritance hierarchy of events.
-- 💾 **New `event_parents` Field:** The `PersistedEventEntity` now includes an `event_parents` field, which stores the inheritance chain of each event, enabling more detailed event categorization and search.
-- 🧪 **Simplified Local Development Authentication:** The `aihub_api` development playground now supports a `NoAuthHandler`, allowing for easier local testing without requiring complex authentication configurations.
-
-### Changed
-- 🔍 **Improved Event Querying:** Event retrieval methods within `PersistedEventEntity` have been updated to utilize the new `event_parents` field, significantly enhancing the flexibility and accuracy of queries, especially for inherited event types.
-
----
-
-
-
-## [v0.112.0] - 2025-03-17 - Enhanced Chat Experiences and Human-in-the-Loop Workflows
-
-### Added
-- 🦾 **Human-in-the-Loop Support:** Introduced comprehensive handling for Human-in-the-Loop request and response events, enabling interactive agent workflows where models can solicit user input.
-- ✨ **Expanded OpenAI API Parameters:** Added support for numerous new parameters in `ChatCompletionRequest` and `ImageGenerationRequest` DTOs, aligning more closely with the official OpenAI API specifications for greater flexibility.
-- 🔗 **Persistent Thread ID Mapping:** Implemented a new mechanism to map external conversation identifiers (e.g., `chat_id` or bot `conversation.id`) to persistent internal `thread_id`s, ensuring consistent conversation tracking and continuation.
-
-### Changed
-- 🔄 **Unified Conversation Threading:** All chat interactions, including OpenAI API routes and bot frameworks, now consistently leverage a `thread_id` for robust and continuous conversation management across sessions.
-- 📖 **Accurate Message History Reconstruction:** Improved the message history retrieval logic to correctly incorporate and order Human-in-the-Loop events, providing a more complete and coherent conversation transcript.
-- 💬 **Smarter Chat Completion Responses:** Modified chat completion responses for both streaming and JSON formats to gracefully handle and indicate Human-in-the-Loop requests by including the prompt question in the final output.
-- ⏱️ **Chronological Event Ordering:** Display events are now consistently retrieved and ordered by creation timestamp, ensuring accurate reconstruction of chat timelines and historical context.
-
----
-
-
-
-## [v0.111.0] - 2025-03-17 - Enhanced Real-time Event Processing
-
-### Changed
-- ⚡️ **Optimized WebSocket Event Publishing:** The internal `WebSocketReceiver` has been refactored to use dedicated NATS publishers for different event types. This change ensures that time-sensitive `DisplayEvent`s are now published directly via NATS core for faster, real-time delivery, while critical events such as `StartEvent` and `HumanInTheLoopResponseEvent` continue to leverage NATS JetStream for reliable and persistent messaging. This improvement enhances overall messaging efficiency and reliability within the system.
-
----
-
-
-
-## [v0.110.0] - 2025-03-14 - Improved Bot Interactions with Advanced File Handling
-
-### Added
-- ✨ **New `ContentExtractor` Module**: Introduced a dedicated module for comprehensive content extraction from bot activities, significantly enhancing the handling of diverse file and attachment types from platforms such as Slack and Microsoft Teams. This allows agents to process user-provided files more effectively.
-
-### Refactor
-- 🧹 **Centralized Bot Content Processing Logic**: The core bot service's content and attachment processing logic has been extracted into the new `ContentExtractor` module, leading to a cleaner architecture, better maintainability, and improved extensibility for future content and file types.
-
----
-
-
-
-## [v0.109.0] - 2025-03-14 - Enhanced Bot Conversation Management and Attachment Handling
+## [v0.102.0] - 2025-03-07 - Enhanced Document Metadata Handling
 
 ### Fixed
-- 🐛 **Improved Microsoft Teams Conversation Reset:** Resolved an issue where bot conversations in Microsoft Teams were not properly reset when the bot was added to a conversation, ensuring a fresh interaction context for new sessions.
+- 🐛 **RefDocDocument**: Improved robustness of metadata property access (e.g., `namespace`, `hash`, `uri`, `updated`) by transitioning from direct dictionary access to using `.get()` methods with default fallback values, preventing potential `KeyError` exceptions for missing metadata.
+
+### Changed
+- ⚡️ **RefDocDocument**: Enhanced the **metadata enrichment process** from `DataLakeFile` objects to intelligently prioritize existing metadata fields and gracefully fall back to default attributes when populating document properties like `namespace`, `hash`, `updated`, `source`, and `document title`.
+
+---
+
+
+
+## [v0.101.0] - 2025-03-07 - Next-Gen Event Persistence and Workflow Control
 
 ### Added
-- ⚡️ **Base64 Encoding Utility:** Introduced a new internal utility to fetch and encode URL-based content (e.g., images) into base64 data URLs, streamlining the processing of various attachments.
-- 📄 **Conversation Deletion Functionality:** Added the ability to explicitly delete existing bot conversations, providing more granular control over conversation states and data retention.
-
-### Refactor
-- 🧹 **Standardized Attachment Processing:** Refactored the internal logic for handling image and text file attachments from platforms like Slack and Microsoft Teams to consistently utilize the new base64 encoding utility, enhancing reliability and maintainability of content processing.
-
----
-
-
-
-## [v0.108.0] - 2025-03-13 - Asynchronous Preconditions for Enhanced Workflow Control
+- ✨ **Introduced JetStream Event Store:** Replaced the Redis-based event storage with a robust NATS JetStream implementation, enabling durable, consistent, and replayable control event persistence for workflows. This significantly improves data reliability and recovery.
+- 🚦 **New Workflow Precondition Decorator (`@precondition`):** Allows agents to define complex, data-driven preconditions for workflow steps, ensuring steps only execute when all necessary criteria are met. This enables more sophisticated and reliable workflow orchestration.
+- 🚀 **Comprehensive Performance Testing Framework:** Added a dedicated playground and tools for benchmarking agent event processing, including raw NATS JetStream performance and full system throughput, providing crucial insights for scalability and optimization.
+- 📁 **Dedicated NATS Server Configuration:** Included a `nats.conf` file for more controlled and robust NATS server deployments within Docker environments.
+- 📊 **New Redis List and Counter Utilities:** Added helper methods for appending to Redis lists and atomically incrementing counters, improving data management within agent state.
 
 ### Changed
-- ⚡️ **Asynchronous Step Preconditions**: Workflow step `precondition` functions can now be defined as `async`, allowing for non-blocking I/O operations (e.g., API calls, database lookups) within your step readiness checks. This provides greater flexibility and control over workflow execution.
-
----
-
-
-
-## [v0.107.0] - 2025-03-13 - API Enhancements and Core Alignment
-
-### Added
-- 🧹 **Agent Cache Management**: Introduced a new `clear_cache` static method to `AgentService` within the API, allowing for the programmatic clearing of in-memory agent discovery caches. This is particularly useful for testing and development to ensure fresh agent lookups.
-
----
-
-
-
-## [v0.106.0] - 2025-03-11 - Streamlined Event Management and Core Library Alignment
-
-### Refactor
-- 🧹 **Consolidated Core Events**: Moved the `LLMStopEvent` from the `playground` examples into the `aihub_lib`'s core NATS events, establishing it as a standard and easily accessible event type within the library.
-- 🔗 **Unified Event Import Paths**: Streamlined import statements for `LLMStopEvent` and `GuardRejectionEvent` across the `aihub_agent` and `aihub_api` services, allowing for consistent direct imports from `aihub_lib.nats.events`.
-- 🗄️ **Improved Event Structure**: Enhanced the modularity and clarity of the event system by reorganizing `GuardRejectionEvent` into a new, dedicated `guard` subdirectory within `aihub_lib.nats.events`.
-
----
-
-
-
-## [v0.105.0] - 2025-03-11 - Core Component Alignment and Documentation Refinements
-
-### Changed
-- 🔄 **Synchronized Component Versions:** All microservices (Agent, API, Bot, Pipeline) have been updated to align with the `v0.105.0` release of the central **aihub-lib** core library, ensuring consistent functionality and compatibility across the platform.
-- 📄 **Documentation Syntax Improvement:** Applied minor syntax adjustments to Mermaid flowchart node labels within the **introduction documentation** for improved clarity and adherence to best practices.
-
----
-
-
-
-## [v0.104.0] - 2025-03-10 - Deeper Integration with Slack and Teams Attachments
-
-### Added
-- ✨ **New Attachment Handling for Slack:** Bots can now process images and text files shared directly in Slack conversations by utilizing a configurable Slack OAuth token, significantly improving content recognition and interaction.
-- 📄 **Configurable Slack OAuth Tokens:** Introduced the ability to store Slack OAuth tokens within the bot's configuration, enabling secure and direct access to Slack file attachments for comprehensive bot processing.
-- 🖼️ **Enhanced Microsoft Teams File Support:** Bots now feature improved handling of native Teams file attachments, providing direct support for both image and text files shared within conversations.
-
-### Changed
-- 🔄 **Refined Message Content Processing:** The internal mechanism for processing user messages and attachments has been updated to consistently utilize `path` information, allowing for more channel-specific configurations and enhanced content extraction across platforms.
-- 🚀 **Centralized Path Context in Conversation Services:** The bot's conversation services now uniformly pass `path` arguments to core message handling functions, enabling more dynamic and context-aware interactions for multi-channel deployments.
-
-### Refactor
-- 🧹 **Streamlined Text File Content Formatting:** Introduced an internal utility function to standardize the representation of text file content extracted from various attachments, improving code consistency.
-
----
-
-
-
-## [v0.103.0] - 2025-03-10 - Improved Agent Orchestration with Direct API Access
-
-### Added
-- ✨ **New Agent API Endpoint:** Introduced a dedicated API endpoint (`/agent/{class}/{id}/send_event`) that allows direct initiation of agent workflows by sending `StartEvent`s and waiting for the final `StopEvent`, simplifying external system integrations.
-- 🛠️ **Dynamic Pydantic Input Model Creation:** Added a utility (`create_input_model`) to automatically generate Pydantic input models for API endpoints, which filters out internal/generated fields from event schemas, leading to cleaner API contracts.
-- 🧪 **Comprehensive API Tests:** Implemented new test cases to ensure the robustness and correct functionality of the newly introduced direct agent interaction API.
-
-### Changed
-- 🚀 **Semantic LLM Stop Events:** The `LLMWrappingAgent` now emits a more specific `LLMStopEvent` upon completion, enhancing event granularity and providing richer context for LLM-related workflow terminations.
-- 🔄 **Expanded WebSocket Event Support:** The core `WSUserEvent` and WebSocket receiver have been updated to support a wider range of `StartEvent` types, enabling more flexible and powerful ways to initiate agent interactions via WebSockets.
-- ⬆️ **Updated Simulation and Playground Examples:** The API test runner and development playground have been updated to leverage and showcase the new semantic event types and direct agent interaction capabilities.
-
-### Refactor
-- 🧹 **Clearer Stop Signal Naming:** Renamed internal `_stop_event` variables to `_stop_signal` across various runners and services for improved clarity and consistency in signaling termination.
-- 📦 **Centralized LLMStopEvent:** The `LLMStopEvent` was moved from the `aihub_agent` specific location to a more central, reusable position within `aihub_lib`, making it a core semantic event available across the platform.
-- ⚙️ **Refined Chat Service Event Handling:** The `ChatService` was refactored to explicitly store the final `StopEvent` and generalize the process of initiating JSON-based event interactions, improving the robustness and extensibility of chat workflow management.
-
----
-
-
-
-## [v0.102.0] - 2025-03-07 - Improved Document Metadata Handling
-
-### Changed
-- ✨ **Enhanced `RefDocDocument` Metadata Retrieval:** Improved the robustness of `RefDocDocument` properties (`namespace`, `hash`, `uri`, `updated`) to safely retrieve metadata, preventing errors when fields are missing by providing sensible default values.
-- 🔄 **Refined Document Metadata Inheritance:** Updated the `RefDocDocument` to prioritize existing metadata from `DataLakeFile` when enriching documents, ensuring more accurate and complete metadata preservation.
-
----
-
-
-
-## [v0.101.0] - 2025-03-07 - Enhanced Agent Workflows and Infrastructure Reliability
-
-### Added
-- ✨ **Precondition Decorator:** Introduced a new `@precondition` decorator for workflow steps, allowing developers to define complex conditions that must be met before a step executes.
-- 🚀 **JetStream Event Store:** Implemented a new `JetStreamEventStore` replacing the Redis-based event store, providing durable, ordered, and replayable event storage leveraging NATS JetStream.
-- 📈 **Performance Testing Framework:** Added a dedicated performance testing framework with a `PerformanceTestingAgent` and utilities to benchmark agent workflow throughput and latency.
-- 📄 **NATS Server Configuration:** Included a `nats.conf` file and updated Docker Compose for more explicit and configurable NATS server setup.
-
-### Changed
-- 🔄 **Event Storage Mechanism:** The underlying event storage for agent runs has been migrated from Redis to NATS JetStream, significantly enhancing reliability and data integrity.
-- ⚡️ **Dispatcher Lifecycle Management:** The `Dispatcher` now includes explicit `start` and `stop` methods, allowing for more controlled initialization and graceful shutdown of agent workflows.
-- ⚙️ **Optimized Step Execution Tracking:** Improved the efficiency of tracking step execution counts and preventing duplicate step calls by leveraging atomic Redis operations and MD5 hashing for event input keys.
-- 📂 **NATS Stream Configuration:** Updated NATS JetStream stream settings to use file-based storage by default, increased maximum messages to 10 million, and reduced the duplicate window for better data management.
-- 🔒 **Graceful Multiprocess Shutdown:** Enhanced the `MultiprocessAgentRunner` to respond robustly to termination signals (`SIGTERM`, `SIGINT`), ensuring cleaner shutdowns for agents running across multiple processes.
-- 💨 **Agent Method Caching:** Applied caching to core agent methods (e.g., `get_steps`, `get_input_events`) to improve performance by reducing redundant computations.
-- 📤 **Refined NATS Publishing:** Split event publishing responsibilities, using `JSPublisher` for durable `ControlEvent`s and `NCPublisher` for fast `DisplayEvent`s, optimizing event delivery.
-- 📥 **Improved NATS Subscription Management:** `JSSubscriber` now limits concurrent message processing with a semaphore, enhancing stability, and explicitly subscribes to streams for more reliable message delivery.
+- 🔄 **Refined NATS Eventing Strategy:** Separated event publishing and subscribing into distinct NATS Core (for display/ephemeral events) and JetStream (for durable control events) channels, optimizing performance and reliability based on event criticality.
+- 💾 **Enhanced JetStream Stream Durability:** Configured JetStream streams to use file storage instead of memory, significantly increasing message retention and persistence.
+- ⚙️ **Optimized JetStream Stream Parameters:** Increased maximum messages capacity and reduced the duplicate window for JetStream streams, improving overall stream management.
+- 🧹 **Improved Agent Step Discovery Performance:** Applied caching to agent methods responsible for discovering workflow steps and events, reducing overhead and speeding up agent initialization.
+- ⚡️ **Optimized Step Execution Counting:** Transitioned step execution counting in the `StepStore` to use Redis atomic increment operations, boosting efficiency and accuracy.
+- 🔑 **More Robust Event Parameter Keying:** Implemented MD5 hashing for event parameter keys in the `StepStore`, ensuring more unique and reliable identification of step calls with specific event sets.
+- 🔗 **Updated Docker Compose NATS Configuration:** Modernized NATS setup in Docker Compose files, utilizing a dedicated configuration file for better control and health checks.
 
 ### Removed
-- 🗑️ **Redis-based Distributed Event Store:** The `DistributedEventStore` (Redis-based) has been removed, superseded by the new `JetStreamEventStore`.
-
----
-
-
-
-## [v0.100.0] - 2025-03-07 - Enhanced Azure Bot Configuration and Structure
-
-### Added
-- ✨ **System Message Configuration for Azure Bots**: Introduced the capability to define a system message when setting up an Azure Bot. This can be provided via new command-line arguments (`--system-message` or `--system-message-file`) during the bot setup process, allowing for more precise control over the bot's initial behavior and persona.
-
-### Refactor
-- 🧹 **Bot Setup Script Relocation**: The `setup_azure_bot.py` script has been moved from the root of the `aihub_bot` directory to `aihub_bot/aihub_bot/` to improve project structure and maintainability.
-
-### Changed
-- 📄 **Updated Chatbot Documentation**: The documentation for chatbots has been updated to reflect the new path of the `setup_azure_bot.py` script, ensuring users can easily locate and utilize the deployment tool.
-
----
-
-
-
-## [v0.99.0] - 2025-03-07 - Enhanced AI Conversation Context and Error Handling
-
-### Added
-- ✨ **Dynamic System Message Personalization**: Introduced support for the `{assistant_name}` placeholder in system messages, allowing for more personalized bot introductions and responses based on the bot's configured name.
-- 📄 **Enhanced Conversation Message Metadata**: The conversation history now captures and persists the **`name` field** for all messages (user, bot, and system), providing richer context for interactions.
-- 🦾 **OpenAI Chat Name Support**: Enabled the passing of cleaned user, bot, and system names to OpenAI chat completion requests, which is crucial for distinguishing participants in multi-turn conversations and when utilizing advanced features like tool calling.
+- 🗑️ **Deprecated Redis Event Store:** The `DistributedEventStore` (Redis-based) has been removed, replaced entirely by the new JetStream-based event persistence.
 
 ### Fixed
-- 🐛 **Robust OpenAI Chat Error Handling**: Improved stability by gracefully handling `BadRequestError` responses from OpenAI API calls, now displaying the specific error message to the user for better debugging and user experience. This applies to both standard and streaming chat completions.
+- 🐛 **Graceful Shutdown for Multiprocess Agents:** Improved signal handling (`SIGTERM`, `SIGINT`) in `MultiprocessAgentRunner` to ensure a more robust and graceful shutdown of agent processes.
+- 🐞 **Robust NATS Unsubscription:** Enhanced `NCSubscriber` to gracefully handle `ConnectionDrainingError` during unsubscription, preventing potential errors during NATS client shutdown.
+- 🛠️ **Consistent Resource Cleanup:** Ensured all dispatcher and subscriber resources are properly stopped and cleaned up during agent shutdown for better stability.
 
 ---
 
 
 
-## [v0.98.0] - 2025-03-06 - Multimodal Chat & Smarter Slack Interactions
+## [v0.100.0] - 2025-03-07 - Enhanced Bot Setup and Structural Refinements
 
 ### Added
-- ✨ **Multimodal Input Support:** Bots can now process and respond to messages containing both text and attachments (e.g., images and text files), significantly enhancing conversational capabilities.
-- 🖼️ **Enabled Image and Text File Attachments:** Users can now include images and text files directly in their messages, which the bot will interpret and incorporate into its responses.
-
-### Changed
-- ⚡️ **Improved Slack Channel Interaction:** Bots now respond more intelligently in Slack, engaging in direct messages, when explicitly mentioned, and automatically continuing conversations in threads where they were previously mentioned.
-- 🔄 **Updated Conversation Data Model:** The internal message and conversation storage has been redesigned to flexibly support diverse content types, laying the groundwork for richer, more dynamic interactions.
+- ✨ **System Message Configuration for Azure Bots:** Introduced the capability to define and store a default `system_message` during Azure bot setup, enabling better initial bot personality or instructional guidance. This message is now saved to the connected MongoDB or Cosmos DB instance.
 
 ### Refactor
-- 🧹 **Consolidated Slack Message Processing:** Core logic for handling Slack messages has been centralized and streamlined for improved maintainability and clarity.
-- ⚙️ **Standardized Content Conversion:** Internal methods for converting messages and content between different formats (e.g., persistence to LLM input) have been harmonized for better consistency.
+- 🧹 **Relocated Azure Bot Setup Script:** The `setup_azure_bot.py` script has been moved into its own dedicated subdirectory (`aihub_bot/aihub_bot/`), improving the overall organization and clarity of the bot module.
+
+---
+
+
+
+## [v0.99.0] - 2025-03-07 - Enhanced Chat Context and Resilience
+
+### Added
+- ✨ **Enabled OpenAI Message Naming:** Implemented support for passing a `name` field with chat messages to OpenAI, allowing the model to distinguish between different participants (e.g., specific users or tools) in a conversation. Names are automatically cleaned to meet API requirements.
+
+### Changed
+- 📝 **Standardized Message Naming:** Messages now consistently include the sender's `name` property (user, bot, system) in the conversation history to improve context for advanced AI features.
+- 📄 **Enriched System Messages:** System messages can now dynamically include the assistant's name using a new `{assistant_name}` placeholder, enabling more personalized interactions.
+- 🤖 **Agent Message Refinements:** Ensured agent chat messages properly include the sender's `name` for better context in multi-agent or tool-using scenarios, aligning with the new message structure.
+
+### Fixed
+- 🐛 **Improved OpenAI Error Handling:** Gracefully handles `BadRequestError` responses from OpenAI API calls, sending the detailed error message back to the user instead of failing silently.
+
+---
+
+
+
+## [v0.98.0] - 2025-03-06 - Next-Gen Chat: Multimodal Support and Enhanced Slack Integration
+
+### Added
+- ✨ **Multimodal Message Support**: Introduced the ability for the bot to process and respond to messages containing various content types, including plain text, image URLs, and content from attached text files, enabling richer and more versatile conversations.
+- 💬 **`Content` Data Model**: A new `Content` embedded document was added to the conversation message structure, allowing messages to store multiple content blocks with distinct types (e.g., `text`, `image_url`).
+- 🚀 **Slack Direct Message Detection**: Implemented new logic to accurately distinguish between direct messages and channel messages in Slack, improving the bot's contextual awareness for responses.
+- 📌 **Conversation Mention Tracking**: Introduced an `is_mentioned` flag within conversation entities to track whether the bot has been explicitly mentioned in a Slack channel, enabling more intelligent and targeted responses.
+
+### Changed
+- 🔄 **Standardized Slack Message Handling**: Refactored the core Slack message processing logic across all bot types into a unified service method (`handle_slack_message`), which now orchestrates the handling of direct messages, channel mentions, and continued conversations.
+- 📄 **Core Message Structure**: Updated the internal `Message` entity to support a list of `Content` objects, replacing the previous single string content field, which is foundational for multimodal input capabilities.
+- 🗣️ **LLM Integration for Multimodal Input**: Modified the integration layers for both Agent and OpenAI bots to correctly parse and pass multimodal content (text and images) from user messages to the underlying Large Language Model services.
+
+### Refactor
+- 🧹 **Centralized Slack Logic**: Consolidated various Slack-specific checks and message preparation steps into a single, comprehensive `handle_slack_message` function, enhancing code clarity and maintainability.
+- ⚙️ **Internal Helper Renames**: Renamed several internal message conversion helper methods to follow private naming conventions (e.g., `message_to_chat_message` to `_message_to_chat_message`), improving encapsulation.
 
 ---
 
@@ -3402,1422 +2443,1353 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.97.0] - 2025-03-06 - LLM Configuration Enhancements
 
 ### Added
-- ✨ **Enhanced ChatLLM Configuration**: Introduced the ability to specify a **system prompt** directly when instantiating an LLM via the `cost_reporting_llm` context manager, allowing for more precise and dynamic model instructions.
+- ✨ **Enhanced LLM System Prompt Control:** The `cost_reporting_llm` context manager in `ChatLLMConfig` now supports an optional `system_prompt` parameter, allowing for direct configuration of system messages for Large Language Models within cost-tracked sessions.
 
 ---
 
 
 
-## [v0.96.0] - 2025-03-06 - Enhanced Bot Stability and Core Service Update
-
-### Changed
-- 🚀 **Synchronized Core Service Versions:** All `aihub` components, including `aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_lib`, and `aihub_pipeline`, have been updated to `v0.96.0`, ensuring consistent dependency management across the ecosystem.
+## [v0.96.0] - 2025-03-06 - Enhanced Bot Message Handling
 
 ### Fixed
-- 🐛 **Improved Bot Message Handling:** Resolved an issue in `aihub_bot` where empty messages could potentially be sent. The `_send_buffer_to_user` method now includes a check to prevent sending messages when the buffer is empty, enhancing bot reliability and user experience.
+- 🐛 **Improved Bot Message Sending:** The bot service now gracefully handles empty message buffers, preventing unnecessary activity updates and enhancing the reliability of message delivery.
 
 ---
 
 
 
-## [v0.95.0] - 2025-03-06 - Enhanced User Experience and Configuration Standardization
+## [v0.95.0] - 2025-03-06 - Improved Chatbot Interactions and Streamlined Environment Setup
 
 ### Added
-- ✨ **Typing Indicators**: Introduced "typing" indicators in `AgentChatBot` and `OpenaiChatBot` to provide real-time feedback to users while the bot is generating a response, significantly improving user experience.
-- 📄 **Standardized Playground Configurations**: Added new `.env` files for `testing` environments, ensuring consistent setup across development and testing playgrounds.
+- 📄 **Standardized Testing Environment Configurations**: Introduced new `.env` files for testing environments, ensuring consistent setup alongside development.
 
 ### Changed
-- ⚙️ **Updated Environment Variable Naming**: Modified environment variable names and values in `.env` configurations for `development` and `testing` playgrounds to standardize Azure subscription and application naming conventions.
+- 💬 **Enhanced Chatbot User Feedback**: Implemented "typing" indicators for all chatbot types (Agent, Stream Agent, OpenAI, and Stream OpenAI), providing real-time feedback during response generation.
+- ⚙️ **Refined Development Environment Variables**: Updated the structure of development `.env` files to directly use `AZURE_SUBSCRIPTION_ID` for more explicit Azure resource identification.
 
 ### Refactor
-- 🧹 **Streamlined Text Sending Logic**: Refactored the internal text sending utility within `send_response_stream` to improve encapsulation and maintainability of the bot's response streaming mechanism.
+- 🧹 **Optimized Chat Service Message Sending**: Inlined the text sending logic within the `send_response_stream` method, improving the internal organization and maintainability of the chat service.
 
 ---
 
 
 
-## [v0.94.0] - 2025-03-05 - Improved Chat Experience and Core Configuration Flexibility
+## [v0.94.0] - 2025-03-05 - Enhanced Bot Streaming and Configuration Flexibility
 
 ### Changed
-- ✨ **Enhanced Bot Streaming for Long Responses:** Bots now provide a smoother user experience when generating lengthy responses by continuously updating the message in real-time. This also intelligently handles platform message limits by seamlessly transitioning to new messages when necessary.
-- ⚙️ **Extended Azure App Name Flexibility:** The configuration for Azure `APP_NAME` now supports hyphens, allowing for more descriptive and flexible naming conventions in deployment setups.
+- ✨ **Improved Bot Streaming Response Handling**: Enhanced the bot's ability to send long streaming responses by introducing a more robust chunking and update mechanism, including graceful handling for messages that exceed length limits to ensure continuous user experience.
+- 🔧 **Flexible Azure App Naming**: The `APP_NAME` configuration for Azure deployments now supports hyphens, providing greater flexibility for naming conventions.
 
 ### Fixed
-- 🐛 **Improved Streaming Reliability:** Addressed a potential issue where bot streaming responses could time out or stall, ensuring robust and reliable message delivery even when streams conclude.
+- 🐛 **Agent Stream Timeout Robustness**: Resolved an issue where agent streaming responses could lead to indefinite waits by implementing a timeout mechanism with graceful handling for stream termination, improving overall stability.
 
 ---
 
 
 
-## [v0.93.0] - 2025-03-05 - Core Library Upgrade and Version Synchronization
+## [v0.93.0] - 2025-03-05 - Core Component Version Alignment
 
 ### Changed
-- 🚀 **Dependency Upgrade:** All core microservices, including `aihub_agent`, `aihub_api`, `aihub_bot`, and `aihub_pipeline`, have been synchronized to utilize the latest `aihub_lib` version `v0.93.0`, ensuring compatibility and integrating the newest shared functionalities.
+- 🔄 **Component Version Synchronization**: Updated the project version and internal `aihub_lib` dependency tags across all `aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_lib`, and `aihub_pipeline` components to `v0.93.0` to ensure full system compatibility and release alignment.
 
 ---
 
 
 
-## [v0.92.0] - 2025-03-05 - Enhanced RAG Agents with Context Sufficiency Guard
+## [v0.92.0] - 2025-03-05 - Intelligent Context Handling for RAG Agents
 
 ### Added
-- 🛡️ **Introduced Context Sufficiency Guard for RAG Agents:** A new guard has been implemented that evaluates if the retrieved context is adequate to answer a user's query, helping to prevent the generation of responses based on incomplete or irrelevant information.
-- ⚙️ **Configurable Context Sufficiency Check:** RAG agents now include a `check_context_sufficiency` configuration option, allowing users to enable or disable the new context sufficiency validation.
-- 💬 **New Control Events for Context Sufficiency:** Added `ContextSufficientEvent` and `ContextInsufficientEvent` to clearly indicate the outcome of the context sufficiency check within the agent's operational flow.
-- 🌍 **Internationalization for Context Guard:** Implemented new translation strings for the context sufficiency guard's prompts and messages across multiple languages (German, English, French, Italian).
+- 🦾 **Introduced Context Sufficiency Guard:** A new `context_sufficient_guard` has been implemented to assess whether the retrieved context is adequate for answering a user's query within RAG agents. This enhances response quality by identifying and managing cases where context is insufficient.
+- ⚙️ **Configurable Context Sufficiency Check:** Added a new `check_context_sufficiency` option to the `RAGAgentConfig`, allowing users to enable or disable the context sufficiency guard based on their requirements.
+- 💬 **New Context State Events:** Introduced `ContextSufficientEvent` and `ContextInsufficientEvent` to clearly signal the outcome of the context sufficiency check within the agent's workflow.
+- 🌐 **Internationalized Context Guard Prompts:** Added multi-language support (German, English, French, Italian) for the new context sufficiency guard's prompts, improving global accessibility.
+- 🚀 **Agent-in-the-Loop Event Categories:** New event categories have been introduced under `aihub_lib/aihub_lib/nats/events/agent_in_the_loop` for managing exceptions, requests, and responses related to agent-in-the-loop functionality, laying groundwork for advanced human-in-the-loop workflows.
 
 ### Changed
-- 🔄 **Improved RAG Agent Response Handling:** The RAG agent's response generation logic now gracefully manages scenarios where the context is deemed insufficient, aligning its behavior with how few-shot rejections are handled.
-- 🧹 **Minor Internal Cleanup in Few-Shot Guard:** Streamlined the `FewShotAcceptEvent` by removing a redundant `success` parameter, enhancing internal code consistency.
-
-### Refactor
-- 🏗️ **Prepared for Agent-in-the-Loop Events:** Established foundational directory structures and `__init__.py` files for upcoming `agent_in_the_loop` exception, request, and response events, setting the stage for future enhancements in agent interaction and control.
+- 🔄 **Improved RAG Agent Fallback Behavior:** The `RAGAgent` now gracefully handles scenarios where the retrieved context is deemed insufficient by providing a fallback response, ensuring a more robust user experience.
+- ✨ **Streamlined Few-Shot Guard Acceptance:** Simplified the `FewShotAcceptEvent` creation in the `few_shot_guard_step`, removing redundant `success=True` parameter as it is implied by the event type.
 
 ---
 
 
 
-## [v0.91.0] - 2025-03-05 - Agent Scaling and Observability Improvements
+## [v0.91.0] - 2025-03-05 - Parallel Agents, GPU Support, and Enhanced Observability
 
 ### Added
-- 🚀 **Multi-Process Agent Runner:** Introduced `MultiprocessAgentRunner` to enable horizontal scaling of agents by running multiple instances across separate processes, supporting true parallelism and improved performance.
-- 🐳 **GPU-Enabled Docker Compose:** Added a new `docker-compose-gpu.yml` configuration to easily spin up a local AI infrastructure with GPU support for components like `llama.cpp` and Hugging Face Text Embeddings Inference (hf-TEI).
+- 🚀 **Multiprocess Agent Runner:** Introduced a new `MultiprocessAgentRunner` to enable horizontal scaling and true parallelism for agents by running multiple instances across separate processes.
+- ⚡️ **GPU-Accelerated Local Development:** Added `docker-compose-gpu.yml` to facilitate local development and testing with GPU-enabled infrastructure, including local LLM and embedding models.
+- ⚙️ **Developer Convenience Configurations:** Included new PyCharm run configurations to simplify the setup and execution of tests and core components (API, Agent, Bots, Lib) for an improved developer experience.
 
 ### Changed
-- 📈 **Improved CI/CD Test Reporting:** Enhanced GitHub Actions for backend tests and pytest coverage comments to provide clearer and more organized reporting within pull requests and checks.
-- ⚡️ **Agent Runner Redis Dependency:** The `AgentRunner` now explicitly requires a `redis_url` during initialization, indicating Redis as a core dependency for agent operations.
-- 🔍 **Enhanced OpenInference Tracing:** Improved the accuracy and compliance of OpenInference tracing by ensuring semantic attributes are properly formatted, including JSON serialization for LLM invocation parameters and filtering out empty/None values.
-- 📄 **Timestamped Logging:** Enabled timestamps with millisecond precision in console logs for better debugging and event correlation.
-
-### Refactor
-- 🧹 **Refined Distributed Event Store:** Enhanced the internal `DistributedEventStore` to improve type safety and efficiency in retrieving and caching `ControlEvent` objects.
-- 🔄 **Optimized OpenTelemetry Span Management:** Adjusted the handling of OpenTelemetry spans, particularly for error states, to ensure more accurate and complete trace representations.
-- 🧪 **Playground Example Cleanups:** Simplified and cleaned up existing playground examples by removing boilerplate and non-essential logic, improving clarity.
-
-### Removed
-- 🗑️ **Deprecated Docker Compose File:** Removed the non-functional `docker-compose-open-webui.yml` example.
-
----
-
-
-
-## [v0.90.0] - 2025-03-04 - Enhanced Observability and Codebase Refinement
-
-### Added
-- ✨ **Logging Configuration**: Introduced `LogSettings` in `aihub_lib` to allow log levels to be dynamically set via environment variables for more flexible control.
-- ⚡️ **Playground Logging**: Enabled enhanced logging in `aihub_api` and `aihub_bot` playground environments to leverage the new dynamic logging configuration.
-
-### Changed
-- 🚀 **Improved Tracing Performance**: Switched OpenTelemetry tracing in `aihub_agent` from `SimpleSpanProcessor` to `BatchSpanProcessor`, significantly enhancing trace export performance and reliability with optimized batching parameters.
-- ⚙️ **Logging Control**: The `enable_logging` utility in `aihub_lib` now offers more flexible log level management, including the ability to configure library-specific log levels.
-
-### Refactor
-- 🧹 **Event Import Structure**: Streamlined the import paths for `AgentInTheLoop` events within `aihub_lib` for better code organization and clarity.
-- 🗑️ **Codebase Cleanup**: Removed various unused imports across `aihub_api` and `aihub_bot` to reduce code clutter and improve maintainability.
-- 📝 **Test Readability**: Enhanced the clarity and precision of test function names in `aihub_agent` playground tests.
-- 📄 **Test Setup Simplification**: Simplified the `test_run` context manager usage in `aihub_agent` playground by removing an unused variable.
-
----
-
-
-
-## [v0.89.0] - 2025-03-03 - Enhanced Agent Dispatcher for Idempotent Step Execution
-
-### Added
-- ✨ **Introduced Idempotent Step Execution:** The agent dispatcher now prevents redundant processing by ensuring that each step, when called with the exact same set of input control events within a run, is executed only once. This improves efficiency and consistency.
-- 🚀 **New Step Store Event Tracking:** Implemented new capabilities within the `StepStore` to record and query previous step executions based on their specific input control events, supporting the new idempotency feature.
-
----
-
-
-
-## [v0.88.0] - 2025-03-03 - NATS Reliability & Performance Enhancements
-
-### Changed
-- 🚀 **NATS JetStream Configuration:** Updated the **AgentRunner** to initialize NATS JetStream with a 60-second timeout and a maximum of 10,000 pending asynchronous publish messages, enhancing performance and reliability for high-volume event handling.
-- 🔗 **Robust NATS Event Publishing:** Improved the **JSPublisher** to include automatic retries (up to 10 attempts), timeouts, and message deduplication via a unique `Nats-Msg-Id`. This significantly increases the reliability of event delivery and resilience to transient network issues.
-- ⚙️ **Optimized NATS Stream Defaults:** Modified the **StreamManager** to configure new NATS streams with in-memory storage (instead of file-based) and introduced specific retention policies (1,000,000 max messages, 30-day max age, 1-hour duplicate window). This optimizes resource usage and ensures efficient message management.
-- 📦 **Streamlined NATS Docker Image:** Switched the NATS service in `docker-compose.yml` to use the lighter `nats:alpine` Docker image, reducing image size and accelerating deployment times.
-
-### Refactor
-- 🧹 **Unified Development Workflow:** Standardized the order of `format` and `lint` commands in the `pr-ready` Makefile target across all microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_lib`, `aihub_pipeline`) for consistent developer experience.
-
----
-
-
-
-## [v0.87.0] - 2025-03-03 - Redis-Powered State Management and Workflow Optimizations
-
-### Added
-- ✨ **Redis Configuration**: Introduced a dedicated `RedisSettings` class to centralize Redis connection settings, enabling more straightforward configuration and management of distributed storage.
-
-### Changed
-- 🚀 **Redis for Distributed State Storage**: Migrated core distributed state management for agents from NATS JetStream Key-Value stores to Redis, significantly enhancing performance and scalability for event and step execution tracking.
-- ⚡️ **Optimized Event Retrieval in Dispatcher**: The Dispatcher now employs more targeted event retrieval methods, fetching only necessary event types, which improves efficiency and reduces unnecessary data processing.
-- ⚙️ **Enhanced NATS Stream Durability**: Configured NATS streams to utilize `FILE` storage by default instead of `MEMORY`, ensuring greater data persistence and reliability across system restarts.
-- 🧹 **Development Workflow Enhancements**: Incorporated `lint` checks into the `pr-ready` Makefile targets across all microservices, raising the standard for code quality and consistency.
+- 🔄 **Event Store Caching Improvement:** Refined the `DistributedEventStore` to directly cache and retrieve deserialized `ControlEvent` objects, enhancing type safety and internal consistency.
+- 📈 **Enhanced Logging Format:** Updated the default logging formatter to include timestamps with milliseconds, providing more precise temporal context for debugging and monitoring.
+- 📊 **Tracing Span Management:** Adjusted the tracing logic for successful agent steps, allowing for more flexible span management and potentially richer trace data capture.
 
 ### Fixed
-- 🐛 **Predictable `wait_for_event` Behavior**: The `AgentTestRunner`'s `wait_for_event` method now explicitly raises `StopIteration` when the anticipated event is not observed, providing clearer and more reliable test outcomes.
-
-### Refactor
-- 🔄 **Re-architected Event and Step Stores**: Overhauled the underlying `StoreBase`, `DistributedEventStore`, and `DistributedStepStore` implementations to leverage Redis, ensuring robust, race-condition-free event and step tracking by storing each event under a unique key.
-- 🗑️ **Streamlined Import Statements**: Removed several unused `StartEvent` and other general import statements across various agents and libraries, contributing to a cleaner and more focused codebase.
-
----
-
-
-
-## [v0.86.0] - 2025-03-03 - Core Version Alignment and Bot Refinements
-
-### Changed
-- 🔄 **Synchronized Core Library and Service Versions**: All core microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_pipeline`) and the `aihub_lib` dependency have been updated to version `v0.86.0`, ensuring consistent versioning across the platform.
-
-### Refactor
-- 🧹 **Streamlined Bot System Message Handling**: Removed redundant explicit calls to `get_system_message` within the `StreamAgentChatBot`, `OpenaiChatBot`, and `StreamOpenaiChatBot` implementations, simplifying the internal logic for chat prompt preparation.
-
----
-
-
-
-## [v0.85.0] - 2025-02-28 - Core Library Synchronization and Compatibility Update
-
-### Changed
-- 🔄 **Core Library Synchronization:** Aligned all microservices (Agent, API, Bot, Pipeline) to use the latest `aihub-lib` version (`v0.85.0`), ensuring consistent functionality and access to the most recent enhancements across the platform.
-- ⚙️ **Document Intelligence Loader Compatibility:** Updated the `DocumentIntelligenceLoader` within `aihub-lib` to adjust a parameter name (`analyze_request` to `body`) when calling the `begin_analyze_document` method, ensuring continued compatibility with the underlying Azure Document Intelligence SDK.
-
----
-
-
-
-## [v0.84.0] - 2025-02-28 - Core Updates and Event Stream Refinements
+- 🐛 **Semantic Event Serialization:** Corrected an issue where optional attributes in semantic tracing events were not properly omitted if `None`, and ensured `LLM_INVOCATION_PARAMETERS` are correctly serialized to JSON.
+- 🪄 **Bot Module Import:** Fixed a minor import path for `OpenaiChatController` in the `aihub_bot` playground.
 
 ### Removed
-- 🗑️ **Deprecated `LimitChatHistoryWithContextEvent`:** Removed an event previously used for limiting chat history and context, streamlining event definitions within the basic `FewShotAgent`.
+- 🗑️ **Deprecated Docker Compose File:** Removed the non-functional `docker-compose-open-webui.yml`, cleaning up the project structure.
 
 ---
 
 
 
-## [v0.83.0] - 2025-02-27 - Streamlined Data Storage and Internal Improvements
-
-### Changed
-- ⚡️ **Optimized NATS JetStream Storage**: Switched the default storage type for Key-Value (KV) stores and streams from file-based (`StorageType.FILE`) to in-memory (`StorageType.MEMORY`) across core components in `aihub_lib` and `aihub_agent`. This change significantly enhances performance and reduces disk I/O for temporary and context-specific data, such as run and thread contexts.
-- 🔄 **Refined KV Store Initialization**: Improved the error handling logic during Key-Value store creation within `aihub_agent`. This enhancement ensures more robust and seamless operation by gracefully retrieving existing stores when a creation attempt fails.
-
----
-
-
-
-## [v0.82.0] - 2025-02-27 - Core Enhancements: Caching, Dispatcher Logic, and Store Simplification
+## [v0.90.0] - 2025-03-04 - Improved Observability and Code Structure
 
 ### Added
-- ✨ **Introduced Caching for Event Store Data**: Implemented `TTLCache` in the `DistributedEventStore` to significantly improve performance when retrieving JSON values by caching frequently accessed data for 5 minutes.
+- ⚙️ **Configurable Logging Levels:** Introduced `LoggingConfig` in `aihub_lib` to allow setting log levels dynamically via environment variables, enhancing debugging and operational control.
+- ⚡️ **Automatic Playground Logging:** Enabled `enable_logging()` by default in `aihub_api` and `aihub_bot` playground environments, providing immediate visibility into test and development flows.
 
 ### Changed
-- 🔄 **Refined Step Execution Counting**: The dispatcher now precisely increments step execution counts only for methods explicitly configured with `_max_executions_per_run`, optimizing performance by avoiding unnecessary updates for steps without limits.
-
-### Removed
-- 🗑️ **Streamlined StoreBase Logic**: The generic `retry_operation` method has been removed from `StoreBase`, simplifying the base store implementation.
-- 🧹 **Deprecated BaseContext Concurrency Primitives**: The `synchronized_update` method and associated mutex/retry logic have been removed from `BaseContext`, streamlining the NATS context and centralizing concurrency control where specifically required.
-
----
-
-
-
-## [v0.81.0] - 2025-02-27 - Agent Stability and Concurrency Enhancements
+- 🚀 **Optimized Trace Export:** Switched OpenTelemetry trace export from `SimpleSpanProcessor` to `BatchSpanProcessor` in `aihub_agent`, significantly improving trace reliability and performance by batching exports.
+- 📈 **Enhanced Logging Configuration:** The `enable_logging` function now supports an additional `lib_level` argument and respects environment variable overrides for log levels, offering more granular control over library logging.
 
 ### Refactor
-- 🔄 **Re-engineered Distributed Event and Step Stores**: Implemented a new, highly concurrent storage model for events and step execution counts. This replaces the previous mutex-based synchronization with an append-only, unique-key per entry strategy, significantly improving reliability and eliminating race conditions in distributed environments.
-- 🧹 **Optimized Event Fetching in Dispatcher**: Refactored the `Dispatcher` to pre-fetch all necessary events once per trigger cycle and pass them to subsequent step readiness checks and executions, reducing redundant calls to the event store and improving performance.
+- 🧹 **API Import Cleanup:** Removed numerous unused imports across various `aihub_api` controllers and DTOs, reducing clutter and improving code readability.
+- 🧪 **Test Suite Clarity:** Renamed test functions in `FewShotAgent` and `AgentInTheLoopAgent` playgrounds for improved clarity and maintainability of test scenarios.
+- 🔄 **Standardized OpenAI URLs:** Centralized OpenAI base URLs in `aihub_api` playground configuration for easier management and consistency.
+- 📄 **Simplified NATS Event Imports:** Refactored the import structure for `AgentInTheLoop` events within `aihub_lib.nats.events` to streamline access and reduce nesting.
 
-### Changed
-- ⚡️ **Improved Key-Value Store Robustness**: Increased the maximum retry attempts and refined the backoff strategy for Key-Value store operations, enhancing resilience against transient network issues and concurrent access.
-- 🐛 **Enhanced Key-Value Store Error Handling**: Added more specific error handling for Key-Value store creation and deletion, ensuring smoother operation and clearer logging for common scenarios.
-- 📄 **Updated Example Agent Configuration**: Applied `max_executions_per_run=1` to a step in the `OptionalAgent` example, demonstrating the step execution limits feature and improving the example's clarity.
-
----
-
-
-
-## [v0.80.0] - 2025-02-27 - Enhanced Internationalization Capabilities
-
-### Changed
-- 🌐 **Locale Handling Improvements**: The `LocaleHandler` now supports passing additional keyword arguments to the underlying internationalization function, enabling more dynamic and flexible message translation with embedded placeholders.
+### Removed
+- 🗑️ **Redundant NATS Event Modules:** Deleted empty `__init__.py` files previously used for re-exporting `AgentInTheLoop` events, simplifying the module structure.
 
 ---
 
 
 
-## [v0.79.0] - 2025-02-27 - Strengthened Data Integrity with Synchronized Updates
+## [v0.89.0] - 2025-03-03 - Enhanced Agent Dispatching with Idempotency
 
 ### Added
-- 🛡️ **Introduced Synchronized Update Mechanism**: Added `synchronized_update` method to `StoreBase` and `BaseContext`, providing a robust mutex-based pattern to prevent race conditions during concurrent updates to key-value store entries.
-- 🚀 **New KV Store Utility Methods**: Added `get_value`, `put_json_value`, `get_json_value`, and `atomic_operation` to `StoreBase` for more flexible, reliable, and convenient interaction with NATS JetStream Key-Value stores.
-- ⚡️ **Configurable Retry Logic**: Implemented `max_retries` and `base_backoff` configurations in `StoreBase` and `BaseContext` to enable resilient operations with automatic retries for transient errors.
-
-### Changed
-- 🔄 **Improved Event and Step Stores**: Refactored `DistributedEventStore` and `DistributedStepStore` to leverage the new `synchronized_update` method, ensuring safe and consistent data operations (e.g., appending events, incrementing step counts) under concurrent access.
-- 🧹 **Refined KV Data Retrieval**: Enhanced `get_all_events` in `DistributedEventStore` and `get_all` in `BaseContext` to automatically filter out internal mutex keys, providing cleaner and more relevant data results.
-- 🐛 **Enhanced Crash Detection Reliability**: Updated `is_run_crashed` in `DistributedStepStore` to use the new generic `get_value` method, improving its robustness and consistency.
+- ✨ **Introduced Idempotent Agent Step Execution:** Agent steps now include a robust mechanism to prevent duplicate executions within the same run when called with identical input events. This significantly enhances the reliability and efficiency of agent dispatching by avoiding redundant processing.
 
 ---
 
 
 
-## [v0.78.0] - 2025-02-27 - Streamlined Azure AI Search Integration
+## [v0.88.0] - 2025-03-03 - Streamlined Communication and Resource Management
 
 ### Changed
-- ⚡️ **Improved Azure AI Search Vector Store Initialization:** Simplified the creation of Azure AI Search vector stores by automatically applying a default semantic configuration if none is explicitly provided, enhancing ease of use for semantic search capabilities.
+- 🚀 **Improved NATS JetStream Configuration:** Enhanced the NATS JetStream client setup in `AgentRunner` with a 60-second timeout and increased `publish_async_max_pending` to 10,000 messages, boosting communication robustness for event publishing.
+- ⚡️ **Enhanced NATS Publishing Reliability:** Implemented a robust retry mechanism with timeouts and message deduplication (using `Nats-Msg-Id` headers) for all NATS JetStream publications, significantly improving the reliability of event delivery.
+- ⚙️ **Optimized NATS Stream Management:** Configured NATS streams to use `MEMORY` storage instead of `FILE` for improved performance. New policies for message limits (`1,000,000`), discarding old messages, a 30-day message age limit, and a 1-hour duplicate window were also introduced, optimizing resource usage and data retention.
+- 🐳 **Updated NATS Docker Image:** Switched the NATS service in `docker-compose.yml` from `nats:latest` to the more lightweight `nats:alpine` image, reducing resource consumption for local deployments.
+
+### Refactor
+- 🧹 **Standardized Pre-Commit Hook Order:** Reordered the `pr-ready` Makefile target across all core services (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_lib`, `aihub_pipeline`) to consistently run formatting before linting, streamlining development workflows.
 
 ---
 
 
 
-## [v0.77.0] - 2025-02-26 - Enhanced NATS JetStream Reliability
+## [v0.87.0] - 2025-03-03 - Infrastructure Upgrade: Redis for Distributed State & Workflow Optimizations
+
+### Added
+- ✨ **Redis for Distributed State**: Integrated Redis as the primary backend for distributed event and step storage across agents, significantly enhancing performance, scalability, and simplifying state management.
+- ⚙️ **Redis Configuration**: Introduced a new `RedisConfig` class within `aihub_lib` for streamlined management of Redis connection settings.
+- 💾 **Redis Docker Service**: Added a dedicated Redis service to the `docker-compose.yml` for easier local development and testing environment setup.
+- 🚀 **Telemetry Header Caching**: Implemented a `TTLCache` in the `Dispatcher` to cache telemetry headers, optimizing performance by reducing redundant data fetches during step execution.
 
 ### Changed
-- 🚀 **Improved NATS JetStream Message Handling:** The JetStream subscriber (`JSSubscriber`) now explicitly acknowledges messages immediately upon receipt, simplifying the message flow and enhancing processing robustness. This change also includes handling for `MsgAlreadyAckdError` to prevent unexpected errors during acknowledgment.
+- 🛠️ **CI/CD Linting Step**: Incorporated a `lint` command into the `pr-ready` Makefile targets for all microservices, reinforcing code quality standards prior to pull requests.
+- 📈 **NATS Stream Durability**: Switched NATS stream storage from in-memory (`MEMORY`) to file-based (`FILE`), improving data durability and persistence for event streams.
+- 🐳 **NATS Docker Image Update**: Updated the NATS Docker image to `nats:latest` and enabled verbose/debug logging (`-D`, `-V`) for better operational insights.
+
+### Refactor
+- 🧹 **Unified State Management Logic**: Reworked core components including `StoreBase`, `DistributedEventStore`, `StepStore`, and various `Context` classes (`BaseContext`, `RunContext`, `ThreadContext`) to unify their distributed state management under Redis, simplifying the overall architecture.
+- 🧰 **Optimized Step Readiness Check**: Enhanced the `Dispatcher`'s step readiness logic to precisely retrieve only the necessary input events for step execution, leading to more efficient data fetching.
+- 🔄 **Streamlined Agent Event Imports**: Cleaned up various agent files by removing explicit `StartEvent` imports where not directly consumed, reflecting a more consolidated approach to initial event handling within the agent framework.
 
 ---
 
 
 
-## [v0.76.0] - 2025-02-26 - Enhanced Message Reliability and Core Updates
+## [v0.86.0] - 2025-03-03 - Streamlined Bot Services
+
+### Refactor
+- 🧹 **Refined Bot System Message Retrieval:** Removed redundant calls to `get_system_message` from `StreamAgentChatBot`, `OpenaiChatBot`, and `StreamOpenaiChatBot` to centralize and simplify how system messages are handled within bot services.
+
+---
+
+
+
+## [v0.85.0] - 2025-02-28 - Core Component Alignment and API Refinements
+
+### Changed
+- 🔄 **Updated Core Component Versions**: Synchronized the versions of `aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_lib`, and `aihub_pipeline` to `v0.85.0` for consistent deployment and development.
+- 📄 **Enhanced Document Intelligence Loader**: Adapted the **Document Intelligence Loader** to align with the latest API specifications by updating the parameter name from `analyze_request` to `body` for improved compatibility.
+
+---
+
+
+
+## [v0.84.0] - 2025-02-28 - Minor Refinements and Event Stream Optimization
+
+### Removed
+- 🗑️ **Removed `LimitChatHistoryWithContextEvent`:** The event previously used for explicitly limiting chat messages and context within the `FewShotAgent` has been removed.
+
+---
+
+
+
+## [v0.83.0] - 2025-02-27 - Core Performance and Stability Improvements
+
+### Changed
+- ⚡️ **Optimized NATS JetStream Storage:** Switched the default storage type for all NATS JetStream Key-Value stores (including run and thread contexts) and general streams from file-based (`FILE`) to in-memory (`MEMORY`). This change significantly enhances performance and responsiveness of context and stream operations.
+- ⚙️ **Enhanced KV Store Creation Robustness:** Improved the error handling for Key-Value store creation, ensuring that the system more gracefully attempts to retrieve an existing store if creation fails, leading to increased stability.
+
+---
+
+
+
+## [v0.82.0] - 2025-02-27 - Core Optimizations and Logic Refinements
+
+### Added
+- ✨ Implemented **caching for event store lookups** within the `DistributedEventStore`, significantly improving performance by reducing redundant data fetches for frequently accessed run-specific information.
+
+### Changed
+- ⚡️ Refined the **step execution count logic** in the `Dispatcher` to conditionally increment based on the presence of a `_max_executions_per_run` attribute, allowing for more precise control over step retries and execution limits.
+
+### Removed
+- 🗑️ Deprecated and removed the **`retry_operation` method** from `StoreBase`, streamlining the core store interface.
+- 🧹 Removed **mutex-based synchronization and retry configuration** attributes (`max_retries`, `base_backoff`, and `synchronized_update` method) from `BaseContext`, simplifying the underlying NATS context management.
+
+---
+
+
+
+## [v0.81.0] - 2025-02-27 - Enhanced Reliability and Concurrency
+
+### Changed
+- ⚡️ **Overhauled event and step execution management** for enhanced concurrency and data consistency in distributed environments. This new approach leverages unique key storage in NATS JetStream, effectively eliminating race conditions previously addressed with mutexes.
+- 🔄 **Optimized event access within the Dispatcher** by pre-fetching all relevant events before checking step readiness and executing steps, improving performance and ensuring consistent state snapshots.
 
 ### Fixed
-- 🐛 **Improved NATS JetStream Message Reliability:** Corrected the message acknowledgment order in `JSSubscriber` to ensure messages are only acknowledged *after* successful processing by the handler, preventing potential message loss and improving robustness in case of processing errors.
+- 🐛 **Improved handling for existing NATS JetStream KeyValue stores** by explicitly catching "already in use" errors during store creation, preventing exceptions in high-concurrency scenarios.
+
+### Refactor
+- ⚙️ **Strengthened NATS JetStream KeyValue store resilience** by increasing maximum retry attempts (from 5 to 10) and fine-tuning the backoff strategy for transient connection or operation errors.
+- 🧹 **Enhanced internal `StoreBase` utilities**, introducing a dedicated method for storing raw byte values and generalizing the retry mechanism for various operations across the agent.
 
 ---
 
 
 
-## [v0.75.0] - 2025-02-26 - Core Library Enhancements for NATS Subscribers
+## [v0.80.0] - 2025-02-27 - Enhanced Localization Capabilities
 
 ### Changed
-- ⚡️ **Improved NATS Message Processing:** The `JSSubscriber` and `NCSubscriber` components have been updated to process incoming NATS messages asynchronously. This change prevents blocking of the main message loop, significantly enhancing the overall responsiveness and concurrency of event handling.
-- 🔄 **Refactored NATS Subscriber Error Handling:** Message processing and acknowledgment within the NATS subscribers now occur in dedicated asynchronous tasks, ensuring more robust error handling and preventing transient issues from interrupting the continuous flow of incoming messages.
+- 🌍 **Improved Internationalization (i18n)**: The `LocaleHandler` now supports passing additional arguments for dynamic content interpolation within translated strings, enabling more flexible and context-aware localized messages.
 
 ---
 
 
 
-## [v0.74.0] - 2025-02-26 - Metadata Precision and Core Synchronization
+## [v0.79.0] - 2025-02-27 - Enhanced Data Consistency with Atomic Store Operations
+
+### Added
+- ✨ **Introduced Atomic and Synchronized Updates:** Implemented new `atomic_operation` and `synchronized_update` methods in `StoreBase` and `BaseContext` to ensure safe, concurrent data modifications in JetStream KV stores, effectively preventing race conditions.
+- ⚙️ **Utility Methods for KV Stores:** Added `get_value`, `put_json_value`, and `get_json_value` to `StoreBase`, simplifying common data retrieval and storage patterns with optional transformations and JSON handling.
+
+### Changed
+- 🔄 **Improved Event Store Concurrency:** The `DistributedEventStore` now leverages the new synchronized update mechanisms for adding events, significantly improving reliability and data consistency under concurrent operations.
+- ⚡️ **Enhanced Step Execution Tracking:** The `DistributedStepStore` now uses synchronized updates for `increment_execution_count` and simplified checks for `is_run_crashed`, ensuring accurate and reliable tracking of step executions in highly concurrent environments.
+- 🧹 **Refined KV Store Key Retrieval:** Key-value store listing methods across `StoreBase` and `BaseContext` now automatically filter out internal mutex keys, providing cleaner and more relevant results.
+
+---
+
+
+
+## [v0.78.0] - 2025-02-27 - Streamlined Azure AI Search Configuration
+
+### Changed
+- ⚡️ **Simplified Azure AI Search Vector Store Creation:** The `create_azure_ai_search_vector_store` function now utilizes a default value for `semantic_configuration_name`, which streamlines the configuration process and simplifies the internal logic for setting up Azure AI Search vector stores.
+
+---
+
+
+
+## [v0.77.0] - 2025-02-26 - Enhanced Message Processing Reliability
+
+### Refactor
+- ⚡️ **Improved NATS JetStream Message Acknowledgment:** Refactored the `JSSubscriber` to acknowledge messages immediately upon receipt, preventing re-delivery of messages if subsequent processing tasks encounter issues. This enhances the reliability and predictability of message consumption.
+
+---
+
+
+
+## [v0.76.0] - 2025-02-26 - NATS Message Processing Refinement
+
+### Changed
+- 🔄 **Adjusted NATS JetStream Acknowledgment Logic:** The order of message acknowledgment has been updated in the `JSSubscriber` to occur *before* the message handler is executed. This change optimizes message flow and prevents potential re-delivery of messages in scenarios where the handler might encounter an error after initial processing has begun.
+
+---
+
+
+
+## [v0.75.0] - 2025-02-26 - Enhanced Asynchronous NATS Message Processing
+
+### Changed
+- ⚡️ **Improved NATS JetStream Message Processing:** The `JSSubscriber` now handles incoming messages asynchronously by creating a separate task for each message. This prevents the main message loop from being blocked by slow handlers, significantly enhancing concurrency and system resilience.
+- 🚀 **Optimized NATS Core Message Handling:** The `NCSubscriber` has been updated to process incoming messages in a non-blocking fashion. This change ensures that message handling is more robust and efficient, improving overall system responsiveness.
+
+---
+
+
+
+## [v0.74.0] - 2025-02-26 - Enhanced Document Metadata Handling
 
 ### Fixed
-- 🐛 **Improved Document Metadata Accuracy:** Addressed an issue in `RefDocDocument` where the document's URI was incorrectly used instead of the `DataLakeFile`'s URI when enriching metadata, ensuring proper title extraction from the correct source.
+- 🐛 **Corrected Document Title Extraction:** Ensured that the document title is accurately extracted from the **DataLakeFile** URI when enriching **RefDocDocument** metadata, preventing incorrect title assignments.
 
 ---
 
 
 
-## [v0.73.0] - 2025-02-26 - Enhanced Core Stability
-
-### Fixed
-- 🐛 **Improved WebSocket Event Handling:** Implemented a more robust check within the WebSocket receiver to prevent potential errors when handling `start` events, ensuring that event messages are properly processed even if the `messages` attribute is not initially present.
-
----
-
-
-
-## [v0.72.0] - 2025-02-26 - Enhanced Document Metadata for Improved RAG
-
-### Added
-- 📄 **Enriched Document Metadata**: The `RefDocDocument` now automatically extracts and includes the `SOURCE` (the original data lake URI) and `DOCUMENT_TITLE` (the filename extracted from the URI) in its metadata when documents are ingested. This enhancement improves the traceability and searchability of documents within the RAG system.
-
----
-
-
-
-## [v0.71.0] - 2025-02-26 - Synchronized Core Services and Enhanced LLM Compatibility
-
-### Changed
-- ⚙️ **Synchronized Core Components**: All `aihub` microservices (`agent`, `api`, `bot`, `pipeline`) and the core `aihub-lib` have been updated and synchronized to version `v0.71.0`, ensuring consistent dependency management across the ecosystem.
-- 💬 **Improved Self-Hosted LLM Compatibility**: Enhanced the tokenizer loading logic for self-hosted Large Language Models to correctly parse model names containing common quantization suffixes such as `-bnb` and `-4bit`.
-
----
-
-
-
-## [v0.70.0] - 2025-02-26 - Enhanced Azure OpenAI Authentication Options
-
-### Added
-- ✨ **Azure OpenAI API Key Support:** Introduced the ability to authenticate Azure OpenAI Large Language Models using a direct API key, providing an alternative to Azure AD for improved configuration flexibility.
-
----
-
-
-
-## [v0.69.0] - 2025-02-25 - Core Component Update and Build Process Improvements
-
-### Changed
-- 🔄 **Synchronized Core Components**: All core microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_pipeline`) and the shared **`aihub_lib`** have been updated to `v0.69.0`, ensuring consistent versioning and dependency alignment across the ecosystem.
-- 🚀 **Enhanced CI/CD Workflow**: The GitHub Actions `add-tag.yml` workflow has been optimized for efficiency and reliability, including improved Python setup caching and more robust Poetry dependency installation steps (`poetry lock` and `poetry install`) for release automation.
-
----
-
-
-
-## [v0.68.0] - 2025-02-25 - Enhanced Self-Hosted LLM Tokenization
+## [v0.73.0] - 2025-02-26 - Core Stability Enhancements and Version Alignment
 
 ### Fixed
-- 🐛 **Improved Self-Hosted LLM Tokenizer Loading:** Resolved an issue where tokenizers for self-hosted Large Language Models (LLMs) might fail to load due to model name suffixes (e.g., `-GGUF`, `-AWQ`). The system now correctly extracts the base model name for accurate tokenizer retrieval and directly provides the encoding function, making it more robust and immediately usable.
-
----
-
-
-
-## [v0.67.0] - 2025-02-25 - Development Workflow Updates and Script Refinements
+- 🐛 **WebSocket Message Handling:** Enhanced robustness of the `WebSocketReceiver` to gracefully handle cases where a start event might not contain a `messages` attribute, preventing potential runtime errors.
 
 ### Changed
-- ⚙️ **Enhanced Development Script Execution:** Updated `Makefile` commands to leverage `poetry run` when executing the dependency switching script, ensuring consistent execution within the Poetry-managed environment and streamlining developer workflows.
-
-### Refactor
-- 🧹 **Renamed Dependency Management Script:** The script responsible for switching between local and remote core dependencies has been renamed from `switch_dependency.py` to `switch_dependencies.py` for improved clarity and naming consistency.
+- 🔄 **Project-wide Version Bump:** Aligned all core microservices and internal dependencies to version `v0.73.0` for consistent build and deployment.
 
 ---
 
 
 
-## [v0.66.0] - 2025-02-25 - Revamped User Interface and Flexible Authentication
+## [v0.72.0] - 2025-02-26 - Enhanced Document Metadata for RAG
 
 ### Added
-- ✨ **Enhanced User Information**: The API now provides richer user details, including profile images fetched directly from Azure AD, for a more personalized experience across the platform.
-- 🚀 **Dynamic Authentication Strategy**: Introduced a new composite authentication handler (`TokenAndOauth2Handler`), allowing the API to seamlessly support multiple authentication methods simultaneously, such as OAuth2 (Azure AD) and API Tokens.
-- 🖼️ **Modern Application Layout**: Implemented a new, intuitive default layout for the web application, featuring a dynamic sidebar for quick navigation, a comprehensive top bar with breadcrumbs and user details, and an improved overall user interface.
-- 📊 **New OpenAPI Client SDK**: Integrated an auto-generated TypeScript SDK for the frontend, ensuring more robust, type-safe, and efficient communication with the backend API.
-- 🔒 **Seamless Session Renewal**: Added support for silent OIDC token renewal in the web application, significantly improving user session management and reducing the frequency of login prompts.
-- 👤 **User Data Persistence Layer**: Laid the foundational groundwork for future personalized features by introducing a dedicated entity for storing user-specific data in the backend.
-- 🌐 **Open Web UI Integration Page**: Incorporated a new page specifically designed for seamlessly integrating and accessing the Open Web UI module directly within the application.
-- 📈 **Standardized Health Check Response**: Introduced a new `HealthResponse` DTO to provide a consistent and explicit structure for the health check endpoint's output.
+- ✨ **Enriched `RefDocDocument` Metadata**: Improved document processing in the pipeline by automatically extracting and adding the **document title** and **source URI** to `RefDocDocument` instances. This enhancement provides richer, more granular context for Retrieval-Augmented Generation (RAG) applications.
+
+---
+
+
+
+## [v0.71.0] - 2025-02-26 - Improved Self-Hosted LLM Compatibility
 
 ### Changed
-- 🔄 **UI Framework Migration**: Completed the migration of the web application's core UI components from `shadcn/ui` to **PrimeVue**, resulting in a refreshed visual design, enhanced accessibility, and improved component functionality.
-- ⚡️ **Improved API Authentication Integration**: Updated FastAPI endpoints to leverage the `Security` dependency for authentication, enabling more flexible and robust authentication flows.
-- 🎨 **Login Page Redesign**: Overhauled the login experience with a modernized design and enhanced branding, providing a more professional and welcoming entry point.
-- 📄 **API Operation ID Generation**: Configured API routes to automatically generate OpenAPI operation IDs, which improves API client generation and tooling support for developers.
-- ℹ️ **User Information Retrieval Logic**: Refined the backend logic for fetching comprehensive user details, ensuring consistency and full utilization of the new profile image capabilities.
+- ⚙️ **Enhanced Self-Hosted LLM Tokenizer Compatibility:** Updated the self-hosted LLM configuration to correctly infer base model names by stripping additional suffixes (`-bnb` and `-4bit`), improving compatibility with various quantized model formats for tokenization.
+
+---
+
+
+
+## [v0.70.0] - 2025-02-26 - Expanded Azure OpenAI Authentication Options
+
+### Changed
+- 🔑 **Enhanced Azure OpenAI LLM Authentication:** Enabled direct API key authentication for **Azure OpenAI Large Language Models**, providing a flexible alternative to Azure AD for resource access.
+
+---
+
+
+
+## [v0.69.0] - 2025-02-25 - Enhanced Build Stability and CI Efficiency
+
+### Changed
+- ⚡️ **Optimized CI Workflow:** Reordered Python and Poetry setup steps and introduced Poetry caching in the `add-tag.yml` GitHub Actions workflow to significantly improve build times and efficiency.
+- 🦾 **Strengthened Dependency Management in CI:** Added explicit `poetry lock` and `poetry install` steps to GitHub Actions workflows, ensuring consistent and reliable dependency resolution and installation across all CI runs.
+- 🧹 **Streamlined Build Dependencies:** Removed direct `pip install` commands for global tools like `tomlkit` in CI, now relying entirely on Poetry for comprehensive dependency management.
+
+---
+
+
+
+## [v0.68.0] - 2025-02-25 - Enhanced Self-Hosted LLM Configuration
+
+### Changed
+- ⚡️ **Improved Self-Hosted LLM Tokenizer Loading:** Enhanced the `tokenizer` property within `SelfHostedLLMConfig` to correctly load tokenizers for various self-hosted models by stripping common suffixes (like `-GGUF` and `-AWQ`) from model names and ensuring the proper encoding function is returned.
+
+---
+
+
+
+## [v0.67.0] - 2025-02-25 - Build System Enhancements and Poetry Integration
+
+### Refactor
+- 🧹 **Renamed Dependency Management Script:** The script for switching between local and remote cores has been renamed from `switch_dependency.py` to `switch_dependencies.py` for improved clarity.
+- ⚡️ **Poetry Integration for Development Scripts:** Updated Makefile commands to utilize `poetry run` for executing core dependency switching scripts, streamlining the development workflow and aligning with Poetry's project management practices.
+
+---
+
+
+
+## [v0.66.0] - 2025-02-25 - Enhanced Authentication, UI Overhaul, and API Clarity
+
+### Added
+- 🖼️ **User Profile Images**: Implemented fetching and displaying user profile images from Azure AD, enhancing the user experience in the UI.
+- 🔑 **Flexible Authentication Handler**: Introduced `TokenAndOauth2Handler` to enable combined use of Bearer token and OAuth2 authentication strategies, offering more versatile security configurations.
+- 💾 **Persistent User Preferences**: Added `UserEntity` for storing user-specific data like favorite modules, laying the groundwork for personalized experiences.
+- ⚡️ **Client SDK Generation**: Integrated OpenAPI-TS to automatically generate a robust TypeScript SDK for the frontend, streamlining API interactions and ensuring type safety.
+- 🎨 **New Application Layouts**: Designed and implemented new `default` and `anonymous` Nuxt layouts, providing a more structured and visually consistent user interface.
+- 👤 **User Bar Component**: Introduced a dedicated user bar component in the UI, displaying user information and integrating a dark mode toggle.
+- 🚀 **Redesigned Login Experience**: Overhauled the login page with a modern, two-panel design and prominent Microsoft login integration.
+- 🔄 **OIDC Silent Token Renewal**: Added support for silent token renewal in OpenID Connect (OIDC) to maintain seamless user sessions without visible re-authentication.
+- 🌐 **Open Web UI Integration**: Enabled direct embedding of Open Web UI as an iframe within the application, providing a unified access point.
+- 📊 **User Data Store**: Created a new Pinia store for managing user-related data, including profile information fetched via the API.
+- 📄 **Structured Health Response**: Defined a `HealthResponse` DTO for the API's health endpoint, providing a clearer and standardized contract.
+
+### Changed
+- 🔒 **Standardized Security Dependencies**: Migrated API routes to use FastAPI's `Security` instead of `Depends` for authentication, improving consistency and clarity in security definitions.
+- 🛠️ **Refined User Information Retrieval**: Updated the API's `get_user` endpoint to leverage a dedicated service method for fetching comprehensive user details, including the newly added profile image.
+- 💅 **UI Framework Transition**: Transitioned the web application's primary styling and component library from Shadcn UI to PrimeVue, resulting in a refreshed look and feel.
+- 🏗️ **Nuxt Layout Integration**: Refactored the web application to fully utilize Nuxt Layouts, establishing a consistent structural foundation across pages.
+- 📈 **Improved OpenAPI Generation**: Enhanced OpenAPI schema generation to include `operation_id` for API routes, facilitating more accurate and usable client SDKs.
+- 🎨 **Updated PrimeVue Theme**: Applied a new `zinc` color palette and configured dark mode for the PrimeVue theme, aligning with updated branding and improving visual consistency.
 
 ### Removed
-- 🗑️ **Legacy UI Components**: Deprecated and removed all `shadcn/ui` components and their associated configurations, streamlining the frontend codebase following the UI framework migration.
-- ❌ **Outdated Multi-Authentication Handler**: Replaced the previous generic `MultiAuthHandler` with the more specialized and integrated `TokenAndOauth2Handler`.
-
----
-
-
-
-## [v0.65.0] - 2025-02-25 - Enhanced LLM Integration and Agent Flexibility
-
-### Changed
-- 🔄 **Expanded LLM Compatibility for `LLMWrappingAgent`**: The `LLMWrappingAgent` now utilizes a more generic `LLMConfig`, enabling seamless integration with a broader array of Large Language Models beyond just Azure OpenAI.
-
----
-
-
-
-## [v0.64.0] - 2025-02-24 - Core Synchronization and Dispatcher Improvement
-
-### Changed
-- ⚙️ **Improved Locale Retrieval:** Ensured that a default locale is always provided when retrieving locale information from the run context, enhancing robustness and preventing potential errors in agent execution.
+- 🗑️ **Deprecated Multi-Authentication Handler**: Removed the generic `MultiAuthHandler` in favor of the more specialized and explicit `TokenAndOauth2Handler`.
+- 🧹 **Shadcn UI Components**: Eliminated all Shadcn UI components, styling, and related configurations from the web application as part of the UI framework transition.
+- 📦 **Unused BSON Dependency**: Cleaned up the `aihub_agent` module by removing an unused `bson` dependency.
 
 ### Refactor
-- 🧹 **Internal Code Cleanup:** Reordered import statements within the dispatcher module for improved code consistency and readability.
+- ⚙️ **Component Organization**: Reorganized and renamed the chat component (`Chat.vue` to `ThreadChat.vue`) and moved it into a dedicated `thread` subdirectory for better module clarity.
 
 ---
 
 
 
-## [v0.63.0] - 2025-02-21 - Core Library Updates and Guard Enhancements
+## [v0.65.0] - 2025-02-25 - Core Agent LLM Flexibility
 
 ### Changed
-- ⚡️ **Improved `AgentTestRunner` Functionality:** Enhanced `get_events` and `get_events_of_type` methods in `AgentTestRunner` with an `event_filter` parameter, allowing for more precise event retrieval during testing.
-- 🦾 **Refined Few-Shot Guard Prompting:** Updated the internal prompt for the **Few-Shot Guard** across all supported languages (DE, EN, FR, IT) to enforce a stricter and more reliable JSON output format from Large Language Models, improving the guard's robustness and parsing.
-- 🔄 **Updated Core Library Dependencies:** All microservices have been updated to utilize the latest `v0.63.0` version of the `aihub_lib` core library, bringing in the latest improvements and fixes.
+- 🔄 **Enhanced LLMWrappingAgent Configuration:** The `LLMWrappingAgentConfig` has been updated to use the more generic `ChatLLMConfig` instead of the provider-specific `AzureOpenAILLMConfig`. This modification provides greater flexibility, enabling the LLM Wrapping Agent to integrate seamlessly with a broader range of chat LLM providers.
 
 ---
 
 
 
-## [v0.62.0] - 2025-02-20 - Developer Experience Improvements and CI/CD Refinements
-
-### Changed
-- ⚙️ **Refined backend test workflow** in CI/CD, allowing Poetry dependency installation to proceed before Docker services are fully healthy, potentially speeding up test execution.
-- ✨ **Simplified `NoAuthHandler` configuration** for local development by providing sensible default user values directly in the configuration, reducing the need for manual `.env` file setup in the playground environment.
-
----
-
-
-
-## [v0.61.0] - 2025-02-20 - Major Pipeline Overhaul: Modular Resources and Simplified Configuration
-
-### Refactor
-- 🧹 **Pipeline Resource Restructuring:** Underwent a significant refactoring of pipeline resource management, replacing a generic `NamespaceResource` with more granular and specific `DataLakeResource` and `DocStoreResource` for clearer configuration and improved modularity.
-- ⚙️ **Streamlined LLM Configuration:** Simplified the setup of Large Language Model (LLM) resources by removing the `LlmHandlerResource` and enabling direct configuration of `EmbeddingModelResource` and `LanguageModelResource` with their respective Azure OpenAI or self-hosted configurations.
-- 🗄️ **Direct Data Store Configuration:** Updated Data Lake, Document Store, and Vector Store resources to accept explicit names (e.g., container, database, vector store names) directly, reducing reliance on a common "namespace" abstraction for better clarity and control.
-- 🚀 **Simplified Pipeline Job Definitions:** Streamlined pipeline job naming and configurations by removing customer-specific prefixes, allowing for more generic and reusable job definitions.
-- 🌐 **Improved MongoDB Connection:** Enhanced the MongoDB connection utility for greater flexibility and robustness by directly using provided database names and adding comprehensive error handling.
-- 🔄 **Refined Import Paths:** Cleaned up and standardized import paths across several modules for better code organization and maintainability.
-
-### Added
-- 💾 **New `DataLakeResource`:** Introduced a dedicated resource (`DataLakeResource`) to explicitly define Data Lake container and directory names, centralizing data lake configuration.
-- 📚 **New `DocStoreResource`:** Added a specialized resource (`DocStoreResource`) for clear configuration of document store database and namespace names.
-
-### Changed
-- 🧩 **Flexible Asset Factory Inputs:** Enhanced `documents_factory` and `nodes_factory` to accept `AssetKey` types for data lake and document inputs, providing greater flexibility in pipeline definitions.
-- 💡 **Conditional Azure AI Search Configuration:** Improved the `AzureAISearchVectorStoreFactory` to intelligently apply semantic configuration only when specified, allowing for more flexible vector store creation.
-- 📊 **Refined Data Lake Asset Metadata:** Updated Data Lake asset materialization events to provide more relevant metadata, focusing on file counts and total size, and improved conditional reporting.
-- 📄 **Enhanced Milvus Vector Store Documentation:** Expanded the documentation and examples for `MilvusVectorStoreResource` to improve clarity and ease of use.
-- 🛠️ **Dagster Sensor API Update:** Adapted to the latest Dagster sensor API, transitioning from `asset_selection` to `target` for automation condition sensors.
-- 📝 **Improved Document Content Reporting:** Switched to using `get_content()` instead of `get_text()` for `RefDocDocument` metadata, providing more relevant document representation in pipeline events.
-
-### Removed
-- 🗑️ **Deprecated Namespace Abstraction:** Eliminated the `NamespaceResource` and related utility functions, simplifying resource management by moving away from a generic namespace abstraction.
-- 🚫 **Removed LLM Handler:** Deprecated and removed the `LlmHandlerResource`, as LLM configuration is now managed directly by individual LLM resource definitions.
-- 🧹 **Removed Legacy Utility Modules:** Cleaned up outdated utility modules (`namespace_util.py`, `partition_utils.py`) that are no longer necessary after the resource management overhaul.
-
----
-
-
-
-## [v0.60.0] - 2025-02-20 - Build Action Refinement and Core Version Alignment
-
-### Changed
-- ⚙️ **Updated Build Image Action:** The `file` input for the `build_image` GitHub Action no longer provides a default path, allowing for more flexible Dockerfile location specification.
-
----
-
-
-
-## [v0.59.0] - 2025-02-20 - Core Component Upgrades and Enhanced Test Visibility
-
-### Changed
-- 🚀 **Upgraded `llama.cpp` LLM Server:** The `llama.cpp` Docker image has been updated to the latest stable `server` tag, ensuring access to recent performance improvements and bug fixes for local Large Language Model inference.
-- ⚙️ **Improved Backend Test Diagnostics:** Added a `docker compose ps` command to the backend test GitHub Action, enhancing visibility and troubleshooting capabilities for service health during automated testing.
-
----
-
-
-
-## [v0.58.0] - 2025-02-20 - Enhanced Build Flexibility and Core Service Updates
-
-### Added
-- ✨ **Enhanced Build Action:** The `build_image` GitHub Action now supports specifying a custom **Dockerfile path**, offering greater flexibility for image builds.
-
-### Changed
-- 🚀 **Core Service Updates:** All primary microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_pipeline`) and the **`aihub_lib` core library** have been updated to `v0.58.0`, ensuring compatibility and incorporating the latest improvements.
-
----
-
-
-
-## [v0.57.0] - 2025-02-20 - Enhanced User Context and Open WebUI Authentication
-
-### Added
-- ✨ **New Open WebUI Authentication Handler:** Introduced `OpenWebuiAuthHandler` to seamlessly integrate with Open WebUI, allowing user authentication via specific HTTP headers and bearer tokens.
-- 📄 **Fake User Utility for Testing:** Added a `fake_user` utility in `aihub_lib.testing.auth_utils` to simplify the creation of authenticated user objects for various test scenarios.
-
-### Changed
-- 🚀 **Enriched `UserMessageEvent`:** The `UserMessageEvent` now explicitly includes the full `AuthenticatedUser` object, providing more comprehensive user context directly within the event.
-- 🔄 **Standardized User Object Propagation:** API and Bot services now consistently pass the complete `AuthenticatedUser` object to chat interaction methods, replacing previous fragmented `user_oid` usage for better consistency.
-
-### Security
-- 🔑 **Enhanced Agent Access Control:** Agent discovery within the OpenAI API is now secured by user access permissions, ensuring users can only interact with agents they are authorized to use.
-
-### Refactor
-- 🧹 **Streamlined User Context Handling:** Refactored internal chat services and WebSocket receivers to directly utilize the `AuthenticatedUser` object, improving consistency and clarity in user context management across the platform.
-
----
-
-
-
-## [v0.56.0] - 2025-02-20 - Streamlined Release: Version Synchronization and CI Improvements
-
-### Changed
-- 🔄 **Core Component Versioning:** Synchronized the core `aihub-lib` and all microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_pipeline`) to version `v0.56.0`, ensuring consistent versioning across the ecosystem.
-- 🚀 **Dependency Alignment:** Updated all microservices to consume the latest `v0.56.0` of `aihub-lib` and `aihub-core` dependencies, ensuring they benefit from the most recent shared capabilities.
-
-### Added
-- ⚡️ **Automated Dependency Updates in CI:** Implemented a new step in the CI/CD pipeline to automatically update `aihub-lib` version tags within `poetry.lock` files, enhancing release consistency and reducing manual overhead.
-
----
-
-
-
-## [v0.55.0] - 2025-02-20 - OpenAI API Alignment and Conversational Agent Refinement
-
-### Added
-- ✨ **OpenAI API Compatibility for Agents**: Introduced new endpoints (`/openai/models` and `/openai/chat/completions`) to seamlessly integrate AI-Hub conversational agents into the OpenAI API standard, allowing agents to be discovered and interacted with just like LLM models.
-- 💬 **`UserMessageEvent` for Conversational Inputs**: A new dedicated event, `UserMessageEvent`, is now the standard for initiating conversational workflows, clearly separating user messages from generic start events.
-- ℹ️ **`is_conversational` Flag for Agent Discovery**: Agent discovery responses now include an `is_conversational` flag, enabling clients to easily identify agents capable of chat-based interactions.
-
-### Changed
-- 🗑️ **`StartEvent` Simplification**: The `StartEvent` has been streamlined to serve as a generic workflow trigger, no longer directly carrying chat history or locale information, which are now exclusively part of `UserMessageEvent`.
-- ⚙️ **Agent Input Event Types**: Agent steps that process conversational input now strictly type-hint `UserMessageEvent` instead of the broader `StartEvent | UserMessageEvent`, ensuring more precise event handling.
-- 🚨 **Improved API Error Handling**: Model and agent lookup failures in the OpenAI API endpoints now raise standard `HTTPException` instead of `ValueError` for consistent error responses.
-
-### Removed
-- ❌ **Deprecated `/chat` API Endpoints**: The old `/chat` API endpoints and their associated internal services and DTOs have been removed, with their functionality migrated to the new OpenAI-compatible endpoints.
-
-### Refactor
-- 🧹 **Unified Conversational Event Logic**: All logic related to user query extraction, chat history, and locale for conversational contexts has been centralized within the `UserMessageEvent` for better maintainability and clarity.
-- 📦 **Event Content Relocation**: Chat message content classes (`AssistantChatMessage`, `UserChatMessage`) have been logically moved from `control.start.content` to `user.content`.
-
----
-
-
-
-## [v0.54.0] - 2025-02-19 - Deepening Integration: API Tokens, Chatbots, and Refined Authentication
-
-### Added
-- 🤖 **Chatbot Core (`aihub_bot`)**: Introduced a new module for integrating AI agents with chat interfaces via Azure Bot Service, enabling seamless conversational interactions across multiple channels (e.g., Slack, MS Teams, WebChat).
-- 🔑 **API Token Management**: New API endpoints and services (`/tokens`) have been added to `aihub_api`, allowing users to create, list, and revoke API access tokens for programmatic interaction.
-- 🔄 **Unified Authentication Strategy**: Implemented a new `AuthHandler` interface and a `MultiAuthHandler` in `aihub_lib`, enabling a flexible composite authentication system that can chain various strategies like OAuth2 and API tokens.
-- 🧑‍💻 **Development User Information Provider**: Added `DevUserInformationProvider` to simplify local development by providing a fixed user identity without requiring external authentication setups.
-- 🧪 **API Test Infrastructure**: Introduced `ASGIAdapter` and comprehensive Python-based integration tests for `aihub_api`, replacing older `.http` client scripts to improve test reliability and execution speed.
-- 📄 **Chatbot Documentation**: A new `13_chatbots.md` document provides in-depth guidance on chatbot design, technical implementation, and deployment within the AI-Hub ecosystem.
-- 🦾 **Agent Stop Events**: Agents can now declare specific "stop events" during discovery, enhancing control and visibility over their termination conditions within a workflow.
-- 🔑 **"AllAgents" Role for Access Control**: Introduced an "AllAgents" role, granting authenticated users comprehensive access to all registered agents, simplifying role-based access management.
-
-### Changed
-- 🔒 **API Endpoint Security**: Integrated the new `AuthHandler` interface across all `aihub_api` controllers, standardizing authentication and enforcing granular access control for chat and thread operations.
-- 🔍 **Agent Discovery Protocol**: The agent discovery response (AgentDTO) now includes a list of `stop_events`, providing more complete lifecycle information for discovered agents.
-- 🏗️ **Configuration Management**: Refactored core configuration classes, separating general `AzureSettings` from API-specific settings now managed by `AIHubSettings` for improved clarity and modularity.
-- 🧪 **Bot Test Runner**: Enhanced the `BotTestRunner` and `SimulatedAgentBotTestRunner` to leverage `ASGIAdapter` for internal HTTP requests, making chatbot integration tests faster and more robust by eliminating external network dependencies.
-- 🧩 **User Information Retrieval**: The `UserService` in `aihub_api` now uses a `MultiStrategyUserInformationProvider` to dynamically fetch user details from Azure AD, API tokens, or a development mock, increasing flexibility.
-- 🌐 **Internationalization Endpoint**: Simplified the `/i18n/my-locale` endpoint in `aihub_api` to streamline locale information retrieval.
-- 🗓️ **Thread Entity Persistence**: Added a `created_at` timestamp to `ThreadEntity` in `aihub_lib` for better auditing and historical tracking of conversations.
-- 🧹 **CI/CD Pipeline Optimization**: Updated `lint_backend` and `test_backend` GitHub Actions to use improved Poetry caching and installation methods for faster, more reliable CI/CD runs.
-
-### Removed
-- 🗑️ **Deprecated Authentication Dependency**: The `use_oauth2_user` and `use_no_auth_user` functions in `aihub_lib` have been removed, replaced by the more modular `OAuth2AuthHandler` and `NoAuthHandler` classes.
-- 🗑️ **Old Access Token Model**: The `AccessToken` persistence model in `aihub_lib` has been replaced by the more robust `BearerToken` entity, which supports the new API token management.
-- 🗑️ **Outdated HTTP Client Tests**: All `.http` client test files in `aihub_api/playground/testing/tests` have been removed, superseded by new, comprehensive Python-based integration tests.
-
-### Refactor
-- 🧹 **Project Structure Alignment**: Adjusted references across modules (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_pipeline`, `aihub_lib`) to align with the new authentication handler and configuration structure.
-- ⚙️ **Internal API Simplification**: Streamlined the `RefDoc` querying methods by removing redundant `organization_shortname` parameters, enhancing code clarity.
-
-
----
-
-
-
-## [v0.53.0] - 2025-02-19 - Authentication Overhaul and API Testing Advancements
-
-### Added
-- ✨ **New API Token Management System:** Introduced dedicated endpoints (`/tokens`) and services for creating, listing, and revoking API tokens, enabling more flexible and secure access.
-- 🔑 **Multi-Strategy Authentication Handler:** Implemented a new `MultiAuthHandler` that allows the API to seamlessly support multiple authentication mechanisms (e.g., OAuth2, API Tokens, development-mode authentication) concurrently, enhancing flexibility.
-- 🦾 **Dedicated Development User Provider:** Introduced `DevUserInformationProvider` for simplified local development and testing, providing a fixed user identity based on environment configurations.
-- 📄 **Comprehensive API Test Suite:** Added an extensive suite of Python-based integration tests covering agent discovery, chat interactions, health checks, localization, OpenAI endpoints, thread management, API tokens, and user profiles, significantly improving test coverage and reliability.
-- 🚀 **API Token Generation Script:** Provided a new utility script (`generate_api_token.py`) to easily create API tokens for administrative or testing purposes, streamlining setup.
-- 📈 **Stop Event Discovery for Agents:** Agents can now declare `StopEvent` types, enhancing their discoverability and allowing clients to understand how agent workflows naturally conclude.
-
-### Changed
-- 🔄 **Centralized API Configuration:** Consolidated general API-related configurations into a new `AIHubSettings` class, clearly separating them from Azure-specific infrastructure settings for better organization.
-- ⚡️ **Improved CI/CD Python Setup:** Updated GitHub Actions workflows to leverage more efficient Poetry caching and dependency resolution during linting and testing phases.
-- 🔒 **Enhanced Agent Access Control:** Modified the `AuthenticatedUser` to allow users with the "AllAgents" role to access any agent, simplifying role management for administrators.
-- 📊 **Auth-Protected Health Endpoint:** The health check endpoint (`/health`) is now protected by the authentication layer, allowing flexible integration with different auth strategies.
-- 🧵 **Thread Creation Endpoint Path:** Adjusted the thread creation endpoint from a path parameter (`/{thread_id}`) to a base path (`/`) for better RESTful consistency.
-
-### Refactor
-- 🧹 **Standardized Authentication Handlers:** Replaced direct FastAPI `Depends` functions with a new `AuthHandler` interface and dedicated handler classes (`OAuth2AuthHandler`, `TokenAuthHandler`, `NoAuthHandler`) for a more modular and extensible authentication system.
-- 🏗️ **Streamlined User Information Providers:** Consolidated user information retrieval into a multi-strategy provider, allowing fetching user details from various sources (e.g., Azure AD, API tokens, development config).
-- ⚙️ **Optimized Test Runner HTTP Calls:** Implemented `ASGIAdapter` in test runners to route internal HTTP requests directly to the FastAPI application, significantly speeding up integration tests by avoiding actual network calls.
-- 📦 **Consolidated API Environment Configuration:** Moved the API's development `.env` file to a more unified location (`aihub_api/.env`) for consistent environment setup.
-- 🔗 **Simplified Reference Document Queries:** Removed the `organization_shortname` parameter from `RefDoc` query methods, aligning with a more centralized database access approach.
+## [v0.64.0] - 2025-02-24 - Improved Core Robustness and System Alignment
 
 ### Fixed
-- 🐛 **RAG Agent Few-Shot Rejection Message:** Corrected a minor issue in the RAG Agent's response generation for few-shot rejections, ensuring the system message is properly formatted.
+- 🐛 **Enhanced Locale Handling:** Ensured that the system's locale context reliably defaults to a predefined value when no specific locale is provided, improving overall stability and preventing potential issues.
 
 ---
 
 
 
-## [v0.52.0] - 2025-02-19 - Bot Reliability and Core Dependency Alignment
+## [v0.63.0] - 2025-02-21 - Refined Guards and Enhanced Testability
 
 ### Changed
-- 🚀 **Updated Core Library Dependency**: All main modules, including `aihub_agent`, `aihub_api`, `aihub_bot`, and `aihub_pipeline`, have been updated to depend on the latest `aihub-lib` version, `v0.52.0`, ensuring alignment with the latest core functionalities.
+- 🔄 **Improved Few-Shot Guard Prompting:** The `Few-Shot Guard` has been updated with a refined internal prompt that strictly enforces JSON-formatted output for guard responses, enhancing their reliability and programmatic parsing.
+- ⚡️ **Enhanced `AgentTestRunner`:** The `get_events` and `get_events_of_type` methods in `AgentTestRunner` now support an `event_filter` parameter, allowing for more granular observation and testing of events based on their specific event type.
+
+---
+
+
+
+## [v0.62.0] - 2025-02-20 - Streamlined Development and Enhanced CI/CD
+
+### Changed
+- 🚀 **Improved CI/CD Stability**: The Docker service health check in the backend test action has been reordered to occur after Python dependency installation, enhancing the reliability of automated tests.
+- ✨ **Simplified NoAuth Configuration**: The `NoAuthHandler` now provides default values for user `NAME`, `EMAIL`, and `ROLES`, reducing the need for explicit configuration in local development environments.
+
+---
+
+
+
+## [v0.61.0] - 2025-02-20 - Major Pipeline Configuration Overhaul
+
+### Added
+- ✨ **Explicit Data Lake Resource**: Introduced the `DataLakeResource` to clearly define and manage data lake container and directory configurations within pipelines, enhancing configuration clarity.
+- ➕ **Dedicated Document Store Resource**: Added the `DocStoreResource` to provide explicit configuration for document store names and associated namespaces, improving resource management.
+
+### Changed
+- 💡 **Flexible Asset Key Inputs**: Asset factories for `documents` and `nodes` now support `AssetKey` objects as input for their respective data lake and document keys, providing greater flexibility in asset dependency definition.
+- ⚙️ **Azure AI Search Configuration**: Enhanced the `AzureAISearchVectorStoreFactory` to correctly handle `None` values for `semantic_configuration_name`, allowing for more flexible vector store deployments without unnecessary parameters.
+- 📄 **Document Content Representation**: Updated the display of `RefDocDocument` metadata to consistently use `get_content()` instead of `get_text()`, ensuring a more accurate representation of indexed document content in pipeline lineage.
+- ⬆️ **Improved Milvus Vector Store Documentation**: Added comprehensive documentation, including detailed examples and docstrings, to the `MilvusVectorStoreResource` for clearer usage guidelines.
+
+### Refactor
+- 🔄 **Centralized Resource Configuration**: Overhauled resource definitions by removing the generic `NamespaceResource` and introducing dedicated, explicit resources like `DataLakeResource` and `DocStoreResource`, enhancing clarity and maintainability of pipeline configurations.
+- 🧹 **Simplified LLM Integration**: Streamlined the setup for Large Language Models and Embedding Models by removing the `LlmHandlerResource` and enabling direct configuration via specific configuration objects (e.g., `AzureOpenAILLMConfig`).
+- 🏗️ **Improved Pipeline Naming**: Simplified job and asset naming conventions by removing the `customer_name` parameter, making asset and job names more concise and consistent.
+- ⚙️ **Refined Data Lake Operations**: Updated data lake fetching and versioning operations to directly use container and directory names, aligning with the new explicit resource configuration model.
+- 🔗 **Modernized MongoDB Connection**: The MongoDB connection utility now directly accepts a specific database name, improving connection clarity and robustness.
+
+### Removed
+- 🗑️ **Deprecated Generic Namespace Resource**: Eliminated the overarching `NamespaceResource`, simplifying the resource dependency graph and enforcing more specific resource configurations.
+- ➖ **Removed LLM Handler Abstraction**: The `LlmHandlerResource` was removed, favoring a direct, configurable approach to LLM and embedding model instantiation.
+- 🧹 **Obsolete Utility Functions**: Discarded various utility functions related to customer and namespace path handling, streamlining the codebase after the resource configuration overhaul.
+
+---
+
+
+
+## [v0.60.0] - 2025-02-20 - Build Action Configuration Update
+
+### Changed
+- 🔄 **Adjusted `build_image` GitHub Action:** The `file` input for the `build_image` action no longer has a default value. This change requires users to explicitly specify the Dockerfile path, promoting clearer and more explicit build configurations.
+
+---
+
+
+
+## [v0.59.0] - 2025-02-20 - Minor Infrastructure Enhancements
+
+### Changed
+- 🛠️ **Improved Backend Testing Visibility:** Added `docker compose ps` command to the backend test action, providing better insights into service health during automated testing workflows.
+- 🔄 **Updated LLM Inference Server:** Upgraded the `llama.cpp` Docker image to the latest `server` tag, ensuring access to the most recent optimizations and features from the underlying LLM inference backend.
+
+---
+
+
+
+## [v0.58.0] - 2025-02-20 - Enhanced Image Building Flexibility
+
+### Added
+- ✨ **Improved `build_image` GitHub Action:** The `build_image` action now supports specifying a custom `Dockerfile` path via a new `file` input, providing greater flexibility for projects with non-standard Dockerfile locations.
+
+---
+
+
+
+## [v0.57.0] - 2025-02-20 - Enhanced User Authentication and Context Management
+
+### Added
+- ✨ **OpenWebUI Authentication Handler:** Introduced a new authentication handler (`OpenWebuiAuthHandler`) for seamless integration with the OpenWebUI frontend, providing robust user identity management for deployments utilizing OpenWebUI.
+- 🧪 **Fake User Utility for Testing:** Added a `fake_user()` utility to simplify the creation of authenticated user contexts, streamlining development and testing of agents and services.
+
+### Changed
+- 🔄 **Enhanced User Context Propagation:** Updated the `UserMessageEvent` and core chat services (`ChatService`, `WebSocketReceiver`) to pass a rich `AuthenticatedUser` object instead of a simple user ID, providing more comprehensive user information throughout the system.
+- ⚡️ **API Playground Default Authentication:** The `aihub_api` development playground now defaults to using the `OpenWebuiAuthHandler`, demonstrating its integration with the new authentication method.
+
+---
+
+
+
+## [v0.56.0] - 2025-02-20 - Unified Core Version Update and Release Automation
+
+### Changed
+- 🚀 **Core Component Version Upgrade**: All core components, including `aihub_lib`, `aihub_agent`, `aihub_api`, `aihub_bot`, and `aihub_pipeline`, have been updated to version `v0.56.0`, ensuring consistency across the ecosystem.
+- 🔗 **Dependency Alignment**: Microservices now depend on the latest `aihub_lib` version `v0.56.0`, ensuring all services benefit from the most recent library improvements.
+- ⚙️ **Streamlined Release Automation**: The release workflow (`add-tag.yml`) has been enhanced to automatically update `poetry.lock` files and commit `Makefile` changes, improving the robustness and consistency of new releases.
+- 🛠️ **Updated Default Remote Core Tag**: The `Makefile` now defaults to `v0.56.0` for the remote core tag, simplifying setup for new environments.
+
+---
+
+
+
+## [v0.55.0] - 2025-02-20 - Unified AI-Hub API: OpenAI Standard for Agents and Enhanced Conversational Flows
+
+### Added
+- 🚀 **OpenAI API Compatibility for Agents**: AI-Hub agents can now be discovered and interacted with using standard OpenAI API endpoints (`/openai/models` and `/openai/chat/completions`). This allows for seamless integration of AI-Hub agents into existing OpenAI-compatible applications and workflows.
+- 💡 **Conversational Agent Identification**: A new `is_conversational` flag has been added to agent discovery responses, allowing client applications to easily identify agents designed for chat-based interactions.
+- ✨ **Dedicated User Message Event**: Introduced `UserMessageEvent` as a specific event type for user-initiated conversational inputs. This event now encapsulates chat messages and locale settings, providing a clearer and more structured way to handle user queries.
+
+### Changed
+- 🔄 **Agent Input Event Types**: Agent workflow steps that process user conversational input have been updated to exclusively accept `UserMessageEvent`, ensuring consistency and clarity in handling user messages.
+- ⚡️ **Enhanced User Query Tracing**: The tracing system now directly utilizes the `user_query` property of `UserMessageEvent` for improved accuracy and readability of span information in conversational turns.
+
+### Removed
+- 🗑️ **Deprecated Chat Endpoints**: The standalone `/chat/completions` API endpoints have been removed. All chat interaction functionality is now consolidated under the new OpenAI-compatible API endpoints.
+
+### Refactor
+- 🧹 **Refined Start Event**: The `StartEvent` has been streamlined to serve as a generic workflow trigger, decoupling it from chat-specific message content and locale.
+- 📂 **Logical Chat Message Grouping**: `AssistantChatMessage` and `UserChatMessage` definitions have been relocated to `aihub_lib/nats/events/user/content` for better logical organization.
+
+---
+
+
+
+## [v0.54.0] - 2025-02-19 - Unified Authentication, API Tokens, and Chatbot Expansion
+
+### Added
+- 🦾 **New `aihub_bot` Module**: Introduced a dedicated module for **Azure Bot Service integration**, enabling AI agents to be seamlessly exposed and interacted with through various chat channels like Microsoft Teams, Slack, and WebChat.
+- ✨ **API Token Management**: Launched new API endpoints (`/tokens`) and backend services to allow users to **create, list, and revoke API tokens** for secure and granular access control.
+- 🔑 **Flexible Authentication Architecture**: Implemented a new abstract `AuthHandler` and `MultiAuthHandler` to support **multiple authentication strategies** (OAuth2, API Tokens, Development/NoAuth) within the API, significantly improving extensibility and security.
+- 🛠️ **Development User Information Provider**: Added `DevUserInformationProvider` for simplified user authentication in development and testing environments, making local setup more convenient.
+- 🧪 **Comprehensive API Test Suite**: Introduced extensive new **pytest-based integration and unit tests** across core API functionalities (agents, chat, authentication, threads, tokens, users, health, internationalization), replacing outdated `.http` client test files and enhancing API reliability.
+- 🚀 **Enhanced Simulated Agent Test Runners**: Improved both API and Bot test runners to better simulate agent behavior, including the handling of `stop_events`, for more robust and accurate testing environments.
+- ⚙️ **API-Specific Configuration**: Introduced `ApiConfig` for managing API-specific settings independently from general Azure configurations, resulting in a cleaner and more modular setup.
+- 🔗 **ASGI Request Adapter for Testing**: Added `ASGIAdapter` to enable seamless internal HTTP requests within test environments for FastAPI applications, which significantly improves test reliability and speed by avoiding actual network calls.
+- 📄 **Utility for API Token Generation**: Provided a new Python script (`generate_api_token.py`) to easily generate API tokens for administrative or internal use.
+
+### Changed
+- 🔄 **Standardized Agent Event Specifications**: Renamed `StartEventSpecs` to `EventSpecs` and extended the agent discovery mechanism to include **`stop_events`**, providing a more complete and accurate representation of agent lifecycle.
+- 🔒 **Agent Access Control**: Enhanced the `AuthenticatedUser` model to allow users with the "AllAgents" role to **access any agent**, simplifying permission management for administrators.
+- 🗺️ **Updated Architectural Overview**: Revised documentation (in `aihub_doc`) to explicitly reflect the **integration of Chatbots** as a core interface layer within the AI-Hub architecture, outlining their design and technical implementation.
+- 🔗 **Thread Creation API Route**: Modified the API route for **creating threads** from `/{thread_id}` to `/`, aligning with RESTful design principles for improved consistency.
+- 👤 **User Information Retrieval**: Updated the user information retrieval mechanism in `aihub_api` to leverage a **multi-strategy provider**, enabling fetching user details from Azure AD, API tokens, or development configurations based on the active authentication.
+- 🛂 **Health Endpoint Authentication**: The health endpoint (`/health`) now requires **authentication**, leveraging the new flexible authentication handlers to ensure consistency across API endpoints.
 
 ### Fixed
-- 🐛 **Improved Conversation Message Retrieval**: Enhanced the `get_messages_by_conversation_id` method within `aihub_bot` to explicitly convert retrieved messages to a list and handle cases where no messages are present, improving reliability and preventing potential errors in conversation context loading.
+- 🐛 **MongoDB Connection Closing**: Ensured that the MongoDB connection is **properly disconnected** in the API runner's `lifetime_manager`, preventing potential resource leaks during application shutdown.
+- 🐞 **Thread User ID Access**: Corrected a minor bug in thread management where user IDs were inconsistently accessed as `user_id` instead of `id`.
 
 ### Refactor
-- 🧹 **Refined Conversation Entity Type Hint**: Updated the internal type hint for conversation messages in `ConversationEntity` to `ListField` for better consistency and accuracy with the underlying database model.
-
----
-
-
-
-## [v0.51.0] - 2025-02-19 - AI-Hub Evolution: Refined Vision and Expanded Architecture
-
-### Changed
-- 🔄 **AI-Hub Vision Reworked:** Significantly updated the introductory documentation (Section 1.1) to present the AI-Hub as a dynamic, multi-tiered platform offering, clarifying its evolution from basic LLM access to custom assistants and fully autonomous agents.
-- 📄 **Expanded AI Capabilities Overview:** Reimagined Section 1.2 to detail the distinct value propositions of direct LLM Access, reactive AI Assistants, and proactive AI Agents, emphasizing their progression and collaborative nature within enterprise workflows.
-- 🏗️ **Architectural Diagram Updated:** Revised the high-level architecture diagram and descriptions (Section 1.3) to reflect the comprehensive platform, including new user interfaces and integration components.
-
-### Added
-- 🚀 **New Tiered AI-Hub Offerings:** Introduced a clear four-tier structure for AI-Hub services, ranging from basic LLM access to specialized Assistant and Agent packages, detailing their features and benefits.
-- 💬 **Dedicated Chat UI:** Incorporated a new, open-source based Chat UI component within the architecture, providing an intuitive and feature-rich interface for user interactions.
-- 🤖 **Bots Integration Module:** Added a new Bots component leveraging the Microsoft Azure Bot Framework to enable seamless AI-Hub integration with collaboration tools like Microsoft Teams, Slack, email, and SMS.
-- 📊 **Agents Transparency Frontend:** Introduced a specialized UI for monitoring, auditing, and ensuring accountability of AI agent activities, enhancing trust and oversight.
-- ⚙️ **Process Panel for Human-Agent Workflows:** Included a new Process Panel for modeling, visualizing, and managing collaborative workflows between humans and AI agents.
-- 🌍 **Deployment Model Clarification:** Added details on the AI-Hub's hosting and deployment model, emphasizing in-customer-infrastructure deployment for security and compliance.
-
----
-
-
-
-## [v0.50.0] - 2025-02-19 - Enhanced Slack Channel Interaction for Bots
-
-### Changed
-- 🚀 **Improved Slack Channel Bot Behavior:** Bots now only respond to messages in Slack channels when they are explicitly **mentioned**, significantly reducing channel noise and providing a more focused interaction experience. This change ensures that bots are more respectful of channel conversations and only engage when directly addressed.
-
-### Added
-- 🦾 **New Slack Message Utilities:** Introduced `is_slack_channel_message` and `is_bot_mentioned` helper functions to accurately identify Slack channel messages and detect when the bot has been mentioned, enabling the refined bot interaction logic.
-
----
-
-
-
-## [v0.49.0] - 2025-02-19 - Revitalized Bot Platform with Streamlined Chat and Setup
-
-### Added
-- 🦾 **Introduced `AgentChatBot` and `StreamAgentChatBot`:** New bot classes now enable more robust interaction with AI Agents, supporting both single-response and real-time streaming capabilities.
-- ⚡️ **New `OpenaiChatBot` and `StreamOpenaiChatBot`:** Dedicated bot classes for OpenAI LLMs provide enhanced chat experiences, offering immediate and streamed responses across various communication channels.
-- 📄 **Configurable System Messages:** Bots can now be configured with custom system messages per path via the `PathEntity`, allowing for personalized instructions and behavior.
-- 💬 **Enhanced Slack Thread Integration:** Improved handling of Slack conversation threads ensures proper context and continuous conversations by accurately managing and retrieving message history.
-- 🚀 **Standardized Streaming Response Handling:** A common utility in the new base `Service` class facilitates efficient sending and updating of streamed responses, significantly improving user experience for long answers.
-
-### Changed
-- 💡 **Simplified Conversation Persistence:** The internal `ConversationEntity` model has been streamlined to focus purely on message history, leading to a cleaner and more efficient data structure.
-- ⚙️ **Flexible Bot Deployment Script:** The `setup_azure_bot.py` script is now more versatile, capable of deleting existing bot resources and supporting direct MongoDB connection strings in addition to Cosmos DB.
-
-### Refactor
-- 🧹 **Overhauled Bot Core Architecture:** The entire bot framework has been re-engineered, consolidating common functionalities into a new base `Service` class and streamlining the `AgentChatBot` and `OpenaiChatBot` implementations.
-- 🔄 **Restructured Bot Module Organization:** Directories and file paths related to bot functionalities have been renamed and reorganized for improved logical grouping and maintainability.
+- 🧹 **Unified Authentication Dependency**: Replaced specific `use_oauth2_user` and `use_no_auth_user` FastAPI dependencies with a **generic `AuthHandler` interface**, providing a consistent and extensible way to integrate various authentication methods across API controllers.
+- 📦 **Authentication Module Restructuring**: Reorganized and renamed authentication-related modules (e.g., `no_auth` to `NoAuthHandler`, `oauth2` to `OAuth2AuthHandler`) for **improved clarity and maintainability** within the authentication system.
+- ⚙️ **Core Configuration Separation**: Separated general Azure base configuration (`AzureBaseConfig`) from API-specific settings (`ApiConfig`) to create a **more modular and explicit configuration structure**, enhancing manageability.
+- 🗃️ **Simplified Document Database Access**: Streamlined database access for `RefDoc` entities by **removing the redundant `organization_shortname` parameter** from query methods, simplifying how reference documents are retrieved.
+- 🧹 **CI/CD Workflow Adjustments**: Performed minor adjustments to GitHub Actions workflows, including Python dependency caching and poetry lock behavior, for **improved reliability and performance** of backend linting and testing processes.
 
 ### Removed
-- 🗑️ **Deprecated ChatBot Base Classes:** The legacy `ChatBot` and its specialized `Json/Stream` variants have been removed, replaced by the new, more modular bot architecture.
-- ❌ **Echo Bot Functionality:** The basic "Echo Bot" and its associated routes and services have been retired.
-- 🧹 **Outdated Conversation Persistence Methods:** Specific methods for user management and conversation deletion in `ConversationEntity` were removed, aligning with the simplified persistence model.
+- 🗑️ **Deprecated Authentication Dependencies**: Eliminated the outdated `use_oauth2_user` and `use_no_auth_user` functions, which have been fully superseded by the new modular authentication handler system.
+- 🗑️ **Legacy API Token Entity**: Removed the old `AccessToken` database entity, which has been replaced by the more robust and flexible `BearerToken` model for API token persistence.
+- 🗑️ **Outdated HTTP Client Tests**: Removed several legacy `.http` client test files from the `aihub_api` playground, as their functionality is now covered by the new, comprehensive `pytest` test suite.
 
 ---
 
 
 
-## [v0.48.0] - 2025-02-19 - Platform Release Synchronization and Test Enhancements
-
-### Changed
-- 🔄 **Synchronized Core Component Versions:** Aligned all core components, including **aihub-agent**, **aihub-api**, **aihub-bot**, **aihub-lib**, and **aihub-pipeline**, to `v0.48.0` for consistent platform releases and improved internal dependency management.
-- ⚡️ **Updated SonarCloud Scan Action:** Upgraded the GitHub Action for SonarCloud scans to `v5`, ensuring compatibility with the latest analysis features and improved code quality checks in the CI/CD pipeline.
+## [v0.52.0] - 2025-02-19 - Bot Reliability and Code Clarity Improvements
 
 ### Fixed
-- 🐛 **Enhanced Bot Test Stability:** Increased wait times and retry attempts in **ChatBot** tests to improve reliability and reduce flakiness during automated testing scenarios.
+- 🐛 **Improved Conversation Message Retrieval:** Enhanced the conversation message retrieval mechanism to consistently return a list, ensuring more robust handling of conversation history within the bot service.
+
+### Refactor
+- 🧹 **Refined Conversation Entity Type Hinting:** Updated internal type hints for conversation message access, providing a more accurate representation of the data structure and improving code clarity.
 
 ---
 
 
 
-## [v0.47.0] - 2025-02-18 - Streamlined Azure Configuration and Expanded Service Support
-
-### Changed
-- ⚙️ **Updated Azure Subscription Identification:** The system now directly uses `AZURE_SUBSCRIPTION_ID` (GUID) instead of `AZURE_SUBSCRIPTION_NAME` for identifying Azure subscriptions, simplifying credential management and enhancing reliability.
-- 🏗️ **Simplified Azure Resource Naming:** Removed the `ENVIRONMENT` variable from Azure resource naming conventions, leading to shorter and more consistent resource group and service names for AI Search, Cognitive Services (Document Intelligence, Speech), Cosmos DB, and Data Lake.
-- 🚀 **CI/CD Alignment:** Updated GitHub Actions to pass `AZURE_SUBSCRIPTION_ID` to backend tests, ensuring compatibility with new Azure configuration practices.
+## [v0.51.0] - 2025-02-19 - Unveiling the Future of AI-Hub: Tiered Services and Enhanced Architectural Clarity
 
 ### Added
-- ✨ **Expanded Azure Service Support:** Introduced new Azure management libraries (`azure-mgmt-cognitiveservices`, `azure-storage-file-datalake`, `adlfs`) to enhance interaction and management capabilities for Azure Cognitive Services and Data Lake Storage Gen2.
-
-### Refactor
-- 🧹 **Unified Cosmos DB Access:** Replaced the `CosmosConnectionStringSingleton` with `CosmosAccess` for a more consistent and robust way of managing Cosmos DB connections.
-- 🔄 **Standardized Configuration Imports:** Adjusted internal import paths (e.g., `Configs` to `configs`, `vector_stores` to `stores`) for improved code consistency and maintainability across the codebase.
-
----
-
-
-
-## [v0.46.0] - 2025-02-18 - Streamlined Azure Resource Management
+- ✨ **Introduced Multi-Tiered AI-Hub Offering:** Detailed the new tiered approach to AI-Hub services, encompassing Basic LLM Access, Basic+ Integrations, Custom AI Assistants, and Autonomous AI Agents.
+- 🦾 **Dedicated Sections for AI Capabilities:** Added comprehensive explanations for **LLM Access**, **AI Assistants**, and **AI Agents**, outlining their distinct roles, use cases, and benefits within the AI-Hub ecosystem.
+- 📈 **Formalized New Architectural Components:** Explicitly documented **Bots module** (for communication channel integration), **Chat UI**, **Agents Transparency Frontend**, and **Process Panel** as core components of the AI-Hub architecture.
 
 ### Changed
-- ⚙️ **Azure Subscription Identification**: Migrated from using Azure subscription names to direct Azure subscription IDs (GUIDs) for more robust and reliable identification and access to Azure resources across all integrated services.
-- 🧹 **Configuration Streamlining**: Simplified core configurations by removing the `ENVIRONMENT` variable from `BaseConfig` and from the default Azure resource naming conventions, leading to leaner and more consistent resource provisioning.
-- ⚡️ **CI/CD Alignment**: Updated internal CI/CD workflows to leverage the new Azure subscription ID-based configuration, ensuring seamless and secure testing against Azure cloud resources.
-
-### Refactor
-- 🔄 **Azure Access Modules**: Overhauled the internal logic within various Azure service access modules (including AI Search, Cognitive Services, Cosmos DB, and Data Lake) to align with the new subscription ID-centric access pattern and simplified resource naming.
-- 📄 **RAG Agent Imports**: Standardized the casing for import paths within RAG Agent configurations (`Configs` to `configs`) to improve code consistency and maintainability.
+- 🔄 **Revamped AI-Hub Introduction:** The foundational documentation for AI-Hub has been significantly rewritten to reflect its evolution into a comprehensive, multi-tiered platform.
+- 📄 **Updated High-Level Architecture Diagram:** The architectural overview diagram now clearly illustrates the expanded ecosystem of AI-Hub components, including new user interfaces and integration points.
 
 ---
 
 
 
-## [v0.45.0] - 2025-02-17 - Core System Updates and Dependency Alignments
+## [v0.50.0] - 2025-02-19 - Smarter Slack Bot Responses in Channels
 
 ### Changed
-- ✨ **Updated Project Version**: The overall project version has been bumped to `v0.45.0`.
-- 🔄 **Upgraded Poetry Dependency Manager**: The project's dependency management tool, Poetry, has been upgraded to version `2.1.1`, enhancing dependency resolution and management capabilities.
-- ⚙️ **Revised CI/CD Dependency Locking**: The continuous integration pipeline now uses an updated Poetry lock command, streamlining dependency updates in the build process.
-- 📦 **Synchronized Internal Library Version**: All sub-components (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_pipeline`) now utilize the latest `aihub-lib` version `v0.45.0`.
-- ⬆️ **Updated Core Dependencies**: Numerous underlying Python package dependencies across all modules have been updated, bringing improvements in stability, performance, and security.
-
-### Refactor
-- 🧹 **Standardized Dependency Grouping**: Poetry lock files now explicitly categorize dependencies into `main` and `dev` groups for clearer and more organized dependency management.
-
----
-
-
-
-## [v0.44.0] - 2025-02-17 - Enhanced Bot Configuration and Core System Flexibility
+- 🤖 **Improved Slack Channel Interaction**: Bots, including both Agent and OpenAI variants, now intelligently respond in Slack channels only when explicitly mentioned. This change significantly enhances bot etiquette by preventing unnecessary responses in shared conversations.
 
 ### Added
-- ✨ **Introduced Single-Tenant Bot Support**: The bot setup script and credential management now fully support Azure Bot Service applications configured as 'SingleTenant', allowing for more flexible deployments in specific Azure AD environments.
-- ⚙️ **Extended Credential Configuration**: Added new fields (`APP_TYPE`, `APP_TENANTID`) to the bot's credential entity, enabling more detailed and versatile configuration options for different bot service types.
-- 🚀 **OpenAI Chat Playground Example**: Included an example OpenAI chat controller in the development playground, simplifying the local testing and integration of Azure OpenAI models.
-
-### Changed
-- 🔄 **Dynamic Bot Adapter Retrieval**: The bot's adapter is now dynamically retrieved per request, enhancing support for multi-tenant scenarios and ensuring the correct bot configuration is used based on the incoming request path.
-- 📄 **Standardized Request/Response Handling**: Updated all bot controllers to consistently use FastAPI's native `Request` and `Response` objects, improving API consistency and maintainability.
-- 🧹 **Refined Credential Field Naming**: Renamed and made optional existing credential fields (`APP_ID`, `APP_PASSWORD`) for better clarity and alignment with new configuration options.
-
-### Refactor
-- 🛠️ **Improved Bot Setup Script**: Enhanced the `setup_azure_bot.py` script for more robust and configurable Azure Bot Service deployment, especially for handling different app registration types.
+- ✨ **Introduced Slack Interaction Utilities**: New helper functions, `is_slack_channel_message` and `is_bot_mentioned`, have been added to accurately detect Slack channel messages and identify when the bot is mentioned. These utilities are crucial for enabling the new, more selective response behavior in Slack.
 
 ---
 
 
 
-## [v0.43.0] - 2025-02-17 - Build System and CI/CD Enhancements
-
-### Changed
-- 🚀 **Updated CI/CD Workflows**: Upgraded the Poetry version used in GitHub Actions from `1.8.3` to `2.1.1`, enhancing the reliability and performance of automated builds and tests.
-- ⚙️ **Modernized Build System Requirements**: Standardized `poetry-core` build system requirements across all components to `>=2.0.0,<3.0.0`, ensuring compatibility with the latest Poetry versions and adopting modern packaging practices.
-
----
-
-
-
-## [v0.42.0] - 2025-02-17 - Library Refinement and Version Alignment
-
-### Refactor
-- 🧹 **Refined node post-processing:** Updated the `ScoreScalerPostProcessor` method name from `process` to `postprocess_nodes` in the `retrieve_nodes` utility for enhanced clarity and consistency in semantic hybrid retrieval operations.
-
----
-
-
-
-## [v0.41.0] - 2025-02-17 - Improved Azure AI Search Semantic Capabilities
+## [v0.49.0] - 2025-02-19 - Enhanced Bot Architecture and Flexible Deployments
 
 ### Added
-- ✨ **Azure AI Search Vector Store:** Introduced the ability to specify a `semantic_configuration_name` when creating an Azure AI Search vector store, allowing for the integration of advanced semantic search functionalities.
-
----
-
-
-
-## [v0.40.0] - 2025-02-14 - Dynamic Bot Credentials and Streamlined Azure Setup
-
-### Added
-- ✨ **New `PathEntity` for Dynamic Credentials**: Introduced a new MongoDB entity (`PathEntity`) to store Azure Bot credentials (`app_id`, `app_password`) associated with specific API paths. This enables the bot to dynamically load authentication details based on the incoming request endpoint.
-- 🚀 **Automated Azure Bot Setup Script**: Added `setup_azure_bot.py`, a new script to simplify and automate the deployment of Azure Bot resources. This includes Azure AD app registration, credential management, and saving these credentials directly into Cosmos DB, streamlining the setup process for new bot instances.
+- ✨ **Configurable System Messages**: Bots can now be configured with specific system messages directly from the database, allowing for more tailored and dynamic bot behaviors.
+- 💬 **Improved Slack Integration**: Enhanced handling of Slack threads, ensuring bots respond in the correct context and fetch full conversation history from channels.
+- 🚀 **Centralized Streaming Responses**: A new common service now handles streaming responses for all bot types, leading to more consistent and efficient real-time user experiences.
+- 💾 **Robust Conversation Persistence**: Conversation history management has been improved to support bulk message additions and automatically create conversations if they don't exist.
+- 🛠️ **MongoDB Setup Option**: The Azure Bot setup script now explicitly supports direct MongoDB connection strings, offering more deployment flexibility.
+- ⚙️ **Flexible Azure Bot Configuration**: The `setup_azure_bot.py` script now allows for more granular configuration of API URLs and paths, and supports specifying the Azure Bot SKU.
 
 ### Changed
-- 🔄 **Dynamic Azure Bot Adapter Configuration**: The `CloudAdapter` for the Azure Bot Framework now dynamically loads credentials from the database based on the incoming request path. This significantly enhances multi-tenancy capabilities, allowing multiple Azure Bot registrations with different credentials to be served from the same API endpoint.
-- ⚡️ **Updated Bot Controller Responses**: Bot controllers now return generic `Response` objects instead of `JSONResponse`, aligning with standard FastAPI practices and supporting the new dynamic adapter changes.
+- 🔄 **Stricter Conversation Schema**: The conversation entity schema has been made stricter (`strict=True`), ensuring data integrity and consistency in stored conversations.
+- ⚡️ **Enhanced Azure Bot Setup**: The `setup_azure_bot.py` script now includes pre-emptive deletion of existing bots and improved error handling for a smoother deployment process.
 
 ### Refactor
-- 🧹 **Persistence Layer Restructuring**: The `aihub_bot/persistence/chat/entities` directory has been reorganized and renamed to `aihub_bot/persistence/entities` for a cleaner, more generalized structure of persistence entities.
-- 🗑️ **Removed Static Bot Credentials from Configuration**: Azure Bot-specific credential fields (`APP_ID`, `APP_PASSWORD`, `APP_TENANTID`, `APP_TYPE`) have been removed from `BaseConfig` in `aihub_lib`, as these are now managed dynamically via the new `PathEntity` in `aihub_bot`.
+- 🧹 **Unified Bot Services**: Major internal restructuring of bot logic, moving common functionalities like conversation management, system message retrieval, and activity processing into a shared `Service` base class.
+- 🦾 **Specialized Bot Implementations**: Old generic chat bots have been replaced with specialized `AgentChatBot` and `OpenaiChatBot` classes (and their streaming counterparts), improving modularity and clarity.
+- 📦 **Reorganized Bot Modules**: Bot and route modules have been reorganized and renamed to reflect the new, more logical architecture, improving code maintainability.
+- 📖 **Simplified Conversation Entity**: The `ConversationEntity` has been streamlined by removing user-specific tracking, focusing solely on message history tied to a conversation ID.
+
+### Removed
+- 🗑️ **Deprecated Chat Bots**: The generic `ChatBot` and `EchoBot` implementations have been removed, superseded by the new specialized bot architecture.
+- 🚫 **User Tracking in Conversations**: Direct user tracking fields have been removed from the `ConversationEntity` to simplify the database schema and conversation management.
 
 ---
 
 
 
-## [v0.39.0] - 2025-02-14 - Improved Agent Context & Data Handling
+## [v0.48.0] - 2025-02-19 - Enhanced Test Stability and Build System Updates
 
 ### Changed
-- 🔄 **RAG Agent Context Handling:** The RAG Agent now correctly incorporates the full limited chat history when processing rejected few-shot prompts, leading to more contextually relevant guardrail responses.
-
-### Refactor
-- 🧹 **Refined Timestamp Formatting Utility:** The internal utility for formatting Unix timestamps (`format_unix_timestamp`) has been improved to directly accept integer timestamps, enhancing the robustness and correctness of date metadata processing.
-
----
-
-
-
-## [v0.38.0] - 2025-02-13 - Bot Reliability & API Streaming Enhancements
+- 🚀 Updated the **SonarCloud scan GitHub Action** to v5, improving the CI/CD pipeline's analysis capabilities and ensuring compatibility with the latest SonarCloud features.
 
 ### Fixed
-- 🐛 **Improved OpenAI Chat Role Handling:** Ensured the user role defaults to "user" in `JsonOpenaiChatBot` interactions, preventing potential issues when the role is not explicitly provided.
-- ⚡️ **Enhanced OpenAI Streaming Stability:** Implemented robust checks for empty or null content chunks during OpenAI chat streaming, significantly improving the stability and reliability of real-time message delivery.
+- 🐛 Improved **chatbot test stability** by significantly extending timeouts for asynchronous operations, which helps prevent flaky test failures related to health checks and streaming response validations.
 
 ---
 
 
 
-## [v0.37.0] - 2025-02-13 - Improved Internationalization and Advanced RAG Context Handling
+## [v0.47.0] - 2025-02-18 - Streamlined Azure Integrations and Core Refinements
 
 ### Added
-- ✨ **Enhanced Localization Support:** Introduced comprehensive French and Italian translations for agent prompts and thought processes, broadening language capabilities.
-- 📄 **New RAG Context Prompt:** Added a detailed and improved context prompt for RAG agents within `aihub_lib`, providing clearer instructions on processing structured documents and their associated metadata.
-- 🦾 **Configurable Locale Paths:** Enabled dynamic specification of locale paths directly within the `AgentConfig`, offering increased flexibility and customizability for managing internationalization.
+- 🔗 **Expanded Azure SDK Support**: Integrated new Azure SDK dependencies, including `azure-mgmt-cognitiveservices`, `azure-storage-file-datalake`, and `adlfs`, to support enhanced Azure service interactions and data lake functionalities.
+- 🧪 **CI/CD Azure Credential Injection**: Enabled the injection of `AZURE_SUBSCRIPTION_ID` into the CI/CD test environment, ensuring robust authentication for automated testing of Azure-dependent components.
 
 ### Changed
-- 🔄 **Centralized Core Prompts:** Migrated general agent prompts (such as `condenser` and RAG context prompts) from agent-specific configurations to a centralized location within `aihub_lib`, promoting reusability and consistency across agents.
-- 📈 **Structured RAG Context Presentation:** Enhanced the formatting of RAG context documents to include rich metadata (e.g., source, namespace, type, version, timestamps) and adopted more descriptive `<DOCUMENT>` tags, aiding better LLM understanding of provided context.
-- 📝 **Refined Condenser Prompts:** Updated standalone question prompts for condensers across all supported languages to improve context retention and clarity in conversational flows.
+- 🚀 **Azure Subscription Identification**: Transitioned from referencing Azure subscriptions by display name to using the direct Azure Subscription ID (GUID), enhancing precision and reliability in resource management.
+- ⚙️ **Standardized Azure Resource Naming**: Implemented a simplified naming convention for various Azure resources (e.g., Cognitive Search, Document Intelligence, Speech Service, Cosmos DB, and Data Lake), removing environment-specific suffixes for a cleaner and more consistent infrastructure.
+- ✨ **Optimized Azure Service Authentication**: Streamlined the authentication process for Azure management clients by directly utilizing the Azure Subscription ID, which removes the need for redundant subscription lookups.
 
 ### Refactor
-- 🧹 **Streamlined Prompt Management:** Decoupled core prompt definitions from individual agent configurations, allowing agents to dynamically retrieve prompts based on locale and their specific configuration.
+- 🧹 **Module Structure Modernization**: Performed internal refactoring of module structures and import paths (e.g., `Configs` to `configs` and `vector_stores` to `stores`) to improve code organization and maintainability.
+- 🔄 **Cosmos DB Access Consolidation**: Replaced the `CosmosConnectionStringSingleton` with `CosmosAccess` for a more consistent approach to managing Cosmos DB connections.
+- 🗑️ **Configuration Cleanup**: Removed the `ENVIRONMENT` variable from `BaseConfig` as part of the broader effort to streamline Azure infrastructure configuration.
 
 ---
 
 
 
-## [v0.36.0] - 2025-02-13 - Core Enhancements and Configuration Flexibility
-
-### Added
-- 🔑 **Enhanced Azure Bot Service Configuration**: Introduced `APP_TYPE` and `APP_TENANTID` environment variables to `BaseConfig` for more comprehensive Azure Bot Service setup.
+## [v0.45.0] - 2025-02-17 - Internal Workflow Enhancements
 
 ### Changed
-- ⚡️ **Improved Chat Streaming Responsiveness**: Added `asyncio.sleep(0)` to the OpenAI chat service's streaming logic to prevent blocking and enhance real-time responsiveness during chat completions.
-- ⚙️ **Flexible Self-Hosted LLM Configuration**: The `default_parameter` in `SelfHostedLLMConfig` is now optional, defaulting to an empty parameter set, which provides more flexibility in model setup.
+- 🔄 **Updated CI/CD Dependency Locking:** The GitHub Actions workflow now utilizes `poetry lock` instead of `poetry lock --no-update` for dependency management, ensuring more current dependency resolution during build processes.
+
+---
+
+
+
+## [v0.44.0] - 2025-02-17 - Flexible Azure Bot Deployments and Development Enhancements
+
+### Added
+- 🦾 **Introduced Single-Tenant Azure Bot Support:** The setup script now allows for the creation and configuration of Azure AD application registrations and Azure Bot resources specific to a single tenant, providing greater deployment flexibility.
+- ⚡️ **Enabled Azure OpenAI Chatbot in Playground:** The development playground can now run and test OpenAI chat bots directly integrated with Azure OpenAI services, facilitating easier development and experimentation.
+- 📄 **Expanded Credential Storage Schema:** New fields, including `APP_TYPE` and `APP_TENANTID`, have been added to the `Credentials` entity within `PathEntity` to support more diverse authentication types and tenant-specific configurations for bots.
+
+### Changed
+- 🔄 **Dynamic Bot Adapter Retrieval:** The `Service.get_adapter` method now directly accepts the FastAPI `Request` object, enabling more contextual and robust retrieval of the appropriate bot adapter.
+- 🔑 **Updated Credential Field Names:** The `PathEntity` for credentials now uses `APP_ID` and `APP_PASSWORD` instead of the previous `app_id` and `app_password`, aligning with the new tenant-aware configuration.
+- 🛠️ **Enhanced Azure Bot Setup Script:** The `setup_azure_bot.py` script has been significantly updated to manage single/multi-tenant bot configurations, including app registration logic and streamlined Cosmos DB credential storage.
 
 ### Refactor
-- 🧹 **Simplified LLM Configuration Examples**: Streamlined LLM model configurations in the `aihub_bot` playground examples, removing verbose default parameter settings for a cleaner setup, and included `gpt-4o-mini` as a new example model.
+- 🧹 **FastAPI Import Consolidation:** Standardized the import of `Request` and `Response` objects to use `fastapi` directly across all controllers, improving code consistency.
+- 🗑️ **Streamlined Cosmos DB Configuration:** Removed the hardcoded Cosmos DB connection string from the development `.env` file, promoting more secure and dynamic environment variable management.
+- ⚙️ **Optimized Cosmos DB ID Generation:** The `setup_azure_bot.py` script no longer explicitly generates object IDs for Cosmos DB entries, allowing the database to handle ID assignment automatically.
 
 ---
 
 
 
-## [v0.35.0] - 2025-02-12 - Enhanced Agent Control and Core Workflow Streamlining
-
-### Added
-- 🦾 **Introduced Few-Shot Guard for RAG Agent**: The RAG Agent now incorporates a configurable few-shot guard mechanism, allowing it to determine if a user query is within its allowed scope based on predefined examples. This enhances control over agent behavior and prevents it from answering out-of-scope questions.
-- 💬 **Direct User Query Access**: A new `user_query` property has been added to the `StartEvent`, providing a more direct and centralized way to access the initial user message within agent workflows.
-- 📝 **FewShotGuardExample Model**: A dedicated `FewShotGuardExample` data model was introduced to facilitate the clear and structured definition of examples for the new few-shot guard.
+## [v0.43.0] - 2025-02-17 - Core Tooling and Build System Enhancements
 
 ### Changed
-- 🚀 **Streamlined Agent Data Flow**: Agents, including `FewShotAgent` and `RAGAgent`, no longer rely on `RunContext` for accessing core data like user queries and chat history. This information is now directly passed via event parameters or accessible from the `StartEvent`, simplifying data flow and reducing internal dependencies.
-- 🗄️ **Standardized Common Event and Config Locations**: Moved general-purpose event and configuration files (e.g., `LimitChatHistoryEvent`, `StandaloneQuestionCondenserEvent`) from agent-specific `rag` directories to a more general `common` module, improving reusability and organizational clarity across different agent types.
-- 🌐 **Centralized Condenser Prompt**: The prompt for condensing standalone questions has been moved from agent-specific translation files to the shared `aihub_lib` translations, making it a more consistent and reusable component across the system.
-- ⚙️ **Updated Azure OpenAI API Version**: The Azure OpenAI API version used in tests has been updated to `2024-08-01-preview` to align with the latest available features and improvements.
+- 🚀 **Updated Poetry Version:** Upgraded the Poetry dependency management tool in GitHub Actions workflows from v1.8.3 to v2.1.1, ensuring compatibility with the latest features and improved build processes.
+- ⚙️ **Refined Poetry Core Requirements:** Standardized and updated the `poetry-core` build system requirements across all `pyproject.toml` files to `>=2.0.0,<3.0.0`, enhancing build stability and future compatibility.
+
+---
+
+
+
+## [v0.42.0] - 2025-02-17 - Internal API Refinement
 
 ### Refactor
-- 🧹 **Refined Standalone Question Condensation**: The `condense_standalone_question` utility now intelligently excludes system messages from the chat history during the condensation process, which can lead to more accurate standalone question generation.
-- 📁 **Improved RAG Agent File Structure**: Minor structural adjustments were applied to the RAG agent's configuration and event paths, standardizing folder names to `configs` and `events` for enhanced consistency.
+- 🧹 **Updated Node Post-processing**: Renamed the `process` method to `postprocess_nodes` within `ScoreScalerPostProcessor` for better clarity and consistency in node manipulation utilities.
 
 ---
 
 
 
-## [v0.34.0] - 2025-02-11 - Unified Module Versions and Stability Improvements
+## [v0.41.0] - 2025-02-17 - Enhanced Azure AI Search Capabilities
+
+### Added
+- ✨ **Expanded Azure AI Search Configuration:** Introduced the ability to specify a `semantic_configuration_name` when creating Azure AI Search vector stores, providing more control over semantic search behavior and relevance tuning.
+
+---
+
+
+
+## [v0.40.0] - 2025-02-14 - Enhanced Azure Bot Management and Multi-Tenancy
+
+### Added
+- ✨ **Dynamic Bot Credential Storage**: Introduced a new `PathEntity` in `aihub_bot.persistence.entities` to securely store Azure Bot credentials, enabling flexible per-path bot configurations.
+- ⚙️ **Azure Bot Setup Utility**: A new `setup_azure_bot.py` script simplifies the setup process for Azure Bots, automating Azure AD app registration, credential management, and their storage within Cosmos DB.
 
 ### Changed
-- ⚙️ **Synchronized Module Versions**: All core modules, including `aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_lib`, and `aihub_pipeline`, have been updated to version `v0.34.0`. This ensures consistent internal dependency management and overall project alignment.
-- ⬆️ **Dependency Updates**: Key dependencies such as `llama-index-readers-file` (to `0.4.5`), `pymongo` (to `4.11.1`), and various `dagster` related packages (to `1.9.13` and `0.25.13`) have been upgraded, contributing to enhanced stability and minor underlying improvements.
+- 🔄 **Multi-Tenancy for Azure Bots**: The `aihub_bot` framework now supports running multiple Azure Bots from a single application instance, each with its own credentials and accessible via distinct API paths.
+- 🚀 **Dynamic Adapter Management**: The `Service` class no longer uses a static global adapter, instead providing a `get_adapter` method to dynamically create `CloudAdapter` instances based on the request path, retrieving corresponding credentials from the new `PathEntity`.
+- ⚡️ **Controller Response Types**: Bot controllers now return `Response` objects instead of `JSONResponse` for broader compatibility in processing bot activities.
 
 ### Refactor
-- 🧹 **OpenAI Chat Service Method Clarity**: The internal method for streaming OpenAI chat completions in `StreamOpenaiChatBot` was renamed from `stream_on_message` to `stream_on_message_completion` for better readability and semantic clarity.
-
-### Removed
-- 🗑️ **Outdated Local Configuration**: The `playground/testing/.env` file has been removed, streamlining the local development environment by deprecating an obsolete test configuration.
+- 🧹 **Persistence Module Restructure**: The `aihub_bot` persistence entities have been reorganized by moving `ConversationEntity` and associated files to a more general `aihub_bot.persistence.entities` module.
+- 🧹 **Centralized Bot Configuration**: Removed static Azure Bot credentials (`APP_ID`, `APP_PASSWORD`, `APP_TENANTID`) from `aihub_lib.infrastructure.azure.BaseConfig`, as these are now dynamically managed via the `PathEntity` for enhanced security and flexibility.
+- 🧹 **Streamlined Service Class**: The `on_error` handler and static `ADAPTER` have been removed from the general `Service` class, contributing to a cleaner and more focused design for bot service routing.
 
 ---
 
 
 
-## [v0.33.0] - 2025-02-10 - Enhanced RAG with Contextual Node Retrieval
-
-### Added
-- ✨ **Introduced Contextual Node Retrieval for RAG Agent**: The RAG agent's retrieval step now supports fetching adjacent nodes (previous, next, or both) from the vector store, enabling richer context for generative responses.
-- ⚙️ **New `VectorPrevNextPostProcessor`**: A new post-processor was added to the `aihub_lib` to manage the traversal and retrieval of linked nodes from vector stores, a core component of the new contextual retrieval feature.
-- 📦 **`RetrievePrevNextConfig` for RAG**: A new configuration model has been added to allow precise control over how previous and next nodes are retrieved within the RAG agent's pipeline.
+## [v0.39.0] - 2025-02-14 - Improved RAG Agent Rejection Handling and Data Consistency
 
 ### Changed
-- 🧪 **Updated Test Workflow for `aihub_lib`**: The `aihub_lib` test workflow now includes Milvus setup, providing comprehensive testing capabilities for vector store-related functionalities, including the new node traversal.
+- 💬 **Enhanced RAG Agent Rejection Responses:** The `RAGAgent` now includes the limited chat history (without context) when generating responses for rejected queries. This provides the Large Language Model (LLM) with more comprehensive context to explain the reasons for rejection, leading to more informative and relevant user messages.
 
 ### Refactor
-- 🧹 **Centralized Milvus Test Utilities**: Moved Milvus-related testing utilities to a shared `aihub_lib/testing` module, improving code reusability and test infrastructure consistency across projects.
+- ⚙️ **Standardized Timestamp Processing:** The internal utility for formatting Unix timestamps has been updated to explicitly expect and handle integer timestamps, improving the robustness and consistency of date-time metadata processing across the system. This refactor includes corresponding updates to test cases to align with the new integer type expectation for metadata fields such as `inserted_at`, `updated_at`, and `created_at`.
 
 ---
 
 
 
-## [v0.32.0] - 2025-02-10 - Flexible Chat Options: Direct OpenAI Support and Modular Agent Architecture
-
-### Added
-- ✨ **Direct OpenAI Model Integration**: Introduced new endpoints and bots for direct chat completions with OpenAI and Azure OpenAI models, supporting both JSON and streaming responses.
-- ⚙️ **Centralized Bot Configuration**: Added `APP_ID` and `APP_PASSWORD` configuration fields to `aihub_lib.infrastructure.azure.BaseConfig`, streamlining bot service authentication setup.
-- 🧪 **OpenAI Playground Examples**: Included new examples in the playground demonstrating the direct integration with various OpenAI and self-hosted language models.
-
-### Changed
-- 🔄 **Modular Chat Architecture**: Reworked the `aihub_bot` chat module, separating agent-based chat logic into a dedicated `agent/` subpackage and introducing a new `openai/` subpackage for direct OpenAI interactions. This improves modularity and maintainability.
-- 🧹 **Refined Base Chat Services**: Simplified the core `ChatBot` and `ChatService` classes to serve as more generic foundations, with specific interaction logic now residing in specialized agent and OpenAI services.
-- 🛡️ **Enhanced Conversation Persistence**: Improved the `ConversationEntity` to automatically initialize a new conversation if one does not exist when adding messages, enhancing robustness.
-- 📝 **Updated Activity Model Types**: Corrected the type mapping for `object` in the activity model for improved type handling.
-
-### Removed
-- 🗑️ **Legacy Bot Configuration File**: Eliminated the `DefaultConfig.py` file from `aihub_bot` as its functionality has been migrated to the centralized `BaseConfig` in `aihub_lib`.
-
----
-
-
-
-## [v0.31.0] - 2025-02-07 - Enhanced Tracing Capabilities
-
-### Added
-- 🔑 **Phoenix Tracing Authentication**: Introduced support for configuring an optional `PHOENIX_AUTH_TOKEN` to authenticate tracing data exports, enabling more secure integration with Phoenix tracing instances.
-
----
-
-
-
-## [v0.30.0] - 2025-02-07 - Core Updates and Chat Service Refinements
-
-### Changed
-- ⚡️ **Enhanced Chat Event Creation:** Streamlined the internal handling of messages within the chat service, allowing `UserMessageEvent` to directly accept the complete message list for improved consistency and simplified event processing.
-
----
-
-
-
-## [v0.29.0] - 2025-02-07 - Configurability and Workflow Updates
-
-### Added
-- 🚀 **Formalized `bots` scope support** in the semantic pull request workflow, enhancing CI/CD validation for bot-related changes.
-
-### Changed
-- ⚙️ **Updated NATS connection configuration** in the `aihub_bot` service to dynamically retrieve the endpoint from `NatsSettings`, replacing the previously hardcoded local address for improved deployment flexibility.
-
----
-
-
-
-## [v0.28.0] - 2025-02-07 - Enhanced AI Capabilities and OpenAI API Compatibility
-
-### Added
-- 🚀 **OpenAI API Emulation**: Introduced a comprehensive `/openai` API endpoint in `aihub_api` that fully mirrors the OpenAI API. This allows for seamless integration with OpenAI SDKs and third-party tools like Open WebUI, supporting chat completions (including streaming responses), text embeddings, image generation (DALL-E), Speech-to-Text (STT) transcription, and Text-to-Speech (TTS) generation.
-- 🖼️ **Image Model Configuration**: New configuration classes (`ImageModelConfig`, `AzureOpenaiImageModelConfig`) were added to explicitly define and manage image generation models, including DALL-E parameters.
-- 🗣️ **Speech and Audio Model Configurations**: Implemented dedicated configuration classes for Speech-to-Text (`STTConfig`, `AzureOpenaiSTTConfig`) and Text-to-Speech (`TTSConfig`, `AzureOpenaiTTSConfig`) models, enabling robust integration of audio processing services.
-- 📄 **Open WebUI Docker Compose Example**: A `docker-compose-open-webui.yml` file was provided to demonstrate how to easily integrate AI-Hub with Open WebUI using the new OpenAI API emulation.
-
-### Changed
-- ⚙️ **LLM Configuration Fields**: The `api_endpoint` field in LLM configurations has been consistently renamed to `base_url` for improved clarity and consistency across various generative AI resource types.
-
-### Refactor
-- 🔄 **Generative AI Resource Reorganization**: Performed a significant internal restructuring of the `aihub_lib.generative_ai` package. The `llms.models` and `llms.costs` modules have been consolidated and renamed to `resources.models` and `resources.costs` respectively. This foundational change unifies the definition and management of all generative AI capabilities (LLMs, embeddings, image, STT, TTS) under a consistent `LiteLLMProxyResourceConfig` hierarchy.
-- 🧹 **Streamlined Azure OpenAI Resource Management**: Introduced `AzureOpenaiResourceConfig` as a new common base class to centralize client initialization and simplify configuration for all Azure OpenAI-backed models.
-- ⬆️ **Core Library Update**: Updated `aihub-lib` to `v0.27.0` to incorporate the latest architectural improvements and new resource configurations.
-
----
-
-
-
-## [v0.27.0] - 2025-02-06 - Enhanced Chat Interactions with Streaming Support and API Documentation
-
-### Added
-- ✨ **Streaming Chat Completions**: Introduced a new endpoint and dedicated bot (`StreamChatBot`) to provide real-time, streamed responses from AI agents, significantly enhancing the user experience for longer interactions.
-- 🧱 **Specialized Chat Bots**: Created `JsonChatBot` and `StreamChatBot` as distinct classes to handle synchronous JSON-based and asynchronous streaming chat interactions, improving modularity and clarity of bot logic.
-- 📄 **Improved API Documentation**: Integrated `ActivityModel` to dynamically generate Pydantic schemas for Bot Framework activities, providing more accurate and detailed OpenAPI documentation for all chat endpoints.
-
-### Changed
-- 🔄 **Test Runner Enhancements**: Updated the `BotTestRunner` to support `PUT` requests and return activity IDs in responses, which are essential for real-time updates of streamed bot responses.
-- 📝 **Comprehensive OpenAPI Definitions**: Expanded the OpenAPI documentation for chat completion endpoints with detailed summaries, descriptions, and response examples, leading to better API understanding and usability.
-
-### Refactor
-- 🧹 **Chat Bot Logic Separation**: Refactored the core `ChatBot` by moving specific message handling logic into dedicated `JsonChatBot` and `StreamChatBot` classes, enabling a clearer separation of concerns and more maintainable code.
-
----
-
-
-
-## [v0.26.0] - 2025-02-06 - Improved Event Management and Data Integrity
-
-### Added
-- ✨ **Enhanced Event Serialization**: Nested `BaseEvent` instances are now correctly serialized when converting events to a dictionary, preventing data loss and supporting more complex event structures.
-- 📄 **Detailed Error Logging**: Implemented comprehensive logging for exceptions encountered during event storage and retrieval within the distributed event store, significantly improving debuggability and operational visibility.
-
-### Changed
-- 🔄 **Refactored Distributed Event Store Logic**: The `DistributedEventStore` now retrieves events by their class name string and utilizes a generic deserialization method (`ControlEvent.deserialize_event`). This change reduces coupling between the store and specific event types, enhancing flexibility and maintainability.
+## [v0.38.0] - 2025-02-13 - Bot Stability and OpenAI Integration Enhancements
 
 ### Fixed
-- 🐛 **Robust Event Retrieval**: Improved error handling in the distributed event store to specifically manage `KeyNotFoundError` when retrieving events, ensuring that missing keys are handled gracefully and preventing generic exceptions from disrupting event flows.
+- 🐛 **Improved Robustness for Chat Roles**: Ensured that chat message roles default to "user" if not explicitly provided, preventing potential issues with `None` values in bot interactions.
+- ⚡️ **Enhanced OpenAI Streaming Reliability**: Added robust error handling for OpenAI chat completions, ensuring the stream continues smoothly even if content chunks are empty or null.
 
 ---
 
 
 
-## [v0.25.0] - 2025-02-06 - Refined Agent Testing for Human-in-the-Loop Workflows
+## [v0.37.0] - 2025-02-13 - Enhanced RAG Context and Expanded Localization
 
-### Refactor
-- 🔄 **Streamlined Human-in-the-Loop Workflow Tests:** Consolidated the multi-step human-in-the-loop agent tests into a single, comprehensive `pytest_asyncio` test function, simplifying test structure and execution.
-- 🧹 **Migrated Test Framework:** Transitioned the testing approach for human-in-the-loop workflows from a Behavior-Driven Development (BDD) style using `pytest-bdd` to a more direct, programmatic `pytest_asyncio` implementation.
+### Added
+- ✨ **Expanded Localization Support:** Introduced French and Italian translations for agent rejection messages and agent thoughts, improving multi-lingual capabilities.
+- ⚙️ **Configurable Locale Paths:** Added the ability to specify locale paths dynamically through agent configuration, increasing flexibility for internationalization.
+- 📄 **Rich RAG Context Metadata:** Enhanced the format of RAG context documents to include comprehensive metadata (e.g., source, namespace, language, version, timestamps), providing more detailed context to the LLM.
+- 💡 **New Default RAG Context Prompt:** Introduced a standardized, detailed prompt for RAG agents within the `aihub_lib` for consistent context presentation.
+
+### Changed
+- 🔄 **Centralized Core Prompts:** Moved `condenser` and RAG-related context prompts from individual agents to the `aihub_lib` for better reusability and maintainability.
+- 📝 **Improved Condenser Prompt Wording:** Refined the language of the `condenser.standalone_question` prompt across all supported locales for greater clarity and accuracy.
 
 ### Removed
-- 🗑️ **Deprecated BDD Feature Files:** Removed `.feature` files and `pytest-bdd` integration associated with the multi-step human-in-the-loop agent tests as part of the transition to a direct testing methodology.
+- 🗑️ **Redundant Agent Prompts:** Removed specific `condenser` and `rag_agent` prompts from `aihub_agent`'s internal translations, as they are now managed centrally in `aihub_lib`.
+- 🗑️ **Outdated Test Prompts:** Removed `test` prompts from agent translation files in `aihub_agent`.
 
 ---
 
 
 
-## [v0.24.0] - 2025-02-06 - Core Infrastructure Enhancements and Expanded Integrations
+## [v0.36.0] - 2025-02-13 - Streamlined Configuration & Azure Bot Service Enhancements
 
 ### Added
-- ✨ **Introduced Text Embeddings Inference Integration**: Added `llama-index-embeddings-text-embeddings-inference` support, enabling more flexible text embedding generation using local or inference server models.
-- 🚀 **Enhanced OpenTelemetry Export Capabilities**: Integrated `opentelemetry-exporter-otlp` and its associated protobuf components, providing robust support for OTLP-based telemetry export.
-- 🦾 **Expanded LlamaIndex with Hugging Face Utilities**: Included `llama-index-utils-huggingface`, facilitating deeper integration with Hugging Face models and datasets within LlamaIndex workflows.
-- 🔗 **Standardized Google APIs Common Protobufs**: Added `googleapis-common-protos` as a core dependency to support broader integration with Google APIs.
-- ⚡️ **Formalized FastAPI Integration**: Explicitly included `fastapi` in core dependencies, reinforcing its role as a foundational element for the project's API layer.
+- ⚙️ **Extended Azure Bot Service Configuration**: Introduced new `APP_TYPE` and `APP_TENANTID` fields within the `BaseConfig` to provide more comprehensive configuration options for Azure Bot Service deployments.
 
 ### Changed
-- 🔄 **Updated Core Project Dependencies**: Performed a comprehensive upgrade of various Python libraries across `aihub_agent`, `aihub_api`, `aihub_bot`, and `aihub_pipeline` modules. This includes updates to `aiohttp`, `beautifulsoup4`, `attrs`, `certifi`, `openai`, `pydantic`, `transformers`, `pymongo`, `motor`, and several `llama-index` components, improving overall stability, performance, and incorporating the latest features.
-- ⚙️ **Streamlined CI Workflow for Backend Testing**: Transitioned from a remote GitHub Action to a local action for `test_backend` within the CI pipeline, enhancing control and reliability of the continuous integration process.
-- 🧹 **Refined Poetry Dependency Management**: Updated the Poetry lock file version and removed redundant `groups` and `markers` definitions from package metadata, optimizing internal dependency resolution and clarity.
+- ⚡️ **Improved Streaming Chat Completion Responsiveness**: Enhanced the `OpenaiChatService` to ensure smoother and more responsive streaming of chat completions by optimizing event loop handling.
+- 🔄 **Streamlined Self-Hosted LLM Configuration**: The `SelfHostedLLMConfig` now automatically initializes its `default_parameter` if not explicitly provided, simplifying model setup and reducing boilerplate for developers.
+- 🧪 **Updated Playground LLM Configurations**: The `main.py` playground example in `aihub_bot` has been updated to reflect the streamlined LLM configuration and now includes `gpt-4o-mini` as an example Azure OpenAI model.
 
 ---
 
 
 
-## [v0.23.0] - 2025-02-05 - AI Hub Expands: Introducing Bot Service and Enhancing Core Reusability
+## [v0.35.0] - 2025-02-12 - Agent Intelligence Boost: Few-Shot Guarding and Workflow Optimization
 
 ### Added
-- 🤖 **Introduced `aihub_bot` module**: This new module enables the creation of AI-powered chatbots integrated with the Azure Bot Service, featuring conversational history persistence and flexible AI agent interactions.
-- ⚡️ **Added a shared chat service to `aihub_lib`**: Extracted core chat interaction logic (including streaming and JSON response handling) into `aihub_lib`, allowing for greater reusability across different AI Hub frontends and bot integrations.
-- 📁 **Introduced new package structures**: Established new package-level import mechanisms within `aihub_api` and `aihub_lib` to support improved modularity and reusability of components.
+- ✨ **Few-Shot Guarding for RAGAgent:** Introduced a new mechanism to filter user queries based on predefined few-shot examples. This allows RAG agents to explicitly accept or reject requests with specific reasons, significantly enhancing control over agent scope. New configuration options (`few_shot_guard_examples`) and events (`FewShotAcceptEvent`, `FewShotRejectEvent`) support this feature.
+- 🦾 **Direct User Query Access:** Added a convenient `user_query` property to the `StartEvent`, providing a straightforward way to access the last user message sent, simplifying agent workflow logic.
+- 📄 **Localized Few-Shot Guard Prompts:** Included comprehensive internationalized prompts for the new few-shot guard, ensuring consistent and flexible agent behavior across various locales.
+- 🚀 **Rejected Query Responses:** Implemented logic within the RAGAgent to automatically provide the user with a specific, configurable reason when a query is rejected by the few-shot guard.
 
 ### Changed
-- ⚙️ **Updated CI/CD pipelines and local tooling**: Integrated the new `aihub_bot` module into existing continuous integration, linting, testing (including SonarCloud analysis), and local development workflows.
-- ⬆️ **Updated core dependencies**: Aligned all microservices to use `aihub_lib` version `v0.16.0` and updated various underlying Python packages (e.g., `attrs`, `certifi`, `openai`, `pydantic`, `httpx`, `grpcio`, `numpy`) for improved performance and stability.
-- 🏷️ **Renamed API chat methods**: Updated method names in `aihub_api`'s chat controller to clarify their role as API-specific wrappers, differentiating them from the new shared chat service in `aihub_lib`.
-- 🚨 **Improved thread access error handling**: Enhanced the `ThreadController` with dedicated exceptions for clearer error responses when users attempt unauthorized thread operations.
-- 📦 **`aihub_lib` now depends on `FastAPI`**: The core library now directly includes `FastAPI` as a dependency, reflecting its expanded role in providing foundational web-related components.
+- 🔄 **RAG Agent Workflow Integration:** Modified the RAGAgent's processing flow to seamlessly integrate the new few-shot guard. This ensures that knowledge retrieval and subsequent responses are contingent on the initial query's acceptance.
+- ⚙️ **Optional RAGAgent Prompts:** Made `condense_question_prompt` and `context_prompt` optional in `RAGAgentConfig`, offering greater flexibility for agent configuration and allowing default prompts to be used if not specified.
+- 🧹 **Improved Standalone Question Condensation:** Enhanced the `condense_standalone_question` utility to explicitly filter out system messages from the chat history, leading to more accurate and focused standalone question generation.
+
+### Refactor
+- 📦 **Centralized Agent Utilities:** Reorganized common agent events and configurations (like `LimitChatHistoryEvent` and `StandaloneQuestionCondenserEvent`) by moving them into a new `aihub_agent/agents/common` directory, improving modularity and reusability across different agent types.
+- 🔗 **Decoupled Agent Logic from `RunContext`:** Refactored both `FewShotAgent` and `RAGAgent` to directly pass essential data (such as user query and chat history) via event objects. This reduces reliance on the `RunContext` for state management, simplifying method signatures and improving code clarity.
+- 🌎 **Moved Condenser Prompt Translations:** Relocated the standalone question condenser prompt translations from `aihub_agent` to `aihub_lib`, centralizing common prompt templates within the core library for better management.
+- 📁 **Standardized Directory Naming:** Renamed `Configs` to `configs` and `Events` to `events` within the `rag` agent modules for consistent lowercase naming conventions across the project.
+
+---
+
+
+
+## [v0.34.0] - 2025-02-11 - Introducing `aihub_bot` and Core Project Enhancements
+
+### Added
+- ✨ **Introduced `aihub_bot` module**: A new core module dedicated to bot functionalities, enabling new conversational AI capabilities within the platform.
+
+### Refactor
+- 🧹 **Refined OpenAI Chat Service API**: The internal method for streaming OpenAI chat completions within `StreamOpenaiChatBot` has been renamed to `stream_on_message_completion` for better clarity and consistency with OpenAI's API.
+- ⚙️ **Streamlined Project Configuration**: Updated internal IDE configuration files across all modules to improve project structure definition and ensure a consistent development environment setup.
 
 ### Removed
-- 🗑️ **Deprecated `llama-index-embeddings-text-embeddings-inference` integration**: Removed support for this specific text embeddings inference, streamlining the embeddings landscape.
-- 🧹 **Removed redundant OpenTelemetry exporter packages**: Streamlined OpenTelemetry setup by removing duplicate or unnecessary exporter packages, relying on a more consolidated approach.
-
-### Refactor
-- 🔄 **Consolidated shared components into `aihub_lib`**: Key components such as `AuthenticatedUser`, `use_nats`, base `Controller` classes, `HealthController`, `WSUserEvent`, and `WebSocketReceiver` have been moved to `aihub_lib` to centralize common functionalities and enhance code reusability across microservices.
-- 🏗️ **Simplified Docker Compose file locations**: Moved common Docker Compose configuration files to the project root for easier management and accessibility.
-- 🧹 **Refined backend testing action**: Streamlined the `test_backend` GitHub action by removing redundant working directory inputs, simplifying its configuration.
+- 🗑️ **Removed Playground Environment Configuration**: The dedicated `.env` file for the bot playground testing has been deleted, streamlining local environment management.
 
 ---
 
 
 
-## [v0.22.0] - 2025-02-04 - Core Module Alignment and CI/CD Streamlining
-
-### Changed
-- 🔄 **Aligned Module Versions:** Updated core project modules (`aihub_agent`, `aihub_api`, `aihub_lib`, `aihub_pipeline`) and their internal `aihub-lib` dependencies to version `v0.22.0` for consistent releases and dependency management.
-- 🚀 **Streamlined CI/CD Workflows:** Updated GitHub Actions across all workflows (testing, linting, code review) to consume actions directly from the `main` branch of `aihub-core`, enhancing the stability and maintainability of our continuous integration and delivery pipelines.
-
----
-
-
-
-## [v0.21.0] - 2025-02-04 - Streamlined CI/CD with Reusable GitHub Actions
+## [v0.33.0] - 2025-02-10 - Enhanced RAG Agent with Contextual Node Retrieval
 
 ### Added
-- ✨ **New `aihub_action` Directory:** Introduced a comprehensive suite of reusable GitHub Actions to centralize and standardize common CI/CD workflows, including:
-    - 🦾 **Backend Linting (`lint_backend`)**: For consistent Python code formatting with Black.
-    - 🖼️ **Frontend Linting (`lint_frontend`)**: For consistent Nuxt.js frontend code style with ESLint.
-    - 🧪 **Backend Testing (`test_backend`)**: For running Python backend tests with coverage reporting and Docker Compose support.
-    - 📄 **Pytest Coverage Comments (`pytest_coverage_comment`)**: To automatically post test coverage reports on pull requests.
-    - 🔍 **SonarCloud Scanning (`sonarcloud_scan`)**: For comprehensive code quality and security analysis.
-    - 🤖 **AI-Assisted PR Review (`review_pr`)**: To leverage PR Agent for automated code reviews.
+- ✨ **Introduced Contextual Node Retrieval for RAG Agent:** The RAG agent now supports fetching adjacent (previous and next) nodes from the vector store based on the initial retrieved results, significantly enhancing the contextual understanding for generated responses.
+- ⚙️ **New `RetrievePrevNextConfig` Option:** A new configuration option has been added to the RAG agent's `RetrieveStepConfig`, allowing users to control the behavior of contextual node retrieval, including the number of nodes and traversal direction (previous, next, or both).
+- 🛠️ **Developed `VectorPrevNextPostProcessor`:** A new internal post-processor and associated utility functions were introduced to efficiently manage the traversal and retrieval of related nodes in vector stores.
+- 🧪 **Expanded CI/CD for `aihub_lib`:** The CI/CD workflow for the `aihub_lib` module now includes Milvus standalone docker-compose, enabling more robust and comprehensive testing for vector store-related functionalities.
 
 ### Refactor
-- 🔄 **CI/CD Workflow Consolidation**: Re-architected existing GitHub workflows (`analyze-test-pr.yml`, `lint-pr.yml`, `review-pr.yml`) to utilize the newly introduced reusable actions, significantly reducing redundancy and improving maintainability. This includes:
-    - Consolidating the `aihub_web` SonarCloud scan into the main `sonarcloud_scan` job matrix.
-    - Replacing verbose, repeated steps with concise calls to the `bbvch-ai/aihub-core/aihub_action` actions.
-
-### Changed
-- ⚡️ **Standardized Pytest Markers**: Updated `aihub_agent` and `aihub_lib` test configurations to enforce strict pytest markers (e.g., `azure`, `slow`, `integration`), improving test organization and selection.
+- 🧹 **Centralized Milvus Test Utilities:** The `milvus_vector_store_content` module, containing utilities for Milvus vector store content management, has been moved from the RAG agent's playground to `aihub_lib/aihub_lib/testing` to improve organization and reusability across the platform.
 
 ---
 
 
 
-## [v0.20.0] - 2025-02-03 - Empowering Agents: New Few-Shot Capabilities and Robust Request Guarding
+## [v0.32.0] - 2025-02-10 - Expanded Bot Capabilities: OpenAI Integration and Refined Agent Interactions
 
 ### Added
-- ✨ **New Few-Shot Agent**: Introduced a dedicated `FewShotAgent` type, allowing agents to generate responses based on provided examples and condensed user queries, significantly enhancing conversational capabilities.
-- 🔐 **Agent Description Guarding**: Implemented a new `agent_description_guard` mechanism, enabling agents to intelligently validate incoming user requests against their defined purpose, improving response relevance and system stability.
-- 🛑 **Guard Rejection Event**: Added `GuardRejectionEvent` to explicitly signal when an agent rejects a request due to policy or relevance, providing clearer feedback.
-- 📄 **Few-Shot Prompting Utilities**: Included new utilities (`FewShotExample`, `create_few_shot_messages`) to facilitate the creation and management of few-shot examples for LLM interactions.
-- 🌍 **Localized Guard Prompts**: Added internationalization support for the new agent description guard, ensuring guard prompts and reasons are available in multiple languages.
-- 🧪 **Few-Shot Agent Playground**: Provided comprehensive playground examples and BDD tests for the new `FewShotAgent`, demonstrating its capabilities and workflow.
-
-### Changed
-- ⚙️ **Flexible Test Filtering**: Updated the `Makefile` to use more flexible pytest filtering (`-k "not azure"`), allowing developers to easily skip specific test suites.
-- 🏷️ **Test Environment Tagging**: Introduced `@azure` and `@self_hosted` tags in RAGAgent tests, enabling environment-specific test execution and clearer test organization.
-- 📖 **Documentation Updates**: Revised `README.md` to reflect recent architectural changes, updated import paths, and clarified agent creation and testing instructions.
+- ✨ **OpenAI Chat Integration:** Introduced new controllers and services to allow direct chat interactions with OpenAI and Azure OpenAI models, supporting both JSON and streaming responses.
+- 🚀 **Centralized Bot Authentication:** Added `APP_ID` and `APP_PASSWORD` fields to `BaseConfig` in `aihub_lib`, centralizing Azure Bot Service authentication configuration.
 
 ### Refactor
-- 🔄 **Core Library Restructuring**: Performed a significant refactor of `aihub_lib`, moving core components like `AgentConfig` to `aihub_lib.agents` and `EventDisplayer` to `aihub_lib.displayers` for improved modularity and clearer separation of concerns across agent implementations.
-- 🧹 **Centralized Tracing Management**: Adjusted tracing implementation by removing direct `@tracing` decorators from document loaders, indicating a more centralized or automated tracing approach within the framework.
-- ⬆️ **Dependency Updates**: Upgraded various project dependencies (e.g., `beautifulsoup4`, `llama-index-llms-openai`, `marshmallow`, `openai`, `pypdf`) to their latest stable versions for performance improvements and bug fixes.
-- ⬇️ **Milvus Dependency Adjustment**: Adjusted the `pymilvus` dependency version, likely to ensure compatibility or address specific integration requirements.
-
----
-
-
-
-## [v0.19.0] - 2025-01-31 - Core Alignment and New Embedding Capabilities
-
-### Added
-- ✨ **Enhanced Embedding Options:** Integrated `llama-index-embeddings-text-embeddings-inference` to support a wider range of text embedding models, providing more flexibility for semantic search and retrieval tasks.
+- 🧹 **Agent Chat Module Reorganization:** Extracted and moved agent-specific chat logic into a dedicated `aihub_bot/bots/chat/agent` and `aihub_bot/routes/chat/agent` package structure, including `JsonAgentChatBot`, `StreamAgentChatBot`, and `AgentChatService` for clearer separation of concerns.
+- 🔄 **Generalized `ChatBot`:** The `ChatBot` class in `aihub_bot` has been refactored to serve as a more generic base class, removing agent-specific dependencies from its core.
+- ⚡️ **Consolidated Bot Configuration:** Replaced module-specific `DefaultConfig` with the centralized `BaseConfig` from `aihub_lib` in the `aihub_bot` module, streamlining configuration management.
 
 ### Changed
-- 🔄 **Core Library Alignment:** Synchronized `aihub_agent`, `aihub_api`, and `aihub_pipeline` modules with `aihub_lib v0.19.0`, ensuring all components utilize the latest core functionalities and improvements.
-- ⚡️ **Upgraded Pipeline Orchestration:** Updated Dagster and its related components to `v1.9.11`, bringing general improvements and fixes to the data orchestration layer.
-- 🚀 **Updated Hugging Face Hub Integration:** Upgraded `huggingface-hub` to `v0.28.1`, including dependency updates like `aiohttp` for inference, potentially improving performance and stability when interacting with Hugging Face models.
-- ⚙️ **General Dependency Updates:** Performed numerous minor version updates across various Python packages to improve compatibility, stability, and leverage the latest upstream fixes.
-- 🐛 **Improved Async Compatibility:** Adjusted `SQLAlchemy`'s `greenlet` dependency markers to enhance compatibility and stability in asynchronous environments.
-
----
-
-
-
-## [v0.18.0] - 2025-01-31 - CI/CD Pipeline Refinements
-
-### Refactor
-- 🧹 **Optimized Release Tagging Workflow:** Reordered the SSH key cleanup step within the GitHub Actions workflow to enhance the robustness and reliability of the release tagging process.
-
----
-
-
-
-## [v0.17.0] - 2025-01-31 - Empowering Agents: Introducing Delegation and Flexible AI Hosting
-
-### Added
-- 🦾 **Agent-in-the-Loop (AITL) Delegation**: Introduced a foundational capability enabling agents to delegate tasks to other specialized agents. This feature enhances complex workflow orchestration by allowing agents to pause, request external processing, and resume based on delegated results.
-- 💬 **AITL Event Definitions**: Added new core event types (`AgentInTheLoopRequestEvent`, `AgentInTheLoopResponseEvent`, `AgentInTheLoopExceptionEvent`) to support robust agent-to-agent communication and error handling during delegation.
-- 🌐 **Self-Hosted LLM and Embedding Support**: Extended the RAG agent and LLM configurations to seamlessly integrate with self-hosted Large Language Models (LLMs) and embedding models. This provides greater flexibility and control over AI infrastructure, enabling local model execution.
-- 📦 **Milvus Vector Store Integration**: Introduced support for Milvus as a configurable vector store within the RAG agent, allowing for more diverse knowledge base integrations.
-- 🔌 **Centralized NATS Configuration**: Added `NatsSettings` to centralize and simplify the management of NATS endpoint configurations across all modules.
-- ⚙️ **Local Milvus and AI Model Docker Setup**: Provided `milvus-standalone-docker-compose.yml` and updated `docker-compose.yml` for simplified local setup of Milvus, `llama.cpp` (for LLMs), and Hugging Face TEI (for embeddings) in the playground, facilitating self-hosted AI development.
-- ✅ **New BDD Test Suites**: Expanded the test coverage with new BDD scenarios for conditional workflows, context handling, fan-out patterns, semantic events, and crucial end-to-end tests for the new Agent-in-the-Loop feature.
-
-### Changed
-- 🔄 **Abstracted RAG Agent Vector Store**: The RAG agent's retrieval step now uses a generic `BasePydanticVectorStore` instead of a specific `index_name`, significantly improving flexibility and allowing different vector databases to be plugged in without code changes.
-- ✏️ **Unified LLM Base URL Naming**: Renamed `api_endpoint` to `base_url` across all LLM and embedding configurations for consistent and clearer terminology.
-- 📝 **Streamlined LLM Tokenization Logic**: Abstracted the tokenizer access within `LLMConfig` to a property, simplifying token counting and history limiting logic across various LLM implementations.
-- 🛠️ **Refined Agent Test Runner**: Enhanced `AgentTestRunner` by introducing distinct `test_run_start` and `test_run_stop` methods, providing more granular control over test execution and setup/teardown.
-- 📂 **Organized Playground Workflows**: Restructured playground examples into more descriptive and logical workflow directories, improving discoverability and maintainability of examples.
-- 📄 **Updated Documentation for Local Setup**: The `README.md` has been updated with clearer instructions for local Docker setup, including guidance on running self-hosted AI services.
-- 🧹 **Improved Docker Health Checks**: Enhanced the robustness of Docker health checks for NATS and MongoDB services in the CI/CD pipeline, ensuring services are fully ready before tests begin.
-- ➡️ **Updated CI/CD Workflows**: Modified `add-tag.yml` to trigger only on pushes to `main` and updated `analyze-test-pr.yml` to reflect new Docker Compose commands and test coverage reporting.
-- 🤖 **Migrated AI Code Review Model**: Switched the `review-pr.yml` workflow to use `gpt-4o` with the latest Azure OpenAI API version for improved code review capabilities.
-- ⚡️ **Enhanced Event Logging**: Improved internal event serialization logging for better debugging and visibility of event payloads.
+- ↔️ **Agent Chat Endpoint Paths:** The API endpoints for agent-based chat completions have been updated from `/chat` to `/agent/chat` to reflect the new modular structure.
+- ⏳ **Stream Response Timeout:** Increased the timeout for receiving chunks in stream responses from 0.5 to 1 second for improved robustness.
 
 ### Fixed
-- 🐛 **Robust Event Registration**: Implemented a check to prevent duplicate event class registrations, improving the stability of the NATS event system.
-
-### Removed
-- 🗑️ **Deprecated LLM Tokenizer Name**: Removed the `tokenizer_name` property from `SelfHostedLLMConfig` as tokenizer inference is now handled automatically.
-- 🗑️ **Removed Specific Index Name from RAG Configuration**: The `index_name` parameter has been removed from `RetrieveStepConfig`, aligning with the more generalized `vector_store` integration.
+- 🐛 **Robust Conversation Creation:** Ensured that a new conversation is automatically created if it doesn't exist when adding a message, preventing potential errors during the first interaction.
+- 🤖 **Improved Bot Message Role Assignment:** Enhanced the logic for assigning the 'bot' role to outgoing messages to ensure consistency.
+- ⚙️ **Corrected Activity Model Type Mapping:** Adjusted the internal type mapping for `object` in activity models for improved data handling.
 
 ---
 
 
 
-## [v0.16.0] - 2025-01-22 - Empowering Local LLM Development and Streamlining CI/CD
+## [v0.31.0] - 2025-02-07 - Enhanced Tracing Authentication
 
 ### Added
-- 🦾 **Enabled Self-Hosted LLMs**: The `LlamaIndexAgent` now supports integration with self-hosted Large Language Models, offering greater flexibility and control over AI agent deployments.
-- 📄 **Configurable Tokenizer for Self-Hosted LLMs**: Introduced a `tokenizer_name` option in `SelfHostedLLMConfig`, allowing precise specification of the tokenizer to be used with custom models.
-- 🧪 **New BDD Test Workflows**: Added comprehensive Behavior-Driven Development (BDD) test suites for `DisplayingAgent` and `LlamaIndexAgent` within the playground environment, enhancing test coverage and reliability.
-- 🛠️ **Improved Agent Test Runner**: A new `get_start_event` utility method has been added to `AgentTestRunner`, simplifying access to initial events in agent test scenarios for easier validation.
-- 🐳 **Integrated Ollama Service in Playground**: The `ollama` local LLM serving platform is now seamlessly integrated into the development `docker-compose` setup, facilitating local testing and experimentation with self-hosted models.
-
-### Changed
-- 🚀 **Enhanced CI/CD Workflow Robustness**: The auto-tagging and pull request testing workflows have been fortified with more resilient shell scripting for directory iteration and refined Git configuration, ensuring consistent and reliable bot operations.
-- 🔗 **Streamlined Global Dependency Management**: Implemented new steps in the pull request analysis workflow to validate and install global Poetry dependencies, preventing conflicts and ensuring consistent build environments.
-- 🤖 **Automated Ollama Model Pull**: The PR analysis workflow now automatically pulls the necessary Qwen2.5 model to the Ollama service during `aihub_agent` tests, guaranteeing immediate test readiness.
-- ⬆️ **Dependency Updates**: Key dependencies across `aihub_lib`, `aihub_agent`, `aihub_api`, and `aihub_pipeline` have been updated for improved performance, stability, and security.
-
-### Refactor
-- 🏗️ **Evolved Project Structure**: Transitioned towards a Poetry workspace/monorepo architecture by introducing a root-level Poetry configuration, laying the groundwork for more efficient package management and development.
-- 🔄 **Optimized CI/CD Tagging Logic**: The sequence of tag deletion and creation in the auto-tagging workflow has been reordered for improved logical flow and error handling.
-
-### Removed
-- 🗑️ **Deprecated Service Startup Script**: The standalone `start_service.sh` script has been removed, as its functionality has been integrated or superseded by other system improvements.
+- ✨ **Introduced Phoenix Tracing Authentication**: Added support for configuring and using a `PHOENIX_AUTH_TOKEN` to authenticate tracing data sent to the Phoenix endpoint, enhancing the security and control over your observability data.
 
 ---
 
 
 
-## [v0.15.0] - 2025-01-21 - Internal CI Workflow Refinements
+## [v0.30.0] - 2025-02-07 - Improved Chat Event Handling
 
 ### Changed
-- ⚙️ **Improved CI workflow reliability** by explicitly defining the conditions for the Pytest coverage comment job to run solely on pull request events.
+- 🔄 **Streamlined User Message Event Creation:** Simplified the construction of `UserMessageEvent` within the `ChatService` by directly providing the full list of messages, enhancing consistency and streamlining how user message events are handled.
 
 ---
 
 
 
-## [v0.14.0] - 2025-01-21 - Unified Testing, Streamlined Development, and Advanced Agent Capabilities
+## [v0.29.0] - 2025-02-07 - Enhanced Bot Connectivity and Development Workflow
+
+### Changed
+- ⚡️ **Improved NATS Connectivity for Bots:** The `aihub_bot` now dynamically retrieves its NATS endpoint from `NatsConfig`, enhancing deployment flexibility and making the connection environment-agnostic.
+- 📄 **Updated Semantic PR Workflow:** Added `bots` as a recognized type in the semantic PR workflow, standardizing and streamlining the development process for bot-related contributions.
+
+---
+
+
+
+## [v0.28.0] - 2025-02-07 - OpenAI API Emulation and Unified AI Resource Management
 
 ### Added
-- ✨ **Automated Draft Pull Request Creation**: A new workflow automatically creates draft pull requests for new branches, streamlining the initial PR creation process.
-- 🦾 **Enhanced Agent Test Runner**: The `AgentTestRunner` now supports observing agent discovery events and provides new utilities for awaiting specific events, significantly improving test reliability and expressiveness for agent interactions.
-- 💡 **Expanded Agent Workflow Examples**: Introduced new playground examples showcasing advanced agent design patterns and capabilities, including `configured` agents for dynamic value injection, `discoverable` agents for self-registration, `human-in-the-loop` agents for human interaction, and `optional` event handling in agent steps.
-- ✅ **Centralized Test Coverage Reporting**: `pytest-cov` has been integrated across all Python modules, enabling standardized coverage report generation and automated publishing of test results and coverage comments on pull requests.
-- 🌐 **Frontend Linting with ESLint**: A new dedicated linting job has been introduced for the `aihub_web` frontend, ensuring consistent code quality and style.
-
-### Changed
-- 🚀 **Refined CI/CD Workflows**: Major enhancements and alignment across all GitHub Actions workflows (auto-tagging, testing, linting, and PR review) improve consistency, robustness, and trigger conditions, including support for `initiative/*` branches and `ready_for_review` pull request status.
-- 🔄 **Centralized Version and Dependency Management**: The `aihub_lib` dependency for all Python modules (`aihub_agent`, `aihub_api`, `aihub_pipeline`) has been transitioned from local file paths to remote Git tag references, ensuring version consistency across the entire ecosystem.
-- 📄 **Updated Package Management Documentation**: The `README.md` now includes a comprehensive new section detailing the package structure and the strategy for managing local and remote dependencies, significantly improving clarity for developers.
-- ⬆️ **Dependency Updates**: Key project dependencies across various modules have been updated to their latest stable versions, enhancing overall stability and performance.
+- 🚀 **OpenAI API Emulation**: Introduced a comprehensive OpenAI API-compatible endpoint suite, enabling seamless integration with existing OpenAI SDKs for various generative AI tasks. This includes:
+    -   🤖 **Chat Completions**: Interact with configured chat models using the `/openai/chat/completions` endpoint, supporting both JSON and streaming responses.
+    -   🔍 **Embeddings**: Generate text embeddings via `/openai/embeddings` for various models.
+    -   🖼️ **Image Generation**: Create images using models like DALL-E through the `/openai/images/generations` endpoint.
+    -   🎤 **Speech-to-Text (STT)**: Transcribe audio files to text using `/openai/audio/transcriptions`.
+    -   🗣️ **Text-to-Speech (TTS)**: Convert text into natural-sounding speech through `/openai/audio/speech`.
+    -   📄 **Model Management**: List and retrieve details for available models via `/openai/models` and `/openai/models/{model_name}`.
+- ✨ **New AI Resource Configurations**: Expanded `aihub_lib` with dedicated configuration classes for different generative AI resource types:
+    -   `ImageModelConfig` and `AzureOpenaiImageModelConfig` for image generation models.
+    -   `STTConfig` and `AzureOpenaiSTTConfig` for speech-to-text models.
+    -   `TTSConfig` and `AzureOpenaiTTSConfig` for text-to-speech models.
+- ⚙️ **Open WebUI Docker Compose Example**: Provided a `docker-compose-open-webui.yml` example to demonstrate integration with Open WebUI, leveraging the new OpenAI API emulation.
 
 ### Refactor
-- 🧹 **Internal Code Reorganization**: Constants within `aihub_lib` have been moved to more logical locations, and internal `LocaleHandler` usage has been refined for improved maintainability.
+- 🔄 **Unified Generative AI Resource Structure**: Performed a significant refactoring of `aihub_lib.generative_ai.llms` into `aihub_lib.generative_ai.resources`, introducing a more generic and extensible structure for managing all AI model types (LLMs, Embeddings, Images, STT, TTS).
+    -   🧹 **Centralized Base Configurations**: Introduced `ResourceConfig` as the new base class for all AI resource configurations, along with `AzureOpenaiResourceConfig` for Azure-specific models, promoting consistent configuration patterns.
+    -   🧹 **Consistent Parameter Naming**: Standardized the `api_endpoint` parameter to `base_url` across all model configurations for clarity and consistency.
+    -   🧹 **Parameter Class Renaming**: Renamed `ModelParameter` to `LLMModelParameter` (and its specialized versions like `ChatLLMParameter` and `EmbeddingLLMParameter`) to better align with the new resource hierarchy.
+
+### Changed
+- 🦾 **Agent Configuration Updates**: Updated `FewShotAgent`, `LLMWrappingAgent`, and `RAGAgent` configurations to utilize the new `aihub_lib.generative_ai.resources` paths and the `base_url` parameter, reflecting the core library's refactor.
+- 💬 **Chat Service Updates**: Adjusted the internal `ChatService` in `aihub_api` to align with the new generative AI resource paths.
+
+---
+
+
+
+## [v0.27.0] - 2025-02-06 - Introducing Chat Streaming and Enhanced API Definitions
+
+### Added
+- ✨ **Asynchronous Chat Streaming**: Implemented new capabilities for streaming chat responses from AI agents to users, providing real-time updates as content is generated. This allows for a more dynamic and responsive user experience.
+- 📄 **Dynamic OpenAPI Schema Generation**: Introduced a new model to dynamically generate OpenAPI schemas for `Activity` payloads, significantly improving API documentation and ensuring robust request validation for bot interactions.
+- ⚡️ **Streaming Endpoint for Agent Interactions**: A new `/completions/{agent_class}/{agent_id}/stream` endpoint was added to support real-time, chunked responses from AI agents, specifically designed for streaming interactions.
+
+### Changed
+- 🚀 **Synchronous Chat Endpoint Updates**: The existing synchronous chat endpoint (`/completions/{agent_class}/{agent_id}/json`) now leverages the refactored `JsonChatBot` and includes enhanced OpenAPI documentation for better clarity and consistency.
+
+### Refactor
+- 🧹 **Bot Logic Decoupling**: Refactored the core `ChatBot` by extracting specific message handling logic into dedicated `JsonChatBot` and `StreamChatBot` classes. This enhances modularity, improves maintainability, and allows for distinct chat interaction patterns (e.g., JSON vs. streaming).
+- 🔄 **Bot Service Endpoint Update Handling**: Updated the test runner and the main bot service endpoint to correctly process `PUT` requests, which is essential for updating message activities during streamed responses to users.
+- 🧹 **Minor Code Enhancements**: Applied `@override` decorators for clarity and adherence to best practices, along with minor formatting adjustments.
+
+---
+
+
+
+## [v0.26.0] - 2025-02-06 - Robust Event Management and Enhanced Data Persistence
+
+### Added
+- ✨ **Enabled Recursive Event Serialization**: The `BaseEvent` model_dump method now intelligently serializes nested `BaseEvent` instances, ensuring comprehensive and accurate data persistence for complex event structures.
+
+### Changed
+- 🔄 **Enhanced Event Deserialization**: The `DistributedEventStore` has been updated to fetch and deserialize events more flexibly by using event class names directly and leveraging a generic `ControlEvent.deserialize_event` method. This improves support for polymorphic event types and simplifies retrieval logic.
 
 ### Fixed
-- 🐛 **Corrected Black Version in pyproject.toml**: Fixed an incorrect version string for the `black` dependency in `aihub_lib/pyproject.toml`.
-
-### Removed
-- 🗑️ **Deprecated Test Scenarios**: Old and redundant simple agent test scenarios from the playground examples have been removed, streamlining the test suite.
+- 🐛 **Improved Error Handling in Event Store**: Refined error handling within the `DistributedEventStore` to specifically catch `KeyNotFoundError` when retrieving events and added comprehensive logging for other exceptions, enhancing the store's reliability and diagnostic capabilities.
 
 ---
 
 
 
-## [v0.13.0] - 2025-01-17 - Workflow Refinements and Enhanced Debugging
-
-### Added
-- ⚡️ **Enhanced Step Debugging Visibility**: Integrated comprehensive debug logging into the `@step` decorator, offering detailed insights into how workflow step parameters and metadata are processed, aiding developers in troubleshooting.
-- 📄 **Enabled Example Workflow Logging**: Activated logging in the `fan_out_workflow` example, providing immediate console feedback during execution for easier testing and demonstration of workflow behavior.
+## [v0.25.0] - 2025-02-06 - Enhanced Testing Framework
 
 ### Refactor
-- 🧹 **Refined Custom List Type Handling**: Improved the internal representation and extraction of item types within `ListOfSize` and `FixedList` annotations, enhancing the robustness of type parsing for fixed-size event lists. This makes the system more resilient to internal Python version changes regarding generic type introspection.
-
----
-
-
-
-## [v0.12.0] - 2025-01-17 - Enhanced Developer Experience and Core Updates
-
-### Changed
-- 📄 **Improved Backend Setup Guide**: The `README.md` now provides comprehensive and clearer instructions for setting up backend microservices, emphasizing the use of isolated Poetry environments to streamline the development workflow and prevent dependency conflicts.
-- 🚀 **Updated Core Internal Library**: Upgraded the `aihub-lib` to version `v0.12.0` across dependent microservices, ensuring all components leverage the latest shared functionalities and improvements.
+- 🧹 **Refactored `MultistepHumanInTheLoopAgent` Tests:** Streamlined the test suite by consolidating multiple BDD-style test steps into a single, cohesive `pytest` function for improved clarity and maintainability.
+- 🔄 **Migrated Test Implementation:** Transitioned the `MultistepHumanInTheLoopAgent` tests from a `pytest-bdd` driven approach to a direct `pytest` implementation, enhancing test maintainability and reducing boilerplate.
 
 ### Removed
-- 🗑️ **Deprecated IDE Run Configurations**: Removed outdated IDE-specific run configurations, simplifying the project's root directory and reducing clutter.
+- 🗑️ **Deprecated `pytest-bdd` Feature Files:** Removed the dedicated `pytest-bdd` feature file (`multistep_human_in_the_loop_agent.feature`) and its associated `pytest-bdd` imports and decorators from the `MultistepHumanInTheLoopAgent` test suite.
 
 ---
 
 
 
-## [v0.11.0] - 2025-01-16 - Agent Evolution and Core Infrastructure Refinements
-
-### Added
-- 🚀 **Introduced AI-Hub Agent Framework:** A foundational new module (`aihub_agent`) providing a structured and modular approach to building general-purpose AI agents with predefined workflows, steps, and event-driven communication.
-- ✨ **New Retrieval-Augmented Generation (RAG) Agent:** Implemented a comprehensive RAG agent leveraging the new agent framework, capable of processing user input, retrieving relevant information, condensing questions, and generating LLM responses.
-- 🛠️ **New Generative AI Utilities:** Added a suite of dedicated utilities to `aihub_lib` for RAG-specific tasks, including `ScoreScalerPostProcessor` for relevance score normalization, and functions for intelligent chat history management, query condensation, and ordered document combination.
-- 🌍 **Enhanced Agent Localization:** Introduced localized internal "thought" messages and prompt templates for agents, improving transparency and multi-language support.
-- 🧪 **Comprehensive Agent Testing Utilities:** Expanded the `AgentTestRunner` with BDD testing capabilities for both individual steps and full agent workflows, enabling robust and predictable agent behavior validation.
+## [v0.24.0] - 2025-02-06 - Core Module Synchronization and CI/CD Enhancements
 
 ### Changed
-- 🔄 **Refactored NATS Event System:** Significant reorganization and modularization of `aihub_lib`'s NATS event classes, leading to clearer event definitions and improved maintainability across the messaging infrastructure.
-- 🧹 **Standardized Code Quality Tools:** Integrated and configured Black, isort, and Ruff across `aihub_agent` and `aihub_api` modules to enforce consistent code formatting and linting.
-- 📄 **Updated Documentation Guidelines:** Enhanced agent development documentation within the `aihub_agent/README.md` to provide comprehensive guidance on creating, configuring, testing, and documenting new agents.
-- ⚙️ **Pipeline I/O Managers Improvements:** Refined `DocStoreIOManager` and `VectorStoreIOManager` to better handle single or multiple document inputs, improving data processing flexibility.
-- 📦 **Dependency Updates:** Updated various Python package dependencies across all modules, including new `llama-index` integrations for Azure OpenAI embeddings and MongoDB document storage.
+- ✨ **Synchronized Core Module Versions**: All `aihub` core modules (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_lib`, `aihub_pipeline`) and their internal `aihub_lib` dependencies have been consistently updated to `v0.24.0`, ensuring full compatibility and alignment across the ecosystem.
 
 ### Refactor
-- 🏗️ **Architectural Integration of New Modules:** Incorporated the new `aihub_agent` and `aihub_api` modules into the main `Makefile` for consistent CI/CD pipeline execution.
-- ♻️ **Streamlined Playground Examples:** Refactored existing playground agent examples to align with the new agent framework's patterns and best practices.
+- 🧹 **Streamlined CI/CD Test Workflow**: The GitHub Actions test workflow now references the `test_backend` action locally within the repository, improving build reliability and simplifying the continuous integration setup.
 
 ---
 
 
 
-## [v0.10.0] - 2025-01-16 - Enhanced Repository Governance and Stability
+## [v0.23.0] - 2025-02-05 - Empowering Chatbots with New Bot Service and Enhanced Core Reusability
 
 ### Added
-- 📄 **Introduced comprehensive branch protection rules:** Detailed new guidelines for `main` and `initiative/*` branches, enforcing strict policies on pushes, deletions, linear history, and pull request merging (including required approvals and squash merging) to enhance codebase integrity and promote collaborative development.
-
----
-
-
-
-## [v0.9.0] - 2025-01-16 - Enhanced Setup Guidance
-
-### Added
-- 📄 **Updated README with Make Instructions:** Added detailed instructions for installing `make` on Windows to the `README.md`, ensuring smoother setup for development environments.
-
----
-
-
-
-## [v0.8.0] - 2025-01-15 - Improved Setup Instructions
+- 🤖 **New AI Hub Bot Service:** Introduced a dedicated `aihub_bot` component for seamless integration with Azure Bot Service, enabling conversational AI capabilities.
+- 💬 **Chatbot and Echo Bot Implementations:** Shipped initial `ChatBot` for managing AI agent interactions and an `EchoBot` for basic conversational responses within the new bot service.
+- 💾 **Conversation History Persistence:** Implemented `ConversationEntity` within the bot service to store and retrieve chat history, providing context for ongoing conversations.
+- 🚀 **Bot Application Runners and Test Utilities:** Added `BotRunner`, `BotTestRunner`, and `SimulatedAgentBotTestRunner` to facilitate streamlined development, testing, and deployment of bot applications.
+- 🌐 **Static Frontend for Bot Testing Playground:** Included basic static web files to enable local testing and interaction with the new bot service.
 
 ### Changed
-- 📄 **Docker installation notes:** Added a helpful troubleshooting tip and reference link to the `README.md` for users experiencing `wsl --update` issues with Docker Desktop.
+- ⚙️ **Renamed API Chat Endpoints:** Renamed chat-related methods in `aihub_api` (e.g., `start_api_stream_chat_interaction`) to clarify their role as API-specific entry points, distinguishing them from core logic now in `aihub_lib`.
+- 🛡️ **Improved Thread Authorization Error Handling:** Enhanced error messages and consistency for unauthorized thread access and modification in the `aihub_api`'s thread controller.
+- 🛠️ **Updated CI/CD and Build Configurations:** Modified GitHub Actions workflows and the Makefile to integrate the new `aihub_bot` component into linting, testing, and deployment processes.
+- 🔄 **Dependency Management Script Update:** The `switch_dependency.py` script now supports managing `aihub_lib` dependencies within the `aihub_bot` project.
+
+### Refactor
+- 📦 **Core Component Reusability (aihub_lib):** Moved several foundational components (e.g., `AuthenticatedUser`, `Controller`, `HealthController`, NATS dependencies, WebSocket receiver components, and core chat service logic) from `aihub_api` into the shared `aihub_lib`. This significantly improves modularity and reduces duplication across services.
+- 🚚 **Centralized Docker Compose Files:** Moved `docker-compose.yml` and `milvus-standalone-docker-compose.yml` to the project root, making them accessible and standard for all microservices.
 
 ---
 
 
 
-## [v0.7.0] - 2025-01-15 - Enhanced Development Workflow and Dependency Management
-
-### Added
-- ✨ **Streamlined Local Development Setup**: Introduced new IDE run configurations and a default `.env` file for the `LLMWrappingAgent` and `core-api` (development and testing), significantly simplifying the local environment setup and execution.
-- 🚀 **Standardized Service Startup**: Added a `start_service.sh` script to unify how microservices are launched, improving consistency and ease of use.
+## [v0.22.0] - 2025-02-04 - Internal System Alignment and Workflow Stabilization
 
 ### Changed
-- 🔄 **Updated `aihub-lib` to v0.7.0**: Upgraded the shared `aihub-lib` to its latest version, incorporating its latest features and fixes across agent and API components.
-- ⚙️ **Improved Dependency Management**: Upgraded Poetry to version `2.0.1` and refined dependency linking for `aihub_pipeline` to use local paths for `aihub_lib`, enhancing monorepo development.
+- 🔄 **Updated Core Dependency Versions:** Synchronized all core modules (aihub_agent, aihub_api, aihub_pipeline) to utilize the latest `v0.22.0` release of `aihub_lib`, ensuring consistent functionality and compatibility across the system.
+- ⚙️ **Refined CI/CD Workflow References:** Updated GitHub Actions workflows (analyze, lint, review) to reference the stable `main` branch of AIHub Core actions, enhancing the reliability and consistency of automated checks.
+
+---
+
+
+
+## [v0.21.0] - 2025-02-04 - CI/CD Modernization: Streamlined Workflows with Reusable Actions
+
+### Added
+- 🚀 **Introduced Reusable GitHub Actions:** A new `aihub_action` directory has been added, containing a suite of modular and reusable GitHub Actions. These actions encapsulate common CI/CD tasks such as backend testing, linting (backend and frontend), SonarCloud scanning, pytest coverage commenting, and PR review, significantly streamlining workflow definitions and promoting reusability.
+- 📄 **New Actions Documentation:** A `README.md` file is now available in the `aihub_action` directory, providing comprehensive documentation for all new reusable GitHub Actions and their usage.
+- 🏷️ **Enhanced Pytest Markers:** New Pytest markers (`azure`, `self_hosted`, `slow`, `integration`, `experimental`) have been added and strict marker usage enforced in `aihub_agent` and `aihub_lib` for improved test organization and filtering.
+
+### Refactor
+- 🔄 **Centralized CI/CD Workflows:** The existing `.github/workflows` have been extensively refactored to leverage the newly introduced reusable GitHub Actions. This significantly reduces redundancy, improves maintainability, and standardizes CI/CD practices across the repository.
+- 🧹 **Unified SonarCloud Scans:** The SonarCloud scanning process has been unified, integrating the `aihub_web` scan into the primary `sonarcloud-scan` job for a more cohesive analysis pipeline.
+
+---
+
+
+
+## [v0.20.0] - 2025-02-03 - Introducing Few-Shot Agents and Core System Improvements
+
+### Added
+- 🦾 **Few-Shot Agent**: A new agent type has been introduced, enabling agents to generate responses based on provided examples, significantly enhancing their learning capabilities for specific tasks.
+- 🚧 **Agent Description Guard**: A new utility has been added that uses an LLM to evaluate if a user's query aligns with an agent's defined purpose, improving intelligent request routing and guardrail mechanisms.
+- 🛑 **Guard Rejection Event**: A new event, `GuardRejectionEvent`, is now emitted when an agent's internal guardrail system rejects a request, providing a clear reason for the rejection to the client.
+- 📚 **Few-Shot Prompting Utilities**: New models and functions (`FewShotExample`, `create_few_shot_messages`) have been added to the `aihub_lib` to standardize and simplify the creation of few-shot messages for LLMs.
+- 🌍 **Localized Translation Strings**: New localized messages have been added to support the newly introduced Few-Shot Agent and the Agent Description Guard, ensuring multilingual support.
+- 🧪 **Few-Shot Agent Playground Examples**: Comprehensive examples and tests for the new Few-Shot Agent have been added to the playground, demonstrating its capabilities and usage.
+
+### Changed
+- ⚙️ **Test Command Filtering**: The `Makefile` in `aihub_agent` has been updated to exclude Azure-specific tests from the default test command, allowing for more granular control over test execution.
+- 📄 **Documentation Clarity**: The `README.md` has been updated to provide clearer guidance on agent creation and testing methodologies, distinguishing between `run.py` for continuous execution and `trigger.py` for limited runtime scenarios.
+- 🏷️ **RAG Agent Test Categorization**: RAG Agent tests are now tagged with `@azure` and `@self_hosted` to facilitate better test organization and selective execution in CI/CD pipelines.
+
+### Refactor
+- 🔄 **Core Library Consolidation**: Fundamental components like `AgentConfig` and `EventDisplayer` have been relocated from `aihub_agent` to `aihub_lib`. This centralizes common functionalities, promotes reusability, and streamlines dependencies across agent and API projects, requiring numerous import path updates.
+- 🧹 **Tracing Decorator Removal**: The `@tracing()` decorator has been removed from specific document loaders (`DocumentIntelligenceLoader`, `RawLoader`), indicating a shift towards a more integrated or alternative approach to tracing within the library.
+- 🌲 **New Package Structures**: New package directories have been introduced across `aihub_agent` and `aihub_lib` to support a more organized and modular architecture for new features and existing components.
+- ⬆️ **Document Intelligence Integration**: The `DocumentIntelligenceLoader` has been updated to align with the latest `DocumentContentFormat` enum from Azure's SDK, ensuring compatibility with updated dependency APIs.
+
+---
+
+
+
+## [v0.19.0] - 2025-01-31 - Core Component Release Synchronization
+
+### Changed
+- 🔄 **Component Version Alignment:** All core components, including `aihub_agent`, `aihub_api`, `aihub_lib`, and `aihub_pipeline`, have been synchronized and updated to version `v0.19.0`. This ensures all projects utilize the latest features and improvements from `aihub_lib`.
+
+---
+
+
+
+## [v0.18.0] - 2025-01-31 - Refined Release Workflow
+
+### Refactor
+- 🧹 **Improved Release Tagging Workflow:** Reordered the SSH key cleanup step in the GitHub Actions workflow to ensure it executes consistently after all tagging operations, enhancing the robustness of the release process.
+
+---
+
+
+
+## [v0.17.0] - 2025-01-31 - Enhanced Agent Orchestration, Flexible LLM Integration, and Developer Experience Boost
+
+### Added
+- 🦾 **Agent-in-the-Loop (AITL) Delegation**: Implemented a new mechanism for agents to delegate tasks to other specialized agents, enabling complex, collaborative workflows. This includes new event types for requests, responses, and exceptions during delegation.
+- ✨ **Self-Hosted LLM and Embedding Support**: Introduced configurations and examples for integrating self-hosted Large Language Models (via `llama.cpp`) and embedding models (via Hugging Face Text Embeddings Inference) into agents and the local development environment.
+- 🚀 **Milvus Vector Store Integration**: Added support for Milvus as a vector store backend for RAG agents, complete with local Docker Compose setup and utilities for content management.
+- 🖼️ **Project-Wide IDE Configuration**: Included `.idea` files for consistent PyCharm project settings and improved developer experience, ensuring these files are automatically ignored by Git.
+- ⚙️ **NATS Configuration Management**: Introduced a dedicated `NatsConfig` for centralizing NATS endpoint configuration via environment variables, enhancing flexibility for various deployment environments.
+- 📝 **Comprehensive Test Coverage for Core Workflows**: Added new BDD test scenarios and corresponding test files for conditional, context, fan-out, multi-locale, and semantic event workflows, ensuring robustness and clarity of agent behaviors.
+- 🔗 **`to_subject` Method for `PartialAgentTopic`**: Added a utility method to `PartialAgentTopic` for easier generation of NATS subjects from partial topic information.
+
+### Changed
+- 🔄 **Generalized LLM and Embedding Configurations**: Refactored `RAGAgentConfig` to use more abstract `ChatLLMConfig` and `EmbeddingLLMConfig`, allowing for greater flexibility in LLM and embedding model choices beyond Azure OpenAI.
+- ⚡️ **Flexible Vector Store Integration in RAG**: Updated `RetrieveStepConfig` to directly accept a generic `BasePydanticVectorStore` instance, replacing the explicit `index_name` and allowing seamless integration of various vector database solutions like Milvus or Azure AI Search.
+- 🐳 **Improved Docker Compose Setup for Development**: Migrated `aihub_agent`'s local Docker setup to `docker compose` (v2) syntax, replaced Ollama with `llama.cpp` and HF TEI for self-hosted LLM/embedding, and enhanced health checks for NATS and MongoDB, including new Milvus services.
+- 📄 **Standardized Test Coverage in Makefiles**: Updated `Makefile` targets across all services (`aihub_agent`, `aihub_api`, `aihub_lib`, `aihub_pipeline`) to use `--cov=.` for more comprehensive and consistent local test coverage reporting.
+- 🌐 **API Endpoint Naming Convention**: Standardized LLM and embedding model configurations to use `base_url` instead of `api_endpoint` for consistency across different LLM providers.
+- 🧩 **Recursive Event Deserialization**: Enhanced `BaseEvent` deserialization to correctly handle nested event structures, improving the robustness of event processing.
+- 🚀 **Git Auto-Tagging Workflow Refinement**: Streamlined the auto-tagging GitHub Actions workflow to trigger only on `main` branch pushes.
+- ⬆️ **CI/CD Model and API Version Updates**: Upgraded the `review-pr.yml` GitHub Actions workflow to use `gpt-4o` and a newer Azure OpenAI API version (`2024-08-01-preview`) for PR reviews, alongside updated secret and variable names.
+- 🪢 **Agent `tokenizer` Abstraction**: Introduced a `tokenizer` property in `ChatLLMConfig` and updated its usage in `limit_chat_history_with_context`, allowing for more flexible tokenization based on the configured LLM.
+
+### Refactor
+- 🧹 **Consolidated Playground Workflow Examples**: Reorganized and renamed various minimal workflow examples within the `playground` directory for better categorization and clarity.
+- 💅 **Minor Code Formatting and Linting**: Applied consistent code formatting and linting rules across the codebase, including the adoption of `black` for Python code.
+- 🗑️ **Removed Redundant `clean` Makefile Targets**: Eliminated duplicate `clean` targets from individual microservice `Makefiles`, as general project cleaning is now handled at the root level.
 
 ### Removed
-- 🗑️ **`bson` Dependency**: The `bson` library has been removed from core dependencies, reducing the overall project footprint.
+- 🗑️ **Deprecated `ollama` Service**: Removed the `ollama` Docker service from the `aihub_agent` playground, replaced by more specific self-hosted LLM inference solutions (`llama.cpp` and HF TEI).
+- 🧹 **Specific LLM Stop Event**: Removed the `LLMStopEvent` class, streamlining event handling as `LLMEvent` and `StopEvent` can be used directly or composed for similar functionality.
 
 ---
 
 
 
-## [v0.6.0] - 2025-01-13 - Agent Core Evolution: New Agent Types & Streamlined Playgrounds
+## [v0.16.0] - 2025-01-22 - Unleashing Self-Hosted LLMs and Bolstering CI/CD
 
 ### Added
-- ✨ **New `LLMWrappingAgent`:** Introduced a foundational agent designed to seamlessly integrate Large Language Models into workflows, simplifying LLM integration and building LLM-powered applications.
-- 📄 **Comprehensive BDD Testing Guide:** Added a detailed section to the `README.md` explaining our new Behavior-Driven Development (BDD) testing framework (`pytest-bdd`), including structure, Gherkin syntax, and benefits, to enhance developer understanding and testing practices.
+- ✨ **New `DisplayingAgent` Example:** Introduced a new example agent (`DisplayingAgent`) with comprehensive BDD tests to showcase event display capabilities within agent workflows.
+- 🦙 **Ollama Integration for Local Development:** Added `ollama` as a service in the `docker-compose.yml` for simplified local setup and testing of self-hosted Large Language Models.
+- ⚙️ **Flexible Tokenizer Configuration for Self-Hosted LLMs:** Enhanced `SelfHostedLLMConfig` with a new `tokenizer_name` field, allowing precise specification of the tokenizer for self-hosted models, improving compatibility and performance.
+- 🧪 **New BDD Tests for `LlamaIndexAgent`:** Implemented new BDD tests to validate the `LlamaIndexAgent`'s functionality, specifically with self-hosted LLM configurations.
+- 🔍 **Direct StartEvent Retrieval:** Added a `get_start_event` method to `AgentTestRunner` for easier access to the initial start event during agent testing.
 
 ### Changed
-- 🔄 **Major Playground Reorganization:** Significantly restructured and renamed all playground examples for both agents and APIs into a more logical, workflow-centric directory structure (e.g., `minimal_workflow`, `agent`) to improve clarity, navigability, and maintainability.
-- 📄 **Updated Agent Documentation:** Revised and expanded the `agents_in_detail.md` documentation to align with the new agent patterns and provide clearer explanations of core concepts, including context handling and semantic events.
+- 🔄 **Expanded LLM Support for `LlamaIndexAgent`:** The `LlamaIndexAgent` now supports `SelfHostedLLMConfig`, providing the flexibility to integrate with a wider range of self-hosted Large Language Models alongside Azure OpenAI.
+- 🚀 **Improved CI/CD Workflow Reliability:** Updates to `add-tag.yml` and `analyze-test-pr.yml` workflows, including refined git configurations, explicit user/email settings for bot commits, and improved dependency management, ensuring more robust and consistent automated tagging and testing.
+- ⏱️ **Enhanced Test Setup with Ollama Readiness Checks:** Added readiness checks for the `ollama` service in CI/CD tests, ensuring that self-hosted LLM services are fully available before test execution.
+- 📦 **Streamlined Global Dependency Management:** Introduced steps to validate and install global poetry dependencies and use local core, making the CI/CD test environment more consistent and efficient.
+
+### Refactor
+- 🧹 **Monorepo Project Structure:** Adopted a global `pyproject.toml` at the root for better management of the monorepo, simplifying project-wide dependency and tool configurations.
+- 🗑️ **Removed `start_service.sh`:** The dedicated `start_service.sh` script has been removed, indicating a shift towards more standardized `poetry run` commands for service startup and local development.
+- 🛠️ **Refined CI/CD Script Logic:** Updated the method for iterating over directories and reordered the tag deletion process within the auto-tagging workflow for improved script robustness and clarity.
+
+---
+
+
+
+## [v0.15.0] - 2025-01-21 - Workflow Refinements
+
+### Changed
+- ⚙️ **CI/CD Workflow Stability:** Enhanced the Pytest coverage comment job within pull requests to ensure it exclusively triggers on pull request events, improving workflow reliability.
+
+---
+
+
+
+## [v0.14.0] - 2025-01-21 - Streamlined Workflows and Robust Testing
+
+### Added
+- 🚀 **Automated Draft PR Creation**: Introduced a new GitHub Actions workflow that automatically creates a draft pull request when a new branch is pushed, streamlining early-stage development.
+- 🧪 **Comprehensive Module Testing**: Implemented granular `make test-cov` commands and integrated `pytest-cov` across `aihub_agent`, `aihub_api`, `aihub_lib`, and `aihub_pipeline`, enabling detailed test coverage reporting for each module.
+- 📊 **Automated Pytest Coverage Comments**: Added a new GitHub Actions job to automatically publish Pytest and coverage results as comments on pull requests, providing immediate feedback on test status.
+- 🔎 **Generalized SonarCloud Scans**: Refactored SonarCloud analysis workflows to use a matrix strategy for all Python modules, streamlining code quality checks across the entire codebase.
+- 🌐 **Frontend Linting Workflow**: Introduced a dedicated GitHub Actions workflow for linting the `aihub_web` (frontend) code using ESLint, ensuring consistent code style and quality.
+- 📚 **Package Management Documentation**: Added a comprehensive "Package Management" section to the `README.md`, detailing the multi-package structure, versioning, and internal dependency referencing.
+- ✨ **Agent Discovery Test Enhancements**: Expanded `AgentTestRunner` with new properties and a `wait_for_event` method to facilitate robust testing of agent discovery events and asynchronous workflows.
+- ⚙️ **Enhanced Agent Workflow Examples**: Introduced new and expanded BDD test scenarios for configured, discoverable, human-in-the-loop, and optional workflow agents, showcasing more complex and configurable agent interactions.
+- 🌍 **Multilingual Support Placeholders**: Added new empty translation files as placeholders for future French and Italian language support.
+
+### Changed
+- 🔄 **Internal Dependency Management**: Switched internal module dependencies (e.g., `aihub_agent` depending on `aihub_lib`) from local file paths to Git tags, enhancing consistency and simplifying deployments.
+- ⚙️ **CI/CD Trigger Conditions**: Adjusted various GitHub Actions workflows (AI Code Review, Semantic PR checks) to prevent execution on draft pull requests, reducing unnecessary CI runs.
+- 🌐 **Nuxt.js Configuration**: Updated the Nuxt.js configuration for the frontend, including enabling SSR (`ssr: false`) and integrating `@nuxt/eslint` for improved linting.
+- 🧹 **`LocaleHandler` Usage**: Modified `LocaleHandler` in `aihub_lib` to be instantiated for better object-oriented practice in translation handling.
+- 📄 **`switch_dependency.py` Script**: Improved the `switch_dependency.py` script by adding `develop: True` for local path dependencies, streamlining local development setup.
+
+### Fixed
+- 🐛 **Storybook Path Correction**: Corrected relative paths in `aihub_web/.storybook/main.ts` from `..\stories` to `../stories`, resolving potential issues with Storybook loading.
+
+### Refactor
+- ♻️ **CI/CD Version Bumping**: Overhauled the `add-tag.yml` workflow to generalize the version bumping process for `pyproject.toml` files across multiple directories and update the `Makefile` tag, making releases more reliable.
+- 🏗️ **Centralized Test & Analyze Workflow**: Consolidated multiple SonarCloud jobs into a unified `test-modules` and `sonarcloud-scan` workflow, improving efficiency and maintainability of the CI/CD pipeline.
+- 🧹 **Backend Linting Generalization**: Refactored the backend linting workflow to apply `black` and `isort` across all Python modules using a matrix strategy, ensuring consistent code style.
+- 📂 **Internal Module Path Restructuring**: Moved node metadata constants from `aihub_lib.constants` to `aihub_lib.persistence.rag.vectors.node_metadata`, improving logical organization within the library.
+- ⚙️ **Frontend Build System**: Migrated `tailwind.config.js` to `tailwind.config.mjs` and updated import statements for ES module compatibility in the frontend.
+- 💡 **Playground Workflow Renaming**: Renamed `discovery_workflow` to `discoverable_workflow` for clearer semantic meaning, alongside renaming some associated test files and agent types.
+
+---
+
+
+
+## [v0.13.0] - 2025-01-17 - Enhanced Workflow Observability and Type System Robustness
+
+### Added
+- ✨ **Enhanced Step Debugging Capabilities**: Introduced comprehensive debug logging for workflow steps, providing more detailed insights into their configuration and event mappings for easier troubleshooting.
+- ⚡️ **Enabled Logging in Playground Example**: Activated logging within a minimal workflow example to assist with debugging and understanding runtime behavior.
+
+### Refactor
+- 🧹 **Improved Type Extraction for Fixed-Size Lists**: Refactored the internal mechanism for extracting item types from `FixedList` annotations, leading to more robust and explicit type handling within the workflow system.
+
+---
+
+
+
+## [v0.12.0] - 2025-01-17 - Streamlined Development Environment & Setup
+
+### Changed
+- 🔄 **Improved PyCharm Development Setup:** The `README.md` now provides revised and clearer instructions for setting up multi-microservice projects in PyCharm. The new recommended approach leverages PyCharm's "Attach Project" feature, allowing developers to manage all `aihub-core` microservices within a single PyCharm window while maintaining separate and isolated Poetry environments for each service, significantly enhancing the developer experience for complex projects.
 
 ### Removed
-- 🗑️ **Outdated Playground Examples:** Eliminated various deprecated or unorganized agent and API playground examples that have been superseded by the new, structured examples, streamlining the codebase.
-
-### Refactor
-- 🧹 **Standardized Agent Naming:** Renamed the `DevAgent` to `LLMWrappingAgent` and relocated it into the `aihub_agent/agents/basic/` directory, improving consistency and discoverability within the core agent types.
+- 🗑️ **Obsolete PyCharm Run Configurations:** Removed outdated PyCharm run configuration files (`.run/*.xml`) that are no longer necessary following the revised development environment setup instructions.
 
 ---
 
 
 
-## [v0.4.0] - 2025-01-07 - Improved Code Quality and Developer Onboarding
+## [v0.11.0] - 2025-01-16 - Smart Agents Get Smarter: RAG Capabilities & Enhanced Developer Experience
 
 ### Added
-- ⚡️ **Enhanced Code Quality Scans**: Integrated **SonarCloud** into the CI/CD pipeline to automatically analyze code quality and security for core services including agents, API, libraries, pipelines, and web components.
+- ✨ **Introduced RAG Agent**: A new, full-fledged **Retrieval-Augmented Generation (RAG) agent**, `RAGAgent`, is now available, enabling knowledge-aware conversational AI.
+- 🛠️ **RAG Utilities**: A suite of new utilities has been added for RAG workflows, including functions to **combine nodes in order**, **condense standalone questions**, **limit chat history with context**, and **retrieve nodes**, facilitating advanced contextual processing.
+- 📊 **Score Scaling Post-processor**: A `ScoreScalerPostProcessor` has been introduced to **normalize retrieval scores**, improving the relevance ranking of retrieved information.
+- 📖 **Agent Development Guide**: A comprehensive `README.md` for `aihub_agent` now provides **detailed guidance on developing, testing, and documenting new AI agents**.
+- 🗣️ **Localized Prompts & Thoughts**: New **localized prompt and thought messages** have been added for the RAG agent, improving multi-language support and user experience.
 
 ### Changed
-- 📝 **Revamped Developer Documentation**: Significantly expanded and restructured the main **README.md** to provide clearer guidance on repository structure, project and work management, branching strategy, and a comprehensive getting started guide for new developers.
+- 🧹 **Code Quality Enforcement**: Integrated **`ruff`, `isort`, and `black` configurations** into `aihub_agent` and `aihub_api` projects, along with a new `pr-ready` Makefile target, to ensure consistent code style and quality.
+- 🏷️ **Enhanced Step Metadata**: The `@step` decorator now supports **`name` and `description` parameters**, allowing for more detailed and localized metadata for workflow steps.
+- 📈 **Improved Workflow Visualization**: The `NetworkXVisualizer` has been enhanced to **leverage new step metadata**, providing richer and more informative workflow diagrams.
+- 🔗 **Event System Refinements**: Refined **event handling logic and structure** across various `nats.events` classes, including additions for `Document` and `RetrieverEvent` to support advanced data flow in RAG workflows.
+
+### Refactor
+- 🧪 **Refactored `AgentTestRunner`**: The `AgentTestRunner` has been refactored to **improve test environment control**, including new context managers for streamlined agent testing.
+- ⚙️ **Internal Build Process Updates**: Updated internal dependency references and `Makefile` structures to streamline **build and test processes** for `aihub_agent` and `aihub_api`.
 
 ---
 
 
 
-## [v0.2.0] - 2025-01-07 - Core Component Linking and Documentation Refinements
+## [v0.10.0] - 2025-01-16 - Introducing Robust Branch Protection Policies
+
+### Added
+- 🛡️ **Implemented Comprehensive Branch Protection Policies:** New documentation has been added to the README, detailing robust branch protection rules for `main` and `initiative` branches. These rules enforce restricted direct pushes, prevent deletions and force pushes, require a linear commit history, and mandate pull requests with specific approval processes (including squashed merges), significantly enhancing codebase stability and integrity.
+
+---
+
+
+
+## [v0.9.0] - 2025-01-16 - Enhanced Windows Setup Documentation
+
+### Added
+- 📄 **Improved Windows Setup Guide**: Added specific instructions for installing and verifying `make` on Windows, streamlining the prerequisite setup for Windows users.
+
+---
+
+
+
+## [v0.8.0] - 2025-01-15 - Documentation Enhancements and Version Update
 
 ### Changed
-- 📄 **Documentation Clarity:** Clarified the behavior of Human-in-the-Loop (HITL) steps in agent documentation, emphasizing that the **RunContext** persists during pauses and can be used for state retention. A less relevant section on "Personalization & Customization" for **ThreadContext** was also removed for brevity.
+- 📄 **Improved Docker Setup Guide:** Added troubleshooting information and a helpful resource link in the `README.md` to assist users with common Docker Desktop WSL update issues during setup.
+
+---
+
+
+
+## [v0.7.0] - 2025-01-15 - Enhanced Local Development Experience
+
+### Added
+- ✨ **Introduced IntelliJ/PyCharm Run Configurations** for `LLMWrappingAgent`, core API development, and core API testing, simplifying local setup and execution of key components.
+- 🚀 **Implemented a standardized `start_service.sh` script** to streamline the local execution and setup of various microservices (e.g., agents, API), ensuring consistent dependency management and startup procedures.
+- 📄 **Created a dedicated `.env` file** for the API development playground, simplifying local environment configuration and connection details for testing and development.
 
 ### Refactor
-- 🔄 **Core Library Linking:** Modified the **aihub_pipeline** project to reference **aihub_lib** via its published **Git tag** (v0.2.0) instead of a local filesystem path. This enhances build consistency and modularity across components.
+- 🔄 **Updated `aihub_pipeline`'s dependency** on `aihub_lib` to use a local path reference instead of a Git tag, facilitating monorepo development and simplifying inter-project dependency management.
+
+### Removed
+- 🗑️ **Dropped the `bson` dependency** from `aihub_lib`, streamlining the library's overall dependencies.
+
+---
+
+
+
+## [v0.6.0] - 2025-01-13 - Agent Workflow Refinements, New LLM Agent, and Comprehensive Testing
+
+### Added
+- 🦾 **New LLM Wrapping Agent:** Introduced `LLMWrappingAgent`, a basic agent designed to simplify the integration and usage of Large Language Models within agent workflows, including cost reporting capabilities.
+- 📄 **Comprehensive Testing Documentation:** Added a detailed "Testing" section to the `README.md`, outlining the use of `pytest` and `pytest-bdd` for behavior-driven development (BDD) and structured testing of agents.
+
+### Changed
+- 🔄 **Restructured Playground Examples:** Reorganized existing agent examples into a new `minimal_workflow` directory structure (e.g., `conditional_workflow`, `context_workflow`, `simple_workflow`) to improve clarity, consistency, and ease of understanding for different agent patterns.
+- 📝 **Enhanced Agent Documentation:** Significantly revised and expanded Chapter 5 of the documentation (`5_agents_in_detail.md`) for improved readability and deeper explanations of agent concepts, context handling, and multi-agent coordination.
+- 🧹 **API Playground Reorganization:** Consolidated and reorganized `aihub_api/playground` examples into clearer `development` and `testing` directories, streamlining API testing setups.
+
+### Refactor
+- ⚡️ **Unified LLM Agent Example:** The previous `DevAgent` playground example has been refactored and integrated into the new `LLMWrappingAgent` within the `basic` agents directory, providing a standardized LLM interaction pattern.
+- ⬆️ **Improved Gitignore:** Updated `.gitignore` to include common Python build artifacts, enhancing repository cleanliness.
+
+### Removed
+- 🗑️ **Deprecated Playground Agents and APIs:** Removed several older, individual playground agent implementations and their corresponding API examples, streamlining the codebase by eliminating redundant or outdated examples.
+
+---
+
+
+
+## [v0.4.0] - 2025-01-07 - Improved Onboarding and Automated Code Analysis
+
+### Added
+- ✨ **Introduced Comprehensive Code Quality Scans**: Integrated SonarCloud into the CI/CD pipeline for the `Agent`, `API`, `Lib`, `Pipeline`, and `Web` core components, enabling automated code quality and security analysis.
+- 🚀 **New CI/CD Workflow for Analysis and Testing**: Established a dedicated GitHub Actions workflow to automatically run SonarCloud scans on pull requests and pushes to `main`, enhancing continuous quality assurance and feedback.
+
+### Changed
+- 📄 **Expanded Developer Documentation**: Significantly updated the main `README.md` with a detailed table of contents, extensive sections on project structure, repository types, branching strategy, and a comprehensive "Getting Started" guide, greatly improving developer onboarding and project clarity.
+
+---
+
+
+
+## [v0.2.0] - 2025-01-07 - Enhanced Context Understanding and Pipeline Alignment
+
+### Changed
+- 📄 **Documentation Clarity**: Clarified the behavior of **RunContext** during Human-in-the-Loop (HITL) pauses, emphasizing that it remains open to preserve agent state.
+- 🔄 **Context Utilization**: Updated documentation to reflect that both **RunContext** and **ThreadContext** can be leveraged for maintaining agent state during HITL steps.
+
+### Refactor
+- 🧹 **Dependency Management**: Transitioned **aihub_pipeline**'s dependency on **aihub_lib** from a local path to a direct Git repository reference, streamlining module integration and future releases.
 
 ---
 

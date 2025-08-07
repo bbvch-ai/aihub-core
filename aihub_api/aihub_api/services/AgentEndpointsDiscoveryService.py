@@ -1,7 +1,7 @@
 import logging
 from functools import reduce
 from operator import or_
-from typing import Annotated
+from typing import Annotated, override
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.access.AccessChecker import AccessChecker
@@ -26,7 +26,6 @@ from fastapi import Body, Depends, FastAPI, HTTPException, Query, Security
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from stringcase import snakecase
-from typing_extensions import override
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.agent.AgentController import AgentController

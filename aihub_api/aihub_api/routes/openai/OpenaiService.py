@@ -188,7 +188,7 @@ class OpenaiService:
 
         if chat_completion_request.stream:
 
-            async def stream_chat_completion() -> AsyncGenerator[str, None]:
+            async def stream_chat_completion() -> AsyncGenerator[str]:
                 """Handles streaming responses from OpenAI's API."""
                 kwargs = OpenaiService._filter_kwargs(client.chat.completions.create, chat_completion_request, user=user)
                 response = await client.chat.completions.create(**kwargs)
