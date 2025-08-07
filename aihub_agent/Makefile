@@ -24,5 +24,9 @@ test-cov:
 	                  --junitxml=pytest.xml \
 	                  -k "not azure"
 
+test:
+	@echo "Running tests in aihub_agent..."
+	poetry run pytest -k "not azure"
+
 pr-ready: format lint
 	@echo "Running full check (format, sort)..."
