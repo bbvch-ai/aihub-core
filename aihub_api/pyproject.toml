@@ -43,6 +43,7 @@ black = { extras = ["jupyter"], version = "^25.1.0" }
 pytest-bdd = "^8.1.0"
 pytest-cov = "^6.0.0"
 asgi-lifespan = "^2.1.0"
+pip-licenses = "^5.0.0"
 
 [tool.poetry.dependencies.jambo]
 git = "https://github.com/bbvch-ai/jambo.git"

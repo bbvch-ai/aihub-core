@@ -1,7 +1,8 @@
 name: Auto Tag, Gen-Changelog & Release
 
 on:
-  push:
+  pull_request:
+    types: [ closed ]
     branches: [ main ]
 
 permissions:
@@ -12,6 +13,7 @@ jobs:
   version-and-tag:
     name: Bump Version, Tag & Gen-Changelog
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v4
@@ -40,10 +42,49 @@ jobs:
           minor=$(echo "$version_number" | cut -d. -f2)
           patch=$(echo "$version_number" | cut -d. -f3)
 
-          # Increment the minor version
-          new_minor=$((minor + 1))
-          new_tag="v$major.$new_minor.$patch"
-          echo "New tag: $new_tag"
+          # Check PR labels to determine version bump type
+          # Default to patch if no label is found
+          bump_type="patch"
+          
+          # Get PR labels using GitHub API
+          PR_LABELS='${{ toJSON(github.event.pull_request.labels.*.name) }}'
+          echo "PR Labels: $PR_LABELS"
+          
+          # Check for version bump labels
+          if echo "$PR_LABELS" | grep -q '"major"'; then
+            bump_type="major"
+            echo "Found 'major' label - will bump major version"
+          elif echo "$PR_LABELS" | grep -q '"minor"'; then
+            bump_type="minor"
+            echo "Found 'minor' label - will bump minor version"
+          elif echo "$PR_LABELS" | grep -q '"patch"'; then
+            bump_type="patch"
+            echo "Found 'patch' label - will bump patch version"
+          else
+            echo "No version label found - defaulting to patch bump"
+          fi
+
+          # Perform the version bump based on the determined type
+          case $bump_type in
+            major)
+              new_major=$((major + 1))
+              new_minor=0
+              new_patch=0
+              ;;
+            minor)
+              new_major=$major
+              new_minor=$((minor + 1))
+              new_patch=0
+              ;;
+            patch)
+              new_major=$major
+              new_minor=$minor
+              new_patch=$((patch + 1))
+              ;;
+          esac
+
+          new_tag="v$new_major.$new_minor.$new_patch"
+          echo "New tag: $new_tag (bump type: $bump_type)"
 
           # Expose it to subsequent steps via outputs (not just GITHUB_ENV).
           echo "version=$new_tag" >> $GITHUB_OUTPUT
@@ -100,6 +141,7 @@ jobs:
           python -m pip install --user pipx
           python -m pipx ensurepath
           pipx install poetry
+          poetry config virtualenvs.in-project true
           poetry install --no-interaction --no-root
 
       - name: Set up SSH for GitHub private dependencies
