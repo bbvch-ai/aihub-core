@@ -24,7 +24,6 @@
           :current-page-report-template="t('litellm.table.pageReport')"
           responsive-layout="scroll"
         >
-          <!-- Model Name Column -->
           <Column
             field="model_name"
             :header="t('litellm.table.modelName')"
@@ -51,7 +50,6 @@
             </template>
           </Column>
 
-          <!-- Provider Column -->
           <Column
             field="provider"
             :header="t('litellm.table.provider')"
@@ -67,7 +65,6 @@
             </template>
           </Column>
 
-          <!-- Mode Column -->
           <Column
             field="model_info.mode"
             :header="t('litellm.table.mode')"
@@ -83,7 +80,6 @@
             </template>
           </Column>
 
-          <!-- Tokens Column -->
           <Column
             field="tokens"
             :header="t('litellm.table.tokens')"
@@ -99,7 +95,6 @@
             </template>
           </Column>
 
-          <!-- Cost Column -->
           <Column
             field="cost"
             :header="t('litellm.table.costPer1M')"
@@ -117,7 +112,6 @@
             </template>
           </Column>
 
-          <!-- Features Column -->
           <Column
             field="features"
             :header="t('litellm.table.features')"
@@ -142,7 +136,6 @@
             </template>
           </Column>
 
-          <!-- Rate Limits Column -->
           <Column
             field="rate_limits"
             :header="t('litellm.table.rateLimits')"
@@ -173,7 +166,6 @@
             </template>
           </Column>
 
-          <!-- Details Column -->
           <Column
             field="details"
             :header="t('litellm.table.details')"
@@ -231,12 +223,11 @@ definePageMeta({
   layout: 'default',
 })
 
-const { t } = useI18n()
+const {t} = useI18n()
 const toast = useToast()
 
 const {data: models, pending, error} = await useFetch<LLMModel[]>('/api/v1/litellm/model_info')
 
-// Provider extraction from model name
 function getProvider(modelName: string): string {
   if (modelName.includes('azure/')) return 'azure'
   if (modelName.includes('google/') || modelName.includes('gemini')) return 'google'
@@ -280,11 +271,10 @@ function getModeSeverity(mode: string): string {
   }
 }
 
-// Token limits formatting
 function formatTokenLimits(model: LLMModel): string {
   const input = model.model_info.max_input_tokens
   const output = model.model_info.max_output_tokens
-  
+
   if (input && output) {
     return `${formatNumber(input)} / ${formatNumber(output)}`
   } else if (input) {
@@ -295,43 +285,39 @@ function formatTokenLimits(model: LLMModel): string {
   return '- / -'
 }
 
-// Cost per 1M tokens formatting
 function formatCostPer1M(costPerToken?: number): string {
   if (!costPerToken) return '-'
   const costPer1M = costPerToken * 1000000
   return `$${costPer1M.toFixed(2)}`
 }
 
-// Model features detection
-function getModelFeatures(model: LLMModel): Array<{name: string, severity: string}> {
-  const features: Array<{name: string, severity: string}> = []
-  
-  // Detect features based on model name and properties
+function getModelFeatures(model: LLMModel): Array<{ name: string, severity: string }> {
+  const features: Array<{ name: string, severity: string }> = []
+
   if (model.model_name.includes('vision') || model.model_name.includes('4o')) {
-    features.push({ name: 'Vision', severity: 'success' })
+    features.push({name: 'Vision', severity: 'success'})
   }
-  
+
   if (model.model_info.mode === 'chat') {
-    features.push({ name: 'Function Calling', severity: 'info' })
+    features.push({name: 'Function Calling', severity: 'info'})
   }
-  
+
   if (model.model_name.includes('gemini')) {
-    features.push({ name: 'Web Search', severity: 'help' })
-    features.push({ name: 'Reasoning', severity: 'warn' })
+    features.push({name: 'Web Search', severity: 'help'})
+    features.push({name: 'Reasoning', severity: 'warn'})
   }
-  
+
   if (model.model_info.cache_read_input_token_cost) {
-    features.push({ name: 'Caching', severity: 'secondary' })
+    features.push({name: 'Caching', severity: 'secondary'})
   }
-  
+
   if (model.model_info.output_vector_size) {
-    features.push({ name: `${model.model_info.output_vector_size}D`, severity: 'secondary' })
+    features.push({name: `${model.model_info.output_vector_size}D`, severity: 'secondary'})
   }
-  
+
   return features
 }
 
-// Utility functions
 function formatNumber(num: number): string {
   return new Intl.NumberFormat().format(num)
 }
@@ -342,7 +328,7 @@ async function copyToClipboard(text: string) {
     toast.add({
       severity: 'success',
       summary: t('litellm.copied'),
-      detail: t('litellm.copiedDetail', { text }),
+      detail: t('litellm.copiedDetail', {text}),
       life: 3000
     })
   } catch (err) {
@@ -356,8 +342,7 @@ async function copyToClipboard(text: string) {
 }
 
 function showModelDetails(model: LLMModel) {
-  // For now, we'll show a toast with model details
-  // In the future, this could open a dialog or navigate to a detail page
+  // TODO add a detail page as popup
   toast.add({
     severity: 'info',
     summary: model.model_name,
