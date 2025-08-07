@@ -184,6 +184,141 @@
           </Column>
         </DataTable>
       </div>
+
+      <!-- Model Details Dialog -->
+      <Dialog
+        v-model:visible="modelDialogVisible"
+        modal
+        :header="selectedModel?.model_name || ''"
+        style="width: 1000px"
+        :breakpoints="{ '960px': '90vw' }"
+        class="model-details-dialog"
+      >
+        <div v-if="selectedModel" class="space-y-6">
+          <!-- Model Overview -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">{{ t('litellm.modelDetails.overview') }}</h3>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <p class="font-medium mb-1">{{ t('litellm.modelDetails.modelGroup') }}:</p>
+                <p>{{ selectedModel.model_name }}</p>
+              </div>
+              <div>
+                <p class="font-medium mb-1">{{ t('litellm.modelDetails.mode') }}:</p>
+                <Tag
+                  :severity="getModeSeverity(selectedModel.model_info.mode)"
+                  :value="selectedModel.model_info.mode"
+                />
+              </div>
+              <div>
+                <p class="font-medium mb-1">{{ t('litellm.modelDetails.provider') }}:</p>
+                <div class="flex flex-wrap gap-1 mt-1">
+                  <Tag
+                    :value="getProvider(selectedModel)"
+                    :severity="getProviderSeverity(getProvider(selectedModel))"
+                  />
+                </div>
+              </div>
+              <div v-if="selectedModel.model_info.id">
+                <p class="font-medium mb-1">{{ t('litellm.modelDetails.modelId') }}:</p>
+                <p class="text-xs font-mono break-all">{{ selectedModel.model_info.id }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Token & Cost Information -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">{{ t('litellm.modelDetails.tokenCost') }}</h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <p class="font-medium mb-1">{{ t('litellm.modelDetails.maxInputTokens') }}:</p>
+                <p>{{ selectedModel.model_info.max_input_tokens ? formatNumber(selectedModel.model_info.max_input_tokens) : t('litellm.modelDetails.notSpecified') }}</p>
+              </div>
+              <div>
+                <p class="font-medium mb-1">{{ t('litellm.modelDetails.maxOutputTokens') }}:</p>
+                <p>{{ selectedModel.model_info.max_output_tokens ? formatNumber(selectedModel.model_info.max_output_tokens) : t('litellm.modelDetails.notSpecified') }}</p>
+              </div>
+              <div>
+                <p class="font-medium mb-1">{{ t('litellm.modelDetails.inputCostPer1M') }}:</p>
+                <p>{{ selectedModel.model_info.input_cost_per_token ? formatCostPer1M(selectedModel.model_info.input_cost_per_token) : t('litellm.modelDetails.notSpecified') }}</p>
+              </div>
+              <div>
+                <p class="font-medium mb-1">{{ t('litellm.modelDetails.outputCostPer1M') }}:</p>
+                <p>{{ selectedModel.model_info.output_cost_per_token ? formatCostPer1M(selectedModel.model_info.output_cost_per_token) : t('litellm.modelDetails.notSpecified') }}</p>
+              </div>
+              <div v-if="selectedModel.model_info.cache_read_input_token_cost">
+                <p class="font-medium mb-1">{{ t('litellm.modelDetails.cacheReadCostPer1M') }}:</p>
+                <p>{{ formatCostPer1M(selectedModel.model_info.cache_read_input_token_cost) }}</p>
+              </div>
+              <div v-if="selectedModel.model_info.output_vector_size">
+                <p class="font-medium mb-1">{{ t('litellm.modelDetails.vectorSize') }}:</p>
+                <p>{{ selectedModel.model_info.output_vector_size }}D</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rate Limits -->
+          <div v-if="selectedModel.model_info.tpm || selectedModel.model_info.rpm">
+            <h3 class="text-lg font-semibold mb-4">{{ t('litellm.modelDetails.rateLimits') }}</h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div v-if="selectedModel.model_info.tpm">
+                <p class="font-medium mb-1">{{ t('litellm.modelDetails.tokensPerMinute') }}:</p>
+                <p>{{ formatNumber(selectedModel.model_info.tpm) }}</p>
+              </div>
+              <div v-if="selectedModel.model_info.rpm">
+                <p class="font-medium mb-1">{{ t('litellm.modelDetails.requestsPerMinute') }}:</p>
+                <p>{{ formatNumber(selectedModel.model_info.rpm) }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Capabilities -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">{{ t('litellm.modelDetails.capabilities') }}</h3>
+            <div class="flex flex-wrap gap-2">
+              <Badge
+                v-for="feature in getModelFeatures(selectedModel)"
+                :key="feature.name"
+                :value="feature.name"
+                :severity="feature.severity"
+                class="text-sm"
+              />
+              <p
+                v-if="!getModelFeatures(selectedModel).length"
+                class="text-gray-500"
+              >
+                {{ t('litellm.modelDetails.noCapabilities') }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Supported OpenAI Parameters -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">{{ t('litellm.modelDetails.supportedParams') }}</h3>
+            <div class="flex flex-wrap gap-2">
+              <Badge
+                v-for="param in selectedModel.model_info.supported_openai_params || []"
+                :key="param"
+                :value="param"
+                severity="success"
+                class="text-sm"
+              />
+              <p
+                v-if="!selectedModel.model_info.supported_openai_params?.length"
+                class="text-gray-500"
+              >
+                {{ t('litellm.modelDetails.notAvailable') }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Usage Example -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">{{ t('litellm.modelDetails.usageExample') }}</h3>
+            <pre class="bg-gray-100 dark:bg-gray-800 p-4 rounded text-sm overflow-x-auto"><code>{{ getUsageExample(selectedModel) }}</code></pre>
+          </div>
+        </div>
+      </Dialog>
     </StructuralColumn>
   </StructuralScreen>
 </template>
@@ -290,6 +425,10 @@ const {t} = useI18n()
 const toast = useToast()
 
 const {data: models, pending, error} = await useFetch<LLMModel[]>('/api/v1/litellm/model_info')
+
+// Modal state
+const modelDialogVisible = ref(false)
+const selectedModel = ref<LLMModel | null>(null)
 
 function getProvider(model: LLMModel): string {
   if (model.model_info.litellm_provider) {
@@ -429,13 +568,67 @@ async function copyToClipboard(text: string) {
   }
 }
 
+function getUsageExample(model: LLMModel): string {
+  const isImageGeneration = model.model_info.mode === 'image_generation'
+  const isEmbedding = model.model_info.mode === 'embedding'
+  
+  if (isImageGeneration) {
+    return `import openai
+
+client = openai.OpenAI(
+    api_key="your_api_key",
+    base_url="http://0.0.0.0:4000"  # Your LiteLLM Proxy URL
+)
+
+response = client.images.generate(
+    model="${model.model_name}",
+    prompt="A beautiful sunset over mountains",
+    size="1024x1024",
+    n=1
+)
+
+print(response.data[0].url)`
+  }
+  
+  if (isEmbedding) {
+    return `import openai
+
+client = openai.OpenAI(
+    api_key="your_api_key",
+    base_url="http://0.0.0.0:4000"  # Your LiteLLM Proxy URL
+)
+
+response = client.embeddings.create(
+    model="${model.model_name}",
+    input="Your text to embed here"
+)
+
+print(response.data[0].embedding)`
+  }
+  
+  // Default to chat completion
+  return `import openai
+
+client = openai.OpenAI(
+    api_key="your_api_key",
+    base_url="http://0.0.0.0:4000"  # Your LiteLLM Proxy URL
+)
+
+response = client.chat.completions.create(
+    model="${model.model_name}",
+    messages=[
+        {
+            "role": "user",
+            "content": "Hello, how are you?"
+        }
+    ]
+)
+
+print(response.choices[0].message.content)`
+}
+
 function showModelDetails(model: LLMModel) {
-  // TODO add a detail page as popup
-  toast.add({
-    severity: 'info',
-    summary: model.model_name,
-    detail: `${t('litellm.table.mode')}: ${model.model_info.mode}`,
-    life: 5000
-  })
+  selectedModel.value = model
+  modelDialogVisible.value = true
 }
 </script>
