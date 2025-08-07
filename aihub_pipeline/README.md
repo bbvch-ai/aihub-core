@@ -5,6 +5,16 @@ index: 3
 
 # 🚰 AI-Hub Pipeline Developer's Guide
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_pipelines-core&metric=alert_status&token=593ae6b9d8cdff5202906c985f89034fb37d8c93)](https://sonarcloud.io/summary/new_code?id=aihub-core_pipelines-core)
+
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_pipelines-core&metric=security_rating&token=593ae6b9d8cdff5202906c985f89034fb37d8c93)](https://sonarcloud.io/summary/new_code?id=aihub-core_pipelines-core)
+
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_pipelines-core&metric=vulnerabilities&token=593ae6b9d8cdff5202906c985f89034fb37d8c93)](https://sonarcloud.io/summary/new_code?id=aihub-core_pipelines-core)
+
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_pipelines-core&metric=sqale_rating&token=593ae6b9d8cdff5202906c985f89034fb37d8c93)](https://sonarcloud.io/summary/new_code?id=aihub-core_pipelines-core)
+
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_pipelines-core&metric=ncloc&token=593ae6b9d8cdff5202906c985f89034fb37d8c93)](https://sonarcloud.io/summary/new_code?id=aihub-core_pipelines-core)
+
 ## 1. 🎯 Foundational Knowledge of Pipeline Development
 
 This section covers the foundational architecture, patterns, and terminology you need to know before building data

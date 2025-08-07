@@ -5,6 +5,16 @@ index: 0
 
 # 📚 AI-Hub Library Developer's Guide
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_lib-core&metric=alert_status&token=fd16708223dbf5307a0ac28f15879abb57a8fc68)](https://sonarcloud.io/summary/new_code?id=aihub-core_lib-core)
+
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_lib-core&metric=security_rating&token=fd16708223dbf5307a0ac28f15879abb57a8fc68)](https://sonarcloud.io/summary/new_code?id=aihub-core_lib-core)
+
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_lib-core&metric=vulnerabilities&token=fd16708223dbf5307a0ac28f15879abb57a8fc68)](https://sonarcloud.io/summary/new_code?id=aihub-core_lib-core)
+
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_lib-core&metric=sqale_rating&token=fd16708223dbf5307a0ac28f15879abb57a8fc68)](https://sonarcloud.io/summary/new_code?id=aihub-core_lib-core)
+
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_lib-core&metric=ncloc&token=fd16708223dbf5307a0ac28f15879abb57a8fc68)](https://sonarcloud.io/summary/new_code?id=aihub-core_lib-core)
+
 ## 1. 🎯 Foundational Knowledge of Library Development
 
 This section covers the foundational architecture, patterns, and terminology you need to know before contributing to the shared library.

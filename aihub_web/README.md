@@ -5,6 +5,15 @@ index: 6
 
 # AI-Hub Web Frontend Developer's Guide
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_aihub-web&metric=alert_status&token=2544c19db5da47510d04d7ee0694f364127a21e0)](https://sonarcloud.io/summary/new_code?id=aihub-core_aihub-web)
+
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_aihub-web&metric=security_rating&token=2544c19db5da47510d04d7ee0694f364127a21e0)](https://sonarcloud.io/summary/new_code?id=aihub-core_aihub-web)
+
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_aihub-web&metric=vulnerabilities&token=2544c19db5da47510d04d7ee0694f364127a21e0)](https://sonarcloud.io/summary/new_code?id=aihub-core_aihub-web)
+
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_aihub-web&metric=sqale_rating&token=2544c19db5da47510d04d7ee0694f364127a21e0)](https://sonarcloud.io/summary/new_code?id=aihub-core_aihub-web)
+
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_aihub-web&metric=ncloc&token=2544c19db5da47510d04d7ee0694f364127a21e0)](https://sonarcloud.io/summary/new_code?id=aihub-core_aihub-web)
 
 You are contributing to the **aihub_web** scope, which contains the main web frontend application within the AI-Hub platform. This scope implements the user interface that connects users to AI agents, processes, and system management capabilities through an intuitive, modern web application built with Nuxt 3.
 

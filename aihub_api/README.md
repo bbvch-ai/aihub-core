@@ -5,6 +5,17 @@ index: 2
 
 # 🚀 AI-Hub API Developer's Guide
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_api-core&metric=alert_status&token=0813ff21e25c4e60e66e06acaefd2927ba63e897)](https://sonarcloud.io/summary/new_code?id=aihub-core_api-core)
+
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_api-core&metric=security_rating&token=0813ff21e25c4e60e66e06acaefd2927ba63e897)](https://sonarcloud.io/summary/new_code?id=aihub-core_api-core)
+
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_api-core&metric=vulnerabilities&token=0813ff21e25c4e60e66e06acaefd2927ba63e897)](https://sonarcloud.io/summary/new_code?id=aihub-core_api-core)
+
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_api-core&metric=sqale_rating&token=0813ff21e25c4e60e66e06acaefd2927ba63e897)](https://sonarcloud.io/summary/new_code?id=aihub-core_api-core)
+
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_api-core&metric=ncloc&token=0813ff21e25c4e60e66e06acaefd2927ba63e897)](https://sonarcloud.io/summary/new_code?id=aihub-core_api-core)
+
+
 ## 1. 🎯 Foundational Knowledge of API Development
 
 This section covers the foundational architecture, patterns, and terminology you need to know before building API endpoints. 

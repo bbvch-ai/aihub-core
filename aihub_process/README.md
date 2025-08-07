@@ -5,6 +5,16 @@ index: 5
 
 # 🔄 AI-Hub Process Developer's Guide
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_process-core&metric=alert_status&token=0e0aba8b78dd02e4ffecf0ed6470b8b4f65c9c61)](https://sonarcloud.io/summary/new_code?id=aihub-core_process-core)
+
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_process-core&metric=security_rating&token=0e0aba8b78dd02e4ffecf0ed6470b8b4f65c9c61)](https://sonarcloud.io/summary/new_code?id=aihub-core_process-core)
+
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_process-core&metric=vulnerabilities&token=0e0aba8b78dd02e4ffecf0ed6470b8b4f65c9c61)](https://sonarcloud.io/summary/new_code?id=aihub-core_process-core)
+
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_process-core&metric=sqale_rating&token=0e0aba8b78dd02e4ffecf0ed6470b8b4f65c9c61)](https://sonarcloud.io/summary/new_code?id=aihub-core_process-core)
+
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_process-core&metric=ncloc&token=0e0aba8b78dd02e4ffecf0ed6470b8b4f65c9c61)](https://sonarcloud.io/summary/new_code?id=aihub-core_process-core)
+
 ## 1. 🎯 Foundational Knowledge of Process Development
 
 This section covers the foundational architecture, patterns, and terminology you need to know before building agentic processes.

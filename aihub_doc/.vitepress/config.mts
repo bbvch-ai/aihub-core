@@ -89,14 +89,13 @@ function generateSidebar() {
     const aihubBasePath = path.join(docsRoot, 'aihub');
     const rootIndexPath = path.join(aihubBasePath, 'index.md');
     const rootFileContent = readFileSync(rootIndexPath, 'utf-8');
-    const { data: rootFrontmatter } = matter(rootFileContent);
 
     allTopLevelGroups.push({
-      text: rootFrontmatter.title || 'Technical Documentation',
+      text: 'Technical Documentation',
       link: '/aihub/',
       collapsible: true,
       items: generateSidebarItems(aihubBasePath, '/aihub/'),
-      index: rootFrontmatter.index,
+      index: 500,
     });
 
     allTopLevelGroups.push({

@@ -1,8 +1,3 @@
----
-title: "Dev Documentation"
-index: 100
----
-
 # AI-Hub Developer Guide
 
 ## 1. :rocket: Introduction

@@ -5,6 +5,17 @@ index: 1
 
 # 🤖 AI-Hub Agent Developer's Guide
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_agents-core&metric=alert_status&token=d536ea3509f1ddb1ca2b071681be1ee5bac7d212)](https://sonarcloud.io/summary/new_code?id=aihub-core_agents-core)
+
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_agents-core&metric=security_rating&token=d536ea3509f1ddb1ca2b071681be1ee5bac7d212)](https://sonarcloud.io/summary/new_code?id=aihub-core_agents-core)
+
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_agents-core&metric=vulnerabilities&token=d536ea3509f1ddb1ca2b071681be1ee5bac7d212)](https://sonarcloud.io/summary/new_code?id=aihub-core_agents-core)
+
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_agents-core&metric=sqale_rating&token=d536ea3509f1ddb1ca2b071681be1ee5bac7d212)](https://sonarcloud.io/summary/new_code?id=aihub-core_agents-core)
+
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_agents-core&metric=ncloc&token=d536ea3509f1ddb1ca2b071681be1ee5bac7d212)](https://sonarcloud.io/summary/new_code?id=aihub-core_agents-core)
+
+
 ## 1. 🎯 Foundational Knowledge of Agent Development
 
 This section covers the foundational architecture, patterns, and terminology you need to know before building an agent.
