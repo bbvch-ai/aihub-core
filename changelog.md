@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.238.1] - 2025-08-07 - Empowering Developers: New Documentation, Enhanced CI/CD, and AI Assistant Integration
+
+### Added
+- 📚 **Comprehensive Documentation System**: Introduced a completely new, structured documentation site using **VitePress**, replacing the old markdown files and setting up automated deployment to GitHub Pages. This includes a new dynamic sidebar and custom theming.
+- 🧑‍💻 **AI Assistant Development Commands**: Added a suite of new commands for Claude Code (`.claude/commands/`), including **`create-pr`**, **`document-decisions`**, **`document-feature`**, **`explain`**, **`implement-feedback-from-pr`**, and **`update-doc`**, to streamline developer workflows.
+- 🔗 **Model Context Protocol (MCP) Integration**: Implemented **MCP support** within the AI-Hub, enabling AI coding assistants to observe and interact with running services (API, Phoenix, MongoDB) for enhanced debugging and development.
+- 🚦 **Automated Version Label Enforcement**: Introduced a new CI check to **enforce version bump labels** (`major`, `minor`, `patch`) on all pull requests targeting the `main` branch, ensuring release predictability.
+- ⚙️ **PR Agent Configuration Customization**: Added a new **`.pr_agent.toml`** file for comprehensive customization of the PR agent's behavior, offering granular control over automated code reviews.
+- 🤖 **Standardized AI Context Files**: New **`CLAUDE.md`** and **`GEMINI.md`** files were added across scopes to provide context for AI coding assistants.
+- ✅ **Prohibited Force Pushes**: Added Git settings to **prohibit force pushes to the `main` branch**, enhancing codebase integrity.
+- 🧪 **Consolidated Local Testing**: Added explicit `test` targets to `Makefiles` in core microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_lib`, `aihub_process`) for easier and consistent local test execution.
+
+### Changed
+- 🚀 **Streamlined CI/CD Versioning**: The automated release workflow now triggers only on **merged pull requests** to `main` and dynamically determines the version bump (`major`, `minor`, `patch`) based on PR labels, providing more granular control over releases.
+- 🧠 **Updated AI Code Review Model**: The PR review workflow now utilizes the **`o4-mini` AI model** and updated API versions (`2024-12-01-preview`), enhancing performance and compatibility for automated code reviews.
+- 📈 **Improved CI/CD Robustness**: Configured various GitHub Actions workflows to use **`fail-fast: false`**, allowing other jobs to continue execution even if one job fails, improving overall CI stability.
+- 🔄 **Refined `ApiRunner` and `BotRunner`**: Restructured runners to consistently utilize **`Starlette`** as the base application, simplifying internal architecture and supporting multiple mounted applications like the new MCP server.
+- 📦 **Standardized Monorepo Dependencies**: Shifted `aihub_lib` dependencies in microservices to **local path references (`develop = true`)** instead of Git tags, streamlining local development and cross-project dependency resolution.
+- 🔑 **Simplified API Playground Authentication**: The default authentication in the `aihub_api` playground has been changed to `DangerousDevelopmentOnlyAuthHandler` for **easier local development setup**.
+- 🐍 **Updated Python Action Examples**: Modified Python version in `aihub_action/README.md` examples from 3.13 to **3.11** for relevant actions.
+
+### Removed
+- 🗑️ **Deprecated Documentation System**: Eliminated the entire old documentation system (`aihub_doc/` markdown files and `arc42/` structure), replaced by the new VitePress-based system.
+- 🧹 **Obsolete `gitkeep` Files**: Cleaned up empty `.gitkeep` files across the repository.
+- ✂️ **Redundant PR Agent Hardcoded Settings**: Removed hardcoded PR agent auto-review settings from the GitHub Action, now managed via `.pr_agent.toml`.
+
+### Refactor
+- 📊 **Unified Python Testing**: Standardized `test` targets in Makefiles across all Python microservices, simplifying local test execution.
+- 🎯 **Streamlined CI/CD Configuration**: Centralized PR agent settings into a dedicated `.pr_agent.toml` file, improving maintainability of automated review processes.
+- 🏗️ **Refined API and Bot Runner Structures**: Simplified base application creation and mounting logic within `ApiRunner` and `BotRunner` for a cleaner architecture.
+
+---
+
+
+
 ## [v0.234.2] - 2025-08-07 - Enhanced PR Agent Configuration and Performance Updates
 
 ### Added
