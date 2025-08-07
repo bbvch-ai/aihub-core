@@ -47,7 +47,7 @@ runs:
         for service in "${SERVICES[@]}"; do
           SERVICES_LIST+=" $service"
         done
-        docker compose -f docker-compose.dev.yml up -d $SERVICES_LIST
+        docker compose -f docker-compose.dev.yml --env-file .env.dev up -d $SERVICES_LIST
 
     - name: Configure Git Authentication
       shell: bash
