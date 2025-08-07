@@ -35,7 +35,6 @@ class OAuth2Settings(EnvironmentSettings):
     CLIENT_ID: Annotated[str, Field(description="The client ID of the application.")]
     AUTHORITY_URL: Annotated[str, Field(description="The authority URL of the Azure AD tenant.")]
 
-
     @computed_field
     @property
     def TOKEN_URL(self) -> str:

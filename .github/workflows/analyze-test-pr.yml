@@ -37,17 +37,17 @@ jobs:
       matrix:
         include:
           - module: aihub_lib
-            docker_compose_files: "docker-compose.yml,milvus-standalone-docker-compose.yml"
+            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm,presidio-analyzer,presidio-anonymizer,minio,etcd,milvus-standalone,attu"
           - module: aihub_api
-            docker_compose_files: "docker-compose.yml"
+            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm,presidio-analyzer,presidio-anonymizer"
           - module: aihub_pipeline
-            docker_compose_files: ""
+            docker_compose_services: ""
           - module: aihub_agent
-            docker_compose_files: "docker-compose.yml,milvus-standalone-docker-compose.yml"
+            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm,presidio-analyzer,presidio-anonymizer,minio,etcd,milvus-standalone,attu"
           - module: aihub_bot
-            docker_compose_files: "docker-compose.yml"
+            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm,presidio-analyzer,presidio-anonymizer"
           - module: aihub_process
-            docker_compose_files: "docker-compose.yml"
+            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm,presidio-analyzer,presidio-anonymizer"
 
     steps:
       - name: Checkout repository
@@ -63,11 +63,11 @@ jobs:
       - name: Run Tests
         uses: ./aihub_action/test_backend
         env:
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.SUBSCRIPTION_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         with:
           github_token: ${{ secrets.PAT_GITHUB_READ_PACKAGES }}
           working_directory: ${{ matrix.module }}
-          docker_compose_paths: ${{ matrix.docker_compose_files }}
+          docker_compose_services: ${{ matrix.docker_compose_services }}
           use_local_core: "true"
           install_ffmpeg: ${{ matrix.module == 'aihub_api' }}
 

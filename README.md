@@ -563,7 +563,7 @@ Navigate to the `aihub_web` folder
           DB.
             - *Start Docker including the local milvus vector DB by running:*
               ```bash
-              docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml up
+              docker compose docker-compose.dev.yml up -d
               ```
 
 ---

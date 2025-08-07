@@ -50,9 +50,7 @@ def oauth2_context() -> dict:
 
 
 @given(
-    parsers.parse(
-        'an OAuth2 configuration client_id "{client_id}", and authority_url "{authority_url}"'
-    ),
+    parsers.parse('an OAuth2 configuration client_id "{client_id}", and authority_url "{authority_url}"'),
     target_fixture="oauth2_config",
 )
 def oauth2_config(monkeypatch, client_id: str, authority_url: str) -> OAuth2Settings:

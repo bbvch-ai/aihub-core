@@ -8,10 +8,6 @@ from datetime import UTC, datetime
 from typing import Any, Literal
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import (
-    EmbeddingLLMParameter,
-    EmbeddingModelConfig,
-)
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
 from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
@@ -165,7 +161,7 @@ class OpenaiService:
             model=model_name,
             dimensions=dimensions,
             encoding_format=encoding_format,
-            user=user.oid,
+            user=user.id,
         )
         return EmbeddingsResponse(
             model=model_name,
@@ -190,7 +186,9 @@ class OpenaiService:
 
             async def stream_chat_completion() -> AsyncGenerator[str]:
                 """Handles streaming responses from OpenAI's API."""
-                kwargs = OpenaiService._filter_kwargs(client.chat.completions.create, chat_completion_request, user=user)
+                kwargs = OpenaiService._filter_kwargs(
+                    client.chat.completions.create, chat_completion_request, user=user
+                )
                 response = await client.chat.completions.create(**kwargs)
 
                 async for chunk in response:
@@ -525,7 +523,9 @@ class OpenaiService:
         return history.messages + [user_message]
 
     @staticmethod
-    def _filter_kwargs(sdk_fn: Callable, fn_kwargs_model: BaseModel, user: UserIdentity | None = None) -> dict[str, Any]:
+    def _filter_kwargs(
+        sdk_fn: Callable, fn_kwargs_model: BaseModel, user: UserIdentity | None = None
+    ) -> dict[str, Any]:
         """
         Wraps an SDK client's `chat.completions.create` method, intelligently preparing
         arguments from a Pydantic model instance.
@@ -535,7 +535,7 @@ class OpenaiService:
         payload_dict = fn_kwargs_model.model_dump(exclude_unset=True)
 
         # Logged-in user is always identified towards open-webui
-        payload_dict["user"] = user.oid
+        payload_dict["user"] = user.id
 
         sdk_call_kwargs: dict[str, Any] = {}
 

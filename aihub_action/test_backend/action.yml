@@ -8,8 +8,8 @@ inputs:
   working_directory:
     description: 'Working directory for the module'
     required: true
-  docker_compose_paths:
-    description: 'Comma-separated list of Docker Compose file paths (empty if not needed)'
+  docker_compose_services:
+    description: 'Comma-separated list of Docker Compose services (empty if not needed)'
     required: false
   use_local_core:
     description: 'Use local core'
@@ -38,16 +38,16 @@ runs:
         version: '2.1.1'
 
     - name: Start Docker services (if needed)
-      if: inputs.docker_compose_paths != ''
+      if: inputs.docker_compose_services != ''
       shell: bash
       run: |
         echo "${{ inputs.github_token }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-        IFS=',' read -ra COMPOSE_FILES <<< "${{ inputs.docker_compose_paths }}"
-        DOCKER_COMPOSE_CMD="docker compose"
-        for file in "${COMPOSE_FILES[@]}"; do
-          DOCKER_COMPOSE_CMD+=" -f $file"
+        IFS=',' read -ra SERVICES <<< "${{ inputs.docker_compose_services }}"
+        SERVICES_LIST=""
+        for service in "${SERVICES[@]}"; do
+          SERVICES_LIST+=" $service"
         done
-        eval "$DOCKER_COMPOSE_CMD up -d"
+        docker compose -f docker-compose.dev.yml up -d $SERVICES_LIST
 
     - name: Configure Git Authentication
       shell: bash
@@ -83,7 +83,7 @@ runs:
       working-directory: ${{ inputs.working_directory }}
 
     - name: Wait for Docker services to become healthy
-      if: inputs.docker_compose_paths != ''
+      if: inputs.docker_compose_services != ''
       shell: bash
       run: |
         echo "Waiting for Docker services to become healthy..."
@@ -153,15 +153,10 @@ runs:
 
 
     - name: Stop Docker services (if started)
-      if: inputs.docker_compose_paths != ''
+      if: inputs.docker_compose_services != ''
       shell: bash
       run: |
-        IFS=',' read -ra COMPOSE_FILES <<< "${{ inputs.docker_compose_paths }}"
-        DOCKER_COMPOSE_CMD="docker compose"
-        for file in "${COMPOSE_FILES[@]}"; do
-          DOCKER_COMPOSE_CMD+=" -f $file"
-        done
-        eval "$DOCKER_COMPOSE_CMD down"
+        docker compose -f docker-compose.dev.yml down
 
     - name: Upload Coverage Report
       uses: actions/upload-artifact@v4

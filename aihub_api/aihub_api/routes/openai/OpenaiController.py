@@ -103,8 +103,7 @@ class OpenaiController(Controller):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> ModelResponse:
             model_response = await OpenaiService.get_models_with_assistants(
-                nc=nc,
-                exclude_webui_agents=exclude_webui_agents
+                nc=nc, exclude_webui_agents=exclude_webui_agents
             )
             access_checker = AccessChecker.from_user(user)
             model_response.data = [
@@ -236,7 +235,7 @@ class OpenaiController(Controller):
                 user=user,
                 nc=nc,
                 external_agent_event_distributor=external_agent_event_distributor,
-                t=t
+                t=t,
             )
 
         return self
