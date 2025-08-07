@@ -13,126 +13,184 @@
         </Message>
       </div>
 
-      <div
-        v-if="!pending && !error && models"
-        class="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3"
-      >
-        <div
-          v-for="model in models"
-          :key="model.model_name"
-          class="flex cursor-pointer flex-col gap-3 rounded-xl border border-surface-200 p-4 hover:bg-surface-100 dark:border-surface-800 hover:dark:bg-surface-800"
+      <div v-if="!pending && !error && models">
+        <DataTable
+          :value="models"
+          table-style="min-width: 50rem"
+          :paginator="true"
+          :rows="10"
+          :rows-per-page-options="[10, 20, 50]"
+          paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+          :current-page-report-template="t('litellm.table.pageReport')"
+          responsive-layout="scroll"
         >
-          <!-- Model Header -->
-          <div class="flex items-center justify-between gap-4">
-            <div class="flex items-center justify-start gap-3">
-              <div
-                class="flex items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900"
-              >
-                <Icon
-                  :name="getModelIcon(model.model_info.mode)"
-                  size="1.5em"
-                />
+          <!-- Model Name Column -->
+          <Column
+            field="model_name"
+            :header="t('litellm.table.modelName')"
+            :sortable="true"
+            style="min-width: 200px"
+          >
+            <template #body="{ data }">
+              <div class="space-y-1">
+                <div class="flex items-center space-x-2">
+                  <p class="font-medium text-sm">{{ data.model_name }}</p>
+                  <Button
+                    v-tooltip="t('litellm.table.copyModelName')"
+                    icon="pi pi-copy"
+                    severity="secondary"
+                    text
+                    size="small"
+                    @click="copyToClipboard(data.model_name)"
+                  />
+                </div>
+                <div class="md:hidden">
+                  <p class="text-xs opacity-60">{{ getProvider(data.model_name) }}</p>
+                </div>
               </div>
-              <div>
-                <h3 class="font-semibold opacity-80">
-                  {{ model.model_name }}
-                </h3>
-                <p class="text-xs font-light opacity-70">
-                  {{ model.model_info.key }}
+            </template>
+          </Column>
+
+          <!-- Provider Column -->
+          <Column
+            field="provider"
+            :header="t('litellm.table.provider')"
+            :sortable="true"
+            class="hidden md:table-cell"
+            style="min-width: 120px"
+          >
+            <template #body="{ data }">
+              <Tag
+                :value="getProvider(data.model_name)"
+                :severity="getProviderSeverity(getProvider(data.model_name))"
+              />
+            </template>
+          </Column>
+
+          <!-- Mode Column -->
+          <Column
+            field="model_info.mode"
+            :header="t('litellm.table.mode')"
+            :sortable="true"
+            class="hidden lg:table-cell"
+            style="min-width: 150px"
+          >
+            <template #body="{ data }">
+              <Tag
+                :severity="getModeSeverity(data.model_info.mode)"
+                :value="data.model_info.mode"
+              />
+            </template>
+          </Column>
+
+          <!-- Tokens Column -->
+          <Column
+            field="tokens"
+            :header="t('litellm.table.tokens')"
+            class="hidden lg:table-cell"
+            style="min-width: 120px"
+          >
+            <template #body="{ data }">
+              <div class="space-y-1">
+                <p class="text-xs">
+                  {{ formatTokenLimits(data) }}
                 </p>
               </div>
-            </div>
-            <div>
-              <Tag
-                :severity="getModeSeverity(model.model_info.mode)"
-                :value="model.model_info.mode"
-              />
-            </div>
-          </div>
+            </template>
+          </Column>
 
-          <!-- Model Metrics -->
-          <div class="space-y-2">
-            <div v-if="model.model_info.max_tokens" class="flex justify-between text-sm">
-              <span class="opacity-70">{{ t('litellm.maxTokens') }}:</span>
-              <Badge :value="formatNumber(model.model_info.max_tokens)" />
-            </div>
-            <div v-if="model.model_info.max_input_tokens" class="flex justify-between text-sm">
-              <span class="opacity-70">{{ t('litellm.maxInput') }}:</span>
-              <Badge :value="formatNumber(model.model_info.max_input_tokens)" />
-            </div>
-            <div v-if="model.model_info.max_output_tokens" class="flex justify-between text-sm">
-              <span class="opacity-70">{{ t('litellm.maxOutput') }}:</span>
-              <Badge :value="formatNumber(model.model_info.max_output_tokens)" />
-            </div>
-            <div v-if="model.model_info.output_vector_size" class="flex justify-between text-sm">
-              <span class="opacity-70">{{ t('litellm.vectorSize') }}:</span>
-              <Badge :value="model.model_info.output_vector_size" />
-            </div>
-          </div>
-
-          <!-- Cost Information -->
-          <div
-            v-if="model.model_info.input_cost_per_token || model.model_info.output_cost_per_token"
-            class="space-y-2"
+          <!-- Cost Column -->
+          <Column
+            field="cost"
+            :header="t('litellm.table.costPer1M')"
+            style="min-width: 120px"
           >
-            <Divider />
-            <div class="text-xs opacity-70">
-              {{ t('litellm.pricing') }}
-            </div>
-            <div class="space-y-1 text-xs">
-              <div v-if="model.model_info.input_cost_per_token" class="flex justify-between">
-                <span class="opacity-70">{{ t('litellm.inputCost') }}:</span>
-                <span class="font-mono">${{ formatCost(model.model_info.input_cost_per_token) }}</span>
+            <template #body="{ data }">
+              <div class="space-y-1">
+                <p class="text-xs font-medium">
+                  {{ formatCostPer1M(data.model_info.input_cost_per_token) }}
+                </p>
+                <p class="text-xs opacity-60">
+                  {{ formatCostPer1M(data.model_info.output_cost_per_token) }}
+                </p>
               </div>
-              <div v-if="model.model_info.output_cost_per_token" class="flex justify-between">
-                <span class="opacity-70">{{ t('litellm.outputCost') }}:</span>
-                <span class="font-mono">${{ formatCost(model.model_info.output_cost_per_token) }}</span>
-              </div>
-              <div v-if="model.model_info.cache_read_input_token_cost" class="flex justify-between">
-                <span class="opacity-70">{{ t('litellm.cacheReadCost') }}:</span>
-                <span class="font-mono">${{ formatCost(model.model_info.cache_read_input_token_cost) }}</span>
-              </div>
-            </div>
-          </div>
+            </template>
+          </Column>
 
-          <!-- Rate Limits -->
-          <div v-if="model.model_info.tpm || model.model_info.rpm" class="space-y-2">
-            <Divider />
-            <div class="text-xs opacity-70">
-              {{ t('litellm.rateLimits') }}
-            </div>
-            <div class="flex gap-2">
-              <Badge
-                v-if="model.model_info.tpm"
-                :value="`${formatNumber(model.model_info.tpm)} TPM`"
-                severity="secondary"
-              />
-              <Badge
-                v-if="model.model_info.rpm"
-                :value="`${formatNumber(model.model_info.rpm)} RPM`"
-                severity="secondary"
-              />
-            </div>
-          </div>
+          <!-- Features Column -->
+          <Column
+            field="features"
+            :header="t('litellm.table.features')"
+            style="min-width: 200px"
+          >
+            <template #body="{ data }">
+              <div class="flex flex-wrap gap-1">
+                <Badge
+                  v-for="feature in getModelFeatures(data)"
+                  :key="feature.name"
+                  :value="feature.name"
+                  :severity="feature.severity"
+                  class="text-xs"
+                />
+                <span
+                  v-if="!getModelFeatures(data).length"
+                  class="text-xs opacity-60"
+                >
+                  -
+                </span>
+              </div>
+            </template>
+          </Column>
 
-          <!-- API Details -->
-          <div v-if="model.litellm_params.api_base || model.litellm_params.api_version" class="space-y-2">
-            <Divider />
-            <div class="text-xs opacity-70">
-              {{ t('litellm.apiDetails') }}
-            </div>
-            <div class="space-y-1 text-xs">
-              <div v-if="model.litellm_params.api_base" class="flex justify-between">
-                <span class="opacity-70">{{ t('litellm.apiBase') }}:</span>
-                <span class="break-all font-mono text-right">{{ model.litellm_params.api_base }}</span>
+          <!-- Rate Limits Column -->
+          <Column
+            field="rate_limits"
+            :header="t('litellm.table.rateLimits')"
+            class="hidden md:table-cell"
+            style="min-width: 120px"
+          >
+            <template #body="{ data }">
+              <div class="flex flex-col gap-1">
+                <Badge
+                  v-if="data.model_info.tpm"
+                  :value="`${formatNumber(data.model_info.tpm)} TPM`"
+                  severity="secondary"
+                  class="text-xs"
+                />
+                <Badge
+                  v-if="data.model_info.rpm"
+                  :value="`${formatNumber(data.model_info.rpm)} RPM`"
+                  severity="secondary"
+                  class="text-xs"
+                />
+                <span
+                  v-if="!data.model_info.tpm && !data.model_info.rpm"
+                  class="text-xs opacity-60"
+                >
+                  -
+                </span>
               </div>
-              <div v-if="model.litellm_params.api_version" class="flex justify-between">
-                <span class="opacity-70">{{ t('litellm.apiVersion') }}:</span>
-                <span class="font-mono">{{ model.litellm_params.api_version }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+            </template>
+          </Column>
+
+          <!-- Details Column -->
+          <Column
+            field="details"
+            :header="t('litellm.table.details')"
+            style="min-width: 100px"
+          >
+            <template #body="{ data }">
+              <Button
+                icon="pi pi-info-circle"
+                :label="t('litellm.table.detailsButton')"
+                severity="info"
+                outlined
+                size="small"
+                @click="showModelDetails(data)"
+              />
+            </template>
+          </Column>
+        </DataTable>
       </div>
     </StructuralColumn>
   </StructuralScreen>
@@ -174,17 +232,35 @@ definePageMeta({
 })
 
 const { t } = useI18n()
+const toast = useToast()
 
 const {data: models, pending, error} = await useFetch<LLMModel[]>('/api/v1/litellm/model_info')
 
-function getModelIcon(mode: string): string {
-  switch (mode) {
-    case 'chat':
-      return 'material-symbols:chat-bubble-outline'
-    case 'embedding':
-      return 'material-symbols:data-object'
+// Provider extraction from model name
+function getProvider(modelName: string): string {
+  if (modelName.includes('azure/')) return 'azure'
+  if (modelName.includes('google/') || modelName.includes('gemini')) return 'google'
+  if (modelName.includes('openai/')) return 'openai'
+  if (modelName.includes('anthropic/')) return 'anthropic'
+  if (modelName.includes('local/')) return 'local'
+  if (modelName.includes('text-embedding')) return 'openai'
+  return 'unknown'
+}
+
+function getProviderSeverity(provider: string): string {
+  switch (provider) {
+    case 'azure':
+      return 'info'
+    case 'google':
+      return 'success'
+    case 'openai':
+      return 'warn'
+    case 'anthropic':
+      return 'danger'
+    case 'local':
+      return 'secondary'
     default:
-      return 'material-symbols:model-training'
+      return 'secondary'
   }
 }
 
@@ -194,16 +270,99 @@ function getModeSeverity(mode: string): string {
       return 'info'
     case 'embedding':
       return 'success'
+    case 'image_generation':
+      return 'warn'
+    case 'audio_transcription':
+    case 'audio_speech':
+      return 'help'
     default:
       return 'secondary'
   }
 }
 
+// Token limits formatting
+function formatTokenLimits(model: LLMModel): string {
+  const input = model.model_info.max_input_tokens
+  const output = model.model_info.max_output_tokens
+  
+  if (input && output) {
+    return `${formatNumber(input)} / ${formatNumber(output)}`
+  } else if (input) {
+    return `${formatNumber(input)} / -`
+  } else if (output) {
+    return `- / ${formatNumber(output)}`
+  }
+  return '- / -'
+}
+
+// Cost per 1M tokens formatting
+function formatCostPer1M(costPerToken?: number): string {
+  if (!costPerToken) return '-'
+  const costPer1M = costPerToken * 1000000
+  return `$${costPer1M.toFixed(2)}`
+}
+
+// Model features detection
+function getModelFeatures(model: LLMModel): Array<{name: string, severity: string}> {
+  const features: Array<{name: string, severity: string}> = []
+  
+  // Detect features based on model name and properties
+  if (model.model_name.includes('vision') || model.model_name.includes('4o')) {
+    features.push({ name: 'Vision', severity: 'success' })
+  }
+  
+  if (model.model_info.mode === 'chat') {
+    features.push({ name: 'Function Calling', severity: 'info' })
+  }
+  
+  if (model.model_name.includes('gemini')) {
+    features.push({ name: 'Web Search', severity: 'help' })
+    features.push({ name: 'Reasoning', severity: 'warn' })
+  }
+  
+  if (model.model_info.cache_read_input_token_cost) {
+    features.push({ name: 'Caching', severity: 'secondary' })
+  }
+  
+  if (model.model_info.output_vector_size) {
+    features.push({ name: `${model.model_info.output_vector_size}D`, severity: 'secondary' })
+  }
+  
+  return features
+}
+
+// Utility functions
 function formatNumber(num: number): string {
   return new Intl.NumberFormat().format(num)
 }
 
-function formatCost(cost: number): string {
-  return cost.toExponential(2)
+async function copyToClipboard(text: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    toast.add({
+      severity: 'success',
+      summary: t('litellm.copied'),
+      detail: t('litellm.copiedDetail', { text }),
+      life: 3000
+    })
+  } catch (err) {
+    toast.add({
+      severity: 'error',
+      summary: t('litellm.copyFailed'),
+      detail: t('litellm.copyFailedDetail'),
+      life: 3000
+    })
+  }
+}
+
+function showModelDetails(model: LLMModel) {
+  // For now, we'll show a toast with model details
+  // In the future, this could open a dialog or navigate to a detail page
+  toast.add({
+    severity: 'info',
+    summary: model.model_name,
+    detail: `${t('litellm.table.mode')}: ${model.model_info.mode}`,
+    life: 5000
+  })
 }
 </script>
