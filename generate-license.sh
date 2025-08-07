@@ -88,7 +88,7 @@ init_report() {
     cat > "$OUTPUT_FILE_ABS" << EOF
 # License Report
 
-Generated on: $(date)
+Generated on: $(date +%d.%m.%Y)
 
 This document contains license information for all dependencies across the monorepo:
 - Python packages (Poetry)
@@ -138,11 +138,14 @@ check_python_project() {
 
     local license_data
     license_data=$(poetry run pip-licenses \
-        --python="$python_executable" \
-        --from=mix \
+        --from=mixed \
         --format=json \
         --ignore-packages pip pip-licenses setuptools wheel tomli prettytable wcwidth \
-        2>/dev/null || echo "[]")
+        2>&1) || {
+        echo -e "${RED}Failed to run pip-licenses in $project${NC}"
+        echo "Error output: $license_data"
+        license_data="[]"
+    }
 
     local project_total
     project_total=$(echo "$license_data" | jq '. | length')
@@ -434,7 +437,7 @@ generate_summary() {
     cat > "$OUTPUT_FILE_ABS" << EOF
 # License Report
 
-Generated on: $(date)
+Generated on: $(date +%d.%m.%Y)
 
 This document contains license information for all dependencies across the monorepo:
 - Python packages (Poetry): **$TOTAL_PYTHON_DEPS packages**

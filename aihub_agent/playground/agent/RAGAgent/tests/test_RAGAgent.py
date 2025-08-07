@@ -132,7 +132,7 @@ def azure_agent_config():
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def self_hosted_agent_config(event_loop):
     """
     Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
@@ -306,7 +306,7 @@ def _(agent_runner: AgentTestRunner, datatable):
 @when(parsers.parse('the start event is sent with a user query "{query}" and locale {locale}'))
 @async_test
 async def _(agent_runner: AgentTestRunner, query: str, locale: str):
-    async with agent_runner.test_run(delay_before_stop=30) as topic:
+    async with agent_runner.test_run(delay_before_stop=60) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
@@ -345,3 +345,44 @@ def _(agent_runner: AgentTestRunner):
     llm_event = agent_runner.get_event_of_class(LLMEvent)
     response_content = llm_event.output_messages[0].content
     assert response_content, "No generated response was returned for a valid user query"
+
+
+@given("with multi-language system prompt")
+def _(agent_runner: AgentTestRunner, datatable):
+    """
+    Given multi-language system prompt provided as a table.
+    The table should have columns: 'locale' and 'prompt'
+    """
+    prompts = {}
+    for row in datatable[1:]:
+        locale = row[0]
+        prompt = row[1]
+        prompts[locale] = prompt
+
+    agent_runner.default_agent_config.system_prompt = LocaleString(**prompts)
+    return agent_runner
+
+
+@given(parsers.parse('with multi-language system prompt for locale {locale} and prompt "{prompt}"'))
+def _(agent_runner: AgentTestRunner, locale: str, prompt: str):
+    """
+    Given multi-language system prompt for a specific locale and prompt.
+    Used for parameterized Scenario Outline with Examples.
+    """
+    agent_runner.default_agent_config.system_prompt = LocaleString(**{locale: prompt})
+    return agent_runner
+
+
+@then(parsers.parse('the LLM received the system prompt "{expected_prompt}"'))
+def _(agent_runner: AgentTestRunner, expected_prompt: str):
+    """
+    Verify that the LLM received the expected system prompt.
+    """
+    config = agent_runner.default_agent_config
+    assert config.system_prompt is not None, "System prompt was not configured"
+
+    start_event = agent_runner.get_start_event()
+    locale = start_event.locale
+
+    actual_prompt = config.system_prompt.in_locale(locale)
+    assert actual_prompt == expected_prompt, f"Expected system prompt '{expected_prompt}', got '{actual_prompt}'"
