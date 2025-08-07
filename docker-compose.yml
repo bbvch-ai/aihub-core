@@ -14,7 +14,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/minio_data:/minio_data
       - ./configs/minio/minio-entrypoint.sh:/usr/local/bin/minio-entrypoint.sh:ro
-    entrypoint: [ "/bin/sh", "-c", "/usr/local/bin/minio-entrypoint.sh" ]
+    entrypoint: [ "/bin/sh", "/usr/local/bin/minio-entrypoint.sh" ]
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
 
