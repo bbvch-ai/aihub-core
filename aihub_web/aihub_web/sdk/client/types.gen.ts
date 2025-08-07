@@ -622,7 +622,15 @@ export type AssistantChatMessage = {
         block_type: 'image';
     } & ImageBlock) | ({
         block_type: 'audio';
-    } & AudioBlock)>;
+    } & AudioBlock) | ({
+        block_type: 'document';
+    } & DocumentBlock) | ({
+        block_type: 'cache';
+    } & CachePoint) | ({
+        block_type: 'citable';
+    } & CitableBlock) | ({
+        block_type: 'citation';
+    } & CitationBlock)>;
     /**
      * Agent Id
      */
@@ -645,6 +653,7 @@ export type Audio = {
 
 /**
  * AudioBlock
+ * A representation of audio data to directly pass to/from the LLM.
  */
 export type AudioBlock = {
     /**
@@ -744,6 +753,32 @@ export type BulkUpdateNotificationRequest = {
      * The updates to apply to each notification.
      */
     updates: UpdateNotificationRequest;
+};
+
+/**
+ * CacheControl
+ */
+export type CacheControl = {
+    /**
+     * Type
+     */
+    type: string;
+    /**
+     * Ttl
+     */
+    ttl?: string;
+};
+
+/**
+ * CachePoint
+ * Used to set the point to cache up to, if the LLM supports caching.
+ */
+export type CachePoint = {
+    /**
+     * Block Type
+     */
+    block_type?: 'cache';
+    cache_control: CacheControl;
 };
 
 /**
@@ -850,13 +885,13 @@ export type ChatCompletion = {
     /**
      * Service Tier
      */
-    service_tier?: ('auto' | 'default' | 'flex') | null;
+    service_tier?: ('auto' | 'default' | 'flex' | 'scale' | 'priority') | null;
     /**
      * System Fingerprint
      */
     system_fingerprint?: string | null;
     usage?: CompletionUsage | null;
-    [key: string]: unknown | string | Array<Choice> | number | 'chat.completion' | (('auto' | 'default' | 'flex') | null) | (string | null) | (CompletionUsage | null) | undefined;
+    [key: string]: unknown | string | Array<Choice> | number | 'chat.completion' | (('auto' | 'default' | 'flex' | 'scale' | 'priority') | null) | (string | null) | (CompletionUsage | null) | undefined;
 };
 
 /**
@@ -921,7 +956,7 @@ export type ChatCompletionAudioParam = {
     /**
      * Voice
      */
-    voice: string | ('alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'fable' | 'onyx' | 'nova' | 'sage' | 'shimmer' | 'verse');
+    voice: string | ('alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'sage' | 'shimmer' | 'verse');
 };
 
 /**
@@ -1118,7 +1153,7 @@ export type ChatCompletionRequest = {
      * Model
      * ID of the model to use for the chat completion.
      */
-    model: string | ('gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613');
+    model: string | ('gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613');
     /**
      * Stream
      * Enable streaming response.
@@ -1222,7 +1257,7 @@ export type ChatCompletionRequest = {
      * Top P
      */
     top_p?: number | null;
-    [key: string]: unknown | (Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null) | (string | ('gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613')) | boolean | (string | null) | (ChatCompletionAudioParam | null) | (number | null) | (('none' | 'auto') | ChatCompletionFunctionCallOptionParam | null) | (Array<OpenaiTypesChatCompletionCreateParamsFunction> | null) | ({
+    [key: string]: unknown | (Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null) | (string | ('gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613')) | boolean | (string | null) | (ChatCompletionAudioParam | null) | (number | null) | (('none' | 'auto') | ChatCompletionFunctionCallOptionParam | null) | (Array<OpenaiTypesChatCompletionCreateParamsFunction> | null) | ({
         [key: string]: number;
     } | null) | (boolean | null) | (number | null) | (number | null) | (Metadata | null) | (Array<'text' | 'audio'> | null) | (number | null) | (boolean | null) | (ChatCompletionPredictionContentParam | null) | (number | null) | (('low' | 'medium' | 'high') | null) | (ResponseFormatText | ResponseFormatJsonSchema | ResponseFormatJsonObject | null) | (number | null) | (('auto' | 'default') | null) | (string | Array<string> | null) | (boolean | null) | (ChatCompletionStreamOptionsParam | null) | (number | null) | (('none' | 'auto' | 'required') | ChatCompletionNamedToolChoiceParam | null) | (Array<ChatCompletionToolParam> | null) | (number | null) | (number | null) | undefined;
 };
@@ -1344,7 +1379,15 @@ export type ChatMessage = {
         block_type: 'image';
     } & ImageBlock) | ({
         block_type: 'audio';
-    } & AudioBlock)>;
+    } & AudioBlock) | ({
+        block_type: 'document';
+    } & DocumentBlock) | ({
+        block_type: 'cache';
+    } & CachePoint) | ({
+        block_type: 'citable';
+    } & CitableBlock) | ({
+        block_type: 'citation';
+    } & CitationBlock)>;
 };
 
 /**
@@ -1484,6 +1527,68 @@ export type ChunkEventWritable = {
      */
     reasoning_content?: string | null;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | null) | undefined;
+};
+
+/**
+ * CitableBlock
+ * Supports providing citable content to LLMs that have built-in citation support.
+ */
+export type CitableBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'citable';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Content
+     */
+    content: Array<({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlock) | ({
+        block_type: 'document';
+    } & DocumentBlock)>;
+};
+
+/**
+ * CitationBlock
+ * A representation of cited content from past messages.
+ */
+export type CitationBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'citation';
+    /**
+     * Cited Content
+     */
+    cited_content: ({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlock);
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Additional Location Info
+     */
+    additional_location_info: {
+        [key: string]: number;
+    };
 };
 
 /**
@@ -1735,6 +1840,26 @@ export type ControlEventWritable = {
      */
     created_at?: number;
     [key: string]: unknown | string | number | undefined;
+};
+
+/**
+ * CreateNamespaceRequest
+ */
+export type CreateNamespaceRequest = {
+    /**
+     * Database Name
+     */
+    database_name: string;
+    /**
+     * Namespace Name
+     */
+    namespace_name: string;
+    /**
+     * Folder Name
+     */
+    folder_name: string;
+    display_name?: LocaleStrings | null;
+    description?: LocaleStrings | null;
 };
 
 /**
@@ -2191,6 +2316,37 @@ export type DisplayStatistics = {
      * Runs in this display, sorted by start time
      */
     runs?: Array<RunStatistics>;
+};
+
+/**
+ * DocumentBlock
+ * A representation of a document to directly pass to the LLM.
+ */
+export type DocumentBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'document';
+    /**
+     * Data
+     */
+    data?: (Blob | File) | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | null;
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * Document Mimetype
+     */
+    document_mimetype?: string | null;
 };
 
 /**
@@ -3448,6 +3604,7 @@ export type Image = {
 
 /**
  * ImageBlock
+ * A representation of image data to directly pass to/from the LLM.
  */
 export type ImageBlock = {
     /**
@@ -3552,11 +3709,27 @@ export type ImagesResponse = {
      */
     created: number;
     /**
+     * Background
+     */
+    background?: ('transparent' | 'opaque') | null;
+    /**
      * Data
      */
     data?: Array<Image> | null;
-    usage?: Usage | null;
-    [key: string]: unknown | number | (Array<Image> | null) | (Usage | null) | undefined;
+    /**
+     * Output Format
+     */
+    output_format?: ('png' | 'webp' | 'jpeg') | null;
+    /**
+     * Quality
+     */
+    quality?: ('low' | 'medium' | 'high') | null;
+    /**
+     * Size
+     */
+    size?: ('1024x1024' | '1024x1536' | '1536x1024') | null;
+    usage?: OpenaiTypesImagesResponseUsage | null;
+    [key: string]: unknown | number | (('transparent' | 'opaque') | null) | (Array<Image> | null) | (('png' | 'webp' | 'jpeg') | null) | (('low' | 'medium' | 'high') | null) | (('1024x1024' | '1024x1536' | '1536x1024') | null) | (OpenaiTypesImagesResponseUsage | null) | undefined;
 };
 
 /**
@@ -4608,6 +4781,28 @@ export type LocaleString = {
 };
 
 /**
+ * LocaleStrings
+ */
+export type LocaleStrings = {
+    /**
+     * En
+     */
+    en?: string | null;
+    /**
+     * De
+     */
+    de?: string | null;
+    /**
+     * Fr
+     */
+    fr?: string | null;
+    /**
+     * It
+     */
+    it?: string | null;
+};
+
+/**
  * Logprob
  */
 export type Logprob = {
@@ -4976,6 +5171,30 @@ export type Namespace = {
      * Oldest timestamp when any document in the namespace was created
      */
     created_at: number;
+};
+
+/**
+ * NamespaceResponse
+ */
+export type NamespaceResponse = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Bucket Id
+     */
+    bucket_id: string;
+    /**
+     * Namespace Name
+     */
+    namespace_name: string;
+    /**
+     * Folder Name
+     */
+    folder_name: string;
+    display_name?: LocaleStrings | null;
+    description?: LocaleStrings | null;
 };
 
 /**
@@ -6424,6 +6643,7 @@ export type SuiteDto = {
 
 /**
  * TextBlock
+ * A representation of text data to directly pass to/from the LLM.
  */
 export type TextBlock = {
     /**
@@ -6917,7 +7137,11 @@ export type Transcription = {
      * Logprobs
      */
     logprobs?: Array<Logprob> | null;
-    [key: string]: unknown | string | (Array<Logprob> | null) | undefined;
+    /**
+     * Usage
+     */
+    usage?: UsageTokens | UsageDuration | null;
+    [key: string]: unknown | string | (Array<Logprob> | null) | (UsageTokens | UsageDuration | null) | undefined;
 };
 
 /**
@@ -6987,11 +7211,12 @@ export type TranscriptionVerbose = {
      * Segments
      */
     segments?: Array<TranscriptionSegment> | null;
+    usage?: OpenaiTypesAudioTranscriptionVerboseUsage | null;
     /**
      * Words
      */
     words?: Array<TranscriptionWord> | null;
-    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (Array<TranscriptionWord> | null) | undefined;
+    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (OpenaiTypesAudioTranscriptionVerboseUsage | null) | (Array<TranscriptionWord> | null) | undefined;
 };
 
 /**
@@ -7011,6 +7236,14 @@ export type TranscriptionWord = {
      */
     word: string;
     [key: string]: unknown | number | string;
+};
+
+/**
+ * UpdateNamespaceRequest
+ */
+export type UpdateNamespaceRequest = {
+    display_name?: LocaleStrings | null;
+    description?: LocaleStrings | null;
 };
 
 /**
@@ -7053,23 +7286,18 @@ export type UpdateRoleRequest = {
 };
 
 /**
- * Usage
+ * UsageDuration
  */
-export type Usage = {
+export type UsageDuration = {
     /**
-     * Input Tokens
+     * Seconds
      */
-    input_tokens: number;
-    input_tokens_details: UsageInputTokensDetails;
+    seconds: number;
     /**
-     * Output Tokens
+     * Type
      */
-    output_tokens: number;
-    /**
-     * Total Tokens
-     */
-    total_tokens: number;
-    [key: string]: unknown | number | UsageInputTokensDetails;
+    type: 'duration';
+    [key: string]: unknown | number | 'duration';
 };
 
 /**
@@ -7085,6 +7313,45 @@ export type UsageInputTokensDetails = {
      */
     text_tokens: number;
     [key: string]: unknown | number;
+};
+
+/**
+ * UsageTokens
+ */
+export type UsageTokens = {
+    /**
+     * Input Tokens
+     */
+    input_tokens: number;
+    /**
+     * Output Tokens
+     */
+    output_tokens: number;
+    /**
+     * Total Tokens
+     */
+    total_tokens: number;
+    /**
+     * Type
+     */
+    type: 'tokens';
+    input_token_details?: UsageTokensInputTokenDetails | null;
+    [key: string]: unknown | number | 'tokens' | (UsageTokensInputTokenDetails | null) | undefined;
+};
+
+/**
+ * UsageTokensInputTokenDetails
+ */
+export type UsageTokensInputTokenDetails = {
+    /**
+     * Audio Tokens
+     */
+    audio_tokens?: number | null;
+    /**
+     * Text Tokens
+     */
+    text_tokens?: number | null;
+    [key: string]: unknown | (number | null) | (number | null) | undefined;
 };
 
 /**
@@ -7120,7 +7387,15 @@ export type UserChatMessage = {
         block_type: 'image';
     } & ImageBlock) | ({
         block_type: 'audio';
-    } & AudioBlock)>;
+    } & AudioBlock) | ({
+        block_type: 'document';
+    } & DocumentBlock) | ({
+        block_type: 'cache';
+    } & CachePoint) | ({
+        block_type: 'citable';
+    } & CitableBlock) | ({
+        block_type: 'citation';
+    } & CitationBlock)>;
     /**
      * User Id
      */
@@ -7485,6 +7760,21 @@ export type WorkflowGraph = {
 };
 
 /**
+ * Usage
+ */
+export type OpenaiTypesAudioTranscriptionVerboseUsage = {
+    /**
+     * Seconds
+     */
+    seconds: number;
+    /**
+     * Type
+     */
+    type: 'duration';
+    [key: string]: unknown | number | 'duration';
+};
+
+/**
  * Function
  */
 export type OpenaiTypesChatChatCompletionMessageToolCallParamFunction = {
@@ -7526,6 +7816,26 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
     parameters?: {
         [key: string]: unknown;
     };
+};
+
+/**
+ * Usage
+ */
+export type OpenaiTypesImagesResponseUsage = {
+    /**
+     * Input Tokens
+     */
+    input_tokens: number;
+    input_tokens_details: UsageInputTokensDetails;
+    /**
+     * Output Tokens
+     */
+    output_tokens: number;
+    /**
+     * Total Tokens
+     */
+    total_tokens: number;
+    [key: string]: unknown | number | UsageInputTokensDetails;
 };
 
 export type GetHealthData = {
@@ -8912,6 +9222,61 @@ export type RunExperimentResponses = {
 };
 
 export type RunExperimentResponse = RunExperimentResponses[keyof RunExperimentResponses];
+
+export type CreateNamespaceData = {
+    body: CreateNamespaceRequest;
+    path?: never;
+    query?: never;
+    url: '/knowledge/namespaces';
+};
+
+export type CreateNamespaceErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateNamespaceError = CreateNamespaceErrors[keyof CreateNamespaceErrors];
+
+export type CreateNamespaceResponses = {
+    /**
+     * Successful Response
+     */
+    200: NamespaceResponse;
+};
+
+export type CreateNamespaceResponse = CreateNamespaceResponses[keyof CreateNamespaceResponses];
+
+export type UpdateNamespaceData = {
+    body: UpdateNamespaceRequest;
+    path: {
+        /**
+         * Namespace Id
+         */
+        namespace_id: string;
+    };
+    query?: never;
+    url: '/knowledge/namespaces/{namespace_id}';
+};
+
+export type UpdateNamespaceErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateNamespaceError = UpdateNamespaceErrors[keyof UpdateNamespaceErrors];
+
+export type UpdateNamespaceResponses = {
+    /**
+     * Successful Response
+     */
+    200: NamespaceResponse;
+};
+
+export type UpdateNamespaceResponse = UpdateNamespaceResponses[keyof UpdateNamespaceResponses];
 
 export type GetDatabasesData = {
     body?: never;

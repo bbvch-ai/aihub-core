@@ -6,7 +6,7 @@ from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
 class NamespaceEntity(Document):
     meta = {
-        "collection": "datalake_namespaces",
+        "collection": "namespaces",
         "strict": False,
         "indexes": [
             {"fields": ["bucket_id", "namespace_name"], "unique": True},

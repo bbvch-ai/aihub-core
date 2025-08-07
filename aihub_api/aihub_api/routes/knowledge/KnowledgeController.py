@@ -5,19 +5,24 @@ from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.azure.cosmos.docstore.CosmosDocstoreAccess import CosmosDocstoreAccess
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
 from aihub_lib.routes.Controller import Controller
-from fastapi import HTTPException, Security
+from fastapi import Depends, HTTPException, Security
 from mongoengine import connect
 from pymongo import MongoClient
 
+from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
+from aihub_api.routes.knowledge.dto.CreateNamespaceRequest import CreateNamespaceRequest
 from aihub_api.routes.knowledge.dto.DatabaseDTO import DatabaseDTO
+from aihub_api.routes.knowledge.dto.NamespaceResponse import NamespaceResponse
 from aihub_api.routes.knowledge.dto.NodeSummaryDTO import NodeSummaryDTO
 from aihub_api.routes.knowledge.dto.PaginatedDocumentsResponse import PaginatedDocumentsResponse
+from aihub_api.routes.knowledge.dto.UpdateNamespaceRequest import UpdateNamespaceRequest
 from aihub_api.routes.knowledge.KnowledgeService import KnowledgeService
 
 
@@ -45,11 +50,13 @@ class KnowledgeController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_databases(
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> list[DatabaseDTO]:
             """
-            Returns all available knowledge namespaces with the number of documents in each.
+            Returns all available buckets with their namespaces and document counts.
+            Gets data from BucketEntity and NamespaceEntity in MongoDB.
             """
-            return KnowledgeService.get_databases(self.docstore_client)
+            return KnowledgeService.get_databases(self.docstore_client, t)
 
         return self
 
@@ -145,5 +152,32 @@ class KnowledgeController(Controller):
                 document_id=document_id,
                 vector_store_factory=self.vector_store_factory,
             )
+
+        return self
+
+    def create_namespace(self, route: str = "/namespaces") -> "KnowledgeController":
+        @self.router.post(route, tags=self.tags)
+        async def create_namespace(
+            request: CreateNamespaceRequest,
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+        ) -> NamespaceResponse:
+            """
+            Creates a new namespace (folder) in the specified database.
+            """
+            return KnowledgeService.create_namespace(request)
+
+        return self
+
+    def update_namespace(self, route: str = "/namespaces/{namespace_id}") -> "KnowledgeController":
+        @self.router.put(route, tags=self.tags)
+        async def update_namespace(
+            namespace_id: Annotated[str, Path(title="Namespace ID")],
+            request: UpdateNamespaceRequest,
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+        ) -> NamespaceResponse:
+            """
+            Updates display name and description for an existing namespace.
+            """
+            return KnowledgeService.update_namespace(namespace_id, request)
 
         return self

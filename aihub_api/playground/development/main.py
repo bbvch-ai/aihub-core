@@ -188,6 +188,8 @@ async def main():
                 "http://localhost:19530", collection, 3072
             ),
         )
+        .create_namespace()
+        .update_namespace()
         .get_databases()
         .get_documents_for_namespace()
         .get_document_by_id()

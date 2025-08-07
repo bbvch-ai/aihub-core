@@ -6,7 +6,7 @@ from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
 class BucketEntity(Document):
     meta = {
-        "collection": "datalake_buckets",
+        "collection": "buckets",
         "strict": False,
         "indexes": [
             {"fields": ["bucket_name"], "unique": True},
@@ -16,7 +16,7 @@ class BucketEntity(Document):
     db_name = StringField(required=True)
     name = EmbeddedDocumentField(LocaleStringEntity, required=False)
     description = EmbeddedDocumentField(LocaleStringEntity, required=False)
-    automatic = BooleanField(default=False)
+    auto_sync = BooleanField(default=False)
 
     @classmethod
     def create_bucket(
@@ -25,7 +25,7 @@ class BucketEntity(Document):
         db_name: str | None = None,
         name: LocaleStringEntity | None = None,
         description: LocaleStringEntity | None = None,
-        automatic: bool = False,
+        auto_sync: bool = False,
         bucket_id: ObjectId | None = None,
     ) -> "BucketEntity":
         bucket = cls(
@@ -34,7 +34,7 @@ class BucketEntity(Document):
             db_name=db_name or bucket_name,
             name=name,
             description=description,
-            automatic=automatic,
+            auto_sync=auto_sync,
         )
         bucket.save()
         return bucket
@@ -59,7 +59,7 @@ class BucketEntity(Document):
         db_name: str | None = None,
         name: LocaleStringEntity | None = None,
         description: LocaleStringEntity | None = None,
-        automatic: bool | None = None,
+        auto_sync: bool | None = None,
     ) -> "BucketEntity":
         bucket = cls.get_bucket_by_id(bucket_id)
         if bucket_name is not None:
@@ -70,8 +70,8 @@ class BucketEntity(Document):
             bucket.name = name
         if description:
             bucket.description = description
-        if automatic:
-            bucket.automatic = automatic
+        if auto_sync:
+            bucket.auto_sync = auto_sync
         bucket.save()
         return bucket
 
