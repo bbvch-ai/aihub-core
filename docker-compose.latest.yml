@@ -366,7 +366,7 @@ services:
       AUDIO_STT_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
       AUDIO_TTS_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
       IMAGES_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
-      OPENAI_API_BASE_URL: "litellm:4000/v1"
+      OPENAI_API_BASE_URL: "http://litellm:4000/v1"
       MODELS_CACHE_TTL: 60
       TASK_MODEL: 'azure/gpt-4o-mini'
       TASK_MODEL_EXTERNAL: 'azure/gpt-4o-mini'
