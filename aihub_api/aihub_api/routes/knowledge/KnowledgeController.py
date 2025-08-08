@@ -56,7 +56,7 @@ class KnowledgeController(Controller):
             Returns all available buckets with their namespaces and document counts.
             Gets data from BucketEntity and NamespaceEntity in MongoDB.
             """
-            return KnowledgeService.get_databases(self.docstore_client, t)
+            return KnowledgeService.get_databases(t)
 
         return self
 
@@ -160,11 +160,12 @@ class KnowledgeController(Controller):
         async def create_namespace(
             request: CreateNamespaceRequest,
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> NamespaceResponse:
             """
             Creates a new namespace (folder) in the specified database.
             """
-            return KnowledgeService.create_namespace(request)
+            return KnowledgeService.create_namespace(request, t)
 
         return self
 
@@ -174,10 +175,11 @@ class KnowledgeController(Controller):
             namespace_id: Annotated[str, Path(title="Namespace ID")],
             request: UpdateNamespaceRequest,
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> NamespaceResponse:
             """
             Updates display name and description for an existing namespace.
             """
-            return KnowledgeService.update_namespace(namespace_id, request)
+            return KnowledgeService.update_namespace(namespace_id, request, t)
 
         return self

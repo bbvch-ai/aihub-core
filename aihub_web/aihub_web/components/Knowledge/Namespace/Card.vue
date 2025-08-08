@@ -13,14 +13,42 @@
             size="1.5em"
           />
         </div>
-        <h3 class="font-semibold opacity-80">
-          {{ name }}
-        </h3>
+        <div>
+          <h3 class="font-semibold opacity-80">
+            {{ displayName }}
+          </h3>
+          <p 
+            v-if="namespace.description" 
+            class="text-sm text-surface-500 dark:text-surface-400"
+          >
+            {{ namespace.description }}
+          </p>
+        </div>
       </div>
-      <Badge
-        :value="namespace.number_of_documents"
-        size="large"
-      />
+      <div class="flex items-center gap-2">
+        <Button
+          icon="pi pi-pencil"
+          rounded
+          text
+          size="small"
+          severity="secondary"
+          v-tooltip.top="'Edit folder'"
+          @click.stop="handleEditClick"
+        />
+        <Button
+          icon="pi pi-upload"
+          rounded
+          text
+          size="small"
+          severity="secondary"
+          v-tooltip.top="'Upload documents'"
+          @click.stop="handleUploadClick"
+        />
+        <Badge
+          :value="namespace.number_of_documents"
+          size="large"
+        />
+      </div>
     </div>
     <div>
       <div class="text-sm">
@@ -36,17 +64,23 @@
 <script setup lang="ts">
 import { useChangeCase } from '@vueuse/integrations/useChangeCase'
 
-import type { Namespace } from '@core/sdk/client'
+import type { NamespaceDto } from '@core/sdk/client'
 
 const props = defineProps<{
-  namespace: Namespace
+  namespace: NamespaceDto
+}>()
+
+const emit = defineEmits<{
+  upload: [namespace: NamespaceDto]
+  edit: [namespace: NamespaceDto]
 }>()
 
 const route = useRoute()
 const { t } = useI18n()
 
-const name = computed(() => {
-  return useChangeCase(props.namespace.name, 'capitalCase')
+const displayName = computed(() => {
+  // Use display_name if available, otherwise fall back to formatted technical name
+  return props.namespace.display_name || useChangeCase(props.namespace.name, 'capitalCase')
 })
 
 const createdAt = computed(() => {
@@ -59,4 +93,14 @@ const updatedAt = computed(() => {
 const isActive = computed(() => {
   return route.params.namespace === props.namespace.name
 })
+
+const handleUploadClick = (event: Event) => {
+  event.stopPropagation()
+  emit('upload', props.namespace)
+}
+
+const handleEditClick = (event: Event) => {
+  event.stopPropagation()
+  emit('edit', props.namespace)
+}
 </script>

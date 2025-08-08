@@ -1,16 +1,11 @@
-from pydantic import BaseModel
+from typing import Annotated
 
-
-class LocaleStrings(BaseModel):
-    en: str | None = None
-    de: str | None = None
-    fr: str | None = None
-    it: str | None = None
+from pydantic import BaseModel, Field
 
 
 class CreateNamespaceRequest(BaseModel):
-    database_name: str
-    namespace_name: str
-    folder_name: str
-    display_name: LocaleStrings | None = None
-    description: LocaleStrings | None = None
+    database_name: Annotated[str, Field(description="The name of the database to which the namespace belongs.")]
+    namespace_name: Annotated[str, Field(description="The name of the namespace to create.")]
+    folder_name: Annotated[str, Field(description="The name of the folder to which the namespace belongs.")]
+    display_name: Annotated[str, Field(description="The display name of the namespace in the user's locale.")] = None
+    description: Annotated[str, Field(description="A short description of the namespace in the user's locale.")] = None

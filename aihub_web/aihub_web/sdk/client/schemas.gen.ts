@@ -2647,35 +2647,28 @@ export const CreateNamespaceRequestSchema = {
     properties: {
         database_name: {
             type: 'string',
-            title: 'Database Name'
+            title: 'Database Name',
+            description: 'The name of the database to which the namespace belongs.'
         },
         namespace_name: {
             type: 'string',
-            title: 'Namespace Name'
+            title: 'Namespace Name',
+            description: 'The name of the namespace to create.'
         },
         folder_name: {
             type: 'string',
-            title: 'Folder Name'
+            title: 'Folder Name',
+            description: 'The name of the folder to which the namespace belongs.'
         },
         display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleStrings'
-                },
-                {
-                    type: 'null'
-                }
-            ]
+            type: 'string',
+            title: 'Display Name',
+            description: "The display name of the namespace in the user's locale."
         },
         description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleStrings'
-                },
-                {
-                    type: 'null'
-                }
-            ]
+            type: 'string',
+            title: 'Description',
+            description: "A short description of the namespace in the user's locale."
         }
     },
     type: 'object',
@@ -2949,7 +2942,7 @@ export const DatabaseDTOSchema = {
         },
         namespaces: {
             items: {
-                '$ref': '#/components/schemas/Namespace'
+                '$ref': '#/components/schemas/NamespaceDTO'
             },
             type: 'array',
             title: 'Namespaces',
@@ -6553,57 +6546,6 @@ export const LocaleStringSchema = {
     title: 'LocaleString'
 } as const;
 
-export const LocaleStringsSchema = {
-    properties: {
-        en: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'En'
-        },
-        de: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'De'
-        },
-        fr: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Fr'
-        },
-        it: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'It'
-        }
-    },
-    type: 'object',
-    title: 'LocaleStrings'
-} as const;
-
 export const LogprobSchema = {
     properties: {
         token: {
@@ -7014,7 +6956,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1754579945
+            default: 1754654095
         },
         owned_by: {
             type: 'string',
@@ -7074,17 +7016,36 @@ export const ModelResponseSchema = {
     title: 'ModelResponse'
 } as const;
 
-export const NamespaceSchema = {
+export const NamespaceDTOSchema = {
     properties: {
-        database: {
-            type: 'string',
-            title: 'Database',
-            description: 'Name of database that the namespace belongs to'
-        },
         name: {
             type: 'string',
             title: 'Name',
             description: 'Name of namespace'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name',
+            description: 'Display name of namespace, can be localized'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: 'Description of namespace, can be localized'
         },
         number_of_documents: {
             type: 'integer',
@@ -7108,8 +7069,8 @@ export const NamespaceSchema = {
         }
     },
     type: 'object',
-    required: ['database', 'name', 'number_of_documents', 'last_updated_at', 'last_inserted_at', 'created_at'],
-    title: 'Namespace'
+    required: ['name', 'number_of_documents', 'last_updated_at', 'last_inserted_at', 'created_at'],
+    title: 'NamespaceDTO'
 } as const;
 
 export const NamespaceResponseSchema = {
@@ -7133,22 +7094,24 @@ export const NamespaceResponseSchema = {
         display_name: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/LocaleStrings'
+                    type: 'string'
                 },
                 {
                     type: 'null'
                 }
-            ]
+            ],
+            title: 'Display Name'
         },
         description: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/LocaleStrings'
+                    type: 'string'
                 },
                 {
                     type: 'null'
                 }
-            ]
+            ],
+            title: 'Description'
         }
     },
     type: 'object',
@@ -9505,22 +9468,24 @@ export const UpdateNamespaceRequestSchema = {
         display_name: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/LocaleStrings'
+                    type: 'string'
                 },
                 {
                     type: 'null'
                 }
-            ]
+            ],
+            title: 'Display Name'
         },
         description: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/LocaleStrings'
+                    type: 'string'
                 },
                 {
                     type: 'null'
                 }
-            ]
+            ],
+            title: 'Description'
         }
     },
     type: 'object',

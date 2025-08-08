@@ -1,15 +1,17 @@
 import logging
 
 import mongoengine
+
+from aihub_api.routes.knowledge.dto.NamespaceDTO import NamespaceDTO
 from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.azure.cosmos.docstore.CosmosDocstoreAccess import CosmosDocstoreAccess
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
-from aihub_lib.persistence.rag.documents.entities.types.Namespace import Namespace
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
-from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
+from aihub_lib.persistence.rag.documents.entities.NamespaceEntity import NamespaceEntity
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     DOCUMENT_ID,
@@ -21,7 +23,6 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 )
 from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
 from mongoengine import register_connection
-from pymongo import MongoClient
 
 from aihub_api.routes.knowledge.dto.CreateNamespaceRequest import CreateNamespaceRequest
 from aihub_api.routes.knowledge.dto.DatabaseDTO import DatabaseDTO
@@ -66,71 +67,27 @@ class KnowledgeService:
         return IngestedDocument.from_entity(ref_doc)
 
     @staticmethod
-    def get_databases(mongo_client: MongoClient, t: LocaleHandler) -> list[DatabaseDTO]:
+    def get_databases(t: LocaleHandler) -> list[DatabaseDTO]:
         """
         Retrieves all databases (buckets) with their available namespaces with the number of documents in each.
         Gets buckets from BucketEntity and namespaces from NamespaceEntity in MongoDB,
         then enriches with document stats from docstore. Returns format compatible with web frontend.
         """
         database_dtos: list[DatabaseDTO] = []
-
-        # Get all buckets from BucketEntity (stored in main API database)
         buckets = BucketEntity.get_all_buckets()
 
         for bucket in buckets:
-            try:
-                db_name = bucket.db_name
-                KnowledgeService._ensure_db_exists(db_name)
+            db_name = bucket.db_name
+            KnowledgeService._ensure_db_exists(db_name)
 
-                # Get namespaces for this bucket from NamespaceEntity (stored in main API database)
-                namespace_entities = NamespaceEntity.get_namespaces_by_bucket(str(bucket.id))
+            namespace_entities = NamespaceEntity.get_namespaces_by_bucket(str(bucket.id))
 
-                namespaces = []
-                for ns_entity in namespace_entities:
-                    # Get document stats for this namespace from RefDoc in the docstore
-                    document_stats = None
-                    try:
-                        namespace_data = RefDoc.get_namespaces(db_alias=db_name)
-                        # Find matching namespace data by name
-                        document_stats = next(
-                            (ns_data for ns_data in namespace_data if ns_data["name"] == ns_entity.namespace_name), None
-                        )
-                    except Exception as e:
-                        logger.warning(
-                            f"Unable to load document stats for namespace {ns_entity.namespace_name} in database {db_name}: {e}"
-                        )
+            namespaces = []
+            for ns_entity in namespace_entities:
+                document_count = RefDoc.count_by_namespace(db_alias=db_name, namespace=ns_entity.namespace_name)
+                namespaces.append(NamespaceDTO.from_entity(entity=ns_entity, t=t, number_of_documents=document_count))
 
-                    # Create Namespace object compatible with frontend expectations
-                    if document_stats:
-                        namespaces.append(
-                            Namespace(
-                                database=db_name,
-                                name=ns_entity.namespace_name,
-                                number_of_documents=document_stats["number_of_documents"],
-                                last_updated_at=document_stats["last_updated_at"],
-                                last_inserted_at=document_stats["last_inserted_at"],
-                                created_at=document_stats["created_at"],
-                            )
-                        )
-                    else:
-                        # Create empty namespace if no documents exist yet
-                        namespaces.append(
-                            Namespace(
-                                database=db_name,
-                                name=ns_entity.namespace_name,
-                                number_of_documents=0,
-                                last_updated_at=0,
-                                last_inserted_at=0,
-                                created_at=0,
-                            )
-                        )
-
-                # Create DatabaseDTO with format expected by frontend
-                database_dtos.append(DatabaseDTO(name=db_name, namespaces=namespaces))
-
-            except Exception as e:
-                logger.warning(f"Unable to process bucket {bucket.bucket_name}: {e}")
-                continue
+            database_dtos.append(DatabaseDTO(name=db_name, namespaces=namespaces))
 
         return database_dtos
 
@@ -170,150 +127,84 @@ class KnowledgeService:
         return list(summaries.values())
 
     @staticmethod
-    def create_namespace(request: CreateNamespaceRequest) -> NamespaceResponse:
+    def create_namespace(request: CreateNamespaceRequest, t: LocaleHandler) -> NamespaceResponse:
         """
         Creates a new namespace (folder) in the specified database.
         """
         from fastapi import HTTPException
 
-        # Get the bucket by database name
         try:
             bucket = BucketEntity.get_bucket_by_bucket_name(request.database_name)
         except Exception:
             raise HTTPException(status_code=404, detail=f"Database '{request.database_name}' not found")
 
-        # Check if namespace already exists
         try:
             existing = NamespaceEntity.get_namespace_by_bucket_and_name(str(bucket.id), request.namespace_name)
             if existing:
-                raise HTTPException(status_code=409, detail=f"Folder '{request.namespace_name}' already exists in database '{request.database_name}'")
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Folder '{request.namespace_name}' already exists in database '{request.database_name}'",
+                )
         except Exception:
             # Namespace doesn't exist, which is what we want
             pass
 
-        # Create LocaleStringEntity objects for display name and description
-        display_name = None
+        display_name_entity = None
         if request.display_name:
-            display_name = LocaleStringEntity(
-                en=request.display_name.en,
-                de=request.display_name.de,
-                fr=request.display_name.fr,
-                it=request.display_name.it,
-            )
+            display_name_entity = LocaleStringEntity.from_locale_string(LocaleString(en=request.display_name))
 
-        description = None
+        description_entity = None
         if request.description:
-            description = LocaleStringEntity(
-                en=request.description.en,
-                de=request.description.de,
-                fr=request.description.fr,
-                it=request.description.it,
-            )
+            description_entity = LocaleStringEntity.from_locale_string(LocaleString(en=request.escription))
 
-        # Create the namespace entity
         namespace_entity = NamespaceEntity.create_namespace(
             bucket_id=str(bucket.id),
             namespace_name=request.namespace_name,
             folder_name=request.folder_name,
-            name=display_name,
-            description=description,
+            display_name=display_name_entity,
+            description=description_entity,
         )
-
-        # Convert LocaleStringEntity to DTO format
-        display_name_dto = None
-        if namespace_entity.name:
-            from aihub_api.routes.knowledge.dto.NamespaceResponse import LocaleStrings
-            display_name_dto = LocaleStrings(
-                en=namespace_entity.name.en,
-                de=namespace_entity.name.de,
-                fr=namespace_entity.name.fr,
-                it=namespace_entity.name.it,
-            )
-
-        description_dto = None
-        if namespace_entity.description:
-            from aihub_api.routes.knowledge.dto.NamespaceResponse import LocaleStrings
-            description_dto = LocaleStrings(
-                en=namespace_entity.description.en,
-                de=namespace_entity.description.de,
-                fr=namespace_entity.description.fr,
-                it=namespace_entity.description.it,
-            )
 
         return NamespaceResponse(
             id=str(namespace_entity.id),
             bucket_id=namespace_entity.bucket_id,
             namespace_name=namespace_entity.namespace_name,
             folder_name=namespace_entity.folder_name,
-            display_name=display_name_dto,
-            description=description_dto,
+            display_name=t.extract(namespace_entity.display_name),
+            description=t.extract(namespace_entity.description),
         )
 
     @staticmethod
-    def update_namespace(namespace_id: str, request: UpdateNamespaceRequest) -> NamespaceResponse:
+    def update_namespace(namespace_id: str, request: UpdateNamespaceRequest, t: LocaleHandler) -> NamespaceResponse:
         """
         Updates display name and description for an existing namespace.
         """
         from fastapi import HTTPException
 
-        # Get the existing namespace
         try:
-            namespace_entity = NamespaceEntity.get_namespace_by_id(namespace_id)
+            NamespaceEntity.get_namespace_by_id(namespace_id)
         except Exception:
             raise HTTPException(status_code=404, detail=f"Folder with ID '{namespace_id}' not found")
 
-        # Create LocaleStringEntity objects for display name and description
         display_name = None
         if request.display_name:
-            display_name = LocaleStringEntity(
-                en=request.display_name.en,
-                de=request.display_name.de,
-                fr=request.display_name.fr,
-                it=request.display_name.it,
-            )
+            display_name = LocaleStringEntity.from_locale_string(LocaleString(en=request.display_name))
 
         description = None
         if request.description:
-            description = LocaleStringEntity(
-                en=request.description.en,
-                de=request.description.de,
-                fr=request.description.fr,
-                it=request.description.it,
-            )
+            description = LocaleStringEntity.from_locale_string(LocaleString(en=request.escription))
 
-        # Update the namespace entity
         updated_entity = NamespaceEntity.update_namespace(
             namespace_id=namespace_id,
-            name=display_name,
+            display_name=display_name,
             description=description,
         )
-
-        # Convert LocaleStringEntity to DTO format
-        display_name_dto = None
-        if updated_entity.name:
-            from aihub_api.routes.knowledge.dto.NamespaceResponse import LocaleStrings
-            display_name_dto = LocaleStrings(
-                en=updated_entity.name.en,
-                de=updated_entity.name.de,
-                fr=updated_entity.name.fr,
-                it=updated_entity.name.it,
-            )
-
-        description_dto = None
-        if updated_entity.description:
-            from aihub_api.routes.knowledge.dto.NamespaceResponse import LocaleStrings
-            description_dto = LocaleStrings(
-                en=updated_entity.description.en,
-                de=updated_entity.description.de,
-                fr=updated_entity.description.fr,
-                it=updated_entity.description.it,
-            )
 
         return NamespaceResponse(
             id=str(updated_entity.id),
             bucket_id=updated_entity.bucket_id,
             namespace_name=updated_entity.namespace_name,
             folder_name=updated_entity.folder_name,
-            display_name=display_name_dto,
-            description=description_dto,
+            display_name=t.extract(updated_entity.display_name),
+            description=t.extract(updated_entity.description),
         )

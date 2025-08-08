@@ -2,7 +2,7 @@ import { type DatabaseDto, getDatabases } from '@core/sdk/client'
 import { minutesToMilliseconds } from 'date-fns'
 
 export const useDatabases = defineQuery(() => {
-  const { data: databases, isPending: databasesAreLoading } = useQuery<DatabaseDto[]>({
+  const { data: databases, isPending: databasesAreLoading, refetch } = useQuery<DatabaseDto[]>({
     key: () => ['knowledge'],
     staleTime: minutesToMilliseconds(5),
     enabled: true,
@@ -12,8 +12,14 @@ export const useDatabases = defineQuery(() => {
       })
     },
   })
+
+  const refreshDatabases = async () => {
+    await refetch()
+  }
+
   return {
     databases,
     databasesAreLoading,
+    refreshDatabases,
   }
 })

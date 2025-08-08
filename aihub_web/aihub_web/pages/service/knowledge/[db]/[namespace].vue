@@ -4,8 +4,17 @@
     close-route="/service/knowledge"
     :loading="isLoading"
   >
+    <div class="mb-4 flex justify-end">
+      <Button
+        icon="pi pi-upload"
+        label="Upload Documents"
+        @click="openUploadModal"
+      />
+    </div>
+
     <KnowledgeDocumentList
       :documents="documents"
+      :processing-documents="processingDocuments"
       @selected="toDocument"
     />
 
@@ -20,6 +29,13 @@
     </div>
   </StructuralColumn>
   <NuxtPage />
+
+  <KnowledgeDocumentUploadModal
+    v-model:visible="uploadModalVisible"
+    :database="route.params.db as string"
+    :preselected-namespace="route.params.namespace as string"
+    @upload="handleUpload"
+  />
 </template>
 
 <script setup lang="ts">
@@ -40,7 +56,18 @@ const {
   pageSize,
   setPage,
   setPageSize,
+  refetch,
 } = useDocuments()
+
+const uploadModalVisible = ref(false)
+
+const processingDocuments = ref<Array<{
+  id: string
+  document_title: string
+  created_at: string
+  status: 'uploading' | 'processing'
+  progress?: number
+}>>([])
 
 const toDocument = (document: IngestedDocument) => {
   router.push(localePath(`/service/knowledge/${route.params.db}/${route.params.namespace}/${document.id}/overview`))
@@ -50,5 +77,53 @@ const onPageChange = (event) => {
   setPageSize(event.rows)
   const newPage = Math.floor(event.first / event.rows) + 1
   setPage(newPage)
+}
+
+const openUploadModal = () => {
+  uploadModalVisible.value = true
+}
+
+const handleUpload = (data: { files: File[], namespace: string, database: string }) => {
+  console.log('Upload requested:', data)
+  uploadModalVisible.value = false
+
+  data.files.forEach((file, index) => {
+    const processingDoc = {
+      id: `processing-${Date.now()}-${index}`,
+      document_title: file.name.replace(/\.[^/.]+$/, ''),
+      created_at: new Date().toISOString(),
+      status: 'uploading' as const,
+      progress: 0
+    }
+    processingDocuments.value.push(processingDoc)
+
+    simulateUploadProgress(processingDoc.id, file.name)
+  })
+}
+
+const simulateUploadProgress = (docId: string, fileName: string) => {
+  const doc = processingDocuments.value.find(d => d.id === docId)
+  if (!doc) return
+
+  const uploadInterval = setInterval(() => {
+    if (doc.progress! < 100) {
+      doc.progress = Math.min(100, doc.progress! + Math.random() * 20)
+    } else {
+      clearInterval(uploadInterval)
+      doc.status = 'processing'
+
+      const processingTime = 3000 + Math.random() * 7000
+      setTimeout(() => {
+        const index = processingDocuments.value.findIndex(d => d.id === docId)
+        if (index > -1) {
+          processingDocuments.value.splice(index, 1)
+        }
+
+        refetch()
+
+        console.log(`Document "${fileName}" processed successfully`)
+      }, processingTime)
+    }
+  }, 200)
 }
 </script>

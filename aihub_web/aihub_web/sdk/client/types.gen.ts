@@ -1848,18 +1848,29 @@ export type ControlEventWritable = {
 export type CreateNamespaceRequest = {
     /**
      * Database Name
+     * The name of the database to which the namespace belongs.
      */
     database_name: string;
     /**
      * Namespace Name
+     * The name of the namespace to create.
      */
     namespace_name: string;
     /**
      * Folder Name
+     * The name of the folder to which the namespace belongs.
      */
     folder_name: string;
-    display_name?: LocaleStrings | null;
-    description?: LocaleStrings | null;
+    /**
+     * Display Name
+     * The display name of the namespace in the user's locale.
+     */
+    display_name?: string;
+    /**
+     * Description
+     * A short description of the namespace in the user's locale.
+     */
+    description?: string;
 };
 
 /**
@@ -2036,7 +2047,7 @@ export type DatabaseDto = {
      * Namespaces
      * List of namespaces
      */
-    namespaces: Array<Namespace>;
+    namespaces: Array<NamespaceDto>;
 };
 
 /**
@@ -4781,28 +4792,6 @@ export type LocaleString = {
 };
 
 /**
- * LocaleStrings
- */
-export type LocaleStrings = {
-    /**
-     * En
-     */
-    en?: string | null;
-    /**
-     * De
-     */
-    de?: string | null;
-    /**
-     * Fr
-     */
-    fr?: string | null;
-    /**
-     * It
-     */
-    it?: string | null;
-};
-
-/**
  * Logprob
  */
 export type Logprob = {
@@ -5138,19 +5127,24 @@ export type ModelResponse = {
 };
 
 /**
- * Namespace
+ * NamespaceDTO
  */
-export type Namespace = {
-    /**
-     * Database
-     * Name of database that the namespace belongs to
-     */
-    database: string;
+export type NamespaceDto = {
     /**
      * Name
      * Name of namespace
      */
     name: string;
+    /**
+     * Display Name
+     * Display name of namespace, can be localized
+     */
+    display_name?: string | null;
+    /**
+     * Description
+     * Description of namespace, can be localized
+     */
+    description?: string | null;
     /**
      * Number Of Documents
      * Number of documents in namespace
@@ -5193,8 +5187,14 @@ export type NamespaceResponse = {
      * Folder Name
      */
     folder_name: string;
-    display_name?: LocaleStrings | null;
-    description?: LocaleStrings | null;
+    /**
+     * Display Name
+     */
+    display_name?: string | null;
+    /**
+     * Description
+     */
+    description?: string | null;
 };
 
 /**
@@ -7242,8 +7242,14 @@ export type TranscriptionWord = {
  * UpdateNamespaceRequest
  */
 export type UpdateNamespaceRequest = {
-    display_name?: LocaleStrings | null;
-    description?: LocaleStrings | null;
+    /**
+     * Display Name
+     */
+    display_name?: string | null;
+    /**
+     * Description
+     */
+    description?: string | null;
 };
 
 /**

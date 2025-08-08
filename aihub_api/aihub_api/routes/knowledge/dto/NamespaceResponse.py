@@ -13,5 +13,5 @@ class NamespaceResponse(BaseModel):
     bucket_id: str
     namespace_name: str
     folder_name: str
-    display_name: LocaleStrings | None = None
-    description: LocaleStrings | None = None
+    display_name: str | None = None
+    description: str | None = None
