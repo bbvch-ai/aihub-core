@@ -81,7 +81,7 @@ runs:
     - name: Use Local Core
       if: inputs.use_local_core == 'true'
       shell: bash
-      run: poetry run make use-local-core
+      run: make use-local-core
 
     - name: Install FFmpeg
       if: inputs.install_ffmpeg == 'true'
