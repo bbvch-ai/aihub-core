@@ -50,6 +50,6 @@ class BotTestRunner(BotRunner):
         """
         from uvicorn import Config, Server
 
-        config = Config(app=self._base_app, host="localhost", port=8001, log_level="debug")
+        config = Config(app=self.get_app(), host="localhost", port=8001, log_level="debug")
         server = Server(config)
         await server.serve()
