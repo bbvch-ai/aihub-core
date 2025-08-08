@@ -1,49 +1,58 @@
 <template>
   <StructuralScreen>
     <StructuralColumn
-        :title="t('litellm.title')"
-        :loading="modelsAreLoading"
-        size="large"
-        class="w-1/2 pr-2"
+      :title="t('models.title')"
+      :loading="modelsAreLoading"
     >
       <div v-if="error" class="mb-4">
         <Message
             severity="error"
             :closable="false"
         >
-          {{ t('litellm.error') }}: {{ error }}
+          {{ t('models.error') }}: {{ error }}
         </Message>
       </div>
 
-      <div v-if="!modelsAreLoading && !error && models">
-        <ModelsTable
-            :models="models"
-            @show-details="showModelDetails"
-        />
+      <div class="flex flex-col gap-12">
+        <div
+            v-for="modelType in modelTypes"
+            :key="modelType.name"
+        >
+          <div
+              class="pb-2 pl-2 text-sm font-medium"
+          >
+            {{ useChangeCase(modelType.name, 'capitalCase') }}
+          </div>
+          <div
+              class="grid grid-cols-2 gap-4 2xl:grid-cols-2"
+          >
+            <ModelsNamespaceCard
+                v-for="model in modelType.models"
+                :key="model.model_name"
+                :model="model"
+                @click="() => showModelDetails(model)"
+            />
+          </div>
+        </div>
       </div>
 
-      <ModelsDialog
-          v-model:visible="modelDialogVisible"
-          :model="selectedModel"
-      />
     </StructuralColumn>
+
+    <NuxtPage />
   </StructuralScreen>
 </template>
 
 <script setup lang="ts">
-definePageMeta({
-  layout: 'default',
-})
+import { useChangeCase } from '@vueuse/integrations/useChangeCase'
+import { useLocalePath } from '#i18n'
 
-const {t} = useI18n()
+const router = useRouter()
+const localePath = useLocalePath()
+const { t } = useI18n()
 
-const {models, modelsAreLoading, error} = useModelsList()
-
-const modelDialogVisible = ref(false)
-const selectedModel = ref(null)
+const { modelTypes, modelsAreLoading, error } = useModelsList()
 
 function showModelDetails(model: any) {
-  selectedModel.value = model
-  modelDialogVisible.value = true
+  router.push(localePath(`/service/models/${encodeURIComponent(model.model_name)}`))
 }
 </script>

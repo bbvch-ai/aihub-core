@@ -1,18 +1,41 @@
+import {type ModelDTO, modelList} from '@core/sdk/client'
+
 import {useQuery} from '@pinia/colada'
 import {minutesToMilliseconds} from 'date-fns'
 
 export const useModelsList = defineQuery(() => {
-  const {data: models, isPending: modelsAreLoading, error} = useQuery({
+  const {data: rawModels, isPending: modelsAreLoading, error} = useQuery<ModelDTO[]>({
     key: () => ['models', 'models'],
     staleTime: minutesToMilliseconds(5),
     enabled: true,
     query: async () => {
-      return await $fetch('/api/v1/models/model_list')
+      return await modelList({
+        composable: '$fetch',
+      })
     },
   })
 
+  const modelTypes = computed(() => {
+    if (!rawModels.value) return []
+
+    const grouped = new Map()
+
+    rawModels.value.forEach((model: any) => {
+      const modelType = model.model_info.mode || 'unknown'
+      if (!grouped.has(modelType)) {
+        grouped.set(modelType, {
+          name: modelType,
+          models: []
+        })
+      }
+      grouped.get(modelType).models.push(model)
+    })
+
+    return Array.from(grouped.values()).sort((a, b) => a.name.localeCompare(b.name))
+  })
+
   return {
-    models,
+    modelTypes,
     modelsAreLoading,
     error,
   }

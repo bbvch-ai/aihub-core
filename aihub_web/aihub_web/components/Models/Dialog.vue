@@ -1,104 +1,103 @@
 <template>
-  <Dialog
-    :visible="visible"
-    modal
-    :header="model?.model_name || ''"
-    style="width: 1000px"
-    :breakpoints="{ '960px': '90vw' }"
-    class="model-details-dialog"
-    @update:visible="$emit('update:visible', $event)"
+  <StructuralColumn
+    :title="model?.model_name"
+    close-route="/service/models"
+    size="large"
   >
-    <div v-if="model" class="space-y-6">
-      <div>
-        <h3 class="text-lg font-semibold mb-4">{{ t('litellm.modelDetails.overview') }}</h3>
-        <div class="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <p class="font-medium mb-1">{{ t('litellm.modelDetails.modelGroup') }}:</p>
-            <p>{{ model.model_name }}</p>
+    <div v-if="model" class="flex flex-col gap-12">
+      <span class="mb-4 block text-sm text-surface-500 dark:text-surface-400">
+        {{ t('models.modelDetails.overview') }}
+      </span>
+      
+      <Panel class="panel pt-5">
+        <div class="grid grid-cols-2 gap-4 xl:grid-cols-4">
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ t('models.modelDetails.modelGroup') }}
+            </span>
+            <Tag
+              :value="model.model_name"
+              severity="secondary"
+            />
           </div>
-          <div>
-            <p class="font-medium mb-1">{{ t('litellm.modelDetails.mode') }}:</p>
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ t('models.modelDetails.mode') }}
+            </span>
             <Tag
               :severity="getModeSeverity(model.model_info.mode)"
               :value="model.model_info.mode"
             />
           </div>
-          <div>
-            <p class="font-medium mb-1">{{ t('litellm.modelDetails.provider') }}:</p>
-            <div class="flex flex-wrap gap-1 mt-1">
-              <Tag
-                :value="getProvider(model)"
-                :severity="getProviderSeverity(getProvider(model))"
-              />
-            </div>
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ t('models.modelDetails.provider') }}
+            </span>
+            <Tag
+              :value="getProvider(model)"
+              :severity="getProviderSeverity(getProvider(model))"
+            />
           </div>
-          <div v-if="model.model_info.id">
-            <p class="font-medium mb-1">{{ t('litellm.modelDetails.modelId') }}:</p>
-            <p class="text-xs font-mono break-all">{{ model.model_info.id }}</p>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <h3 class="text-lg font-semibold mb-4">{{ t('litellm.modelDetails.tokenCost') }}</h3>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <p class="font-medium mb-1">{{ t('litellm.modelDetails.maxInputTokens') }}:</p>
-            <p>{{
-                model.model_info.max_input_tokens ? formatNumber(model.model_info.max_input_tokens) :
-                  t('litellm.modelDetails.notSpecified')
-              }}</p>
-          </div>
-          <div>
-            <p class="font-medium mb-1">{{ t('litellm.modelDetails.maxOutputTokens') }}:</p>
-            <p>{{
-                model.model_info.max_output_tokens ? formatNumber(model.model_info.max_output_tokens)
-                  : t('litellm.modelDetails.notSpecified')
-              }}</p>
-          </div>
-          <div>
-            <p class="font-medium mb-1">{{ t('litellm.modelDetails.inputCostPer1M') }}:</p>
-            <p>{{
-                model.model_info.input_cost_per_token ?
-                  formatCostPer1M(model.model_info.input_cost_per_token) :
-                  t('litellm.modelDetails.notSpecified')
-              }}</p>
-          </div>
-          <div>
-            <p class="font-medium mb-1">{{ t('litellm.modelDetails.outputCostPer1M') }}:</p>
-            <p>{{
-                model.model_info.output_cost_per_token ?
-                  formatCostPer1M(model.model_info.output_cost_per_token) :
-                  t('litellm.modelDetails.notSpecified')
-              }}</p>
-          </div>
-          <div v-if="model.model_info.cache_read_input_token_cost">
-            <p class="font-medium mb-1">{{ t('litellm.modelDetails.cacheReadCostPer1M') }}:</p>
-            <p>{{ formatCostPer1M(model.model_info.cache_read_input_token_cost) }}</p>
-          </div>
-          <div v-if="model.model_info.output_vector_size">
-            <p class="font-medium mb-1">{{ t('litellm.modelDetails.vectorSize') }}:</p>
-            <p>{{ model.model_info.output_vector_size }}D</p>
+          <div v-if="model.model_info.id" class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ t('models.modelDetails.modelId') }}
+            </span>
+            <Tag
+              :value="model.model_info.id"
+              severity="secondary"
+            />
           </div>
         </div>
-      </div>
+      </Panel>
 
-      <div v-if="model.model_info.tpm || model.model_info.rpm">
-        <h3 class="text-lg font-semibold mb-4">{{ t('litellm.modelDetails.rateLimits') }}</h3>
-        <div class="grid grid-cols-2 gap-4">
-          <div v-if="model.model_info.tpm">
-            <p class="font-medium mb-1">{{ t('litellm.modelDetails.tokensPerMinute') }}:</p>
-            <p>{{ formatNumber(model.model_info.tpm) }}</p>
+      <Panel class="panel pt-5">
+        <template #header>
+          <h3 class="text-lg font-semibold">{{ t('models.modelDetails.tokenCost') }}</h3>
+        </template>
+        <div class="grid grid-cols-2 gap-4 xl:grid-cols-3">
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ t('models.modelDetails.maxInputTokens') }}
+            </span>
+            <Tag
+              :value="model.model_info.max_input_tokens ? formatNumber(model.model_info.max_input_tokens) : t('models.modelDetails.notSpecified')"
+              severity="secondary"
+            />
           </div>
-          <div v-if="model.model_info.rpm">
-            <p class="font-medium mb-1">{{ t('litellm.modelDetails.requestsPerMinute') }}:</p>
-            <p>{{ formatNumber(model.model_info.rpm) }}</p>
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ t('models.modelDetails.maxOutputTokens') }}
+            </span>
+            <Tag
+              :value="model.model_info.max_output_tokens ? formatNumber(model.model_info.max_output_tokens) : t('models.modelDetails.notSpecified')"
+              severity="secondary"
+            />
+          </div>
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ t('models.modelDetails.inputCostPer1M') }}
+            </span>
+            <Tag
+              :value="model.model_info.input_cost_per_token ? formatCostPer1M(model.model_info.input_cost_per_token) : t('models.modelDetails.notSpecified')"
+              severity="success"
+            />
+          </div>
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-semibold">
+              {{ t('models.modelDetails.outputCostPer1M') }}
+            </span>
+            <Tag
+              :value="model.model_info.output_cost_per_token ? formatCostPer1M(model.model_info.output_cost_per_token) : t('models.modelDetails.notSpecified')"
+              severity="success"
+            />
           </div>
         </div>
-      </div>
+      </Panel>
 
-      <div>
-        <h3 class="text-lg font-semibold mb-4">{{ t('litellm.modelDetails.capabilities') }}</h3>
+      <Panel v-if="getModelFeatures(model).length" class="panel pt-5">
+        <template #header>
+          <h3 class="text-lg font-semibold">{{ t('models.modelDetails.capabilities') }}</h3>
+        </template>
         <div class="flex flex-wrap gap-2">
           <Badge
             v-for="feature in getModelFeatures(model)"
@@ -107,55 +106,40 @@
             :severity="feature.severity"
             class="text-sm"
           />
-          <p
-            v-if="!getModelFeatures(model).length"
-            class="text-gray-500"
-          >
-            {{ t('litellm.modelDetails.noCapabilities') }}
-          </p>
         </div>
-      </div>
+      </Panel>
 
-      <div>
-        <h3 class="text-lg font-semibold mb-4">{{ t('litellm.modelDetails.supportedParams') }}</h3>
+      <Panel v-if="model.model_info.supported_openai_params?.length" class="panel pt-5">
+        <template #header>
+          <h3 class="text-lg font-semibold">{{ t('models.modelDetails.supportedParams') }}</h3>
+        </template>
         <div class="flex flex-wrap gap-2">
           <Badge
-            v-for="param in model.model_info.supported_openai_params || []"
+            v-for="param in model.model_info.supported_openai_params"
             :key="param"
             :value="param"
-            severity="success"
+            severity="info"
             class="text-sm"
           />
-          <p
-            v-if="!model.model_info.supported_openai_params?.length"
-            class="text-gray-500"
-          >
-            {{ t('litellm.modelDetails.notAvailable') }}
-          </p>
         </div>
-      </div>
+      </Panel>
 
-      <div>
-        <h3 class="text-lg font-semibold mb-4">{{ t('litellm.modelDetails.usageExample') }}</h3>
-        <pre class="bg-gray-100 dark:bg-gray-800 p-4 rounded text-sm overflow-x-auto"><code>{{
-            getUsageExample(model)
-          }}</code></pre>
-      </div>
+      <Panel class="panel pt-5">
+        <template #header>
+          <h3 class="text-lg font-semibold">{{ t('models.modelDetails.usageExample') }}</h3>
+        </template>
+        <pre class="bg-gray-100 dark:bg-gray-800 p-4 rounded text-sm overflow-x-auto"><code>{{ getUsageExample(model) }}</code></pre>
+      </Panel>
     </div>
-  </Dialog>
+  </StructuralColumn>
 </template>
 
 <script setup lang="ts">
 const props = defineProps<{
-  visible: boolean
   model: any
 }>()
 
-const emit = defineEmits<{
-  'update:visible': [value: boolean]
-}>()
-
-const {t} = useI18n()
+const { t } = useI18n()
 const {
   getProvider,
   getProviderSeverity,
@@ -166,3 +150,9 @@ const {
   getUsageExample
 } = useModelsUtils()
 </script>
+
+<style scoped>
+.panel :deep(.p-panel-header) {
+  padding: 0 !important;
+}
+</style>

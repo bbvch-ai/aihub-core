@@ -6,12 +6,12 @@
     :rows="3"
     :rows-per-page-options="[3, 5, 10]"
     paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-    :current-page-report-template="t('litellm.table.pageReport')"
+    :current-page-report-template="t('models.table.pageReport')"
     responsive-layout="scroll"
   >
     <Column
       field="model_name"
-      :header="t('litellm.table.modelName')"
+      :header="t('models.table.modelName')"
       :sortable="true"
       style="min-width: 200px"
     >
@@ -20,7 +20,7 @@
           <div class="flex items-center space-x-2">
             <p class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ data.model_name }}</p>
             <Button
-              v-tooltip="t('litellm.table.copyModelName')"
+              v-tooltip="t('models.table.copyModelName')"
               icon="pi pi-copy"
               severity="secondary"
               text
@@ -37,7 +37,7 @@
 
     <Column
       field="provider"
-      :header="t('litellm.table.provider')"
+      :header="t('models.table.provider')"
       :sortable="true"
       class="hidden md:table-cell"
       style="min-width: 120px"
@@ -52,7 +52,7 @@
 
     <Column
       field="model_info.mode"
-      :header="t('litellm.table.mode')"
+      :header="t('models.table.mode')"
       :sortable="true"
       class="hidden lg:table-cell"
       style="min-width: 150px"
@@ -67,7 +67,7 @@
 
     <Column
       field="tokens"
-      :header="t('litellm.table.tokens')"
+      :header="t('models.table.tokens')"
       class="hidden lg:table-cell"
       style="min-width: 120px"
     >
@@ -82,7 +82,7 @@
 
     <Column
       field="cost"
-      :header="t('litellm.table.costPer1M')"
+      :header="t('models.table.costPer1M')"
       style="min-width: 120px"
     >
       <template #body="{ data }">
@@ -99,7 +99,7 @@
 
     <Column
       field="features"
-      :header="t('litellm.table.features')"
+      :header="t('models.table.features')"
       style="min-width: 200px"
     >
       <template #body="{ data }">
@@ -123,7 +123,7 @@
 
     <Column
       field="rate_limits"
-      :header="t('litellm.table.rateLimits')"
+      :header="t('models.table.rateLimits')"
       class="hidden md:table-cell"
       style="min-width: 120px"
     >
@@ -153,13 +153,13 @@
 
     <Column
       field="details"
-      :header="t('litellm.table.details')"
+      :header="t('models.table.details')"
       style="min-width: 100px"
     >
       <template #body="{ data }">
         <Button
           icon="pi pi-info-circle"
-          :label="t('litellm.table.detailsButton')"
+          :label="t('models.table.detailsButton')"
           severity="info"
           outlined
           size="small"

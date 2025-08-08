@@ -2,38 +2,6 @@ export const useModelsUtils = () => {
   const {t} = useI18n()
   const toast = useToast()
 
-  const getProvider = (model: any): string => {
-    if (model.model_info.litellm_provider) {
-      return model.model_info.litellm_provider
-    }
-
-    const modelName = model.model_name
-    if (modelName.includes('azure/')) return 'azure'
-    if (modelName.includes('google/') || modelName.includes('gemini')) return 'google'
-    if (modelName.includes('openai/')) return 'openai'
-    if (modelName.includes('anthropic/')) return 'anthropic'
-    if (modelName.includes('local/')) return 'local'
-    if (modelName.includes('text-embedding')) return 'openai'
-    return 'unknown'
-  }
-
-  const getProviderSeverity = (provider: string): string => {
-    switch (provider) {
-      case 'azure':
-        return 'info'
-      case 'google':
-        return 'success'
-      case 'openai':
-        return 'warn'
-      case 'anthropic':
-        return 'danger'
-      case 'local':
-        return 'secondary'
-      default:
-        return 'secondary'
-    }
-  }
-
   const getModeSeverity = (mode: string): string => {
     switch (mode) {
       case 'chat':
@@ -198,8 +166,6 @@ print(response.choices[0].message.content)`
   }
 
   return {
-    getProvider,
-    getProviderSeverity,
     getModeSeverity,
     formatTokenLimits,
     formatCostPer1M,
