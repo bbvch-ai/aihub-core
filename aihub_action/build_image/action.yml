@@ -24,7 +24,7 @@ inputs:
     required: true
   ssh_key:
     description: 'ssh key to access private aihub core repository'
-    required: true
+    required: false
 
 runs:
   using: "composite"

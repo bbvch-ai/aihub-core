@@ -40,51 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-## [v0.234.2] - 2025-08-07 - Enhanced PR Agent Configuration and Performance Updates
-
-### Added
-- ✨ **Introduced `pr_agent.toml` configuration file:** Enables comprehensive customization of the PR agent's behavior, including advanced settings for auto-approval, reasoning effort, code suggestions, and best practices, empowering users with greater control over automated reviews.
-
-### Changed
-- 🚀 **Updated AI Model and API Versions:** Upgraded the `review-pr` workflow to utilize the `o4-mini` AI model and the `2024-12-01-preview` API version, enhancing performance and ensuring compatibility with the latest service capabilities.
-
-### Refactor
-- 🧹 **Centralized PR Agent Settings:** Migrated several hardcoded PR agent configurations from `action.yml` into the new `pr_agent.toml` file, streamlining configuration management and improving overall maintainability.
-
----
-
-
-
-## [v0.234.1] - 2025-08-07 - Platform Evolution: Python 3.13, Automated Compliance, and RAG Agent Enhancements
-
-### Added
-- ✨ **Automated License Compliance Reporting**: Introduced a comprehensive system to scan, categorize, and report on all Python, Node.js, and Docker image dependencies, generating a detailed `LICENSES.md` file for improved transparency and compliance.
-- 🔊 **Python 3.13 Audio Compatibility**: Added the `audioop-lts` dependency to the API service to ensure seamless audio processing compatibility with Python 3.13.
-- 🦾 **RAGAgent System Prompt Configuration**: Introduced the capability to configure the `RAGAgent` with a system prompt, allowing for more precise guidance of the underlying Large Language Model's behavior and responses. This includes support for multi-language prompts and comprehensive testing.
-- 🛡️ **Enforced Main Branch Protection**: Implemented Git settings to explicitly prohibit force pushes to the `main` branch, enhancing codebase integrity and preventing accidental history rewrites.
-- ✅ **Automated PR Version Label Check**: Introduced a new CI check that ensures all pull requests targeting `main` have a `major`, `minor`, or `patch` label, streamlining version management and release predictability.
-
-### Changed
-- ⬆️ **Python 3.13 Platform Upgrade**: All core Python projects and CI/CD workflows (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`, `aihub_process`) have been upgraded to officially support and leverage Python 3.13, enabling access to the latest language features and performance improvements.
-- ⚙️ **Refined CI/CD Versioning Strategy**: The automated release workflow now triggers only on *merged pull requests* to `main` and determines the version bump (major, minor, or patch) based on PR labels, providing more granular control over releases.
-- ⚡️ **Increased RAGAgent Test Timeout**: Extended the default timeout for RAGAgent test runs to provide more stability and accommodate longer LLM response times in complex scenarios.
-- 🔗 **Internal Dependency Tag Synchronization**: Synchronized all internal `aihub_lib` dependency tags across microservices to align with the latest versioning, ensuring consistent module integration.
-- 🧪 **IntelliJ/PyCharm Test Runner Updates**: Updated various IntelliJ/PyCharm run configurations for Python tests, aligning them with `pytest` and modern Poetry virtual environment practices.
-- 📝 **Documentation Python Version**: Updated `README.md` to reflect the new Python 3.13 requirement.
-- 🌐 **Web Project Name**: Renamed the `aihub_web` project in `package.json` for consistency.
-
-### Removed
-- 🗑️ **Deprecated GitHub Release Creation**: Eliminated the automated step within the build image GitHub Action that previously created a GitHub Release for each built Docker image, streamlining CI/CD processes.
-
-### Refactor
-- 🧹 **Python 3.13 Type Hint Modernization**: Migrated `typing_extensions.override` annotations to Python's built-in `typing.override` and simplified `AsyncGenerator` type hints for cleaner and more consistent type declarations, aligning with Python 3.13 standards.
-- 🧪 **Optimized Agent Test Fixture Scope**: Changed the `self_hosted_agent_config` pytest fixture to be session-scoped, improving test execution performance by setting up the configuration once per test session instead of per function.
-- 📦 **Streamlined Poetry Setup in CI**: Refined the Poetry installation and caching steps in GitHub Actions workflows, improving CI efficiency and consistency.
-
----
-
-
-
 ## [v0.238.0] - 2025-08-06 - Internal Version Alignment
 
 ### Changed
@@ -133,6 +88,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Refactor
 - 🧹 **Type Hint Modernization**: Migrated `typing_extensions.override` annotations to Python's built-in `typing.override` for cleaner and more consistent type declarations, aligning with Python 3.13 standards.
+
+---
+
+
+
+## [v0.234.2] - 2025-08-07 - Enhanced PR Agent Configuration and Performance Updates
+
+### Added
+- ✨ **Introduced `pr_agent.toml` configuration file:** Enables comprehensive customization of the PR agent's behavior, including advanced settings for auto-approval, reasoning effort, code suggestions, and best practices, empowering users with greater control over automated reviews.
+
+### Changed
+- 🚀 **Updated AI Model and API Versions:** Upgraded the `review-pr` workflow to utilize the `o4-mini` AI model and the `2024-12-01-preview` API version, enhancing performance and ensuring compatibility with the latest service capabilities.
+
+### Refactor
+- 🧹 **Centralized PR Agent Settings:** Migrated several hardcoded PR agent configurations from `action.yml` into the new `pr_agent.toml` file, streamlining configuration management and improving overall maintainability.
+
+---
+
+
+
+## [v0.234.1] - 2025-08-07 - Platform Evolution: Python 3.13, Automated Compliance, and RAG Agent Enhancements
+
+### Added
+- ✨ **Automated License Compliance Reporting**: Introduced a comprehensive system to scan, categorize, and report on all Python, Node.js, and Docker image dependencies, generating a detailed `LICENSES.md` file for improved transparency and compliance.
+- 🔊 **Python 3.13 Audio Compatibility**: Added the `audioop-lts` dependency to the API service to ensure seamless audio processing compatibility with Python 3.13.
+- 🦾 **RAGAgent System Prompt Configuration**: Introduced the capability to configure the `RAGAgent` with a system prompt, allowing for more precise guidance of the underlying Large Language Model's behavior and responses. This includes support for multi-language prompts and comprehensive testing.
+- 🛡️ **Enforced Main Branch Protection**: Implemented Git settings to explicitly prohibit force pushes to the `main` branch, enhancing codebase integrity and preventing accidental history rewrites.
+- ✅ **Automated PR Version Label Check**: Introduced a new CI check that ensures all pull requests targeting `main` have a `major`, `minor`, or `patch` label, streamlining version management and release predictability.
+
+### Changed
+- ⬆️ **Python 3.13 Platform Upgrade**: All core Python projects and CI/CD workflows (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`, `aihub_process`) have been upgraded to officially support and leverage Python 3.13, enabling access to the latest language features and performance improvements.
+- ⚙️ **Refined CI/CD Versioning Strategy**: The automated release workflow now triggers only on *merged pull requests* to `main` and determines the version bump (major, minor, or patch) based on PR labels, providing more granular control over releases.
+- ⚡️ **Increased RAGAgent Test Timeout**: Extended the default timeout for RAGAgent test runs to provide more stability and accommodate longer LLM response times in complex scenarios.
+- 🔗 **Internal Dependency Tag Synchronization**: Synchronized all internal `aihub_lib` dependency tags across microservices to align with the latest versioning, ensuring consistent module integration.
+- 🧪 **IntelliJ/PyCharm Test Runner Updates**: Updated various IntelliJ/PyCharm run configurations for Python tests, aligning them with `pytest` and modern Poetry virtual environment practices.
+- 📝 **Documentation Python Version**: Updated `README.md` to reflect the new Python 3.13 requirement.
+- 🌐 **Web Project Name**: Renamed the `aihub_web` project in `package.json` for consistency.
+
+### Removed
+- 🗑️ **Deprecated GitHub Release Creation**: Eliminated the automated step within the build image GitHub Action that previously created a GitHub Release for each built Docker image, streamlining CI/CD processes.
+
+### Refactor
+- 🧹 **Python 3.13 Type Hint Modernization**: Migrated `typing_extensions.override` annotations to Python's built-in `typing.override` and simplified `AsyncGenerator` type hints for cleaner and more consistent type declarations, aligning with Python 3.13 standards.
+- 🧪 **Optimized Agent Test Fixture Scope**: Changed the `self_hosted_agent_config` pytest fixture to be session-scoped, improving test execution performance by setting up the configuration once per test session instead of per function.
+- 📦 **Streamlined Poetry Setup in CI**: Refined the Poetry installation and caching steps in GitHub Actions workflows, improving CI efficiency and consistency.
 
 ---
 

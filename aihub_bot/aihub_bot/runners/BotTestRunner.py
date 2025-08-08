@@ -18,7 +18,6 @@ class BotTestRunner(BotRunner):
             title="Local AI Hub Bot Service",
             description="Local version only",
             origins=[],
-            debug=True,
             conversation_ttl_days=conversation_ttl_days,
         )
 

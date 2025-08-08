@@ -4,7 +4,7 @@ from collections import defaultdict
 from llama_index.core.base.llms.types import ChatMessage, ImageBlock, TextBlock
 from llama_index.core.prompts import RichPromptTemplate
 
-from aihub_lib.generative_ai.document.accessor.FileAccessServiceConfig import FileAccessServiceConfig
+from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings import AnonymousFileAccessSettings
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -105,7 +105,7 @@ def combine_nodes_in_order(
                     # Azure format: container/path
                     container, blob_path = image_path.split("/", 1)
 
-                file_access_config = FileAccessServiceConfig()
+                file_access_config = AnonymousFileAccessSettings()
                 image_url = file_access_config.service.generate_sas_url(container, blob_path, lifetime_hours=1)
                 context_blocks.append(ImageBlock(url=image_url))
             else:

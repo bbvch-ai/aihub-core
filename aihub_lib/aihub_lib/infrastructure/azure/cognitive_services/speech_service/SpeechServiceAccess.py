@@ -1,7 +1,9 @@
 from azure.cognitiveservices.speech import SpeechConfig
 
 from aihub_lib.infrastructure.azure.cognitive_services.CognitiveServiceAccess import CognitiveServiceAccess
-from aihub_lib.infrastructure.azure.cognitive_services.speech_service.SpeechServiceConfig import SpeechServiceConfig
+from aihub_lib.infrastructure.azure.cognitive_services.speech_service.AzureSpeechServiceSettings import (
+    AzureSpeechServiceSettings,
+)
 
 
 class SpeechServiceAccess(CognitiveServiceAccess):
@@ -19,21 +21,19 @@ class SpeechServiceAccess(CognitiveServiceAccess):
 
     def _initialize(self):
         # If the key and region are provided in the config, use them
-        if SpeechServiceConfig().SPEECH_SERVICE_KEY and SpeechServiceConfig().SPEECH_SERVICE_REGION:
-            self._region = SpeechServiceConfig().SPEECH_SERVICE_REGION
+        if AzureSpeechServiceSettings().KEY and AzureSpeechServiceSettings().REGION:
+            self._region = AzureSpeechServiceSettings().REGION
             self.speech_config = SpeechConfig(
-                subscription=SpeechServiceConfig().SPEECH_SERVICE_KEY,
+                subscription=AzureSpeechServiceSettings().KEY,
                 region=self._region,
             )
             return
 
         super()._initialize()
 
-        self._resource_group_name = (
-            SpeechServiceConfig().SPEECH_SERVICE_RESOURCE_GROUP_NAME or f"{self._app}-rg-{self._region}"
-        )
+        self._resource_group_name = AzureSpeechServiceSettings().GROUP_NAME or f"{self._app}-rg-{self._region}"
         self._speech_service_account_name = (
-            SpeechServiceConfig().SPEECH_SERVICE_NAME or f"{self._app}-srch-{self._region}"
+            AzureSpeechServiceSettings().RESOURCE_NAME or f"{self._app}-srch-{self._region}"
         )
 
         account = self._client.accounts.get(self._resource_group_name, self._speech_service_account_name)

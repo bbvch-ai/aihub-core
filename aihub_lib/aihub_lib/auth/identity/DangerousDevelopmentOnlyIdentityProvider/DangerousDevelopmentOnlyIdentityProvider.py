@@ -1,5 +1,5 @@
-from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthConfig import (
-    DangerousDevelopmentOnlyAuthConfig,
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
 )
 from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -8,7 +8,7 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 class DangerousDevelopmentOnlyIdentityProvider(IdentityProvider):
     """
     A developer user information provider that returns a fixed user identity
-    from the DangerousDevelopmentOnlyAuthConfig.
+    from the DangerousDevelopmentOnlyAuthSettings.
 
     It checks if the provided oid matches the configured dev oid and, if so, returns a UserIdentity
     built from the configuration settings. This is useful in development or testing environments
@@ -16,7 +16,7 @@ class DangerousDevelopmentOnlyIdentityProvider(IdentityProvider):
     """
 
     def __init__(self):
-        self.config = DangerousDevelopmentOnlyAuthConfig()
+        self.config = DangerousDevelopmentOnlyAuthSettings()
 
     async def get_user_identity_by_oid(self, user_oid: str) -> UserIdentity:
         if user_oid == self.config.OID:

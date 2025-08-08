@@ -176,7 +176,7 @@ The AI-Hub project utilizes the following technologies. Ensure they are installe
 environment.
 
 * **Git**: For version control.
-* **Python**: The project is built on Python, specifically version 3.11.
+* **Python**: The project is built on Python, specifically version 3.13.
 * **Poetry**: For dependency management and managing virtual environments for each Python package.
 * **make**: Used for running common tasks and commands defined in Makefiles.
 * **Docker & Docker Compose**: For containerizing and running the project's infrastructure stack.

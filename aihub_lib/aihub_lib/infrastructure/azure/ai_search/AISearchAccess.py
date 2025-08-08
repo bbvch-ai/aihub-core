@@ -3,8 +3,8 @@ from azure.identity import DefaultAzureCredential
 from azure.mgmt.search import SearchManagementClient
 from azure.search.documents.indexes import SearchIndexClient
 
-from aihub_lib.infrastructure.azure.ai_search.AISearchConfig import AISearchConfig
-from aihub_lib.infrastructure.azure.AzureBaseConfig import AzureBaseConfig
+from aihub_lib.infrastructure.azure.ai_search.AzureAISearchSettings import AzureAISearchSettings
+from aihub_lib.infrastructure.azure.AzureSettings import AzureSettings
 
 
 class AISearchAccess:
@@ -25,20 +25,18 @@ class AISearchAccess:
         return cls._instance
 
     def _initialize(self):
-        if AISearchConfig().COGNITIVE_SEARCH_ENDPOINT and AISearchConfig().COGNITIVE_SEARCH_API_KEY:
+        if AzureAISearchSettings().ENDPOINT and AzureAISearchSettings().API_KEY:
             self.index_client = SearchIndexClient(
-                endpoint=AISearchConfig().COGNITIVE_SEARCH_ENDPOINT,
-                credential=AzureKeyCredential(AISearchConfig().COGNITIVE_SEARCH_API_KEY),
+                endpoint=AzureAISearchSettings().ENDPOINT,
+                credential=AzureKeyCredential(AzureAISearchSettings().API_KEY),
             )
             return
 
-        self._app = AzureBaseConfig().APP_NAME
-        self._region = AzureBaseConfig().REGION_SHORT
-        self._subscription_id = AzureBaseConfig().AZURE_SUBSCRIPTION_ID
-        self._resource_group_name = (
-            AISearchConfig().COGNITIVE_SEARCH_RESOURCE_GROUP_NAME or f"{self._app}-rg-{self._region}"
-        )
-        self._search_service_name = AISearchConfig().COGNITIVE_SEARCH_NAME or f"{self._app}-srch-{self._region}"
+        self._app = AzureSettings().APP_NAME
+        self._region = AzureSettings().REGION_SHORT
+        self._subscription_id = AzureSettings().SUBSCRIPTION_ID
+        self._resource_group_name = AzureAISearchSettings().RESOURCE_GROUP_NAME or f"{self._app}-rg-{self._region}"
+        self._search_service_name = AzureAISearchSettings().NAME or f"{self._app}-srch-{self._region}"
         self._service_endpoint = f"https://{self._search_service_name}.search.windows.net"
 
         credential = DefaultAzureCredential()

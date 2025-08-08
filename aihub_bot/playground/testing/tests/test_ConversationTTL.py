@@ -12,7 +12,8 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.route_adapter.ASGIAdapter import ASGIAdapter
 from asgi_lifespan import LifespanManager
@@ -54,8 +55,8 @@ def mongodb_direct_connection():
     """Direct MongoDB connection for basic tests"""
     # Use a different alias to avoid conflicts
     connect(
-        db=ApiConfig().DB_NAME,
-        host="mongodb://admin:admin@localhost:27017/",
+        db=AIHubSettings().MONGO_MAIN_DB_NAME,
+        host=MongoSettings().CONNECTION_STRING,
     )
     yield
     disconnect()

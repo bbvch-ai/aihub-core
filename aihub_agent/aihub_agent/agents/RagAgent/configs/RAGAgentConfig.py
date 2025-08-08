@@ -2,9 +2,7 @@ from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
-from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.gemini.GeminiLLMConfig import GeminiLLMConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
@@ -17,7 +15,7 @@ class RAGAgentConfig(AgentConfig):
     """
 
     llm: Annotated[
-        AzureOpenAILLMConfig | GeminiLLMConfig | OpenaiLikeLLMConfig,
+        LLMConfig,
         Field(description="The LLM configuration for the agent."),
     ]
     retrieve_step_config: Annotated[RetrieveStepConfig, Field(description="The configuration for the retrieval step.")]

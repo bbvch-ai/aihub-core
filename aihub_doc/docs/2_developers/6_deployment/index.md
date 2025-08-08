@@ -100,7 +100,7 @@ This configuration provides infrastructure control while leveraging external LLM
 git clone https://github.com/bbvch-ai/aihub-core
 
 # Configure environment variables for external LLM provider
-cp .env.example .env
+cp .env.dev .env
 # Edit .env with your LLM provider credentials
 
 # Choose your deployment variant:

@@ -8,7 +8,7 @@ from fastapi.routing import APIRoute
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.routes.Controller import Controller
 
 
@@ -29,7 +29,7 @@ class Runner(abc.ABC):
     ### Key Features
     - **Dual Application Architecture:** Distinguishes between a base application (for static files or other mounts)
       and the API application (serving routes under a given prefix).
-    - **Integration with Config:** Pulls version info and other details from `ApiConfig`.
+    - **Integration with Config:** Pulls version info and other details from `AIHubSettings`.
     - **Easy Controller Mounting:** Controllers that subclass `Controller` can be attached with a simple
       `.mount()` call.
     - **Abstract Lifetime Management:** Each implementation must provide a `lifetime_manager`
@@ -39,7 +39,7 @@ class Runner(abc.ABC):
     ### Usage
     ```python
     # Typically you'd use a concrete implementation like ApiRunner or BotRunner
-    runner = ConcreteRunner(api_path="/api/v1", title="My API", debug=True)
+    runner = ConcreteRunner(api_path="/api/v1", title="My API")
     runner.mount(MyController())  # Mounting a controller
     runner.mount_frontend("path/to/frontend/dist")  # Serve frontend if desired
     app = runner.get_app()  # This is the main FastAPI instance to run
@@ -54,12 +54,10 @@ class Runner(abc.ABC):
         title: str = "AI Hub Service",
         description: str = "AI Hub",
         origins: list[str] | None = None,
-        debug: bool = False,
     ):
         self.title = title
         self.description = description
         self.origins = origins
-        self.debug = debug
 
         # Create the base and API apps
         self._api_app = self._get_api_app()
@@ -93,8 +91,8 @@ class Runner(abc.ABC):
         app = FastAPI(
             title=self.title,
             description=self.description,
-            version=ApiConfig().VERSION or ".dev",
-            debug=self.debug,
+            version=AIHubSettings().API_VERSION,
+            debug=AIHubSettings().API_DEBUG_MODE,
             redirect_slashes=True,
         )
 

@@ -23,7 +23,7 @@ Before you begin, you need to install several tools. Follow the instructions for
 
       - You can download it [directly](https://git-scm.com/) or install it through your IDE. JetBrains IDEs have excellent built-in Git support.
 
-  - **Python (3.11) via Miniconda**: We use Miniconda to create isolated Python environments.
+  - **Python (3.13) via Miniconda**: We use Miniconda to create isolated Python environments.
 
       - Download and install [Miniconda](https://docs.conda.io/en/latest/miniconda.html).
       - **Important**: During installation, ensure you add Miniconda to your system's PATH.
