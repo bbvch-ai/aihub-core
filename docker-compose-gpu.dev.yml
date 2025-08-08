@@ -174,9 +174,13 @@ services:
     restart: always
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
 
   huggingface-text-embedding-inference:
-    image: ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cuda-1.8
+    image: ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:89-1.8
     container_name: huggingface-text-embedding-inference
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/hf-tei-data:/data
@@ -188,6 +192,7 @@ services:
     command: >
       --port 8183
       --model-id Qwen/Qwen3-Embedding-0.6B
+      --max-batch-tokens 512
     deploy:
       resources:
         reservations:
@@ -198,6 +203,10 @@ services:
     restart: always
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8183/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
 
   presidio-analyzer:
     image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359
