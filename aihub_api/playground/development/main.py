@@ -81,7 +81,7 @@ async def main():
         .remove_agent_from_thread()
         .add_user_to_thread()
         .remove_user_from_thread(),
-        LiteLLMController(auth=auth).status().model_info(),
+        LiteLLMController(auth=auth).status().model_info().daily_activity(),
         AgentController(auth=auth).get_agent().get_agent_threads().get_agents().discover_agents(),
         ProcessController(auth=auth)
         .get_process()
