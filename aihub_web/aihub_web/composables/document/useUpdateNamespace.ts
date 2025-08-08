@@ -1,4 +1,4 @@
-import { updateNamespace, type UpdateNamespaceRequest } from '@core/sdk/client';
+import { updateNamespace, type UpdateNamespaceRequest } from '@core/sdk/client'
 
 export const useUpdateNamespace = defineMutation(() => {
   const queryCache = useQueryCache()

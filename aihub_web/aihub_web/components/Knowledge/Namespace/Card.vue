@@ -17,8 +17,8 @@
           <h3 class="font-semibold opacity-80">
             {{ displayName }}
           </h3>
-          <p 
-            v-if="namespace.description" 
+          <p
+            v-if="namespace.description"
             class="text-sm text-surface-500 dark:text-surface-400"
           >
             {{ namespace.description }}
@@ -27,21 +27,21 @@
       </div>
       <div class="flex items-center gap-2">
         <Button
+          v-tooltip.top="'Edit folder'"
           icon="pi pi-pencil"
           rounded
           text
           size="small"
           severity="secondary"
-          v-tooltip.top="'Edit folder'"
           @click.stop="handleEditClick"
         />
         <Button
+          v-tooltip.top="'Upload documents'"
           icon="pi pi-upload"
           rounded
           text
           size="small"
           severity="secondary"
-          v-tooltip.top="'Upload documents'"
           @click.stop="handleUploadClick"
         />
         <Badge

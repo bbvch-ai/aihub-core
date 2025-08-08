@@ -196,6 +196,34 @@ knowledge:
     title: "Document Summaries"
     level: "Level"
     no_summaries_at_level: "No summaries on this Level"
+  actions:
+    save: "Save"
+    create: "Create"
+    cancel: "Cancel"
+  add_folder:
+    title: "Add Knowledge Database Folder"
+    description: "Create a new folder in the knowledge database"
+    cancel: "Cancel"
+  form:
+    create:
+      title: "Create Knowledge Database Folder"
+    edit:
+      title: "Edit Knowledge Database Folder"
+    database:
+      label: "Knowledge Database"
+      placeholder: "Knowledge Database Name"
+    folder_name:
+      label: "Folder Name"
+      placeholder: "Folder Name"
+      help: "Name of the folder to create"
+    display_name:
+      label: "Display Name"
+      placeholder: "Display Name"
+      help: "Display name of the folder"
+    description:
+      label: "Description"
+      placeholder: "Description"
+      help: "Description of the folder"
 
 auth:
   renew:

@@ -334,13 +334,6 @@ class TestNotificationControllerIntegration:
             assert data["severity"] in ["low", "medium", "high", "critical"]
 
     @pytest.mark.asyncio
-    async def test_unauthorized_access(self, api_client):
-        """Test that endpoints require proper authentication."""
-        # This would require mocking the auth handler to return unauthorized
-        # For now, we assume the DangerousDevelopmentOnlyAuthHandler allows access
-        pass
-
-    @pytest.mark.asyncio
     async def test_content_type_handling(self, api_client):
         """Test that endpoints handle different content types correctly."""
         headers = {"Content-Type": "application/json"}

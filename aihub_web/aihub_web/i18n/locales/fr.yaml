@@ -195,6 +195,34 @@ knowledge:
     title: "Résumés de document"
     level: "Niveau"
     no_summaries_at_level: "Aucun résumé à ce niveau"
+  actions:
+    save: "Enregistrer"
+    create: "Créer"
+    cancel: "Annuler"
+  add_folder:
+    title: "Ajouter un dossier à la base de connaissances"
+    description: "Créer un nouveau dossier dans la base de connaissances"
+    cancel: "Annuler"
+  form:
+    create:
+      title: "Créer un dossier de base de connaissances"
+    edit:
+      title: "Modifier le dossier de la base de connaissances"
+    database:
+      label: "Base de connaissances"
+      placeholder: "Nom de la base de connaissances"
+    folder_name:
+      label: "Nom du dossier"
+      placeholder: "Nom du dossier"
+      help: "Nom du dossier à créer"
+    display_name:
+      label: "Nom d'affichage"
+      placeholder: "Nom d'affichage"
+      help: "Nom d'affichage du dossier"
+    description:
+      label: "Description"
+      placeholder: "Description"
+      help: "Description du dossier"
 
 auth:
   renew:

@@ -12,10 +12,16 @@
     >
       <template #body="{ data }">
         <div class="flex items-center gap-2">
-          <p class="font-bold" :class="{ 'text-surface-500': data.isProcessing }">
+          <p
+            class="font-bold"
+            :class="{ 'text-surface-500': data.isProcessing }"
+          >
             {{ data.document_title }}
           </p>
-          <div v-if="data.isProcessing" class="flex items-center gap-2">
+          <div
+            v-if="data.isProcessing"
+            class="flex items-center gap-2"
+          >
             <ProgressSpinner
               v-if="data.status === 'processing'"
               style="width: 16px; height: 16px"
@@ -74,7 +80,10 @@
           icon="pi pi-download"
           @click="() => downloadFile(data.source)"
         />
-        <span v-else class="text-surface-400 text-sm">-</span>
+        <span
+          v-else
+          class="text-sm text-surface-400"
+        >-</span>
       </template>
     </Column>
   </DataTable>
@@ -117,12 +126,12 @@ const allDocuments = computed(() => {
     isProcessing: true,
     updated_at: doc.created_at,
     number_of_pages: null,
-    source: null
+    source: null,
   }))
 
   const regular = props.documents.map(doc => ({
     ...doc,
-    isProcessing: false
+    isProcessing: false,
   }))
 
   // Put processing documents at the top

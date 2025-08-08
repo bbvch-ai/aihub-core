@@ -93,7 +93,7 @@ const handleUpload = (data: { files: File[], namespace: string, database: string
       document_title: file.name.replace(/\.[^/.]+$/, ''),
       created_at: new Date().toISOString(),
       status: 'uploading' as const,
-      progress: 0
+      progress: 0,
     }
     processingDocuments.value.push(processingDoc)
 
@@ -108,7 +108,8 @@ const simulateUploadProgress = (docId: string, fileName: string) => {
   const uploadInterval = setInterval(() => {
     if (doc.progress! < 100) {
       doc.progress = Math.min(100, doc.progress! + Math.random() * 20)
-    } else {
+    }
+    else {
       clearInterval(uploadInterval)
       doc.status = 'processing'
 

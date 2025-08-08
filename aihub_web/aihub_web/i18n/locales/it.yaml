@@ -195,6 +195,34 @@ knowledge:
     title: "Riassunti del documento"
     level: "Livello"
     no_summaries_at_level: "Nessun riassunto a questo livello"
+  actions:
+    save: "Salva"
+    create: "Crea"
+    cancel: "Annulla"
+  add_folder:
+    title: "Aggiungi cartella al database di conoscenza"
+    description: "Crea una nuova cartella nel database di conoscenza"
+    cancel: "Annulla"
+  form:
+    create:
+      title: "Crea cartella del database di conoscenza"
+    edit:
+      title: "Modifica cartella del database di conoscenza"
+    database:
+      label: "Database di conoscenza"
+      placeholder: "Nome del database di conoscenza"
+    folder_name:
+      label: "Nome cartella"
+      placeholder: "Nome cartella"
+      help: "Nome della cartella da creare"
+    display_name:
+      label: "Nome visualizzato"
+      placeholder: "Nome visualizzato"
+      help: "Nome visualizzato della cartella"
+    description:
+      label: "Descrizione"
+      placeholder: "Descrizione"
+      help: "Descrizione della cartella"
 
 auth:
   renew:

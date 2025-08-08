@@ -1,10 +1,13 @@
 import logging
 
 import mongoengine
+from fastapi import HTTPException
 
 from aihub_api.routes.knowledge.dto.NamespaceDTO import NamespaceDTO
+from aihub_api.services.TranslationService import TranslationService
 from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
+from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.azure.cosmos.docstore.CosmosDocstoreAccess import CosmosDocstoreAccess
@@ -22,7 +25,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     NodeTypeValue,
 )
 from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
-from mongoengine import register_connection
+from mongoengine import register_connection, DoesNotExist
 
 from aihub_api.routes.knowledge.dto.CreateNamespaceRequest import CreateNamespaceRequest
 from aihub_api.routes.knowledge.dto.DatabaseDTO import DatabaseDTO
@@ -126,37 +129,64 @@ class KnowledgeService:
             summaries[level].nodes.sort(key=lambda node: node.index)
         return list(summaries.values())
 
+    async def _create_and_translate_locale_entity(
+        text: str | None, t: LocaleHandler, llm_config: ChatLLMConfig | None
+    ) -> LocaleStringEntity | None:
+        """Helper to create and translate a LocaleStringEntity."""
+        if not text:
+            return None
+
+        # Create the initial entity from the user's input and locale
+        locale_string = LocaleString(**{t.locale: text})
+        entity = LocaleStringEntity.from_locale_string(locale_string)
+
+        # If an LLM is configured, attempt to translate to other locales
+        if llm_config:
+            try:
+                # This returns the updated entity with translations
+                entity = await TranslationService.translate_locale_string_entity(
+                    entity=entity, llm_config=llm_config, t=t, source_locale=t.locale
+                )
+                logger.info(f"Successfully translated text snippet '{text[:30]}...'.")
+            except Exception as e:
+                logger.warning(f"Failed to auto-translate text snippet '{text[:30]}...': {e}")
+
+        return entity
+
     @staticmethod
-    def create_namespace(request: CreateNamespaceRequest, t: LocaleHandler) -> NamespaceResponse:
+    async def create_namespace(
+        request: CreateNamespaceRequest, t: LocaleHandler, llm_config: ChatLLMConfig | None = None
+    ) -> NamespaceResponse:
         """
         Creates a new namespace (folder) in the specified database.
         """
-        from fastapi import HTTPException
-
+        # 1. --- Validate Bucket ---
         try:
             bucket = BucketEntity.get_bucket_by_bucket_name(request.database_name)
-        except Exception:
-            raise HTTPException(status_code=404, detail=f"Database '{request.database_name}' not found")
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail=f"Database '{request.database_name}' not found.")
 
+        # 2. --- Prevent Duplicates (with specific error handling) ---
         try:
-            existing = NamespaceEntity.get_namespace_by_bucket_and_name(str(bucket.id), request.namespace_name)
-            if existing:
-                raise HTTPException(
-                    status_code=409,
-                    detail=f"Folder '{request.namespace_name}' already exists in database '{request.database_name}'",
-                )
-        except Exception:
-            # Namespace doesn't exist, which is what we want
+            NamespaceEntity.get_namespace_by_bucket_and_name(str(bucket.id), request.namespace_name)
+            # If the above line doesn't raise an exception, the namespace already exists.
+            raise HTTPException(
+                status_code=409,
+                detail=f"Folder '{request.namespace_name}' already exists in database '{request.database_name}'.",
+            )
+        except DoesNotExist:
+            # This is the expected path for a new namespace, so we can proceed.
             pass
 
-        display_name_entity = None
-        if request.display_name:
-            display_name_entity = LocaleStringEntity.from_locale_string(LocaleString(en=request.display_name))
+        # 3. --- Prepare Localized Data (using the helper method) ---
+        display_name_entity = await KnowledgeService._create_and_translate_locale_entity(
+            request.display_name, t, llm_config
+        )
+        description_entity = await KnowledgeService._create_and_translate_locale_entity(
+            request.description, t, llm_config
+        )
 
-        description_entity = None
-        if request.description:
-            description_entity = LocaleStringEntity.from_locale_string(LocaleString(en=request.escription))
-
+        # 4. --- Create the Namespace in the Database ---
         namespace_entity = NamespaceEntity.create_namespace(
             bucket_id=str(bucket.id),
             namespace_name=request.namespace_name,
@@ -165,6 +195,7 @@ class KnowledgeService:
             description=description_entity,
         )
 
+        # 5. --- Format and Return the Response ---
         return NamespaceResponse(
             id=str(namespace_entity.id),
             bucket_id=namespace_entity.bucket_id,
@@ -175,7 +206,9 @@ class KnowledgeService:
         )
 
     @staticmethod
-    def update_namespace(namespace_id: str, request: UpdateNamespaceRequest, t: LocaleHandler) -> NamespaceResponse:
+    async def update_namespace(
+        namespace_id: str, request: UpdateNamespaceRequest, t: LocaleHandler, llm_config: ChatLLMConfig | None = None
+    ) -> NamespaceResponse:
         """
         Updates display name and description for an existing namespace.
         """
@@ -188,11 +221,37 @@ class KnowledgeService:
 
         display_name = None
         if request.display_name:
-            display_name = LocaleStringEntity.from_locale_string(LocaleString(en=request.display_name))
+            # Create basic LocaleString with user's language
+            locale_kwargs = {t.locale: request.display_name}
+            locale_string = LocaleString(**locale_kwargs)
+            display_name = LocaleStringEntity.from_locale_string(locale_string)
+
+            # Auto-translate to missing locales if LLM config is provided
+            if llm_config:
+                try:
+                    display_name = await TranslationService.translate_locale_string_entity(
+                        entity=display_name, llm_config=llm_config, t=t, source_locale=t.locale
+                    )
+                    logger.info(f"Successfully translated display_name to all supported locales")
+                except Exception as e:
+                    logger.warning(f"Failed to translate display_name: {e}")
 
         description = None
         if request.description:
-            description = LocaleStringEntity.from_locale_string(LocaleString(en=request.escription))
+            # Create basic LocaleString with user's language
+            locale_kwargs = {t.locale: request.description}
+            locale_string = LocaleString(**locale_kwargs)
+            description = LocaleStringEntity.from_locale_string(locale_string)
+
+            # Auto-translate to missing locales if LLM config is provided
+            if llm_config:
+                try:
+                    description = await TranslationService.translate_locale_string_entity(
+                        entity=description, llm_config=llm_config, t=t, source_locale=t.locale
+                    )
+                    logger.info(f"Successfully translated description to all supported locales")
+                except Exception as e:
+                    logger.warning(f"Failed to translate description: {e}")
 
         updated_entity = NamespaceEntity.update_namespace(
             namespace_id=namespace_id,
@@ -205,6 +264,6 @@ class KnowledgeService:
             bucket_id=updated_entity.bucket_id,
             namespace_name=updated_entity.namespace_name,
             folder_name=updated_entity.folder_name,
-            display_name=t.extract(updated_entity.display_name),
-            description=t.extract(updated_entity.description),
+            display_name=t.extract(updated_entity.display_name) if updated_entity.display_name else None,
+            description=t.extract(updated_entity.description) if updated_entity.description else None,
         )

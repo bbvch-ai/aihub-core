@@ -191,7 +191,7 @@ const getEmptyStateTitle = computed(() => {
 
 const handleNotificationClick = async (notification: NotificationDto) => {
   if (!notification.read) {
-    await updateNotification({
+    updateNotification({
       id: notification.id,
       payload: ref({ read: true }),
     })

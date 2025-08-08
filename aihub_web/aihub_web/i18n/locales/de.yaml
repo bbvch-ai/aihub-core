@@ -196,6 +196,34 @@ knowledge:
     title: "Dokumentzusammenfassungen"
     level: "Ebene"
     no_summaries_at_level: "Keine Zusammenfassungen auf dieser Ebene"
+  actions:
+    save: "Speichern"
+    create: "Erstellen"
+    cancel: "Abbrechen"
+  add_folder:
+    title: "Ordner zur Wissensdatenbank hinzufügen"
+    description: "Einen neuen Ordner in der Wissensdatenbank erstellen"
+    cancel: "Abbrechen"
+  form:
+    create:
+      title: "Ordner für Wissensdatenbank erstellen"
+    edit:
+      title: "Ordner der Wissensdatenbank bearbeiten"
+    database:
+      label: "Wissensdatenbank"
+      placeholder: "Name der Wissensdatenbank"
+    folder_name:
+      label: "Ordnername"
+      placeholder: "Ordnername"
+      help: "Name des zu erstellenden Ordners"
+    display_name:
+      label: "Anzeigename"
+      placeholder: "Anzeigename"
+      help: "Anzeigename des Ordners"
+    description:
+      label: "Beschreibung"
+      placeholder: "Beschreibung"
+      help: "Beschreibung des Ordners"
 
 auth:
   renew:
