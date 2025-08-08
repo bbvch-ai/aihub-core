@@ -560,6 +560,11 @@ async function copyToClipboard(text: string) {
   }
 }
 
+function showModelDetails(model: LLMModel) {
+  selectedModel.value = model
+  modelDialogVisible.value = true
+}
+
 function getUsageExample(model: LLMModel): string {
   const isImageGeneration = model.model_info.mode === 'image_generation'
   const isEmbedding = model.model_info.mode === 'embedding'
