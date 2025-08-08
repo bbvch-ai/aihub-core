@@ -3,21 +3,6 @@ from typing import Optional, List
 from pydantic import BaseModel
 
 
-class CustomTokenizerDTO(BaseModel):
-    identifier: str
-    revision: str
-    auth_token: Optional[str] = None
-
-
-class LiteLLMParamsDTO(BaseModel):
-    api_base: Optional[str] = None
-    api_version: Optional[str] = None
-    use_in_pass_through: Optional[bool] = None
-    use_litellm_proxy: Optional[bool] = None
-    merge_reasoning_content_in_choices: Optional[bool] = None
-    model: str
-
-
 class ModelInfoDTO(BaseModel):
     id: Optional[str] = None
     db_model: Optional[bool] = None
@@ -51,7 +36,6 @@ class ModelInfoDTO(BaseModel):
     search_context_cost_per_query: Optional[float] = None
     output_vector_size: Optional[int] = None
     litellm_provider: Optional[str] = None
-    custom_tokenizer: Optional[CustomTokenizerDTO] = None
     supports_system_messages: Optional[bool] = None
     supports_response_schema: Optional[bool] = None
     supports_vision: Optional[bool] = None
@@ -73,7 +57,6 @@ class ModelInfoDTO(BaseModel):
     supported_openai_params: Optional[List[str]] = None
 
 
-class LLMDTO(BaseModel):
+class ModelDTO(BaseModel):
     model_name: str
-    litellm_params: LiteLLMParamsDTO
     model_info: ModelInfoDTO

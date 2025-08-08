@@ -1,30 +1,30 @@
 <template>
   <StructuralScreen>
     <StructuralColumn
-      :title="t('litellm.title')"
-      :loading="modelsAreLoading"
-      size="large"
-      class="w-1/2 pr-2"
+        :title="t('litellm.title')"
+        :loading="modelsAreLoading"
+        size="large"
+        class="w-1/2 pr-2"
     >
       <div v-if="error" class="mb-4">
         <Message
-          severity="error"
-          :closable="false"
+            severity="error"
+            :closable="false"
         >
           {{ t('litellm.error') }}: {{ error }}
         </Message>
       </div>
 
       <div v-if="!modelsAreLoading && !error && models">
-        <LiteLLMModelTable
-          :models="models"
-          @show-details="showModelDetails"
+        <ModelsTable
+            :models="models"
+            @show-details="showModelDetails"
         />
       </div>
 
-      <LiteLLMModelDialog
-        v-model:visible="modelDialogVisible"
-        :model="selectedModel"
+      <ModelsDialog
+          v-model:visible="modelDialogVisible"
+          :model="selectedModel"
       />
     </StructuralColumn>
   </StructuralScreen>
@@ -35,9 +35,9 @@ definePageMeta({
   layout: 'default',
 })
 
-const { t } = useI18n()
+const {t} = useI18n()
 
-const { models, modelsAreLoading, error } = useLiteLLMModels()
+const {models, modelsAreLoading, error} = useModelsList()
 
 const modelDialogVisible = ref(false)
 const selectedModel = ref(null)

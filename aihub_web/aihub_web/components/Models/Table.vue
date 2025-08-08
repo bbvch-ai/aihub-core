@@ -171,6 +171,7 @@
 </template>
 
 <script setup lang="ts">
+
 const props = defineProps<{
   models: any[]
 }>()
@@ -189,5 +190,5 @@ const {
   getModelFeatures,
   formatNumber,
   copyToClipboard
-} = useLiteLLMUtils()
+} = useModelsUtils()
 </script>

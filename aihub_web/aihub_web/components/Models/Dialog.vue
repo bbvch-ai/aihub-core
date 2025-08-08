@@ -155,14 +155,14 @@ const emit = defineEmits<{
   'update:visible': [value: boolean]
 }>()
 
-const { t } = useI18n()
-const { 
-  getProvider, 
-  getProviderSeverity, 
-  getModeSeverity, 
-  formatCostPer1M, 
+const {t} = useI18n()
+const {
+  getProvider,
+  getProviderSeverity,
+  getModeSeverity,
+  formatCostPer1M,
   getModelFeatures,
   formatNumber,
   getUsageExample
-} = useLiteLLMUtils()
+} = useModelsUtils()
 </script>

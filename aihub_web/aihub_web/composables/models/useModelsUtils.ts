@@ -1,5 +1,5 @@
-export const useLiteLLMUtils = () => {
-  const { t } = useI18n()
+export const useModelsUtils = () => {
+  const {t} = useI18n()
   const toast = useToast()
 
   const getProvider = (model: any): string => {
@@ -74,43 +74,43 @@ export const useLiteLLMUtils = () => {
     const features: Array<{ name: string, severity: string }> = []
 
     if (model.model_info.supports_vision) {
-      features.push({ name: 'Vision', severity: 'success' })
+      features.push({name: 'Vision', severity: 'success'})
     }
 
     if (model.model_info.supports_function_calling) {
-      features.push({ name: 'Function Calling', severity: 'info' })
+      features.push({name: 'Function Calling', severity: 'info'})
     }
 
     if (model.model_info.supports_web_search) {
-      features.push({ name: 'Web Search', severity: 'help' })
+      features.push({name: 'Web Search', severity: 'help'})
     }
 
     if (model.model_info.supports_reasoning) {
-      features.push({ name: 'Reasoning', severity: 'warn' })
+      features.push({name: 'Reasoning', severity: 'warn'})
     }
 
     if (model.model_info.supports_prompt_caching) {
-      features.push({ name: 'Caching', severity: 'secondary' })
+      features.push({name: 'Caching', severity: 'secondary'})
     }
 
     if (model.model_info.supports_audio_input) {
-      features.push({ name: 'Audio Input', severity: 'info' })
+      features.push({name: 'Audio Input', severity: 'info'})
     }
 
     if (model.model_info.supports_audio_output) {
-      features.push({ name: 'Audio Output', severity: 'info' })
+      features.push({name: 'Audio Output', severity: 'info'})
     }
 
     if (model.model_info.supports_pdf_input) {
-      features.push({ name: 'PDF Input', severity: 'success' })
+      features.push({name: 'PDF Input', severity: 'success'})
     }
 
     if (model.model_info.supports_computer_use) {
-      features.push({ name: 'Computer Use', severity: 'danger' })
+      features.push({name: 'Computer Use', severity: 'danger'})
     }
 
     if (model.model_info.output_vector_size) {
-      features.push({ name: `${model.model_info.output_vector_size}D`, severity: 'secondary' })
+      features.push({name: `${model.model_info.output_vector_size}D`, severity: 'secondary'})
     }
 
     return features
@@ -126,7 +126,7 @@ export const useLiteLLMUtils = () => {
       toast.add({
         severity: 'success',
         summary: t('litellm.copied'),
-        detail: t('litellm.copiedDetail', { text }),
+        detail: t('litellm.copiedDetail', {text}),
         life: 3000
       })
     } catch (err) {

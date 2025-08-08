@@ -8,7 +8,7 @@ from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.file.FileController import FileController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
-from aihub_api.routes.litellm.LiteLLMController import LiteLLMController
+from aihub_api.routes.model.ModelController import ModelController
 from aihub_api.routes.notification.NotificationController import NotificationController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.routes.process.ProcessController import ProcessController
@@ -74,7 +74,7 @@ async def main():
         .remove_agent_from_thread()
         .add_user_to_thread()
         .remove_user_from_thread(),
-        LiteLLMController(auth=auth).status().model_info(),
+        ModelController(auth=auth).status().model_list(),
         AgentController(auth=auth).get_agent().get_agent_threads().get_agents().discover_agents(),
         ProcessController(auth=auth)
         .get_process()
