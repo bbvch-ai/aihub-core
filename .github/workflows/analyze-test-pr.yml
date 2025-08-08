@@ -54,22 +54,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Free disk space
-        run: |
-          echo "Disk space before cleanup:"
-          df -h
-          
-          # Remove pre-installed tools that aren't needed
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /usr/local/share/boost
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          sudo apt-get clean
-          
-          echo "Disk space after cleanup:"
-          df -h
-
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
