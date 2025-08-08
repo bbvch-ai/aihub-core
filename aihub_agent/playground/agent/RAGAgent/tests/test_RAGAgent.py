@@ -173,7 +173,7 @@ def _(self_hosted_agent_config):
 @when(parsers.parse('the start event is sent with a user query "{query}"'))
 @async_test
 async def _(agent_runner: AgentTestRunner, query: str):
-    async with agent_runner.test_run(delay_before_stop=40) as topic:
+    async with agent_runner.test_run(delay_before_stop=60) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(

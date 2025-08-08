@@ -78,7 +78,6 @@ def fill_collection(
         vector_store=vector_store,
         docstore=doc_store,
     )
-    print(nodes)
     if nodes:
         pipeline.run(nodes=nodes)
     else:
