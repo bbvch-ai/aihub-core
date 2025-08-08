@@ -19,3 +19,7 @@ test-cov:
 	                  --cov-report=xml:coverage.xml \
 	                  --cov-report=term-missing \
 	                  --junitxml=pytest.xml
+
+test:
+	@echo "Running tests in aihub_lib..."
+	poetry run pytest

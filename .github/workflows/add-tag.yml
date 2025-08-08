@@ -30,7 +30,7 @@ jobs:
             latest_tag="v0.0.0"
           else
             # Get the latest tag matching 'v*'
-            latest_tag=$(git describe --tags --match "v*" --abbrev=0)
+            latest_tag=$(git tag -l "v*" | sort -V | tail -n 1)
           fi
           echo "Latest tag: $latest_tag"
 

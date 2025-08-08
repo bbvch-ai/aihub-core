@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_api"
-version = "v0.235.0"
+version = "v0.238.1"
 description = "api core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -32,6 +32,7 @@ arize-phoenix = "^10.0.0"
 # audioop-lts is required as a compatibility shim for Python 3.13,
 # since the standard library's audioop module was removed in Python 3.13.
 audioop-lts = "^0.2.1"
+fastmcp = "^2.11.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
@@ -43,6 +44,7 @@ black = { extras = ["jupyter"], version = "^25.1.0" }
 pytest-bdd = "^8.1.0"
 pytest-cov = "^6.0.0"
 asgi-lifespan = "^2.1.0"
+pip-licenses = "^5.0.0"
 
 [tool.poetry.dependencies.jambo]
 git = "https://github.com/bbvch-ai/jambo.git"
@@ -50,7 +52,7 @@ tag = "v0.4.0"
 
 [tool.poetry.dependencies.aihub_lib]
 git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.238.0"
+tag = "v0.238.1"
 subdirectory = "aihub_lib"
 
 [build-system]

@@ -357,8 +357,6 @@ check_docker_images() {
     TOTAL_DOCKER_IMAGES=$external_images
     echo "Found ${#seen_images[@]} unique Docker images ($external_images external)"
 
-    add_section "Docker Images"
-
     echo "### External Docker Service Licenses" >> "$OUTPUT_FILE_ABS"
     echo "" >> "$OUTPUT_FILE_ABS"
     echo "| Status | Service | Image | License | Notes |" >> "$OUTPUT_FILE_ABS"

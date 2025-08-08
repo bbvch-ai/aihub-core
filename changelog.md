@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.238.1] - 2025-08-07 - Empowering Developers: New Documentation, Enhanced CI/CD, and AI Assistant Integration
+
+### Added
+- 📚 **Comprehensive Documentation System**: Introduced a completely new, structured documentation site using **VitePress**, replacing the old markdown files and setting up automated deployment to GitHub Pages. This includes a new dynamic sidebar and custom theming.
+- 🧑‍💻 **AI Assistant Development Commands**: Added a suite of new commands for Claude Code (`.claude/commands/`), including **`create-pr`**, **`document-decisions`**, **`document-feature`**, **`explain`**, **`implement-feedback-from-pr`**, and **`update-doc`**, to streamline developer workflows.
+- 🔗 **Model Context Protocol (MCP) Integration**: Implemented **MCP support** within the AI-Hub, enabling AI coding assistants to observe and interact with running services (API, Phoenix, MongoDB) for enhanced debugging and development.
+- 🚦 **Automated Version Label Enforcement**: Introduced a new CI check to **enforce version bump labels** (`major`, `minor`, `patch`) on all pull requests targeting the `main` branch, ensuring release predictability.
+- ⚙️ **PR Agent Configuration Customization**: Added a new **`.pr_agent.toml`** file for comprehensive customization of the PR agent's behavior, offering granular control over automated code reviews.
+- 🤖 **Standardized AI Context Files**: New **`CLAUDE.md`** and **`GEMINI.md`** files were added across scopes to provide context for AI coding assistants.
+- ✅ **Prohibited Force Pushes**: Added Git settings to **prohibit force pushes to the `main` branch**, enhancing codebase integrity.
+- 🧪 **Consolidated Local Testing**: Added explicit `test` targets to `Makefiles` in core microservices (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_lib`, `aihub_process`) for easier and consistent local test execution.
+
+### Changed
+- 🚀 **Streamlined CI/CD Versioning**: The automated release workflow now triggers only on **merged pull requests** to `main` and dynamically determines the version bump (`major`, `minor`, `patch`) based on PR labels, providing more granular control over releases.
+- 🧠 **Updated AI Code Review Model**: The PR review workflow now utilizes the **`o4-mini` AI model** and updated API versions (`2024-12-01-preview`), enhancing performance and compatibility for automated code reviews.
+- 📈 **Improved CI/CD Robustness**: Configured various GitHub Actions workflows to use **`fail-fast: false`**, allowing other jobs to continue execution even if one job fails, improving overall CI stability.
+- 🔄 **Refined `ApiRunner` and `BotRunner`**: Restructured runners to consistently utilize **`Starlette`** as the base application, simplifying internal architecture and supporting multiple mounted applications like the new MCP server.
+- 📦 **Standardized Monorepo Dependencies**: Shifted `aihub_lib` dependencies in microservices to **local path references (`develop = true`)** instead of Git tags, streamlining local development and cross-project dependency resolution.
+- 🔑 **Simplified API Playground Authentication**: The default authentication in the `aihub_api` playground has been changed to `DangerousDevelopmentOnlyAuthHandler` for **easier local development setup**.
+- 🐍 **Updated Python Action Examples**: Modified Python version in `aihub_action/README.md` examples from 3.13 to **3.11** for relevant actions.
+
+### Removed
+- 🗑️ **Deprecated Documentation System**: Eliminated the entire old documentation system (`aihub_doc/` markdown files and `arc42/` structure), replaced by the new VitePress-based system.
+- 🧹 **Obsolete `gitkeep` Files**: Cleaned up empty `.gitkeep` files across the repository.
+- ✂️ **Redundant PR Agent Hardcoded Settings**: Removed hardcoded PR agent auto-review settings from the GitHub Action, now managed via `.pr_agent.toml`.
+
+### Refactor
+- 📊 **Unified Python Testing**: Standardized `test` targets in Makefiles across all Python microservices, simplifying local test execution.
+- 🎯 **Streamlined CI/CD Configuration**: Centralized PR agent settings into a dedicated `.pr_agent.toml` file, improving maintainability of automated review processes.
+- 🏗️ **Refined API and Bot Runner Structures**: Simplified base application creation and mounting logic within `ApiRunner` and `BotRunner` for a cleaner architecture.
+
+---
+
+
+
 ## [v0.234.2] - 2025-08-07 - Enhanced PR Agent Configuration and Performance Updates
 
 ### Added
@@ -45,118 +80,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🧹 **Python 3.13 Type Hint Modernization**: Migrated `typing_extensions.override` annotations to Python's built-in `typing.override` and simplified `AsyncGenerator` type hints for cleaner and more consistent type declarations, aligning with Python 3.13 standards.
 - 🧪 **Optimized Agent Test Fixture Scope**: Changed the `self_hosted_agent_config` pytest fixture to be session-scoped, improving test execution performance by setting up the configuration once per test session instead of per function.
 - 📦 **Streamlined Poetry Setup in CI**: Refined the Poetry installation and caching steps in GitHub Actions workflows, improving CI efficiency and consistency.
-
----
-
-
-
-## [v0.201.0] - 2025-06-30 - Unified User Identity & Authentication Overhaul
-
-### Refactor
-- 🔄 **Unified User Identity Management**: Implemented a comprehensive overhaul of user identity handling, centralizing the **`UserIdentity`** model in `aihub_lib` and replacing the deprecated `AuthenticatedUser` across all services (`aihub_api`, `aihub_agent`, `aihub_bot`). This standardizes how user information is represented and accessed.
-- 🧹 **Decoupled Authentication from Identity Resolution**: Introduced a new **`IdentityProvider`** interface and various concrete implementations (e.g., `AzureIdentityProvider`, `TokenIdentityProvider`). Authentication handlers (`OAuth2AuthHandler`, `TokenAuthHandler`, `OpenWebuiAuthHandler`) now leverage these providers, significantly improving modularity and allowing for easier integration of new identity sources.
-- 🔐 **Enhanced Security Development Experience**: Renamed `NoAuthHandler` to **`DangerousDevelopmentOnlyAuthHandler`** and introduced a dedicated **`DangerousDevelopmentOnlyIdentityProvider`** to clearly delineate and manage authentication in non-production environments, making it more explicit when security is bypassed for development.
-
-### Changed
-- ⚡️ **Standardized Controller Initialization**: The **`auth`** parameter in all `Controller` constructors is now a required keyword-only argument, promoting clearer and more consistent API initialization.
-- 🚀 **Unauthenticated Health Checks**: The **health check endpoint** (`/health`) no longer requires authentication, making it easier to monitor service availability.
-- 📄 **API Token Generation Improvements**: Updated the **`generate_api_token.py`** script with clearer CLI parameter names (`--token-path`, `--token-url`) to better reflect their purpose.
-- 🛣️ **Bot API Path Update**: Changed the base API path for **bot-in-the-loop interactions** from `/api/v1` to `/bearer_token/v1` in `aihub_bot` to align with specific authentication routing.
-- 🌐 **Frontend User Profile Update**: Renamed the **`preferredUsername`** property to **`email`** in frontend user components and SDK schemas to align with the new `UserIdentity` model, reflecting a more direct and generic user email representation.
-
-### Removed
-- 🗑️ **Deprecated User Information Providers**: Eliminated several specific user information provider classes from `aihub_api` (`BaseUserInformationProvider`, `MultiStrategyUserInformationProvider`, `ApiTokenUserInformationProvider`, `AzureUserInformationProvider`, `DevUserInformationProvider`) as their functionality is now superseded by the new **`IdentityProvider`** architecture in `aihub_lib`.
-- 🗑️ **Legacy `AuthenticatedUser` Model**: The outdated **`AuthenticatedUser`** model has been fully removed from `aihub_lib`, completing the transition to `UserIdentity`.
-
----
-
-
-
-## [v0.176.0] - 2025-06-04 - Introducing Advanced Document Intelligence with Visual Content Processing
-
-### Added
-- 🖼️ **Multimodal Document Processing**: Introduced the capability to extract figures from documents, generate detailed alt-text descriptions using an AI vision model (GPT-4o), and re-inject these descriptions and image URLs back into the document content.
-- ⚡️ **Table Reformatting**: Added functionality to automatically convert HTML tables within documents into a structured Markdown format for improved readability and processing.
-- 📄 **Page Number Metadata**: Document nodes now include a `page` metadata field, enabling precise contextual retrieval based on original page numbers.
-- ✨ **Dedicated Figure Storage**: Implemented a dedicated directory in the data lake for storing extracted raw figure data, ensuring efficient management of visual assets.
-- 🦾 **New Prompt Templates for Figure Descriptions**: Added specialized prompt templates to guide the AI vision model in generating high-quality, accessible alt-text for figures.
-
-### Changed
-- 🔄 **Revamped Document Processing Pipeline**: The entire document ingestion pipeline has been significantly refactored to support multimodal capabilities, including new stages for figure extraction, description generation, and table reformatting.
-- 🧠 **Upgraded Language Model**: The default language model for the playground environment has been upgraded to `gpt-4o`, enhancing its capabilities, especially for vision-related tasks.
-- 🧹 **Refined Data Lake File Handling**: Updated the logic for fetching files from the data lake to exclude figure directories, streamlining document processing.
-- 🌍 **Improved Summarizer Localization**: The summarizer prompt now explicitly instructs the model to generate summaries in the same language as the input text, improving language consistency.
-
-### Refactor
-- ⚙️ **Modularized Document Parsing**: The core document parsing operation was refactored to separate the initial parsing from the final `RefDocDocument` creation, improving pipeline clarity and flexibility for multimodal steps.
-- 🗑️ **Automated Figure Cleanup**: Implemented automatic deletion of associated figure data from the data lake when a document is removed, ensuring data hygiene.
-
----
-
-
-
-## [v0.149.0] - 2025-05-04 - Enhanced LLM Flexibility with Gemini Support
-
-### Added
-- ✨ **Google Gemini LLM Support**: Introduced `GeminiLLMConfig` and associated configurations, enabling seamless integration and usage of Google Gemini chat models via their OpenAI-compatible API.
-
-### Refactor
-- 🧹 **Standardized OpenAI-like LLM Configuration**: Renamed `SelfHostedLLMConfig` to `OpenaiLikeLLMConfig` to more accurately reflect its compatibility with various OpenAI-like API endpoints, improving clarity and broad applicability across the codebase.
-- 🔄 **Updated RAG Agent Module Path**: The `RAGAgent` and its related configuration files have been reorganized and moved to a new, more logical module path (`aihub_agent.agents.RagAgent`), streamlining the internal structure of agent implementations.
-
----
-
-
-
-## [v0.53.0] - 2025-02-19 - Enhanced Security & Scalable Platform Foundations
-
-### Added
-- ✨ **New API Token Management:** Introduced comprehensive API endpoints and a dedicated `BearerToken` entity for creating, listing, and revoking API tokens, enabling secure programmatic access to the platform.
-- 🚀 **Flexible Authentication Strategies:** Implemented a new `AuthHandler` abstraction and a `MultiAuthHandler` composite, allowing the API to support multiple authentication methods (e.g., OAuth2, API tokens, or no-auth for development) seamlessly.
-- 🧪 **Enhanced Testing Infrastructure:** Added `ASGIAdapter` to enable direct in-memory testing of HTTP requests within the ASGI application, significantly enhancing test reliability and performance.
-- 📄 **Dedicated API Configuration:** Introduced `ApiConfig` to centralize API-specific settings, separating them from general Azure infrastructure configurations for clearer management.
-- 🛠️ **Developer User Information Provider:** Added `DevUserInformationProvider` to simplify local development and testing by providing a configurable user identity without requiring external authentication services.
-
-### Changed
-- 🔄 **Extended Agent Discovery:** Agent discovery responses now include `stop_events` alongside `start_events`, providing a more complete picture of an agent's lifecycle and supported termination events. The corresponding `StartEventSpecs` type was renamed to `EventSpecs` for broader applicability.
-- 🗓️ **Thread Creation Timestamp:** Thread entities now automatically record their `created_at` timestamp upon creation, improving traceability and data management.
-- ⚙️ **Updated CI/CD Workflows:** Adjusted backend linting and testing actions, including the `aihub_api` Docker Compose configuration and Poetry lock command, for improved reliability and efficiency in continuous integration.
-
-### Fixed
-- 🐛 **Refined Azure User Information Error Handling:** Improved error handling in `AzureUserInformationProvider` to raise a `ValueError` for failed user information fetches from Microsoft Graph, providing more precise feedback.
-- 🐞 **Corrected Thread User ID Access:** Addressed an issue where thread access checks incorrectly used `user_id` instead of `id` for user validation within thread operations.
-
-### Security
-- 🔑 **Enhanced Agent Access Control:** The `AuthenticatedUser` now properly recognizes the `AllAgents` role, providing more flexible and robust permissions for agent interactions.
-- 🔒 **Authenticated Health Checks:** The `/health` endpoint now requires proper authentication, preventing unauthorized access to application status information and ensuring a more secure deployment.
-- 🛡️ **Agent Access Validation for Chat:** Chat completion endpoints now perform explicit authorization checks, ensuring users only communicate with agents they are permitted to access.
-
-### Refactor
-- 🧹 **Streamlined Authentication Modules:** Restructured and consolidated authentication-related modules, moving core components to `aihub_lib` and adopting a unified `AuthHandler` interface across the application. This includes the removal of legacy `use_oauth2_user` and `use_no_auth_user` dependencies.
-- 🗑️ **Removed Legacy AccessToken System:** The outdated `AccessToken` persistence entity and its associated code have been removed in favor of the new, more flexible `BearerToken` system.
-- 📦 **Centralized API Testing:** Migrated various `.http` integration test files to comprehensive Python-based `pytest` suites, improving test maintainability, automation, and reliability.
-- 🧹 **Simplified MongoDB Document Access:** Refactored `RefDoc` querying methods to remove the `organization_shortname` parameter, streamlining data access and consistency.
-- ⚙️ **Improved Configuration Clarity:** Renamed `BaseConfig` to `AzureBaseConfig` and adjusted its usage to better reflect its Azure-specific nature, separating it from general `ApiConfig`.
-- 🧹 **General Code Cleanup:** Removed extraneous SonarLint settings from project files and performed minor import reordering for better code hygiene.
-
----
-
-
-
-## [v0.46.0] - 2025-02-18 - Streamlined Azure Integration and Configuration
-
-### Changed
-- 🔄 **Azure Subscription Identification:** Transitioned all Azure infrastructure access from using Azure Subscription Names to more robust and direct Azure Subscription IDs, enhancing reliability and security.
-- ⚡️ **Azure Resource Naming Convention:** Simplified the naming convention for Azure resources by removing the environment-specific slug, promoting a cleaner and more consistent resource management approach.
-
-### Refactor
-- 🧹 **Configuration Base Class:** Restructured the `BaseConfig` by removing the explicit `ENVIRONMENT` field, streamlining the configuration process and abstracting environment specificity across the platform.
-- ⚙️ **Azure Service Access Logic:** Refactored the internal logic for accessing various Azure services (AI Search, Cognitive Services, Cosmos DB, Data Lake) to directly utilize Azure Subscription IDs, improving efficiency and removing reliance on potentially ambiguous subscription name lookups.
-- 🗂️ **Internal Module Naming:** Standardized internal module naming conventions for configuration files from `Configs` to `configs` (lowercase) for improved consistency within the codebase.
-
-### Added
-- ⬆️ **Azure Management Dependencies:** Incorporated new `azure-mgmt-cognitiveservices`, `azure-storage-file-datalake`, and `adlfs` dependencies to support the updated Azure integration patterns and access methods.
-- 🔐 **CI/CD Azure Subscription ID Support:** Updated CI/CD workflows to pass the `AZURE_SUBSCRIPTION_ID` secret, ensuring alignment of testing environments with the new Azure configuration standards.
 
 ---
 
@@ -834,6 +757,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v0.201.0] - 2025-06-30 - Unified User Identity & Authentication Overhaul
+
+### Refactor
+- 🔄 **Unified User Identity Management**: Implemented a comprehensive overhaul of user identity handling, centralizing the **`UserIdentity`** model in `aihub_lib` and replacing the deprecated `AuthenticatedUser` across all services (`aihub_api`, `aihub_agent`, `aihub_bot`). This standardizes how user information is represented and accessed.
+- 🧹 **Decoupled Authentication from Identity Resolution**: Introduced a new **`IdentityProvider`** interface and various concrete implementations (e.g., `AzureIdentityProvider`, `TokenIdentityProvider`). Authentication handlers (`OAuth2AuthHandler`, `TokenAuthHandler`, `OpenWebuiAuthHandler`) now leverage these providers, significantly improving modularity and allowing for easier integration of new identity sources.
+- 🔐 **Enhanced Security Development Experience**: Renamed `NoAuthHandler` to **`DangerousDevelopmentOnlyAuthHandler`** and introduced a dedicated **`DangerousDevelopmentOnlyIdentityProvider`** to clearly delineate and manage authentication in non-production environments, making it more explicit when security is bypassed for development.
+
+### Changed
+- ⚡️ **Standardized Controller Initialization**: The **`auth`** parameter in all `Controller` constructors is now a required keyword-only argument, promoting clearer and more consistent API initialization.
+- 🚀 **Unauthenticated Health Checks**: The **health check endpoint** (`/health`) no longer requires authentication, making it easier to monitor service availability.
+- 📄 **API Token Generation Improvements**: Updated the **`generate_api_token.py`** script with clearer CLI parameter names (`--token-path`, `--token-url`) to better reflect their purpose.
+- 🛣️ **Bot API Path Update**: Changed the base API path for **bot-in-the-loop interactions** from `/api/v1` to `/bearer_token/v1` in `aihub_bot` to align with specific authentication routing.
+- 🌐 **Frontend User Profile Update**: Renamed the **`preferredUsername`** property to **`email`** in frontend user components and SDK schemas to align with the new `UserIdentity` model, reflecting a more direct and generic user email representation.
+
+### Removed
+- 🗑️ **Deprecated User Information Providers**: Eliminated several specific user information provider classes from `aihub_api` (`BaseUserInformationProvider`, `MultiStrategyUserInformationProvider`, `ApiTokenUserInformationProvider`, `AzureUserInformationProvider`, `DevUserInformationProvider`) as their functionality is now superseded by the new **`IdentityProvider`** architecture in `aihub_lib`.
+- 🗑️ **Legacy `AuthenticatedUser` Model**: The outdated **`AuthenticatedUser`** model has been fully removed from `aihub_lib`, completing the transition to `UserIdentity`.
+
+---
+
+
+
 ## [v0.200.0] - 2025-06-30 - Process Orchestration and Core Refinements for Enhanced Modularity
 
 ### Added
@@ -1211,6 +1156,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - 🐛 **Typo in Document Store Removal Logic:** Corrected a minor typo in the logic for fetching reference documents to be removed from the document store.
+
+---
+
+
+## [v0.176.0] - 2025-06-04 - Introducing Advanced Document Intelligence with Visual Content Processing
+
+### Added
+- 🖼️ **Multimodal Document Processing**: Introduced the capability to extract figures from documents, generate detailed alt-text descriptions using an AI vision model (GPT-4o), and re-inject these descriptions and image URLs back into the document content.
+- ⚡️ **Table Reformatting**: Added functionality to automatically convert HTML tables within documents into a structured Markdown format for improved readability and processing.
+- 📄 **Page Number Metadata**: Document nodes now include a `page` metadata field, enabling precise contextual retrieval based on original page numbers.
+- ✨ **Dedicated Figure Storage**: Implemented a dedicated directory in the data lake for storing extracted raw figure data, ensuring efficient management of visual assets.
+- 🦾 **New Prompt Templates for Figure Descriptions**: Added specialized prompt templates to guide the AI vision model in generating high-quality, accessible alt-text for figures.
+
+### Changed
+- 🔄 **Revamped Document Processing Pipeline**: The entire document ingestion pipeline has been significantly refactored to support multimodal capabilities, including new stages for figure extraction, description generation, and table reformatting.
+- 🧠 **Upgraded Language Model**: The default language model for the playground environment has been upgraded to `gpt-4o`, enhancing its capabilities, especially for vision-related tasks.
+- 🧹 **Refined Data Lake File Handling**: Updated the logic for fetching files from the data lake to exclude figure directories, streamlining document processing.
+- 🌍 **Improved Summarizer Localization**: The summarizer prompt now explicitly instructs the model to generate summaries in the same language as the input text, improving language consistency.
+
+### Refactor
+- ⚙️ **Modularized Document Parsing**: The core document parsing operation was refactored to separate the initial parsing from the final `RefDocDocument` creation, improving pipeline clarity and flexibility for multimodal steps.
+- 🗑️ **Automated Figure Cleanup**: Implemented automatic deletion of associated figure data from the data lake when a document is removed, ensuring data hygiene.
 
 ---
 
@@ -1650,6 +1617,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Refactor
 - 🔄 **Standardized OpenAI-like LLM Naming**: Renamed `SelfHostedLLMConfig` and `SelfHostedLLMParameter` to `OpenaiLikeLLMConfig` and `OpenaiLikeLLMParameter` across the codebase. This standardizes the configuration for models that adhere to the OpenAI API specification but are hosted locally or externally.
 - 🧹 **Internal Module Reorganization**: Reorganized internal imports and module structures within `aihub_agent` and `aihub_bot` to improve code clarity and maintainability.
+
+---
+
+
+## [v0.149.0] - 2025-05-04 - Enhanced LLM Flexibility with Gemini Support
+
+### Added
+- ✨ **Google Gemini LLM Support**: Introduced `GeminiLLMConfig` and associated configurations, enabling seamless integration and usage of Google Gemini chat models via their OpenAI-compatible API.
+
+### Refactor
+- 🧹 **Standardized OpenAI-like LLM Configuration**: Renamed `SelfHostedLLMConfig` to `OpenaiLikeLLMConfig` to more accurately reflect its compatibility with various OpenAI-like API endpoints, improving clarity and broad applicability across the codebase.
+- 🔄 **Updated RAG Agent Module Path**: The `RAGAgent` and its related configuration files have been reorganized and moved to a new, more logical module path (`aihub_agent.agents.RagAgent`), streamlining the internal structure of agent implementations.
 
 ---
 
@@ -3048,6 +3027,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v0.53.0] - 2025-02-19 - Enhanced Security & Scalable Platform Foundations
+
+### Added
+- ✨ **New API Token Management:** Introduced comprehensive API endpoints and a dedicated `BearerToken` entity for creating, listing, and revoking API tokens, enabling secure programmatic access to the platform.
+- 🚀 **Flexible Authentication Strategies:** Implemented a new `AuthHandler` abstraction and a `MultiAuthHandler` composite, allowing the API to support multiple authentication methods (e.g., OAuth2, API tokens, or no-auth for development) seamlessly.
+- 🧪 **Enhanced Testing Infrastructure:** Added `ASGIAdapter` to enable direct in-memory testing of HTTP requests within the ASGI application, significantly enhancing test reliability and performance.
+- 📄 **Dedicated API Configuration:** Introduced `ApiConfig` to centralize API-specific settings, separating them from general Azure infrastructure configurations for clearer management.
+- 🛠️ **Developer User Information Provider:** Added `DevUserInformationProvider` to simplify local development and testing by providing a configurable user identity without requiring external authentication services.
+
+### Changed
+- 🔄 **Extended Agent Discovery:** Agent discovery responses now include `stop_events` alongside `start_events`, providing a more complete picture of an agent's lifecycle and supported termination events. The corresponding `StartEventSpecs` type was renamed to `EventSpecs` for broader applicability.
+- 🗓️ **Thread Creation Timestamp:** Thread entities now automatically record their `created_at` timestamp upon creation, improving traceability and data management.
+- ⚙️ **Updated CI/CD Workflows:** Adjusted backend linting and testing actions, including the `aihub_api` Docker Compose configuration and Poetry lock command, for improved reliability and efficiency in continuous integration.
+
+### Fixed
+- 🐛 **Refined Azure User Information Error Handling:** Improved error handling in `AzureUserInformationProvider` to raise a `ValueError` for failed user information fetches from Microsoft Graph, providing more precise feedback.
+- 🐞 **Corrected Thread User ID Access:** Addressed an issue where thread access checks incorrectly used `user_id` instead of `id` for user validation within thread operations.
+
+### Security
+- 🔑 **Enhanced Agent Access Control:** The `AuthenticatedUser` now properly recognizes the `AllAgents` role, providing more flexible and robust permissions for agent interactions.
+- 🔒 **Authenticated Health Checks:** The `/health` endpoint now requires proper authentication, preventing unauthorized access to application status information and ensuring a more secure deployment.
+- 🛡️ **Agent Access Validation for Chat:** Chat completion endpoints now perform explicit authorization checks, ensuring users only communicate with agents they are permitted to access.
+
+### Refactor
+- 🧹 **Streamlined Authentication Modules:** Restructured and consolidated authentication-related modules, moving core components to `aihub_lib` and adopting a unified `AuthHandler` interface across the application. This includes the removal of legacy `use_oauth2_user` and `use_no_auth_user` dependencies.
+- 🗑️ **Removed Legacy AccessToken System:** The outdated `AccessToken` persistence entity and its associated code have been removed in favor of the new, more flexible `BearerToken` system.
+- 📦 **Centralized API Testing:** Migrated various `.http` integration test files to comprehensive Python-based `pytest` suites, improving test maintainability, automation, and reliability.
+- 🧹 **Simplified MongoDB Document Access:** Refactored `RefDoc` querying methods to remove the `organization_shortname` parameter, streamlining data access and consistency.
+- ⚙️ **Improved Configuration Clarity:** Renamed `BaseConfig` to `AzureBaseConfig` and adjusted its usage to better reflect its Azure-specific nature, separating it from general `ApiConfig`.
+- 🧹 **General Code Cleanup:** Removed extraneous SonarLint settings from project files and performed minor import reordering for better code hygiene.
+
+---
+
+
+
 ## [v0.52.0] - 2025-02-19 - Bot Reliability and Code Clarity Improvements
 
 ### Fixed
@@ -3144,6 +3158,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🗑️ **Configuration Cleanup**: Removed the `ENVIRONMENT` variable from `BaseConfig` as part of the broader effort to streamline Azure infrastructure configuration.
 
 ---
+
+
+
+## [v0.46.0] - 2025-02-18 - Streamlined Azure Integration and Configuration
+
+### Changed
+- 🔄 **Azure Subscription Identification:** Transitioned all Azure infrastructure access from using Azure Subscription Names to more robust and direct Azure Subscription IDs, enhancing reliability and security.
+- ⚡️ **Azure Resource Naming Convention:** Simplified the naming convention for Azure resources by removing the environment-specific slug, promoting a cleaner and more consistent resource management approach.
+
+### Refactor
+- 🧹 **Configuration Base Class:** Restructured the `BaseConfig` by removing the explicit `ENVIRONMENT` field, streamlining the configuration process and abstracting environment specificity across the platform.
+- ⚙️ **Azure Service Access Logic:** Refactored the internal logic for accessing various Azure services (AI Search, Cognitive Services, Cosmos DB, Data Lake) to directly utilize Azure Subscription IDs, improving efficiency and removing reliance on potentially ambiguous subscription name lookups.
+- 🗂️ **Internal Module Naming:** Standardized internal module naming conventions for configuration files from `Configs` to `configs` (lowercase) for improved consistency within the codebase.
+
+### Added
+- ⬆️ **Azure Management Dependencies:** Incorporated new `azure-mgmt-cognitiveservices`, `azure-storage-file-datalake`, and `adlfs` dependencies to support the updated Azure integration patterns and access methods.
+- 🔐 **CI/CD Azure Subscription ID Support:** Updated CI/CD workflows to pass the `AZURE_SUBSCRIPTION_ID` secret, ensuring alignment of testing environments with the new Azure configuration standards.
+
+---
+
 
 
 

@@ -1,24 +1,6 @@
 import asyncio
-from os.path import abspath, dirname, isdir, join
 
 import nest_asyncio
-
-from aihub_api.routes.agent.AgentController import AgentController
-from aihub_api.routes.evaluation.EvaluationController import EvaluationController
-from aihub_api.routes.event.EventController import EventController
-from aihub_api.routes.file.FileController import FileController
-from aihub_api.routes.i18n.I18nController import I18nController
-from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
-from aihub_api.routes.litellm.LiteLLMController import LiteLLMController
-from aihub_api.routes.notification.NotificationController import NotificationController
-from aihub_api.routes.openai.OpenaiController import OpenaiController
-from aihub_api.routes.process.ProcessController import ProcessController
-from aihub_api.routes.role.RoleController import RoleController
-from aihub_api.routes.suite.SuiteController import SuiteController
-from aihub_api.routes.thread.ThreadController import ThreadController
-from aihub_api.routes.token.TokenController import TokenController
-from aihub_api.routes.user.UserController import UserController
-from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
@@ -39,6 +21,22 @@ from aihub_lib.generative_ai.resources.models.tts.azure.AzureTTSConfig import Az
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
+
+from aihub_api.routes.agent.AgentController import AgentController
+from aihub_api.routes.evaluation.EvaluationController import EvaluationController
+from aihub_api.routes.event.EventController import EventController
+from aihub_api.routes.file.FileController import FileController
+from aihub_api.routes.i18n.I18nController import I18nController
+from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
+from aihub_api.routes.notification.NotificationController import NotificationController
+from aihub_api.routes.openai.OpenaiController import OpenaiController
+from aihub_api.routes.process.ProcessController import ProcessController
+from aihub_api.routes.role.RoleController import RoleController
+from aihub_api.routes.suite.SuiteController import SuiteController
+from aihub_api.routes.thread.ThreadController import ThreadController
+from aihub_api.routes.token.TokenController import TokenController
+from aihub_api.routes.user.UserController import UserController
+from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from playground.development.DevelopmentOpenaiResourceSettings import DevelopmentOpenaiResourceSettings
 
 enable_logging()
@@ -47,12 +45,6 @@ nest_asyncio.apply()
 
 async def main():
     runner = ApiTestRunner()
-
-    frontend_dir = join(
-        dirname(abspath(__file__)), "..", "..", "..", "aihub_web", "aihub_web", ".playground", ".output", "public"
-    )
-    if isdir(join(frontend_dir, "_nuxt")):
-        runner.mount_frontend(frontend_dir)
 
     # auth = TokenAndOauth2Handler(
     #     bearer_handlers=[
@@ -81,7 +73,6 @@ async def main():
         .remove_agent_from_thread()
         .add_user_to_thread()
         .remove_user_from_thread(),
-        LiteLLMController(auth=auth).status().model_info().daily_activity(),
         AgentController(auth=auth).get_agent().get_agent_threads().get_agents().discover_agents(),
         ProcessController(auth=auth)
         .get_process()

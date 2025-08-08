@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_lib"
-version = "v0.235.0"
+version = "v0.238.1"
 description = ""
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -73,6 +73,7 @@ mypy = "^1.13.0"
 types-pyyaml = "^6.0.12.20240917"
 types-networkx = "^3.4.2.20241115"
 pytest-cov = "^6.0.0"
+pip-licenses = "^5.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
