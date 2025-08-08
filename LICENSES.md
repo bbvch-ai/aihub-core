@@ -1,11 +1,11 @@
 # License Report
 
-Generated on: 07.08.2025
+Generated on: 08.08.2025
 
 This document contains license information for all dependencies across the monorepo:
-- Python packages (Poetry): **1474 packages**
+- Python packages (Poetry): **1454 packages**
 - Node.js packages (pnpm): **193 packages**
-- External Docker images: **10 images**
+- External Docker images: **20 images**
 
 ### License Compatibility
 
@@ -173,11 +173,8 @@ This document contains license information for all dependencies across the monor
 | ✅ | jmespath | 1.0.1 | MIT License |  |
 | ✅ | latex2mathml | 3.78.0 | MIT License |  |
 | ✅ | llama-index-embeddings-openai | 0.3.1 | MIT License |  |
-| ✅ | llama-index-embeddings-text-embeddings-inference | 0.3.2 | MIT License |  |
-| ✅ | llama-index-llms-azure-openai | 0.3.2 | MIT License |  |
 | ✅ | llama-index-storage-docstore-mongodb | 0.3.0 | MIT License |  |
 | ✅ | llama-index-storage-kvstore-mongodb | 0.3.0 | MIT License |  |
-| ✅ | llama-index-utils-huggingface | 0.3.0 | MIT License |  |
 | ✅ | markdown-it-py | 3.0.0 | MIT License |  |
 | ✅ | marshmallow | 3.26.1 | MIT License |  |
 | ✅ | mdurl | 0.1.2 | MIT License |  |
@@ -242,9 +239,8 @@ This document contains license information for all dependencies across the monor
 | ✅ | jsonschema | 4.25.0 | MIT (override) |  |
 | ✅ | jsonschema-specifications | 2025.4.1 | MIT (override) |  |
 | ✅ | llama-index-core | 0.12.52.post1 | MIT (override) |  |
-| ✅ | llama-index-embeddings-azure-openai | 0.3.9 | MIT (override) |  |
+| ✅ | llama-index-embeddings-openai-like | 0.1.1 | MIT (override) |  |
 | ✅ | llama-index-instrumentation | 0.4.0 | MIT (override) |  |
-| ✅ | llama-index-llms-google-genai | 0.1.14 | MIT (override) |  |
 | ✅ | llama-index-llms-openai | 0.3.44 | MIT (override) |  |
 | ✅ | llama-index-llms-openai-like | 0.3.5 | MIT (override) |  |
 | ✅ | llama-index-readers-file | 0.4.11 | MIT (override) |  |
@@ -432,7 +428,6 @@ This document contains license information for all dependencies across the monor
 | ✅ | latex2mathml | 3.78.0 | MIT License |  |
 | ✅ | llama-index-embeddings-openai | 0.3.1 | MIT License |  |
 | ✅ | llama-index-embeddings-text-embeddings-inference | 0.3.2 | MIT License |  |
-| ✅ | llama-index-llms-azure-openai | 0.3.2 | MIT License |  |
 | ✅ | llama-index-storage-docstore-mongodb | 0.3.0 | MIT License |  |
 | ✅ | llama-index-storage-kvstore-mongodb | 0.3.0 | MIT License |  |
 | ✅ | llama-index-utils-huggingface | 0.3.0 | MIT License |  |
@@ -508,9 +503,8 @@ This document contains license information for all dependencies across the monor
 | ✅ | jsonschema | 4.25.0 | MIT (override) |  |
 | ✅ | jsonschema-specifications | 2025.4.1 | MIT (override) |  |
 | ✅ | llama-index-core | 0.12.52.post1 | MIT (override) |  |
-| ✅ | llama-index-embeddings-azure-openai | 0.3.9 | MIT (override) |  |
+| ✅ | llama-index-embeddings-openai-like | 0.1.1 | MIT (override) |  |
 | ✅ | llama-index-instrumentation | 0.4.0 | MIT (override) |  |
-| ✅ | llama-index-llms-google-genai | 0.1.14 | MIT (override) |  |
 | ✅ | llama-index-llms-openai | 0.3.44 | MIT (override) |  |
 | ✅ | llama-index-llms-openai-like | 0.3.5 | MIT (override) |  |
 | ✅ | llama-index-readers-file | 0.4.11 | MIT (override) |  |
@@ -686,11 +680,8 @@ This document contains license information for all dependencies across the monor
 | ✅ | jmespath | 1.0.1 | MIT License |  |
 | ✅ | latex2mathml | 3.78.0 | MIT License |  |
 | ✅ | llama-index-embeddings-openai | 0.3.1 | MIT License |  |
-| ✅ | llama-index-embeddings-text-embeddings-inference | 0.3.2 | MIT License |  |
-| ✅ | llama-index-llms-azure-openai | 0.3.2 | MIT License |  |
 | ✅ | llama-index-storage-docstore-mongodb | 0.3.0 | MIT License |  |
 | ✅ | llama-index-storage-kvstore-mongodb | 0.3.0 | MIT License |  |
-| ✅ | llama-index-utils-huggingface | 0.3.0 | MIT License |  |
 | ✅ | markdown-it-py | 3.0.0 | MIT License |  |
 | ✅ | marshmallow | 3.26.1 | MIT License |  |
 | ✅ | mdurl | 0.1.2 | MIT License |  |
@@ -753,9 +744,8 @@ This document contains license information for all dependencies across the monor
 | ✅ | jsonschema | 4.25.0 | MIT (override) |  |
 | ✅ | jsonschema-specifications | 2025.4.1 | MIT (override) |  |
 | ✅ | llama-index-core | 0.12.52.post1 | MIT (override) |  |
-| ✅ | llama-index-embeddings-azure-openai | 0.3.9 | MIT (override) |  |
+| ✅ | llama-index-embeddings-openai-like | 0.1.1 | MIT (override) |  |
 | ✅ | llama-index-instrumentation | 0.4.0 | MIT (override) |  |
-| ✅ | llama-index-llms-google-genai | 0.1.14 | MIT (override) |  |
 | ✅ | llama-index-llms-openai | 0.3.44 | MIT (override) |  |
 | ✅ | llama-index-llms-openai-like | 0.3.5 | MIT (override) |  |
 | ✅ | llama-index-readers-file | 0.4.11 | MIT (override) |  |
@@ -928,11 +918,9 @@ This document contains license information for all dependencies across the monor
 | ✅ | jmespath | 1.0.1 | MIT License |  |
 | ✅ | latex2mathml | 3.78.0 | MIT License |  |
 | ✅ | llama-index-embeddings-openai | 0.3.1 | MIT License |  |
-| ✅ | llama-index-embeddings-text-embeddings-inference | 0.3.2 | MIT License |  |
 | ✅ | llama-index-llms-azure-openai | 0.3.2 | MIT License |  |
 | ✅ | llama-index-storage-docstore-mongodb | 0.3.0 | MIT License |  |
 | ✅ | llama-index-storage-kvstore-mongodb | 0.3.0 | MIT License |  |
-| ✅ | llama-index-utils-huggingface | 0.3.0 | MIT License |  |
 | ✅ | markdown-it-py | 3.0.0 | MIT License |  |
 | ✅ | marshmallow | 3.26.1 | MIT License |  |
 | ✅ | mdurl | 0.1.2 | MIT License |  |
@@ -998,9 +986,8 @@ This document contains license information for all dependencies across the monor
 | ✅ | jsonschema | 4.25.0 | MIT (override) |  |
 | ✅ | jsonschema-specifications | 2025.4.1 | MIT (override) |  |
 | ✅ | llama-index-core | 0.12.52.post1 | MIT (override) |  |
-| ✅ | llama-index-embeddings-azure-openai | 0.3.9 | MIT (override) |  |
+| ✅ | llama-index-embeddings-openai-like | 0.1.1 | MIT (override) |  |
 | ✅ | llama-index-instrumentation | 0.4.0 | MIT (override) |  |
-| ✅ | llama-index-llms-google-genai | 0.1.14 | MIT (override) |  |
 | ✅ | llama-index-llms-openai | 0.3.44 | MIT (override) |  |
 | ✅ | llama-index-llms-openai-like | 0.3.5 | MIT (override) |  |
 | ✅ | llama-index-readers-file | 0.4.11 | MIT (override) |  |
@@ -1171,11 +1158,9 @@ This document contains license information for all dependencies across the monor
 | ✅ | jmespath | 1.0.1 | MIT License |  |
 | ✅ | latex2mathml | 3.78.0 | MIT License |  |
 | ✅ | llama-index-embeddings-openai | 0.3.1 | MIT License |  |
-| ✅ | llama-index-embeddings-text-embeddings-inference | 0.3.2 | MIT License |  |
 | ✅ | llama-index-llms-azure-openai | 0.3.2 | MIT License |  |
 | ✅ | llama-index-storage-docstore-mongodb | 0.3.0 | MIT License |  |
 | ✅ | llama-index-storage-kvstore-mongodb | 0.3.0 | MIT License |  |
-| ✅ | llama-index-utils-huggingface | 0.3.0 | MIT License |  |
 | ✅ | markdown-it-py | 3.0.0 | MIT License |  |
 | ✅ | marshmallow | 3.26.1 | MIT License |  |
 | ✅ | mdurl | 0.1.2 | MIT License |  |
@@ -1240,9 +1225,8 @@ This document contains license information for all dependencies across the monor
 | ✅ | jsonschema | 4.25.0 | MIT (override) |  |
 | ✅ | jsonschema-specifications | 2025.4.1 | MIT (override) |  |
 | ✅ | llama-index-core | 0.12.52.post1 | MIT (override) |  |
-| ✅ | llama-index-embeddings-azure-openai | 0.3.9 | MIT (override) |  |
+| ✅ | llama-index-embeddings-openai-like | 0.1.1 | MIT (override) |  |
 | ✅ | llama-index-instrumentation | 0.4.0 | MIT (override) |  |
-| ✅ | llama-index-llms-google-genai | 0.1.14 | MIT (override) |  |
 | ✅ | llama-index-llms-openai | 0.3.44 | MIT (override) |  |
 | ✅ | llama-index-llms-openai-like | 0.3.5 | MIT (override) |  |
 | ✅ | llama-index-readers-file | 0.4.11 | MIT (override) |  |
@@ -1428,11 +1412,8 @@ This document contains license information for all dependencies across the monor
 | ✅ | jmespath | 1.0.1 | MIT License |  |
 | ✅ | latex2mathml | 3.78.0 | MIT License |  |
 | ✅ | llama-index-embeddings-openai | 0.3.1 | MIT License |  |
-| ✅ | llama-index-embeddings-text-embeddings-inference | 0.3.2 | MIT License |  |
-| ✅ | llama-index-llms-azure-openai | 0.3.2 | MIT License |  |
 | ✅ | llama-index-storage-docstore-mongodb | 0.3.0 | MIT License |  |
 | ✅ | llama-index-storage-kvstore-mongodb | 0.3.0 | MIT License |  |
-| ✅ | llama-index-utils-huggingface | 0.3.0 | MIT License |  |
 | ✅ | markdown-it-py | 3.0.0 | MIT License |  |
 | ✅ | marshmallow | 3.26.1 | MIT License |  |
 | ✅ | mdurl | 0.1.2 | MIT License |  |
@@ -1491,9 +1472,8 @@ This document contains license information for all dependencies across the monor
 | ✅ | jsonschema | 4.25.0 | MIT (override) |  |
 | ✅ | jsonschema-specifications | 2025.4.1 | MIT (override) |  |
 | ✅ | llama-index-core | 0.12.52.post1 | MIT (override) |  |
-| ✅ | llama-index-embeddings-azure-openai | 0.3.9 | MIT (override) |  |
+| ✅ | llama-index-embeddings-openai-like | 0.1.1 | MIT (override) |  |
 | ✅ | llama-index-instrumentation | 0.4.0 | MIT (override) |  |
-| ✅ | llama-index-llms-google-genai | 0.1.14 | MIT (override) |  |
 | ✅ | llama-index-llms-openai | 0.3.44 | MIT (override) |  |
 | ✅ | llama-index-llms-openai-like | 0.3.5 | MIT (override) |  |
 | ✅ | llama-index-readers-file | 0.4.11 | MIT (override) |  |
@@ -1543,12 +1523,12 @@ This document contains license information for all dependencies across the monor
 | ✅ | @pinia/nuxt | 0.11.1 | MIT |  |
 | ✅ | @primeuix/forms | 0.0.4 | MIT |  |
 | ✅ | @primeuix/styled | 0.6.4 | MIT |  |
-| ✅ | @primeuix/styles | 1.1.1 | MIT |  |
+| ✅ | @primeuix/styles | 1.2.1 | MIT |  |
 | ✅ | @primeuix/themes | 1.1.1 | MIT |  |
 | ✅ | @primeuix/utils | 0.4.1 | MIT |  |
 | ✅ | @primevue/core | 4.3.5 | MIT |  |
 | ✅ | @primevue/forms | 4.3.5 | MIT |  |
-| ✅ | @primevue/icons | 4.3.5 | MIT |  |
+| ✅ | @primevue/icons | 4.3.6 | MIT |  |
 | ✅ | @socket.io/component-emitter | 3.1.2 | MIT |  |
 | ✅ | @svgdotjs/svg.draggable.js | 3.0.6 | MIT |  |
 | ✅ | @svgdotjs/svg.filter.js | 3.0.9 | MIT |  |
@@ -1565,18 +1545,18 @@ This document contains license information for all dependencies across the monor
 | ✅ | @vue-flow/controls | 1.1.2 | MIT |  |
 | ✅ | @vue-flow/core | 1.44.0 | MIT |  |
 | ✅ | @vue-flow/minimap | 1.5.3 | MIT |  |
-| ✅ | @vue/compiler-core | 3.5.16 | MIT |  |
-| ✅ | @vue/compiler-dom | 3.5.16 | MIT |  |
-| ✅ | @vue/compiler-sfc | 3.5.16 | MIT |  |
-| ✅ | @vue/compiler-ssr | 3.5.16 | MIT |  |
+| ✅ | @vue/compiler-core | 3.5.17 | MIT |  |
+| ✅ | @vue/compiler-dom | 3.5.17 | MIT |  |
+| ✅ | @vue/compiler-sfc | 3.5.17 | MIT |  |
+| ✅ | @vue/compiler-ssr | 3.5.17 | MIT |  |
 | ✅ | @vue/devtools-api | 6.6.4 | MIT |  |
 | ✅ | @vue/devtools-kit | 7.7.6 | MIT |  |
 | ✅ | @vue/devtools-shared | 7.7.6 | MIT |  |
-| ✅ | @vue/reactivity | 3.5.16 | MIT |  |
-| ✅ | @vue/runtime-core | 3.5.16 | MIT |  |
-| ✅ | @vue/runtime-dom | 3.5.16 | MIT |  |
-| ✅ | @vue/server-renderer | 3.5.16 | MIT |  |
-| ✅ | @vue/shared | 3.5.16 | MIT |  |
+| ✅ | @vue/reactivity | 3.5.17 | MIT |  |
+| ✅ | @vue/runtime-core | 3.5.17 | MIT |  |
+| ✅ | @vue/runtime-dom | 3.5.17 | MIT |  |
+| ✅ | @vue/server-renderer | 3.5.17 | MIT |  |
+| ✅ | @vue/shared | 3.5.17 | MIT |  |
 | ✅ | @vueuse/core | 10.11.1 | MIT |  |
 | ✅ | @vueuse/integrations | 13.3.0 | MIT |  |
 | ✅ | @vueuse/math | 13.3.0 | MIT |  |
@@ -1670,9 +1650,9 @@ This document contains license information for all dependencies across the monor
 | ✅ | picomatch | 4.0.2 | MIT |  |
 | ✅ | pinia | 3.0.3 | MIT |  |
 | ✅ | pkg-types | 1.3.1 | MIT |  |
-| ✅ | postcss | 8.5.4 | MIT |  |
+| ✅ | postcss | 8.5.6 | MIT |  |
 | ✅ | primeicons | 7.0.0 | MIT |  |
-| ✅ | primevue | 4.3.5 | MIT |  |
+| ✅ | primevue | 4.3.6 | MIT |  |
 | ✅ | quansync | 0.2.10 | MIT |  |
 | ✅ | quill | 2.0.3 | BSD-3-Clause |  |
 | ✅ | quill-delta | 5.1.0 | MIT |  |
@@ -1704,7 +1684,7 @@ This document contains license information for all dependencies across the monor
 | ✅ | unplugin-utils | 0.2.4 | MIT |  |
 | ✅ | untyped | 2.0.0 | MIT |  |
 | ✅ | uuid | 11.1.0 | MIT |  |
-| ✅ | vue | 3.5.16 | MIT |  |
+| ✅ | vue | 3.5.17 | MIT |  |
 | ✅ | vue-demi | 0.14.10 | MIT |  |
 | ✅ | vue-router | 4.5.1 | MIT |  |
 | ✅ | vue3-apexcharts | 1.8.0 | MIT |  |
@@ -1721,16 +1701,26 @@ This document contains license information for all dependencies across the monor
 
 | Status | Service | Image | License | Notes |
 |--------|---------|-------|---------|-------|
+| ✅ | milvus | `ghcr.io/bbvch-ai/aihub-core/milvus:v2.5.15` | Apache-2.0 | Permissive license |
 | ✅ | llama.cpp | `ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b5490` | MIT | Permissive license |
-| ✅ | text-embeddings-inference | `ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cuda-1.6` | Apache-2.0 | Permissive license |
+| ✅ | minimal-notebook | `ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6` | BSD-3-Clause | Jupyter base image |
+| ✅ | litellm | `ghcr.io/bbvch-ai/aihub-core/litellm:main-v1.74.8-nightly` | MIT | Permissive license |
 | ⚠️ | mongo | `ghcr.io/bbvch-ai/aihub-core/mongo:8.0.9` | SSPL | Source-available; allowed for internal use, not for DB-as-a-service |
 | ✅ | pgvector | `ghcr.io/bbvch-ai/aihub-core/pgvector:pg17` | PostgreSQL License | BSD-style permissive license |
-| ✅ | text-embeddings-inference | `ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cpu-1.6` | Apache-2.0 | Permissive license |
+| ✅ | presidio-analyzer | `ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359` | MIT | Permissive license |
+| ✅ | playwright | `ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy` | Apache-2.0 | Permissive license |
 | ✅ | nats | `ghcr.io/bbvch-ai/aihub-core/nats:2.11.4` | Apache-2.0 | Permissive license |
+| ✅ | docling-serve | `ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.1.0` | MIT | Permissive license |
+| ✅ | text-embeddings-inference | `ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cpu-ipex-sha-c8ff435` | Apache-2.0 | Permissive license |
+| ✅ | attu | `ghcr.io/bbvch-ai/aihub-core/attu:v2.5.12` | Apache-2.0 | Permissive license |
+| ✅ | presidio-anonymizer | `ghcr.io/bbvch-ai/aihub-core/presidio-anonymizer:2.2.359` | MIT | Permissive license |
+| ✅ | etcd | `ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.16` | Apache-2.0 | Permissive license |
 | ✅ | llama.cpp | `ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b5490` | MIT | Permissive license |
+| ⚠️ | minio | `ghcr.io/bbvch-ai/aihub-core/minio:release.2024-05-28T17-19-04Z` | AGPL-3.0 | Copyleft - modifications must be open sourced |
 | ⚠️ | redis | `ghcr.io/bbvch-ai/aihub-core/redis:8.0.1` | AGPL-3.0 | Copyleft - modifications must be open sourced if changed |
 | ⚠️ | open-webui | `ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.13` | BSD-3-Clause | Permissive with required branding retention |
 | ⚠️ | phoenix | `ghcr.io/bbvch-ai/aihub-core/phoenix:version-10.0.4` | ELv2 | Source-available; cannot offer as a service, internal use allowed |
+| ✅ | text-embeddings-inference | `ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:89-1.8` | Apache-2.0 | Permissive license |
 
 ### Internal Docker Images (Our Code)
 
