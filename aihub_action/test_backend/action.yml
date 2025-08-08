@@ -78,10 +78,31 @@ runs:
       shell: bash
       run: poetry install --no-interaction --with dev --no-root
 
-    - name: Use Local Core
+    - name: Use Local Core (without install)
       if: inputs.use_local_core == 'true'
       shell: bash
-      run: make use-local-core
+      run: |
+        echo "Switching to local core dependencies without install..."
+        make use-local-core-without-install
+
+    - name: Update Poetry Lock and Install for Module
+      if: inputs.use_local_core == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        echo "Updating poetry.lock for ${{ inputs.working_directory }}..."
+        poetry lock
+        
+        echo "Installing dependencies for ${{ inputs.working_directory }}..."
+        poetry install --no-interaction --with dev --no-root
+
+    - name: Install Module Dependencies (when not using local core)
+      if: inputs.use_local_core != 'true'
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        echo "Installing dependencies for ${{ inputs.working_directory }}..."
+        poetry install --no-interaction --with dev --no-root
 
     - name: Install FFmpeg
       if: inputs.install_ffmpeg == 'true'
@@ -148,6 +169,7 @@ runs:
 
     - name: Run Tests with Coverage and Generate Report
       shell: bash
+      working-directory: ${{ inputs.working_directory }}
       run: |
         pytest_exit_code=0
         poetry run pytest -m "not azure" --cov=. \
@@ -163,7 +185,6 @@ runs:
           echo "❌ Some tests failed!"
           echo "TEST_FAIL=true" >> $GITHUB_ENV
         fi
-      working-directory: ${{ inputs.working_directory }}
 
     - name: Stop Docker services (if started)
       if: inputs.docker_compose_services != ''
