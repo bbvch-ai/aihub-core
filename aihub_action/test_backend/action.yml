@@ -9,7 +9,7 @@ inputs:
     description: 'Working directory for the module'
     required: true
   docker_compose_services:
-    description: 'Comma-separated list of Docker Compose services (empty if not needed)'
+    description: 'Space-separated list of Docker Compose services (empty if not needed)'
     required: false
   use_local_core:
     description: 'Use local core'
@@ -37,17 +37,22 @@ runs:
       with:
         version: '2.1.1'
 
-    - name: Start Docker services (if needed)
+    - name: Pre-pull Docker images (if services needed)
       if: inputs.docker_compose_services != ''
       shell: bash
       run: |
         echo "${{ inputs.github_token }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-        IFS=',' read -ra SERVICES <<< "${{ inputs.docker_compose_services }}"
-        SERVICES_LIST=""
-        for service in "${SERVICES[@]}"; do
-          SERVICES_LIST+=" $service"
-        done
-        docker compose -f docker-compose.dev.yml --env-file .env.dev up -d $SERVICES_LIST
+        
+        # Pre-pull images in parallel to use cache effectively
+        echo "Pre-pulling Docker images for faster startup..."
+        docker compose -f docker-compose.dev.yml --env-file .env.dev pull --quiet || true
+
+    - name: Start Docker services (if needed)
+      if: inputs.docker_compose_services != ''
+      shell: bash
+      run: |
+        # Use --no-build to avoid rebuilding and rely on cached images
+        docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --no-build ${{ inputs.docker_compose_services }}
 
     - name: Configure Git Authentication
       shell: bash
@@ -81,6 +86,13 @@ runs:
       shell: bash
       run: make install-ffmpeg
       working-directory: ${{ inputs.working_directory }}
+
+    - name: Setup environment variables for tests
+      shell: bash
+      run: |
+        # Copy .env.dev to .env so that Pydantic BaseSettings can find it
+        cp .env.dev .env
+        echo "✅ Copied .env.dev to .env for test environment"
 
     - name: Wait for Docker services to become healthy
       if: inputs.docker_compose_services != ''

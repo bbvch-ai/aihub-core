@@ -38,21 +38,33 @@ jobs:
       matrix:
         include:
           - module: aihub_lib
-            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm,minio,etcd,milvus-standalone"
+            docker_compose_services: "postgres phoenix nats redis mongo llama-cpp huggingface-text-embedding-inference litellm minio etcd milvus-standalone"
           - module: aihub_api
-            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm"
+            docker_compose_services: "postgres phoenix nats redis mongo llama-cpp huggingface-text-embedding-inference litellm"
           - module: aihub_pipeline
             docker_compose_services: ""
           - module: aihub_agent
-            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm,minio,etcd,milvus-standalone"
+            docker_compose_services: "postgres phoenix nats redis mongo llama-cpp huggingface-text-embedding-inference litellm minio etcd milvus-standalone"
           - module: aihub_bot
-            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm"
+            docker_compose_services: "postgres phoenix nats redis mongo llama-cpp huggingface-text-embedding-inference litellm"
           - module: aihub_process
-            docker_compose_services: "postgres,phoenix,nats,redis,mongo,llama-cpp,huggingface-text-embedding-inference,litellm"
+            docker_compose_services: "postgres phoenix nats redis mongo llama-cpp huggingface-text-embedding-inference litellm"
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-docker-${{ matrix.module }}-${{ hashFiles('docker-compose.dev.yml', '.env.dev') }}
+          restore-keys: |
+            ${{ runner.os }}-docker-${{ matrix.module }}-
+            ${{ runner.os }}-docker-
 
       - name: Setup SSH
         run: |
@@ -145,4 +157,3 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
           report_coverage: ${{ matrix.report_coverage }}
-

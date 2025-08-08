@@ -5,7 +5,7 @@ from pydantic import Field
 from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
 
 
-class AzureBlogStorageSettings(EnvironmentSettings):
+class AzureBlobStorageSettings(EnvironmentSettings):
     """
     Configuration for connecting to Azure Blob Storage.
     Reads settings from environment variables or a .env file.

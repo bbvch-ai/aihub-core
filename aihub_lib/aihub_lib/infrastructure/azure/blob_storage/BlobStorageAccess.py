@@ -2,7 +2,7 @@ from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 
 from aihub_lib.infrastructure.azure.AzureSettings import AzureSettings
-from aihub_lib.infrastructure.azure.blob_storage.AzureBlogStorageSettings import AzureBlogStorageSettings
+from aihub_lib.infrastructure.azure.blob_storage.AzureBlobStorageSettings import AzureBlobStorageSettings
 
 
 class BlobStorageAccess:
@@ -28,9 +28,9 @@ class BlobStorageAccess:
     def _initialize(self):
         self._app = AzureSettings().APP_NAME
         self._region = AzureSettings().REGION_SHORT
-        self._storage_service_name = AzureBlogStorageSettings().NAME or f"{self._app}st{self._region}datalake"
+        self._storage_service_name = AzureBlobStorageSettings().NAME or f"{self._app}st{self._region}datalake"
         self._service_endpoint = (
-            AzureBlogStorageSettings().ENDPOINT or f"https://{self._storage_service_name}.blob.core.windows.net"
+            AzureBlobStorageSettings().ENDPOINT or f"https://{self._storage_service_name}.blob.core.windows.net"
         )
 
         self._credential = DefaultAzureCredential()
@@ -46,4 +46,4 @@ class BlobStorageAccess:
         return self._blob_service_client
 
     def get_url_signing_secret(self) -> str:
-        return AzureBlogStorageSettings().URL_SIGNING_SECRET
+        return AzureBlobStorageSettings().URL_SIGNING_SECRET

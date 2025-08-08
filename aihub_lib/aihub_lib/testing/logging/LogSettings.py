@@ -11,8 +11,8 @@ class LogSettings(EnvironmentSettings):
 
     LEVEL: Annotated[
         Literal["CRITICAL", "FATAL", "ERROR", "WARNING", "WARN", "INFO", "DEBUG", "NOTSET"],
-        Field(description="Logging level (can be string like 'INFO' or integer)"),
-    ] = logging.WARNING
+        Field(description="Logging level"),
+    ] = "WARNING"
 
     @property
     def level_number(self) -> int:

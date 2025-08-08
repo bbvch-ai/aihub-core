@@ -424,7 +424,7 @@ class OpenaiService:
         Generate an image using the specified image model.
         Routes the generation request to the corresponding Azure image model client.
         """
-        image_model_names = OpenaiService._model_names_by_type("image_generation", model_name)
+        image_model_names = await OpenaiService._model_names_by_type("image_generation", model_name)
         if len(image_model_names) == 0:
             raise ValueError(f"Model {model_name} not found.")
 

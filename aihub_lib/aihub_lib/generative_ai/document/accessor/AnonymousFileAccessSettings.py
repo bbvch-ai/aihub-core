@@ -42,7 +42,7 @@ class AnonymousFileAccessSettings(EnvironmentSettings):
 
     model_config = EnvironmentSettings.create_settings_config("ANONYMOUS_FILE_ACCESS_SERVICE_")
 
-    STORAGE_BACKEND: Literal["azure", "s3", "minio"] = Field(description="Storage backend to use")
+    STORAGE_BACKEND: Literal["azure", "s3", "minio"] = Field("minio", description="Storage backend to use")
 
     @property
     def service(self) -> AbstractAnonymousFileAccessService:

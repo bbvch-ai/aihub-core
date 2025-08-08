@@ -10,7 +10,7 @@ def enable_logging(level: int | None = None) -> logging.Logger:
     The log level will ALWAYS be set to the Level specified in the environment variables, if set.
     """
 
-    level = level or LogSettings().level_number
+    level = level if level is not None else LogSettings().level_number
 
     lib_loggers = [
         "azure.identity",

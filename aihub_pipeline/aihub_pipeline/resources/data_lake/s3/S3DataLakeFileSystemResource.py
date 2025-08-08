@@ -1,5 +1,5 @@
 import s3fs
-from aihub_lib.infrastructure.s3.S3Config import S3StorageSettings
+from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
 from dagster import InitResourceContext
 
 from aihub_pipeline.resources.data_lake.base.AbstractDataLakeFileSystemResource import (

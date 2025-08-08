@@ -1,3 +1,4 @@
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.azure.data_lake.DataLakeAccess import DataLakeAccess
 from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
@@ -152,7 +153,7 @@ def default_io_manager_s3_datalake_resources(
 
 def default_llm_resources() -> dict[str, ConfigurableResourceFactory]:
     embedding_model_resource = EmbeddingModelResource(
-        embedding_config=EmbeddingModelResource(model_name="azure/text-embedding-ada-002")
+        embedding_config=EmbeddingModelConfig(model_name="azure/text-embedding-ada-002")
     )
     language_model = LanguageModelResource(llm_config=LLMConfig(model_name="azure/gpt-4o-mini"))
     return {
