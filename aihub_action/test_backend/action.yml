@@ -179,12 +179,19 @@ runs:
         fi
       working-directory: ${{ inputs.working_directory }}
 
-
     - name: Stop Docker services (if started)
       if: inputs.docker_compose_services != ''
       shell: bash
       run: |
-        docker compose -f docker-compose.dev.yml down
+        docker compose -f docker-compose.dev.yml down -v --remove-orphans
+
+    - name: Clean Docker after services
+      if: always() && inputs.docker_compose_services != ''
+      shell: bash
+      run: |
+        echo "Cleaning Docker system after services..."
+        docker system prune -af --volumes || true
+        echo "Docker cleanup completed"
 
     - name: Upload Coverage Report
       uses: actions/upload-artifact@v4

@@ -54,17 +54,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Free disk space
+        run: |
+          echo "Disk space before cleanup:"
+          df -h
+          
+          # Remove pre-installed tools that aren't needed
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          
+          # Clean apt cache
+          sudo apt-get clean
+          
+          # Clean Docker system
+          docker system prune -af --volumes || true
+          
+          echo "Disk space after cleanup:"
+          df -h
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Cache Docker layers
-        uses: actions/cache@v4
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-docker-${{ matrix.module }}-${{ hashFiles('docker-compose.dev.yml', '.env.dev') }}
-          restore-keys: |
-            ${{ runner.os }}-docker-${{ matrix.module }}-
-            ${{ runner.os }}-docker-
 
       - name: Setup SSH
         run: |
@@ -88,6 +100,13 @@ jobs:
         run: |
           rm -rf ~/.ssh
           git config --global --unset url."git@github.com:".insteadOf
+
+      - name: Clean Docker after tests
+        if: always()
+        run: |
+          echo "Cleaning Docker system after tests..."
+          docker system prune -af --volumes || true
+          echo "Docker cleanup completed"
 
   pytest-coverage-comment:
     name: Pytest Coverage Comment
