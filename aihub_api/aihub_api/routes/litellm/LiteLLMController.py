@@ -4,8 +4,16 @@ from fastapi import Depends, HTTPException, Security
 from nats.aio.client import Client as NATS
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
+from aihub_api.routes.litellm.dto.DailyActivityDTO import (
+    DailyActivityResponseDTO,
+    DailyActivityResultDTO,
+    DailyActivityMetadataDTO,
+    MetricsDTO,
+    BreakdownDTO,
+    ModelBreakdownDTO,
+    ApiKeyBreakdownDTO,
+)
 from aihub_api.routes.litellm.dto.LLMDTO import LLMDTO, LiteLLMParamsDTO, ModelInfoDTO, CustomTokenizerDTO
-from aihub_api.routes.litellm.dto.DailyActivityDTO import DailyActivityResponseDTO, DailyActivityResultDTO, DailyActivityMetadataDTO, MetricsDTO, BreakdownDTO, ModelBreakdownDTO, ApiKeyBreakdownDTO
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -56,6 +64,7 @@ class LiteLLMController(Controller):
             """
             Retrieve a list of all models in LiteLLM.
             """
+            # http://localhost:4000/team/daily/activity?start_date=2025-07-11&end_date=2025-08-08&page_size=1000&page=1&exclude_team_ids=litellm-dashboard
             data = [
                 LLMDTO(
                     model_name="azure/gpt-4o-mini",
@@ -85,12 +94,32 @@ class LiteLLMController(Controller):
                         supports_tool_choice=True,
                         supports_prompt_caching=True,
                         supported_openai_params=[
-                            "temperature", "n", "stream", "stream_options", "stop", "max_tokens",
-                            "max_completion_tokens", "tools", "tool_choice", "presence_penalty",
-                            "frequency_penalty", "logit_bias", "user", "function_call", "functions",
-                            "top_p", "logprobs", "top_logprobs", "response_format", "seed",
-                            "extra_headers", "parallel_tool_calls", "prediction", "modalities",
-                            "audio", "web_search_options"
+                            "temperature",
+                            "n",
+                            "stream",
+                            "stream_options",
+                            "stop",
+                            "max_tokens",
+                            "max_completion_tokens",
+                            "tools",
+                            "tool_choice",
+                            "presence_penalty",
+                            "frequency_penalty",
+                            "logit_bias",
+                            "user",
+                            "function_call",
+                            "functions",
+                            "top_p",
+                            "logprobs",
+                            "top_logprobs",
+                            "response_format",
+                            "seed",
+                            "extra_headers",
+                            "parallel_tool_calls",
+                            "prediction",
+                            "modalities",
+                            "audio",
+                            "web_search_options",
                         ],
                     ),
                 ),
@@ -212,12 +241,12 @@ class LiteLLMController(Controller):
         @self.router.get(route, tags=self.tags)
         async def daily_activity(
             nc: Annotated[NATS, Depends(use_nats)],
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
             start_date: str = "2025-08-01",
             end_date: str = "2025-08-08",
             page_size: int = 1000,
-            page: int = 1
+            page: int = 1,
         ) -> DailyActivityResponseDTO:
             """
             Retrieve daily activity data for models usage and spending.
@@ -236,7 +265,7 @@ class LiteLLMController(Controller):
                             total_tokens=70,
                             successful_requests=1,
                             failed_requests=1,
-                            api_requests=2
+                            api_requests=2,
                         ),
                         breakdown=BreakdownDTO(
                             mcp_servers={},
@@ -251,7 +280,7 @@ class LiteLLMController(Controller):
                                         total_tokens=70,
                                         successful_requests=1,
                                         failed_requests=0,
-                                        api_requests=1
+                                        api_requests=1,
                                     ),
                                     metadata={},
                                     api_key_breakdown={
@@ -265,14 +294,11 @@ class LiteLLMController(Controller):
                                                 total_tokens=70,
                                                 successful_requests=1,
                                                 failed_requests=0,
-                                                api_requests=1
+                                                api_requests=1,
                                             ),
-                                            metadata={
-                                                "key_alias": "test",
-                                                "team_id": None
-                                            }
+                                            metadata={"key_alias": "test", "team_id": None},
                                         )
-                                    }
+                                    },
                                 ),
                                 "text-embedding-3-large": ModelBreakdownDTO(
                                     metrics=MetricsDTO(
@@ -284,10 +310,10 @@ class LiteLLMController(Controller):
                                         total_tokens=0,
                                         successful_requests=0,
                                         failed_requests=0,
-                                        api_requests=0
+                                        api_requests=0,
                                     ),
                                     metadata={},
-                                    api_key_breakdown={}
+                                    api_key_breakdown={},
                                 ),
                                 "google/gemini-2.5-flash": ModelBreakdownDTO(
                                     metrics=MetricsDTO(
@@ -299,10 +325,10 @@ class LiteLLMController(Controller):
                                         total_tokens=195,
                                         successful_requests=3,
                                         failed_requests=0,
-                                        api_requests=3
+                                        api_requests=3,
                                     ),
                                     metadata={},
-                                    api_key_breakdown={}
+                                    api_key_breakdown={},
                                 ),
                                 "azure/dall-e-3": ModelBreakdownDTO(
                                     metrics=MetricsDTO(
@@ -314,10 +340,10 @@ class LiteLLMController(Controller):
                                         total_tokens=0,
                                         successful_requests=2,
                                         failed_requests=0,
-                                        api_requests=2
+                                        api_requests=2,
                                     ),
                                     metadata={},
-                                    api_key_breakdown={}
+                                    api_key_breakdown={},
                                 ),
                                 "local/qwen3-0.6b": ModelBreakdownDTO(
                                     metrics=MetricsDTO(
@@ -329,33 +355,194 @@ class LiteLLMController(Controller):
                                         total_tokens=323,
                                         successful_requests=5,
                                         failed_requests=1,
-                                        api_requests=6
+                                        api_requests=6,
                                     ),
                                     metadata={},
-                                    api_key_breakdown={}
-                                )
+                                    api_key_breakdown={},
+                                ),
                             },
                             model_groups={},
                             providers={},
                             api_keys={},
-                            entities={}
-                        )
-                    )
+                            entities={},
+                        ),
+                    ),
+                    DailyActivityResultDTO(
+                        date="2025-08-08",
+                        metrics=MetricsDTO(
+                            spend=0.001312575,
+                            prompt_tokens=1119,
+                            completion_tokens=1709,
+                            cache_read_input_tokens=0,
+                            cache_creation_input_tokens=0,
+                            total_tokens=2828,
+                            successful_requests=3,
+                            failed_requests=0,
+                            api_requests=3,
+                        ),
+                        breakdown=BreakdownDTO(
+                            mcp_servers={},
+                            models={
+                                "gpt-4o-mini": ModelBreakdownDTO(
+                                    metrics=MetricsDTO(
+                                        spend=0.001312575,
+                                        prompt_tokens=1119,
+                                        completion_tokens=1709,
+                                        cache_read_input_tokens=0,
+                                        cache_creation_input_tokens=0,
+                                        total_tokens=2828,
+                                        successful_requests=3,
+                                        failed_requests=0,
+                                        api_requests=3,
+                                    ),
+                                    metadata={},
+                                    api_key_breakdown={
+                                        "4b3a3de86614468d5d0b2413544d95d7eb662f8da2a81552b0be9951a5db865d": ApiKeyBreakdownDTO(
+                                            metrics=MetricsDTO(
+                                                spend=0.001312575,
+                                                prompt_tokens=1119,
+                                                completion_tokens=1709,
+                                                cache_read_input_tokens=0,
+                                                cache_creation_input_tokens=0,
+                                                total_tokens=2828,
+                                                successful_requests=3,
+                                                failed_requests=0,
+                                                api_requests=3,
+                                            ),
+                                            metadata={"key_alias": None, "team_id": "litellm-dashboard"},
+                                        )
+                                    },
+                                )
+                            },
+                            model_groups={
+                                "azure/gpt-4o-mini": ModelBreakdownDTO(
+                                    metrics=MetricsDTO(
+                                        spend=0.001312575,
+                                        prompt_tokens=1119,
+                                        completion_tokens=1709,
+                                        cache_read_input_tokens=0,
+                                        cache_creation_input_tokens=0,
+                                        total_tokens=2828,
+                                        successful_requests=3,
+                                        failed_requests=0,
+                                        api_requests=3,
+                                    ),
+                                    metadata={},
+                                    api_key_breakdown={
+                                        "4b3a3de86614468d5d0b2413544d95d7eb662f8da2a81552b0be9951a5db865d": ApiKeyBreakdownDTO(
+                                            metrics=MetricsDTO(
+                                                spend=0.001312575,
+                                                prompt_tokens=1119,
+                                                completion_tokens=1709,
+                                                cache_read_input_tokens=0,
+                                                cache_creation_input_tokens=0,
+                                                total_tokens=2828,
+                                                successful_requests=3,
+                                                failed_requests=0,
+                                                api_requests=3,
+                                            ),
+                                            metadata={"key_alias": None, "team_id": "litellm-dashboard"},
+                                        )
+                                    },
+                                )
+                            },
+                            providers={
+                                "azure": ModelBreakdownDTO(
+                                    metrics=MetricsDTO(
+                                        spend=0.001312575,
+                                        prompt_tokens=1119,
+                                        completion_tokens=1709,
+                                        cache_read_input_tokens=0,
+                                        cache_creation_input_tokens=0,
+                                        total_tokens=2828,
+                                        successful_requests=3,
+                                        failed_requests=0,
+                                        api_requests=3,
+                                    ),
+                                    metadata={},
+                                    api_key_breakdown={
+                                        "4b3a3de86614468d5d0b2413544d95d7eb662f8da2a81552b0be9951a5db865d": ApiKeyBreakdownDTO(
+                                            metrics=MetricsDTO(
+                                                spend=0.001312575,
+                                                prompt_tokens=1119,
+                                                completion_tokens=1709,
+                                                cache_read_input_tokens=0,
+                                                cache_creation_input_tokens=0,
+                                                total_tokens=2828,
+                                                successful_requests=3,
+                                                failed_requests=0,
+                                                api_requests=3,
+                                            ),
+                                            metadata={"key_alias": None, "team_id": "litellm-dashboard"},
+                                        )
+                                    },
+                                )
+                            },
+                            api_keys={
+                                "4b3a3de86614468d5d0b2413544d95d7eb662f8da2a81552b0be9951a5db865d": ApiKeyBreakdownDTO(
+                                    metrics=MetricsDTO(
+                                        spend=0.001312575,
+                                        prompt_tokens=1119,
+                                        completion_tokens=1709,
+                                        cache_read_input_tokens=0,
+                                        cache_creation_input_tokens=0,
+                                        total_tokens=2828,
+                                        successful_requests=3,
+                                        failed_requests=0,
+                                        api_requests=3,
+                                    ),
+                                    metadata={"key_alias": None, "team_id": "litellm-dashboard"},
+                                )
+                            },
+                            entities={
+                                "default_user_id": ModelBreakdownDTO(
+                                    metrics=MetricsDTO(
+                                        spend=0.001312575,
+                                        prompt_tokens=1119,
+                                        completion_tokens=1709,
+                                        cache_read_input_tokens=0,
+                                        cache_creation_input_tokens=0,
+                                        total_tokens=2828,
+                                        successful_requests=3,
+                                        failed_requests=0,
+                                        api_requests=3,
+                                    ),
+                                    metadata={},
+                                    api_key_breakdown={
+                                        "4b3a3de86614468d5d0b2413544d95d7eb662f8da2a81552b0be9951a5db865d": ApiKeyBreakdownDTO(
+                                            metrics=MetricsDTO(
+                                                spend=0.001312575,
+                                                prompt_tokens=1119,
+                                                completion_tokens=1709,
+                                                cache_read_input_tokens=0,
+                                                cache_creation_input_tokens=0,
+                                                total_tokens=2828,
+                                                successful_requests=3,
+                                                failed_requests=0,
+                                                api_requests=3,
+                                            ),
+                                            metadata={"key_alias": None, "team_id": "litellm-dashboard"},
+                                        )
+                                    },
+                                )
+                            },
+                        ),
+                    ),
                 ],
                 metadata=DailyActivityMetadataDTO(
-                    total_spend=0.08020046,
-                    total_prompt_tokens=436,
-                    total_completion_tokens=152,
-                    total_tokens=588,
-                    total_api_requests=13,
-                    total_successful_requests=11,
+                    total_spend=0.08151304,
+                    total_prompt_tokens=1555,
+                    total_completion_tokens=1861,
+                    total_tokens=3416,
+                    total_api_requests=16,
+                    total_successful_requests=14,
                     total_failed_requests=2,
                     total_cache_read_input_tokens=0,
                     total_cache_creation_input_tokens=0,
                     page=1,
                     total_pages=1,
-                    has_more=False
-                )
+                    has_more=False,
+                ),
             )
 
         return self

@@ -345,17 +345,19 @@
                     <span class="text-gray-700 dark:text-gray-300">{{ formatSelectedDateRange() }}</span>
                     <i class="pi pi-chevron-down text-gray-400 dark:text-gray-500 text-xs"></i>
                   </div>
-                  
-                  <div v-if="dateRangeDropdownVisible" class="absolute top-full left-0 z-[9999] min-w-[600px] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl">
+
+                  <div v-if="dateRangeDropdownVisible"
+                       class="absolute top-full left-0 z-[9999] min-w-[600px] mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl">
                     <div class="flex">
-                      <!-- Relative Time Section -->
                       <div class="w-1/2 border-r border-gray-200 dark:border-gray-700">
                         <div class="p-3 border-b border-gray-200 dark:border-gray-700">
-                          <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ t('litellm.dashboard.relativeTime') }}</span>
+                          <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{
+                              t('litellm.dashboard.relativeTime')
+                            }}</span>
                         </div>
                         <div class="h-[350px] overflow-y-auto">
-                          <div 
-                            v-for="option in relativeDateOptions" 
+                          <div
+                            v-for="option in relativeDateOptions"
                             :key="option.value"
                             @click="selectRelativeDate(option)"
                             class="flex items-center justify-between px-5 py-4 cursor-pointer border-b border-gray-100 dark:border-gray-700 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -363,7 +365,7 @@
                               'bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 border-blue-200 dark:border-blue-700': selectedDateRange.type === 'relative' && selectedDateRange.value === option.value
                             }"
                           >
-                            <span 
+                            <span
                               class="text-sm"
                               :class="{
                                 'text-blue-700 dark:text-blue-300 font-medium': selectedDateRange.type === 'relative' && selectedDateRange.value === option.value,
@@ -372,7 +374,7 @@
                             >
                               {{ option.label }}
                             </span>
-                            <span 
+                            <span
                               class="text-xs px-2 py-1 rounded"
                               :class="{
                                 'text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-800': selectedDateRange.type === 'relative' && selectedDateRange.value === option.value,
@@ -384,46 +386,54 @@
                           </div>
                         </div>
                       </div>
-                      
+
                       <!-- Custom Date Section -->
                       <div class="w-1/2 relative">
                         <div class="p-3.5 border-b border-gray-200 dark:border-gray-700">
                           <div class="flex items-center gap-2">
                             <i class="pi pi-calendar text-gray-600 dark:text-gray-400"></i>
-                            <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ t('litellm.dashboard.customDateRange') }}</span>
+                            <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{
+                                t('litellm.dashboard.customDateRange')
+                              }}</span>
                           </div>
                         </div>
                         <div class="p-6 space-y-6 pb-20">
                           <div>
-                            <label class="text-sm text-gray-700 dark:text-gray-300 mb-1 block">{{ t('litellm.dashboard.startDate') }}</label>
-                            <input 
+                            <label class="text-sm text-gray-700 dark:text-gray-300 mb-1 block">{{
+                                t('litellm.dashboard.startDate')
+                              }}</label>
+                            <input
                               v-model="customDateRange.startDate"
-                              class="w-65 px-3 py-2 text-sm border rounded-md cursor-pointer hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" 
+                              class="w-65 px-3 py-2 text-sm border rounded-md cursor-pointer hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                               type="date"
                             />
                           </div>
                           <div>
-                            <label class="text-sm text-gray-700 dark:text-gray-300 mb-1 block">{{ t('litellm.dashboard.endDate') }}</label>
-                            <input 
+                            <label class="text-sm text-gray-700 dark:text-gray-300 mb-1 block">{{
+                                t('litellm.dashboard.endDate')
+                              }}</label>
+                            <input
                               v-model="customDateRange.endDate"
-                              class="w-65 px-3 py-2 text-sm border rounded-md cursor-pointer hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" 
+                              class="w-65 px-3 py-2 text-sm border rounded-md cursor-pointer hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                               type="date"
                             />
                           </div>
                           <div class="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md">
-                            <div class="text-xs text-blue-700 dark:text-blue-300 font-medium">{{ t('litellm.dashboard.preview') }}:</div>
+                            <div class="text-xs text-blue-700 dark:text-blue-300 font-medium">
+                              {{ t('litellm.dashboard.preview') }}:
+                            </div>
                             <div class="text-sm text-blue-800 dark:text-blue-200">{{ formatCustomDatePreview() }}</div>
                           </div>
                         </div>
                         <div class="absolute bottom-4 right-4">
                           <div class="flex gap-2">
-                            <button 
+                            <button
                               @click="cancelDateSelection"
                               class="px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 bg-transparent border border-blue-600 dark:border-blue-400 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20"
                             >
                               {{ t('litellm.dashboard.cancel') }}
                             </button>
-                            <button 
+                            <button
                               @click="applyCustomDateRange"
                               class="px-4 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 border border-blue-600 dark:border-blue-500 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600"
                             >
@@ -440,19 +450,25 @@
               <TabView class="w-full">
                 <TabPanel :header="t('litellm.dashboard.cost')">
                   <div class="space-y-6">
-                    <div class="grid grid-cols-5 gap-4">
-                      <div
-                        class="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
-                        <div class="flex items-center justify-between">
-                          <div>
-                            <p class="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                              {{ t('litellm.dashboard.totalSpend') }}</p>
-                            <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                              ${{ getTotalSpend().toFixed(4) }}</p>
-                          </div>
-                          <i class="pi pi-dollar text-blue-500 dark:text-blue-400 text-2xl"></i>
-                        </div>
+                    <div class="grid grid-cols-2 gap-4">
+                      <div class="mb-2">
+                        <h3 class="text-lg text-gray-900 dark:text-gray-100">
+                          {{ t('litellm.dashboard.totalSpend') }}
+                        </h3>
+                        <p class="text-4xl font-bold text-gray-900 dark:text-gray-100">
+                          ${{ getTotalSpend().toFixed(2) }}</p>
                       </div>
+
+                      <div class="mb-2">
+                        <h3 class="text-lg text-gray-900 dark:text-gray-100">
+                          {{ t('litellm.dashboard.maxBudget') }}
+                        </h3>
+                        <p class="text-4xl font-bold text-gray-900 dark:text-gray-100">
+                          {{ t('litellm.dashboard.noLimit') }}</p>
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-5 gap-4">
 
                       <div
                         class="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 p-4 rounded-lg border border-green-200 dark:border-green-700">
@@ -503,6 +519,19 @@
                               {{ formatNumber(getTotalTokens()) }}</p>
                           </div>
                           <i class="pi pi-code text-purple-500 dark:text-purple-400 text-2xl"></i>
+                        </div>
+                      </div>
+
+                      <div
+                        class="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
+                        <div class="flex items-center justify-between">
+                          <div>
+                            <p class="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                              {{ t('litellm.dashboard.avgCostPerRequest') }}</p>
+                            <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                              ${{ getAverageCostPerRequest().toFixed(4) }}</p>
+                          </div>
+                          <i class="pi pi-dollar text-blue-500 dark:text-blue-400 text-2xl"></i>
                         </div>
                       </div>
                     </div>
@@ -580,10 +609,6 @@
                       <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
                           {{ t('litellm.dashboard.spendByProvider') }}</h3>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">Total: ${{
-                            getTotalSpend().toFixed(4)
-                          }}
-                        </div>
                       </div>
                       <div class="grid grid-cols-2 gap-6">
                         <div
@@ -806,14 +831,13 @@ const customDateRange = ref({
 })
 
 const relativeDateOptions: RelativeDateOption[] = [
-  { label: 'Today', shortLabel: 'today', value: 'today', days: 0 },
-  { label: 'Last 7 days', shortLabel: '7d', value: '7d', days: 7 },
-  { label: 'Last 30 days', shortLabel: '30d', value: '30d', days: 30 },
-  { label: 'Month to date', shortLabel: 'MTD', value: 'mtd', days: 30 },
-  { label: 'Year to date', shortLabel: 'YTD', value: 'ytd', days: 365 }
+  {label: 'Today', shortLabel: 'today', value: 'today', days: 0},
+  {label: 'Last 7 days', shortLabel: '7d', value: '7d', days: 7},
+  {label: 'Last 30 days', shortLabel: '30d', value: '30d', days: 30},
+  {label: 'Month to date', shortLabel: 'MTD', value: 'mtd', days: 30},
+  {label: 'Year to date', shortLabel: 'YTD', value: 'ytd', days: 365}
 ]
 
-// Usage data fetching
 interface DailyActivityResponse {
   results: Array<{
     date: string
@@ -843,10 +867,23 @@ interface DailyActivityResponse {
         }
       }>
     }
+    metadata: {
+      total_spend: number,
+      total_prompt_tokens: number,
+      total_completion_tokens: number,
+      total_tokens: number,
+      total_api_requests: number,
+      total_successful_requests: number,
+      total_failed_requests: number,
+      total_cache_read_input_tokens: number,
+      total_cache_creation_input_tokens: number,
+      page: number,
+      total_pages: number,
+      has_more: boolean,
+    }
   }>
 }
 
-// Reactive date range parameters
 const dateRangeParams = computed(() => {
   if (selectedDateRange.value.type === 'custom') {
     return {
@@ -856,7 +893,7 @@ const dateRangeParams = computed(() => {
       page: 1
     }
   } else {
-    const { startDate, endDate } = getRelativeDateRange(selectedDateRange.value.value || '7d')
+    const {startDate, endDate} = getRelativeDateRange(selectedDateRange.value.value || '7d')
     return {
       start_date: startDate,
       end_date: endDate,
@@ -866,7 +903,10 @@ const dateRangeParams = computed(() => {
   }
 })
 
-const {data: usageData, refresh: refreshUsageData} = await useFetch<DailyActivityResponse>('/api/v1/litellm/daily_activity', {
+const {
+  data: usageData,
+  refresh: refreshUsageData
+} = await useFetch<DailyActivityResponse>('/api/v1/litellm/daily_activity', {
   query: dateRangeParams
 })
 
@@ -1110,28 +1150,23 @@ function getModelTokens(modelName: string): number {
 }
 
 function getTotalSpend(): number {
-  if (!usageData.value?.results?.length) return 0
-  return usageData.value.results.reduce((total, result) => total + result.metrics.spend, 0)
+  return usageData.value?.metadata?.total_spend ?? 0
 }
 
 function getTotalRequests(): number {
-  if (!usageData.value?.results?.length) return 0
-  return usageData.value.results.reduce((total, result) => total + result.metrics.api_requests, 0)
+  return usageData.value?.metadata?.total_api_requests ?? 0
 }
 
 function getTotalSuccessfulRequests(): number {
-  if (!usageData.value?.results?.length) return 0
-  return usageData.value.results.reduce((total, result) => total + result.metrics.successful_requests, 0)
+  return usageData.value?.metadata?.total_successful_requests ?? 0
 }
 
 function getTotalFailedRequests(): number {
-  if (!usageData.value?.results?.length) return 0
-  return usageData.value.results.reduce((total, result) => total + result.metrics.failed_requests, 0)
+  return usageData.value?.metadata?.total_failed_requests ?? 0
 }
 
 function getTotalTokens(): number {
-  if (!usageData.value?.results?.length) return 0
-  return usageData.value.results.reduce((total, result) => total + result.metrics.total_tokens, 0)
+  return usageData.value?.metadata?.total_tokens ?? 0
 }
 
 function getAverageCostPerRequest(): number {
@@ -1202,9 +1237,9 @@ function getProviderBreakdown() {
 function getRelativeDateRange(value: string): { startDate: string, endDate: string } {
   const today = new Date()
   const endDate = today.toISOString().split('T')[0]
-  
+
   let startDate: string
-  
+
   switch (value) {
     case 'today':
       startDate = endDate
@@ -1230,8 +1265,8 @@ function getRelativeDateRange(value: string): { startDate: string, endDate: stri
       defaultSevenDaysAgo.setDate(today.getDate() - 7)
       startDate = defaultSevenDaysAgo.toISOString().split('T')[0]
   }
-  
-  return { startDate, endDate }
+
+  return {startDate, endDate}
 }
 
 // Dropdown handler functions
@@ -1279,7 +1314,10 @@ function formatSelectedDateRange(): string {
     if (startDate && endDate) {
       const start = new Date(startDate)
       const end = new Date(endDate)
-      return `${start.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })} - ${end.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}`
+      return `${start.toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'short'
+      })} - ${end.toLocaleDateString('en-US', {day: 'numeric', month: 'short'})}`
     }
     return '1 Aug - 8 Aug'
   }
@@ -1291,12 +1329,14 @@ function formatCustomDatePreview(): string {
   if (startDate && endDate) {
     const start = new Date(startDate)
     const end = new Date(endDate)
-    return `${start.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}, 00:00 - ${end.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}, 23:59`
+    return `${start.toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short'
+    })}, 00:00 - ${end.toLocaleDateString('en-US', {day: 'numeric', month: 'short'})}, 23:59`
   }
   return 'Invalid date range'
 }
 
-// Close dropdown when clicking outside
 onMounted(() => {
   document.addEventListener('click', (event) => {
     const dropdown = document.querySelector('.date-range-dropdown')
