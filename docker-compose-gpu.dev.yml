@@ -144,8 +144,11 @@ services:
     platform: linux/amd64
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/llamacpp-data:/data
+      - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
     ports:
       - "8182:8182"
+    environment:
+      HF_HOME: /root/.cache/huggingface
     command: >
       -hf unsloth/Qwen3-1.7B-GGUF
       --port 8182
@@ -177,8 +180,11 @@ services:
     container_name: huggingface-text-embedding-inference
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/hf-tei-data:/data
+      - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
     ports:
       - "8183:8183"
+    environment:
+      HF_HOME: /root/.cache/huggingface
     command: >
       --port 8183
       --model-id Qwen/Qwen3-Embedding-0.6B
@@ -263,7 +269,7 @@ services:
       ENABLE_BASE_MODELS_CACHE: True
 
       # Development
-      ENV: ${MODE}
+      ENV: ${ENV}
       GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
 
       # Privacy
@@ -451,7 +457,7 @@ services:
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
   playwright:
-    image: mcr.microsoft.com/playwright:v1.49.0-jammy
+    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy
     container_name: playwright-server
     command: npx playwright@v1.49.0 run-server --port 3036 --host 0.0.0.0
     ports:

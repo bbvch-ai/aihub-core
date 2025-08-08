@@ -44,14 +44,51 @@ runs:
       with:
         version: '2.1.1'
 
-    # Cache Poetry downloads
+    # Cache Poetry downloads - using a simpler key that doesn't require files to exist
     - name: Cache Poetry downloads
       uses: actions/cache@v4
       with:
         path: ~/.cache/pypoetry
-        key: ${{ runner.os }}-poetry-cache-${{ hashFiles('**/poetry.lock') }}
+        key: ${{ runner.os }}-poetry-cache-${{ inputs.working_directory }}-${{ hashFiles(format('{0}/poetry.lock', inputs.working_directory), 'poetry.lock') }}
         restore-keys: |
+          ${{ runner.os }}-poetry-cache-${{ inputs.working_directory }}-
           ${{ runner.os }}-poetry-cache-
+
+    # Cache HuggingFace models with dynamic key based on docker-compose content
+    - name: Cache HuggingFace Models
+      if: inputs.docker_compose_services != ''
+      id: model-cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ./local-volumes/hf-tei-data
+          ./local-volumes/llamacpp-data
+        key: ${{ runner.os }}-hf-models-${{ hashFiles('docker-compose.dev.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-hf-models-
+
+    # Report cache status
+    - name: Report Model Cache Status
+      if: inputs.docker_compose_services != ''
+      shell: bash
+      run: |
+        if [ "${{ steps.model-cache.outputs.cache-hit }}" == "true" ]; then
+          echo "✅ HuggingFace models restored from cache!"
+          echo "CACHE_HIT=true" >> $GITHUB_ENV
+        else
+          echo "📥 HuggingFace models will be downloaded (first run or docker-compose changed)"
+          echo "CACHE_HIT=false" >> $GITHUB_ENV
+        fi
+
+    # Ensure volume directories exist with correct permissions
+    - name: Prepare Volume Directories
+      if: inputs.docker_compose_services != ''
+      shell: bash
+      run: |
+        mkdir -p ./local-volumes/hf-tei-data
+        mkdir -p ./local-volumes/llamacpp-data
+        chmod 777 ./local-volumes/hf-tei-data
+        chmod 777 ./local-volumes/llamacpp-data
 
     - name: Pre-pull Docker images (if services needed)
       if: inputs.docker_compose_services != ''
@@ -133,8 +170,15 @@ runs:
         echo "Initial container status:"
         docker ps
 
-        # Maximum wait time in seconds (5 minutes)
-        MAX_WAIT=300
+        # Adjust timeout based on cache hit
+        if [ "$CACHE_HIT" == "false" ]; then
+          MAX_WAIT=600  # 10 minutes for first-time model downloads
+          echo "⏳ Models not cached, allowing up to 10 minutes for download..."
+        else
+          MAX_WAIT=300  # 5 minutes when models are cached
+          echo "✅ Models cached, expecting faster startup (5 min timeout)..."
+        fi
+        
         # Polling interval in seconds
         INTERVAL=5
         # Counter
@@ -190,7 +234,7 @@ runs:
       if: inputs.docker_compose_services != ''
       shell: bash
       run: |
-        docker compose -f docker-compose.dev.yml down -v --remove-orphans
+        docker compose -f docker-compose.dev.yml down --remove-orphans
 
     - name: Upload Coverage Report
       uses: actions/upload-artifact@v4
