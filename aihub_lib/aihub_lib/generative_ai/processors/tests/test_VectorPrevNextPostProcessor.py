@@ -35,7 +35,7 @@ def get_node_ids(result):
 @given("these nodes:", target_fixture="nodes")
 def _(datatable):
     nodes = []
-    for row in datatable:
+    for row in datatable[1:]:
         nodes.append(TextNode(id_=row[0], text=row[1], metadata={}))
     return nodes
 
