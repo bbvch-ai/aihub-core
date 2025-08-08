@@ -202,7 +202,7 @@ services:
               capabilities: [ gpu ]
     restart: always
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8183/health" ]
+      test: [  "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8183/health" ]
       timeout: 10s
       interval: 30s
       retries: 3
