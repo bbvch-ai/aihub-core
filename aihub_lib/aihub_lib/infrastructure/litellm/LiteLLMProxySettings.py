@@ -2,7 +2,7 @@ from typing import Annotated
 
 import httpx
 import openai
-from pydantic import Field
+from pydantic import Field, SecretStr
 
 from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
 
@@ -12,7 +12,7 @@ class LiteLLMProxySettings(EnvironmentSettings):
 
     BASE_URL: Annotated[str, Field(description="The base URL of the model.")]
     API_KEY: Annotated[
-        str | None,
+        SecretStr | None,
         Field(description="API key for authentication. If not provided, other authentication methods will be used."),
     ] = None
 

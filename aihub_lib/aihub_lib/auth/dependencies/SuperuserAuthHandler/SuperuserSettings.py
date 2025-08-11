@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import Field, computed_field, field_validator
+from pydantic import Field, computed_field, field_validator, SecretStr
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
@@ -28,7 +28,7 @@ class SuperuserSettings(EnvironmentSettings):
         ),
     ]
     ROLE: Annotated[str, Field(description="The role the superuser possesses.")] = "AIHubSuperuser"
-    TOKEN: Annotated[str, Field(description="The superuser's access token.")]
+    TOKEN: Annotated[SecretStr, Field(description="The superuser's access token.", min_length=32)]
 
     @field_validator("ROLES", mode="before")
     @classmethod
