@@ -2,7 +2,7 @@ from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 
 
-class MultiStrategyTokenIdentityProvider(IdentityProvider):
+class MultiStrategyIdentityProvider(IdentityProvider):
     """
     A composite user information provider that aggregates multiple base providers.
 

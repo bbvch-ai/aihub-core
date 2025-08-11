@@ -10,7 +10,9 @@ from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler import OpenWebuiAuthHandler
+from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.auth.identity.AzureIdentityProvider.AzureIdentityProvider import AzureIdentityProvider
+from aihub_lib.auth.identity.TokenIdentityProvider.TokenIdentityProvider import TokenIdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
@@ -258,7 +260,10 @@ async def invoke_openwebui_auth_handler(token_context: dict, token_context_resul
     }
     request = create_dummy_request(headers)
 
-    handler = OpenWebuiAuthHandler(identity_provider=AzureIdentityProvider())
+    handler = OpenWebuiAuthHandler(
+        identity_provider=AzureIdentityProvider(),
+        base_auth_handler=TokenAuthHandler(identity_provider=TokenIdentityProvider()),
+    )
     try:
         security = await HTTPBearer()(request)
         user = await handler(request, security)
@@ -281,7 +286,10 @@ async def invoke_openwebui_auth_handler_expect_error(token_context: dict, error_
     }
     request = create_dummy_request(headers)
 
-    handler = OpenWebuiAuthHandler(identity_provider=AzureIdentityProvider())
+    handler = OpenWebuiAuthHandler(
+        identity_provider=AzureIdentityProvider(),
+        base_auth_handler=TokenAuthHandler(identity_provider=TokenIdentityProvider()),
+    )
     try:
         security = await HTTPBearer()(request)
         await handler(request, security)
