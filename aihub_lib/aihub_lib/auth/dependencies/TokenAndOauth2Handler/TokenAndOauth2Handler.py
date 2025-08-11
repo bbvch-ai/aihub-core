@@ -104,7 +104,7 @@ class TokenAndOauth2Handler(AuthHandler):
                 OAuth2AuthHandler(identity_provider=identity_provider),
             )
         else:
-            raise ValueError(f"Unknown identity provider: {config.AUTH_IDENTITY_PROVIDER}")
+            raise ValueError(f"Unknown identity provider: {config.IDENTITY_PROVIDER}")
 
         if SuperuserSettings().ENABLED:
             logger.info("Using superuser identity provider")

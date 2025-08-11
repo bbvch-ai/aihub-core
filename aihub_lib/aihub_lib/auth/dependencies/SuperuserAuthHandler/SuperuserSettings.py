@@ -30,13 +30,6 @@ class SuperuserSettings(EnvironmentSettings):
     ROLE: Annotated[str, Field(description="The role the superuser possesses.")] = "AIHubSuperuser"
     TOKEN: Annotated[SecretStr, Field(description="The superuser's access token.", min_length=64)]
 
-    @field_validator("ROLES", mode="before")
-    @classmethod
-    def decode_roles(cls, v: str | list[str]) -> list[str]:
-        if isinstance(v, list):
-            return v
-        return v.split(",")
-
     @computed_field
     @property
     def ROLES(self) -> list[str]:
@@ -44,8 +37,8 @@ class SuperuserSettings(EnvironmentSettings):
 
     def get_user_identity(self) -> UserIdentity:
         return UserIdentity(
-            name=SuperuserSettings().NAME,
-            email=SuperuserSettings().EMAIL,
-            id=SuperuserSettings().OID,
-            roles=SuperuserSettings().ROLES,
+            name=self.NAME,
+            email=self.EMAIL,
+            id=self.OID,
+            roles=self.ROLES,
         )
