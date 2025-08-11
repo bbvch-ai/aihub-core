@@ -402,7 +402,7 @@ services:
 
       # Code Interpreter
       CODE_INTERPRETER_ENGINE: 'jupyter'
-      CODE_INTERPRETER_JUPYTER_URL: 'http://jupyter:88888'
+      CODE_INTERPRETER_JUPYTER_URL: 'http://jupyter:8888'
       CODE_INTERPRETER_JUPYTER_AUTH: 'token'
       CODE_INTERPRETER_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
 
