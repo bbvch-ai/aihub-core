@@ -2,7 +2,7 @@ import logging
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import DisplayEvent
-from aihub_lib.nats.topics import AgentTopic
+from aihub_lib.nats.topics import AgentInstanceTopic
 from fastapi import WebSocket
 
 from aihub_api.sockets.events.server_to_user.ContextualizedAgentEvent import ContextualizedAgentEvent
@@ -79,7 +79,7 @@ class WebSocketManager:
             if not self.active_connections[user_id]:
                 del self.active_connections[user_id]
 
-    async def send_agent_event(self, event: DisplayEvent, topic: AgentTopic, user_id: str) -> None:
+    async def send_agent_event(self, event: DisplayEvent, topic: AgentInstanceTopic, user_id: str) -> None:
         """
         Send a JSON-serialized version of the given event to all active connections of the specified user.
 

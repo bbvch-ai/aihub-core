@@ -8,17 +8,21 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
 )
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
+from aihub_lib.testing.logging.logger import enable_logging
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from llama_index.core.base.llms.types import ChatMessage
 from stringcase import snakecase
 
-from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_api.routes.agent.AgentController import AgentController
+from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.runners.simulation.agent.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
+from aihub_api.services.ModelCreationService import ModelCreationService
 
-AGENT_CLASS = "test_agent"
+AGENT_CLASS = "TestAgent"
 AGENT_ID = "test_agent_1"
+
+enable_logging()
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
@@ -33,6 +37,13 @@ async def agent_api_client():
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1") as client:
             yield client
+
+
+@pytest.fixture(autouse=True)
+def cleanup_db_and_cache():
+    AgentService._clear_cache()
+    yield
+    AgentService._clear_cache()
 
 
 @pytest.mark.asyncio(loop_scope="module")
@@ -63,7 +74,7 @@ async def test_get_agent(agent_api_client):
 @pytest.mark.asyncio(loop_scope="module")
 async def test_send_event_to_agent(agent_api_client):
     """Test POST /agent/{agent_class}/{agent_id}/{event_name} returns correct agent details."""
-    user_message = EventModelCreationService.create_input_model(UserMessageEvent)(
+    user_message = ModelCreationService.create_input_model_from_event_class(UserMessageEvent)(
         messages=[ChatMessage(role="user", content="Hey!")]
     )
     path = f"/agents/{AGENT_CLASS}/{AGENT_ID}/{snakecase(UserMessageEvent.event_name_from_class())}"

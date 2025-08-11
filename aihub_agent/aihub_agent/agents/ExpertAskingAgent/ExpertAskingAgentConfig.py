@@ -1,12 +1,12 @@
 from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from pydantic import Field
 
 
 class ExpertAskingAgentConfig(AgentConfig):
-    llm: ChatLLMConfig
+    llm: LLMConfig
     slack_channel_id: Annotated[
         str, Field(..., description="Slack channel ID to which expert question should be posted")
     ]

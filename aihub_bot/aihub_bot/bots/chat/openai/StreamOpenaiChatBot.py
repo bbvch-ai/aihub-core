@@ -1,6 +1,7 @@
+from typing import override
+
 from botbuilder.core import TurnContext
 from botframework.connector import Channels
-from typing_extensions import override
 
 from aihub_bot.bots.chat.openai.OpenaiChatBot import OpenaiChatBot
 

@@ -3,3 +3,5 @@ node_modules
 aihub
 aihub_*
 .vitepress/dist
+changelog/index.md
+licenses/index.md

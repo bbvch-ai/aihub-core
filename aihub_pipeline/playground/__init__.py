@@ -1,12 +1,6 @@
-from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
-    AzureOpenAILLMConfig,
-    AzureOpenAIParameter,
-)
-from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
-    AzureOpenAIEmbeddingConfig,
-    AzureOpenAIEmbeddingParameter,
-)
-from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from dagster import AssetKey, AssetSelection, Definitions, DynamicPartitionsDefinition
 
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
@@ -18,18 +12,21 @@ from aihub_pipeline.assets.factories.data_lake_to_vector_store.removed_documents
 )
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.summary_nodes_factory import summary_nodes_factory
 from aihub_pipeline.executors.factory import default_process_executor
+from aihub_pipeline.jobs.factory import materialize_asset_job, observe_source_job
 from aihub_pipeline.resources.factory import (
-    azure_data_lake_resources,
-    default_io_manager_azure_datalake_resources,
+    default_io_manager_s3_datalake_resources,
     local_mongo_milvus_storage_context_resource,
+    s3_data_lake_resources,
 )
 from aihub_pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelResource
 from aihub_pipeline.resources.llm.LanguageModelResource import LanguageModelResource
 from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource, LoaderType
 from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
+from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
 
+# Configuration: Change this to switch between cloud providers
 DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
 DOCUMENT_KEY = AssetKey(["playground", "documents"])
 NODES_KEY = AssetKey(["playground", "nodes"])
@@ -38,9 +35,9 @@ SUMMARY_NODES_KEY = AssetKey(["playground", "summary_nodes"])
 
 DATALAKE_CONTAINER_NAME = "playground"
 DATALAKE_DIRECTORY_NAME = "test"
+NAMESPACE_NAME = DATALAKE_DIRECTORY_NAME
+STORE_NAME = DATALAKE_CONTAINER_NAME
 FIGURES_DIRECTORY_NAME = "__figures__"
-NAMESPACE_NAME = "test"
-STORE_NAME = "test"
 
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
@@ -55,14 +52,24 @@ assets = [
     ),
 ]
 
+job = observe_source_job(
+    observable_asset=observable_asset,
+    namespace_name=NAMESPACE_NAME,
+)
+
+remove_job = materialize_asset_job(
+    namespace_name=NAMESPACE_NAME,
+    job_name="remove_documents",
+    asset_selection=AssetSelection.keys(REMOVED_DOCUMENTS_KEY),
+)
 
 defs = Definitions(
     assets=assets,
     resources={
-        **default_io_manager_azure_datalake_resources(
+        **default_io_manager_s3_datalake_resources(
             container_name=DATALAKE_CONTAINER_NAME, directory_name=DATALAKE_DIRECTORY_NAME
         ),
-        "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
+        "document_parser": DocumentParserResource(loader_type=LoaderType.DOCUMENT_INTELLIGENCE),
         "node_parser": MarkdownStructuralNodeParserResource(),
         "summary_parser": RecursiveSummaryParserResource(),
         **local_mongo_milvus_storage_context_resource(
@@ -70,31 +77,18 @@ defs = Definitions(
             store_name=STORE_NAME,
             namespace_name=NAMESPACE_NAME,
         ),
-        **azure_data_lake_resources(
+        **s3_data_lake_resources(
             container_name=DATALAKE_CONTAINER_NAME,
             directory_name=DATALAKE_DIRECTORY_NAME,
             figures_directory_name=FIGURES_DIRECTORY_NAME,
         ),
         "embedding_model": EmbeddingModelResource(
-            embedding_config=AzureOpenAIEmbeddingConfig(
-                name="text-embedding-3-large",
-                base_url="https://bbvaihub-openai-sui.openai.azure.com/",
-                api_version="2023-05-15",
-                embedding_tokens_costs_per_thousand=0.000118,
-                default_parameter=AzureOpenAIEmbeddingParameter(),
-            ),
+            embedding_config=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
         ),
-        "language_model": LanguageModelResource(
-            llm_config=AzureOpenAILLMConfig(
-                name="gpt-4o-mini",
-                base_url="https://bbvaihub-openai-sui.openai.azure.com/",
-                api_version="2024-12-01-preview",
-                prompt_tokens_costs_per_thousand=0.00013599,
-                completion_tokens_costs_per_thousand=0.0005440,
-                default_parameter=AzureOpenAIParameter(temperature=0.0),
-            )
-        ),
+        "language_model": LanguageModelResource(llm_config=LLMConfig(model_name="azure/gpt-4o-mini")),
     },
     sensors=[default_automation_sensor(assets)],
     executor=default_process_executor(),
+    jobs=[job, remove_job],
+    schedules=[daily_schedule_at(job, hour=0, minute=0), daily_schedule_at(remove_job, hour=1, minute=0)],
 )

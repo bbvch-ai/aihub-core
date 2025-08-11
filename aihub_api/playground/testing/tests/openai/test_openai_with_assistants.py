@@ -2,12 +2,15 @@ import json
 
 import pytest
 import pytest_asyncio
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
@@ -106,6 +109,39 @@ async def test_chat_completions_json(api_client):
 
     data = response.json()
 
+    assert data.get("object") == "chat.completion", f"Unexpected object type: {data.get('object')}"
+    choices = data.get("choices", [])
+    assert choices, "No choices returned in the response"
+    message = choices[0].get("message", {})
+    expected = "First chunk.\nSecond chunk"
+    assert (
+        message.get("content") == expected
+    ), f"Expected message content '{expected}' but got '{message.get('content')}'"
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_chat_completions_json_with_custom_agent_config(api_client):
+    """Test JSON chat completions with custom agent config."""
+    AgentConfigEntityDocument.delete_if_exists_for_class_and_id(agent_class=AGENT_CLASS, agent_id=AGENT_ID)
+    custom_agent_config = AgentConfig(
+        agent_id=AGENT_ID,
+        agent_class=AGENT_CLASS,
+        name=LocaleString(en="Override Test Agent"),
+        description=LocaleString(en="This is a test agent with custom config."),
+    )
+    custom_agent_config_entity = AgentConfigEntityDocument.from_agent_config(custom_agent_config)
+    custom_agent_config_entity.save()
+    payload = {
+        "model": f"{AGENT_CLASS}/{AGENT_ID}",
+        "messages": [{"role": "user", "content": "Hello!"}],
+        "stream": False,
+    }
+    response = await api_client.post(COMPLETIONS_ENDPOINT, json=payload)
+    custom_agent_config_entity.delete()
+
+    assert response.status_code == 200, f"Response: {response.text}"
+
+    data = response.json()
     assert data.get("object") == "chat.completion", f"Unexpected object type: {data.get('object')}"
     choices = data.get("choices", [])
     assert choices, "No choices returned in the response"

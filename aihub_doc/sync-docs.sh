@@ -1,3 +1,4 @@
+
 #!/bin/bash
 #
 # This script synchronizes README.md files from the monorepo root
@@ -8,6 +9,13 @@ echo "🔄 Syncing README files..."
 
 # First, remove the aihub folder
 rm -rf aihub
+rm -f LICENSES.md
+rm -f changelog.md
+
+mkdir -p "licenses"
+mkdir -p "changelog"
+cp "../LICENSES.md" "./licenses/index.md"
+cp "../changelog.md" "./changelog/index.md"
 
 # Find all 'README.md' files in the parent directory (../),
 # while excluding 'node_modules' and the current 'aihub_doc' directory.
@@ -15,7 +23,7 @@ rm -rf aihub
 find ../ -path '*/node_modules' -prune -o -path '../aihub_doc' -prune -o -name "README.md" | while read -r source_file; do
     # 'source_file' is the full path from find, e.g., ../aihub_api/README.md
 
-    local dest_file=""
+    dest_file=""
 
     # == Special Case Handling ==
     # Check if the file is the root README.md.

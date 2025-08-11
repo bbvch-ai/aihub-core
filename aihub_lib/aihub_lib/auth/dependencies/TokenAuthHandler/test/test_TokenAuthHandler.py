@@ -11,8 +11,8 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.auth.identity.TokenIdentityProvider.TokenIdentityProvider import TokenIdentityProvider
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
-from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 from aihub_lib.persistence.user.UserEntity import UserEntity
 from aihub_lib.testing.asyncio_utils.bdd import async_test
@@ -21,12 +21,11 @@ from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 
 @pytest.fixture(autouse=True)
-def mongo_connection(monkeypatch) -> Generator[None, None, None]:
+def mongo_connection(monkeypatch) -> Generator[None]:
     """Set up a MongoDB connection for testing and disconnect after."""
-    monkeypatch.setenv("COSMOS_CONNECTION_STRING", "mongodb://admin:admin@localhost:27017/")
     connect(
-        db=ApiConfig().DB_NAME,
-        host=CosmosAccess().get_connection_string(),
+        db=AIHubSettings().MONGO_MAIN_DB_NAME,
+        host=MongoSettings().CONNECTION_STRING,
     )
     yield
     disconnect()

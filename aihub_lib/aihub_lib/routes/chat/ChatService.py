@@ -9,6 +9,7 @@ from fastapi import HTTPException
 from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
 
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -29,7 +30,8 @@ from aihub_lib.nats.events.utils import get_parent_classes_until_base
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
+from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 
@@ -131,11 +133,18 @@ class ChatService:
             )
             display_id = event.request_event.topic.display_id
         else:
+            agent_config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+            if agent_config_entity is None:
+                logger.info(f"Agent config not found for class {agent_class} and id {agent_id}. Using default config.")
+                agent_config_dict = None
+            else:
+                agent_config_dict = AgentConfig.from_entity(agent_config_entity).model_dump()
             event = UserMessageEvent(
                 messages=messages,
                 user=user,
                 locale=locale or LocaleHandler.DEFAULT_LOCALE,
                 files=files,
+                agent_config=agent_config_dict,
             )
 
         event = ExternalAgentEvent(
@@ -191,7 +200,7 @@ class ChatService:
             stop_event=None,
         )
 
-        async def response_aggregator(event: DisplayEvent, topic: AgentTopic):
+        async def response_aggregator(event: DisplayEvent, topic: AgentInstanceTopic):
             is_primary_agent = topic.agent_class == agent_class and topic.agent_id == agent_id
             logger.debug(f"Received display event: {event}")
             if event.is_chunk_event:
@@ -282,7 +291,7 @@ class ChatService:
             stop_event=None,
         )
 
-        async def response_aggregator(event: DisplayEvent, topic: AgentTopic):
+        async def response_aggregator(event: DisplayEvent, topic: AgentInstanceTopic):
             logger.debug(f"Received display event: {event}")
             is_primary_agent = topic.agent_class == agent_class and topic.agent_id == agent_id
             if event.is_chunk_event:

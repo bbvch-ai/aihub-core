@@ -1,7 +1,9 @@
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from aihub_lib.testing.auth_utils.fake_user import fake_user
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
 
@@ -17,11 +19,11 @@ scenarios("./features/simple_agent.feature")
 def _():
     return AgentTestRunner(
         agent_type=SimpleAgent,
-        agent_config=SimpleAgentConfig(
+        default_agent_config=SimpleAgentConfig(
             agent_id="simple_agent",
+            agent_class=SimpleAgent.__name__,
             name=LocaleString(en="Simple Agent"),
             description=LocaleString(en="This is a very simple agent"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
 
@@ -32,7 +34,8 @@ async def _(agent_runner: AgentTestRunner, payload: str):
     async with agent_runner.test_run() as topic:
         await agent_runner.send_event_from_topic(
             start_event=UserMessageEvent(
-                messages=[ChatMessage(content=payload, role=MessageRole.USER)], user=fake_user()
+                messages=[ChatMessage(content=payload, role=MessageRole.USER)],
+                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
             ),
             topic=topic,
         )

@@ -1,6 +1,9 @@
 import copy
 
 import pytest
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
     AgentInTheLoopExceptionEvent,
@@ -10,7 +13,6 @@ from aihub_lib.nats.events import (
     UserMessageEvent,
 )
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from aihub_lib.testing.auth_utils.fake_user import fake_user
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
 
@@ -34,9 +36,9 @@ scenarios("./features/agent_in_the_loop_agent.feature")
 def orchestrator_config():
     return OrchestratorAgentConfig(
         agent_id="orchestrator_agent",
+        agent_class=OrchestratorAgent.__name__,
         name=LocaleString(en="Orchestrator Agent"),
         description=LocaleString(en="This is an orchestrator agent"),
-        system_prompt=LocaleString(en="You are an orchestrator agent"),
     )
 
 
@@ -44,9 +46,9 @@ def orchestrator_config():
 def worker_config():
     return WorkerAgentConfig(
         agent_id="worker_agent",
+        agent_class=WorkerAgent.__name__,
         name=LocaleString(en="Worker Agent"),
         description=LocaleString(en="This is a worker agent"),
-        system_prompt=LocaleString(en="You are a worker agent"),
     )
 
 
@@ -54,7 +56,7 @@ def worker_config():
 def _(orchestrator_config):
     return AgentTestRunner(
         agent_type=OrchestratorAgent,
-        agent_config=orchestrator_config,
+        default_agent_config=orchestrator_config,
     )
 
 
@@ -62,7 +64,7 @@ def _(orchestrator_config):
 def _(worker_config):
     return AgentTestRunner(
         agent_type=WorkerAgent,
-        agent_config=worker_config,
+        default_agent_config=worker_config,
     )
 
 
@@ -88,7 +90,8 @@ async def send_start_to_orchestrator(
         async with orchestrator_runner.test_run() as topic:
             await orchestrator_runner.send_event_from_topic(
                 start_event=UserMessageEvent(
-                    messages=[ChatMessage(content=message, role=MessageRole.USER)], user=fake_user()
+                    messages=[ChatMessage(content=message, role=MessageRole.USER)],
+                    user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
                 ),
                 topic=topic,
             )

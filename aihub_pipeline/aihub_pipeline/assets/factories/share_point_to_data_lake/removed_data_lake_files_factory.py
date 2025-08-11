@@ -1,4 +1,4 @@
-from dagster import AssetIn, AssetKey, AutomationCondition, Output, graph_asset
+from dagster import AssetIn, AssetKey, Output, graph_asset
 
 from aihub_pipeline.ops.share_point.delete_data_lake_files_from_data_lake import delete_data_lake_files_from_data_lake
 from aihub_pipeline.ops.share_point.fetch_data_lake_files_to_remove import fetch_data_lake_files_to_remove
@@ -19,7 +19,6 @@ def removed_data_lake_files_factory(key: AssetKey, share_point_key: str | AssetK
         key=key,
         group_name=group_name_from_asset_key(key),
         ins={"share_point_files": AssetIn(key=share_point_key)},
-        automation_condition=AutomationCondition.eager(),
         description="Removes documents from the Data Lake that are no longer present in SharePoint.",
     )
     def removed_datalake_files(share_point_files: list[MinimalSharePointFile]) -> Output[list[DataLakeFile]]:

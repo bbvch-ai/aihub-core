@@ -12,8 +12,8 @@ from pytest_bdd import given, parsers, scenarios, then, when
 from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler import OpenWebuiAuthHandler
 from aihub_lib.auth.identity.AzureIdentityProvider.AzureIdentityProvider import AzureIdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
-from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 from aihub_lib.persistence.user.UserEntity import UserEntity
 from aihub_lib.testing.asyncio_utils.bdd import async_test
@@ -22,12 +22,11 @@ from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 
 @pytest.fixture(autouse=True)
-def mongo_connection(monkeypatch) -> Generator[None, None, None]:
+def mongo_connection(monkeypatch) -> Generator[None]:
     """Set up a MongoDB connection for testing and disconnect after."""
-    monkeypatch.setenv("COSMOS_CONNECTION_STRING", "mongodb://admin:admin@localhost:27017/")
     connect(
-        db=ApiConfig().DB_NAME,
-        host=CosmosAccess().get_connection_string(),
+        db=AIHubSettings().MONGO_MAIN_DB_NAME,
+        host=MongoSettings().CONNECTION_STRING,
     )
     yield
     disconnect()
@@ -123,14 +122,13 @@ def generate_dummy_valid_token(oid: str) -> str:
 
 
 @given(
-    parsers.parse('a tenant_id "{tenant_id}", client_id "{client_id}", and authority_url "{authority_url}"'),
+    parsers.parse('a client_id "{client_id}", and authority_url "{authority_url}"'),
     target_fixture="oauth2_config",
 )
-def oauth2_config(monkeypatch, tenant_id: str, client_id: str, authority_url: str):
+def oauth2_config(monkeypatch, client_id: str, authority_url: str):
     """Set the OAuth2 configuration environment variables."""
-    monkeypatch.setenv("TENANT_ID", tenant_id)
-    monkeypatch.setenv("CLIENT_ID", client_id)
-    monkeypatch.setenv("AUTHORITY_URL", authority_url)
+    monkeypatch.setenv("OAUTH_CLIENT_ID", client_id)
+    monkeypatch.setenv("OAUTH_AUTHORITY_URL", authority_url)
 
 
 @given(

@@ -15,7 +15,7 @@ permissions:
 jobs:
   test-modules:
     name: Test Modules
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-8-cores
     if: ${{ !github.event.pull_request.draft }}
 
     permissions:
@@ -34,20 +34,21 @@ jobs:
       test_report_url_html: ${{ steps.test_report.outputs.url_html }}
 
     strategy:
+      fail-fast: false
       matrix:
         include:
           - module: aihub_lib
-            docker_compose_files: "docker-compose.yml,milvus-standalone-docker-compose.yml"
+            docker_compose_services: "postgres nats redis mongo llama-cpp huggingface-text-embedding-inference litellm minio etcd milvus-standalone"
           - module: aihub_api
-            docker_compose_files: "docker-compose.yml"
+            docker_compose_services: "postgres nats redis mongo llama-cpp huggingface-text-embedding-inference litellm"
           - module: aihub_pipeline
-            docker_compose_files: ""
+            docker_compose_services: ""
           - module: aihub_agent
-            docker_compose_files: "docker-compose.yml,milvus-standalone-docker-compose.yml"
+            docker_compose_services: "postgres phoenix nats redis mongo llama-cpp huggingface-text-embedding-inference litellm minio etcd milvus-standalone"
           - module: aihub_bot
-            docker_compose_files: "docker-compose.yml"
+            docker_compose_services: "nats redis mongo"
           - module: aihub_process
-            docker_compose_files: "docker-compose.yml"
+            docker_compose_services: "postgres phoenix nats redis mongo"
 
     steps:
       - name: Checkout repository
@@ -67,7 +68,7 @@ jobs:
         with:
           github_token: ${{ secrets.PAT_GITHUB_READ_PACKAGES }}
           working_directory: ${{ matrix.module }}
-          docker_compose_paths: ${{ matrix.docker_compose_files }}
+          docker_compose_services: ${{ matrix.docker_compose_services }}
           use_local_core: "true"
           install_ffmpeg: ${{ matrix.module == 'aihub_api' }}
 
@@ -89,6 +90,7 @@ jobs:
       checks: write
 
     strategy:
+      fail-fast: false
       matrix:
         module: [ aihub_lib, aihub_api, aihub_agent, aihub_pipeline, aihub_bot, aihub_process ]
 
@@ -109,6 +111,7 @@ jobs:
       security-events: write
 
     strategy:
+      fail-fast: false
       matrix:
         include:
           - folder: aihub_agent
@@ -142,4 +145,3 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
           report_coverage: ${{ matrix.report_coverage }}
-

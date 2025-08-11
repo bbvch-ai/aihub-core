@@ -1,52 +1,16 @@
-from typing import Annotated
+from typing import Annotated, override
 
-from typing_extensions import override
-
-from aihub_lib.nats.topic_managers.AbstractStreamTopicManager import AbstractStreamTopicManager
-from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
+from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
 
 
-class ProcessInstanceTopicManager(ProcessTopicManager, AbstractStreamTopicManager):
+class ProcessInstanceTopicManager(ProcessClassTopicManager):
     def __init__(
         self,
         process_class: Annotated[str, "The processes class identifier."],
         process_id: Annotated[str, "Unique identifier for the specific process instance."],
     ):
-        super().__init__()
-        self.process_class = process_class
+        super().__init__(process_class=process_class)
         self.process_id = process_id
-
-    def get_process_discovery_subject_request(
-        self,
-        call_id: Annotated[str, "Identifier linking request and response"],
-        process_class: str | None = None,
-        process_id: str | None = None,
-    ) -> str:
-        """
-        Returns a subject for requesting discovery info about this process instance (or a provided override).
-        If process_class/process_id are not specified, it uses the instance's own identifiers.
-        """
-        return super().get_process_discovery_subject_request(
-            process_class=process_class or self.process_class,
-            process_id=process_id or self.process_id,
-            call_id=call_id,
-        )
-
-    def get_process_discovery_subject_response(
-        self,
-        call_id: Annotated[str, "Identifier linking request and response"],
-        process_class: str | None = None,
-        process_id: str | None = None,
-    ) -> str:
-        """
-        Returns a subject for receiving process discovery responses for this process instance (or a provided override).
-        If process_class/process_id are not specified, it uses the instance's own identifiers.
-        """
-        return super().get_process_discovery_subject_response(
-            process_class=process_class or self.process_class,
-            process_id=process_id or self.process_id,
-            call_id=call_id,
-        )
 
     def get_subject_for_specific_event_in_process_instance(
         self,
@@ -128,10 +92,3 @@ class ProcessInstanceTopicManager(ProcessTopicManager, AbstractStreamTopicManage
             event_name="*",
             event_id="*",
         )
-
-    def get_stream(self) -> tuple[str, str]:
-        return self._get_stream_name_for_all_events(), self.get_subject_for_all_events_in_process()
-
-    def _get_stream_name_for_all_events(self) -> str:
-        """Returns the stream name used for all process events."""
-        return f"{self.PROCESS_TOPIC}_{self.process_class}_{self.process_id}_stream"

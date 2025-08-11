@@ -24,7 +24,7 @@ inputs:
     required: true
   ssh_key:
     description: 'ssh key to access private aihub core repository'
-    required: true
+    required: false
 
 runs:
   using: "composite"
@@ -51,17 +51,3 @@ runs:
         tags: |
           ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:${{ inputs.release_version }}
           ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:latest
-
-
-    - name: Create GitHub Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
-      with:
-        tag_name: ${{ inputs.image_name }}-${{ inputs.release_version }}
-        release_name: Release ${{ inputs.image_name }} ${{ inputs.release_version }}
-        body: |
-          Docker image '${{ inputs.image_name }}' for version ${{ inputs.release_version }} is available at:
-          `ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:${{ inputs.release_version }}`.
-        draft: false
-        prerelease: false

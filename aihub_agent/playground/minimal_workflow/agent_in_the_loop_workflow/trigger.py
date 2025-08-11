@@ -1,8 +1,10 @@
 import asyncio
 
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
-from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.logging.logger import enable_logging
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
@@ -20,21 +22,21 @@ enable_logging()
 async def main():
     orchestrator_runner = AgentTestRunner(
         agent_type=OrchestratorAgent,
-        agent_config=OrchestratorAgentConfig(
+        default_agent_config=OrchestratorAgentConfig(
             agent_id="orchestrator_agent",
+            agent_class=OrchestratorAgent.__name__,
             name=LocaleString(en="Orchestrator Agent"),
             description=LocaleString(en="This is an orchestrator agent"),
-            system_prompt=LocaleString(en="You are an orchestrator agent"),
         ),
     )
 
     worker_runner = AgentTestRunner(
         agent_type=WorkerAgent,
-        agent_config=WorkerAgentConfig(
+        default_agent_config=WorkerAgentConfig(
             agent_id="worker_agent",
+            agent_class=WorkerAgent.__name__,
             name=LocaleString(en="Worker Agent"),
             description=LocaleString(en="This is a worker agent"),
-            system_prompt=LocaleString(en="You are a worker agent"),
         ),
     )
 
@@ -43,7 +45,8 @@ async def main():
             await orchestrator_runner.send_event_from_topic(
                 topic=topic,
                 start_event=UserMessageEvent(
-                    messages=[ChatMessage(content="128", role=MessageRole.USER)], user=fake_user()
+                    messages=[ChatMessage(content="128", role=MessageRole.USER)],
+                    user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
                 ),
             )
 

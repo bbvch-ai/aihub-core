@@ -5,12 +5,13 @@ from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from typing import Annotated, Any
 
+from aihub_lib.context.BaseContext import BaseContext
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.infrastructure.phoenix.PhoenixConfig import PhoenixConfig
+from aihub_lib.infrastructure.phoenix.PhoenixSettings import PhoenixSettings
 from aihub_lib.nats.events import BaseEvent, ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import ListOfSize
 from nats.aio.client import Client as NATS
 from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
@@ -24,8 +25,6 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Span, StatusCode, set_tracer_provider
 from pydantic import BaseModel
-
-from aihub_agent.context.BaseContext import BaseContext
 
 logger = logging.getLogger(__name__)
 
@@ -73,8 +72,8 @@ class RunTraceCoordinator:
     ):
         self.nc = nc
 
-        endpoint = f"{PhoenixConfig().PHOENIX_ENDPOINT}/v1/traces"
-        auth_token = PhoenixConfig().PHOENIX_AUTH_TOKEN
+        endpoint = f"{PhoenixSettings().ENDPOINT}/v1/traces"
+        auth_token = PhoenixSettings().AUTH_TOKEN
         headers = {"authorization": f"Bearer {auth_token}"} if auth_token else {}
         tracer_provider = TracerProvider(resource=Resource({ResourceAttributes.PROJECT_NAME: project_name}))
         set_tracer_provider(tracer_provider)
@@ -89,8 +88,9 @@ class RunTraceCoordinator:
 
         LlamaIndexInstrumentor().instrument(tracer_provider=tracer_provider)
         self.tracer = trace.get_tracer(__name__)
+        self._background_tasks: set[asyncio.Task] = set()
 
-    def trace_run_start(self, topic: AgentTopic, event: StartEvent) -> dict[str, str]:
+    def trace_run_start(self, topic: AgentInstanceTopic, event: StartEvent) -> dict[str, str]:
         """
         Initiates a run-level span upon receiving a StartEvent.
 
@@ -121,17 +121,19 @@ class RunTraceCoordinator:
             telemetry_headers: dict[str, str] = {}
             inject(telemetry_headers, context=span_context)
             logger.debug(f"Tracing run start for {topic.agent_class} with headers {telemetry_headers}")
-            asyncio.create_task(self._end_span_on_event(topic, span))
+            task = asyncio.create_task(self._end_span_on_event(topic, span))
+            self._background_tasks.add(task)
+            task.add_done_callback(self._background_tasks.discard)
             return telemetry_headers
 
-    async def _end_span_on_event(self, topic: AgentTopic, span: Span):
+    async def _end_span_on_event(self, topic: AgentInstanceTopic, span: Span):
         """
         Waits for a StopEvent or ExceptionEvent to conclude the run’s span, meanwhile accumulating output
         (like chunks) from events that arrive during the run.
         """
         response_aggregate = ""
 
-        async def handler(event: BaseEvent, t: AgentTopic):
+        async def handler(event: BaseEvent, t: AgentInstanceTopic):
             nonlocal response_aggregate
             if event.is_chunk_event:
                 logger.debug("Received ChunkEvent in tracing coordinator")
@@ -173,7 +175,7 @@ class RunTraceCoordinator:
     async def trace_step_start(
         self,
         telemetry_headers: dict[str, str],
-        topic: AgentTopic,
+        topic: AgentInstanceTopic,
         step_method: Callable,
         kwargs: dict[str, Any],
     ) -> AsyncIterator[Span]:

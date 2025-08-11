@@ -1,11 +1,14 @@
 ---
 title: "Authentication & Authorization System"
 ---
+
 # Authentication & Authorization System
 
 ## Overview
 
-The AI-Hub authentication system provides enterprise-grade security through a modular architecture that separates authentication from authorization. The system supports multiple authentication strategies while maintaining a unified authorization model based on hierarchical permissions.
+The AI-Hub authentication system provides enterprise-grade security through a modular architecture that separates
+authentication from authorization. The system supports multiple authentication strategies while maintaining a unified
+authorization model based on hierarchical permissions.
 
 ## Architecture
 
@@ -50,21 +53,25 @@ The system supports two types of permission checks:
 ## Supported Authentication Strategies
 
 ### OAuth2 (Microsoft Azure AD)
+
 - JWT token validation using JWKS
 - Automatic token caching and RSA key management
 - Claims mapping to user identity
 
 ### Token-Based Authentication
+
 - Bearer token lookup in database
 - Token expiration validation
 - Direct user identity mapping
 
 ### Development Authentication
+
 - Bypasses authentication for development environments
 - Configurable mock user identities
 - **WARNING**: Only for development use
 
 ### Multi-Strategy Support
+
 - Combines OAuth2 and token authentication
 - Fallback authentication mechanisms
 - Flexible deployment configurations
@@ -72,11 +79,13 @@ The system supports two types of permission checks:
 ## Identity Providers
 
 ### Azure Identity Provider
+
 - Microsoft Graph API integration
 - Automatic user profile synchronization
 - Role and permission mapping from Azure AD
 
 ### Token Identity Provider
+
 - Database-driven user management
 - Custom role assignment
 - Offline authentication support
@@ -93,10 +102,12 @@ The system supports two types of permission checks:
 ## Usage Context
 
 This authentication system is designed for enterprise environments requiring:
+
 - Multiple authentication methods
 - Fine-grained authorization control
 - Integration with existing identity providers
 - Scalable, stateless operation
 - Comprehensive audit trails
 
-The system powers all AI-Hub services and enables secure access to agents, processes, and administrative functions through a unified security model.
+The system powers all AI-Hub services and enables secure access to agents, processes, and administrative functions
+through a unified security model.

@@ -1,6 +1,6 @@
 import logging
 
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
+from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
 from aihub_lib.auth.identity.AzureIdentityProvider.AzureGraphService import AzureGraphService
 from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -12,11 +12,11 @@ logger = logging.getLogger(__name__)
 class AzureIdentityProvider(IdentityProvider):
     """
     Provides user information (profile, image, app-specific roles) by querying Microsoft Graph.
-    The application context for roles is defined by CLIENT_ID in OAuth2Config.
+    The application context for roles is defined by CLIENT_ID in OAuth2Settings.
     """
 
     def __init__(self):
-        self.config = OAuth2Config()
+        self.config = OAuth2Settings()
         self.graph_service = AzureGraphService(self.config.CLIENT_ID)
 
     async def get_user_identity_by_oid(self, user_oid: str) -> UserIdentity:

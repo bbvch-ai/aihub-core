@@ -1,3 +1,3 @@
-from .AgentDiscoveryTopic import AgentDiscoveryTopic
+from .AgentInstanceDiscoveryTopic import AgentInstanceDiscoveryTopic
 
-__all__ = ["AgentDiscoveryTopic"]
+__all__ = ["AgentInstanceDiscoveryTopic"]

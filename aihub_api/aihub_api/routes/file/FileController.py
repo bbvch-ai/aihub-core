@@ -2,7 +2,7 @@ from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessService import AnonymousFileAccessService
+from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings import AnonymousFileAccessSettings
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
 from fastapi import Query, Security
@@ -26,7 +26,7 @@ class FileController(Controller):
     def __init__(self, *, auth: AuthHandler, route: str = "/file", additionally_required_permission: str | None = None):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
-    def get_file_url(self, route: str = "/logged-in/url/{container}/{file_path:path}"):
+    def get_file_url(self, route: str = "/logged-in/url/{container}/{file_path:path}") -> "FileController":
         @self.router.get(route, tags=self.tags, summary="Get signed file URL")
         async def get_file_url(
             container: str,
@@ -36,7 +36,9 @@ class FileController(Controller):
             """
             Generates a short-lived secure link to the blob resource, and returns the URL.
             """
-            return SignedUrlDto(url=AnonymousFileAccessService.generate_sas_url(container, file_path))
+            file_access_config = AnonymousFileAccessSettings()
+            sas_url = file_access_config.service.generate_sas_url(container, file_path)
+            return SignedUrlDto(url=sas_url)
 
         return self
 

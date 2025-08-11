@@ -5,8 +5,8 @@ from unittest.mock import patch
 
 import pytest
 
-from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthConfig import (
-    DangerousDevelopmentOnlyAuthConfig,
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
 )
 from aihub_lib.persistence.user.UserEntity import UserEntity
 
@@ -15,7 +15,7 @@ def _create_mock_user_entity_function():
     """
     Create a mock function for UserEntity.by_oid that returns a dummy user.
     """
-    config = DangerousDevelopmentOnlyAuthConfig()
+    config = DangerousDevelopmentOnlyAuthSettings()
 
     def mock_by_oid(user_oid):
         user = UserEntity(
@@ -36,7 +36,7 @@ def _create_mock_user_entity_function():
 @pytest.fixture(autouse=True)
 def mock_user_entity_autouse():
     """
-    Mock UserEntity.by_oid to return a dummy user with properties from DangerousDevelopmentOnlyAuthConfig.
+    Mock UserEntity.by_oid to return a dummy user with properties from DangerousDevelopmentOnlyAuthSettings.
 
     This fixture is useful for tests that need a consistent user object without database dependencies.
 
@@ -51,12 +51,8 @@ def get_expected_user_data(include_dashboard=True, include_access=True):
     """
     Helper function to get expected user data for tests.
     Returns the user data that should be returned by API endpoints.
-
-    Args:
-        include_dashboard (bool): Whether to include dashboard data in the response
-        include_access (bool): Whether to include access data in the response
     """
-    config = DangerousDevelopmentOnlyAuthConfig()
+    config = DangerousDevelopmentOnlyAuthSettings()
     data = {
         "id": config.OID,
         "name": config.NAME,

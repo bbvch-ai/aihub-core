@@ -89,14 +89,27 @@ function generateSidebar() {
     const aihubBasePath = path.join(docsRoot, 'aihub');
     const rootIndexPath = path.join(aihubBasePath, 'index.md');
     const rootFileContent = readFileSync(rootIndexPath, 'utf-8');
-    const { data: rootFrontmatter } = matter(rootFileContent);
 
     allTopLevelGroups.push({
-      text: rootFrontmatter.title || 'Technical Documentation',
+      text: 'Technical Documentation',
       link: '/aihub/',
       collapsible: true,
       items: generateSidebarItems(aihubBasePath, '/aihub/'),
-      index: rootFrontmatter.index,
+      index: 500,
+    });
+
+    allTopLevelGroups.push({
+      text: 'Changelog',
+      link: '/changelog/',
+      collapsible: true,
+      index: 1000,
+    });
+
+    allTopLevelGroups.push({
+      text: 'Licenses',
+      link: '/licenses/',
+      collapsible: true,
+      index: 1001,
     });
   } catch (e) {
     console.warn(`[VitePress] Could not process 'aihub' section. Is aihub/index.md missing?`);

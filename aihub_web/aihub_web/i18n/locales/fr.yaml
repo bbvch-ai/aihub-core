@@ -331,3 +331,41 @@ role:
   role_saved:
     summary: "Rôle enregistré"
     detail: "Rôle enregistré avec succès, les nouvelles règles d'accès prennent effet immédiatement."
+
+notification:
+  title: "Notifications"
+  no_unread_notifications: "Aucune notification non lue"
+  no_notifications: "Aucune notification disponible"
+  no_pending_notifications: "Aucune notification en attente"
+  mark_all_as_read: "Tout marquer comme lu"
+  mark_as_read: "Marquer comme lu"
+  mark_as_done: "Marquer comme terminé"
+  view_all: "Voir toutes les notifications"
+  click_to_view: "Cliquer pour voir la notification"
+  clear_selection: "Effacer la sélection"
+  select_all: "Sélectionner toutes les notifications"
+  filter_notifications: "Filtrer les notifications"
+  select_notification: "Sélectionner la notification"
+  default_summary: "Nouvelle notification"
+  view_button: "Voir"
+  filter:
+    all: "Tous"
+    unread: "Non lus"
+    not_done: "À faire"
+  types:
+    info: "Info"
+    success: "Succès"
+    warn: "Avertissement"
+    error: "Erreur"
+  severities:
+    low: "Faible"
+    medium: "Moyenne"
+    high: "Élevée"
+    critical: "Critique"
+
+bar:
+  toggle_dark_mode: "Basculer le mode sombre"
+  show_notifications: "Afficher les notifications"
+
+process:
+  title: "Processus"

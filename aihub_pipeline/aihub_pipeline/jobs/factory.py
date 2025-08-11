@@ -1,4 +1,4 @@
-from dagster import JobDefinition, RunConfig, define_asset_job, observable_source_asset
+from dagster import AssetSelection, JobDefinition, RunConfig, define_asset_job, observable_source_asset
 
 
 def materialize_all_job(namespace_name: str, config: RunConfig | None = None) -> JobDefinition:
@@ -30,4 +30,20 @@ def observe_source_job(
         name=f"{namespace_name}_{job_name}",
         config=config,
         description=job_description,
+    )
+
+
+def materialize_asset_job(
+    namespace_name: str,
+    job_name: str,
+    asset_selection: AssetSelection,
+    config: RunConfig | None = None,
+    description: str | None = None,
+) -> JobDefinition:
+    """Creates a job that materializes a specific selection of assets."""
+    return define_asset_job(
+        name=f"{namespace_name}_{job_name}",
+        selection=asset_selection,
+        config=config,
+        description=description or "A job to materialize the selected assets.",
     )

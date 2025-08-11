@@ -1,7 +1,8 @@
 from typing import Annotated
 
+from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 
 
 class AgentThreadTopicManager(AgentInstanceTopicManager):
@@ -111,7 +112,27 @@ class AgentThreadTopicManager(AgentInstanceTopicManager):
         )
 
     @classmethod
-    def from_agent_topic(cls, topic: AgentTopic) -> "AgentThreadTopicManager":
+    def from_agent_class_topic_manager(
+        cls,
+        topic_manager: AgentClassTopicManager,
+        agent_id: Annotated[str, "Specific agent ID within the class"],
+        thread_id: Annotated[str, "Thread ID"],
+        display_id: Annotated[str, "Display ID for UI grouping"],
+        run_id: Annotated[str, "Run ID within the thread"],
+    ) -> "AgentThreadTopicManager":
+        """
+        Creates an AgentThreadTopicManager from an existing AgentClassTopicManager and additional thread details.
+        """
+        return cls(
+            agent_class=topic_manager.agent_class,
+            agent_id=agent_id,
+            thread_id=thread_id,
+            display_id=display_id,
+            run_id=run_id,
+        )
+
+    @classmethod
+    def from_agent_topic(cls, topic: AgentInstanceTopic) -> "AgentThreadTopicManager":
         """Constructs an AgentThreadTopicManager directly from an AgentTopic object."""
         return cls(
             agent_class=topic.agent_class,

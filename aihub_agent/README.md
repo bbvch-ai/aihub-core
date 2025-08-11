@@ -5,6 +5,17 @@ index: 1
 
 # 🤖 AI-Hub Agent Developer's Guide
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_agents-core&metric=alert_status&token=d536ea3509f1ddb1ca2b071681be1ee5bac7d212)](https://sonarcloud.io/summary/new_code?id=aihub-core_agents-core)
+
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_agents-core&metric=security_rating&token=d536ea3509f1ddb1ca2b071681be1ee5bac7d212)](https://sonarcloud.io/summary/new_code?id=aihub-core_agents-core)
+
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_agents-core&metric=vulnerabilities&token=d536ea3509f1ddb1ca2b071681be1ee5bac7d212)](https://sonarcloud.io/summary/new_code?id=aihub-core_agents-core)
+
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_agents-core&metric=sqale_rating&token=d536ea3509f1ddb1ca2b071681be1ee5bac7d212)](https://sonarcloud.io/summary/new_code?id=aihub-core_agents-core)
+
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_agents-core&metric=ncloc&token=d536ea3509f1ddb1ca2b071681be1ee5bac7d212)](https://sonarcloud.io/summary/new_code?id=aihub-core_agents-core)
+
+
 ## 1. 🎯 Foundational Knowledge of Agent Development
 
 This section covers the foundational architecture, patterns, and terminology you need to know before building an agent.
@@ -177,9 +188,9 @@ We use Behavior-Driven Development (BDD) with `pytest-bdd` as the primary method
     # tests/features/my_agent.feature
     Feature: My Agent
       Scenario: Test basic functionality
-        Given a MyAgent runner
-        When the start event is sent with payload "Hello"
-        Then a StopEvent is present
+        Given a MyAgent configuration
+        When the user sends a message with content: "Hello"
+        Then the agent run should complete
     ```
 2.  **Implement the Test Steps**: Write Python code to implement the Gherkin steps using the `AgentTestRunner`. The test runner provides a sandboxed environment to execute the agent and inspect the resulting events.
     ```python
@@ -194,7 +205,7 @@ We use Behavior-Driven Development (BDD) with `pytest-bdd` as the primary method
 
     scenarios("./features/my_agent.feature")
 
-    @given("a MyAgent runner", target_fixture="agent_runner")
+    @given("a MyAgent configuration", target_fixture="agent_runner")
     def _():
         return AgentTestRunner(
             agent_type=MyAgent,
@@ -208,7 +219,7 @@ We use Behavior-Driven Development (BDD) with `pytest-bdd` as the primary method
             ),
         )
 
-    @when(parsers.parse('the start event is sent with payload "{payload}"'))
+    @when(parsers.parse('the user sends a message with content: "{payload}"'))
     @async_test
     async def _(agent_runner: AgentTestRunner, payload: str):
         async with agent_runner.test_run() as topic:
@@ -220,7 +231,7 @@ We use Behavior-Driven Development (BDD) with `pytest-bdd` as the primary method
                 topic=topic,
             )
 
-    @then("a StopEvent is present")
+    @then("the agent run should complete")
     def _(agent_runner: AgentTestRunner):
         assert agent_runner.has_stop_event, "Agent did not receive stop event"
     ```
@@ -256,6 +267,7 @@ For any non-trivial agent, create a `trigger.py` script. This script programmati
 import asyncio
 from aihub_lib.testing.logging.logger import enable_logging
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+
 # ... other imports
 
 # ALWAYS enable logging for debugging

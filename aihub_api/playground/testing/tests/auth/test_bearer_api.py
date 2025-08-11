@@ -3,10 +3,13 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 import pytest_asyncio
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.auth.identity.TokenIdentityProvider.TokenIdentityProvider import TokenIdentityProvider
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
-from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 from aihub_lib.persistence.user.UserEntity import UserEntity
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
@@ -25,7 +28,7 @@ EXPECTED_USER_FIELDS = ["id", "name", "email"]
 @pytest.fixture(scope="module", autouse=True)
 def mongo_db():
     """Set up and tear down the MongoDB connection for tests."""
-    connect(db=ApiConfig().DB_NAME, host=CosmosAccess().get_connection_string())
+    connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING)
     yield
     disconnect()
 
@@ -34,10 +37,10 @@ def mongo_db():
 def valid_token(mongo_db):
     """Insert a valid token document and return its token string."""
     user = UserEntity.create_user(
-        oid=os.getenv("OID", "1234567890"),
-        name=os.getenv("NAME", "Melanie Musterfrau"),
-        email=os.getenv("EMAIL", "melanie.musterfrau@bbv.ch"),
-        roles=["TestOnlyFullAdminAccess"],
+        oid=os.getenv("OID", DangerousDevelopmentOnlyAuthSettings().OID),
+        name=os.getenv("NAME", DangerousDevelopmentOnlyAuthSettings().NAME),
+        email=os.getenv("EMAIL", DangerousDevelopmentOnlyAuthSettings().EMAIL),
+        roles=DangerousDevelopmentOnlyAuthSettings().ROLES,
     )
     expiry = datetime.now(UTC) + timedelta(hours=1)
     token_obj = BearerToken.create_new_token(name="token-name", expiry_date=expiry, user_oid=user.id)
@@ -50,11 +53,11 @@ def valid_token(mongo_db):
 def expected_user_data():
     """Return the expected user data based on environment variables."""
     return {
-        "id": os.getenv("OID", "1234567890"),
-        "name": os.getenv("NAME", "Melanie Musterfrau"),
-        "email": os.getenv("EMAIL", "melanie.musterfrau@bbv.ch"),
+        "id": os.getenv("OID", DangerousDevelopmentOnlyAuthSettings().OID),
+        "name": os.getenv("NAME", DangerousDevelopmentOnlyAuthSettings().NAME),
+        "email": os.getenv("EMAIL", DangerousDevelopmentOnlyAuthSettings().EMAIL),
         "profile_image": None,
-        "roles": ["TestOnlyFullAdminAccess"],
+        "roles": DangerousDevelopmentOnlyAuthSettings().ROLES,
         "favorite_modules": [],
     }
 

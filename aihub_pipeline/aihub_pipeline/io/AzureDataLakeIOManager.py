@@ -2,9 +2,10 @@ import base64
 from urllib.parse import quote, unquote
 
 from adlfs import AzureBlobFileSystem
-from azure.storage.filedatalake import ContentSettings, FileSystemClient
+from azure.storage.filedatalake import ContentSettings
 from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 
+from aihub_pipeline.resources.data_lake.azure.AzureDataLakeClient import AzureDataLakeClient
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 
 
@@ -22,8 +23,9 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
     added to data lake files and always returns a DataLakeFile object, not pickled data.
 
     The AzureDataLakeIOManager depends on two other resources:
-    - **DataLakeClientResource**: Responsible for providing the FileSystemClient to interact with the Azure Data Lake.
-    - **DataLakeFileSystemResource**: Responsible for providing the AzureBlobFileSystem to interact with the
+    - **AzureDataLakeClientResource**: Responsible for providing the FileSystemClient to
+      interact with the Azure Data Lake.
+    - **AzureDataLakeFileSystemResource**: Responsible for providing the AzureBlobFileSystem to interact with the
     Azure Data Lake.
 
     Hence, do NOT use this IO Manager as the default io_manager with the resource key ``"io_manager"``.
@@ -46,9 +48,9 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
     .. code-block:: python
 
         from aihub_pipeline.io.AzureDataLakeIOManager import AzureDataLakeIOManager
-        from aihub_pipeline.resources.data_lake.DataLakeClientResource import DataLakeClientResource
-        from aihub_pipeline.resources.data_lake.DataLakeFileSystemResource import DataLakeFileSystemResource
-        from aihub_pipeline.resources.organization.NamespaceResource import NamespaceResource
+        from aihub_pipeline.resources.data_lake.azure.AzureDataLakeClientResource import AzureDataLakeClientResource
+        from aihub_pipeline.resources.data_lake.azure.AzureDataLakeFileSystemResource
+        import AzureDataLakeFileSystemResource
 
         from dagster import Definitions, asset
 
@@ -71,10 +73,10 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
             # The input asset will be loaded from the data_lake
             ...
 
-        data_lake_client = DataLakeClientResource(
+        data_lake_client = AzureDataLakeClientResource(
             container_name="my_container",
         )
-        data_lake_file_system = DataLakeFileSystemResource()
+        data_lake_file_system = AzureDataLakeFileSystemResource()
         data_lake_io_manager = AzureDataLakeIOManager(
             data_lake_client=data_lake_client,
             data_lake_file_system=data_lake_file_system,
@@ -90,7 +92,7 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
         )
     """
 
-    data_lake_client: ResourceDependency[FileSystemClient]
+    data_lake_client: ResourceDependency[AzureDataLakeClient]
     data_lake_file_system: ResourceDependency[AzureBlobFileSystem]
 
     def handle_output(self, context: OutputContext, obj: DataLakeFile | list[DataLakeFile]) -> None:
@@ -121,7 +123,7 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
 
             # Set metadata
             file_path_without_org = file_path.split("/", 1)[1]  # Remove the organization from the path
-            file_client = self.data_lake_client.get_file_client(file_path_without_org)
+            file_client = self.data_lake_client.raw_client.get_file_client(file_path_without_org)
             file_client.set_metadata(encoded_metadata)
 
             # Set content settings (e.g., content type and MD5 hash)
@@ -138,7 +140,7 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
             # If the context has a partition key, proceed as usual
             document_uri = context.partition_key
             context.log.info(f"Loading DataLakeFile from uri: {document_uri}")
-            data_lake_file = DataLakeFile.from_uri(uri=document_uri, fs_client=self.data_lake_client)
+            data_lake_file = self.data_lake_client.create_data_lake_file_from_uri(document_uri)
 
             # Decode metadata after retrieval
             decoded_metadata = self._decode_metadata(data_lake_file.metadata)
@@ -157,7 +159,7 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
                 for partition_key in all_partition_keys:
                     document_uri = partition_key
                     context.log.info(f"Loading DataLakeFile from uri: {document_uri}")
-                    data_lake_file = DataLakeFile.from_uri(uri=document_uri, fs_client=self.data_lake_client)
+                    data_lake_file = self.data_lake_client.create_data_lake_file_from_uri(document_uri)
 
                     # Decode metadata after retrieval
                     decoded_metadata = self._decode_metadata(data_lake_file.metadata)

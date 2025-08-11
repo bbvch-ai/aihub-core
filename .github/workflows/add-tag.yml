@@ -1,7 +1,8 @@
 name: Auto Tag, Gen-Changelog & Release
 
 on:
-  push:
+  pull_request:
+    types: [ closed ]
     branches: [ main ]
 
 permissions:
@@ -12,6 +13,7 @@ jobs:
   version-and-tag:
     name: Bump Version, Tag & Gen-Changelog
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v4
@@ -28,7 +30,7 @@ jobs:
             latest_tag="v0.0.0"
           else
             # Get the latest tag matching 'v*'
-            latest_tag=$(git describe --tags --match "v*" --abbrev=0)
+            latest_tag=$(git tag -l "v*" | sort -V | tail -n 1)
           fi
           echo "Latest tag: $latest_tag"
 
@@ -40,10 +42,49 @@ jobs:
           minor=$(echo "$version_number" | cut -d. -f2)
           patch=$(echo "$version_number" | cut -d. -f3)
 
-          # Increment the minor version
-          new_minor=$((minor + 1))
-          new_tag="v$major.$new_minor.$patch"
-          echo "New tag: $new_tag"
+          # Check PR labels to determine version bump type
+          # Default to patch if no label is found
+          bump_type="patch"
+          
+          # Get PR labels using GitHub API
+          PR_LABELS='${{ toJSON(github.event.pull_request.labels.*.name) }}'
+          echo "PR Labels: $PR_LABELS"
+          
+          # Check for version bump labels
+          if echo "$PR_LABELS" | grep -q '"major"'; then
+            bump_type="major"
+            echo "Found 'major' label - will bump major version"
+          elif echo "$PR_LABELS" | grep -q '"minor"'; then
+            bump_type="minor"
+            echo "Found 'minor' label - will bump minor version"
+          elif echo "$PR_LABELS" | grep -q '"patch"'; then
+            bump_type="patch"
+            echo "Found 'patch' label - will bump patch version"
+          else
+            echo "No version label found - defaulting to patch bump"
+          fi
+
+          # Perform the version bump based on the determined type
+          case $bump_type in
+            major)
+              new_major=$((major + 1))
+              new_minor=0
+              new_patch=0
+              ;;
+            minor)
+              new_major=$major
+              new_minor=$((minor + 1))
+              new_patch=0
+              ;;
+            patch)
+              new_major=$major
+              new_minor=$minor
+              new_patch=$((patch + 1))
+              ;;
+          esac
+
+          new_tag="v$new_major.$new_minor.$new_patch"
+          echo "New tag: $new_tag (bump type: $bump_type)"
 
           # Expose it to subsequent steps via outputs (not just GITHUB_ENV).
           echo "version=$new_tag" >> $GITHUB_OUTPUT
@@ -61,10 +102,10 @@ jobs:
         run: |
           echo "directories=aihub_pipeline aihub_agent aihub_api aihub_bot aihub_iac aihub_process" >> $GITHUB_OUTPUT
 
-      - name: Set up Python 3.11 and Poetry
+      - name: Set up Python 3.13 and Poetry
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: Increment version-tag in project files
         run: |
@@ -100,6 +141,7 @@ jobs:
           python -m pip install --user pipx
           python -m pipx ensurepath
           pipx install poetry
+          poetry config virtualenvs.in-project true
           poetry install --no-interaction --no-root
 
       - name: Set up SSH for GitHub private dependencies
@@ -169,19 +211,46 @@ jobs:
         # we still want to proceed to publish the final tag.
         continue-on-error: true
 
-      - name: Commit Changelog and Finalize Tag
+      - name: Install additional dependencies for license check
+        run: |
+          sudo apt-get install -y jq
+          npm install -g pnpm
+
+      - name: Update License Report
+        id: license_generator
+        run: |
+          chmod +x ./generate-license.sh
+          make license-check
+        continue-on-error: true
+
+      - name: Commit Changelog and License Report, Finalize Tag
         run: |
           VERSION="${{ steps.create-tag.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Only amend the commit if the changelog step was successful and the file has changed.
+          # Check if either changelog or license report have been updated
+          changelog_changed=false
+          license_changed=false
+          
           if [[ "${{ steps.changelog_generator.outcome }}" == "success" && -n $(git status --porcelain changelog.md) ]]; then
-            echo "Changelog updated, amending previous commit."
-            git add changelog.md
+            changelog_changed=true
+            echo "Changelog updated."
+          fi
+          
+          if [[ "${{ steps.license_generator.outcome }}" == "success" && -n $(git status --porcelain LICENSES.md) ]]; then
+            license_changed=true
+            echo "License report updated."
+          fi
+
+          # Only amend the commit if either file has changed
+          if [[ "$changelog_changed" == "true" || "$license_changed" == "true" ]]; then
+            echo "Amending previous commit with updated files."
+            [[ "$changelog_changed" == "true" ]] && git add changelog.md
+            [[ "$license_changed" == "true" ]] && git add LICENSES.md
             git commit --amend --no-edit
           else
-            echo "No new changelog entries were generated, or the step failed. Proceeding without changelog update."
+            echo "No new changelog or license report entries were generated, or the steps failed. Proceeding without updates."
           fi
           
           echo "Creating final tag ${VERSION} and pushing..."

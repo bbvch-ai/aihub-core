@@ -81,21 +81,6 @@ export type AgentConfigDto = {
      */
     description: string;
     /**
-     * System Prompt
-     * The system prompt of the agent.
-     */
-    system_prompt: string;
-    /**
-     * Color
-     * The color of the agent UI theme.
-     */
-    color?: string;
-    /**
-     * Voice
-     * The TTS voice ID the agent uses.
-     */
-    voice?: string;
-    /**
      * Icon
      * The icon representing the agent.
      */
@@ -358,7 +343,7 @@ export type AgentInTheLoopRequestEventReadable = {
      * Other Agent Topic
      * A partial or full agent topic specifying the target agent and event routing, ensuring the task is delegated to the correct agent.
      */
-    other_agent_topic: PartialAgentTopic | AgentTopic;
+    other_agent_topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Share Thread Id
      * Whether to share the conversation thread context with the other agent.
@@ -385,7 +370,7 @@ export type AgentInTheLoopRequestEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventReadable | UserMessageEventReadable) | (PartialAgentTopic | AgentTopic) | boolean | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventReadable | UserMessageEventReadable) | (PartialAgentTopic | AgentInstanceTopic) | boolean | Array<string> | undefined;
 };
 
 /**
@@ -426,7 +411,7 @@ export type AgentInTheLoopRequestEventWritable = {
      * Other Agent Topic
      * A partial or full agent topic specifying the target agent and event routing, ensuring the task is delegated to the correct agent.
      */
-    other_agent_topic: PartialAgentTopic | AgentTopic;
+    other_agent_topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Share Thread Id
      * Whether to share the conversation thread context with the other agent.
@@ -442,7 +427,7 @@ export type AgentInTheLoopRequestEventWritable = {
      * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!
      */
     share_run_id?: boolean;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventWritable | UserMessageEventWritable) | (PartialAgentTopic | AgentTopic) | boolean | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventWritable | UserMessageEventWritable) | (PartialAgentTopic | AgentInstanceTopic) | boolean | undefined;
 };
 
 /**
@@ -525,7 +510,7 @@ export type AgentInTheLoopResponseEventWritable = {
 };
 
 /**
- * AgentTopic
+ * AgentInstanceTopic
  * Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
  * to be present. This includes identifiers for agent_class, agent_id, and the event itself.
  *
@@ -541,7 +526,7 @@ export type AgentInTheLoopResponseEventWritable = {
  * "agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"
  * then this AgentTopic can represent it, providing quick field-level access and serialization.
  */
-export type AgentTopic = {
+export type AgentInstanceTopic = {
     /**
      * Agent Class
      * The agent's class identifier.
@@ -743,6 +728,22 @@ export type BodyCreateTranscriptionOpenaiAudioTranscriptionsPost = {
      * Timestamp granularities (e.g. 'word' or 'segment'); only used with verbose_json response_format
      */
     timestamp_granularities?: Array<'word' | 'segment'> | null;
+};
+
+/**
+ * BulkUpdateNotificationRequest
+ * Request model for updating multiple notifications at once.
+ */
+export type BulkUpdateNotificationRequest = {
+    /**
+     * Notification Ids
+     * The IDs of the notifications to update.
+     */
+    notification_ids: Array<string>;
+    /**
+     * The updates to apply to each notification.
+     */
+    updates: UpdateNotificationRequest;
 };
 
 /**
@@ -3282,7 +3283,7 @@ export type HumanInTheLoopRequestEventReadable = {
      * Topic
      * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
      */
-    topic: PartialAgentTopic | AgentTopic;
+    topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -3294,7 +3295,7 @@ export type HumanInTheLoopRequestEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentTopic) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | Array<string> | undefined;
 };
 
 /**
@@ -3333,8 +3334,8 @@ export type HumanInTheLoopRequestEventWritable = {
      * Topic
      * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
      */
-    topic: PartialAgentTopic | AgentTopic;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentTopic) | undefined;
+    topic: PartialAgentTopic | AgentInstanceTopic;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | undefined;
 };
 
 /**
@@ -5053,6 +5054,68 @@ export type NodeSummaryDto = {
 };
 
 /**
+ * NotificationDTO
+ * Data Transfer Object for a notification.
+ */
+export type NotificationDto = {
+    /**
+     * Id
+     * The unique identifier of the notification.
+     */
+    id: string;
+    /**
+     * User Id
+     * The unique identifier of the user associated with the notification.
+     */
+    user_id: string;
+    /**
+     * Notification Group Id
+     * The identifier of the notification group this notification belongs to.
+     */
+    notification_group_id?: string | null;
+    /**
+     * Title
+     * The internationalized title of the notification.
+     */
+    title: string;
+    /**
+     * Message
+     * The internationalized content of the notification.
+     */
+    message: string;
+    /**
+     * Read
+     * Indicates if the notification has been read by the user.
+     */
+    read?: boolean;
+    /**
+     * Done
+     * Indicates if the task associated with the notification has been completed.
+     */
+    done?: boolean;
+    /**
+     * Type
+     * Categorizes the notification for visual representation (e.g., icon and color).
+     */
+    type?: 'success' | 'info' | 'warn' | 'error';
+    /**
+     * Severity
+     * The priority level of the notification.
+     */
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    /**
+     * Link
+     * A relative internal link to navigate to the relevant resource.
+     */
+    link: string;
+    /**
+     * Created At
+     * The timestamp when the notification was created.
+     */
+    created_at: Date;
+};
+
+/**
  * PaginatedDocumentsResponse
  */
 export type PaginatedDocumentsResponse = {
@@ -5081,6 +5144,38 @@ export type PaginatedDocumentsResponse = {
      * List of Document DTOs objects for the current page
      */
     documents: Array<IngestedDocument>;
+};
+
+/**
+ * PaginatedNotificationsResponse
+ * A paginated response container for notifications.
+ */
+export type PaginatedNotificationsResponse = {
+    /**
+     * Total
+     * The total number of notifications matching the filter criteria.
+     */
+    total: number;
+    /**
+     * Page
+     * The current page number (1-indexed).
+     */
+    page: number;
+    /**
+     * Page Size
+     * The number of notifications requested per page.
+     */
+    page_size: number;
+    /**
+     * Total Pages
+     * The total number of pages available based on the page size.
+     */
+    total_pages: number;
+    /**
+     * Notifications
+     * The list of notifications for the current page.
+     */
+    notifications: Array<NotificationDto>;
 };
 
 /**
@@ -5236,11 +5331,11 @@ export type ProcessConfigDto = {
 
 /**
  * ProcessDTO
- * An agentic process is a process in which humans, agents and programs interact with each other to achieve a
- * common goal.
- * To interact with the process, it is necessary to know which entity (human, agent, program) can and must submit
- * what kind of work to start / continue the process.
- * Hence, this object offers information about the inputs (work events) that these entities can contribute.
+ * A data transfer object for representing process information in responses.
+ * This DTO standardizes how process data is returned from the service layer to the controller,
+ * and subsequently to the API response. It helps maintain a clean separation between the internal
+ * event models and the publicly exposed fields in HTTP responses.
+ * By using `ProcessDTO`, the API can evolve independently from the internal event representations.
  */
 export type ProcessDto = {
     /**
@@ -5274,7 +5369,7 @@ export type ProcessDto = {
     agent_inputs: Array<AgentInSpecs>;
     /**
      * Is Online
-     * Indicates whether the processis online and reachable.
+     * Indicates whether the process is online and reachable.
      */
     is_online?: boolean | null;
 };
@@ -6137,6 +6232,13 @@ export type StartEventReadable = {
      */
     display_description?: LocaleString | null;
     /**
+     * Agent Config
+     * Agent configuration
+     */
+    agent_config?: {
+        [key: string]: unknown;
+    } | null;
+    /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
@@ -6147,7 +6249,9 @@ export type StartEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
+        [key: string]: unknown;
+    } | null) | Array<string> | undefined;
 };
 
 /**
@@ -6180,7 +6284,16 @@ export type StartEventWritable = {
      * Display description for the event
      */
     display_description?: LocaleString | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+    /**
+     * Agent Config
+     * Agent configuration
+     */
+    agent_config?: {
+        [key: string]: unknown;
+    } | null;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
+        [key: string]: unknown;
+    } | null) | undefined;
 };
 
 /**
@@ -6901,6 +7014,23 @@ export type TranscriptionWord = {
 };
 
 /**
+ * UpdateNotificationRequest
+ * Request model for partially updating a notification.
+ */
+export type UpdateNotificationRequest = {
+    /**
+     * Read
+     * The new 'read' status of the notification.
+     */
+    read?: boolean | null;
+    /**
+     * Done
+     * The new 'done' status for the notification's task.
+     */
+    done?: boolean | null;
+};
+
+/**
  * UpdateRoleRequest
  * Request model for updating an existing role. All fields are optional.
  */
@@ -7117,6 +7247,13 @@ export type UserMessageEventReadable = {
      */
     display_description?: LocaleString | null;
     /**
+     * Agent Config
+     * Agent configuration
+     */
+    agent_config?: {
+        [key: string]: unknown;
+    } | null;
+    /**
      * Locale
      * The user’s locale, defaults to a system-wide default locale, guiding language or regional adaptations.
      */
@@ -7146,7 +7283,9 @@ export type UserMessageEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | UserIdentity | Array<ChatMessage | UserChatMessage | AssistantChatMessage> | (Array<UserUploadedFile> | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
+        [key: string]: unknown;
+    } | null) | UserIdentity | Array<ChatMessage | UserChatMessage | AssistantChatMessage> | (Array<UserUploadedFile> | null) | Array<string> | undefined;
 };
 
 /**
@@ -7193,6 +7332,13 @@ export type UserMessageEventWritable = {
      */
     display_description?: LocaleString | null;
     /**
+     * Agent Config
+     * Agent configuration
+     */
+    agent_config?: {
+        [key: string]: unknown;
+    } | null;
+    /**
      * Locale
      * The user’s locale, defaults to a system-wide default locale, guiding language or regional adaptations.
      */
@@ -7211,7 +7357,9 @@ export type UserMessageEventWritable = {
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
     files?: Array<UserUploadedFile> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | UserIdentity | Array<ChatMessage | UserChatMessage | AssistantChatMessage> | (Array<UserUploadedFile> | null) | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
+        [key: string]: unknown;
+    } | null) | UserIdentity | Array<ChatMessage | UserChatMessage | AssistantChatMessage> | (Array<UserUploadedFile> | null) | undefined;
 };
 
 /**
@@ -8075,45 +8223,6 @@ export type GetProcessStartFormsResponses = {
 
 export type GetProcessStartFormsResponse = GetProcessStartFormsResponses[keyof GetProcessStartFormsResponses];
 
-export type GetProcessOpenFormsData = {
-    body?: never;
-    path: {
-        /**
-         * Process Class
-         */
-        process_class: string;
-        /**
-         * Process Id
-         */
-        process_id: string;
-        /**
-         * Process Walkthrough Id
-         */
-        process_walkthrough_id: string;
-    };
-    query?: never;
-    url: '/processes/{process_class}/{process_id}/{process_walkthrough_id}/open_forms';
-};
-
-export type GetProcessOpenFormsErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetProcessOpenFormsError = GetProcessOpenFormsErrors[keyof GetProcessOpenFormsErrors];
-
-export type GetProcessOpenFormsResponses = {
-    /**
-     * Response Get Process Open Forms Processes  Process Class   Process Id   Process Walkthrough Id  Open Forms Get
-     * Successful Response
-     */
-    200: Array<ProcessHumanInDto>;
-};
-
-export type GetProcessOpenFormsResponse = GetProcessOpenFormsResponses[keyof GetProcessOpenFormsResponses];
-
 export type SendProcessStartFormData = {
     /**
      * Data
@@ -8213,6 +8322,45 @@ export type SendProcessOpenFormResponses = {
 };
 
 export type SendProcessOpenFormResponse = SendProcessOpenFormResponses[keyof SendProcessOpenFormResponses];
+
+export type GetProcessOpenFormsData = {
+    body?: never;
+    path: {
+        /**
+         * Process Class
+         */
+        process_class: string;
+        /**
+         * Process Id
+         */
+        process_id: string;
+        /**
+         * Process Walkthrough Id
+         */
+        process_walkthrough_id: string;
+    };
+    query?: never;
+    url: '/processes/{process_class}/{process_id}/{process_walkthrough_id}/open_forms';
+};
+
+export type GetProcessOpenFormsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetProcessOpenFormsError = GetProcessOpenFormsErrors[keyof GetProcessOpenFormsErrors];
+
+export type GetProcessOpenFormsResponses = {
+    /**
+     * Response Get Process Open Forms Processes  Process Class   Process Id   Process Walkthrough Id  Open Forms Get
+     * Successful Response
+     */
+    200: Array<ProcessHumanInDto>;
+};
+
+export type GetProcessOpenFormsResponse = GetProcessOpenFormsResponses[keyof GetProcessOpenFormsResponses];
 
 export type ListTokensEndpointData = {
     body?: never;
@@ -9094,6 +9242,112 @@ export type GetAnonymousFileRedirectResponses = {
      */
     200: unknown;
 };
+
+export type GetNotificationsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Page
+         */
+        page?: number;
+        /**
+         * Page Size
+         */
+        page_size?: number;
+        /**
+         * Types
+         */
+        types?: Array<string> | null;
+        /**
+         * Severities
+         */
+        severities?: Array<string> | null;
+        /**
+         * Read
+         */
+        read?: boolean | null;
+        /**
+         * Done
+         */
+        done?: boolean | null;
+    };
+    url: '/notifications';
+};
+
+export type GetNotificationsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetNotificationsError = GetNotificationsErrors[keyof GetNotificationsErrors];
+
+export type GetNotificationsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PaginatedNotificationsResponse;
+};
+
+export type GetNotificationsResponse = GetNotificationsResponses[keyof GetNotificationsResponses];
+
+export type UpdateNotificationsBulkData = {
+    body: BulkUpdateNotificationRequest;
+    path?: never;
+    query?: never;
+    url: '/notifications/';
+};
+
+export type UpdateNotificationsBulkErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateNotificationsBulkError = UpdateNotificationsBulkErrors[keyof UpdateNotificationsBulkErrors];
+
+export type UpdateNotificationsBulkResponses = {
+    /**
+     * Response Update Notifications Bulk Notifications  Patch
+     * Successful Response
+     */
+    200: Array<NotificationDto>;
+};
+
+export type UpdateNotificationsBulkResponse = UpdateNotificationsBulkResponses[keyof UpdateNotificationsBulkResponses];
+
+export type UpdateNotificationData = {
+    body: UpdateNotificationRequest;
+    path: {
+        /**
+         * Notification Id
+         */
+        notification_id: string;
+    };
+    query?: never;
+    url: '/notifications/{notification_id}';
+};
+
+export type UpdateNotificationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateNotificationError = UpdateNotificationErrors[keyof UpdateNotificationErrors];
+
+export type UpdateNotificationResponses = {
+    /**
+     * Successful Response
+     */
+    200: NotificationDto;
+};
+
+export type UpdateNotificationResponse = UpdateNotificationResponses[keyof UpdateNotificationResponses];
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});

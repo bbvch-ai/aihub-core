@@ -37,7 +37,9 @@ class RetrievalAgent(Agent):
         Retrieves relevant nodes from the knowledge base.
         """
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
-        embedding, _ = retrieve_step_config.embed_model.to_llama_index(model_parameter=None)
+        embedding, _ = retrieve_step_config.embed_model.to_llama_index()
+
+        vector_store = retrieve_step_config.vector_store.to_llama_index()
 
         nodes = retrieve_nodes(
             message=event.question,
@@ -46,11 +48,11 @@ class RetrievalAgent(Agent):
             index_namespaces=retrieve_step_config.index_namespaces,
             query_mode=retrieve_step_config.query_mode,
             node_types=retrieve_step_config.node_types,
-            vector_store=retrieve_step_config.vector_store,
+            vector_store=vector_store,
         )
         if retrieve_step_config.retrieve_prev_next:
             nodes = retrieve_prev_next_nodes(
-                vector_store=retrieve_step_config.vector_store,
+                vector_store=vector_store,
                 nodes=nodes,
                 num_nodes=retrieve_step_config.retrieve_prev_next.num_nodes,
                 prev_next_mode=retrieve_step_config.retrieve_prev_next.mode,

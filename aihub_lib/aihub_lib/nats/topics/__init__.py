@@ -1,14 +1,14 @@
-from .agents import AgentTopic, PartialAgentTopic
-from .discovery import AgentDiscoveryTopic, DiscoveryTopic, ProcessDiscoveryTopic
-from .process import ProcessTopic
+from .agents import AgentInstanceTopic, PartialAgentTopic
+from .discovery import AgentInstanceDiscoveryTopic, DiscoveryTopic, ProcessInstanceDiscoveryTopic
+from .process import ProcessInstanceTopic
 from .Topic import Topic
 
 __all__ = [
     "Topic",
     "DiscoveryTopic",
-    "ProcessDiscoveryTopic",
-    "AgentDiscoveryTopic",
-    "AgentTopic",
-    "ProcessTopic",
+    "ProcessInstanceDiscoveryTopic",
+    "AgentInstanceDiscoveryTopic",
+    "AgentInstanceTopic",
+    "ProcessInstanceTopic",
     "PartialAgentTopic",
 ]

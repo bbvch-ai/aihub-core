@@ -3,3 +3,9 @@ __pycache__/
 /aihub_agent/playground/minimal_workflow/bounded_loop/tests/.env
 /aihub_pipeline/.env
 /aihub_agent/playground/agent/RAGAgent/.env
+.env
+local-volumes
+aihub_doc/node_modules
+aihub_doc/.vitepress/cache
+aihub_doc/.vitepress/dist
+aihub_doc/aihub

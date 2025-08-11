@@ -5,6 +5,16 @@ index: 0
 
 # 📚 AI-Hub Library Developer's Guide
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_lib-core&metric=alert_status&token=fd16708223dbf5307a0ac28f15879abb57a8fc68)](https://sonarcloud.io/summary/new_code?id=aihub-core_lib-core)
+
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_lib-core&metric=security_rating&token=fd16708223dbf5307a0ac28f15879abb57a8fc68)](https://sonarcloud.io/summary/new_code?id=aihub-core_lib-core)
+
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_lib-core&metric=vulnerabilities&token=fd16708223dbf5307a0ac28f15879abb57a8fc68)](https://sonarcloud.io/summary/new_code?id=aihub-core_lib-core)
+
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_lib-core&metric=sqale_rating&token=fd16708223dbf5307a0ac28f15879abb57a8fc68)](https://sonarcloud.io/summary/new_code?id=aihub-core_lib-core)
+
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_lib-core&metric=ncloc&token=fd16708223dbf5307a0ac28f15879abb57a8fc68)](https://sonarcloud.io/summary/new_code?id=aihub-core_lib-core)
+
 ## 1. 🎯 Foundational Knowledge of Library Development
 
 This section covers the foundational architecture, patterns, and terminology you need to know before contributing to the shared library.
@@ -27,12 +37,12 @@ The `aihub_lib` scope is organized as follows:
 
 ```
 aihub_lib/
-├── aihub_lib/                  # Main package source
-│   ├── auth/                   # Authentication and authorization system
+├── aihub_lib/                 # Main package source
+│   ├── auth/                  # Authentication and authorization system
 │   │   ├── access/            # Permission-based access control
 │   │   ├── dependencies/      # Auth handlers and strategies
 │   │   └── identity/          # User identity providers
-│   ├── nats/                   # Event-driven messaging system
+│   ├── nats/                  # Event-driven messaging system
 │   │   ├── events/            # Event definitions and hierarchies
 │   │   ├── dispatcher/        # Workflow orchestration engine
 │   │   ├── publishers/        # Event publishing mechanisms
@@ -43,7 +53,7 @@ aihub_lib/
 │   │   ├── evaluation/        # AI model evaluation frameworks
 │   │   ├── resources/         # LLM configuration and cost tracking
 │   │   └── prompting/         # Prompt engineering utilities
-│   ├── i18n/                   # Internationalization system
+│   ├── i18n/                  # Internationalization system
 │   │   ├── translations/      # Translation files (DE, EN, FR, IT)
 │   │   └── LocaleHandler.py   # Core i18n functionality
 │   ├── infrastructure/        # Cloud service configurations
@@ -62,7 +72,7 @@ aihub_lib/
 │   │   ├── auth_utils/        # Authentication testing helpers
 │   │   └── logging/           # Test logging configuration
 │   └── ...                    # Other shared utilities
-└── tests/                      # Comprehensive test suite
+└── tests/                     # Comprehensive test suite
 ```
 
 ### 🏗️ Core Architectural Principles
@@ -221,8 +231,8 @@ The AI-Hub event system is a sophisticated event-driven architecture that powers
 **Event Directory Structure:**
 ```
 aihub_lib/nats/events/
-├── BaseEvent.py                    # Core foundational event class
-├── ControlAndDisplayEvent.py       # Multi-inheritance bridge
+├── BaseEvent.py                   # Core foundational event class
+├── ControlAndDisplayEvent.py      # Multi-inheritance bridge
 ├── agent_in_the_loop/             # Agent involvement patterns
 ├── bot_in_the_loop/               # Bot interaction patterns  
 ├── common/                        # Shared utility events

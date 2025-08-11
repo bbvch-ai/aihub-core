@@ -23,12 +23,13 @@ Before you begin, you need to install several tools. Follow the instructions for
 
       - You can download it [directly](https://git-scm.com/) or install it through your IDE. JetBrains IDEs have excellent built-in Git support.
 
-  - **Python (3.11) via Miniconda**: We use Miniconda to create isolated Python environments.
+  - **Python (3.13) via Miniconda**: We use Miniconda to create isolated Python environments.
 
       - Download and install [Miniconda](https://docs.conda.io/en/latest/miniconda.html).
       - **Important**: During installation, ensure you add Miniconda to your system's PATH.
       - To verify the installation, open a terminal and run: `conda --version`.
-      - > **Note**: Miniconda is used only to create the virtual environment and install the base Python version. Package management within the environment is handled by Poetry.
+    - > **Note**: Miniconda is used only to create the virtual environment and install the base Python version.
+      Package management within the environment is handled by Poetry.
 
   - **make (Windows only)**: A tool for automating tasks.
 
@@ -43,9 +44,21 @@ Before you begin, you need to install several tools. Follow the instructions for
 
   - **Docker**: For running our application stack in containers.
 
-      - Download and install [Docker Desktop](https://www.docker.com/products/docker-desktop/).
-      - If you encounter a `wsl --update` error on Windows that isn't resolved by running the command, refer to this [Stack Overflow solution](https://stackoverflow.com/questions/78879806/docker-desktop-wsl-update-failed).
-      - Verify by running: `docker --version`.
+      - **Option 1: Rancher Desktop (Free)**
+          - [Download here](https://rancherdesktop.io/)
+
+      - **Option 2: Docker Desktop (License)**
+        ::: warning Commercial Licensing
+        Docker Desktop requires a paid license for commercial use. Verify your compliance with Docker Desktop's licensing terms.
+        :::
+          - [Download here](https://www.docker.com/products/docker-desktop/)
+          - **Windows**: For WSL errors,
+            see [this solution](https://stackoverflow.com/questions/78879806/docker-desktop-wsl-update-failed)
+
+      - **Option 3: Linux: Docker Engine**
+        - Follow the [Docker Engine installation guide](https://docs.docker.com/engine/install/).
+
+    **Verify installation**: `docker --version` and `docker-compose --version`
 
   - **Node.js (LTS) through NVM**: We use NVM to manage Node.js versions for frontend development.
 
@@ -129,7 +142,7 @@ The `aihub-core` repository is a monorepo containing multiple independent micros
 
 ### 🐳 Start the Infrastructure with Docker
 
-1.  Make sure Docker Desktop is running.
+1.  Make sure docker is running.
 2.  Navigate to the root of the `aihub_agent` directory in your terminal.
 3.  Run the following command to start the core services (Phoenix for tracing, NATS for messaging, and MongoDB):
     ```bash

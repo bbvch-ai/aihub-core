@@ -5,6 +5,16 @@ index: 4
 
 # 🤖 AI-Hub Bot Developer's Guide
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_bot-core&metric=alert_status&token=03193dc08631f5b20dd72de1b2bf28cdb48a9ed1)](https://sonarcloud.io/summary/new_code?id=aihub-core_bot-core)
+
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_bot-core&metric=security_rating&token=03193dc08631f5b20dd72de1b2bf28cdb48a9ed1)](https://sonarcloud.io/summary/new_code?id=aihub-core_bot-core)
+
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_bot-core&metric=vulnerabilities&token=03193dc08631f5b20dd72de1b2bf28cdb48a9ed1)](https://sonarcloud.io/summary/new_code?id=aihub-core_bot-core)
+
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_bot-core&metric=sqale_rating&token=03193dc08631f5b20dd72de1b2bf28cdb48a9ed1)](https://sonarcloud.io/summary/new_code?id=aihub-core_bot-core)
+
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_bot-core&metric=ncloc&token=03193dc08631f5b20dd72de1b2bf28cdb48a9ed1)](https://sonarcloud.io/summary/new_code?id=aihub-core_bot-core)
+
 ## 1. 🎯 Foundational Knowledge of Bot Development
 
 This section covers the foundational architecture, patterns, and terminology you need to know before building a bot.
