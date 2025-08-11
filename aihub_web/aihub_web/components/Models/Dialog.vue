@@ -1,14 +1,13 @@
 <template>
   <StructuralColumn
-    :title="model?.model_name"
+    :title="t('knowledge.documents.title')"
     close-route="/service/models"
-    size="large"
   >
     <div v-if="model" class="flex flex-col gap-12">
       <span class="mb-4 block text-sm text-surface-500 dark:text-surface-400">
         {{ t('models.modelDetails.overview') }}
       </span>
-      
+
       <Panel class="panel pt-5">
         <div class="grid grid-cols-2 gap-4 xl:grid-cols-4">
           <div class="flex flex-col items-start gap-2">
@@ -128,7 +127,9 @@
         <template #header>
           <h3 class="text-lg font-semibold">{{ t('models.modelDetails.usageExample') }}</h3>
         </template>
-        <pre class="bg-gray-100 dark:bg-gray-800 p-4 rounded text-sm overflow-x-auto"><code>{{ getUsageExample(model) }}</code></pre>
+        <pre class="bg-gray-100 dark:bg-gray-800 p-4 rounded text-sm overflow-x-auto"><code>{{
+            getUsageExample(model)
+          }}</code></pre>
       </Panel>
     </div>
   </StructuralColumn>
@@ -139,7 +140,7 @@ const props = defineProps<{
   model: any
 }>()
 
-const { t } = useI18n()
+const {t} = useI18n()
 const {
   getProvider,
   getProviderSeverity,

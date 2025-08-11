@@ -1,3 +1,5 @@
+import {type ModelDTO} from '@core/sdk/client'
+
 export const useModelsUtils = () => {
   const {t} = useI18n()
   const toast = useToast()
@@ -18,9 +20,9 @@ export const useModelsUtils = () => {
     }
   }
 
-  const formatTokenLimits = (model: any): string => {
-    const input = model.model_info.max_input_tokens
-    const output = model.model_info.max_output_tokens
+  const formatTokenLimits = (model: ModelDTO): string => {
+    const input = model?.model_info?.max_input_tokens
+    const output = model?.model_info?.max_output_tokens
 
     if (input && output) {
       return `${formatNumber(input)} / ${formatNumber(output)}`
@@ -36,52 +38,6 @@ export const useModelsUtils = () => {
     if (!costPerToken) return '-'
     const costPer1M = costPerToken * 1000000
     return `$${costPer1M.toFixed(2)}`
-  }
-
-  const getModelFeatures = (model: any): Array<{ name: string, severity: string }> => {
-    const features: Array<{ name: string, severity: string }> = []
-
-    if (model.model_info.supports_vision) {
-      features.push({name: 'Vision', severity: 'success'})
-    }
-
-    if (model.model_info.supports_function_calling) {
-      features.push({name: 'Function Calling', severity: 'info'})
-    }
-
-    if (model.model_info.supports_web_search) {
-      features.push({name: 'Web Search', severity: 'help'})
-    }
-
-    if (model.model_info.supports_reasoning) {
-      features.push({name: 'Reasoning', severity: 'warn'})
-    }
-
-    if (model.model_info.supports_prompt_caching) {
-      features.push({name: 'Caching', severity: 'secondary'})
-    }
-
-    if (model.model_info.supports_audio_input) {
-      features.push({name: 'Audio Input', severity: 'info'})
-    }
-
-    if (model.model_info.supports_audio_output) {
-      features.push({name: 'Audio Output', severity: 'info'})
-    }
-
-    if (model.model_info.supports_pdf_input) {
-      features.push({name: 'PDF Input', severity: 'success'})
-    }
-
-    if (model.model_info.supports_computer_use) {
-      features.push({name: 'Computer Use', severity: 'danger'})
-    }
-
-    if (model.model_info.output_vector_size) {
-      features.push({name: `${model.model_info.output_vector_size}D`, severity: 'secondary'})
-    }
-
-    return features
   }
 
   const formatNumber = (num: number): string => {
@@ -107,71 +63,11 @@ export const useModelsUtils = () => {
     }
   }
 
-  const getUsageExample = (model: any): string => {
-    const isImageGeneration = model.model_info.mode === 'image_generation'
-    const isEmbedding = model.model_info.mode === 'embedding'
-
-    if (isImageGeneration) {
-      return `import openai
-
-client = openai.OpenAI(
-    api_key="your_api_key",
-    base_url="http://0.0.0.0:4000"  # Your LiteLLM Proxy URL
-)
-
-response = client.images.generate(
-    model="${model.model_name}",
-    prompt="A beautiful sunset over mountains",
-    size="1024x1024",
-    n=1
-)
-
-print(response.data[0].url)`
-    }
-
-    if (isEmbedding) {
-      return `import openai
-
-client = openai.OpenAI(
-    api_key="your_api_key",
-    base_url="http://0.0.0.0:4000"  # Your LiteLLM Proxy URL
-)
-
-response = client.embeddings.create(
-    model="${model.model_name}",
-    input="Your text to embed here"
-)
-
-print(response.data[0].embedding)`
-    }
-
-    return `import openai
-
-client = openai.OpenAI(
-    api_key="your_api_key",
-    base_url="http://0.0.0.0:4000"  # Your LiteLLM Proxy URL
-)
-
-response = client.chat.completions.create(
-    model="${model.model_name}",
-    messages=[
-        {
-            "role": "user",
-            "content": "Hello, how are you?"
-        }
-    ]
-)
-
-print(response.choices[0].message.content)`
-  }
-
   return {
     getModeSeverity,
     formatTokenLimits,
     formatCostPer1M,
-    getModelFeatures,
     formatNumber,
     copyToClipboard,
-    getUsageExample,
   }
 }

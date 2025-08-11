@@ -19,7 +19,6 @@ models:
   detailsButton: "Details"
   copyModelName: "Copy model name to clipboard"
   pageReport: "Showing {first} to {last} of {totalRecords} models"
-  no_description: "No description available"
   navigation:
     overview: "Overview"
   overview:
@@ -29,6 +28,7 @@ models:
     status: "Status"
   modelDetails:
     overview: "Model Overview"
+    no_description: "No description available"
     modelGroup: "Model Group"
     mode: "Mode"
     provider: "Provider"

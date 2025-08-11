@@ -3,39 +3,27 @@ from typing import Optional, List
 from pydantic import BaseModel
 
 
-class ModelInfoDTO(BaseModel):
-    id: Optional[str] = None
-    db_model: Optional[bool] = None
-    base_model: Optional[str] = None
+class ModelDTO(BaseModel):
+    model_name: str
     mode: str
-    key: str
-    max_tokens: Optional[int] = None
     max_input_tokens: Optional[int] = None
     max_output_tokens: Optional[int] = None
     input_cost_per_token: Optional[float] = None
     output_cost_per_token: Optional[float] = None
     cache_creation_input_token_cost: Optional[float] = None
     cache_read_input_token_cost: Optional[float] = None
-    input_cost_per_character: Optional[float] = None
     input_cost_per_token_above_128k_tokens: Optional[float] = None
     input_cost_per_token_above_200k_tokens: Optional[float] = None
-    input_cost_per_query: Optional[float] = None
-    input_cost_per_second: Optional[float] = None
     input_cost_per_audio_token: Optional[float] = None
     input_cost_per_token_batches: Optional[float] = None
     output_cost_per_token_batches: Optional[float] = None
     output_cost_per_audio_token: Optional[float] = None
-    output_cost_per_character: Optional[float] = None
     output_cost_per_reasoning_token: Optional[float] = None
     output_cost_per_token_above_128k_tokens: Optional[float] = None
-    output_cost_per_character_above_128k_tokens: Optional[float] = None
     output_cost_per_token_above_200k_tokens: Optional[float] = None
-    output_cost_per_second: Optional[float] = None
     output_cost_per_image: Optional[float] = None
-    citation_cost_per_token: Optional[float] = None
     search_context_cost_per_query: Optional[float] = None
     output_vector_size: Optional[int] = None
-    litellm_provider: Optional[str] = None
     supports_system_messages: Optional[bool] = None
     supports_response_schema: Optional[bool] = None
     supports_vision: Optional[bool] = None
@@ -55,8 +43,3 @@ class ModelInfoDTO(BaseModel):
     tpm: Optional[int] = None
     rpm: Optional[int] = None
     supported_openai_params: Optional[List[str]] = None
-
-
-class ModelDTO(BaseModel):
-    model_name: str
-    model_info: ModelInfoDTO
