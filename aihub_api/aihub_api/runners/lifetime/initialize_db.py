@@ -78,11 +78,6 @@ async def initialize_role(name: str, description: str, access_rules: list[str]) 
 
     This is a generic function that can be used to create any role with
     the specified permissions. It is idempotent and safe to call multiple times.
-
-    Args:
-        name: The unique name identifier for the role
-        description: A human-readable description of the role's purpose
-        access_rules: List of permission rules granted to this role
     """
     # Check if the role already exists
     existing_role = RoleEntity.get_role_by_name(name)
