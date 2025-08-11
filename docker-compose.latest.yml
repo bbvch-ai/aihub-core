@@ -314,11 +314,11 @@ services:
 
       # Telemetry
       ENABLE_OTEL: False
-      ENABLE_OTEL_METRICS: True
-      OTEL_EXPORTER_OTLP_ENDPOINT: XXX # TODO: define
-      OTEL_SERVICE_NAME: "open-webui"
-      OTEL_BASIC_AUTH_USERNAME: XXX # TODO: define
-      OTEL_BASIC_AUTH_PASSWORD: XXX # TODO: define
+      # ENABLE_OTEL_METRICS: True
+      # OTEL_EXPORTER_OTLP_ENDPOINT: XXX
+      # OTEL_SERVICE_NAME: "open-webui"
+      # OTEL_BASIC_AUTH_USERNAME: XXX
+      # OTEL_BASIC_AUTH_PASSWORD: XXX
 
       # Auth
       WEBUI_AUTH: True
