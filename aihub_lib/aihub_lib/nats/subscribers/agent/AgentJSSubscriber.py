@@ -3,14 +3,14 @@ from collections.abc import Awaitable, Callable
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
-from aihub_lib.nats.events import ControlEvent
+from aihub_lib.nats.events import ControlEvent, BaseEvent
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topics import AgentInstanceTopic
 
 
-class AgentJSSubscriber(JSSubscriber):
+class AgentJSSubscriber(JSSubscriber[BaseEvent]):
     @classmethod
     def for_agent_instance_control_events(
         cls,
