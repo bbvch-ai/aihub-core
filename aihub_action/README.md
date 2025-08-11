@@ -1,9 +1,17 @@
-# AI Hub Actions - Reusable Actions for CI/CD (GitHub workflows)
+---
+title: "Github Actions"
+index: 7
+---
 
-These actions are a collection of modular GitHub Actions designed to automate and standardize CI/CD workflows across customer repositories. 
-Each action is focused on a specific task such as building images, linting code, running tests, posting coverage comments, and more.
+# 🚀 AI Hub Actions - Reusable Actions for CI/CD (GitHub workflows)
 
-## Directory Structure
+::: info
+These actions are a collection of modular GitHub Actions designed to automate and standardize CI/CD workflows across
+customer repositories. Each action is focused on a specific task such as building images, linting code, running tests,
+posting coverage comments, and more.
+:::
+
+## 📁 Directory Structure
 
 The repository is organized as follows:
 
@@ -32,11 +40,14 @@ aihub_action/
 │   └── action.yml             # Runs backend tests with coverage
 ```
 
-## Defining an Action (`action.yml`)
+## 📝 Defining an Action (`action.yml`)
 
-Here’s an example of how to define an action to lint backend code using Black. This reusable action installs Python, checks out the repository, and runs the linter.
+::: tip Action Definition
+Here's an example of how to define an action to lint backend code using Black. This reusable action installs Python,
+checks out the repository, and runs the linter.
+:::
 
-### Example: `lint_backend/action.yml`
+### 📝 Example: `lint_backend/action.yml`
 
 ```yaml
 name: Lint Backend
@@ -69,11 +80,13 @@ runs:
       run: black ${{ inputs.working_directory }}
 ```
 
-### Example: Using the Action in a Workflow
+### 🔄 Example: Using the Action in a Workflow
 
+::: info
 To use this action in a repository, reference it in a GitHub workflow file.
+:::
 
-#### Corresponding GitHub Workflow File: `.github/workflows/lint_backend.yml`
+#### 📝 Corresponding GitHub Workflow File: `.github/workflows/lint_backend.yml`
 
 ```yaml
 name: Lint Backend
@@ -93,16 +106,23 @@ jobs:
           working_directory: "agents"
 ```
 
-### Key Points
+::: tip Key Points
+
 1. The reusable action is stored in `aihub_action/lint_backend/action.yml`.
 2. The workflow file references this action using the `uses` keyword.
 3. Inputs like `github_token` and `working_directory` are passed to the action.
 
-## Best Practices
+:::
+
+## ✅ Best Practices
+
+::: warning Best Practices
 
 - Ensure each action is focused on a single task.
 - Test actions thoroughly before integrating them into repositories.
 - Use descriptive names and clear documentation in `action.yml` files.
 - Use tagged versions (`@v1.0.0`) instead of `@main` in workflows for stability.
-- Store sensitive data, such as `GITHUB_TOKEN`, in the repository’s Secrets.
+- Store sensitive data, such as `GITHUB_TOKEN`, in the repository's Secrets.
+
+:::
 

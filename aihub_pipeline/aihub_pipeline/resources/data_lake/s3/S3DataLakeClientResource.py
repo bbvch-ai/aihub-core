@@ -1,5 +1,5 @@
 import boto3
-from aihub_lib.infrastructure.s3.S3Config import S3Config
+from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
 from dagster import InitResourceContext
 
 from aihub_pipeline.resources.data_lake.base.AbstractDataLakeClientResource import AbstractDataLakeClientResource
@@ -97,7 +97,7 @@ class S3DataLakeClientResource(AbstractDataLakeClientResource[S3DataLakeClient])
     container_name: str
 
     def create_resource(self, context: InitResourceContext) -> S3DataLakeClient:
-        s3_config = S3Config()
+        s3_config = S3StorageSettings()
 
         s3_client = boto3.client(
             "s3",

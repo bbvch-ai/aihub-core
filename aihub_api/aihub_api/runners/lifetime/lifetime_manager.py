@@ -2,9 +2,9 @@ import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
-from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
-from aihub_lib.infrastructure.nats.NatsConfig import NatsConfig
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
@@ -21,6 +21,8 @@ from aihub_api.services.AgentEndpointsDiscoveryService import AgentEndpointsDisc
 from aihub_api.services.ProcessEndpointsDiscoveryService import ProcessEndpointsDiscoveryService
 from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
 from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -69,13 +71,13 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
     # Connect to MongoDB via Cosmos
     connect(
-        db=ApiConfig().DB_NAME,
-        host=CosmosAccess().get_connection_string(),
+        db=AIHubSettings().MONGO_MAIN_DB_NAME,
+        host=MongoSettings().CONNECTION_STRING,
     )
 
     try:
         # Connect to NATS and setup JetStream
-        await nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
+        await nc.connect(servers=[NatsSettings().ENDPOINT])
         js = nc.jetstream()
 
         # Persist all events
@@ -127,6 +129,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             )
             await agent_discovery_service.start()
             app.state.agent_discovery_service = agent_discovery_service
+        else:
+            logger.warning("Unable to start AgentEndpointsDiscoveryService due to missing state.agent_controller")
 
         # Create and start the process discovery service
         if hasattr(api_app.state, "process_controller"):
@@ -139,6 +143,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             )
             await process_discovery_service.start()
             app.state.process_discovery_service = process_discovery_service
+        else:
+            logger.warning("Unable to start ProcessEndpointsDiscoveryService due to missing state.process_controller")
 
         # Yield control back to FastAPI to start serving requests
         yield

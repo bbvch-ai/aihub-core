@@ -3,7 +3,7 @@ import logging
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.infrastructure.nats.NatsConfig import NatsConfig
+from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.nats.events import (
     BaseEvent,
     ChunkEvent,
@@ -185,7 +185,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         assert len(self.simulated_events) > 0, "No simulated events provided"
 
         self.nc = NATS()
-        await self.nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
+        await self.nc.connect(servers=[NatsSettings().ENDPOINT])
 
         if self.start_events is None:
             self.start_events = [
@@ -230,6 +230,8 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
                 stop_events=self.stop_events,
                 config=self.default_agent_config,
             )
+        else:
+            logger.warning("Unable to start AgentEndpointsDiscoveryService due to missing state.agent_controller")
 
     async def run(self):
         await self.start_simulation()

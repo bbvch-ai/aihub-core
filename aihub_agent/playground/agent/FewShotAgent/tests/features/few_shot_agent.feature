@@ -22,7 +22,7 @@ Feature: Test the FewShotAgent
     Then an LLMEvent is present with a generated response
     Then a StopEvent is present
 
-  @self_hosted
+  @azure
   Scenario: Validate the FewShotAgent workflow with self hosted llm
     Given I have an empty agent config
     Given the agent description is "This agent can transform movie titles into emojis."

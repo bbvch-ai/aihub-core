@@ -62,6 +62,7 @@
     "jsonschema": "MIT",
     "llama-index-core": "MIT",
     "llama-index-embeddings-azure-openai": "MIT",
+    "llama-index-embeddings-openai-like": "MIT",
     "llama-index-instrumentation": "MIT",
     "llama-index-llms-google-genai": "MIT",
     "llama-index-llms-openai-like": "MIT",
@@ -86,7 +87,8 @@
     "click": "BSD-3-Clause",
     "jsonschema-specifications": "MIT",
     "tiktoken": "MIT",
-    "argparse":  "Python Software Foundation License"
+    "argparse":  "Python Software Foundation License",
+    "sse-starlette": "BSD-3-Clause"
   },
   "reviewed_packages": [
     {

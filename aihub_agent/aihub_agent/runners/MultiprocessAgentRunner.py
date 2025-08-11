@@ -32,7 +32,7 @@ class MultiprocessAgentRunner:
     ```python
     runner = MultiprocessAgentRunner(
         servers=["nats://localhost:4222"],
-        redis_url=RedisConfig().REDIS_URL,
+        redis_url=RedisSettings().URL,
         agent_type=MyAgent,
         agent_config=my_config,
         process_count=5

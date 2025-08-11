@@ -38,10 +38,10 @@ def result_user() -> dict:
 @given(parsers.parse('a NoAuth configuration with name "{name}", email "{email}", oid "{oid}", and roles "{roles}"'))
 def setup_no_auth_config(monkeypatch, name, email, oid, roles):
     """Set up the NoAuth configuration using environment variables."""
-    monkeypatch.setenv("NAME", name)
-    monkeypatch.setenv("EMAIL", email)
-    monkeypatch.setenv("OID", oid)
-    monkeypatch.setenv("ROLES", roles)
+    monkeypatch.setenv("DANGEROUS_DEV_ONLY_AUTH_FAKE_NAME", name)
+    monkeypatch.setenv("DANGEROUS_DEV_ONLY_AUTH_FAKE_EMAIL", email)
+    monkeypatch.setenv("DANGEROUS_DEV_ONLY_AUTH_FAKE_OID", oid)
+    monkeypatch.setenv("DANGEROUS_DEV_ONLY_AUTH_FAKE_ROLES", roles)
 
 
 # --- When Steps ---

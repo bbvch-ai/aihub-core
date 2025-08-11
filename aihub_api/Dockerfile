@@ -1,5 +1,5 @@
 # Build stage
-FROM python:3.11-slim AS builder
+FROM python:3.13-slim AS builder
 ARG VERSION
 
 # Set environment variables
@@ -43,7 +43,7 @@ RUN rm -rf ~/.cache/pypoetry ~/.cache/pip /tmp/poetry_cache
 
 
 # Runtime stage
-FROM python:3.11-slim AS runtime
+FROM python:3.13-slim AS runtime
 
 ARG VERSION
 

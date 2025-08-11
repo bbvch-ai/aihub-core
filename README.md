@@ -1,822 +1,1011 @@
-# AI Hub
+# AI-Hub Developer Guide
+
+## 1. :rocket: Introduction
 
-Table of Content:
+### What is the Swiss AI-Hub?
 
-- [AI-Hub Developer Introduction](#1-ai-hub-developer-introduction)
-- [Getting Started](#2-getting-started)
-- [Testing](#3-testing)
-- [Additional Infos](#4-additional-infos)
+::: info
+The Swiss AI-Hub is a comprehensive, enterprise-grade platform designed to integrate artificial intelligence into the
+core of your business. It addresses a critical need in the Swiss market for a sovereign, trustworthy, and collaborative
+AI platform.
+:::
 
-# 1 AI-Hub Developer Introduction
+Most available AI tools are frameworks or libraries, which are excellent for proofs-of-concept but leave the user with
+the immense challenge of building a secure, scalable, and maintainable enterprise-ready system. The Swiss AI-Hub fills
+this gap by providing a complete, production-grade ecosystem for Swiss companies to succeed with AI, not just another
+agentic framework. It is a foundational software framework that serves as a bridge between people, enterprise knowledge,
+and digital processes. A core principle of the Hub is to bring specialized intelligence directly into familiar work
+environments, rather than forcing employees to switch between special applications for AI support.
+
+### Our Goal: An Enterprise-Grade Platform, Not Just a Library
 
-Welcome to the AI-Hub project! This document provides an overview of the AI-Hub platform, its key features, and
-technical aspects for developers.
+The distinction between a library and a platform is central to our vision. While a library helps you solve a specific
+problem, a platform provides the entire environment to solve problems at scale, reliably, and over the long term.
 
-## 1.1 What is AI-Hub?
+::: tip :battery: Batteries Included!
+The Swiss AI-Hub is a "batteries-included" platform for developers. It provides a full-fledged enterprise architecture,
+including:
 
-The AI-Hub is more than just a code repository; it is a carefully crafted and evolving platform that encapsulates
-best practices, standardizes common functionalities, and allows bbv to deliver AI solutions with greater agility and
-reliability. As you progress through the subsequent sections—for instance, understanding the deeper reasoning behind
-AI agents in Section 1.2 or the foundational principles of how the AI-Hub approaches workflows and autonomy in Section
-2—you will see how the core ideas introduced here form the bedrock of the entire AI-Hub ecosystem.
+* A database layer
+* A REST API and WebSocket gateway
+* A user interface
+* Scalable data ingestion pipelines
+* Pre-configured Docker containers for deployment
+  :::
+
+This allows developers to focus on creating business value by designing an agent's logic, while the platform handles
+security, scalability, and infrastructure.
 
-For further information, please refer to the AI-Hub Documentation:
+### Core Philosophy: The "Swiss Way"
 
-1. [Introduction](aihub_doc/1_introduction.md)
-2. [Core Concepts and Philosophy](aihub_doc/2_core_concepts_and_philosophy.md)
-3. [Project Phases and Client Engagement](aihub_doc/3_project_phases_and_client_engagement.md)
-4. [Architectural Overview](aihub_doc/4_architectural_overview.md)
-5. [Agents in Detail](aihub_doc/5_agents_in_detail.md)
-6. [Pipelines](aihub_doc/6_pipelines.md)
-7. [Frontend](aihub_doc/7_frontend.md)
-8. [Backend / API](aihub_doc/8_backend_api.md)
-9. [Tooling, Testing, and CI/CD](aihub_doc/9_tooling_testing_ci_cd.md)
-10. [Extensibility and Licensing](aihub_doc/10_extensibility_and_licensing.md)
-11. [Best Practices and Guidelines](aihub_doc/11_best_practices_and_guidelines.md)
-12. [Roadmap and Initiatives](aihub_doc/12_roadmap_and_initiatives.md)
+Our architecture is built on a set of non-negotiable principles that reflect the values of the companies we serve.
+
+::: warning :shield: Non-Negotiable Principles
 
----
-
-## 1.2 Repositories
-
-There are two types of repositories in the AI-Hub ecosystem:
-
-1. **Core repository**  
-   The core repository, named **`aihub-core`**, contains all shared functionality and code used across multiple
-   projects. Under no circumstances should it contain any customer-specific information. This separation is critical to
-   prevent information leakage because this repo is referenced by customer-specific repositories.
-
-2. **Customer repositories**  
-   Customer repositories are named **`aihub-<CUSTOMER>`**. These repositories build on the functionality provided by
-   `aihub-core` while adding or overriding components for the specific customer context.
-
-### 1.2.1 Repository Structure
-
-Regardless of whether you are working in the core repository or a customer repository, you will find the following
-top-level folders (or *scopes*). The main difference is that, in `aihub-core`, each folder is prefixed with `aihub_` (
-e.g., `aihub_agents`, `aihub_api`, etc.):
-
-- **`agents`**: Contains agent-specific code, such as workflow steps.
-
-- **`api`**: Contains API endpoint definitions.
-
-- **`bot`**: Contains API endpoint definitions for Azure Bot Framework.
-
-- **`doc`**: Contains documentation (for example, arc42 documentation).
-
-- **`lib`**: Provides shared functionality that can be reused across multiple scopes within the repository.
-
-- **`pipeline`**: Contains definitions for Dagster pipelines.
-
-- **`web`**: Contains frontend code.
-
-Within a customer repository (`aihub-<CUSTOMER>`), the corresponding scopes will typically import core functionalities
-from `aihub-core` as needed. The `lib` folder in each repo may also be consumed by other scopes within the same repo.
-
-#### 1.2.1.1 Additional Scopes (Core Repository Only)
-
-In addition to the folders listed above, the core repository (`aihub-core`) includes the following additional scopes:
-
-- **`aihub_action`**  
-  Contains reusable code for GitHub Actions used in the CI/CD pipelines of customer repositories. Managing these actions
-  in the core repo helps to avoid duplication and reduces maintenance overhead.
-
-  > ☝ **Note:** This is **not** the same as the `.github` folder.  
-  > The `.github` folder contains the actual GitHub Actions and workflows executed in the CI/CD flow for `aihub-core`
-  itself.
-
-- **`aihub_iac`**  
-  Contains Infrastructure-as-Code (IaC) resources that can be reused by customer repositories.
-
----
-
-## 1.3 Project and Work Management
-
-The **AI-Hub** ecosystem uses two main GitHub Projects to manage development and roadmap planning:
-
-1. **`aihub-roadmap`**  
-   Focuses on high-level planning, covering both customer projects and larger initiatives for the AI-Hub core.
-
-2. **`aihub`**  
-   Focuses on day-to-day development tasks that contribute to the overall initiatives and customer projects.
-
-### 1.3.1 Types of Projects
-
-We distinguish between two primary types of projects:
-
-1. **Customer Projects**  
-   These are engagements specific to a customer. They are often tied to a particular `aihub-<CUSTOMER>` repository but
-   may also require changes or enhancements in `aihub-core`.
-
-2. **Initiatives**  
-   These can be viewed as large features or focus areas targeted for improvement or creation within the AI-Hub core.
-   They are broader in scope than most customer projects and generally aim to advance the platform as a whole.
-
-### 1.3.2 Roadmap Overview ([aihub-roadmap](https://github.com/orgs/bbvch-ai/projects/7))
-
-In the [aihub-roadmap](https://github.com/orgs/bbvch-ai/projects/7) GitHub Project, we manage both **customer projects**
-and **initiatives**. Here, you will find:
-
-- **General Project Information**: Owner, Project Manager, Development Lead, etc.
-- **Project Goal & Initial Setup**: Defined in the main issue describing the project or initiative.
-- **Ongoing Documentation**: All major events, decisions, and outcomes are recorded in the issues.
-- **Project Health States**:
-    - **In Schedule**: Work is proceeding as planned.
-    - **Tight Schedule**: There is a risk of falling behind schedule.
-    - **Behind Schedule**: The project or initiative has already fallen behind planned milestones.
-    - **Schedule Impossible**: The current timeline can no longer be met without major changes.
-
-At the end of a project or initiative, the main issue can also serve as a record of **learnings**, providing valuable
-insights for future work.
-
-### 1.3.3 Daily Work Management ([aihub](https://github.com/orgs/bbvch-ai/projects/2))
-
-While the high-level status and context of projects or initiatives live in `aihub-roadmap`, the actual development tasks
-are tracked in the [aihub](https://github.com/orgs/bbvch-ai/projects/2) GitHub Project. Tasks in `aihub` may span
-multiple projects or initiatives but are always linked back to the corresponding item in `aihub-roadmap`. This ensures:
-
-- **Traceability**: Developers can see which larger project or initiative their tasks belong to.
-- **Alignment**: Project Managers and Dev Leads can monitor progress on overarching goals by reviewing associated tasks.
-
-In each task’s GitHub issue, you should see a reference or link to the main issue in `aihub-roadmap` that tracks the
-project or initiative. This linkage helps keep the broader context visible and maintains clarity on priorities.
-
-For day-to-day tasks managed in the `aihub` board, we use three primary status columns:
-
-- **To Do**
-- **In Progress**
-- **Done**
-
-#### 1.3.3.1 Guidelines
-
-1. **Assigning Tasks**
-    - If you start working on a task and it is unassigned, assign yourself to it.
-    - Always keep the assignee field up to date to ensure transparency.
-
-2. **Moving Tasks**
-    - When you begin work, move the task from **To Do** to **In Progress**.
-    - Once you complete the task (and all necessary reviews and merges), move it to **Done**.
-
-This straightforward workflow helps maintain a clear overview of who is working on what, and the current status of
-each task. Keeping the board updated is crucial for effective collaboration and progress tracking.
-
----
-
-## 1.4 Branching Strategy & PR Conventions
-
-Our branching strategy is designed to streamline development by organizing code changes based on customer
-projects and internal initiatives. This approach enhances collaboration, simplifies code management,
-and ensures that updates are efficiently merged and deployed.
-
-### 1.4.1 Long-Lived Branches
-
-We maintain long-lived branches that correspond to specific customer projects and internal initiatives.
-These branches serve as stable bases for ongoing development related to their respective areas.
-
-**Customer Branches:**
-
-- `customer/bbv`, `customer/fmh`, `customer/bs`, ...
-
-**Initiative Branches:**
-
-- `initiative/agent-custom`, `initiative/agent-xp`, `initiative/avatar`, ...
-
-**Short-Lived Branches:**
-
-Short-lived branches are created for specific tasks or fixes and are intended to be merged back into their
-originating branch promptly. The naming convention indicates both their origin and intended merge target
-using hierarchical names. Due to naming constraints. e.g., not being able to have both a branch and a scope (part before
-`/`), we use:
-
-- `quickfix` for target `dev`-branch
-- `hotfix` for target `main`-branch
-
-Example 1: `quickfix/fix-message-editing`
-
-*Originates from the development branch.
-Intended to be merged back into development.*
-
-Example 2: `hotfix/fix-message-editing`
-
-*Originates from the main branch.
-Intended to be merged back into main.*
-
-Example 3: `workflows/hitl`
-
-*Originates from the initiative/workflows branch.
-Intended to be merged back into initiative/workflows.*
-
-### 1.4.2 Pull Request Titles
-
-Pull request (PR) titles follow a specific format to indicate:
-
-Why the code was changed (PR-Type):
-
-- `fix`
-- `feat`
-- `test`
-- `doc`
-- `chore`
-
-For whom the code was changed (PR-Scope):
-
-- `aihub` *(internal product owner without initiative)*
-- `workflows` *(initiative)*
-- `fmh` *(customer)*
-
-#### 1.4.2.1 PR Title Format
-
-```txt
-type(scope): Description of the change
+* **Privacy and Sovereignty by Design**: The platform is designed to be fully self-hostable, allowing the entire
+  technology stack to run on-premises or in a Swiss cloud. This guarantees complete data sovereignty, ensuring sensitive
+  company data remains in Switzerland and is subject to Swiss regulations.
+* **Security as a Prerequisite**: Security is built into every layer of the architecture, from a secure development
+  lifecycle to granular access control and support for enterprise authentication like OAuth and LDAP. It is a principle
+  that informs every architectural decision, not an add-on.
+* **Radical Transparency and Auditability**: We believe trust is earned through transparency. Our "AI Agents as
+  Workflows" philosophy ensures that agent behavior is not a "black box". Agents and assistants are built as structured,
+  step-by-step workflows, making them inherently transparent and testable. Every step can be visually monitored and
+  audited using tools like Phoenix Tracing, which is crucial for gaining the trust of employees, managers, and
+  regulators.
+  :::
+
+### The Vision: From Assistants to Autonomous Agents
+
+The AI-Hub is designed to grow with an organization, supporting an evolutionary journey from simple assistance to
+autonomous process automation. It enables the creation of a rich ecosystem of specialized AI solutions that collaborate
+with your team.
+
+::: details :robot: AI Assistants: Your AI-Powered Co-Worker    
+For employees, the AI-Hub provides secure access to specialized AI Assistants tailored to your team's needs. Unlike
+generic chatbots, these assistants are valuable because they are integrated with relevant business data and tools. They
+are reactive, context-aware partners designed to enhance your daily work by answering complex questions, analyzing data,
+and saving you time and effort.
+:::
+
+::: details :gear: AI Agents: Autonomous Process Partners    
+As an organization advances, the platform enables collaboration with AI Agents—autonomous partners that proactively
+participate in business processes. Instead of simply reacting to prompts, these agents are designed to analyze
+workflows, autonomously determine the next steps, and execute tasks with minimal human intervention. This reimagines
+workflows as a deep collaboration between humans and AI, allowing employees to focus on the most critical and creative
+aspects of their jobs while maintaining oversight for key decisions.
+:::
+
+
+-----
+
+## 2. :file_folder: Project Structure & Repositories
+
+The Swiss AI-Hub is designed as a powerful, cohesive ecosystem. Its structure is not just a technical choice; it is a
+reflection of our vision to provide a platform that is both ready-to-use and infinitely extensible.
+
+### Repository Types: Core vs. Customer
+
+The ecosystem is organized into two fundamental types of repositories to ensure a clean separation of concerns and
+foster collaboration without risking data leakage.
+
+::: danger :warning: Critical Separation
+
+* **Core Repository (`aihub-core`)**: This is the heart of the platform. It contains all the shared, reusable
+  functionality and code that powers the AI-Hub. Under no circumstances should it contain any customer-specific
+  information. This strict separation is critical, as `aihub-core` is referenced as a dependency by all
+  customer-specific projects.
+* **Customer Repositories (`aihub-<CUSTOMER>`)**: These repositories are where you bring the Hub to life for a specific
+  context. They build on the powerful foundation of `aihub-core`, allowing you to add or override components—like
+  agents, pipelines, or processes—for a specific customer's needs.
+  :::
+
+### An Architecture for Speed and Extensibility
+
+To a developer, the AI-Hub is an entire "batteries-included" platform, not just a library. The monorepo contains
+multiple, distinct Python packages called "scopes," which are organized into logical layers. This architecture is
+designed to let you focus on creating business value, while we handle the heavy lifting of infrastructure, security, and
+scalability.
+
+::: details :building_construction: The Foundational & Logic Layers
+At the lowest level is **`aihub_lib`**, the foundational shared library for code used by more than one service. Building
+on this, we provide a base layer for the core AI components:
+
+* **`aihub_pipeline`**: Contains definitions for data ingestion and processing pipelines, often using Dagster.
+* **`aihub_agents`**: Contains all agent-specific logic and workflow definitions.
+* **`aihub_process`**: Orchestrates high-level business processes that involve collaboration between agents, humans, and
+  external programs.
+  :::
+
+::: details :electric_plug: The Integration & Interaction Layer
+This layer provides a full-stack experience for interacting with the core logic.
+
+* **`aihub_api`**: The main user-facing REST API and WebSocket gateway, built with FastAPI.
+* **`aihub_web`**: The complete frontend application, built with Nuxt.js, providing the user interface.
+* **`aihub_bot`**: The core logic for integrating with collaboration platforms like MS Teams.
+  :::
+
+::: details :toolbox: The Operational & Best Practices Layer
+We provide tools to ensure your solutions are robust, maintainable, and easy to deploy.
+
+* **`aihub_action`**: Contains reusable GitHub Actions to standardize CI/CD pipelines and avoid duplication.
+* **`aihub_iac`**: (Infrastructure-as-Code) Defines reusable cloud infrastructure resources for deployment.
+* **`aihub_doc`**: Holds all project documentation, including arc42 and Architectural Decision Records (ADRs).
+  :::
+
+### Use It Out-of-the-Box or Make It Your Own
+
+::: tip :package: Instant Start
+This architecture gives you incredible flexibility. You can use the Hub as-is by simply running the`docker-compose.yaml`
+to get a fully working, locally running AI-Hub complete with pre-built standard agents, pipelines, and processes ready
+to go.
+:::
+
+::: info :sparkles: The Magic of Extension
+Or, you can extend it. This is where the magic happens. When you build your own components, you build on the same
+battle-tested base that we do. Create a new agent, a new pipeline, or a new process, package it as a Docker image, and
+add it to the `docker-compose.yaml`. Instantly, your creation becomes a first-class citizen in the ecosystem. You will
+see all our platform-level features work for your component automatically, out-of-the-box:
+
+* **Automatic Observability**: Your new agent will immediately appear in the **`aihub_web`** UI, where it can be managed
+  and observed.
+* **Built-in Traceability**: Every run of your agent is automatically traced and can be audited visually in Phoenix
+  without any extra work.
+* **Seamless Interaction**: Your agent can be invoked from the chat interface and can use our built-in protocols to
+  interact with other agents in the Hub.
+* **Process Integration**: You can immediately employ your new agent as a step within a larger, more complex agentic
+  process using **`aihub_process`**.
+
+Want to build a new pipeline in **`aihub_pipeline`** that ingests and feeds data into an existing, perfected RAG-Agent
+we already provide? You can. The Hub is designed for this kind of powerful, modular composition. You focus on the unique
+logic, and the platform handles the rest.
+:::
+
+-----
+
+## 3.:computer: Getting Started: Local Development Setup
+
+This chapter outlines the technologies used in the AI-Hub and the necessary steps to set up the development environment
+from the command line. It is up to the developer to install the required tools according to their operating system and
+preferences.
+
+### Required Technologies
+
+::: details :wrench: Complete Technology Stack    
+The AI-Hub project utilizes the following technologies. Ensure they are installed and accessible from your command line
+environment.
+
+* **Git**: For version control.
+* **Python**: The project is built on Python, specifically version 3.13.
+* **Poetry**: For dependency management and managing virtual environments for each Python package.
+* **make**: Used for running common tasks and commands defined in Makefiles.
+* **Docker & Docker Compose**: For containerizing and running the project's infrastructure stack.
+* **Node.js**: The LTS version is used for frontend development, managed via a version manager like NVM.
+* **pnpm**: Fast package manager for node.js.
+* **Other Tools**: For specific tasks, developers may also need tools like **Postman** for API testing, **MongoDB
+  Compass** for database management, and the **Bot Framework Emulator** for testing chatbots.
+  :::
+
+#### :robot: AI & LLM Orchestration
+
+Our AI capabilities are primarily powered by the LlamaIndex ecosystem and integrations with leading AI providers.
+
+* **LlamaIndex**: The central framework for building context-aware RAG (Retrieval-Augmented Generation) applications.
+  This includes `llama-index-core`, along with various integrations for vector stores, embeddings, and LLMs.
+* **LLM & Embedding Providers**:
+    * **OpenAI & Azure OpenAI**: Integrated via the `openai`, `llama-index-llms-openai-like`, and
+      `llama-index-embeddings-azure-openai` libraries.
+    * **Google GenAI**: Support for Google's models through `google-genai` and `llama-index-llms-google-genai`.
+    * **Hugging Face**: Using `transformers` and `llama-index-embeddings-text-embeddings-inference` for local or
+      self-hosted models.
+* **Azure AI Services**: We make extensive use of Azure's managed AI services, including:
+    * **Azure Cognitive Search**: For powerful search and retrieval capabilities.
+    * **Azure Document Intelligence**: For document analysis and information extraction.
+    * **Azure Speech Services**: For speech-to-text and other speech-related features.
+
+#### :floppy_disk: Data & Storage
+
+* **Databases**:
+    * **MongoDB**: Used as our primary NoSQL database, accessed via **MongoEngine** and integrated into LlamaIndex for
+      document storage (`llama-index-storage-docstore-mongodb`).
+    * **Redis**: For in-memory caching and fast data retrieval.
+* **Vector Stores**:
+    * **Azure AI Search**: The primary vector store for our production environment (
+      `llama-index-vector-stores-azureaisearch`).
+    * **Milvus**: An alternative or additional vector database option (`llama-index-vector-stores-milvus`).
+* **File Storage**:
+    * **Azure Data Lake Storage (ADLS)**: Managed through `azure-storage-file-datalake` and `adlfs` for large-scale data
+      storage and access.
+
+#### :satellite: Observability & Communication
+
+* **Monitoring**: We use a combination of tools for comprehensive application monitoring:
+    * **OpenTelemetry**: The foundational toolkit for generating and exporting telemetry data (traces, metrics, logs).
+    * **OpenInference**: A specialized instrumentation library for monitoring LLM applications built with LlamaIndex.
+    * **Arize Phoenix**: For ML observability and model performance evaluation.
+* **Asynchronous Messaging**:
+    * **NATS**: Used for high-performance, asynchronous communication between services.
+
+#### :sparkles: Code Quality & Tooling
+
+We enforce strict standards to ensure our code is clean, consistent, and bug-free.
+
+* **Linting & Formatting**:
+    * **Ruff**: Our primary linter for speed and comprehensive checks.
+    * **Black**: For uncompromising and consistent code formatting.
+* **Type Checking**:
+    * **MyPy**: Used in `strict` mode to enforce static type safety across the entire codebase.
+* **Testing**:
+    * **Pytest**: The core framework for writing and running our tests, along with `pytest-asyncio` for asynchronous
+      code and `pytest-mock` for mocking.
+    * **Pytest BDD**: For writing behavior-driven tests.
+
+### :gear: Codebase & Dependency Setup
+
+#### Clone Repositories
+
+::: info
+First, clone the necessary repositories into your local workspace.
+
+* **aihub-core** (this repo): `git clone https://github.com/bbvch-ai/aihub-core`
+
+  :::
+
+#### Install Project Dependencies
+
+The project is a monorepo containing multiple packages ("scopes"), such as `aihub_agent` or `aihub_api`. Each scope has
+its own isolated Poetry environment and dependencies.
+
+::: warning :warning: Important
+To work on a specific scope, you must first activate its environment:
+
+1. Navigate into the scope's directory (e.g., `cd aihub_agent`).
+2. Activate the environment using the command: `poetry shell`.
+   Poetry shell was moved to a separate plugin, so you may need to install it first with:
+   `poetry self add poetry-plugin-shell`.
+3. Once the shell is activated, install the dependencies with: `poetry install`.
+
+You must run commands from within the correct scope's activated environment. This process needs to be repeated for each
+scope you intend to work on.
+:::
+
+For frontend services (`aihub_web`), follow the setup instructions in that directory's `README.md` file.
+
+#### Manage Dependencies with Poetry
+
+::: tip :package: Poetry Commands
+Use the following commands to manage dependencies within an activated scope environment. Do not edit the`pyproject.toml`
+or `poetry.lock` files manually.
+
+* `poetry install`: Installs all dependencies defined in `poetry.lock`.
+* `poetry add <package>`: Adds a new package as a dependency.
+* `poetry remove <package>`: Removes a package.
+* `poetry update`: Updates all dependencies to their latest allowed versions.
+  :::
+
+### :whale: Starting the Infrastructure Stack (Docker)
+
+To run the full AI-Hub stack locally, use Docker Compose to start the required services. Several configuration files are
+provided for different environments. Run the appropriate command from the root of the `aihub-core` repository:
+
+::: tip :whale: Choose Your Environment
+**For a CPU Environment**:
+
+```bash
+docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml -f docker-compose-webui.yml up -d
 ```
 
-Examples:
+**For a GPU Environment**:
 
-- `fix(aihub): Fix bug where old messages can't be edited anymore`
-    - Origin: Could be from `chat-xp/message-editing`.
-    - Merge Target: `initiative/chat-xp`.
-    - > Note: Indicates a fix primarily benefiting our internal product (aihub).
-
-- `fix(siemens): Fix environment variable for D-ID that broke avatars in online setting`
-    - Origin: Could be from `quickfix/fix-did` if it's a quick fix.
-    - Merge Target: `dev`.
-    - > Note: Although originating from `dev`, the PR-scope (`siemens`) indicates it's a fix for Siemens, helping
-      prioritize the merge.
-
-### 1.4.3 Benefits of This Strategy
-
-- **Clarity**: Clear branch names and PR titles make it easy to understand the purpose and target of code changes.
-- **Efficiency**: By indicating the customer or initiative, we can prioritize merges that are critical for specific
-  stakeholders.
-- **Flexibility**: Allows for parallel development across different projects and initiatives without conflicts.
-- **Traceability**: Enhances the ability to track changes back to their origin, facilitating better project management.
-
-## 1.5 Branch Protection
-
-To ensure the stability and integrity of our codebase, we have implemented branch protection rules for our branches.
-
-### 1.5.1 Main Branch
-
-For the main branch, the following rules apply:
-
-- **Restrict Updates**
-    - **Description:** Only users with bypass can push directly.
-    - **Reason:** This rule ensures that most contributors can’t directly push to certain critical branches.
-      They have to go through a pull request, which requires reviews or checks to pass before merging.
-      By limiting who can push directly, we reduce the chance of accidental or unreviewed changes.
-
-- **Restrict Deletions**
-    - **Description:** Only users with bypass can delete `main`.
-    - **Reason:** Preserves the integrity of the primary branch.
-
-- **Block Force Pushes**
-    - **Description:** Denies force-pushes to `main`.
-    - **Reason:** Preserves commit history from destructive rewrites. By limiting who can push directly,
-      we reduce the chance of accidental or unreviewed changes.
-
-- **Require Linear History**
-    - **Description:** Disallows merge commits, enforcing a linear commit history.
-    - **Reason:** Keeps the repository history clean and traceable. A linear history is easier to read and navigate,
-      since you don’t have merge commits branching off in different directions.
-
-- **Require a Pull Request Before Merging**
-    - **Description:** All changes must be introduced via pull requests.
-    - **Reason:** Encourages peer review and prevents unauthorized merges.
-    - **Approvals**:
-        - **Required Approvals**
-            - **Config:** At least 1 approving review is needed.
-        - **Dismiss Stale Pull Request Approvals**
-            - **Config:** New commits dismiss previous approvals which means after new commits are pushed to the branch,
-              the
-              previous approvals are removed.
-        - **Require Conversation Resolution Before Merging**
-            - **Config:** All review discussions must be resolved this includes also comments by bots.
-        - **Allowed Merge Methods**
-            - **Config:** Only `Squash` is enabled. This means that into the main branch only squash commits are
-              allowed.
-              This means that each pull request is merged as a single commit to the main branch. As a result,
-              the commit history remains linear—avoiding merge commits—and each merge is captured as one
-              commit representing all changes in that pull request.
-              Like this we will later not bloat the main branches' history. There might be the case where we have
-              long-running initiative which only should be merged to the main once all features of the initiative are
-              done.
-              In that case we use the initiative branch and then merge it into main. Since this is considered an
-              exception we have to temporarily change the rule for this.
-
-### 1.5.1 Initiative Branch
-
-For the `initiative/*` branches, the same rules apply as for the main branch.
-
-**Important**: Initiative branches should only be used if the features of an initiative can only be merged
-once all features are done.
-
----
-
-# 2 Getting Started
-
-## 2.1 Install Required & Recommended Tools
-
-- **JetBrains Toolbox**: Download the [JetBrains Toolbox](https://www.jetbrains.com/toolbox-app/). Install and manage
-  IDEs like PyCharm (backend) and WebStorm (frontend).
-    - bbv employees: Request a JetBrains license via [YouTrack](https://youtrack.bbv.ch/newIssue?project=issues) .
-- **Git**: You may install it in your IDE under Version Control and link your account (alternatively: download
-  it [directly](https://git-scm.com/))).
-  JetBrain IDEs have built-in support for Git. You can use the Git integration to commit, push, and pull changes
-  directly from the IDE.
-- **Python (3.13)** via Miniconda: Download and install [Miniconda](https://docs.conda.io/en/latest/miniconda.html).
-  Miniconda is a package manager for Python. It is a lightweight version of Anaconda, which is a distribution of Python
-  for scientific computing.
-
-  Make sure to add Miniconda to the PATH during installation.
-  Test the installation by opening a command prompt and typing `conda --version`. If the installation was successful,
-  you should see the version of Miniconda.
-
-  > ☝ **Note: Miniconda for Virtual Environment Only**  
-  > We use Miniconda to create virtual environments and install the initial Python version in it. For the package
-  management inside the virtual environment, we use poetry. (see below)
-
-- **make (Windows only)**
-  You can download `make`
-  from [GnuWin32](http://gnuwin32.sourceforge.net/packages/make.htm). Make sure to add the `bin` directory of the `make`
-  installation to the PATH.
-    - Verify: `make --version`
-
-- **Poetry**: Dependency management tool for Python ([Download Poetry](https://python-poetry.org/docs/)).
-    - Verify: `poetry --version`
-- **Docker**: Containerization tool ([Download Docker](https://www.docker.com/products/docker-desktop/)). If problems
-  occur when trying to run Docker Desktop:
-  it says **wsl --update** but running this command doesn't resolve the issue. Refer
-  to [WSL Update Failed](https://stackoverflow.com/questions/78879806/docker-desktop-wsl-update-failed)
-    - Verify: `docker --version`
-- **Node.js (LTS)** through **NVM**: Download and install Node Version Manager (NVM)
-  for [Windows](https://github.com/coreybutler/nvm-windows/releases)
-  or [Linux](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating). NVM is a version manager for
-  Node.js that allows you to install multiple versions of Node.js and switch between them easily.
-
-  After installing NVM, open a new command prompt and type `nvm --version`. If the installation was successful, you
-  should see the version of NVM.
-
-  Install the latest LTS version of Node.js by typing `nvm install --lts` in the command prompt. When successful, it
-  will finish with a statement like
-
-  ```
-  Installation complete. If you want to use this version, type
-  
-  nvm use 20.16.0
-  ```
-  Run the `nvm use` command with the version you get indicated. Alternatively, use `nvm list` to see, which versions you
-  have installed.
-
-  Test the installation by typing `node --version` and `npm --version`. If the installation was successful, you should
-  see the versions of Node.js and npm. If not, type `nvm user --lts` and try again.
-
-- **MongoDB Compass**: GUI for managing MongoDB ([Download MongoDB Compass](https://www.mongodb.com/products/compass)).
-- **Azure CLI**: Manage Azure
-  resources ([Download Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)).
-    - Verify: `az --version`
-- **Postman**: For API testing ([Download Postman](https://www.postman.com/)).
-- **Bot Framework Emulator**: For testing chatbots ([Download Bot Framework Emulator](https://github.com/microsoft/BotFramework-Emulator)).
-
-### 2.1.1 Optional JetBrains Tools
-
-Useful PyCharm Plugins & Settings
-
-Install the following plugins in PyCharm to make development easier:
-
-- [Github Copilot](https://plugins.jetbrains.com/plugin/17718-github-copilot) - AI coding assistant
-- [Database Tools and SQL](https://www.jetbrains.com/help/pycharm/database-tool-window.html) - Interact with MongoDB
-  directly within PyCharm. This should be activated by default. To access the database from PyCharm, create a new
-  MongoDB connection and paste the connection string from Microsoft Azure. Learn more about the
-  setup [here](https://www.jetbrains.com/help/pycharm/mongodb.html).
-- [Docker](https://www.jetbrains.com/help/pycharm/docker-containers.html) - Interact with Docker containers within
-  PyCharm. This should be activated by default if you have a docker development setup.
-- [SonarLint](https://www.sonarsource.com/products/sonarlint/features/jetbrains/) - Extension for checking code quality
-  before commiting.
-
-Enable the following settings for optimal developer experience:
-
-- [Black](https://www.jetbrains.com/help/pycharm/2023.2/reformat-and-rearrange-code.html#format-python-code-with-black) -
-  Code formatter for Python
-- [Code With Me](https://www.jetbrains.com/code-with-me/) - Collaborative development tool, use this to pair-code with
-  other AI-Hub developers.
-
-Install the following software for convenience:
-
-- [Microsoft Azure Command Line Interface (CLI)](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-windows?tabs=azure-cli) -
-  Run `az` commands from the command-line or Power Shell without using the dedicated Azure Cloud Shell.
-
-### 2.1.2 (Optional) Useful WebStorm Plugins & Settings
-
-Install the following plugins to make development easier:
-
-- [Github Copilot](https://plugins.jetbrains.com/plugin/17718-github-copilot) - AI coding assistant
-- [Docker](https://www.jetbrains.com/help/pycharm/docker-containers.html) - Interact with Docker containers within
-  WebStorm (only needed if you have a docker development setup).
-- [SonarLint](https://www.sonarsource.com/products/sonarlint/features/jetbrains/) extension for checking code quality
-  before commiting.
-
-Enable the following settings for optimal developer experience:
-
-- [EsLint](https://www.jetbrains.com/help/webstorm/eslint.html#ws_eslint_configure_run_eslint_on_save) - Code linter for
-  JavaScript / TypeScript
-
-### 2.1.3 Setup Auto-Reformat and Lint
-
-#### 2.1.3.1 On Save (PyCharm)
-
-We can set up Pycharm so that whenever a file is saved (Ctrl + S), it is automatically reformatted and linted.
-
-1. Go to **File > Settings > Tools > Actions on Save**.
-2. Check the boxes for `Reformat code` and `Run Black`.
-3. Click `OK`.
-
-#### 2.1.3.2 Before Commit (PyCharm)
-
-We can set up Pycharm so that before committing changes, the code is automatically reformatted and linted.
-
-1. In the Commit dialog, click on the gear icon next to the Commit button.
-2. In the section **Commit Checks**, check the boxes for `Reformat code` and `Perform SonarQube for IDE analysis`.
-
----
-
-## 2.2 Set Up the Codebase
-
-### **2.2.1 Clone Repositories**
-
-Clone the following repositories:
-
-- **aihub-core**: Core services for the AI-Hub.
-    ```bash 
-    git clone https://github.com/bbvch-ai/aihub-core
-    ```
-- **aihub-bbv**: bbv customer repo (for bbv employees only)
-    ```bash
-    git clone https://github.com/bbvch-ai/aihub-bbv
-    ```
-- **ai-hub**: Legacy repository
-    ```bash
-    git clone https://github.com/bbvch-ai/ai-hub
-    ```
-
-### **2.2.2 Install Dependencies**
-
-#### 2.2.2.1 Backend Services
-
-Each folder in the `aihub-core` repository represents a **microservice**, which is an independent, self-contained module
-designed to handle a specific functionality within the broader system. This modular approach enhances scalability and
-maintainability.
-
-1. **Open the `aihub-core` Project (or a Parent Directory)**:
-
-    - Open PyCharm.
-    - Navigate to the `aihub-core` directory or any parent directory containing `aihub-core` and open it as the main
-      project. Opening a parent directory can help manage additional related projects, such as customer projects, in the
-      same workspace.
-
-2. **Attach Microservices as Additional Projects**:
-
-    - For each folder in `aihub-core` containing a `pyproject.toml` file (e.g., `aihub_api`, `aihub_bot`, `aihub_lib`, 
-      `aihub_agent`,`aihub_pipeline`):
-        - Go to **File > Open...**.
-        - Select the microservice folder.
-        - In the popup, select the **Attach** option to keep all microservices accessible within the same PyCharm
-          workspace.
-
-3. **Set Up Poetry Environments for Each Microservice**:
-
-    - For each attached project:
-        - Go to **File > Settings > Project:\*\*\*\* > Python Interpreter**.
-        - Select the microservice in the left column (e.g., `aihub_agent`).
-        - Click on **Add Interpreter > Add Local Interpreter**.
-            - **Type**: Poetry
-            - **Base interpreter**: Use the Miniconda Python executable (usually found under
-              `AppData/Local/miniconda3`).
-            - **Poetry executable**: Locate and select the `poetry.exe` file.
-        - Apply the settings.
-    - Navigate to the microservice directory and run:
-      ```bash
-      poetry install
-      ```
-    - *Alternatively*, you can just open any Python file in the microservice, and PyCharm should prompt you to configure
-      the Poetry environment based on the project's `pyproject.toml` file.
-
-4. **Repeat for Each Microservice**:
-
-    - Ensure every microservice folder is configured with its own Poetry environment to avoid dependency conflicts. For
-      example, if one microservice uses a specific version of a library, it won't interfere with others.
-
-5. **Add `aihub_lib` dependency to other services**:
-
-    - Go to **File > Settings > Project:\*\*\*\* > Project Dependencies**.
-    - Add `aihub_lib` as a dependency to each microservice project (`aihub_api`, `aihub_bot`, `aihub_agent`, `aihub_pipeline`).
-
-##### 2.2.2.1.1 Poetry Commands
-
-- `poetry install` to install the dependencies
-- `poetry add <package> --group dev` to install the dev-dependencies
-- `poetry add <package>` to add a new package
-- `poetry remove <package>` to remove a package
-- `poetry update` to update the dependencies
-
-> ☝ **Note: Don't Edit Configuration Files**  
-> Poetry uses two configuration files: "pyproject.toml" and "poetry.lock".
-> Don't edit these files manually but use the `poetry` command instead.
-
-> Modify the "pyproject.toml" dependency configuration file with `poetry add` and `poetry remove`.
-> The poetry.lock file is maintained by the `poetry update` command.
-
-#### 2.2.2.2 Frontend Services
-
-Navigate to the `aihub_web` folder
-
-- Follow the instructions in the `README.md` file to set up the frontend.
-
-### **2.2.3 Configure Environment Variables**
-
-- Request `.env` files from the team.
-- Place them in the root directories of backend and frontend projects.
-
----
-
-## 2.3 Read Documentation
-
-- Read the whole documentation in the [aihub_doc](https://github.com/bbvch-ai/aihub-core/tree/main/aihub_doc) folder in
-  the `aihub-core` repository.
-- Feel free to read up on any other resource used in the project e.g. AI Agents, LlamaIndex, FastAPI, Nuxt.js, etc.
-
----
-
-## 2.4 First Steps
-
-### 2.4.1 Explore the Codebase + Playground
-
-- **Codebase**: Explore the codebase to understand the structure and the services provided.
-- **Playground**: Use the `playground` directories in the services to test and experiment with the code.
-  Quickstart:
-    - Start Docker.
-        - Navigate to the `aihub_agent` directory.
-        - Run the following command:
-          ```bash
-          docker compose up
-          ```
-          or simply click the green play button in PyCharm. This will start phoenix on localhost:6006, nats, and mongo
-          DB.
-            - *Start Docker including the local milvus vector DB by running:*
-              ```bash
-              docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml up
-              ```
-
----
-
-# 3 Testing
-
-## 3.1 pytest
-
-We are using `pytest` as the testing framework for the AI-Hub project. The tests are located in the `tests` directory
-at the location of the code that is being tested. The testfile itself should be prefixed with `test_` resulting in
-a filename like `test_<unit_beeing_tested>.py`.
-
-## 3.2 Behaviour-Driven Development (bdd) based testing
-
-This repository uses **Behavior-Driven Development (BDD)** with the [
-pytest-bdd plugin](https://pytest-bdd.readthedocs.io/). BDD provides a structured approach for writing tests that
-capture business requirements in a format understandable to both technical and non-technical team members.
-
-### 3.2.1 How It Works
-
-1. **Feature Files**: Written in Gherkin syntax (`.feature` files) that describe the feature, the scenarios, and the
-   expected behavior.
-2. **Step Definitions**: Python functions decorated with `pytest-bdd` decorators (e.g. `@given`, `@when`, `@then`) that
-   implement the steps defined in the feature files.
-3. **Test Execution**: `pytest` discovers the feature files and maps each Gherkin step to the matching Python step
-   definition.
-
-### 3.2.2 Project Structure
-
-The BDD tests are organized in the following structure:
-
-```plaintext
-.
-├── SystemUnderTest.py
-└── tests
-    ├── features
-    │   ├── system_under_test.feature
-    │   └── ...
-    └── test_SystemUnderTest.py
+```bash
+docker compose -f milvus-standalone-docker-compose.yml -f docker-compose-webui.yml -f docker-compose-gpu.yml up -d
 ```
 
-*As a general rule there is always one .feature file per system-under-test. There can be exceptions if
-the same class hase multiple purposes but this should be prevented*
+:::
 
-### 3.2.3 Gherkin Syntax
+::: warning :clock3: Wait for Health Check
+Wait for all services to become healthy (you can check with `docker ps`) before proceeding.
+:::
 
-The .feature files are located in the `tests/features` directory and contain the Gherkin scenarios and look like this:
+### :key: Configure Environment Variables
 
-```gherkin
-Feature: Simple Agent
-  test for SimpleAgent
+::: warning
+The project requires environment variables for configuration. You will need to request the `.env` files from the team
+and place them in the root directories of the relevant backend and frontend projects.
+:::
 
-  Scenario: Test Simple Agent
-    Given a SimpleAgent runner
+### :robot: AI Coding Assistant Integration (MCP)
 
-    When a the start event is sent with payload "Hello"
-    Then a StartEvent is present with payload "Hello"
-    And a StopEvent is present
-    And an EventA event is present with payload "Hello"
+The AI-Hub provides enhanced integration with AI coding assistants through the Model Context Protocol (MCP). This
+integration allows AI tools like Claude Code, Gemini CLI, and other assistants to interact directly with your
+development environment.
+
+::: info MCP Benefits
+MCP integration provides AI coding assistants with:
+
+- **Real-time observation** of running services and their state
+- **Direct access** to development databases for debugging
+- **API interaction** capabilities for testing and validation
+- **Observability integration** with Phoenix tracing and monitoring
+  :::
+
+#### :gear: MCP Configuration
+
+The MCP integration is configured through the `.mcp.json` file in the project root. This file defines three key MCP
+servers:
+
+1. **Phoenix MCP Server**: Provides access to AI observability and tracing data
+2. **MongoDB MCP Server**: Enables database queries and monitoring (read-only)
+3. **AI-Hub API MCP Server**: Exposes AI-Hub API functionality to AI assistants
+
+::: details :wrench: MCP Server Configuration
+The `.mcp.json` file contains the following configuration:
+
+```json
+{
+  "mcpServers": {
+    "phoenix": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--network=host",
+        "node:22-alpine",
+        "npx",
+        "-y",
+        "@arizeai/phoenix-mcp@latest",
+        "--baseUrl",
+        "http://localhost:6006"
+      ]
+    },
+    "mongodb": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--network=host",
+        "-e",
+        "MDB_MCP_CONNECTION_STRING=mongodb://admin:admin@localhost:27017/aihub",
+        "-e",
+        "MDB_MCP_READ_ONLY=true",
+        "mongodb/mongodb-mcp-server:latest"
+      ]
+    },
+    "aihub_api": {
+      "type": "http",
+      "url": "http://localhost:8000/mcp",
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}
 ```
 
-These scenarios can be written in a configurable way where input can be passed as variables to the test or the same test
-is executed with different values.
-For extensive list of possibilities see the [pytest-bdd documentation](https://pytest-bdd.readthedocs.io/en/stable/)
+:::
 
-Each line the scenario maps to a method in the `test_SystemUnderTest.py` file which might look like this:
+#### :rocket: Using MCP Integration
+
+Once your development environment is running, AI coding assistants that support MCP can automatically discover and use
+these integrations:
+
+- **Query agent execution traces** through Phoenix MCP
+- **Inspect database state** through MongoDB MCP (read-only)
+- **Test API endpoints** through AI-Hub API MCP
+- **Debug complex issues** with full development context
+
+::: tip AI Assistant Setup
+Ensure your AI coding assistant (Claude Code, Gemini CLI, etc.) is configured to use the `.mcp.json` file. Most modern
+AI assistants will automatically detect and use this configuration when present in the project root.
+:::
+
+### :hammer_and_wrench: Development Tools & Slash Commands
+
+The AI-Hub includes several slash commands (located in `.claude/commands/`) that streamline common development
+workflows:
+
+- **`/create-pr`**: Pre-pull request validation and preparation
+- **`/update-doc`**: Documentation synchronization and updates
+- **`/document-decisions`**: ADR creation and management
+- **`/document-feature`**: Create documentation for a described feature
+- **`/explain`**: Explains and documents a specific part of the codebase
+- **`/implement-feedback-from-pr`**: Systematic PR feedback implementation
+
+::: info AI Assistant Context Files
+Each scope contains `CLAUDE.md` and `GEMINI.md` files that reference the respective README files. These provide AI
+assistants with proper context about each component's purpose and architecture.
+:::
+
+## 4. :clipboard: Project Governance & Work Management
+
+This chapter outlines the rules and processes that govern contributions, technical decision-making, and how development
+work is managed across the project.
+
+### :chart_with_upwards_trend: Work Management (Roadmap & Kanban)
+
+The AI-Hub ecosystem uses two main GitHub Projects to manage development and high-level planning. All interactions can
+be performed via the GitHub CLI (`gh`).
+
+#### High-Level Planning: `aihub-roadmap`
+
+The `aihub-roadmap` project focuses on high-level planning, covering both customer projects and larger initiatives for
+the AI-Hub core. Here you will find general project information, goals, and ongoing documentation related to major
+initiatives.
+
+::: details :chart_with_upwards_trend: Roadmap Access
+**URL**: `https://github.com/orgs/bbvch-ai/projects/7`
+
+**View the roadmap via CLI**:
+
+```bash
+# View high-level details of the roadmap project
+gh project view 7 --owner bbvch-ai
+
+# List all items in the roadmap
+gh project item-list 7 --owner bbvch-ai
+```
+
+:::
+
+#### Daily Work: `aihub` Kanban Board
+
+While high-level context lives in the roadmap, actual development tasks are tracked in the `aihub` Kanban Board. Tasks
+on this board are always linked back to a corresponding item in the `aihub-roadmap` to ensure traceability.
+
+The board uses three primary status columns: **To Do**, **In Progress**, and **Done**. When you begin work on a task,
+assign it to yourself and move it from "To Do" to "In Progress". Once complete, move it to "Done".
+
+::: details :clipboard: Kanban Board Access
+**URL**: `https://github.com/orgs/bbvch-ai/projects/2`
+
+**Interact with the board via CLI**:
+
+```bash
+# List all open issues on the Kanban board that are assigned to you
+gh issue list -R "bbvch-ai/aihub-core" -a "@me" -S "project:bbvch-ai/2"
+
+# View the details and comments of a specific issue
+gh issue view <issue_number> -c -R "bbvch-ai/aihub-core"
+```
+
+:::
+
+### :memo: Architectural Decision Records (ADRs)
+
+To ensure our architecture evolves consistently, all significant technical decisions are documented using an
+Architectural Decision Record (ADR) process.
+
+#### Consultation Protocol
+
+::: danger :stop_sign: Required Reading
+Before you make any "significant change," you **must** consult the existing ADRs located in `aihub_doc/arc42/decisions/`
+to ensure your change does not conflict with a past decision. A significant change includes adding major dependencies,
+introducing new tools, or altering fundamental architectural patterns.
+:::
+
+#### Documentation Protocol
+
+If your task requires a new significant decision, you **must** document it by creating a new ADR file in the same
+directory.
+
+::: details :memo: ADR Template
+**Naming Convention**: `YYYY_MM_DD_short-decision-summary.md`
+
+**Template**: Use the following markdown template for the new ADR file.
+
+```markdown
+# Title of the Decision
+
+A clear, concise title. Example: "Adopt Redis for Caching"
+
+## Context
+
+Describe the problem or situation that necessitates this decision. What is the technical or business context?
+
+## Decision Drivers
+
+List the key forces influencing your decision as bullet points. These are the "whys".
+
+## Decision
+
+State your decision clearly and unambiguously. Describe exactly what you have chosen to do.
+
+## Consequences
+
+Describe the results of your decision. List both positive outcomes and any potential negative trade-offs.
+```
+
+:::
+
+-----
+
+## 5. :evergreen_tree: Git & GitHub Workflow
+
+This chapter outlines the rules and processes for source code management, including branching, commit conventions, and
+pull request procedures.
+
+### :herb: Branching Strategy
+
+To maintain a clean and manageable repository, we follow a simple branching strategy.
+
+::: info :herb: Branch Structure
+
+* **`main` branch**: This is the single long-lived branch, which represents the stable, main line of development.
+
+* **Feature branches**: All new work, including features, fixes, and chores, must be done on short-lived branches. These
+  branches are created from `main` and merged back into `main` via a pull request. Branch names **must** follow this
+  pattern:
+
+    * `type/short-description`
+
+  Where `type` must be one of `feat`, `fix`, `chore`, `test` or `doc`.
+
+    * Example feature branch: `feat/new-agent-workflow`
+    * Example fix branch: `fix/login-bug-incorrect-redirect`
+      :::
+
+### :label: Conventional Commits & Pull Request (PR) Titles
+
+Both commit messages and Pull Request (PR) titles **must** follow
+the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification. This ensures a clear and
+descriptive history that can be easily parsed.
+
+The format is: `<type>(<scope>): <subject>`
+
+::: details :label: Format Specification
+
+* **`type`**: Must be one of: `fix`, `feat`, `test`, `doc`, `chore`.
+* **`scope`**: Describes what part of the codebase is affected, such as a package name, customer, or initiative (e.g.,
+  `aihub`, `api`, `bbv`).
+* **`subject`**: A short, imperative-tense description of the change.
+  :::
+
+::: tip :memo: Examples
+
+* `fix(aihub): Fix bug where old messages can't be edited anymore`
+* `feat(ci-cd): Add new feature to ci-cd pipeline`
+  :::
+
+### :computer: GitHub CLI Integration
+
+All GitHub-related operations should be performed using the GitHub CLI (`gh`) tool rather than the web interface. This
+ensures consistency and enables automation.
+
+::: details :computer: Common GitHub CLI Commands
+**Create a Pull Request**:
+
+```bash
+# Create a new PR with a title and body
+gh pr create --title "feat(api): Add new endpoint for user profiles" --body "This PR introduces..."
+```
+
+**View Pull Requests**:
+
+```bash
+# See the current status of all PRs in the repository
+gh pr status
+
+# List all PRs that you have authored
+gh pr list --author "@me"
+```
+
+**Review a Pull Request**:
+
+```bash
+# Check out a PR locally to test it
+gh pr checkout <pr_number>
+
+# View the details and changes of a PR in the terminal
+gh pr view <pr_number> --web
+
+# Approve a PR
+gh pr review <pr_number> --approve --body "LGTM!"
+```
+
+**Merge a Pull Request**:
+
+```bash
+# Merge a PR after it has been approved and all checks have passed
+gh pr merge <pr_number> --squash
+```
+
+:::
+
+### :lock: Branch Protection Rules
+
+::: warning :shield: Protected Branch
+To ensure the stability and integrity of our codebase, the `main` branch is protected by the following rules.
+:::
+
+::: details :shield: Protection Rules
+
+* **Require a Pull Request Before Merging**: All changes must be made through a pull request. Direct pushes to `main`are
+  blocked.
+    * **Required Approvals**: At least **one** approving review is required before merging.
+    * **Dismiss Stale Approvals**: When new commits are pushed to the branch, previous approvals are dismissed and a new
+      review is required.
+    * **Require Conversation Resolution**: All comments and discussions on the PR must be resolved before merging.
+* **Require Linear History**: This rule disallows merge commits, keeping the repository history clean and easy to
+  follow.
+* **Allowed Merge Method**: Only **Squash Merging** is enabled. This means all commits from a feature branch are
+  squashed into a single commit when merged into `main`. This keeps the history of the `main` branch concise and linear.
+* **Block Force Pushes and Deletions**: Force pushing to `main` is denied to preserve commit history. Deleting the`main`
+  branch is also restricted.
+  :::
+
+-----
+
+## 6. :test_tube: Testing In-Depth
+
+This chapter describes the testing frameworks and philosophies used in the AI-Hub project. While comprehensive testing
+is a core part of our development cycle, we do **not** follow a strict Test-Driven Development (TDD) methodology.
+
+### :checkered_flag: Pytest & Markers
+
+::: info :test_tube: Test Structure
+**`pytest`** is the standard testing framework for the AI-Hub project. Tests are located in a `tests` directory at the
+same level as the code being tested. All test files must be prefixed with `test_`, such as`test_<unit_being_tested>.py`.
+:::
+
+::: info :label: Test Markers
+To better categorize tests, we use `pytest` markers. This allows us to selectively run or exclude certain types of
+tests. Common markers include:
+
+* `azure`
+* `self_hosted`
+* `slow`
+* `integration`
+  :::
+
+### :cucumber: Behavior-Driven Development (BDD) with pytest-bdd
+
+For testing agent and process workflows, we try to use **Behavior-Driven Development (BDD)** with the `pytest-bdd`
+plugin. BDD provides a structured way to write tests that are easily understandable by both technical and non-technical
+team members.
+
+::: warning :warning: Async Testing Limitation
+However, `pytest-bdd` does not fully support `async` testing, which can be clumsy. Therefore, for truly asynchronous
+tests, we often fall back to using **`pytest` directly**.
+:::
+
+::: details :gear: How It Works
+The BDD process involves two main components:
+
+1. **Feature Files**: Written in Gherkin syntax (`.feature`), these files describe a feature and its scenarios in plain
+   English. They are located in the `tests/features/` directory.
+2. **Step Definitions**: These are Python functions that implement the steps defined in the feature files. They use
+   decorators like `@given`, `@when`, and `@then` to link the code to the Gherkin steps.
+
+Tests are structured into three parts: `Given` (setup), `When` (execute), and `Then` (assert).
+:::
+
+::: tip :bulb: Why We Use BDD
+When possible, we favor BDD for several key reasons:
+
+* **Readable Tests**: Scenarios written in plain language allow non-technical stakeholders to validate requirements.
+* **Reusability**: Step definitions can be shared across multiple scenarios, which reduces code duplication.
+* **Faster Iterations**: New test cases can often be added by writing new Gherkin scenarios without needing new Python
+  code.
+* **Closer Collaboration**: The process encourages collaboration between business, QA, and development teams.
+  :::
+
+-----
+
+## 7. :pencil2: Code Conventions
+
+Adherence to a consistent coding standard is critical for maintaining the quality, readability, and long-term
+maintainability of the AI-Hub codebase. The following conventions are not optional; they are strictly enforced by our
+CI/CD pipelines.
+
+### :art: Formatting, Linting, and Type Checking
+
+We use a specific set of tools to automate code formatting, enforce style rules, and perform static analysis.
+
+::: details :black_circle: Code Formatter: Black
+**Rule**: All Python code is formatted using the `black` code formatter.
+**Configuration**: The line length is set to **120 characters**. No other configuration is changed from the default.
+:::
+
+::: details :zap: Linter: Ruff
+**Rule**: We use `ruff` for high-performance linting and import sorting.
+**Configuration**: We enforce a specific set of rules: `select = ["E", "F", "UP", "I"]`.
+
+* `E`/`F`: Catches errors and warnings from Pyflakes (e.g., unused imports, undefined names).
+* `UP`: Includes rules from `pyupgrade` to enforce modern Python syntax.
+* `I`: Enforces import sorting, handled automatically by Ruff.
+  :::
+
+::: details :mag: Static Type Checker: MyPy
+**Rule**: We use `mypy` for static type checking to catch type-related errors before runtime.
+**Configuration**: Type checking is run in `strict = true` mode, which enforces the highest level of type safety.
+:::
+
+### :hammer: Enforcement via Makefile
+
+::: danger :rotating_light: Critical Commands
+While these checks run automatically in our CI pipeline, you **must** run them locally before committing your code. Each
+scope (and the root directory) contains a `Makefile` with the necessary commands. Always run these from within an
+activated Poetry shell.
+
+* `make format`: Formats all code in the current scope using **Black**.
+* `make lint`: Lints all code using **Ruff** and runs **MyPy** for type checking.
+* `make pr-ready`: This is the **most important command**. It runs both `make format` and `make lint` with auto-fixing
+  capabilities (`ruff check --fix`). Run this command to ensure your code is 100% compliant before creating a pull
+  request.
+  :::
+
+### :abc: Naming Conventions
+
+::: info :snake: Snake Case Rules
+
+* **Files and Directories**: All Python files and directory names must use `snake_case`.
+    * Example file: `agent_workflow_manager.py`
+    * Example directory: `workflow_steps`
+* **Test Files**: All test files must be prefixed with `test_` and follow the `snake_case` convention.
+    * Example: `test_agent_workflow_manager.py`
+      :::
+
+::: info :camel: Camel Case Rules
+* **Classes**: All class names must use `CamelCase`.
+    * Example: `AgentWorkflowManager.py`, `ProcessExecutor.py`, `UserIdentity.py`
+:::
+
+### :speech_balloon: Docstrings and Comments
+
+::: tip :speech_balloon: Documentation Best Practices
+**Docstrings**: All public modules, classes, methods, and functions **must** have a multi-line docstring that clearly
+explains their purpose, context, and usage. This is crucial for maintainability and for others to understand your code.
 
 ```python
-@given("a SimpleAgent runner", target_fixture="agent_runner")
-def _():
-    return AgentTestRunner(
-        agent_class=SimpleAgent,
-        agent_config=SimpleAgentConfig(
-            agent_id="simple_agent",
-            agent_class=SimpleAgent.__name__,
-            name=LocaleString(en="Simple Agent"),
-            description=LocaleString(en="This is a very simple agent"),
-        ),
-    )
+class AgenticProcess:
+    """
+    Manages the lifecycle of an agentic process from instantiation to completion.
 
-
-@when(parsers.parse('a the start event is sent with payload "{payload}"'))
-@async_test
-async def _(agent_runner: AgentTestRunner, payload: str):
-    async with agent_runner.test_run() as topic:
-        await agent_runner.send_event_from_topic(
-            start_event=UserMessageEvent(messages=[ChatMessage(content=payload, role=MessageRole.USER)]),
-            topic=topic,
-        )
-
-
-@then(parsers.parse('a StartEvent is present with payload "{payload}"'))
-def _(agent_runner: AgentTestRunner, payload: str):
-    assert agent_runner.has_start_event, "Agent did not receive start event"
+    This class orchestrates the flow of events between different actors (agents, humans, programs)
+    and ensures that the process adheres to its predefined workflow definition.
+    """
 ```
 
-We see that all tests are structured into three parts:
+**Comments**: Comments should explain the **why**, not the **what**. Write your code to be as self-documenting as
+possible, and use comments only to clarify complex logic, business rules, or the reasoning behind a specific
+implementation choice.
 
-- `given`: setup the test environment
-- `when`: execute behaviour that is tested
-- `then`: check if the behaviour was executed correctly
+```python
+# Incorrect: "what" the code does
+# Increment the counter
+i += 1
 
-  > ☝ **Note: Test can have multiple steps of the same type! **  
-  > It can occur or even is encouraged to have multiple steps of the same type (`given`, `when`, `then`) in the
-  > same scenario. This allows to have the steps as atomic as possible which makes it easier for the steps to be
-  > reused in different scenarios.
+# Correct: "why" the code does it
+# We must wait for the event to propagate before proceeding to avoid a race condition.
+await asyncio.sleep(0.1)
+```
 
-### 3.2.4 Why we use bdd testing
+:::
 
-- **Readable Tests**: Scenarios in plain English let non-technical stakeholders validate requirements.
-- **Reusability**: Step definitions can be shared across multiple scenarios, reducing duplicate test code.
-- **Faster Iterations**: New test cases often require no new Python code—just add new scenarios in the feature file.
-- **Closer Collaboration**: Encourages collaboration between business, QA, and development.
+### :label: Type Annotations
 
-# 4 Package Management
+Strict and specific type hints are mandatory.
 
-## 4.1 Package structure
+::: tip :label: Type Annotation Guidelines
+**Rule**: All variables, function arguments, and return values must have type annotations.
 
-The AI hub consists of multiple packages:
+**Style**: Use modern standard library types where possible (e.g., `list[int]` instead of `typing.List[int]`, and
+`int | None` instead of `typing.Optional[int]`).
 
-- `aihub_agents`: Contains common code for agent development
-- `aihub_api`: Contains common code for API implementation
-- `aihub_bot`: Contains common code for bot development
-- `aihub_pipeline`: Contains common code pipeline development
-- `aihub_lib`: Contains code relevant for multiple packages of above
+**Advanced Types**: For more complex scenarios, use the advanced types available in the `typing` module, such as
+`Annotated`, `TypeVar`, and `Generic`.
 
-This means that the `aihub_lib` package is used by all other packages.
-
-All our packages have versions which are increased in sync with the tags in the repository.
-This means that the version is increased with every merge into the main branch.
-
-### 4.2 Referencing
-
-By default, the referencing is done by referencing to the `aihub_lib` package by the git url in the `pyproject.toml`
-file.
-This is done to allow to tag git commits as versions of the package using tags.
-As we expect that changes in the `aihub_lib` package are done in sync with the other packages we are aware
-that for local development one might want to reference the local package instead of the git repository.
-This can be done by using `make use-local-core` which switches the reference to the local package.
-
-#### 4.2.1 Deployment
-
-For deployment (of customer projects) the referencing is adjusted to reference the package from the github repo
-and specifying the version by the tag.
-
-# 5 Additional Infos
-
-## Key Features
-
-1. **Specialized AI Agents**: Unlike generic AI tools, AI-Hub focuses on providing targeted, controlled, and
-   high-quality AI-assisted support in specific areas through specialized agents.
-
-2. **Collaborative AI**: AI-Hub enables collaboration between different AI agents, supporting cross-disciplinary
-   approaches and creating swarm intelligence.
-
-3. **Context-Aware Agents**: AI-Hub agents are equipped with extensive contextual knowledge, minimizing the need for
-   detailed prompts from users.
-
-4. **Flexible Integration**: The platform can work with multiple Large Language Models (LLMs) such as Azure Open AI,
-   OpenAI ChatGPT, Gemini, and LLama.
-
-5. **Enhanced Privacy and Security**: AI-Hub can be configured to run entirely within a company's IT infrastructure or
-   in a secure Swiss cloud environment.
-
-6. **Customizable and Scalable**: The platform allows for deep integration into existing business processes and systems,
-   with the ability to scale as needed.
-
-## Technical Aspects
-
-### Architecture
-
-- AI-Hub is built on a flexible architecture that can integrate with various LLMs and vector databases.
-- It uses a custom Business Logic Application to extract information from and perform actions in various systems.
-- The frontend is designed for seamless dialogue between employees and AI agents.
-
-### Key Components
-
-1. **Vector Databases**: Support for Azure Cognitive Search, Weaviate, Pinecode, and Milvus.
-2. **LLM Integration**: Flexible integration with multiple LLMs, allowing for optimal model selection based on specific
-   use cases.
-3. **Retrieval-Augmented Generation (RAG)**: Enables cataloging and provision of company-internal knowledge.
-4. **Agent Capabilities**: Internet research, speech processing, speech response generation, and integration with
-   company-specific interfaces.
-
-### Security and Data Protection
-
-- Role-Based Access Control (RBAC) for securing data in vector databases and agents.
-- Integration with Azure Active Directory for additional security layers.
-- Option for data anonymization to protect user privacy while enabling full data analysis and processing.
-
-### Optimization Strategies
-
-- Specialized system prompts and agent-level optimization.
-- Few-Shot Learning techniques for context-specific responses.
-- Optimized data ingestion into vector databases, including structured information and additional context.
-
-## Features
-
-| Feature            | Description                                                            | Availability                                                         |
-|--------------------|------------------------------------------------------------------------|----------------------------------------------------------------------|
-| prompt_enhance     | User can improve the prompt by clicking the magic-Wand                 | Switzerland North, Dependent on LLM-Model (currently GPT3 (13.8.24)) |
-| prompt_library     | Use can access a list of pre-written prompts that are globally defined | Always                                                               |
-| voice_input        | user can input prompt by voice                                         | US East, Whisper (13.8.24)                                           |
-| voice_output       | User can let the app read the messages as voice                        | Switzerland North, Speech Service (13.8.24)                          |
-| tracing            | The Interactions and agent behaviour is traces and reported to phoenix | Always                                                               |
-| usage_limits       | usage limits are visible int he frontend                               | Always                                                               |
-| chat_export_import | chat can be exported and imported                                      | Always                                                               |
-
-## Tech-Stack
-
-### Base Technologies
-
-| Category                        | Technology Used                             | Description                                                                                                                                                                                                               | Alternatives                            |
-|---------------------------------|---------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------|
-| Python AI Framework             | [Llama-Index](https://www.llamaindex.ai/)   | A rapidly evolving framework for using AI capabilities. It is very close to the research and quickly adapts new approaches. Downside: Because it develops so quickly, there are regular major changes and sometimes bugs. | [Langchain](https://www.langchain.com/) |
-| Tracing                         | OpenTelemetry                               | OpenTelemetry is an observability framework for cloud-native software, providing APIs, libraries, agents, and other integration components to capture distributed traces and metrics.                                     | ...                                     |
-| Tracing Explorer                | [Arize Phoenix](https://phoenix.arize.com/) | A tool for exploring and visualizing distributed traces captured by OpenTelemetry.                                                                                                                                        | ...                                     |
-| Ingestion Pipeline Orchestrator | [Dagster](https://dagster.io/)              | A workflow management system for building and managing complex data processing pipelines.                                                                                                                                 | ...                                     |
-| Version Control System          | GitHub                                      | A web-based platform for version control and collaboration, providing a centralized place for developers to store, track, and manage their code.                                                                          | ...                                     |
-| IDE                             | PyCharm, WebStorm                           | Integrated Development Environments (IDEs) for writing and testing code, offering features like code editing, debugging, and project management.                                                                          | ...                                     |
-| Container Orchestration         | Docker, Docker-Compose                      | Tools for building, deploying, and managing containerized applications, enabling consistent and scalable deployments across different environments.                                                                       | ...                                     |
-| CI/CD                           | GitHub Actions                              | A cloud-based automation platform that allows you to build, test, and deploy your code directly from GitHub.                                                                                                              | ...                                     |
-| Code Quality                    | [SonarCloud](https://sonarcloud.io/)        | A cloud-based code quality and security tool that analyzes your code, identifies issues, and provides insights to improve code quality.                                                                                   | ...                                     |
-| Testing                         | PyTest                                      | A popular Python testing framework that makes it easy to write and run tests for your Python code.                                                                                                                        | ...                                     |
-| Testing (Frontend)              | Playwright                                  | A framework for end-to-end (E2E) testing of web applications, supporting multiple browsers and providing a reliable and fast testing experience.                                                                          | Cypress, Selenium                       |
-| Identity Management             | MSAL / Entra ID                             | Libraries and services for managing user authentication and authorization, ensuring secure access to your applications.                                                                                                   | ...                                     |
-
-### Cloud Technologies
-
-| Category            | Technology Used                        | Description                                                                                                                                                                                                                                                                   | Alternatives |
-|---------------------|----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------|
-| Vector Database     | Azure Cognitive Search                 | Azure Cognitive Search is a cloud-based search service that provides full-text, numerical, and faceted search capabilities over structured and unstructured data. It is used to store and index vector representations of data, enabling efficient similarity-based searches. | ...          |
-| LLM                 | GPT Models, Open Source LLaMA, Mistral | Azure provides access to various large language models (LLMs), including GPT models, the open-source LLaMA models, and the Mistral model. These LLMs are used for natural language processing tasks such as text generation, question answering, and language understanding.  | ...          |
-| Database            | Cosmos MongoDB (Azure)                 | The agent definitions are stored in an Azure Cosmos DB MongoDB database, which is a fully managed, globally distributed, and highly available NoSQL database service.                                                                                                         | ...          |
-| Backend Server      | Azure App Service                      | The backend server is deployed on Azure App Service, a fully managed platform for building, deploying, and scaling web applications and APIs.                                                                                                                                 | ...          |
-| Frontend Host       | Azure Static Web App                   | The frontend of the application is hosted on Azure Static Web Apps, a fully managed service that automatically builds and deploys full-stack web apps from a GitHub repository.                                                                                               | ...          |
-| Voice Input         | Azure Speech Service                   | The Azure Speech Service is used to enable voice input functionality, allowing users to interact with the application using speech recognition.                                                                                                                               | ...          |
-| Voice Output        | Azure Speech Service                   | The Azure Speech Service is also used to generate speech output, enabling the application to provide audio responses to users.                                                                                                                                                | ...          |
-| Chatbot Integration | Azure Bot Service                      | The Azure Bot Service is used to implement Chatbots over a multitude of Channels (e.g. Slack, MS Teams, WebChat)                                                                                                                                                              | ...          |
-
-### OnPrem Technologies
-
-| Category                       | Technology Used     | Description                                                                                                                                                                                                                                                                                                                                             | Alternatives |
-|--------------------------------|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------|
-| Vector Database (On-Premises)  | Milvus              | Milvus is an open-source, highly reliable, and scalable vector database used for efficient storage and retrieval of high-dimensional vector data. It is well-suited for applications that require fast similarity searches, like recommendation systems, image/text search, and natural language processing.                                            | ...          |
-| Vector Database (On-Premises)  | PG-vector           | PG-vector is plugin for Postgres Databases which are open-source, highly reliable, and scalable. This converts postgres DB to vector database used for efficient storage and retrieval of high-dimensional vector data. It is well-suited for applications that already make use of postgres.                                                           | ...          |
-| LLM (On-Premises)              | LLaMA, Mistral, Phi | LLaMA, Mistral, and Phi are large language models (LLMs) that can be deployed on-premises, enabling organizations to leverage the power of advanced natural language processing capabilities within their own infrastructure. These models can be used for a variety of tasks, such as text generation, question answering, and language understanding. | ...          |
-| LLM Server                     | llama.cpp, vllm     | llama.cpp and vllm are open-source projects that provide server-based deployment of large language models, allowing organizations to integrate these models into their applications and services without the need to manage the underlying infrastructure.                                                                                              | ...          |
-| Database (NOSQL) (On-Premises) | MongoDB             | MongoDB is a popular NoSQL database used for storing the definitions of the agents, which are the autonomous entities that interact with users or other systems within the application.                                                                                                                                                                 | ...          |
-| Database (SQL) (On-Premises)   | Postgres            | Postgres is an opensource SQL DB that can be run in Docker containers                                                                                                                                                                                                                                                                                   | ...          |
-| Voice Input (On-Premises)      | Whisper.cpp         | Whisper.cpp is an open-source speech recognition model developed by OpenAI, which can be deployed on-premises to enable voice input capabilities within the application. This allows users to interact with the system using voice commands or dictation.                                                                                               | ...          |
-| App-Environment                | Docker              | For creating reproducible Application Environments Docker containers are used.                                                                                                                                                                                                                                                                          | ...          |
+```python
+from typing import Annotated
+from fastapi import Depends
 
 
+# Good example demonstrating modern type hints and advanced usage
+async def get_user_data(
+        user_id: int | None,
+        token: Annotated[str, Depends(oauth2_scheme)]
+) -> UserDto:
+    """Fetches user data based on an ID and an authentication token."""
+    if user_id is None:
+        raise ValueError(...)
+    # ... logic to fetch data
+    return UserDto(user_id=user_id, name="Example User")
+```
 
+**Complex types**: Avoid dicts or complex types like `tuple[str, int, list[float]]` at all costs. Always create pydantic
+objects or dataclasses to hold complex data structures.
+
+**Let things fail**: Do not catch errors and return none. Instead, if a function or method can't generate its output, it
+shall fail.
+:::
+
+-----
+
+## 8. :repeat: The Core Development Cycle
+
+This chapter outlines the standard, step-by-step process for every development task. Following this cycle ensures that
+all work is done consistently, contextually aware, and meets our quality standards.
+
+### :mag: Step 1: Understand the Goal and Context
+
+::: tip :dart: Start with Context
+Every development task begins with a clear goal, typically provided as a GitHub issue number. You must first understand
+the task's requirements and its place within the broader project roadmap.
+:::
+
+::: info :link: Task Linking
+Your task's issue title will often contain a prefix in brackets (e.g., `[process]`) that links it to a larger initiative
+on the `aihub-roadmap`. You can view the roadmap using the `gh` CLI:
+:::
+
+::: tip :mag: View High-Level Initiatives
+
+```bash
+gh project item-list 7 --owner bbvch-ai --limit 100
+```
+
+This command will show the high-level initiatives:
+
+```
+> Issue  🗺️ Infrastructure [infra]                             375      bbvch-ai/aihub-core  PVTI_lADOCmtSJM4ArqDTzgbcrk4
+> Issue  🗺️ Spike Container Deployment [container]             422      bbvch-ai/aihub-core  PVTI_lADOCmtSJM4ArqDTzgcQbYQ
+> Issue  🗺️ Agentic Process Automation [process]               442      bbvch-ai/aihub-core  PVTI_lADOCmtSJM4ArqDTzgcTfWw
+```
+
+By fetching the main initiative issue (e.g., \#442), you can gain more insight into the overall goal and see how your
+specific task fits in with related issues.
+
+```bash
+gh issue view 442 -c -R "bbvch-ai/aihub-core"
+```
+
+This gives you the context and a checklist of related tasks, helping you to understand the full picture before you
+begin.
+:::
+
+### :broom: Step 2: Prepare Your Workspace
+
+Before writing any code, check your local environment.
+
+::: info :gear: Workspace Preparation
+
+1. **Check your current branch**. If you are on `main`, create a new branch that follows the naming convention outlined
+   in Chapter Git & GitHub Workflow (e.g., `feat/new-process-feature`).
+2. **Review existing work**. If you are already on a feature branch, run `git diff main...` to see what changes have
+   already been made on that branch.
+   :::
+
+### :bulb: Step 3: Plan and Implement Your Solution
+
+::: tip :bulb: Implementation Steps
+
+1. **Plan your implementation**. Think through the changes you need to make before writing code.
+2. **Choose the correct scope**. It is critical that you place your code in the correct package (`aihub_lib`,
+   `aihub_agent`, `aihub_api`, etc.). If code is used by more than one service, it belongs in `aihub_lib`.
+3. **Write the code**. As you implement your solution, rigorously follow all rules defined in the Chapter **Code
+   Conventions**.
+   :::
+
+### :white_check_mark: Step 4: Verify Code Quality
+
+Once you have a working implementation, you must run our automated formatting and linting tools to ensure your code is
+100% compliant with our standards.
+
+::: tip :white_check_mark: Quality Check
+From within the activated Poetry shell of the scope you worked on, run:
+
+```bash
+make pr-ready
+```
+
+This command will automatically format your code and report any linting or type errors that need to be fixed.
+:::
+
+### :test_tube: Step 5: Write and Run Tests
+
+Our approach to testing is pragmatic.
+
+::: tip :test_tube: Pragmatic Testing Approach
+
+* **Writing new tests**: You are not required to write tests for every change, as we do not aim for 100% test coverage.
+  However, if it is easy and straightforward to write a test for your new code, you should do so. Only write complex
+  tests if you are specifically instructed to.
+* **Running all tests**: Whether you have written a new test or not, you **must** run the entire local test suite to
+  ensure your changes have not broken any existing functionality. Tests must always pass before you consider your work
+  complete.
+  :::
+
+::: tip :test_tube: Run Tests
+To run the local test suite, use the command:
+
+```bash
+make test
+```
+
+:::
+
+-----
+
+## 9. :books: Documentation and Self-Improvement
+
+A key principle of the AI-Hub project is that documentation must evolve with the code. This chapter outlines our
+documentation philosophy and the process every developer must follow to ensure our documentation remains accurate,
+helpful, and up-to-date.
+
+### :thought_balloon: Documentation Philosophy
+
+We follow a **README.md-only** documentation principle. All project documentation resides in one of two places:
+
+::: info :two: Two Documentation Types
+
+1. **Code Docstrings**: For documentation that is specific to a single class, method, or function, we use detailed
+   docstrings directly in the implementation file. This is the most common form of documentation.
+2. **README.md Files**: For documentation that holds true for a larger part of the codebase (a specific folder, a scope,
+   or the entire project), we use `README.md` files.
+   :::
+
+::: tip :file_folder: Hierarchical Structure
+These README files are hierarchical. A `README.md` can exist at the project root, within each scope (e.g.,
+`aihub_agent/README.md`), or even in nested sub-folders. This allows us to provide context at the most appropriate
+level.
+
+It is critical that these files are kept up-to-date and are well-written, as we use them to automatically generate a
+developer documentation site with VuePress.
+:::
+
+### :arrows_clockwise: The Self-Improvement Protocol
+
+::: danger :warning: Mandatory Step
+This is the final, critical step of the development cycle. Before you consider a task complete, you **must** reflect on
+your work and its impact on the documentation. This is not optional; it is essential for the long-term health of the
+project.
+:::
+
+::: details :question: Self-Reflection Questions
+After implementing your changes, ask yourself the following questions:
+
+* **Does my change make existing documentation inaccurate?**
+  If your code change implies that a section in a `README.md` is now out of date or incorrect, you must adapt that
+  section of the
+  README to align with your changes.
+
+* **Is there missing information that would have helped me?**
+  If you had to discover important information on your own that was not documented, you must add it. Either extend an
+  existing `README.md` or create a new one at the appropriate level (folder, scope) to share this knowledge.
+
+* **Did the documentation conflict with the code?**
+  If you found information in a `README.md` that was wrong, you must correct or remove it. In this project, the **code
+  is always the ground truth.**
+  :::
+
+-----
+
+## 10. :book: Technical Reference
+
+This chapter provides a reference for the project's package management strategy and the technologies used in the stack.
+
+### :package: Package Management & Versioning
+
+::: details :package: Package Structure
+The AI Hub consists of multiple packages that handle specific functionalities:
+
+* `aihub_agent`: Contains common code for agent development.
+* `aihub_api`: Contains common code for API implementation.
+* `aihub_bot`: Contains common code for bot development.
+* `aihub_pipeline`: Contains common code for pipeline development.
+* `aihub_process`: Contains common code for process development.
+* `aihub_lib`: A foundational library containing code that is relevant for multiple other packages. The `aihub_lib`
+  package is used by all other packages.
+  :::
+
+::: tip :label: Versioning and Referencing
+All packages have versions that are increased in sync with the tags in the repository. This means a package's version is
+updated with every merge into the main branch.
+
+By default, packages reference `aihub_lib` via its Git URL in the `pyproject.toml` file, which allows versioning to be
+handled by Git tags. For local development, it is possible to switch to a local version of the core library by running
+the command `make use-local-core`. For deployment, the reference is switched back to the GitHub repository, specifying
+the version by its tag.
+:::
 
