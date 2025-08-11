@@ -1,8 +1,8 @@
 # Build stage
-FROM python:3.11-slim AS builder
+FROM python:3.13-slim AS builder
 
 ARG AGENT=llm_wrapping_agent
-
+ARG VERSION
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -51,10 +51,11 @@ RUN rm -rf ~/.cache/pypoetry ~/.cache/pip /tmp/poetry_cache
 
 
 # Runtime stage
-FROM python:3.11-slim AS runtime
+FROM python:3.13-slim AS runtime
 
 ARG AGENT=llm_wrapping_agent
 ENV AGENT_NAME=${AGENT}
+ARG VERSION
 
 
 # Set environment variables
@@ -66,7 +67,8 @@ ENV PYTHONUNBUFFERED=1 \
     POETRY_VIRTUALENVS_CREATE=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache \
     PYTHONPATH=/app \
-    PATH="/app/.venv/bin:/opt/poetry/bin:$PATH"
+    PATH="/app/.venv/bin:/opt/poetry/bin:$PATH" \
+    AIHUB_AGENT_VERSION=${VERSION}
 
 # Setup users
 ARG USERNAME=user

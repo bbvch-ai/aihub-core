@@ -1,9 +1,9 @@
 # syntax = docker/dockerfile:1.2
-
 # Build stage
-FROM python:3.11-slim AS builder
+FROM python:3.13-slim AS builder
 
 ARG PIPELINE=default_rag_pipeline
+ARG VERSION
 
 
 # Set environment variables
@@ -50,10 +50,11 @@ RUN rm -rf ~/.cache/pypoetry ~/.cache/pip /tmp/poetry_cache
 
 
 # --- Runtime stage ---
-FROM python:3.11-slim AS runtime
+FROM python:3.13-slim AS runtime
 
 ARG PIPELINE=default_rag_pipeline
 ENV PIPELINE_NAME=${PIPELINE}
+ARG VERSION
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -65,8 +66,8 @@ ENV PYTHONUNBUFFERED=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache \
     PYTHONPATH=/app \
     PATH="/app/.venv/bin:/opt/poetry/bin:$PATH" \
-    DAGSTER_HOME=/dagster_home
-
+    DAGSTER_HOME=/dagster_home \
+    AIHUB_PIPELINE_VERSION=${VERSION}
 # Setup users
 ARG USERNAME=user
 ARG USER_UID=1000
