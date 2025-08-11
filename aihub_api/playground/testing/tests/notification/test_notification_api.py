@@ -42,7 +42,7 @@ async def api_client():
     controller = NotificationController(auth=auth)
     controller.get_notifications().update_notification().update_notifications()
     runner.mount(controller)
-    app = runner.get_app()
+    app = runner.create_app()
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client

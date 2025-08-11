@@ -10,6 +10,7 @@ from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAut
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
 from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler import OpenWebuiAuthHandler
 from aihub_lib.auth.dependencies.SuperuserAuthHandler.SuperuserAuthHandler import SuperuserAuthHandler
+from aihub_lib.auth.dependencies.SuperuserAuthHandler.SuperuserSettings import SuperuserSettings
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.auth.identity.AzureIdentityProvider.AzureIdentityProvider import AzureIdentityProvider
 from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
@@ -96,7 +97,8 @@ class TokenAndOauth2Handler(AuthHandler):
 
         config = AuthSettings()
 
-        if config.AUTH_IDENTITY_PROVIDER == "azure":
+        if config.IDENTITY_PROVIDER == "azure":
+            logger.info("Using Azure identity provider")
             identity_provider = AzureIdentityProvider()
             oauth2_handlers.append(
                 OAuth2AuthHandler(identity_provider=identity_provider),
@@ -104,7 +106,8 @@ class TokenAndOauth2Handler(AuthHandler):
         else:
             raise ValueError(f"Unknown identity provider: {config.AUTH_IDENTITY_PROVIDER}")
 
-        if config.ENABLE_SUPERUSER:
+        if SuperuserSettings().ENABLED:
+            logger.info("Using superuser identity provider")
             bearer_handlers.append(
                 SuperuserAuthHandler(identity_provider=SuperuserIdentityProvider()),
             )
@@ -116,6 +119,7 @@ class TokenAndOauth2Handler(AuthHandler):
             )
 
         if config.ENABLE_API_ACCESS:
+            logger.info("Using token identity provider")
             bearer_handlers.append(
                 TokenAuthHandler(identity_provider=TokenIdentityProvider()),
             )

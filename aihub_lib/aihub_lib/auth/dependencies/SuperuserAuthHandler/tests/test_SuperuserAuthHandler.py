@@ -1,8 +1,9 @@
+from unittest.mock import MagicMock
+
 import pytest
 from fastapi import HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials
 from pytest_bdd import given, parsers, scenarios, then, when
-from unittest.mock import MagicMock
 
 from aihub_lib.auth.dependencies.SuperuserAuthHandler.SuperuserAuthHandler import SuperuserAuthHandler
 from aihub_lib.auth.identity.SuperuserIdentityProvider.SuperuserIdentityProvider import SuperuserIdentityProvider
@@ -58,11 +59,11 @@ def mock_bearer_token() -> HTTPAuthorizationCredentials:
 )
 def setup_superuser_config(monkeypatch, name: str, email: str, oid: str, role: str, token: str):
     """Set up the superuser configuration using environment variables."""
-    monkeypatch.setenv("AIHUB_SUPERUSER_NAME", name)
-    monkeypatch.setenv("AIHUB_SUPERUSER_EMAIL", email)
-    monkeypatch.setenv("AIHUB_SUPERUSER_OID", oid)
-    monkeypatch.setenv("AIHUB_SUPERUSER_ROLE", role)
-    monkeypatch.setenv("AIHUB_SUPERUSER_TOKEN", token)
+    monkeypatch.setenv("SUPERUSER_NAME", name)
+    monkeypatch.setenv("SUPERUSER_EMAIL", email)
+    monkeypatch.setenv("SUPERUSER_OID", oid)
+    monkeypatch.setenv("SUPERUSER_ROLE", role)
+    monkeypatch.setenv("SUPERUSER_TOKEN", token)
 
 
 @given(parsers.parse('a bearer token with value "{token_value}"'))
@@ -165,11 +166,11 @@ class TestSuperuserAuthHandler:
     async def test_authenticate_valid_token(self, monkeypatch):
         """Test authentication with a valid superuser token."""
         # Setup environment
-        monkeypatch.setenv("AIHUB_SUPERUSER_NAME", "Super Admin")
-        monkeypatch.setenv("AIHUB_SUPERUSER_EMAIL", "admin@example.com")
-        monkeypatch.setenv("AIHUB_SUPERUSER_OID", "admin-123")
-        monkeypatch.setenv("AIHUB_SUPERUSER_ROLE", "AIHubSuperuser")
-        monkeypatch.setenv("AIHUB_SUPERUSER_TOKEN", "secret-token-123")
+        monkeypatch.setenv("SUPERUSER_NAME", "Super Admin")
+        monkeypatch.setenv("SUPERUSER_EMAIL", "admin@example.com")
+        monkeypatch.setenv("SUPERUSER_OID", "admin-123")
+        monkeypatch.setenv("SUPERUSER_ROLE", "AIHubSuperuser")
+        monkeypatch.setenv("SUPERUSER_TOKEN", "secret-token-123")
 
         handler = SuperuserAuthHandler(identity_provider=SuperuserIdentityProvider())
         user = await handler.authenticate_token("secret-token-123")
@@ -182,11 +183,11 @@ class TestSuperuserAuthHandler:
     @pytest.mark.asyncio
     async def test_authenticate_invalid_token(self, monkeypatch):
         """Test authentication with an invalid token."""
-        monkeypatch.setenv("AIHUB_SUPERUSER_TOKEN", "secret-token-123")
-        monkeypatch.setenv("AIHUB_SUPERUSER_NAME", "Super Admin")
-        monkeypatch.setenv("AIHUB_SUPERUSER_EMAIL", "admin@example.com")
-        monkeypatch.setenv("AIHUB_SUPERUSER_OID", "admin-123")
-        monkeypatch.setenv("AIHUB_SUPERUSER_ROLE", "AIHubSuperuser")
+        monkeypatch.setenv("SUPERUSER_TOKEN", "secret-token-123")
+        monkeypatch.setenv("SUPERUSER_NAME", "Super Admin")
+        monkeypatch.setenv("SUPERUSER_EMAIL", "admin@example.com")
+        monkeypatch.setenv("SUPERUSER_OID", "admin-123")
+        monkeypatch.setenv("SUPERUSER_ROLE", "AIHubSuperuser")
 
         handler = SuperuserAuthHandler(identity_provider=SuperuserIdentityProvider())
 
@@ -199,11 +200,11 @@ class TestSuperuserAuthHandler:
     @pytest.mark.asyncio
     async def test_authenticate_empty_token(self, monkeypatch):
         """Test authentication with an empty token."""
-        monkeypatch.setenv("AIHUB_SUPERUSER_TOKEN", "secret-token-123")
-        monkeypatch.setenv("AIHUB_SUPERUSER_NAME", "Super Admin")
-        monkeypatch.setenv("AIHUB_SUPERUSER_EMAIL", "admin@example.com")
-        monkeypatch.setenv("AIHUB_SUPERUSER_OID", "admin-123")
-        monkeypatch.setenv("AIHUB_SUPERUSER_ROLE", "AIHubSuperuser")
+        monkeypatch.setenv("SUPERUSER_TOKEN", "secret-token-123")
+        monkeypatch.setenv("SUPERUSER_NAME", "Super Admin")
+        monkeypatch.setenv("SUPERUSER_EMAIL", "admin@example.com")
+        monkeypatch.setenv("SUPERUSER_OID", "admin-123")
+        monkeypatch.setenv("SUPERUSER_ROLE", "AIHubSuperuser")
 
         handler = SuperuserAuthHandler(identity_provider=SuperuserIdentityProvider())
 
@@ -217,11 +218,11 @@ class TestSuperuserAuthHandler:
     async def test_call_with_valid_bearer(self, monkeypatch, mock_request):
         """Test __call__ method with valid bearer token."""
         # Setup environment
-        monkeypatch.setenv("AIHUB_SUPERUSER_NAME", "Super Admin")
-        monkeypatch.setenv("AIHUB_SUPERUSER_EMAIL", "admin@example.com")
-        monkeypatch.setenv("AIHUB_SUPERUSER_OID", "admin-123")
-        monkeypatch.setenv("AIHUB_SUPERUSER_ROLE", "AIHubSuperuser")
-        monkeypatch.setenv("AIHUB_SUPERUSER_TOKEN", "test-token")
+        monkeypatch.setenv("SUPERUSER_NAME", "Super Admin")
+        monkeypatch.setenv("SUPERUSER_EMAIL", "admin@example.com")
+        monkeypatch.setenv("SUPERUSER_OID", "admin-123")
+        monkeypatch.setenv("SUPERUSER_ROLE", "AIHubSuperuser")
+        monkeypatch.setenv("SUPERUSER_TOKEN", "test-token")
 
         handler = SuperuserAuthHandler(identity_provider=SuperuserIdentityProvider())
 

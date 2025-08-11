@@ -26,7 +26,7 @@ async def api_client():
     controller = OpenaiController(auth=auth).get_models().get_model().get_embeddings().chat_completion()
     runner = ApiTestRunner()
     runner.mount(controller)
-    app = runner.get_app()
+    app = runner.create_app()
 
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:

@@ -26,7 +26,7 @@ class OpenWebuiAuthHandler(BearerAuthHandler):
 
     def _verify_signature(self, signature_to_check: str, user_name: str, user_email: str) -> bool:
         """Verifies the HMAC-SHA256 signature from OpenWebUI headers."""
-        message = f"name:{user_name},email:{user_email}".encode("utf-8")
+        message = f"name:{user_name},email:{user_email}".encode()
         expected_signature = hmac.new(self.signing_secret, message, hashlib.sha256).hexdigest()
         return hmac.compare_digest(expected_signature, signature_to_check)
 
@@ -43,7 +43,8 @@ class OpenWebuiAuthHandler(BearerAuthHandler):
         if not (user_name and user_email and signature):
             raise HTTPException(
                 status_code=400,
-                detail="Required OpenWebUI headers are missing (X-OpenWebUI-User-Name, X-OpenWebUI-User-Email, X-OpenWebUI-Signature).",
+                detail="Required OpenWebUI headers are missing "
+                "(X-OpenWebUI-User-Name, X-OpenWebUI-User-Email, X-OpenWebUI-Signature).",
             )
 
         is_signature_valid = self._verify_signature(signature, user_name, user_email)

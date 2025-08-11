@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import Field, field_validator, computed_field
+from pydantic import Field, computed_field, field_validator
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
@@ -11,8 +11,9 @@ class SuperuserSettings(EnvironmentSettings):
     Configuration for a global superuser that has access to everything.
     """
 
-    model_config = EnvironmentSettings.create_settings_config("AIHUB_SUPERUSER_")
+    model_config = EnvironmentSettings.create_settings_config("SUPERUSER_")
 
+    ENABLED: Annotated[bool, Field(description="Whether the superuser is enabled.")] = True
     NAME: Annotated[str, Field(description="The user's displayed name.")]
     EMAIL: Annotated[
         str,
@@ -26,7 +27,7 @@ class SuperuserSettings(EnvironmentSettings):
             description="A unique OID (Object ID) for the user.",
         ),
     ]
-    ROLE: Annotated[str, Field(description="The role the superuser possesses.")] = ["AIHubSuperuser"]
+    ROLE: Annotated[str, Field(description="The role the superuser possesses.")] = "AIHubSuperuser"
     TOKEN: Annotated[str, Field(description="The superuser's access token.")]
 
     @field_validator("ROLES", mode="before")

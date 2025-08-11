@@ -69,7 +69,7 @@ async def api_client(agent_class, agent_id, mongodb) -> AsyncGenerator[AsyncClie
     )
     runner.mount(controller)
     await runner.start_simulation()
-    app = runner.get_app()
+    app = runner.create_app()
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test") as client:
             yield client

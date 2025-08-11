@@ -36,7 +36,7 @@ def api_client(mongodb):
     runner = ApiTestRunner()
     auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     runner.mount(TokenController(auth=auth).create_token().list_tokens().revoke_token())
-    with TestClient(runner.get_app(), raise_server_exceptions=True) as client:
+    with TestClient(runner.create_app(), raise_server_exceptions=True) as client:
         yield client
 
 

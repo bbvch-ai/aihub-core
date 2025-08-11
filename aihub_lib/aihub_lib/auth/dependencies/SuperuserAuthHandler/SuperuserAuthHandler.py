@@ -32,4 +32,4 @@ class SuperuserAuthHandler(BearerAuthHandler):
         if token_str != SuperuserSettings().TOKEN:
             raise HTTPException(status_code=401, detail="Invalid token.")
 
-        return SuperuserSettings().get_user_identity()
+        return await self._identity_provider.get_user_identity_by_oid(SuperuserSettings().OID)

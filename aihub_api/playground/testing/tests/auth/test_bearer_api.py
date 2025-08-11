@@ -68,7 +68,7 @@ async def token_api_client():
     runner = ApiTestRunner()
     auth = TokenAuthHandler(identity_provider=TokenIdentityProvider())
     runner.mount(UserController(auth=auth).get_my_user())
-    app = runner.get_app()
+    app = runner.create_app()
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client

@@ -38,7 +38,7 @@ TTL_DAYS = 1 / 86400  # 1 second TTL in days
 @pytest.fixture
 def patch_requests_adapter(monkeypatch, test_runner):
     """Patch the request.Session to forward all calls to our test application"""
-    app = test_runner.get_app()
+    app = test_runner.create_app()
     original_session = requests.Session
 
     def session_factory(*args, **kwargs):
@@ -76,7 +76,7 @@ async def test_runner():
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def client(test_runner: SimulatedAgentBotTestRunner):
     """Create an HTTP client for testing"""
-    app = test_runner.get_app()
+    app = test_runner.create_app()
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client
