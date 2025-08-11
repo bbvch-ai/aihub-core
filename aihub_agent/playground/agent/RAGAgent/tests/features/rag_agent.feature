@@ -57,10 +57,10 @@ Feature: RAG Agent
     * a StopEvent is present
 
     Examples:
-    | locale | prompt                                                                                  | query        |
-    | en     | You are a helpful AI assistant. Always respond in English and be very detailed.        | What is AI?  |
-    | de     | Sie sind ein hilfreicher KI-Assistent. Antworten Sie immer auf Deutsch und ausführlich. | Was ist AI?  |
-    | fr     | Vous êtes un assistant IA utile. Répondez toujours en français et soyez complet.       | Qu'est-ce que l'IA? |
+    | locale | prompt                                                                                         | query        |
+    | en     | You are a helpful AI assistant. Always respond in English.              | What is AI?          |
+    | de     | Sie sind ein hilfreicher KI-Assistent. Antworten Sie immer auf Deutsch. | Was ist AI?          |
+    | fr     | Vous êtes un assistant IA utile. Répondez toujours en français.         | Qu'est-ce que l'IA?  |
 
   @self_hosted
   Scenario: Test RAGAgent with valid self hosted configuration
