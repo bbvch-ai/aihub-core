@@ -335,7 +335,7 @@ jobs:
           git push origin --tags --force
 
   notify-release:
-    name: Notify Release Consumers
+    name: Notify Release Dispatch
     needs: [finalize-release, compute-and-initial-tag]
     runs-on: ubuntu-latest
     steps:
