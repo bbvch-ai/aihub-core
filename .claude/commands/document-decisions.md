@@ -4,6 +4,8 @@ You've made some significant changes to the codebase. But did you make any archi
 need to understand? This cookbook guides you through documenting important technical decisions using our ADR (
 Architecture Decision Records) process.
 
+Focus on: $DECISION
+
 ## Overview
 
 Here's your explanation documentation journey:

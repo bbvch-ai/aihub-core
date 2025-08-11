@@ -10,6 +10,7 @@ import logging
 from aihub_lib.auth.dependencies.SuperuserAuthHandler.SuperuserSettings import SuperuserSettings
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
+from aihub_lib.persistence.user.UserEntity import UserEntity
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,9 @@ async def initialize_roles() -> None:
 
     logger.info("Role initialization completed successfully")
 
+    # Initialize superuser if enabled
+    await initialize_superuser()
+
 
 async def initialize_role(name: str, description: str, access_rules: list[str]) -> None:
     """
@@ -95,4 +99,34 @@ async def initialize_role(name: str, description: str, access_rules: list[str]) 
         logger.info(f"Successfully created role '{name}'")
     except Exception as e:
         logger.error(f"Failed to create role '{name}': {e}")
+        raise
+
+
+async def initialize_superuser() -> None:
+    """
+    Initialize the superuser in the database if superuser auth is enabled.
+
+    This function ensures that the superuser account exists in the database
+    when the SuperuserAuthHandler is enabled.
+    """
+    if not SuperuserSettings().ENABLED:
+        logger.info("Superuser is not enabled, skipping initialization")
+        return
+
+    try:
+        settings = SuperuserSettings()
+        user_identity = settings.get_user_identity()
+
+        UserEntity.ensure_user_exists(
+            oid=user_identity.id,
+            name=user_identity.name,
+            email=user_identity.email,
+            roles=user_identity.roles,
+            profile_image=user_identity.profile_image,
+        )
+
+        logger.info(f"Superuser initialization completed for user '{user_identity.name}'")
+
+    except Exception as e:
+        logger.error(f"Failed to initialize superuser: {e}")
         raise
