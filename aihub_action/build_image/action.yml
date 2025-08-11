@@ -25,6 +25,10 @@ inputs:
   ssh_key:
     description: 'ssh key to access private aihub core repository'
     required: false
+  secondary_tag:
+    description: 'secondary tag for the image, besides the release version (e.g., latest, nightly, ...) (default: nightly)'
+    default: 'nightly'
+    required: false
 
 runs:
   using: "composite"
@@ -51,7 +55,7 @@ runs:
             "ssh_key=${{ inputs.ssh_key }}"
         tags: |
           ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:${{ inputs.release_version }}
-          ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:latest
+          ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:${{ inputs.secondary_tag }}
 
     - name: Build and push Docker image
       if: ${{ inputs.ssh_key == '' }}
@@ -66,4 +70,4 @@ runs:
             "ssh_key=${{ inputs.ssh_key }}"
         tags: |
           ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:${{ inputs.release_version }}
-          ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:latest
+          ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:${{ inputs.secondary_tag }}
