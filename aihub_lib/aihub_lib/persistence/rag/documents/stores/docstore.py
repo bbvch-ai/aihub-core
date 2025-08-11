@@ -8,7 +8,7 @@ from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 @cache
 def create_mongo_document_store(document_store_name: str) -> MongoDocumentStore:
     return MongoDocumentStore.from_uri(
-        uri=MongoSettings().CONNECTION_STRING,
+        uri=MongoSettings().CONNECTION_STRING.get_secret_value(),
         db_name=document_store_name,
         namespace="documents",
         node_collection_suffix="-data",

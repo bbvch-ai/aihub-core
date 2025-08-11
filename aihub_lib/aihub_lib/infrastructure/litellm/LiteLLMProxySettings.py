@@ -45,20 +45,20 @@ class LiteLLMProxySettings(EnvironmentSettings):
     @property
     def httpx_client(self) -> httpx.Client:
         return httpx.Client(
-            headers={"Authorization": f"Bearer {self.API_KEY}"},
+            headers={"Authorization": f"Bearer {self.API_KEY.get_secret_value()}"},
             base_url=self.BASE_URL,
         )
 
     @property
     def httpx_aclient(self) -> httpx.AsyncClient:
         return httpx.AsyncClient(
-            headers={"Authorization": f"Bearer {self.API_KEY}"},
+            headers={"Authorization": f"Bearer {self.API_KEY.get_secret_value()}"},
             base_url=self.BASE_URL,
         )
 
     @property
     def openai_aclient(self) -> openai.AsyncClient:
         return openai.AsyncClient(
-            api_key=self.API_KEY,
+            api_key=self.API_KEY.get_secret_value(),
             base_url=self.BASE_URL,
         )

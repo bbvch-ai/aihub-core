@@ -28,7 +28,7 @@ def mongo_connection(monkeypatch) -> Generator[None]:
     """Set up a MongoDB connection for testing and disconnect after."""
     connect(
         db=AIHubSettings().MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING,
+        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
     )
     yield
     disconnect()

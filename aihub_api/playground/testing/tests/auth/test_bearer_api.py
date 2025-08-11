@@ -28,7 +28,7 @@ EXPECTED_USER_FIELDS = ["id", "name", "email"]
 @pytest.fixture(scope="module", autouse=True)
 def mongo_db():
     """Set up and tear down the MongoDB connection for tests."""
-    connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING)
+    connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING.get_secret_value())
     yield
     disconnect()
 

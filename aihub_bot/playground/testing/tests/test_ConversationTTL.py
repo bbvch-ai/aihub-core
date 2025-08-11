@@ -56,7 +56,7 @@ def mongodb_direct_connection():
     # Use a different alias to avoid conflicts
     connect(
         db=AIHubSettings().MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING,
+        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
     )
     yield
     disconnect()

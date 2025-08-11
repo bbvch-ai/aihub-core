@@ -21,7 +21,7 @@ class OpenWebuiAuthHandler(BearerAuthHandler):
         self.app_client_id_for_roles: str | None = self.config.CLIENT_ID
         self.base_auth_handler = base_auth_handler
 
-        secret = AuthSettings().OPEN_WEBUI_SIGNING_SECRET
+        secret = AuthSettings().OPEN_WEBUI_SIGNING_SECRET.get_secret_value()
         self.signing_secret = secret.encode("utf-8")
 
     def _verify_signature(self, signature_to_check: str, user_name: str, user_email: str) -> bool:

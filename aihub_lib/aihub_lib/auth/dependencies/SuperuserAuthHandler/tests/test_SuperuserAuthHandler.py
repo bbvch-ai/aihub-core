@@ -34,7 +34,7 @@ def mock_request() -> Request:
     """Create a mock Request object."""
     scope = {
         "type": "http",
-        "headers": [(b"authorization", b"Bearer test-token")],
+        "headers": [(b"authorization", b"Bearer e78a133a52a97f14bd413a567d53663c70c5fe65d01c9783b0bf72811f774a9e")],
         "method": "GET",
         "path": "/",
     }
@@ -45,7 +45,7 @@ def mock_request() -> Request:
 def mock_bearer_token() -> HTTPAuthorizationCredentials:
     """Create a mock bearer token."""
     token = MagicMock(spec=HTTPAuthorizationCredentials)
-    token.credentials = "test-token"
+    token.credentials = "e78a133a52a97f14bd413a567d53663c70c5fe65d01c9783b0bf72811f774a9e"
     return token
 
 
@@ -170,10 +170,14 @@ class TestSuperuserAuthHandler:
         monkeypatch.setenv("SUPERUSER_EMAIL", "admin@example.com")
         monkeypatch.setenv("SUPERUSER_OID", "admin-123")
         monkeypatch.setenv("SUPERUSER_ROLE", "AIHubSuperuser")
-        monkeypatch.setenv("SUPERUSER_TOKEN", "secret-token-123")
+        monkeypatch.setenv(
+            "SUPERUSER_TOKEN", "secret-token-4f517978885a2bd7b8065be4d16cc422c6d7c37292db9fbc7da23eabc8d35585"
+        )
 
         handler = SuperuserAuthHandler(identity_provider=SuperuserIdentityProvider())
-        user = await handler.authenticate_token("secret-token-123")
+        user = await handler.authenticate_token(
+            "secret-token-4f517978885a2bd7b8065be4d16cc422c6d7c37292db9fbc7da23eabc8d35585"
+        )
 
         assert user.name == "Super Admin"
         assert user.email == "admin@example.com"
@@ -183,7 +187,9 @@ class TestSuperuserAuthHandler:
     @pytest.mark.asyncio
     async def test_authenticate_invalid_token(self, monkeypatch):
         """Test authentication with an invalid token."""
-        monkeypatch.setenv("SUPERUSER_TOKEN", "secret-token-123")
+        monkeypatch.setenv(
+            "SUPERUSER_TOKEN", "secret-token-4f517978885a2bd7b8065be4d16cc422c6d7c37292db9fbc7da23eabc8d35585"
+        )
         monkeypatch.setenv("SUPERUSER_NAME", "Super Admin")
         monkeypatch.setenv("SUPERUSER_EMAIL", "admin@example.com")
         monkeypatch.setenv("SUPERUSER_OID", "admin-123")
@@ -200,7 +206,9 @@ class TestSuperuserAuthHandler:
     @pytest.mark.asyncio
     async def test_authenticate_empty_token(self, monkeypatch):
         """Test authentication with an empty token."""
-        monkeypatch.setenv("SUPERUSER_TOKEN", "secret-token-123")
+        monkeypatch.setenv(
+            "SUPERUSER_TOKEN", "secret-token-4f517978885a2bd7b8065be4d16cc422c6d7c37292db9fbc7da23eabc8d35585"
+        )
         monkeypatch.setenv("SUPERUSER_NAME", "Super Admin")
         monkeypatch.setenv("SUPERUSER_EMAIL", "admin@example.com")
         monkeypatch.setenv("SUPERUSER_OID", "admin-123")
@@ -222,13 +230,13 @@ class TestSuperuserAuthHandler:
         monkeypatch.setenv("SUPERUSER_EMAIL", "admin@example.com")
         monkeypatch.setenv("SUPERUSER_OID", "admin-123")
         monkeypatch.setenv("SUPERUSER_ROLE", "AIHubSuperuser")
-        monkeypatch.setenv("SUPERUSER_TOKEN", "test-token")
+        monkeypatch.setenv("SUPERUSER_TOKEN", "e78a133a52a97f14bd413a567d53663c70c5fe65d01c9783b0bf72811f774a9e")
 
         handler = SuperuserAuthHandler(identity_provider=SuperuserIdentityProvider())
 
         # Mock the HTTPBearer security
         mock_bearer = MagicMock(spec=HTTPAuthorizationCredentials)
-        mock_bearer.credentials = "test-token"
+        mock_bearer.credentials = "e78a133a52a97f14bd413a567d53663c70c5fe65d01c9783b0bf72811f774a9e"
 
         user = await handler(mock_request, mock_bearer)
 

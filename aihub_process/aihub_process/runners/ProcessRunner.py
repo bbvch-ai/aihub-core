@@ -159,7 +159,7 @@ class ProcessRunner:
         self._stop_signal.clear()
 
         connect(
-            host=MongoSettings().CONNECTION_STRING,
+            host=MongoSettings().CONNECTION_STRING.get_secret_value(),
         )
 
         self.nc = NATS()

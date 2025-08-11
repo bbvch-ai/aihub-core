@@ -9,5 +9,5 @@ class AuthSettings(EnvironmentSettings):
     model_config = EnvironmentSettings.create_settings_config("AUTH_")
 
     ENABLE_API_ACCESS: Annotated[bool, Field(description="Enable API access")] = True
-    OPEN_WEBUI_SIGNING_SECRET: Annotated[SecretStr, Field(description="OpenWebUI signing secret", min_length=32)]
+    OPEN_WEBUI_SIGNING_SECRET: Annotated[SecretStr, Field(description="OpenWebUI signing secret", min_length=64)]
     IDENTITY_PROVIDER: Annotated[Literal["azure"], Field(description="OAuth provider")] = "azure"
