@@ -265,6 +265,24 @@ mdformat-tables = ">=0.4.0"
 mdit-py-plugins = ">=0.2.0"
 
 [[package]]
+name = "mdformat-pyproject"
+version = "0.0.2"
+description = "An mdformat plugin for..."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "mdformat_pyproject-0.0.2-py3-none-any.whl", hash = "sha256:e0791a335e53264d5589be353c519e230ac555b64fa076005bc64ca037717710"},
+    {file = "mdformat_pyproject-0.0.2.tar.gz", hash = "sha256:1638c4be0d239f49eea72089aafd06dc4ec603068ccc4868f91f0958b15b82c8"},
+]
+
+[package.dependencies]
+mdformat = ">=0.7,<1.0"
+
+[package.extras]
+dev = ["pre-commit"]
+test = ["coverage", "pytest (>=6.0,<7.0)", "pytest-cov"]
+
+[[package]]
 name = "mdformat-simple-breaks"
 version = "0.0.1"
 description = "An mdformat plugin for..."
@@ -698,4 +716,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.13, <3.14"
-content-hash = "726fe8de6b1444d3424e2bad55751d2dffec91940cc8be5244afabec0939bc76"
+content-hash = "f348463e1b48f7928bd78e3c47eb82972ce89d21216e04fe2a2b3947b5037337"
