@@ -325,7 +325,7 @@ description = "Preserve VuePress-style ::: containers in mdformat"
 optional = false
 python-versions = ">=3.9"
 files = []
-develop = false
+develop = true
 
 [package.dependencies]
 markdown-it-py = ">=3"
@@ -716,4 +716,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.13, <3.14"
-content-hash = "f348463e1b48f7928bd78e3c47eb82972ce89d21216e04fe2a2b3947b5037337"
+content-hash = "d7cb694a20fd1b7713bdff9d8da18c804278ea53c5a768737608f2dc18afbab7"

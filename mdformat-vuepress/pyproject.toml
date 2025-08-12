@@ -10,7 +10,9 @@ dependencies = [
   "mdit-py-plugins>=0.4"
 ]
 
-# <<< THIS is where the entry point goes when using [project]
+[project.entry-points."mdformat.parser_extension"]
+vuepress = "mdformat_vuepress.plugin"
+
 [project.entry-points."mdformat.plugins"]
 vuepress = "mdformat_vuepress.plugin:plugin"
 
@@ -18,6 +20,5 @@ vuepress = "mdformat_vuepress.plugin:plugin"
 requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
-# Tell setuptools to include the package dir
 [tool.setuptools.packages.find]
 include = ["mdformat_vuepress*"]
