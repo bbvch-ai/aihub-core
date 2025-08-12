@@ -82,7 +82,9 @@ runner.mount(
     .run_experiment(),
     KnowledgeController(
         auth=auth,
-        vector_store_factory=lambda collection: create_milvus_vector_store(MilvusSettings().URL, collection, 3072),
+        vector_store_factory=lambda collection: create_milvus_vector_store(
+            MilvusSettings().URL, collection, MilvusSettings().DIMENSION
+        ),
     )
     .get_databases()
     .get_documents_for_namespace()

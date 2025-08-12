@@ -10,7 +10,7 @@ model_list:
 
   - model_name: text-embedding-3-large
     litellm_params:
-      model: text-embedding-3-large
+      model: azure/text-embedding-3-large
       api_base: https://aihub-dev-openai-che.openai.azure.com/
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2024-02-01"
