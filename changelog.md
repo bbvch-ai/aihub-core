@@ -8,25 +8,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [v0.240.0] - 2025-08-12 - Streamlined Setup with Superuser Authentication and Enhanced Security
 
 ### Added
+
 - ✨ **Global Superuser Authentication**: Introduced a new superuser authentication system, enabling immediate API access for external services in containerized or backend-only deployments via a configurable environment variable token. This streamlines initial setup and simplifies service integration.
 - 🦾 **Automatic Default Role Initialization**: Added the capability to automatically create standard AI-Hub roles (e.g., `AIHubUser`, `AIHubAdmin`) during application startup, simplifying initial deployment and configuration steps.
 - 📄 **Comprehensive Authentication Settings**: Introduced new environment variables and settings for general API access control, OpenWebUI signing secrets, and configurable OAuth identity provider selection, offering more granular control over authentication strategies.
 
 ### Changed
+
 - 🔄 **Dynamic Authentication Handler Initialization**: Refactored the core authentication handler (`TokenAndOauth2Handler`) to dynamically configure available authentication strategies (superuser, token, OAuth2, OpenWebUI) based on environment settings, significantly streamlining setup and enabling more flexible deployments.
 - ⚡️ **Enhanced OpenWebUI Authentication**: Improved the OpenWebUI authentication mechanism by migrating from a custom hashing scheme to a more robust HMAC-SHA256 signature verification, bolstering security against request tampering.
 - 📝 **ADR Documentation Improvements**: Updated the Architecture Decision Records (ADR) process documentation with clearer guidance on focusing decisions and a simplified date format for new ADR files.
 
 ### Security
+
 - 🔑 **Robust Secret Management**: Migrated the handling of all sensitive configuration parameters (e.g., API keys, connection strings, private tokens) to Pydantic's `SecretStr` type. This prevents accidental exposure of secrets in logs, debugging output, or system representations, significantly enhancing application security.
 
 ### Refactor
+
 - 🧹 **Standardized Application Runner API**: Renamed the method for obtaining the application instance from `get_app()` to `create_app()` across all core runners (`ApiRunner`, `BotRunner`, and the base `Runner`), improving API consistency and clarity.
 - 🔄 **Generalized Identity Provider Naming**: Renamed `MultiStrategyTokenIdentityProvider` to `MultiStrategyIdentityProvider` to accurately reflect its role in aggregating various identity provider types, not just token-based ones.
 
 ---
-
-
 
 ## [v0.239.0] - 2025-08-08 - Architectural Overhaul: Streamlined AI Integration and Enhanced Development Workflow
 
