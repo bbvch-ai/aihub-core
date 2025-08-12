@@ -41,7 +41,7 @@ const props = defineProps<{
 const { resolveComponentForEvent } = useEventComponent()
 
 const vueComponent = computed(() => {
-  return resolveComponentForEvent(wrappedStartEvent)
+  return resolveComponentForEvent(wrappedStartEvent.value)
 })
 
 const wrappedStartEvent = computed<WsServerAgentEventReadable>(() => {

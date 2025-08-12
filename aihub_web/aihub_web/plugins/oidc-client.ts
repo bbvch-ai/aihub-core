@@ -5,10 +5,6 @@ import { defineNuxtPlugin } from '#app'
 export default defineNuxtPlugin(async ({ $i18n, $router }) => {
   const config = useRuntimeConfig()
 
-  // Enable logging for debugging (remove in production)
-  Log.setLogger(console)
-  Log.setLevel(Log.INFO)
-
   const auth = new UserManager({
     authority: `${config.public.oidc.authorityUrl}/v2.0`,
     client_id: config.public.oidc.clientId,

@@ -27,6 +27,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     DOCUMENT_TITLE,
     REFERENCE_URL,
     SOURCE,
+    NAMESPACE,
 )
 from llama_index.core.schema import NodeWithScore, TextNode
 
@@ -55,6 +56,7 @@ class FrontendTestingAgent(Agent):
         if random.random() > 0.5:
             return ExceptionEvent(message="50% chance that this occurs :)", http_status_code=500)
         print("[OrchestratorAgent.start_step]", event)
+        event.agent_config = None
         return AgentInTheLoop.invoke(agent_id="dev_agent", agent_class="LLMWrappingAgent", start_event=event)
 
     @step()
@@ -110,6 +112,7 @@ class FrontendTestingAgent(Agent):
                                 DOCUMENT_ID: "1",
                                 DOCUMENT_TITLE: "SBB",
                                 SOURCE: "sbb.docx",
+                                NAMESPACE: "sbb",
                                 CREATED_AT: 1743681278,
                                 REFERENCE_URL: "https://www.sbb.ch",
                             },
@@ -125,6 +128,7 @@ class FrontendTestingAgent(Agent):
                                 DOCUMENT_ID: "2",
                                 DOCUMENT_TITLE: "WHO Bericht",
                                 SOURCE: "who.pdf",
+                                NAMESPACE: "who",
                                 CREATED_AT: 1743481278,
                                 REFERENCE_URL: "https://www.who.int",
                             },
@@ -190,6 +194,7 @@ class FrontendTestingAgent(Agent):
     #     )
 
     @step()
-    async def stop(self, event: CustomHumanInTheLoop.request, displayer: EventDisplayer) -> StopEvent:
-        await displayer.display_chunk(content=f"Botl Response: {event.response}", model_name="FrontendTestingAgent")
+    async def stop(self, event: CustomHumanInTheLoop.response, displayer: EventDisplayer) -> StopEvent:
+        await displayer.display_chunk(content=f"Hitl Response: {event.response}", model_name="FrontendTestingAgent")
+        # await displayer.display_chunk(content=f"Botl Response: {event.response}", model_name="FrontendTestingAgent")
         return StopEvent()
