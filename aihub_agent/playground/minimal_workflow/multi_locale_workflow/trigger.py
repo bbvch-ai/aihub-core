@@ -1,9 +1,11 @@
 import asyncio
 import os
 
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
-from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.logging.logger import enable_logging
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
@@ -36,7 +38,7 @@ async def main():
             start_event=UserMessageEvent(
                 locale="en",
                 messages=[ChatMessage(content="Hello", role=MessageRole.USER)],
-                user=fake_user(),
+                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
             ),
             topic=topic,
         )

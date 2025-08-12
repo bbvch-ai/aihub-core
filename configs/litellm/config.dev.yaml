@@ -1,0 +1,134 @@
+model_list:
+  - model_name: azure/gpt-4o-mini
+    litellm_params:
+      model: azure/gpt-4o-mini
+      api_base: https://aihub-dev-openai-che.openai.azure.com/
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_version: "2024-12-01-preview"
+    model_info:
+      mode: chat
+
+  - model_name: azure/text-embedding-3-large
+    litellm_params:
+      model: azure/text-embedding-3-large
+      api_base: https://aihub-dev-openai-che.openai.azure.com/
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_version: "2024-02-01"
+    model_info:
+      mode: embedding
+
+  - model_name: azure/dall-e-3
+    litellm_params:
+      model: azure/dall-e-3
+      api_base: https://joelb-mdotxdzc-australiaeast.cognitiveservices.azure.com/
+      api_key: os.environ/AZURE_OPENAI_KEY_IMAGE
+      api_version: "2024-02-01"
+    model_info:
+      mode: image_generation
+      base_model: azure/dall-e-3
+
+  - model_name: azure/gpt-4o-mini-transcribe
+    litellm_params:
+      model: azure/gpt-4o-mini-transcribe
+      api_base: https://joelb-mdpmzqib-eastus2.cognitiveservices.azure.com/
+      api_key: os.environ/AZURE_OPENAI_KEY_AUDIO
+      api_version: "2025-03-01-preview"
+    model_info:
+      mode: audio_transcription
+      base_model: azure/gpt-4o-mini-transcribe
+
+  - model_name: azure/gpt-4o-mini-tts
+    litellm_params:
+      model: azure/gpt-4o-mini-tts
+      api_base: https://joelb-mdpmzqib-eastus2.cognitiveservices.azure.com/
+      api_key: os.environ/AZURE_OPENAI_KEY_AUDIO
+      api_version: "2025-03-01-preview"
+    model_info:
+      mode: audio_speech
+      base_model: azure/gpt-4o-mini-tts
+
+  - model_name: google/gemini-2.5-flash
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY
+    model_info:
+      mode: chat
+
+  - model_name: local/qwen3-small
+    litellm_params:
+      model: openai/unsloth/Qwen3-1.7B-GGUF
+      api_base: http://llama-cpp:8182/v1
+      api_key: None
+    model_info:
+      mode: chat
+      max_input_tokens: 8196
+      supports_function_calling: true
+      max_output_tokens: 4096
+      input_cost_per_token: 0.00001
+      output_cost_per_token: 0.0002
+      custom_tokenizer:
+        identifier: Qwen/Qwen3-0.6B
+        revision: main
+        auth_token: os.environ/HUGGINGFACE_API_KEY
+
+  - model_name: local/qwen-embedding
+    litellm_params:
+      model: openai/Qwen/Qwen3-Embedding-0.6B
+      api_base: http://huggingface-text-embedding-inference:8183/v1
+      api_key: None
+    model_info:
+      mode: embedding
+      input_cost_per_token: 0.000000001
+      custom_tokenizer:
+        identifier: Qwen/Qwen3-Embedding-0.6B
+        revision: main
+        auth_token: os.environ/HUGGINGFACE_API_KEY
+
+guardrails:
+  - guardrail_name: "presidio-mask-guard"
+    litellm_params:
+      guardrail: presidio
+      default_on: false
+      mode: "pre_call"
+      presidio_language: "de"
+      presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
+      presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
+      output_parse_pii: true
+      pii_entities_config:
+        PERSON: "MASK"
+        EMAIL_ADDRESS: "MASK"
+
+  - guardrail_name: "presidio-block-guard"
+    litellm_params:
+      guardrail: presidio
+      default_on: false
+      mode: "pre_call"
+      presidio_language: "de"
+      presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
+      presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
+      output_parse_pii: true
+      pii_entities_config:
+        CREDIT_CARD: "BLOCK"
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: os.environ/DATABASE_URL
+  store_model_in_db: true
+  store_prompts_in_spend_logs: true
+  maximum_spend_logs_retention_period: "365d"
+  maximum_spend_logs_retention_interval: "30d"
+
+litellm_settings:
+  callbacks: ["detect_prompt_injection"]
+  default_fallbacks: []
+  telemetry: false
+  json_logs: true
+
+router_settings:
+  routing_strategy: "usage-based-routing-v2"
+  retry_policy:
+    "TimeoutErrorRetries": 2
+    "RateLimitErrorRetries": 3
+    "InternalServerErrorRetries": 2
+  allowed_fails: 3
+  cooldown_time: 30

@@ -3,7 +3,7 @@ from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import override
 
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.routes.Controller import Controller
 from aihub_lib.runners.Runner import Runner
 from fastapi import FastAPI
@@ -43,10 +43,10 @@ class ApiRunner(Runner):
 
     ### Usage
     ```python
-    runner = ApiRunner(api_path="/api/v1", title="My API", debug=True)
+    runner = ApiRunner(api_path="/api/v1", title="My API")
     runner.mount(UserController(), ProductController())  # Mount controllers
     runner.mount_frontend("path/to/frontend/dist")  # Optional: serve frontend
-    app = runner.get_app()  # Get the FastAPI instance
+    app = runner.create_app()  # Get the FastAPI instance
     ```
 
     Run the resulting `app` using `uvicorn` or another ASGI server.
@@ -58,16 +58,15 @@ class ApiRunner(Runner):
         title: str = "AI Hub",
         description: str = "AI Hub Backend",
         origins: list[str] | None = None,
-        debug: bool = False,
     ):
-        super().__init__(api_path, title, description, origins, debug)
+        super().__init__(api_path, title, description, origins)
 
     @property
     def lifetime_manager(self) -> Callable[[FastAPI], AbstractAsyncContextManager]:
         return lifetime_manager
 
     @override
-    def get_app(self) -> Starlette:
+    def create_app(self) -> Starlette:
         mcp = FastMCP.from_fastapi(
             app=self._api_app,
             route_maps=[
@@ -118,8 +117,8 @@ class ApiRunner(Runner):
         app = super()._get_api_app()
 
         origins = self.origins or ["http://localhost:8080"]
-        if ApiConfig().FRONTEND_ORIGIN:
-            origins += [item.strip() for item in ApiConfig().FRONTEND_ORIGIN.split(",")]
+        if AIHubSettings().FRONTEND_ORIGIN:
+            origins += [item.strip() for item in AIHubSettings().FRONTEND_ORIGIN.split(",")]
 
         # Add CORS middleware
         app.add_middleware(

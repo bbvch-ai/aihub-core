@@ -17,7 +17,7 @@ from phoenix.experiments.types import RanExperiment
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.evaluation.JudgeOutput import JudgeOutput
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.chat.ChatService import ChatContent, ChatService, JsonResources
@@ -45,7 +45,7 @@ class PhoenixExperimentEvaluator:
         self,
         nats_client: NATS,
         external_agent_event_distributor: ExternalAgentEventDistributor,
-        judge: ChatLLMConfig,
+        judge: LLMConfig,
         authenticated_user: UserIdentity,
         t: LocaleHandler,
     ):

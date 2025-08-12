@@ -8,8 +8,8 @@ inputs:
   working_directory:
     description: 'Working directory for the module'
     required: true
-  docker_compose_paths:
-    description: 'Comma-separated list of Docker Compose file paths (empty if not needed)'
+  docker_compose_services:
+    description: 'Space-separated list of Docker Compose services (empty if not needed)'
     required: false
   use_local_core:
     description: 'Use local core'
@@ -32,49 +32,114 @@ runs:
       with:
         python-version: '3.13'
 
+    # Cache Poetry installation
+    - name: Cache Poetry installation
+      uses: actions/cache@v4
+      with:
+        path: ~/.local
+        key: ${{ runner.os }}-poetry-2.1.1
+
     - name: Install Poetry
       uses: snok/install-poetry@v1
       with:
         version: '2.1.1'
 
-    - name: Start Docker services (if needed)
-      if: inputs.docker_compose_paths != ''
+    # Cache Poetry downloads - using a simpler key that doesn't require files to exist
+    - name: Cache Poetry downloads
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pypoetry
+        key: ${{ runner.os }}-poetry-cache-${{ inputs.working_directory }}-${{ hashFiles(format('{0}/poetry.lock', inputs.working_directory), 'poetry.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-poetry-cache-${{ inputs.working_directory }}-
+          ${{ runner.os }}-poetry-cache-
+
+    # Cache HuggingFace models with dynamic key based on docker-compose content
+    - name: Cache HuggingFace Models
+      if: inputs.docker_compose_services != ''
+      id: model-cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ./local-volumes/hf-tei-data
+          ./local-volumes/llamacpp-data
+        key: ${{ runner.os }}-hf-models-${{ hashFiles('docker-compose.dev.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-hf-models-
+
+    # Report cache status
+    - name: Report Model Cache Status
+      if: inputs.docker_compose_services != ''
+      shell: bash
+      run: |
+        if [ "${{ steps.model-cache.outputs.cache-hit }}" == "true" ]; then
+          echo "✅ HuggingFace models restored from cache!"
+          echo "CACHE_HIT=true" >> $GITHUB_ENV
+        else
+          echo "📥 HuggingFace models will be downloaded (first run or docker-compose changed)"
+          echo "CACHE_HIT=false" >> $GITHUB_ENV
+        fi
+
+    # Ensure volume directories exist with correct permissions
+    - name: Prepare Volume Directories
+      if: inputs.docker_compose_services != ''
+      shell: bash
+      run: |
+        mkdir -p ./local-volumes/hf-tei-data
+        mkdir -p ./local-volumes/llamacpp-data
+        chmod 777 ./local-volumes/hf-tei-data
+        chmod 777 ./local-volumes/llamacpp-data
+
+    - name: Pre-pull Docker images (if services needed)
+      if: inputs.docker_compose_services != ''
       shell: bash
       run: |
         echo "${{ inputs.github_token }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-        IFS=',' read -ra COMPOSE_FILES <<< "${{ inputs.docker_compose_paths }}"
-        DOCKER_COMPOSE_CMD="docker compose"
-        for file in "${COMPOSE_FILES[@]}"; do
-          DOCKER_COMPOSE_CMD+=" -f $file"
-        done
-        eval "$DOCKER_COMPOSE_CMD up -d"
+        
+        # Pre-pull images in parallel to use cache effectively
+        echo "Pre-pulling Docker images for faster startup..."
+        docker compose -f docker-compose.dev.yml --env-file .env.dev pull --quiet ${{ inputs.docker_compose_services }} || true
+
+    - name: Start Docker services (if needed)
+      if: inputs.docker_compose_services != ''
+      shell: bash
+      run: |
+        # Use --no-build to avoid rebuilding and rely on cached images
+        docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --no-build ${{ inputs.docker_compose_services }}
 
     - name: Configure Git Authentication
       shell: bash
       run: git config --global url."git@github.com:".insteadOf "https://github.com/"
 
-    - name: Validate Global Poetry Lock
-      shell: bash
-      run: poetry lock
-
     - name: Install Global Dependencies
       shell: bash
       run: poetry install --no-interaction --with dev --no-root
 
-    - name: Use Local Core
+    - name: Use Local Core (without install)
       if: inputs.use_local_core == 'true'
       shell: bash
-      run: poetry run make use-local-core
+      run: |
+        echo "Switching to local core dependencies without install..."
+        make use-local-core-without-install
 
-    - name: Validate Poetry Lock
+    - name: Update Poetry Lock and Install for Module
+      if: inputs.use_local_core == 'true'
       shell: bash
-      run: poetry lock
       working-directory: ${{ inputs.working_directory }}
+      run: |
+        echo "Updating poetry.lock for ${{ inputs.working_directory }}..."
+        poetry lock
+        
+        echo "Installing dependencies for ${{ inputs.working_directory }}..."
+        poetry install --no-interaction --with dev --no-root
 
-    - name: Install Dependencies
+    - name: Install Module Dependencies (when not using local core)
+      if: inputs.use_local_core != 'true'
       shell: bash
-      run: poetry install --no-interaction --no-root
       working-directory: ${{ inputs.working_directory }}
+      run: |
+        echo "Installing dependencies for ${{ inputs.working_directory }}..."
+        poetry install --no-interaction --with dev --no-root
 
     - name: Install FFmpeg
       if: inputs.install_ffmpeg == 'true'
@@ -82,8 +147,15 @@ runs:
       run: make install-ffmpeg
       working-directory: ${{ inputs.working_directory }}
 
+    - name: Setup environment variables for tests
+      shell: bash
+      run: |
+        # Copy .env.dev to .env so that Pydantic BaseSettings can find it
+        cp .env.dev .env
+        echo "✅ Copied .env.dev to .env for test environment"
+
     - name: Wait for Docker services to become healthy
-      if: inputs.docker_compose_paths != ''
+      if: inputs.docker_compose_services != ''
       shell: bash
       run: |
         echo "Waiting for Docker services to become healthy..."
@@ -98,8 +170,8 @@ runs:
         echo "Initial container status:"
         docker ps
 
-        # Maximum wait time in seconds (5 minutes)
-        MAX_WAIT=300
+        # Wait for at most 10 minutes for services to get healthy
+        MAX_WAIT=600
         # Polling interval in seconds
         INTERVAL=5
         # Counter
@@ -134,6 +206,7 @@ runs:
 
     - name: Run Tests with Coverage and Generate Report
       shell: bash
+      working-directory: ${{ inputs.working_directory }}
       run: |
         pytest_exit_code=0
         poetry run pytest -m "not azure" --cov=. \
@@ -149,19 +222,12 @@ runs:
           echo "❌ Some tests failed!"
           echo "TEST_FAIL=true" >> $GITHUB_ENV
         fi
-      working-directory: ${{ inputs.working_directory }}
-
 
     - name: Stop Docker services (if started)
-      if: inputs.docker_compose_paths != ''
+      if: inputs.docker_compose_services != ''
       shell: bash
       run: |
-        IFS=',' read -ra COMPOSE_FILES <<< "${{ inputs.docker_compose_paths }}"
-        DOCKER_COMPOSE_CMD="docker compose"
-        for file in "${COMPOSE_FILES[@]}"; do
-          DOCKER_COMPOSE_CMD+=" -f $file"
-        done
-        eval "$DOCKER_COMPOSE_CMD down"
+        docker compose -f docker-compose.dev.yml down --remove-orphans
 
     - name: Upload Coverage Report
       uses: actions/upload-artifact@v4

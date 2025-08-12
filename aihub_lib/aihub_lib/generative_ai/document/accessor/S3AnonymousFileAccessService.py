@@ -6,7 +6,7 @@ from botocore.exceptions import ClientError
 from aihub_lib.generative_ai.document.accessor.AbstractAnonymousFileAccessService import (
     AbstractAnonymousFileAccessService,
 )
-from aihub_lib.infrastructure.s3.S3Config import S3Config
+from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class S3AnonymousFileAccessService(AbstractAnonymousFileAccessService):
     This service provides secure, temporary access to S3 objects through presigned URLs.
     It supports both AWS S3 and MinIO (S3-compatible) storage backends.
 
-    The service uses boto3 for S3 interactions and relies on S3Config for
+    The service uses boto3 for S3 interactions and relies on S3StorageSettings for
     connection parameters including endpoint URL, access keys, and region.
     """
 
@@ -29,7 +29,7 @@ class S3AnonymousFileAccessService(AbstractAnonymousFileAccessService):
         Loads S3 configuration and creates a boto3 client instance.
         """
         try:
-            self._s3_config = S3Config()
+            self._s3_config = S3StorageSettings()
             self._s3_client = self._create_s3_client()
         except Exception as e:
             logger.error(f"Failed to initialize S3 service: {e}")
@@ -39,12 +39,12 @@ class S3AnonymousFileAccessService(AbstractAnonymousFileAccessService):
         """
         Create and configure an S3 client for MinIO or AWS S3.
 
-        Uses configuration from S3Config to set up the boto3 client with
+        Uses configuration from S3StorageSettings to set up the boto3 client with
         appropriate endpoint URL, credentials, and region settings.
         """
         return boto3.client(
             "s3",
-            endpoint_url=self._s3_config.ENDPOINT_URL,
+            endpoint_url=self._s3_config.ENDPOINT,
             aws_access_key_id=self._s3_config.ACCESS_KEY,
             aws_secret_access_key=self._s3_config.SECRET_KEY,
             region_name=self._s3_config.REGION,
@@ -84,7 +84,7 @@ class S3AnonymousFileAccessService(AbstractAnonymousFileAccessService):
         """
         Get the URL signing secret for S3/MinIO operations.
 
-        Returns the secret access key from S3Config, which is used as the
+        Returns the secret access key from S3StorageSettings, which is used as the
         signing secret for generating secure URLs and request signatures.
         """
         return self._s3_config.SECRET_KEY

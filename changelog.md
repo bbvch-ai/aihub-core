@@ -5,6 +5,66 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.240.0] - 2025-08-12 - Streamlined Setup with Superuser Authentication and Enhanced Security
+
+### Added
+- ✨ **Global Superuser Authentication**: Introduced a new superuser authentication system, enabling immediate API access for external services in containerized or backend-only deployments via a configurable environment variable token. This streamlines initial setup and simplifies service integration.
+- 🦾 **Automatic Default Role Initialization**: Added the capability to automatically create standard AI-Hub roles (e.g., `AIHubUser`, `AIHubAdmin`) during application startup, simplifying initial deployment and configuration steps.
+- 📄 **Comprehensive Authentication Settings**: Introduced new environment variables and settings for general API access control, OpenWebUI signing secrets, and configurable OAuth identity provider selection, offering more granular control over authentication strategies.
+
+### Changed
+- 🔄 **Dynamic Authentication Handler Initialization**: Refactored the core authentication handler (`TokenAndOauth2Handler`) to dynamically configure available authentication strategies (superuser, token, OAuth2, OpenWebUI) based on environment settings, significantly streamlining setup and enabling more flexible deployments.
+- ⚡️ **Enhanced OpenWebUI Authentication**: Improved the OpenWebUI authentication mechanism by migrating from a custom hashing scheme to a more robust HMAC-SHA256 signature verification, bolstering security against request tampering.
+- 📝 **ADR Documentation Improvements**: Updated the Architecture Decision Records (ADR) process documentation with clearer guidance on focusing decisions and a simplified date format for new ADR files.
+
+### Security
+- 🔑 **Robust Secret Management**: Migrated the handling of all sensitive configuration parameters (e.g., API keys, connection strings, private tokens) to Pydantic's `SecretStr` type. This prevents accidental exposure of secrets in logs, debugging output, or system representations, significantly enhancing application security.
+
+### Refactor
+- 🧹 **Standardized Application Runner API**: Renamed the method for obtaining the application instance from `get_app()` to `create_app()` across all core runners (`ApiRunner`, `BotRunner`, and the base `Runner`), improving API consistency and clarity.
+- 🔄 **Generalized Identity Provider Naming**: Renamed `MultiStrategyTokenIdentityProvider` to `MultiStrategyIdentityProvider` to accurately reflect its role in aggregating various identity provider types, not just token-based ones.
+
+---
+
+
+
+## [v0.239.0] - 2025-08-08 - Architectural Overhaul: Streamlined AI Integration and Enhanced Development Workflow
+
+### Added
+- ✨ **Unified Infrastructure Configuration**: Introduced a new `configs/` directory with `litellm/config.dev.yaml`, `milvus/milvus.dev.yaml`, `minio/minio-entrypoint.sh`, and `postgres/init-multiple-dbs.sh`, providing centralized and detailed configurations for LiteLLM, Milvus, MinIO, NATS, and PostgreSQL, enabling more flexible and powerful development environments.
+- 🐳 **New Docker Compose Files for Development**: Added `docker-compose.dev.yml` (CPU) and `docker-compose-gpu.dev.yml` (GPU) for simplified local infrastructure setup, including services like LiteLLM, llama.cpp, HuggingFace TEI, and improved health checks.
+- 📦 **Enhanced Frontend Build and Deployment**: Introduced a multi-stage Dockerfile, `nginx.conf`, `config.template.json`, and `plugins/config-loader.client.ts` for `aihub_web`, enabling production-ready Nginx-based serving with runtime environment variable injection.
+- ⚙️ **Windows Image Mirroring Utility**: Added `mirror-image-win` target to `aihub_iac/Makefile` for convenient Docker image mirroring on Windows environments.
+- 🧪 **Standardized Local Docker Run Configurations**: New `.idea/runConfigurations` XML files were added to streamline building specific Docker images (API, Bot, LLM Wrapping, RAG Pipeline) and running infrastructure on CPU/GPU directly from IntelliJ/PyCharm.
+- 📄 **New Development Environment File**: Introduced a `.env.dev` file to standardize local development environment variables, including API keys and service endpoints.
+
+### Changed
+- 🚀 **Optimized CI/CD Backend Testing**: Refined GitHub Actions workflows for backend testing by updating runner types to `ubuntu-latest-8-cores`, switching to direct Docker Compose service specification, enabling comprehensive caching for Poetry and HuggingFace models, and implementing pre-pulling of Docker images for faster test runs.
+- ⬆️ **Updated Python Requirement**: The core project now officially supports and recommends Python 3.13, and related documentation in `README.md` and `aihub_doc` has been updated.
+- ⚡️ **Increased Test Stability**: Extended the timeout for Docker service health checks in CI/CD workflows to accommodate varying startup times and enhance test reliability.
+- 🔒 **Flexible Image Build Authentication**: The SSH key requirement for the `aihub_action/build_image` workflow has been made optional, providing more flexibility in build environments.
+- 🔄 **Refined Makefile Commands**: Added `run-prod` targets for `aihub_api` and `aihub_bot` for standardized Gunicorn-based production server startup, and introduced `use-local-core-without-install`/`use-remote-core-without-install` for more granular dependency switching.
+- 🌐 **Web Frontend Application Structure**: Migrated the Nuxt.js frontend from a generic `.playground` to a dedicated `.app` directory, centralizing application-specific configurations and build artifacts.
+- 📐 **Milvus Vector Store Dimension**: Increased the default embedding vector dimension for Milvus in agent and pipeline configurations from 768 to 1024 to support higher-dimension embedding models.
+
+### Removed
+- 🗑️ **Legacy Configuration Files**: Eliminated numerous outdated `.env` files from individual microservice playgrounds, centralizing environment variable management to the root `.env.dev` for consistency.
+- 🧹 **Deprecated IntelliJ/PyCharm Run Configurations**: Removed old Docker run configurations (`Infra_CPU.xml`, `Infra_GPU.xml`, `Webui.xml`) that have been superseded by the new, more flexible configurations.
+
+### Refactor
+- 🏗️ **Comprehensive Settings System Overhaul**: Replaced the fragmented `*Config.py` and `*Access.py` classes (e.g., `ApiConfig`, `CosmosAccess`, `NatsConfig`, `PhoenixConfig`, `RedisConfig`, `S3Config`, `DoclingConfig`) with a new, unified `EnvironmentSettings` hierarchy. This centralizes environment variable loading and makes configuration more consistent and maintainable across the entire platform.
+- 🧠 **Unified AI Model Integration with LiteLLM**: Performed a significant architectural shift by refactoring all LLM, Embedding, Image Generation, Speech-to-Text, and Text-to-Speech model configurations (`ChatLLMConfig`, `EmbeddingLLMConfig`, `AzureOpenAILLMConfig`, `SelfHostedEmbeddingConfig`, `AzureImageModelConfig`, etc.) into a streamlined system (`LLMConfig`, `EmbeddingModelConfig`) that leverages **LiteLLM** as a central proxy. This greatly simplifies model management, enables dynamic model routing, and reduces hardcoded dependencies on specific AI providers within the codebase.
+- 🧹 **Streamlined Frontend Scripts and Paths**: Updated `aihub_web/package.json` scripts and `.gitignore` to reflect the new `.app` directory structure, ensuring a cleaner and more organized frontend project.
+- 🧽 **Cleaned Up `aihub_lib` Structure**: Removed various redundant or now obsolete model and infrastructure configuration files and their corresponding `__init__.py` files, significantly reducing complexity and improving code clarity in the core library.
+- ⚙️ **Standardized Auth Settings Usage**: Migrated authentication logic across agents and API to consistently use the new `DangerousDevelopmentOnlyAuthSettings` and `OAuth2Settings`, ensuring uniform handling of fake users and OAuth2 configurations.
+- 📦 **Streamlined Poetry Dependency Management**: Modified `aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_pipeline`, and `aihub_process` `pyproject.toml` files to use local path dependencies for `aihub_lib`, simplifying local development and CI/CD builds.
+- 🧪 **Optimized Agent Test Setup**: Improved agent test runners to copy `.env.dev` to `.env` for consistent environment loading during tests and streamlined Poetry dependency installation in CI without redundant `poetry lock` calls when using local cores.
+- 💬 **Improved LLM Cost Reporting**: Updated `EventDisplayer` to use the `model_name` attribute from the new `LLMConfig` for more accurate and consistent cost reporting.
+
+---
+
+
+
 ## [v0.238.1] - 2025-08-07 - Empowering Developers: New Documentation, Enhanced CI/CD, and AI Assistant Integration
 
 ### Added
@@ -35,51 +95,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 📊 **Unified Python Testing**: Standardized `test` targets in Makefiles across all Python microservices, simplifying local test execution.
 - 🎯 **Streamlined CI/CD Configuration**: Centralized PR agent settings into a dedicated `.pr_agent.toml` file, improving maintainability of automated review processes.
 - 🏗️ **Refined API and Bot Runner Structures**: Simplified base application creation and mounting logic within `ApiRunner` and `BotRunner` for a cleaner architecture.
-
----
-
-
-
-## [v0.234.2] - 2025-08-07 - Enhanced PR Agent Configuration and Performance Updates
-
-### Added
-- ✨ **Introduced `pr_agent.toml` configuration file:** Enables comprehensive customization of the PR agent's behavior, including advanced settings for auto-approval, reasoning effort, code suggestions, and best practices, empowering users with greater control over automated reviews.
-
-### Changed
-- 🚀 **Updated AI Model and API Versions:** Upgraded the `review-pr` workflow to utilize the `o4-mini` AI model and the `2024-12-01-preview` API version, enhancing performance and ensuring compatibility with the latest service capabilities.
-
-### Refactor
-- 🧹 **Centralized PR Agent Settings:** Migrated several hardcoded PR agent configurations from `action.yml` into the new `pr_agent.toml` file, streamlining configuration management and improving overall maintainability.
-
----
-
-
-
-## [v0.234.1] - 2025-08-07 - Platform Evolution: Python 3.13, Automated Compliance, and RAG Agent Enhancements
-
-### Added
-- ✨ **Automated License Compliance Reporting**: Introduced a comprehensive system to scan, categorize, and report on all Python, Node.js, and Docker image dependencies, generating a detailed `LICENSES.md` file for improved transparency and compliance.
-- 🔊 **Python 3.13 Audio Compatibility**: Added the `audioop-lts` dependency to the API service to ensure seamless audio processing compatibility with Python 3.13.
-- 🦾 **RAGAgent System Prompt Configuration**: Introduced the capability to configure the `RAGAgent` with a system prompt, allowing for more precise guidance of the underlying Large Language Model's behavior and responses. This includes support for multi-language prompts and comprehensive testing.
-- 🛡️ **Enforced Main Branch Protection**: Implemented Git settings to explicitly prohibit force pushes to the `main` branch, enhancing codebase integrity and preventing accidental history rewrites.
-- ✅ **Automated PR Version Label Check**: Introduced a new CI check that ensures all pull requests targeting `main` have a `major`, `minor`, or `patch` label, streamlining version management and release predictability.
-
-### Changed
-- ⬆️ **Python 3.13 Platform Upgrade**: All core Python projects and CI/CD workflows (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`, `aihub_process`) have been upgraded to officially support and leverage Python 3.13, enabling access to the latest language features and performance improvements.
-- ⚙️ **Refined CI/CD Versioning Strategy**: The automated release workflow now triggers only on *merged pull requests* to `main` and determines the version bump (major, minor, or patch) based on PR labels, providing more granular control over releases.
-- ⚡️ **Increased RAGAgent Test Timeout**: Extended the default timeout for RAGAgent test runs to provide more stability and accommodate longer LLM response times in complex scenarios.
-- 🔗 **Internal Dependency Tag Synchronization**: Synchronized all internal `aihub_lib` dependency tags across microservices to align with the latest versioning, ensuring consistent module integration.
-- 🧪 **IntelliJ/PyCharm Test Runner Updates**: Updated various IntelliJ/PyCharm run configurations for Python tests, aligning them with `pytest` and modern Poetry virtual environment practices.
-- 📝 **Documentation Python Version**: Updated `README.md` to reflect the new Python 3.13 requirement.
-- 🌐 **Web Project Name**: Renamed the `aihub_web` project in `package.json` for consistency.
-
-### Removed
-- 🗑️ **Deprecated GitHub Release Creation**: Eliminated the automated step within the build image GitHub Action that previously created a GitHub Release for each built Docker image, streamlining CI/CD processes.
-
-### Refactor
-- 🧹 **Python 3.13 Type Hint Modernization**: Migrated `typing_extensions.override` annotations to Python's built-in `typing.override` and simplified `AsyncGenerator` type hints for cleaner and more consistent type declarations, aligning with Python 3.13 standards.
-- 🧪 **Optimized Agent Test Fixture Scope**: Changed the `self_hosted_agent_config` pytest fixture to be session-scoped, improving test execution performance by setting up the configuration once per test session instead of per function.
-- 📦 **Streamlined Poetry Setup in CI**: Refined the Poetry installation and caching steps in GitHub Actions workflows, improving CI efficiency and consistency.
 
 ---
 
@@ -133,6 +148,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Refactor
 - 🧹 **Type Hint Modernization**: Migrated `typing_extensions.override` annotations to Python's built-in `typing.override` for cleaner and more consistent type declarations, aligning with Python 3.13 standards.
+
+---
+
+
+
+## [v0.234.2] - 2025-08-07 - Enhanced PR Agent Configuration and Performance Updates
+
+### Added
+- ✨ **Introduced `pr_agent.toml` configuration file:** Enables comprehensive customization of the PR agent's behavior, including advanced settings for auto-approval, reasoning effort, code suggestions, and best practices, empowering users with greater control over automated reviews.
+
+### Changed
+- 🚀 **Updated AI Model and API Versions:** Upgraded the `review-pr` workflow to utilize the `o4-mini` AI model and the `2024-12-01-preview` API version, enhancing performance and ensuring compatibility with the latest service capabilities.
+
+### Refactor
+- 🧹 **Centralized PR Agent Settings:** Migrated several hardcoded PR agent configurations from `action.yml` into the new `pr_agent.toml` file, streamlining configuration management and improving overall maintainability.
+
+---
+
+
+
+## [v0.234.1] - 2025-08-07 - Platform Evolution: Python 3.13, Automated Compliance, and RAG Agent Enhancements
+
+### Added
+- ✨ **Automated License Compliance Reporting**: Introduced a comprehensive system to scan, categorize, and report on all Python, Node.js, and Docker image dependencies, generating a detailed `LICENSES.md` file for improved transparency and compliance.
+- 🔊 **Python 3.13 Audio Compatibility**: Added the `audioop-lts` dependency to the API service to ensure seamless audio processing compatibility with Python 3.13.
+- 🦾 **RAGAgent System Prompt Configuration**: Introduced the capability to configure the `RAGAgent` with a system prompt, allowing for more precise guidance of the underlying Large Language Model's behavior and responses. This includes support for multi-language prompts and comprehensive testing.
+- 🛡️ **Enforced Main Branch Protection**: Implemented Git settings to explicitly prohibit force pushes to the `main` branch, enhancing codebase integrity and preventing accidental history rewrites.
+- ✅ **Automated PR Version Label Check**: Introduced a new CI check that ensures all pull requests targeting `main` have a `major`, `minor`, or `patch` label, streamlining version management and release predictability.
+
+### Changed
+- ⬆️ **Python 3.13 Platform Upgrade**: All core Python projects and CI/CD workflows (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`, `aihub_process`) have been upgraded to officially support and leverage Python 3.13, enabling access to the latest language features and performance improvements.
+- ⚙️ **Refined CI/CD Versioning Strategy**: The automated release workflow now triggers only on *merged pull requests* to `main` and determines the version bump (major, minor, or patch) based on PR labels, providing more granular control over releases.
+- ⚡️ **Increased RAGAgent Test Timeout**: Extended the default timeout for RAGAgent test runs to provide more stability and accommodate longer LLM response times in complex scenarios.
+- 🔗 **Internal Dependency Tag Synchronization**: Synchronized all internal `aihub_lib` dependency tags across microservices to align with the latest versioning, ensuring consistent module integration.
+- 🧪 **IntelliJ/PyCharm Test Runner Updates**: Updated various IntelliJ/PyCharm run configurations for Python tests, aligning them with `pytest` and modern Poetry virtual environment practices.
+- 📝 **Documentation Python Version**: Updated `README.md` to reflect the new Python 3.13 requirement.
+- 🌐 **Web Project Name**: Renamed the `aihub_web` project in `package.json` for consistency.
+
+### Removed
+- 🗑️ **Deprecated GitHub Release Creation**: Eliminated the automated step within the build image GitHub Action that previously created a GitHub Release for each built Docker image, streamlining CI/CD processes.
+
+### Refactor
+- 🧹 **Python 3.13 Type Hint Modernization**: Migrated `typing_extensions.override` annotations to Python's built-in `typing.override` and simplified `AsyncGenerator` type hints for cleaner and more consistent type declarations, aligning with Python 3.13 standards.
+- 🧪 **Optimized Agent Test Fixture Scope**: Changed the `self_hosted_agent_config` pytest fixture to be session-scoped, improving test execution performance by setting up the configuration once per test session instead of per function.
+- 📦 **Streamlined Poetry Setup in CI**: Refined the Poetry installation and caching steps in GitHub Actions workflows, improving CI efficiency and consistency.
 
 ---
 

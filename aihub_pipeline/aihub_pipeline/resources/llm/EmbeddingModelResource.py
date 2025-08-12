@@ -1,9 +1,4 @@
-from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
-    AzureOpenAIEmbeddingConfig,
-)
-from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
-    SelfHostedEmbeddingConfig,
-)
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
 from llama_index.core.base.embeddings.base import BaseEmbedding
 
@@ -38,7 +33,7 @@ class EmbeddingModelResource(ConfigurableResource[BaseEmbedding]):
                         base_url="https://aihub-dev-openai-che.openai.azure.com/",
                         api_version="2024-12-01-preview",
                         embedding_tokens_costs_per_thousand=0.0,
-                        default_parameter=AzureOpenAIEmbeddingParameter(),
+                        default_parameter=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
                     )
                 )
             }
@@ -46,10 +41,10 @@ class EmbeddingModelResource(ConfigurableResource[BaseEmbedding]):
 
     """
 
-    embedding_config: ResourceDependency[SelfHostedEmbeddingConfig | AzureOpenAIEmbeddingConfig]
+    embedding_config: ResourceDependency[EmbeddingModelConfig]
 
     def create_resource(self, context: InitResourceContext) -> BaseEmbedding:
-        model, _ = self.embedding_config.to_llama_index(self.embedding_config.default_parameter)
+        model, _ = self.embedding_config.to_llama_index()
         if not isinstance(model, BaseEmbedding):
             raise ValueError("The returned model is not an instance of BaseEmbedding.")
         return model

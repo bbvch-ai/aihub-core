@@ -4,10 +4,10 @@
   "version": "0.0.1",
   "main": "./nuxt.config.ts",
   "scripts": {
-    "dev": "nuxi prepare && nuxi dev .playground --port 8182",
-    "dev:prepare": "nuxi prepare && nuxt prepare .playground",
-    "build": "nuxt generate .playground",
-    "preview": "nuxt preview .playground",
+    "dev": "nuxi prepare && nuxi dev .app --port 8182 --dotenv ../../../.env",
+    "dev:prepare": "nuxi prepare && nuxt prepare .app",
+    "build": "nuxt generate .app",
+    "preview": "nuxt preview .app",
     "lint": "nuxi prepare && eslint . --fix",
     "generate-sdk": "openapi-ts"
   },
@@ -77,7 +77,7 @@
     "typescript-eslint": "^8.33.1"
   },
   "peerDependencies": {
-    "primevue": "^4.3.5",
-    "vue": "^3.5.0"
+    "primevue": "4.3.6",
+    "vue": "3.5.17"
   }
 }

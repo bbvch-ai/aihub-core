@@ -257,7 +257,7 @@ API testing uses pytest with FastAPI's test client and the `ApiTestRunner` or `S
        auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
        runner = ApiTestRunner()
        runner.mount(MyController(auth=auth).create_resource().get_resource())
-       return TestClient(runner.get_app())
+       return TestClient(runner.create_app())
 
    # For asynchronous tests (with real event handling)
    @pytest.fixture
@@ -266,7 +266,7 @@ API testing uses pytest with FastAPI's test client and the `ApiTestRunner` or `S
        auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
        runner = ApiTestRunner()
        runner.mount(MyController(auth=auth).create_resource().get_resource())
-       app = runner.get_app()
+       app = runner.create_app()
        
        async with LifespanManager(app) as lifespan:
            async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1") as client:
