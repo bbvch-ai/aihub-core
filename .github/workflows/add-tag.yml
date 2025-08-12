@@ -99,6 +99,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git tag ${{ steps.create-tag.outputs.version }}
           git push origin ${{ steps.create-tag.outputs.version }}
+          git pull --rebase origin main
 
   update-and-dependencies:
     name: Update Files & Install Deps
@@ -263,6 +264,14 @@ jobs:
           sudo apt-get install -y jq
           npm install -g pnpm
 
+      - name: Install Poetry
+        run: |
+          python3 -m pip install --user pipx
+          python3 -m pipx ensurepath
+          pipx install poetry
+          poetry config virtualenvs.in-project true
+          poetry install --no-interaction --no-root
+
       - name: Update License Report
         id: license_generator
         run: |
@@ -347,5 +356,5 @@ jobs:
         run: |
           gh api repos/${{ github.repository }}/dispatches \
             --method POST \
-            --field event_type=release-ready \
-            --field client_payload:="{\"release_version\":\"$VERSION\"}"
+            -F event_type=release-ready \
+            -F client_payload='{"release_version":"'"$VERSION"'"}'
