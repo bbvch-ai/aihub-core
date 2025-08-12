@@ -44,7 +44,7 @@ extend-exclude = '''
 '''
 
 [tool.mdformat]
-extensions = ["frontmatter", "gfm", "myst"]
+extensions = ["frontmatter", "gfm", "myst", "vuepress"]
 exclude = [
     "node_modules",
     ".pnpm",
