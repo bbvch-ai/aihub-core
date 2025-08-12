@@ -4,6 +4,8 @@ on:
   pull_request:
     types: [ closed ]
     branches: [ main ]
+  push:
+    branches: [ feat/docker-compose-deployment ]
 
 permissions:
   contents: write
