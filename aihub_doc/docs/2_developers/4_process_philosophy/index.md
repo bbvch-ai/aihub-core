@@ -63,9 +63,9 @@ Once humans trust the process structure, selectively introduce automation where 
 
 1. **Automate the Boring:** Identify repetitive, rule-based tasks that humans find tedious. Connect these to existing
    automation tools like n8n or Power Automate that your organization already uses or can easily adopt.
-1. **Add Intelligence Gradually:** For tasks requiring reasoning or analysis, introduce AI agents as process
+2. **Add Intelligence Gradually:** For tasks requiring reasoning or analysis, introduce AI agents as process
    participants. Start with low-risk scenarios where human oversight is easy to maintain.
-1. **Preserve Human Veto Power:** Ensure humans can always step in, override decisions, or redirect process flow. The
+3. **Preserve Human Veto Power:** Ensure humans can always step in, override decisions, or redirect process flow. The
    goal is augmentation, not replacement.
 
 ### Phase 3: Trusted Agentic Collaboration
@@ -74,9 +74,9 @@ As confidence builds, enable more sophisticated human-agent collaboration while 
 
 1. **Strategic Approval Points:** Humans remain in control at key decision points, approving agent work before critical
    next steps.
-1. **Context-Aware Handoffs:** Processes intelligently route work between humans, agents, and external programs based on
+2. **Context-Aware Handoffs:** Processes intelligently route work between humans, agents, and external programs based on
    context, workload, and expertise.
-1. **Continuous Transparency:** Every automated action, agent decision, and external tool integration is fully visible
+3. **Continuous Transparency:** Every automated action, agent decision, and external tool integration is fully visible
    in the process execution timeline.
 
 ::: tip The Trust-Building Journey This evolutionary approach ensures organizations can embrace agentic processes at
@@ -148,9 +148,9 @@ maintaining human control and trust.
 
 1. **Leverage Existing Tools:** Integrate with existing CRM (Salesforce), contract management (DocuSign), and accounting
    (QuickBooks) systems
-1. **Add Intelligence:** AI agents analyze customer data to recommend optimal setup configurations and identify
+2. **Add Intelligence:** AI agents analyze customer data to recommend optimal setup configurations and identify
    potential issues
-1. **Human Orchestration:** Humans guide the process at key decision points, with dynamic forms that adapt to each
+3. **Human Orchestration:** Humans guide the process at key decision points, with dynamic forms that adapt to each
    customer's specific needs
 
 **Trust-Building Features**

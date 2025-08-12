@@ -87,9 +87,9 @@ As the agent proves reliability through testing and monitoring, you can graduall
 
 1. **Introduce Choice Points:** Allow the agent to select from predefined options. For instance, an agent might choose
    between different retrieval strategies based on the query's nature.
-1. **Monitor Performance:** Track metrics like response accuracy, latency, and user satisfaction. Positive trends
+2. **Monitor Performance:** Track metrics like response accuracy, latency, and user satisfaction. Positive trends
    justify further autonomy, while negative trends signal need for re-tuning.
-1. **Periodic Reviews:** Regularly review workflows with stakeholders to ensure the current level of autonomy meets
+3. **Periodic Reviews:** Regularly review workflows with stakeholders to ensure the current level of autonomy meets
    business needs and maintains sufficient traceability.
 
 ::: tip Phased Approach This approach ensures organizations can introduce AI with minimal risk, retaining full control
@@ -116,11 +116,11 @@ safeguards to ensure reliability.
 
 1. **Grounded Responses:** Agents base answers on retrieved documents from approved sources. If no relevant information
    is found, the agent states it cannot answer rather than guessing.
-1. **Context Validation:** Before producing answers, agents confirm they have sufficient and relevant context to prevent
+2. **Context Validation:** Before producing answers, agents confirm they have sufficient and relevant context to prevent
    assumptions or fabricated details.
-1. **Verification Steps:** Agents can include separate verification steps to compare claims against source documents,
+3. **Verification Steps:** Agents can include separate verification steps to compare claims against source documents,
    adjusting responses if contradictions arise.
-1. **Workflow Boundaries:** Agents operate strictly within their defined workflow and approved capabilities, preventing
+4. **Workflow Boundaries:** Agents operate strictly within their defined workflow and approved capabilities, preventing
    unintended or harmful actions.
 
 ### Observability and Trust Building

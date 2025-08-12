@@ -242,9 +242,9 @@ its own isolated Poetry environment and dependencies.
 ::: warning :warning: Important To work on a specific scope, you must first activate its environment:
 
 1. Navigate into the scope's directory (e.g., `cd aihub_agent`).
-1. Activate the environment using the command: `poetry shell`. Poetry shell was moved to a separate plugin, so you may
+2. Activate the environment using the command: `poetry shell`. Poetry shell was moved to a separate plugin, so you may
    need to install it first with: `poetry self add poetry-plugin-shell`.
-1. Once the shell is activated, install the dependencies with: `poetry install`.
+3. Once the shell is activated, install the dependencies with: `poetry install`.
 
 You must run commands from within the correct scope's activated environment. This process needs to be repeated for each
 scope you intend to work on. :::
@@ -307,8 +307,8 @@ The MCP integration is configured through the `.mcp.json` file in the project ro
 servers:
 
 1. **Phoenix MCP Server**: Provides access to AI observability and tracing data
-1. **MongoDB MCP Server**: Enables database queries and monitoring (read-only)
-1. **AI-Hub API MCP Server**: Exposes AI-Hub API functionality to AI assistants
+2. **MongoDB MCP Server**: Enables database queries and monitoring (read-only)
+3. **AI-Hub API MCP Server**: Exposes AI-Hub API functionality to AI assistants
 
 ::: details :wrench: MCP Server Configuration The `.mcp.json` file contains the following configuration:
 
@@ -625,7 +625,7 @@ be clumsy. Therefore, for truly asynchronous tests, we often fall back to using 
 
 1. **Feature Files**: Written in Gherkin syntax (`.feature`), these files describe a feature and its scenarios in plain
    English. They are located in the `tests/features/` directory.
-1. **Step Definitions**: These are Python functions that implement the steps defined in the feature files. They use
+2. **Step Definitions**: These are Python functions that implement the steps defined in the feature files. They use
    decorators like `@given`, `@when`, and `@then` to link the code to the Gherkin steps.
 
 Tests are structured into three parts: `Given` (setup), `When` (execute), and `Then` (assert). :::
@@ -807,7 +807,7 @@ Before writing any code, check your local environment.
 
 1. **Check your current branch**. If you are on `main`, create a new branch that follows the naming convention outlined
    in Chapter Git & GitHub Workflow (e.g., `feat/new-process-feature`).
-1. **Review existing work**. If you are already on a feature branch, run `git diff main...` to see what changes have
+2. **Review existing work**. If you are already on a feature branch, run `git diff main...` to see what changes have
    already been made on that branch. :::
 
 ### :bulb: Step 3: Plan and Implement Your Solution
@@ -815,9 +815,9 @@ Before writing any code, check your local environment.
 ::: tip :bulb: Implementation Steps
 
 1. **Plan your implementation**. Think through the changes you need to make before writing code.
-1. **Choose the correct scope**. It is critical that you place your code in the correct package (`aihub_lib`,
+2. **Choose the correct scope**. It is critical that you place your code in the correct package (`aihub_lib`,
    `aihub_agent`, `aihub_api`, etc.). If code is used by more than one service, it belongs in `aihub_lib`.
-1. **Write the code**. As you implement your solution, rigorously follow all rules defined in the Chapter **Code
+3. **Write the code**. As you implement your solution, rigorously follow all rules defined in the Chapter **Code
    Conventions**. :::
 
 ### :white_check_mark: Step 4: Verify Code Quality
@@ -870,7 +870,7 @@ We follow a **README.md-only** documentation principle. All project documentatio
 
 1. **Code Docstrings**: For documentation that is specific to a single class, method, or function, we use detailed
    docstrings directly in the implementation file. This is the most common form of documentation.
-1. **README.md Files**: For documentation that holds true for a larger part of the codebase (a specific folder, a scope,
+2. **README.md Files**: For documentation that holds true for a larger part of the codebase (a specific folder, a scope,
    or the entire project), we use `README.md` files. :::
 
 ::: tip :file_folder: Hierarchical Structure These README files are hierarchical. A `README.md` can exist at the project

@@ -87,13 +87,13 @@ are handled smoothly without breaking user experience or losing conversation con
      --mongo-connection-string "mongodb://localhost:27017"
    ```
 
-1. **Azure AD App Registration**: Automatically handled by setup script
+2. **Azure AD App Registration**: Automatically handled by setup script
 
    - Creates Azure AD application with Bot Framework permissions
    - Generates secure app credentials (App ID and password)
    - Configures single-tenant or multi-tenant authentication
 
-1. **Channel Configuration**: Manually configure in Azure Portal after setup
+3. **Channel Configuration**: Manually configure in Azure Portal after setup
 
    - **Microsoft Teams**: Add Teams channel in Azure Bot Service
    - **Slack**: Create Slack App and link to Azure Bot Service
@@ -111,7 +111,7 @@ are handled smoothly without breaking user experience or losing conversation con
    # Use tunnel URL in bot configuration
    ```
 
-1. **Database Configuration**: Credentials stored in MongoDB
+2. **Database Configuration**: Credentials stored in MongoDB
 
    ```json
    {
@@ -133,9 +133,9 @@ are handled smoothly without breaking user experience or losing conversation con
 **Basic Chat Interaction:**
 
 1. **Add Bot to Teams**: Install AI-Hub bot in your Teams workspace
-1. **Start Conversation**: Message the bot directly or mention in channels
-1. **Streaming Responses**: See real-time typing indicators and incremental responses
-1. **Conversation Persistence**: Context maintained across multiple interactions
+2. **Start Conversation**: Message the bot directly or mention in channels
+3. **Streaming Responses**: See real-time typing indicators and incremental responses
+4. **Conversation Persistence**: Context maintained across multiple interactions
 
 **Advanced Features:**
 
@@ -227,8 +227,8 @@ To implement Azure Bot Service Integration in your AI-Hub deployment:
 
 1. **Run Azure Setup Script**: Use the provided automation to create Azure Bot resources and configure authentication
    with your preferred database backend
-1. **Configure Channels**: Set up Microsoft Teams and/or Slack integrations through Azure Portal channel configuration
-1. **Deploy Bot Implementations**: Choose between agent-based bots for complex workflows or OpenAI-based bots for
+2. **Configure Channels**: Set up Microsoft Teams and/or Slack integrations through Azure Portal channel configuration
+3. **Deploy Bot Implementations**: Choose between agent-based bots for complex workflows or OpenAI-based bots for
    simpler interactions, with streaming support for enhanced user experience
 
 For detailed setup instructions, troubleshooting guidance, and advanced configuration options, refer to the

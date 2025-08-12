@@ -166,7 +166,7 @@ Follow this three-part process to define a new API endpoint domain. Each part bu
        created_at: Annotated[str, Field(description="Creation timestamp")]
    ```
 
-1. **Create the Service**: Implement the business logic layer.
+2. **Create the Service**: Implement the business logic layer.
 
    ```python
    # my_domain/MyService.py
@@ -187,7 +187,7 @@ Follow this three-part process to define a new API endpoint domain. Each part bu
            pass
    ```
 
-1. **Create the Controller**: Define the HTTP endpoints.
+3. **Create the Controller**: Define the HTTP endpoints.
 
    ```python
    # my_domain/MyController.py
@@ -304,7 +304,7 @@ API testing uses pytest with FastAPI's test client and the `ApiTestRunner` or `S
        assert data["id"] == resource_id
    ```
 
-1. **Run Tests**: Execute tests from your activated Poetry shell.
+2. **Run Tests**: Execute tests from your activated Poetry shell.
 
    ```bash
    # Run all tests
@@ -347,21 +347,21 @@ The playground provides a full API server with frontend for interactive testing.
        await runner.run()
    ```
 
-1. **Start the Test Server**: Run the playground server.
+2. **Start the Test Server**: Run the playground server.
 
    ```bash
    cd playground/testing
    python main.py
    ```
 
-1. **Access the API**:
+3. **Access the API**:
 
    - **Frontend**: `http://localhost:8000` (interactive testing interface)
    - **API Docs**: `http://localhost:8000/api/v1/docs` (Swagger UI)
    - **ReDoc**: `http://localhost:8000/api/v1/redoc` (Alternative API docs)
    - **Phoenix Traces**: `http://localhost:6006` (agent execution traces)
 
-1. **Test with curl/wget**: You can use curl or wget to make requests to API endpoints:
+4. **Test with curl/wget**: You can use curl or wget to make requests to API endpoints:
 
    ```bash
    # Check if API is running

@@ -233,9 +233,9 @@ Contact BBV to discuss your requirements and set up your dedicated AI-Hub instan
 When hosting the AI-Hub yourself, scaling requires manual intervention:
 
 1. **Monitor Resource Usage**: Track CPU, memory, and storage utilization
-1. **Identify Bottlenecks**: Determine if scaling is needed
-1. **Server Migration**: Move to larger instance when limits are reached
-1. **Data Migration**: Ensure seamless data transfer during upgrades
+2. **Identify Bottlenecks**: Determine if scaling is needed
+3. **Server Migration**: Move to larger instance when limits are reached
+4. **Data Migration**: Ensure seamless data transfer during upgrades
 
 ### :lock: Security Best Practices
 
@@ -250,11 +250,11 @@ When hosting the AI-Hub yourself, scaling requires manual intervention:
 ## :books: Next Steps
 
 1. **Choose Your Deployment Option**: Based on privacy requirements, budget, and infrastructure capabilities
-1. **Review Requirements**: Ensure hardware and software prerequisites are met
-1. **Prepare Environment**: Set up necessary infrastructure and credentials
-1. **Deploy**: Follow the specific deployment instructions for your chosen option
-1. **Configure**: Customize the AI-Hub for your organization's needs
-1. **Test**: Verify all components are working correctly
-1. **Monitor**: Implement ongoing monitoring and maintenance procedures
+2. **Review Requirements**: Ensure hardware and software prerequisites are met
+3. **Prepare Environment**: Set up necessary infrastructure and credentials
+4. **Deploy**: Follow the specific deployment instructions for your chosen option
+5. **Configure**: Customize the AI-Hub for your organization's needs
+6. **Test**: Verify all components are working correctly
+7. **Monitor**: Implement ongoing monitoring and maintenance procedures
 
 For detailed configuration and troubleshooting, refer to the specific deployment documentation for your chosen option.

@@ -57,8 +57,8 @@ predictable REST endpoints, enabling powerful integrations with third-party serv
 Dynamic endpoints are enabled automatically when you start the AI-Hub with the full infrastructure stack:
 
 1. **NATS Message Bus**: Required for service discovery communication
-1. **API Gateway**: The `aihub_api` service with `lifetime_manager` enabled
-1. **Discovery Services**: Automatically started by the lifetime manager
+2. **API Gateway**: The `aihub_api` service with `lifetime_manager` enabled
+3. **Discovery Services**: Automatically started by the lifetime manager
 
 ## Agent Endpoint Generation
 
@@ -116,9 +116,9 @@ system load
 To begin using dynamic endpoints in your AI-Hub:
 
 1. **Start the Infrastructure**: Ensure NATS and the API gateway are running with the standard Docker Compose setup
-1. **Deploy Agents/Processes**: Any agent or process that connects to NATS will automatically get endpoints
-1. **Discover Endpoints**: Check `/api/v1/docs` to see all dynamically generated endpoints
-1. **Integrate**: Use the standard REST endpoints to integrate with external systems or build custom frontends
+2. **Deploy Agents/Processes**: Any agent or process that connects to NATS will automatically get endpoints
+3. **Discover Endpoints**: Check `/api/v1/docs` to see all dynamically generated endpoints
+4. **Integrate**: Use the standard REST endpoints to integrate with external systems or build custom frontends
 
 The dynamic endpoint system transforms the AI-Hub from a static API into a living, adaptive integration layer that grows
 with your AI capabilities.

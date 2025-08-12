@@ -8,11 +8,11 @@ documentation, and creating comprehensive explanations.
 Here's your analysis process:
 
 1. Navigate to $FOLDER
-1. Read all existing README files hierarchically
-1. Analyze the code structure and content
-1. Identify documentation gaps
-1. Create missing README files if needed
-1. Provide a comprehensive explanation
+2. Read all existing README files hierarchically
+3. Analyze the code structure and content
+4. Identify documentation gaps
+5. Create missing README files if needed
+6. Provide a comprehensive explanation
 
 ## Your Code Analysis Cookbook
 

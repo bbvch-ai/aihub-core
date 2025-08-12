@@ -101,13 +101,13 @@ knowledge that survives personnel changes.
      --slack-token "xoxb-your-slack-oauth-token"
    ```
 
-1. **Slack App Configuration**: Create a Slack App with required permissions
+2. **Slack App Configuration**: Create a Slack App with required permissions
 
    - **Bot Token Scopes**: `channels:read`, `chat:write`, `chat:write.public`, `users:read`
    - **Event Subscriptions**: Subscribe to `message.channels` events
    - **OAuth Installation**: Install the app to your workspace
 
-1. **Channel Access**: Ensure your bot is added to the Slack channels where you want to post questions
+3. **Channel Access**: Ensure your bot is added to the Slack channels where you want to post questions
 
    ```
    /invite @YourAIHubBot
@@ -121,14 +121,14 @@ knowledge that survives personnel changes.
    from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
    ```
 
-1. **Configure Slack Channel IDs**: Identify your Slack channel IDs (format: `C08MCK6LEBY`)
+2. **Configure Slack Channel IDs**: Identify your Slack channel IDs (format: `C08MCK6LEBY`)
 
    ```python
    # Right-click channel → View channel details → Copy channel ID
    EXPERT_CHANNEL_ID = "C08MCK6LEBY"
    ```
 
-1. **NATS Event Distribution**: Ensure your AI-Hub deployment has NATS messaging configured for event routing
+3. **NATS Event Distribution**: Ensure your AI-Hub deployment has NATS messaging configured for event routing
 
 ## Usage Examples
 
@@ -296,9 +296,9 @@ To implement Bot-in-the-Loop in your AI-Hub deployment:
 
 1. **Configure Slack Integration**: Set up Azure Bot Service with Slack connectivity and ensure your bot has access to
    designated expert channels
-1. **Identify Expert Channels**: Create or identify Slack channels where subject matter experts are available to respond
+2. **Identify Expert Channels**: Create or identify Slack channels where subject matter experts are available to respond
    to agent questions
-1. **Integrate in Agent Workflows**: Use the simple `BotInTheLoop.invoke()` pattern at decision points where human input
+3. **Integrate in Agent Workflows**: Use the simple `BotInTheLoop.invoke()` pattern at decision points where human input
    adds value to automated processes
 
 For detailed agent integration patterns, see the [Expert Agents documentation](../expert-agents/) for real-world

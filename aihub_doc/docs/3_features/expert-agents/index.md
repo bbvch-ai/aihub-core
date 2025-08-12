@@ -73,7 +73,7 @@ impact across the organization.
      api_version: "2024-12-01-preview"
    ```
 
-1. **Expert Asking Agent Reference**: Connect to your Expert Asking Agent instance
+2. **Expert Asking Agent Reference**: Connect to your Expert Asking Agent instance
 
    ```yaml
    expert_asking_agent_class: "ExpertAskingAgent"
@@ -88,7 +88,7 @@ impact across the organization.
    slack_channel_id: "C08MK7Z8GU9"  # Your expert Slack channel ID
    ```
 
-1. **OpenWebUI Knowledge Base**: Set up knowledge storage integration
+2. **OpenWebUI Knowledge Base**: Set up knowledge storage integration
 
    ```yaml
    open_webui_knowledge_id: "your-knowledge-base-id"
@@ -96,7 +96,7 @@ impact across the organization.
    open_webui_api_url: "http://localhost:8080"
    ```
 
-1. **Loop Protection**: Configure maximum follow-up questions
+3. **Loop Protection**: Configure maximum follow-up questions
 
    ```yaml
    loop_max: 3  # Maximum expert consultation rounds
@@ -107,22 +107,22 @@ impact across the organization.
 ### Basic Expert Consultation Flow
 
 1. **User Question**: "What is our company's policy on remote work flexibility?"
-1. **Context Assessment**: Agent evaluates available documentation
-1. **Expert Escalation**: If policy details are insufficient, agent asks: "I lack the necessary knowledge to answer this
+2. **Context Assessment**: Agent evaluates available documentation
+3. **Expert Escalation**: If policy details are insufficient, agent asks: "I lack the necessary knowledge to answer this
    question. Would you like me to obtain the required knowledge from an expert?"
-1. **Slack Consultation**: Question posted to HR experts channel
-1. **Response Capture**: Expert responds with detailed policy information
-1. **Knowledge Storage**: Response automatically saved to knowledge base
-1. **User Response**: Complete policy information delivered to user
+4. **Slack Consultation**: Question posted to HR experts channel
+5. **Response Capture**: Expert responds with detailed policy information
+6. **Knowledge Storage**: Response automatically saved to knowledge base
+7. **User Response**: Complete policy information delivered to user
 
 ### Iterative Expert Questioning
 
 If expert's initial response lacks detail:
 
 1. **Sufficiency Assessment**: LLM evaluates response completeness
-1. **Follow-up Generation**: Automatic creation of clarifying questions
-1. **Continued Engagement**: Expert provides additional details
-1. **Knowledge Synthesis**: Final comprehensive response creation
+2. **Follow-up Generation**: Automatic creation of clarifying questions
+3. **Continued Engagement**: Expert provides additional details
+4. **Knowledge Synthesis**: Final comprehensive response creation
 
 ## Available Capabilities
 
@@ -164,9 +164,9 @@ To implement Expert Agents in your AI-Hub deployment:
 
 1. **Configure Slack Integration**: Set up dedicated expert consultation channels and ensure
    [Bot-in-the-Loop infrastructure](../bot-in-the-loop/) is running
-1. **Deploy Expert Asking Agents**: Configure one or more Expert Asking Agents for different domains (HR, Legal,
+2. **Deploy Expert Asking Agents**: Configure one or more Expert Asking Agents for different domains (HR, Legal,
    Technical, etc.)
-1. **Implement Expert Grounded Agents**: Deploy grounded agents that connect to your Expert Asking Agents for seamless
+3. **Implement Expert Grounded Agents**: Deploy grounded agents that connect to your Expert Asking Agents for seamless
    escalation
 
 For detailed setup instructions, configuration examples, and troubleshooting guidance, refer to the AI-Hub Agent

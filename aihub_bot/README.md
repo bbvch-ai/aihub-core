@@ -230,7 +230,7 @@ Follow this three-part process to implement a new bot integration. Each part bui
                await super().on_message_activity(turn_context)
    ```
 
-1. **Create the Completion Handler**: Implement the logic for generating responses.
+2. **Create the Completion Handler**: Implement the logic for generating responses.
 
    ```python
    # my_bot/MyCompletionHandler.py
@@ -264,7 +264,7 @@ Follow this three-part process to implement a new bot integration. Each part bui
                    yield chunk.delta
    ```
 
-1. **Create the Controller**: Define HTTP endpoints for bot integration.
+3. **Create the Controller**: Define HTTP endpoints for bot integration.
 
    ```python
    # my_bot/MyBotController.py
@@ -354,7 +354,7 @@ Bot testing uses pytest with the `BotTestRunner` for integration testing. This p
        assert entity.ttl > 0
    ```
 
-1. **Run Tests**: Execute tests from your activated Poetry shell.
+2. **Run Tests**: Execute tests from your activated Poetry shell.
 
    ```bash
    # Run all tests
@@ -402,14 +402,14 @@ The playground provides a full bot server with web interface for interactive tes
        await runner.run()
    ```
 
-1. **Start the Test Server**: Run the playground server.
+2. **Start the Test Server**: Run the playground server.
 
    ```bash
    cd playground/testing
    python main.py
    ```
 
-1. **Access the Bot**:
+3. **Access the Bot**:
 
    - **Web Interface**: `http://localhost:8000` (interactive chat UI)
    - **API Docs**: `http://localhost:8000/api/v1/docs` (Swagger UI)
@@ -585,9 +585,9 @@ AI-Hub bots support real-time response streaming, allowing users to see response
 **How it works:**
 
 1. Bot sends an empty message to establish the activity
-1. As response chunks are generated, the message is updated incrementally
-1. Updates are throttled (every 0.5 seconds) to avoid rate limits
-1. Final message shows the complete response
+2. As response chunks are generated, the message is updated incrementally
+3. Updates are throttled (every 0.5 seconds) to avoid rate limits
+4. Final message shows the complete response
 
 **Built-in streaming support:**
 
@@ -604,11 +604,11 @@ The Bot-in-the-Loop pattern enables AI agents to pause their execution and reque
 **How it works:**
 
 1. An AI agent encounters a decision point requiring human input
-1. The agent sends a `BotInTheLoop.request` event to the bot system
-1. The bot posts a formatted message to the specified Slack channel
-1. A human responds in the Slack thread
-1. The bot captures the response and sends it back to the waiting agent
-1. The agent continues execution with the human input
+2. The agent sends a `BotInTheLoop.request` event to the bot system
+3. The bot posts a formatted message to the specified Slack channel
+4. A human responds in the Slack thread
+5. The bot captures the response and sends it back to the waiting agent
+6. The agent continues execution with the human input
 
 This pattern enables seamless human-AI collaboration within automated workflows.
 
@@ -682,18 +682,18 @@ This provides:
 ### 🖥️ Bot Framework Emulator Setup
 
 1. Download Bot Framework Emulator from Microsoft
-1. Configure endpoint URL: `http://localhost:8000/api/v1/messages`
-1. Leave App ID and Password empty for local testing
-1. Test different activity types and channels
+2. Configure endpoint URL: `http://localhost:8000/api/v1/messages`
+3. Leave App ID and Password empty for local testing
+4. Test different activity types and channels
 
 ### ☁️ Azure Bot Deployment
 
 #### 🏭 Production Deployment Process
 
 1. **Run the Setup Script**: Use the provided `setup_azure_bot.py` script to automate Azure resource creation
-1. **Configure Public Endpoint**: Ensure your bot API is publicly accessible (use ngrok for development)
-1. **Set Up Channels**: Manually configure channels in Azure Portal after resource creation
-1. **Monitor and Debug**: Use Azure Portal monitoring and Bot Framework Emulator for testing
+2. **Configure Public Endpoint**: Ensure your bot API is publicly accessible (use ngrok for development)
+3. **Set Up Channels**: Manually configure channels in Azure Portal after resource creation
+4. **Monitor and Debug**: Use Azure Portal monitoring and Bot Framework Emulator for testing
 
 #### 🔐 Credential Management
 
@@ -729,7 +729,7 @@ For local development that integrates with Azure Bot Service:
    python main.py
    ```
 
-1. **Expose via Azure DevTunnel**:
+2. **Expose via Azure DevTunnel**:
 
    ```bash
    devtunnel create --allow-anonymous
@@ -738,14 +738,14 @@ For local development that integrates with Azure Bot Service:
    # Copy the https URL (e.g., https://abc123-8000.devtunnels.ms)
    ```
 
-1. **Update Azure Bot endpoint**:
+3. **Update Azure Bot endpoint**:
 
    ```bash
    az bot update --name "my-bot" --resource-group "my-rg" \
        --endpoint "https://abc123-8000.devtunnels.ms/api/v1/messages"
    ```
 
-1. **Test in Teams/Slack**: Your local bot now receives messages from Azure Bot Service
+4. **Test in Teams/Slack**: Your local bot now receives messages from Azure Bot Service
 
 ### 📖 Glossary of Bot-Specific Terms
 

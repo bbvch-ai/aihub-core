@@ -68,13 +68,13 @@ Setting up RBAC in your AI-Hub deployment:
    - **Token-based**: Configure database-driven user management
    - **Development**: Use bypass authentication for development environments
 
-1. **Role Definition**: Create roles that match your organizational structure
+2. **Role Definition**: Create roles that match your organizational structure
 
    - Navigate to the AI-Hub admin interface
    - Access the "Roles" management section
    - Define roles with appropriate access rules
 
-1. **User Assignment**: Assign users to roles through your identity provider
+3. **User Assignment**: Assign users to roles through your identity provider
 
    - Azure AD: Map Azure AD groups to AI-Hub roles
    - Token-based: Assign roles directly through the AI-Hub interface
@@ -185,9 +185,9 @@ The AI-Hub RBAC system provides:
 To begin implementing RBAC in your AI-Hub deployment:
 
 1. **Configure Authentication**: Set up your preferred authentication method (Azure AD recommended for enterprise)
-1. **Define Organizational Roles**: Create roles that match your team structure and access requirements
-1. **Assign Initial Users**: Map users to roles through your identity provider or AI-Hub interface
-1. **Test Access Patterns**: Verify that users can access appropriate resources and are blocked from unauthorized areas
+2. **Define Organizational Roles**: Create roles that match your team structure and access requirements
+3. **Assign Initial Users**: Map users to roles through your identity provider or AI-Hub interface
+4. **Test Access Patterns**: Verify that users can access appropriate resources and are blocked from unauthorized areas
 
 For detailed API documentation and advanced configuration options, refer to the AI-Hub API reference and your specific
 authentication provider's documentation.

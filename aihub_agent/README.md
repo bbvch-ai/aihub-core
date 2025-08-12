@@ -154,7 +154,7 @@ agent implementation. :::
        async def process_step(self, event: MyCustomEvent) -> StopEvent:
            # ...
    ```
-1. **Define the Agent Configuration**: Create a Pydantic model inheriting from `AgentConfig` to hold the agent's
+2. **Define the Agent Configuration**: Create a Pydantic model inheriting from `AgentConfig` to hold the agent's
    settings. Use `Annotated` and `Field` for validation and documentation.
    ```python
    # my_agent/MyAgentConfig.py
@@ -166,7 +166,7 @@ agent implementation. :::
        temperature: Annotated[float, Field(0.7, description="LLM temperature", ge=0.0, le=1.0)]
        confidence_threshold: Annotated[float, Field(0.5, description="Minimum confidence threshold")]
    ```
-1. **Define Custom Events**: If your workflow requires custom data structures to be passed between steps, define them as
+3. **Define Custom Events**: If your workflow requires custom data structures to be passed between steps, define them as
    Pydantic models inheriting from `Event`.
    ```python
    # my_agent/events/MyCustomEvent.py
@@ -191,7 +191,7 @@ agent workflows. :::
        When the user sends a message with content: "Hello"
        Then the agent run should complete
    ```
-1. **Implement the Test Steps**: Write Python code to implement the Gherkin steps using the `AgentTestRunner`. The test
+2. **Implement the Test Steps**: Write Python code to implement the Gherkin steps using the `AgentTestRunner`. The test
    runner provides a sandboxed environment to execute the agent and inspect the resulting events.
    ```python
    # tests/test_MyAgent.py
@@ -235,7 +235,7 @@ agent workflows. :::
    def _(agent_runner: AgentTestRunner):
        assert agent_runner.has_stop_event, "Agent did not receive stop event"
    ```
-1. **Run the Tests**: Execute tests from your activated Poetry shell.
+3. **Run the Tests**: Execute tests from your activated Poetry shell.
    ```bash
    # Run all tests (excluding cloud dependencies)
    poetry run pytest -k "not azure"

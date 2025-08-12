@@ -22,8 +22,7 @@ format:
 # Format markdown files, use python for faster file fetching. and excluding of non git tracked files
 format-md:
 	@echo "Formatting markdown files..."
-	@poetry run python -c "import subprocess; files=subprocess.check_output(['git','ls-files','*.md'], text=True).split(); subprocess.run(['mdformat', *files])"
-
+	@poetry run python -c "import subprocess; files = subprocess.check_output(['git','ls-files','*.md'], text=True).split(); subprocess.run(['mdformat', *files, '--number'])"
 # Type-check with MyPy
 typecheck:
 	@echo "Running type checks for pipelines..."

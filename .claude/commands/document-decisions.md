@@ -11,10 +11,10 @@ Focus on: $DECISION
 Here's your explanation documentation journey:
 
 1. Review your changes against main
-1. Check existing architecture decisions
-1. Identify if you made significant architecture choices
-1. Document new decisions properly
-1. Reference any superseded decisions
+2. Check existing architecture decisions
+3. Identify if you made significant architecture choices
+4. Document new decisions properly
+5. Reference any superseded decisions
 
 ## Your Decision Documentation Cookbook
 

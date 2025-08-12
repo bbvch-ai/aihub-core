@@ -8,12 +8,12 @@ changes meet all quality standards and pass all checks.
 Here's what you need to do:
 
 1. Commit your current work using semantic commits
-1. Format and lint all code across every scope
-1. Run all tests and fix any failures
-1. Review your changes against the main branch
-1. Validate adherence to our coding standards
-1. Fix any issues you find along the way
-1. Update documentation if needed
+2. Format and lint all code across every scope
+3. Run all tests and fix any failures
+4. Review your changes against the main branch
+5. Validate adherence to our coding standards
+6. Fix any issues you find along the way
+7. Update documentation if needed
 
 ## Your Step-by-Step Cookbook
 
@@ -100,8 +100,8 @@ Now it's time to ensure your code actually works! Run the test suite for each sc
 fail:
 
 1. Read the error message carefully - understand what's breaking
-1. Fix the root cause (never disable or skip tests!)
-1. Re-run the tests until you see that satisfying green checkmark
+2. Fix the root cause (never disable or skip tests!)
+3. Re-run the tests until you see that satisfying green checkmark
 
 ```bash
 # Test the core library first - everything depends on this!
@@ -167,7 +167,7 @@ Here's your inspection checklist:
    - Are you leaking any resources?
    - Any race conditions lurking in concurrent code?
 
-1. **Enforce our coding standards religiously**
+2. **Enforce our coding standards religiously**
 
    - **Comments**: Do they explain "why" not "what"? Bad: `# Increment counter`. Good:
      `# Retry 3 times to handle transient network errors`
@@ -177,7 +177,7 @@ Here's your inspection checklist:
    - **Error handling**: Let functions fail fast and loud. Never swallow exceptions with a silent None return
    - **Naming conventions**: Everything must be snake_case. No camelCase, no PascalCase for files/directories
 
-1. **Respect the architecture**
+3. **Respect the architecture**
 
    - Is your code in the right scope? Shared code belongs in aihub_lib
    - Zero customer-specific information in the core repository
@@ -188,16 +188,16 @@ Here's your inspection checklist:
 Found issues? Here's your fix-it protocol:
 
 1. Jump into the files and fix each problem properly
-1. After each fix, go back and re-run `make pr-ready` and `make test` for that scope
-1. Double-check that your fixes actually solved the problems (don't assume!)
+2. After each fix, go back and re-run `make pr-ready` and `make test` for that scope
+3. Double-check that your fixes actually solved the problems (don't assume!)
 
 ### Step 6: The Final Check
 
 You're almost there! Let's do one last sweep:
 
 1. Run `git status` - take inventory of everything you've touched
-1. Run `git diff` one more time - give it a final read-through with fresh eyes
-1. Ask yourself: "Does this solve exactly what the task asked for?"
+2. Run `git diff` one more time - give it a final read-through with fresh eyes
+3. Ask yourself: "Does this solve exactly what the task asked for?"
 
 ### Step 7: Update Documentation
 

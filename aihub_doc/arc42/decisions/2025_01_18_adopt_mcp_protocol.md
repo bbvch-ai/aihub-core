@@ -36,16 +36,16 @@ We will adopt a two-pronged MCP (Model Context Protocol) integration strategy:
 Configure AI coding assistants to access development tools through MCP servers using `.mcp.json`:
 
 1. **Phoenix MCP Server**: For AI observability and tracing (`@arizeai/phoenix-mcp`)
-1. **MongoDB MCP Server**: For database access and monitoring (`mongodb/mongodb-mcp-server`)
-1. **AI-Hub API MCP Server**: For internal API integration (`http://localhost:8000/mcp`)
+2. **MongoDB MCP Server**: For database access and monitoring (`mongodb/mongodb-mcp-server`)
+3. **AI-Hub API MCP Server**: For internal API integration (`http://localhost:8000/mcp`)
 
 ### Decision 2: AI-Hub API as MCP Server
 
 Implement MCP server capabilities directly in the AI-Hub API to expose functionality to AI coding assistants:
 
 1. **Read-Only Access**: Currently expose only GET endpoints through MCP for security
-1. **Standardized Interface**: Provide AI tools with structured access to API functionality
-1. **Third-Party Integration**: Enable external AI tools to interact with AI-Hub through MCP protocol
+2. **Standardized Interface**: Provide AI tools with structured access to API functionality
+3. **Third-Party Integration**: Enable external AI tools to interact with AI-Hub through MCP protocol
 
 ## Consequences
 

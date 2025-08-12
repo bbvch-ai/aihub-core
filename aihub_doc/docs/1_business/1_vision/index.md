@@ -101,16 +101,16 @@ technology serves your people, not the other way around.
 :::details Click here to see an example Assistant scenario A product team discusses an issue in a Microsoft Teams
 channel:
 
-1. **Product Manager:** "We need to delay the Henderson launch. @Finance-Assistant, can you analyze the Q3 impact?"
-1. **Finance Assistant:** "Analyzing... Based on the pipeline forecast, a two-week delay would shift approximately
-1. $120K in revenue from Q3 to Q4."
-1. **Marketing Lead:** "@Project-Assistant, what are our external commitments for Henderson?"
-1. **Project Assistant:** "Checking commitments... We promised a 'summer release' in the April newsletter. I don't
-1. see the TechDaily commitment in my records; it may have been discussed in a meeting."
-1. **Technical Lead:** "@Dev-Assistant, what's the status of the critical bugs?"
-1. **Dev Assistant:** "Checking the bug tracker... There are 3 critical bugs open. Based on historical data, the team
-1. needs approximately 8 working days to address them."
-1. **Product Manager:** "Thanks, everyone. The path forward is clear."
+01. **Product Manager:** "We need to delay the Henderson launch. @Finance-Assistant, can you analyze the Q3 impact?"
+02. **Finance Assistant:** "Analyzing... Based on the pipeline forecast, a two-week delay would shift approximately
+03. $120K in revenue from Q3 to Q4."
+04. **Marketing Lead:** "@Project-Assistant, what are our external commitments for Henderson?"
+05. **Project Assistant:** "Checking commitments... We promised a 'summer release' in the April newsletter. I don't
+06. see the TechDaily commitment in my records; it may have been discussed in a meeting."
+07. **Technical Lead:** "@Dev-Assistant, what's the status of the critical bugs?"
+08. **Dev Assistant:** "Checking the bug tracker... There are 3 critical bugs open. Based on historical data, the team
+09. needs approximately 8 working days to address them."
+10. **Product Manager:** "Thanks, everyone. The path forward is clear."
 
 In this scenario, each AI Assistant acts as a domain expert, providing precise, auditable information while
 acknowledging its limitations, allowing the human team to make the final strategic decisions. :::

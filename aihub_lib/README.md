@@ -137,8 +137,8 @@ poetry shell
 #### 📊 Integration Assessment
 
 1. **Identify Dependencies**: What other services will use this code?
-1. **Review Existing Patterns**: Are there similar utilities already implemented?
-1. **Consider Breaking Changes**: How will changes affect existing consumers?
+2. **Review Existing Patterns**: Are there similar utilities already implemented?
+3. **Consider Breaking Changes**: How will changes affect existing consumers?
 
 ### 🛠️ Step 2: Implement Core Components
 
@@ -197,7 +197,7 @@ credentials) from user information retrieval. :::
            return await self.identity_provider.get_user_identity_by_oid(user_data["oid"])
    ```
 
-1. **Create Identity Provider**: For new user identity sources.
+2. **Create Identity Provider**: For new user identity sources.
 
    ```python
    # auth/identity/MyIdentityProvider/MyIdentityProvider.py
@@ -338,12 +338,12 @@ Key characteristics:
 ::: tip Event Architecture Principles
 
 1. **Automatic Registration**: Events auto-register when imported, enabling dynamic deserialization
-1. **Type Safety**: Strong typing with Pydantic validation and comprehensive type annotations
-1. **Separation of Concerns**: Clear distinction between control (workflow) and display (UI) events
-1. **Extensibility**: Easy addition of new event types without modifying core infrastructure
-1. **Observability**: Semantic events provide rich tracing integration
-1. **Internationalization**: Display events support multi-language interfaces
-1. **Resilience**: Unknown event fallback preserves system functionality :::
+2. **Type Safety**: Strong typing with Pydantic validation and comprehensive type annotations
+3. **Separation of Concerns**: Clear distinction between control (workflow) and display (UI) events
+4. **Extensibility**: Easy addition of new event types without modifying core infrastructure
+5. **Observability**: Semantic events provide rich tracing integration
+6. **Internationalization**: Display events support multi-language interfaces
+7. **Resilience**: Unknown event fallback preserves system functionality :::
 
 ### 🧪 Step 3: Write Comprehensive Tests
 
@@ -362,7 +362,7 @@ Key characteristics:
        Then the output should contain "processed: test data"
    ```
 
-1. **Implement Test Steps**: Write Python implementations.
+2. **Implement Test Steps**: Write Python implementations.
 
    ```python
    # tests/test_my_component.py

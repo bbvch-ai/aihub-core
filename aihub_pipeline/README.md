@@ -79,12 +79,12 @@ sources, parsing and transforming it, and storing it in a format that agents can
 **Key Stages:**
 
 1. **Document Ingestion**: SharePoint files are observed and ingested into the data lake with metadata extraction
-1. **Document Processing**: Raw files are parsed and converted to structured RefDoc documents with consistent metadata
-1. **Node Generation**: Documents are chunked into nodes using structural parsing strategies for precise retrieval
-1. **Embedding Generation**: Text nodes are converted to vector embeddings using AI models (e.g.,
+2. **Document Processing**: Raw files are parsed and converted to structured RefDoc documents with consistent metadata
+3. **Node Generation**: Documents are chunked into nodes using structural parsing strategies for precise retrieval
+4. **Embedding Generation**: Text nodes are converted to vector embeddings using AI models (e.g.,
    text-embedding-ada-002)
-1. **Vector Storage**: Embeddings are stored in vector databases for retrieval operations
-1. **Summary Generation**: Hierarchical summaries are created for better context preservation
+5. **Vector Storage**: Embeddings are stored in vector databases for retrieval operations
+6. **Summary Generation**: Hierarchical summaries are created for better context preservation
 
 **Data Versions and Traceability:** Each partition is assigned **DataVersions** that reflect the current state of the
 document. If a document changes, its DataVersion changes, prompting re-ingestion and re-indexing. This ensures:
@@ -184,7 +184,7 @@ poetry shell
        pass
    ```
 
-1. **Operations**: Define individual processing steps
+2. **Operations**: Define individual processing steps
 
    ```python
    @op(
@@ -197,7 +197,7 @@ poetry shell
        pass
    ```
 
-1. **Resources**: Configure external dependencies
+3. **Resources**: Configure external dependencies
 
    ```python
    class DocumentParserResource(ConfigurableResource):
@@ -240,7 +240,7 @@ poetry shell
        return my_asset
    ```
 
-1. **Define Operations**: Create the processing operations.
+2. **Define Operations**: Create the processing operations.
 
    ```python
    # ops/my_domain/process_my_data.py
@@ -257,7 +257,7 @@ poetry shell
        return resource.process(input_data)
    ```
 
-1. **Create Resources**: Define necessary resources for your operations.
+3. **Create Resources**: Define necessary resources for your operations.
 
    ```python
    # resources/my_domain/MyResource.py
@@ -343,9 +343,9 @@ poetry run dagster dev -m playground --use-legacy-code-server-behavior
 #### 🔄 Interactive Development Workflow
 
 1. **Asset Materialization**: Click "Materialize" on individual assets to test them
-1. **Pipeline Monitoring**: View real-time logs and execution progress
-1. **Data Inspection**: Examine asset outputs and intermediate results
-1. **Error Debugging**: Access detailed error logs and stack traces
+2. **Pipeline Monitoring**: View real-time logs and execution progress
+3. **Data Inspection**: Examine asset outputs and intermediate results
+4. **Error Debugging**: Access detailed error logs and stack traces
 
 ### ✅ Step 5: Ensure Code Quality
 
@@ -378,9 +378,9 @@ varying needs without reinventing the wheel. :::
 ::: tip Ready-to-Use Assets The AI-Hub includes a set of ready-to-use pipeline assets designed for frequent tasks: :::
 
 1. **Data Lake Observers**: Monitor a data lake for new or updated files
-1. **Document Converters**: Convert raw files (PDF, Markdown, Word) into RefDocs with consistent metadata
-1. **Node Chunkers**: Break down large documents into nodes suitable for embedding
-1. **Embedders & Indexers**: Generate vector embeddings and insert them into vector stores or document databases
+2. **Document Converters**: Convert raw files (PDF, Markdown, Word) into RefDocs with consistent metadata
+3. **Node Chunkers**: Break down large documents into nodes suitable for embedding
+4. **Embedders & Indexers**: Generate vector embeddings and insert them into vector stores or document databases
 
 ::: info Benefits of Reusable Assets By using these predefined assets, developers compose existing building blocks to
 create client-specific workflows. This accelerates development, reduces errors, and ensures consistency across projects.
@@ -392,13 +392,13 @@ create client-specific workflows. This accelerates development, reduces errors, 
 policies work together: :::
 
 1. **Detect Change**: A new Markdown file is uploaded to the data lake
-1. **Observable Asset Triggers Run**: Dagster notices the change and triggers a pipeline run for that specific file (a
+2. **Observable Asset Triggers Run**: Dagster notices the change and triggers a pipeline run for that specific file (a
    dynamic partition)
-1. **Document Conversion**: The pipeline converts the file into a RefDoc, adding metadata and storing it in the document
+3. **Document Conversion**: The pipeline converts the file into a RefDoc, adding metadata and storing it in the document
    store
-1. **Chunking & Embedding**: The pipeline splits the RefDoc into nodes, embeds them into vector form, and inserts those
+4. **Chunking & Embedding**: The pipeline splits the RefDoc into nodes, embeds them into vector form, and inserts those
    embeddings into the vector database
-1. **Agent-Ready Data**: When an agent receives a user query requiring that document, it can semantically retrieve the
+5. **Agent-Ready Data**: When an agent receives a user query requiring that document, it can semantically retrieve the
    relevant chunks, confident that the data is up-to-date and well-structured
 
 ::: tip Pipeline Benefits This approach ensures that data ingestion pipelines reduce manual effort, maintain higher data

@@ -52,7 +52,7 @@ layers of safeguards: :::
    Instead, individual agents are designed as **structured, step-by-step workflows**. This philosophy ensures that each
    agent's behavior is reliable, testable, and constrained to its specific purpose. They can only use the tools and
    perform the actions defined for them.
-1. **At the Process Level - Tunable Autonomy:** We design the overarching Agentic Process with as much or as little
+2. **At the Process Level - Tunable Autonomy:** We design the overarching Agentic Process with as much or as little
    autonomy as you are comfortable with. We can explicitly model **human-in-the-loop** steps where an agent must pause
    and wait for human approval before proceeding. This allows for a gradual introduction of autonomy; you can start with
    heavy human oversight and, as confidence grows, allow the agents more freedom to act independently.

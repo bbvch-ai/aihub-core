@@ -64,8 +64,8 @@ build proofs-of-concept, we give you an enterprise-grade platform to build produ
 ## 🎯 Your Learning Path
 
 1. **Start with Vision** - Understand the big picture and why we built this platform
-1. **Master Agent Philosophy** - Learn our unique approach to building reliable AI systems
-1. **Setup Your Environment** - Get everything running locally and start building
+2. **Master Agent Philosophy** - Learn our unique approach to building reliable AI systems
+3. **Setup Your Environment** - Get everything running locally and start building
 
 ::: info Ready to Build the Future? The Swiss AI-Hub represents the next generation of enterprise AI development. These
 guides will take you from zero to hero, giving you the knowledge and tools to build AI systems that are not just

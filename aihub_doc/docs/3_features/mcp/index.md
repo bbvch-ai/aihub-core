@@ -57,7 +57,7 @@ your AI-Hub, creating a truly integrated AI development environment.
 To enable MCP server functionality in your AI-Hub:
 
 1. **Enable MCP Endpoint**: The AI-Hub automatically exposes an MCP endpoint at `/mcp` when running
-1. **Configure AI Tools**: Set up your AI coding assistants to connect to your AI-Hub instance
+2. **Configure AI Tools**: Set up your AI coding assistants to connect to your AI-Hub instance
 
 ## Example Configuration for Claude Code
 
@@ -115,8 +115,8 @@ The AI-Hub MCP server currently provides:
 To begin using MCP integration with your AI-Hub:
 
 1. **Ensure Your AI-Hub is Running**: The MCP server is automatically available at `/mcp` endpoint
-1. **Configure Your AI Tools**: Add your AI-Hub instance to your AI tool's MCP configuration
-1. **Start Collaborating**: Your AI assistants can access AI-Hub context and provide enhanced assistance
+2. **Configure Your AI Tools**: Add your AI-Hub instance to your AI tool's MCP configuration
+3. **Start Collaborating**: Your AI assistants can access AI-Hub context and provide enhanced assistance
 
 For advanced configuration options and troubleshooting, refer to your AI tool's MCP documentation and the AI-Hub API
 reference.

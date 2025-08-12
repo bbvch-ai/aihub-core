@@ -8,10 +8,10 @@ implementing review comments systematically and effectively.
 Here's your feedback implementation roadmap:
 
 1. Find your PR and fetch all review comments
-1. Distinguish human feedback from bot suggestions
-1. Prioritize and implement human feedback first
-1. Critically evaluate automated feedback
-1. Test your changes thoroughly
+2. Distinguish human feedback from bot suggestions
+3. Prioritize and implement human feedback first
+4. Critically evaluate automated feedback
+5. Test your changes thoroughly
 
 ## Your Feedback Implementation Cookbook
 

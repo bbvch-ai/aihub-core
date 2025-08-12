@@ -103,8 +103,8 @@ jobs:
 ::: tip Key Points
 
 1. The reusable action is stored in `aihub_action/lint_backend/action.yml`.
-1. The workflow file references this action using the `uses` keyword.
-1. Inputs like `github_token` and `working_directory` are passed to the action.
+2. The workflow file references this action using the `uses` keyword.
+3. Inputs like `github_token` and `working_directory` are passed to the action.
 
 :::
 

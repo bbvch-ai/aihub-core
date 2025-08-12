@@ -105,7 +105,7 @@ development experience.
    - Start PyCharm and select **File > Open**.
    - Navigate to the `aihub-core` directory you cloned and open it as the main project.
 
-1. **Attach Microservices as Projects**:
+2. **Attach Microservices as Projects**:
 
    - Each folder in `aihub-core` with a `pyproject.toml` file is a separate microservice. You need to attach each one to
      your PyCharm workspace.
@@ -114,7 +114,7 @@ development experience.
      - Select the microservice folder (e.g., `aihub_agent`).
      - In the dialog that appears, choose **Attach**. This adds it to your current project window.
 
-1. **Set Up Poetry Environments for Each Microservice**:
+3. **Set Up Poetry Environments for Each Microservice**:
 
    - You must configure a separate Poetry environment for each attached microservice to keep dependencies isolated.
    - For each attached project:
@@ -127,7 +127,7 @@ development experience.
      - PyCharm should automatically find your **Poetry executable**. If not, locate the `poetry.exe` file.
      - Click **OK** to create the environment. PyCharm will automatically run `poetry install`.
 
-1. **Set Up Project Dependencies in PyCharm**:
+4. **Set Up Project Dependencies in PyCharm**:
 
    - Since services like `aihub_api` and `aihub_agent` depend on `aihub_lib`, you need to tell PyCharm about this
      relationship for features like code navigation and autocompletion to work correctly.
@@ -151,16 +151,16 @@ development experience.
 ### 🐳 Start the Infrastructure with Docker
 
 1. Make sure docker is running.
-1. Navigate to the root of the `aihub_agent` directory in your terminal.
-1. Run the following command to start the core services (Phoenix for tracing, NATS for messaging, and MongoDB):
+2. Navigate to the root of the `aihub_agent` directory in your terminal.
+3. Run the following command to start the core services (Phoenix for tracing, NATS for messaging, and MongoDB):
    ```bash
    docker compose up
    ```
-1. To start the services including the local Milvus vector database, use this command instead:
+4. To start the services including the local Milvus vector database, use this command instead:
    ```bash
    docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml up
    ```
-1. Alternatively, PyCharm's Docker integration allows you to simply click the green play button next to the services in
+5. Alternatively, PyCharm's Docker integration allows you to simply click the green play button next to the services in
    your `docker-compose.yml` file.
 
 ### 🎮 Explore the Playground
@@ -191,10 +191,10 @@ your JetBrains IDE.
   - **Code With Me**: A built-in tool for collaborative development and pair programming.
   - **Auto-Format on Save**:
     1. Go to **File > Settings > Tools > Actions on Save**.
-    1. Check the boxes for `Reformat code` and `Run Black`.
+    2. Check the boxes for `Reformat code` and `Run Black`.
   - **Pre-Commit Checks**:
     1. In the Commit tool window, click the settings (gear) icon.
-    1. Under **Commit Checks**, enable `Reformat code` and `Perform SonarQube for IDE analysis`.
+    2. Under **Commit Checks**, enable `Reformat code` and `Perform SonarQube for IDE analysis`.
 
 ### 🌐 Useful WebStorm Plugins
 

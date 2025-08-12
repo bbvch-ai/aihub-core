@@ -8,11 +8,11 @@ your code changes. Remember: documentation is not an afterthought - it's an inte
 Here's your documentation checklist:
 
 1. Review what you've changed in your code
-1. Read all potentially affected README files
-1. Identify documentation that needs updates
-1. Fix inaccurate documentation
-1. Add missing documentation
-1. Create new README files where needed
+2. Read all potentially affected README files
+3. Identify documentation that needs updates
+4. Fix inaccurate documentation
+5. Add missing documentation
+6. Create new README files where needed
 
 ## Your Documentation Cookbook
 
@@ -203,10 +203,10 @@ Follow these rules religiously:
 ### The Golden Rules
 
 1. **Documentation evolves with code** - They're inseparable twins
-1. **Code is truth** - When in doubt, the code wins
-1. **Future you will thank current you** - Document what you wish you had known
-1. **No documentation debt** - Fix it now, not "later"
-1. **Respect scope** - Edit the smallest possible README.md, only edit the root level README.md if your change is large
+2. **Code is truth** - When in doubt, the code wins
+3. **Future you will thank current you** - Document what you wish you had known
+4. **No documentation debt** - Fix it now, not "later"
+5. **Respect scope** - Edit the smallest possible README.md, only edit the root level README.md if your change is large
    enough to justify it
 
 ## You're Done When...

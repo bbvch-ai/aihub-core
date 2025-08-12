@@ -108,7 +108,7 @@ We will implement a **Global Superuser Authentication System** that solves the D
 This decision introduces a powerful authentication mechanism that requires careful security practices:
 
 1. **Token Security**: The `SUPERUSER_TOKEN` must be treated as a critical secret with proper rotation policies
-1. **Network Security**: Superuser authentication should only be used within secure network boundaries
-1. **Monitoring**: All superuser actions should be monitored and logged for security analysis
-1. **Least Privilege**: Despite being "super", the user still operates within the role-based permission system
-1. **Disable in Production**: Consider disabling superuser authentication in high-security production environments where service-to-service authentication can be handled through other mechanisms
+2. **Network Security**: Superuser authentication should only be used within secure network boundaries
+3. **Monitoring**: All superuser actions should be monitored and logged for security analysis
+4. **Least Privilege**: Despite being "super", the user still operates within the role-based permission system
+5. **Disable in Production**: Consider disabling superuser authentication in high-security production environments where service-to-service authentication can be handled through other mechanisms

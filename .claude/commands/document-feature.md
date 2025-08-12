@@ -9,10 +9,10 @@ comprehensive feature documentation that follows our standards.
 Here's your feature documentation journey:
 
 1. Deep-dive into the codebase to understand your feature completely
-1. Analyze the user value and business impact
-1. Create structured, user-facing documentation
-1. Follow our VitePress markdown standards
-1. Ensure consistency with existing feature docs
+2. Analyze the user value and business impact
+3. Create structured, user-facing documentation
+4. Follow our VitePress markdown standards
+5. Ensure consistency with existing feature docs
 
 ## Your Feature Documentation Cookbook
 

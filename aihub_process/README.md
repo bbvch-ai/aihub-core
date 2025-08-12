@@ -174,7 +174,7 @@ a complete process implementation. :::
            return FinalResult(decision=review_result.decision)
    ```
 
-1. **Define Work Events**: Create events that represent work completion by different entities.
+2. **Define Work Events**: Create events that represent work completion by different entities.
 
    ```python
    # my_process/events/InitialWork.py
@@ -198,7 +198,7 @@ a complete process implementation. :::
            return FormGroup(display_name=display_name, **kwargs)
    ```
 
-1. **Create Process Configuration**: Define the process metadata.
+3. **Create Process Configuration**: Define the process metadata.
 
    ```python
    # Usage in runner or tests
@@ -228,7 +228,7 @@ language description of process behavior. :::
        Then the process produces a final result
    ```
 
-1. **Implement the Test Steps**: Write Python implementations using the `ProcessTestRunner`.
+2. **Implement the Test Steps**: Write Python implementations using the `ProcessTestRunner`.
 
    ```python
    # tests/test_MyProcess.py
@@ -265,7 +265,7 @@ language description of process behavior. :::
        assert process_runner.has_event_of_class(HumanReviewRequest)
    ```
 
-1. **Run the Tests**: Execute tests from your activated Poetry shell.
+3. **Run the Tests**: Execute tests from your activated Poetry shell.
 
    ```bash
    # Run all tests
@@ -309,7 +309,7 @@ language description of process behavior. :::
        asyncio.run(main())
    ```
 
-1. **The `run.py` Script**: For interactive process testing with multiple entities.
+2. **The `run.py` Script**: For interactive process testing with multiple entities.
 
    ```python
    # my_process/run.py
