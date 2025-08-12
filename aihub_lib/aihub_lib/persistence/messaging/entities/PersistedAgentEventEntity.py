@@ -5,7 +5,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from bson import ObjectId
-from llama_index.core.base.llms.types import MessageRole, ChatMessage
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from mongoengine import DictField, Document, ListField, StringField
 
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
@@ -384,7 +384,7 @@ class PersistedAgentEventEntity(Document):
                             additional_kwargs={
                                 "agent_id": current_agent_id,
                                 "agent_class": current_agent_class,
-                            }
+                            },
                         )
                     )
                     assistant_content_buffer = ""
@@ -417,7 +417,7 @@ class PersistedAgentEventEntity(Document):
                                 additional_kwargs={
                                     "agent_id": current_agent_id,
                                     "agent_class": current_agent_class,
-                                }
+                                },
                             )
                         )
                     # Start a new assistant message
@@ -439,7 +439,7 @@ class PersistedAgentEventEntity(Document):
                     additional_kwargs={
                         "agent_id": current_agent_id,
                         "agent_class": current_agent_class,
-                    }
+                    },
                 )
             )
 

@@ -175,21 +175,21 @@ class FrontendTestingAgent(Agent):
         print("[HumanInTheLoopAgent.start_step]")
         return CustomHumanInTheLoop.invoke(question="Shall I continue?")
 
-    @step()
-    async def botl_start(
-        self, user_message_event: UserMessageEvent, hitl_event: CustomHumanInTheLoop.response, displayer: EventDisplayer
-    ) -> BotInTheLoop.request:
-        await displayer.display_chunk(
-            content=f"Hitl Response: {hitl_event.response}", model_name="FrontendTestingAgent"
-        )
-        print("Bot in the loop")
-        return BotInTheLoop.invoke(
-            user=user_message_event.user,
-            question="Make some noise",
-            slack_channel_id="C08MK7Z8GU9",
-        )
+    # @step()
+    # async def botl_start(
+    #     self, user_message_event: UserMessageEvent, hitl_event: CustomHumanInTheLoop.response, displayer: EventDisplayer
+    # ) -> BotInTheLoop.request:
+    #     await displayer.display_chunk(
+    #         content=f"Hitl Response: {hitl_event.response}", model_name="FrontendTestingAgent"
+    #     )
+    #     print("Bot in the loop")
+    #     return BotInTheLoop.invoke(
+    #         user=user_message_event.user,
+    #         question="Make some noise",
+    #         slack_channel_id="C08MK7Z8GU9",
+    #     )
 
     @step()
-    async def stop(self, event: BotInTheLoop.response, displayer: EventDisplayer) -> StopEvent:
+    async def stop(self, event: CustomHumanInTheLoop.request, displayer: EventDisplayer) -> StopEvent:
         await displayer.display_chunk(content=f"Botl Response: {event.response}", model_name="FrontendTestingAgent")
         return StopEvent()

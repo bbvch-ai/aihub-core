@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from functools import reduce
 from operator import or_
@@ -25,6 +26,7 @@ from aihub_lib.nats.topics import AgentInstanceDiscoveryTopic
 from fastapi import Body, Depends, FastAPI, HTTPException, Query, Security
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
+from starlette.responses import StreamingResponse
 from stringcase import snakecase
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
@@ -165,12 +167,14 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
 
         for start_event_specs in start_events:
             start_event_name = snakecase(start_event_specs.event_name)
-
             endpoint_name = f"send_{start_event_name}_to_{agent_class_snake}_{agent_id_snake}"
             path = f"{base_path}/{start_event_name}"
+            stream_endpoint_name = f"stream_{start_event_name}_to_{agent_class_snake}_{agent_id_snake}"
+            stream_path = f"{base_path}/{start_event_name}/stream"
 
             start_event_input_type = ModelCreationService.create_input_model_from_event_specs(start_event_specs)
 
+            # Register regular endpoint (existing)
             self.app.add_api_route(
                 path=path,
                 endpoint=self._create_endpoint(
@@ -189,6 +193,25 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 response_model=stop_event_union_type,
             )
             logger.info(f"Registered endpoint: {path}")
+
+            # Register streaming endpoint (new)
+            self.app.add_api_route(
+                path=stream_path,
+                endpoint=self._create_streaming_endpoint(
+                    input_type=start_event_input_type,
+                    start_event_parents=start_event_specs.event_parents,
+                    start_event_name=start_event_specs.event_name,
+                    agent_class=agent_class,
+                    agent_id=agent_id,
+                    agent_controller=self.controller,
+                    agent_config=config,
+                ),
+                methods=["POST"],
+                name=stream_endpoint_name,
+                tags=["Agents"],
+                response_class=StreamingResponse,
+            )
+            logger.info(f"Registered streaming endpoint: {stream_path}")
 
     @staticmethod
     def _create_endpoint(
@@ -217,9 +240,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             display_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
             t: LocaleHandler = Depends(use_locale),
         ) -> stop_event_union_type:
-            """
-            Send a specific event type to a specific agent. Returns any possible stop event type.
-            """
+            """Send a specific event type to a specific agent. Returns any possible stop event type."""
             if thread_id is not None:
                 thread = await ThreadService.get_thread_by_id(thread_id, t=t)
 
@@ -251,3 +272,86 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             return response_event
 
         return send_event
+
+    @staticmethod
+    def _create_streaming_endpoint(
+        input_type: type[BaseModel],
+        start_event_parents: list[str],
+        start_event_name: str,
+        agent_class: str,
+        agent_id: str,
+        agent_controller: AgentController,
+        agent_config: AgentConfig,
+    ):
+        """Creates a FastAPI streaming endpoint that sends a StartEvent to an agent and streams all events"""
+
+        async def stream_event(
+            nc: Annotated[NATS, Depends(use_nats)],
+            start_event_input: Annotated[input_type, Body],
+            external_agent_event_distributor: Annotated[
+                ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
+            ],
+            user: Annotated[
+                UserIdentity,
+                Security(agent_controller.user_with_permission(f"aihub.user.agent.{agent_class}.{agent_id}")),
+            ],
+            thread_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
+            display_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
+            t: LocaleHandler = Depends(use_locale),
+        ) -> StreamingResponse:
+            """Send a specific event type to a specific agent and stream all events as SSE."""
+            if thread_id is not None:
+                thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+
+                user_in_thread = user.id in [u.id for u in thread.users]
+                thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
+                    thread.process_class, thread.process_id
+                )
+                if not (user_in_thread or thread_belongs_to_users_process):
+                    raise agent_controller.not_authorized_to_view_exception
+
+            resources = await AgentService.send_agent_start_event_stream(
+                nc=nc,
+                agent_class=agent_class,
+                agent_id=agent_id,
+                start_event_parents=start_event_parents,
+                start_event_name=start_event_name,
+                raw_event_data=start_event_input.model_dump(),
+                external_agent_event_distributor=external_agent_event_distributor,
+                thread_id=thread_id,
+                display_id=display_id,
+                user=user,
+                t=t,
+                agent_config=agent_config,
+            )
+
+            async def sse_event_generator():
+                """Generator that yields raw events as SSE without conversion"""
+                while True:
+                    if resources.stop_signal.is_set() and resources.chunk_queue.empty():
+                        logger.debug("Stop streaming due to stop_event and empty queue")
+                        break
+                    try:
+                        # Get the next event from the queue
+                        event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=0.5)
+
+                        # Dump the raw event as JSON for SSE
+                        event_data = event.model_dump_json()
+                        yield f"data: {event_data}\n\n"
+
+                        resources.chunk_queue.task_done()
+                    except TimeoutError:
+                        # No new event yet; keep waiting
+                        continue
+                    except asyncio.CancelledError:
+                        break
+
+                # Final event to signal stream end
+                yield "data: [DONE]\n\n"
+
+            return StreamingResponse(
+                sse_event_generator(),
+                media_type="text/event-stream",
+            )
+
+        return stream_event
