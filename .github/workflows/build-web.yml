@@ -1,9 +1,8 @@
 name: Build and Release Web Image
 
 on:
-  workflow_run:
-    workflows: ["Auto Tag on Push"]
-    types: [completed]
+  repository_dispatch:
+    types: [ release-ready ]
   workflow_dispatch:
     inputs:
       release_version:
