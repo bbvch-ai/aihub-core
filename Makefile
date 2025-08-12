@@ -19,6 +19,10 @@ format:
 	@(cd aihub_bot && make format)
 	@(cd aihub_iac && make format)
 
+format-md:
+	@echo "Formatting markdown files..."
+	@poetry run mdformat --number $$(git ls-files '*.md')
+
 # Type-check with MyPy
 typecheck:
 	@echo "Running type checks for pipelines..."
