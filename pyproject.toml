@@ -15,6 +15,7 @@ python = ">=3.13, <3.14"
 tomlkit = "^0.13.2"
 black = { extras = ["jupyter"], version = "^25.1.0" }
 pip-licenses = "^5.0.0"
+mdformat = "^0.7.21"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -37,3 +38,6 @@ extend-exclude = '''
   | dist
 )/
 '''
+
+[tool.mdformat]
+wrap = 120

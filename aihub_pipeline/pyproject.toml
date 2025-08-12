@@ -24,9 +24,8 @@ s3fs = "^2024.12.0"
 boto3 = "^1.35.0"
 
 [tool.poetry.dependencies.aihub_lib]
-git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.239.0"
-subdirectory = "aihub_lib"
+path = "../aihub_lib"
+develop = true
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
@@ -35,6 +34,7 @@ ruff = "^0.8.1"
 mypy = "^1.13.0"
 pytest-cov = "^6.0.0"
 pip-licenses = "^5.0.0"
+mdformat = "^0.7.21"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -64,3 +64,6 @@ extend-exclude = '''
   | dist
 )/
 '''
+
+[tool.mdformat]
+wrap = 120

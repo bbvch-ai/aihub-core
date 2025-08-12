@@ -30,11 +30,11 @@ pytest-bdd = "^8.1.0"
 pytest-cov = "^6.0.0"
 asgi-lifespan = "^2.1.0"
 pip-licenses = "^5.0.0"
+mdformat = "^0.7.21"
 
 [tool.poetry.dependencies.aihub_lib]
-git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.239.0"
-subdirectory = "aihub_lib"
+path = "../aihub_lib"
+develop = true
 
 [tool.poetry.group.dev.dependencies.aihub_agent]
 path = "../aihub_agent"
@@ -78,3 +78,6 @@ markers = [
     "experimental: mark a test as experimental",
 ]
 addopts = "--strict-markers"
+
+[tool.mdformat]
+wrap = 120

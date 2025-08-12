@@ -19,6 +19,11 @@ format:
 	@(cd aihub_bot && make format)
 	@(cd aihub_iac && make format)
 
+# Format markdown files
+format-md:
+	@echo "Formatting markdown files..."
+	poetry run mdformat . --wrap 120
+
 # Type-check with MyPy
 typecheck:
 	@echo "Running type checks for pipelines..."
@@ -41,6 +46,7 @@ pr-ready:
 	@(cd aihub_bot &&  make pr-ready)
 	@(cd aihub_iac &&  make pr-ready)
 	@(cd aihub_web && make pr-ready)
+	@make format-md
 
 # Use local cores for development (with poetry install)
 use-local-core:

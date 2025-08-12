@@ -72,6 +72,7 @@ types-pyyaml = "^6.0.12.20240917"
 types-networkx = "^3.4.2.20241115"
 pytest-cov = "^6.0.0"
 pip-licenses = "^5.0.0"
+mdformat = "^0.7.21"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -128,3 +129,6 @@ markers = [
 ]
 addopts = "--strict-markers"
 pythonpath = ["."]
+
+[tool.mdformat]
+wrap = 120

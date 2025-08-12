@@ -6,6 +6,10 @@ format:
 	@echo "Formatting code for pipelines..."
 	poetry run ruff format
 
+format-md:
+	@echo "Formatting markdown files..."
+	poetry run mdformat . --wrap 120
+
 typecheck:
 	@echo "Running type checks for pipelines..."
 	poetry run mypy .
