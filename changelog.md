@@ -5,36 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v0.240.2] - 2025-08-12 - Streamlined Release Tagging
-
-### Changed
-- 🚀 **Improved Release Tagging Workflow**: Eliminated an unneeded `git pull --rebase` step from the GitHub Actions workflow responsible for creating release tags, enhancing the robustness and efficiency of the tagging process.
-
----
-
-
-
-## [v0.240.1] - 2025-08-12 - Architectural Overhaul for Enhanced Deployment and Microservice Management
-
-### Added
-- ✨ **Formalized Containerized Deployment Architecture:** Adopted a new strategic approach, including separate Docker Compose files for local development, nightly builds, production-ready deployments, and placeholders for GPU-enabled environments.
-- 🚀 **Component-Specific CI/CD Pipelines:** Introduced dedicated GitHub Actions workflows to automate the building and releasing of Docker images for individual microservices: **Agents**, **API**, **Bot**, **Dagster**, **Pipelines**, and the **Web UI**.
-- ⚙️ **New Containerized Services:** Launched dedicated Dockerized applications, including the **LLM Wrapping Agent**, the **Default RAG Pipeline**, and established distinct containerized services for the **AI-Hub API** and **AI-Hub Bot**.
-- 🔗 **Standardized Milvus Configuration:** Implemented a new `MilvusSettings` component within `aihub_lib` to centralize and ensure consistent Milvus database connection settings across all services.
-- 📄 **Environment-Specific Configurations:** Added distinct configuration files for **Dagster**, **LiteLLM**, **Milvus**, and **NATS** to support tailored deployments across local, nightly, and latest environments.
-- 🔔 **Automated Release Notifications:** Integrated a new `repository_dispatch` mechanism into the release pipeline to dispatch notifications upon successful tag creation, enabling seamless coordination with downstream workflows.
-- 📋 **Automated Changelog and License Reports:** Enhanced the release pipeline with automated generation and artifact upload for `changelog.md` and `LICENSES.md`, improving release transparency and compliance.
-
-### Changed
-- 🔄 **Refactored Release Workflow:** The main GitHub Actions release workflow (`add-tag.yml`) was extensively restructured into a series of modular, interdependent jobs, significantly enhancing pipeline clarity, maintainability, and reusability.
-- 🏷️ **Flexible Docker Image Tagging:** Enhanced the core `build_image` action to support an explicit `secondary_tag` (e.g., `nightly`), providing more granular control over Docker image versioning.
-- 📄 **Updated License Scan Scope:** Extended the `licenses.config.json` to include the newly introduced applications (`llm_wrapping_agent`, `default_rag_pipeline`), ensuring comprehensive license scanning.
-- 🔒 **Enhanced Web UI Docker Security:** Improved the Web UI Dockerfile by incorporating explicit user and group setup, aligning with best practices for container security.
-- 🔄 **API Milvus Configuration:** Updated the **AI-Hub API** and its development playground examples to utilize the new centralized `MilvusSettings`, ensuring consistent database connections.
-
----
-
-
 
 ## [v0.240.0] - 2025-08-12 - Streamlined Setup with Superuser Authentication and Enhanced Security
 
