@@ -1,5 +1,5 @@
 ---
-title: "AI-Hub Bot Integration"
+title: AI-Hub Bot Integration
 index: 4
 ---
 
@@ -19,13 +19,15 @@ index: 4
 
 This section covers the foundational architecture, patterns, and terminology you need to know before building a bot.
 
-::: info
-This documentation assumes you have completed the general AI-Hub setup as described in the main README.md. Make sure you have the required infrastructure running before proceeding.
-:::
+::: info This documentation assumes you have completed the general AI-Hub setup as described in the main README.md. Make
+sure you have the required infrastructure running before proceeding. :::
 
 ### 📚 Introduction to `aihub_bot`
 
-You are contributing to the **aihub_bot** scope, which provides the core logic for building and integrating chatbots with platforms like Microsoft Teams and Slack within the AI-Hub platform. This scope implements conversational interfaces that connect users to AI-Hub services through familiar collaboration tools, enabling seamless AI interactions without context switching.
+You are contributing to the **aihub_bot** scope, which provides the core logic for building and integrating chatbots
+with platforms like Microsoft Teams and Slack within the AI-Hub platform. This scope implements conversational
+interfaces that connect users to AI-Hub services through familiar collaboration tools, enabling seamless AI interactions
+without context switching.
 
 ### 📁 Project Structure
 
@@ -74,6 +76,7 @@ class StreamAgentChatBot(AgentChatBot):
 ```
 
 **Key Principles:**
+
 - **Channel Agnostic**: Core logic works across Teams, Slack, and other channels
 - **Stateful Conversations**: Persistent conversation tracking with configurable TTL
 - **Flexible Completion**: Support for both agent-based and direct LLM completions
@@ -81,9 +84,11 @@ class StreamAgentChatBot(AgentChatBot):
 
 ### 🔗 Bot Framework Integration
 
-The AI-Hub uses Microsoft Bot Framework for channel connectivity, leveraging Azure Bot Service for multi-channel support and standardized message processing.
+The AI-Hub uses Microsoft Bot Framework for channel connectivity, leveraging Azure Bot Service for multi-channel support
+and standardized message processing.
 
 **Azure Bot Service Architecture:**
+
 - **Unified Platform**: Humans and AI agents share the same conversational interface
 - **Multi-Channel Support**: Consistent experience across Teams, Slack, web chat, and other channels
 - **Standardized Messaging**: Uniform message format enables predictable interactions
@@ -91,19 +96,22 @@ The AI-Hub uses Microsoft Bot Framework for channel connectivity, leveraging Azu
 - **Structured Output**: Rich responses with Cards, buttons, and interactive elements
 
 **Channel Support:**
+
 - Microsoft Teams (primary)
 - Slack (via Bot-in-the-Loop)
 - Web Chat (for testing)
 - Extensible to other Bot Framework channels
 
 **Activity Processing:**
+
 - Message activities trigger chat completions
 - Conversation updates handle bot lifecycle
 - Typing activities provide user feedback
 - Event activities enable custom integrations
 
-**Event-Driven Integration:**
-Once the Bot API receives messages from Azure Bot Service, it transforms them into events that integrate with the AI-Hub's event-driven architecture:
+**Event-Driven Integration:** Once the Bot API receives messages from Azure Bot Service, it transforms them into events
+that integrate with the AI-Hub's event-driven architecture:
+
 - **Agent Workflow Integration**: Messages route to appropriate AI agent workflows
 - **Context Preservation**: Thread and run contexts maintain multi-turn dialogue state
 - **Human Collaboration**: Seamless escalation from AI agents to human operators when needed
@@ -118,9 +126,8 @@ This section provides a practical, step-by-step guide to building, testing, and 
 
 Before you begin, ensure you have completed the infrastructure setup from the root project documentation.
 
-::: warning
-All subsequent commands must be run from within an activated Poetry shell. This is critical for proper environment isolation.
-:::
+::: warning All subsequent commands must be run from within an activated Poetry shell. This is critical for proper
+environment isolation. :::
 
 ```bash
 # Start required services from the project root
@@ -134,9 +141,8 @@ poetry shell
 
 #### ☁️ Azure Bot Framework Setup
 
-::: tip
-For production deployment or integration with Microsoft Teams/Slack, you'll need to configure Azure Bot Service. The AI-Hub provides a Python setup script that automates this process:
-:::
+::: tip For production deployment or integration with Microsoft Teams/Slack, you'll need to configure Azure Bot Service.
+The AI-Hub provides a Python setup script that automates this process: :::
 
 ```bash
 # Example Azure Bot setup
@@ -150,6 +156,7 @@ python aihub_bot/setup_azure_bot.py \
 ```
 
 **What the setup script does:**
+
 - Creates Azure AD app registration with appropriate permissions
 - Generates app credentials (App ID and password)
 - Creates Azure Bot resource pointing to your API endpoint
@@ -157,6 +164,7 @@ python aihub_bot/setup_azure_bot.py \
 - Configures single-tenant or multi-tenant authentication
 
 **Required parameters:**
+
 - `--resource-group`: Azure resource group name
 - `--bot-name`: Name for your bot (display name and resource name)
 - `--token-url`: Public URL where your bot API is hosted (use Azure DevTunnel for local development)
@@ -164,19 +172,21 @@ python aihub_bot/setup_azure_bot.py \
 - Database connection (either `--mongo-connection-string` or `--cosmos-name` + `--subscription-id`)
 
 **Optional parameters:**
+
 - `--tenant-id`: For single-tenant configuration (defaults to multi-tenant)
 - `--location`: Azure region (default: `westeurope`)
 - `--sku`: Bot service pricing tier (default: `F0` for free tier)
 - `--system-message`: Custom system message for the bot
 - `--slack-token`: Slack OAuth token for Slack integration
 
-**Channel Configuration:**
-After running the setup script, you must manually configure channels in the Azure Portal:
+**Channel Configuration:** After running the setup script, you must manually configure channels in the Azure Portal:
+
 - **Microsoft Teams**: Add Teams channel in Azure Bot Service
 - **Slack**: Create Slack App at [api.slack.com](https://api.slack.com/apps) and link to Azure Bot
 - **Web Chat**: Automatically configured with Azure Bot Service
 
 **Local Development with Azure DevTunnel:**
+
 ```bash
 # Install Azure DevTunnel and expose your local bot server
 devtunnel create --allow-anonymous
@@ -187,18 +197,18 @@ devtunnel host
 
 ### 🛠️ Step 1: Create Bot, Controller, and Configuration
 
-::: info
-Follow this three-part process to implement a new bot integration. Each part builds on the previous one to create a complete bot implementation.
-:::
+::: info Follow this three-part process to implement a new bot integration. Each part builds on the previous one to
+create a complete bot implementation. :::
 
 1. **Create the Bot Class**: Define the bot's behavior by extending appropriate base classes.
+
    ```python
    # my_bot/MyCustomBot.py
    from aihub_bot.bots.chat.BaseChatBot import BaseChatBot
    from aihub_bot.bots.chat.CompletionHandler import CompletionHandler
    from botbuilder.core import TurnContext
    from typing_extensions import override
-   
+
    class MyCustomBot(BaseChatBot):
        def __init__(
            self,
@@ -219,13 +229,14 @@ Follow this three-part process to implement a new bot integration. Each part bui
                await super().on_message_activity(turn_context)
    ```
 
-2. **Create the Completion Handler**: Implement the logic for generating responses.
+1. **Create the Completion Handler**: Implement the logic for generating responses.
+
    ```python
    # my_bot/MyCompletionHandler.py
    from aihub_bot.bots.chat.CompletionHandler import CompletionHandler
    from aihub_lib.generative_ai.LLMs import LLMs
    from typing import AsyncGenerator
-   
+
    class MyCompletionHandler(CompletionHandler):
        def __init__(self, llm_config: ChatLLMConfig):
            self.llm = LLMs.from_config(llm_config)
@@ -252,14 +263,15 @@ Follow this three-part process to implement a new bot integration. Each part bui
                    yield chunk.delta
    ```
 
-3. **Create the Controller**: Define HTTP endpoints for bot integration.
+1. **Create the Controller**: Define HTTP endpoints for bot integration.
+
    ```python
    # my_bot/MyBotController.py
    from aihub_lib.routes.Controller import Controller
    from aihub_bot.routes.RoutesService import RoutesService
    from typing import Annotated
    from fastapi import Depends
-   
+
    class MyBotController(Controller):
        name = LocaleString(en="My Custom Bot")
        description = LocaleString(en="Custom bot implementation")
@@ -290,11 +302,11 @@ Follow this three-part process to implement a new bot integration. Each part bui
 
 ### 🧪 Step 2: Write and Run Tests
 
-::: tip
-Bot testing uses pytest with the `BotTestRunner` for integration testing. This provides a complete testing environment without requiring external services.
-:::
+::: tip Bot testing uses pytest with the `BotTestRunner` for integration testing. This provides a complete testing
+environment without requiring external services. :::
 
 1. **Create Test Files**: Write comprehensive tests for your bot.
+
    ```python
    # playground/testing/tests/test_my_bot.py
    import pytest
@@ -303,7 +315,7 @@ Bot testing uses pytest with the `BotTestRunner` for integration testing. This p
    from fastapi.testclient import TestClient
    from aihub_bot.runners.BotTestRunner import BotTestRunner
    from aihub_bot.routes.my_bot.MyBotController import MyBotController
-   
+
    @pytest.fixture
    def bot_client():
        """Fixture to create a test client for the bot."""
@@ -313,7 +325,7 @@ Bot testing uses pytest with the `BotTestRunner` for integration testing. This p
        runner = BotTestRunner()
        runner.mount(MyBotController(auth=auth, custom_config=test_config).chat_completion())
        return TestClient(runner.get_app())
-   
+
    def test_bot_message_handling(bot_client):
        """Test bot handles messages correctly."""
        # Load test activity from JSON
@@ -340,29 +352,30 @@ Bot testing uses pytest with the `BotTestRunner` for integration testing. This p
        assert entity.ttl > 0
    ```
 
-2. **Run Tests**: Execute tests from your activated Poetry shell.
+1. **Run Tests**: Execute tests from your activated Poetry shell.
+
    ```bash
    # Run all tests
    poetry run pytest
-   
+
    # Run specific test file
    poetry run pytest playground/testing/tests/test_my_bot.py
-   
+
    # Run with coverage
    make test-cov
    ```
 
 ### 🎮 Step 3: Test with Playground
 
-::: info
-The playground provides a full bot server with web interface for interactive testing. This is the recommended way to test your bot implementation interactively.
-:::
+::: info The playground provides a full bot server with web interface for interactive testing. This is the recommended
+way to test your bot implementation interactively. :::
 
 1. **Update Playground Configuration**: Add your bot to the test server.
+
    ```python
    # playground/testing/main.py
    from aihub_bot.routes.my_bot.MyBotController import MyBotController
-   
+
    async def main():
        runner = BotTestRunner()
        auth = DangerousDevelopmentOnlyAuthHandler(
@@ -386,13 +399,15 @@ The playground provides a full bot server with web interface for interactive tes
        await runner.run()
    ```
 
-2. **Start the Test Server**: Run the playground server.
+1. **Start the Test Server**: Run the playground server.
+
    ```bash
    cd playground/testing
    python main.py
    ```
 
-3. **Access the Bot**:
+1. **Access the Bot**:
+
    - **Web Interface**: `http://localhost:8000` (interactive chat UI)
    - **API Docs**: `http://localhost:8000/api/v1/docs` (Swagger UI)
    - **Direct Bot Endpoint**: `http://localhost:8000/api/v1/my-bot/chat`
@@ -400,9 +415,7 @@ The playground provides a full bot server with web interface for interactive tes
 
 ### 🔍 Step 4: Debug and Observe Your Bot
 
-::: tip Enable Logging
-Add logging to your bot development for better debugging visibility.
-:::
+::: tip Enable Logging Add logging to your bot development for better debugging visibility. :::
 
 ```python
 # Add to your main.py or test files
@@ -411,12 +424,14 @@ enable_logging()
 ```
 
 **Key Debugging Tools:**
+
 - **Bot Framework Emulator**: Desktop app for testing bot conversations
 - **Activity Inspection**: Log full activity JSON to understand channel-specific data
 - **Conversation Tracking**: Monitor `ConversationEntity` updates in MongoDB
 - **Network Monitoring**: Use browser dev tools to inspect bot API calls
 
 **Common Debugging Patterns:**
+
 - Check activity type and channel ID for proper routing
 - Verify conversation reference for reply activities
 - Test typing indicator timeouts with slow completions
@@ -424,9 +439,7 @@ enable_logging()
 
 ### ✅ Step 5: Ensure Code Quality
 
-::: warning
-Before committing your changes, use the provided Makefile commands to ensure code quality.
-:::
+::: warning Before committing your changes, use the provided Makefile commands to ensure code quality. :::
 
 ```bash
 # Run this before creating a pull request
@@ -437,9 +450,8 @@ make format      # Ruff formatting
 make lint        # Ruff linting
 ```
 
-::: danger
-All bot code must use strict Python type annotations and follow the established patterns. This is enforced by CI/CD.
-:::
+::: danger All bot code must use strict Python type annotations and follow the established patterns. This is enforced by
+CI/CD. :::
 
 ---
 
@@ -449,17 +461,18 @@ This section covers common patterns and best practices for building robust bot i
 
 ### 📱 Channel-Specific Patterns
 
-::: info
-Different channels require different handling approaches due to their unique features and limitations. Understanding these patterns is crucial for robust bot development.
-:::
+::: info Different channels require different handling approaches due to their unique features and limitations.
+Understanding these patterns is crucial for robust bot development. :::
 
 #### 🟣 Microsoft Teams Pattern
 
-::: warning Microsoft Teams Conversation Management
-Microsoft Teams has unique conversation management behavior that requires special handling. Unlike other channels, Teams reuses conversation IDs when users delete and restart conversations. The only way to detect a fresh conversation is by monitoring when the bot is re-added to the conversation.
+::: warning Microsoft Teams Conversation Management Microsoft Teams has unique conversation management behavior that
+requires special handling. Unlike other channels, Teams reuses conversation IDs when users delete and restart
+conversations. The only way to detect a fresh conversation is by monitoring when the bot is re-added to the
+conversation.
 
-This pattern is crucial for maintaining proper conversation state - without it, users would see old conversation history even after deleting a conversation in Teams.
-:::
+This pattern is crucial for maintaining proper conversation state - without it, users would see old conversation history
+even after deleting a conversation in Teams. :::
 
 ```python
 class TeamsBot(BaseChatBot):
@@ -481,11 +494,12 @@ class TeamsBot(BaseChatBot):
 
 #### 💬 Slack Integration Pattern
 
-::: tip Slack Integration Considerations
-Slack integration requires special handling for threading and message formatting. The Bot-in-the-Loop pattern specifically uses Slack channels with threading support, where the bot posts messages to specific channels and monitors thread responses for human input.
-:::
+::: tip Slack Integration Considerations Slack integration requires special handling for threading and message
+formatting. The Bot-in-the-Loop pattern specifically uses Slack channels with threading support, where the bot posts
+messages to specific channels and monitors thread responses for human input. :::
 
 Key considerations for Slack integration:
+
 - **Thread Detection**: Messages must be identified as coming from Slack channel threads
 - **Message Formatting**: Slack uses different markdown syntax than other channels
 - **Response Handling**: Bot responses need to be formatted appropriately for Slack's display requirements
@@ -513,90 +527,93 @@ class SlackBot(BaseChatBot):
 
 ### 🎯 Completion Strategies
 
-::: info
-AI-Hub bots support multiple completion strategies through the `CompletionHandler` interface:
-:::
+::: info AI-Hub bots support multiple completion strategies through the `CompletionHandler` interface: :::
 
 **Agent-Based Completion:**
+
 - Routes messages to AI-Hub agents via NATS messaging
 - Supports both streaming and non-streaming responses
 - Maintains conversation context across agent interactions
 - Used by `AgentChatBot` and `StreamAgentChatBot`
 
 **Direct LLM Completion:**
+
 - Directly calls OpenAI-compatible models
 - Faster response times without agent overhead
 - Used by `OpenaiChatBot` and `StreamOpenaiChatBot`
 
 **Multi-Model Support:**
+
 - Single bot can support multiple LLM configurations
 - Configurable selection strategies (round-robin, least-cost, etc.)
 - Useful for fallback scenarios or cost optimization
 
 ### 💬 Conversation Management
 
-::: info
-AI-Hub bots maintain conversation state across user interactions and bot restarts through the `ConversationEntity` system:
-:::
+::: info AI-Hub bots maintain conversation state across user interactions and bot restarts through the
+`ConversationEntity` system: :::
 
 **Key Features:**
+
 - **Persistent Storage**: Conversations are stored in MongoDB with configurable TTL (default 30 days)
 - **Message History**: Full conversation history is maintained and can be reconstructed
 - **Channel Context**: Each conversation tracks its channel, locale, and metadata
 - **Automatic Cleanup**: TTL is refreshed on each interaction and expired conversations are automatically removed
 
 **Configuration:**
+
 ```python
 runner = BotRunner(conversation_ttl_days=60)  # Custom TTL
 ```
 
 ### 🌊 Streaming Responses
 
-::: tip
-AI-Hub bots support real-time response streaming, allowing users to see responses as they're generated:
-:::
+::: tip AI-Hub bots support real-time response streaming, allowing users to see responses as they're generated: :::
 
 **How it works:**
+
 1. Bot sends an empty message to establish the activity
-2. As response chunks are generated, the message is updated incrementally
-3. Updates are throttled (every 0.5 seconds) to avoid rate limits
-4. Final message shows the complete response
+1. As response chunks are generated, the message is updated incrementally
+1. Updates are throttled (every 0.5 seconds) to avoid rate limits
+1. Final message shows the complete response
 
 **Built-in streaming support:**
+
 - `StreamAgentChatBot`: Streams responses from AI agents
 - `StreamOpenaiChatBot`: Streams responses from OpenAI models
 - Automatic error handling with partial response preservation
 
 ### 🔄 Bot-in-the-Loop Pattern
 
-::: info Bot-in-the-Loop Pattern
-The Bot-in-the-Loop pattern enables AI agents to pause their execution and request human input via Slack channels. This is particularly useful for approval workflows, complex decision-making, or when human expertise is required.
-:::
+::: info Bot-in-the-Loop Pattern The Bot-in-the-Loop pattern enables AI agents to pause their execution and request
+human input via Slack channels. This is particularly useful for approval workflows, complex decision-making, or when
+human expertise is required. :::
 
 **How it works:**
+
 1. An AI agent encounters a decision point requiring human input
-2. The agent sends a `BotInTheLoop.request` event to the bot system
-3. The bot posts a formatted message to the specified Slack channel
-4. A human responds in the Slack thread
-5. The bot captures the response and sends it back to the waiting agent
-6. The agent continues execution with the human input
+1. The agent sends a `BotInTheLoop.request` event to the bot system
+1. The bot posts a formatted message to the specified Slack channel
+1. A human responds in the Slack thread
+1. The bot captures the response and sends it back to the waiting agent
+1. The agent continues execution with the human input
 
 This pattern enables seamless human-AI collaboration within automated workflows.
 
 ### 🛡️ Error Handling and Testing
 
-::: tip
-For robust bot development, implement comprehensive error handling and use the provided testing infrastructure:
+::: tip For robust bot development, implement comprehensive error handling and use the provided testing infrastructure:
 :::
 
 **Error Handling Best Practices:**
+
 - Show typing indicators during processing to provide user feedback
 - Handle timeouts gracefully with user-friendly messages
 - Log errors for debugging while showing generic error messages to users
 - Implement retry logic for transient failures
 
-**Testing with Simulated Agents:**
-The `SimulatedAgentBotTestRunner` allows you to test bot functionality without requiring actual agents:
+**Testing with Simulated Agents:** The `SimulatedAgentBotTestRunner` allows you to test bot functionality without
+requiring actual agents:
 
 ```python
 # Create test runner with mock agent responses
@@ -604,8 +621,8 @@ runner = SimulatedAgentBotTestRunner(agent_class="test_agent", agent_id="test_12
 runner.with_simple_chunk_events()  # Simulates streaming responses
 ```
 
-**Channel-Specific Testing:**
-Test your bot with different Bot Framework activity types to ensure compatibility across Teams, Slack, and other channels.
+**Channel-Specific Testing:** Test your bot with different Bot Framework activity types to ensure compatibility across
+Teams, Slack, and other channels.
 
 ---
 
@@ -615,11 +632,10 @@ This section serves as an appendix for locating key files and running specific t
 
 ### 🎮 Running Bots Interactively
 
-::: info
-The playground provides different configurations for various testing scenarios.
-:::
+::: info The playground provides different configurations for various testing scenarios. :::
 
 #### 🚀 Development Mode
+
 ```bash
 # Full bot with all features enabled
 cd playground/development
@@ -627,12 +643,14 @@ python main.py
 ```
 
 This starts a bot server with:
+
 - OpenAI chat endpoints
-- Agent chat endpoints  
+- Agent chat endpoints
 - Bot-in-the-loop functionality
 - Extended conversation TTL (60 days)
 
 #### 🧪 Testing Mode
+
 ```bash
 # Bot with simulated agents and web UI
 cd playground/testing
@@ -640,6 +658,7 @@ python main.py
 ```
 
 This provides:
+
 - Simulated agent responses (no real agents needed)
 - Web-based chat interface
 - All bot endpoints for testing
@@ -648,24 +667,23 @@ This provides:
 ### 🖥️ Bot Framework Emulator Setup
 
 1. Download Bot Framework Emulator from Microsoft
-2. Configure endpoint URL: `http://localhost:8000/api/v1/messages`
-3. Leave App ID and Password empty for local testing
-4. Test different activity types and channels
+1. Configure endpoint URL: `http://localhost:8000/api/v1/messages`
+1. Leave App ID and Password empty for local testing
+1. Test different activity types and channels
 
 ### ☁️ Azure Bot Deployment
 
 #### 🏭 Production Deployment Process
 
 1. **Run the Setup Script**: Use the provided `setup_azure_bot.py` script to automate Azure resource creation
-2. **Configure Public Endpoint**: Ensure your bot API is publicly accessible (use ngrok for development)
-3. **Set Up Channels**: Manually configure channels in Azure Portal after resource creation
-4. **Monitor and Debug**: Use Azure Portal monitoring and Bot Framework Emulator for testing
+1. **Configure Public Endpoint**: Ensure your bot API is publicly accessible (use ngrok for development)
+1. **Set Up Channels**: Manually configure channels in Azure Portal after resource creation
+1. **Monitor and Debug**: Use Azure Portal monitoring and Bot Framework Emulator for testing
 
 #### 🔐 Credential Management
 
-::: danger Credential Security
-The setup script stores bot credentials in your database for runtime access. Ensure your database is properly secured in production environments.
-:::
+::: danger Credential Security The setup script stores bot credentials in your database for runtime access. Ensure your
+database is properly secured in production environments. :::
 
 ```python
 # Credentials stored in MongoDB collection "bot_paths"
@@ -684,17 +702,17 @@ The setup script stores bot credentials in your database for runtime access. Ens
 
 #### 🔧 Local Development with Azure Bot
 
-::: tip Local Development
-For local development that integrates with Azure Bot Service:
-:::
+::: tip Local Development For local development that integrates with Azure Bot Service: :::
 
 1. **Start your bot server locally**:
+
    ```bash
    cd playground/development
    python main.py
    ```
 
-2. **Expose via Azure DevTunnel**:
+1. **Expose via Azure DevTunnel**:
+
    ```bash
    devtunnel create --allow-anonymous
    devtunnel port create -p 8000
@@ -702,37 +720,38 @@ For local development that integrates with Azure Bot Service:
    # Copy the https URL (e.g., https://abc123-8000.devtunnels.ms)
    ```
 
-3. **Update Azure Bot endpoint**:
+1. **Update Azure Bot endpoint**:
+
    ```bash
    az bot update --name "my-bot" --resource-group "my-rg" \
        --endpoint "https://abc123-8000.devtunnels.ms/api/v1/messages"
    ```
 
-4. **Test in Teams/Slack**: Your local bot now receives messages from Azure Bot Service
-
+1. **Test in Teams/Slack**: Your local bot now receives messages from Azure Bot Service
 
 ### 📖 Glossary of Bot-Specific Terms
 
-This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_bot` scope, building upon the core AI-Hub terminology.
+This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_bot` scope,
+building upon the core AI-Hub terminology.
 
-| Term | Definition |
-| :--- | :--- |
-| **Activity** | Bot Framework concept representing any communication between bot and user (messages, typing indicators, conversation updates). |
-| **Activity Handler** | Base class from Bot Framework that processes different types of activities. All bots extend this class. |
-| **Agent Chat Bot** | Bot implementation that connects to AI-Hub agents, forwarding user messages to agents and streaming responses back. |
-| **Bot Framework** | Microsoft's framework for building conversational AI applications, supporting multiple channels like Teams, Slack, etc. |
-| **Bot-in-the-Loop** | Pattern where a bot pauses an agent workflow to request human input via Slack, then resumes with the response. |
-| **Channel** | Communication platform where the bot operates (e.g., Microsoft Teams, Slack, Web Chat). |
-| **Chat Completion** | Process of generating AI responses to user messages, supporting both streaming and non-streaming modes. |
-| **Completion Handler** | Abstract interface for processing chat completions, implemented differently for agents and OpenAI models. |
-| **Content Extractor** | Utility for extracting text and attachments from bot activities across different channels. |
-| **Conversation Entity** | Database model tracking conversation state, messages, and metadata with configurable TTL. |
-| **Conversation Tracker** | Service for persisting and managing conversation history across bot restarts. |
-| **OpenAI Chat Bot** | Bot implementation that directly uses OpenAI-compatible models without agent orchestration. |
-| **Path Entity** | Database model storing conversation paths and routing information for multi-bot scenarios. |
-| **Routes Service** | Centralized service managing bot endpoint registration and channel configuration. |
-| **Simulated Agent Bot Test Runner** | Testing infrastructure that mocks agent responses for development without real agents. |
-| **Slack Utils** | Utilities for handling Slack-specific formatting, threading, and user mentions. |
-| **Stream Chat Bot** | Base class for bots that stream responses incrementally, providing real-time typing indicators. |
-| **Turn Context** | Bot Framework object containing all information about the current conversation turn. |
-| **Typing Indicator** | Visual feedback showing the bot is processing, with configurable timeout protection. |
+| Term                                | Definition                                                                                                                     |
+| :---------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
+| **Activity**                        | Bot Framework concept representing any communication between bot and user (messages, typing indicators, conversation updates). |
+| **Activity Handler**                | Base class from Bot Framework that processes different types of activities. All bots extend this class.                        |
+| **Agent Chat Bot**                  | Bot implementation that connects to AI-Hub agents, forwarding user messages to agents and streaming responses back.            |
+| **Bot Framework**                   | Microsoft's framework for building conversational AI applications, supporting multiple channels like Teams, Slack, etc.        |
+| **Bot-in-the-Loop**                 | Pattern where a bot pauses an agent workflow to request human input via Slack, then resumes with the response.                 |
+| **Channel**                         | Communication platform where the bot operates (e.g., Microsoft Teams, Slack, Web Chat).                                        |
+| **Chat Completion**                 | Process of generating AI responses to user messages, supporting both streaming and non-streaming modes.                        |
+| **Completion Handler**              | Abstract interface for processing chat completions, implemented differently for agents and OpenAI models.                      |
+| **Content Extractor**               | Utility for extracting text and attachments from bot activities across different channels.                                     |
+| **Conversation Entity**             | Database model tracking conversation state, messages, and metadata with configurable TTL.                                      |
+| **Conversation Tracker**            | Service for persisting and managing conversation history across bot restarts.                                                  |
+| **OpenAI Chat Bot**                 | Bot implementation that directly uses OpenAI-compatible models without agent orchestration.                                    |
+| **Path Entity**                     | Database model storing conversation paths and routing information for multi-bot scenarios.                                     |
+| **Routes Service**                  | Centralized service managing bot endpoint registration and channel configuration.                                              |
+| **Simulated Agent Bot Test Runner** | Testing infrastructure that mocks agent responses for development without real agents.                                         |
+| **Slack Utils**                     | Utilities for handling Slack-specific formatting, threading, and user mentions.                                                |
+| **Stream Chat Bot**                 | Base class for bots that stream responses incrementally, providing real-time typing indicators.                                |
+| **Turn Context**                    | Bot Framework object containing all information about the current conversation turn.                                           |
+| **Typing Indicator**                | Visual feedback showing the bot is processing, with configurable timeout protection.                                           |

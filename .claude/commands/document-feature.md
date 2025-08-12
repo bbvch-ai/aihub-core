@@ -1,25 +1,29 @@
 # Document Features - Create User-Facing Feature Documentation
 
-You've implemented a new feature called "$FEATURE" in the AI-Hub. Now it's time to make it shine with clear, user-facing documentation that helps customers understand its value and how to use it. This cookbook guides you through creating comprehensive feature documentation that follows our standards.
+You've implemented a new feature called "$FEATURE" in the AI-Hub. Now it's time to make it shine with clear, user-facing
+documentation that helps customers understand its value and how to use it. This cookbook guides you through creating
+comprehensive feature documentation that follows our standards.
 
 ## Overview
 
 Here's your feature documentation journey:
+
 1. Deep-dive into the codebase to understand your feature completely
-2. Analyze the user value and business impact
-3. Create structured, user-facing documentation
-4. Follow our VitePress markdown standards
-5. Ensure consistency with existing feature docs
+1. Analyze the user value and business impact
+1. Create structured, user-facing documentation
+1. Follow our VitePress markdown standards
+1. Ensure consistency with existing feature docs
 
 ## Your Feature Documentation Cookbook
 
 ### Step 1: Understand Your Feature Inside and Out
 
-Before writing anything, you need to become the world's expert on "$FEATURE". Time to investigate!
-Start by searching for your feature across all scopes. Find all files and commits related to your feature. 
-Search in specific scopes systematically
+Before writing anything, you need to become the world's expert on "$FEATURE". Time to investigate! Start by searching
+for your feature across all scopes. Find all files and commits related to your feature. Search in specific scopes
+systematically
 
 **Deep Investigation Questions:**
+
 - **Where is it implemented?** Which scopes contain the core logic?
 - **How does it work?** What are the key components and their interactions?
 - **What APIs does it expose?** Are there REST endpoints, WebSocket events, or other interfaces?
@@ -30,12 +34,14 @@ Search in specific scopes systematically
 ### Step 2: Map the Complete Feature Architecture
 
 Now that you've found the code, understand the full architecture:
+
 - Look at API endpoints (if any)
 - Check for database models
 - Find frontend components
 - Look for configuration files
 
 **Architecture Understanding Checklist:**
+
 - [ ] I know exactly which scopes implement this feature
 - [ ] I understand the data flow from user interaction to backend processing
 - [ ] I can explain how it integrates with existing AI-Hub components
@@ -47,6 +53,7 @@ Now that you've found the code, understand the full architecture:
 This is CRUCIAL! You need to understand why users will care about "$FEATURE".
 
 **Value Analysis Questions:**
+
 - **What problem does it solve?** Be specific about user pain points
 - **Who is the target user?** Developers, business users, administrators, or all?
 - **What workflows does it enable?** How does it change or improve user workflows?
@@ -54,6 +61,7 @@ This is CRUCIAL! You need to understand why users will care about "$FEATURE".
 - **What are the measurable benefits?** Time savings, cost reduction, efficiency gains?
 
 **Business Impact Questions:**
+
 - **Strategic value**: How does it align with AI-Hub's mission and vision?
 - **Competitive advantage**: Does it differentiate AI-Hub from other platforms?
 - **User adoption**: What barriers to adoption exist, and how do we address them?
@@ -73,9 +81,11 @@ cd aihub_doc/docs/features/
 
 ### Step 5: Follow Our Feature Documentation Structure
 
-Your feature documentation MUST follow this exact structure. Use the MCP Integration documentation (`aihub_doc/docs/features/mcp/index.md`) as your template reference.
+Your feature documentation MUST follow this exact structure. Use the MCP Integration documentation
+(`aihub_doc/docs/features/mcp/index.md`) as your template reference.
 
 **Required Front Matter:**
+
 ```yaml
 ---
 title: "Your Feature Title"
@@ -160,20 +170,23 @@ Reference links to related documentation, API docs, or tutorials.
 ### Step 6: Apply VitePress Markdown Standards
 
 **Emoji Usage Rules:**
+
 - **Headers 1 & 2 ONLY**: Add emojis at the END of h1 and h2 headers
-- **Examples**: 
+- **Examples**:
   - `# Feature Name :tada: :100:`
   - `## Section Title :brain:`
   - `## Why It Matters :trophy:`
 - **NO emojis in h3 or lower headers**
 
 **VitePress Container Usage:**
+
 - **`::: info`** - For TL;DR sections and important highlights
 - **`::: details`** - For collapsible setup instructions and advanced topics
 - **`::: warning`** - For important warnings or caveats
 - **`::: tip`** - For helpful tips and best practices
 
 **Language and Tone:**
+
 - **User-facing perspective**: Write for customers, not internal developers
 - **Present tense**: "The AI-Hub acts as..." not "The AI-Hub now acts as..."
 - **Clear, jargon-free language**: Explain technical concepts simply
@@ -184,6 +197,7 @@ Reference links to related documentation, API docs, or tutorials.
 Before considering your documentation complete, validate against these criteria:
 
 **Content Quality:**
+
 - [ ] TL;DR immediately communicates value in 2-3 sentences
 - [ ] Technical explanation is clear and jargon-free
 - [ ] Business value section has 5 specific, tangible benefits
@@ -192,6 +206,7 @@ Before considering your documentation complete, validate against these criteria:
 - [ ] Security considerations are documented
 
 **Structure and Format:**
+
 - [ ] Front matter is correct with title and index
 - [ ] Only h1 and h2 headers are used (no h3 or lower)
 - [ ] Emojis are only in h1 and h2 headers, at the end
@@ -200,6 +215,7 @@ Before considering your documentation complete, validate against these criteria:
 - [ ] Markdown formatting is consistent
 
 **User Experience:**
+
 - [ ] A non-technical user can understand the value
 - [ ] Setup instructions are complete and accurate
 - [ ] Examples are practical and actionable
@@ -219,6 +235,7 @@ head -50 aihub_doc/docs/features/*/index.md
 ```
 
 **Integration Checklist:**
+
 - [ ] Writing style matches existing feature docs
 - [ ] Technical depth is appropriate for the audience
 - [ ] Cross-references to related features are included
@@ -235,13 +252,13 @@ head -50 aihub_doc/docs/features/*/index.md
 
 ## You're Done When...
 
-✅ You deeply understand "$FEATURE" implementation across all scopes  
-✅ You can clearly articulate the business value and user benefits  
-✅ Your documentation follows the exact structure template  
-✅ VitePress markdown standards are applied correctly  
-✅ Setup instructions are complete and tested  
-✅ The documentation answers "why should I care?" convincingly  
-✅ A non-technical user can understand the value proposition  
-✅ Integration with existing AI-Hub features is explained  
+✅ You deeply understand "$FEATURE" implementation across all scopes\
+✅ You can clearly articulate the business value and user benefits\
+✅ Your documentation follows the exact structure template\
+✅ VitePress markdown standards are applied correctly\
+✅ Setup instructions are complete and tested\
+✅ The documentation answers "why should I care?" convincingly\
+✅ A non-technical user can understand the value proposition\
+✅ Integration with existing AI-Hub features is explained
 
 Remember: Great feature documentation is a bridge between amazing engineering and happy users! 🚀

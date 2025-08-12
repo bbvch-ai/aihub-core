@@ -1,5 +1,5 @@
 ---
-title: "Authentication & Authorization System"
+title: Authentication & Authorization System
 ---
 
 # Authentication & Authorization System
@@ -23,9 +23,9 @@ The authentication system is built around three main abstractions:
 ### Authentication Flow
 
 1. **Credential Extraction**: AuthHandlers extract tokens/credentials from HTTP requests
-2. **Token Validation**: Handlers validate tokens against their respective authorities
-3. **Identity Resolution**: IdentityProviders fetch detailed user information
-4. **Permission Evaluation**: AccessChecker determines user access levels
+1. **Token Validation**: Handlers validate tokens against their respective authorities
+1. **Identity Resolution**: IdentityProviders fetch detailed user information
+1. **Permission Evaluation**: AccessChecker determines user access levels
 
 ## Permission System
 
@@ -48,7 +48,7 @@ The system uses dot-notation permissions with wildcard support:
 The system supports two types of permission checks:
 
 1. **Direct Checks**: Verify access to specific resources
-2. **Implicit Checks**: Verify if user has any matching access pattern (using `?*` and `?>`)
+1. **Implicit Checks**: Verify if user has any matching access pattern (using `?*` and `?>`)
 
 ## Supported Authentication Strategies
 

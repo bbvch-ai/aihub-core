@@ -19,10 +19,10 @@ format:
 	@(cd aihub_bot && make format)
 	@(cd aihub_iac && make format)
 
-# Format markdown files
+# Format markdown files, use python for faster file fetching. and excluding of non git tracked files
 format-md:
 	@echo "Formatting markdown files..."
-	poetry run mdformat . --wrap 120
+	@poetry run python -c "import subprocess; files=subprocess.check_output(['git','ls-files','*.md'], text=True).split(); subprocess.run(['mdformat', *files])"
 
 # Type-check with MyPy
 typecheck:
@@ -37,7 +37,8 @@ typecheck:
 
 # Run format, type-check, and test in sequence
 pr-ready:
-	@echo "Running full check (format, lint)..."
+	@echo "Running full check (format-md, format, lint)..."
+	@make format-md
 	@(cd aihub_pipeline &&  make pr-ready)
 	@(cd aihub_lib &&  make pr-ready)
 	@(cd aihub_agent &&  make pr-ready)
@@ -46,7 +47,6 @@ pr-ready:
 	@(cd aihub_bot &&  make pr-ready)
 	@(cd aihub_iac &&  make pr-ready)
 	@(cd aihub_web && make pr-ready)
-	@make format-md
 
 # Use local cores for development (with poetry install)
 use-local-core:
@@ -73,8 +73,10 @@ use-remote-core-without-install:
 changelog:
 	@echo "Generating changelog"
 	/bin/bash ./generate-changelog.sh
+	make format-md
 
 # Check licenses across all dependencies
 license-check:
 	@echo "Checking licenses..."
 	/bin/bash ./generate-license.sh
+	make format-md

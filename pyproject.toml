@@ -16,6 +16,9 @@ tomlkit = "^0.13.2"
 black = { extras = ["jupyter"], version = "^25.1.0" }
 pip-licenses = "^5.0.0"
 mdformat = "^0.7.21"
+mdformat-gfm = "^0.4.1"
+mdformat-frontmatter = "^2.0.8"
+mdformat-simple-breaks = "^0.0.1"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -39,5 +42,17 @@ extend-exclude = '''
 )/
 '''
 
-[tool.mdformat]
+[mdformat]
+extensions = ["frontmatter", "gfm"]
+exclude = [
+    "node_modules",
+    ".pnpm",
+    ".venv",
+    "dist",
+    "local_volumes",
+    ".idea",
+    "venv",
+    ".git"
+]
 wrap = 120
+end_of_line = "lf"

@@ -9,10 +9,10 @@ Architecture Decision Records) process.
 Here's your explanation documentation journey:
 
 1. Review your changes against main
-2. Check existing architecture decisions
-3. Identify if you made significant architecture choices
-4. Document new decisions properly
-5. Reference any superseded decisions
+1. Check existing architecture decisions
+1. Identify if you made significant architecture choices
+1. Document new decisions properly
+1. Reference any superseded decisions
 
 ## Your Decision Documentation Cookbook
 
@@ -63,34 +63,49 @@ Ask yourself:
 
 ### Step 3: Identify What Needs Documentation
 
-** REQUIRES an ADR - Significant Architecture Decisions:**
+\*\* REQUIRES an ADR - Significant Architecture Decisions:\*\*
 
 - **Technology Choices**
+
 - Adopting a new framework or library (e.g., "Use Celery for async tasks")
+
 - Choosing between competing technologies (e.g., "Redis vs. RabbitMQ for queuing")
+
 - Selecting a new database or storage solution
 
 - **Architecture Patterns**
+
 - Introducing new design patterns (e.g., "Implement Event Sourcing for audit trails")
+
 - Changing communication patterns (e.g., "Move from REST to GraphQL")
+
 - Adopting new architecture styles (e.g., "Transition to microservices")
 
 - **Major Structural Changes**
+
 - Reorganizing package structure fundamentally
+
 - Changing how components interact
+
 - Introducing new layers or boundaries
 
 - **Cross-Cutting Concerns**
+
 - New security approaches (e.g., "Implement Zero Trust architecture")
+
 - Performance optimization strategies (e.g., "Add caching layer with Redis")
+
 - Observability decisions (e.g., "Adopt OpenTelemetry for tracing")
 
 - **Integration Decisions**
+
 - How to integrate with external systems
+
 - API versioning strategies
+
 - Data synchronization approaches
 
-** DOES NOT Require an ADR - Implementation Details:**
+\*\* DOES NOT Require an ADR - Implementation Details:\*\*
 
 **Regular Feature Development**
 
@@ -216,14 +231,14 @@ Before finalizing, ensure your ADR is valuable:
 
 ### Examples to Guide You
 
-**Good ADR Title:** "Adopt NATS for Inter-Service Communication"  
+**Good ADR Title:** "Adopt NATS for Inter-Service Communication"\
 **Poor ADR Title:** "Update Message System"
 
 **Good Context:** "Our current HTTP-based service communication creates tight coupling and lacks resilience. We need
-asynchronous messaging to handle service failures gracefully."  
+asynchronous messaging to handle service failures gracefully."\
 **Poor Context:** "We need better messaging."
 
-**Good Decision Driver:** "Must handle 10,000 messages/second with <100ms latency"  
+**Good Decision Driver:** "Must handle 10,000 messages/second with \<100ms latency"\
 **Poor Decision Driver:** "Need fast messaging"
 
 ## Common Pitfalls to Avoid
