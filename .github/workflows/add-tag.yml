@@ -4,8 +4,6 @@ on:
   pull_request:
     types: [ closed ]
     branches: [ main ]
-  push:
-    branches: [ feat/docker-compose-deployment ]
 
 permissions:
   contents: write
@@ -99,6 +97,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git tag ${{ steps.create-tag.outputs.version }}
           git push origin ${{ steps.create-tag.outputs.version }}
+          git pull --rebase origin main
 
   update-and-dependencies:
     name: Update Files & Install Deps
