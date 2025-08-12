@@ -1,0 +1,14 @@
+[project]
+name = "mdformat-vuepress"
+version = "0.1.0"
+description = "Preserve VuePress-style ::: containers in mdformat"
+authors = [{name = "You"}]
+requires-python = ">=3.9"
+dependencies = ["mdformat>=0.7", "markdown-it-py>=3", "mdit-py-plugins>=0.4"]
+
+[project.entry-points."mdformat.plugins"]
+vuepress = "mdformat_vuepress.plugin:plugin"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
