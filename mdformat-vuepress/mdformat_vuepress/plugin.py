@@ -60,7 +60,7 @@ def plugin(md):
     """mdformat plugin entry: register pre/post processors."""
     # mdformat calls these with (text, path) and (text, path, state)
     return {
-        "preprocessors": [_preprocess],
-        "postprocessors": [_postprocess],
+        "PREPROCESSORS": [_preprocess],
+        "POSTPROCESSORS": [_postprocess],
         # no parser/renderer changes needed
     }

@@ -19,8 +19,8 @@ mdformat = "^0.7.21"
 mdformat-gfm = "^0.4.1"
 mdformat-frontmatter = "^2.0.8"
 mdformat-simple-breaks = "^0.0.1"
-mdformat-vuepress = {path = "mdformat-vuepress"}
 mdformat-pyproject = "^0.0.2"
+mdformat-vuepress = {path = "mdformat-vuepress"}
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
