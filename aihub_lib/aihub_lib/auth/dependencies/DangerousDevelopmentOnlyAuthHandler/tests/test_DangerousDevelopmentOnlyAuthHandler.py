@@ -13,7 +13,7 @@ from aihub_lib.testing.asyncio_utils.bdd import async_test
 # --- Scenario Declaration ---
 
 
-scenarios("features/no_auth_handler.feature")
+scenarios("features/dangerous_development_only_auth_handler.feature")
 
 
 # --- Fixtures ---

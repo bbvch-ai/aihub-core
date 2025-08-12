@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_process"
-version = "v0.239.0"
+version = "v0.240.0"
 description = "agentic process automation"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -30,11 +30,11 @@ pytest-bdd = "^8.1.0"
 pytest-cov = "^6.0.0"
 asgi-lifespan = "^2.1.0"
 pip-licenses = "^5.0.0"
-mdformat = "^0.7.21"
 
 [tool.poetry.dependencies.aihub_lib]
-path = "../aihub_lib"
-develop = true
+git = "https://github.com/bbvch-ai/aihub-core.git"
+tag = "v0.240.0"
+subdirectory = "aihub_lib"
 
 [tool.poetry.group.dev.dependencies.aihub_agent]
 path = "../aihub_agent"
@@ -78,6 +78,3 @@ markers = [
     "experimental: mark a test as experimental",
 ]
 addopts = "--strict-markers"
-
-[tool.mdformat]
-wrap = 120

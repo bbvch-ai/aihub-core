@@ -25,7 +25,7 @@ EXPECTED_USER_FIELDS = ["id", "name", "email"]
 @pytest.fixture(scope="module", autouse=True)
 def mongo_db():
     """Set up and tear down the MongoDB connection for tests."""
-    connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING)
+    connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING.get_secret_value())
     yield
     disconnect()
 
@@ -36,7 +36,7 @@ async def api_client():
     runner = ApiTestRunner()
     auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     runner.mount(UserController(auth=auth).get_my_user())
-    app = runner.get_app()
+    app = runner.create_app()
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client

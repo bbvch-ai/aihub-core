@@ -21,10 +21,10 @@ class SpeechServiceAccess(CognitiveServiceAccess):
 
     def _initialize(self):
         # If the key and region are provided in the config, use them
-        if AzureSpeechServiceSettings().KEY and AzureSpeechServiceSettings().REGION:
+        if AzureSpeechServiceSettings().KEY.get_secret_value() and AzureSpeechServiceSettings().REGION:
             self._region = AzureSpeechServiceSettings().REGION
             self.speech_config = SpeechConfig(
-                subscription=AzureSpeechServiceSettings().KEY,
+                subscription=AzureSpeechServiceSettings().KEY.get_secret_value(),
                 region=self._region,
             )
             return

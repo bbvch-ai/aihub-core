@@ -42,7 +42,7 @@ class Runner(abc.ABC):
     runner = ConcreteRunner(api_path="/api/v1", title="My API")
     runner.mount(MyController())  # Mounting a controller
     runner.mount_frontend("path/to/frontend/dist")  # Serve frontend if desired
-    app = runner.get_app()  # This is the main FastAPI instance to run
+    app = runner.create_app()  # This is the main FastAPI instance to run
     ```
 
     You can then run `app` using `uvicorn` or another ASGI server.
@@ -72,7 +72,7 @@ class Runner(abc.ABC):
     def lifetime_manager(self) -> Callable[[FastAPI], AbstractAsyncContextManager]:
         pass
 
-    def get_app(self) -> Starlette:
+    def create_app(self) -> Starlette:
         """
         Returns the main FastAPI application instance, which can be run using an ASGI server.
         """
