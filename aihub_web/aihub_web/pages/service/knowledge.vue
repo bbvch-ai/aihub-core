@@ -83,8 +83,14 @@ const openUploadModal = (database_name: string, namespace_name: string) => {
   uploadModalVisible.value = true
 }
 
-const handleUpload = () => {
+const handleUpload = (data: { files: File[], namespace: string, database: string }) => {
+  console.log('Upload completed successfully:', data)
   uploadModalVisible.value = false
+
+  // Optionally navigate to the namespace after upload
+  const localePath = useLocalePath()
+  const router = useRouter()
+  router.push(localePath(`/service/knowledge/${data.database}/${data.namespace}`))
 }
 
 const openNewNamespaceModal = (databaseName: string) => {

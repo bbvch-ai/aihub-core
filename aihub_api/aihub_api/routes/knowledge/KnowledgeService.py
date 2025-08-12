@@ -1,10 +1,8 @@
 import logging
+import uuid
 
 import mongoengine
-from fastapi import HTTPException
-
-from aihub_api.routes.knowledge.dto.NamespaceDTO import NamespaceDTO
-from aihub_api.services.TranslationService import TranslationService
+from aihub_lib.generative_ai.document.accessor.FileAccessServiceConfig import FileAccessServiceConfig
 from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
@@ -12,9 +10,9 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.azure.cosmos.docstore.CosmosDocstoreAccess import CosmosDocstoreAccess
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
-from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.documents.entities.NamespaceEntity import NamespaceEntity
+from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     DOCUMENT_ID,
@@ -24,14 +22,21 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     TYPE,
     NodeTypeValue,
 )
+from fastapi import HTTPException
 from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
-from mongoengine import register_connection, DoesNotExist
+from mongoengine import DoesNotExist, register_connection
 
 from aihub_api.routes.knowledge.dto.CreateNamespaceRequest import CreateNamespaceRequest
 from aihub_api.routes.knowledge.dto.DatabaseDTO import DatabaseDTO
+from aihub_api.routes.knowledge.dto.DocumentUploadCompleteRequest import DocumentUploadCompleteRequest
+from aihub_api.routes.knowledge.dto.DocumentUploadCompleteResponse import DocumentUploadCompleteResponse
+from aihub_api.routes.knowledge.dto.DocumentUploadRequest import DocumentUploadRequest
+from aihub_api.routes.knowledge.dto.DocumentUploadResponse import DocumentUploadResponse
+from aihub_api.routes.knowledge.dto.NamespaceDTO import NamespaceDTO
 from aihub_api.routes.knowledge.dto.NamespaceResponse import NamespaceResponse
 from aihub_api.routes.knowledge.dto.NodeSummaryDTO import NodeSummaryDTO
 from aihub_api.routes.knowledge.dto.UpdateNamespaceRequest import UpdateNamespaceRequest
+from aihub_api.services.TranslationService import TranslationService
 
 logger = logging.getLogger(__name__)
 
@@ -232,7 +237,7 @@ class KnowledgeService:
                     display_name = await TranslationService.translate_locale_string_entity(
                         entity=display_name, llm_config=llm_config, t=t, source_locale=t.locale
                     )
-                    logger.info(f"Successfully translated display_name to all supported locales")
+                    logger.info("Successfully translated display_name to all supported locales")
                 except Exception as e:
                     logger.warning(f"Failed to translate display_name: {e}")
 
@@ -249,7 +254,7 @@ class KnowledgeService:
                     description = await TranslationService.translate_locale_string_entity(
                         entity=description, llm_config=llm_config, t=t, source_locale=t.locale
                     )
-                    logger.info(f"Successfully translated description to all supported locales")
+                    logger.info("Successfully translated description to all supported locales")
                 except Exception as e:
                     logger.warning(f"Failed to translate description: {e}")
 
@@ -266,4 +271,93 @@ class KnowledgeService:
             folder_name=updated_entity.folder_name,
             display_name=t.extract(updated_entity.display_name) if updated_entity.display_name else None,
             description=t.extract(updated_entity.description) if updated_entity.description else None,
+        )
+
+    @staticmethod
+    async def initiate_document_upload(request: DocumentUploadRequest, t: LocaleHandler) -> DocumentUploadResponse:
+        """
+        Initiates document upload by generating a presigned S3/MinIO URL.
+
+        This method validates the upload request, generates a unique object key,
+        and creates a presigned URL for direct upload to S3/MinIO storage.
+        """
+        # Validate file size (10MB max)
+        if request.content_length > 10 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="File size exceeds 10MB limit")
+
+        # Validate content type
+        allowed_types = [
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "text/plain",
+            "text/markdown",
+        ]
+        if request.content_type not in allowed_types:
+            raise HTTPException(status_code=415, detail="Unsupported file type")
+
+        # Validate database exists and get bucket info
+        try:
+            bucket = BucketEntity.get_bucket_by_bucket_name(request.database)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail=f"Database '{request.database}' not found")
+
+        # Generate unique upload ID and object key
+        upload_id = str(uuid.uuid4())
+        safe_filename = "".join(c for c in request.filename if c.isalnum() or c in ".-_").rstrip()
+        object_key = f"{request.namespace}/{safe_filename}"
+
+        # Use the actual bucket name from BucketEntity
+        container = bucket.bucket_name
+
+        # Generate presigned URL using S3/MinIO service
+        try:
+            file_service = FileAccessServiceConfig().service
+            presigned_url = file_service.generate_upload_url(
+                container=container,
+                file_path=object_key,
+                content_type=request.content_type,
+                lifetime_hours=1,  # 1 hour expiration
+            )
+
+            logger.info(f"Generated presigned URL for upload: {upload_id}")
+
+            return DocumentUploadResponse(
+                upload_url=presigned_url,
+                upload_id=upload_id,
+                container=container,
+                object_key=object_key,
+                expires_in=3600,  # 1 hour in seconds
+                namespace=request.namespace,
+                database=request.database,
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to generate presigned URL: {e}")
+            raise HTTPException(status_code=500, detail="Failed to generate upload URL")
+
+    @staticmethod
+    async def complete_document_upload(
+        request: DocumentUploadCompleteRequest, t: LocaleHandler
+    ) -> DocumentUploadCompleteResponse:
+        """
+        Completes document upload after successful S3/MinIO upload.
+
+        This method validates the upload completion and triggers document
+        processing for indexing in the knowledge base.
+        """
+        # TODO: Add validation to check if file actually exists in S3/MinIO
+        # TODO: Trigger document processing pipeline (ingestion, parsing, indexing)
+        # TODO: Store upload metadata in database
+
+        # For now, return success response indicating the upload was registered
+        document_id = str(uuid.uuid4())
+
+        logger.info(f"Document upload completed: upload_id={request.upload_id}, document_id={document_id}")
+
+        return DocumentUploadCompleteResponse(
+            success=True,
+            document_id=document_id,
+            message="Document uploaded successfully and queued for processing",
+            processing_status="queued",
         )

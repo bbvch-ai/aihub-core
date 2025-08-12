@@ -1,12 +1,12 @@
 import asyncio
 
 import nest_asyncio
-from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
-    DangerousDevelopmentOnlyAuthHandler,
-)
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
+from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
+from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler import OpenWebuiAuthHandler
+from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
+from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
+from aihub_lib.auth.identity.AzureIdentityProvider.AzureIdentityProvider import AzureIdentityProvider
+from aihub_lib.auth.identity.TokenIdentityProvider.TokenIdentityProvider import TokenIdentityProvider
 from aihub_lib.generative_ai.resources.models.image.azure.AzureImageModelConfig import AzureOpenaiImageModelConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
@@ -46,16 +46,16 @@ nest_asyncio.apply()
 async def main():
     runner = ApiTestRunner()
 
-    # auth = TokenAndOauth2Handler(
-    #     bearer_handlers=[
-    #         OpenWebuiAuthHandler(identity_provider=AzureIdentityProvider()),
-    #         TokenAuthHandler(identity_provider=TokenIdentityProvider()),
-    #     ],
-    #     oauth2_handlers=[
-    #         OAuth2AuthHandler(identity_provider=AzureIdentityProvider()),
-    #     ],
-    # )
-    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    auth = TokenAndOauth2Handler(
+        bearer_handlers=[
+            OpenWebuiAuthHandler(identity_provider=AzureIdentityProvider()),
+            TokenAuthHandler(identity_provider=TokenIdentityProvider()),
+        ],
+        oauth2_handlers=[
+            OAuth2AuthHandler(identity_provider=AzureIdentityProvider()),
+        ],
+    )
+    # auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
 
     azure_openai_settings = DevelopmentOpenaiResourceSettings()
 
@@ -178,9 +178,19 @@ async def main():
             vector_store_factory=lambda collection: create_milvus_vector_store(
                 "http://localhost:19530", collection, 3072
             ),
+            translation_llm_config=AzureOpenAILLMConfig(
+                name="gpt-4o-mini",
+                base_url="https://bbvaihub-openai-sui.openai.azure.com",
+                api_version="2025-01-01-preview",
+                prompt_tokens_costs_per_thousand=0.0045,
+                completion_tokens_costs_per_thousand=0.0133,
+                api_key=azure_openai_settings.OPENAI_API_KEY,
+            ),
         )
         .create_namespace()
         .update_namespace()
+        .initiate_document_upload()
+        .complete_document_upload()
         .get_databases()
         .get_documents_for_namespace()
         .get_document_by_id()

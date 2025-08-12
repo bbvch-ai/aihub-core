@@ -1,9 +1,8 @@
 from typing import Annotated
 
-from pydantic import BaseModel, Field
-
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.rag.documents.entities.NamespaceEntity import NamespaceEntity
+from pydantic import BaseModel, Field
 
 
 class NamespaceDTO(BaseModel):

@@ -83,48 +83,26 @@ const openUploadModal = () => {
   uploadModalVisible.value = true
 }
 
-const handleUpload = (data: { files: File[], namespace: string, database: string }) => {
-  console.log('Upload requested:', data)
-  uploadModalVisible.value = false
+const handleUpload = async (data: { files: File[], namespace: string, database: string }) => {
+  console.log('Upload completed successfully:', data)
 
+  // Add processing documents to show immediate feedback
   data.files.forEach((file, index) => {
     const processingDoc = {
       id: `processing-${Date.now()}-${index}`,
       document_title: file.name.replace(/\.[^/.]+$/, ''),
       created_at: new Date().toISOString(),
-      status: 'uploading' as const,
-      progress: 0,
+      status: 'processing' as const,
+      progress: 100,
     }
     processingDocuments.value.push(processingDoc)
-
-    simulateUploadProgress(processingDoc.id, file.name)
   })
-}
 
-const simulateUploadProgress = (docId: string, fileName: string) => {
-  const doc = processingDocuments.value.find(d => d.id === docId)
-  if (!doc) return
-
-  const uploadInterval = setInterval(() => {
-    if (doc.progress! < 100) {
-      doc.progress = Math.min(100, doc.progress! + Math.random() * 20)
-    }
-    else {
-      clearInterval(uploadInterval)
-      doc.status = 'processing'
-
-      const processingTime = 3000 + Math.random() * 7000
-      setTimeout(() => {
-        const index = processingDocuments.value.findIndex(d => d.id === docId)
-        if (index > -1) {
-          processingDocuments.value.splice(index, 1)
-        }
-
-        refetch()
-
-        console.log(`Document "${fileName}" processed successfully`)
-      }, processingTime)
-    }
-  }, 200)
+  // Simulate processing time before refreshing the document list
+  setTimeout(() => {
+    // Remove all processing documents and refresh the list
+    processingDocuments.value = []
+    refetch()
+  }, 3000)
 }
 </script>

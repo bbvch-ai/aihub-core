@@ -28,7 +28,7 @@ import { useI18n } from '#i18n'
 const { t } = useI18n()
 
 const emit = defineEmits<{
-  (e: 'add'): void
+  (event: 'add'): void
 }>()
 
 const handleAdd = () => {

@@ -86,8 +86,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void
-  (e: 'success', data: { database: string, namespace: string }): void
+  (event: 'update:modelValue', value: boolean): void
+  (event: 'success', data: { database: string, namespace: string }): void
 }>()
 
 const { t } = useI18n()

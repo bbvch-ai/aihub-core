@@ -88,3 +88,50 @@ class S3AnonymousFileAccessService(AbstractAnonymousFileAccessService):
         signing secret for generating secure URLs and request signatures.
         """
         return self._s3_config.SECRET_KEY
+
+    def generate_upload_url(self, container: str, file_path: str, content_type: str, lifetime_hours: int = 1) -> str:
+        """
+        Generate a presigned URL for uploading a file to S3/MinIO.
+
+        Creates a time-limited URL that allows anonymous upload to a specific
+        S3 object path without requiring AWS credentials. The URL expires after
+        the specified lifetime.
+
+        Args:
+            container: S3 bucket name
+            file_path: Object key/path within the bucket
+            content_type: MIME type of the file being uploaded
+            lifetime_hours: URL expiration time in hours (max 24)
+
+        Returns:
+            str: Presigned URL for PUT operation
+
+        Raises:
+            ValueError: If parameters are invalid
+            Exception: If URL generation fails
+        """
+        # Validate input parameters
+        if not container or not container.strip():
+            raise ValueError("Container name cannot be empty")
+        if not file_path or not file_path.strip():
+            raise ValueError("File path cannot be empty")
+        if not content_type or not content_type.strip():
+            raise ValueError("Content type cannot be empty")
+        if lifetime_hours <= 0 or lifetime_hours > 24:  # 24 hours max for uploads
+            raise ValueError("Lifetime must be between 1 and 24 hours")
+
+        try:
+            # Generate presigned URL for PUT operation
+            presigned_url = self._s3_client.generate_presigned_url(
+                "put_object",
+                Params={
+                    "Bucket": container,
+                    "Key": file_path,
+                    "ContentType": content_type
+                },
+                ExpiresIn=int(lifetime_hours * 3600),  # Convert hours to seconds
+            )
+            logger.debug(f"Generated presigned upload URL for {container}/{file_path}, expires in {lifetime_hours}h")
+            return presigned_url
+        except ClientError as e:
+            raise Exception(f"Failed to generate presigned upload URL: {e}")

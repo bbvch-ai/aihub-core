@@ -3386,6 +3386,161 @@ export const DocumentBlockSchema = {
     description: 'A representation of a document to directly pass to the LLM.'
 } as const;
 
+export const DocumentUploadCompleteRequestSchema = {
+    properties: {
+        upload_id: {
+            type: 'string',
+            title: 'Upload Id',
+            description: 'Unique identifier for the upload session'
+        },
+        container: {
+            type: 'string',
+            title: 'Container',
+            description: 'S3 bucket/container name where document was stored'
+        },
+        object_key: {
+            type: 'string',
+            title: 'Object Key',
+            description: 'S3 object key/path of the uploaded document'
+        },
+        namespace: {
+            type: 'string',
+            title: 'Namespace',
+            description: 'Target namespace for the document'
+        },
+        database: {
+            type: 'string',
+            title: 'Database',
+            description: 'Target database for the document'
+        }
+    },
+    type: 'object',
+    required: ['upload_id', 'container', 'object_key', 'namespace', 'database'],
+    title: 'DocumentUploadCompleteRequest',
+    description: `Request payload for completing document upload after successful S3/MinIO upload.
+
+This request notifies the system that the document has been successfully
+uploaded to S3/MinIO and should be processed for indexing in the knowledge base.`
+} as const;
+
+export const DocumentUploadCompleteResponseSchema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success',
+            description: 'Whether the upload completion was successful'
+        },
+        document_id: {
+            type: 'string',
+            title: 'Document Id',
+            description: 'Unique identifier assigned to the uploaded document'
+        },
+        message: {
+            type: 'string',
+            title: 'Message',
+            description: 'Human-readable status message'
+        },
+        processing_status: {
+            type: 'string',
+            title: 'Processing Status',
+            description: 'Current processing status (queued, processing, completed, error)'
+        }
+    },
+    type: 'object',
+    required: ['success', 'document_id', 'message', 'processing_status'],
+    title: 'DocumentUploadCompleteResponse',
+    description: `Response payload for completed document upload.
+
+Confirms that the document has been successfully received and
+queued for processing in the knowledge base pipeline.`
+} as const;
+
+export const DocumentUploadRequestSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename',
+            description: 'Original filename of the document'
+        },
+        content_type: {
+            type: 'string',
+            title: 'Content Type',
+            description: 'MIME type of the document'
+        },
+        content_length: {
+            type: 'integer',
+            maximum: 10485760,
+            exclusiveMinimum: 0,
+            title: 'Content Length',
+            description: 'Size of the document in bytes'
+        },
+        namespace: {
+            type: 'string',
+            title: 'Namespace',
+            description: 'Target namespace/folder for the document'
+        },
+        database: {
+            type: 'string',
+            title: 'Database',
+            description: 'Target database for the document'
+        }
+    },
+    type: 'object',
+    required: ['filename', 'content_type', 'content_length', 'namespace', 'database'],
+    title: 'DocumentUploadRequest',
+    description: `Request payload for initiating document upload to knowledge base.
+
+This request is used to get presigned URLs for direct S3/MinIO upload
+of documents that will be processed and indexed in the knowledge base.`
+} as const;
+
+export const DocumentUploadResponseSchema = {
+    properties: {
+        upload_url: {
+            type: 'string',
+            title: 'Upload Url',
+            description: 'Presigned URL for uploading the document to S3/MinIO'
+        },
+        upload_id: {
+            type: 'string',
+            title: 'Upload Id',
+            description: 'Unique identifier for this upload session'
+        },
+        container: {
+            type: 'string',
+            title: 'Container',
+            description: 'S3 bucket/container name where document will be stored'
+        },
+        object_key: {
+            type: 'string',
+            title: 'Object Key',
+            description: 'S3 object key/path for the uploaded document'
+        },
+        expires_in: {
+            type: 'integer',
+            title: 'Expires In',
+            description: 'Upload URL expiration time in seconds'
+        },
+        namespace: {
+            type: 'string',
+            title: 'Namespace',
+            description: 'Target namespace for the document'
+        },
+        database: {
+            type: 'string',
+            title: 'Database',
+            description: 'Target database for the document'
+        }
+    },
+    type: 'object',
+    required: ['upload_url', 'upload_id', 'container', 'object_key', 'expires_in', 'namespace', 'database'],
+    title: 'DocumentUploadResponse',
+    description: `Response payload for document upload initialization.
+
+Contains the presigned URL for direct S3/MinIO upload and metadata
+needed to complete the upload process.`
+} as const;
+
 export const EdgeDataSchema = {
     properties: {
         source: {
@@ -6956,7 +7111,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1754659023
+            default: 1754984880
         },
         owned_by: {
             type: 'string',

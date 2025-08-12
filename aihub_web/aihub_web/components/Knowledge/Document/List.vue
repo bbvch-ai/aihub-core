@@ -112,13 +112,6 @@ const emit = defineEmits<{
 
 const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY')
 
-const formatDate = (datestr: string, isProcessing: boolean) => {
-  if (isProcessing) {
-    return useDateFormat(new Date(datestr), 'DD.MM.YYYY HH:mm')
-  }
-  return formatted(datestr)
-}
-
 // Combine regular documents with processing documents
 const allDocuments = computed(() => {
   const processing = (props.processingDocuments || []).map(doc => ({
@@ -144,7 +137,7 @@ const selectedDocument = computed(() => {
   })
 })
 
-const handleSelection = (document: any) => {
+const handleSelection = (document: IngestedDocument & { isProcessing: boolean }) => {
   // Only allow selection of non-processing documents
   if (!document.isProcessing) {
     emit('selected', document as IngestedDocument)

@@ -1,7 +1,6 @@
-import asyncio
 import json
 import logging
-from typing import Dict, Type, TypeVar, overload
+from typing import TypeVar
 
 from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import (
     ChatLLMConfig,
@@ -69,7 +68,7 @@ class TranslationService:
     @classmethod
     async def _get_translations_from_llm(
         cls, text: str, source_locale: str, target_locales: list[str], llm_config: ChatLLMConfig
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         if not target_locales:
             return {}
 

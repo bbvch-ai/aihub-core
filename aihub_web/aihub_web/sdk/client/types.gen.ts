@@ -2361,6 +2361,151 @@ export type DocumentBlock = {
 };
 
 /**
+ * DocumentUploadCompleteRequest
+ * Request payload for completing document upload after successful S3/MinIO upload.
+ *
+ * This request notifies the system that the document has been successfully
+ * uploaded to S3/MinIO and should be processed for indexing in the knowledge base.
+ */
+export type DocumentUploadCompleteRequest = {
+    /**
+     * Upload Id
+     * Unique identifier for the upload session
+     */
+    upload_id: string;
+    /**
+     * Container
+     * S3 bucket/container name where document was stored
+     */
+    container: string;
+    /**
+     * Object Key
+     * S3 object key/path of the uploaded document
+     */
+    object_key: string;
+    /**
+     * Namespace
+     * Target namespace for the document
+     */
+    namespace: string;
+    /**
+     * Database
+     * Target database for the document
+     */
+    database: string;
+};
+
+/**
+ * DocumentUploadCompleteResponse
+ * Response payload for completed document upload.
+ *
+ * Confirms that the document has been successfully received and
+ * queued for processing in the knowledge base pipeline.
+ */
+export type DocumentUploadCompleteResponse = {
+    /**
+     * Success
+     * Whether the upload completion was successful
+     */
+    success: boolean;
+    /**
+     * Document Id
+     * Unique identifier assigned to the uploaded document
+     */
+    document_id: string;
+    /**
+     * Message
+     * Human-readable status message
+     */
+    message: string;
+    /**
+     * Processing Status
+     * Current processing status (queued, processing, completed, error)
+     */
+    processing_status: string;
+};
+
+/**
+ * DocumentUploadRequest
+ * Request payload for initiating document upload to knowledge base.
+ *
+ * This request is used to get presigned URLs for direct S3/MinIO upload
+ * of documents that will be processed and indexed in the knowledge base.
+ */
+export type DocumentUploadRequest = {
+    /**
+     * Filename
+     * Original filename of the document
+     */
+    filename: string;
+    /**
+     * Content Type
+     * MIME type of the document
+     */
+    content_type: string;
+    /**
+     * Content Length
+     * Size of the document in bytes
+     */
+    content_length: number;
+    /**
+     * Namespace
+     * Target namespace/folder for the document
+     */
+    namespace: string;
+    /**
+     * Database
+     * Target database for the document
+     */
+    database: string;
+};
+
+/**
+ * DocumentUploadResponse
+ * Response payload for document upload initialization.
+ *
+ * Contains the presigned URL for direct S3/MinIO upload and metadata
+ * needed to complete the upload process.
+ */
+export type DocumentUploadResponse = {
+    /**
+     * Upload Url
+     * Presigned URL for uploading the document to S3/MinIO
+     */
+    upload_url: string;
+    /**
+     * Upload Id
+     * Unique identifier for this upload session
+     */
+    upload_id: string;
+    /**
+     * Container
+     * S3 bucket/container name where document will be stored
+     */
+    container: string;
+    /**
+     * Object Key
+     * S3 object key/path for the uploaded document
+     */
+    object_key: string;
+    /**
+     * Expires In
+     * Upload URL expiration time in seconds
+     */
+    expires_in: number;
+    /**
+     * Namespace
+     * Target namespace for the document
+     */
+    namespace: string;
+    /**
+     * Database
+     * Target database for the document
+     */
+    database: string;
+};
+
+/**
  * EdgeData
  * Data for an edge in the workflow graph.
  */
@@ -9283,6 +9428,56 @@ export type UpdateNamespaceResponses = {
 };
 
 export type UpdateNamespaceResponse = UpdateNamespaceResponses[keyof UpdateNamespaceResponses];
+
+export type InitiateDocumentUploadData = {
+    body: DocumentUploadRequest;
+    path?: never;
+    query?: never;
+    url: '/knowledge/documents/upload/initiate';
+};
+
+export type InitiateDocumentUploadErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type InitiateDocumentUploadError = InitiateDocumentUploadErrors[keyof InitiateDocumentUploadErrors];
+
+export type InitiateDocumentUploadResponses = {
+    /**
+     * Successful Response
+     */
+    200: DocumentUploadResponse;
+};
+
+export type InitiateDocumentUploadResponse = InitiateDocumentUploadResponses[keyof InitiateDocumentUploadResponses];
+
+export type CompleteDocumentUploadData = {
+    body: DocumentUploadCompleteRequest;
+    path?: never;
+    query?: never;
+    url: '/knowledge/documents/upload/complete';
+};
+
+export type CompleteDocumentUploadErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CompleteDocumentUploadError = CompleteDocumentUploadErrors[keyof CompleteDocumentUploadErrors];
+
+export type CompleteDocumentUploadResponses = {
+    /**
+     * Successful Response
+     */
+    200: DocumentUploadCompleteResponse;
+};
+
+export type CompleteDocumentUploadResponse = CompleteDocumentUploadResponses[keyof CompleteDocumentUploadResponses];
 
 export type GetDatabasesData = {
     body?: never;
