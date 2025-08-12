@@ -69,6 +69,10 @@ In this stage, we move from general-purpose AI to highly specialized, custom **A
 
 We work with you to build a powerful ecosystem of specialists, such as a finance assistant or an HR assistant. They are deeply integrated with your data and include a transparency module so users can always trace how an answer was generated.
 
+**The human remains firmly in control.** Each AI Assistant is designed as a powerful tool that amplifies human expertise rather than replacing human judgment. Users decide when to engage their assistants, what questions to ask, and how to interpret and act on the responses. The assistants provide recommendations and insights, but the human always makes the final decisions on business processes and outcomes.
+
+This human-centered approach ensures that while AI Assistants bring specialized knowledge and rapid analysis to your fingertips, your team retains full autonomy over strategic decisions, process modifications, and business direction. The technology serves your people, not the other way around.
+
 :::details Click here to see an example Assistant scenario
 A product team discusses an issue in a Microsoft Teams channel:
 
@@ -104,6 +108,14 @@ This is the most advanced tier, where we go beyond reactive assistance to fundam
 :::
 
 We don't just automate old processes; we redesign them as a transparent, controlled collaboration between humans, specialized AI agents, and your existing programs and software. Humans remain in complete control, with full visibility into every step and the ability to guide the process at any time.
+
+**In this tier, AI agents take the lead in driving business processes**, but always within controlled and strictly defined parameters. Unlike Tier 3 where humans initiate every interaction, here the AI proactively manages process progression, identifies next steps, and coordinates tasks across the process timeline. However, this leadership operates within carefully established guardrails and escalation protocols that ensure human oversight remains meaningful and accessible.
+
+**True human-agent collaboration is at our core.** We firmly believe that the future of work isn't about fully autonomous agents operating in isolation, but about creating seamless, intuitive partnerships between humans and AI. Our approach ensures that while agents lead process execution and coordination, humans retain strategic oversight, creative problem-solving, and final decision-making authority on critical junctures.
+
+We've designed our agentic systems to make this collaboration feel natural and empowering. The interplay between humans and agents is transparent, with clear handoff points where humans can step in, modify directions, or take full control. We focus intensively on making these interactions not just functional, but genuinely enjoyable and accessible to users at all technical levels.
+
+**The result is a workflow where technology amplifies human capabilities without overwhelming them.** Users can easily understand what their AI agents are doing, why they're doing it, and how to guide them toward better outcomes. This creates an environment where the combined intelligence of humans and AI far exceeds what either could achieve alone, while keeping the human experience engaging and comprehensible.
 
 :::details Example: The HR Application Process, Redesigned with Agentic Process Automation
 Consider how a traditional HR application process is transformed through Agentic Process Automation:
