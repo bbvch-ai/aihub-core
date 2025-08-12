@@ -41,3 +41,19 @@ extend-exclude = '''
   | dist
 )/
 '''
+
+[tool.mdformat]
+extensions = ["frontmatter", "gfm", "myst"]
+exclude = [
+    "node_modules",
+    ".pnpm",
+    ".venv",
+    "dist",
+    "local_volumes",
+    ".idea",
+    "venv",
+    ".git"
+]
+wrap = 120
+number = true
+end_of_line = "lf"
