@@ -16,7 +16,6 @@ The monorepo structure needed to be preserved while enabling component-specific 
 
 ## Decision Drivers
 
-- **Build Efficiency**: Only rebuild components that have changed, reducing CI/CD time and resource consumption
 - **Component Independence**: Each microservice should have its own build pipeline with appropriate dependencies
 - **Version Management**: Support for different versioning strategies (local development, nightly builds, semantic versioning)
 - **Environment Flexibility**: Build artifacts suitable for different deployment environments

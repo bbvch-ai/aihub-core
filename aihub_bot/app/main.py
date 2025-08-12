@@ -13,4 +13,4 @@ runner.mount(
     OpenaiChatController().json_chat_completion().stream_chat_completion(),
 )
 
-app = runner.get_app()
+app = runner.create_app()

@@ -65,7 +65,7 @@ x-restart-policy: &restart-policy
 
 
 services:
-  # === MinIO Stack (self-hosted S3-compatible) ===
+  # === MinIO Stack ===
   # <editor-fold desc="Minio Stack">
   minio:
     image: ghcr.io/bbvch-ai/aihub-core/minio:release.2025-05-24t17-08-30z
@@ -74,7 +74,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_DEFAULT_BUCKETS: "open-webui,a-bucket"  # Comma-separated list
+      MINIO_DEFAULT_BUCKETS: "open-webui,a-bucket"
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/minio_data:/minio_data
       - ./configs/minio/minio-entrypoint.sh:/usr/local/bin/minio-entrypoint.sh:ro
@@ -124,7 +124,7 @@ services:
       MINIO_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
     volumes:
       - ${VOLUME_ROOT:-./local-volumes}/milvus-data:/var/lib/milvus
-      - ./configs/milvus/milvus.latest.yaml:/milvus/configs/milvus.yaml
+      - ./configs/milvus/milvus.nightly.yaml:/milvus/configs/milvus.yaml
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
       start_period: 90s
@@ -158,7 +158,7 @@ services:
       - ${VOLUME_ROOT:-./local-volumes}/postgres-data:/var/lib/postgresql/data
       - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U webui" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
       start_period: 5s
     logging: *default-logging
   # </editor-fold>
@@ -186,7 +186,7 @@ services:
     <<: *restart-policy
     command: -c /etc/nats/nats.conf
     volumes:
-      - ./configs/nats/nats.latest.conf:/etc/nats/nats.conf
+      - ./configs/nats/nats.nightly.conf:/etc/nats/nats.conf
       - ${VOLUME_ROOT:-./local-volumes}/nats-data:/data
     logging: *default-logging
 
@@ -252,7 +252,7 @@ services:
       PRESIDIO_ANONYMIZER_API_BASE: "http://presidio-anonymizer:3000"
       SET_VERBOSE: "false"
     volumes:
-      - ./configs/litellm/litellm.latest.yaml:/app/config.yaml
+      - ./configs/litellm/litellm.nightly.yaml:/app/config.yaml
     command: --config /app/config.yaml --detailed_debug
     depends_on:
       postgres:
@@ -625,7 +625,7 @@ services:
       - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/dagster_home
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
-      - ./configs/dagster/dagster.latest.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/dagster.nightly.yaml:/dagster_home/dagster.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -644,7 +644,7 @@ services:
       - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/dagster_home
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
-      - ./configs/dagster/dagster.latest.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/dagster.nightly.yaml:/dagster_home/dagster.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home

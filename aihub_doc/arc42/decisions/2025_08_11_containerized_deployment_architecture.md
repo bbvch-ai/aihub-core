@@ -95,7 +95,7 @@ PostgreSQL, MinIO)
 ## Implementation Notes
 
 This decision enables:
-- Quick environment setup: `docker compose -f docker-compose.yml -f docker-compose.local.yml up -d`
+- Quick environment setup: `docker compose -f docker-compose-gpu.dev.yml up -d`
 - GPU acceleration when needed: Use GPU-specific compose files
 - Independent service development: Each microservice has its own container and entry point
 - Automated deployment: CI/CD pipelines build and deploy containers automatically

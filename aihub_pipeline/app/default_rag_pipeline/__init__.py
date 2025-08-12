@@ -2,6 +2,7 @@ from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import Em
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from dagster import AssetKey, AssetSelection, Definitions, DynamicPartitionsDefinition
 
+from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
@@ -25,14 +26,6 @@ from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
 from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
-from app.default_rag_pipeline.PipelineRunnerSettings import PipelineRunnerSettings
-
-# Requires the following env variables to be set:
-# - S3_ENDPOINT_URL
-# - S3_ACCESS_KEY
-# - S3_SECRET_KEY
-# - S3_REGION
-
 
 # Configuration: Change this to switch between cloud providers
 DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
@@ -71,8 +64,6 @@ remove_job = materialize_asset_job(
     asset_selection=AssetSelection.keys(REMOVED_DOCUMENTS_KEY),
 )
 
-runner = PipelineRunnerSettings()
-
 defs = Definitions(
     assets=assets,
     resources={
@@ -83,7 +74,7 @@ defs = Definitions(
         "node_parser": MarkdownStructuralNodeParserResource(),
         "summary_parser": RecursiveSummaryParserResource(),
         **local_mongo_milvus_storage_context_resource(
-            vector_store_uri=runner.VECTOR_STORE_URI,
+            vector_store_uri=MilvusSettings().URL,
             store_name=STORE_NAME,
             namespace_name=NAMESPACE_NAME,
         ),
