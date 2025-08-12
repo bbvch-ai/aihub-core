@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.240.2] - 2025-08-12 - Internal CI/CD Workflow Simplification
+
+### Changed
+- ⚙️ **Workflow Payload Simplification**: Streamlined the internal GitHub Actions workflow responsible for dispatching release events, updating the `gh cli` command to utilize a more direct and simplified payload syntax for client parameters.
+
+---
+
+
+
+## [v0.240.1] - 2025-08-12 - Pivotal Shift to Containerized Deployments with Enhanced CI/CD
+
+### Added
+- 🚀 **Full-Stack Containerized Deployment**: Introduced a comprehensive multi-environment deployment strategy leveraging Docker Compose for local, nightly, and production environments, including specific GPU-enabled configurations. This provides out-of-the-box deployability for the entire platform.
+- 🐳 **Component-Specific Docker Images**: New, dedicated Docker image builds and associated CI/CD pipelines for individual microservices (Agents, API, Bot, Dagster, Pipelines, and Web) to enable independent deployment and versioning.
+- 🤖 **`LLMWrappingAgent`**: A new, flexible agent designed to streamline the integration and utilization of Large Language Models within workflows.
+- 💡 **`Default RAG Pipeline`**: A new out-of-the-box Retrieval-Augmented Generation (RAG) pipeline for efficient knowledge retrieval.
+- ⚙️ **Centralized Milvus Configuration**: Added `MilvusSettings` to the core library for consistent and centralized management of Milvus database connection parameters.
+- 📊 **Dedicated Dagster Orchestration Service**: Introduced a standalone Docker image for the Dagster orchestration tool, facilitating robust data pipeline management.
+- 📝 **Architectural Decision Records (ADRs)**: Published new ADRs detailing the rationale behind the adoption of containerized deployment and component-specific build pipelines, providing clear architectural guidance.
+- 📄 **Environment-Specific Service Configurations**: Added extensive, tailored configurations for Dagster, LiteLLM, Milvus, and NATS across different deployment environments (local, nightly, latest) to support flexible setup.
+
+### Changed
+- 🔄 **Modularized CI/CD Release Workflow**: The `add-tag.yml` workflow has been refactored into a series of modular jobs (version computation, file updates, changelog/license generation, release finalization, and notification dispatch), significantly enhancing the robustness and clarity of the release automation process.
+- 🏷️ **Enhanced Docker Build Action**: Improved the Docker image build action to support a `secondary_tag` (e.g., `nightly`) alongside the release version, providing more granular control over image tagging.
+- 📦 **API and Bot Application Restructuring**: The main entry points and directory structures for the API and Bot applications have been refactored to align with a more modular microservice architecture.
+- 🌍 **Standardized Milvus URL in Development**: The Milvus vector store configuration in the API's development playground now consistently uses the centralized `MilvusSettings` for improved environment abstraction.
+- 🔒 **Improved Web Image Security**: Updated the web Dockerfile to include dedicated user setup, enhancing container security best practices.
+
+---
+
+
+
 
 ## [v0.240.0] - 2025-08-12 - Streamlined Setup with Superuser Authentication and Enhanced Security
 
