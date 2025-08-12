@@ -361,6 +361,5 @@ jobs:
           VERSION: ${{ needs.compute-and-initial-tag.outputs.version }}
         run: |
           gh api repos/${{ github.repository }}/dispatches \
-            --method POST \
             -F event_type=release-ready \
-            -F client_payload:='{"release_version":"'"$VERSION"'"}'
+            -F client_payload[release_version]=$VERSION
