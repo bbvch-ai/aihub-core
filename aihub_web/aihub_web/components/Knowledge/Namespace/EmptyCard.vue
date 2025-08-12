@@ -23,12 +23,10 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from '#i18n'
-
 const { t } = useI18n()
 
 const emit = defineEmits<{
-  (event: 'add'): void
+  add: []
 }>()
 
 const handleAdd = () => {

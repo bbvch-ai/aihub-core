@@ -7,7 +7,6 @@
     :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
   >
     <div class="flex flex-col gap-6">
-      <!-- File Drop Zone -->
       <div
         ref="dropZone"
         class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-surface-300 p-8 transition-colors hover:border-primary-500 hover:bg-surface-50 dark:border-surface-600 dark:hover:bg-surface-800"
@@ -31,7 +30,6 @@
           PDF, DOC, TXT, MD (MAX. 10MB)
         </p>
 
-        <!-- Selected Files -->
         <div
           v-if="selectedFiles.length > 0"
           class="mt-4 w-full"
@@ -61,7 +59,6 @@
         </div>
       </div>
 
-      <!-- Target Location -->
       <div
         v-if="props.preselectedNamespace && props.database"
         class="flex flex-col gap-2"
@@ -148,16 +145,14 @@ interface Props {
   title?: string
 }
 
-interface Emits {
-  (event: 'update:visible', value: boolean): void
-  (event: 'upload', data: { files: File[], namespace: string, database: string }): void
-}
-
 const props = withDefaults(defineProps<Props>(), {
   title: 'Upload Documents',
 })
 
-const emit = defineEmits<Emits>()
+const emit = defineEmits<{
+  'update:visible': [value: boolean]
+  'upload': [data: { files: File[], namespace: string, database: string }]
+}>()
 
 // Use the document upload composable
 const { uploadDocument, validateFile } = useDocumentUpload()

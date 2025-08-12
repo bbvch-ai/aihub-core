@@ -10,7 +10,7 @@ export interface UploadFileOptions {
   file: File
   namespace: string
   database: string
-  onProgress?: (_progress: number) => void
+  onProgress?: () => void
 }
 
 export const useDocumentUpload = defineMutation(() => {

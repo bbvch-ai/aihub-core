@@ -2,12 +2,14 @@ import logging
 import uuid
 
 import mongoengine
-from aihub_lib.generative_ai.document.accessor.FileAccessServiceConfig import FileAccessServiceConfig
+
+from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
 from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.documents.entities.NamespaceEntity import NamespaceEntity
@@ -134,7 +136,7 @@ class KnowledgeService:
         return list(summaries.values())
 
     async def _create_and_translate_locale_entity(
-        text: str | None, t: LocaleHandler, llm_config: ChatLLMConfig | None
+        text: str | None, t: LocaleHandler, llm_config: LLMConfig | None
     ) -> LocaleStringEntity | None:
         """Helper to create and translate a LocaleStringEntity."""
         if not text:
@@ -159,7 +161,7 @@ class KnowledgeService:
 
     @staticmethod
     async def create_namespace(
-        request: CreateNamespaceRequest, t: LocaleHandler, llm_config: ChatLLMConfig | None = None
+        request: CreateNamespaceRequest, t: LocaleHandler, llm_config: LLMConfig | None = None
     ) -> NamespaceResponse:
         """
         Creates a new namespace (folder) in the specified database.
@@ -211,7 +213,7 @@ class KnowledgeService:
 
     @staticmethod
     async def update_namespace(
-        namespace_id: str, request: UpdateNamespaceRequest, t: LocaleHandler, llm_config: ChatLLMConfig | None = None
+        namespace_id: str, request: UpdateNamespaceRequest, t: LocaleHandler, llm_config: LLMConfig | None = None
     ) -> NamespaceResponse:
         """
         Updates display name and description for an existing namespace.
@@ -311,7 +313,7 @@ class KnowledgeService:
 
         # Generate presigned URL using S3/MinIO service
         try:
-            file_service = FileAccessServiceConfig().service
+            file_service = S3AnonymousFileAccessService()
             presigned_url = file_service.generate_upload_url(
                 container=container,
                 file_path=object_key,

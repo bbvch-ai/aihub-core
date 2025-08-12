@@ -5,7 +5,7 @@ from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
@@ -43,7 +43,7 @@ class KnowledgeController(Controller):
         vector_store_factory: VectorStoreFactory,
         route: str = "/knowledge",
         additionally_required_permission: str | None = None,
-        translation_llm_config: ChatLLMConfig | None = None,
+        translation_llm_config: LLMConfig | None = None,
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
         self.docstore_client: MongoClient = connect(

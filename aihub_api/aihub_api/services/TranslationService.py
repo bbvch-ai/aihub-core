@@ -2,10 +2,7 @@ import json
 import logging
 from typing import TypeVar
 
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import (
-    ChatLLMConfig,
-    ChatLLMParameter,
-)
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig, LLMParameter
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
@@ -25,7 +22,7 @@ class TranslationService:
 
     @classmethod
     async def translate(
-        cls, translatable: T, llm_config: ChatLLMConfig, t: LocaleHandler, source_locale: str = "en"
+        cls, translatable: T, llm_config: LLMConfig, t: LocaleHandler, source_locale: str = "en"
     ) -> T:
         """
         Translates missing fields in a translatable object (LocaleString or LocaleStringEntity).
@@ -67,7 +64,7 @@ class TranslationService:
 
     @classmethod
     async def _get_translations_from_llm(
-        cls, text: str, source_locale: str, target_locales: list[str], llm_config: ChatLLMConfig
+        cls, text: str, source_locale: str, target_locales: list[str], llm_config: LLMConfig
     ) -> dict[str, str]:
         if not target_locales:
             return {}
@@ -88,12 +85,7 @@ class TranslationService:
             ChatMessage(role=MessageRole.USER, content=text),
         ]
 
-        llm, _ = llm_config.to_llama_index(
-            ChatLLMParameter(
-                temperature=0.0,
-                max_tokens=1024,
-            )
-        )
+        llm, _ = llm_config.to_llama_index()
         if hasattr(llm.llm, "response_format"):
             llm.llm.response_format = {"type": "json_object"}
 

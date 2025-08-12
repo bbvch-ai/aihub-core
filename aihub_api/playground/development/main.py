@@ -1,7 +1,6 @@
 import asyncio
 
 import nest_asyncio
-from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
@@ -83,13 +82,8 @@ async def main():
             vector_store_factory=lambda collection: create_milvus_vector_store(
                 "http://localhost:19530", collection, 3072
             ),
-            translation_llm_config=AzureOpenAILLMConfig(
-                name="gpt-4o-mini",
-                base_url="https://bbvaihub-openai-sui.openai.azure.com",
-                api_version="2025-01-01-preview",
-                prompt_tokens_costs_per_thousand=0.0045,
-                completion_tokens_costs_per_thousand=0.0133,
-                api_key=azure_openai_settings.OPENAI_API_KEY,
+            translation_llm_config=LLMConfig(
+                model_name="azure/gpt-4o-mini",
             ),
         )
         .create_namespace()
