@@ -2,20 +2,25 @@
 
 ## Context
 
-The AI-Hub development team increasingly relies on AI coding assistants (Claude Code, Gemini CLI, OpenAI Codex, JetBrains Junie) for writing and debugging code. These tools needed better access to the development environment to provide more effective assistance, including:
+The AI-Hub development team increasingly relies on AI coding assistants (Claude Code, Gemini CLI, OpenAI Codex,
+JetBrains Junie) for writing and debugging code. These tools needed better access to the development environment to
+provide more effective assistance, including:
 
 - Real-time observation of running services and their state
 - Direct access to development databases for debugging
 - Ability to interact with AI-Hub APIs for testing and validation
 - Integration with observability tools for tracing and monitoring
 
-Previously, AI coding assistants worked in isolation with limited context about the running development environment. This reduced their effectiveness in debugging complex issues and understanding system behavior.
+Previously, AI coding assistants worked in isolation with limited context about the running development environment.
+This reduced their effectiveness in debugging complex issues and understanding system behavior.
 
-Additionally, we wanted to make our AI-Hub API more accessible to third-party AI tools and potential integrations while maintaining security boundaries.
+Additionally, we wanted to make our AI-Hub API more accessible to third-party AI tools and potential integrations while
+maintaining security boundaries.
 
 ## Decision Drivers
 
-- **Enhanced AI Assistant Capabilities**: Enable coding assistants to observe and interact with the development environment
+- **Enhanced AI Assistant Capabilities**: Enable coding assistants to observe and interact with the development
+  environment
 - **Improved Debugging Experience**: Allow AI tools to access runtime data, logs, and system state
 - **Standardized Tool Integration**: Use emerging industry standards for AI tool integration
 - **Developer Productivity**: Reduce context switching between AI assistants and development tools
@@ -46,7 +51,8 @@ Implement MCP server capabilities directly in the AI-Hub API to expose functiona
 
 ### Positive
 
-- **Enhanced AI Assistance**: Coding assistants can now observe running services, access databases, and interact with APIs
+- **Enhanced AI Assistance**: Coding assistants can now observe running services, access databases, and interact with
+  APIs
 - **Improved Debugging**: AI tools can analyze real-time system state and provide context-aware debugging help
 - **Standardized Integration**: All AI tool integrations follow the same MCP protocol
 - **Developer Productivity**: Reduced context switching between AI assistants and development tools

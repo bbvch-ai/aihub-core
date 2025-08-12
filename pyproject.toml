@@ -20,7 +20,7 @@ mdformat-gfm = "^0.4.1"
 mdformat-frontmatter = "^2.0.8"
 mdformat-simple-breaks = "^0.0.1"
 mdformat-pyproject = "^0.0.2"
-mdformat-vuepress = {path = "mdformat-vuepress", develop = true}
+mdformat-vuepress = {path = "aihub_doc/mdformat-vuepress", develop = true}
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

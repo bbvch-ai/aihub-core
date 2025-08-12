@@ -334,7 +334,7 @@ mdit-py-plugins = ">=0.4"
 
 [package.source]
 type = "directory"
-url = "mdformat-vuepress"
+url = "aihub_doc/mdformat-vuepress"
 
 [[package]]
 name = "mdit-py-plugins"
@@ -716,4 +716,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.13, <3.14"
-content-hash = "d7cb694a20fd1b7713bdff9d8da18c804278ea53c5a768737608f2dc18afbab7"
+content-hash = "3f2b959ae5a9f9f468ef2e53b353868a93b8416b07bc2ddc7ba869b28da68057"
