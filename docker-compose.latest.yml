@@ -302,7 +302,7 @@ services:
       ENABLE_BASE_MODELS_CACHE: True
 
       # Development
-      ENV: "dev" # TODO: what is this for?
+      ENV: "prod"
       GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
 
       # Privacy
