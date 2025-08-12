@@ -38,7 +38,7 @@ async def process_api_client():
     ).with_simple_human_only_process_events()
     runner.mount(controller)
     await runner.start_simulation()
-    app = runner.get_app()
+    app = runner.create_app()
 
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1") as client:

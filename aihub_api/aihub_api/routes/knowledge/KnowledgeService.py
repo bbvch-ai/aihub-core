@@ -29,7 +29,7 @@ class KnowledgeService:
     @staticmethod
     def _ensure_db_exists(db: str):
         if db not in mongoengine.connection._connections:
-            register_connection(alias=db, name=db, host=MongoSettings().CONNECTION_STRING)
+            register_connection(alias=db, name=db, host=MongoSettings().CONNECTION_STRING.get_secret_value())
 
     @staticmethod
     def get_paginated_documents(

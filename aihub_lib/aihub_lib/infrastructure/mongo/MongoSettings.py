@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 
 from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
 
@@ -8,4 +8,4 @@ from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
 class MongoSettings(EnvironmentSettings):
     model_config = EnvironmentSettings.create_settings_config("MONGO_")
 
-    CONNECTION_STRING: Annotated[str | None, Field(description="Overwrite the MongoDB connection string")] = None
+    CONNECTION_STRING: Annotated[SecretStr, Field(description="Overwrite the MongoDB connection string")]

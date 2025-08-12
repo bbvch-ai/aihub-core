@@ -25,7 +25,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     # Connect to MongoDB via Cosmos
     connect(
         db=AIHubSettings().MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING,
+        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
     )
 
     # Configure TTL index after connection is established

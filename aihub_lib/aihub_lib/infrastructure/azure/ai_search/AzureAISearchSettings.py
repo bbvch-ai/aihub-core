@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 
 from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
 
@@ -13,4 +13,4 @@ class AzureAISearchSettings(EnvironmentSettings):
     )
     NAME: Annotated[str | None, Field(description="Overwrite the cognitive search service name")] = None
     ENDPOINT: Annotated[str | None, Field(description="Overwrite the cognitive search API endpoint")] = None
-    API_KEY: Annotated[str | None, Field(description="Overwrite the cognitive search API key")] = None
+    API_KEY: Annotated[SecretStr | None, Field(description="Overwrite the cognitive search API key")] = None

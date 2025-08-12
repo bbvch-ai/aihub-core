@@ -6,7 +6,7 @@ def connect_to_mongo_db(database_name: str = None):
     try:
         connect(
             db=database_name,
-            host=MongoSettings().CONNECTION_STRING,
+            host=MongoSettings().CONNECTION_STRING.get_secret_value(),
         )
     except Exception as e:
         raise ConnectionError(f"Failed to connect to MongoDB: {e}")

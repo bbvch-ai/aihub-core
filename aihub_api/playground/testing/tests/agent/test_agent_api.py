@@ -32,7 +32,7 @@ async def agent_api_client():
     runner = SimulatedAgentApiTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID).with_simple_chunk_events()
     runner.mount(controller)
     await runner.start_simulation()
-    app = runner.get_app()
+    app = runner.create_app()
 
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1") as client:

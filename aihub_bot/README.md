@@ -312,7 +312,7 @@ Bot testing uses pytest with the `BotTestRunner` for integration testing. This p
        )
        runner = BotTestRunner()
        runner.mount(MyBotController(auth=auth, custom_config=test_config).chat_completion())
-       return TestClient(runner.get_app())
+       return TestClient(runner.create_app())
    
    def test_bot_message_handling(bot_client):
        """Test bot handles messages correctly."""

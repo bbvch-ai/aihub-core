@@ -66,9 +66,9 @@ class EvaluationService:
     @staticmethod
     def _get_phoenix_request_config() -> tuple[str, dict[str, str]]:
         """Resolves the Phoenix base endpoint and authentication headers."""
-        config = PhoenixSettings()
-        headers = {"authorization": f"Bearer {config.AUTH_TOKEN}"} if config.AUTH_TOKEN else {}
-        return config.ENDPOINT, headers
+        auth_token = PhoenixSettings().AUTH_TOKEN
+        headers = {"authorization": f"Bearer {auth_token.get_secret_value()}"} if auth_token else {}
+        return PhoenixSettings().ENDPOINT, headers
 
     @staticmethod
     async def _fetch_datasets_from_phoenix() -> list[PhoenixDataset]:

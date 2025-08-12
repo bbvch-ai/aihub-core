@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 
 from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
 
@@ -18,7 +18,7 @@ class AzureBlobStorageSettings(EnvironmentSettings):
 
     # This secret key is used to sign our own internal URLs, not for Azure.
     URL_SIGNING_SECRET: Annotated[
-        str,
+        SecretStr,
         Field(
             description="A secret key used for signing and verifying temporary anonymous access URLs.",
         ),
