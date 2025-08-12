@@ -35,7 +35,9 @@ class KnowledgeController(Controller):
         additionally_required_permission: str | None = None,
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
-        self.docstore_client: MongoClient = connect(host=MongoSettings().CONNECTION_STRING, alias="docstore")
+        self.docstore_client: MongoClient = connect(
+            host=MongoSettings().CONNECTION_STRING.get_secret_value(), alias="docstore"
+        )
 
         self.vector_store_factory = vector_store_factory
 

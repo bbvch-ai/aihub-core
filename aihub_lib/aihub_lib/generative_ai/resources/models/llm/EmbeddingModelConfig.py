@@ -63,7 +63,7 @@ class EmbeddingModelConfig(LiteLLMBase[OpenAILikeEmbedding]):
         open_ai_like_embedding = OpenAILikeEmbedding(
             model_name=self.model_name,
             api_base=config.BASE_URL,
-            api_key=config.API_KEY,
+            api_key=config.API_KEY.get_secret_value(),
             max_retries=self.default_parameter.max_retries,
             callback_manager=CallbackManager([token_counter]),
             timeout=self.default_parameter.timeout,

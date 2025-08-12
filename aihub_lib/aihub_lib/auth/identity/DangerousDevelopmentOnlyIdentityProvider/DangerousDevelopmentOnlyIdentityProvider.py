@@ -19,32 +19,27 @@ class DangerousDevelopmentOnlyIdentityProvider(IdentityProvider):
         self.config = DangerousDevelopmentOnlyAuthSettings()
 
     async def get_user_identity_by_oid(self, user_oid: str) -> UserIdentity:
-        if user_oid == self.config.OID:
-            return UserIdentity(
-                id=self.config.OID,
-                name=self.config.NAME,
-                email=self.config.EMAIL,
-                roles=self.config.ROLES,
+        if user_oid != self.config.OID:
+            raise ValueError(
+                f"DangerousDevelopmentOnlyIdentityProvider: oid '{user_oid}' "
+                f"does not match the configured dev oid '{self.config.OID}'."
             )
-        raise ValueError(
-            f"DangerousDevelopmentOnlyIdentityProvider: oid '{user_oid}' "
-            f"does not match the configured dev oid '{self.config.OID}'."
-        )
+        return self.config.get_user_identity()
 
     async def get_user_identity_by_email(self, email: str) -> UserIdentity:
-        if email == self.config.EMAIL:
-            return UserIdentity(
-                id=self.config.OID,
-                name=self.config.NAME,
-                email=self.config.EMAIL,
-                roles=self.config.ROLES,
+        if email != self.config.EMAIL:
+            raise ValueError(
+                f"DangerousDevelopmentOnlyIdentityProvider: email '{email}' "
+                f"does not match the configured dev email '{self.config.EMAIL}'."
             )
-        raise ValueError(
-            f"DangerousDevelopmentOnlyIdentityProvider: email '{email}' "
-            f"does not match the configured dev email '{self.config.EMAIL}'."
-        )
+        return self.config.get_user_identity()
 
     async def get_user_roles(self, user_oid: str) -> list[str]:
+        if user_oid != self.config.OID:
+            raise ValueError(
+                f"DangerousDevelopmentOnlyIdentityProvider: oid '{user_oid}' "
+                f"does not match the configured dev oid '{self.config.OID}'."
+            )
         return self.config.ROLES
 
     async def get_user_profile_image_data_url(self, user_oid: str) -> str | None:
