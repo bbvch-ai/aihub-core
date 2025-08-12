@@ -25,10 +25,10 @@ class AISearchAccess:
         return cls._instance
 
     def _initialize(self):
-        if AzureAISearchSettings().ENDPOINT and AzureAISearchSettings().API_KEY:
+        if AzureAISearchSettings().ENDPOINT and AzureAISearchSettings().API_KEY.get_secret_value():
             self.index_client = SearchIndexClient(
                 endpoint=AzureAISearchSettings().ENDPOINT,
-                credential=AzureKeyCredential(AzureAISearchSettings().API_KEY),
+                credential=AzureKeyCredential(AzureAISearchSettings().API_KEY.get_secret_value()),
             )
             return
 

@@ -35,7 +35,7 @@ class BotRunner(Runner):
     ```python
     runner = BotRunner(api_path="/api/v1", title="My Bot Service", conversation_ttl_days=30)
     runner.mount(BotController())  # Mount bot controllers
-    app = runner.get_app()  # Get the FastAPI instance
+    app = runner.create_app()  # Get the FastAPI instance
     ```
 
     Run the resulting `app` using `uvicorn` or another ASGI server.
@@ -59,11 +59,11 @@ class BotRunner(Runner):
         self._api_app.state = self._base_app.state
 
     @override
-    def get_app(self) -> Starlette:
+    def create_app(self) -> Starlette:
         return self._base_app
 
     def _get_base_app(self) -> Starlette:
-        app = super().get_app()
+        app = super().create_app()
         app.state.conversation_ttl_days = self.conversation_ttl_days
         return app
 

@@ -4,6 +4,8 @@ You've made some significant changes to the codebase. But did you make any archi
 need to understand? This cookbook guides you through documenting important technical decisions using our ADR (
 Architecture Decision Records) process.
 
+Focus on: $DECISION
+
 ## Overview
 
 Here's your explanation documentation journey:
@@ -135,9 +137,12 @@ Time to document! Create your decision file:
 # Navigate to the decisions directory
 cd aihub_doc/arc42/decisions/
 
+# Check out the current date
+date +%Y_%m_%d
+
 # Create your ADR with today's date
 # Format: YYYY_MM_DD_short_decision_summary.md
-touch "$(date +%Y_%m_%d)_your_decision_summary.md"
+touch "YYYY_MM_DD_your_decision_summary.md"
 ```
 
 Now write your ADR following this structure:

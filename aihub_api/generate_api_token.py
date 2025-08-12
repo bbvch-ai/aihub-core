@@ -62,7 +62,7 @@ if not all([cli_user_oid, cli_user_name, cli_user_preferred_username]):
     print("Exiting script due to missing Azure CLI user information.")
     exit()
 
-connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING)
+connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING.get_secret_value())
 
 user_name = cli_user_name
 token_name = f"{cli_user_name} Token"

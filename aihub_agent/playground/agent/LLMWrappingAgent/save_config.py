@@ -16,7 +16,7 @@ config = LLMWrappingAgentConfig(
     llm=LLMConfig(model_name="azure/gpt-4o-mini"),
 )
 
-connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING)
+connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING.get_secret_value())
 
 entity = AgentConfigEntityDocument.from_agent_config(config)
 entity.save()

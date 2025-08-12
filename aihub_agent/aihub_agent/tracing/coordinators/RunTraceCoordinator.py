@@ -73,8 +73,9 @@ class RunTraceCoordinator:
         self.nc = nc
 
         endpoint = f"{PhoenixSettings().ENDPOINT}/v1/traces"
+
         auth_token = PhoenixSettings().AUTH_TOKEN
-        headers = {"authorization": f"Bearer {auth_token}"} if auth_token else {}
+        headers = {"authorization": f"Bearer {auth_token.get_secret_value()}"} if auth_token else {}
         tracer_provider = TracerProvider(resource=Resource({ResourceAttributes.PROJECT_NAME: project_name}))
         set_tracer_provider(tracer_provider)
         tracer_provider.add_span_processor(

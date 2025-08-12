@@ -46,7 +46,7 @@ class ApiRunner(Runner):
     runner = ApiRunner(api_path="/api/v1", title="My API")
     runner.mount(UserController(), ProductController())  # Mount controllers
     runner.mount_frontend("path/to/frontend/dist")  # Optional: serve frontend
-    app = runner.get_app()  # Get the FastAPI instance
+    app = runner.create_app()  # Get the FastAPI instance
     ```
 
     Run the resulting `app` using `uvicorn` or another ASGI server.
@@ -66,7 +66,7 @@ class ApiRunner(Runner):
         return lifetime_manager
 
     @override
-    def get_app(self) -> Starlette:
+    def create_app(self) -> Starlette:
         mcp = FastMCP.from_fastapi(
             app=self._api_app,
             route_maps=[

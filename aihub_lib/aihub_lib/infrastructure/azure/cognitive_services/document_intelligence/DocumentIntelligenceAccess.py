@@ -21,10 +21,13 @@ class DocumentIntelligenceAccess(CognitiveServiceAccess):
 
     def _initialize(self):
         # If the key and region are provided in the config, use them
-        if AzureDocumentIntelligenceSettings().ENDPOINT and AzureDocumentIntelligenceSettings().API_KEY:
+        if (
+            AzureDocumentIntelligenceSettings().ENDPOINT
+            and AzureDocumentIntelligenceSettings().API_KEY.get_secret_value()
+        ):
             self.di_client = DocumentIntelligenceClient(
                 endpoint=AzureDocumentIntelligenceSettings().ENDPOINT,
-                credential=AzureKeyCredential(AzureDocumentIntelligenceSettings().API_KEY),
+                credential=AzureKeyCredential(AzureDocumentIntelligenceSettings().API_KEY.get_secret_value()),
                 api_version=AzureDocumentIntelligenceSettings().API_VERSION,
             )
             return
