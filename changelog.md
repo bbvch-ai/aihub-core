@@ -2,8 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
-[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [v0.240.1] - 2025-08-13 - Enhanced Documentation Formatting and Tooling
+
+### Added
+- ✨ **Introduced Standardized Markdown Formatting**: Added `mdformat` and various plugins to enforce consistent and high-quality markdown formatting across all documentation files.
+- ⚙️ **Custom VuePress Markdown Support**: Developed and integrated a new `mdformat-vuepress` plugin to ensure proper formatting and preservation of custom VuePress `:::` block syntax in documentation.
+- 🚀 **New `format-md` Command**: Introduced a `make format-md` command to easily apply the new markdown formatting standards across the project.
+
+### Refactor
+- 🧹 **Unified Documentation Styling**: Applied a comprehensive set of markdown formatting rules across all documentation files, improving readability and consistency.
+
+---
+
+
 
 ## [v0.240.0] - 2025-08-12 - Streamlined Setup with Superuser Authentication and Enhanced Security
 
