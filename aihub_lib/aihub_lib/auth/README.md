@@ -1,5 +1,5 @@
 ---
-title: "Authentication & Authorization System"
+title: Authentication & Authorization System
 ---
 
 # Authentication & Authorization System

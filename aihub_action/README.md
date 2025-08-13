@@ -1,5 +1,5 @@
 ---
-title: "Github Actions"
+title: Github Actions
 index: 7
 ---
 
@@ -107,22 +107,17 @@ jobs:
 ```
 
 ::: tip Key Points
-
 1. The reusable action is stored in `aihub_action/lint_backend/action.yml`.
 2. The workflow file references this action using the `uses` keyword.
 3. Inputs like `github_token` and `working_directory` are passed to the action.
-
 :::
 
 ## ✅ Best Practices
 
 ::: warning Best Practices
-
 - Ensure each action is focused on a single task.
 - Test actions thoroughly before integrating them into repositories.
 - Use descriptive names and clear documentation in `action.yml` files.
 - Use tagged versions (`@v1.0.0`) instead of `@main` in workflows for stability.
 - Store sensitive data, such as `GITHUB_TOKEN`, in the repository's Secrets.
-
 :::
-
