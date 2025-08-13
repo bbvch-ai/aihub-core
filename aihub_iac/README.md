@@ -1,5 +1,5 @@
 ---
-title: "Infrastructure"
+title: Infrastructure
 index: 8
 ---
 
