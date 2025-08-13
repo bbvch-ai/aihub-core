@@ -65,6 +65,9 @@ jobs:
           python -m pipx ensurepath
           pipx install poetry
 
+      - name: Install Poetry dev dependencies
+        run: poetry install --only dev
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
