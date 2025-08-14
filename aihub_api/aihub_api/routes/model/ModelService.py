@@ -1,8 +1,8 @@
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
 from httpx import Client
 
 from aihub_api.routes.model.dto.ModelDTO import ModelDTO, ModelInfoDTO
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
 
 
 def _convert_costs_to_microunits(model_info: ModelInfoDTO) -> None:
