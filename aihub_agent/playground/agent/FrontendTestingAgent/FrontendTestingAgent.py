@@ -1,3 +1,4 @@
+import asyncio
 import random
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
@@ -16,7 +17,6 @@ from aihub_lib.nats.events import (
     ToolEvent,
     UserMessageEvent,
 )
-from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
 from aihub_lib.nats.events.semantic import Embedding
@@ -25,9 +25,9 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     DOCUMENT_ID,
     DOCUMENT_TITLE,
+    NAMESPACE,
     REFERENCE_URL,
     SOURCE,
-    NAMESPACE,
 )
 from llama_index.core.schema import NodeWithScore, TextNode
 
@@ -53,8 +53,8 @@ class CustomHumanInTheLoop(HumanInTheLoop):
 class FrontendTestingAgent(Agent):
     @step()
     async def start_step(self, event: UserMessageEvent) -> AgentInTheLoop.request | ExceptionEvent:
-        if random.random() > 0.5:
-            return ExceptionEvent(message="50% chance that this occurs :)", http_status_code=500)
+        if random.random() > 0.95:
+            return ExceptionEvent(message="5% chance that this occurs :)", http_status_code=500)
         print("[OrchestratorAgent.start_step]", event)
         event.agent_config = None
         return AgentInTheLoop.invoke(agent_id="dev_agent", agent_class="LLMWrappingAgent", start_event=event)
@@ -62,6 +62,7 @@ class FrontendTestingAgent(Agent):
     @step()
     async def guard_step(self, _: AgentInTheLoop.response, displayer: EventDisplayer) -> GuardEvent:
         await displayer.display_thought("Now I need to check the guard")
+        await asyncio.sleep(3)
         return GuardEvent()
 
     @step()

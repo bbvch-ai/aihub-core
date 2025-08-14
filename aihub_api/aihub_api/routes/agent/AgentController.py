@@ -136,8 +136,8 @@ class AgentController(Controller):
             """
             access_level = AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id)
             total, threads = await AgentService.get_paginated_agent_threads(
-                agent_class,
-                agent_id,
+                agent_class=agent_class,
+                agent_id=agent_id,
                 t=t,
                 page=page,
                 page_size=page_size,

@@ -112,6 +112,8 @@ class AgentEntity(Document):
     is_conversational = BooleanField(required=True)
     start_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
     stop_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
+    hitl_request_events = ListField(EmbeddedDocumentField(EventSpec), default=list)
+    hitl_response_events = ListField(EmbeddedDocumentField(EventSpec), default=list)
     network_graph = DictField(required=True)
     first_discovered = DateTimeField(required=True, default=datetime.now)
     last_discovered = DateTimeField(required=True, default=datetime.now)
@@ -126,6 +128,8 @@ class AgentEntity(Document):
         is_conversational: bool,
         start_events: list[EventSpec],
         stop_events: list[EventSpec],
+        hitl_request_events: list[EventSpec],
+        hitl_response_events: list[EventSpec],
         network_graph: dict,
         agent_entity_id: ObjectId | None = None,
     ) -> "AgentEntity":
@@ -138,6 +142,8 @@ class AgentEntity(Document):
             is_conversational=is_conversational,
             start_events=start_events,
             stop_events=stop_events,
+            hitl_request_events=hitl_request_events,
+            hitl_response_events=hitl_response_events,
             network_graph=network_graph,
             first_discovered=datetime.now(),
             last_discovered=datetime.now(),
@@ -154,6 +160,8 @@ class AgentEntity(Document):
         is_conversational: bool,
         start_events: list[EventSpecs],
         stop_events: list[EventSpecs],
+        hitl_request_events: list[EventSpecs],
+        hitl_response_events: list[EventSpecs],
         network_graph: WorkflowGraph,
     ) -> "AgentEntity":
         """
@@ -174,6 +182,8 @@ class AgentEntity(Document):
         # Create EventSpec objects, serializing the schema to avoid $ issues
         start_events = [EventSpec.from_specs(event) for event in start_events]
         stop_events = [EventSpec.from_specs(event) for event in stop_events]
+        hitl_request_events = [EventSpec.from_specs(event) for event in hitl_request_events]
+        hitl_response_events = [EventSpec.from_specs(event) for event in hitl_response_events]
 
         network_graph = network_graph.model_dump()
 
@@ -184,6 +194,8 @@ class AgentEntity(Document):
             existing_agent.is_conversational = is_conversational
             existing_agent.start_events = start_events
             existing_agent.stop_events = stop_events
+            existing_agent.hitl_request_events = hitl_request_events
+            existing_agent.hitl_response_events = hitl_response_events
             existing_agent.network_graph = network_graph
             existing_agent.last_discovered = datetime.now()
             existing_agent.save()
@@ -198,6 +210,8 @@ class AgentEntity(Document):
                 is_conversational=is_conversational,
                 start_events=start_events,
                 stop_events=stop_events,
+                hitl_request_events=hitl_request_events,
+                hitl_response_events=hitl_response_events,
                 network_graph=network_graph,
             )
 

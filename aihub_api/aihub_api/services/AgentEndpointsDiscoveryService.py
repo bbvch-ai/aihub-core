@@ -4,6 +4,10 @@ from functools import reduce
 from operator import or_
 from typing import Annotated, override
 
+from bson import ObjectId
+from mongoengine import DoesNotExist
+
+from aihub_api.routes.thread.dto.ThreadAgentDTO import ThreadAgentDTO
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -13,7 +17,13 @@ from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributo
     use_external_agent_event_distributor,
 )
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from aihub_lib.nats.events import ExceptionEvent, InstanceDiscoveryRequestEvent, StopEvent
+from aihub_lib.nats.events import (
+    ExceptionEvent,
+    InstanceDiscoveryRequestEvent,
+    StopEvent,
+    StartEvent,
+    HumanInTheLoopResponseEvent,
+)
 from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import (
     AgentInstanceDiscoveryResponseEvent,
 )
@@ -36,6 +46,7 @@ from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
 from aihub_api.services.EndpointsDiscoveryService import EndpointsDiscoveryService
 from aihub_api.services.ModelCreationService import ModelCreationService
+from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity, User, Agent
 
 logger = logging.getLogger(__name__)
 
@@ -137,6 +148,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 agent_id=agent.agent_id,
                 start_events=agent.start_events,
                 stop_events=agent.stop_events,
+                hitl_request_events=agent.hitl_request_events,
+                hitl_response_events=agent.hitl_response_events,
                 config=agent.agent_config,
             )
 
@@ -145,10 +158,13 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
 
     def _register_agent_endpoints(
         self,
+        *,
         agent_class: str,
         agent_id: str,
         start_events: list[EventSpecs],
         stop_events: list[EventSpecs],
+        hitl_request_events: list[EventSpecs],
+        hitl_response_events: list[EventSpecs],
         config: AgentConfig,
     ):
         """Registers endpoints for sending events to an agent"""
@@ -156,20 +172,30 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         agent_class_snake = snakecase(agent_class)
         agent_id_snake = snakecase(agent_id)
 
+        # Create output types for stop events
         stop_event_output_types = [
             ModelCreationService.create_output_model_from_event_specs(stop_event) for stop_event in stop_events
         ]
 
-        if len(stop_event_output_types) == 1:
-            stop_event_union_type = stop_event_output_types[0]
+        # Create output types for HITL request events
+        hitl_request_output_types = [
+            ModelCreationService.create_output_model_from_event_specs(hitl_event) for hitl_event in hitl_request_events
+        ]
+
+        # Combine stop events and HITL request events for the response type
+        all_output_types = stop_event_output_types + hitl_request_output_types
+
+        if len(all_output_types) == 1:
+            response_union_type = all_output_types[0]
         else:
-            stop_event_union_type = reduce(or_, stop_event_output_types)
+            response_union_type = reduce(or_, all_output_types)
 
         for start_event_specs in start_events:
-            start_event_name = snakecase(start_event_specs.event_name)
-            endpoint_name = f"send_{start_event_name}_to_{agent_class_snake}_{agent_id_snake}"
+            start_event_name = start_event_specs.event_name
+            start_event_namesnake = snakecase(start_event_name)
+            endpoint_name = f"send_{start_event_namesnake}_to_{agent_class_snake}_{agent_id_snake}"
             path = f"{base_path}/{start_event_name}"
-            stream_endpoint_name = f"stream_{start_event_name}_to_{agent_class_snake}_{agent_id_snake}"
+            stream_endpoint_name = f"stream_{start_event_namesnake}_to_{agent_class_snake}_{agent_id_snake}"
             stream_path = f"{base_path}/{start_event_name}/stream"
 
             start_event_input_type = ModelCreationService.create_input_model_from_event_specs(start_event_specs)
@@ -179,18 +205,19 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 path=path,
                 endpoint=self._create_endpoint(
                     input_type=start_event_input_type,
-                    stop_event_union_type=stop_event_union_type,
+                    response_union_type=response_union_type,
                     start_event_parents=start_event_specs.event_parents,
                     start_event_name=start_event_specs.event_name,
                     agent_class=agent_class,
                     agent_id=agent_id,
                     agent_controller=self.controller,
                     agent_config=config,
+                    expected_type=StartEvent,
                 ),
                 methods=["POST"],
                 name=endpoint_name,
                 tags=["Agents"],
-                response_model=stop_event_union_type,
+                response_model=response_union_type,
             )
             logger.info(f"Registered endpoint: {path}")
 
@@ -205,6 +232,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                     agent_id=agent_id,
                     agent_controller=self.controller,
                     agent_config=config,
+                    expected_type=StartEvent,
                 ),
                 methods=["POST"],
                 name=stream_endpoint_name,
@@ -213,16 +241,71 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             )
             logger.info(f"Registered streaming endpoint: {stream_path}")
 
+        # Register endpoints for HITL response events (for human responses to HITL requests)
+        for hitl_response_event_specs in hitl_response_events:
+            hitl_response_event_name = hitl_response_event_specs.event_name
+            hitl_response_event_name_snake = snakecase(hitl_response_event_name)
+            endpoint_name = f"send_{hitl_response_event_name_snake}_to_{agent_class_snake}_{agent_id_snake}"
+            path = f"{base_path}/{hitl_response_event_name}"
+            stream_endpoint_name = f"stream_{hitl_response_event_name_snake}_to_{agent_class_snake}_{agent_id_snake}"
+            stream_path = f"{base_path}/{hitl_response_event_name}/stream"
+
+            hitl_response_input_type = ModelCreationService.create_input_model_from_event_specs(
+                hitl_response_event_specs
+            )
+
+            # Register regular endpoint
+            self.app.add_api_route(
+                path=path,
+                endpoint=self._create_endpoint(
+                    input_type=hitl_response_input_type,
+                    response_union_type=response_union_type,
+                    start_event_parents=hitl_response_event_specs.event_parents,
+                    start_event_name=hitl_response_event_specs.event_name,
+                    agent_class=agent_class,
+                    agent_id=agent_id,
+                    agent_controller=self.controller,
+                    agent_config=config,
+                    expected_type=HumanInTheLoopResponseEvent,
+                ),
+                methods=["POST"],
+                name=endpoint_name,
+                tags=["Agents"],
+            )
+            logger.info(f"Registered HITL response endpoint: {path}")
+
+            # Register streaming endpoint
+            self.app.add_api_route(
+                path=stream_path,
+                endpoint=self._create_streaming_endpoint(
+                    input_type=hitl_response_input_type,
+                    start_event_parents=hitl_response_event_specs.event_parents,
+                    start_event_name=hitl_response_event_specs.event_name,
+                    agent_class=agent_class,
+                    agent_id=agent_id,
+                    agent_controller=self.controller,
+                    agent_config=config,
+                    expected_type=HumanInTheLoopResponseEvent,
+                ),
+                methods=["POST"],
+                name=stream_endpoint_name,
+                tags=["Agents"],
+                response_class=StreamingResponse,
+            )
+            logger.info(f"Registered HITL response streaming endpoint: {stream_path}")
+
     @staticmethod
     def _create_endpoint(
+        *,
         input_type: type[BaseModel],
-        stop_event_union_type: type[BaseModel],
+        response_union_type: type[BaseModel],
         start_event_parents: list[str],
         start_event_name: str,
         agent_class: str,
         agent_id: str,
         agent_controller: AgentController,
         agent_config: AgentConfig,
+        expected_type: type[StartEvent] | type[HumanInTheLoopResponseEvent],
     ):
         """Creates a FastAPI endpoint that sends a StartEvent to an agent"""
 
@@ -236,13 +319,22 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 UserIdentity,
                 Security(agent_controller.user_with_permission(f"aihub.user.agent.{agent_class}.{agent_id}")),
             ],
-            thread_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
-            display_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
+            thread_id: Annotated[str, Query(pattern=r"^[a-f0-9]{24}$")] = None,
+            display_id: Annotated[str, Query(pattern=r"^[a-f0-9]{24}$")] = None,
             t: LocaleHandler = Depends(use_locale),
-        ) -> stop_event_union_type:
-            """Send a specific event type to a specific agent. Returns any possible stop event type."""
+        ) -> response_union_type:
+            """Send a specific event type to a specific agent. Returns either a stop event or HITL request event."""
             if thread_id is not None:
-                thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+                try:
+                    thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+                except DoesNotExist:
+                    ThreadEntity.create_thread(
+                        "chat",
+                        users=[User(user_id=user.id)],
+                        agents=[Agent(agent_class=agent_class, agent_id=agent_id)],
+                        thread_id=ObjectId(thread_id),
+                    )
+                    thread = await ThreadService.get_thread_by_id(thread_id, t=t)
 
                 user_in_thread = user.id in [u.id for u in thread.users]
                 thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
@@ -251,12 +343,12 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 if not (user_in_thread or thread_belongs_to_users_process):
                     raise agent_controller.not_authorized_to_view_exception
 
-            response_event: StopEvent | ExceptionEvent = await AgentService.send_agent_start_event(
+            response_event = await AgentService.send_agent_input_event(
                 nc=nc,
                 agent_class=agent_class,
                 agent_id=agent_id,
-                start_event_parents=start_event_parents,
-                start_event_name=start_event_name,
+                input_event_parents=start_event_parents,
+                input_event_name=start_event_name,
                 raw_event_data=start_event_input.model_dump(),
                 external_agent_event_distributor=external_agent_event_distributor,
                 thread_id=thread_id,
@@ -264,6 +356,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 user=user,
                 t=t,
                 agent_config=agent_config,
+                expected_type=expected_type,
+                subscribe_to_thread=True,
             )
 
             if isinstance(response_event, ExceptionEvent):
@@ -275,6 +369,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
 
     @staticmethod
     def _create_streaming_endpoint(
+        *,
         input_type: type[BaseModel],
         start_event_parents: list[str],
         start_event_name: str,
@@ -282,6 +377,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         agent_id: str,
         agent_controller: AgentController,
         agent_config: AgentConfig,
+        expected_type: type[StartEvent] | type[HumanInTheLoopResponseEvent],
     ):
         """Creates a FastAPI streaming endpoint that sends a StartEvent to an agent and streams all events"""
 
@@ -295,13 +391,22 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 UserIdentity,
                 Security(agent_controller.user_with_permission(f"aihub.user.agent.{agent_class}.{agent_id}")),
             ],
-            thread_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
-            display_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
+            thread_id: Annotated[str, Query(pattern=r"^[a-f0-9]{24}$")] = None,
+            display_id: Annotated[str, Query(pattern=r"^[a-f0-9]{24}$")] = None,
             t: LocaleHandler = Depends(use_locale),
         ) -> StreamingResponse:
             """Send a specific event type to a specific agent and stream all events as SSE."""
             if thread_id is not None:
-                thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+                try:
+                    thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+                except DoesNotExist:
+                    ThreadEntity.create_thread(
+                        "chat",
+                        users=[User(user_id=user.id)],
+                        agents=[Agent(agent_class=agent_class, agent_id=agent_id)],
+                        thread_id=ObjectId(thread_id),
+                    )
+                    thread = await ThreadService.get_thread_by_id(thread_id, t=t)
 
                 user_in_thread = user.id in [u.id for u in thread.users]
                 thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
@@ -310,12 +415,12 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 if not (user_in_thread or thread_belongs_to_users_process):
                     raise agent_controller.not_authorized_to_view_exception
 
-            resources = await AgentService.send_agent_start_event_stream(
+            resources = await AgentService.send_agent_input_event_stream(
                 nc=nc,
                 agent_class=agent_class,
                 agent_id=agent_id,
-                start_event_parents=start_event_parents,
-                start_event_name=start_event_name,
+                input_event_parents=start_event_parents,
+                input_event_name=start_event_name,
                 raw_event_data=start_event_input.model_dump(),
                 external_agent_event_distributor=external_agent_event_distributor,
                 thread_id=thread_id,
@@ -323,6 +428,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 user=user,
                 t=t,
                 agent_config=agent_config,
+                expected_type=expected_type,
+                subscribe_to_thread=True,
             )
 
             async def sse_event_generator():

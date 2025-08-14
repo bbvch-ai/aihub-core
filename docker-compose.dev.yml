@@ -7,7 +7,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_DEFAULT_BUCKETS: "open-webui,a-bucket"  # Comma-separated list
+      MINIO_DEFAULT_BUCKETS: "open-webui,milvus"  # Comma-separated list
     ports:
       - "9001:9001"
       - "9000:9000"
@@ -238,7 +238,7 @@ services:
       start_period: 60s
 
   open-webui:
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.13
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.22
     network_mode: "host"
     container_name: open-webui
     depends_on:
@@ -305,13 +305,20 @@ services:
       OAUTH_EMAIL_CLAIM: 'email'
       OAUTH_GROUP_CLAIM: 'email'
 
+      # AI-Hub Connection
+      AIHUB_BASE_URL: http://localhost:8000/api/v1
+      AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
+      OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
+      AIHUB_PIPELINE_PREFIX: "aihub/"
+      AIHUB_REQUEST_TIMEOUT: 60
+
       # Data storage
       STORAGE_PROVIDER: "s3"
       S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
       S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
       S3_REGION_NAME: "us-east-1"
       S3_BUCKET_NAME: "open-webui"
-      S3_ENDPOINT_URL: 'http://minio:9000'
+      S3_ENDPOINT_URL: 'http://localhost:9000'
 
       # Model config
       OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
@@ -329,7 +336,7 @@ services:
       DATABASE_TYPE: 'postgres'
       DATABASE_USER: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      DATABASE_HOST: 'postgres'
+      DATABASE_HOST: 'localhost'
       DATABASE_PORT: 5432
       DATABASE_NAME: 'openwebui'
 
