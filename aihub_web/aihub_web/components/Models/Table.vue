@@ -181,14 +181,103 @@ const emit = defineEmits<{
 }>()
 
 const {t} = useI18n()
-const {
-  getProvider,
-  getProviderSeverity,
-  getModeSeverity,
-  formatTokenLimits,
-  formatCostPer1M,
-  getModelFeatures,
-  formatNumber,
-  copyToClipboard
-} = useModelsUtils()
+const toast = useToast()
+
+// Local utility functions
+const formatNumber = (num: number): string => {
+  return new Intl.NumberFormat().format(num)
+}
+
+const getModeSeverity = (mode: string): string => {
+  switch (mode) {
+    case 'chat':
+      return 'info'
+    case 'embedding':
+      return 'success'
+    case 'image_generation':
+      return 'warn'
+    case 'audio_transcription':
+    case 'audio_speech':
+      return 'help'
+    default:
+      return 'secondary'
+  }
+}
+
+const formatTokenLimits = (model: any): string => {
+  const input = model?.model_info?.max_input_tokens
+  const output = model?.model_info?.max_output_tokens
+
+  if (input && output) {
+    return `${formatNumber(input)} / ${formatNumber(output)}`
+  } else if (input) {
+    return `${formatNumber(input)} / -`
+  } else if (output) {
+    return `- / ${formatNumber(output)}`
+  }
+  return '- / -'
+}
+
+const copyToClipboard = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    toast.add({
+      severity: 'success',
+      summary: t('litellm.copied'),
+      detail: t('litellm.copiedDetail', {text}),
+      life: 3000
+    })
+  } catch (err) {
+    toast.add({
+      severity: 'error',
+      summary: t('litellm.copyFailed'),
+      detail: t('litellm.copyFailedDetail'),
+      life: 3000
+    })
+  }
+}
+
+// These functions seem to be missing from the original utils, adding placeholder implementations
+const getProvider = (data: any): string => {
+  // Extract provider from model name or use a default
+  return data.model_name?.split('/')[0] || 'Unknown'
+}
+
+const getProviderSeverity = (provider: string): string => {
+  // Simple provider-based severity mapping
+  switch (provider.toLowerCase()) {
+    case 'openai':
+      return 'success'
+    case 'anthropic':
+      return 'info'
+    case 'google':
+      return 'warn'
+    default:
+      return 'secondary'
+  }
+}
+
+const formatCostPer1M = (costPerToken: number | null | undefined): string => {
+  if (costPerToken === null || costPerToken === undefined) {
+    return '-'
+  }
+  const costPer1M = costPerToken * 1000000
+  return `$${costPer1M.toFixed(2)}`
+}
+
+const getModelFeatures = (data: any): Array<{name: string, severity: string}> => {
+  const features: Array<{name: string, severity: string}> = []
+  
+  if (data.model_info?.supports_vision) {
+    features.push({ name: 'Vision', severity: 'info' })
+  }
+  if (data.model_info?.supports_function_calling) {
+    features.push({ name: 'Functions', severity: 'success' })
+  }
+  if (data.model_info?.supports_streaming) {
+    features.push({ name: 'Streaming', severity: 'help' })
+  }
+  
+  return features
+}
 </script>

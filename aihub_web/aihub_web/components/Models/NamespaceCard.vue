@@ -20,9 +20,9 @@
     <div>
       <div class="text-sm">
         {{ t('models.costPer1M') }} <span class="font-light">{{
-          formatCostPer1M(model.model_info.input_cost_per_token)
+          `$${model.input_cost_per_million_token.toFixed(2)}`
         }} / {{
-          formatCostPer1M(model.model_info.output_cost_per_token)
+          `$${model.output_cost_per_million_token.toFixed(2)}`
         }}</span>
       </div>
       <div class="text-sm">
@@ -33,18 +33,35 @@
 </template>
 
 <script setup lang="ts">
+import {type ModelDTO} from '@core/sdk/client'
+
 const props = defineProps<{
-  model: any
+  model: ModelDTO
 }>()
 
 const {t} = useI18n()
-const {
-  formatTokenLimits,
-  formatCostPer1M
-} = useModelsUtils()
 
-const getModelIcon = (model: any): string => {
-  const mode = model.model_info.mode
+// Local utility functions
+const formatNumber = (num: number): string => {
+  return new Intl.NumberFormat().format(num)
+}
+
+const formatTokenLimits = (model: ModelDTO): string => {
+  const input = model?.max_input_tokens
+  const output = model?.max_output_tokens
+
+  if (input && output) {
+    return `${formatNumber(input)} / ${formatNumber(output)}`
+  } else if (input) {
+    return `${formatNumber(input)} / -`
+  } else if (output) {
+    return `- / ${formatNumber(output)}`
+  }
+  return '- / -'
+}
+
+const getModelIcon = (model: ModelDTO): string => {
+  const mode = model.mode
   switch (mode) {
     case 'chat':
       return 'mdi:chat'

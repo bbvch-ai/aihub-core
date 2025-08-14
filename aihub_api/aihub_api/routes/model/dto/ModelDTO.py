@@ -8,8 +8,8 @@ class ModelDTO(BaseModel):
     mode: str
     max_input_tokens: Optional[int] = None
     max_output_tokens: Optional[int] = None
-    input_cost_per_token: Optional[float] = None
-    output_cost_per_token: Optional[float] = None
+    input_cost_per_million_token: Optional[float] = None
+    output_cost_per_million_token: Optional[float] = None
     cache_creation_input_token_cost: Optional[float] = None
     cache_read_input_token_cost: Optional[float] = None
     input_cost_per_token_above_128k_tokens: Optional[float] = None
