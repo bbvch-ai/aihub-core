@@ -5,7 +5,7 @@ export default defineNuxtConfig({
   modules: ['@nuxt/eslint'],
   runtimeConfig: {
     public: {
-      mode: process.env.ENV,
+      env: process.env.ENV,
       oidc: {
         clientId: process.env.ENV == 'dev' ? process.env.OAUTH_CLIENT_ID : '',
         authorityUrl: process.env.ENV == 'dev' ? process.env.OAUTH_AUTHORITY_URL : '',

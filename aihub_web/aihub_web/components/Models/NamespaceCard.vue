@@ -19,27 +19,27 @@
     </div>
     <div>
       <div class="text-sm">
-        {{ t('models.costPer1M') }} <span class="font-light">{{
-          `$${model.input_cost_per_million_token.toFixed(2)}`
+        {{ t('models.card.costPer1M') }} <span class="font-light">{{
+          `$${model?.model_info?.input_cost_per_token?.toFixed(2) ?? '-'}`
         }} / {{
-          `$${model.output_cost_per_million_token.toFixed(2)}`
+          `$${model?.model_info?.output_cost_per_token?.toFixed(2) ?? '-'}`
         }}</span>
       </div>
       <div class="text-sm">
-        {{ t('models.tokens') }} <span class="font-light">{{ formatTokenLimits(model) }}</span>
+        {{ t('models.card.tokens') }} <span class="font-light">{{ formatTokenLimits(model) }}</span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { ModelDTO } from '@core/sdk/client'
+import type {ModelDTO} from '@core/sdk/client'
 
 defineProps<{
   model: ModelDTO
 }>()
 
-const { t } = useI18n()
+const {t} = useI18n()
 
 // Local utility functions
 const formatNumber = (num: number): string => {
@@ -47,23 +47,21 @@ const formatNumber = (num: number): string => {
 }
 
 const formatTokenLimits = (model: ModelDTO): string => {
-  const input = model?.max_input_tokens
-  const output = model?.max_output_tokens
+  const input = model?.model_info?.max_input_tokens
+  const output = model?.model_info?.max_output_tokens
 
   if (input && output) {
     return `${formatNumber(input)} / ${formatNumber(output)}`
-  }
-  else if (input) {
+  } else if (input) {
     return `${formatNumber(input)} / -`
-  }
-  else if (output) {
+  } else if (output) {
     return `- / ${formatNumber(output)}`
   }
   return '- / -'
 }
 
 const getModelIcon = (model: ModelDTO): string => {
-  const mode = model.mode
+  const mode = model.model_info.mode
   switch (mode) {
     case 'chat':
       return 'mdi:chat'

@@ -607,42 +607,8 @@ export type AnnotationUrlCitation = {
 /**
  * AssistantChatMessage
  */
-export type AssistantChatMessageInput = {
-    role?: MessageRoleInput;
-    additional_kwargs: AdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlockInput) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput) | ({
-        block_type: 'cache';
-    } & CachePointInput) | ({
-        block_type: 'citable';
-    } & CitableBlockInput) | ({
-        block_type: 'citation';
-    } & CitationBlockInput)>;
-    /**
-     * Agent Id
-     */
-    agent_id: string;
-    /**
-     * Agent Class
-     */
-    agent_class: string;
-};
-
-/**
- * AssistantChatMessage
- */
-export type AssistantChatMessageOutput = {
-    role?: MessageRoleOutput;
+export type AssistantChatMessage = {
+    role?: MessageRole;
     /**
      * Additional Kwargs
      */
@@ -652,19 +618,19 @@ export type AssistantChatMessageOutput = {
      */
     blocks?: Array<({
         block_type: 'text';
-    } & TextBlockOutput) | ({
+    } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockOutput) | ({
+    } & ImageBlock) | ({
         block_type: 'audio';
-    } & AudioBlockOutput) | ({
+    } & AudioBlock) | ({
         block_type: 'document';
-    } & DocumentBlockOutput) | ({
+    } & DocumentBlock) | ({
         block_type: 'cache';
-    } & CachePointOutput) | ({
+    } & CachePoint) | ({
         block_type: 'citable';
-    } & CitableBlockOutput) | ({
+    } & CitableBlock) | ({
         block_type: 'citation';
-    } & CitationBlockOutput)>;
+    } & CitationBlock)>;
     /**
      * Agent Id
      */
@@ -687,35 +653,9 @@ export type Audio = {
 
 /**
  * AudioBlock
- */
-export type AudioBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'audio';
-    /**
-     * Audio
-     */
-    audio?: (Blob | File) | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | null;
-    /**
-     * Format
-     */
-    format?: string | null;
-};
-
-/**
- * AudioBlock
  * A representation of audio data to directly pass to/from the LLM.
  */
-export type AudioBlockOutput = {
+export type AudioBlock = {
     /**
      * Block Type
      */
@@ -831,20 +771,9 @@ export type CacheControl = {
 
 /**
  * CachePoint
- */
-export type CachePointInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'cache';
-    cache_control: CacheControl;
-};
-
-/**
- * CachePoint
  * Used to set the point to cache up to, if the LLM supports caching.
  */
-export type CachePointOutput = {
+export type CachePoint = {
     /**
      * Block Type
      */
@@ -1433,36 +1362,10 @@ export type ChatCompletionUserMessageParam = {
 
 /**
  * ChatMessage
- */
-export type ChatMessageInput = {
-    role?: MessageRoleInput;
-    additional_kwargs: AdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlockInput) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput) | ({
-        block_type: 'cache';
-    } & CachePointInput) | ({
-        block_type: 'citable';
-    } & CitableBlockInput) | ({
-        block_type: 'citation';
-    } & CitationBlockInput)>;
-};
-
-/**
- * ChatMessage
  * Chat message.
  */
-export type ChatMessageOutput = {
-    role?: MessageRoleOutput;
+export type ChatMessage = {
+    role?: MessageRole;
     /**
      * Additional Kwargs
      */
@@ -1472,19 +1375,19 @@ export type ChatMessageOutput = {
      */
     blocks?: Array<({
         block_type: 'text';
-    } & TextBlockOutput) | ({
+    } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockOutput) | ({
+    } & ImageBlock) | ({
         block_type: 'audio';
-    } & AudioBlockOutput) | ({
+    } & AudioBlock) | ({
         block_type: 'document';
-    } & DocumentBlockOutput) | ({
+    } & DocumentBlock) | ({
         block_type: 'cache';
-    } & CachePointOutput) | ({
+    } & CachePoint) | ({
         block_type: 'citable';
-    } & CitableBlockOutput) | ({
+    } & CitableBlock) | ({
         block_type: 'citation';
-    } & CitationBlockOutput)>;
+    } & CitationBlock)>;
 };
 
 /**
@@ -1628,37 +1531,9 @@ export type ChunkEventWritable = {
 
 /**
  * CitableBlock
- */
-export type CitableBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'citable';
-    /**
-     * Title
-     */
-    title: string;
-    /**
-     * Source
-     */
-    source: string;
-    /**
-     * Content
-     */
-    content: Array<({
-        block_type: 'text';
-    } & TextBlockInput) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput)>;
-};
-
-/**
- * CitableBlock
  * Supports providing citable content to LLMs that have built-in citation support.
  */
-export type CitableBlockOutput = {
+export type CitableBlock = {
     /**
      * Block Type
      */
@@ -1676,45 +1551,18 @@ export type CitableBlockOutput = {
      */
     content: Array<({
         block_type: 'text';
-    } & TextBlockOutput) | ({
+    } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockOutput) | ({
+    } & ImageBlock) | ({
         block_type: 'document';
-    } & DocumentBlockOutput)>;
-};
-
-/**
- * CitationBlock
- */
-export type CitationBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'citation';
-    /**
-     * Cited Content
-     */
-    cited_content: ({
-        block_type: 'text';
-    } & TextBlockInput) | ({
-        block_type: 'image';
-    } & ImageBlockInput);
-    /**
-     * Source
-     */
-    source: string;
-    /**
-     * Title
-     */
-    title: string;
-    additional_location_info: AdditionalLocationInfo;
+    } & DocumentBlock)>;
 };
 
 /**
  * CitationBlock
  * A representation of cited content from past messages.
  */
-export type CitationBlockOutput = {
+export type CitationBlock = {
     /**
      * Block Type
      */
@@ -1724,9 +1572,9 @@ export type CitationBlockOutput = {
      */
     cited_content: ({
         block_type: 'text';
-    } & TextBlockOutput) | ({
+    } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockOutput);
+    } & ImageBlock);
     /**
      * Source
      */
@@ -2452,39 +2300,9 @@ export type DisplayStatistics = {
 
 /**
  * DocumentBlock
- */
-export type DocumentBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'document';
-    /**
-     * Data
-     */
-    data?: (Blob | File) | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | null;
-    /**
-     * Title
-     */
-    title?: string | null;
-    /**
-     * Document Mimetype
-     */
-    document_mimetype?: string | null;
-};
-
-/**
- * DocumentBlock
  * A representation of a document to directly pass to the LLM.
  */
-export type DocumentBlockOutput = {
+export type DocumentBlock = {
     /**
      * Block Type
      */
@@ -3766,39 +3584,9 @@ export type Image = {
 
 /**
  * ImageBlock
- */
-export type ImageBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'image';
-    /**
-     * Image
-     */
-    image?: (Blob | File) | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | null;
-    /**
-     * Image Mimetype
-     */
-    image_mimetype?: string | null;
-    /**
-     * Detail
-     */
-    detail?: string | null;
-};
-
-/**
- * ImageBlock
  * A representation of image data to directly pass to/from the LLM.
  */
-export type ImageBlockOutput = {
+export type ImageBlock = {
     /**
      * Block Type
      */
@@ -4457,12 +4245,12 @@ export type LlmEventReadable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    input_messages?: Array<MessageReadable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    output_messages?: Array<MessageReadable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -4535,7 +4323,7 @@ export type LlmEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageReadable> | null) | (Array<MessageReadable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -4569,12 +4357,12 @@ export type LlmEventWritable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    input_messages?: Array<MessageWritable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    output_messages?: Array<MessageWritable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -4636,7 +4424,7 @@ export type LlmEventWritable = {
     tools?: Array<{
         [key: string]: unknown;
     }> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageWritable> | null) | (Array<MessageWritable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -4670,12 +4458,12 @@ export type LlmStopEventReadable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    input_messages?: Array<MessageReadable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    output_messages?: Array<MessageReadable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -4748,7 +4536,7 @@ export type LlmStopEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageReadable> | null) | (Array<MessageReadable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -4782,12 +4570,12 @@ export type LlmStopEventWritable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    input_messages?: Array<MessageWritable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    output_messages?: Array<MessageWritable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -4849,90 +4637,13 @@ export type LlmStopEventWritable = {
     tools?: Array<{
         [key: string]: unknown;
     }> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageWritable> | null) | (Array<MessageWritable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
     } | null) | (string | null) | (number | null) | (number | null) | (number | null) | (Array<{
         [key: string]: unknown;
     }> | null) | undefined;
-};
-
-/**
- * LLMStopEventOutput
- */
-export type LlmStopEventOutput = {
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Input Messages
-     * List of messages sent to the LLM as input.
-     */
-    input_messages?: Array<JamboParserObjectTypeParserMessage> | null;
-    /**
-     * Output Messages
-     * List of messages received from the LLM as output.
-     */
-    output_messages?: Array<JamboParserObjectTypeParserMessage> | null;
-    /**
-     * Parameters used during the invocation of the LLM.
-     */
-    invocation_parameters?: InvocationParameters | null;
-    /**
-     * Chat Model Name
-     * The name of the language model being utilized.
-     */
-    chat_model_name?: string | null;
-    /**
-     * Provider
-     * The hosting provider of the LLM, e.g., OpenAI, Azure.
-     */
-    provider?: string | null;
-    /**
-     * System
-     * The AI product as identified by the client or server.
-     */
-    system?: string | null;
-    /**
-     * Prompt Template
-     * The prompt template as a Python f-string.
-     */
-    prompt_template?: string | null;
-    /**
-     * A dictionary of input variables to the prompt template.
-     */
-    prompt_template_variables?: PromptTemplateVariables | null;
-    /**
-     * Prompt Template Version
-     * The version of the prompt template being used.
-     */
-    prompt_template_version?: string | null;
-    /**
-     * Token Count Prompt
-     * The number of tokens in the prompt.
-     */
-    token_count_prompt?: number | null;
-    /**
-     * Token Count Completion
-     * The number of tokens in the completion.
-     */
-    token_count_completion?: number | null;
-    /**
-     * Token Count Total
-     * The total number of tokens, including both prompt and completion.
-     */
-    token_count_total?: number | null;
-    /**
-     * Tools
-     * List of tools that are advertised to the LLM to be able to call.
-     */
-    tools?: Array<Tools> | null;
 };
 
 /**
@@ -4961,7 +4672,7 @@ export type LimitChatHistoryEventReadable = {
      * Limited History
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessageOutput>;
+    limited_history: Array<ChatMessage>;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -4973,7 +4684,7 @@ export type LimitChatHistoryEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessage> | Array<string> | undefined;
 };
 
 /**
@@ -5002,8 +4713,8 @@ export type LimitChatHistoryEventWritable = {
      * Limited History
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessageOutput>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessageOutput> | undefined;
+    limited_history: Array<ChatMessage>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessage> | undefined;
 };
 
 /**
@@ -5069,35 +4780,110 @@ export type Logprob = {
 };
 
 /**
- * MessageRole
+ * Message
  */
-export type MessageRoleInput = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
+export type MessageReadable = {
+    /**
+     * Role
+     * The role of the message, such as 'user', 'assistant', or 'system'.
+     */
+    role: string;
+    /**
+     * Name
+     * The name of the function or agent generating the message.
+     */
+    name?: string | null;
+    /**
+     * Tool Calls
+     * List of tool calls generated by the model, such as function calls.
+     */
+    tool_calls?: Array<{
+        [key: string]: unknown;
+    }> | null;
+    /**
+     * Function Call Name
+     * The name of the function being called in the message.
+     */
+    function_call_name?: string | null;
+    /**
+     * Function Call Arguments Json
+     * JSON representing arguments passed to the function during a function call.
+     */
+    function_call_arguments_json?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Tool Call Id
+     * The ID of the tool call, if applicable.
+     */
+    tool_call_id?: string | null;
+    /**
+     * Contents
+     * The message contents as an array of content blocks (text, image, audio).
+     */
+    contents?: Array<TextContent | ImageContent | AudioContent> | null;
+    /**
+     * Content
+     */
+    readonly content: string;
+};
 
 /**
- * MessageRole
+ * Message
  */
-export const MessageRoleInput = {
-    SYSTEM: 'system',
-    DEVELOPER: 'developer',
-    USER: 'user',
-    ASSISTANT: 'assistant',
-    FUNCTION: 'function',
-    TOOL: 'tool',
-    CHATBOT: 'chatbot',
-    MODEL: 'model'
-} as const;
+export type MessageWritable = {
+    /**
+     * Role
+     * The role of the message, such as 'user', 'assistant', or 'system'.
+     */
+    role: string;
+    /**
+     * Name
+     * The name of the function or agent generating the message.
+     */
+    name?: string | null;
+    /**
+     * Tool Calls
+     * List of tool calls generated by the model, such as function calls.
+     */
+    tool_calls?: Array<{
+        [key: string]: unknown;
+    }> | null;
+    /**
+     * Function Call Name
+     * The name of the function being called in the message.
+     */
+    function_call_name?: string | null;
+    /**
+     * Function Call Arguments Json
+     * JSON representing arguments passed to the function during a function call.
+     */
+    function_call_arguments_json?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Tool Call Id
+     * The ID of the tool call, if applicable.
+     */
+    tool_call_id?: string | null;
+    /**
+     * Contents
+     * The message contents as an array of content blocks (text, image, audio).
+     */
+    contents?: Array<TextContent | ImageContent | AudioContent> | null;
+};
 
 /**
  * MessageRole
  * Message role.
  */
-export type MessageRoleOutput = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
+export type MessageRole = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
 
 /**
  * MessageRole
  * Message role.
  */
-export const MessageRoleOutput = {
+export const MessageRole = {
     SYSTEM: 'system',
     DEVELOPER: 'developer',
     USER: 'user',
@@ -5131,7 +4917,7 @@ export type Metadata = {
      * Files
      * List of files to attach to the request, if supported by the model.
      */
-    files?: Array<AihubLibNatsEventsUserUserUploadedFileUserUploadedFile> | null;
+    files?: Array<UserUploadedFile> | null;
 };
 
 /**
@@ -5309,29 +5095,9 @@ export type ModelDetails = {
  */
 export type ModelInfoDto = {
     /**
-     * Id
-     */
-    id?: string | null;
-    /**
-     * Db Model
-     */
-    db_model?: boolean | null;
-    /**
-     * Base Model
-     */
-    base_model?: string | null;
-    /**
      * Mode
      */
     mode: string;
-    /**
-     * Key
-     */
-    key: string;
-    /**
-     * Max Tokens
-     */
-    max_tokens?: number | null;
     /**
      * Max Input Tokens
      */
@@ -5357,10 +5123,6 @@ export type ModelInfoDto = {
      */
     cache_read_input_token_cost?: number | null;
     /**
-     * Input Cost Per Character
-     */
-    input_cost_per_character?: number | null;
-    /**
      * Input Cost Per Token Above 128K Tokens
      */
     input_cost_per_token_above_128k_tokens?: number | null;
@@ -5368,14 +5130,6 @@ export type ModelInfoDto = {
      * Input Cost Per Token Above 200K Tokens
      */
     input_cost_per_token_above_200k_tokens?: number | null;
-    /**
-     * Input Cost Per Query
-     */
-    input_cost_per_query?: number | null;
-    /**
-     * Input Cost Per Second
-     */
-    input_cost_per_second?: number | null;
     /**
      * Input Cost Per Audio Token
      */
@@ -5393,10 +5147,6 @@ export type ModelInfoDto = {
      */
     output_cost_per_audio_token?: number | null;
     /**
-     * Output Cost Per Character
-     */
-    output_cost_per_character?: number | null;
-    /**
      * Output Cost Per Reasoning Token
      */
     output_cost_per_reasoning_token?: number | null;
@@ -5405,25 +5155,13 @@ export type ModelInfoDto = {
      */
     output_cost_per_token_above_128k_tokens?: number | null;
     /**
-     * Output Cost Per Character Above 128K Tokens
-     */
-    output_cost_per_character_above_128k_tokens?: number | null;
-    /**
      * Output Cost Per Token Above 200K Tokens
      */
     output_cost_per_token_above_200k_tokens?: number | null;
     /**
-     * Output Cost Per Second
-     */
-    output_cost_per_second?: number | null;
-    /**
      * Output Cost Per Image
      */
     output_cost_per_image?: number | null;
-    /**
-     * Citation Cost Per Token
-     */
-    citation_cost_per_token?: number | null;
     /**
      * Search Context Cost Per Query
      */
@@ -5432,10 +5170,6 @@ export type ModelInfoDto = {
      * Output Vector Size
      */
     output_vector_size?: number | null;
-    /**
-     * Litellm Provider
-     */
-    litellm_provider?: string | null;
     /**
      * Supports System Messages
      */
@@ -6745,7 +6479,7 @@ export type StandaloneQuestionCondenserEventReadable = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessageOutput;
+    condensed_chat_message: ChatMessage;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -6757,7 +6491,7 @@ export type StandaloneQuestionCondenserEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessageOutput | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessage | Array<string> | undefined;
 };
 
 /**
@@ -6785,8 +6519,8 @@ export type StandaloneQuestionCondenserEventWritable = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessageOutput;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessageOutput | undefined;
+    condensed_chat_message: ChatMessage;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessage | undefined;
 };
 
 /**
@@ -7012,23 +6746,9 @@ export type SuiteDto = {
 
 /**
  * TextBlock
- */
-export type TextBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'text';
-    /**
-     * Text
-     */
-    text: string;
-};
-
-/**
- * TextBlock
  * A representation of text data to directly pass to/from the LLM.
  */
-export type TextBlockOutput = {
+export type TextBlock = {
     /**
      * Block Type
      */
@@ -7747,38 +7467,8 @@ export type UserAccess = {
 /**
  * UserChatMessage
  */
-export type UserChatMessageInput = {
-    role?: MessageRoleInput;
-    additional_kwargs: AdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlockInput) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput) | ({
-        block_type: 'cache';
-    } & CachePointInput) | ({
-        block_type: 'citable';
-    } & CitableBlockInput) | ({
-        block_type: 'citation';
-    } & CitationBlockInput)>;
-    /**
-     * User Id
-     */
-    user_id: string;
-};
-
-/**
- * UserChatMessage
- */
-export type UserChatMessageOutput = {
-    role?: MessageRoleOutput;
+export type UserChatMessage = {
+    role?: MessageRole;
     /**
      * Additional Kwargs
      */
@@ -7788,19 +7478,19 @@ export type UserChatMessageOutput = {
      */
     blocks?: Array<({
         block_type: 'text';
-    } & TextBlockOutput) | ({
+    } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockOutput) | ({
+    } & ImageBlock) | ({
         block_type: 'audio';
-    } & AudioBlockOutput) | ({
+    } & AudioBlock) | ({
         block_type: 'document';
-    } & DocumentBlockOutput) | ({
+    } & DocumentBlock) | ({
         block_type: 'cache';
-    } & CachePointOutput) | ({
+    } & CachePoint) | ({
         block_type: 'citable';
-    } & CitableBlockOutput) | ({
+    } & CitableBlock) | ({
         block_type: 'citation';
-    } & CitationBlockOutput)>;
+    } & CitationBlock)>;
     /**
      * User Id
      */
@@ -7946,12 +7636,12 @@ export type UserMessageEventReadable = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput>;
+    messages?: Array<ChatMessage | UserChatMessage | AssistantChatMessage>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
-    files?: Array<UserUploadedFileOutput> | null;
+    files?: Array<UserUploadedFile> | null;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -7965,7 +7655,7 @@ export type UserMessageEventReadable = {
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
         [key: string]: unknown;
-    } | null) | UserIdentity | Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput> | (Array<UserUploadedFileOutput> | null) | Array<string> | undefined;
+    } | null) | UserIdentity | Array<ChatMessage | UserChatMessage | AssistantChatMessage> | (Array<UserUploadedFile> | null) | Array<string> | undefined;
 };
 
 /**
@@ -8031,37 +7721,21 @@ export type UserMessageEventWritable = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput>;
+    messages?: Array<ChatMessage | UserChatMessage | AssistantChatMessage>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
-    files?: Array<UserUploadedFileOutput> | null;
+    files?: Array<UserUploadedFile> | null;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
         [key: string]: unknown;
-    } | null) | UserIdentity | Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput> | (Array<UserUploadedFileOutput> | null) | undefined;
-};
-
-/**
- * UserMessageEventInput
- */
-export type UserMessageEventInput = {
-    /**
-     * Messages
-     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
-     */
-    messages?: Array<ChatMessageInput | UserChatMessageInput | AssistantChatMessageInput>;
-    /**
-     * Files
-     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
-     */
-    files?: Array<JamboParserObjectTypeParserUserUploadedFile> | null;
+    } | null) | UserIdentity | Array<ChatMessage | UserChatMessage | AssistantChatMessage> | (Array<UserUploadedFile> | null) | undefined;
 };
 
 /**
  * UserUploadedFile
  */
-export type UserUploadedFileOutput = {
+export type UserUploadedFile = {
     /**
      * Filename
      * The name of the uploaded file, including the extension.
@@ -8181,210 +7855,6 @@ export type WorkflowGraph = {
 };
 
 /**
- * additional_kwargs
- */
-export type AdditionalKwargs = {
-    [key: string]: unknown;
-};
-
-/**
- * additional_location_info
- */
-export type AdditionalLocationInfo = {
-    [key: string]: unknown;
-};
-
-/**
- * Message
- */
-export type AihubLibNatsEventsSemanticLlmMessageMessageReadable = {
-    /**
-     * Role
-     * The role of the message, such as 'user', 'assistant', or 'system'.
-     */
-    role: string;
-    /**
-     * Name
-     * The name of the function or agent generating the message.
-     */
-    name?: string | null;
-    /**
-     * Tool Calls
-     * List of tool calls generated by the model, such as function calls.
-     */
-    tool_calls?: Array<{
-        [key: string]: unknown;
-    }> | null;
-    /**
-     * Function Call Name
-     * The name of the function being called in the message.
-     */
-    function_call_name?: string | null;
-    /**
-     * Function Call Arguments Json
-     * JSON representing arguments passed to the function during a function call.
-     */
-    function_call_arguments_json?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * Tool Call Id
-     * The ID of the tool call, if applicable.
-     */
-    tool_call_id?: string | null;
-    /**
-     * Contents
-     * The message contents as an array of content blocks (text, image, audio).
-     */
-    contents?: Array<TextContent | ImageContent | AudioContent> | null;
-    /**
-     * Content
-     */
-    readonly content: string;
-};
-
-/**
- * Message
- */
-export type AihubLibNatsEventsSemanticLlmMessageMessageWritable = {
-    /**
-     * Role
-     * The role of the message, such as 'user', 'assistant', or 'system'.
-     */
-    role: string;
-    /**
-     * Name
-     * The name of the function or agent generating the message.
-     */
-    name?: string | null;
-    /**
-     * Tool Calls
-     * List of tool calls generated by the model, such as function calls.
-     */
-    tool_calls?: Array<{
-        [key: string]: unknown;
-    }> | null;
-    /**
-     * Function Call Name
-     * The name of the function being called in the message.
-     */
-    function_call_name?: string | null;
-    /**
-     * Function Call Arguments Json
-     * JSON representing arguments passed to the function during a function call.
-     */
-    function_call_arguments_json?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * Tool Call Id
-     * The ID of the tool call, if applicable.
-     */
-    tool_call_id?: string | null;
-    /**
-     * Contents
-     * The message contents as an array of content blocks (text, image, audio).
-     */
-    contents?: Array<TextContent | ImageContent | AudioContent> | null;
-};
-
-/**
- * UserUploadedFile
- */
-export type AihubLibNatsEventsUserUserUploadedFileUserUploadedFile = {
-    /**
-     * Filename
-     * The name of the uploaded file, including the extension.
-     */
-    filename: string;
-    /**
-     * File Data
-     * Base64 encoded content of the uploaded file.
-     */
-    file_data: string;
-    /**
-     * File Type
-     * The MIME type of the uploaded file.
-     */
-    file_type: string;
-};
-
-/**
- * function_call_arguments_json
- */
-export type FunctionCallArgumentsJson = {
-    [key: string]: unknown;
-};
-
-/**
- * invocation_parameters
- */
-export type InvocationParameters = {
-    [key: string]: unknown;
-};
-
-/**
- * Message
- */
-export type JamboParserObjectTypeParserMessage = {
-    /**
-     * Role
-     * The role of the message, such as 'user', 'assistant', or 'system'.
-     */
-    role: string;
-    /**
-     * Name
-     * The name of the function or agent generating the message.
-     */
-    name?: string | null;
-    /**
-     * Tool Calls
-     * List of tool calls generated by the model, such as function calls.
-     */
-    tool_calls?: Array<ToolCalls> | null;
-    /**
-     * Function Call Name
-     * The name of the function being called in the message.
-     */
-    function_call_name?: string | null;
-    /**
-     * JSON representing arguments passed to the function during a function call.
-     */
-    function_call_arguments_json?: FunctionCallArgumentsJson | null;
-    /**
-     * Tool Call Id
-     * The ID of the tool call, if applicable.
-     */
-    tool_call_id?: string | null;
-    /**
-     * Contents
-     * The message contents as an array of content blocks (text, image, audio).
-     */
-    contents?: Array<TextContent | ImageContent | AudioContent> | null;
-};
-
-/**
- * UserUploadedFile
- */
-export type JamboParserObjectTypeParserUserUploadedFile = {
-    /**
-     * Filename
-     * The name of the uploaded file, including the extension.
-     */
-    filename: string;
-    /**
-     * File Data
-     * Base64 encoded content of the uploaded file.
-     */
-    file_data: string;
-    /**
-     * File Type
-     * The MIME type of the uploaded file.
-     */
-    file_type: string;
-};
-
-/**
  * Usage
  */
 export type OpenaiTypesAudioTranscriptionVerboseUsage = {
@@ -8461,27 +7931,6 @@ export type OpenaiTypesImagesResponseUsage = {
      */
     total_tokens: number;
     [key: string]: unknown | number | UsageInputTokensDetails;
-};
-
-/**
- * prompt_template_variables
- */
-export type PromptTemplateVariables = {
-    [key: string]: unknown;
-};
-
-/**
- * tool_calls
- */
-export type ToolCalls = {
-    [key: string]: unknown;
-};
-
-/**
- * tools
- */
-export type Tools = {
-    [key: string]: unknown;
 };
 
 export type GetHealthData = {
@@ -10340,40 +9789,6 @@ export type UpdateNotificationResponses = {
 };
 
 export type UpdateNotificationResponse = UpdateNotificationResponses[keyof UpdateNotificationResponses];
-
-export type SendUserMessageEventToRagAgentDevAgentAgentsRagAgentDevAgentUserMessageEventPostData = {
-    body: UserMessageEventInput;
-    path?: never;
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/RAGAgent/dev_agent/user_message_event';
-};
-
-export type SendUserMessageEventToRagAgentDevAgentAgentsRagAgentDevAgentUserMessageEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendUserMessageEventToRagAgentDevAgentAgentsRagAgentDevAgentUserMessageEventPostError = SendUserMessageEventToRagAgentDevAgentAgentsRagAgentDevAgentUserMessageEventPostErrors[keyof SendUserMessageEventToRagAgentDevAgentAgentsRagAgentDevAgentUserMessageEventPostErrors];
-
-export type SendUserMessageEventToRagAgentDevAgentAgentsRagAgentDevAgentUserMessageEventPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: LlmStopEventOutput;
-};
-
-export type SendUserMessageEventToRagAgentDevAgentAgentsRagAgentDevAgentUserMessageEventPostResponse = SendUserMessageEventToRagAgentDevAgentAgentsRagAgentDevAgentUserMessageEventPostResponses[keyof SendUserMessageEventToRagAgentDevAgentAgentsRagAgentDevAgentUserMessageEventPostResponses];
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});

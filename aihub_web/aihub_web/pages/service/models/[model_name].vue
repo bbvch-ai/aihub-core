@@ -4,15 +4,11 @@
     close-route="/service/models"
   >
     <div class="flex flex-col gap-8">
-      <span class="mb-4 block text-sm text-surface-500 dark:text-surface-400">
-        {{ selectedModel?.description || t('models.modelDetails.no_description') }}
-      </span>
-
       <Panel class="panel pt-5">
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div class="flex flex-col items-start gap-2">
             <span class="font-semibold">
-              {{ t('models.overview.name') }}
+              {{ t('models.modelDetails.name') }}
             </span>
             <span class="text-lg font-light">
               {{ selectedModel?.model_name || t('models.modelDetails.notSpecified') }}
@@ -20,20 +16,11 @@
           </div>
           <div class="flex flex-col items-start gap-2">
             <span class="font-semibold">
-              {{ t('models.overview.mode') }}
+              {{ t('models.modelDetails.mode') }}
             </span>
             <span class="text-lg font-light capitalize">
-              {{ selectedModel?.mode || t('models.modelDetails.notSpecified') }}
+              {{ selectedModel?.model_info?.mode || t('models.modelDetails.notSpecified') }}
             </span>
-          </div>
-          <div class="flex flex-col items-start gap-2">
-            <span class="font-semibold">
-              {{ t('models.overview.status') }}
-            </span>
-            <Tag
-              :value="selectedModel?.status || 'available'"
-              :severity="(selectedModel?.status || 'available') === 'available' ? 'success' : 'error'"
-            />
           </div>
           <div class="flex flex-col items-start gap-2">
             <span class="font-semibold">
@@ -41,7 +28,7 @@
             </span>
             <span class="text-lg font-light">
               {{
-                model?.max_input_tokens ? formatNumber(model.max_input_tokens) : t('models.modelDetails.notSpecified')
+                model?.model_info?.max_input_tokens ? formatNumber(model?.model_info?.max_input_tokens) : t('models.modelDetails.notSpecified')
               }}
             </span>
           </div>
@@ -51,7 +38,7 @@
             </span>
             <span class="text-lg font-light">
               {{
-                model?.max_output_tokens ? formatNumber(model.max_output_tokens) : t('models.modelDetails.notSpecified')
+                model?.model_info?.max_output_tokens ? formatNumber(model?.model_info?.max_output_tokens) : t('models.modelDetails.notSpecified')
               }}
             </span>
           </div>
@@ -61,7 +48,7 @@
             </span>
             <span class="text-lg font-light">
               {{
-                model?.input_cost_per_million_token !== null && model?.input_cost_per_million_token !== undefined ? `$${model.input_cost_per_million_token.toFixed(2)}` : t('models.modelDetails.notSpecified')
+                model?.model_info?.input_cost_per_token !== null && model?.model_info?.input_cost_per_token !== undefined ? `$${model.model_info.input_cost_per_token.toFixed(2)}` : t('models.modelDetails.notSpecified')
               }}
             </span>
           </div>
@@ -71,7 +58,7 @@
             </span>
             <span class="text-lg font-light">
               {{
-                model?.output_cost_per_million_token !== null && model?.output_cost_per_million_token !== undefined ? `$${model.output_cost_per_million_token.toFixed(2)}` : t('models.modelDetails.notSpecified')
+                model?.model_info?.output_cost_per_token !== null && model?.model_info?.output_cost_per_token !== undefined ? `$${model.model_info.output_cost_per_token.toFixed(2)}` : t('models.modelDetails.notSpecified')
               }}
             </span>
           </div>
@@ -93,99 +80,99 @@
               </h4>
               <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <div
-                  v-if="model?.cache_creation_input_token_cost"
+                  v-if="model?.model_info?.cache_creation_input_token_cost"
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.cacheCreationCost') }}</span>
-                  <span class="text-lg font-light">${{ model.cache_creation_input_token_cost.toFixed(4) }}</span>
+                  <span class="text-lg font-light">${{ model.model_info.cache_creation_input_token_cost.toFixed(4) }}</span>
                 </div>
                 <div
-                  v-if="model?.cache_read_input_token_cost"
+                  v-if="model?.model_info?.cache_read_input_token_cost"
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.cacheReadCost') }}</span>
-                  <span class="text-lg font-light">${{ model.cache_read_input_token_cost.toFixed(4) }}</span>
+                  <span class="text-lg font-light">${{ model.model_info.cache_read_input_token_cost.toFixed(4) }}</span>
                 </div>
                 <div
-                  v-if="model?.input_cost_per_token_above_128k_tokens"
+                  v-if="model?.model_info?.input_cost_per_token_above_128k_tokens"
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.inputCostAbove128k') }}</span>
-                  <span class="text-lg font-light">${{ model.input_cost_per_token_above_128k_tokens.toFixed(4) }}</span>
+                  <span class="text-lg font-light">${{ model.model_info.input_cost_per_token_above_128k_tokens.toFixed(4) }}</span>
                 </div>
                 <div
-                  v-if="model?.input_cost_per_token_above_200k_tokens"
+                  v-if="model?.model_info?.input_cost_per_token_above_200k_tokens"
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.inputCostAbove200k') }}</span>
-                  <span class="text-lg font-light">${{ model.input_cost_per_token_above_200k_tokens.toFixed(4) }}</span>
+                  <span class="text-lg font-light">${{ model.model_info.input_cost_per_token_above_200k_tokens.toFixed(4) }}</span>
                 </div>
                 <div
-                  v-if="model?.input_cost_per_audio_token"
+                  v-if="model?.model_info?.input_cost_per_audio_token"
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.inputAudioCost') }}</span>
-                  <span class="text-lg font-light">${{ model.input_cost_per_audio_token.toFixed(4) }}</span>
+                  <span class="text-lg font-light">${{ model.model_info.input_cost_per_audio_token.toFixed(4) }}</span>
                 </div>
                 <div
-                  v-if="model?.input_cost_per_token_batches"
+                  v-if="model?.model_info?.input_cost_per_token_batches"
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.inputBatchCost') }}</span>
-                  <span class="text-lg font-light">${{ model.input_cost_per_token_batches.toFixed(4) }}</span>
+                  <span class="text-lg font-light">${{ model.model_info.input_cost_per_token_batches.toFixed(4) }}</span>
                 </div>
                 <div
-                  v-if="model?.output_cost_per_token_batches"
+                  v-if="model?.model_info?.output_cost_per_token_batches"
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.outputBatchCost') }}</span>
-                  <span class="text-lg font-light">${{ model.output_cost_per_token_batches.toFixed(4) }}</span>
+                  <span class="text-lg font-light">${{ model.model_info.output_cost_per_token_batches.toFixed(4) }}</span>
                 </div>
                 <div
-                  v-if="model?.output_cost_per_audio_token"
+                  v-if="model?.model_info?.output_cost_per_audio_token"
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.outputAudioCost') }}</span>
-                  <span class="text-lg font-light">${{ model.output_cost_per_audio_token.toFixed(4) }}</span>
+                  <span class="text-lg font-light">${{ model.model_info.output_cost_per_audio_token.toFixed(4) }}</span>
                 </div>
                 <div
-                  v-if="model?.output_cost_per_reasoning_token"
+                  v-if="model?.model_info?.output_cost_per_reasoning_token"
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.reasoningTokenCost') }}</span>
-                  <span class="text-lg font-light">${{ model.output_cost_per_reasoning_token.toFixed(4) }}</span>
+                  <span class="text-lg font-light">${{ model.model_info.output_cost_per_reasoning_token.toFixed(4) }}</span>
                 </div>
                 <div
-                  v-if="model?.output_cost_per_token_above_128k_tokens"
+                  v-if="model?.model_info?.output_cost_per_token_above_128k_tokens"
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.outputCostAbove128k') }}</span>
                   <span class="text-lg font-light">${{
-                    model.output_cost_per_token_above_128k_tokens.toFixed(4)
-                  }}</span>
+                      model.model_info.output_cost_per_token_above_128k_tokens.toFixed(4)
+                    }}</span>
                 </div>
                 <div
-                  v-if="model?.output_cost_per_token_above_200k_tokens"
+                  v-if="model?.model_info?.output_cost_per_token_above_200k_tokens"
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.outputCostAbove200k') }}</span>
                   <span class="text-lg font-light">${{
-                    model.output_cost_per_token_above_200k_tokens.toFixed(4)
-                  }}</span>
+                      model.model_info.output_cost_per_token_above_200k_tokens.toFixed(4)
+                    }}</span>
                 </div>
                 <div
-                  v-if="model?.output_cost_per_image"
+                  v-if="model?.model_info?.output_cost_per_image"
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.imageCost') }}</span>
-                  <span class="text-lg font-light">${{ model.output_cost_per_image.toFixed(4) }}</span>
+                  <span class="text-lg font-light">${{ model.model_info.output_cost_per_image.toFixed(4) }}</span>
                 </div>
                 <div
-                  v-if="model?.search_context_cost_per_query"
+                  v-if="model?.model_info?.search_context_cost_per_query"
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.searchContextCost') }}</span>
-                  <span class="text-lg font-light">${{ model.search_context_cost_per_query.toFixed(4) }}</span>
+                  <span class="text-lg font-light">${{ model.model_info.search_context_cost_per_query.toFixed(4) }}</span>
                 </div>
               </div>
             </div>
@@ -199,18 +186,18 @@
               </h4>
               <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div
-                  v-if="model?.tpm"
+                  v-if="model?.model_info?.tpm"
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.tokensPerMinute') }}</span>
-                  <span class="text-lg font-light">{{ formatNumber(model.tpm) }}</span>
+                  <span class="text-lg font-light">{{ formatNumber(model.model_info.tpm) }}</span>
                 </div>
                 <div
-                  v-if="model?.rpm"
+                  v-if="model?.model_info?.rpm"
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.requestsPerMinute') }}</span>
-                  <span class="text-lg font-light">{{ formatNumber(model.rpm) }}</span>
+                  <span class="text-lg font-light">{{ formatNumber(model.model_info.rpm) }}</span>
                 </div>
               </div>
             </div>
@@ -221,91 +208,91 @@
               </h4>
               <div class="flex flex-wrap gap-2">
                 <Badge
-                  v-if="model?.supports_system_messages !== null"
+                  v-if="model?.model_info?.supports_system_messages !== null"
                   :value="t('models.modelDetails.supportsSystemMessages')"
                   severity="secondary"
                   class="text-sm"
                 />
                 <Badge
-                  v-if="model?.supports_response_schema !== null"
+                  v-if="model?.model_info?.supports_response_schema !== null"
                   :value="t('models.modelDetails.supportsResponseSchema')"
                   severity="secondary"
                   class="text-sm"
                 />
                 <Badge
-                  v-if="model?.supports_vision !== null"
+                  v-if="model?.model_info?.supports_vision !== null"
                   :value="t('models.modelDetails.supportsVision')"
                   severity="secondary"
                   class="text-sm"
                 />
                 <Badge
-                  v-if="model?.supports_function_calling !== null"
+                  v-if="model?.model_info?.supports_function_calling !== null"
                   :value="t('models.modelDetails.supportsFunctionCalling')"
                   severity="secondary"
                   class="text-sm"
                 />
                 <Badge
-                  v-if="model?.supports_tool_choice !== null"
+                  v-if="model?.model_info?.supports_tool_choice !== null"
                   :value="t('models.modelDetails.supportsToolChoice')"
                   severity="secondary"
                   class="text-sm"
                 />
                 <Badge
-                  v-if="model?.supports_assistant_prefill !== null"
+                  v-if="model?.model_info?.supports_assistant_prefill !== null"
                   :value="t('models.modelDetails.supportsAssistantPrefill')"
                   severity="secondary"
                   class="text-sm"
                 />
                 <Badge
-                  v-if="model?.supports_prompt_caching !== null"
+                  v-if="model?.model_info?.supports_prompt_caching !== null"
                   :value="t('models.modelDetails.supportsPromptCaching')"
                   severity="secondary"
                   class="text-sm"
                 />
                 <Badge
-                  v-if="model?.supports_audio_input !== null"
+                  v-if="model?.model_info?.supports_audio_input !== null"
                   :value="t('models.modelDetails.supportsAudioInput')"
                   severity="secondary"
                   class="text-sm"
                 />
                 <Badge
-                  v-if="model?.supports_audio_output !== null"
+                  v-if="model?.model_info?.supports_audio_output !== null"
                   :value="t('models.modelDetails.supportsAudioOutput')"
                   severity="secondary"
                   class="text-sm"
                 />
                 <Badge
-                  v-if="model?.supports_pdf_input !== null"
+                  v-if="model?.model_info?.supports_pdf_input !== null"
                   :value="t('models.modelDetails.supportsPdfInput')"
                   severity="secondary"
                   class="text-sm"
                 />
                 <Badge
-                  v-if="model?.supports_native_streaming !== null"
+                  v-if="model?.model_info?.supports_native_streaming !== null"
                   :value="t('models.modelDetails.supportsNativeStreaming')"
                   severity="secondary"
                   class="text-sm"
                 />
                 <Badge
-                  v-if="model?.supports_web_search !== null"
+                  v-if="model?.model_info?.supports_web_search !== null"
                   :value="t('models.modelDetails.supportsWebSearch')"
                   severity="secondary"
                   class="text-sm"
                 />
                 <Badge
-                  v-if="model?.supports_url_context !== null"
+                  v-if="model?.model_info?.supports_url_context !== null"
                   :value="t('models.modelDetails.supportsUrlContext')"
                   severity="secondary"
                   class="text-sm"
                 />
                 <Badge
-                  v-if="model?.supports_reasoning !== null"
+                  v-if="model?.model_info?.supports_reasoning !== null"
                   :value="t('models.modelDetails.supportsReasoning')"
                   severity="secondary"
                   class="text-sm"
                 />
                 <Badge
-                  v-if="model?.supports_computer_use !== null"
+                  v-if="model?.model_info?.supports_computer_use !== null"
                   :value="t('models.modelDetails.supportsComputerUse')"
                   severity="secondary"
                   class="text-sm"
@@ -322,35 +309,35 @@
               </h4>
               <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div
-                  v-if="model?.output_vector_size"
+                  v-if="model?.model_info?.output_vector_size"
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="text-sm font-medium">{{ t('models.modelDetails.outputVectorSize') }}</span>
                   <Tag
-                    :value="formatNumber(model.output_vector_size)"
+                    :value="formatNumber(model.model_info.output_vector_size)"
                     severity="secondary"
                   />
                 </div>
                 <div
-                  v-if="model?.supports_embedding_image_input !== null"
+                  v-if="model?.model_info?.supports_embedding_image_input !== null"
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="text-sm font-medium">{{ t('models.modelDetails.supportsEmbeddingImageInput') }}</span>
                   <Tag
-                    :value="model?.supports_embedding_image_input ? 'Yes' : 'No'"
-                    :severity="model?.supports_embedding_image_input ? 'success' : 'secondary'"
+                    :value="model?.model_info?.supports_embedding_image_input ? 'Yes' : 'No'"
+                    :severity="model?.model_info?.supports_embedding_image_input ? 'success' : 'secondary'"
                   />
                 </div>
               </div>
             </div>
 
-            <div v-if="model?.supported_openai_params?.length">
+            <div v-if="model?.model_info?.supported_openai_params?.length">
               <h4 class="mb-4 text-base font-semibold">
                 {{ t('models.modelDetails.supportedParams') }}
               </h4>
               <div class="flex flex-wrap gap-2">
                 <Badge
-                  v-for="param in model.supported_openai_params"
+                  v-for="param in model.model_info.supported_openai_params"
                   :key="param"
                   :value="param"
                   severity="secondary"
@@ -366,17 +353,16 @@
 </template>
 
 <script setup lang="ts">
-import type { ModelDTO } from '@core/sdk/client'
+import type {ModelDTO} from '@core/sdk/client'
 
 const route = useRoute()
-const { t } = useI18n()
-const { modelTypes } = useModelsList()
+const {t} = useI18n()
+const {modelTypes} = useModelsList()
 
 const props = defineProps<{
   model: ModelDTO
 }>()
 
-// Local utility function
 const formatNumber = (num: number): string => {
   return new Intl.NumberFormat().format(num)
 }
@@ -396,31 +382,30 @@ const selectedModel = computed(() => {
 
 const model = computed(() => selectedModel.value || props.model)
 
-// Check if sections have content
 const hasAdvancedPricing = computed(() => {
   if (!model.value) return false
-  return !!(model.value.cache_creation_input_token_cost
-    || model.value.cache_read_input_token_cost
-    || model.value.input_cost_per_token_above_128k_tokens
-    || model.value.input_cost_per_token_above_200k_tokens
-    || model.value.input_cost_per_audio_token
-    || model.value.input_cost_per_token_batches
-    || model.value.output_cost_per_token_batches
-    || model.value.output_cost_per_audio_token
-    || model.value.output_cost_per_reasoning_token
-    || model.value.output_cost_per_token_above_128k_tokens
-    || model.value.output_cost_per_token_above_200k_tokens
-    || model.value.output_cost_per_image
-    || model.value.search_context_cost_per_query)
+  return !!(model.value.model_info.cache_creation_input_token_cost
+    || model.value.model_info.cache_read_input_token_cost
+    || model.value.model_info.input_cost_per_token_above_128k_tokens
+    || model.value.model_info.input_cost_per_token_above_200k_tokens
+    || model.value.model_info.input_cost_per_audio_token
+    || model.value.model_info.input_cost_per_token_batches
+    || model.value.model_info.output_cost_per_token_batches
+    || model.value.model_info.output_cost_per_audio_token
+    || model.value.model_info.output_cost_per_reasoning_token
+    || model.value.model_info.output_cost_per_token_above_128k_tokens
+    || model.value.model_info.output_cost_per_token_above_200k_tokens
+    || model.value.model_info.output_cost_per_image
+    || model.value.model_info.search_context_cost_per_query)
 })
 
 const hasRateLimits = computed(() => {
   if (!model.value) return false
-  return !!(model.value.tpm || model.value.rpm)
+  return !!(model.value.model_info.tpm || model.value.model_info.rpm)
 })
 
 const hasOtherDetails = computed(() => {
   if (!model.value) return false
-  return model.value.output_vector_size || model.value.supports_embedding_image_input !== null
+  return model.value.model_info.output_vector_size || model.value.model_info.supports_embedding_image_input !== null
 })
 </script>
