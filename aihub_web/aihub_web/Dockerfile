@@ -24,6 +24,14 @@ RUN pnpm run build
 # Use a lightweight and stable Nginx image
 FROM nginx:stable-alpine
 
+# Setup users
+ARG USERNAME=user
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+RUN addgroup -g "$USER_GID" "$USERNAME" \
+  && adduser -D -H -u "$USER_UID" -G "$USERNAME" -s /sbin/nologin "$USERNAME"
+
 # Install 'gettext' to get the 'envsubst' utility
 RUN apk add --no-cache gettext
 

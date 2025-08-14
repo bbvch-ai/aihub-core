@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import Field, SecretStr, computed_field, field_validator
+from pydantic import Field, SecretStr, computed_field
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings

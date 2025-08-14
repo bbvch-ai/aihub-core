@@ -1,6 +1,10 @@
+# syntax = docker/dockerfile:1.2
 # Build stage
 FROM python:3.13-slim AS builder
+
+ARG PIPELINE=default_rag_pipeline
 ARG VERSION
+
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -23,28 +27,33 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-
-# Set the working directory
 WORKDIR /app
 
-# Copy only the dependency files first
-COPY Makefile switch_dependencies.py pyproject.toml ./
-COPY aihub_api ./aihub_api
+COPY aihub_pipeline/app/${PIPELINE} ./aihub_pipeline/app/${PIPELINE}
+COPY aihub_pipeline ./aihub_pipeline
+COPY aihub_pipeline/Makefile ./aihub_pipeline/Makefile
+COPY aihub_pipeline/poetry.lock ./aihub_pipeline/poetry.lock
+COPY aihub_pipeline/pyproject.toml ./aihub_pipeline/pyproject.toml
 COPY aihub_lib ./aihub_lib
+
+COPY Makefile switch_dependencies.py pyproject.toml ./
 
 RUN poetry install
 RUN make use-local-core
 RUN rm Makefile switch_dependencies.py pyproject.toml
+
 # Set the working directory
-WORKDIR /app/aihub_api
+WORKDIR /app/aihub_pipeline
 RUN poetry install
 
 RUN rm -rf ~/.cache/pypoetry ~/.cache/pip /tmp/poetry_cache
 
 
-# Runtime stage
+# --- Runtime stage ---
 FROM python:3.13-slim AS runtime
 
+ARG PIPELINE=default_rag_pipeline
+ENV PIPELINE_NAME=${PIPELINE}
 ARG VERSION
 
 # Set environment variables
@@ -57,8 +66,8 @@ ENV PYTHONUNBUFFERED=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache \
     PYTHONPATH=/app \
     PATH="/app/.venv/bin:/opt/poetry/bin:$PATH" \
-    AIHUB_API_VERSION=${VERSION}
-
+    DAGSTER_HOME=/dagster_home \
+    AIHUB_PIPELINE_VERSION=${VERSION}
 # Setup users
 ARG USERNAME=user
 ARG USER_UID=1000
@@ -77,8 +86,7 @@ RUN apt-get update && \
     iputils-ping \
     libasound2 \
     make \
-    curl \
-    ffmpeg && \
+    curl && \
     curl -sSL https://install.python-poetry.org | python3 - --version ${POETRY_VERSION} && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -87,19 +95,19 @@ RUN apt-get update && \
 RUN echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/"$USERNAME" && \
     chmod 0440 /etc/sudoers.d/"$USERNAME"
 
+ENV DAGSTER_HOME=/app/aihub_pipeline
+RUN mkdir -p $DAGSTER_HOME
+
 # Set the working directory
 WORKDIR /app
 
-# Copy only the necessary code from the builder stage
+# Copy application code and configuration files
 COPY --from=builder /app /app
 
-# Switch to non-root user
-USER $USERNAME
+WORKDIR $DAGSTER_HOME
 
-# Expose port 8000
-EXPOSE 8000
+# Expose necessary port
+EXPOSE 4000
 
-WORKDIR /app/aihub_api
-
-# Start the server using Makefile
-ENTRYPOINT ["make", "run-prod"]
+# Start the application
+ENTRYPOINT exec poetry run dagster api grpc -h 0.0.0.0 -p 4000 -m app.${PIPELINE_NAME}

@@ -1,6 +1,7 @@
+# syntax = docker/dockerfile:1.2
+
 # Build stage
-FROM python:3.13-slim AS builder
-ARG VERSION
+FROM python:3.11-slim AS builder
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -23,29 +24,25 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-
-# Set the working directory
 WORKDIR /app
 
-# Copy only the dependency files first
 COPY Makefile switch_dependencies.py pyproject.toml ./
-COPY aihub_api ./aihub_api
+COPY aihub_pipeline ./aihub_pipeline
 COPY aihub_lib ./aihub_lib
 
 RUN poetry install
 RUN make use-local-core
 RUN rm Makefile switch_dependencies.py pyproject.toml
+
 # Set the working directory
-WORKDIR /app/aihub_api
+WORKDIR /app/aihub_pipeline
 RUN poetry install
 
 RUN rm -rf ~/.cache/pypoetry ~/.cache/pip /tmp/poetry_cache
 
 
-# Runtime stage
-FROM python:3.13-slim AS runtime
-
-ARG VERSION
+# --- Runtime stage ---
+FROM python:3.11-slim AS runtime
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -57,7 +54,7 @@ ENV PYTHONUNBUFFERED=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache \
     PYTHONPATH=/app \
     PATH="/app/.venv/bin:/opt/poetry/bin:$PATH" \
-    AIHUB_API_VERSION=${VERSION}
+    DAGSTER_HOME=/dagster_home
 
 # Setup users
 ARG USERNAME=user
@@ -77,8 +74,7 @@ RUN apt-get update && \
     iputils-ping \
     libasound2 \
     make \
-    curl \
-    ffmpeg && \
+    curl && \
     curl -sSL https://install.python-poetry.org | python3 - --version ${POETRY_VERSION} && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -87,19 +83,19 @@ RUN apt-get update && \
 RUN echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/"$USERNAME" && \
     chmod 0440 /etc/sudoers.d/"$USERNAME"
 
+ENV DAGSTER_HOME=/dagster_home
+RUN mkdir -p $DAGSTER_HOME
+
 # Set the working directory
 WORKDIR /app
 
-# Copy only the necessary code from the builder stage
+# Copy application code and configuration files
 COPY --from=builder /app /app
 
-# Switch to non-root user
-USER $USERNAME
+WORKDIR $DAGSTER_HOME
 
-# Expose port 8000
+# Expose necessary port
 EXPOSE 8000
 
-WORKDIR /app/aihub_api
-
-# Start the server using Makefile
-ENTRYPOINT ["make", "run-prod"]
+# Start the application
+ENTRYPOINT ["make", "dagster-webserver"]
