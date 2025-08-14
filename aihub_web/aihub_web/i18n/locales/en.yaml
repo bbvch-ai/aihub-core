@@ -3,6 +3,7 @@ welcome: "Welcome to bbv ai-hub"
 
 models:
   title: "Models"
+  otherModels: "Other Models"
   card:
     error: "Error loading models"
     tokens: "Tokens"

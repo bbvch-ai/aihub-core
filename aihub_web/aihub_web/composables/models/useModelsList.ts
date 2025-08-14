@@ -20,7 +20,7 @@ export const useModelsList = defineQuery(() => {
     const grouped = new Map()
 
     rawModels.value.forEach((model: ModelDTO) => {
-      const modelType = model.model_info.mode || 'Other'
+      const modelType = model.model_info.mode || t('models.otherModels')
       if (!grouped.has(modelType)) {
         grouped.set(modelType, {
           name: modelType,
