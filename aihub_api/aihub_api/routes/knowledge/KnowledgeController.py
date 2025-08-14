@@ -6,7 +6,7 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.infrastructure.azure.cosmos.docstore.CosmosDocstoreAccess import CosmosDocstoreAccess
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
 from aihub_lib.routes.Controller import Controller
 from fastapi import HTTPException, Security
@@ -36,7 +36,7 @@ class KnowledgeController(Controller):
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
         self.docstore_client: MongoClient = connect(
-            host=CosmosDocstoreAccess().get_connection_string(), alias="docstore"
+            host=MongoSettings().CONNECTION_STRING.get_secret_value(), alias="docstore"
         )
 
         self.vector_store_factory = vector_store_factory

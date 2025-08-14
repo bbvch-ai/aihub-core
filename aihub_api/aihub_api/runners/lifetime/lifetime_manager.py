@@ -2,9 +2,9 @@ import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
-from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
-from aihub_lib.infrastructure.nats.NatsConfig import NatsConfig
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
@@ -17,6 +17,7 @@ from nats.aio.client import Client as NATS
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.persistance.events.EventPersister import EventPersister
+from aihub_api.runners.lifetime.initialize_db import initialize_roles
 from aihub_api.services.AgentEndpointsDiscoveryService import AgentEndpointsDiscoveryService
 from aihub_api.services.ProcessEndpointsDiscoveryService import ProcessEndpointsDiscoveryService
 from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
@@ -71,13 +72,13 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
     # Connect to MongoDB via Cosmos
     connect(
-        db=ApiConfig().DB_NAME,
-        host=CosmosAccess().get_connection_string(),
+        db=AIHubSettings().MONGO_MAIN_DB_NAME,
+        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
     )
 
     try:
         # Connect to NATS and setup JetStream
-        await nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
+        await nc.connect(servers=[NatsSettings().ENDPOINT])
         js = nc.jetstream()
 
         # Persist all events
@@ -145,6 +146,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             app.state.process_discovery_service = process_discovery_service
         else:
             logger.warning("Unable to start ProcessEndpointsDiscoveryService due to missing state.process_controller")
+
+        await initialize_roles()
 
         # Yield control back to FastAPI to start serving requests
         yield

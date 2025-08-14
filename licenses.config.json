@@ -62,6 +62,7 @@
     "jsonschema": "MIT",
     "llama-index-core": "MIT",
     "llama-index-embeddings-azure-openai": "MIT",
+    "llama-index-embeddings-openai-like": "MIT",
     "llama-index-instrumentation": "MIT",
     "llama-index-llms-google-genai": "MIT",
     "llama-index-llms-openai-like": "MIT",

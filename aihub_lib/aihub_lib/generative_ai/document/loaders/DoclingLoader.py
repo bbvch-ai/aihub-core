@@ -4,6 +4,7 @@ import os
 import re
 from typing import Any
 
+import httpx
 from bs4 import BeautifulSoup
 from docling_core.types import DoclingDocument
 from docling_core.types.doc import ImageRefMode
@@ -13,7 +14,7 @@ from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 
 from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
-from aihub_lib.infrastructure.docling.DoclingAccess import DoclingAccess
+from aihub_lib.infrastructure.docling.DoclingSettings import DoclingSettings
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     NODE_CONTENT_TYPE_FIGURE,
     NODE_CONTENT_TYPE_TABLE,
@@ -24,7 +25,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 class DoclingLoader(BaseReader):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.docling_client = DoclingAccess()
+        self.config = DoclingSettings()
 
     def load_data(
         self,
@@ -74,6 +75,43 @@ class DoclingLoader(BaseReader):
                 extra_info={**extra_info, **metadata} if extra_info else metadata,
             )
         ]
+
+    def convert_document(self, file_content: str, filename: str):
+        request_body = {
+            "options": {
+                "from_formats": self.config.FROM_FORMATS,
+                "to_formats": self.config.TO_FORMATS,
+                "image_export_mode": self.config.IMAGE_EXPORT_MODE,
+                "do_ocr": self.config.DO_OCR,
+                "force_ocr": self.config.FORCE_OCR,
+                "ocr_engine": self.config.OCR_ENGINE,
+                "pdf_backend": self.config.PDF_BACKEND,
+                "table_mode": self.config.TABLE_MODE,
+                "abort_on_error": False,
+                "return_as_file": False,
+                "do_table_structure": True,
+                "include_images": True,
+                "images_scale": self.config.IMAGES_SCALE,
+                "do_code_enrichment": True,
+                "do_formula_enrichment": True,
+                "do_picture_classification": False,
+                "do_picture_description": False,
+                "md_page_break_placeholder": self.config.MD_PAGE_BREAK_PLACEHOLDER,
+            },
+            "file_sources": [{"base64_string": file_content, "filename": filename}],
+        }
+
+        response = httpx.post(
+            self.config.API_ENDPOINT,
+            json=request_body,
+            headers={"Content-Type": "application/json"},
+            timeout=self.config.API_TIMEOUT,
+        )
+
+        if response.status_code != 200:
+            raise ValueError(f"Docling API request failed with status code {response.status_code}: {response.text}")
+
+        return response.json()
 
 
 def inject_figure_tags(markdown_text: str, img_strs: list[str]):

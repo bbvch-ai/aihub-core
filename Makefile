@@ -19,6 +19,10 @@ format:
 	@(cd aihub_bot && make format)
 	@(cd aihub_iac && make format)
 
+format-md:
+	@echo "Formatting markdown files..."
+	@poetry run mdformat --number $$(git ls-files '*.md')
+
 # Type-check with MyPy
 typecheck:
 	@echo "Running type checks for pipelines..."
@@ -42,15 +46,26 @@ pr-ready:
 	@(cd aihub_iac &&  make pr-ready)
 	@(cd aihub_web && make pr-ready)
 
-# Use local cores for development
+# Use local cores for development (with poetry install)
 use-local-core:
-	@echo "Switching to local cores..."
+	@echo "Switching to local cores with poetry install..."
+	poetry run python switch_dependencies.py local --install
+
+# Use local cores without running poetry install (for CI)
+use-local-core-without-install:
+	@echo "Switching to local cores without poetry install..."
 	poetry run python switch_dependencies.py local
 
-TAG ?= v0.238.1
+TAG ?= v0.240.1
 
+# Use remote cores (with poetry install)
 use-remote-core:
 	@echo "Switching all microservices to remote with tag: $(TAG)"
+	poetry run python switch_dependencies.py remote --tag "$(TAG)" --install
+
+# Use remote cores without running poetry install (for CI)
+use-remote-core-without-install:
+	@echo "Switching all microservices to remote with tag: $(TAG) without poetry install..."
 	poetry run python switch_dependencies.py remote --tag "$(TAG)"
 
 changelog:

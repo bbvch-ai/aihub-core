@@ -32,7 +32,7 @@ class ApiTestRunner(ApiRunner):
     """
 
     def __init__(self):
-        super().__init__(title="Local AI Hub", description="Local version only", origins=[], debug=True)
+        super().__init__(title="Local AI Hub", description="Local version only", origins=[])
 
     async def run(self) -> None:
         """
@@ -42,6 +42,6 @@ class ApiTestRunner(ApiRunner):
         """
         from uvicorn import Config, Server
 
-        config = Config(app=self.get_app(), host="localhost", port=8000, log_level="debug")
+        config = Config(app=self.create_app(), host="localhost", port=8000, log_level="debug")
         server = Server(config)
         await server.serve()

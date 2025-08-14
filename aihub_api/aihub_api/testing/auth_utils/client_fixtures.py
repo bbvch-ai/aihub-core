@@ -36,7 +36,7 @@ async def development_auth_api_client(controller_mount_func):
     auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     runner.mount(controller_mount_func(auth))
 
-    app = runner.get_app()
+    app = runner.create_app()
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client
@@ -51,7 +51,7 @@ async def token_auth_api_client(controller_mount_func):
     auth = TokenAuthHandler(identity_provider=TokenIdentityProvider())
     runner.mount(controller_mount_func(auth))
 
-    app = runner.get_app()
+    app = runner.create_app()
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client
@@ -66,7 +66,7 @@ async def oauth2_auth_api_client(controller_mount_func):
     auth = OAuth2AuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     runner.mount(controller_mount_func(auth))
 
-    app = runner.get_app()
+    app = runner.create_app()
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client

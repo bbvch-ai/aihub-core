@@ -30,3 +30,12 @@ test:
 
 pr-ready: format lint
 	@echo "Running full check (format, lint)..."
+
+run-prod:
+	@echo "Starting server with Gunicorn using ${NUM_WORKERS} workers..."
+	poetry run gunicorn -w ${NUM_WORKERS} \
+		-k uvicorn.workers.UvicornWorker \
+		--timeout=300 \
+		-b 0.0.0.0:8001 \
+		--forwarded-allow-ips=* \
+		app/main:app

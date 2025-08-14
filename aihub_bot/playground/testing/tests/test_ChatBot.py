@@ -40,7 +40,7 @@ ACTIVITY_ID = "test_activity_id"
 @pytest.fixture
 def patch_requests_adapter(monkeypatch, test_runner):
     """Patch the request.Session to forward all calls made to the test domain to our fastapi application"""
-    app = test_runner.get_app()
+    app = test_runner.create_app()
     original_session = requests.Session
 
     def session_factory(*args, **kwargs):
@@ -66,7 +66,7 @@ async def test_runner():
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def client(test_runner: SimulatedAgentBotTestRunner):
-    app = test_runner.get_app()
+    app = test_runner.create_app()
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client

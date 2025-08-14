@@ -18,7 +18,6 @@ class BotTestRunner(BotRunner):
             title="Local AI Hub Bot Service",
             description="Local version only",
             origins=[],
-            debug=True,
             conversation_ttl_days=conversation_ttl_days,
         )
 
@@ -50,6 +49,6 @@ class BotTestRunner(BotRunner):
         """
         from uvicorn import Config, Server
 
-        config = Config(app=self.get_app(), host="localhost", port=8001, log_level="debug")
+        config = Config(app=self.create_app(), host="localhost", port=8001, log_level="debug")
         server = Server(config)
         await server.serve()

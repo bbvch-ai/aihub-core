@@ -12,7 +12,8 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.route_adapter.ASGIAdapter import ASGIAdapter
 from asgi_lifespan import LifespanManager
@@ -37,7 +38,7 @@ TTL_DAYS = 1 / 86400  # 1 second TTL in days
 @pytest.fixture
 def patch_requests_adapter(monkeypatch, test_runner):
     """Patch the request.Session to forward all calls to our test application"""
-    app = test_runner.get_app()
+    app = test_runner.create_app()
     original_session = requests.Session
 
     def session_factory(*args, **kwargs):
@@ -54,8 +55,8 @@ def mongodb_direct_connection():
     """Direct MongoDB connection for basic tests"""
     # Use a different alias to avoid conflicts
     connect(
-        db=ApiConfig().DB_NAME,
-        host="mongodb://admin:admin@localhost:27017/",
+        db=AIHubSettings().MONGO_MAIN_DB_NAME,
+        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
     )
     yield
     disconnect()
@@ -75,7 +76,7 @@ async def test_runner():
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def client(test_runner: SimulatedAgentBotTestRunner):
     """Create an HTTP client for testing"""
-    app = test_runner.get_app()
+    app = test_runner.create_app()
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client

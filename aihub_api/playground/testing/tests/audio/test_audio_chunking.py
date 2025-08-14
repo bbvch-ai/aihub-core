@@ -1,6 +1,9 @@
 import io
 
 import pytest
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from fastapi import UploadFile
 from pydub import AudioSegment
 from pydub.generators import Sine
@@ -97,41 +100,51 @@ class TestAudioChunking:
 
 
 @pytest.mark.asyncio
-async def test_full_stt_with_chunking(create_test_audio):
+async def test_full_stt_with_chunking(create_test_audio, monkeypatch):
     """Integration test for the full STT process with chunking."""
-    from unittest.mock import AsyncMock, MagicMock
+    from unittest.mock import AsyncMock, MagicMock, patch
 
     # Create a large test file
     large_file = create_test_audio(10 * 60 * 1000)  # 20 minutes
 
     # Mock OpenAI client
     mock_client = AsyncMock()
+    mock_transcription_1 = MagicMock()
+    mock_transcription_1.text = "First chunk transcription"
+    mock_transcription_2 = MagicMock()
+    mock_transcription_2.text = "Second chunk transcription"
+    mock_transcription_3 = MagicMock()
+    mock_transcription_3.text = "Third chunk transcription"
+
     mock_client.audio.transcriptions.create = AsyncMock(
         side_effect=[
-            "First chunk transcription",
-            "Second chunk transcription",
-            "Third chunk transcription",
+            mock_transcription_1,
+            mock_transcription_2,
+            mock_transcription_3,
         ]
     )
 
-    # Mock the STT model config
-    mock_model_config = MagicMock()
-    mock_model_config.get_openai_client.return_value = mock_client
-    mock_model_config.name = "test-model"
+    # Mock the model names by type
+    async def mock_model_names(*args, **kwargs):
+        return ["azure/gpt-4o-mini-transcribe"]
 
     # Test the service
     from aihub_api.routes.openai.OpenaiService import OpenaiService
 
-    result = await OpenaiService.stt(
-        stt_models=[mock_model_config],
-        file=large_file,
-        model_name="test-model",
-        language="en",
-        prompt=None,
-        response_format="json",
-        temperature=0.0,
-        timestamp_granularities=None,
-    )
+    with patch("aihub_api.routes.openai.OpenaiService.LiteLLMService.openai_aclient_for_user") as mock_litellm_client:
+        mock_litellm_client.return_value = mock_client
+
+        with patch.object(OpenaiService, "_model_names_by_type", side_effect=mock_model_names):
+            result = await OpenaiService.stt(
+                file=large_file,
+                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
+                model_name="azure/gpt-4o-mini-transcribe",
+                language="en",
+                prompt=None,
+                response_format="json",
+                temperature=0.0,
+                timestamp_granularities=None,
+            )
 
     # Verify the result
     assert hasattr(result, "text")

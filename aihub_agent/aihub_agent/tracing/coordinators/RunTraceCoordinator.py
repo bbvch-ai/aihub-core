@@ -7,7 +7,7 @@ from typing import Annotated, Any
 
 from aihub_lib.context.BaseContext import BaseContext
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.infrastructure.phoenix.PhoenixConfig import PhoenixConfig
+from aihub_lib.infrastructure.phoenix.PhoenixSettings import PhoenixSettings
 from aihub_lib.nats.events import BaseEvent, ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
@@ -72,9 +72,10 @@ class RunTraceCoordinator:
     ):
         self.nc = nc
 
-        endpoint = f"{PhoenixConfig().PHOENIX_ENDPOINT}/v1/traces"
-        auth_token = PhoenixConfig().PHOENIX_AUTH_TOKEN
-        headers = {"authorization": f"Bearer {auth_token}"} if auth_token else {}
+        endpoint = f"{PhoenixSettings().ENDPOINT}/v1/traces"
+
+        auth_token = PhoenixSettings().AUTH_TOKEN
+        headers = {"authorization": f"Bearer {auth_token.get_secret_value()}"} if auth_token else {}
         tracer_provider = TracerProvider(resource=Resource({ResourceAttributes.PROJECT_NAME: project_name}))
         set_tracer_provider(tracer_provider)
         tracer_provider.add_span_processor(

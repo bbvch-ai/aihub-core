@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_lib"
-version = "v0.238.1"
+version = "v0.240.1"
 description = ""
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -41,12 +41,10 @@ opentelemetry-sdk = "^1.32.1"
 opentelemetry-semantic-conventions = "^0.53b1"
 opentelemetry-exporter-otlp = "^1.32.1"
 pydantic = "^2.10.3"
-llama-index-embeddings-azure-openai = "^0.3.2"
 llama-index-storage-docstore-mongodb = "^0.3.0"
 pytest-mock = "^3.14.0"
 llama-index-llms-openai-like = "^0.3.4"
 transformers = "^4.48.1"
-llama-index-embeddings-text-embeddings-inference = "^0.3.2"
 fastapi = "^0.115.8"
 azure-mgmt-cognitiveservices = "^13.6.0"
 azure-storage-file-datalake = "^12.18.1"
@@ -54,11 +52,11 @@ adlfs = "^2024.12.0"
 redis = "^5.2.1"
 openai = "^1.76.2"
 cachetools = "^5.5.2"
-llama-index-llms-google-genai = "^0.1.7"
 google-genai = "^1.10.0"
 arize-phoenix = "^10.0.2"
 docling-core = "^2.38.0"
 boto3 = "^1.35.0"
+llama-index-embeddings-openai-like = "^0.1.1"
 
 
 [tool.poetry.group.dev.dependencies]
