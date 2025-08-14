@@ -8,7 +8,7 @@
           class="flex items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900"
         >
           <Icon
-            :name="getModelIcon(model)"
+            :name="model.icon"
             size="1.5em"
           />
         </div>
@@ -60,20 +60,4 @@ const formatTokenLimits = (model: ModelDTO): string => {
   return '- / -'
 }
 
-const getModelIcon = (model: ModelDTO): string => {
-  const mode = model.model_info.mode
-  switch (mode) {
-    case 'chat':
-      return 'mdi:chat'
-    case 'embedding':
-      return 'mdi:vector-triangle'
-    case 'image_generation':
-      return 'mdi:image'
-    case 'audio_transcription':
-    case 'audio_speech':
-      return 'mdi:microphone'
-    default:
-      return 'mdi:robot'
-  }
-}
 </script>

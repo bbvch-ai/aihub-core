@@ -47,3 +47,4 @@ class ModelInfoDTO(BaseModel):
 class ModelDTO(BaseModel):
     model_name: str
     model_info: ModelInfoDTO
+    icon: Optional[str] = None

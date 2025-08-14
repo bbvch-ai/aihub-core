@@ -22,4 +22,19 @@ class ModelService:
         for model in models:
             model.model_info.input_cost_per_token *= 1_000_000
             model.model_info.output_cost_per_token *= 1_000_000
+            _set_model_icon(model)
+
         return models
+
+
+def _set_model_icon(model: ModelDTO):
+    if model.model_info.mode == "chat":
+        model.icon = "mdi:chat"
+    elif model.model_info.mode == "embedding":
+        model.icon = "mdi:vector-triangle"
+    elif model.model_info.mode == "image_generation":
+        model.icon = "mdi:image"
+    elif model.model_info.mode == "audio_transcription" or "audio_speech":
+        model.icon = "mdi:microphone"
+    else:
+        model.icon = "mdi:robot"
