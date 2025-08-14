@@ -1,10 +1,9 @@
-import {type ModelDTO, modelList} from '@core/sdk/client'
-
-import {useQuery} from '@pinia/colada'
-import {minutesToMilliseconds} from 'date-fns'
+import { type ModelDTO, modelList } from '@core/sdk/client'
+import { useQuery } from '@pinia/colada'
+import { minutesToMilliseconds } from 'date-fns'
 
 export const useModelsList = defineQuery(() => {
-  const {data: rawModels, isPending: modelsAreLoading, error} = useQuery<ModelDTO[]>({
+  const { data: rawModels, isPending: modelsAreLoading, error } = useQuery<ModelDTO[]>({
     key: () => ['models', 'models'],
     staleTime: minutesToMilliseconds(5),
     enabled: true,
@@ -25,7 +24,7 @@ export const useModelsList = defineQuery(() => {
       if (!grouped.has(modelType)) {
         grouped.set(modelType, {
           name: modelType,
-          models: []
+          models: [],
         })
       }
       grouped.get(modelType).models.push(model)
