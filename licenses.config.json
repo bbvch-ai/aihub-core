@@ -15,7 +15,9 @@
     "bot",
     "agent",
     "process",
-    "pipeline"
+    "pipeline",
+    "llm_wrapping_agent",
+    "default_rag_pipeline"
   ],
   "license_categories": {
     "restrictive": [
@@ -71,6 +73,7 @@
     "llama-index-vector-stores-azureaisearch": "MIT",
     "llama-index-vector-stores-milvus": "MIT",
     "llama-index-workflows": "MIT",
+    "mdformat": "MIT",
     "milvus-lite": "Apache-2.0",
     "mypy_extensions": "MIT",
     "pillow": "MIT-CMU",

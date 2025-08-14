@@ -56,7 +56,7 @@ ENV PYTHONUNBUFFERED=1 \
     POETRY_VIRTUALENVS_CREATE=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache \
     PYTHONPATH=/app \
-    PATH="/app/.venv/bin:/opt/poetry/bin:$PATH"\
+    PATH="/app/.venv/bin:/opt/poetry/bin:$PATH" \
     AIHUB_API_VERSION=${VERSION}
 
 # Setup users

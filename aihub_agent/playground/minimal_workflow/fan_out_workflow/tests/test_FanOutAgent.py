@@ -30,7 +30,7 @@ def _():
 @when("the start event is sent")
 @async_test
 async def _(agent_runner: AgentTestRunner):
-    async with agent_runner.test_run() as topic:
+    async with agent_runner.test_run(delay_before_stop=10) as topic:
         await agent_runner.send_event_from_topic(
             start_event=StartEvent(),
             topic=topic,
