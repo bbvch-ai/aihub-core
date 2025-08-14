@@ -5,7 +5,7 @@
   >
     <div class="flex flex-col gap-8">
       <Panel class="panel pt-5">
-        <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div class="grid grid-cols-3 gap-6">
           <div class="flex flex-col items-start gap-2">
             <span class="font-semibold">
               {{ t('models.modelDetails.name') }}
@@ -78,7 +78,7 @@
               <h4 class="mb-4 text-base font-semibold">
                 {{ t('models.modelDetails.advancedPricing') }}
               </h4>
-              <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div class="grid grid-cols-3 gap-6">
                 <div
                   v-if="model?.model_info?.cache_creation_input_token_cost"
                   class="flex flex-col items-start gap-2"
@@ -184,7 +184,7 @@
               <h4 class="mb-4 text-base font-semibold">
                 {{ t('models.modelDetails.rateLimits') }}
               </h4>
-              <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div class="grid grid-cols-3 gap-6">
                 <div
                   v-if="model?.model_info?.tpm"
                   class="flex flex-col items-start gap-2"
@@ -307,7 +307,8 @@
               <h4 class="mb-4 text-base font-semibold">
                 {{ t('models.modelDetails.otherDetails') }}
               </h4>
-              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="grid grid-cols-3 gap-6
+">
                 <div
                   v-if="model?.model_info?.output_vector_size"
                   class="flex flex-col items-start gap-2"

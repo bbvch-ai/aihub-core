@@ -1,32 +1,40 @@
 <template>
   <div
-    class="flex cursor-pointer flex-col gap-3 rounded-xl border border-surface-200 p-4 hover:bg-surface-100 dark:border-surface-800 hover:dark:bg-surface-800"
+    class="flex cursor-pointer flex-col gap-3 rounded-xl border border-surface-200 p-5 hover:bg-surface-100 dark:border-surface-800 hover:dark:bg-surface-800"
   >
-    <div class="flex items-center justify-between gap-4">
-      <div class="flex items-center justify-start gap-2">
-        <div
-          class="flex items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900"
-        >
-          <Icon
-            :name="model.icon"
-            size="1.5em"
-          />
-        </div>
+    <div class="flex items-center gap-4">
+      <div
+        class="flex items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900"
+      >
+        <Icon
+          :name="model.icon"
+          size="1.5em"
+        />
+      </div>
+      <div class="flex-1">
         <h3 class="font-semibold opacity-80">
           {{ model.model_name }}
         </h3>
-      </div>
-    </div>
-    <div>
-      <div class="text-sm">
-        {{ t('models.card.costPer1M') }} <span class="font-light">{{
-          `$${model?.model_info?.input_cost_per_token?.toFixed(2) ?? '-'}`
-        }} / {{
-          `$${model?.model_info?.output_cost_per_token?.toFixed(2) ?? '-'}`
-        }}</span>
-      </div>
-      <div class="text-sm">
-        {{ t('models.card.tokens') }} <span class="font-light">{{ formatTokenLimits(model) }}</span>
+        <div class="flex flex-col gap-2 mt-3">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-bold text-surface-600 dark:text-surface-400">
+              {{ t('models.card.costPer1M') }}:
+            </span>
+            <span class="text-sm font-light text-surface-900 dark:text-surface-100">
+              ${{ model?.model_info?.input_cost_per_token?.toFixed(2) ?? '-' }}
+              <span class="mx-1 text-surface-500">•</span>
+              ${{ model?.model_info?.output_cost_per_token?.toFixed(2) ?? '-' }}
+            </span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-bold text-surface-600 dark:text-surface-400">
+              {{ t('models.card.tokens') }}:
+            </span>
+            <span class="text-sm font-light text-surface-900 dark:text-surface-100">
+              {{ formatTokenLimits(model) }}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -41,7 +49,6 @@ defineProps<{
 
 const {t} = useI18n()
 
-// Local utility functions
 const formatNumber = (num: number): string => {
   return new Intl.NumberFormat().format(num)
 }
