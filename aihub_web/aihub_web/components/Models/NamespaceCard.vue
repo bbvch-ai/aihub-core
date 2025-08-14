@@ -33,13 +33,13 @@
 </template>
 
 <script setup lang="ts">
-import {type ModelDTO} from '@core/sdk/client'
+import type { ModelDTO } from '@core/sdk/client'
 
-const props = defineProps<{
+defineProps<{
   model: ModelDTO
 }>()
 
-const {t} = useI18n()
+const { t } = useI18n()
 
 // Local utility functions
 const formatNumber = (num: number): string => {
@@ -52,9 +52,11 @@ const formatTokenLimits = (model: ModelDTO): string => {
 
   if (input && output) {
     return `${formatNumber(input)} / ${formatNumber(output)}`
-  } else if (input) {
+  }
+  else if (input) {
     return `${formatNumber(input)} / -`
-  } else if (output) {
+  }
+  else if (output) {
     return `- / ${formatNumber(output)}`
   }
   return '- / -'
