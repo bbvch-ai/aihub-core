@@ -50,7 +50,7 @@ optional = false
 python-versions = ">=3.13, <3.14"
 groups = ["main"]
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 adlfs = "^2024.12.0"
@@ -100,8 +100,11 @@ redis = "^5.2.1"
 transformers = "^4.48.1"
 
 [package.source]
-type = "directory"
-url = "../aihub_lib"
+type = "git"
+url = "https://github.com/bbvch-ai/aihub-core.git"
+reference = "v0.240.1"
+resolved_reference = "14b98a8c1cde75c632f2bdc3591ee40d18a1e0fe"
+subdirectory = "aihub_lib"
 
 [[package]]
 name = "aiohappyeyeballs"
@@ -8303,4 +8306,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13, <3.14"
-content-hash = "e426631a9548e008d14348e2160157a11784cad0c37ad9024b359079ea9bcc66"
+content-hash = "54de783ab7e904e29e7a92b4171e5a4e78a889fec72b9685009ed5ebe7da62b6"

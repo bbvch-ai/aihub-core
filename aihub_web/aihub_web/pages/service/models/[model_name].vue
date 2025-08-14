@@ -148,8 +148,8 @@
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.outputCostAbove128k') }}</span>
                   <span class="text-lg font-light">${{
-                      model.model_info.output_cost_per_token_above_128k_tokens.toFixed(4)
-                    }}</span>
+                    model.model_info.output_cost_per_token_above_128k_tokens.toFixed(4)
+                  }}</span>
                 </div>
                 <div
                   v-if="model?.model_info?.output_cost_per_token_above_200k_tokens"
@@ -157,8 +157,8 @@
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.outputCostAbove200k') }}</span>
                   <span class="text-lg font-light">${{
-                      model.model_info.output_cost_per_token_above_200k_tokens.toFixed(4)
-                    }}</span>
+                    model.model_info.output_cost_per_token_above_200k_tokens.toFixed(4)
+                  }}</span>
                 </div>
                 <div
                   v-if="model?.model_info?.output_cost_per_image"
@@ -307,8 +307,10 @@
               <h4 class="mb-4 text-base font-semibold">
                 {{ t('models.modelDetails.otherDetails') }}
               </h4>
-              <div class="grid grid-cols-3 gap-6
-">
+              <div
+                class="grid grid-cols-3 gap-6
+"
+              >
                 <div
                   v-if="model?.model_info?.output_vector_size"
                   class="flex flex-col items-start gap-2"
@@ -354,11 +356,11 @@
 </template>
 
 <script setup lang="ts">
-import type {ModelDTO} from '@core/sdk/client'
+import type { ModelDTO } from '@core/sdk/client'
 
 const route = useRoute()
-const {t} = useI18n()
-const {modelTypes} = useModelsList()
+const { t } = useI18n()
+const { modelTypes } = useModelsList()
 
 const props = defineProps<{
   model: ModelDTO

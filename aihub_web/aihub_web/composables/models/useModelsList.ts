@@ -14,6 +14,8 @@ export const useModelsList = defineQuery(() => {
     },
   })
 
+  const { t } = useI18n()
+
   const modelTypes = computed(() => {
     if (!rawModels.value) return []
 
