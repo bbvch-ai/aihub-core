@@ -7,11 +7,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [v0.240.3] - 2025-08-15 - Core Infrastructure Enhancements and Frontend Streamlining
 
-### Removed
-
-- 🗑️ **Removed Node.js Frontend**: The `aihub_web` Node.js frontend and its associated dependencies have been deprecated
-  and removed from license tracking, streamlining the overall architecture.
-
 ### Added
 
 - ⚙️ **New Infrastructure Components**: Introduced `Traefik` as an ingress controller and `OAuth2 Proxy` for
