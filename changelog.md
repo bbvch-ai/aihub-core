@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.240.3] - 2025-08-15 - Streamlined Dependencies and CI/CD Enhancements
+
+### Refactor
+
+- 🧹 **Optimized Python Dependencies:** Significantly reduced the total number of Python packages across the monorepo
+  (from 1454 to 237), leading to leaner builds, faster dependency resolution, and a reduced attack surface.
+- 📄 **Consolidated License Reporting:** Refined the license report generation to align with the optimized package
+  structure, providing a clearer and more concise overview of Python dependencies.
+
+### Changed
+
+- ⚙️ **Enhanced CI/CD Workflows:** Improved the internal GitHub Actions workflows for more reliable version management
+  and a more efficient Poetry installation process during releases, including updates to utilize Python 3.13 and a
+  streamlined Poetry installation.
+- 🔒 **Improved CI/CD Security:** Configured the release workflow to use a private SSH key for checkout, enhancing secure
+  access for repository operations.
+- 🔄 **Flexible Workflow Trigger:** Added a new push trigger for `hotfix/changelog-workflow` branches, allowing for more
+  targeted CI/CD execution for specific maintenance tasks.
+
+### Added
+
+- 🐳 **Expanded External Service Support:** Integrated new external Docker images for `oauth2-proxy`, `traefik`, and an
+  updated `playwright` version (v1.54.1-jammy), alongside new `dagster` image versions (`latest` and `nightly`),
+  enhancing the project's infrastructure and testing capabilities.
+
+---
+
 ## [v0.240.5] - 2025-08-15 - Build System Updates
 
 ### Changed
