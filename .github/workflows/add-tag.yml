@@ -99,7 +99,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git tag ${{ steps.create-tag.outputs.version }}
           git push origin ${{ steps.create-tag.outputs.version }}
-          git pull --rebase origin
+          git pull --rebase origin main
 
   update-and-dependencies:
     name: Update Files & Install Deps
@@ -182,7 +182,7 @@ jobs:
 
       - name: Update lib version tag in poetry.lock
         run: |
-          VERSION="${{ steps.create-tag.outputs.version }}"
+          VERSION="${{ needs.compute-and-initial-tag.outputs.version }}"
           update_version_tag() {
               echo "Update version tag in $1"
               sed -i '/name = "aihub-lib"/,/^version =/ s/version = "[^"]*"/version = "'"$VERSION"'"/' "$1"
@@ -195,7 +195,7 @@ jobs:
 
       - name: Commit version updates
         run: |
-          VERSION="${{ steps.create-tag.outputs.version }}"
+          VERSION="${{ needs.compute-and-initial-tag.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -u
