@@ -2,22 +2,101 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [v0.240.5] - 2025-08-15 - Build System Updates
+
+### Changed
+
+- ⚡️ **Updated CI/CD Workflows:** Configured the tagging workflow to utilize **Python 3.13**, ensuring compatibility
+  with the latest Python environments for release automation.
+
+---
+
+## [v0.240.4] - 2025-08-15 - Streamlined Dependencies and CI/CD Enhancements
+
+### Refactor
+
+- 🧹 **Optimized Python Dependencies:** Significantly reduced the total number of Python packages across the monorepo
+  (from 1454 to 237), leading to leaner builds, faster dependency resolution, and a reduced attack surface.
+- ⚙️ **Enhanced CI/CD Workflows:** Improved the internal GitHub Actions workflows for more reliable version management
+  and a more efficient Poetry installation process during releases.
+- 📄 **Consolidated License Reporting:** Refined the license report generation to align with the optimized package
+  structure, providing a clearer and more concise overview of Python dependencies.
+
+### Added
+
+- 🐳 **Expanded External Service Support:** Integrated new external Docker images for `oauth2-proxy`, `traefik`, and an
+  updated `playwright` version (v1.54.1-jammy), alongside new `dagster` image versions (`latest` and `nightly`),
+  enhancing the project's infrastructure and testing capabilities.
+
+---
+
+## [v0.240.2] - 2025-08-14 - Architectural Evolution: Containerized Deployment and New AI Capabilities
+
+### Added
+
+- 🦾 **Containerized Deployment Architecture**: Introduced comprehensive Docker Compose files
+  (`docker-compose.latest.yml`, `docker-compose.nightly.yml`, `docker-compose-gpu.*.yml`) to enable multi-environment
+  deployments for the entire AI-Hub platform, supporting local development, nightly builds, and production-ready setups.
+- 📄 **Architectural Decision Records**: Added new documentation (`arc42/decisions`) detailing the rationale and design
+  of the new containerized deployment and microservice build pipeline architectures.
+- ⚙️ **Modular Dockerfiles for Services**: Introduced dedicated Dockerfiles for `api`, `bot`, `dagster`, `web`,
+  `llm_wrapping_agent`, and `default_rag_pipeline` to enable component-specific image builds and deployments.
+- ✨ **`LLMWrappingAgent`**: A new generic agent capable of wrapping and exposing Large Language Models as a service
+  within workflows, simplifying LLM integration.
+- ⚡️ **`DefaultRAGPipeline`**: A new default Retrieval-Augmented Generation (RAG) pipeline, providing out-of-the-box
+  capabilities for knowledge retrieval and content generation.
+- 🔑 **Milvus Configuration Settings**: Introduced a new `MilvusSettings` class to standardize Milvus database connection
+  URL and embedding dimension configuration across the platform.
+- 📦 **Multi-Environment Configuration Files**: Added environment-specific configuration files for Dagster, LiteLLM,
+  Milvus, and NATS, allowing tailored setups for different deployment environments.
+
+### Changed
+
+- 🔄 **CI/CD Release Workflow Redesign**: Reworked the GitHub Actions release pipeline (`add-tag.yml`) to support a more
+  granular, event-driven build and release process for individual microservices.
+- 🚀 **Docker Image Build Action Enhancements**: Updated the shared `build_image` action to support secondary tags (e.g.,
+  `nightly`) and passing version as a build argument, improving flexibility and versioning.
+- 📈 **Agent Test Stability**: Increased `delay_before_stop` in agent test runs to enhance stability and reliability
+  during asynchronous test execution.
+- 🔒 **Web UI Container Security**: Hardened the Web UI Docker image by introducing a dedicated non-root user for
+  improved security posture.
+- 🧹 **Markdown Formatting Enforcement**: Integrated `mdformat` into PR readiness, changelog, and license check steps to
+  ensure consistent Markdown formatting across the repository.
+- 🔗 **Milvus Integration Update**: Updated API and pipeline configurations to leverage the new standardized
+  `MilvusSettings`, ensuring consistent and configurable Milvus connectivity.
+
+### Fixed
+
+- 🐛 **API Dockerfile Path Fix**: Corrected a minor syntax error in the API Dockerfile's `PATH` environment variable,
+  ensuring proper script execution.
+
+### Refactor
+
+- 📐 **Core Application Restructuring**: Restructured the main application entry points for `aihub_api` and `aihub_bot`
+  into `app/main.py` files, improving modularity and maintainability.
+
+---
 
 ## [v0.240.1] - 2025-08-13 - Enhanced Documentation Formatting and Tooling
 
 ### Added
-- ✨ **Introduced Standardized Markdown Formatting**: Added `mdformat` and various plugins to enforce consistent and high-quality markdown formatting across all documentation files.
-- ⚙️ **Custom VuePress Markdown Support**: Developed and integrated a new `mdformat-vuepress` plugin to ensure proper formatting and preservation of custom VuePress `:::` block syntax in documentation.
-- 🚀 **New `format-md` Command**: Introduced a `make format-md` command to easily apply the new markdown formatting standards across the project.
+
+- ✨ **Introduced Standardized Markdown Formatting**: Added `mdformat` and various plugins to enforce consistent and
+  high-quality markdown formatting across all documentation files.
+- ⚙️ **Custom VuePress Markdown Support**: Developed and integrated a new `mdformat-vuepress` plugin to ensure proper
+  formatting and preservation of custom VuePress `:::` block syntax in documentation.
+- 🚀 **New `format-md` Command**: Introduced a `make format-md` command to easily apply the new markdown formatting
+  standards across the project.
 
 ### Refactor
-- 🧹 **Unified Documentation Styling**: Applied a comprehensive set of markdown formatting rules across all documentation files, improving readability and consistency.
+
+- 🧹 **Unified Documentation Styling**: Applied a comprehensive set of markdown formatting rules across all documentation
+  files, improving readability and consistency.
 
 ---
-
-
 
 ## [v0.240.0] - 2025-08-12 - Streamlined Setup with Superuser Authentication and Enhanced Security
 
