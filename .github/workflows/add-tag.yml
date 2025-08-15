@@ -99,7 +99,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git tag ${{ steps.create-tag.outputs.version }}
           git push origin ${{ steps.create-tag.outputs.version }}
-          git pull --rebase origin main
+          git pull --rebase origin
 
   update-and-dependencies:
     name: Update Files & Install Deps
