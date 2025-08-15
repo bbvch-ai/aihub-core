@@ -12,11 +12,11 @@ from aihub_lib.routes.Controller import Controller
 
 class ModelController(Controller):
     """
-    A controller managing endpoints related to LiteLLM, in order to manage and interact with LiteLLM functionalities.
+    A controller managing endpoints related to available models, in order to interact with them.
 
-    ### Why AgentController?
-    The AgentController exposes routes for:
-    - Listing all available LiteLLM models.
+    ### Why ModelController?
+    The ModelController exposes routes for:
+    - Listing all available models.
     """
 
     name = LocaleString(en="Models")
@@ -36,7 +36,7 @@ class ModelController(Controller):
             user: Annotated[UserIdentity, Depends(self.auth)],
         ) -> dict:
             """
-            Get LiteLLM service status.
+            Get model service status.
             """
             return {"status": "ok", "service": "litellm"}
 
@@ -48,7 +48,7 @@ class ModelController(Controller):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> list[ModelDTO]:
             """
-            Retrieve a list of all models in LiteLLM.
+            Retrieve a list of all available models.
             """
             data = await ModelService.get_model_list(user)
             return data
