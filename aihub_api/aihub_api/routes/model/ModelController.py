@@ -1,17 +1,13 @@
 from typing import Annotated
 
+from fastapi import Depends, HTTPException, Security
+
+from aihub_api.routes.model.ModelService import ModelService
+from aihub_api.routes.model.dto.ModelDTO import ModelDTO
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, HTTPException, Security
-from nats.aio.client import Client as NATS
-
-from aihub_api.i18n.dependencies.use_locale import use_locale
-from aihub_api.routes.model.dto.ModelDTO import ModelDTO
-from aihub_api.routes.model.ModelService import ModelService
 
 
 class ModelController(Controller):
@@ -49,9 +45,7 @@ class ModelController(Controller):
     def model_list(self, route: str = "/model_list") -> "ModelController":
         @self.router.get(route, tags=self.tags)
         async def model_list(
-            nc: Annotated[NATS, Depends(use_nats)],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
-            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> list[ModelDTO]:
             """
             Retrieve a list of all models in LiteLLM.
