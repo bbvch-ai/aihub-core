@@ -85,8 +85,8 @@
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.cacheCreationCost') }}</span>
                   <span class="text-lg font-light">${{
-                      model.model_info.cache_creation_input_token_cost.toFixed(4)
-                    }}</span>
+                    model.model_info.cache_creation_input_token_cost.toFixed(4)
+                  }}</span>
                 </div>
                 <div
                   v-if="model?.model_info?.cache_read_input_token_cost"
@@ -101,8 +101,8 @@
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.inputCostAbove128k') }}</span>
                   <span class="text-lg font-light">${{
-                      model.model_info.input_cost_per_token_above_128k_tokens.toFixed(4)
-                    }}</span>
+                    model.model_info.input_cost_per_token_above_128k_tokens.toFixed(4)
+                  }}</span>
                 </div>
                 <div
                   v-if="model?.model_info?.input_cost_per_token_above_200k_tokens"
@@ -110,8 +110,8 @@
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.inputCostAbove200k') }}</span>
                   <span class="text-lg font-light">${{
-                      model.model_info.input_cost_per_token_above_200k_tokens.toFixed(4)
-                    }}</span>
+                    model.model_info.input_cost_per_token_above_200k_tokens.toFixed(4)
+                  }}</span>
                 </div>
                 <div
                   v-if="model?.model_info?.input_cost_per_audio_token"
@@ -126,8 +126,8 @@
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.inputBatchCost') }}</span>
                   <span class="text-lg font-light">${{
-                      model.model_info.input_cost_per_token_batches.toFixed(4)
-                    }}</span>
+                    model.model_info.input_cost_per_token_batches.toFixed(4)
+                  }}</span>
                 </div>
                 <div
                   v-if="model?.model_info?.output_cost_per_token_batches"
@@ -135,8 +135,8 @@
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.outputBatchCost') }}</span>
                   <span class="text-lg font-light">${{
-                      model.model_info.output_cost_per_token_batches.toFixed(4)
-                    }}</span>
+                    model.model_info.output_cost_per_token_batches.toFixed(4)
+                  }}</span>
                 </div>
                 <div
                   v-if="model?.model_info?.output_cost_per_audio_token"
@@ -151,8 +151,8 @@
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.reasoningTokenCost') }}</span>
                   <span class="text-lg font-light">${{
-                      model.model_info.output_cost_per_reasoning_token.toFixed(4)
-                    }}</span>
+                    model.model_info.output_cost_per_reasoning_token.toFixed(4)
+                  }}</span>
                 </div>
                 <div
                   v-if="model?.model_info?.output_cost_per_token_above_128k_tokens"
@@ -160,8 +160,8 @@
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.outputCostAbove128k') }}</span>
                   <span class="text-lg font-light">${{
-                      model.model_info.output_cost_per_token_above_128k_tokens.toFixed(4)
-                    }}</span>
+                    model.model_info.output_cost_per_token_above_128k_tokens.toFixed(4)
+                  }}</span>
                 </div>
                 <div
                   v-if="model?.model_info?.output_cost_per_token_above_200k_tokens"
@@ -169,8 +169,8 @@
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.outputCostAbove200k') }}</span>
                   <span class="text-lg font-light">${{
-                      model.model_info.output_cost_per_token_above_200k_tokens.toFixed(4)
-                    }}</span>
+                    model.model_info.output_cost_per_token_above_200k_tokens.toFixed(4)
+                  }}</span>
                 </div>
                 <div
                   v-if="model?.model_info?.output_cost_per_image"
@@ -185,8 +185,8 @@
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.searchContextCost') }}</span>
                   <span class="text-lg font-light">${{
-                      model.model_info.search_context_cost_per_query.toFixed(4)
-                    }}</span>
+                    model.model_info.search_context_cost_per_query.toFixed(4)
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -370,11 +370,11 @@
 </template>
 
 <script setup lang="ts">
-import type {ModelDTO} from '@core/sdk/client'
+import type { ModelDTO } from '@core/sdk/client'
 
 const route = useRoute()
-const {t} = useI18n()
-const {modelTypes} = useModelsList()
+const { t } = useI18n()
+const { modelTypes } = useModelsList()
 
 const props = defineProps<{
   model: ModelDTO
@@ -396,7 +396,6 @@ const model = computed(() => {
 
   return props.model
 })
-
 
 const hasAdvancedPricing = computed(() => {
   if (!model.value) return false
