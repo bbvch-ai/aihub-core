@@ -5,12 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.240.4] - 2025-08-15 - Enhanced CI/CD Actions with Python Version Flexibility
+
+### Changed
+
+- ⚡️ **Configurable Python Version for Backend Actions**: The `lint_backend` and `test_backend` GitHub Actions now
+  support a new `python_version` input. This allows users to specify the Python version used for linting and testing
+  within their workflows, providing greater flexibility while maintaining `3.13` as the default.
+
+---
+
 ## [v0.240.3] - 2025-08-15 - Core Infrastructure Enhancements and Frontend Streamlining
-
-### Removed
-
-- 🗑️ **Removed Node.js Frontend**: The `aihub_web` Node.js frontend and its associated dependencies have been deprecated
-  and removed from license tracking, streamlining the overall architecture.
 
 ### Added
 

@@ -19,6 +19,10 @@ inputs:
     description: 'Install ffmpeg'
     required: false
     default: 'false'
+  python_version:
+    description: 'Python version to install'
+    required: false
+    default: '3.13'
 
 runs:
   using: "composite"
@@ -27,10 +31,10 @@ runs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Set up Python 3.13
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.13'
+        python-version: ${{ inputs.python_version }}
 
     # Cache Poetry installation
     - name: Cache Poetry installation
