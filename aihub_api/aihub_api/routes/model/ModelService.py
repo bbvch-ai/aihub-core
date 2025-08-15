@@ -1,8 +1,8 @@
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
 from httpx import Client
 
 from aihub_api.routes.model.dto.ModelDTO import ModelDTO, ModelInfoDTO
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
 
 
 def _convert_costs_to_microunits(model_info: ModelInfoDTO) -> None:
@@ -38,7 +38,7 @@ def _set_model_icon(model: ModelDTO):
         model.icon = "mdi:vector-triangle"
     elif model.model_info.mode == "image_generation":
         model.icon = "mdi:image"
-    elif model.model_info.mode == "audio_transcription" or "audio_speech":
+    elif model.model_info.mode in ("audio_transcription", "audio_speech"):
         model.icon = "mdi:microphone"
     else:
         model.icon = "mdi:robot"

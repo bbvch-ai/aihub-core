@@ -11,7 +11,7 @@
               {{ t('models.modelDetails.name') }}
             </span>
             <span class="text-lg font-light">
-              {{ selectedModel?.model_name || t('models.modelDetails.notSpecified') }}
+              {{ model?.model_name || t('models.modelDetails.notSpecified') }}
             </span>
           </div>
           <div class="flex flex-col items-start gap-2">
@@ -19,7 +19,7 @@
               {{ t('models.modelDetails.mode') }}
             </span>
             <span class="text-lg font-light capitalize">
-              {{ selectedModel?.model_info?.mode || t('models.modelDetails.notSpecified') }}
+              {{ model?.model_info?.mode || t('models.modelDetails.notSpecified') }}
             </span>
           </div>
           <div class="flex flex-col items-start gap-2">
@@ -84,7 +84,9 @@
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.cacheCreationCost') }}</span>
-                  <span class="text-lg font-light">${{ model.model_info.cache_creation_input_token_cost.toFixed(4) }}</span>
+                  <span class="text-lg font-light">${{
+                      model.model_info.cache_creation_input_token_cost.toFixed(4)
+                    }}</span>
                 </div>
                 <div
                   v-if="model?.model_info?.cache_read_input_token_cost"
@@ -98,14 +100,18 @@
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.inputCostAbove128k') }}</span>
-                  <span class="text-lg font-light">${{ model.model_info.input_cost_per_token_above_128k_tokens.toFixed(4) }}</span>
+                  <span class="text-lg font-light">${{
+                      model.model_info.input_cost_per_token_above_128k_tokens.toFixed(4)
+                    }}</span>
                 </div>
                 <div
                   v-if="model?.model_info?.input_cost_per_token_above_200k_tokens"
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.inputCostAbove200k') }}</span>
-                  <span class="text-lg font-light">${{ model.model_info.input_cost_per_token_above_200k_tokens.toFixed(4) }}</span>
+                  <span class="text-lg font-light">${{
+                      model.model_info.input_cost_per_token_above_200k_tokens.toFixed(4)
+                    }}</span>
                 </div>
                 <div
                   v-if="model?.model_info?.input_cost_per_audio_token"
@@ -119,14 +125,18 @@
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.inputBatchCost') }}</span>
-                  <span class="text-lg font-light">${{ model.model_info.input_cost_per_token_batches.toFixed(4) }}</span>
+                  <span class="text-lg font-light">${{
+                      model.model_info.input_cost_per_token_batches.toFixed(4)
+                    }}</span>
                 </div>
                 <div
                   v-if="model?.model_info?.output_cost_per_token_batches"
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.outputBatchCost') }}</span>
-                  <span class="text-lg font-light">${{ model.model_info.output_cost_per_token_batches.toFixed(4) }}</span>
+                  <span class="text-lg font-light">${{
+                      model.model_info.output_cost_per_token_batches.toFixed(4)
+                    }}</span>
                 </div>
                 <div
                   v-if="model?.model_info?.output_cost_per_audio_token"
@@ -140,7 +150,9 @@
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.reasoningTokenCost') }}</span>
-                  <span class="text-lg font-light">${{ model.model_info.output_cost_per_reasoning_token.toFixed(4) }}</span>
+                  <span class="text-lg font-light">${{
+                      model.model_info.output_cost_per_reasoning_token.toFixed(4)
+                    }}</span>
                 </div>
                 <div
                   v-if="model?.model_info?.output_cost_per_token_above_128k_tokens"
@@ -148,8 +160,8 @@
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.outputCostAbove128k') }}</span>
                   <span class="text-lg font-light">${{
-                    model.model_info.output_cost_per_token_above_128k_tokens.toFixed(4)
-                  }}</span>
+                      model.model_info.output_cost_per_token_above_128k_tokens.toFixed(4)
+                    }}</span>
                 </div>
                 <div
                   v-if="model?.model_info?.output_cost_per_token_above_200k_tokens"
@@ -157,8 +169,8 @@
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.outputCostAbove200k') }}</span>
                   <span class="text-lg font-light">${{
-                    model.model_info.output_cost_per_token_above_200k_tokens.toFixed(4)
-                  }}</span>
+                      model.model_info.output_cost_per_token_above_200k_tokens.toFixed(4)
+                    }}</span>
                 </div>
                 <div
                   v-if="model?.model_info?.output_cost_per_image"
@@ -172,7 +184,9 @@
                   class="flex flex-col items-start gap-2"
                 >
                   <span class="font-semibold">{{ t('models.modelDetails.searchContextCost') }}</span>
-                  <span class="text-lg font-light">${{ model.model_info.search_context_cost_per_query.toFixed(4) }}</span>
+                  <span class="text-lg font-light">${{
+                      model.model_info.search_context_cost_per_query.toFixed(4)
+                    }}</span>
                 </div>
               </div>
             </div>
@@ -356,11 +370,11 @@
 </template>
 
 <script setup lang="ts">
-import type { ModelDTO } from '@core/sdk/client'
+import type {ModelDTO} from '@core/sdk/client'
 
 const route = useRoute()
-const { t } = useI18n()
-const { modelTypes } = useModelsList()
+const {t} = useI18n()
+const {modelTypes} = useModelsList()
 
 const props = defineProps<{
   model: ModelDTO
@@ -370,20 +384,19 @@ const formatNumber = (num: number): string => {
   return new Intl.NumberFormat().format(num)
 }
 
-const selectedModel = computed(() => {
-  if (!modelTypes.value) return null
+const model = computed(() => {
+  if (!modelTypes.value) return props.model
 
   const modelName = decodeURIComponent(route.params?.model_name as string)
 
   for (const modelType of modelTypes.value) {
-    const model = modelType.models.find((m: ModelDTO) => m?.model_name === modelName)
-    if (model) return model
+    const foundModel = modelType.models.find((m: ModelDTO) => m?.model_name === modelName)
+    if (foundModel) return foundModel
   }
 
-  return null
+  return props.model
 })
 
-const model = computed(() => selectedModel.value || props.model)
 
 const hasAdvancedPricing = computed(() => {
   if (!model.value) return false
