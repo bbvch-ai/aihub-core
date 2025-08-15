@@ -20,7 +20,7 @@ mongoengine = "^0.29.1"
 azure-identity = "^1.19.0"
 azure-mgmt-cosmosdb = "^9.7.0"
 azure-mgmt-resource = "^23.2.0"
-uvicorn = {extras = ["standard"], version = "^0.34.0"}
+uvicorn = { extras = ["standard"], version = "^0.34.0" }
 httpx = "^0.28.1"
 cryptography = "^44.0.0"
 pyjwt = "^2.10.1"
@@ -33,7 +33,6 @@ arize-phoenix = "^10.0.0"
 # since the standard library's audioop module was removed in Python 3.13.
 audioop-lts = "^0.2.1"
 fastmcp = "^2.11.2"
-notebook = "^7.4.5"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"

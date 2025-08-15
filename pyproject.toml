@@ -10,7 +10,6 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.13, <3.14"
-notebook = "^7.4.5"
 
 [tool.poetry.group.dev.dependencies]
 tomlkit = "^0.13.2"
@@ -21,7 +20,7 @@ mdformat-gfm = "^0.4.1"
 mdformat-frontmatter = "^2.0.8"
 mdformat-simple-breaks = "^0.0.1"
 mdformat-pyproject = "^0.0.2"
-mdformat-vuepress = {path = "aihub_doc/mdformat-vuepress", develop = true}
+mdformat-vuepress = { path = "aihub_doc/mdformat-vuepress", develop = true }
 mdformat-myst = "^0.2.1"
 
 [build-system]
