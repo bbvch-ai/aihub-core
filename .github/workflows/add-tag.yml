@@ -4,8 +4,6 @@ on:
   pull_request:
     types: [ closed ]
     branches: [ main ]
-  push:
-    branches: [hotfix/changelog-workflow]
 
 permissions:
   contents: write
@@ -371,4 +369,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ needs.compute-and-initial-tag.outputs.version }}
         run: |
-          echo "Dispatching release-ready event with version $VERSION"
+          gh api repos/${{ github.repository }}/dispatches \
+            -F event_type=release-ready \
+            -F client_payload[release_version]=$VERSION
