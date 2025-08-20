@@ -36,16 +36,13 @@ poetry shell
 
 ```bash
 # Run all migration tests (requires MongoDB)
-pytest aihub_lib/persistence/migrations/tests/ -v
+pytest aihub_lib/persistence/migrations/ -v
 
 # Run tests for specific migrator
-pytest aihub_lib/persistence/migrations/tests/test_DocumentV2Migrator.py -v
+pytest aihub_lib/persistence/migrations/v2/test_DocumentV2Migrator.py -v
 
 # Run performance tests
 pytest aihub_lib/persistence/migrations/tests/ -m performance -v
-
-# Run with verbose output and logging
-pytest aihub_lib/persistence/migrations/tests/ -v -s
 ```
 
 ### Test Configuration Options
@@ -114,9 +111,9 @@ class TestDocumentV2Migrator(BaseMigrationTest):
 ### 1. Create Migration Test Class
 
 ```python
-# aihub_lib/persistence/migrations/tests/test_DocumentV3Migrator.py
-from tests.persistence.migrations.base_migration_test import BaseMigrationTest
-from aihub_lib.persistence.migrations.DocumentV3Migrator import DocumentV3Migrator
+# aihub_lib/persistence/migrations/v3/test_DocumentV3Migrator.py
+from aihub_lib.persistence.migrations.tests.base_migration_test import BaseMigrationTest
+from aihub_lib.persistence.migrations.v3.DocumentV3Migrator import DocumentV3Migrator
 
 class TestDocumentV3Migrator(BaseMigrationTest):
     migration_class = DocumentV3Migrator
@@ -187,13 +184,13 @@ Before running migrations in production, ensure all tests pass:
 
 ```bash
 # Complete test suite
-pytest aihub_lib/persistence/migrations/tests/ -v
+pytest aihub_lib/persistence/migrations/ -v
 
 # Performance validation
-pytest aihub_lib/persistence/migrations/tests/ -m performance
+pytest aihub_lib/persistence/migrations/ -m performance
 
 # Specific migrator validation
-pytest aihub_lib/persistence/migrations/tests/test_DocumentV2Migrator.py
+pytest aihub_lib/persistence/migrations/v2/test_DocumentV2Migrator.py
 ```
 
 ### Key Validations:
@@ -215,7 +212,7 @@ pytest aihub_lib/persistence/migrations/tests/test_DocumentV2Migrator.py
 ### Performance Test Results:
 ```bash
 # View performance test results
-pytest aihub_lib/persistence/migrations/tests/ -m performance -v
+pytest aihub_lib/persistence/migrations/ -m performance -v
 ```
 
 ## 🤝 Contributing New Migration Tests

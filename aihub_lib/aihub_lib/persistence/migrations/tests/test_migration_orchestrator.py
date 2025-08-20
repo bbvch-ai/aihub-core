@@ -194,10 +194,10 @@ class TestRunMigrations:
     @pytest.mark.asyncio
     async def test_run_migrations_with_defaults(self):
         """Test run_migrations with default parameters."""
-        mock_client = Mock()
+        mock_client = AsyncMock()
         mock_client.__getitem__ = Mock(return_value=Mock())
 
-        with patch("aihub_lib.persistence.migrations.migrate.MongoClient", return_value=mock_client):
+        with patch("aihub_lib.persistence.migrations.migrate.AsyncMongoClient", return_value=mock_client):
             with patch.object(MigrationOrchestrator, "migrate_to") as mock_migrate_to:
                 await run_migrations("mongodb://test", "test_db")
                 mock_migrate_to.assert_called_once_with(None)
@@ -205,10 +205,10 @@ class TestRunMigrations:
     @pytest.mark.asyncio
     async def test_run_migrations_with_target_version(self):
         """Test run_migrations with specific target version."""
-        mock_client = Mock()
+        mock_client = AsyncMock()
         mock_client.__getitem__ = Mock(return_value=Mock())
 
-        with patch("aihub_lib.persistence.migrations.migrate.MongoClient", return_value=mock_client):
+        with patch("aihub_lib.persistence.migrations.migrate.AsyncMongoClient", return_value=mock_client):
             with patch.object(MigrationOrchestrator, "migrate_to") as mock_migrate_to:
                 await run_migrations("mongodb://test", "test_db", target_version=1)
                 mock_migrate_to.assert_called_once_with(1)
@@ -216,25 +216,27 @@ class TestRunMigrations:
     @pytest.mark.asyncio
     async def test_run_migrations_closes_client(self):
         """Test that MongoDB client is properly closed after migration."""
-        mock_client = Mock()
+        mock_client = AsyncMock()
         mock_client.__getitem__ = Mock(return_value=Mock())
 
-        with patch("aihub_lib.persistence.migrations.migrate.MongoClient", return_value=mock_client):
+        with patch("aihub_lib.persistence.migrations.migrate.AsyncMongoClient", return_value=mock_client):
             with patch.object(MigrationOrchestrator, "migrate_to"):
                 await run_migrations("mongodb://test", "test_db")
-                mock_client.close.assert_called_once()
+                # With async context manager, __aexit__ is called automatically
+                mock_client.__aexit__.assert_called()
 
     @pytest.mark.asyncio
     async def test_run_migrations_closes_client_on_exception(self):
         """Test that MongoDB client is closed even when migration fails."""
-        mock_client = Mock()
+        mock_client = AsyncMock()
         mock_client.__getitem__ = Mock(return_value=Mock())
 
-        with patch("aihub_lib.persistence.migrations.migrate.MongoClient", return_value=mock_client):
+        with patch("aihub_lib.persistence.migrations.migrate.AsyncMongoClient", return_value=mock_client):
             with patch.object(MigrationOrchestrator, "migrate_to", side_effect=Exception("Migration failed")):
                 with pytest.raises(Exception, match="Migration failed"):
                     await run_migrations("mongodb://test", "test_db")
-                mock_client.close.assert_called_once()
+                # With async context manager, __aexit__ is called even on exception
+                mock_client.__aexit__.assert_called()
 
 
 class TestMigrationRegistration:

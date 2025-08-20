@@ -82,7 +82,7 @@ Create `v3/DocumentV3Migrator.py`:
 ```python
 from typing import Any
 
-from pymongo.database import Database
+from pymongo.asynchronous.database import AsyncDatabase
 
 from aihub_lib.persistence.migrations.base import DocumentMigration
 
@@ -93,13 +93,29 @@ class DocumentV3Migrator(DocumentMigration):
     def get_affected_collections(self) -> list[str]:
         return ["agent_events", "process_events"]
     
-    async def up(self, db: Database) -> dict[str, Any]:
+    async def up(self, db: AsyncDatabase) -> dict[str, Any]:
         # Migration logic here
-        pass
+        # Example: Add created_at index to agent_events
+        await db["agent_events"].create_index("created_at")
+        
+        # Update documents using aggregation pipeline for atomicity
+        result = await db["agent_events"].update_many(
+            {"schema_version": {"$ne": 3}},
+            [{"$set": {"schema_version": 3}}]
+        )
+        
+        return {"updated_documents": result.modified_count}
     
-    async def down(self, db: Database) -> dict[str, Any]:
-        # Rollback logic here
-        pass
+    async def down(self, db: AsyncDatabase) -> dict[str, Any]:
+        # Rollback logic here - reverse all changes made in up()
+        await db["agent_events"].drop_index("created_at")
+        
+        result = await db["agent_events"].update_many(
+            {"schema_version": 3},
+            [{"$set": {"schema_version": 2}}]
+        )
+        
+        return {"reverted_documents": result.modified_count}
 ```
 
 ### Step 2: Create Comprehensive Tests (MANDATORY)
@@ -183,12 +199,12 @@ Before submitting a migration PR, ensure:
 Migrations run automatically on API startup via `run_migrations()`:
 
 ```python
-# In API startup
+# In API startup (aihub_api/runners/lifetime/lifetime_manager.py)
 from aihub_lib.persistence.migrations.migrate import run_migrations
 
 await run_migrations(
-    mongodb_url="mongodb://...", 
-    database_name="aihub"
+    connection_string="mongodb://admin:admin@localhost:27017/aihub", 
+    db_name="aihub"
 )
 ```
 

@@ -4,8 +4,8 @@ Central migration orchestrator for database schema updates.
 
 import logging
 
-from pymongo import MongoClient
-from pymongo.database import Database
+from pymongo import AsyncMongoClient
+from pymongo.asynchronous.database import AsyncDatabase
 
 from aihub_lib.persistence.base.schema_version import CURRENT_SCHEMA_VERSION
 from aihub_lib.persistence.migrations.base import DocumentMigration
@@ -22,7 +22,7 @@ MIGRATIONS: list[type[DocumentMigration]] = [
 class MigrationOrchestrator:
     """Orchestrates database migrations."""
 
-    def __init__(self, db: Database):
+    def __init__(self, db: AsyncDatabase):
         self.db = db
         self.migrations = sorted(MIGRATIONS, key=lambda m: m.version)
 
@@ -108,11 +108,7 @@ async def run_migrations(connection_string: str, db_name: str, target_version: i
     Connects to MongoDB and runs all pending migrations up to target_version.
     If target_version is None, migrates to the latest version.
     """
-    client = MongoClient(connection_string)
-    db = client[db_name]
-
-    try:
+    async with AsyncMongoClient(connection_string) as client:
+        db = client[db_name]
         orchestrator = MigrationOrchestrator(db)
         await orchestrator.migrate_to(target_version)
-    finally:
-        client.close()

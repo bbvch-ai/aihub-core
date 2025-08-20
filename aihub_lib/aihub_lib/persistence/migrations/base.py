@@ -6,7 +6,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, ClassVar
 
-from pymongo.database import Database
+from pymongo.asynchronous.database import AsyncDatabase
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class DocumentMigration(ABC):
     description: ClassVar[str]
 
     @abstractmethod
-    async def up(self, db: Database) -> dict[str, Any]:
+    async def up(self, db: AsyncDatabase) -> dict[str, Any]:
         """
         Migrate from version-1 to version.
 
@@ -32,7 +32,7 @@ class DocumentMigration(ABC):
         pass
 
     @abstractmethod
-    async def down(self, db: Database) -> dict[str, Any]:
+    async def down(self, db: AsyncDatabase) -> dict[str, Any]:
         """
         Rollback from version to version-1.
 
@@ -45,7 +45,7 @@ class DocumentMigration(ABC):
         """Return list of collection names this migration affects."""
         pass
 
-    async def validate_prerequisites(self, db: Database) -> bool:
+    async def validate_prerequisites(self, db: AsyncDatabase) -> bool:
         """
         Validate that the database is in the correct state for this migration.
 
