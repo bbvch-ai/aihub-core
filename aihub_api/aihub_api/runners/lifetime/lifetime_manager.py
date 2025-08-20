@@ -11,6 +11,7 @@ from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
+from aihub_lib.persistence.migrations.migrate import run_migrations
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from nats.aio.client import Client as NATS
@@ -71,12 +72,19 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     nc = NATS()
 
     # Connect to MongoDB via Cosmos
+    connection_string = MongoSettings().CONNECTION_STRING.get_secret_value()
+    db_name = AIHubSettings().MONGO_MAIN_DB_NAME
     connect(
-        db=AIHubSettings().MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
+        db=db_name,
+        host=connection_string,
     )
 
     try:
+        # Database migrations must run before any service starts
+        logger.info("Running database migrations...")
+        await run_migrations(connection_string, db_name)
+        logger.info("Database migrations completed")
+
         # Connect to NATS and setup JetStream
         await nc.connect(servers=[NatsSettings().ENDPOINT])
         js = nc.jetstream()

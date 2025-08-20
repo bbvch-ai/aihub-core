@@ -136,7 +136,7 @@ Always activate the Poetry environment before working. All subsequent commands m
 
 ```bash
 # Start required services from the project root
-docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml -f docker-compose-webui.yml up -d
+docker compose -f docker-compose.dev.yml up -d
 ```
 
 ```bash

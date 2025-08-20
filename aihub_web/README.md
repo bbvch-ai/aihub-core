@@ -447,7 +447,7 @@ Before you begin, ensure you have completed the infrastructure setup from the ro
 
 ```bash
 # Start required services from the project root
-docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml -f docker-compose-webui.yml up -d
+docker compose -f docker-compose.dev.yml up -d
 ```
 
 **Critical: Navigate to the aihub_web directory and install dependencies.** The frontend uses pnpm as the package

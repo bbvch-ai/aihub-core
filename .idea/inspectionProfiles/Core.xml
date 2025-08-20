@@ -58,22 +58,25 @@
     <inspection_tool class="PyComparisonWithNoneInspection" enabled="true" level="WEAK WARNING" enabled_by_default="false">
       <scope name="ExcludeJambo" level="WEAK WARNING" enabled="true" />
     </inspection_tool>
-    <inspection_tool class="PyCompatibilityInspection" enabled="false" level="WARNING" enabled_by_default="false">
+    <inspection_tool class="PyCompatibilityInspection" enabled="true" level="WARNING" enabled_by_default="true">
       <scope name="ExcludeJambo" level="WARNING" enabled="false">
         <option name="ourVersions">
           <value>
-            <list size="2">
-              <item index="0" class="java.lang.String" itemvalue="2.7" />
-              <item index="1" class="java.lang.String" itemvalue="3.14" />
+            <list size="1">
+              <item index="0" class="java.lang.String" itemvalue="3.13" />
             </list>
           </value>
         </option>
       </scope>
       <option name="ourVersions">
         <value>
-          <list size="2">
-            <item index="0" class="java.lang.String" itemvalue="2.7" />
-            <item index="1" class="java.lang.String" itemvalue="3.14" />
+          <list size="4">
+            <item index="0" class="java.lang.String" itemvalue="3.14" />
+            <item index="1" class="java.lang.String" itemvalue="3.13" />
+            <item index="1" class="java.lang.String" itemvalue="3.12" />
+            <item index="1" class="java.lang.String" itemvalue="3.11" />
+            <item index="2" class="java.lang.String" itemvalue="3.10" />
+            <item index="3" class="java.lang.String" itemvalue="3.9" />
           </list>
         </value>
       </option>

@@ -3,20 +3,32 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from bson import ObjectId
-from mongoengine import DictField, Document, ListField, StringField
+from mongoengine import DictField, IntField, ListField, StringField
+
+from aihub_lib.persistence.base.versioned_document import VersionedDocument
 
 if TYPE_CHECKING:
     from aihub_lib.nats.events import BaseEvent
     from aihub_lib.nats.topics import ProcessInstanceTopic
 
 
-class PersistedProcessEventEntity(Document):
+class PersistedProcessEventEntity(VersionedDocument):
+    """
+    Persists process events to MongoDB for retrieval and analysis.
+
+    This entity stores all events emitted during process execution,
+    enabling workflow tracking, debugging, and process orchestration.
+    """
+
     meta = {
         "collection": "process_events",
-        "strict": False,
+        "strict": True,
         "indexes": [
             {"fields": ["process_class", "process_id", "process_walkthrough_id", "event_parents"]},
             {"fields": ["event_data.forms._event_name"]},
+            {"fields": ["created_at"]},
+            {"fields": ["process_walkthrough_id", "created_at"]},
+            {"fields": ["schema_version"]},
         ],
     }
     process_class = StringField(required=True)
@@ -27,6 +39,7 @@ class PersistedProcessEventEntity(Document):
     event_name = StringField(required=True)
     event_data = DictField(required=True)
     event_parents = ListField(StringField(), required=True)
+    created_at = IntField(required=True)
 
     @classmethod
     def persist_event(cls, event: BaseEvent, topic: ProcessInstanceTopic, db: str):
@@ -40,6 +53,7 @@ class PersistedProcessEventEntity(Document):
             event_name=topic.event_name,
             event_data=event.model_dump(),
             event_parents=event._parent_event_names,
+            created_at=event.created_at,
         )
         persisted_entity.switch_db(db)
         persisted_entity.save()

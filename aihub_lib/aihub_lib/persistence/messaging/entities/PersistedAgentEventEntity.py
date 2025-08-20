@@ -6,10 +6,11 @@ from typing import TYPE_CHECKING, Any
 
 from bson import ObjectId
 from llama_index.core.base.llms.types import MessageRole
-from mongoengine import DictField, Document, ListField, StringField
+from mongoengine import DictField, IntField, ListField, StringField
 
 from aihub_lib.nats.events.control import AssistantChatMessage, UserChatMessage
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from aihub_lib.persistence.base.versioned_document import VersionedDocument
 from aihub_lib.persistence.messaging.entities.types.EventBucket import EventBucket
 
 if TYPE_CHECKING:
@@ -69,18 +70,29 @@ TIME_RANGE_CONFIG: dict[TimeRange, TimeRangeDetailConfig] = {
 }
 
 
-class PersistedAgentEventEntity(Document):
+class PersistedAgentEventEntity(VersionedDocument):
+    """
+    Persists agent events to MongoDB for retrieval and analysis.
+
+    This entity stores all events emitted by agents during their execution,
+    enabling historical analysis, debugging, and user interface updates.
+    """
+
     meta = {
         "collection": "agent_events",
-        "strict": False,
+        "strict": True,
         "indexes": [
             {"fields": ["thread_id", "event_type"]},
             {"fields": ["agent_id", "event_type"]},
             {"fields": ["thread_id", "event_parents"]},
             {"fields": ["run_id"]},
-            {"fields": ["event_data.created_at"]},
+            {"fields": ["created_at"]},
+            {"fields": ["thread_id", "created_at"]},
+            {"fields": ["agent_id", "created_at"]},
+            {"fields": ["thread_id", "event_type", "created_at"]},
             {"fields": ["display_id"]},
             {"fields": ["thread_id", "event_type", "event_parents"]},
+            {"fields": ["schema_version"]},
         ],
     }
     agent_class = StringField(required=True)
@@ -93,6 +105,7 @@ class PersistedAgentEventEntity(Document):
     event_name = StringField(required=True)
     event_data = DictField(required=True)
     event_parents = ListField(StringField(), required=True)
+    created_at = IntField(required=True)
 
     @classmethod
     def persist_event(cls, event: "BaseEvent", topic: "AgentInstanceTopic", db: str):
@@ -108,6 +121,7 @@ class PersistedAgentEventEntity(Document):
             event_name=topic.event_name,
             event_data=event.model_dump(),
             event_parents=event._parent_event_names,
+            created_at=event.created_at,
         )
         persisted_entity.switch_db(db)
         persisted_entity.save()
@@ -124,7 +138,7 @@ class PersistedAgentEventEntity(Document):
         if event_name is not None:
             query = query.filter(event_parents__contains=event_name)
 
-        return query.order_by("event_data__created_at")
+        return query.order_by("created_at")
 
     @classmethod
     def display_events_for_threads(
@@ -135,14 +149,12 @@ class PersistedAgentEventEntity(Document):
         if event_name is not None:
             query = query.filter(event_parents__contains=event_name)
 
-        return query.order_by("event_data__created_at")
+        return query.order_by("created_at")
 
     @classmethod
     def display_events_for_agent(cls, agent_id: str) -> list["PersistedAgentEventEntity"]:
         return (
-            cls.objects()
-            .filter(agent_id=agent_id, event_type=AgentTopicManager.DISPLAY_EVENT)
-            .order_by("event_data__created_at")
+            cls.objects().filter(agent_id=agent_id, event_type=AgentTopicManager.DISPLAY_EVENT).order_by("created_at")
         )
 
     @classmethod
@@ -150,7 +162,7 @@ class PersistedAgentEventEntity(Document):
         return list(
             cls.objects()
             .filter(thread_id=thread_id, event_parents__contains="HumanInTheLoopRequestEvent")
-            .order_by("event_data__created_at")
+            .order_by("created_at")
         )
 
     @classmethod
@@ -162,7 +174,7 @@ class PersistedAgentEventEntity(Document):
                 event_parents__contains="HumanInTheLoopResponseEvent",
                 event_type=AgentTopicManager.CONTROL_EVENT,
             )
-            .order_by("event_data__created_at")
+            .order_by("created_at")
         )
 
     @classmethod
@@ -170,7 +182,7 @@ class PersistedAgentEventEntity(Document):
         """
         Retrieves all events (both display and control) for a thread.
         """
-        return list(cls.objects().filter(thread_id=thread_id).order_by("event_data__created_at"))
+        return list(cls.objects().filter(thread_id=thread_id).order_by("created_at"))
 
     # Inside ThreadService or potentially PersistedAgentEventEntity as a class method
 
@@ -184,7 +196,7 @@ class PersistedAgentEventEntity(Document):
             # 1. Match events for the given thread
             {"$match": {"thread_id": thread_id}},
             # 2. Add a standardized BSON date field (simplified)
-            {"$addFields": {"event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1e6]}}}},
+            {"$addFields": {"event_time": {"$toDate": {"$divide": ["$created_at", 1e6]}}}},
             # 3. Sort events within the thread by time
             {"$sort": {"event_time": 1}},
             # 4. Group by run_id and event_id to de-duplicate events
@@ -364,7 +376,7 @@ class PersistedAgentEventEntity(Document):
                     "HumanInTheLoopResponseEvent",
                 ],
             )
-            .order_by("event_data__created_at")
+            .order_by("created_at")
             .only("event_name", "event_data", "agent_id", "agent_class", "run_id")
         )
 
@@ -471,7 +483,7 @@ class PersistedAgentEventEntity(Document):
             end_time_boundary = current_utc_time
 
         match_filter: dict[str, Any] = {
-            "event_data.created_at": {
+            "created_at": {
                 "$gte": int(start_time.timestamp() * 1e9),
                 "$lte": int(end_time_boundary.timestamp() * 1e9),
             },
@@ -491,7 +503,7 @@ class PersistedAgentEventEntity(Document):
             # 1. Match events based on primary criteria
             {"$match": match_filter},
             # 2. Add a standardized BSON date field
-            {"$addFields": {"event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1e6]}}}},
+            {"$addFields": {"event_time": {"$toDate": {"$divide": ["$created_at", 1e6]}}}},
             # 3. Create time buckets (timestamp in milliseconds)
             {
                 "$addFields": {

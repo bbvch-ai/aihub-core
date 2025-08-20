@@ -287,13 +287,13 @@ provided for different environments. Run the appropriate command from the root o
 **For a CPU Environment**:
 
 ```bash
-docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml -f docker-compose-webui.yml up -d
+docker compose -f docker-compose.dev.yml up -d
 ```
 
 **For a GPU Environment**:
 
 ```bash
-docker compose -f milvus-standalone-docker-compose.yml -f docker-compose-webui.yml -f docker-compose-gpu.yml up -d
+docker compose -f docker-compose-gpu.dev.yml up -d
 ```
 :::
 

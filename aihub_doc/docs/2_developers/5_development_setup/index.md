@@ -165,7 +165,7 @@ development experience.
    ```
 4. To start the services including the local Milvus vector database, use this command instead:
    ```bash
-   docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml up
+   docker compose -f docker-compose.dev.yml up -d
    ```
 5. Alternatively, PyCharm's Docker integration allows you to simply click the green play button next to the services in
    your `docker-compose.yml` file.
