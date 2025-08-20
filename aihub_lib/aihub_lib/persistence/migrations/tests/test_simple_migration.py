@@ -48,12 +48,14 @@ class TestMigrationBasics:
         mock_db = Mock()
         mock_collection = Mock()
         mock_db.__getitem__ = Mock(return_value=mock_collection)
+        mock_db.list_collection_names = AsyncMock(return_value=["agent_events", "process_events"])
 
         mock_result = Mock()
         mock_result.modified_count = 5
         mock_result.matched_count = 5
         mock_collection.update_many = AsyncMock(return_value=mock_result)
         mock_collection.create_index = AsyncMock()
+        mock_collection.count_documents = AsyncMock(return_value=5)
 
         stats = await migration.up(mock_db)
         assert isinstance(stats, dict)
@@ -69,12 +71,14 @@ class TestMigrationBasics:
         mock_db = Mock()
         mock_collection = Mock()
         mock_db.__getitem__ = Mock(return_value=mock_collection)
+        mock_db.list_collection_names = AsyncMock(return_value=["agent_events", "process_events"])
 
         mock_result = Mock()
         mock_result.modified_count = 3
         mock_result.matched_count = 3
         mock_collection.update_many = AsyncMock(return_value=mock_result)
         mock_collection.drop_index = AsyncMock()
+        mock_collection.count_documents = AsyncMock(return_value=3)
 
         stats = await migration.down(mock_db)
         assert isinstance(stats, dict)

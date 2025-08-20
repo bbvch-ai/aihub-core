@@ -6,7 +6,7 @@ Schema version: 1 -> 2
 import logging
 from typing import Any, ClassVar
 
-from pymongo.database import Database
+from pymongo.asynchronous.database import AsyncDatabase
 
 from aihub_lib.persistence.migrations.base import DocumentMigration
 
@@ -31,16 +31,31 @@ class DocumentV2Migrator(DocumentMigration):
             "process_events",
         ]
 
-    async def up(self, db: Database) -> dict[str, Any]:
+    async def up(self, db: AsyncDatabase) -> dict[str, Any]:
         """Migrate from v1 to v2: Add root-level created_at."""
         stats = {}
 
+        existing_collections = await db.list_collection_names()
+
         for collection_name in self.get_affected_collections():
+            if collection_name not in existing_collections:
+                logger.info(f"Collection {collection_name} does not exist, skipping migration")
+                stats[collection_name] = {"modified": 0, "matched": 0, "skipped": "collection not exists"}
+                continue
+
             collection = db[collection_name]
 
+            # Check if collection is empty
+            total_docs = await collection.count_documents({})
+            if total_docs == 0:
+                logger.info(f"Collection {collection_name} is empty, skipping migration")
+                stats[collection_name] = {"modified": 0, "matched": 0, "skipped": "collection empty"}
+                continue
+
             # MongoDB aggregation pipeline ensures atomic update
+            # Update docs without schema_version (implicit v1) or explicit v1
             result = await collection.update_many(
-                {"schema_version": 1},
+                {"$or": [{"schema_version": 1}, {"schema_version": {"$exists": False}}]},
                 [
                     {
                         "$set": {
@@ -56,18 +71,21 @@ class DocumentV2Migrator(DocumentMigration):
                 "matched": result.matched_count,
             }
 
-            # Create indices for optimized querying
-            await collection.create_index([("created_at", 1)])
-            await collection.create_index([("thread_id", 1), ("created_at", 1)])
-            await collection.create_index([("agent_id", 1), ("created_at", 1)])
-            await collection.create_index([("thread_id", 1), ("event_type", 1), ("created_at", 1)])
+            # Create indices for optimized querying (only if collection has docs)
+            if result.matched_count > 0:
+                await collection.create_index([("created_at", 1)])
+                await collection.create_index([("thread_id", 1), ("created_at", 1)])
+                await collection.create_index([("agent_id", 1), ("created_at", 1)])
+                await collection.create_index([("thread_id", 1), ("event_type", 1), ("created_at", 1)])
+
+            # Always create schema_version index for version tracking
             await collection.create_index([("schema_version", 1)])
 
             logger.info(f"Migrated {result.modified_count} documents in {collection_name} to v2")
 
         return stats
 
-    async def down(self, db: Database) -> dict[str, Any]:
+    async def down(self, db: AsyncDatabase) -> dict[str, Any]:
         """Rollback from v2 to v1: Remove root-level created_at."""
         stats = {}
 

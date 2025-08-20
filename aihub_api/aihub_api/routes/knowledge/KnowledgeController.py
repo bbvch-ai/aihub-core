@@ -10,8 +10,7 @@ from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
 from aihub_lib.routes.Controller import Controller
 from fastapi import HTTPException, Security
-from mongoengine import connect
-from pymongo import MongoClient
+from pymongo import AsyncMongoClient
 
 from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
@@ -35,9 +34,8 @@ class KnowledgeController(Controller):
         additionally_required_permission: str | None = None,
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
-        self.docstore_client: MongoClient = connect(
-            host=MongoSettings().CONNECTION_STRING.get_secret_value(), alias="docstore"
-        )
+        self.connection_string = MongoSettings().CONNECTION_STRING.get_secret_value()
+        # AsyncMongoClient will be created per request to ensure proper async context
 
         self.vector_store_factory = vector_store_factory
 
@@ -49,7 +47,8 @@ class KnowledgeController(Controller):
             """
             Returns all available knowledge namespaces with the number of documents in each.
             """
-            return KnowledgeService.get_databases(self.docstore_client)
+            async with AsyncMongoClient(self.connection_string) as client:
+                return await KnowledgeService.get_databases(client)
 
         return self
 

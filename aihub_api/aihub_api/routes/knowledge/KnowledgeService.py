@@ -17,7 +17,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 )
 from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
 from mongoengine import register_connection
-from pymongo import MongoClient
+from pymongo import AsyncMongoClient
 
 from aihub_api.routes.knowledge.dto.DatabaseDTO import DatabaseDTO
 from aihub_api.routes.knowledge.dto.NodeSummaryDTO import NodeSummaryDTO
@@ -59,12 +59,12 @@ class KnowledgeService:
         return IngestedDocument.from_entity(ref_doc)
 
     @staticmethod
-    def get_databases(mongo_client: MongoClient) -> list[DatabaseDTO]:
+    async def get_databases(mongo_client: AsyncMongoClient) -> list[DatabaseDTO]:
         """
         Retrieves all databases with their available namespaces with the number of documents in each.
         Uses a MongoDB aggregation pipeline to get this information in a single query.
         """
-        database_names = mongo_client.list_database_names()
+        database_names = await mongo_client.list_database_names()
         user_dbs = [db_name for db_name in database_names if db_name not in ["admin", "local", "config"]]
 
         database_dtos: list[DatabaseDTO] = []

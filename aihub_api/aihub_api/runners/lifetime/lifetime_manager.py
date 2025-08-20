@@ -71,19 +71,21 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
     nc = NATS()
 
-    # Connect to MongoDB via Cosmos
+    # Get database configuration
     connection_string = MongoSettings().CONNECTION_STRING.get_secret_value()
     db_name = AIHubSettings().MONGO_MAIN_DB_NAME
-    connect(
-        db=db_name,
-        host=connection_string,
-    )
 
     try:
         # Database migrations must run before any service starts
         logger.info("Running database migrations...")
         await run_migrations(connection_string, db_name)
         logger.info("Database migrations completed")
+
+        # Connect to MongoDB via MongoEngine after migrations complete
+        connect(
+            db=db_name,
+            host=connection_string,
+        )
 
         # Connect to NATS and setup JetStream
         await nc.connect(servers=[NatsSettings().ENDPOINT])
