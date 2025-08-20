@@ -33,29 +33,33 @@ migrations/
 Before any migration PR is merged, it **MUST** include:
 
 1. **Migration Implementation** (`vX/DocumentVXMigrator.py`)
+
    - Inherits from `DocumentMigration`
    - Implements `up()` and `down()` methods
    - Uses MongoDB aggregation pipelines for atomic operations
    - Creates optimized indices for performance
 
 2. **Comprehensive Tests** (`vX/test_DocumentVXMigrator.py`)
+
    - **Properties Tests**: Version, description, affected collections
    - **Mock Tests**: Database operation validation without real MongoDB
    - **Integration Tests**: Real MongoDB with realistic data scenarios
-   - **Edge Case Tests**: Missing fields, malformed data, error conditions  
+   - **Edge Case Tests**: Missing fields, malformed data, error conditions
    - **Performance Tests**: Large dataset migration validation
    - **Rollback Tests**: Complete reversion validation
 
 3. **Registration** (Update `migrate.py`)
+
    - Add new migrator to `MIGRATIONS` list in version order
 
 ### Test Categories
 
 #### 1. **Version-Specific Tests** (`vX/test_DocumentVXMigrator.py`)
+
 - **Purpose**: Test the specific migration logic and requirements
 - **Scope**: Only tests for that particular migration version
 - **Requirements**: MANDATORY for every new migration
-- **Coverage**: 
+- **Coverage**:
   - Migration-specific data transformations
   - Version-specific index creation/removal
   - Real integration scenarios with realistic data
@@ -63,6 +67,7 @@ Before any migration PR is merged, it **MUST** include:
   - Rollback data integrity
 
 #### 2. **Framework Tests** (`tests/`)
+
 - **Purpose**: Test the general migration system and orchestration
 - **Scope**: Framework-wide functionality that works with any migration
 - **Coverage**:
@@ -74,11 +79,13 @@ Before any migration PR is merged, it **MUST** include:
 ## 🛠️ **Creating a New Migration**
 
 ### Step 1: Create Migration Folder and Implementation
+
 ```bash
 mkdir -p persistence/migrations/v3
 ```
 
 Create `v3/DocumentV3Migrator.py`:
+
 ```python
 from typing import Any
 
@@ -119,6 +126,7 @@ class DocumentV3Migrator(DocumentMigration):
 ```
 
 ### Step 2: Create Comprehensive Tests (MANDATORY)
+
 Create `v3/test_DocumentV3Migrator.py` with all required test categories:
 
 ```python
@@ -141,7 +149,9 @@ class TestDocumentV3MigratorValidation:
 ```
 
 ### Step 3: Register Migration
+
 Update `migrate.py`:
+
 ```python
 from aihub_lib.persistence.migrations.v3.DocumentV3Migrator import DocumentV3Migrator
 
@@ -152,6 +162,7 @@ MIGRATIONS: list[type[DocumentMigration]] = [
 ```
 
 ### Step 4: Run Tests
+
 ```bash
 # Run new migration tests
 poetry run pytest persistence/migrations/v3/test_DocumentV3Migrator.py -v
@@ -163,6 +174,7 @@ poetry run pytest persistence/migrations/ -v
 ## 🧪 **Testing Strategy**
 
 ### Local Development
+
 ```bash
 # Run all migration tests (requires MongoDB)
 poetry run pytest persistence/migrations/ -v
@@ -172,6 +184,7 @@ poetry run pytest persistence/migrations/v2/test_DocumentV2Migrator.py -v
 ```
 
 ### CI/CD Pipeline
+
 ```bash
 # Use the provided test runner
 poetry run python persistence/migrations/tests/run_migration_tests.py
@@ -187,7 +200,7 @@ Before submitting a migration PR, ensure:
 - [ ] **Index Management**: Creates indices in up(), drops in down()
 - [ ] **Error Handling**: Graceful handling of edge cases
 - [ ] **Properties Tests**: Version, description, collections ✅
-- [ ] **Mock Tests**: Database operations validation ✅  
+- [ ] **Mock Tests**: Database operations validation ✅
 - [ ] **Integration Tests**: Real MongoDB scenarios ✅
 - [ ] **Performance Tests**: Large dataset validation ✅
 - [ ] **Rollback Tests**: Complete reversion validation ✅

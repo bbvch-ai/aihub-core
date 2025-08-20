@@ -5,16 +5,19 @@ This directory contains comprehensive tests for the AI-Hub database migration sy
 ## 🎯 Test Categories
 
 ### 1. **Unit Tests** (Fast, No External Dependencies)
+
 - **Mock-based tests**: Test migration logic without real database
 - **Algorithm validation**: Test schema transformation logic
 - **Edge case handling**: Test error conditions and invalid data
 
 ### 2. **Integration Tests** (Require MongoDB)
+
 - **Real database operations**: Test with actual MongoDB instance
 - **Data integrity validation**: Ensure no data loss during migration
 - **Performance testing**: Validate migration speed with large datasets
 
 ### 3. **End-to-End Tests**
+
 - **Complete migration cycles**: Test up/down migration sequences
 - **Production simulation**: Test with realistic data volumes
 - **Rollback validation**: Ensure complete revertability
@@ -59,6 +62,7 @@ pytest aihub_lib/persistence/migrations/tests/ -m "performance"
 ## 📋 Test Structure
 
 ### BaseMigrationTest
+
 Abstract base class providing common migration testing infrastructure:
 
 - **Database setup/teardown**: Automatic test database isolation
@@ -67,6 +71,7 @@ Abstract base class providing common migration testing infrastructure:
 - **Error handling**: Partial failure and recovery testing
 
 ### Migration-Specific Tests
+
 Each migrator (e.g., `DocumentV2Migrator`) has comprehensive tests:
 
 ```python
@@ -87,21 +92,25 @@ class TestDocumentV2Migrator(BaseMigrationTest):
 ## 🔬 Test Coverage Areas
 
 ### Data Integrity
+
 - ✅ **No data loss**: All original data preserved during migration
 - ✅ **Correct transformation**: Schema changes applied accurately
 - ✅ **Referential integrity**: Relationships maintained across collections
 
 ### Performance
+
 - ✅ **Large dataset handling**: Test with 1000+ documents per collection
 - ✅ **Migration timing**: Ensure reasonable completion times
 - ✅ **Memory usage**: Validate resource consumption
 
 ### Error Handling
+
 - ✅ **Partial failures**: Test recovery from interrupted migrations
 - ✅ **Invalid data**: Handle documents missing required fields
 - ✅ **Concurrent access**: Test behavior with simultaneous database operations
 
 ### Rollback Safety
+
 - ✅ **Complete reversion**: Down migration restores original state
 - ✅ **Data preservation**: No data loss during rollback
 - ✅ **Index cleanup**: Migration-created indices properly removed
@@ -152,12 +161,14 @@ async def create_large_test_dataset(self, db):
 ## 🔍 Debugging Test Failures
 
 ### Enable Detailed Logging
+
 ```python
 from aihub_lib.testing.logging.logger import enable_logging
 enable_logging()  # Already enabled in test files
 ```
 
 ### Debug Specific Test
+
 ```bash
 # Run single test with full output
 pytest aihub_lib/persistence/migrations/tests/test_DocumentV2Migrator.py::TestDocumentV2Migrator::test_migration_up_transforms_data_correctly -v -s
@@ -167,6 +178,7 @@ pytest aihub_lib/persistence/migrations/tests/ --pdb
 ```
 
 ### Inspect Test Database
+
 ```python
 # Add temporary debugging code in tests
 async def debug_database_state(self, db):
@@ -194,6 +206,7 @@ pytest aihub_lib/persistence/migrations/v2/test_DocumentV2Migrator.py
 ```
 
 ### Key Validations:
+
 - [ ] **All unit tests pass**: Mock-based logic tests
 - [ ] **All integration tests pass**: Real MongoDB tests
 - [ ] **Performance within limits**: Large dataset tests complete reasonably
@@ -205,11 +218,13 @@ pytest aihub_lib/persistence/migrations/v2/test_DocumentV2Migrator.py
 ## 📈 Performance Benchmarks
 
 ### Expected Performance (Development Hardware):
+
 - **Small dataset** (10-100 docs): < 1 second
-- **Medium dataset** (1K docs): < 5 seconds  
+- **Medium dataset** (1K docs): < 5 seconds
 - **Large dataset** (10K docs): < 30 seconds
 
 ### Performance Test Results:
+
 ```bash
 # View performance test results
 pytest aihub_lib/persistence/migrations/ -m performance -v

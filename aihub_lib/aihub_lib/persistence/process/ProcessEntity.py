@@ -88,7 +88,7 @@ class ProcessConfig(EmbeddedDocument):
 class ProcessEntity(Document):
     meta = {
         "collection": "processes",
-        "strict": False,
+        "strict": True,
         "indexes": [{"fields": ["process_class", "process_id"], "unique": True}],
     }
     process_class = StringField(required=True)

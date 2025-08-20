@@ -10,7 +10,7 @@ class RoleEntity(Document):
 
     meta = {
         "collection": "roles",
-        "strict": False,
+        "strict": True,
         "indexes": [
             {"fields": ["name"], "unique": True},
         ],

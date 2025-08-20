@@ -102,7 +102,7 @@ class EventSpec(EmbeddedDocument):
 class AgentEntity(Document):
     meta = {
         "collection": "agents",
-        "strict": False,
+        "strict": True,
         "indexes": [{"fields": ["agent_class", "agent_id"], "unique": True}],
     }
     agent_class = StringField(required=True)

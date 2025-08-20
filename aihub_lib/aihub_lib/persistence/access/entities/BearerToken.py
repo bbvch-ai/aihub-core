@@ -8,7 +8,7 @@ from mongoengine.errors import DoesNotExist
 
 
 class BearerToken(Document):
-    meta = {"collection": "tokens", "strict": False, "indexes": [{"fields": ["token"], "unique": True}]}
+    meta = {"collection": "tokens", "strict": True, "indexes": [{"fields": ["token"], "unique": True}]}
     version = IntField(default=1, db_field="_version")
     user_oid = StringField(required=True)
     name = StringField(required=True)

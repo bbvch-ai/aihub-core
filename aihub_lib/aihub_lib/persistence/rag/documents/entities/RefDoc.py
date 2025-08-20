@@ -52,7 +52,7 @@ class RefDoc(Document):
     DocumentData.
     """
 
-    meta = {"collection": "documents-data", "strict": False, "indexes": [{"fields": ["data.metadata.namespace"]}]}
+    meta = {"collection": "documents-data", "strict": True, "indexes": [{"fields": ["data.metadata.namespace"]}]}
     id = StringField(primary_key=True)
     data = EmbeddedDocumentField(DocumentData, db_field="__data__")
     type_ = StringField(db_field="__type__")

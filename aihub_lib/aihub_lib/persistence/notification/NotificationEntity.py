@@ -18,6 +18,7 @@ class NotificationEntity(Document):
 
     meta = {
         "collection": "notifications",
+        "strict": True,
         "indexes": [{"fields": ["user_id"]}],
     }
 

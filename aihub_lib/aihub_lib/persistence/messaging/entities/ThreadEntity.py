@@ -16,7 +16,7 @@ class Agent(EmbeddedDocument):
 class ThreadEntity(Document):
     meta = {
         "collection": "threads",
-        "strict": False,
+        "strict": True,
         "indexes": [
             {"fields": ["users.user_id"]},
             {"fields": ["created_at"]},

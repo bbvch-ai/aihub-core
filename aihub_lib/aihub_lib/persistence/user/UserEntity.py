@@ -38,7 +38,7 @@ class Dashboard(EmbeddedDocument):
 class UserEntity(Document):
     meta = {
         "collection": "users",
-        "strict": False,
+        "strict": True,
         "indexes": [
             {"fields": ["email"], "unique": True},
             {"fields": ["roles"]},
