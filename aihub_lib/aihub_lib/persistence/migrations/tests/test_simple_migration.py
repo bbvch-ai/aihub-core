@@ -4,7 +4,9 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
+from motor.motor_asyncio import AsyncIOMotorClient
 
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.migrations.migrate import MIGRATIONS, MigrationOrchestrator
 from aihub_lib.persistence.migrations.v2.DocumentV2Migrator import DocumentV2Migrator
 from aihub_lib.testing.logging.logger import enable_logging
@@ -12,30 +14,24 @@ from aihub_lib.testing.logging.logger import enable_logging
 enable_logging()
 
 
-@pytest_asyncio.fixture(scope="function")
+@pytest_asyncio.fixture
 async def migration_db():
     """Create test database for migration testing."""
-    from motor.motor_asyncio import AsyncIOMotorClient
-    from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+    client = AsyncIOMotorClient(MongoSettings().CONNECTION_STRING.get_secret_value())
+    db = client["test_migrations_simple"]
 
-    mongodb_url = MongoSettings().CONNECTION_STRING.get_secret_value()
-    client = AsyncIOMotorClient(mongodb_url)
-    db = client["test_migrations"]
-
-    # Clean up any existing test data
     await db["agent_events"].delete_many({})
     await db["process_events"].delete_many({})
 
     yield db
 
-    # Clean up after test
     await db["agent_events"].delete_many({})
     await db["process_events"].delete_many({})
     client.close()
 
 
 class TestMigrationBasics:
-    """Basic migration tests using mocks."""
+    """Basic migration tests using mocks and real database."""
 
     def test_migration_class_properties(self):
         """Test that migration has required properties."""
@@ -49,7 +45,6 @@ class TestMigrationBasics:
     async def test_migration_up_with_mock_db(self):
         """Test migration up with mocked database operations."""
         migration = DocumentV2Migrator()
-
         mock_db = Mock()
         mock_collection = Mock()
         mock_db.__getitem__ = Mock(return_value=mock_collection)
@@ -71,7 +66,6 @@ class TestMigrationBasics:
     async def test_migration_down_with_mock_db(self):
         """Test migration down with mocked database operations."""
         migration = DocumentV2Migrator()
-
         mock_db = Mock()
         mock_collection = Mock()
         mock_db.__getitem__ = Mock(return_value=mock_collection)
@@ -89,23 +83,15 @@ class TestMigrationBasics:
         assert mock_collection.update_many.call_count >= 2
         assert mock_collection.drop_index.call_count >= 6
 
-
-class TestMigrationRegistration:
-    """Test migration registration."""
-
     def test_migration_is_registered(self):
         """Test that DocumentV2Migrator is properly registered."""
         assert DocumentV2Migrator in MIGRATIONS
         versions = [migration.version for migration in MIGRATIONS]
         assert len(versions) == len(set(versions)), "Migration versions should be unique"
-        # Test sequential versions
+
         versions = sorted(versions)
         for i in range(1, len(versions)):
             assert versions[i] == versions[i - 1] + 1, f"Versions should be sequential: {versions}"
-
-
-class TestMigrationOrchestratorMock:
-    """Test migration orchestrator with mocks."""
 
     @pytest.mark.asyncio
     async def test_orchestrator_creation(self):
@@ -127,14 +113,9 @@ class TestMigrationOrchestratorMock:
         version = await orchestrator.get_current_version()
         assert version == 1
 
-
-class TestMigrationWithRealMongoDB:
-    """Integration tests that require real MongoDB."""
-
     @pytest.mark.asyncio
     async def test_migration_with_real_data(self, migration_db):
         """Test migration with real MongoDB and realistic data."""
-        # Create test data representing v1 schema
         test_doc = {
             "schema_version": 1,
             "agent_class": "TestAgent",
@@ -167,7 +148,6 @@ class TestMigrationWithRealMongoDB:
         }
 
         await migration_db["agent_events"].insert_one(test_doc)
-
         migration = DocumentV2Migrator()
 
         # Migrate up and verify

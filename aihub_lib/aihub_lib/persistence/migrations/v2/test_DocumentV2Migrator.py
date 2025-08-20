@@ -1,59 +1,55 @@
-"""Tests for DocumentV2Migrator - simplified version."""
+"""Tests for DocumentV2Migrator - consolidated and simplified."""
 
 from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
+from motor.motor_asyncio import AsyncIOMotorClient
 
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.migrations.v2.DocumentV2Migrator import DocumentV2Migrator
 from aihub_lib.testing.logging.logger import enable_logging
 
 enable_logging()
 
 
-@pytest_asyncio.fixture(scope="function")
+@pytest_asyncio.fixture
 async def migration_db():
     """Create test database for DocumentV2Migrator testing."""
-    from motor.motor_asyncio import AsyncIOMotorClient
-    from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
-
-    mongodb_url = MongoSettings().CONNECTION_STRING.get_secret_value()
-    client = AsyncIOMotorClient(mongodb_url)
+    client = AsyncIOMotorClient(MongoSettings().CONNECTION_STRING.get_secret_value())
     db = client["test_v2_migration"]
 
-    # Clean up any existing test data
     await db["agent_events"].delete_many({})
     await db["process_events"].delete_many({})
 
     yield db
 
-    # Clean up after test
     await db["agent_events"].delete_many({})
     await db["process_events"].delete_many({})
     client.close()
 
 
-class TestDocumentV2MigratorProperties:
-    """Test DocumentV2Migrator class properties."""
+class TestDocumentV2Migrator:
+    """Comprehensive tests for DocumentV2Migrator."""
 
     def test_migration_properties(self):
         """Test that migration has correct properties."""
         migration = DocumentV2Migrator()
         assert migration.version == 2
         assert "created_at" in migration.description
+        assert "V2" in migration.__class__.__name__
+        assert len(migration.description) > 50
+        assert migration.__class__.__doc__ is not None
+        assert len(migration.__class__.__doc__.strip()) > 100
+
         collections = migration.get_affected_collections()
         assert "agent_events" in collections
         assert "process_events" in collections
-
-
-class TestDocumentV2MigratorMockOperations:
-    """Test DocumentV2Migrator with mocked database operations."""
 
     @pytest.mark.asyncio
     async def test_up_migration_mock(self):
         """Test the up migration with mocked database."""
         migration = DocumentV2Migrator()
-
         mock_db = Mock()
         mock_collection = Mock()
         mock_db.__getitem__ = Mock(return_value=mock_collection)
@@ -73,7 +69,6 @@ class TestDocumentV2MigratorMockOperations:
     async def test_down_migration_mock(self):
         """Test the down migration with mocked database."""
         migration = DocumentV2Migrator()
-
         mock_db = Mock()
         mock_collection = Mock()
         mock_db.__getitem__ = Mock(return_value=mock_collection)
@@ -93,7 +88,6 @@ class TestDocumentV2MigratorMockOperations:
     async def test_validate_prerequisites(self):
         """Test prerequisite validation."""
         migration = DocumentV2Migrator()
-
         mock_db = Mock()
         mock_collection = Mock()
         mock_collection.count_documents = AsyncMock(return_value=0)
@@ -103,14 +97,9 @@ class TestDocumentV2MigratorMockOperations:
         result = await migration.validate_prerequisites(mock_db)
         assert result is True
 
-
-class TestDocumentV2MigratorIntegration:
-    """Integration tests with real MongoDB for DocumentV2Migrator."""
-
     @pytest.mark.asyncio
     async def test_migration_with_realistic_data(self, migration_db):
         """Test migration with realistic data."""
-        # Create realistic V1 test data
         v1_docs = [
             {
                 "schema_version": 1,
@@ -129,7 +118,6 @@ class TestDocumentV2MigratorIntegration:
         ]
 
         await migration_db["agent_events"].insert_many(v1_docs)
-
         migration = DocumentV2Migrator()
         result = await migration.up(migration_db)
 
@@ -155,7 +143,6 @@ class TestDocumentV2MigratorIntegration:
         }
 
         await migration_db["agent_events"].insert_one(test_doc)
-
         migration = DocumentV2Migrator()
 
         # Migrate up and verify
@@ -183,7 +170,6 @@ class TestDocumentV2MigratorIntegration:
         }
 
         await migration_db["agent_events"].insert_one(problematic_doc)
-
         migration = DocumentV2Migrator()
         await migration.up(migration_db)
 
@@ -200,20 +186,21 @@ class TestDocumentV2MigratorIntegration:
     @pytest.mark.asyncio
     async def test_migration_performance(self, migration_db):
         """Test migration performance with medium dataset."""
-        # Create medium dataset
-        docs = []
-        for i in range(100):
-            docs.append({
+        docs = [
+            {
                 "schema_version": 1,
                 "agent_class": f"TestAgent{i % 10}",
                 "agent_id": f"agent_{i:03d}",
                 "event_id": f"event_{i:03d}",
                 "event_data": {"created_at": 1640995200000000000 + (i * 1000000000), "content": f"Test {i}"},
-            })
+            }
+            for i in range(100)
+        ]
 
         await migration_db["agent_events"].insert_many(docs)
 
         import time
+
         migration = DocumentV2Migrator()
 
         start_time = time.time()
@@ -240,7 +227,6 @@ class TestDocumentV2MigratorIntegration:
         }
 
         await migration_db["agent_events"].insert_one(test_doc)
-
         migration = DocumentV2Migrator()
 
         # Run migration multiple times
@@ -260,24 +246,6 @@ class TestDocumentV2MigratorIntegration:
         assert final_doc["schema_version"] == 2
         assert final_doc["created_at"] == 1640995200000000000
         assert final_doc["event_data"]["created_at"] == 1640995200000000000
-
-
-class TestDocumentV2MigratorValidation:
-    """Test DocumentV2Migrator validation and error scenarios."""
-
-    def test_migration_validates_version_consistency(self):
-        """Test that migration version is consistent."""
-        migration = DocumentV2Migrator()
-        assert migration.version == 2
-        assert "V2" in migration.__class__.__name__
-
-    def test_migration_has_documentation(self):
-        """Test that migration is properly documented."""
-        migration = DocumentV2Migrator()
-        assert len(migration.description) > 50
-        assert "created_at" in migration.description.lower()
-        assert migration.__class__.__doc__ is not None
-        assert len(migration.__class__.__doc__.strip()) > 100
 
     @pytest.mark.asyncio
     async def test_migration_validates_input_parameters(self):
