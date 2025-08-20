@@ -1,4 +1,5 @@
-from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentField, StringField
+from aihub_lib.persistence.base.versioned_document import VersionedDocument
+from mongoengine import EmbeddedDocument, EmbeddedDocumentField, StringField
 
 
 class Credentials(EmbeddedDocument):
@@ -8,7 +9,7 @@ class Credentials(EmbeddedDocument):
     APP_TENANTID = StringField(required=False)
 
 
-class PathEntity(Document):
+class PathEntity(VersionedDocument):
     """
     Represents the configuration for a given path/endpoint and therefore for a specific bot.
 

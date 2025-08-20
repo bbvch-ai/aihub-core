@@ -2,7 +2,6 @@ from typing import Any
 
 from mongoengine import (
     DictField,
-    Document,
     DynamicEmbeddedDocument,
     EmbeddedDocumentField,
     IntField,
@@ -10,6 +9,8 @@ from mongoengine import (
     StringField,
 )
 from mongoengine.context_managers import switch_db
+
+from aihub_lib.persistence.base.versioned_document import VersionedDocument
 
 
 class Metadata(DynamicEmbeddedDocument):
@@ -45,7 +46,7 @@ class DocumentData(DynamicEmbeddedDocument):
     class_name = StringField(default="Document")
 
 
-class RefDoc(Document):
+class RefDoc(VersionedDocument):
     """
     This RefDoc document is closely modelled after the RefDoc by llama-index. Hence, we can NOT freely change how
     this document is stored in the database. We have some creative freedom over the Metadata, but not at all over the

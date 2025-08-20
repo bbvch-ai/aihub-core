@@ -1,7 +1,9 @@
 from datetime import datetime
 
 from bson import ObjectId
-from mongoengine import DateTimeField, Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField
+from mongoengine import DateTimeField, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField
+
+from aihub_lib.persistence.base.versioned_document import VersionedDocument
 
 
 class User(EmbeddedDocument):
@@ -13,7 +15,7 @@ class Agent(EmbeddedDocument):
     agent_class = StringField(required=True)
 
 
-class ThreadEntity(Document):
+class ThreadEntity(VersionedDocument):
     meta = {
         "collection": "threads",
         "strict": True,

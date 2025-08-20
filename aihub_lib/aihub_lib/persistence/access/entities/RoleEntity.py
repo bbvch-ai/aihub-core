@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from mongoengine import Document, ListField, StringField
+from mongoengine import ListField, StringField
+
+from aihub_lib.persistence.base.versioned_document import VersionedDocument
 
 
-class RoleEntity(Document):
+class RoleEntity(VersionedDocument):
     """
     Represents a role in the system, which contains a set of access rules.
     """

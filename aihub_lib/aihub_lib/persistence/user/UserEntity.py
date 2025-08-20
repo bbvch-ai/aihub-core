@@ -4,7 +4,6 @@ from uuid import uuid4
 from mongoengine import (
     BooleanField,
     DateTimeField,
-    Document,
     DoesNotExist,
     EmbeddedDocument,
     EmbeddedDocumentField,
@@ -12,6 +11,8 @@ from mongoengine import (
     ListField,
     StringField,
 )
+
+from aihub_lib.persistence.base.versioned_document import VersionedDocument
 
 
 class DashboardItem(EmbeddedDocument):
@@ -35,7 +36,7 @@ class Dashboard(EmbeddedDocument):
     meta = {"strict": False}
 
 
-class UserEntity(Document):
+class UserEntity(VersionedDocument):
     meta = {
         "collection": "users",
         "strict": True,

@@ -1,7 +1,3 @@
-"""
-Base document class that provides schema versioning for all MongoDB documents.
-"""
-
 from mongoengine import Document as MongoDocument
 from mongoengine import IntField
 

@@ -1,9 +1,9 @@
 from datetime import UTC, datetime
 
+from aihub_lib.persistence.base.versioned_document import VersionedDocument
 from mongoengine import (
     BooleanField,
     DateTimeField,
-    Document,
     EmbeddedDocument,
     EmbeddedDocumentField,
     ListField,
@@ -27,7 +27,7 @@ class Message(EmbeddedDocument):
     name = StringField(required=True)
 
 
-class ConversationTracker(Document):
+class ConversationTracker(VersionedDocument):
     """
     Tracks conversation IDs to distinguish between expired and explicitly deleted conversations.
 
@@ -79,7 +79,7 @@ class ConversationTracker(Document):
         return tracker is not None and not tracker.explicitly_deleted and not exists_now
 
 
-class ConversationEntity(Document):
+class ConversationEntity(VersionedDocument):
     """
     Represents a persistent conversation thread between users and agents over the Azure Bot Service.
 

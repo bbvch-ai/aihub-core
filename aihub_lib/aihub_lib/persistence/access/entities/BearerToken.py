@@ -3,11 +3,13 @@ import secrets
 from datetime import UTC, datetime
 
 from bson import ObjectId
-from mongoengine import DateTimeField, Document, IntField, StringField
+from mongoengine import DateTimeField, IntField, StringField
 from mongoengine.errors import DoesNotExist
 
+from aihub_lib.persistence.base.versioned_document import VersionedDocument
 
-class BearerToken(Document):
+
+class BearerToken(VersionedDocument):
     meta = {"collection": "tokens", "strict": True, "indexes": [{"fields": ["token"], "unique": True}]}
     version = IntField(default=1, db_field="_version")
     user_oid = StringField(required=True)

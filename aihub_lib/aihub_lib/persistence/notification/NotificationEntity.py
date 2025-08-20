@@ -3,15 +3,15 @@ from datetime import UTC, datetime
 from mongoengine import (
     BooleanField,
     DateTimeField,
-    Document,
     EmbeddedDocumentField,
     StringField,
 )
 
+from aihub_lib.persistence.base.versioned_document import VersionedDocument
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
 
-class NotificationEntity(Document):
+class NotificationEntity(VersionedDocument):
     """
     Represents a notification for a user in the database.
     """

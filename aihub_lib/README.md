@@ -506,9 +506,9 @@ Entity classes use `@classmethod` methods to implement repository-like functiona
 - Maintains clean separation between data structure and access patterns
 
 ```python
-from mongoengine import Document, StringField, DoesNotExist
+from mongoengine import StringField, DoesNotExist
 
-class ResourceEntity(Document):
+class ResourceEntity(VersionedDocument):
     name = StringField(required=True)
     status = StringField(default="active")
     

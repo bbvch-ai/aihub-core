@@ -6,7 +6,6 @@ from mongoengine import (
     BooleanField,
     DateTimeField,
     DictField,
-    Document,
     EmbeddedDocument,
     EmbeddedDocumentField,
     ListField,
@@ -18,6 +17,7 @@ from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentI
 from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from aihub_lib.persistence.agents.AgentEntity import EventSpec
+from aihub_lib.persistence.base.versioned_document import VersionedDocument
 from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
 from aihub_lib.persistence.process.ProcessConfigEntityEmbeddedDocument import ProcessConfigEntityEmbeddedDocument
 
@@ -85,7 +85,7 @@ class ProcessConfig(EmbeddedDocument):
     icon = StringField(default="meteor-icons:robot")
 
 
-class ProcessEntity(Document):
+class ProcessEntity(VersionedDocument):
     meta = {
         "collection": "processes",
         "strict": True,
