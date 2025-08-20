@@ -117,7 +117,6 @@ class TestDocumentV3MigratorProperties:
 class TestDocumentV3MigratorMockOperations:
     """Test migration logic with mocked database."""
     
-@pytest.mark.mongodb
 class TestDocumentV3MigratorIntegration:
     """Integration tests with real MongoDB."""
     
@@ -149,14 +148,11 @@ poetry run pytest persistence/migrations/ -v
 
 ### Local Development
 ```bash
-# Fast unit tests (no MongoDB required)
-poetry run pytest persistence/migrations/ -m "not mongodb" -v
-
-# Full integration tests (requires MongoDB)
-poetry run pytest persistence/migrations/ --mongodb -v
+# Run all migration tests (requires MongoDB)
+poetry run pytest persistence/migrations/ -v
 
 # Test specific migration
-poetry run pytest persistence/migrations/v2/test_DocumentV2Migrator.py --mongodb -v
+poetry run pytest persistence/migrations/v2/test_DocumentV2Migrator.py -v
 ```
 
 ### CI/CD Pipeline

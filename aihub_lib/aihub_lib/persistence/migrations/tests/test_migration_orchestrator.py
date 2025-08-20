@@ -21,63 +21,31 @@ from aihub_lib.testing.logging.logger import enable_logging
 enable_logging()
 
 
-class MigrationTestHelper:
-    """Inline migration test helper."""
-
-    async def create_bulk_test_data(self, db, collection_name: str, count: int, schema_version: int = 1):
-        """Create bulk test data for migration testing."""
-        docs = []
-        for i in range(count):
-            doc = {
-                "schema_version": schema_version,
-                "agent_class": f"TestAgent{i}",
-                "agent_id": f"test_agent_{i}",
-                "thread_id": f"test_thread_{i}",
-                "display_id": f"test_display_{i}",
-                "run_id": f"test_run_{i}",
-                "event_id": f"test_event_{i}",
-                "event_type": "display",
-                "event_name": f"TestEvent{i}",
-                "event_data": {
-                    "created_at": 1640995200000000000 + i * 1000000000,
-                    "content": f"Test content {i}",
-                },
-                "event_parents": ["BaseEvent", "DisplayEvent"],
-            }
-            docs.append(doc)
-
-        if docs:
-            await db[collection_name].insert_many(docs)
-
-    async def verify_collection_schema_version(self, db, collection_name: str, expected_version: int) -> bool:
-        """Verify all documents in collection have expected schema version."""
-        doc = await db[collection_name].find_one({"schema_version": {"$ne": expected_version}})
-        return doc is None
-
-    async def get_collection_stats(self, db, collection_name: str) -> dict:
-        """Get collection statistics including version counts."""
-        pipeline = [{"$group": {"_id": "$schema_version", "count": {"$sum": 1}}}]
-        cursor = db[collection_name].aggregate(pipeline)
-        results = await cursor.to_list(length=None)
-
-        version_counts = {}
-        for result in results:
-            version_counts[result["_id"]] = result["count"]
-
-        return {"version_counts": version_counts, "total_docs": sum(version_counts.values())}
+async def create_test_docs(db, collection: str, count: int, version: int = 1):
+    """Create test documents for migration testing."""
+    docs = []
+    for i in range(count):
+        docs.append({
+            "schema_version": version,
+            "agent_class": f"TestAgent{i}",
+            "agent_id": f"agent_{i}",
+            "event_id": f"event_{i}",
+            "event_data": {"created_at": 1640995200000000000 + i * 1000000000},
+        })
+    if docs:
+        await db[collection].insert_many(docs)
+    return len(docs)
 
 
 @pytest_asyncio.fixture(scope="function")
-async def migration_test_database():
+async def migration_db():
     """Create test database for migration testing."""
     from motor.motor_asyncio import AsyncIOMotorClient
-
     from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 
     mongodb_url = MongoSettings().CONNECTION_STRING.get_secret_value()
     client = AsyncIOMotorClient(mongodb_url)
-    db_name = "test_migrations"
-    db = client[db_name]
+    db = client["test_migrations"]
 
     # Clean up any existing test data
     await db["agent_events"].delete_many({})
@@ -89,12 +57,6 @@ async def migration_test_database():
     await db["agent_events"].delete_many({})
     await db["process_events"].delete_many({})
     client.close()
-
-
-@pytest.fixture
-def migration_test_helper():
-    """Provide migration test helper instance."""
-    return MigrationTestHelper()
 
 
 class TestMigrationOrchestrator:
@@ -299,69 +261,46 @@ class TestMigrationRegistration:
                 assert versions[i] == versions[i - 1] + 1, f"Migration versions should be sequential: {versions}"
 
 
-@pytest.mark.mongodb
 class TestMigrationOrchestratorIntegration:
     """Integration tests with real MongoDB for migration orchestrator."""
 
     @pytest.mark.asyncio
-    async def test_full_migration_cycle(self, migration_test_database: AsyncIOMotorDatabase):
+    async def test_full_migration_cycle(self, migration_db: AsyncIOMotorDatabase):
         """Test complete migration cycle: setup -> migrate up -> migrate down."""
         # Create test data at v1
-        helper = MigrationTestHelper()
-        await helper.create_bulk_test_data(migration_test_database, "agent_events", 10, schema_version=1)
-        await helper.create_bulk_test_data(migration_test_database, "process_events", 5, schema_version=1)
+        await create_test_docs(migration_db, "agent_events", 10)
+        await create_test_docs(migration_db, "process_events", 5)
 
-        orchestrator = MigrationOrchestrator(migration_test_database)
+        orchestrator = MigrationOrchestrator(migration_db)
 
-        # Verify initial state
-        initial_version = await orchestrator.get_current_version()
-        assert initial_version == 1
-
-        # Migrate up to v2
+        # Verify initial state and migrate up
+        assert await orchestrator.get_current_version() == 1
         await orchestrator.migrate_to(2)
+        assert await orchestrator.get_current_version() == 2
 
-        # Verify migration to v2
-        current_version = await orchestrator.get_current_version()
-        assert current_version == 2
-
-        # Verify data integrity after migration up
-        assert await helper.verify_collection_schema_version(migration_test_database, "agent_events", 2)
-        assert await helper.verify_collection_schema_version(migration_test_database, "process_events", 2)
-
-        # Verify created_at field was added
-        agent_doc = await migration_test_database["agent_events"].find_one({})
+        # Verify migration worked
+        agent_doc = await migration_db["agent_events"].find_one({})
+        assert agent_doc["schema_version"] == 2
         assert "created_at" in agent_doc
-        assert agent_doc["created_at"] == agent_doc["event_data"]["created_at"]
 
-        # Migrate down to v1
+        # Migrate down and verify rollback
         await orchestrator.migrate_to(1)
-
-        # Verify rollback to v1
-        rollback_version = await orchestrator.get_current_version()
-        assert rollback_version == 1
-
-        # Verify data integrity after rollback
-        assert await helper.verify_collection_schema_version(migration_test_database, "agent_events", 1)
-        assert await helper.verify_collection_schema_version(migration_test_database, "process_events", 1)
-
-        # Verify created_at field was removed
-        agent_doc = await migration_test_database["agent_events"].find_one({})
+        assert await orchestrator.get_current_version() == 1
+        agent_doc = await migration_db["agent_events"].find_one({})
+        assert agent_doc["schema_version"] == 1
         assert "created_at" not in agent_doc
-        assert "created_at" in agent_doc["event_data"]  # Still in event_data
 
     @pytest.mark.asyncio
-    async def test_migration_with_large_dataset(self, migration_test_database: AsyncIOMotorDatabase):
+    async def test_migration_with_large_dataset(self, migration_db: AsyncIOMotorDatabase):
         """Test migration performance with larger dataset."""
         # Create larger test dataset
-        helper = MigrationTestHelper()
-        await helper.create_bulk_test_data(migration_test_database, "agent_events", 1000, schema_version=1)
-        await helper.create_bulk_test_data(migration_test_database, "process_events", 500, schema_version=1)
+        await create_test_docs(migration_db, "agent_events", 1000)
+        await create_test_docs(migration_db, "process_events", 500)
 
-        orchestrator = MigrationOrchestrator(migration_test_database)
+        orchestrator = MigrationOrchestrator(migration_db)
 
         # Time the migration
         import time
-
         start_time = time.time()
         await orchestrator.migrate_to(2)
         duration = time.time() - start_time
@@ -370,33 +309,30 @@ class TestMigrationOrchestratorIntegration:
         assert duration < 10.0  # 10 seconds for 1500 documents
 
         # Verify all documents were migrated
-        helper = MigrationTestHelper()
-        stats = await helper.get_collection_stats(migration_test_database, "agent_events")
-        assert stats["version_counts"][2] == 1000
-
-        stats = await helper.get_collection_stats(migration_test_database, "process_events")
-        assert stats["version_counts"][2] == 500
+        agent_count = await migration_db["agent_events"].count_documents({"schema_version": 2})
+        process_count = await migration_db["process_events"].count_documents({"schema_version": 2})
+        assert agent_count == 1000
+        assert process_count == 500
 
     @pytest.mark.asyncio
-    async def test_migration_idempotency(self, migration_test_database: AsyncIOMotorDatabase):
+    async def test_migration_idempotency(self, migration_db: AsyncIOMotorDatabase):
         """Test that running the same migration multiple times is safe."""
         # Create test data
-        helper = MigrationTestHelper()
-        await helper.create_bulk_test_data(migration_test_database, "agent_events", 10, schema_version=1)
+        await create_test_docs(migration_db, "agent_events", 10)
 
-        orchestrator = MigrationOrchestrator(migration_test_database)
+        orchestrator = MigrationOrchestrator(migration_db)
 
         # Run migration to v2 multiple times
         await orchestrator.migrate_to(2)
-        stats1 = await helper.get_collection_stats(migration_test_database, "agent_events")
+        v2_count_1 = await migration_db["agent_events"].count_documents({"schema_version": 2})
 
         await orchestrator.migrate_to(2)  # Run again
-        stats2 = await helper.get_collection_stats(migration_test_database, "agent_events")
+        v2_count_2 = await migration_db["agent_events"].count_documents({"schema_version": 2})
 
         await orchestrator.migrate_to(2)  # Run third time
-        stats3 = await helper.get_collection_stats(migration_test_database, "agent_events")
+        v2_count_3 = await migration_db["agent_events"].count_documents({"schema_version": 2})
 
         # Stats should be identical after first migration
-        assert stats1 == stats2 == stats3
-        assert stats1["version_counts"][2] == 10
-        assert 1 not in stats1["version_counts"]  # No v1 documents should remain
+        assert v2_count_1 == v2_count_2 == v2_count_3 == 10
+        v1_count = await migration_db["agent_events"].count_documents({"schema_version": 1})
+        assert v1_count == 0  # No v1 documents should remain

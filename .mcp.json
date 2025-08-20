@@ -23,7 +23,7 @@
         "-i",
         "--network=host",
         "-e",
-        "MDB_MCP_CONNECTION_STRING=mongodb://admin:admin@localhost:27017/aihub",
+        "MDB_MCP_CONNECTION_STRING=${MONGO_CONNECTION_STRING}",
         "-e",
         "MDB_MCP_READ_ONLY=true",
         "mongodb/mongodb-mcp-server:latest"

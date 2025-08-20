@@ -45,63 +45,27 @@ async def main():
         print("❌ MongoDB not available at mongodb://admin:admin@localhost:27017")
         print("   Please ensure MongoDB is running:")
         print("   docker compose -f docker-compose.dev.yml up -d")
-        print("\n🏃‍♀️ Running unit tests only (no MongoDB integration)...")
+        print("\n⚠️  Migration tests require MongoDB to run properly")
+        return 1
     else:
         print("✅ MongoDB connection successful")
 
-    # Step 2: Run unit tests (always)
-    print("\n🔬 Running unit tests (mock-based, fast)...")
-    unit_test_cmd = ["poetry", "run", "pytest", "aihub_lib/persistence/migrations/tests/", "-m", "not mongodb", "-v"]
+    # Step 2: Run all migration tests
+    print("\n🔬 Running migration tests...")
+    test_cmd = ["poetry", "run", "pytest", "aihub_lib/persistence/migrations/tests/", "-v"]
 
-    unit_result = run_command(unit_test_cmd)
-    if unit_result != 0:
-        print("❌ Unit tests failed!")
-        return unit_result
+    test_result = run_command(test_cmd)
+    if test_result != 0:
+        print("❌ Migration tests failed!")
+        return test_result
 
-    print("✅ Unit tests passed")
+    print("✅ Migration tests passed")
 
-    # Step 3: Run integration tests if MongoDB available
-    if mongodb_available:
-        print("\n🔗 Running integration tests (requires MongoDB)...")
-        integration_test_cmd = ["poetry", "run", "pytest", "aihub_lib/persistence/migrations/tests/", "--mongodb", "-v"]
-
-        integration_result = run_command(integration_test_cmd)
-        if integration_result != 0:
-            print("❌ Integration tests failed!")
-            return integration_result
-
-        print("✅ Integration tests passed")
-
-        # Step 4: Run performance tests
-        print("\n⚡ Running performance tests...")
-        perf_test_cmd = [
-            "poetry",
-            "run",
-            "pytest",
-            "aihub_lib/persistence/migrations/tests/",
-            "--mongodb",
-            "-m",
-            "performance",
-            "-v",
-        ]
-
-        perf_result = run_command(perf_test_cmd)
-        if perf_result != 0:
-            print("⚠️  Performance tests had issues (non-critical)")
-        else:
-            print("✅ Performance tests passed")
-
-    # Step 5: Summary
+    # Step 3: Summary
     print("\n🎉 Migration Test Summary")
     print("=" * 30)
-    print("✅ Unit tests: PASSED")
-    if mongodb_available:
-        print("✅ Integration tests: PASSED")
-        print("✅ Performance tests: PASSED")
-        print("\n🚀 Migration system is ready for production!")
-    else:
-        print("⚠️  Integration tests: SKIPPED (no MongoDB)")
-        print("\n⚠️  Run with MongoDB for complete validation")
+    print("✅ All migration tests: PASSED")
+    print("\n🚀 Migration system is ready for production!")
 
     return 0
 

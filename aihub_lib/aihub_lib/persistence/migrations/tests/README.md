@@ -35,31 +35,28 @@ poetry shell
 ### Quick Test Commands
 
 ```bash
-# Run only unit tests (fast, no MongoDB required)
-pytest aihub_lib/persistence/migrations/tests/ -m "not mongodb"
-
-# Run all tests including MongoDB integration tests
-pytest aihub_lib/persistence/migrations/tests/ --mongodb
+# Run all migration tests (requires MongoDB)
+pytest aihub_lib/persistence/migrations/tests/ -v
 
 # Run tests for specific migrator
-pytest aihub_lib/persistence/migrations/tests/test_DocumentV2Migrator.py --mongodb
+pytest aihub_lib/persistence/migrations/tests/test_DocumentV2Migrator.py -v
 
 # Run performance tests
-pytest aihub_lib/persistence/migrations/tests/ --mongodb -m performance
+pytest aihub_lib/persistence/migrations/tests/ -m performance -v
 
 # Run with verbose output and logging
-pytest aihub_lib/persistence/migrations/tests/ --mongodb -v -s
+pytest aihub_lib/persistence/migrations/tests/ -v -s
 ```
 
 ### Test Configuration Options
 
 ```bash
 # Custom MongoDB URL (default: mongodb://admin:admin@localhost:27017)
-pytest aihub_lib/persistence/migrations/tests/ --mongodb --mongodb-url="mongodb://localhost:27017"
+pytest aihub_lib/persistence/migrations/tests/ --mongodb-url="mongodb://localhost:27017"
 
 # Run specific test categories
-pytest aihub_lib/persistence/migrations/tests/ -m "migration and not performance"
-pytest aihub_lib/persistence/migrations/tests/ -m "mongodb and performance"
+pytest aihub_lib/persistence/migrations/tests/ -m "not performance"
+pytest aihub_lib/persistence/migrations/tests/ -m "performance"
 ```
 
 ## 📋 Test Structure
@@ -166,10 +163,10 @@ enable_logging()  # Already enabled in test files
 ### Debug Specific Test
 ```bash
 # Run single test with full output
-pytest aihub_lib/persistence/migrations/tests/test_DocumentV2Migrator.py::TestDocumentV2Migrator::test_migration_up_transforms_data_correctly --mongodb -v -s
+pytest aihub_lib/persistence/migrations/tests/test_DocumentV2Migrator.py::TestDocumentV2Migrator::test_migration_up_transforms_data_correctly -v -s
 
 # Drop into debugger on failure
-pytest aihub_lib/persistence/migrations/tests/ --mongodb --pdb
+pytest aihub_lib/persistence/migrations/tests/ --pdb
 ```
 
 ### Inspect Test Database
@@ -190,13 +187,13 @@ Before running migrations in production, ensure all tests pass:
 
 ```bash
 # Complete test suite
-pytest aihub_lib/persistence/migrations/tests/ --mongodb -v
+pytest aihub_lib/persistence/migrations/tests/ -v
 
 # Performance validation
-pytest aihub_lib/persistence/migrations/tests/ --mongodb -m performance
+pytest aihub_lib/persistence/migrations/tests/ -m performance
 
 # Specific migrator validation
-pytest aihub_lib/persistence/migrations/tests/test_DocumentV2Migrator.py --mongodb
+pytest aihub_lib/persistence/migrations/tests/test_DocumentV2Migrator.py
 ```
 
 ### Key Validations:
@@ -218,7 +215,7 @@ pytest aihub_lib/persistence/migrations/tests/test_DocumentV2Migrator.py --mongo
 ### Performance Test Results:
 ```bash
 # View performance test results
-pytest aihub_lib/persistence/migrations/tests/ --mongodb -m performance -v
+pytest aihub_lib/persistence/migrations/tests/ -m performance -v
 ```
 
 ## 🤝 Contributing New Migration Tests
