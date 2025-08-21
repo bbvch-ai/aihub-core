@@ -109,6 +109,8 @@ class TestMigrationBasics:
     async def test_get_current_version_with_mocked_collections(self):
         """Test version detection with mocked collections."""
         mock_db = Mock()
+        mock_db.list_collection_names = AsyncMock(return_value=["agent_events", "process_events"])
+        
         mock_collection = Mock()
         mock_collection.find_one = AsyncMock(return_value={"schema_version": 1})
         mock_db.__getitem__ = Mock(return_value=mock_collection)

@@ -8,13 +8,15 @@ from pymongo import AsyncMongoClient
 from pymongo.asynchronous.database import AsyncDatabase
 
 from aihub_lib.persistence.base.schema_version import CURRENT_SCHEMA_VERSION
-from aihub_lib.persistence.migrations.base import DocumentMigration
+from aihub_lib.persistence.migrations.DocumentMigration import DocumentMigration
+from aihub_lib.persistence.migrations.v1.DocumentV1Migrator import DocumentV1Migrator
 from aihub_lib.persistence.migrations.v2.DocumentV2Migrator import DocumentV2Migrator
 
 logger = logging.getLogger(__name__)
 
 # All migrations registered here in version order
 MIGRATIONS: list[type[DocumentMigration]] = [
+    DocumentV1Migrator,
     DocumentV2Migrator,
 ]
 
@@ -30,19 +32,29 @@ class MigrationOrchestrator:
         """
         Determine the current schema version of the database.
 
-        Returns the lowest schema version found across all collections.
+        Returns the lowest schema version found across all user collections.
         """
+        # Get all user collections to check schema versions
+        all_collections = await self.db.list_collection_names()
+        user_collections = [
+            collection_name for collection_name in all_collections 
+            if not collection_name.startswith('system.')
+        ]
+
+        if not user_collections:
+            # No collections yet, start with version 0
+            return 0
+
         min_version = CURRENT_SCHEMA_VERSION
 
-        for migration_class in self.migrations:
-            migration = migration_class()
-            for collection_name in migration.get_affected_collections():
-                doc = await self.db[collection_name].find_one({}, {"schema_version": 1})
-                if doc and "schema_version" in doc:
-                    min_version = min(min_version, doc["schema_version"])
-                elif doc:
-                    # Document exists but no version means v1
-                    min_version = 1
+        for collection_name in user_collections:
+            # Check if collection has any documents
+            doc = await self.db[collection_name].find_one({}, {"schema_version": 1})
+            if doc and "schema_version" in doc:
+                min_version = min(min_version, doc["schema_version"])
+            elif doc:
+                # Document exists but no version means v0 (before any migrations)
+                min_version = 0
 
         return min_version
 

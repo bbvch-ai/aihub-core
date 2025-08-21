@@ -53,9 +53,21 @@ class TestMigrationOrchestrator:
     """Test the migration orchestration logic."""
 
     @pytest.mark.asyncio
+    async def test_get_current_version_with_no_collections(self):
+        """Test version detection when no collections exist."""
+        mock_db = Mock()
+        mock_db.list_collection_names = AsyncMock(return_value=[])
+
+        orchestrator = MigrationOrchestrator(mock_db)
+        version = await orchestrator.get_current_version()
+        assert version == 0  # No collections means version 0
+
+    @pytest.mark.asyncio
     async def test_get_current_version_with_no_documents(self):
         """Test version detection when no documents exist."""
         mock_db = Mock()
+        mock_db.list_collection_names = AsyncMock(return_value=["agent_events"])
+        
         mock_collection = Mock()
         mock_collection.find_one = AsyncMock(return_value=None)
         mock_db.__getitem__ = Mock(return_value=mock_collection)
@@ -68,6 +80,8 @@ class TestMigrationOrchestrator:
     async def test_get_current_version_with_v1_documents(self):
         """Test version detection with v1 documents."""
         mock_db = Mock()
+        mock_db.list_collection_names = AsyncMock(return_value=["agent_events"])
+        
         mock_collection = Mock()
         mock_collection.find_one = AsyncMock(return_value={"schema_version": 1})
         mock_db.__getitem__ = Mock(return_value=mock_collection)
@@ -80,6 +94,8 @@ class TestMigrationOrchestrator:
     async def test_get_current_version_with_mixed_versions(self):
         """Test version detection with mixed document versions."""
         mock_db = Mock()
+        mock_db.list_collection_names = AsyncMock(return_value=["agent_events", "process_events"])
+        
         mock_agent_collection = Mock()
         mock_process_collection = Mock()
         mock_agent_collection.find_one = AsyncMock(return_value={"schema_version": 2})
@@ -102,13 +118,15 @@ class TestMigrationOrchestrator:
     async def test_get_current_version_with_legacy_documents(self):
         """Test version detection with documents that have no schema_version field."""
         mock_db = Mock()
+        mock_db.list_collection_names = AsyncMock(return_value=["agent_events", "process_events"])
+        
         mock_collection = Mock()
         mock_collection.find_one = AsyncMock(return_value={"event_id": "test"})
         mock_db.__getitem__ = Mock(return_value=mock_collection)
 
         orchestrator = MigrationOrchestrator(mock_db)
         version = await orchestrator.get_current_version()
-        assert version == 1
+        assert version == 0  # Documents without schema_version are v0
 
     @pytest.mark.asyncio
     async def test_migrate_to_same_version(self):

@@ -10,7 +10,7 @@ Production-ready migration framework for safely evolving MongoDB schemas in the 
 
 ```
 migrations/
-├── base.py                     # Abstract migration interface
+├── DocumentMigration.py        # Abstract migration interface
 ├── migrate.py                  # Migration orchestration system  
 ├── v2/                        # Version 2 migration
 │   ├── DocumentV2Migrator.py   # V2 migration implementation
@@ -91,7 +91,7 @@ from typing import Any
 
 from pymongo.asynchronous.database import AsyncDatabase
 
-from aihub_lib.persistence.migrations.base import DocumentMigration
+from aihub_lib.persistence.migrations.DocumentMigration import DocumentMigration
 
 class DocumentV3Migrator(DocumentMigration):
     version = 3
