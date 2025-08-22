@@ -8,24 +8,26 @@ from typing import Any, ClassVar
 
 from pymongo.asynchronous.database import AsyncDatabase
 
-from aihub_lib.persistence.migrations.DocumentMigration import DocumentMigration
+from aihub_lib.persistence.migrations.DocumentMigrator import DocumentMigrator
 
 logger = logging.getLogger(__name__)
 
 
-class DocumentV2Migrator(DocumentMigration):
+class DocumentV2Migrator(DocumentMigrator):
     """
     Migrates all collections to schema_version 2 and adds root-level created_at field to event collections.
 
     This migration updates ALL collections to schema version 2, but only adds the created_at field
-    to event collections for optimized querying by moving the created_at field from nested 
+    to event collections for optimized querying by moving the created_at field from nested
     event_data to the document root level.
     """
 
     version: ClassVar[int] = 2
-    description: ClassVar[str] = "Update all collections to v2 and add root-level created_at field for event collections"
+    description: ClassVar[str] = (
+        "Update all collections to v2 and add root-level created_at field for event collections"
+    )
     affected_collections: ClassVar[list[str]] = [
-        "agent_events", 
+        "agent_events",
         "process_events",
     ]
 
@@ -95,7 +97,9 @@ class DocumentV2Migrator(DocumentMigration):
         except Exception as e:
             logger.warning(f"Could not drop indices: {e}")
 
-        logger.info(f"Rolled back {result.modified_count} documents in {collection_name} to v1, removed created_at field")
+        logger.info(
+            f"Rolled back {result.modified_count} documents in {collection_name} to v1, removed created_at field"
+        )
 
         return {
             "modified": result.modified_count,

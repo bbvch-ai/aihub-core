@@ -8,12 +8,12 @@ from typing import Any, ClassVar
 
 from pymongo.asynchronous.database import AsyncDatabase
 
-from aihub_lib.persistence.migrations.DocumentMigration import DocumentMigration
+from aihub_lib.persistence.migrations.DocumentMigrator import DocumentMigrator
 
 logger = logging.getLogger(__name__)
 
 
-class DocumentV1Migrator(DocumentMigration):
+class DocumentV1Migrator(DocumentMigrator):
     """
     Migrates all documents in all collections to include schema_version field set to 1.
 

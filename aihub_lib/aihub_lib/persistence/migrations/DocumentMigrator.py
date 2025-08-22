@@ -11,13 +11,13 @@ from pymongo.asynchronous.database import AsyncDatabase
 logger = logging.getLogger(__name__)
 
 
-class DocumentMigration(ABC):
+class DocumentMigrator(ABC):
     """
     Abstract base class for document migrations.
 
     Each migration should handle upgrading from version-1 to version
     and downgrading from version to version-1.
-    
+
     The migration pattern ensures ALL collections maintain the same schema_version,
     while allowing specific collections to have additional migration logic.
     """
@@ -29,7 +29,7 @@ class DocumentMigration(ABC):
     def get_affected_collections(self) -> list[str]:
         """
         Return list of collection names that need specific migration logic.
-        
+
         Collections NOT in this list will only receive schema version updates.
         Uses class variable for consistency and validation.
         """
@@ -38,7 +38,7 @@ class DocumentMigration(ABC):
     async def get_validated_affected_collections(self, db: AsyncDatabase) -> list[str]:
         """
         Get affected collections with validation that they actually exist.
-        
+
         Warns if collections don't exist (could be misspelled collection names).
         Returns only collections that actually exist in the database.
         """
@@ -65,7 +65,7 @@ class DocumentMigration(ABC):
     async def migrate_collection(self, db: AsyncDatabase, collection_name: str) -> dict[str, Any]:
         """
         Apply specific migration logic to an affected collection.
-        
+
         This method should handle both the specific changes AND schema version update.
         """
         pass
@@ -74,7 +74,7 @@ class DocumentMigration(ABC):
     async def rollback_collection(self, db: AsyncDatabase, collection_name: str) -> dict[str, Any]:
         """
         Rollback specific migration logic from an affected collection.
-        
+
         This method should handle both the specific rollback AND schema version downgrade.
         """
         pass
@@ -82,10 +82,7 @@ class DocumentMigration(ABC):
     async def get_user_collections(self, db: AsyncDatabase) -> list[str]:
         """Get all user collections (excluding system collections)."""
         all_collections = await db.list_collection_names()
-        return [
-            collection_name for collection_name in all_collections 
-            if not collection_name.startswith('system.')
-        ]
+        return [collection_name for collection_name in all_collections if not collection_name.startswith("system.")]
 
     async def update_schema_version_only(self, db: AsyncDatabase, collection_name: str) -> dict[str, Any]:
         """Update only the schema version for collections without specific migration logic."""
@@ -106,7 +103,9 @@ class DocumentMigration(ABC):
         # Create schema_version index for version tracking
         await collection.create_index([("schema_version", 1)])
 
-        logger.info(f"Updated schema version for {result.modified_count} documents in {collection_name} to v{self.version}")
+        logger.info(
+            f"Updated schema version for {result.modified_count} documents in {collection_name} to v{self.version}"
+        )
 
         return {
             "modified": result.modified_count,
@@ -122,7 +121,9 @@ class DocumentMigration(ABC):
             {"$set": {"schema_version": self.version - 1}},
         )
 
-        logger.info(f"Downgraded schema version for {result.modified_count} documents in {collection_name} to v{self.version - 1}")
+        logger.info(
+            f"Downgraded schema version for {result.modified_count} documents in {collection_name} to v{self.version - 1}"
+        )
 
         return {
             "modified": result.modified_count,
@@ -136,10 +137,10 @@ class DocumentMigration(ABC):
         Returns dictionary with migration statistics.
         """
         stats = {}
-        
+
         user_collections = await self.get_user_collections(db)
         validated_affected_collections = await self.get_validated_affected_collections(db)
-        
+
         logger.info(f"Processing {len(user_collections)} collections for v{self.version} migration")
         logger.info(f"Collections with specific migration logic: {validated_affected_collections}")
 
@@ -160,10 +161,10 @@ class DocumentMigration(ABC):
         Returns dictionary with rollback statistics.
         """
         stats = {}
-        
+
         user_collections = await self.get_user_collections(db)
         validated_affected_collections = await self.get_validated_affected_collections(db)
-        
+
         logger.info(f"Processing {len(user_collections)} collections for v{self.version} rollback")
         logger.info(f"Collections with specific rollback logic: {validated_affected_collections}")
 

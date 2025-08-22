@@ -10,7 +10,7 @@ Production-ready migration framework for safely evolving MongoDB schemas in the 
 
 ```
 migrations/
-├── DocumentMigration.py        # Abstract migration interface
+├── DocumentMigrator.py        # Abstract migration interface
 ├── migrate.py                  # Migration orchestration system  
 ├── v2/                        # Version 2 migration
 │   ├── DocumentV2Migrator.py   # V2 migration implementation
@@ -34,7 +34,7 @@ Before any migration PR is merged, it **MUST** include:
 
 1. **Migration Implementation** (`vX/DocumentVXMigrator.py`)
 
-   - Inherits from `DocumentMigration`
+   - Inherits from `DocumentMigrator`
    - Implements `up()` and `down()` methods
    - Uses MongoDB aggregation pipelines for atomic operations
    - Creates optimized indices for performance
@@ -91,37 +91,38 @@ from typing import Any
 
 from pymongo.asynchronous.database import AsyncDatabase
 
-from aihub_lib.persistence.migrations.DocumentMigration import DocumentMigration
+from aihub_lib.persistence.migrations.DocumentMigrator import DocumentMigrator
 
-class DocumentV3Migrator(DocumentMigration):
+
+class DocumentV3Migrator(DocumentMigrator):
     version = 3
     description = "Your migration description here"
-    
+
     def get_affected_collections(self) -> list[str]:
         return ["agent_events", "process_events"]
-    
+
     async def up(self, db: AsyncDatabase) -> dict[str, Any]:
         # Migration logic here
         # Example: Add created_at index to agent_events
         await db["agent_events"].create_index("created_at")
-        
+
         # Update documents using aggregation pipeline for atomicity
         result = await db["agent_events"].update_many(
             {"schema_version": {"$ne": 3}},
             [{"$set": {"schema_version": 3}}]
         )
-        
+
         return {"updated_documents": result.modified_count}
-    
+
     async def down(self, db: AsyncDatabase) -> dict[str, Any]:
         # Rollback logic here - reverse all changes made in up()
         await db["agent_events"].drop_index("created_at")
-        
+
         result = await db["agent_events"].update_many(
             {"schema_version": 3},
             [{"$set": {"schema_version": 2}}]
         )
-        
+
         return {"reverted_documents": result.modified_count}
 ```
 
@@ -155,7 +156,7 @@ Update `migrate.py`:
 ```python
 from aihub_lib.persistence.migrations.v3.DocumentV3Migrator import DocumentV3Migrator
 
-MIGRATIONS: list[type[DocumentMigration]] = [
+MIGRATIONS: list[type[DocumentMigrator]] = [
     DocumentV2Migrator,
     DocumentV3Migrator,  # Add in version order
 ]
@@ -194,7 +195,7 @@ poetry run python persistence/migrations/tests/run_migration_tests.py
 
 Before submitting a migration PR, ensure:
 
-- [ ] **Migration Implementation**: Inherits from `DocumentMigration`
+- [ ] **Migration Implementation**: Inherits from `DocumentMigrator`
 - [ ] **Up Migration**: Uses aggregation pipeline for atomic operations
 - [ ] **Down Migration**: Completely reverts all changes
 - [ ] **Index Management**: Creates indices in up(), drops in down()

@@ -74,7 +74,7 @@ fine-grained migration control and mixed-version document handling during migrat
 
 ### Decision 2: Production-Grade Migration Framework
 
-**Core Implementation**: Abstract base class (`DocumentMigration`) with strict interface requirements for up/down
+**Core Implementation**: Abstract base class (`DocumentMigrator`) with strict interface requirements for up/down
 operations, prerequisite validation, and affected collections tracking.
 
 **Key Features**:

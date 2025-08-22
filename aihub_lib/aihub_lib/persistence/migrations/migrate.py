@@ -8,14 +8,14 @@ from pymongo import AsyncMongoClient
 from pymongo.asynchronous.database import AsyncDatabase
 
 from aihub_lib.persistence.base.schema_version import CURRENT_SCHEMA_VERSION
-from aihub_lib.persistence.migrations.DocumentMigration import DocumentMigration
+from aihub_lib.persistence.migrations.DocumentMigrator import DocumentMigrator
 from aihub_lib.persistence.migrations.v1.DocumentV1Migrator import DocumentV1Migrator
 from aihub_lib.persistence.migrations.v2.DocumentV2Migrator import DocumentV2Migrator
 
 logger = logging.getLogger(__name__)
 
 # All migrations registered here in version order
-MIGRATIONS: list[type[DocumentMigration]] = [
+MIGRATIONS: list[type[DocumentMigrator]] = [
     DocumentV1Migrator,
     DocumentV2Migrator,
 ]
@@ -37,8 +37,7 @@ class MigrationOrchestrator:
         # Get all user collections to check schema versions
         all_collections = await self.db.list_collection_names()
         user_collections = [
-            collection_name for collection_name in all_collections 
-            if not collection_name.startswith('system.')
+            collection_name for collection_name in all_collections if not collection_name.startswith("system.")
         ]
 
         if not user_collections:
