@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.240.5] - 2025-08-22 - Core Infrastructure Updates and Build System Refinements
+
+### Changed
+
+- 🚀 **Upgraded `aihub_pipeline` Docker images to Python 3.13** from 3.11, leveraging the latest language features and
+  performance improvements for pipeline execution.
+- ⚙️ **Enhanced CI/CD workflows to support private GitHub dependencies** by configuring SSH, facilitating more robust
+  and secure access to internal repositories during automated builds.
+- 📦 **Streamlined Docker build processes** by temporarily including the `mdformat-vuepress` module in several service
+  images (`aihub_agent`, `aihub_api`, `aihub_pipeline`) to ensure internal tool compatibility.
+
+---
+
 ## [v0.240.4] - 2025-08-15 - Enhanced CI/CD Actions with Python Version Flexibility
 
 ### Changed
