@@ -8,9 +8,12 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from aihub_lib.testing.logging.logger import enable_logging
 from playground.minimal_workflow.simple_workflow.events.SimpleEventA import SimpleEventA
 from playground.minimal_workflow.simple_workflow.SimpleAgent import SimpleAgent
 from playground.minimal_workflow.simple_workflow.SimpleAgentConfig import SimpleAgentConfig
+
+enable_logging()
 
 scenarios("./features/simple_agent.feature")
 

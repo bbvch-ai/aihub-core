@@ -4,7 +4,8 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 import pytest_asyncio
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from pymongo import AsyncMongoClient
+from pymongo.asynchronous.database import AsyncDatabase
 
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.base.schema_version import CURRENT_SCHEMA_VERSION
@@ -18,7 +19,7 @@ enable_logging()
 @pytest_asyncio.fixture
 async def migration_db():
     """Create test database for migration testing."""
-    client = AsyncIOMotorClient(MongoSettings().CONNECTION_STRING.get_secret_value())
+    client = AsyncMongoClient(MongoSettings().CONNECTION_STRING.get_secret_value())
     db = client["test_migrations"]
 
     await db["agent_events"].delete_many({})
@@ -28,7 +29,7 @@ async def migration_db():
 
     await db["agent_events"].delete_many({})
     await db["process_events"].delete_many({})
-    client.close()
+    await client.close()
 
 
 async def create_test_docs(db, collection: str, count: int, version: int = 1):
@@ -84,9 +85,9 @@ class TestMigrationOrchestrator:
 
         mock_collection = Mock()
         mock_collection.count_documents = AsyncMock(return_value=1)
-        mock_aggregation = Mock()
-        mock_aggregation.to_list = AsyncMock(return_value=[{"_id": None, "min_version": 1}])
-        mock_collection.aggregate = Mock(return_value=mock_aggregation)
+        mock_cursor = Mock()
+        mock_cursor.to_list = AsyncMock(return_value=[{"_id": None, "min_version": 1}])
+        mock_collection.aggregate = AsyncMock(return_value=mock_cursor)
         mock_db.__getitem__ = Mock(return_value=mock_collection)
 
         orchestrator = MigrationOrchestrator(mock_db)
@@ -101,15 +102,15 @@ class TestMigrationOrchestrator:
 
         mock_agent_collection = Mock()
         mock_agent_collection.count_documents = AsyncMock(return_value=1)
-        mock_agent_aggregation = Mock()
-        mock_agent_aggregation.to_list = AsyncMock(return_value=[{"_id": None, "min_version": 2}])
-        mock_agent_collection.aggregate = Mock(return_value=mock_agent_aggregation)
+        mock_agent_cursor = Mock()
+        mock_agent_cursor.to_list = AsyncMock(return_value=[{"_id": None, "min_version": 2}])
+        mock_agent_collection.aggregate = AsyncMock(return_value=mock_agent_cursor)
 
         mock_process_collection = Mock()
         mock_process_collection.count_documents = AsyncMock(return_value=1)
-        mock_process_aggregation = Mock()
-        mock_process_aggregation.to_list = AsyncMock(return_value=[{"_id": None, "min_version": 1}])
-        mock_process_collection.aggregate = Mock(return_value=mock_process_aggregation)
+        mock_process_cursor = Mock()
+        mock_process_cursor.to_list = AsyncMock(return_value=[{"_id": None, "min_version": 1}])
+        mock_process_collection.aggregate = AsyncMock(return_value=mock_process_cursor)
 
         def get_collection(name):
             if name == "agent_events":
@@ -132,9 +133,9 @@ class TestMigrationOrchestrator:
 
         mock_collection = Mock()
         mock_collection.count_documents = AsyncMock(return_value=1)
-        mock_aggregation = Mock()
-        mock_aggregation.to_list = AsyncMock(return_value=[])  # No docs with schema_version
-        mock_collection.aggregate = Mock(return_value=mock_aggregation)
+        mock_cursor = Mock()
+        mock_cursor.to_list = AsyncMock(return_value=[])  # No docs with schema_version
+        mock_collection.aggregate = AsyncMock(return_value=mock_cursor)
         mock_db.__getitem__ = Mock(return_value=mock_collection)
 
         orchestrator = MigrationOrchestrator(mock_db)
@@ -300,7 +301,7 @@ class TestMigrationIntegration:
     """Integration tests with real MongoDB for migration orchestrator."""
 
     @pytest.mark.asyncio
-    async def test_full_migration_cycle(self, migration_db: AsyncIOMotorDatabase):
+    async def test_full_migration_cycle(self, migration_db: AsyncDatabase):
         """Test complete migration cycle: setup -> migrate up -> migrate down."""
         await create_test_docs(migration_db, "agent_events", 10)
         await create_test_docs(migration_db, "process_events", 5)
@@ -324,7 +325,7 @@ class TestMigrationIntegration:
         assert "created_at" not in agent_doc
 
     @pytest.mark.asyncio
-    async def test_migration_with_large_dataset(self, migration_db: AsyncIOMotorDatabase):
+    async def test_migration_with_large_dataset(self, migration_db: AsyncDatabase):
         """Test migration performance with larger dataset."""
         await create_test_docs(migration_db, "agent_events", 1000)
         await create_test_docs(migration_db, "process_events", 500)
@@ -344,7 +345,7 @@ class TestMigrationIntegration:
         assert process_count == 500
 
     @pytest.mark.asyncio
-    async def test_migration_idempotency(self, migration_db: AsyncIOMotorDatabase):
+    async def test_migration_idempotency(self, migration_db: AsyncDatabase):
         """Test that running the same migration multiple times is safe."""
         await create_test_docs(migration_db, "agent_events", 10)
         orchestrator = MigrationOrchestrator(migration_db)

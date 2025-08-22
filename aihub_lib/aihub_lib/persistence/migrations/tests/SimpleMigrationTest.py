@@ -11,7 +11,7 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
-from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import AsyncMongoClient
 from pymongo.asynchronous.database import AsyncDatabase
 
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
@@ -40,7 +40,7 @@ class SimpleMigrationTest(ABC):
     async def db(self):
         """Provide a clean test database for each test."""
         # Use the MongoDB connection from settings
-        client = AsyncIOMotorClient(MongoSettings().CONNECTION_STRING.get_secret_value())
+        client = AsyncMongoClient(MongoSettings().CONNECTION_STRING.get_secret_value())
 
         try:
             # Drop the test database to ensure clean state
@@ -54,7 +54,7 @@ class SimpleMigrationTest(ABC):
         finally:
             # Cleanup after test
             await client.drop_database(self.test_db_name)
-            client.close()
+            await client.close()
 
     async def setup_initial_state(self, db: AsyncDatabase) -> None:
         """Insert initial documents into the database."""

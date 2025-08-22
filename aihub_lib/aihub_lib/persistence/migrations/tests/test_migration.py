@@ -113,9 +113,9 @@ class TestMigrationBasics:
 
         mock_collection = Mock()
         mock_collection.count_documents = AsyncMock(return_value=1)
-        mock_aggregation = Mock()
-        mock_aggregation.to_list = AsyncMock(return_value=[{"_id": None, "min_version": 1}])
-        mock_collection.aggregate = Mock(return_value=mock_aggregation)
+        mock_cursor = Mock()
+        mock_cursor.to_list = AsyncMock(return_value=[{"_id": None, "min_version": 1}])
+        mock_collection.aggregate = AsyncMock(return_value=mock_cursor)
         mock_db.__getitem__ = Mock(return_value=mock_collection)
 
         orchestrator = MigrationOrchestrator(mock_db)

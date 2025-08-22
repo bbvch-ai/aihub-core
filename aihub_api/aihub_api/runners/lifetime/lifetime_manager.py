@@ -78,7 +78,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     try:
         # Database migrations must run before any service starts
         logger.info("Running database migrations...")
-        await run_migrations(connection_string, db_name)
+        await MigrationOrchestrator.run_migrations(connection_string, db_name)
         logger.info("Database migrations completed")
 
         # Connect to MongoDB via MongoEngine after migrations complete

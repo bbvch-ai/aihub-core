@@ -53,7 +53,8 @@ class MigrationOrchestrator:
                 {"$group": {"_id": None, "min_version": {"$min": "$schema_version"}}},
             ]
 
-            result = await collection.aggregate(pipeline).to_list(length=1)
+            cursor = await collection.aggregate(pipeline)
+            result = await cursor.to_list(length=1)
 
             if result:
                 collection_min = result[0]["min_version"]
