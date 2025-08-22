@@ -280,6 +280,14 @@ jobs:
           sudo apt-get install -y jq
           npm install -g pnpm
 
+      - name: Set up SSH for GitHub private dependencies
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          git config --global url."git@github.com:".insteadOf "https://github.com/"
+
       - name: Install Poetry
         run: |
           python -m pip install --user pipx

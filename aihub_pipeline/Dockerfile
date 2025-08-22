@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:1.2
 
 # Build stage
-FROM python:3.11-slim AS builder
+FROM python:3.13-slim AS builder
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -29,6 +29,8 @@ WORKDIR /app
 COPY Makefile switch_dependencies.py pyproject.toml ./
 COPY aihub_pipeline ./aihub_pipeline
 COPY aihub_lib ./aihub_lib
+# TODO: remove once plugin separated!
+COPY aihub_doc/mdformat-vuepress ./aihub_doc/mdformat-vuepress
 
 RUN poetry install
 RUN make use-local-core
@@ -42,7 +44,7 @@ RUN rm -rf ~/.cache/pypoetry ~/.cache/pip /tmp/poetry_cache
 
 
 # --- Runtime stage ---
-FROM python:3.11-slim AS runtime
+FROM python:3.13-slim AS runtime
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
