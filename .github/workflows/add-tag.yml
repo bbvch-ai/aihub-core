@@ -10,10 +10,12 @@ permissions:
   actions: read
 
 jobs:
-  version-and-tag:
-    name: Bump Version, Tag & Gen-Changelog
+  compute-and-initial-tag:
+    name: Compute Version & Initial Tag
+    if: github.event.pull_request.merged == true || github.event_name == 'push'
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
+    outputs:
+      version: ${{ steps.create-tag.outputs.version }}
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v4
@@ -97,6 +99,16 @@ jobs:
           git push origin ${{ steps.create-tag.outputs.version }}
           git pull --rebase origin main
 
+  update-and-dependencies:
+    name: Update Files & Install Deps
+    needs: compute-and-initial-tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Define directories
         id: define-directories
         run: |
@@ -109,7 +121,7 @@ jobs:
 
       - name: Increment version-tag in project files
         run: |
-          VERSION="${{ steps.create-tag.outputs.version }}"
+          VERSION="${{ needs.compute-and-initial-tag.outputs.version }}"
           update_version() {
             echo "Update package version in $1"
             sed -i '/\[tool.poetry\]/,/^version =/ s/version = "[^"]*"/version = "'"$VERSION"'"/' $1
@@ -168,7 +180,7 @@ jobs:
 
       - name: Update lib version tag in poetry.lock
         run: |
-          VERSION="${{ steps.create-tag.outputs.version }}"
+          VERSION="${{ needs.compute-and-initial-tag.outputs.version }}"
           update_version_tag() {
               echo "Update version tag in $1"
               sed -i '/name = "aihub-lib"/,/^version =/ s/version = "[^"]*"/version = "'"$VERSION"'"/' "$1"
@@ -181,7 +193,7 @@ jobs:
 
       - name: Commit version updates
         run: |
-          VERSION="${{ steps.create-tag.outputs.version }}"
+          VERSION="${{ needs.compute-and-initial-tag.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -u
@@ -189,6 +201,37 @@ jobs:
           git push origin --force
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Clean up SSH keys
+        run: |
+          rm -rf ~/.ssh
+          git config --global --unset url."git@github.com:".insteadOf
+
+  changelog:
+    name: Generate Changelog
+    needs: [compute-and-initial-tag, update-and-dependencies]
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Ensure pipx is available
+        run: |
+          python3 -m pip install --user pipx
+          python3 -m pipx ensurepath
+
+      - name: Install Poetry
+        run: |
+          pipx install poetry
+          poetry install --only dev
 
       - name: Setup LLM for Changelog Generation
         env:
@@ -207,58 +250,141 @@ jobs:
       - name: Generate Changelog
         id: changelog_generator
         run: make changelog
-        # This step is allowed to fail. If changelog generation has an error,
-        # we still want to proceed to publish the final tag.
-        continue-on-error: true
+
+      - name: Upload changelog artifact
+        if: ${{ hashFiles('changelog.md') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: changelog.md
+
+  license-report:
+    name: Generate License Report
+    needs: [compute-and-initial-tag, update-and-dependencies]
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
 
       - name: Install additional dependencies for license check
         run: |
+          sudo apt-get update
           sudo apt-get install -y jq
           npm install -g pnpm
+
+      - name: Set up SSH for GitHub private dependencies
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          git config --global url."git@github.com:".insteadOf "https://github.com/"
+
+      - name: Install Poetry
+        run: |
+          python -m pip install --user pipx
+          python -m pipx ensurepath
+          pipx install poetry
+          poetry install --only dev
 
       - name: Update License Report
         id: license_generator
         run: |
           chmod +x ./generate-license.sh
           make license-check
+
+      - name: Upload license artifact
+        if: ${{ hashFiles('LICENSES.md') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: licenses
+          path: LICENSES.md
+
+  finalize-release:
+    name: Commit Artifacts & Finalize Tag
+    needs: [compute-and-initial-tag, update-and-dependencies, changelog, license-report]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download changelog (if any)
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog
+          path: .
         continue-on-error: true
+
+      - name: Download licenses (if any)
+        uses: actions/download-artifact@v4
+        with:
+          name: licenses
+          path: .
+        continue-on-error: true
+
+      - name: Set up SSH for GitHub bypass
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          git config --global url."git@github.com:".insteadOf "https://github.com/"
 
       - name: Commit Changelog and License Report, Finalize Tag
         run: |
-          VERSION="${{ steps.create-tag.outputs.version }}"
+          VERSION="${{ needs.compute-and-initial-tag.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Check if either changelog or license report have been updated
-          changelog_changed=false
-          license_changed=false
-          
-          if [[ "${{ steps.changelog_generator.outcome }}" == "success" && -n $(git status --porcelain changelog.md) ]]; then
-            changelog_changed=true
-            echo "Changelog updated."
+          # Detect changes (only if files exist and differ)
+          changed=false
+          if [ -f changelog.md ]; then
+            if [ -n "$(git status --porcelain changelog.md)" ]; then
+              git add changelog.md
+              changed=true
+              echo "Changelog updated."
+            fi
           fi
-          
-          if [[ "${{ steps.license_generator.outcome }}" == "success" && -n $(git status --porcelain LICENSES.md) ]]; then
-            license_changed=true
-            echo "License report updated."
+          if [ -f LICENSES.md ]; then
+            if [ -n "$(git status --porcelain LICENSES.md)" ]; then
+              git add LICENSES.md
+              changed=true
+              echo "License report updated."
+            fi
+          fi
+  
+          if [ "$changed" = true ]; then
+            git commit --amend --no-edit || true
+            git push origin HEAD --force
+          else
+            echo "No new changelog or license changes to commit."
           fi
 
-          # Only amend the commit if either file has changed
-          if [[ "$changelog_changed" == "true" || "$license_changed" == "true" ]]; then
-            echo "Amending previous commit with updated files."
-            [[ "$changelog_changed" == "true" ]] && git add changelog.md
-            [[ "$license_changed" == "true" ]] && git add LICENSES.md
-            git commit --amend --no-edit
-          else
-            echo "No new changelog or license report entries were generated, or the steps failed. Proceeding without updates."
-          fi
-          
           echo "Creating final tag ${VERSION} and pushing..."
-          git tag -f ${VERSION}
+          git tag -f "${VERSION}"
           git push origin --force
           git push origin --tags --force
 
-      - name: Clean up SSH keys
+  notify-release:
+    name: Notify Release Dispatch
+    needs: [finalize-release, compute-and-initial-tag]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch release-ready
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.compute-and-initial-tag.outputs.version }}
         run: |
-          rm -rf ~/.ssh
-          git config --global --unset url."git@github.com:".insteadOf
+          gh api repos/${{ github.repository }}/dispatches \
+            -F event_type=release-ready \
+            -F client_payload[release_version]=$VERSION

@@ -31,6 +31,8 @@ WORKDIR /app
 COPY Makefile switch_dependencies.py pyproject.toml ./
 COPY aihub_api ./aihub_api
 COPY aihub_lib ./aihub_lib
+# TODO: remove once plugin separated!
+COPY aihub_doc/mdformat-vuepress ./aihub_doc/mdformat-vuepress
 
 RUN poetry install
 RUN make use-local-core
@@ -56,7 +58,7 @@ ENV PYTHONUNBUFFERED=1 \
     POETRY_VIRTUALENVS_CREATE=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache \
     PYTHONPATH=/app \
-    PATH="/app/.venv/bin:/opt/poetry/bin:$PATH"\
+    PATH="/app/.venv/bin:/opt/poetry/bin:$PATH" \
     AIHUB_API_VERSION=${VERSION}
 
 # Setup users

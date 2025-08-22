@@ -19,6 +19,10 @@ format:
 	@(cd aihub_bot && make format)
 	@(cd aihub_iac && make format)
 
+format-md:
+	@echo "Formatting markdown files..."
+	@poetry run mdformat --number $$(git ls-files '*.md')
+
 # Type-check with MyPy
 typecheck:
 	@echo "Running type checks for pipelines..."
@@ -41,6 +45,7 @@ pr-ready:
 	@(cd aihub_bot &&  make pr-ready)
 	@(cd aihub_iac &&  make pr-ready)
 	@(cd aihub_web && make pr-ready)
+	@poetry run mdformat --number $$(git ls-files '*.md')
 
 # Use local cores for development (with poetry install)
 use-local-core:
@@ -52,7 +57,7 @@ use-local-core-without-install:
 	@echo "Switching to local cores without poetry install..."
 	poetry run python switch_dependencies.py local
 
-TAG ?= v0.240.0
+TAG ?= v0.240.2
 
 # Use remote cores (with poetry install)
 use-remote-core:
@@ -67,8 +72,9 @@ use-remote-core-without-install:
 changelog:
 	@echo "Generating changelog"
 	/bin/bash ./generate-changelog.sh
-
+	@poetry run mdformat --number $$(git ls-files '*.md')
 # Check licenses across all dependencies
 license-check:
 	@echo "Checking licenses..."
 	/bin/bash ./generate-license.sh
+	@poetry run mdformat --number $$(git ls-files '*.md')

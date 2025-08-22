@@ -1,5 +1,5 @@
 ---
-title: "AI-Hub Pipelines"
+title: AI-Hub Pipelines
 index: 3
 ---
 
@@ -187,6 +187,7 @@ Before implementing new pipeline components, understand the existing data flow a
 #### 🧩 Core Pipeline Components
 
 1. **Asset Factories**: Create reusable asset definitions
+
    ```python
    def documents_factory(
        key: AssetKey,
@@ -198,6 +199,7 @@ Before implementing new pipeline components, understand the existing data flow a
    ```
 
 2. **Operations**: Define individual processing steps
+
    ```python
    @op(
        required_resource_keys={"document_parser"},
@@ -210,6 +212,7 @@ Before implementing new pipeline components, understand the existing data flow a
    ```
 
 3. **Resources**: Configure external dependencies
+
    ```python
    class DocumentParserResource(ConfigurableResource):
        loader_type: LoaderType = LoaderType.DOCLING
@@ -228,10 +231,11 @@ Follow this pattern to create new pipeline assets that integrate with the existi
 #### 🏭 Asset Factory Pattern
 
 1. **Create Asset Factory**: Define a factory function that creates your asset.
+
    ```python
    # assets/factories/my_domain/my_asset_factory.py
    from dagster import AssetKey, DynamicPartitionsDefinition, graph_asset
-   
+
    def my_asset_factory(
        key: AssetKey,
        upstream_key: AssetKey,
@@ -253,10 +257,11 @@ Follow this pattern to create new pipeline assets that integrate with the existi
    ```
 
 2. **Define Operations**: Create the processing operations.
+
    ```python
    # ops/my_domain/process_my_data.py
    from dagster import op, In, Out
-   
+
    @op(
        required_resource_keys={"my_resource"},
        ins={"input_data": In(MyInputType)},
@@ -269,10 +274,11 @@ Follow this pattern to create new pipeline assets that integrate with the existi
    ```
 
 3. **Create Resources**: Define necessary resources for your operations.
+
    ```python
    # resources/my_domain/MyResource.py
    from dagster import ConfigurableResource
-   
+
    class MyResource(ConfigurableResource):
        endpoint: str
        api_key: str
@@ -536,7 +542,7 @@ This glossary defines terms, concepts, and technologies that have specific meani
 building upon the core AI-Hub terminology.
 
 | Term                   | Definition                                                                                                                                                                |
-|:-----------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Asset**              | A Dagster concept representing a data object or file that is produced by a pipeline. Assets can be materialized (computed) and have dependencies on other assets.         |
 | **Asset Factory**      | A function that creates and configures Dagster assets with specific parameters, enabling reusable asset definitions across different pipeline configurations.             |
 | **Data Lake File**     | A structured representation of a document stored in Azure Data Lake, containing content, metadata, and URI information for downstream processing.                         |
