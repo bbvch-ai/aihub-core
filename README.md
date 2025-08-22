@@ -256,9 +256,7 @@ its own isolated Poetry environment and dependencies.
 To work on a specific scope, you must first activate its environment:
 
 1. Navigate into the scope's directory (e.g., `cd aihub_agent`).
-2. Activate the environment using the command: `poetry shell`. Poetry shell was moved to a separate plugin, so you may
-   need to install it first with: `poetry self add poetry-plugin-shell`.
-3. Once the shell is activated, install the dependencies with: `poetry install`.
+2. Install the dependencies with: `poetry install`.
 
 You must run commands from within the correct scope's activated environment. This process needs to be repeated for each
 scope you intend to work on.
@@ -710,8 +708,7 @@ checking is run in `strict = true` mode, which enforces the highest level of typ
 
 ::: danger :rotating_light: Critical Commands
 While these checks run automatically in our CI pipeline, you **must** run them locally before committing your code. Each
-scope (and the root directory) contains a `Makefile` with the necessary commands. Always run these from within an
-activated Poetry shell.
+scope (and the root directory) contains a `Makefile` with the necessary commands.
 
 - `make format`: Formats all code in the current scope using **Black**.
 - `make lint`: Lints all code using **Ruff** and runs **MyPy** for type checking.
@@ -873,7 +870,7 @@ Once you have a working implementation, you must run our automated formatting an
 100% compliant with our standards.
 
 ::: tip :white_check_mark: Quality Check
-From within the activated Poetry shell of the scope you worked on, run:
+From within the scope you worked on, run:
 
 ```bash
 make pr-ready

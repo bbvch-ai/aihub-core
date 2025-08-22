@@ -175,7 +175,6 @@ docker compose -f docker-compose.dev.yml up -d
 
 ```bash
 cd aihub_pipeline
-poetry shell
 ```
 
 ### 🔍 Step 1: Understanding the Pipeline Architecture

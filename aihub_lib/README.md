@@ -114,7 +114,6 @@ docker compose -f docker-compose.dev.yml up -d
 
 ```bash
 cd aihub_lib
-poetry shell
 ```
 
 ### 🔍 Step 1: Understanding the Domain and Scope

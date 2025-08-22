@@ -141,7 +141,6 @@ docker compose -f docker-compose.dev.yml up -d
 
 ```bash
 cd aihub_process
-poetry shell
 ```
 
 ### 🛠️ Step 1: Create the Process, Configuration, and Events
@@ -267,7 +266,7 @@ Process testing uses BDD with `pytest-bdd` and the `ProcessTestRunner`. This pro
        assert process_runner.has_event_of_class(HumanReviewRequest)
    ```
 
-3. **Run the Tests**: Execute tests from your activated Poetry shell.
+3. **Run the Tests**: Execute tests.
 
    ```bash
    # Run all tests

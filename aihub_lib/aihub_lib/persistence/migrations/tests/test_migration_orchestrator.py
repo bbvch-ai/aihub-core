@@ -8,7 +8,7 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.base.schema_version import CURRENT_SCHEMA_VERSION
-from aihub_lib.persistence.migrations.migrate import MIGRATIONS, MigrationOrchestrator, run_migrations
+from aihub_lib.persistence.migrations.MigrationOrchestrator import MIGRATIONS, MigrationOrchestrator
 from aihub_lib.persistence.migrations.v2.DocumentV2Migrator import DocumentV2Migrator
 from aihub_lib.testing.logging.logger import enable_logging
 
@@ -67,23 +67,26 @@ class TestMigrationOrchestrator:
         """Test version detection when no documents exist."""
         mock_db = Mock()
         mock_db.list_collection_names = AsyncMock(return_value=["agent_events"])
-        
+
         mock_collection = Mock()
-        mock_collection.find_one = AsyncMock(return_value=None)
+        mock_collection.count_documents = AsyncMock(return_value=0)
         mock_db.__getitem__ = Mock(return_value=mock_collection)
 
         orchestrator = MigrationOrchestrator(mock_db)
         version = await orchestrator.get_current_version()
-        assert version == CURRENT_SCHEMA_VERSION
+        assert version == 0  # Empty collections should return 0
 
     @pytest.mark.asyncio
     async def test_get_current_version_with_v1_documents(self):
         """Test version detection with v1 documents."""
         mock_db = Mock()
         mock_db.list_collection_names = AsyncMock(return_value=["agent_events"])
-        
+
         mock_collection = Mock()
-        mock_collection.find_one = AsyncMock(return_value={"schema_version": 1})
+        mock_collection.count_documents = AsyncMock(return_value=1)
+        mock_aggregation = Mock()
+        mock_aggregation.to_list = AsyncMock(return_value=[{"_id": None, "min_version": 1}])
+        mock_collection.aggregate = Mock(return_value=mock_aggregation)
         mock_db.__getitem__ = Mock(return_value=mock_collection)
 
         orchestrator = MigrationOrchestrator(mock_db)
@@ -95,11 +98,18 @@ class TestMigrationOrchestrator:
         """Test version detection with mixed document versions."""
         mock_db = Mock()
         mock_db.list_collection_names = AsyncMock(return_value=["agent_events", "process_events"])
-        
+
         mock_agent_collection = Mock()
+        mock_agent_collection.count_documents = AsyncMock(return_value=1)
+        mock_agent_aggregation = Mock()
+        mock_agent_aggregation.to_list = AsyncMock(return_value=[{"_id": None, "min_version": 2}])
+        mock_agent_collection.aggregate = Mock(return_value=mock_agent_aggregation)
+
         mock_process_collection = Mock()
-        mock_agent_collection.find_one = AsyncMock(return_value={"schema_version": 2})
-        mock_process_collection.find_one = AsyncMock(return_value={"schema_version": 1})
+        mock_process_collection.count_documents = AsyncMock(return_value=1)
+        mock_process_aggregation = Mock()
+        mock_process_aggregation.to_list = AsyncMock(return_value=[{"_id": None, "min_version": 1}])
+        mock_process_collection.aggregate = Mock(return_value=mock_process_aggregation)
 
         def get_collection(name):
             if name == "agent_events":
@@ -119,9 +129,12 @@ class TestMigrationOrchestrator:
         """Test version detection with documents that have no schema_version field."""
         mock_db = Mock()
         mock_db.list_collection_names = AsyncMock(return_value=["agent_events", "process_events"])
-        
+
         mock_collection = Mock()
-        mock_collection.find_one = AsyncMock(return_value={"event_id": "test"})
+        mock_collection.count_documents = AsyncMock(return_value=1)
+        mock_aggregation = Mock()
+        mock_aggregation.to_list = AsyncMock(return_value=[])  # No docs with schema_version
+        mock_collection.aggregate = Mock(return_value=mock_aggregation)
         mock_db.__getitem__ = Mock(return_value=mock_collection)
 
         orchestrator = MigrationOrchestrator(mock_db)
@@ -215,9 +228,9 @@ class TestRunMigrations:
         mock_client = AsyncMock()
         mock_client.__getitem__ = Mock(return_value=Mock())
 
-        with patch("aihub_lib.persistence.migrations.migrate.AsyncMongoClient", return_value=mock_client):
+        with patch("aihub_lib.persistence.migrations.MigrationOrchestrator.AsyncMongoClient", return_value=mock_client):
             with patch.object(MigrationOrchestrator, "migrate_to") as mock_migrate_to:
-                await run_migrations("mongodb://test", "test_db")
+                await MigrationOrchestrator.run_migrations("mongodb://test", "test_db")
                 mock_migrate_to.assert_called_once_with(None)
 
     @pytest.mark.asyncio
@@ -226,9 +239,9 @@ class TestRunMigrations:
         mock_client = AsyncMock()
         mock_client.__getitem__ = Mock(return_value=Mock())
 
-        with patch("aihub_lib.persistence.migrations.migrate.AsyncMongoClient", return_value=mock_client):
+        with patch("aihub_lib.persistence.migrations.MigrationOrchestrator.AsyncMongoClient", return_value=mock_client):
             with patch.object(MigrationOrchestrator, "migrate_to") as mock_migrate_to:
-                await run_migrations("mongodb://test", "test_db", target_version=1)
+                await MigrationOrchestrator.run_migrations("mongodb://test", "test_db", target_version=1)
                 mock_migrate_to.assert_called_once_with(1)
 
     @pytest.mark.asyncio
@@ -237,9 +250,9 @@ class TestRunMigrations:
         mock_client = AsyncMock()
         mock_client.__getitem__ = Mock(return_value=Mock())
 
-        with patch("aihub_lib.persistence.migrations.migrate.AsyncMongoClient", return_value=mock_client):
+        with patch("aihub_lib.persistence.migrations.MigrationOrchestrator.AsyncMongoClient", return_value=mock_client):
             with patch.object(MigrationOrchestrator, "migrate_to"):
-                await run_migrations("mongodb://test", "test_db")
+                await MigrationOrchestrator.run_migrations("mongodb://test", "test_db")
                 # With async context manager, __aexit__ is called automatically
                 mock_client.__aexit__.assert_called()
 
@@ -249,10 +262,10 @@ class TestRunMigrations:
         mock_client = AsyncMock()
         mock_client.__getitem__ = Mock(return_value=Mock())
 
-        with patch("aihub_lib.persistence.migrations.migrate.AsyncMongoClient", return_value=mock_client):
+        with patch("aihub_lib.persistence.migrations.MigrationOrchestrator.AsyncMongoClient", return_value=mock_client):
             with patch.object(MigrationOrchestrator, "migrate_to", side_effect=Exception("Migration failed")):
                 with pytest.raises(Exception, match="Migration failed"):
-                    await run_migrations("mongodb://test", "test_db")
+                    await MigrationOrchestrator.run_migrations("mongodb://test", "test_db")
                 # With async context manager, __aexit__ is called even on exception
                 mock_client.__aexit__.assert_called()
 

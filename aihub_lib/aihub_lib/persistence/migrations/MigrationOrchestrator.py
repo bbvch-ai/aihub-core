@@ -1,7 +1,3 @@
-"""
-Central migration orchestrator for database schema updates.
-"""
-
 import logging
 
 from pymongo import AsyncMongoClient
@@ -22,7 +18,7 @@ MIGRATIONS: list[type[DocumentMigrator]] = [
 
 
 class MigrationOrchestrator:
-    """Orchestrates database migrations."""
+    """Central migration orchestrator for database schema updates."""
 
     def __init__(self, db: AsyncDatabase):
         self.db = db
@@ -41,21 +37,32 @@ class MigrationOrchestrator:
         ]
 
         if not user_collections:
-            # No collections yet, start with version 0
             return 0
 
-        min_version = CURRENT_SCHEMA_VERSION
+        min_version = None
 
         for collection_name in user_collections:
-            # Check if collection has any documents
-            doc = await self.db[collection_name].find_one({}, {"schema_version": 1})
-            if doc and "schema_version" in doc:
-                min_version = min(min_version, doc["schema_version"])
-            elif doc:
-                # Document exists but no version means v0 (before any migrations)
-                min_version = 0
+            collection = self.db[collection_name]
 
-        return min_version
+            count = await collection.count_documents({}, limit=1)
+            if count == 0:
+                continue
+
+            pipeline = [
+                {"$match": {"schema_version": {"$exists": True}}},
+                {"$group": {"_id": None, "min_version": {"$min": "$schema_version"}}},
+            ]
+
+            result = await collection.aggregate(pipeline).to_list(length=1)
+
+            if result:
+                collection_min = result[0]["min_version"]
+                min_version = collection_min if min_version is None else min(min_version, collection_min)
+            else:
+                # Collection has documents but none have schema_version (v0)
+                return 0  # Immediately return 0 as it's the minimum possible
+
+        return min_version if min_version is not None else 0
 
     async def migrate_to(self, target_version: int | None = None) -> None:
         """
@@ -111,15 +118,15 @@ class MigrationOrchestrator:
 
                 logger.info(f"Successfully rolled back migration v{migration.version}: {stats}")
 
+    @staticmethod
+    async def run_migrations(connection_string: str, db_name: str, target_version: int | None = None) -> None:
+        """
+        Main entry point for running migrations.
 
-async def run_migrations(connection_string: str, db_name: str, target_version: int | None = None) -> None:
-    """
-    Main entry point for running migrations.
-
-    Connects to MongoDB and runs all pending migrations up to target_version.
-    If target_version is None, migrates to the latest version.
-    """
-    async with AsyncMongoClient(connection_string) as client:
-        db = client[db_name]
-        orchestrator = MigrationOrchestrator(db)
-        await orchestrator.migrate_to(target_version)
+        Connects to MongoDB and runs all pending migrations up to target_version.
+        If target_version is None, migrates to the latest version.
+        """
+        async with AsyncMongoClient(connection_string) as client:
+            db = client[db_name]
+            orchestrator = MigrationOrchestrator(db)
+            await orchestrator.migrate_to(target_version)

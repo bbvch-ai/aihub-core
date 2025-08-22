@@ -7,7 +7,7 @@ import pytest_asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
-from aihub_lib.persistence.migrations.migrate import MIGRATIONS, MigrationOrchestrator
+from aihub_lib.persistence.migrations.MigrationOrchestrator import MIGRATIONS, MigrationOrchestrator
 from aihub_lib.persistence.migrations.v2.DocumentV2Migrator import DocumentV2Migrator
 from aihub_lib.testing.logging.logger import enable_logging
 
@@ -110,9 +110,12 @@ class TestMigrationBasics:
         """Test version detection with mocked collections."""
         mock_db = Mock()
         mock_db.list_collection_names = AsyncMock(return_value=["agent_events", "process_events"])
-        
+
         mock_collection = Mock()
-        mock_collection.find_one = AsyncMock(return_value={"schema_version": 1})
+        mock_collection.count_documents = AsyncMock(return_value=1)
+        mock_aggregation = Mock()
+        mock_aggregation.to_list = AsyncMock(return_value=[{"_id": None, "min_version": 1}])
+        mock_collection.aggregate = Mock(return_value=mock_aggregation)
         mock_db.__getitem__ = Mock(return_value=mock_collection)
 
         orchestrator = MigrationOrchestrator(mock_db)

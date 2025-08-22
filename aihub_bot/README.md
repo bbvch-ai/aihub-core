@@ -124,7 +124,7 @@ This section provides a practical, step-by-step guide to building, testing, and 
 Before you begin, ensure you have completed the infrastructure setup from the root project documentation.
 
 ::: warning
-All subsequent commands must be run from within an activated Poetry shell. This is critical for proper environment isolation.
+All subsequent commands must be run from within an activated Poetry environment. This is critical for proper environment isolation.
 :::
 
 ```bash
@@ -134,7 +134,6 @@ docker compose -f docker-compose.dev.yml up -d
 
 ```bash
 cd aihub_bot
-poetry shell
 ```
 
 #### ☁️ Azure Bot Framework Setup
@@ -354,7 +353,7 @@ Bot testing uses pytest with the `BotTestRunner` for integration testing. This p
        assert entity.ttl > 0
    ```
 
-2. **Run Tests**: Execute tests from your activated Poetry shell.
+2. **Run Tests**: Execute tests.
 
    ```bash
    # Run all tests

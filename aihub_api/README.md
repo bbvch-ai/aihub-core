@@ -139,7 +139,6 @@ docker compose -f docker-compose.dev.yml up -d
 
 ```bash
 cd aihub_api
-poetry shell
 ```
 
 ### 🛠️ Step 1: Create Controller, Service, and DTOs
@@ -303,7 +302,7 @@ API testing uses pytest with FastAPI's test client and the `ApiTestRunner` or `S
        assert data["id"] == resource_id
    ```
 
-2. **Run Tests**: Execute tests from your activated Poetry shell.
+2. **Run Tests**: Execute tests.
 
    ```bash
    # Run all tests

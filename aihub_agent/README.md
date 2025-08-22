@@ -131,7 +131,6 @@ docker compose -f docker-compose.dev.yml up -d
 
 ```bash
 cd aihub_agent
-poetry shell
 ```
 
 ### 🛠️ Step 1: Create the Agent, Configuration, and Events
@@ -234,7 +233,7 @@ We use Behavior-Driven Development (BDD) with `pytest-bdd` as the primary method
    def _(agent_runner: AgentTestRunner):
        assert agent_runner.has_stop_event, "Agent did not receive stop event"
    ```
-3. **Run the Tests**: Execute tests from your activated Poetry shell.
+3. **Run the Tests**: Execute tests.
    ```bash
    # Run all tests (excluding cloud dependencies)
    poetry run pytest -k "not azure"

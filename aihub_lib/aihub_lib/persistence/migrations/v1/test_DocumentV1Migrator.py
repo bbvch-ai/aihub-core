@@ -1,316 +1,343 @@
-"""Tests for DocumentV1Migrator - consolidated and simplified."""
+"""
+Simple, real-world tests for DocumentV1Migrator using actual MongoEngine entity structures.
 
-from unittest.mock import AsyncMock, Mock
+These tests use actual MongoDB with clear before/after states based on real entity schemas,
+making them easy to understand and maintain.
+"""
 
-import pytest
-import pytest_asyncio
-from motor.motor_asyncio import AsyncIOMotorClient
+from datetime import UTC, datetime
+from typing import Any
 
-from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.persistence.migrations.tests.SimpleMigrationTest import SimpleMigrationTest
 from aihub_lib.persistence.migrations.v1.DocumentV1Migrator import DocumentV1Migrator
-from aihub_lib.testing.logging.logger import enable_logging
 
-enable_logging()
-
-
-@pytest_asyncio.fixture
-async def migration_db():
-    """Create test database for DocumentV1Migrator testing."""
-    client = AsyncIOMotorClient(MongoSettings().CONNECTION_STRING.get_secret_value())
-    db = client["test_v1_migration"]
-
-    await db["agent_events"].delete_many({})
-    await db["process_events"].delete_many({})
-
-    yield db
-
-    await db["agent_events"].delete_many({})
-    await db["process_events"].delete_many({})
-    client.close()
+# Use fixed datetime instances to avoid precision issues
+FIXED_DATETIME_1 = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
+FIXED_DATETIME_2 = datetime(2025, 1, 2, 12, 0, 0, tzinfo=UTC)
 
 
-class TestDocumentV1Migrator:
-    """Comprehensive tests for DocumentV1Migrator."""
+class TestDocumentV1MigratorRealistic(SimpleMigrationTest):
+    """
+    Realistic tests for DocumentV1Migrator using actual entity data structures.
 
-    def test_migration_properties(self):
-        """Test that migration has correct properties."""
-        migration = DocumentV1Migrator()
-        assert migration.version == 1
-        assert "schema_version" in migration.description
-        assert "V1" in migration.__class__.__name__
-        assert len(migration.description) > 20
-        assert migration.__class__.__doc__ is not None
-        assert len(migration.__class__.__doc__.strip()) > 50
+    V1 migration adds schema_version=1 to all documents that don't have it.
+    Uses real collections: users, agent_events, process_events
+    """
 
-        # V1 migration affects ALL collections, so get_affected_collections() returns []
-        collections = migration.get_affected_collections()
-        assert collections == []
+    migration_class = DocumentV1Migrator
 
-    @pytest.mark.asyncio
-    async def test_up_migration_mock(self):
-        """Test the up migration with mocked database."""
-        migration = DocumentV1Migrator()
-        mock_db = Mock()
-        mock_collection = Mock()
-        mock_db.__getitem__ = Mock(return_value=mock_collection)
-        mock_db.list_collection_names = AsyncMock(return_value=["agent_events", "process_events", "user_profiles"])
-
-        mock_result = Mock()
-        mock_result.modified_count = 50
-        mock_result.matched_count = 50
-        mock_collection.update_many = AsyncMock(return_value=mock_result)
-        mock_collection.create_index = AsyncMock()
-        mock_collection.count_documents = AsyncMock(return_value=50)
-
-        result = await migration.up(mock_db)
-        assert isinstance(result, dict)
-        assert "agent_events" in result
-        assert "process_events" in result
-        assert "user_profiles" in result  # All collections should be processed
-
-    @pytest.mark.asyncio
-    async def test_down_migration_mock(self):
-        """Test the down migration with mocked database."""
-        migration = DocumentV1Migrator()
-        mock_db = Mock()
-        mock_collection = Mock()
-        mock_db.__getitem__ = Mock(return_value=mock_collection)
-        mock_db.list_collection_names = AsyncMock(return_value=["agent_events", "process_events", "user_profiles"])
-
-        mock_result = Mock()
-        mock_result.modified_count = 25
-        mock_result.matched_count = 25
-        mock_collection.update_many = AsyncMock(return_value=mock_result)
-        mock_collection.drop_index = AsyncMock()
-        mock_collection.count_documents = AsyncMock(return_value=25)
-
-        result = await migration.down(mock_db)
-        assert isinstance(result, dict)
-        assert "agent_events" in result
-        assert "process_events" in result
-        assert "user_profiles" in result  # All collections should be processed
-
-    @pytest.mark.asyncio
-    async def test_validate_prerequisites(self):
-        """Test prerequisite validation."""
-        migration = DocumentV1Migrator()
-        mock_db = Mock()
-        mock_collection = Mock()
-        mock_collection.count_documents = AsyncMock(return_value=0)
-        mock_db.list_collection_names = AsyncMock(return_value=[])  # Empty collections list should still validate
-        mock_db.__getitem__ = Mock(return_value=mock_collection)
-
-        result = await migration.validate_prerequisites(mock_db)
-        assert result is True
-
-    @pytest.mark.asyncio
-    async def test_migration_with_realistic_data(self, migration_db):
-        """Test migration with realistic data."""
-        v0_docs = [
+    # Real entity data based on actual MongoEngine schemas
+    initial_state: dict[str, list[dict[str, Any]]] = {
+        "users": [
             {
-                "agent_class": "TestAgent",
-                "agent_id": "agent_001",
-                "event_id": "event_001",
-                "event_data": {"created_at": 1640995200000000000, "content": "Test content"},
+                # UserEntity fields without schema_version (pre-migration state)
+                "id": "user-123-oid",
+                "name": "Alice Smith",
+                "email": "alice@example.com",
+                "profile_image": None,
+                "last_updated": FIXED_DATETIME_1,
+                "roles": ["user", "admin"],
+                "favorite_modules": [],
+                "dashboard": {
+                    # Empty dashboard for simplification
+                    "minRow": 1,
+                    "margin": 24,
+                    "column": 4,
+                    "cellHeight": 350,
+                    "children": [],
+                },
             },
             {
-                "agent_class": "TestAgent",
-                "agent_id": "agent_002",
-                "event_id": "event_002",
-                "event_data": {"created_at": 1640995260000000000, "content": "Another test"},
+                "id": "user-456-oid",
+                "name": "Bob Jones",
+                "email": "bob@example.com",
+                "profile_image": "https://example.com/avatar.jpg",
+                "last_updated": FIXED_DATETIME_2,
+                "roles": ["user"],
+                "favorite_modules": ["chat", "search"],
+                "dashboard": {"minRow": 1, "margin": 24, "column": 4, "cellHeight": 350, "children": []},
             },
-        ]
-
-        await migration_db["agent_events"].insert_many(v0_docs)
-        migration = DocumentV1Migrator()
-        result = await migration.up(migration_db)
-
-        assert result["agent_events"]["modified"] == 2
-        assert result["agent_events"]["matched"] == 2
-
-        # Verify data transformation
-        docs = await migration_db["agent_events"].find({}).to_list(length=None)
-        for doc in docs:
-            assert doc["schema_version"] == 1
-
-    @pytest.mark.asyncio
-    async def test_migration_rollback_integrity(self, migration_db):
-        """Test that rollback properly restores original state."""
-        test_doc = {
-            "agent_class": "TestAgent",
-            "agent_id": "rollback_test",
-            "event_id": "rollback_event",
-            "event_data": {"created_at": 1640995200000000000, "content": "Rollback test"},
-        }
-
-        await migration_db["agent_events"].insert_one(test_doc)
-        migration = DocumentV1Migrator()
-
-        # Migrate up and verify
-        await migration.up(migration_db)
-        migrated_doc = await migration_db["agent_events"].find_one({"event_id": "rollback_event"})
-        assert migrated_doc["schema_version"] == 1
-
-        # Rollback and verify
-        await migration.down(migration_db)
-        rolled_back_doc = await migration_db["agent_events"].find_one({"event_id": "rollback_event"})
-        assert "schema_version" not in rolled_back_doc
-
-    @pytest.mark.asyncio
-    async def test_migration_performance(self, migration_db):
-        """Test migration performance with medium dataset."""
-        docs = [
+        ],
+        "agent_events": [
             {
-                "agent_class": f"TestAgent{i % 10}",
-                "agent_id": f"agent_{i:03d}",
-                "event_id": f"event_{i:03d}",
-                "event_data": {"created_at": 1640995200000000000 + (i * 1000000000), "content": f"Test {i}"},
+                # PersistedAgentEventEntity fields without schema_version
+                "agent_class": "ChatAgent",
+                "agent_id": "agent-123",
+                "thread_id": "thread-abc",
+                "display_id": "display-xyz",
+                "run_id": "run-001",
+                "event_id": "event-001",
+                "event_type": "control",
+                "event_name": "StartEvent",
+                "event_data": {
+                    "created_at": 1640995200000000000,
+                    "content": "Agent started processing user query",
+                    "metadata": {"source": "user_input"},
+                },
+                "event_parents": [],
+                "created_at": 1640995200000000000,
+            },
+            {
+                "agent_class": "RAGAgent",
+                "agent_id": "agent-456",
+                "thread_id": "thread-abc",
+                "display_id": "display-xyz",
+                "run_id": "run-001",
+                "event_id": "event-002",
+                "event_type": "display",
+                "event_name": "ChunkEvent",
+                "event_data": {
+                    "created_at": 1640995260000000000,
+                    "content": "Retrieved relevant documents...",
+                    "chunk_id": 1,
+                },
+                "event_parents": ["StartEvent"],
+                "created_at": 1640995260000000000,
+            },
+        ],
+        "process_events": [
+            {
+                # PersistedProcessEventEntity fields without schema_version
+                "process_class": "UserQueryProcess",
+                "process_id": "process-123",
+                "process_walkthrough_id": "walkthrough-abc",
+                "event_id": "proc-event-001",
+                "event_type": "control",
+                "event_name": "ProcessStartEvent",
+                "event_data": {
+                    "created_at": 1640995300000000000,
+                    "workflow": "user_query_processing",
+                    "input_data": {"query": "What is AI?"},
+                },
+                "event_parents": [],
+                "created_at": 1640995300000000000,
             }
-            for i in range(100)
-        ]
+        ],
+    }
 
-        await migration_db["agent_events"].insert_many(docs)
+    expected_state_after_up: dict[str, list[dict[str, Any]]] = {
+        "users": [
+            {
+                "schema_version": 1,  # Added by migration
+                "id": "user-123-oid",
+                "name": "Alice Smith",
+                "email": "alice@example.com",
+                "profile_image": None,
+                "last_updated": FIXED_DATETIME_1,
+                "roles": ["user", "admin"],
+                "favorite_modules": [],
+                "dashboard": {"minRow": 1, "margin": 24, "column": 4, "cellHeight": 350, "children": []},
+            },
+            {
+                "schema_version": 1,  # Added by migration
+                "id": "user-456-oid",
+                "name": "Bob Jones",
+                "email": "bob@example.com",
+                "profile_image": "https://example.com/avatar.jpg",
+                "last_updated": FIXED_DATETIME_2,
+                "roles": ["user"],
+                "favorite_modules": ["chat", "search"],
+                "dashboard": {"minRow": 1, "margin": 24, "column": 4, "cellHeight": 350, "children": []},
+            },
+        ],
+        "agent_events": [
+            {
+                "schema_version": 1,  # Added by migration
+                "agent_class": "ChatAgent",
+                "agent_id": "agent-123",
+                "thread_id": "thread-abc",
+                "display_id": "display-xyz",
+                "run_id": "run-001",
+                "event_id": "event-001",
+                "event_type": "control",
+                "event_name": "StartEvent",
+                "event_data": {
+                    "created_at": 1640995200000000000,
+                    "content": "Agent started processing user query",
+                    "metadata": {"source": "user_input"},
+                },
+                "event_parents": [],
+                "created_at": 1640995200000000000,
+            },
+            {
+                "schema_version": 1,  # Added by migration
+                "agent_class": "RAGAgent",
+                "agent_id": "agent-456",
+                "thread_id": "thread-abc",
+                "display_id": "display-xyz",
+                "run_id": "run-001",
+                "event_id": "event-002",
+                "event_type": "display",
+                "event_name": "ChunkEvent",
+                "event_data": {
+                    "created_at": 1640995260000000000,
+                    "content": "Retrieved relevant documents...",
+                    "chunk_id": 1,
+                },
+                "event_parents": ["StartEvent"],
+                "created_at": 1640995260000000000,
+            },
+        ],
+        "process_events": [
+            {
+                "schema_version": 1,  # Added by migration
+                "process_class": "UserQueryProcess",
+                "process_id": "process-123",
+                "process_walkthrough_id": "walkthrough-abc",
+                "event_id": "proc-event-001",
+                "event_type": "control",
+                "event_name": "ProcessStartEvent",
+                "event_data": {
+                    "created_at": 1640995300000000000,
+                    "workflow": "user_query_processing",
+                    "input_data": {"query": "What is AI?"},
+                },
+                "event_parents": [],
+                "created_at": 1640995300000000000,
+            }
+        ],
+    }
 
-        import time
+    # After rollback, should match initial state (no schema_version fields)
+    expected_state_after_down: dict[str, list[dict[str, Any]]] = initial_state
 
-        migration = DocumentV1Migrator()
 
-        start_time = time.time()
-        result = await migration.up(migration_db)
-        duration = time.time() - start_time
+class TestDocumentV1MigratorMixedVersions(SimpleMigrationTest):
+    """
+    Test V1 migration with mixed documents - some already have schema_version, some don't.
+    """
 
-        assert duration < 5.0  # 5 seconds for 100 documents
-        assert result["agent_events"]["modified"] == 100
-        assert result["agent_events"]["matched"] == 100
+    migration_class = DocumentV1Migrator
 
-        # Verify all documents migrated correctly
-        migrated_count = await migration_db["agent_events"].count_documents({"schema_version": 1})
-        assert migrated_count == 100
-
-    @pytest.mark.asyncio
-    async def test_migration_idempotency(self, migration_db):
-        """Test that running the same migration multiple times is safe."""
-        test_doc = {
-            "agent_class": "TestAgent",
-            "agent_id": "idempotent_test",
-            "event_id": "idempotent_event",
-            "event_data": {"created_at": 1640995200000000000, "content": "Idempotent test"},
-        }
-
-        await migration_db["agent_events"].insert_one(test_doc)
-        migration = DocumentV1Migrator()
-
-        # Run migration multiple times
-        result1 = await migration.up(migration_db)
-        result2 = await migration.up(migration_db)
-        result3 = await migration.up(migration_db)
-
-        # First run should modify the document
-        assert result1["agent_events"]["modified"] == 1
-
-        # Subsequent runs should not modify already migrated documents
-        assert result2["agent_events"]["modified"] == 0
-        assert result3["agent_events"]["modified"] == 0
-
-        # Verify document is correctly migrated
-        final_doc = await migration_db["agent_events"].find_one({"event_id": "idempotent_event"})
-        assert final_doc["schema_version"] == 1
-
-    @pytest.mark.asyncio
-    async def test_migration_validates_input_parameters(self):
-        """Test that migration validates input parameters properly."""
-        migration = DocumentV1Migrator()
-
-        # Should handle None database gracefully
-        with pytest.raises((TypeError, AttributeError)):
-            await migration.up(None)
-
-        with pytest.raises((TypeError, AttributeError)):
-            await migration.down(None)
-
-    @pytest.mark.asyncio
-    async def test_migration_skips_documents_with_schema_version(self, migration_db):
-        """Test that migration skips documents that already have schema_version."""
-        docs_with_schema = [
+    initial_state: dict[str, list[dict[str, Any]]] = {
+        "users": [
+            # User without schema_version (should be migrated)
+            {
+                "id": "user-new",
+                "name": "Charlie Brown",
+                "email": "charlie@example.com",
+                "profile_image": None,
+                "last_updated": FIXED_DATETIME_1,
+                "roles": ["user"],
+                "favorite_modules": [],
+                "dashboard": {"minRow": 1, "margin": 24, "column": 4, "cellHeight": 350, "children": []},
+            },
+            # User already at v1 (should be left alone)
             {
                 "schema_version": 1,
-                "agent_class": "TestAgent",
-                "agent_id": "agent_with_schema",
-                "event_id": "event_with_schema",
-                "event_data": {"created_at": 1640995200000000000, "content": "Already has schema"},
+                "id": "user-v1",
+                "name": "Diana Prince",
+                "email": "diana@example.com",
+                "profile_image": None,
+                "last_updated": FIXED_DATETIME_1,
+                "roles": ["admin"],
+                "favorite_modules": [],
+                "dashboard": {"minRow": 1, "margin": 24, "column": 4, "cellHeight": 350, "children": []},
             },
+            # User already at v2 (should be left alone)
             {
                 "schema_version": 2,
-                "agent_class": "TestAgent", 
-                "agent_id": "agent_v2",
-                "event_id": "event_v2",
-                "event_data": {"created_at": 1640995260000000000, "content": "V2 document"},
+                "id": "user-v2",
+                "name": "Bruce Wayne",
+                "email": "bruce@example.com",
+                "profile_image": None,
+                "last_updated": FIXED_DATETIME_1,
+                "roles": ["admin"],
+                "favorite_modules": [],
+                "dashboard": {"minRow": 1, "margin": 24, "column": 4, "cellHeight": 350, "children": []},
             },
         ]
+    }
 
-        docs_without_schema = [
+    expected_state_after_up: dict[str, list[dict[str, Any]]] = {
+        "users": [
+            # Was migrated from no version to v1
             {
-                "agent_class": "TestAgent",
-                "agent_id": "agent_without_schema", 
-                "event_id": "event_without_schema",
-                "event_data": {"created_at": 1640995320000000000, "content": "No schema version"},
-            }
+                "schema_version": 1,  # Added by migration
+                "id": "user-new",
+                "name": "Charlie Brown",
+                "email": "charlie@example.com",
+                "profile_image": None,
+                "last_updated": FIXED_DATETIME_1,
+                "roles": ["user"],
+                "favorite_modules": [],
+                "dashboard": {"minRow": 1, "margin": 24, "column": 4, "cellHeight": 350, "children": []},
+            },
+            # Was already v1 (unchanged)
+            {
+                "schema_version": 1,
+                "id": "user-v1",
+                "name": "Diana Prince",
+                "email": "diana@example.com",
+                "profile_image": None,
+                "last_updated": FIXED_DATETIME_1,
+                "roles": ["admin"],
+                "favorite_modules": [],
+                "dashboard": {"minRow": 1, "margin": 24, "column": 4, "cellHeight": 350, "children": []},
+            },
+            # Was already v2 (unchanged)
+            {
+                "schema_version": 2,
+                "id": "user-v2",
+                "name": "Bruce Wayne",
+                "email": "bruce@example.com",
+                "profile_image": None,
+                "last_updated": FIXED_DATETIME_1,
+                "roles": ["admin"],
+                "favorite_modules": [],
+                "dashboard": {"minRow": 1, "margin": 24, "column": 4, "cellHeight": 350, "children": []},
+            },
         ]
+    }
 
-        all_docs = docs_with_schema + docs_without_schema
-        await migration_db["agent_events"].insert_many(all_docs)
-        
-        migration = DocumentV1Migrator()
-        result = await migration.up(migration_db)
+    expected_state_after_down: dict[str, list[dict[str, Any]]] = {
+        "users": [
+            # V1 rollback removed schema_version
+            {
+                "id": "user-new",
+                "name": "Charlie Brown",
+                "email": "charlie@example.com",
+                "profile_image": None,
+                "last_updated": FIXED_DATETIME_1,
+                "roles": ["user"],
+                "favorite_modules": [],
+                "dashboard": {"minRow": 1, "margin": 24, "column": 4, "cellHeight": 350, "children": []},
+            },
+            # Was v1, rollback removed schema_version
+            {
+                "id": "user-v1",
+                "name": "Diana Prince",
+                "email": "diana@example.com",
+                "profile_image": None,
+                "last_updated": FIXED_DATETIME_1,
+                "roles": ["admin"],
+                "favorite_modules": [],
+                "dashboard": {"minRow": 1, "margin": 24, "column": 4, "cellHeight": 350, "children": []},
+            },
+            # Was v2, stays unchanged (rollback doesn't touch v2 docs)
+            {
+                "schema_version": 2,
+                "id": "user-v2",
+                "name": "Bruce Wayne",
+                "email": "bruce@example.com",
+                "profile_image": None,
+                "last_updated": FIXED_DATETIME_1,
+                "roles": ["admin"],
+                "favorite_modules": [],
+                "dashboard": {"minRow": 1, "margin": 24, "column": 4, "cellHeight": 350, "children": []},
+            },
+        ]
+    }
 
-        # Should only modify the one document without schema_version
-        assert result["agent_events"]["modified"] == 1
-        assert result["agent_events"]["matched"] == 1
 
-        # Verify the document without schema_version now has it
-        doc_without_schema = await migration_db["agent_events"].find_one({"event_id": "event_without_schema"})
-        assert doc_without_schema["schema_version"] == 1
+class TestDocumentV1MigratorEmptyDatabase(SimpleMigrationTest):
+    """
+    Test V1 migration on empty database.
+    """
 
-        # Verify documents with schema_version are unchanged
-        doc_with_schema = await migration_db["agent_events"].find_one({"event_id": "event_with_schema"})
-        assert doc_with_schema["schema_version"] == 1  # unchanged
+    migration_class = DocumentV1Migrator
 
-        doc_v2 = await migration_db["agent_events"].find_one({"event_id": "event_v2"})
-        assert doc_v2["schema_version"] == 2  # unchanged
-
-    @pytest.mark.asyncio
-    async def test_migration_processes_all_collections(self, migration_db):
-        """Test that migration processes ALL collections in the database."""
-        # Create documents in multiple collections
-        await migration_db["agent_events"].insert_one({
-            "agent_class": "TestAgent",
-            "event_data": {"created_at": 1640995200000000000}
-        })
-        
-        await migration_db["process_events"].insert_one({
-            "process_id": "test_process",
-            "data": {"value": "test"}
-        })
-        
-        await migration_db["user_profiles"].insert_one({
-            "user_id": "test_user",
-            "name": "Test User"
-        })
-        
-        migration = DocumentV1Migrator()
-        result = await migration.up(migration_db)
-        
-        # All collections should be in the result
-        assert "agent_events" in result
-        assert "process_events" in result  
-        assert "user_profiles" in result
-        
-        # Verify all documents got schema_version
-        agent_doc = await migration_db["agent_events"].find_one({})
-        assert agent_doc["schema_version"] == 1
-        
-        process_doc = await migration_db["process_events"].find_one({})
-        assert process_doc["schema_version"] == 1
-        
-        user_doc = await migration_db["user_profiles"].find_one({})
-        assert user_doc["schema_version"] == 1
+    # Empty database
+    initial_state: dict[str, list[dict[str, Any]]] = {}
+    expected_state_after_up: dict[str, list[dict[str, Any]]] = {}
+    expected_state_after_down: dict[str, list[dict[str, Any]]] = {}

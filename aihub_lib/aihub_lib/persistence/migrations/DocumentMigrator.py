@@ -95,8 +95,17 @@ class DocumentMigrator(ABC):
             return {"modified": 0, "matched": 0, "skipped": "collection empty"}
 
         # Update schema version from previous version to current version
+        # Note: V1 migrator handles the special case of documents without schema_version
+        # All other migrators only handle their specific version transition
+        if self.version == 1:
+            # V1 is special: it handles documents without schema_version field
+            query = {"schema_version": {"$exists": False}}
+        else:
+            # All other versions only handle documents at previous version
+            query = {"schema_version": self.version - 1}
+
         result = await collection.update_many(
-            {"$or": [{"schema_version": self.version - 1}, {"schema_version": {"$exists": False}}]},
+            query,
             {"$set": {"schema_version": self.version}},
         )
 
@@ -121,8 +130,9 @@ class DocumentMigrator(ABC):
             {"$set": {"schema_version": self.version - 1}},
         )
 
+        target_version = self.version - 1
         logger.info(
-            f"Downgraded schema version for {result.modified_count} documents in {collection_name} to v{self.version - 1}"
+            f"Downgraded schema version for {result.modified_count} documents in {collection_name} to v{target_version}"
         )
 
         return {

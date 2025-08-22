@@ -44,9 +44,9 @@ class DocumentV2Migrator(DocumentMigrator):
             return {"modified": 0, "matched": 0, "skipped": "collection empty"}
 
         # MongoDB aggregation pipeline ensures atomic update
-        # Update docs with v1 or without schema_version (implicit v1)
+        # Only update docs with schema_version 1 (v0→v1 is handled by DocumentV1Migrator)
         result = await collection.update_many(
-            {"$or": [{"schema_version": 1}, {"schema_version": {"$exists": False}}]},
+            {"schema_version": 1},
             [
                 {
                     "$set": {

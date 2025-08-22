@@ -119,7 +119,7 @@ with deployed code.
 
 **Integration Points**:
 
-- **Startup Integration**: `run_migrations()` executes automatically in API lifecycle management
+- **Startup Integration**: `MigrationOrchestrator.run_migrations()` executes automatically in API lifecycle management
 - **Docker Compose Support**: Migrations run automatically when containers start
 - **CI/CD Integration**: Migration testing integrated into continuous integration pipelines
 - **Environment Flexibility**: Support for development, staging, and production migration scenarios
@@ -187,7 +187,7 @@ This decision enables several critical capabilities:
 
 **For DevOps and Deployment**:
 
-- Automatic migration execution during API startup via `run_migrations()`
+- Automatic migration execution during API startup via `MigrationOrchestrator.run_migrations()`
 - Docker Compose compatibility with `docker-compose up` handling migrations automatically
 - CI/CD pipeline integration for automated migration testing and deployment
 
