@@ -242,4 +242,4 @@ pytest aihub_lib/persistence/migrations/ -m performance -v
 
 - [Migration Framework Documentation](../../../persistence/migrations/README.md)
 - [BaseEvent Schema](../../../nats/events/BaseEvent.py)
-- [VersionedDocument Base Class](../../../persistence/base/versioned_document.py)
+- [VersionedDocument Base Class](../../base/VersionedDocument.py)

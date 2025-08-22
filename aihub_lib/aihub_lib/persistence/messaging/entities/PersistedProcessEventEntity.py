@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from bson import ObjectId
 from mongoengine import DictField, IntField, ListField, StringField
 
-from aihub_lib.persistence.base.versioned_document import VersionedDocument
+from aihub_lib.persistence.base.VersionedDocument import VersionedDocument
 
 if TYPE_CHECKING:
     from aihub_lib.nats.events import BaseEvent

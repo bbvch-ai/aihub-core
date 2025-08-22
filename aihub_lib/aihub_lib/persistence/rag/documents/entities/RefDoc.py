@@ -10,7 +10,7 @@ from mongoengine import (
 )
 from mongoengine.context_managers import switch_db
 
-from aihub_lib.persistence.base.versioned_document import VersionedDocument
+from aihub_lib.persistence.base.VersionedDocument import VersionedDocument
 
 
 class Metadata(DynamicEmbeddedDocument):

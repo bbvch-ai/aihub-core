@@ -3,7 +3,7 @@ from datetime import datetime
 from bson import ObjectId
 from mongoengine import DateTimeField, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField
 
-from aihub_lib.persistence.base.versioned_document import VersionedDocument
+from aihub_lib.persistence.base.VersionedDocument import VersionedDocument
 
 
 class User(EmbeddedDocument):

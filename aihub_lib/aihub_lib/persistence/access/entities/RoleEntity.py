@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from mongoengine import ListField, StringField
 
-from aihub_lib.persistence.base.versioned_document import VersionedDocument
+from aihub_lib.persistence.base.VersionedDocument import VersionedDocument
 
 
 class RoleEntity(VersionedDocument):

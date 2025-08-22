@@ -10,7 +10,7 @@ from mongoengine import DictField, IntField, ListField, StringField
 
 from aihub_lib.nats.events.control import AssistantChatMessage, UserChatMessage
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from aihub_lib.persistence.base.versioned_document import VersionedDocument
+from aihub_lib.persistence.base.VersionedDocument import VersionedDocument
 from aihub_lib.persistence.messaging.entities.types.EventBucket import EventBucket
 
 if TYPE_CHECKING:

@@ -7,7 +7,7 @@ from mongoengine import (
     StringField,
 )
 
-from aihub_lib.persistence.base.versioned_document import VersionedDocument
+from aihub_lib.persistence.base.VersionedDocument import VersionedDocument
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
 

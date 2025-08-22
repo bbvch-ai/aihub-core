@@ -6,7 +6,7 @@ from bson import ObjectId
 from mongoengine import DateTimeField, IntField, StringField
 from mongoengine.errors import DoesNotExist
 
-from aihub_lib.persistence.base.versioned_document import VersionedDocument
+from aihub_lib.persistence.base.VersionedDocument import VersionedDocument
 
 
 class BearerToken(VersionedDocument):

@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from aihub_lib.persistence.base.versioned_document import VersionedDocument
+from aihub_lib.persistence.base.VersionedDocument import VersionedDocument
 from mongoengine import (
     BooleanField,
     DateTimeField,
