@@ -23,6 +23,10 @@ format-md:
 	@echo "Formatting markdown files..."
 	@poetry run mdformat --number $$(git ls-files '*.md')
 
+format-md-win:
+	@echo "Formatting markdown files..."
+	@poetry run mdformat --number $(shell git ls-files *.md)
+
 # Type-check with MyPy
 typecheck:
 	@echo "Running type checks for pipelines..."
