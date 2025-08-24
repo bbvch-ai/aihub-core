@@ -387,17 +387,18 @@ description = "Preserve VuePress-style ::: containers in mdformat"
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
-files = []
-develop = true
+files = [
+    {file = "mdformat_vuepress-0.1.0-py3-none-any.whl", hash = "sha256:aa16e5a56358e06ce8f75129d4416b9105cfe2af83088752d74b765b3c811238"},
+    {file = "mdformat_vuepress-0.1.0.tar.gz", hash = "sha256:5ec0f17185d35f1b4235c0209ebeb0ec9a9fabcd1bd52a66fe8521c2d63e33ad"},
+]
 
 [package.dependencies]
 markdown-it-py = ">=3"
 mdformat = ">=0.7"
 mdit-py-plugins = ">=0.4"
 
-[package.source]
-type = "directory"
-url = "aihub_doc/mdformat-vuepress"
+[package.extras]
+test = ["pytest (>=6.0)", "pytest-cov"]
 
 [[package]]
 name = "mdit-py-plugins"
@@ -804,4 +805,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13, <3.14"
-content-hash = "74ed3128048c5417ae36b9206a6fed4d365024e15cf330e6e8f41d16450af7e6"
+content-hash = "b32f179cf6350258819eb1380465ec70a5213a2a1e2da8c6eab7b394c2bf7268"
