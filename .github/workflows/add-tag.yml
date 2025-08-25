@@ -252,11 +252,11 @@ jobs:
         run: make changelog
 
       - name: Upload changelog artifact
-        if: ${{ hashFiles('changelog.md') != '' }}
+        if: ${{ hashFiles('CHANGELOG.md') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: changelog
-          path: changelog.md
+          path: CHANGELOG.md
 
   license-report:
     name: Generate License Report
@@ -348,9 +348,9 @@ jobs:
 
           # Detect changes (only if files exist and differ)
           changed=false
-          if [ -f changelog.md ]; then
-            if [ -n "$(git status --porcelain changelog.md)" ]; then
-              git add changelog.md
+          if [ -f CHANGELOG.md ]; then
+            if [ -n "$(git status --porcelain CHANGELOG.md)" ]; then
+              git add CHANGELOG.md
               changed=true
               echo "Changelog updated."
             fi
