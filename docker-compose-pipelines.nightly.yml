@@ -1,0 +1,18 @@
+services:
+  default_rag_pipeline:
+    image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:nightly
+    container_name: default-rag-pipeline
+    restart: always
+    volumes:
+      - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/dagster_home
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+      S3_STORAGE_ENDPOINT: http://minio:9000
+      S3_STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER}
+      S3_STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      COSMOS_DOCSTORE_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
+      VECTOR_STORE_URI: http://milvus-standalone:19530
+      DOCLING_API_ENDPOINT: http://docling:5001/v1/convert/source
