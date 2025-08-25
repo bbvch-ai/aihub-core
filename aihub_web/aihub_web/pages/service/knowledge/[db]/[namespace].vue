@@ -14,7 +14,6 @@
 
     <KnowledgeDocumentList
       :documents="documents"
-      :processing-documents="processingDocuments"
       @selected="toDocument"
     />
 
@@ -61,14 +60,6 @@ const {
 
 const uploadModalVisible = ref(false)
 
-const processingDocuments = ref<Array<{
-  id: string
-  document_title: string
-  created_at: string
-  status: 'uploading' | 'processing'
-  progress?: number
-}>>([])
-
 const toDocument = (document: IngestedDocument) => {
   router.push(localePath(`/service/knowledge/${route.params.db}/${route.params.namespace}/${document.id}/overview`))
 }
@@ -86,23 +77,7 @@ const openUploadModal = () => {
 const handleUpload = async (data: { files: File[], namespace: string, database: string }) => {
   console.log('Upload completed successfully:', data)
 
-  // Add processing documents to show immediate feedback
-  data.files.forEach((file, index) => {
-    const processingDoc = {
-      id: `processing-${Date.now()}-${index}`,
-      document_title: file.name.replace(/\.[^/.]+$/, ''),
-      created_at: new Date().toISOString(),
-      status: 'processing' as const,
-      progress: 100,
-    }
-    processingDocuments.value.push(processingDoc)
-  })
-
-  // Simulate processing time before refreshing the document list
-  setTimeout(() => {
-    // Remove all processing documents and refresh the list
-    processingDocuments.value = []
-    refetch()
-  }, 3000)
+  // Refresh the document list to show the newly uploaded processing documents
+  refetch()
 }
 </script>

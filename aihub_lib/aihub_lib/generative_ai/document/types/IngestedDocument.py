@@ -27,7 +27,7 @@ class IngestedDocument(IngestedBase):
     """
 
     id: Annotated[str, Field(description="Unique identifier for the document.")]
-    content: Annotated[str, Field(description="Content of the document.")] = None
+    content: Annotated[str | None, Field(description="Content of the document.")] = None
 
     @classmethod
     def from_ref_doc(

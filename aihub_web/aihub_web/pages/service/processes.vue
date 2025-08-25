@@ -30,9 +30,9 @@ const router = useRouter()
 const localePath = useLocalePath()
 const { t } = useI18n()
 
-const { processes, processesAreLoading } = useProcesses()
+const { processes: _processes, processesAreLoading } = useProcesses()
 
-const toProcess = (process: ProcessDto) => {
+const _toProcess = (process: ProcessDto) => {
   router.push(localePath(`/service/processes/process-${process.process_id}-${process.process_class}/overview`))
 }
 </script>

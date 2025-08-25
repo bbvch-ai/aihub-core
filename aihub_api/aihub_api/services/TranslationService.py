@@ -27,9 +27,6 @@ class TranslationService:
         """
         Translates missing fields in a translatable object (LocaleString or LocaleStringEntity).
         """
-        if not translatable:
-            return translatable
-
         source_text = getattr(translatable, source_locale, None)
         if not source_text:
             return translatable
@@ -86,8 +83,6 @@ class TranslationService:
         ]
 
         llm, _ = llm_config.to_llama_index()
-        if hasattr(llm.llm, "response_format"):
-            llm.llm.response_format = {"type": "json_object"}
 
         response = await llm.achat(messages)
         content = response.message.content.strip()

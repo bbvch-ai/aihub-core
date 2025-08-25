@@ -5384,6 +5384,113 @@ export const ImagesResponseSchema = {
     title: 'ImagesResponse'
 } as const;
 
+export const IngestedDatalakeFileSchema = {
+    properties: {
+        source: {
+            type: 'string',
+            title: 'Source',
+            description: 'Source URI of original document.'
+        },
+        namespace: {
+            type: 'string',
+            title: 'Namespace',
+            description: 'The namespace of the document within its metadata.'
+        },
+        version: {
+            type: 'integer',
+            title: 'Version',
+            description: 'Document version.',
+            default: 1
+        },
+        content_hash: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Content Hash',
+            description: 'Hash of the document/node, helpful to track whether file changed.'
+        },
+        number_of_pages: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Number Of Pages',
+            description: 'Number of Pages in the Document.'
+        },
+        document_title: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Document Title',
+            description: 'Document title.'
+        },
+        language: {
+            anyOf: [
+                {
+                    type: 'string',
+                    enum: ['de', 'en', 'fr', 'it']
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Language',
+            description: 'Document language.'
+        },
+        created_at: {
+            type: 'string',
+            title: 'Created At',
+            description: 'Date source document was created (ISO format string)'
+        },
+        updated_at: {
+            type: 'string',
+            title: 'Updated At',
+            description: 'Date source document was last updated (ISO format string)'
+        },
+        inserted_at: {
+            type: 'string',
+            title: 'Inserted At',
+            description: 'Date source document was inserted into document store (ISO format string)'
+        },
+        metadata: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Metadata',
+            description: 'Additional metadata for the document.'
+        },
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'Unique identifier for the document.'
+        }
+    },
+    type: 'object',
+    required: ['source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'id'],
+    title: 'IngestedDatalakeFile',
+    description: 'Set of default metadata for a data lake file. A data lake file is a file that was uploaded to a data lake storage.'
+} as const;
+
 export const IngestedDocumentSchema = {
     properties: {
         source: {
@@ -5485,7 +5592,14 @@ export const IngestedDocumentSchema = {
             description: 'Unique identifier for the document.'
         },
         content: {
-            type: 'string',
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             title: 'Content',
             description: 'Content of the document.'
         }
@@ -7111,7 +7225,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1754984880
+            default: 1756135319
         },
         owned_by: {
             type: 'string',
@@ -7173,6 +7287,11 @@ export const ModelResponseSchema = {
 
 export const NamespaceDTOSchema = {
     properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'Unique identifier of the namespace'
+        },
         name: {
             type: 'string',
             title: 'Name',
@@ -7224,7 +7343,7 @@ export const NamespaceDTOSchema = {
         }
     },
     type: 'object',
-    required: ['name', 'number_of_documents', 'last_updated_at', 'last_inserted_at', 'created_at'],
+    required: ['id', 'name', 'number_of_documents', 'last_updated_at', 'last_inserted_at', 'created_at'],
     title: 'NamespaceDTO'
 } as const;
 
@@ -7503,7 +7622,14 @@ export const PaginatedDocumentsResponseSchema = {
         },
         documents: {
             items: {
-                '$ref': '#/components/schemas/IngestedDocument'
+                anyOf: [
+                    {
+                        '$ref': '#/components/schemas/IngestedDocument'
+                    },
+                    {
+                        '$ref': '#/components/schemas/IngestedDatalakeFile'
+                    }
+                ]
             },
             type: 'array',
             title: 'Documents',

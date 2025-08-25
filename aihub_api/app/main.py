@@ -90,7 +90,11 @@ runner.mount(
     .get_documents_for_namespace()
     .get_document_by_id()
     .get_nodes_for_document()
-    .get_summary_nodes_for_document(),
+    .get_summary_nodes_for_document()
+    .create_namespace()
+    .update_namespace()
+    .initiate_document_upload()
+    .complete_document_upload(),
     FileController(auth=auth).get_file_url().get_file_redirect().get_anonymous_file_url().get_anonymous_file_redirect(),
 )
 

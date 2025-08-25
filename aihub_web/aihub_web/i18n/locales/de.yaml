@@ -177,6 +177,16 @@ document:
     document_type: "Dokumenttyp"
     number_of_pages: "Anzahl der Seiten"
     download: "Download"
+    is_processing: "Verarbeitung läuft"
+  upload:
+    title: "Dokumente hochladen"
+    drag_and_drop: "Ziehen Sie Dateien hierher oder klicken Sie, um Dateien auszuwählen"
+    target_location:
+      label: "Speicherort"
+      help: "Ordner, in dem die Dokumente gespeichert werden sollen"
+    actions:
+      upload: "Hochladen"
+      cancel: "Abbrechen"
 
 knowledge:
   title: "Wissensdatenbanken"

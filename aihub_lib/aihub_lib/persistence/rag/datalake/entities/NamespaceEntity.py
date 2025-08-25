@@ -6,6 +6,11 @@ from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
 
 class NamespaceEntity(Document):
+    """
+    Represents a folder or namespace within a data lake bucket/container.
+    Each namespace is uniquely identified by its name within the context of a specific bucket.
+    Each namespace has a corresponding folder name in the data lake.
+    """
     meta = {
         "collection": "namespaces",
         "strict": False,

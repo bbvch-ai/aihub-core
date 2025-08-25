@@ -1,7 +1,12 @@
 import asyncio
 
 import nest_asyncio
+
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import \
+    DangerousDevelopmentOnlyAuthHandler
 from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
+from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import \
+    DangerousDevelopmentOnlyIdentityProvider
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
@@ -31,8 +36,8 @@ nest_asyncio.apply()
 async def main():
     runner = ApiTestRunner()
 
-    auth = TokenAndOauth2Handler.from_auth_settings()
-    # auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    # auth = TokenAndOauth2Handler.from_auth_settings()
+    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
 
     runner.mount(
         HealthController(auth=auth).get_health(),

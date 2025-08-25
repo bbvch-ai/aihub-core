@@ -24,12 +24,8 @@
           style="font-size: 3rem"
         />
         <p class="mb-2 text-sm text-surface-600 dark:text-surface-400">
-          <span class="font-semibold">Click to upload</span> or drag and drop
+          <span class="font-semibold">{{ t('document.upload.drag_and_drop') }}</span>
         </p>
-        <p class="text-xs text-surface-500 dark:text-surface-400">
-          PDF, DOC, TXT, MD (MAX. 10MB)
-        </p>
-
         <div
           v-if="selectedFiles.length > 0"
           class="mt-4 w-full"
@@ -63,7 +59,7 @@
         v-if="props.preselectedNamespace && props.database"
         class="flex flex-col gap-2"
       >
-        <label class="text-sm font-medium">Target Location</label>
+        <label class="text-sm font-medium">{{ t('document.target_location.label') }}</label>
         <div class="flex items-center gap-2 rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-700 dark:bg-surface-800">
           <i
             class="pi pi-database text-surface-400"
@@ -81,11 +77,10 @@
           <span class="text-sm font-medium text-surface-800 dark:text-surface-100">{{ props.preselectedNamespace }}</span>
         </div>
         <small class="text-surface-500 dark:text-surface-400">
-          Documents will be uploaded to this folder
+          {{t('document.upload.target_location.help')}}
         </small>
       </div>
 
-      <!-- Error Message -->
       <Message
         v-if="errorMessage"
         severity="error"
@@ -94,7 +89,6 @@
         {{ errorMessage }}
       </Message>
 
-      <!-- Upload Progress -->
       <div
         v-if="isUploading"
         class="flex flex-col gap-2"
@@ -110,14 +104,14 @@
     <template #footer>
       <div class="flex justify-end gap-2">
         <Button
-          label="Cancel"
+          :label="t('document.upload.actions.cancel')"
           severity="secondary"
           outlined
           :disabled="isUploading"
           @click="closeModal"
         />
         <Button
-          label="Upload"
+          :label="t('document.upload.actions.upload')"
           :disabled="!canUpload"
           :loading="isUploading"
           @click="handleUpload"
@@ -125,7 +119,6 @@
       </div>
     </template>
 
-    <!-- Hidden File Input -->
     <input
       ref="fileInput"
       type="file"
@@ -146,18 +139,17 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  title: 'Upload Documents',
 })
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   'update:visible': [value: boolean]
   'upload': [data: { files: File[], namespace: string, database: string }]
 }>()
 
-// Use the document upload composable
-const { uploadDocument, validateFile } = useDocumentUpload()
+const { uploadDocument } = useDocumentUpload()
 
-// Reactive state
 const selectedFiles = ref<File[]>([])
 const isDragOver = ref(false)
 const isUploading = ref(false)
@@ -166,27 +158,21 @@ const hasError = ref(false)
 const uploadProgress = ref(0)
 const currentUploadFile = ref('')
 
-// Template refs
 const fileInput = ref<HTMLInputElement>()
 
-// Computed properties
 const isVisible = computed({
   get: () => props.visible,
   set: value => emit('update:visible', value),
 })
 
 const modalTitle = computed(() => {
-  if (props.preselectedNamespace && props.database) {
-    return `Upload Documents to ${props.preselectedNamespace}`
-  }
-  return props.title
+  return `${t('document.upload.title')} ${props.preselectedNamespace}`
 })
 
 const canUpload = computed(() => {
   return selectedFiles.value.length > 0 && !isUploading.value
 })
 
-// Methods
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 B'
   const k = 1024
@@ -202,14 +188,6 @@ const addFiles = (files: FileList | File[]) => {
   const fileArray = Array.from(files)
 
   for (const file of fileArray) {
-    const validation = validateFile(file)
-    if (!validation.isValid) {
-      errorMessage.value = validation.error!
-      hasError.value = true
-      return
-    }
-
-    // Avoid duplicates
     if (!selectedFiles.value.some(existing => existing.name === file.name && existing.size === file.size)) {
       selectedFiles.value.push(file)
     }
@@ -257,42 +235,25 @@ const handleUpload = async () => {
   isUploading.value = true
   errorMessage.value = ''
 
-  try {
-    // Upload each file using the composable
-    for (const file of selectedFiles.value) {
-      currentUploadFile.value = file.name
+  for (const file of selectedFiles.value) {
+    currentUploadFile.value = file.name
 
-      await uploadDocument({
-        filename: file.name,
-        file,
-        namespace,
-        database,
-        onProgress: (progress) => {
-          uploadProgress.value = progress
-        },
-      })
-    }
-
-    // Emit success event - this will trigger the parent component's handleUpload
-    emit('upload', {
-      files: selectedFiles.value,
+    await uploadDocument({
+      filename: file.name,
+      file,
       namespace,
       database,
     })
-
-    // Close modal on success
-    closeModal()
   }
-  catch (error) {
-    console.error('Upload failed:', error)
-    errorMessage.value = error.message || 'Upload failed. Please try again.'
-    hasError.value = true
-  }
-  finally {
-    isUploading.value = false
-    uploadProgress.value = 0
-    currentUploadFile.value = ''
-  }
+  emit('upload', {
+    files: selectedFiles.value,
+    namespace,
+    database,
+  })
+  closeModal()
+  isUploading.value = false
+  uploadProgress.value = 0
+  currentUploadFile.value = ''
 }
 
 const closeModal = () => {
@@ -305,7 +266,6 @@ const closeModal = () => {
   emit('update:visible', false)
 }
 
-// Reset form when modal opens
 watch(() => props.visible, (newVal) => {
   if (newVal) {
     selectedFiles.value = []

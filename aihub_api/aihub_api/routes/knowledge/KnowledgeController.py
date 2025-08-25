@@ -196,7 +196,6 @@ class KnowledgeController(Controller):
         async def initiate_document_upload(
             request: DocumentUploadRequest,
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
-            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> DocumentUploadResponse:
             """
             Initiates document upload by generating a presigned S3/MinIO URL.
@@ -204,7 +203,7 @@ class KnowledgeController(Controller):
             This endpoint validates the upload request and returns a presigned URL
             that allows the client to upload the document directly to S3/MinIO storage.
             """
-            return await KnowledgeService.initiate_document_upload(request, t)
+            return await KnowledgeService.initiate_document_upload(request)
 
         return self
 

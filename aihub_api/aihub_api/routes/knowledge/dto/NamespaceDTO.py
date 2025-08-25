@@ -1,11 +1,12 @@
 from typing import Annotated
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.persistence.rag.documents.entities.NamespaceEntity import NamespaceEntity
+from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
 from pydantic import BaseModel, Field
 
 
 class NamespaceDTO(BaseModel):
+    id: Annotated[str, Field(..., description="Unique identifier of the namespace")]
     name: Annotated[str, Field(..., description="Name of namespace")]
     display_name: Annotated[str | None, Field(None, description="Display name of namespace, can be localized")]
     description: Annotated[str | None, Field(None, description="Description of namespace, can be localized")]
@@ -23,6 +24,7 @@ class NamespaceDTO(BaseModel):
     @classmethod
     def from_entity(cls, entity: NamespaceEntity, t: LocaleHandler, number_of_documents: int) -> "NamespaceDTO":
         return cls(
+            id=str(entity.id),
             name=entity.namespace_name,
             display_name=t.extract(entity.display_name.to_mongo().to_dict()),
             description=t.extract(entity.description.to_mongo().to_dict()),

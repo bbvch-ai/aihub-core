@@ -51,7 +51,6 @@
         />
         <Button
           :label="t('knowledge.actions.save')"
-          :loading="isUpdating"
           @click="handleSave"
         />
       </div>
@@ -75,7 +74,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const { mutateAsync: updateNamespace, isPending: isUpdating } = useUpdateNamespace()
+const { mutateAsync: updateNamespace } = useUpdateNamespace()
 
 const displayName = ref('')
 const description = ref('')

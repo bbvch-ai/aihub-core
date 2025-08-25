@@ -66,7 +66,6 @@
         <Button
           :label="t('knowledge.actions.create')"
           :disabled="!canSubmit"
-          :loading="isCreating"
           @click="handleCreate"
         />
       </div>
@@ -77,7 +76,7 @@
 <script setup lang="ts">
 import type { CreateNamespaceRequest, DatabaseDto } from '@core/sdk/client'
 
-import { useI18n } from '#i18n'
+const { t } = useI18n()
 
 const props = defineProps<{
   modelValue: boolean
@@ -90,8 +89,7 @@ const emit = defineEmits<{
   'success': [data: { database: string, namespace: string }]
 }>()
 
-const { t } = useI18n()
-const { mutateAsync: createNamespace, isPending: isCreating } = useCreateNamespace()
+const { mutateAsync: createNamespace } = useCreateNamespace()
 
 const selectedDatabase = ref('')
 const name = ref('')

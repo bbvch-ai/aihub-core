@@ -1,6 +1,6 @@
 <template>
   <DataTable
-    :value="allDocuments"
+    :value="documents"
     table-style="min-width: 50rem"
     selection-mode="single"
     :selection="selectedDocument"
@@ -14,28 +14,18 @@
         <div class="flex items-center gap-2">
           <p
             class="font-bold"
-            :class="{ 'text-surface-500': data.isProcessing }"
           >
             {{ data.document_title }}
           </p>
           <div
-            v-if="data.isProcessing"
+            v-if="!data.content"
             class="flex items-center gap-2"
           >
-            <ProgressSpinner
-              v-if="data.status === 'processing'"
-              style="width: 16px; height: 16px"
-              stroke-width="4"
-            />
-            <ProgressBar
-              v-else-if="data.status === 'uploading'"
-              :value="data.progress"
-              style="width: 60px; height: 8px"
-            />
-            <Badge
-              :value="data.status === 'uploading' ? 'Uploading' : 'Processing'"
-              :severity="data.status === 'uploading' ? 'info' : 'warning'"
+            <Tag
+              :value="t('document.list.is_processing')"
               size="small"
+              icon="pi pi-clock"
+              severity="info"
             />
           </div>
         </div>
@@ -73,7 +63,7 @@
     >
       <template #body="{ data }">
         <Button
-          v-if="!data.isProcessing"
+          v-if="data.source"
           rounded
           size="small"
           variant="outlined"
@@ -97,13 +87,6 @@ const { t } = useI18n()
 
 const props = defineProps<{
   documents: IngestedDocument[]
-  processingDocuments?: Array<{
-    id: string
-    document_title: string
-    created_at: string
-    status: 'uploading' | 'processing'
-    progress?: number
-  }>
 }>()
 
 const emit = defineEmits<{
@@ -111,37 +94,14 @@ const emit = defineEmits<{
 }>()
 
 const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY')
-
-// Combine regular documents with processing documents
-const allDocuments = computed(() => {
-  const processing = (props.processingDocuments || []).map(doc => ({
-    ...doc,
-    isProcessing: true,
-    updated_at: doc.created_at,
-    number_of_pages: null,
-    source: null,
-  }))
-
-  const regular = props.documents.map(doc => ({
-    ...doc,
-    isProcessing: false,
-  }))
-
-  // Put processing documents at the top
-  return [...processing, ...regular]
-})
-
 const selectedDocument = computed(() => {
   return props.documents.filter((document: IngestedDocument) => {
     return document.id === route.params.document_id
   })
 })
 
-const handleSelection = (document: IngestedDocument & { isProcessing: boolean }) => {
-  // Only allow selection of non-processing documents
-  if (!document.isProcessing) {
-    emit('selected', document as IngestedDocument)
-  }
+const handleSelection = (document: IngestedDocument) => {
+  emit('selected', document)
 }
 
 const downloadFile = async (src: string) => {

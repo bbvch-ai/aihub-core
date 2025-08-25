@@ -5,11 +5,17 @@ from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
 
 class BucketEntity(Document):
+    """
+    Represents the metadata of a data lake bucket/container.
+    Each bucket is associated with a unique name and a corresponding database name for storage.
+    Auto-sync indicates whether the bucket automatically loads files into the data lake and does not allow manual uploads.
+    """
     meta = {
         "collection": "buckets",
         "strict": False,
         "indexes": [
             {"fields": ["bucket_name"], "unique": True},
+            {"fields": ["db_name"], "unique": True},
         ],
     }
     bucket_name = StringField(required=True, unique=True)
@@ -46,6 +52,10 @@ class BucketEntity(Document):
     @classmethod
     def get_bucket_by_bucket_name(cls, bucket_name: str) -> "BucketEntity":
         return cls.objects().get(bucket_name=bucket_name)
+
+    @classmethod
+    def get_bucket_by_db_name(cls, db_name: str) -> "BucketEntity":
+        return cls.objects().get(db_name=db_name)
 
     @classmethod
     def get_all_buckets(cls) -> list["BucketEntity"]:

@@ -3889,6 +3889,75 @@ export type ImagesResponse = {
 };
 
 /**
+ * IngestedDatalakeFile
+ * Set of default metadata for a data lake file. A data lake file is a file that was uploaded to a data lake storage.
+ */
+export type IngestedDatalakeFile = {
+    /**
+     * Source
+     * Source URI of original document.
+     */
+    source: string;
+    /**
+     * Namespace
+     * The namespace of the document within its metadata.
+     */
+    namespace: string;
+    /**
+     * Version
+     * Document version.
+     */
+    version?: number;
+    /**
+     * Content Hash
+     * Hash of the document/node, helpful to track whether file changed.
+     */
+    content_hash?: string | null;
+    /**
+     * Number Of Pages
+     * Number of Pages in the Document.
+     */
+    number_of_pages?: number | null;
+    /**
+     * Document Title
+     * Document title.
+     */
+    document_title?: string | null;
+    /**
+     * Language
+     * Document language.
+     */
+    language?: ('de' | 'en' | 'fr' | 'it') | null;
+    /**
+     * Created At
+     * Date source document was created (ISO format string)
+     */
+    created_at: string;
+    /**
+     * Updated At
+     * Date source document was last updated (ISO format string)
+     */
+    updated_at: string;
+    /**
+     * Inserted At
+     * Date source document was inserted into document store (ISO format string)
+     */
+    inserted_at: string;
+    /**
+     * Metadata
+     * Additional metadata for the document.
+     */
+    metadata?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Id
+     * Unique identifier for the document.
+     */
+    id: string;
+};
+
+/**
  * IngestedDocument
  * Set of default metadata for a document or - what llama index calls it - a ref_doc. A ref doc is the databae
  * representation of a document that was ingested through a pipeline. Hence, compared to the default data,
@@ -3961,7 +4030,7 @@ export type IngestedDocument = {
      * Content
      * Content of the document.
      */
-    content?: string;
+    content?: string | null;
 };
 
 /**
@@ -5276,6 +5345,11 @@ export type ModelResponse = {
  */
 export type NamespaceDto = {
     /**
+     * Id
+     * Unique identifier of the namespace
+     */
+    id: string;
+    /**
      * Name
      * Name of namespace
      */
@@ -5507,7 +5581,7 @@ export type PaginatedDocumentsResponse = {
      * Documents
      * List of Document DTOs objects for the current page
      */
-    documents: Array<IngestedDocument>;
+    documents: Array<IngestedDocument | IngestedDatalakeFile>;
 };
 
 /**

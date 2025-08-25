@@ -2,17 +2,20 @@ import logging
 import uuid
 
 import mongoengine
+import boto3
 
 from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
+from aihub_lib.generative_ai.document.types.IngestedDatalakeFile import IngestedDatalakeFile
 from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
-from aihub_lib.persistence.rag.documents.entities.NamespaceEntity import NamespaceEntity
+from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
 from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
 from aihub_lib.persistence.rag.vectors.node_metadata import (
@@ -49,22 +52,99 @@ class KnowledgeService:
             register_connection(alias=db, name=db, host=MongoSettings().CONNECTION_STRING.get_secret_value())
 
     @staticmethod
+    def _get_s3_client():
+        """Get S3 client for datalake operations."""
+        s3_config = S3StorageSettings()
+        return boto3.client(
+            "s3",
+            endpoint_url=s3_config.ENDPOINT,
+            aws_access_key_id=s3_config.ACCESS_KEY,
+            aws_secret_access_key=s3_config.SECRET_KEY.get_secret_value(),
+            region_name=s3_config.REGION,
+        )
+
+    @staticmethod
+    def _get_datalake_files_in_namespace(bucket_name: str, namespace: str) -> list[IngestedDatalakeFile]:
+        """
+        Get all files from datalake in a specific namespace using direct S3 API calls.
+        """
+        s3_client = KnowledgeService._get_s3_client()
+
+        all_files = []
+        paginator = s3_client.get_paginator("list_objects_v2")
+        page_iterator = paginator.paginate(
+            Bucket=bucket_name,
+            Prefix=f"{namespace}/",
+        )
+
+        for page in page_iterator:
+            if "Contents" not in page:
+                continue
+
+            for obj in page["Contents"]:
+                key = obj["Key"]
+                if key.endswith("/"):
+                    continue
+
+                filename = key.split("/")[-1]
+                file_namespace = key.split("/")[0]
+
+
+                document_uri = f"s3://{bucket_name}/{key}"
+                datalake_file = IngestedDatalakeFile(
+                    id=key,
+                    document_title=filename,
+                    namespace=file_namespace,
+                    updated_at="",
+                    created_at="",
+                    inserted_at="",
+                    source=document_uri,
+                    language="de",
+                )
+                all_files.append(datalake_file)
+
+        return all_files
+
+
+    @staticmethod 
+    def _filter_processing_documents(datalake_files: list[IngestedDatalakeFile], processed_doc_sources: set[str]) -> list[IngestedDatalakeFile]:
+        """
+        Filter datalake files to only include those not already processed (not in docstore).
+        """
+        processing_files = []
+        for file in datalake_files:
+            if file.source not in processed_doc_sources:
+                processing_files.append(file)
+        
+        return processing_files
+
+    @staticmethod
     def get_paginated_documents(
         db: str, namespace: str, page: int = 1, page_size: int = 20
-    ) -> tuple[int, list[IngestedDocument]]:
+    ) -> tuple[int, list[IngestedDocument | IngestedDatalakeFile]]:
         """
-        Retrieves paginated documents for a given namespace.
+        Retrieves paginated documents for a given namespace, including both processed (docstore) 
+        and processing (datalake) documents.
         """
         skip = (page - 1) * page_size
 
         KnowledgeService._ensure_db_exists(db)
-        total = RefDoc.count_by_namespace(db_alias=db, namespace=namespace)
+        ref_docs_page = RefDoc.get_paginated_by_namespace(db_alias=db, namespace=namespace, skip=0, limit=1000000)  # Get all for filtering
+        processed_documents = [IngestedDocument.from_entity(doc) for doc in ref_docs_page]
 
-        ref_docs_page = RefDoc.get_paginated_by_namespace(db_alias=db, namespace=namespace, skip=skip, limit=page_size)
+        processed_doc_sources = {doc.source for doc in processed_documents}
 
-        document_dtos = [IngestedDocument.from_entity(doc) for doc in ref_docs_page]
+        bucket = BucketEntity.get_bucket_by_db_name(db)
+        datalake_files = KnowledgeService._get_datalake_files_in_namespace(bucket.bucket_name, namespace)
+        processing_files = KnowledgeService._filter_processing_documents(datalake_files, processed_doc_sources)
 
-        return total, document_dtos
+        all_documents = processed_documents + processing_files
+        all_documents.sort(key=lambda doc: doc.updated_at, reverse=True)
+
+        total = len(all_documents)
+        paginated_documents = all_documents[skip:skip + page_size]
+
+        return total, paginated_documents
 
     @staticmethod
     def get_document_by_id(db: str, document_id: str) -> IngestedDocument:
@@ -93,8 +173,16 @@ class KnowledgeService:
 
             namespaces = []
             for ns_entity in namespace_entities:
-                document_count = RefDoc.count_by_namespace(db_alias=db_name, namespace=ns_entity.namespace_name)
-                namespaces.append(NamespaceDTO.from_entity(entity=ns_entity, t=t, number_of_documents=document_count))
+                processed_count = RefDoc.count_by_namespace(db_alias=db_name, namespace=ns_entity.namespace_name)
+
+                datalake_files = KnowledgeService._get_datalake_files_in_namespace(bucket.bucket_name, ns_entity.namespace_name)
+                processed_docs = RefDoc.get_paginated_by_namespace(db_alias=db_name, namespace=ns_entity.namespace_name, skip=0, limit=1000000)
+                processed_doc_sources = {doc.data.metadata.source for doc in processed_docs}
+                processing_files = KnowledgeService._filter_processing_documents(datalake_files, processed_doc_sources)
+                processing_count = len(processing_files)
+
+                total_document_count = processed_count + processing_count
+                namespaces.append(NamespaceDTO.from_entity(entity=ns_entity, t=t, number_of_documents=total_document_count))
 
             database_dtos.append(DatabaseDTO(name=db_name, namespaces=namespaces))
 
@@ -135,29 +223,17 @@ class KnowledgeService:
             summaries[level].nodes.sort(key=lambda node: node.index)
         return list(summaries.values())
 
+    @staticmethod
     async def _create_and_translate_locale_entity(
-        text: str | None, t: LocaleHandler, llm_config: LLMConfig | None
+        text: str | None, t: LocaleHandler, llm_config: LLMConfig
     ) -> LocaleStringEntity | None:
         """Helper to create and translate a LocaleStringEntity."""
-        if not text:
-            return None
-
-        # Create the initial entity from the user's input and locale
         locale_string = LocaleString(**{t.locale: text})
         entity = LocaleStringEntity.from_locale_string(locale_string)
 
-        # If an LLM is configured, attempt to translate to other locales
-        if llm_config:
-            try:
-                # This returns the updated entity with translations
-                entity = await TranslationService.translate_locale_string_entity(
-                    entity=entity, llm_config=llm_config, t=t, source_locale=t.locale
-                )
-                logger.info(f"Successfully translated text snippet '{text[:30]}...'.")
-            except Exception as e:
-                logger.warning(f"Failed to auto-translate text snippet '{text[:30]}...': {e}")
-
-        return entity
+        return await TranslationService.translate(
+            translatable=entity, llm_config=llm_config, t=t, source_locale=t.locale
+        )
 
     @staticmethod
     async def create_namespace(
@@ -166,33 +242,24 @@ class KnowledgeService:
         """
         Creates a new namespace (folder) in the specified database.
         """
-        # 1. --- Validate Bucket ---
-        try:
-            bucket = BucketEntity.get_bucket_by_bucket_name(request.database_name)
-        except DoesNotExist:
-            raise HTTPException(status_code=404, detail=f"Database '{request.database_name}' not found.")
+        bucket = BucketEntity.get_bucket_by_db_name(request.database_name)
 
-        # 2. --- Prevent Duplicates (with specific error handling) ---
         try:
             NamespaceEntity.get_namespace_by_bucket_and_name(str(bucket.id), request.namespace_name)
-            # If the above line doesn't raise an exception, the namespace already exists.
             raise HTTPException(
                 status_code=409,
                 detail=f"Folder '{request.namespace_name}' already exists in database '{request.database_name}'.",
             )
         except DoesNotExist:
-            # This is the expected path for a new namespace, so we can proceed.
             pass
 
-        # 3. --- Prepare Localized Data (using the helper method) ---
         display_name_entity = await KnowledgeService._create_and_translate_locale_entity(
-            request.display_name, t, llm_config
+            text=request.display_name, t=t, llm_config=llm_config
         )
         description_entity = await KnowledgeService._create_and_translate_locale_entity(
             request.description, t, llm_config
         )
 
-        # 4. --- Create the Namespace in the Database ---
         namespace_entity = NamespaceEntity.create_namespace(
             bucket_id=str(bucket.id),
             namespace_name=request.namespace_name,
@@ -201,7 +268,6 @@ class KnowledgeService:
             description=description_entity,
         )
 
-        # 5. --- Format and Return the Response ---
         return NamespaceResponse(
             id=str(namespace_entity.id),
             bucket_id=namespace_entity.bucket_id,
@@ -218,51 +284,22 @@ class KnowledgeService:
         """
         Updates display name and description for an existing namespace.
         """
-        from fastapi import HTTPException
-
         try:
             NamespaceEntity.get_namespace_by_id(namespace_id)
         except Exception:
             raise HTTPException(status_code=404, detail=f"Folder with ID '{namespace_id}' not found")
 
-        display_name = None
-        if request.display_name:
-            # Create basic LocaleString with user's language
-            locale_kwargs = {t.locale: request.display_name}
-            locale_string = LocaleString(**locale_kwargs)
-            display_name = LocaleStringEntity.from_locale_string(locale_string)
-
-            # Auto-translate to missing locales if LLM config is provided
-            if llm_config:
-                try:
-                    display_name = await TranslationService.translate_locale_string_entity(
-                        entity=display_name, llm_config=llm_config, t=t, source_locale=t.locale
-                    )
-                    logger.info("Successfully translated display_name to all supported locales")
-                except Exception as e:
-                    logger.warning(f"Failed to translate display_name: {e}")
-
-        description = None
-        if request.description:
-            # Create basic LocaleString with user's language
-            locale_kwargs = {t.locale: request.description}
-            locale_string = LocaleString(**locale_kwargs)
-            description = LocaleStringEntity.from_locale_string(locale_string)
-
-            # Auto-translate to missing locales if LLM config is provided
-            if llm_config:
-                try:
-                    description = await TranslationService.translate_locale_string_entity(
-                        entity=description, llm_config=llm_config, t=t, source_locale=t.locale
-                    )
-                    logger.info("Successfully translated description to all supported locales")
-                except Exception as e:
-                    logger.warning(f"Failed to translate description: {e}")
+        display_name_entity = await KnowledgeService._create_and_translate_locale_entity(
+            text=request.display_name, t=t, llm_config=llm_config
+        )
+        description_entity = await KnowledgeService._create_and_translate_locale_entity(
+            request.description, t, llm_config
+        )
 
         updated_entity = NamespaceEntity.update_namespace(
             namespace_id=namespace_id,
-            display_name=display_name,
-            description=description,
+            display_name=display_name_entity,
+            description=description_entity,
         )
 
         return NamespaceResponse(
@@ -275,67 +312,45 @@ class KnowledgeService:
         )
 
     @staticmethod
-    async def initiate_document_upload(request: DocumentUploadRequest, t: LocaleHandler) -> DocumentUploadResponse:
+    async def initiate_document_upload(request: DocumentUploadRequest) -> DocumentUploadResponse:
         """
         Initiates document upload by generating a presigned S3/MinIO URL.
 
         This method validates the upload request, generates a unique object key,
         and creates a presigned URL for direct upload to S3/MinIO storage.
         """
-        # Validate file size (10MB max)
-        if request.content_length > 10 * 1024 * 1024:
-            raise HTTPException(status_code=413, detail="File size exceeds 10MB limit")
 
-        # Validate content type
-        allowed_types = [
-            "application/pdf",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "text/plain",
-            "text/markdown",
-        ]
-        if request.content_type not in allowed_types:
-            raise HTTPException(status_code=415, detail="Unsupported file type")
-
-        # Validate database exists and get bucket info
         try:
-            bucket = BucketEntity.get_bucket_by_bucket_name(request.database)
+            bucket = BucketEntity.get_bucket_by_db_name(request.database)
         except DoesNotExist:
             raise HTTPException(status_code=404, detail=f"Database '{request.database}' not found")
 
-        # Generate unique upload ID and object key
         upload_id = str(uuid.uuid4())
         safe_filename = "".join(c for c in request.filename if c.isalnum() or c in ".-_").rstrip()
         object_key = f"{request.namespace}/{safe_filename}"
 
-        # Use the actual bucket name from BucketEntity
         container = bucket.bucket_name
 
-        # Generate presigned URL using S3/MinIO service
-        try:
-            file_service = S3AnonymousFileAccessService()
-            presigned_url = file_service.generate_upload_url(
-                container=container,
-                file_path=object_key,
-                content_type=request.content_type,
-                lifetime_hours=1,  # 1 hour expiration
-            )
+        file_service = S3AnonymousFileAccessService()
+        presigned_url = file_service.generate_upload_url(
+            container=container,
+            file_path=object_key,
+            content_type=request.content_type,
+            lifetime_hours=1,  # 1 hour expiration
+        )
 
-            logger.info(f"Generated presigned URL for upload: {upload_id}")
+        logger.info(f"Generated presigned URL for upload: {upload_id}")
 
-            return DocumentUploadResponse(
-                upload_url=presigned_url,
-                upload_id=upload_id,
-                container=container,
-                object_key=object_key,
-                expires_in=3600,  # 1 hour in seconds
-                namespace=request.namespace,
-                database=request.database,
-            )
+        return DocumentUploadResponse(
+            upload_url=presigned_url,
+            upload_id=upload_id,
+            container=container,
+            object_key=object_key,
+            expires_in=3600,  # 1 hour in seconds
+            namespace=request.namespace,
+            database=request.database,
+        )
 
-        except Exception as e:
-            logger.error(f"Failed to generate presigned URL: {e}")
-            raise HTTPException(status_code=500, detail="Failed to generate upload URL")
 
     @staticmethod
     async def complete_document_upload(
