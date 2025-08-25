@@ -665,9 +665,6 @@ services:
       - "mongo"
       - "nats"
       - "traefik"
-    volumes:
-      - api-venv:/app/.venv
-      - api-api-venv:/app/aihub_api/.venv
     environment:
       NATS_ENDPOINT: "nats://nats:4222"
       MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
