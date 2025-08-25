@@ -21,6 +21,7 @@ azure-identity = "^1.19.0"
 azure-mgmt-cosmosdb = "^9.7.0"
 azure-mgmt-resource = "^23.2.0"
 uvicorn = {extras = ["standard"], version = "^0.34.0"}
+gunicorn = "^23.0.0"
 httpx = "^0.28.1"
 cryptography = "^44.0.0"
 pyjwt = "^2.10.1"

@@ -252,7 +252,7 @@ services:
       PRESIDIO_ANONYMIZER_API_BASE: "http://presidio-anonymizer:3000"
       SET_VERBOSE: "false"
     volumes:
-      - ./configs/litellm/litellm.latest.yaml:/app/config.yaml
+      - ./configs/litellm/config.latest.yaml:/app/config.yaml
     command: --config /app/config.yaml --detailed_debug
     depends_on:
       postgres:
