@@ -28,13 +28,8 @@ enable_logging()
 
 
 runner = ApiRunner()
-auth = TokenAndOauth2Handler(
-    bearer_handlers=[
-        OpenWebuiAuthHandler(identity_provider=AzureIdentityProvider()),
-        TokenAuthHandler(identity_provider=AzureIdentityProvider()),
-    ],
-    oauth2_handlers=[OAuth2AuthHandler(identity_provider=AzureIdentityProvider())],
-)
+auth = TokenAndOauth2Handler.from_auth_settings()
+
 
 runner.mount(
     HealthController(auth=auth).get_health(),
