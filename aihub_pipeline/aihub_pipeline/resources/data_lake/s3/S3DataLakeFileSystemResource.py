@@ -93,12 +93,12 @@ class S3DataLakeFileSystemResource(AbstractDataLakeFileSystemResource[s3fs.S3Fil
 
         client_kwargs = {
             "region_name": s3_config.REGION,
-            "endpoint_url": s3_config.ENDPOINT_URL,
+            "endpoint_url": s3_config.ENDPOINT,
         }
 
         return s3fs.S3FileSystem(
             key=s3_config.ACCESS_KEY,
-            secret=s3_config.SECRET_KEY,
+            secret=s3_config.SECRET_KEY.get_secret_value(),
             client_kwargs=client_kwargs,
             anon=False,  # Use credentials, not anonymous access
         )
