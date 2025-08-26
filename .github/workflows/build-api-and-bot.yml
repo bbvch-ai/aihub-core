@@ -10,7 +10,7 @@ on:
           required: true
           default: "manual"
       secondary_tag:
-          description: 'Secondary tag to apply (optional)'
+          description: 'Secondary tag to apply (optional), [nightly, latest, *empty*]'
           required: false
           default: ''
           options:
