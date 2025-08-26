@@ -88,7 +88,7 @@ guardrails:
   - guardrail_name: "presidio-mask-guard"
     litellm_params:
       guardrail: presidio
-      default_on: true
+      default_on: false
       mode: "pre_call"
       presidio_language: "de"
       presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
@@ -101,7 +101,7 @@ guardrails:
   - guardrail_name: "presidio-block-guard"
     litellm_params:
       guardrail: presidio
-      default_on: true
+      default_on: false
       mode: "pre_call"
       presidio_language: "de"
       presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
