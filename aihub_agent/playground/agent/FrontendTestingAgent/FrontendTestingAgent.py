@@ -61,12 +61,12 @@ class FrontendTestingAgent(Agent):
 
     @step()
     async def guard_step(self, _: AgentInTheLoop.response, displayer: EventDisplayer) -> GuardEvent:
-        await displayer.display_thought("Now I need to check the guard")
-        await asyncio.sleep(3)
+        await asyncio.sleep(1)
         return GuardEvent()
 
     @step()
-    async def router_step(self, _: GuardEvent) -> RouterEvent:
+    async def router_step(self, _: GuardEvent, displayer: EventDisplayer) -> RouterEvent:
+        await asyncio.sleep(1)
         routes = [
             RouteOptions(
                 name="Route A",
@@ -89,6 +89,7 @@ class FrontendTestingAgent(Agent):
 
     @step()
     async def embedding_step(self, _: FrontendTestingEventA) -> EmbeddingEvent:
+        await asyncio.sleep(1)
         return EmbeddingEvent(
             text="This is the text that was embedded",
             embedding_model_name="text-embedding-ada-002",
@@ -102,6 +103,7 @@ class FrontendTestingAgent(Agent):
 
     @step()
     async def retriever_step(self, _: EmbeddingEvent) -> RetrieverEvent:
+        await asyncio.sleep(1)
         return RetrieverEvent(
             nodes=[
                 IngestedNode.from_llama_index_node_with_score(
@@ -141,6 +143,7 @@ class FrontendTestingAgent(Agent):
 
     @step()
     async def rerank_step(self, event: RetrieverEvent) -> RerankerEvent:
+        await asyncio.sleep(1)
         return RerankerEvent(
             input_nodes=event.nodes,
             output_nodes=event.nodes[::-1],
@@ -151,6 +154,7 @@ class FrontendTestingAgent(Agent):
 
     @step()
     async def tool(self, _: RerankerEvent) -> ToolEvent:
+        await asyncio.sleep(1)
         return ToolEvent(
             name="Weather Tool",
             description="Fetches the current weather",
@@ -178,6 +182,7 @@ class FrontendTestingAgent(Agent):
     @step()
     async def hitl_step(self, _: ToolEvent) -> CustomHumanInTheLoop.request:
         print("[HumanInTheLoopAgent.start_step]")
+        await asyncio.sleep(1)
         return CustomHumanInTheLoop.invoke(question="Shall I continue?")
 
     # @step()
@@ -196,6 +201,7 @@ class FrontendTestingAgent(Agent):
 
     @step()
     async def stop(self, event: CustomHumanInTheLoop.response, displayer: EventDisplayer) -> StopEvent:
+        await asyncio.sleep(1)
         await displayer.display_chunk(content=f"Hitl Response: {event.response}", model_name="FrontendTestingAgent")
         # await displayer.display_chunk(content=f"Botl Response: {event.response}", model_name="FrontendTestingAgent")
         return StopEvent()

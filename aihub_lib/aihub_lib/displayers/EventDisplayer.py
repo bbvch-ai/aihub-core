@@ -38,7 +38,7 @@ class EventDisplayer:
     Developers can correlate displayed content with the execution flow in distributed traces.
 
     ### Example
-    When an LLM is asked a question, `display_llm_stream` streams the model’s reply line-by-line as `ChunkEvent`s.
+    When an LLM is asked a question, `display_llm_stream` streams the model's reply line-by-line as `ChunkEvent`s.
     Another scenario: after completion, `display_llm_costs` publishes an `LLMCostEvent` summarizing token usage.
 
     """
@@ -122,38 +122,118 @@ class EventDisplayer:
 
         ### How it Works
         - Calls `llm.stream_chat(messages)` to get a generator of partial responses (chunks).
-        - For each chunk, buffers output until a newline or buffer exceeds `max_buffer_length`, then displays it.
+        - Maintains separate buffers for regular content and thinking content.
+        - Flushes buffers when encountering sentence boundaries (.), newlines, or when buffer exceeds `max_buffer_length`.
+        - Content within <think>...</think> tags is streamed live as ThoughtEvents.
         - After streaming all chunks, retrieves token usage from `TokenCountingHandler`.
         - Returns an LLMEvent summarizing the entire conversation (inputs + full output).
 
         ### Example
-        If the LLM returns a three-line answer, `display_llm_stream` will publish
-        three `ChunkEvent`s as the lines appear, then produce a final LLMEvent with the aggregate content.
+        If the LLM returns content with thinking, `display_llm_stream` will stream both
+        ChunkEvents for regular content and ThoughtEvents for thinking content in real-time,
+        then produce a final LLMEvent with the aggregate content.
         """
 
         aggregate = ""
-        buffer = ""
+        regular_buffer = ""
+        thinking_buffer = ""
+        pending_content = ""  # Content that needs to be processed
+        in_thinking = False
         max_buffer_length = 500
+
+        async def flush_regular_buffer():
+            nonlocal regular_buffer
+            if regular_buffer:
+                await self.display_chunk(regular_buffer, model_name=llm_config.model_name)
+                regular_buffer = ""
+
+        async def flush_thinking_buffer():
+            nonlocal thinking_buffer
+            if thinking_buffer:
+                await self.display_thought(thinking_buffer)
+                thinking_buffer = ""
+
+        def add_to_buffer_and_check_flush(char, buffer_type="regular"):
+            """Add character to appropriate buffer and check flush conditions"""
+            nonlocal regular_buffer, thinking_buffer
+
+            if buffer_type == "thinking":
+                thinking_buffer += char
+                should_flush = char == "." or char == "\n" or len(thinking_buffer) >= max_buffer_length
+                return should_flush
+            else:
+                regular_buffer += char
+                should_flush = char == "." or char == "\n" or len(regular_buffer) >= max_buffer_length
+                return should_flush
 
         # Iterate over streamed chunks from the LLM
         for chunk in llm.stream_chat(messages):
             content = chunk.delta
             aggregate += content
-            buffer += content
+            pending_content += content
 
-            # Flush buffer at newline boundaries
-            while "\n" in buffer:
-                section, buffer = buffer.split("\n", 1)
-                await self.display_chunk(section + "\n", model_name=llm_config.model_name)
+            # Process pending content
+            while pending_content:
+                # Check if we're at the start of a potential tag
+                if pending_content.startswith("<think>"):
+                    # Found opening think tag
+                    await flush_regular_buffer()
+                    in_thinking = True
+                    pending_content = pending_content[7:]  # Remove '<think>'
 
-            # If no newline but buffer large, flush to avoid delays
-            if len(buffer) > max_buffer_length:
-                await self.display_chunk(buffer, model_name=llm_config.model_name)
-                buffer = ""
+                elif pending_content.startswith("</think>"):
+                    # Found closing think tag
+                    await flush_thinking_buffer()
+                    in_thinking = False
+                    pending_content = pending_content[8:]  # Remove '</think>'
 
-        # Flush remaining buffer after streaming finishes
-        if buffer:
-            await self.display_chunk(buffer, model_name=llm_config.model_name)
+                elif pending_content.startswith("<") and len(pending_content) < 8:
+                    # Might be start of a tag but need more content to determine
+                    # Check if it could be the beginning of <think> or </think>
+                    if "<think>".startswith(pending_content) or "</think>".startswith(pending_content):
+                        # Could be a tag, wait for more content
+                        break
+                    else:
+                        # Not a thinking tag, process the '<' character
+                        char = pending_content[0]
+                        pending_content = pending_content[1:]
+
+                        if in_thinking:
+                            if add_to_buffer_and_check_flush(char, "thinking"):
+                                await flush_thinking_buffer()
+                        else:
+                            if add_to_buffer_and_check_flush(char, "regular"):
+                                await flush_regular_buffer()
+                else:
+                    # Process regular character
+                    char = pending_content[0]
+                    pending_content = pending_content[1:]
+
+                    if in_thinking:
+                        if add_to_buffer_and_check_flush(char, "thinking"):
+                            await flush_thinking_buffer()
+                    else:
+                        if add_to_buffer_and_check_flush(char, "regular"):
+                            await flush_regular_buffer()
+
+        # Process any remaining pending content
+        if pending_content:
+            # Incomplete tag or remaining content
+            if pending_content.startswith("<") and (
+                "<think>".startswith(pending_content) or "</think>".startswith(pending_content)
+            ):
+                logger.warning(f"Incomplete tag found at end of stream: {pending_content}")
+
+            # Process remaining content as regular text
+            for char in pending_content:
+                if in_thinking:
+                    thinking_buffer += char
+                else:
+                    regular_buffer += char
+
+        # Flush any remaining buffers
+        await flush_thinking_buffer()
+        await flush_regular_buffer()
 
         # Extract token counts from handler if present
         handlers = llm.callback_manager.handlers

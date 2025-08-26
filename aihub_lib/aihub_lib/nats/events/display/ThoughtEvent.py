@@ -1,10 +1,12 @@
-from typing import ClassVar
+from typing import ClassVar, Annotated
+
+from pydantic import Field
 
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.display.ChunkEvent import ChunkEvent
+from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 
 
-class ThoughtEvent(ChunkEvent):
+class ThoughtEvent(DisplayEvent):
     """
     An event representing the system or agent's internal reasoning process, often displayed as
     a "thought" or debug info stream. These "thoughts" provide insight into how the agent arrives
@@ -18,3 +20,9 @@ class ThoughtEvent(ChunkEvent):
 
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.thought_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.thought_event.description")
+    reasoning_content: Annotated[
+        str | None,
+        Field(
+            description="The textual representation of the agent’s internal reasoning at a particular point in time."
+        ),
+    ] = None

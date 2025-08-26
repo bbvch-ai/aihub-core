@@ -6,22 +6,167 @@ version: 1.0.0
 required_open_webui_version: 0.6.0
 """
 
-import asyncio
 import base64
 import hashlib
 import hmac
+import html
 import json
 import logging
 import os
-from typing import Any, Union, Annotated, Optional
+from enum import Enum
+
+import time
+from typing import Any, Annotated, Optional
 from urllib.parse import urlparse
 
 import httpx
 from pydantic import BaseModel, Field
 from bson import ObjectId
+import boto3
+from botocore.client import Config
 from open_webui.models.files import Files
 
 logger = logging.getLogger(__name__)
+
+
+class BlockType(str, Enum):
+    TEXT = "text"
+    THINKING = "thinking"
+    TOOL = "tool"  # New block type for tool calls
+
+
+class ContentBlock(BaseModel):
+    type: BlockType
+    content: str = ""
+    started_at: Optional[float] = None
+    ended_at: Optional[float] = None
+    closed: bool = False
+    # Additional fields for tool blocks
+    tool_id: Optional[str] = None
+    tool_name: Optional[str] = None
+    tool_params: Optional[dict] = None
+    tool_result: Optional[str] = None
+
+    @property
+    def duration(self) -> Optional[int]:
+        if self.started_at and self.ended_at:
+            return int(self.ended_at - self.started_at)
+        return None
+
+    def close(self):
+        """Close the block and set end time"""
+        self.closed = True
+        self.ended_at = time.time()
+
+    def append_content(self, content: str):
+        """Append content to this block"""
+        self.content += content
+
+    def to_html(self) -> str:
+        """Convert block to HTML representation"""
+        if self.type == BlockType.THINKING:
+            if self.closed and self.duration:
+                return (
+                    f'\n<details type="reasoning" done="true" duration="{self.duration}">\n'
+                    f"{self.content.strip()}\n"
+                    f"</details>\n"
+                )
+            else:
+                return f'\n<details type="reasoning" done="false">\n' f"{self.content.strip()}" f"</details>\n"
+        elif self.type == BlockType.TOOL:
+            escaped_params = html.escape(json.dumps(self.tool_params or {}))
+            done_status = "true" if self.closed else "false"
+
+            result_attr = ""
+            if self.tool_result and self.closed:
+                escaped_result = html.escape(json.dumps(self.tool_result))
+                result_attr = f' result="{escaped_result}"'
+
+            return (
+                f'\n<details type="tool_calls" done="{done_status}" id="{self.tool_id}" '
+                f'name="{self.tool_name}" arguments="{escaped_params}"{result_attr}>\n'
+                f'<summary>{"Tool Executed" if self.closed else f"Calling {self.tool_name}..."}</summary>\n'
+                f"</details>\n"
+            )
+        else:  # TEXT
+            return self.content
+
+
+class StreamingState(BaseModel):
+    """State management for streaming content"""
+
+    content_blocks: list[ContentBlock] = Field(default_factory=list)
+    current_block: Optional[ContentBlock] = None
+
+    def close_tool_blocks(self) -> None:
+        """Close any open tool blocks"""
+        if self.current_block and self.current_block.type == BlockType.TOOL and not self.current_block.closed:
+            self.current_block.close()
+            self.finalize_current_block()
+
+    def start_tool_block(self, tool_id: str, tool_name: str, tool_params: dict) -> None:
+        """Start a new tool block"""
+        # Close any existing tool blocks
+        self.close_tool_blocks()
+
+        # Finalize current block if it's not a tool
+        if self.current_block and self.current_block.type != BlockType.TOOL:
+            self.finalize_current_block()
+
+        self.current_block = ContentBlock(
+            type=BlockType.TOOL, tool_id=tool_id, tool_name=tool_name, tool_params=tool_params, started_at=time.time()
+        )
+
+    def start_thinking_block(self, content: str = "") -> None:
+        """Start or append to a thinking block"""
+        # Close any open tool blocks
+        self.close_tool_blocks()
+
+        if self.current_block and self.current_block.type == BlockType.THINKING:
+            # Already in thinking block, just append
+            self.current_block.append_content(content)
+        else:
+            # Close current block if exists and start new thinking block
+            self.finalize_current_block()
+            self.current_block = ContentBlock(type=BlockType.THINKING, content=content, started_at=time.time())
+
+    def start_text_block(self, content: str = "") -> None:
+        """Start or append to a text block"""
+        # Close any open tool blocks
+        self.close_tool_blocks()
+
+        # If we were thinking, close that block
+        if self.current_block and self.current_block.type == BlockType.THINKING:
+            self.current_block.close()
+            self.finalize_current_block()
+
+        if self.current_block and self.current_block.type == BlockType.TEXT:
+            # Already in text block, just append
+            self.current_block.append_content(content)
+        else:
+            # Start new text block
+            self.finalize_current_block()
+            self.current_block = ContentBlock(type=BlockType.TEXT, content=content)
+
+    def finalize_current_block(self) -> None:
+        """Move current block to content_blocks if it exists"""
+        if self.current_block and (self.current_block.content or self.current_block.type == BlockType.TOOL):
+            self.content_blocks.append(self.current_block)
+            self.current_block = None
+
+    def serialize_to_html(self) -> str:
+        """Serialize all content blocks to HTML"""
+        html_parts = []
+
+        # Add all finalized blocks
+        for block in self.content_blocks:
+            html_parts.append(block.to_html())
+
+        # Add current block if exists
+        if self.current_block:
+            html_parts.append(self.current_block.to_html())
+
+        return "".join(html_parts)
 
 
 class Pipe:
@@ -39,8 +184,8 @@ class Pipe:
 
     class Valves(BaseModel):
         AIHUB_BASE_URL: str = Field(
-            default=os.getenv("AIHUB_BASE_URL", "http://localhost:8000/api/v1"),
-            description="Base URL for the AI-Hub API endpoints",
+            default=os.getenv("AIHUB_BASE_URL", "http://localhost:8000"),
+            description="Base URL for the AI-Hub API endpoints (without /api/v1)",
         )
         AIHUB_SUPERUSER_API_KEY: str = Field(
             default=os.getenv("AIHUB_SUPERUSER_API_KEY", ""),
@@ -77,76 +222,41 @@ class Pipe:
     async def _fetch_file_from_s3(
         self, s3_path: Annotated[str, "S3 path in format s3://bucket/key"]
     ) -> Annotated[Optional[bytes], "File content as bytes"]:
-        """
-        Fetch a file from S3/MinIO storage.
-        """
-        try:
-            # Parse S3 path
-            parsed = urlparse(s3_path)
-            if parsed.scheme != "s3":
-                logger.error(f"Invalid S3 path: {s3_path}")
-                return None
-
-            bucket = parsed.netloc
-            key = parsed.path.lstrip("/")
-
-            # Use boto3 if available, otherwise use direct HTTP requests
-            try:
-                import boto3
-                from botocore.client import Config
-
-                # Create S3 client
-                s3_client = boto3.client(
-                    "s3",
-                    endpoint_url=self.valves.S3_STORAGE_ENDPOINT,
-                    aws_access_key_id=self.valves.S3_STORAGE_ACCESS_KEY,
-                    aws_secret_access_key=self.valves.S3_STORAGE_SECRET_KEY,
-                    config=Config(signature_version="s3v4"),
-                    region_name="us-east-1",  # Default region for MinIO
-                )
-
-                # Download file
-                response = s3_client.get_object(Bucket=bucket, Key=key)
-                return response["Body"].read()
-
-            except ImportError:
-                # Fallback to direct HTTP requests for MinIO
-                logger.debug("boto3 not available, using HTTP requests for S3")
-
-                # Build URL
-                url = f"{self.valves.S3_STORAGE_ENDPOINT}/{bucket}/{key}"
-
-                # Generate signature for authentication (simplified for MinIO)
-                async with httpx.AsyncClient(timeout=self.valves.AIHUB_REQUEST_TIMEOUT) as client:
-                    response = await client.get(
-                        url,
-                        auth=(
-                            self.valves.S3_STORAGE_ACCESS_KEY,
-                            self.valves.S3_STORAGE_SECRET_KEY,
-                        ),
-                    )
-                    response.raise_for_status()
-                    return response.content
-
-        except Exception as e:
-            logger.exception(f"Error fetching file from S3: {e}")
+        """Fetch a file from S3/MinIO storage."""
+        # Parse S3 path
+        parsed = urlparse(s3_path)
+        if parsed.scheme != "s3":
+            logger.error(f"Invalid S3 path: {s3_path}")
             return None
+
+        bucket = parsed.netloc
+        key = parsed.path.lstrip("/")
+
+        # Create S3 client
+        s3_client = boto3.client(
+            "s3",
+            endpoint_url=self.valves.S3_STORAGE_ENDPOINT,
+            aws_access_key_id=self.valves.S3_STORAGE_ACCESS_KEY,
+            aws_secret_access_key=self.valves.S3_STORAGE_SECRET_KEY,
+            config=Config(signature_version="s3v4"),
+            region_name="us-east-1",
+        )
+
+        # Download file
+        response = s3_client.get_object(Bucket=bucket, Key=key)
+        return response["Body"].read()
 
     def _str_to_object_id(
         self, context_id: Annotated[Optional[str], "Context ID to hash"]
     ) -> Annotated[str, "ObjectId string"]:
-        """
-        Convert a string to an ObjectId by hashing it with MD5.
-        """
+        """Convert a string to an ObjectId by hashing it with MD5."""
         if not context_id:
             return str(ObjectId())
         hashed = hashlib.md5(context_id.encode()).digest()[:12]
         return str(ObjectId(hashed)).lower()
 
     async def pipes(self) -> list[dict]:
-        """
-        Fetch available conversational agents from AI-Hub.
-        """
+        """Fetch available conversational agents from AI-Hub."""
         if not self.valves.AIHUB_SUPERUSER_API_KEY:
             return [{"id": "error", "name": "API Key not configured"}]
 
@@ -160,7 +270,7 @@ class Pipe:
             }
 
             async with httpx.AsyncClient(timeout=self.valves.AIHUB_REQUEST_TIMEOUT, follow_redirects=True) as client:
-                response = await client.get(f"{self.valves.AIHUB_BASE_URL}/agents", headers=headers)
+                response = await client.get(f"{self.valves.AIHUB_BASE_URL}/api/v1/agents", headers=headers)
                 response.raise_for_status()
                 agents = response.json()
 
@@ -189,9 +299,7 @@ class Pipe:
         user_name: Annotated[str, "The user's name"],
         user_email: Annotated[str, "The user's email"],
     ) -> Annotated[str, "HMAC-SHA256 signature as hex string"]:
-        """
-        Sign user information with HMAC-SHA256 for authentication.
-        """
+        """Sign user information with HMAC-SHA256 for authentication."""
         secret = self.valves.OPEN_WEBUI_SIGNING_SECRET.encode("utf-8")
         message = f"name:{user_name},email:{user_email}".encode()
         signature = hmac.new(secret, message, hashlib.sha256).hexdigest()
@@ -287,46 +395,48 @@ class Pipe:
         """
         Convert Open WebUI files to AI-Hub event format by fetching from S3.
         """
+        if not __files__:
+            return []
+
         files_to_send = []
 
-        if __files__:
-            for file in __files__:
-                try:
-                    logger.debug(f"Processing file: {file.get('name', '')}, ID: {file.get('id', '')}")
-                    file_id = file.get("id", "")
-                    file_obj = Files.get_file_by_id(file_id)
+        for file in __files__:
+            try:
+                logger.debug(f"Processing file: {file.get('name', '')}, ID: {file.get('id', '')}")
+                file_id = file.get("id", "")
+                file_obj = Files.get_file_by_id(file_id)
 
-                    if file_obj:
-                        # Get file metadata
-                        file_meta = file_obj.meta
-                        filename = file_meta.get("name", "unnamed_file")
-                        content_type = file_meta.get("content_type", "application/octet-stream")
+                if file_obj:
+                    # Get file metadata
+                    file_meta = file_obj.meta
+                    filename = file_meta.get("name", "unnamed_file")
+                    content_type = file_meta.get("content_type", "application/octet-stream")
 
-                        # Fetch file from S3
-                        s3_path = file_obj.path
-                        logger.debug(f"Fetching file from S3: {s3_path}")
+                    # Fetch file from S3
+                    s3_path = file_obj.path
+                    logger.debug(f"Fetching file from S3: {s3_path}")
 
-                        file_content = await self._fetch_file_from_s3(s3_path)
+                    file_content = await self._fetch_file_from_s3(s3_path)
 
-                        if file_content:
-                            # Convert to base64
-                            base64_data = base64.b64encode(file_content).decode("utf-8")
+                    if file_content:
+                        # Convert to base64
+                        base64_data = base64.b64encode(file_content).decode("utf-8")
 
-                            files_to_send.append(
-                                {
-                                    "filename": filename,
-                                    "file_data": base64_data,
-                                    "file_type": content_type,
-                                }
-                            )
-                            logger.debug(f"Successfully prepared file: {filename}")
-                        else:
-                            logger.warning(f"Could not fetch file from S3: {s3_path}")
+                        files_to_send.append(
+                            {
+                                "filename": filename,
+                                "file_data": base64_data,
+                                "file_type": content_type,
+                            }
+                        )
+                        logger.debug(f"Successfully prepared file: {filename}")
                     else:
-                        logger.warning(f"Could not retrieve file with ID: {file_id}")
+                        logger.warning(f"Could not fetch file from S3: {s3_path}")
+                else:
+                    logger.warning(f"Could not retrieve file with ID: {file_id}")
 
-                except Exception as e:
-                    logger.exception(f"Error processing file {file.get('name', '')}: {e}")
+            except Exception as e:
+                logger.exception(f"Error processing file {file.get('name', '')}: {e}")
 
         return files_to_send
 
@@ -341,7 +451,7 @@ class Pipe:
         """
         Build the streaming endpoint URL for sending events to agents.
         """
-        url = f"{self.valves.AIHUB_BASE_URL}/agents/{agent_class}/{agent_id}/{event_name}/stream"
+        url = f"{self.valves.AIHUB_BASE_URL}/api/v1/agents/{agent_class}/{agent_id}/{event_name}/stream"
         url += f"?thread_id={thread_id}&display_id={display_id}"
         return url
 
@@ -356,13 +466,15 @@ class Pipe:
         display_id: Annotated[str, "Display ID"],
         __event_emitter__: Annotated[Any, "Event emitter for streaming responses"],
         __event_call__: Annotated[Any, "Event caller for user interactions"],
-        accumulated_content: Annotated[list, "List to accumulate content chunks"],
+        state: Annotated[StreamingState, "State object for accumulation"],
     ) -> None:
         """
         Stream an event to an agent and handle the SSE response.
         """
         endpoint_url = self._build_endpoint_url(agent_class, agent_id, event_name, thread_id, display_id)
         logger.debug(f"Streaming {event_name} to: {endpoint_url}")
+
+        # Initialize state for content accumulation
 
         async with httpx.AsyncClient(timeout=None, follow_redirects=True) as client:
             try:
@@ -376,38 +488,35 @@ class Pipe:
                             logger.debug("Stream ended with [DONE]")
                             break
 
-                        if not line:
+                        if not line or not line.startswith("data: "):
                             continue
 
-                        if line.startswith("data: "):
-                            try:
-                                json_str = line[6:]
-                                if json_str == "[DONE]":
-                                    logger.debug("Stream ended with data: [DONE]")
-                                    break
+                        try:
+                            json_str = line[6:]
+                            if json_str == "[DONE]":
+                                break
 
-                                event = json.loads(json_str)
+                            event = json.loads(json_str)
 
-                                # Process the event
-                                should_continue = await self._process_event(
-                                    event,
-                                    __event_emitter__,
-                                    __event_call__,
-                                    accumulated_content,
-                                    headers,
-                                    agent_class,
-                                    agent_id,
-                                    thread_id,
-                                )
+                            # Process the event with state
+                            should_continue = await self._process_event(
+                                event,
+                                __event_emitter__,
+                                __event_call__,
+                                headers,
+                                agent_class,
+                                agent_id,
+                                thread_id,
+                                state,
+                            )
 
-                                if not should_continue:
-                                    logger.debug(f"Stopping stream due to event: {event['_event_name']}")
-                                    break
+                            if not should_continue:
+                                break
 
-                            except json.JSONDecodeError as e:
-                                logger.warning(f"Failed to parse JSON: {e}, line: {line}")
-                            except Exception as e:
-                                logger.exception(f"Error processing event: {e}")
+                        except json.JSONDecodeError as e:
+                            logger.warning(f"Failed to parse JSON: {e}, line: {line}")
+                        except Exception as e:
+                            logger.exception(f"Error processing event: {e}")
 
             except httpx.HTTPStatusError as e:
                 error_msg = f"HTTP {e.response.status_code}"
@@ -461,57 +570,168 @@ class Pipe:
         event: Annotated[dict, "Event data"],
         __event_emitter__: Annotated[Any, "Event emitter"],
         __event_call__: Annotated[Any, "Event caller"],
-        accumulated_content: Annotated[list, "Content accumulator"],
         headers: Annotated[dict, "Request headers"],
         agent_class: Annotated[str, "Agent class"],
         agent_id: Annotated[str, "Agent ID"],
         thread_id: Annotated[str, "Thread ID"],
+        state: Annotated[StreamingState, "State object for accumulation"],
     ) -> Annotated[bool, "Whether to continue processing"]:
         """
         Process an event and return whether to continue streaming.
         """
         parent_names = event.get("_parent_event_names", [])
 
-        # Check event types in order of specificity
-        if "ChunkEvent" in parent_names:
-            # Handle ThoughtEvent with reasoning content
+        # Handle ThoughtEvent
+        if "ThoughtEvent" in parent_names:
             reasoning_content = event.get("reasoning_content", "")
+            state.start_thinking_block(reasoning_content)
+
+            # Emit full message
+            await __event_emitter__(
+                {
+                    "type": "replace",
+                    "data": {
+                        "content": state.serialize_to_html(),
+                    },
+                }
+            )
+            return True
+
+        # Handle ChunkEvent
+        if "ChunkEvent" in parent_names:
             regular_content = event.get("content", "")
+            state.start_text_block(regular_content)
 
-            if reasoning_content:
-                # Emit reasoning content to Open WebUI
-                await __event_emitter__(
-                    {
-                        "type": "chat:completion",
-                        "data": {
-                            "choices": [
-                                {
-                                    "delta": {
-                                        "content": regular_content,
-                                        "thinking": reasoning_content,
-                                    }
-                                }
-                            ],
+            # Emit full message
+            await __event_emitter__(
+                {
+                    "type": "replace",
+                    "data": {
+                        "content": state.serialize_to_html(),
+                    },
+                }
+            )
+            return True
+
+        if "EmbeddingEvent" in parent_names:
+            search_query = event.get("text", "")
+
+            await __event_emitter__(
+                {
+                    "type": "status",
+                    "data": {
+                        "action": "knowledge_search",
+                        "query": search_query,
+                        "done": True,
+                        "error": False,
+                    },
+                }
+            )
+            return True
+
+        if "RetrieverEvent" in parent_names:
+            nodes = event.get("nodes", [])
+
+            if nodes:
+                # Emit each node as a separate source event
+                for node in nodes:
+                    # Prepare the source data structure
+                    source_data = {
+                        "source": {
+                            "name": node.get("document_title", node.get("source", "Unknown Source")),
+                            "id": node.get("id", ""),
+                            # Add URL if reference_url exists
+                            **(
+                                {"url": node.get("metadata", {}).get("reference_url")}
+                                if node.get("metadata", {}).get("reference_url")
+                                else {}
+                            ),
                         },
+                        "document": [node.get("content", "")],
+                        "metadata": [
+                            {
+                                "source": node.get("source", ""),
+                                "document_title": node.get("document_title", ""),
+                                "namespace": node.get("namespace", ""),
+                                "language": node.get("language", ""),
+                                "document_id": node.get("document_id", ""),
+                                "reference_url": node.get("metadata", {}).get("reference_url", ""),
+                                "created_at": node.get("created_at", ""),
+                                # Add file-related metadata if available
+                                "name": node.get("source", ""),  # File name for display
+                                # Page number if available (subtract 1 since frontend adds 1)
+                                **({"page": node.get("index", 0)} if node.get("index") is not None else {}),
+                            }
+                        ],
+                        # Add distance/score for relevance display
+                        **({"distances": [node.get("score", 0.0)]} if "score" in node else {}),
                     }
-                )
-                logger.debug(f"Emitted reasoning: {reasoning_content[:100]}...")
 
-            if regular_content:
-                # Also handle regular content if present
-                accumulated_content.append(regular_content)
+                    # Emit as a source event
+                    await __event_emitter__(
+                        {"type": "source", "data": source_data}  # This gets handled by chatEventHandler
+                    )
+
+                # Emit status to show retrieval completion
+                display_description = event.get("display_description", {})
+                description = display_description.get("en", f"Found {len(nodes)} relevant documents")
+
                 await __event_emitter__(
                     {
-                        "type": "chat:message:delta",
-                        "data": {"content": regular_content},
+                        "type": "status",
+                        "data": {
+                            "action": None,
+                            "description": description,
+                            "done": True,
+                        },
                     }
                 )
 
             return True
 
-        elif "ExceptionEvent" in parent_names:
+        # Handle ToolEvent - Display tool usage
+        if "ToolEvent" in parent_names:
+            tool_name = event.get("name", "Unknown Tool")
+            tool_description = event.get("description", "")
+            parameters = event.get("parameters", {})
+            tool_id = event.get("event_id")
+
+            # Emit status event to show tool is being called
+            await __event_emitter__(
+                {
+                    "type": "status",
+                    "data": {
+                        "action": None,
+                        "description": f"{tool_description}: {tool_name}",
+                        "done": False,
+                    },
+                }
+            )
+
+            # Start a tool block
+            state.start_tool_block(tool_id=tool_id, tool_name=tool_name, tool_params=parameters)
+
+            # Emit the updated content
+            await __event_emitter__(
+                {
+                    "type": "replace",
+                    "data": {
+                        "content": state.serialize_to_html(),
+                    },
+                }
+            )
+
+            return True
+
+        if "ExceptionEvent" in parent_names:
+            # Finalize any open blocks
+            state.finalize_current_block()
+
             message = event.get("message", "An error occurred")
             error_content = f"\n\n> [!CAUTION]\n> {message}\n"
+
+            # Add error as text block
+            state.start_text_block(error_content)
 
             await __event_emitter__(
                 {
@@ -526,15 +746,13 @@ class Pipe:
             )
             await __event_emitter__(
                 {
-                    "type": "chat:message:delta",
-                    "data": {"content": error_content},
+                    "type": "replace",
+                    "data": {"content": state.serialize_to_html()},
                 }
             )
+            return False
 
-            accumulated_content.append(error_content)
-            return False  # Stop processing
-
-        elif "HumanInTheLoopRequestEvent" in parent_names:
+        if "HumanInTheLoopRequestEvent" in parent_names:
             question = event.get("question", "Please provide input")
             topic = event.get("topic", {})
 
@@ -573,12 +791,12 @@ class Pipe:
                     hitl_display_id,  # Use HITL's display_id
                     __event_emitter__,
                     __event_call__,
-                    accumulated_content,
+                    state,
                 )
 
             return True  # Continue processing
 
-        elif "DisplayEvent" in parent_names:
+        if "DisplayEvent" in parent_names:
             # Generic display event handler
             display_description = event.get("display_description", {})
             event_description = display_description.get("en", "Processing...")
@@ -651,7 +869,22 @@ class Pipe:
             event_payload["files"] = files
             logger.debug(f"Attached {len(files)} file(s) to UserMessageEvent")
 
-        accumulated_content = []
+        code = f"""
+        window.parent.postMessage({{
+            type: 'show-traces',
+            thread_id: '{thread_id}',
+            display_id: '{display_id}',
+          }}, '{self.valves.AIHUB_BASE_URL}');
+        """
+
+        await __event_call__(
+            {
+                "type": "execute",
+                "data": {
+                    "code": code,
+                },
+            }
+        )
 
         # Emit initial status
         await __event_emitter__(
@@ -676,28 +909,19 @@ class Pipe:
             display_id,
             __event_emitter__,
             __event_call__,
-            accumulated_content,
+            state=StreamingState(),
         )
 
-        # Emit final complete message
-        if accumulated_content:
-            complete_content = "".join(accumulated_content)
-            await __event_emitter__(
-                {
-                    "type": "chat:message",
-                    "data": {"content": complete_content},
-                }
-            )
-            await __event_emitter__(
-                {
-                    "type": "status",
-                    "data": {
-                        "action": None,
-                        "description": "Response completed",
-                        "done": True,
-                    },
-                }
-            )
-            logger.debug(f"Completed with {len(complete_content)} characters")
+        await __event_emitter__(
+            {
+                "type": "status",
+                "data": {
+                    "action": None,
+                    "description": "Response completed",
+                    "done": True,
+                },
+            }
+        )
+        logger.debug("Completed")
 
-        return ""  # Content is sent via events
+        return ""
