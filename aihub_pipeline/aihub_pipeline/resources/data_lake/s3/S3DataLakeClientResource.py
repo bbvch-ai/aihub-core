@@ -104,6 +104,6 @@ class S3DataLakeClientResource(AbstractDataLakeClientResource[S3DataLakeClient])
             aws_access_key_id=s3_config.ACCESS_KEY,
             aws_secret_access_key=s3_config.SECRET_KEY,
             region_name=s3_config.REGION,
-            endpoint_url=s3_config.ENDPOINT_URL,
+            endpoint_url=s3_config.ENDPOINT,
         )
         return S3DataLakeClient(self.container_name, s3_client)

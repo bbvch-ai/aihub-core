@@ -136,7 +136,7 @@ def default_io_manager_s3_datalake_resources(
     s3_resource = S3Resource(
         aws_access_key_id=s3_config.ACCESS_KEY,
         aws_secret_access_key=s3_config.SECRET_KEY,
-        endpoint_url=s3_config.ENDPOINT_URL,
+        endpoint_url=s3_config.ENDPOINT,
         region_name=s3_config.REGION,
     )
     s3_pickle_io_manager = S3PickleIOManager(
