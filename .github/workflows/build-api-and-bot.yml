@@ -9,6 +9,14 @@ on:
           description: 'Docker image release version'
           required: true
           default: "manual"
+      secondary_tag:
+          description: 'Secondary tag to apply (optional)'
+          required: false
+          default: ''
+          options:
+            - ''
+            - nightly
+            - latest
 
 permissions:
   contents: write
@@ -52,7 +60,7 @@ jobs:
           echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
 
       - name: build and release docker image
-        uses: ./aihub_action/build_image
+        uses: ./aihub_action/build_image@chore/manual-build-non-nightly
         with:
           release_version: ${{ inputs.release_version || steps.get_tag.outputs.tag || format('testing-{0}', github.run_number) }}
           image_name: ${{ matrix.image }}
@@ -61,4 +69,4 @@ jobs:
           context: .
           file: ./aihub_${{ matrix.image }}/Dockerfile
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          secondary_tag: nightly
+          secondary_tag: ${{ github.event_name == 'repository_dispatch' && 'nightly' || github.event.inputs.secondary_tag }}
