@@ -60,7 +60,7 @@ jobs:
           echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
 
       - name: build and release docker image
-        uses: ./aihub_action/build_image@chore/manual-build-non-nightly
+        uses: ./aihub_action/build_image
         with:
           release_version: ${{ inputs.release_version || steps.get_tag.outputs.tag || format('testing-{0}', github.run_number) }}
           image_name: ${{ matrix.image }}
