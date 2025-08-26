@@ -174,7 +174,6 @@ services:
     environment:
       PHOENIX_SQL_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix"
       PHOENIX_ENABLE_AUTH: "False"
-      PHOENIX_ADMIN_SECRET: ${PHOENIX_SECRET}
       VERSION: ""
     logging: *default-logging
   # </editor-fold>
@@ -691,7 +690,6 @@ services:
       AZURE_CLIENT_ID: ${OAUTH_CLIENT_ID}
       AZURE_TENANT_ID: ${OAUTH_TENANT_ID}
       AZURE_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
-      PHOENIX_SECRET: ${PHOENIX_SECRET}
       PHOENIX_ENDPOINT: "http://phoenix:6006"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
