@@ -687,6 +687,8 @@ services:
       AIHUB_CREATE_DEFAULT_ROLES: True
       LITE_LLM_PROXY_BASE_URL: "http://litellm:4000/v1"
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+      AZURE_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      AZURE_TENANT_ID: ${OAUTH_TENANT_ID}
 
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
