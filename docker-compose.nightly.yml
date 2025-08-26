@@ -692,7 +692,7 @@ services:
       AZURE_TENANT_ID: ${OAUTH_TENANT_ID}
       AZURE_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
       PHOENIX_SECRET: ${PHOENIX_SECRET}
-      PHOENIX_ENDPOINT: http://phoenix:6006
+      PHOENIX_ENDPOINT: "http://phoenix:6006"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
     logging: *default-logging
