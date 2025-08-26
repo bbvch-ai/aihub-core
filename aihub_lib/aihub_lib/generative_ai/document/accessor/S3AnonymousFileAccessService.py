@@ -46,7 +46,7 @@ class S3AnonymousFileAccessService(AbstractAnonymousFileAccessService):
             "s3",
             endpoint_url=self._s3_config.ENDPOINT,
             aws_access_key_id=self._s3_config.ACCESS_KEY,
-            aws_secret_access_key=self._s3_config.SECRET_KEY,
+            aws_secret_access_key=self._s3_config.SECRET_KEY.get_secret_value(),
             region_name=self._s3_config.REGION,
         )
 
@@ -87,7 +87,7 @@ class S3AnonymousFileAccessService(AbstractAnonymousFileAccessService):
         Returns the secret access key from S3StorageSettings, which is used as the
         signing secret for generating secure URLs and request signatures.
         """
-        return self._s3_config.SECRET_KEY
+        return self._s3_config.URL_SIGNING_SECRET.get_secret_value()
 
     def generate_upload_url(self, container: str, file_path: str, content_type: str, lifetime_hours: int = 1) -> str:
         """
@@ -124,11 +124,7 @@ class S3AnonymousFileAccessService(AbstractAnonymousFileAccessService):
             # Generate presigned URL for PUT operation
             presigned_url = self._s3_client.generate_presigned_url(
                 "put_object",
-                Params={
-                    "Bucket": container,
-                    "Key": file_path,
-                    "ContentType": content_type
-                },
+                Params={"Bucket": container, "Key": file_path, "ContentType": content_type},
                 ExpiresIn=int(lifetime_hours * 3600),  # Convert hours to seconds
             )
             logger.debug(f"Generated presigned upload URL for {container}/{file_path}, expires in {lifetime_hours}h")
