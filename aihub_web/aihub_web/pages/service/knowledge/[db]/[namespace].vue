@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import type { IngestedDocument } from '@core/sdk/client'
+import type { DocumentDTO } from '@core/sdk/client'
 
 import { useLocalePath } from '#i18n'
 
@@ -60,7 +60,7 @@ const {
 
 const uploadModalVisible = ref(false)
 
-const toDocument = (document: IngestedDocument) => {
+const toDocument = (document: DocumentDTO) => {
   router.push(localePath(`/service/knowledge/${route.params.db}/${route.params.namespace}/${document.id}/overview`))
 }
 

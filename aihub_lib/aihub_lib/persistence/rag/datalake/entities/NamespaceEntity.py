@@ -1,6 +1,7 @@
 import time
+
 from bson import ObjectId
-from mongoengine import Document, StringField, EmbeddedDocumentField, IntField
+from mongoengine import Document, EmbeddedDocumentField, IntField, StringField
 
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
@@ -11,6 +12,7 @@ class NamespaceEntity(Document):
     Each namespace is uniquely identified by its name within the context of a specific bucket.
     Each namespace has a corresponding folder name in the data lake.
     """
+
     meta = {
         "collection": "namespaces",
         "strict": False,

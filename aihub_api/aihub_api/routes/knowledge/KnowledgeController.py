@@ -207,20 +207,3 @@ class KnowledgeController(Controller):
 
         return self
 
-    def complete_document_upload(self, route: str = "/documents/upload/complete") -> "KnowledgeController":
-        @self.router.post(route, tags=self.tags)
-        async def complete_document_upload(
-            request: DocumentUploadCompleteRequest,
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
-            t: Annotated[LocaleHandler, Depends(use_locale)],
-        ) -> DocumentUploadCompleteResponse:
-            """
-            Completes document upload after successful S3/MinIO upload.
-
-            This endpoint is called after the client has successfully uploaded
-            the document to S3/MinIO. It triggers the document processing pipeline
-            for indexing the document in the knowledge base.
-            """
-            return await KnowledgeService.complete_document_upload(request, t)
-
-        return self

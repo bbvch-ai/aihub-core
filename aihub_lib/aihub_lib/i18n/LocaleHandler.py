@@ -63,7 +63,7 @@ class LocaleHandler:
             if len(locale_data) == 0:
                 return None
             return self.extract_dict(locale_data, locale)
-        elif isinstance(locale_data, (LocaleString, LocaleStringEntity)):
+        elif isinstance(locale_data, LocaleString | LocaleStringEntity):
             return self.extract_multi_locale(locale_data, locale)
         return locale_data
 

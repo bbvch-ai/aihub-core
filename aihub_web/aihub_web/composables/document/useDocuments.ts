@@ -1,4 +1,4 @@
-import { type IngestedDocument, getDocumentsForNamespace } from '@core/sdk/client'
+import { type DocumentDTO, getDocumentsForNamespace } from '@core/sdk/client'
 
 export const useDocuments = defineQuery(() => {
   const route = useRoute()
@@ -49,7 +49,7 @@ export const useDocuments = defineQuery(() => {
     }
   })
 
-  const documents = computed(() => (documentsQuery.state.value?.data)?.documents ?? [] as IngestedDocument[])
+  const documents = computed(() => (documentsQuery.state.value?.data)?.documents ?? [] as DocumentDTO[])
 
   const isLoading = computed(() => documentsQuery.asyncStatus.value === 'loading')
 

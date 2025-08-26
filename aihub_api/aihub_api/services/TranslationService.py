@@ -2,7 +2,7 @@ import json
 import logging
 from typing import TypeVar
 
-from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig, LLMParameter
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
@@ -21,9 +21,7 @@ class TranslationService:
     """
 
     @classmethod
-    async def translate(
-        cls, translatable: T, llm_config: LLMConfig, t: LocaleHandler, source_locale: str = "en"
-    ) -> T:
+    async def translate(cls, translatable: T, llm_config: LLMConfig, t: LocaleHandler, source_locale: str = "en") -> T:
         """
         Translates missing fields in a translatable object (LocaleString or LocaleStringEntity).
         """

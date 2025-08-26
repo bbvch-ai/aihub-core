@@ -3386,73 +3386,83 @@ export const DocumentBlockSchema = {
     description: 'A representation of a document to directly pass to the LLM.'
 } as const;
 
-export const DocumentUploadCompleteRequestSchema = {
+export const DocumentDTOSchema = {
     properties: {
-        upload_id: {
+        id: {
             type: 'string',
-            title: 'Upload Id',
-            description: 'Unique identifier for the upload session'
+            title: 'Id',
+            description: 'Unique identifier of the document.'
         },
-        container: {
+        source: {
             type: 'string',
-            title: 'Container',
-            description: 'S3 bucket/container name where document was stored'
-        },
-        object_key: {
-            type: 'string',
-            title: 'Object Key',
-            description: 'S3 object key/path of the uploaded document'
+            title: 'Source',
+            description: 'Source URI of original document.'
         },
         namespace: {
             type: 'string',
             title: 'Namespace',
-            description: 'Target namespace for the document'
+            description: 'The namespace of the document within its metadata.'
         },
-        database: {
+        created_at: {
             type: 'string',
-            title: 'Database',
-            description: 'Target database for the document'
-        }
-    },
-    type: 'object',
-    required: ['upload_id', 'container', 'object_key', 'namespace', 'database'],
-    title: 'DocumentUploadCompleteRequest',
-    description: `Request payload for completing document upload after successful S3/MinIO upload.
-
-This request notifies the system that the document has been successfully
-uploaded to S3/MinIO and should be processed for indexing in the knowledge base.`
-} as const;
-
-export const DocumentUploadCompleteResponseSchema = {
-    properties: {
-        success: {
+            title: 'Created At',
+            description: 'Date source document was created (ISO format string)'
+        },
+        updated_at: {
+            type: 'string',
+            title: 'Updated At',
+            description: 'Date source document was last updated (ISO format string)'
+        },
+        inserted_at: {
+            type: 'string',
+            title: 'Inserted At',
+            description: 'Date source document was inserted into document store (ISO format string)'
+        },
+        is_ingested: {
             type: 'boolean',
-            title: 'Success',
-            description: 'Whether the upload completion was successful'
+            title: 'Is Ingested',
+            description: 'Indicates if the document has been ingested.'
         },
-        document_id: {
-            type: 'string',
-            title: 'Document Id',
-            description: 'Unique identifier assigned to the uploaded document'
+        content: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Content',
+            description: 'Content of the document.'
         },
-        message: {
-            type: 'string',
-            title: 'Message',
-            description: 'Human-readable status message'
+        number_of_pages: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Number Of Pages',
+            description: 'Number of Pages in the Document.'
         },
-        processing_status: {
-            type: 'string',
-            title: 'Processing Status',
-            description: 'Current processing status (queued, processing, completed, error)'
+        document_title: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Document Title',
+            description: 'Document title.'
         }
     },
     type: 'object',
-    required: ['success', 'document_id', 'message', 'processing_status'],
-    title: 'DocumentUploadCompleteResponse',
-    description: `Response payload for completed document upload.
-
-Confirms that the document has been successfully received and
-queued for processing in the knowledge base pipeline.`
+    required: ['id', 'source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'is_ingested'],
+    title: 'DocumentDTO'
 } as const;
 
 export const DocumentUploadRequestSchema = {
@@ -5384,113 +5394,6 @@ export const ImagesResponseSchema = {
     title: 'ImagesResponse'
 } as const;
 
-export const IngestedDatalakeFileSchema = {
-    properties: {
-        source: {
-            type: 'string',
-            title: 'Source',
-            description: 'Source URI of original document.'
-        },
-        namespace: {
-            type: 'string',
-            title: 'Namespace',
-            description: 'The namespace of the document within its metadata.'
-        },
-        version: {
-            type: 'integer',
-            title: 'Version',
-            description: 'Document version.',
-            default: 1
-        },
-        content_hash: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Content Hash',
-            description: 'Hash of the document/node, helpful to track whether file changed.'
-        },
-        number_of_pages: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Number Of Pages',
-            description: 'Number of Pages in the Document.'
-        },
-        document_title: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Document Title',
-            description: 'Document title.'
-        },
-        language: {
-            anyOf: [
-                {
-                    type: 'string',
-                    enum: ['de', 'en', 'fr', 'it']
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Language',
-            description: 'Document language.'
-        },
-        created_at: {
-            type: 'string',
-            title: 'Created At',
-            description: 'Date source document was created (ISO format string)'
-        },
-        updated_at: {
-            type: 'string',
-            title: 'Updated At',
-            description: 'Date source document was last updated (ISO format string)'
-        },
-        inserted_at: {
-            type: 'string',
-            title: 'Inserted At',
-            description: 'Date source document was inserted into document store (ISO format string)'
-        },
-        metadata: {
-            anyOf: [
-                {
-                    additionalProperties: true,
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Metadata',
-            description: 'Additional metadata for the document.'
-        },
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: 'Unique identifier for the document.'
-        }
-    },
-    type: 'object',
-    required: ['source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'id'],
-    title: 'IngestedDatalakeFile',
-    description: 'Set of default metadata for a data lake file. A data lake file is a file that was uploaded to a data lake storage.'
-} as const;
-
 export const IngestedDocumentSchema = {
     properties: {
         source: {
@@ -7225,7 +7128,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1756135319
+            default: 1756194075
         },
         owned_by: {
             type: 'string',
@@ -7622,14 +7525,7 @@ export const PaginatedDocumentsResponseSchema = {
         },
         documents: {
             items: {
-                anyOf: [
-                    {
-                        '$ref': '#/components/schemas/IngestedDocument'
-                    },
-                    {
-                        '$ref': '#/components/schemas/IngestedDatalakeFile'
-                    }
-                ]
+                '$ref': '#/components/schemas/DocumentDTO'
             },
             type: 'array',
             title: 'Documents',

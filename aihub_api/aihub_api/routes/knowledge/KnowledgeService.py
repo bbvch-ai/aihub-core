@@ -1,11 +1,11 @@
 import logging
 import uuid
 
-import mongoengine
 import boto3
+import mongoengine
 
+from aihub_api.routes.knowledge.dto.DocumentDTO import DocumentDTO
 from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
-from aihub_lib.generative_ai.document.types.IngestedDatalakeFile import IngestedDatalakeFile
 from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
@@ -64,7 +64,7 @@ class KnowledgeService:
         )
 
     @staticmethod
-    def _get_datalake_files_in_namespace(bucket_name: str, namespace: str) -> list[IngestedDatalakeFile]:
+    def _get_datalake_files_in_namespace(bucket_name: str, namespace: str) -> list[DocumentDTO]:
         """
         Get all files from datalake in a specific namespace using direct S3 API calls.
         """
@@ -89,9 +89,8 @@ class KnowledgeService:
                 filename = key.split("/")[-1]
                 file_namespace = key.split("/")[0]
 
-
                 document_uri = f"s3://{bucket_name}/{key}"
-                datalake_file = IngestedDatalakeFile(
+                datalake_file = DocumentDTO(
                     id=key,
                     document_title=filename,
                     namespace=file_namespace,
@@ -99,15 +98,16 @@ class KnowledgeService:
                     created_at="",
                     inserted_at="",
                     source=document_uri,
-                    language="de",
+                    is_ingested=False
                 )
                 all_files.append(datalake_file)
 
         return all_files
 
-
-    @staticmethod 
-    def _filter_processing_documents(datalake_files: list[IngestedDatalakeFile], processed_doc_sources: set[str]) -> list[IngestedDatalakeFile]:
+    @staticmethod
+    def _filter_processing_documents(
+        datalake_files: list[DocumentDTO], processed_doc_sources: set[str]
+    ) -> list[DocumentDTO]:
         """
         Filter datalake files to only include those not already processed (not in docstore).
         """
@@ -115,22 +115,24 @@ class KnowledgeService:
         for file in datalake_files:
             if file.source not in processed_doc_sources:
                 processing_files.append(file)
-        
+
         return processing_files
 
     @staticmethod
     def get_paginated_documents(
         db: str, namespace: str, page: int = 1, page_size: int = 20
-    ) -> tuple[int, list[IngestedDocument | IngestedDatalakeFile]]:
+    ) -> tuple[int, list[DocumentDTO]]:
         """
-        Retrieves paginated documents for a given namespace, including both processed (docstore) 
-        and processing (datalake) documents.
+        Retrieves paginated documents for a given namespace, including both processed (docstore)
+        and processing (datalake only) documents.
         """
         skip = (page - 1) * page_size
 
         KnowledgeService._ensure_db_exists(db)
-        ref_docs_page = RefDoc.get_paginated_by_namespace(db_alias=db, namespace=namespace, skip=0, limit=1000000)  # Get all for filtering
-        processed_documents = [IngestedDocument.from_entity(doc) for doc in ref_docs_page]
+        ref_docs_page = RefDoc.get_paginated_by_namespace(
+            db_alias=db, namespace=namespace, skip=0, limit=1000000
+        )
+        processed_documents = [DocumentDTO.from_ref_doc(doc) for doc in ref_docs_page]
 
         processed_doc_sources = {doc.source for doc in processed_documents}
 
@@ -142,7 +144,7 @@ class KnowledgeService:
         all_documents.sort(key=lambda doc: doc.updated_at, reverse=True)
 
         total = len(all_documents)
-        paginated_documents = all_documents[skip:skip + page_size]
+        paginated_documents = all_documents[skip : skip + page_size]
 
         return total, paginated_documents
 
@@ -175,14 +177,20 @@ class KnowledgeService:
             for ns_entity in namespace_entities:
                 processed_count = RefDoc.count_by_namespace(db_alias=db_name, namespace=ns_entity.namespace_name)
 
-                datalake_files = KnowledgeService._get_datalake_files_in_namespace(bucket.bucket_name, ns_entity.namespace_name)
-                processed_docs = RefDoc.get_paginated_by_namespace(db_alias=db_name, namespace=ns_entity.namespace_name, skip=0, limit=1000000)
+                datalake_files = KnowledgeService._get_datalake_files_in_namespace(
+                    bucket.bucket_name, ns_entity.namespace_name
+                )
+                processed_docs = RefDoc.get_paginated_by_namespace(
+                    db_alias=db_name, namespace=ns_entity.namespace_name, skip=0, limit=1000000
+                )
                 processed_doc_sources = {doc.data.metadata.source for doc in processed_docs}
                 processing_files = KnowledgeService._filter_processing_documents(datalake_files, processed_doc_sources)
                 processing_count = len(processing_files)
 
                 total_document_count = processed_count + processing_count
-                namespaces.append(NamespaceDTO.from_entity(entity=ns_entity, t=t, number_of_documents=total_document_count))
+                namespaces.append(
+                    NamespaceDTO.from_entity(entity=ns_entity, t=t, number_of_documents=total_document_count)
+                )
 
             database_dtos.append(DatabaseDTO(name=db_name, namespaces=namespaces))
 
@@ -349,31 +357,4 @@ class KnowledgeService:
             expires_in=3600,  # 1 hour in seconds
             namespace=request.namespace,
             database=request.database,
-        )
-
-
-    @staticmethod
-    async def complete_document_upload(
-        request: DocumentUploadCompleteRequest, t: LocaleHandler
-    ) -> DocumentUploadCompleteResponse:
-        """
-        Completes document upload after successful S3/MinIO upload.
-
-        This method validates the upload completion and triggers document
-        processing for indexing in the knowledge base.
-        """
-        # TODO: Add validation to check if file actually exists in S3/MinIO
-        # TODO: Trigger document processing pipeline (ingestion, parsing, indexing)
-        # TODO: Store upload metadata in database
-
-        # For now, return success response indicating the upload was registered
-        document_id = str(uuid.uuid4())
-
-        logger.info(f"Document upload completed: upload_id={request.upload_id}, document_id={document_id}")
-
-        return DocumentUploadCompleteResponse(
-            success=True,
-            document_id=document_id,
-            message="Document uploaded successfully and queued for processing",
-            processing_status="queued",
         )

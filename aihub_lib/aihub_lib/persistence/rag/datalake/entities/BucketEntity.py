@@ -1,5 +1,5 @@
 from bson import ObjectId
-from mongoengine import Document, StringField, BooleanField, EmbeddedDocumentField
+from mongoengine import BooleanField, Document, EmbeddedDocumentField, StringField
 
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
@@ -8,8 +8,9 @@ class BucketEntity(Document):
     """
     Represents the metadata of a data lake bucket/container.
     Each bucket is associated with a unique name and a corresponding database name for storage.
-    Auto-sync indicates whether the bucket automatically loads files into the data lake and does not allow manual uploads.
+    Auto-sync indicates that the bucket automatically loads files into the data lake and does not allow manual uploads.
     """
+
     meta = {
         "collection": "buckets",
         "strict": False,

@@ -4,6 +4,7 @@
     table-style="min-width: 50rem"
     selection-mode="single"
     :selection="selectedDocument"
+    :row-class="getRowClass"
     @update:selection="handleSelection"
   >
     <Column
@@ -18,7 +19,7 @@
             {{ data.document_title }}
           </p>
           <div
-            v-if="!data.content"
+            v-if="!data.is_ingested"
             class="flex items-center gap-2"
           >
             <Tag
@@ -80,28 +81,34 @@
 </template>
 
 <script setup lang="ts">
-import { getFileUrl, type IngestedDocument } from '@core/sdk/client'
+import { getFileUrl, type DocumentDto } from '@core/sdk/client'
 
 const route = useRoute()
 const { t } = useI18n()
 
 const props = defineProps<{
-  documents: IngestedDocument[]
+  documents: DocumentDto[]
 }>()
 
 const emit = defineEmits<{
-  selected: [document: IngestedDocument]
+  selected: [document: DocumentDto]
 }>()
 
 const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY')
 const selectedDocument = computed(() => {
-  return props.documents.filter((document: IngestedDocument) => {
+  return props.documents.filter((document: DocumentDto) => {
     return document.id === route.params.document_id
   })
 })
 
-const handleSelection = (document: IngestedDocument) => {
-  emit('selected', document)
+const handleSelection = (document: DocumentDto) => {
+  if (document.is_ingested) {
+    emit('selected', document)
+  }
+}
+
+const getRowClass = (data: DocumentDto) => {
+  return data.is_ingested ? '' : 'opacity-50 cursor-not-allowed pointer-events-none'
 }
 
 const downloadFile = async (src: string) => {

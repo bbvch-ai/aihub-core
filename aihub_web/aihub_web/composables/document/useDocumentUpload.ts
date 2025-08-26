@@ -1,8 +1,6 @@
 import {
   initiateDocumentUpload,
-  completeDocumentUpload,
   type DocumentUploadRequest,
-  type DocumentUploadCompleteRequest,
 } from '@core/sdk/client'
 
 export interface UploadFileOptions {
@@ -40,21 +38,7 @@ export const useDocumentUpload = defineMutation(() => {
           'Content-Type': file.type,
         },
       })
-
-      const completeRequest: DocumentUploadCompleteRequest = {
-        upload_id: initiateResponse.upload_id,
-        container: initiateResponse.container,
-        object_key: initiateResponse.object_key,
-        namespace,
-        database,
-      }
-
-      const completeResponse = await completeDocumentUpload({
-        composable: '$fetch',
-        body: completeRequest,
-      })
-
-      return completeResponse.document_id
+      return initiateResponse.upload_id
     },
     onSuccess: () => {
       queryCache.invalidateQueries({ key: ['knowledge'] })
