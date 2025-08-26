@@ -15,6 +15,7 @@ from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.file.FileController import FileController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
+from aihub_api.routes.notification.NotificationController import NotificationController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.routes.process.ProcessController import ProcessController
 from aihub_api.routes.role.RoleController import RoleController
@@ -87,6 +88,7 @@ runner.mount(
     .get_nodes_for_document()
     .get_summary_nodes_for_document(),
     FileController(auth=auth).get_file_url().get_file_redirect().get_anonymous_file_url().get_anonymous_file_redirect(),
+    NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
 )
 
 
