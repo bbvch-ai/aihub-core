@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.240.6] - 2025-08-26 - S3 Security Hardening and Configuration Alignment
+
+### Security
+
+- 🔑 **Enhanced Secret Key Handling:** Updated S3 resource configurations to securely access secret keys using
+  `.get_secret_value()`, reinforcing protection for sensitive credentials across S3 file access services and data lake
+  clients.
+
+### Changed
+
+- 🔄 **Standardized S3 Endpoint Configuration:** Renamed the S3 configuration parameter `ENDPOINT_URL` to `ENDPOINT` for
+  consistency across all related S3 services and resources, simplifying configuration management.
+
+---
+
 ## [v0.240.5] - 2025-08-22 - Core Infrastructure Updates and Build System Refinements
 
 ### Changed
