@@ -7,7 +7,7 @@ tools, retrieval, human-in-the-loop) into Open-WebUI's native data structures.
 
 Key Features:
 - Event-driven architecture with Chain of Responsibility pattern
-- Streaming content blocks (text, thinking, tool execution)  
+- Streaming content blocks (text, thinking, tool execution)
 - Native AI-Hub event format preservation
 - Automatic lifecycle management (streams auto-close with conversations)
 - File upload support with S3/MinIO integration
@@ -58,7 +58,9 @@ class ContentBlock(BaseModel, ABC):
     """Abstract base class for all content blocks"""
 
     type: Annotated[BlockType, "The type of content block"]
-    created_at: Annotated[float, "Unix timestamp when block was created"] = Field(default_factory=time.time)
+    created_at: Annotated[float, "Unix timestamp when block was created"] = Field(
+        default_factory=time.time
+    )
 
     @abstractmethod
     def to_html(self) -> Annotated[str, "HTML representation of the block"]:
@@ -74,10 +76,14 @@ class ContentBlock(BaseModel, ABC):
 class TextBlock(ContentBlock):
     """Block containing plain text content"""
 
-    type: Annotated[BlockType, "Block type"] = Field(default=BlockType.TEXT, frozen=True)
+    type: Annotated[BlockType, "Block type"] = Field(
+        default=BlockType.TEXT, frozen=True
+    )
     content: Annotated[str, "Text content of the block"] = ""
 
-    def with_content(self, additional_content: Annotated[str, "Content to append"]) -> Self:
+    def with_content(
+        self, additional_content: Annotated[str, "Content to append"]
+    ) -> Self:
         """Return new block with appended content (immutable pattern)"""
         return self.model_copy(update={"content": self.content + additional_content})
 
@@ -93,7 +99,9 @@ class TextBlock(ContentBlock):
 class ThinkingBlock(ContentBlock):
     """Block containing AI reasoning/thinking content"""
 
-    type: Annotated[BlockType, "Block type"] = Field(default=BlockType.THINKING, frozen=True)
+    type: Annotated[BlockType, "Block type"] = Field(
+        default=BlockType.THINKING, frozen=True
+    )
     content: Annotated[str, "Reasoning content"] = ""
     closed: Annotated[bool, "Whether reasoning is complete"] = False
     ended_at: Annotated[Optional[float], "Unix timestamp when reasoning ended"] = None
@@ -105,7 +113,9 @@ class ThinkingBlock(ContentBlock):
             return int(self.ended_at - self.created_at)
         return None
 
-    def with_content(self, additional_content: Annotated[str, "Content to append"]) -> Self:
+    def with_content(
+        self, additional_content: Annotated[str, "Content to append"]
+    ) -> Self:
         """Return new block with appended content"""
         return self.model_copy(update={"content": self.content + additional_content})
 
@@ -121,7 +131,11 @@ class ThinkingBlock(ContentBlock):
                 f"{self.content.strip()}\n"
                 f"</details>\n"
             )
-        return f'\n<details type="reasoning" done="false">\n' f"{self.content.strip()}" f"</details>\n"
+        return (
+            f'\n<details type="reasoning" done="false">\n'
+            f"{self.content.strip()}"
+            f"</details>\n"
+        )
 
     def is_complete(self) -> Annotated[bool, "Whether block has content"]:
         """Thinking blocks are complete when they have content"""
@@ -131,10 +145,14 @@ class ThinkingBlock(ContentBlock):
 class ToolBlock(ContentBlock):
     """Block representing tool/function execution"""
 
-    type: Annotated[BlockType, "Block type"] = Field(default=BlockType.TOOL, frozen=True)
+    type: Annotated[BlockType, "Block type"] = Field(
+        default=BlockType.TOOL, frozen=True
+    )
     tool_id: Annotated[str, "Unique identifier for the tool call"]
     tool_name: Annotated[str, "Name of the tool being called"]
-    tool_params: Annotated[dict[str, Any], "Parameters passed to the tool"] = Field(default_factory=dict)
+    tool_params: Annotated[dict[str, Any], "Parameters passed to the tool"] = Field(
+        default_factory=dict
+    )
     closed: Annotated[bool, "Whether tool execution is complete"] = False
     ended_at: Annotated[Optional[float], "Unix timestamp when tool finished"] = None
 
@@ -208,7 +226,9 @@ class ContentBlockFactory:
 class EventEmitter(Protocol):
     """Protocol for event emission"""
 
-    async def __call__(self, event: Annotated[dict[str, Any], "Event to emit"]) -> None: ...
+    async def __call__(
+        self, event: Annotated[dict[str, Any], "Event to emit"]
+    ) -> None: ...
 
 
 class EventCaller(Protocol):
@@ -413,11 +433,17 @@ class StreamingStateManager:
     """Manages streaming content state with proper encapsulation"""
 
     def __init__(self):
-        self._content_blocks: Annotated[list[ContentBlock], "List of finalized content blocks"] = []
-        self._current_block: Annotated[Optional[ContentBlock], "Currently active block being built"] = None
+        self._content_blocks: Annotated[
+            list[ContentBlock], "List of finalized content blocks"
+        ] = []
+        self._current_block: Annotated[
+            Optional[ContentBlock], "Currently active block being built"
+        ] = None
         self._block_factory = ContentBlockFactory()
 
-    def start_text_block(self, content: Annotated[str, "Initial text content"] = "") -> None:
+    def start_text_block(
+        self, content: Annotated[str, "Initial text content"] = ""
+    ) -> None:
         """Start a new text block"""
         # Close any open blocks that need closing (tool or thinking)
         self._close_open_blocks()
@@ -430,7 +456,9 @@ class StreamingStateManager:
             self._finalize_current_block()
             self._current_block = self._block_factory.create_text_block(content)
 
-    def start_thinking_block(self, content: Annotated[str, "Initial reasoning content"] = "") -> None:
+    def start_thinking_block(
+        self, content: Annotated[str, "Initial reasoning content"] = ""
+    ) -> None:
         """Start or append to thinking block"""
         # Close any open tool blocks
         self._close_tool_block_if_open()
@@ -458,7 +486,9 @@ class StreamingStateManager:
             tool_id=tool_id, tool_name=tool_name, tool_params=tool_params
         )
 
-    def append_to_current_block(self, content: Annotated[str, "Content to append"]) -> None:
+    def append_to_current_block(
+        self, content: Annotated[str, "Content to append"]
+    ) -> None:
         """Append content to current block if it supports it"""
         if self._current_block:
             if isinstance(self._current_block, (TextBlock, ThinkingBlock)):
@@ -479,9 +509,15 @@ class StreamingStateManager:
     def _close_open_blocks(self) -> None:
         """Close any blocks that need closing (tool or thinking)"""
         if self._current_block:
-            if isinstance(self._current_block, ToolBlock) and not self._current_block.closed:
+            if (
+                isinstance(self._current_block, ToolBlock)
+                and not self._current_block.closed
+            ):
                 self._current_block = self._current_block.with_closure()
-            elif isinstance(self._current_block, ThinkingBlock) and not self._current_block.closed:
+            elif (
+                isinstance(self._current_block, ThinkingBlock)
+                and not self._current_block.closed
+            ):
                 self._current_block = self._current_block.with_closure()
 
     def _close_tool_block_if_open(self) -> None:
@@ -545,7 +581,9 @@ class EventHandler(ABC):
     """Abstract base for event handlers in chain of responsibility"""
 
     def __init__(self):
-        self._next_handler: Annotated[Optional[EventHandler], "Next handler in chain"] = None
+        self._next_handler: Annotated[
+            Optional[EventHandler], "Next handler in chain"
+        ] = None
 
     def set_next(
         self, handler: Annotated["EventHandler", "Next handler to chain"]
@@ -581,7 +619,9 @@ class EventHandler(ABC):
         elif self._next_handler:
             return await self._next_handler.process(event, context)
         else:
-            logger.warning(f"No handler for event: {event.get('_event_name', 'unknown')}")
+            logger.warning(
+                f"No handler for event: {event.get('_event_name', 'unknown')}"
+            )
             return True
 
 
@@ -669,7 +709,9 @@ class ToolEventHandler(EventHandler):
             }
         )
 
-        context.state_manager.start_tool_block(tool_id=tool_id, tool_name=tool_name, tool_params=parameters)
+        context.state_manager.start_tool_block(
+            tool_id=tool_id, tool_name=tool_name, tool_params=parameters
+        )
 
         await context.emitter(
             {
@@ -709,7 +751,9 @@ class HumanInTheLoopHandler(EventHandler):
             }
         )
 
-        user_response = result.get("value", "") if isinstance(result, dict) else str(result)
+        user_response = (
+            result.get("value", "") if isinstance(result, dict) else str(result)
+        )
 
         if user_response:
             response_event_name = topic.get("event_name", "HumanInTheLoopResponseEvent")
@@ -815,7 +859,9 @@ class RetrieverEventHandler(EventHandler):
                 source_data = self._build_source_data(node)
                 await context.emitter({"type": "source", "data": source_data})
 
-            description = event.get("display_description", {}).get("en", f"Found {len(nodes)} relevant documents")
+            description = event.get("display_description", {}).get(
+                "en", f"Found {len(nodes)} relevant documents"
+            )
 
             await context.emitter(
                 {
@@ -838,7 +884,9 @@ class RetrieverEventHandler(EventHandler):
 
         source_data = {
             "source": {
-                "name": node.get("document_title", node.get("source", "Unknown Source")),
+                "name": node.get(
+                    "document_title", node.get("source", "Unknown Source")
+                ),
                 "id": node.get("id", ""),
             },
             "document": [node.get("content", "")],
@@ -971,10 +1019,14 @@ class StreamingService:
         event_emitter: Annotated[EventEmitter, "Event emitter function"],
         event_caller: Annotated[EventCaller, "Event caller function"],
         state_manager: Annotated[StreamingStateManager, "State manager"],
-        stream_start_callback: Annotated[Callable | None, "Stream start callback"] = None,
+        stream_start_callback: Annotated[
+            Callable | None, "Stream start callback"
+        ] = None,
     ) -> None:
         """Stream an event and process responses"""
-        endpoint_url = self.build_endpoint_url(agent_class, agent_id, event_name, thread_id, display_id)
+        endpoint_url = self.build_endpoint_url(
+            agent_class, agent_id, event_name, thread_id, display_id
+        )
 
         logger.debug(f"Streaming {event_name} to: {endpoint_url}")
 
@@ -992,11 +1044,23 @@ class StreamingService:
 
         async with httpx.AsyncClient(timeout=None, follow_redirects=True) as client:
             try:
-                await self._process_stream(client, endpoint_url, event_payload, headers, context, stream_start_callback)
+                await self._process_stream(
+                    client,
+                    endpoint_url,
+                    event_payload,
+                    headers,
+                    context,
+                    stream_start_callback,
+                )
                 # Finalize any open blocks when stream ends normally
                 state_manager.finalize_all_blocks()
                 # Emit final state if there were unclosed blocks
-                await event_emitter({"type": "replace", "data": {"content": state_manager.serialize_to_html()}})
+                await event_emitter(
+                    {
+                        "type": "replace",
+                        "data": {"content": state_manager.serialize_to_html()},
+                    }
+                )
             except httpx.HTTPStatusError as e:
                 state_manager.finalize_all_blocks()
                 await self._handle_http_error(e, event_emitter)
@@ -1011,10 +1075,14 @@ class StreamingService:
         payload: Annotated[dict[str, Any], "Request payload"],
         headers: Annotated[dict[str, str], "Request headers"],
         context: Annotated[EventContext, "Processing context"],
-        stream_start_callback: Annotated[Callable | None, "Stream start callback"] = None,
+        stream_start_callback: Annotated[
+            Callable | None, "Stream start callback"
+        ] = None,
     ) -> None:
         """Process the SSE stream"""
-        async with client.stream("POST", url, json=payload, headers=headers) as response:
+        async with client.stream(
+            "POST", url, json=payload, headers=headers
+        ) as response:
             response.raise_for_status()
 
             if stream_start_callback:
@@ -1064,7 +1132,7 @@ class StreamingService:
         try:
             error_detail = await error.response.aread()
             error_msg = f"{error_msg}: {error_detail.decode()}"
-        except:
+        except Exception:
             pass
 
         logger.error(f"HTTP error: {error_msg}")
@@ -1167,8 +1235,12 @@ class AgentDiscoveryService:
                 "Accept": "application/json",
             }
 
-            async with httpx.AsyncClient(timeout=self._timeout, follow_redirects=True) as client:
-                response = await client.get(f"{self._base_url}/api/v1/agents", headers=headers)
+            async with httpx.AsyncClient(
+                timeout=self._timeout, follow_redirects=True
+            ) as client:
+                response = await client.get(
+                    f"{self._base_url}/api/v1/agents", headers=headers
+                )
                 response.raise_for_status()
                 agents = response.json()
 
@@ -1194,7 +1266,9 @@ class AgentDiscoveryService:
                 )
 
         if not conversational_agents:
-            return [{"id": "error", "name": "No online conversational agents available"}]
+            return [
+                {"id": "error", "name": "No online conversational agents available"}
+            ]
 
         return conversational_agents
 
@@ -1207,7 +1281,9 @@ class AgentDiscoveryService:
 class FileProcessingService:
     """Handles file processing and conversion"""
 
-    def __init__(self, storage_adapter: Annotated[FileStorageAdapter, "Storage adapter instance"]):
+    def __init__(
+        self, storage_adapter: Annotated[FileStorageAdapter, "Storage adapter instance"]
+    ):
         self._storage_adapter = storage_adapter
 
     async def prepare_files_for_event(
@@ -1233,7 +1309,9 @@ class FileProcessingService:
         self, file: Annotated[dict[str, Any], "Single file to process"]
     ) -> Annotated[Optional[dict[str, str]], "Processed file or None"]:
         """Process a single file"""
-        logger.debug(f"Processing file: {file.get('name', '')}, ID: {file.get('id', '')}")
+        logger.debug(
+            f"Processing file: {file.get('name', '')}, ID: {file.get('id', '')}"
+        )
 
         file_id = file.get("id", "")
         file_obj = Files.get_file_by_id(file_id)
@@ -1348,7 +1426,9 @@ class Pipe:
         )
 
         # Streaming
-        self._streaming_service = StreamingService(self.valves.AIHUB_BASE_URL, self.valves.AIHUB_REQUEST_TIMEOUT)
+        self._streaming_service = StreamingService(
+            self.valves.AIHUB_BASE_URL, self.valves.AIHUB_REQUEST_TIMEOUT
+        )
 
     async def pipes(
         self,
@@ -1361,7 +1441,10 @@ class Pipe:
 
     def _validate_configuration(self) -> Annotated[bool, "Configuration validity"]:
         """Validate required configuration"""
-        return bool(self.valves.AIHUB_SUPERUSER_API_KEY and self.valves.OPEN_WEBUI_SIGNING_SECRET)
+        return bool(
+            self.valves.AIHUB_SUPERUSER_API_KEY
+            and self.valves.OPEN_WEBUI_SIGNING_SECRET
+        )
 
     def _extract_agent_info(
         self, model_id: Annotated[str, "Model ID from request"]
@@ -1427,13 +1510,17 @@ class Pipe:
             agent_class, agent_id = self._extract_agent_info(body["model"])
 
             # Generate IDs
-            thread_id, display_id = self._generate_ids(__metadata__.get("chat_id"), __metadata__.get("message_id"))
+            thread_id, display_id = self._generate_ids(
+                __metadata__.get("chat_id"), __metadata__.get("message_id")
+            )
 
             logger.debug(f"Processing request for {agent_class}.{agent_id}")
             logger.debug(f"Thread ID: {thread_id}, Display ID: {display_id}")
 
             # Prepare authentication
-            headers = self._auth_service.prepare_headers(__user__["name"], __user__["email"])
+            headers = self._auth_service.prepare_headers(
+                __user__["name"], __user__["email"]
+            )
 
             # Convert messages
             messages = self._message_converter.convert_to_event_format(body["messages"])
@@ -1461,7 +1548,9 @@ class Pipe:
 
             # Create state manager for this stream
             state_manager = StreamingStateManager()
-            stream_start_callback = lambda: self._set_ui_context(thread_id, display_id, __event_call__)
+
+            async def stream_start_callback():
+                await self._set_ui_context(thread_id, display_id, __event_call__)
 
             # Stream the conversation
             await self._streaming_service.stream_response(

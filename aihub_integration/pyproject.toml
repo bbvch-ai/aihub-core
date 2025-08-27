@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "aihub-core"
-version = "v0.13.0"
-description = "aihub core"
+name = "aihub-integrations"
+version = "v0.1.0"
+description = "aihub integrations"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
     "Marius Högger <marius.hoegger@bbv.ch>",
@@ -16,16 +16,16 @@ package-mode = false
 python = ">=3.13, <3.14"
 
 [tool.poetry.group.dev.dependencies]
-tomlkit = "^0.13.2"
+pytest = "^8.4.1"
+pytest-asyncio = "^0.24.0"
+ruff = "^0.8.1"
+mypy = "^1.13.0"
+toml-sort = "^0.24.2"
 black = { extras = ["jupyter"], version = "^25.1.0" }
+pytest-bdd = "^8.1.0"
+pytest-cov = "^6.0.0"
+asgi-lifespan = "^2.1.0"
 pip-licenses = "^5.0.0"
-mdformat = "^0.7.21"
-mdformat-gfm = "^0.4.1"
-mdformat-frontmatter = "^2.0.8"
-mdformat-simple-breaks = "^0.0.1"
-mdformat-pyproject = "^0.0.2"
-mdformat-vuepress = {path = "aihub_doc/mdformat-vuepress", develop = true}
-mdformat-myst = "^0.2.1"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
