@@ -1,5 +1,23 @@
 """
-AI-Hub Agent Connector - Refactored with inheritance and modern type hints
+AI-Hub Open-WebUI Pipeline - Server-Side Events Integration
+
+This pipeline provides native integration between AI-Hub agents and Open-WebUI through
+Server-Side Events (SSE) streaming. It translates AI-Hub's rich event system (thoughts,
+tools, retrieval, human-in-the-loop) into Open-WebUI's native data structures.
+
+Key Features:
+- Event-driven architecture with Chain of Responsibility pattern
+- Streaming content blocks (text, thinking, tool execution)  
+- Native AI-Hub event format preservation
+- Automatic lifecycle management (streams auto-close with conversations)
+- File upload support with S3/MinIO integration
+- Human-in-the-loop interaction support
+
+Architecture:
+- EventHandler chain processes different AI-Hub event types
+- StreamingStateManager maintains content block state
+- ContentBlock hierarchy (TextBlock, ThinkingBlock, ToolBlock)
+- SSE streaming to /api/v1/agents/{class}/{id}/{event}/stream endpoints
 """
 
 import base64
