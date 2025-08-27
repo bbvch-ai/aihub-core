@@ -123,6 +123,7 @@ litellm_settings:
   default_fallbacks: ["azure/gpt-4o-mini"]
   telemetry: false
   json_logs: true
+  drop_params: true
 
 router_settings:
   routing_strategy: "usage-based-routing-v2"
