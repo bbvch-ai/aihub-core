@@ -781,6 +781,7 @@ services:
     environment:
       NATS_ENDPOINT: "nats://nats:4222"
       REDIS_URL: "redis://redis:6379"
+      PHOENIX_ENDPOINT: "http://phoenix:6006"
   # </editor-fold>
 
   default_rag_pipeline:
