@@ -1,5 +1,5 @@
 import time
-from typing import Annotated, ClassVar, Any
+from typing import Annotated, Any, ClassVar
 
 from bson import ObjectId
 from pydantic import Field

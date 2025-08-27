@@ -54,15 +54,15 @@ class AgentClassDiscoveryResponseEvent(BaseEvent):
     hitl_request_events: Annotated[
         list[EventSpecs],
         Field(
-            description="A list of `EventSpecs` objects, each describing a human-in-the-loop request event type and schema. "
-            "These events allow the agent to request human intervention during its workflow."
+            description="A list of `EventSpecs` objects, each describing a human-in-the-loop request event type "
+            "and schema. These events allow the agent to request human intervention during its workflow."
         ),
     ]
     hitl_response_events: Annotated[
         list[EventSpecs],
         Field(
-            description="A list of `EventSpecs` objects, each describing a human-in-the-loop response event type and schema. "
-            "These events allow humans to respond to agent HITL requests."
+            description="A list of `EventSpecs` objects, each describing a human-in-the-loop response event type "
+            "and schema. These events allow humans to respond to agent HITL requests."
         ),
     ]
     network_graph: Annotated[

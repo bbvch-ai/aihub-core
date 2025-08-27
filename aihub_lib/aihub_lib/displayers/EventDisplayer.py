@@ -123,7 +123,8 @@ class EventDisplayer:
         ### How it Works
         - Calls `llm.stream_chat(messages)` to get a generator of partial responses (chunks).
         - Maintains separate buffers for regular content and thinking content.
-        - Flushes buffers when encountering sentence boundaries (.), newlines, or when buffer exceeds `max_buffer_length`.
+        - Flushes buffers when encountering sentence boundaries (.), newlines,
+          or when buffer exceeds `max_buffer_length`.
         - Content within <think>...</think> tags is streamed live as ThoughtEvents.
         - After streaming all chunks, retrieves token usage from `TokenCountingHandler`.
         - Returns an LLMEvent summarizing the entire conversation (inputs + full output).

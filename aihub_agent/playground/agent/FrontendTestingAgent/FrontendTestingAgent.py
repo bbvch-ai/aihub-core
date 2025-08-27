@@ -187,7 +187,10 @@ class FrontendTestingAgent(Agent):
 
     # @step()
     # async def botl_start(
-    #     self, user_message_event: UserMessageEvent, hitl_event: CustomHumanInTheLoop.response, displayer: EventDisplayer
+    #     self,
+    #     user_message_event: UserMessageEvent,
+    #     hitl_event: CustomHumanInTheLoop.response,
+    #     displayer: EventDisplayer
     # ) -> BotInTheLoop.request:
     #     await displayer.display_chunk(
     #         content=f"Hitl Response: {hitl_event.response}", model_name="FrontendTestingAgent"
