@@ -786,7 +786,7 @@ services:
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
   rag_agent:
-    image: ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:nightly
+    image: ghcr.io/bbvch-ai/aihub-core/rag_agent:nightly
     container_name: rag-agent
     restart: always
     environment:
@@ -815,7 +815,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
-      DOCLING_API_ENDPOINT: http://docling:5001/v1alpha/convert/source
+      DOCLING_API_ENDPOINT: http://docling:5001/v1/convert/source
       MILVUS_URL: "http://milvus-standalone"
       MILVUS_DIMENSION: "3072"
       LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
