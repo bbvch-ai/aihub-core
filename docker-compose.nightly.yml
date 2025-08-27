@@ -714,7 +714,7 @@ services:
     <<: *restart-policy
     environment:
       DOCLING_SERVE_ENABLE_UI: false
-      DOCLING_SERVE_MAX_SYNC_WAIT: 120
+      DOCLING_SERVE_MAX_SYNC_WAIT: 600
       DOCLING_SERVE_ARTIFACTS_PATH: /opt/app-root/src/models
     command: >
       sh -c "
