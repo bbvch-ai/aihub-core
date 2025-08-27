@@ -5,7 +5,7 @@ model_list:
       api_base: https://aihub-dev-openai-che.openai.azure.com/
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2024-12-01-preview"
-      drop_params: true
+      additional_drop_params: ["display_id", "thread_id"]
     model_info:
       mode: chat
 
@@ -15,7 +15,7 @@ model_list:
       api_base: https://aihub-dev-openai-che.openai.azure.com/
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2024-02-01"
-      drop_params: true
+      additional_drop_params: ["display_id", "thread_id"]
     model_info:
       mode: embedding
 
@@ -25,7 +25,7 @@ model_list:
       api_base: https://joelb-mdotxdzc-australiaeast.cognitiveservices.azure.com/
       api_key: os.environ/AZURE_OPENAI_KEY_IMAGE
       api_version: "2024-02-01"
-      drop_params: true
+      additional_drop_params: ["display_id", "thread_id"]
     model_info:
       mode: image_generation
       base_model: azure/dall-e-3
@@ -36,7 +36,7 @@ model_list:
       api_base: https://joelb-mdpmzqib-eastus2.cognitiveservices.azure.com/
       api_key: os.environ/AZURE_OPENAI_KEY_AUDIO
       api_version: "2025-03-01-preview"
-      drop_params: true
+      additional_drop_params: ["display_id", "thread_id"]
     model_info:
       mode: audio_transcription
       base_model: azure/gpt-4o-mini-transcribe
@@ -47,7 +47,7 @@ model_list:
       api_base: https://joelb-mdpmzqib-eastus2.cognitiveservices.azure.com/
       api_key: os.environ/AZURE_OPENAI_KEY_AUDIO
       api_version: "2025-03-01-preview"
-      drop_params: true
+      additional_drop_params: ["display_id", "thread_id"]
     model_info:
       mode: audio_speech
       base_model: azure/gpt-4o-mini-tts
@@ -56,7 +56,7 @@ model_list:
     litellm_params:
       model: gemini/gemini-2.5-flash
       api_key: os.environ/GEMINI_API_KEY
-      drop_params: true
+      additional_drop_params: ["display_id", "thread_id"]
     model_info:
       mode: chat
 
@@ -65,7 +65,7 @@ model_list:
       model: openai/unsloth/Qwen3-0.6B-GGUF
       api_base: http://llama-cpp:8182/v1
       api_key: None
-      drop_params: true
+      additional_drop_params: ["display_id", "thread_id"]
     model_info:
       mode: chat
       max_input_tokens: 32768
@@ -83,7 +83,7 @@ model_list:
       model: openai/Alibaba-NLP/gte-base-en-v1.5
       api_base: http://huggingface-text-embedding-inference:8183/v1
       api_key: None
-      drop_params: true
+      additional_drop_params: ["display_id", "thread_id"]
     model_info:
       mode: embedding
       input_cost_per_token: 0.000000001
@@ -131,6 +131,7 @@ litellm_settings:
   default_fallbacks: ["azure/gpt-4o-mini"]
   telemetry: false
   json_logs: true
+  drop_params: true
 
 router_settings:
   routing_strategy: "usage-based-routing-v2"
