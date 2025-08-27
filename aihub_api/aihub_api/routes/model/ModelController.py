@@ -1,13 +1,13 @@
 from typing import Annotated
 
+from fastapi import Security
+
+from aihub_api.routes.model.ModelService import ModelService
+from aihub_api.routes.model.dto.ModelDTO import ModelDTO, ModelTypeGroupDTO
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
-from fastapi import HTTPException, Security
-
-from aihub_api.routes.model.dto.ModelDTO import ModelDTO, ModelTypeGroupDTO
-from aihub_api.routes.model.ModelService import ModelService
 
 
 class ModelController(Controller):
@@ -23,8 +23,6 @@ class ModelController(Controller):
     description = LocaleString(en="Shows all available models.")
     icon = "meteor-icons:key"
 
-    not_authorized_to_view_exception = HTTPException(status_code=403, detail="Not authorized to view this thread")
-
     def __init__(
         self, *, auth: AuthHandler, route: str = "/models", additionally_required_permission: str | None = None
     ):
@@ -33,7 +31,7 @@ class ModelController(Controller):
     def models(self, route: str = "") -> "ModelController":
         @self.router.get(route, tags=self.tags)
         async def models(
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.models.?>"))],
         ) -> list[ModelTypeGroupDTO]:
             """
             Retrieve a list of all available models grouped by type.
@@ -47,7 +45,7 @@ class ModelController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_model(
             model_name: str,
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.models.{model_name}.?>"))],
         ) -> ModelDTO:
             """
             Retrieve a specific model by name.
