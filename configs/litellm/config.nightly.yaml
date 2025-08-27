@@ -19,7 +19,7 @@ model_list:
     model_info:
       mode: chat
 
-  - model_name: text-embedding-3-large
+  - model_name: azure/text-embedding-3-large
     litellm_params:
       model: azure/text-embedding-3-large
       api_base: https://aihub-dev-openai-che.openai.azure.com/
