@@ -805,7 +805,8 @@ services:
       DOCLING_API_ENDPOINT: http://docling:5001/v1/convert/source
       MILVUS_URL: "http://milvus-standalone"
       MILVUS_DIMENSION: "3072"
-
+      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
   # === Traefik ===
   # <editor-fold desc="Traefik">
