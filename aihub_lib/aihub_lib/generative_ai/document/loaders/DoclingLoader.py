@@ -39,7 +39,7 @@ class DoclingLoader(BaseReader):
             encoded_string = base64.b64encode(pdf_file.read()).decode("utf-8")
         file_name = os.path.basename(file)
 
-        answer = self.docling_client.convert_document(encoded_string, file_name)
+        answer = self.convert_document(encoded_string, file_name)
         doc = DoclingDocument(**answer["document"]["json_content"])
         markdown_content = doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
         if len(doc.pictures) > 0:
