@@ -321,7 +321,7 @@ services:
       OAUTH_GROUP_CLAIM: 'email'
 
       # AI-Hub Connection
-      AIHUB_BASE_URL: http://localhost:8000/api/v1
+      AIHUB_BASE_URL: http://localhost:8000
       AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
       OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
       AIHUB_PIPELINE_PREFIX: "aihub/"

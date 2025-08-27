@@ -1,9 +1,5 @@
 """
-title: AI-Hub Agent Connector
-description: Connects Open WebUI to AI-Hub agents with streaming support
-author: AI-Hub Team
-version: 1.0.0
-required_open_webui_version: 0.6.0
+AI-Hub Agent Connector - Refactored with inheritance and modern type hints
 """
 
 import base64
@@ -13,10 +9,10 @@ import html
 import json
 import logging
 import os
-from enum import Enum
-
 import time
-from typing import Any, Annotated, Optional
+from abc import ABC, abstractmethod
+from enum import Enum
+from typing import Any, Annotated, Optional, Protocol, Self, Callable
 from urllib.parse import urlparse
 
 import httpx
@@ -29,163 +25,1247 @@ from open_webui.models.files import Files
 logger = logging.getLogger(__name__)
 
 
+# ============================================================================
+# Domain Models with Inheritance
+# ============================================================================
+
+
 class BlockType(str, Enum):
     TEXT = "text"
     THINKING = "thinking"
-    TOOL = "tool"  # New block type for tool calls
+    TOOL = "tool"
 
 
-class ContentBlock(BaseModel):
-    type: BlockType
-    content: str = ""
-    started_at: Optional[float] = None
-    ended_at: Optional[float] = None
-    closed: bool = False
-    # Additional fields for tool blocks
-    tool_id: Optional[str] = None
-    tool_name: Optional[str] = None
-    tool_params: Optional[dict] = None
-    tool_result: Optional[str] = None
+class ContentBlock(BaseModel, ABC):
+    """Abstract base class for all content blocks"""
+
+    type: Annotated[BlockType, "The type of content block"]
+    created_at: Annotated[float, "Unix timestamp when block was created"] = Field(default_factory=time.time)
+
+    @abstractmethod
+    def to_html(self) -> Annotated[str, "HTML representation of the block"]:
+        """Convert block to HTML representation"""
+        pass
+
+    @abstractmethod
+    def is_complete(self) -> Annotated[bool, "Whether the block is complete"]:
+        """Check if the block is complete and ready to be finalized"""
+        pass
+
+
+class TextBlock(ContentBlock):
+    """Block containing plain text content"""
+
+    type: Annotated[BlockType, "Block type"] = Field(default=BlockType.TEXT, frozen=True)
+    content: Annotated[str, "Text content of the block"] = ""
+
+    def with_content(self, additional_content: Annotated[str, "Content to append"]) -> Self:
+        """Return new block with appended content (immutable pattern)"""
+        return self.model_copy(update={"content": self.content + additional_content})
+
+    def to_html(self) -> Annotated[str, "HTML representation"]:
+        """Convert to HTML - just return the text content"""
+        return self.content
+
+    def is_complete(self) -> Annotated[bool, "Always true for text blocks"]:
+        """Text blocks are always ready to be finalized if they have content"""
+        return bool(self.content)
+
+
+class ThinkingBlock(ContentBlock):
+    """Block containing AI reasoning/thinking content"""
+
+    type: Annotated[BlockType, "Block type"] = Field(default=BlockType.THINKING, frozen=True)
+    content: Annotated[str, "Reasoning content"] = ""
+    closed: Annotated[bool, "Whether reasoning is complete"] = False
+    ended_at: Annotated[Optional[float], "Unix timestamp when reasoning ended"] = None
 
     @property
-    def duration(self) -> Optional[int]:
-        if self.started_at and self.ended_at:
-            return int(self.ended_at - self.started_at)
+    def duration(self) -> Annotated[Optional[int], "Duration in seconds"]:
+        """Calculate duration of thinking in seconds"""
+        if self.created_at and self.ended_at:
+            return int(self.ended_at - self.created_at)
         return None
 
-    def close(self):
-        """Close the block and set end time"""
-        self.closed = True
-        self.ended_at = time.time()
+    def with_content(self, additional_content: Annotated[str, "Content to append"]) -> Self:
+        """Return new block with appended content"""
+        return self.model_copy(update={"content": self.content + additional_content})
 
-    def append_content(self, content: str):
-        """Append content to this block"""
-        self.content += content
+    def with_closure(self) -> Self:
+        """Return new closed block with end timestamp"""
+        return self.model_copy(update={"closed": True, "ended_at": time.time()})
 
-    def to_html(self) -> str:
-        """Convert block to HTML representation"""
-        if self.type == BlockType.THINKING:
-            if self.closed and self.duration:
-                return (
-                    f'\n<details type="reasoning" done="true" duration="{self.duration}">\n'
-                    f"{self.content.strip()}\n"
-                    f"</details>\n"
-                )
-            else:
-                return f'\n<details type="reasoning" done="false">\n' f"{self.content.strip()}" f"</details>\n"
-        elif self.type == BlockType.TOOL:
-            escaped_params = html.escape(json.dumps(self.tool_params or {}))
-            done_status = "true" if self.closed else "false"
-
-            result_attr = ""
-            if self.tool_result and self.closed:
-                escaped_result = html.escape(json.dumps(self.tool_result))
-                result_attr = f' result="{escaped_result}"'
-
+    def to_html(self) -> Annotated[str, "HTML details element"]:
+        """Convert to HTML details element for reasoning display"""
+        if self.closed and self.duration:
             return (
-                f'\n<details type="tool_calls" done="{done_status}" id="{self.tool_id}" '
-                f'name="{self.tool_name}" arguments="{escaped_params}"{result_attr}>\n'
-                f'<summary>{"Tool Executed" if self.closed else f"Calling {self.tool_name}..."}</summary>\n'
+                f'\n<details type="reasoning" done="true" duration="{self.duration}">\n'
+                f"{self.content.strip()}\n"
                 f"</details>\n"
             )
-        else:  # TEXT
-            return self.content
+        return f'\n<details type="reasoning" done="false">\n' f"{self.content.strip()}" f"</details>\n"
+
+    def is_complete(self) -> Annotated[bool, "Whether block has content"]:
+        """Thinking blocks are complete when they have content"""
+        return bool(self.content)
 
 
-class StreamingState(BaseModel):
-    """State management for streaming content"""
+class ToolBlock(ContentBlock):
+    """Block representing tool/function execution"""
 
-    content_blocks: list[ContentBlock] = Field(default_factory=list)
-    current_block: Optional[ContentBlock] = None
+    type: Annotated[BlockType, "Block type"] = Field(default=BlockType.TOOL, frozen=True)
+    tool_id: Annotated[str, "Unique identifier for the tool call"]
+    tool_name: Annotated[str, "Name of the tool being called"]
+    tool_params: Annotated[dict[str, Any], "Parameters passed to the tool"] = Field(default_factory=dict)
+    closed: Annotated[bool, "Whether tool execution is complete"] = False
+    ended_at: Annotated[Optional[float], "Unix timestamp when tool finished"] = None
 
-    def close_tool_blocks(self) -> None:
-        """Close any open tool blocks"""
-        if self.current_block and self.current_block.type == BlockType.TOOL and not self.current_block.closed:
-            self.current_block.close()
-            self.finalize_current_block()
+    @property
+    def duration(self) -> Annotated[Optional[int], "Execution duration in seconds"]:
+        """Calculate tool execution duration"""
+        if self.created_at and self.ended_at:
+            return int(self.ended_at - self.created_at)
+        return None
 
-    def start_tool_block(self, tool_id: str, tool_name: str, tool_params: dict) -> None:
-        """Start a new tool block"""
-        # Close any existing tool blocks
-        self.close_tool_blocks()
+    def with_closure(self) -> Self:
+        """Return new closed block"""
+        return self.model_copy(update={"closed": True, "ended_at": time.time()})
 
-        # Finalize current block if it's not a tool
-        if self.current_block and self.current_block.type != BlockType.TOOL:
-            self.finalize_current_block()
+    def to_html(self) -> Annotated[str, "HTML details element for tool"]:
+        """Convert to HTML details element for tool display"""
+        escaped_params = html.escape(json.dumps(self.tool_params))
+        done_status = "true" if self.closed else "false"
 
-        self.current_block = ContentBlock(
-            type=BlockType.TOOL, tool_id=tool_id, tool_name=tool_name, tool_params=tool_params, started_at=time.time()
+        status_text = "Tool Executed" if self.closed else f"Calling {self.tool_name}..."
+
+        return (
+            f'\n<details type="tool_calls" done="{done_status}" id="{self.tool_id}" '
+            f'name="{self.tool_name}" arguments="{escaped_params}">\n'
+            f"<summary>{status_text}</summary>\n"
+            f"</details>\n"
         )
 
-    def start_thinking_block(self, content: str = "") -> None:
-        """Start or append to a thinking block"""
-        # Close any open tool blocks
-        self.close_tool_blocks()
+    def is_complete(self) -> Annotated[bool, "Always true for tool blocks"]:
+        """Tool blocks are always complete once created"""
+        return True
 
-        if self.current_block and self.current_block.type == BlockType.THINKING:
-            # Already in thinking block, just append
-            self.current_block.append_content(content)
+
+# ============================================================================
+# Factory for Creating Content Blocks
+# ============================================================================
+
+
+class ContentBlockFactory:
+    """Factory for creating appropriate content block types"""
+
+    @staticmethod
+    def create_text_block(
+        content: Annotated[str, "Initial text content"] = "",
+    ) -> TextBlock:
+        """Create a text content block"""
+        return TextBlock(content=content)
+
+    @staticmethod
+    def create_thinking_block(
+        content: Annotated[str, "Initial reasoning content"] = "",
+    ) -> ThinkingBlock:
+        """Create a thinking/reasoning block"""
+        return ThinkingBlock(content=content)
+
+    @staticmethod
+    def create_tool_block(
+        tool_id: Annotated[str, "Tool call ID"],
+        tool_name: Annotated[str, "Tool name"],
+        tool_params: Annotated[dict[str, Any], "Tool parameters"],
+    ) -> ToolBlock:
+        """Create a tool execution block"""
+        return ToolBlock(tool_id=tool_id, tool_name=tool_name, tool_params=tool_params)
+
+
+# ============================================================================
+# Protocols for Dependency Injection
+# ============================================================================
+
+
+class EventEmitter(Protocol):
+    """Protocol for event emission"""
+
+    async def __call__(self, event: Annotated[dict[str, Any], "Event to emit"]) -> None: ...
+
+
+class EventCaller(Protocol):
+    """Protocol for event calling with response"""
+
+    async def __call__(
+        self, event: Annotated[dict[str, Any], "Event to call"]
+    ) -> Annotated[dict[str, Any], "Response from event call"]: ...
+
+
+class FileStorageAdapter(Protocol):
+    """Protocol for file storage operations"""
+
+    async def fetch_file(
+        self, path: Annotated[str, "File path"]
+    ) -> Annotated[Optional[bytes], "File content or None if error"]: ...
+
+
+# ============================================================================
+# Authentication Service
+# ============================================================================
+
+
+class AuthenticationService:
+    """Handles all authentication-related operations"""
+
+    def __init__(
+        self,
+        signing_secret: Annotated[str, "HMAC signing secret"],
+        api_key: Annotated[str, "API key for AI-Hub"],
+    ):
+        self._signing_secret = signing_secret
+        self._api_key = api_key
+
+    def sign_user_headers(
+        self,
+        user_name: Annotated[str, "User's name"],
+        user_email: Annotated[str, "User's email address"],
+    ) -> Annotated[str, "HMAC-SHA256 signature as hex string"]:
+        """Generate HMAC-SHA256 signature for user authentication"""
+        secret = self._signing_secret.encode("utf-8")
+        message = f"name:{user_name},email:{user_email}".encode()
+        return hmac.new(secret, message, hashlib.sha256).hexdigest()
+
+    def prepare_headers(
+        self,
+        user_name: Annotated[str, "User's name"],
+        user_email: Annotated[str, "User's email address"],
+    ) -> Annotated[dict[str, str], "HTTP headers with authentication"]:
+        """Prepare authenticated request headers"""
+        signature = self.sign_user_headers(user_name, user_email)
+
+        return {
+            "Authorization": f"Bearer {self._api_key}",
+            "Content-Type": "application/json",
+            "X-OpenWebUI-User-Name": user_name,
+            "X-OpenWebUI-User-Email": user_email,
+            "X-OpenWebUI-Signature": signature,
+        }
+
+
+# ============================================================================
+# File Storage Implementation
+# ============================================================================
+
+
+class S3StorageAdapter:
+    """S3/MinIO storage adapter implementing FileStorageAdapter protocol"""
+
+    def __init__(
+        self,
+        endpoint: Annotated[str, "S3 endpoint URL"],
+        access_key: Annotated[str, "S3 access key"],
+        secret_key: Annotated[str, "S3 secret key"],
+    ):
+        self._endpoint = endpoint
+        self._access_key = access_key
+        self._secret_key = secret_key
+        self._client: Annotated[Optional[Any], "Boto3 S3 client"] = None
+
+    def _get_client(self) -> Annotated[Any, "Boto3 S3 client"]:
+        """Lazy initialization of S3 client"""
+        if not self._client:
+            self._client = boto3.client(
+                "s3",
+                endpoint_url=self._endpoint,
+                aws_access_key_id=self._access_key,
+                aws_secret_access_key=self._secret_key,
+                config=Config(signature_version="s3v4"),
+                region_name="us-east-1",
+            )
+        return self._client
+
+    async def fetch_file(
+        self, s3_path: Annotated[str, "S3 path in format s3://bucket/key"]
+    ) -> Annotated[Optional[bytes], "File content as bytes or None"]:
+        """Fetch file from S3 storage"""
+        parsed = urlparse(s3_path)
+        if parsed.scheme != "s3":
+            logger.error(f"Invalid S3 path: {s3_path}")
+            return None
+
+        bucket = parsed.netloc
+        key = parsed.path.lstrip("/")
+
+        try:
+            response = self._get_client().get_object(Bucket=bucket, Key=key)
+            return response["Body"].read()
+        except Exception as e:
+            logger.exception(f"Error fetching file from S3: {e}")
+            return None
+
+
+# ============================================================================
+# Message Conversion Service
+# ============================================================================
+
+
+class MessageConverter:
+    """Handles message format conversions between Open WebUI and AI-Hub"""
+
+    @staticmethod
+    def convert_to_event_format(
+        messages: Annotated[list[dict[str, Any]], "Open WebUI messages"],
+    ) -> Annotated[list[dict[str, Any]], "AI-Hub formatted messages"]:
+        """Convert Open WebUI messages to AI-Hub format"""
+        converter = MessageConverter()
+        return [converter._convert_single_message(msg) for msg in messages]
+
+    def _convert_single_message(
+        self, msg: Annotated[dict[str, Any], "Single message to convert"]
+    ) -> Annotated[dict[str, Any], "Converted message"]:
+        """Convert a single message"""
+        content = msg.get("content")
+        blocks = self._extract_blocks(content)
+
+        return {
+            "role": msg.get("role", "user"),
+            "blocks": blocks,
+            "additional_kwargs": {},
+        }
+
+    def _extract_blocks(
+        self, content: Annotated[Any, "Content in various formats"]
+    ) -> Annotated[list[dict[str, Any]], "List of content blocks"]:
+        """Extract blocks from various content formats"""
+        if isinstance(content, str):
+            return [{"block_type": "text", "text": content}]
+        elif isinstance(content, list):
+            return self._extract_blocks_from_list(content)
+        elif isinstance(content, dict) and "blocks" in content:
+            return content["blocks"]
         else:
-            # Close current block if exists and start new thinking block
-            self.finalize_current_block()
-            self.current_block = ContentBlock(type=BlockType.THINKING, content=content, started_at=time.time())
+            return [{"block_type": "text", "text": str(content) if content else ""}]
 
-    def start_text_block(self, content: str = "") -> None:
-        """Start or append to a text block"""
-        # Close any open tool blocks
-        self.close_tool_blocks()
+    def _extract_blocks_from_list(
+        self, content_list: Annotated[list[Any], "List of content items"]
+    ) -> Annotated[list[dict[str, Any]], "Extracted blocks"]:
+        """Extract blocks from list content"""
+        blocks: list[dict[str, Any]] = []
 
-        # If we were thinking, close that block
-        if self.current_block and self.current_block.type == BlockType.THINKING:
-            self.current_block.close()
-            self.finalize_current_block()
+        for item in content_list:
+            if isinstance(item, dict):
+                if item.get("type") == "text":
+                    blocks.append({"block_type": "text", "text": item.get("text", "")})
+                elif item.get("type") == "image_url":
+                    blocks.append(self._process_image_item(item))
+            elif isinstance(item, str):
+                blocks.append({"block_type": "text", "text": item})
 
-        if self.current_block and self.current_block.type == BlockType.TEXT:
-            # Already in text block, just append
-            self.current_block.append_content(content)
+        return blocks
+
+    def _process_image_item(
+        self, item: Annotated[dict[str, Any], "Image item to process"]
+    ) -> Annotated[dict[str, Any], "Processed image block"]:
+        """Process image items from content"""
+        image_url = item.get("image_url", {}).get("url", "")
+
+        if image_url.startswith("data:image"):
+            try:
+                parts = image_url.split(",", 1)
+                if len(parts) == 2:
+                    header, base64_data = parts
+                    mime_type = header.split(";")[0].replace("data:", "")
+                    return {
+                        "block_type": "image",
+                        "image_data": base64_data,
+                        "mime_type": mime_type,
+                    }
+            except Exception as e:
+                logger.warning(f"Failed to parse image URL: {e}")
+
+        return {"block_type": "image", "image_url": image_url}
+
+
+# ============================================================================
+# Streaming State Management
+# ============================================================================
+
+
+class StreamingStateManager:
+    """Manages streaming content state with proper encapsulation"""
+
+    def __init__(self):
+        self._content_blocks: Annotated[list[ContentBlock], "List of finalized content blocks"] = []
+        self._current_block: Annotated[Optional[ContentBlock], "Currently active block being built"] = None
+        self._block_factory = ContentBlockFactory()
+
+    def start_text_block(self, content: Annotated[str, "Initial text content"] = "") -> None:
+        """Start a new text block"""
+        # Close any open blocks that need closing (tool or thinking)
+        self._close_open_blocks()
+
+        if self._current_block and isinstance(self._current_block, TextBlock):
+            # Append to existing text block
+            self._current_block = self._current_block.with_content(content)
         else:
             # Start new text block
-            self.finalize_current_block()
-            self.current_block = ContentBlock(type=BlockType.TEXT, content=content)
+            self._finalize_current_block()
+            self._current_block = self._block_factory.create_text_block(content)
 
-    def finalize_current_block(self) -> None:
-        """Move current block to content_blocks if it exists"""
-        if self.current_block and (self.current_block.content or self.current_block.type == BlockType.TOOL):
-            self.content_blocks.append(self.current_block)
-            self.current_block = None
+    def start_thinking_block(self, content: Annotated[str, "Initial reasoning content"] = "") -> None:
+        """Start or append to thinking block"""
+        # Close any open tool blocks
+        self._close_tool_block_if_open()
 
-    def serialize_to_html(self) -> str:
-        """Serialize all content blocks to HTML"""
-        html_parts = []
+        if self._current_block and isinstance(self._current_block, ThinkingBlock):
+            # Append to existing thinking block
+            self._current_block = self._current_block.with_content(content)
+        else:
+            # Start new thinking block
+            self._finalize_current_block()
+            self._current_block = self._block_factory.create_thinking_block(content)
 
-        # Add all finalized blocks
-        for block in self.content_blocks:
+    def start_tool_block(
+        self,
+        tool_id: Annotated[str, "Tool call identifier"],
+        tool_name: Annotated[str, "Name of the tool"],
+        tool_params: Annotated[dict[str, Any], "Tool parameters"],
+    ) -> None:
+        """Start a new tool execution block"""
+        # Close any open blocks
+        self._close_open_blocks()
+        self._finalize_current_block()
+
+        self._current_block = self._block_factory.create_tool_block(
+            tool_id=tool_id, tool_name=tool_name, tool_params=tool_params
+        )
+
+    def append_to_current_block(self, content: Annotated[str, "Content to append"]) -> None:
+        """Append content to current block if it supports it"""
+        if self._current_block:
+            if isinstance(self._current_block, (TextBlock, ThinkingBlock)):
+                self._current_block = self._current_block.with_content(content)
+
+    def close_current_block(self) -> None:
+        """Close the current block if it supports closing"""
+        if self._current_block:
+            if isinstance(self._current_block, (ThinkingBlock, ToolBlock)):
+                self._current_block = self._current_block.with_closure()
+            self._finalize_current_block()
+
+    def finalize_all_blocks(self) -> None:
+        """Finalize all blocks when stream ends"""
+        self._close_open_blocks()
+        self._finalize_current_block()
+
+    def _close_open_blocks(self) -> None:
+        """Close any blocks that need closing (tool or thinking)"""
+        if self._current_block:
+            if isinstance(self._current_block, ToolBlock) and not self._current_block.closed:
+                self._current_block = self._current_block.with_closure()
+            elif isinstance(self._current_block, ThinkingBlock) and not self._current_block.closed:
+                self._current_block = self._current_block.with_closure()
+
+    def _close_tool_block_if_open(self) -> None:
+        """Close tool block if it's currently open"""
+        if self._current_block and isinstance(self._current_block, ToolBlock):
+            if not self._current_block.closed:
+                self._current_block = self._current_block.with_closure()
+            self._finalize_current_block()
+
+    def _finalize_current_block(self) -> None:
+        """Move current block to finalized blocks if complete"""
+        if self._current_block and self._current_block.is_complete():
+            self._content_blocks.append(self._current_block)
+            self._current_block = None
+
+    def serialize_to_html(self) -> Annotated[str, "Complete HTML representation"]:
+        """Serialize all blocks to HTML"""
+        html_parts: list[str] = []
+
+        # Render finalized blocks
+        for block in self._content_blocks:
             html_parts.append(block.to_html())
 
-        # Add current block if exists
-        if self.current_block:
-            html_parts.append(self.current_block.to_html())
+        # Render current block if exists
+        if self._current_block:
+            html_parts.append(self._current_block.to_html())
 
         return "".join(html_parts)
 
 
+# ============================================================================
+# Event Handler Base Classes and Context
+# ============================================================================
+
+
+class EventContext:
+    """Context object passed to event handlers"""
+
+    def __init__(
+        self,
+        state_manager: Annotated[StreamingStateManager, "State manager instance"],
+        emitter: Annotated[EventEmitter, "Event emitter function"],
+        caller: Annotated[EventCaller, "Event caller function"],
+        headers: Annotated[dict[str, str], "Request headers"],
+        agent_class: Annotated[str, "Agent class identifier"],
+        agent_id: Annotated[str, "Agent instance identifier"],
+        thread_id: Annotated[str, "Thread identifier"],
+        stream_service: Annotated[Any, "Streaming service instance"],
+    ):
+        self.state_manager = state_manager
+        self.emitter = emitter
+        self.caller = caller
+        self.headers = headers
+        self.agent_class = agent_class
+        self.agent_id = agent_id
+        self.thread_id = thread_id
+        self.stream_service = stream_service
+
+
+class EventHandler(ABC):
+    """Abstract base for event handlers in chain of responsibility"""
+
+    def __init__(self):
+        self._next_handler: Annotated[Optional[EventHandler], "Next handler in chain"] = None
+
+    def set_next(
+        self, handler: Annotated["EventHandler", "Next handler to chain"]
+    ) -> Annotated["EventHandler", "The handler that was set"]:
+        """Set the next handler in chain"""
+        self._next_handler = handler
+        return handler
+
+    @abstractmethod
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "Whether this handler can process the event"]:
+        """Check if this handler can process the event"""
+        pass
+
+    @abstractmethod
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Event to handle"],
+        context: Annotated[EventContext, "Event processing context"],
+    ) -> Annotated[bool, "Whether to continue processing"]:
+        """Handle the event and return whether to continue"""
+        pass
+
+    async def process(
+        self,
+        event: Annotated[dict[str, Any], "Event to process"],
+        context: Annotated[EventContext, "Event processing context"],
+    ) -> Annotated[bool, "Whether to continue processing"]:
+        """Process event through chain"""
+        if await self.can_handle(event):
+            return await self.handle(event, context)
+        elif self._next_handler:
+            return await self._next_handler.process(event, context)
+        else:
+            logger.warning(f"No handler for event: {event.get('_event_name', 'unknown')}")
+            return True
+
+
+# ============================================================================
+# Concrete Event Handlers
+# ============================================================================
+
+
+class ThoughtEventHandler(EventHandler):
+    """Handler for thought/reasoning events"""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if event contains ThoughtEvent"]:
+        return "ThoughtEvent" in event.get("_parent_event_names", [])
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Thought event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        reasoning_content = event.get("reasoning_content", "")
+        context.state_manager.start_thinking_block(reasoning_content)
+
+        await context.emitter(
+            {
+                "type": "replace",
+                "data": {"content": context.state_manager.serialize_to_html()},
+            }
+        )
+        return True
+
+
+class ChunkEventHandler(EventHandler):
+    """Handler for content chunk events"""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if event contains ChunkEvent"]:
+        return "ChunkEvent" in event.get("_parent_event_names", [])
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Chunk event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        content = event.get("content", "")
+        context.state_manager.start_text_block(content)
+
+        await context.emitter(
+            {
+                "type": "replace",
+                "data": {"content": context.state_manager.serialize_to_html()},
+            }
+        )
+        return True
+
+
+class ToolEventHandler(EventHandler):
+    """Handler for tool execution events"""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if event contains ToolEvent"]:
+        return "ToolEvent" in event.get("_parent_event_names", [])
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Tool event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        tool_name = event.get("name", "Unknown Tool")
+        tool_description = event.get("description", "")
+        parameters = event.get("parameters", {})
+        tool_id = event.get("event_id", "")
+
+        await context.emitter(
+            {
+                "type": "status",
+                "data": {
+                    "action": None,
+                    "description": f"{tool_description}: {tool_name}",
+                    "done": False,
+                },
+            }
+        )
+
+        context.state_manager.start_tool_block(tool_id=tool_id, tool_name=tool_name, tool_params=parameters)
+
+        await context.emitter(
+            {
+                "type": "replace",
+                "data": {"content": context.state_manager.serialize_to_html()},
+            }
+        )
+        return True
+
+
+class HumanInTheLoopHandler(EventHandler):
+    """Handler for human-in-the-loop interactions"""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if HITL request event"]:
+        return "HumanInTheLoopRequestEvent" in event.get("_parent_event_names", [])
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "HITL event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        question = event.get("question", "Please provide input")
+        topic = event.get("topic", {})
+
+        logger.info(f"Received HITL request: {question}")
+
+        result = await context.caller(
+            {
+                "type": "input",
+                "data": {
+                    "title": "Agent Question",
+                    "message": question,
+                    "placeholder": "Enter your response...",
+                },
+            }
+        )
+
+        user_response = result.get("value", "") if isinstance(result, dict) else str(result)
+
+        if user_response:
+            response_event_name = topic.get("event_name", "HumanInTheLoopResponseEvent")
+            hitl_display_id = topic.get("display_id", "")
+
+            response_payload = {"response": user_response, "request_event": event}
+
+            await context.stream_service.send_hitl_response(
+                response_event_name, response_payload, hitl_display_id, context
+            )
+
+        return True
+
+
+class ExceptionEventHandler(EventHandler):
+    """Handler for exception events"""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if exception event"]:
+        return "ExceptionEvent" in event.get("_parent_event_names", [])
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Exception event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Returns False to stop processing"]:
+        context.state_manager.close_current_block()
+
+        message = event.get("message", "An error occurred")
+        error_content = f"\n\n> [!CAUTION]\n> {message}\n"
+
+        context.state_manager.start_text_block(error_content)
+
+        await context.emitter(
+            {
+                "type": "status",
+                "data": {
+                    "action": None,
+                    "description": f"Error: {message}",
+                    "done": True,
+                    "error": True,
+                },
+            }
+        )
+
+        await context.emitter(
+            {
+                "type": "replace",
+                "data": {"content": context.state_manager.serialize_to_html()},
+            }
+        )
+
+        return False
+
+
+class EmbeddingEventHandler(EventHandler):
+    """Handler for embedding/search events"""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if embedding event"]:
+        return "EmbeddingEvent" in event.get("_parent_event_names", [])
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Embedding event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        search_query = event.get("text", "")
+
+        await context.emitter(
+            {
+                "type": "status",
+                "data": {
+                    "action": "knowledge_search",
+                    "query": search_query,
+                    "done": True,
+                    "error": False,
+                },
+            }
+        )
+        return True
+
+
+class RetrieverEventHandler(EventHandler):
+    """Handler for document retrieval events"""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if retriever event"]:
+        return "RetrieverEvent" in event.get("_parent_event_names", [])
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Retriever event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        nodes = event.get("nodes", [])
+
+        if nodes:
+            for node in nodes:
+                source_data = self._build_source_data(node)
+                await context.emitter({"type": "source", "data": source_data})
+
+            description = event.get("display_description", {}).get("en", f"Found {len(nodes)} relevant documents")
+
+            await context.emitter(
+                {
+                    "type": "status",
+                    "data": {
+                        "action": None,
+                        "description": description,
+                        "done": True,
+                    },
+                }
+            )
+
+        return True
+
+    def _build_source_data(
+        self, node: Annotated[dict[str, Any], "Node data"]
+    ) -> Annotated[dict[str, Any], "Source data structure"]:
+        """Build source data structure from node"""
+        metadata = node.get("metadata", {})
+
+        source_data = {
+            "source": {
+                "name": node.get("document_title", node.get("source", "Unknown Source")),
+                "id": node.get("id", ""),
+            },
+            "document": [node.get("content", "")],
+            "metadata": [
+                {
+                    "source": node.get("source", ""),
+                    "document_title": node.get("document_title", ""),
+                    "namespace": node.get("namespace", ""),
+                    "language": node.get("language", ""),
+                    "document_id": node.get("document_id", ""),
+                    "reference_url": metadata.get("reference_url", ""),
+                    "created_at": node.get("created_at", ""),
+                    "name": node.get("source", ""),
+                }
+            ],
+        }
+
+        # Add optional fields
+        if metadata.get("reference_url"):
+            source_data["source"]["url"] = metadata["reference_url"]
+
+        if node.get("index") is not None:
+            source_data["metadata"][0]["page"] = node["index"]
+
+        if "score" in node:
+            source_data["distances"] = [node["score"]]
+
+        return source_data
+
+
+class DefaultEventHandler(EventHandler):
+    """Default handler for unrecognized display events"""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if display event"]:
+        return "DisplayEvent" in event.get("_parent_event_names", [])
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Display event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        display_description = event.get("display_description", {})
+        event_description = display_description.get("en", "Processing...")
+
+        logger.debug(f"Processing DisplayEvent: {event.get('_event_name', 'unknown')}")
+
+        await context.emitter(
+            {
+                "type": "status",
+                "data": {
+                    "action": None,
+                    "description": event_description,
+                    "done": False,
+                },
+            }
+        )
+        return True
+
+
+# ============================================================================
+# Event Processing Factory
+# ============================================================================
+
+
+class EventProcessorFactory:
+    """Factory for creating event processing chain"""
+
+    @staticmethod
+    def create_chain() -> Annotated[EventHandler, "First handler in chain"]:
+        """Create the event processing chain of responsibility"""
+        handlers = [
+            ThoughtEventHandler(),
+            ChunkEventHandler(),
+            ToolEventHandler(),
+            HumanInTheLoopHandler(),
+            ExceptionEventHandler(),
+            EmbeddingEventHandler(),
+            RetrieverEventHandler(),
+            DefaultEventHandler(),
+        ]
+
+        # Link handlers in chain
+        for i in range(len(handlers) - 1):
+            handlers[i].set_next(handlers[i + 1])
+
+        return handlers[0]
+
+
+# ============================================================================
+# Streaming Service
+# ============================================================================
+
+
+class StreamingService:
+    """Manages streaming operations and SSE processing"""
+
+    def __init__(
+        self,
+        base_url: Annotated[str, "AI-Hub base URL"],
+        timeout: Annotated[int, "Request timeout in seconds"],
+    ):
+        self._base_url = base_url
+        self._timeout = timeout
+        self._event_processor = EventProcessorFactory.create_chain()
+
+    def build_endpoint_url(
+        self,
+        agent_class: Annotated[str, "Agent class identifier"],
+        agent_id: Annotated[str, "Agent instance identifier"],
+        event_name: Annotated[str, "Event name to send"],
+        thread_id: Annotated[str, "Thread identifier"],
+        display_id: Annotated[str, "Display identifier"],
+    ) -> Annotated[str, "Complete streaming endpoint URL"]:
+        """Build streaming endpoint URL"""
+        url = f"{self._base_url}/api/v1/agents/{agent_class}/{agent_id}/{event_name}/stream"
+        url += f"?thread_id={thread_id}&display_id={display_id}"
+        return url
+
+    async def stream_response(
+        self,
+        agent_class: Annotated[str, "Agent class identifier"],
+        agent_id: Annotated[str, "Agent instance identifier"],
+        event_name: Annotated[str, "Event name to send"],
+        event_payload: Annotated[dict[str, Any], "Event payload"],
+        headers: Annotated[dict[str, str], "Request headers"],
+        thread_id: Annotated[str, "Thread identifier"],
+        display_id: Annotated[str, "Display identifier"],
+        event_emitter: Annotated[EventEmitter, "Event emitter function"],
+        event_caller: Annotated[EventCaller, "Event caller function"],
+        state_manager: Annotated[StreamingStateManager, "State manager"],
+        stream_start_callback: Annotated[Callable, "Stream start callback"],
+    ) -> None:
+        """Stream an event and process responses"""
+        endpoint_url = self.build_endpoint_url(agent_class, agent_id, event_name, thread_id, display_id)
+
+        logger.debug(f"Streaming {event_name} to: {endpoint_url}")
+
+        # Build context for event processing
+        context = EventContext(
+            state_manager=state_manager,
+            emitter=event_emitter,
+            caller=event_caller,
+            headers=headers,
+            agent_class=agent_class,
+            agent_id=agent_id,
+            thread_id=thread_id,
+            stream_service=self,
+        )
+
+        async with httpx.AsyncClient(timeout=None, follow_redirects=True) as client:
+            try:
+                await self._process_stream(client, endpoint_url, event_payload, headers, context, stream_start_callback)
+                # Finalize any open blocks when stream ends normally
+                state_manager.finalize_all_blocks()
+                # Emit final state if there were unclosed blocks
+                await event_emitter({"type": "replace", "data": {"content": state_manager.serialize_to_html()}})
+            except httpx.HTTPStatusError as e:
+                state_manager.finalize_all_blocks()
+                await self._handle_http_error(e, event_emitter)
+            except Exception as e:
+                state_manager.finalize_all_blocks()
+                await self._handle_general_error(e, event_emitter)
+
+    async def _process_stream(
+        self,
+        client: Annotated[httpx.AsyncClient, "HTTP client"],
+        url: Annotated[str, "Endpoint URL"],
+        payload: Annotated[dict[str, Any], "Request payload"],
+        headers: Annotated[dict[str, str], "Request headers"],
+        context: Annotated[EventContext, "Processing context"],
+        stream_start_callback: Annotated[Callable, "Stream start callback"],
+    ) -> None:
+        """Process the SSE stream"""
+        async with client.stream("POST", url, json=payload, headers=headers) as response:
+            response.raise_for_status()
+            # Show trace viewer
+            await stream_start_callback()
+
+            async for line in response.aiter_lines():
+                if not await self._process_line(line, context):
+                    break
+
+    async def _process_line(
+        self,
+        line: Annotated[str, "SSE line to process"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Whether to continue processing"]:
+        """Process a single SSE line"""
+        line = line.strip()
+
+        if line == "[DONE]":
+            logger.debug("Stream ended with [DONE]")
+            return False
+
+        if not line or not line.startswith("data: "):
+            return True
+
+        try:
+            json_str = line[6:]
+            if json_str == "[DONE]":
+                return False
+
+            event = json.loads(json_str)
+            return await self._event_processor.process(event, context)
+
+        except json.JSONDecodeError as e:
+            logger.warning(f"Failed to parse JSON: {e}, line: {line}")
+            return True
+        except Exception as e:
+            logger.exception(f"Error processing event: {e}")
+            return True
+
+    async def _handle_http_error(
+        self,
+        error: Annotated[httpx.HTTPStatusError, "HTTP error"],
+        emitter: Annotated[EventEmitter, "Event emitter"],
+    ) -> None:
+        """Handle HTTP errors"""
+        error_msg = f"HTTP {error.response.status_code}"
+        try:
+            error_detail = await error.response.aread()
+            error_msg = f"{error_msg}: {error_detail.decode()}"
+        except:
+            pass
+
+        logger.error(f"HTTP error: {error_msg}")
+
+        await emitter(
+            {
+                "type": "status",
+                "data": {
+                    "action": None,
+                    "description": f"Connection error: {error_msg}",
+                    "done": True,
+                    "error": True,
+                },
+            }
+        )
+
+        await emitter(
+            {
+                "type": "chat:message:delta",
+                "data": {"content": f"\n\n> [!CAUTION]\n> {error_msg}\n"},
+            }
+        )
+
+    async def _handle_general_error(
+        self,
+        error: Annotated[Exception, "General error"],
+        emitter: Annotated[EventEmitter, "Event emitter"],
+    ) -> None:
+        """Handle general errors"""
+        logger.exception(f"Streaming error: {error}")
+
+        await emitter(
+            {
+                "type": "status",
+                "data": {
+                    "action": None,
+                    "description": f"Error: {str(error)}",
+                    "done": True,
+                    "error": True,
+                },
+            }
+        )
+
+        await emitter(
+            {
+                "type": "chat:message:delta",
+                "data": {"content": f"\n\n> [!CAUTION]\n> {str(error)}\n"},
+            }
+        )
+
+    async def send_hitl_response(
+        self,
+        event_name: Annotated[str, "Response event name"],
+        payload: Annotated[dict[str, Any], "Response payload"],
+        display_id: Annotated[str, "HITL display ID"],
+        context: Annotated[EventContext, "Original context"],
+    ) -> None:
+        """Send HITL response back to agent"""
+        await self.stream_response(
+            context.agent_class,
+            context.agent_id,
+            event_name,
+            payload,
+            context.headers,
+            context.thread_id,
+            display_id,
+            context.emitter,
+            context.caller,
+            context.state_manager,
+        )
+
+
+# ============================================================================
+# Agent Discovery Service
+# ============================================================================
+
+
+class AgentDiscoveryService:
+    """Service for discovering available agents"""
+
+    def __init__(
+        self,
+        base_url: Annotated[str, "AI-Hub base URL"],
+        api_key: Annotated[str, "API key"],
+        prefix: Annotated[str, "UI prefix for agent names"],
+        timeout: Annotated[int, "Request timeout"],
+    ):
+        self._base_url = base_url
+        self._api_key = api_key
+        self._prefix = prefix
+        self._timeout = timeout
+
+    async def discover_agents(
+        self,
+    ) -> Annotated[list[dict[str, str]], "List of available agents with id and name"]:
+        """Fetch available conversational agents"""
+        try:
+            headers = {
+                "Authorization": f"Bearer {self._api_key}",
+                "Accept": "application/json",
+            }
+
+            async with httpx.AsyncClient(timeout=self._timeout, follow_redirects=True) as client:
+                response = await client.get(f"{self._base_url}/api/v1/agents", headers=headers)
+                response.raise_for_status()
+                agents = response.json()
+
+            return self._filter_conversational_agents(agents)
+
+        except Exception as e:
+            logger.exception(f"Error fetching agents: {e}")
+            return [{"id": "error", "name": f"Error: {str(e)}"}]
+
+    def _filter_conversational_agents(
+        self, agents: Annotated[list[dict[str, Any]], "Raw agent data"]
+    ) -> Annotated[list[dict[str, str]], "Filtered agent list"]:
+        """Filter for online conversational agents"""
+        conversational_agents: list[dict[str, str]] = []
+
+        for agent in agents:
+            if agent["is_conversational"] and agent["is_online"]:
+                conversational_agents.append(
+                    {
+                        "id": f"{agent['agent_class']}.{agent['agent_id']}",
+                        "name": f"{self._prefix}{agent['agent_config']['name']}",
+                    }
+                )
+
+        if not conversational_agents:
+            return [{"id": "error", "name": "No online conversational agents available"}]
+
+        return conversational_agents
+
+
+# ============================================================================
+# File Processing Service
+# ============================================================================
+
+
+class FileProcessingService:
+    """Handles file processing and conversion"""
+
+    def __init__(self, storage_adapter: Annotated[FileStorageAdapter, "Storage adapter instance"]):
+        self._storage_adapter = storage_adapter
+
+    async def prepare_files_for_event(
+        self, files: Annotated[Optional[list[dict[str, Any]]], "Files from Open WebUI"]
+    ) -> Annotated[list[dict[str, str]], "Prepared files for AI-Hub"]:
+        """Convert Open WebUI files to AI-Hub event format"""
+        if not files:
+            return []
+
+        prepared_files: list[dict[str, str]] = []
+
+        for file in files:
+            try:
+                prepared_file = await self._process_single_file(file)
+                if prepared_file:
+                    prepared_files.append(prepared_file)
+            except Exception as e:
+                logger.exception(f"Error processing file {file.get('name', '')}: {e}")
+
+        return prepared_files
+
+    async def _process_single_file(
+        self, file: Annotated[dict[str, Any], "Single file to process"]
+    ) -> Annotated[Optional[dict[str, str]], "Processed file or None"]:
+        """Process a single file"""
+        logger.debug(f"Processing file: {file.get('name', '')}, ID: {file.get('id', '')}")
+
+        file_id = file.get("id", "")
+        file_obj = Files.get_file_by_id(file_id)
+
+        if not file_obj:
+            logger.warning(f"Could not retrieve file with ID: {file_id}")
+            return None
+
+        file_meta = file_obj.meta
+        filename = file_meta.get("name", "unnamed_file")
+        content_type = file_meta.get("content_type", "application/octet-stream")
+
+        file_content = await self._storage_adapter.fetch_file(file_obj.path)
+
+        if not file_content:
+            logger.warning(f"Could not fetch file from storage: {file_obj.path}")
+            return None
+
+        base64_data = base64.b64encode(file_content).decode("utf-8")
+
+        logger.debug(f"Successfully prepared file: {filename}")
+
+        return {
+            "filename": filename,
+            "file_data": base64_data,
+            "file_type": content_type,
+        }
+
+
+# ============================================================================
+# Main Pipeline Facade
+# ============================================================================
+
+
 class Pipe:
     """
-    AI-Hub Agent Connector Pipeline
+    AI-Hub Agent Connector Pipeline - Main Facade
 
-    This pipeline connects Open WebUI to AI-Hub agents by:
-    1. Discovering available conversational agents that are online
-    2. Sending UserMessageEvents to agents
-    3. Streaming back responses via Server-Sent Events (SSE)
-    4. Authenticating requests with HMAC signatures
-    5. Handling Human-in-the-Loop interactions
-    6. Supporting file uploads from S3/MinIO storage
+    This is the entry point that orchestrates all services using the Facade pattern.
     """
 
     class Valves(BaseModel):
+        """Configuration valves for the pipeline"""
+
         AIHUB_BASE_URL: str = Field(
             default=os.getenv("AIHUB_BASE_URL", "http://localhost:8000"),
-            description="Base URL for the AI-Hub API endpoints (without /api/v1)",
+            description="Base URL for the AI-Hub API endpoints",
+        )
+        AIHUB_FRONTEND_URL: str = Field(
+            default=os.getenv("AIHUB_BASE_URL", "http://localhost:3000/"),
+            description="Base URL for the AI-Hub frontend",
         )
         AIHUB_SUPERUSER_API_KEY: str = Field(
             default=os.getenv("AIHUB_SUPERUSER_API_KEY", ""),
@@ -193,7 +1273,7 @@ class Pipe:
         )
         OPEN_WEBUI_SIGNING_SECRET: str = Field(
             default=os.getenv("OPEN_WEBUI_SIGNING_SECRET", ""),
-            description="Secret key for signing user headers with HMAC-SHA256",
+            description="Secret key for signing user headers",
         )
         AIHUB_PIPELINE_PREFIX: str = Field(
             default=os.getenv("AIHUB_PIPELINE_PREFIX", "aihub/"),
@@ -205,7 +1285,7 @@ class Pipe:
         )
         S3_STORAGE_ENDPOINT: str = Field(
             default=os.getenv("S3_ENDPOINT_URL", ""),
-            description="S3/MinIO endpoint URL (e.g., http://localhost:9000)",
+            description="S3/MinIO endpoint URL",
         )
         S3_STORAGE_ACCESS_KEY: str = Field(
             default=os.getenv("S3_ACCESS_KEY_ID", ""),
@@ -218,710 +1298,193 @@ class Pipe:
 
     def __init__(self):
         self.valves = self.Valves()
+        self._initialize_services()
 
-    async def _fetch_file_from_s3(
-        self, s3_path: Annotated[str, "S3 path in format s3://bucket/key"]
-    ) -> Annotated[Optional[bytes], "File content as bytes"]:
-        """Fetch a file from S3/MinIO storage."""
-        # Parse S3 path
-        parsed = urlparse(s3_path)
-        if parsed.scheme != "s3":
-            logger.error(f"Invalid S3 path: {s3_path}")
-            return None
-
-        bucket = parsed.netloc
-        key = parsed.path.lstrip("/")
-
-        # Create S3 client
-        s3_client = boto3.client(
-            "s3",
-            endpoint_url=self.valves.S3_STORAGE_ENDPOINT,
-            aws_access_key_id=self.valves.S3_STORAGE_ACCESS_KEY,
-            aws_secret_access_key=self.valves.S3_STORAGE_SECRET_KEY,
-            config=Config(signature_version="s3v4"),
-            region_name="us-east-1",
+    def _initialize_services(self) -> None:
+        """Initialize all required services"""
+        # Authentication
+        self._auth_service = AuthenticationService(
+            self.valves.OPEN_WEBUI_SIGNING_SECRET, self.valves.AIHUB_SUPERUSER_API_KEY
         )
 
-        # Download file
-        response = s3_client.get_object(Bucket=bucket, Key=key)
-        return response["Body"].read()
+        # Storage
+        self._storage_adapter = S3StorageAdapter(
+            self.valves.S3_STORAGE_ENDPOINT,
+            self.valves.S3_STORAGE_ACCESS_KEY,
+            self.valves.S3_STORAGE_SECRET_KEY,
+        )
+
+        # File Processing
+        self._file_service = FileProcessingService(self._storage_adapter)
+
+        # Message Conversion
+        self._message_converter = MessageConverter()
+
+        # Agent Discovery
+        self._agent_discovery = AgentDiscoveryService(
+            self.valves.AIHUB_BASE_URL,
+            self.valves.AIHUB_SUPERUSER_API_KEY,
+            self.valves.AIHUB_PIPELINE_PREFIX,
+            self.valves.AIHUB_REQUEST_TIMEOUT,
+        )
+
+        # Streaming
+        self._streaming_service = StreamingService(self.valves.AIHUB_BASE_URL, self.valves.AIHUB_REQUEST_TIMEOUT)
+
+    async def pipes(
+        self,
+    ) -> Annotated[list[dict[str, str]], "List of available agent pipelines"]:
+        """Discover available agents"""
+        if not self._validate_configuration():
+            return [{"id": "error", "name": "Configuration incomplete"}]
+
+        return await self._agent_discovery.discover_agents()
+
+    def _validate_configuration(self) -> Annotated[bool, "Configuration validity"]:
+        """Validate required configuration"""
+        return bool(self.valves.AIHUB_SUPERUSER_API_KEY and self.valves.OPEN_WEBUI_SIGNING_SECRET)
+
+    def _extract_agent_info(
+        self, model_id: Annotated[str, "Model ID from request"]
+    ) -> Annotated[tuple[str, str], "Agent class and ID"]:
+        """Extract agent class and ID from model ID"""
+        parts = model_id.split(".")
+        if len(parts) < 3:
+            raise ValueError(f"Invalid model ID format: {model_id}")
+
+        agent_class = parts[1]
+        agent_id = ".".join(parts[2:])
+        return agent_class, agent_id
+
+    def _generate_ids(
+        self,
+        chat_id: Annotated[Optional[str], "Chat session ID"],
+        message_id: Annotated[Optional[str], "Message ID"],
+    ) -> Annotated[tuple[str, str], "Thread and display IDs"]:
+        """Generate thread and display IDs"""
+        thread_id = self._str_to_object_id(chat_id)
+        display_id = self._str_to_object_id(message_id)
+        return thread_id, display_id
 
     def _str_to_object_id(
-        self, context_id: Annotated[Optional[str], "Context ID to hash"]
+        self, context_id: Annotated[Optional[str], "Context ID to convert"]
     ) -> Annotated[str, "ObjectId string"]:
-        """Convert a string to an ObjectId by hashing it with MD5."""
+        """Convert string to ObjectId format"""
         if not context_id:
             return str(ObjectId())
         hashed = hashlib.md5(context_id.encode()).digest()[:12]
         return str(ObjectId(hashed)).lower()
 
-    async def pipes(self) -> list[dict]:
-        """Fetch available conversational agents from AI-Hub."""
-        if not self.valves.AIHUB_SUPERUSER_API_KEY:
-            return [{"id": "error", "name": "API Key not configured"}]
-
-        if not self.valves.OPEN_WEBUI_SIGNING_SECRET:
-            return [{"id": "error", "name": "Signing secret not configured"}]
-
-        try:
-            headers = {
-                "Authorization": f"Bearer {self.valves.AIHUB_SUPERUSER_API_KEY}",
-                "Accept": "application/json",
-            }
-
-            async with httpx.AsyncClient(timeout=self.valves.AIHUB_REQUEST_TIMEOUT, follow_redirects=True) as client:
-                response = await client.get(f"{self.valves.AIHUB_BASE_URL}/api/v1/agents", headers=headers)
-                response.raise_for_status()
-                agents = response.json()
-
-            # Filter for conversational agents that are online
-            conversational_agents = []
-            for agent in agents:
-                if agent["is_conversational"] and agent["is_online"]:
-                    conversational_agents.append(
-                        {
-                            "id": f"{agent['agent_class']}.{agent['agent_id']}",
-                            "name": f"{self.valves.AIHUB_PIPELINE_PREFIX}{agent['agent_config']['name']}",
-                        }
-                    )
-
-            if not conversational_agents:
-                return [{"id": "error", "name": "No online conversational agents available"}]
-
-            return conversational_agents
-
-        except Exception as e:
-            logger.exception(f"Error fetching agents: {e}")
-            return [{"id": "error", "name": f"Error: {str(e)}"}]
-
-    def _sign_user_headers(
+    async def _set_ui_context(
         self,
-        user_name: Annotated[str, "The user's name"],
-        user_email: Annotated[str, "The user's email"],
-    ) -> Annotated[str, "HMAC-SHA256 signature as hex string"]:
-        """Sign user information with HMAC-SHA256 for authentication."""
-        secret = self.valves.OPEN_WEBUI_SIGNING_SECRET.encode("utf-8")
-        message = f"name:{user_name},email:{user_email}".encode()
-        signature = hmac.new(secret, message, hashlib.sha256).hexdigest()
-        return signature
-
-    def _prepare_headers(
-        self,
-        user_name: Annotated[str, "User's name"],
-        user_email: Annotated[str, "User's email"],
-    ) -> Annotated[dict, "Request headers"]:
-        """
-        Prepare request headers with authentication and user information.
-        """
-        signature = self._sign_user_headers(user_name, user_email)
-
-        return {
-            "Authorization": f"Bearer {self.valves.AIHUB_SUPERUSER_API_KEY}",
-            "Content-Type": "application/json",
-            "X-OpenWebUI-User-Name": user_name,
-            "X-OpenWebUI-User-Email": user_email,
-            "X-OpenWebUI-Signature": signature,
-        }
-
-    def _convert_messages_to_event_format(
-        self, messages: Annotated[list[dict], "List of messages from Open WebUI"]
-    ) -> Annotated[list[dict], "List of messages in AI-Hub format"]:
-        """
-        Convert Open WebUI message format to AI-Hub UserMessageEvent format.
-        Handles both simple string content and complex content with images.
-        """
-        converted_messages = []
-
-        for msg in messages:
-            content = msg.get("content")
-            blocks = []
-
-            # Handle different content types
-            if isinstance(content, str):
-                # Simple text message
-                blocks = [{"block_type": "text", "text": content}]
-            elif isinstance(content, list):
-                # Complex content with potentially multiple blocks
-                for item in content:
-                    if isinstance(item, dict):
-                        if item.get("type") == "text":
-                            blocks.append({"block_type": "text", "text": item.get("text", "")})
-                        elif item.get("type") == "image_url":
-                            # Handle image blocks - extract base64 data
-                            image_url = item.get("image_url", {}).get("url", "")
-                            if image_url.startswith("data:image"):
-                                # Extract base64 data from data URL
-                                try:
-                                    # Format: data:image/png;base64,<data>
-                                    parts = image_url.split(",", 1)
-                                    if len(parts) == 2:
-                                        header, base64_data = parts
-                                        mime_type = header.split(";")[0].replace("data:", "")
-                                        blocks.append(
-                                            {
-                                                "block_type": "image",
-                                                "image_data": base64_data,
-                                                "mime_type": mime_type,
-                                            }
-                                        )
-                                except Exception as e:
-                                    logger.warning(f"Failed to parse image URL: {e}")
-                            else:
-                                # Regular URL - just pass it through
-                                blocks.append({"block_type": "image", "image_url": image_url})
-                    elif isinstance(item, str):
-                        # Fallback for string items in list
-                        blocks.append({"block_type": "text", "text": item})
-            elif isinstance(content, dict) and "blocks" in content:
-                # Already in block format
-                blocks = content["blocks"]
-            else:
-                # Fallback - try to convert to string
-                blocks = [{"block_type": "text", "text": str(content) if content else ""}]
-
-            converted_messages.append(
-                {
-                    "role": msg.get("role", "user"),
-                    "blocks": blocks,
-                    "additional_kwargs": {},
-                }
-            )
-
-        return converted_messages
-
-    async def _prepare_files_for_event(
-        self, __files__: Annotated[Optional[list], "Files from Open WebUI"]
-    ) -> Annotated[list[dict], "Files in AI-Hub format"]:
-        """
-        Convert Open WebUI files to AI-Hub event format by fetching from S3.
-        """
-        if not __files__:
-            return []
-
-        files_to_send = []
-
-        for file in __files__:
-            try:
-                logger.debug(f"Processing file: {file.get('name', '')}, ID: {file.get('id', '')}")
-                file_id = file.get("id", "")
-                file_obj = Files.get_file_by_id(file_id)
-
-                if file_obj:
-                    # Get file metadata
-                    file_meta = file_obj.meta
-                    filename = file_meta.get("name", "unnamed_file")
-                    content_type = file_meta.get("content_type", "application/octet-stream")
-
-                    # Fetch file from S3
-                    s3_path = file_obj.path
-                    logger.debug(f"Fetching file from S3: {s3_path}")
-
-                    file_content = await self._fetch_file_from_s3(s3_path)
-
-                    if file_content:
-                        # Convert to base64
-                        base64_data = base64.b64encode(file_content).decode("utf-8")
-
-                        files_to_send.append(
-                            {
-                                "filename": filename,
-                                "file_data": base64_data,
-                                "file_type": content_type,
-                            }
-                        )
-                        logger.debug(f"Successfully prepared file: {filename}")
-                    else:
-                        logger.warning(f"Could not fetch file from S3: {s3_path}")
-                else:
-                    logger.warning(f"Could not retrieve file with ID: {file_id}")
-
-            except Exception as e:
-                logger.exception(f"Error processing file {file.get('name', '')}: {e}")
-
-        return files_to_send
-
-    def _build_endpoint_url(
-        self,
-        agent_class: Annotated[str, "Agent class identifier"],
-        agent_id: Annotated[str, "Agent instance identifier"],
-        event_name: Annotated[str, "Event name to send"],
         thread_id: Annotated[str, "Thread ID"],
         display_id: Annotated[str, "Display ID"],
-    ) -> Annotated[str, "Complete endpoint URL"]:
-        """
-        Build the streaming endpoint URL for sending events to agents.
-        """
-        url = f"{self.valves.AIHUB_BASE_URL}/api/v1/agents/{agent_class}/{agent_id}/{event_name}/stream"
-        url += f"?thread_id={thread_id}&display_id={display_id}"
-        return url
-
-    async def _stream_agent_response(
-        self,
-        agent_class: Annotated[str, "Agent class identifier"],
-        agent_id: Annotated[str, "Agent instance identifier"],
-        event_name: Annotated[str, "Event name to send"],
-        event_payload: Annotated[dict, "Event payload to send"],
-        headers: Annotated[dict, "Request headers"],
-        thread_id: Annotated[str, "Thread ID"],
-        display_id: Annotated[str, "Display ID"],
-        __event_emitter__: Annotated[Any, "Event emitter for streaming responses"],
-        __event_call__: Annotated[Any, "Event caller for user interactions"],
-        state: Annotated[StreamingState, "State object for accumulation"],
+        event_caller: Annotated[EventCaller, "Event caller function"],
     ) -> None:
+        """Emit JavaScript to show trace viewer"""
+        code = f"""
+        window.parent.postMessage({{
+            type: 'set-context',
+            thread_id: '{thread_id}',
+            display_id: '{display_id}',
+        }}, '{self.valves.AIHUB_FRONTEND_URL}');
         """
-        Stream an event to an agent and handle the SSE response.
-        """
-        endpoint_url = self._build_endpoint_url(agent_class, agent_id, event_name, thread_id, display_id)
-        logger.debug(f"Streaming {event_name} to: {endpoint_url}")
 
-        # Initialize state for content accumulation
+        await event_caller({"type": "execute", "data": {"code": code}})
 
-        async with httpx.AsyncClient(timeout=None, follow_redirects=True) as client:
-            try:
-                async with client.stream("POST", endpoint_url, json=event_payload, headers=headers) as response:
-                    response.raise_for_status()
-
-                    async for line in response.aiter_lines():
-                        line = line.strip()
-
-                        if line == "[DONE]":
-                            logger.debug("Stream ended with [DONE]")
-                            break
-
-                        if not line or not line.startswith("data: "):
-                            continue
-
-                        try:
-                            json_str = line[6:]
-                            if json_str == "[DONE]":
-                                break
-
-                            event = json.loads(json_str)
-
-                            # Process the event with state
-                            should_continue = await self._process_event(
-                                event,
-                                __event_emitter__,
-                                __event_call__,
-                                headers,
-                                agent_class,
-                                agent_id,
-                                thread_id,
-                                state,
-                            )
-
-                            if not should_continue:
-                                break
-
-                        except json.JSONDecodeError as e:
-                            logger.warning(f"Failed to parse JSON: {e}, line: {line}")
-                        except Exception as e:
-                            logger.exception(f"Error processing event: {e}")
-
-            except httpx.HTTPStatusError as e:
-                error_msg = f"HTTP {e.response.status_code}"
-                try:
-                    error_detail = await e.response.aread()
-                    error_msg = f"{error_msg}: {error_detail.decode()}"
-                except:
-                    pass
-
-                logger.error(f"HTTP error: {error_msg}")
-                await __event_emitter__(
-                    {
-                        "type": "status",
-                        "data": {
-                            "action": None,
-                            "description": f"Connection error: {error_msg}",
-                            "done": True,
-                            "error": True,
-                        },
-                    }
-                )
-                await __event_emitter__(
-                    {
-                        "type": "chat:message:delta",
-                        "data": {"content": f"\n\n> [!CAUTION]\n> {error_msg}\n"},
-                    }
-                )
-
-            except Exception as e:
-                logger.exception(f"Streaming error: {e}")
-                await __event_emitter__(
-                    {
-                        "type": "status",
-                        "data": {
-                            "action": None,
-                            "description": f"Error: {str(e)}",
-                            "done": True,
-                            "error": True,
-                        },
-                    }
-                )
-                await __event_emitter__(
-                    {
-                        "type": "chat:message:delta",
-                        "data": {"content": f"\n\n> [!CAUTION]\n> {str(e)}\n"},
-                    }
-                )
-
-    async def _process_event(
+    async def pipe(
         self,
-        event: Annotated[dict, "Event data"],
-        __event_emitter__: Annotated[Any, "Event emitter"],
-        __event_call__: Annotated[Any, "Event caller"],
-        headers: Annotated[dict, "Request headers"],
-        agent_class: Annotated[str, "Agent class"],
-        agent_id: Annotated[str, "Agent ID"],
-        thread_id: Annotated[str, "Thread ID"],
-        state: Annotated[StreamingState, "State object for accumulation"],
-    ) -> Annotated[bool, "Whether to continue processing"]:
-        """
-        Process an event and return whether to continue streaming.
-        """
-        parent_names = event.get("_parent_event_names", [])
+        body: Annotated[dict[str, Any], "Request body"],
+        __user__: Annotated[dict[str, str], "User information"],
+        __metadata__: Annotated[dict[str, str], "Request metadata"],
+        __event_emitter__: Annotated[Any, "Event emitter function"],
+        __event_call__: Annotated[Any, "Event caller function"],
+        __files__: Annotated[Optional[list[dict[str, Any]]], "Uploaded files"] = None,
+        **kwargs,
+    ) -> Annotated[str, "Response (always empty for streaming)"]:
+        """Main pipeline entry point"""
+        try:
+            # Extract agent information
+            agent_class, agent_id = self._extract_agent_info(body["model"])
 
-        # Handle ThoughtEvent
-        if "ThoughtEvent" in parent_names:
-            reasoning_content = event.get("reasoning_content", "")
-            state.start_thinking_block(reasoning_content)
+            # Generate IDs
+            thread_id, display_id = self._generate_ids(__metadata__.get("chat_id"), __metadata__.get("message_id"))
 
-            # Emit full message
-            await __event_emitter__(
-                {
-                    "type": "replace",
-                    "data": {
-                        "content": state.serialize_to_html(),
-                    },
-                }
-            )
-            return True
+            logger.debug(f"Processing request for {agent_class}.{agent_id}")
+            logger.debug(f"Thread ID: {thread_id}, Display ID: {display_id}")
 
-        # Handle ChunkEvent
-        if "ChunkEvent" in parent_names:
-            regular_content = event.get("content", "")
-            state.start_text_block(regular_content)
+            # Prepare authentication
+            headers = self._auth_service.prepare_headers(__user__["name"], __user__["email"])
 
-            # Emit full message
-            await __event_emitter__(
-                {
-                    "type": "replace",
-                    "data": {
-                        "content": state.serialize_to_html(),
-                    },
-                }
-            )
-            return True
+            # Convert messages
+            messages = self._message_converter.convert_to_event_format(body["messages"])
 
-        if "EmbeddingEvent" in parent_names:
-            search_query = event.get("text", "")
+            # Process files
+            files = await self._file_service.prepare_files_for_event(__files__)
 
-            await __event_emitter__(
-                {
-                    "type": "status",
-                    "data": {
-                        "action": "knowledge_search",
-                        "query": search_query,
-                        "done": True,
-                        "error": False,
-                    },
-                }
-            )
-            return True
+            # Build event payload
+            event_payload: dict[str, Any] = {"messages": messages}
+            if files:
+                event_payload["files"] = files
+                logger.debug(f"Attached {len(files)} file(s) to UserMessageEvent")
 
-        if "RetrieverEvent" in parent_names:
-            nodes = event.get("nodes", [])
-
-            if nodes:
-                # Emit each node as a separate source event
-                for node in nodes:
-                    # Prepare the source data structure
-                    source_data = {
-                        "source": {
-                            "name": node.get("document_title", node.get("source", "Unknown Source")),
-                            "id": node.get("id", ""),
-                            # Add URL if reference_url exists
-                            **(
-                                {"url": node.get("metadata", {}).get("reference_url")}
-                                if node.get("metadata", {}).get("reference_url")
-                                else {}
-                            ),
-                        },
-                        "document": [node.get("content", "")],
-                        "metadata": [
-                            {
-                                "source": node.get("source", ""),
-                                "document_title": node.get("document_title", ""),
-                                "namespace": node.get("namespace", ""),
-                                "language": node.get("language", ""),
-                                "document_id": node.get("document_id", ""),
-                                "reference_url": node.get("metadata", {}).get("reference_url", ""),
-                                "created_at": node.get("created_at", ""),
-                                # Add file-related metadata if available
-                                "name": node.get("source", ""),  # File name for display
-                                # Page number if available (subtract 1 since frontend adds 1)
-                                **({"page": node.get("index", 0)} if node.get("index") is not None else {}),
-                            }
-                        ],
-                        # Add distance/score for relevance display
-                        **({"distances": [node.get("score", 0.0)]} if "score" in node else {}),
-                    }
-
-                    # Emit as a source event
-                    await __event_emitter__(
-                        {"type": "source", "data": source_data}  # This gets handled by chatEventHandler
-                    )
-
-                # Emit status to show retrieval completion
-                display_description = event.get("display_description", {})
-                description = display_description.get("en", f"Found {len(nodes)} relevant documents")
-
-                await __event_emitter__(
-                    {
-                        "type": "status",
-                        "data": {
-                            "action": None,
-                            "description": description,
-                            "done": True,
-                        },
-                    }
-                )
-
-            return True
-
-        # Handle ToolEvent - Display tool usage
-        if "ToolEvent" in parent_names:
-            tool_name = event.get("name", "Unknown Tool")
-            tool_description = event.get("description", "")
-            parameters = event.get("parameters", {})
-            tool_id = event.get("event_id")
-
-            # Emit status event to show tool is being called
+            # Emit initial status
             await __event_emitter__(
                 {
                     "type": "status",
                     "data": {
                         "action": None,
-                        "description": f"{tool_description}: {tool_name}",
+                        "description": f"Connecting to agent {agent_class}.{agent_id}...",
                         "done": False,
                     },
                 }
             )
 
-            # Start a tool block
-            state.start_tool_block(tool_id=tool_id, tool_name=tool_name, tool_params=parameters)
+            # Create state manager for this stream
+            state_manager = StreamingStateManager()
+            stream_start_callback = lambda: self._set_ui_context(thread_id, display_id, __event_call__)
 
-            # Emit the updated content
-            await __event_emitter__(
-                {
-                    "type": "replace",
-                    "data": {
-                        "content": state.serialize_to_html(),
-                    },
-                }
+            # Stream the conversation
+            await self._streaming_service.stream_response(
+                agent_class,
+                agent_id,
+                "UserMessageEvent",
+                event_payload,
+                headers,
+                thread_id,
+                display_id,
+                __event_emitter__,
+                __event_call__,
+                state_manager,
+                stream_start_callback,
             )
 
-            return True
-
-        if "ExceptionEvent" in parent_names:
-            # Finalize any open blocks
-            state.finalize_current_block()
-
-            message = event.get("message", "An error occurred")
-            error_content = f"\n\n> [!CAUTION]\n> {message}\n"
-
-            # Add error as text block
-            state.start_text_block(error_content)
-
+            # Emit completion status
             await __event_emitter__(
                 {
                     "type": "status",
                     "data": {
                         "action": None,
-                        "description": f"Error: {message}",
+                        "description": "Response completed",
+                        "done": True,
+                    },
+                }
+            )
+
+            logger.debug("Request processing completed")
+            return ""
+
+        except Exception as e:
+            logger.exception(f"Error in pipe: {e}")
+            await __event_emitter__(
+                {
+                    "type": "status",
+                    "data": {
+                        "action": None,
+                        "description": f"Pipeline error: {str(e)}",
                         "done": True,
                         "error": True,
                     },
                 }
             )
-            await __event_emitter__(
-                {
-                    "type": "replace",
-                    "data": {"content": state.serialize_to_html()},
-                }
-            )
-            return False
-
-        if "HumanInTheLoopRequestEvent" in parent_names:
-            question = event.get("question", "Please provide input")
-            topic = event.get("topic", {})
-
-            logger.info(f"Received HITL request: {question}")
-
-            # Get the response event name and IDs from the topic
-            response_event_name = topic.get("event_name", "HumanInTheLoopResponseEvent")
-            hitl_display_id = topic.get("display_id", "")
-
-            # Prompt user for input
-            result = await __event_call__(
-                {
-                    "type": "input",
-                    "data": {
-                        "title": "Agent Question",
-                        "message": question,
-                        "placeholder": "Enter your response...",
-                    },
-                }
-            )
-
-            user_response = result.get("value", "") if isinstance(result, dict) else str(result)
-
-            if user_response:
-                # Send the response back to the agent
-                response_payload = {"response": user_response, "request_event": event}
-
-                # Continue with the response event
-                await self._stream_agent_response(
-                    agent_class,
-                    agent_id,
-                    response_event_name,
-                    response_payload,
-                    headers,
-                    thread_id,
-                    hitl_display_id,  # Use HITL's display_id
-                    __event_emitter__,
-                    __event_call__,
-                    state,
-                )
-
-            return True  # Continue processing
-
-        if "DisplayEvent" in parent_names:
-            # Generic display event handler
-            display_description = event.get("display_description", {})
-            event_description = display_description.get("en", "Processing...")
-
-            logger.debug(f"Processing DisplayEvent: {event.get('_event_name', 'unknown')}")
-
-            await __event_emitter__(
-                {
-                    "type": "status",
-                    "data": {
-                        "action": None,
-                        "description": event_description,
-                        "done": False,
-                    },
-                }
-            )
-            return True
-
-        else:
-            logger.warning(f"No handler for event: {event.get('_event_name', 'unknown')}")
-            return True
-
-    async def pipe(
-        self,
-        body: Annotated[dict, "Request body from Open WebUI"],
-        __user__: Annotated[dict, "User information"],
-        __metadata__: Annotated[dict, "Metadata from Open WebUI"],
-        __event_emitter__: Annotated[Any, "Event emitter for streaming responses"],
-        __event_call__: Annotated[Any, "Event caller for user interactions"],
-        __files__: Annotated[Optional[list], "Files uploaded by the user"] = None,
-        **kwargs,
-    ) -> str:
-        """
-        Main entry point for the pipeline. Always streams.
-        """
-        # Extract agent info from model ID (format: pipe_id.agent_class.agent_id)
-        model_id = body["model"]
-        parts = model_id.split(".")
-
-        if len(parts) < 3:
-            logger.error(f"Invalid model ID format: {model_id}")
-            return ""
-
-        agent_class = parts[1]
-        agent_id = ".".join(parts[2:])
-
-        # Derive thread_id and display_id from Open WebUI metadata
-        chat_id = __metadata__.get("chat_id")
-        message_id = __metadata__.get("message_id")
-        thread_id = self._str_to_object_id(chat_id)
-        display_id = self._str_to_object_id(message_id)
-
-        logger.debug(f"Processing request for {agent_class}.{agent_id}")
-        logger.debug(f"Thread ID: {thread_id}, Display ID: {display_id}")
-
-        # Prepare request
-        headers = self._prepare_headers(__user__["name"], __user__["email"])
-        messages = self._convert_messages_to_event_format(body["messages"])
-
-        # Prepare files if any
-        files = await self._prepare_files_for_event(__files__)
-
-        # Build event payload
-        event_payload = {
-            "messages": messages,
-        }
-
-        # Add files if present
-        if files:
-            event_payload["files"] = files
-            logger.debug(f"Attached {len(files)} file(s) to UserMessageEvent")
-
-        code = f"""
-        window.parent.postMessage({{
-            type: 'show-traces',
-            thread_id: '{thread_id}',
-            display_id: '{display_id}',
-          }}, '{self.valves.AIHUB_BASE_URL}');
-        """
-
-        await __event_call__(
-            {
-                "type": "execute",
-                "data": {
-                    "code": code,
-                },
-            }
-        )
-
-        # Emit initial status
-        await __event_emitter__(
-            {
-                "type": "status",
-                "data": {
-                    "action": None,
-                    "description": f"Connecting to agent {agent_class}.{agent_id}...",
-                    "done": False,
-                },
-            }
-        )
-
-        # Stream UserMessageEvent to start the conversation
-        await self._stream_agent_response(
-            agent_class,
-            agent_id,
-            "UserMessageEvent",
-            event_payload,
-            headers,
-            thread_id,
-            display_id,
-            __event_emitter__,
-            __event_call__,
-            state=StreamingState(),
-        )
-
-        await __event_emitter__(
-            {
-                "type": "status",
-                "data": {
-                    "action": None,
-                    "description": "Response completed",
-                    "done": True,
-                },
-            }
-        )
-        logger.debug("Completed")
-
-        return ""
+            return f"Error: {str(e)}"

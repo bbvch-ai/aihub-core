@@ -1,6 +1,7 @@
 <template>
   <div class="flex flex-col gap-12 pt-4">
     <Panel
+      v-if="showChat"
       :header="t('event.list.chat')"
       toggleable
     >
@@ -70,11 +71,14 @@ import type {
   WsServerAgentEventReadable,
 } from '@core/sdk/client'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   events: WsServerAgentEventReadable[]
   thread: ThreadDto
   displayId?: string
-}>()
+  showChat?: boolean
+}>(), {
+  showChat: false,
+})
 
 const route = useRoute()
 const { t } = useI18n()

@@ -1,17 +1,15 @@
 """
-title: Sources
-description: Opens source-view in AI-Hub
-icon_url: data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJjdXJyZW50Q29sb3IiIGQ9Ik0xNS43NSAxM2EuNzUuNzUgMCAwIDAtLjc1LS43NUg5YS43NS43NSAwIDAgMCAwIDEuNWg2YS43NS43NSAwIDAgMCAuNzUtLjc1bTAgNGEuNzUuNzUgMCAwIDAtLjc1LS43NUg5YS43NS43NSAwIDAgMCAwIDEuNWg2YS43NS43NSAwIDAgMCAuNzUtLjc1Ii8+PHBhdGggZmlsbD0iY3VycmVudENvbG9yIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik03IDIuMjVBMi43NSAyLjc1IDAgMCAwIDQuMjUgNXYxNEEyLjc1IDIuNzUgMCAwIDAgNyAyMS43NWgxMEEyLjc1IDIuNzUgMCAwIDAgMTkuNzUgMTlWNy45NjhjMC0uMzgxLS4xMjQtLjc1MS0uMzU0LTEuMDU1bC0yLjk5OC0zLjk2OGExLjc1IDEuNzUgMCAwIDAtMS4zOTYtLjY5NXpNNS43NSA1YzAtLjY5LjU2LTEuMjUgMS4yNS0xLjI1aDcuMjV2NC4zOTdjMCAuNDE0LjMzNi43NS43NS43NWgzLjI1VjE5YzAgLjY5LS41NiAxLjI1LTEuMjUgMS4yNUg3Yy0uNjkgMC0xLjI1LS41Ni0xLjI1LTEuMjV6IiBjbGlwLXJ1bGU9ImV2ZW5vZGQiLz48L3N2Zz4=
+title: Tracing
+description: Opens tracing-view in AI-Hub
+icon_url: data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJjdXJyZW50Q29sb3IiIGQ9Ik0xOCAxNmgtLjU4bC0uODEtLjgxQTcuMDcgNy4wNyAwIDAgMCAxOCAxMWMwLTMuODctMy4xMy03LTctN2MtMS41IDAtMyAuNS00LjIxIDEuNGMtMy4wOSAyLjMyLTMuNzIgNi43MS0xLjQgOS44czYuNzEgMy43MiA5LjggMS40bC44MS44MVYxOGw1IDVsMi0yem0tNyAwYy0yLjc2IDAtNS0yLjI0LTUtNXMyLjI0LTUgNS01czUgMi4yNCA1IDVzLTIuMjQgNS01IDVNMyA2TDEgOFYxaDdMNiAzSDN6bTE4LTV2N2wtMi0yVjNoLTNsLTItMnpNNiAxOWwyIDJIMXYtN2wyIDJ2M3oiLz48L3N2Zz4=
 required_open_webui_version: 0.6.0
 """
 
-from pydantic import BaseModel, Field
-from typing import Optional, Union, Generator, Iterator, Annotated
-
-import json
 import os
-import requests
-import asyncio
+
+from pydantic import BaseModel, Field
+from typing import Optional, Annotated
+
 import hashlib
 import logging
 
@@ -19,22 +17,25 @@ from bson import ObjectId
 
 logger = logging.getLogger(__name__)
 
-def str_to_object_id(context_id: str | None) -> ObjectId:
-    if not context_id:
-        return ObjectId()
-    hashed = hashlib.md5(context_id.encode()).digest()[:12]
-    return str(ObjectId(hashed))
-
 
 class Action:
     class Valves(BaseModel):
-        AIHUB_FRONTEND_BASE_URL: Annotated[str, Field(
-            description="Base URL for accessing AI-Hub Suite Frontend.",
-        )] = "http://localhost:3000"
+        AIHUB_FRONTEND_URL: str = Field(
+            default=os.getenv("AIHUB_BASE_URL", "http://localhost:3000/"),
+            description="Base URL for the AI-Hub frontend",
+        )
 
     def __init__(self):
         self.valves = self.Valves()
-        pass
+
+    def _str_to_object_id(
+        self, context_id: Annotated[Optional[str], "Context ID to hash"]
+    ) -> Annotated[str, "ObjectId string"]:
+        """Convert a string to an ObjectId by hashing it with MD5."""
+        if not context_id:
+            return str(ObjectId())
+        hashed = hashlib.md5(context_id.encode()).digest()[:12]
+        return str(ObjectId(hashed)).lower()
 
     async def action(
         self,
@@ -43,13 +44,19 @@ class Action:
         __event_emitter__=None,
         __event_call__=None,
     ) -> dict | None:
+        chat_id = body.get("chat_id")
+        message_id = body.get("id")
+
+        thread_id = self._str_to_object_id(chat_id)
+        display_id = self._str_to_object_id(message_id)
+
         try:
             code = f"""
             window.parent.postMessage({{
                 type: 'show-sources',
-                thread_id: '{str_to_object_id(body.get("chat_id"))}',
-                display_id: '{str_to_object_id(body.get("id"))}',
-              }}, '{self.valves.AIHUB_FRONTEND_BASE_URL}');
+                thread_id: '{thread_id}',
+                display_id: '{display_id}',
+            }}, '{self.valves.AIHUB_FRONTEND_URL}');
             """
 
             await __event_call__(
