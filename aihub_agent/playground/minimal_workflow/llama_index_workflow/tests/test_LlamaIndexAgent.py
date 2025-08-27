@@ -32,7 +32,7 @@ def _():
 @when(parsers.parse('the user sends a message "{payload}"'))
 @async_test
 async def _(agent_runner: AgentTestRunner, payload: str):
-    async with agent_runner.test_run(delay_before_stop=5) as topic:
+    async with agent_runner.test_run(delay_before_stop=10) as topic:
         await agent_runner.send_event_from_topic(
             start_event=UserMessageEvent(
                 messages=[ChatMessage(content=payload, role=MessageRole.USER)],

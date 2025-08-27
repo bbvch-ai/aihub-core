@@ -46,7 +46,7 @@ class S3AnonymousFileAccessService(AbstractAnonymousFileAccessService):
             "s3",
             endpoint_url=self._s3_config.ENDPOINT,
             aws_access_key_id=self._s3_config.ACCESS_KEY,
-            aws_secret_access_key=self._s3_config.SECRET_KEY,
+            aws_secret_access_key=self._s3_config.SECRET_KEY.get_secret_value(),
             region_name=self._s3_config.REGION,
         )
 

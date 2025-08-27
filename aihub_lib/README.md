@@ -1,5 +1,5 @@
 ---
-title: "AI-Hub Library"
+title: AI-Hub Library
 index: 0
 ---
 
@@ -82,12 +82,15 @@ The library is built on these foundational principles:
 :::
 
 #### 📶 1. Event-Driven Architecture
+
 All communication happens via events, enabling loose coupling and scalability. Events are strongly typed Pydantic models with automatic registration and serialization.
 
 #### ⚙️ 2. Configuration-Driven Development
+
 Pydantic-based configuration management with environment variable integration, validation, and hierarchical inheritance.
 
 #### 🌍 3. Internationalization by Design
+
 Built-in multi-language support with YAML-based translations, dynamic locale switching, and comprehensive fallback mechanisms.
 
 ---
@@ -121,17 +124,20 @@ Before implementing any functionality, determine if it belongs in the library.
 :::
 
 #### ✅ When to Add to `aihub_lib`
+
 - **Shared Utilities**: Code used by multiple services (agent, api, process, etc.)
 - **Core Infrastructure**: Authentication, messaging, configuration management
 - **Common Patterns**: Event definitions, base classes, shared abstractions
 - **Testing Utilities**: Fixtures, mocks, and helpers used across services
 
 #### ❌ When NOT to Add to `aihub_lib`
+
 - **Service-Specific Logic**: Business logic specific to one service
 - **Implementation Details**: Concrete implementations that don't need sharing
 - **Service Dependencies**: Code that depends on specific service requirements
 
 #### 📊 Integration Assessment
+
 1. **Identify Dependencies**: What other services will use this code?
 2. **Review Existing Patterns**: Are there similar utilities already implemented?
 3. **Consider Breaking Changes**: How will changes affect existing consumers?
@@ -151,25 +157,28 @@ Follow these patterns for implementing different types of library components.
 :::
 
 **When to Create New AuthHandlers:**
+
 - Supporting a new authentication protocol (e.g., SAML, custom JWT format)
 - Integrating with a new identity provider that requires specific token handling
 - Adding multi-factor authentication or custom validation logic
 - Creating development/testing authentication bypasses
 
 **When to Create New IdentityProviders:**
+
 - Connecting to a new user directory service (Active Directory, LDAP, etc.)
 - Supporting a new user profile storage system
 - Adding custom user role resolution logic
 - Creating mock providers for testing environments
 
 1. **Create Auth Handler**: For new authentication strategies.
+
    ```python
    # auth/dependencies/MyAuthHandler/MyAuthHandler.py
    from typing import Annotated
    from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
    from aihub_lib.auth.identity.UserIdentity import UserIdentity
    from fastapi import HTTPException, Request
-   
+
    class MyAuthHandler(AuthHandler):
        async def __call__(self, request: Request) -> UserIdentity:
            """Extract and validate authentication from FastAPI Request."""
@@ -191,11 +200,12 @@ Follow these patterns for implementing different types of library components.
    ```
 
 2. **Create Identity Provider**: For new user identity sources.
+
    ```python
    # auth/identity/MyIdentityProvider/MyIdentityProvider.py
    from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
    from aihub_lib.auth.identity.UserIdentity import UserIdentity
-   
+
    class MyIdentityProvider(IdentityProvider):
        async def get_user_identity_by_oid(self, user_oid: str) -> UserIdentity:
            """Retrieve user by Object ID (primary key)."""
@@ -229,6 +239,7 @@ The AI-Hub event system is a sophisticated event-driven architecture that powers
 :::
 
 **Event Directory Structure:**
+
 ```
 aihub_lib/nats/events/
 ├── BaseEvent.py                   # Core foundational event class
@@ -254,11 +265,11 @@ aihub_lib/nats/events/
 ```
 
 ::: details Event Type Categories
-
 **1. Control Events** (`ControlEvent`)
 Control events are system-level signals that influence workflow execution. **Only ControlEvent types can drive workflow steps and control system flow.**
 
 Key characteristics:
+
 - Must inherit from `ControlEvent`
 - Can be consumed by workflow steps as input
 - Drive the progression of automated processes
@@ -268,6 +279,7 @@ Key characteristics:
 Display events are user-facing informational events for UIs and monitoring dashboards. They are purely informational and never affect control flow.
 
 Key characteristics:
+
 - Must inherit from `DisplayEvent`
 - Include internationalization support with `LocaleString`
 - Never influence workflow execution
@@ -277,6 +289,7 @@ Key characteristics:
 Base class for events that influence process control flow, extending `BaseEvent`.
 
 Key characteristics:
+
 - Foundation for work-related events
 - Used in agentic process orchestration
 - Examples: `WorkEvent`, `WorkRequestEvent`
@@ -285,6 +298,7 @@ Key characteristics:
 Events that must report to OpenInference-compatible tracing systems like Arize Phoenix.
 
 Key characteristics:
+
 - Inherit from `ControlAndDisplayEvent` (both control and display)
 - Must implement `to_semantic_convention()` method
 - Provide structured semantic attributes for observability
@@ -294,6 +308,7 @@ Key characteristics:
 Signal successful work completion by entities in agentic processes.
 
 Key characteristics:
+
 - Extend `ProcessEvent`
 - Primary drivers of agentic processes
 - Signal step completion to process dispatchers
@@ -303,6 +318,7 @@ Key characteristics:
 Delegate work to specific entities in agentic processes.
 
 Key characteristics:
+
 - Extend `ProcessEvent`
 - Request work from specific entity types
 - Variants: `AgentWorkRequestEvent`, `HumanWorkRequestEvent`, `ProgramWorkRequestEvent`
@@ -311,6 +327,7 @@ Key characteristics:
 Enable dynamic service discovery and integration.
 
 Key characteristics:
+
 - `AgentDiscoveryResponseEvent`: Details agent capabilities, configs, start/stop events
 - `ProcessDiscoveryResponseEvent`: Exposes process inputs for humans/programs/agents
 - Enable runtime service integration without manual configuration
@@ -319,13 +336,13 @@ Key characteristics:
 Support human, agent, and bot involvement in workflows.
 
 Key characteristics:
+
 - Request/response patterns that pause and resume workflows
 - Helper classes with `invoke()` methods for easy integration
 - Examples: `HumanInTheLoop`, `AgentInTheLoop`, `BotInTheLoop`
 :::
 
 ::: tip Event Architecture Principles
-
 1. **Automatic Registration**: Events auto-register when imported, enabling dynamic deserialization
 2. **Type Safety**: Strong typing with Pydantic validation and comprehensive type annotations
 3. **Separation of Concerns**: Clear distinction between control (workflow) and display (UI) events
@@ -344,6 +361,7 @@ The library uses both BDD and unit testing approaches depending on the component
 #### 📝 BDD Testing for Complex Logic
 
 1. **Create Feature Files**: Describe behavior in Gherkin syntax.
+
    ```gherkin
    # tests/features/my_component.feature
    Feature: My Component
@@ -354,22 +372,23 @@ The library uses both BDD and unit testing approaches depending on the component
    ```
 
 2. **Implement Test Steps**: Write Python implementations.
+
    ```python
    # tests/test_my_component.py
    from aihub_lib.testing.asyncio_utils.bdd import async_test
    from pytest_bdd import given, parsers, scenarios, then, when
-   
+
    scenarios("./features/my_component.feature")
-   
+
    @given("a configured component", target_fixture="component")
    def _():
        return MyComponent(config=test_config)
-   
+
    @when(parsers.parse('the component processes input "{input_data}"'))
    @async_test
    async def _(component: MyComponent, input_data: str):
        component.result = await component.process(input_data)
-   
+
    @then(parsers.parse('the output should contain "{expected}"'))
    def _(component: MyComponent, expected: str):
        assert expected in component.result
@@ -382,13 +401,13 @@ The library uses both BDD and unit testing approaches depending on the component
    # tests/unit/test_my_utility.py
    import pytest
    from aihub_lib.my_domain.MyUtility import MyUtility
-   
+
    @pytest.mark.asyncio
    async def test_my_utility_basic_functionality():
        utility = MyUtility()
        result = await utility.process("test input")
        assert result == "expected output"
-   
+
    def test_my_utility_error_handling():
        utility = MyUtility()
        with pytest.raises(ValueError):
@@ -444,6 +463,7 @@ The AI-Hub uses Pydantic's `BaseSettings` for configuration management rather th
 :::
 
 Pydantic's `BaseSettings` automatically:
+
 - Loads values from environment variables
 - Parses `.env` files when configured
 - Validates data types and constraints
@@ -479,6 +499,7 @@ In the AI-Hub, entity classes serve a dual purpose: they define the database sch
 
 **Repository Pattern via Class Methods:**
 Entity classes use `@classmethod` methods to implement repository-like functionality for data access, creation, and business operations. This approach:
+
 - Centralizes data access logic within the entity class
 - Provides a consistent interface for database operations
 - Enables complex queries and business logic encapsulation
@@ -508,6 +529,7 @@ The AI-Hub provides comprehensive internationalization (i18n) support with a **m
 :::
 
 **Key Characteristics:**
+
 - **Default Locale**: German (`de`) - used as fallback when requested locale is unavailable
 - **Supported Locales**: `["de", "en", "fr", "it"]` (whitelist enforced)
 - **Fallback Chain**: Requested locale → German (`de`) → First available locale
@@ -533,25 +555,24 @@ errors:
 
 This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_lib` scope, building upon the core AI-Hub terminology.
 
-| Term | Definition |
-| :--- | :--- |
-| **Access Checker** | Core authorization component that evaluates user permissions against resources using hierarchical wildcards (`*`, `>`, `?*`, `?>`). |
-| **Auth Handler** | Abstract base class for authentication strategies. Implementations include OAuth2, Token, OpenWebUI, and Development-only handlers. |
-| **Base Event** | Foundation class for all events in the system. Provides automatic type registration, serialization, and metadata handling. |
-| **Base Dispatcher** | Core workflow execution engine that processes events through registered handlers in a stateless, distributed manner. |
-| **Configuration Management** | Pydantic-based system for managing service configurations with environment variable integration and validation. |
-| **Event-Driven Architecture** | Core architectural pattern where all communication happens via events, enabling scalable, stateless distributed systems. |
-| **Event Store** | Persistence layer for events, providing replay capabilities and audit trails using NATS JetStream. |
-| **Hierarchical Permissions** | Permission system using dot notation (e.g., `aihub.user.agent.class.id`) with wildcard support for flexible access control. |
-| **Identity Provider** | Strategy pattern implementation for user authentication supporting multiple backends (Azure AD, Token, Development). |
-| **Internationalization (i18n)** | Multi-language support system with YAML-based translations and dynamic locale switching. |
-| **Locale Handler** | Core i18n component that manages language-specific content extraction and fallback mechanisms. |
-| **Locale String** | Multi-language string representation supporting dynamic locale resolution and default fallbacks. |
-| **NATS Integration** | Message bus integration providing event publishing, subscription, and stream management for distributed communication. |
-| **Persistence Layer** | Database abstraction layer supporting multiple storage backends (MongoDB, Cosmos, Redis) with entity management. |
-| **Resource Config** | Pydantic models for configuring AI/ML services including LLMs, embeddings, and other generative AI resources. |
-| **Topic Manager** | NATS subject/topic routing system that manages message distribution across services and workflow components. |
-| **User Identity** | Core user representation including roles, permissions, and authentication state management. |
-| **Vector Store** | Abstraction for vector database operations supporting multiple backends (Milvus, Azure AI Search) for RAG implementations. |
-| **Workflow Orchestration** | Event-driven workflow execution system enabling complex business processes through distributed state management. |
-
+| Term                            | Definition                                                                                                                          |
+| :------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------- |
+| **Access Checker**              | Core authorization component that evaluates user permissions against resources using hierarchical wildcards (`*`, `>`, `?*`, `?>`). |
+| **Auth Handler**                | Abstract base class for authentication strategies. Implementations include OAuth2, Token, OpenWebUI, and Development-only handlers. |
+| **Base Event**                  | Foundation class for all events in the system. Provides automatic type registration, serialization, and metadata handling.          |
+| **Base Dispatcher**             | Core workflow execution engine that processes events through registered handlers in a stateless, distributed manner.                |
+| **Configuration Management**    | Pydantic-based system for managing service configurations with environment variable integration and validation.                     |
+| **Event-Driven Architecture**   | Core architectural pattern where all communication happens via events, enabling scalable, stateless distributed systems.            |
+| **Event Store**                 | Persistence layer for events, providing replay capabilities and audit trails using NATS JetStream.                                  |
+| **Hierarchical Permissions**    | Permission system using dot notation (e.g., `aihub.user.agent.class.id`) with wildcard support for flexible access control.         |
+| **Identity Provider**           | Strategy pattern implementation for user authentication supporting multiple backends (Azure AD, Token, Development).                |
+| **Internationalization (i18n)** | Multi-language support system with YAML-based translations and dynamic locale switching.                                            |
+| **Locale Handler**              | Core i18n component that manages language-specific content extraction and fallback mechanisms.                                      |
+| **Locale String**               | Multi-language string representation supporting dynamic locale resolution and default fallbacks.                                    |
+| **NATS Integration**            | Message bus integration providing event publishing, subscription, and stream management for distributed communication.              |
+| **Persistence Layer**           | Database abstraction layer supporting multiple storage backends (MongoDB, Cosmos, Redis) with entity management.                    |
+| **Resource Config**             | Pydantic models for configuring AI/ML services including LLMs, embeddings, and other generative AI resources.                       |
+| **Topic Manager**               | NATS subject/topic routing system that manages message distribution across services and workflow components.                        |
+| **User Identity**               | Core user representation including roles, permissions, and authentication state management.                                         |
+| **Vector Store**                | Abstraction for vector database operations supporting multiple backends (Milvus, Azure AI Search) for RAG implementations.          |
+| **Workflow Orchestration**      | Event-driven workflow execution system enabling complex business processes through distributed state management.                    |
