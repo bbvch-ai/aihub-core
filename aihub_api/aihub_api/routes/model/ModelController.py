@@ -1,13 +1,13 @@
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Security
-
-from aihub_api.routes.model.ModelService import ModelService
-from aihub_api.routes.model.dto.ModelDTO import ModelDTO
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
+from fastapi import HTTPException, Security
+
+from aihub_api.routes.model.dto.ModelDTO import ModelDTO, ModelTypeGroupDTO
+from aihub_api.routes.model.ModelService import ModelService
 
 
 class ModelController(Controller):
@@ -30,27 +30,29 @@ class ModelController(Controller):
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
-    def status(self, route: str = "/") -> "ModelController":
+    def models(self, route: str = "") -> "ModelController":
         @self.router.get(route, tags=self.tags)
-        async def status(
-            user: Annotated[UserIdentity, Depends(self.auth)],
-        ) -> dict:
+        async def models(
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+        ) -> list[ModelTypeGroupDTO]:
             """
-            Get model service status.
+            Retrieve a list of all available models grouped by type.
             """
-            return {"status": "ok", "service": "litellm"}
+            data = await ModelService.get_grouped_model_list(user)
+            return data
 
         return self
 
-    def model_list(self, route: str = "/model_list") -> "ModelController":
+    def get_model(self, route: str = "/{model_name:path}") -> "ModelController":
         @self.router.get(route, tags=self.tags)
-        async def model_list(
+        async def get_model(
+            model_name: str,
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
-        ) -> list[ModelDTO]:
+        ) -> ModelDTO:
             """
-            Retrieve a list of all available models.
+            Retrieve a specific model by name.
             """
-            data = await ModelService.get_model_list(user)
+            data = await ModelService.get_model_by_name(user, model_name)
             return data
 
         return self

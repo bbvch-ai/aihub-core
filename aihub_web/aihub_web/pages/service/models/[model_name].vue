@@ -2,6 +2,7 @@
   <StructuralColumn
     :title="t('models.modelDetails.overview')"
     close-route="/service/models"
+    :loading="modelIsLoading"
   >
     <div class="flex flex-col gap-8">
       <Panel class="panel pt-5">
@@ -80,113 +81,12 @@
               </h4>
               <div class="grid grid-cols-3 gap-6">
                 <div
-                  v-if="model?.model_info?.cache_creation_input_token_cost"
+                  v-for="priceItem in advancedPricingItems"
+                  :key="priceItem.key"
                   class="flex flex-col items-start gap-2"
                 >
-                  <span class="font-semibold">{{ t('models.modelDetails.cacheCreationCost') }}</span>
-                  <span class="text-lg font-light">${{
-                    model.model_info.cache_creation_input_token_cost.toFixed(4)
-                  }}</span>
-                </div>
-                <div
-                  v-if="model?.model_info?.cache_read_input_token_cost"
-                  class="flex flex-col items-start gap-2"
-                >
-                  <span class="font-semibold">{{ t('models.modelDetails.cacheReadCost') }}</span>
-                  <span class="text-lg font-light">${{ model.model_info.cache_read_input_token_cost.toFixed(4) }}</span>
-                </div>
-                <div
-                  v-if="model?.model_info?.input_cost_per_token_above_128k_tokens"
-                  class="flex flex-col items-start gap-2"
-                >
-                  <span class="font-semibold">{{ t('models.modelDetails.inputCostAbove128k') }}</span>
-                  <span class="text-lg font-light">${{
-                    model.model_info.input_cost_per_token_above_128k_tokens.toFixed(4)
-                  }}</span>
-                </div>
-                <div
-                  v-if="model?.model_info?.input_cost_per_token_above_200k_tokens"
-                  class="flex flex-col items-start gap-2"
-                >
-                  <span class="font-semibold">{{ t('models.modelDetails.inputCostAbove200k') }}</span>
-                  <span class="text-lg font-light">${{
-                    model.model_info.input_cost_per_token_above_200k_tokens.toFixed(4)
-                  }}</span>
-                </div>
-                <div
-                  v-if="model?.model_info?.input_cost_per_audio_token"
-                  class="flex flex-col items-start gap-2"
-                >
-                  <span class="font-semibold">{{ t('models.modelDetails.inputAudioCost') }}</span>
-                  <span class="text-lg font-light">${{ model.model_info.input_cost_per_audio_token.toFixed(4) }}</span>
-                </div>
-                <div
-                  v-if="model?.model_info?.input_cost_per_token_batches"
-                  class="flex flex-col items-start gap-2"
-                >
-                  <span class="font-semibold">{{ t('models.modelDetails.inputBatchCost') }}</span>
-                  <span class="text-lg font-light">${{
-                    model.model_info.input_cost_per_token_batches.toFixed(4)
-                  }}</span>
-                </div>
-                <div
-                  v-if="model?.model_info?.output_cost_per_token_batches"
-                  class="flex flex-col items-start gap-2"
-                >
-                  <span class="font-semibold">{{ t('models.modelDetails.outputBatchCost') }}</span>
-                  <span class="text-lg font-light">${{
-                    model.model_info.output_cost_per_token_batches.toFixed(4)
-                  }}</span>
-                </div>
-                <div
-                  v-if="model?.model_info?.output_cost_per_audio_token"
-                  class="flex flex-col items-start gap-2"
-                >
-                  <span class="font-semibold">{{ t('models.modelDetails.outputAudioCost') }}</span>
-                  <span class="text-lg font-light">${{ model.model_info.output_cost_per_audio_token.toFixed(4) }}</span>
-                </div>
-                <div
-                  v-if="model?.model_info?.output_cost_per_reasoning_token"
-                  class="flex flex-col items-start gap-2"
-                >
-                  <span class="font-semibold">{{ t('models.modelDetails.reasoningTokenCost') }}</span>
-                  <span class="text-lg font-light">${{
-                    model.model_info.output_cost_per_reasoning_token.toFixed(4)
-                  }}</span>
-                </div>
-                <div
-                  v-if="model?.model_info?.output_cost_per_token_above_128k_tokens"
-                  class="flex flex-col items-start gap-2"
-                >
-                  <span class="font-semibold">{{ t('models.modelDetails.outputCostAbove128k') }}</span>
-                  <span class="text-lg font-light">${{
-                    model.model_info.output_cost_per_token_above_128k_tokens.toFixed(4)
-                  }}</span>
-                </div>
-                <div
-                  v-if="model?.model_info?.output_cost_per_token_above_200k_tokens"
-                  class="flex flex-col items-start gap-2"
-                >
-                  <span class="font-semibold">{{ t('models.modelDetails.outputCostAbove200k') }}</span>
-                  <span class="text-lg font-light">${{
-                    model.model_info.output_cost_per_token_above_200k_tokens.toFixed(4)
-                  }}</span>
-                </div>
-                <div
-                  v-if="model?.model_info?.output_cost_per_image"
-                  class="flex flex-col items-start gap-2"
-                >
-                  <span class="font-semibold">{{ t('models.modelDetails.imageCost') }}</span>
-                  <span class="text-lg font-light">${{ model.model_info.output_cost_per_image.toFixed(4) }}</span>
-                </div>
-                <div
-                  v-if="model?.model_info?.search_context_cost_per_query"
-                  class="flex flex-col items-start gap-2"
-                >
-                  <span class="font-semibold">{{ t('models.modelDetails.searchContextCost') }}</span>
-                  <span class="text-lg font-light">${{
-                    model.model_info.search_context_cost_per_query.toFixed(4)
-                  }}</span>
+                  <span class="font-semibold">{{ priceItem.label }}</span>
+                  <span class="text-lg font-light">${{ priceItem.value.toFixed(4) }}</span>
                 </div>
               </div>
             </div>
@@ -216,98 +116,18 @@
               </div>
             </div>
 
-            <div class="mb-6">
+            <div
+              v-if="hasCapabilities"
+              class="mb-6"
+            >
               <h4 class="mb-4 text-base font-semibold">
                 {{ t('models.modelDetails.capabilities') }}
               </h4>
               <div class="flex flex-wrap gap-2">
                 <Badge
-                  v-if="model?.model_info?.supports_system_messages !== null"
-                  :value="t('models.modelDetails.supportsSystemMessages')"
-                  severity="secondary"
-                  class="text-sm"
-                />
-                <Badge
-                  v-if="model?.model_info?.supports_response_schema !== null"
-                  :value="t('models.modelDetails.supportsResponseSchema')"
-                  severity="secondary"
-                  class="text-sm"
-                />
-                <Badge
-                  v-if="model?.model_info?.supports_vision !== null"
-                  :value="t('models.modelDetails.supportsVision')"
-                  severity="secondary"
-                  class="text-sm"
-                />
-                <Badge
-                  v-if="model?.model_info?.supports_function_calling !== null"
-                  :value="t('models.modelDetails.supportsFunctionCalling')"
-                  severity="secondary"
-                  class="text-sm"
-                />
-                <Badge
-                  v-if="model?.model_info?.supports_tool_choice !== null"
-                  :value="t('models.modelDetails.supportsToolChoice')"
-                  severity="secondary"
-                  class="text-sm"
-                />
-                <Badge
-                  v-if="model?.model_info?.supports_assistant_prefill !== null"
-                  :value="t('models.modelDetails.supportsAssistantPrefill')"
-                  severity="secondary"
-                  class="text-sm"
-                />
-                <Badge
-                  v-if="model?.model_info?.supports_prompt_caching !== null"
-                  :value="t('models.modelDetails.supportsPromptCaching')"
-                  severity="secondary"
-                  class="text-sm"
-                />
-                <Badge
-                  v-if="model?.model_info?.supports_audio_input !== null"
-                  :value="t('models.modelDetails.supportsAudioInput')"
-                  severity="secondary"
-                  class="text-sm"
-                />
-                <Badge
-                  v-if="model?.model_info?.supports_audio_output !== null"
-                  :value="t('models.modelDetails.supportsAudioOutput')"
-                  severity="secondary"
-                  class="text-sm"
-                />
-                <Badge
-                  v-if="model?.model_info?.supports_pdf_input !== null"
-                  :value="t('models.modelDetails.supportsPdfInput')"
-                  severity="secondary"
-                  class="text-sm"
-                />
-                <Badge
-                  v-if="model?.model_info?.supports_native_streaming !== null"
-                  :value="t('models.modelDetails.supportsNativeStreaming')"
-                  severity="secondary"
-                  class="text-sm"
-                />
-                <Badge
-                  v-if="model?.model_info?.supports_web_search !== null"
-                  :value="t('models.modelDetails.supportsWebSearch')"
-                  severity="secondary"
-                  class="text-sm"
-                />
-                <Badge
-                  v-if="model?.model_info?.supports_url_context !== null"
-                  :value="t('models.modelDetails.supportsUrlContext')"
-                  severity="secondary"
-                  class="text-sm"
-                />
-                <Badge
-                  v-if="model?.model_info?.supports_reasoning !== null"
-                  :value="t('models.modelDetails.supportsReasoning')"
-                  severity="secondary"
-                  class="text-sm"
-                />
-                <Badge
-                  v-if="model?.model_info?.supports_computer_use !== null"
-                  :value="t('models.modelDetails.supportsComputerUse')"
+                  v-for="capability in capabilities"
+                  :key="capability"
+                  :value="capability"
                   severity="secondary"
                   class="text-sm"
                 />
@@ -370,48 +190,119 @@
 </template>
 
 <script setup lang="ts">
-import type { ModelDTO } from '@core/sdk/client'
-
 const route = useRoute()
 const { t } = useI18n()
-const { modelTypes } = useModelsList()
 
-const props = defineProps<{
-  model: ModelDTO
-}>()
+const modelName = computed(() => decodeURIComponent(route.params?.model_name as string))
+const { model, modelIsLoading } = useSingleModel(modelName)
 
 const formatNumber = (num: number): string => {
   return new Intl.NumberFormat().format(num)
 }
 
-const model = computed(() => {
-  if (!modelTypes.value) return props.model
+const advancedPricingItems = computed(() => {
+  if (!model.value?.model_info) return []
 
-  const modelName = decodeURIComponent(route.params?.model_name as string)
+  const info = model.value.model_info
+  const items = [
+    {
+      key: 'cache_creation_input_token_cost',
+      label: t('models.modelDetails.cacheCreationCost'),
+      value: info.cache_creation_input_token_cost,
+    },
+    {
+      key: 'cache_read_input_token_cost',
+      label: t('models.modelDetails.cacheReadCost'),
+      value: info.cache_read_input_token_cost,
+    },
+    {
+      key: 'input_cost_per_token_above_128k_tokens',
+      label: t('models.modelDetails.inputCostAbove128k'),
+      value: info.input_cost_per_token_above_128k_tokens,
+    },
+    {
+      key: 'input_cost_per_token_above_200k_tokens',
+      label: t('models.modelDetails.inputCostAbove200k'),
+      value: info.input_cost_per_token_above_200k_tokens,
+    },
+    {
+      key: 'input_cost_per_audio_token',
+      label: t('models.modelDetails.inputAudioCost'),
+      value: info.input_cost_per_audio_token,
+    },
+    {
+      key: 'input_cost_per_token_batches',
+      label: t('models.modelDetails.inputBatchCost'),
+      value: info.input_cost_per_token_batches,
+    },
+    {
+      key: 'output_cost_per_token_batches',
+      label: t('models.modelDetails.outputBatchCost'),
+      value: info.output_cost_per_token_batches,
+    },
+    {
+      key: 'output_cost_per_audio_token',
+      label: t('models.modelDetails.outputAudioCost'),
+      value: info.output_cost_per_audio_token,
+    },
+    {
+      key: 'output_cost_per_reasoning_token',
+      label: t('models.modelDetails.reasoningTokenCost'),
+      value: info.output_cost_per_reasoning_token,
+    },
+    {
+      key: 'output_cost_per_token_above_128k_tokens',
+      label: t('models.modelDetails.outputCostAbove128k'),
+      value: info.output_cost_per_token_above_128k_tokens,
+    },
+    {
+      key: 'output_cost_per_token_above_200k_tokens',
+      label: t('models.modelDetails.outputCostAbove200k'),
+      value: info.output_cost_per_token_above_200k_tokens,
+    },
+    { key: 'output_cost_per_image', label: t('models.modelDetails.imageCost'), value: info.output_cost_per_image },
+    {
+      key: 'search_context_cost_per_query',
+      label: t('models.modelDetails.searchContextCost'),
+      value: info.search_context_cost_per_query,
+    },
+  ]
 
-  for (const modelType of modelTypes.value) {
-    const foundModel = modelType.models.find((m: ModelDTO) => m?.model_name === modelName)
-    if (foundModel) return foundModel
-  }
-
-  return props.model
+  return items.filter(item => item.value !== null && item.value !== undefined)
 })
 
 const hasAdvancedPricing = computed(() => {
-  if (!model.value) return false
-  return !!(model.value.model_info.cache_creation_input_token_cost
-    || model.value.model_info.cache_read_input_token_cost
-    || model.value.model_info.input_cost_per_token_above_128k_tokens
-    || model.value.model_info.input_cost_per_token_above_200k_tokens
-    || model.value.model_info.input_cost_per_audio_token
-    || model.value.model_info.input_cost_per_token_batches
-    || model.value.model_info.output_cost_per_token_batches
-    || model.value.model_info.output_cost_per_audio_token
-    || model.value.model_info.output_cost_per_reasoning_token
-    || model.value.model_info.output_cost_per_token_above_128k_tokens
-    || model.value.model_info.output_cost_per_token_above_200k_tokens
-    || model.value.model_info.output_cost_per_image
-    || model.value.model_info.search_context_cost_per_query)
+  return advancedPricingItems.value.length > 0
+})
+
+const capabilities = computed(() => {
+  const info = model.value?.model_info
+  if (!info) return []
+  const capabilityMap = {
+    supports_system_messages: t('models.modelDetails.supportsSystemMessages'),
+    supports_response_schema: t('models.modelDetails.supportsResponseSchema'),
+    supports_vision: t('models.modelDetails.supportsVision'),
+    supports_function_calling: t('models.modelDetails.supportsFunctionCalling'),
+    supports_tool_choice: t('models.modelDetails.supportsToolChoice'),
+    supports_assistant_prefill: t('models.modelDetails.supportsAssistantPrefill'),
+    supports_prompt_caching: t('models.modelDetails.supportsPromptCaching'),
+    supports_audio_input: t('models.modelDetails.supportsAudioInput'),
+    supports_audio_output: t('models.modelDetails.supportsAudioOutput'),
+    supports_pdf_input: t('models.modelDetails.supportsPdfInput'),
+    supports_native_streaming: t('models.modelDetails.supportsNativeStreaming'),
+    supports_web_search: t('models.modelDetails.supportsWebSearch'),
+    supports_url_context: t('models.modelDetails.supportsUrlContext'),
+    supports_reasoning: t('models.modelDetails.supportsReasoning'),
+    supports_computer_use: t('models.modelDetails.supportsComputerUse'),
+  }
+
+  return Object.keys(capabilityMap)
+    .filter(key => info[key] != null)
+    .map(key => capabilityMap[key])
+})
+
+const hasCapabilities = computed(() => {
+  return capabilities.value.length > 0
 })
 
 const hasRateLimits = computed(() => {

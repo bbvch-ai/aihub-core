@@ -3,9 +3,8 @@ welcome: "Welcome to bbv ai-hub"
 
 models:
   title: "Models"
-  otherModels: "Other Models"
+  error: "Error loading models"
   card:
-    error: "Error loading models"
     tokens: "Tokens"
     costPer1M: "Cost/1M"
   modelDetails:
@@ -55,7 +54,6 @@ models:
     supportsEmbeddingImageInput: "Embedding Image Input"
     supportedParams: "Supported OpenAI Parameters"
     notSpecified: "Not specified"
-    notAvailable: "Not available"
 
 languages:
   en: "English"

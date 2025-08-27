@@ -1046,6 +1046,43 @@ export const ChatCompletionSchema = {
     title: 'ChatCompletion'
 } as const;
 
+export const ChatCompletionAllowedToolChoiceParamSchema = {
+    properties: {
+        allowed_tools: {
+            '$ref': '#/components/schemas/ChatCompletionAllowedToolsParam'
+        },
+        type: {
+            type: 'string',
+            const: 'allowed_tools',
+            title: 'Type'
+        }
+    },
+    type: 'object',
+    required: ['allowed_tools', 'type'],
+    title: 'ChatCompletionAllowedToolChoiceParam'
+} as const;
+
+export const ChatCompletionAllowedToolsParamSchema = {
+    properties: {
+        mode: {
+            type: 'string',
+            enum: ['auto', 'required'],
+            title: 'Mode'
+        },
+        tools: {
+            items: {
+                additionalProperties: true,
+                type: 'object'
+            },
+            type: 'array',
+            title: 'Tools'
+        }
+    },
+    type: 'object',
+    required: ['mode', 'tools'],
+    title: 'ChatCompletionAllowedToolsParam'
+} as const;
+
 export const ChatCompletionAssistantMessageParamSchema = {
     properties: {
         role: {
@@ -1114,7 +1151,14 @@ export const ChatCompletionAssistantMessageParamSchema = {
         },
         tool_calls: {
             items: {
-                '$ref': '#/components/schemas/ChatCompletionMessageToolCallParam'
+                anyOf: [
+                    {
+                        '$ref': '#/components/schemas/ChatCompletionMessageFunctionToolCallParam'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ChatCompletionMessageCustomToolCallParam'
+                    }
+                ]
             },
             type: 'array',
             title: 'Tool Calls'
@@ -1312,6 +1356,22 @@ export const ChatCompletionFunctionMessageParamSchema = {
     title: 'ChatCompletionFunctionMessageParam'
 } as const;
 
+export const ChatCompletionFunctionToolParamSchema = {
+    properties: {
+        function: {
+            '$ref': '#/components/schemas/FunctionDefinition'
+        },
+        type: {
+            type: 'string',
+            const: 'function',
+            title: 'Type'
+        }
+    },
+    type: 'object',
+    required: ['function', 'type'],
+    title: 'ChatCompletionFunctionToolParam'
+} as const;
+
 export const ChatCompletionMessageSchema = {
     properties: {
         content: {
@@ -1379,7 +1439,14 @@ export const ChatCompletionMessageSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/ChatCompletionMessageToolCall'
+                        anyOf: [
+                            {
+                                '$ref': '#/components/schemas/ChatCompletionMessageFunctionToolCall'
+                            },
+                            {
+                                '$ref': '#/components/schemas/ChatCompletionMessageCustomToolCall'
+                            }
+                        ]
                     },
                     type: 'array'
                 },
@@ -1396,7 +1463,48 @@ export const ChatCompletionMessageSchema = {
     title: 'ChatCompletionMessage'
 } as const;
 
-export const ChatCompletionMessageToolCallSchema = {
+export const ChatCompletionMessageCustomToolCallSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        custom: {
+            '$ref': '#/components/schemas/Custom-Output'
+        },
+        type: {
+            type: 'string',
+            const: 'custom',
+            title: 'Type'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['id', 'custom', 'type'],
+    title: 'ChatCompletionMessageCustomToolCall'
+} as const;
+
+export const ChatCompletionMessageCustomToolCallParamSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        custom: {
+            '$ref': '#/components/schemas/openai__types__chat__chat_completion_message_custom_tool_call_param__Custom'
+        },
+        type: {
+            type: 'string',
+            const: 'custom',
+            title: 'Type'
+        }
+    },
+    type: 'object',
+    required: ['id', 'custom', 'type'],
+    title: 'ChatCompletionMessageCustomToolCallParam'
+} as const;
+
+export const ChatCompletionMessageFunctionToolCallSchema = {
     properties: {
         id: {
             type: 'string',
@@ -1414,17 +1522,17 @@ export const ChatCompletionMessageToolCallSchema = {
     additionalProperties: true,
     type: 'object',
     required: ['id', 'function', 'type'],
-    title: 'ChatCompletionMessageToolCall'
+    title: 'ChatCompletionMessageFunctionToolCall'
 } as const;
 
-export const ChatCompletionMessageToolCallParamSchema = {
+export const ChatCompletionMessageFunctionToolCallParamSchema = {
     properties: {
         id: {
             type: 'string',
             title: 'Id'
         },
         function: {
-            '$ref': '#/components/schemas/openai__types__chat__chat_completion_message_tool_call_param__Function'
+            '$ref': '#/components/schemas/openai__types__chat__chat_completion_message_function_tool_call_param__Function'
         },
         type: {
             type: 'string',
@@ -1434,7 +1542,23 @@ export const ChatCompletionMessageToolCallParamSchema = {
     },
     type: 'object',
     required: ['id', 'function', 'type'],
-    title: 'ChatCompletionMessageToolCallParam'
+    title: 'ChatCompletionMessageFunctionToolCallParam'
+} as const;
+
+export const ChatCompletionNamedToolChoiceCustomParamSchema = {
+    properties: {
+        custom: {
+            '$ref': '#/components/schemas/openai__types__chat__chat_completion_named_tool_choice_custom_param__Custom'
+        },
+        type: {
+            type: 'string',
+            const: 'custom',
+            title: 'Type'
+        }
+    },
+    type: 'object',
+    required: ['custom', 'type'],
+    title: 'ChatCompletionNamedToolChoiceCustomParam'
 } as const;
 
 export const ChatCompletionNamedToolChoiceParamSchema = {
@@ -1523,7 +1647,7 @@ export const ChatCompletionRequestSchema = {
                 },
                 {
                     type: 'string',
-                    enum: ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4.1-2025-04-14', 'gpt-4.1-mini-2025-04-14', 'gpt-4.1-nano-2025-04-14', 'o4-mini', 'o4-mini-2025-04-16', 'o3', 'o3-2025-04-16', 'o3-mini', 'o3-mini-2025-01-31', 'o1', 'o1-2024-12-17', 'o1-preview', 'o1-preview-2024-09-12', 'o1-mini', 'o1-mini-2024-09-12', 'gpt-4o', 'gpt-4o-2024-11-20', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-audio-preview', 'gpt-4o-audio-preview-2024-10-01', 'gpt-4o-audio-preview-2024-12-17', 'gpt-4o-audio-preview-2025-06-03', 'gpt-4o-mini-audio-preview', 'gpt-4o-mini-audio-preview-2024-12-17', 'gpt-4o-search-preview', 'gpt-4o-mini-search-preview', 'gpt-4o-search-preview-2025-03-11', 'gpt-4o-mini-search-preview-2025-03-11', 'chatgpt-4o-latest', 'codex-mini-latest', 'gpt-4o-mini', 'gpt-4o-mini-2024-07-18', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4-0125-preview', 'gpt-4-turbo-preview', 'gpt-4-1106-preview', 'gpt-4-vision-preview', 'gpt-4', 'gpt-4-0314', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-4-32k-0613', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0301', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0125', 'gpt-3.5-turbo-16k-0613']
+                    enum: ['gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'gpt-5-2025-08-07', 'gpt-5-mini-2025-08-07', 'gpt-5-nano-2025-08-07', 'gpt-5-chat-latest', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4.1-2025-04-14', 'gpt-4.1-mini-2025-04-14', 'gpt-4.1-nano-2025-04-14', 'o4-mini', 'o4-mini-2025-04-16', 'o3', 'o3-2025-04-16', 'o3-mini', 'o3-mini-2025-01-31', 'o1', 'o1-2024-12-17', 'o1-preview', 'o1-preview-2024-09-12', 'o1-mini', 'o1-mini-2024-09-12', 'gpt-4o', 'gpt-4o-2024-11-20', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-audio-preview', 'gpt-4o-audio-preview-2024-10-01', 'gpt-4o-audio-preview-2024-12-17', 'gpt-4o-audio-preview-2025-06-03', 'gpt-4o-mini-audio-preview', 'gpt-4o-mini-audio-preview-2024-12-17', 'gpt-4o-search-preview', 'gpt-4o-mini-search-preview', 'gpt-4o-search-preview-2025-03-11', 'gpt-4o-mini-search-preview-2025-03-11', 'chatgpt-4o-latest', 'codex-mini-latest', 'gpt-4o-mini', 'gpt-4o-mini-2024-07-18', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4-0125-preview', 'gpt-4-turbo-preview', 'gpt-4-1106-preview', 'gpt-4-vision-preview', 'gpt-4', 'gpt-4-0314', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-4-32k-0613', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0301', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0125', 'gpt-3.5-turbo-16k-0613']
                 }
             ],
             title: 'Model',
@@ -1715,7 +1839,7 @@ export const ChatCompletionRequestSchema = {
             anyOf: [
                 {
                     type: 'string',
-                    enum: ['low', 'medium', 'high']
+                    enum: ['minimal', 'low', 'medium', 'high']
                 },
                 {
                     type: 'null'
@@ -1819,7 +1943,13 @@ export const ChatCompletionRequestSchema = {
                     enum: ['none', 'auto', 'required']
                 },
                 {
+                    '$ref': '#/components/schemas/ChatCompletionAllowedToolChoiceParam'
+                },
+                {
                     '$ref': '#/components/schemas/ChatCompletionNamedToolChoiceParam'
+                },
+                {
+                    '$ref': '#/components/schemas/ChatCompletionNamedToolChoiceCustomParam'
                 },
                 {
                     type: 'null'
@@ -1831,7 +1961,7 @@ export const ChatCompletionRequestSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/ChatCompletionToolParam'
+                        '$ref': '#/components/schemas/ChatCompletionFunctionToolParam'
                     },
                     type: 'array'
                 },
@@ -1872,6 +2002,10 @@ export const ChatCompletionRequestSchema = {
 
 export const ChatCompletionStreamOptionsParamSchema = {
     properties: {
+        include_obfuscation: {
+            type: 'boolean',
+            title: 'Include Obfuscation'
+        },
         include_usage: {
             type: 'boolean',
             title: 'Include Usage'
@@ -1979,22 +2113,6 @@ export const ChatCompletionToolMessageParamSchema = {
     type: 'object',
     required: ['content', 'role', 'tool_call_id'],
     title: 'ChatCompletionToolMessageParam'
-} as const;
-
-export const ChatCompletionToolParamSchema = {
-    properties: {
-        function: {
-            '$ref': '#/components/schemas/FunctionDefinition'
-        },
-        type: {
-            type: 'string',
-            const: 'function',
-            title: 'Type'
-        }
-    },
-    type: 'object',
-    required: ['function', 'type'],
-    title: 'ChatCompletionToolParam'
 } as const;
 
 export const ChatCompletionUserMessageParamSchema = {
@@ -2758,6 +2876,23 @@ export const CreateTokenResponseSchema = {
     type: 'object',
     required: ['id', 'name', 'expiry_date', 'token'],
     title: 'CreateTokenResponse'
+} as const;
+
+export const Custom_OutputSchema = {
+    properties: {
+        input: {
+            type: 'string',
+            title: 'Input'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['input', 'name'],
+    title: 'Custom'
 } as const;
 
 export const DashboardDTOSchema = {
@@ -6910,10 +7045,24 @@ export const ModelDTOSchema = {
     properties: {
         model_name: {
             type: 'string',
-            title: 'Model Name'
+            title: 'Model Name',
+            description: 'The name/identifier of the model'
         },
         model_info: {
-            '$ref': '#/components/schemas/ModelInfoDTO'
+            '$ref': '#/components/schemas/ModelInfoDTO',
+            description: 'Detailed information about the model'
+        },
+        icon: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Icon',
+            description: "URL or path to the model's icon"
         }
     },
     type: 'object',
@@ -6938,7 +7087,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1755180200
+            default: 1756284290
         },
         owned_by: {
             type: 'string',
@@ -6980,7 +7129,8 @@ export const ModelInfoDTOSchema = {
     properties: {
         mode: {
             type: 'string',
-            title: 'Mode'
+            title: 'Mode',
+            description: "The mode of the model (e.g., 'chat', 'completion', 'embedding')"
         },
         max_input_tokens: {
             anyOf: [
@@ -6991,7 +7141,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Max Input Tokens'
+            title: 'Max Input Tokens',
+            description: 'Maximum number of input tokens the model can handle'
         },
         max_output_tokens: {
             anyOf: [
@@ -7002,7 +7153,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Max Output Tokens'
+            title: 'Max Output Tokens',
+            description: 'Maximum number of output tokens the model can generate'
         },
         input_cost_per_token: {
             anyOf: [
@@ -7013,7 +7165,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Input Cost Per Token'
+            title: 'Input Cost Per Token',
+            description: 'Cost per input token in USD'
         },
         output_cost_per_token: {
             anyOf: [
@@ -7024,7 +7177,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Output Cost Per Token'
+            title: 'Output Cost Per Token',
+            description: 'Cost per output token in USD'
         },
         cache_creation_input_token_cost: {
             anyOf: [
@@ -7035,7 +7189,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Cache Creation Input Token Cost'
+            title: 'Cache Creation Input Token Cost',
+            description: 'Cost for creating cache from input tokens'
         },
         cache_read_input_token_cost: {
             anyOf: [
@@ -7046,7 +7201,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Cache Read Input Token Cost'
+            title: 'Cache Read Input Token Cost',
+            description: 'Cost for reading cached input tokens'
         },
         input_cost_per_token_above_128k_tokens: {
             anyOf: [
@@ -7057,7 +7213,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Input Cost Per Token Above 128K Tokens'
+            title: 'Input Cost Per Token Above 128K Tokens',
+            description: 'Cost per input token for contexts above 128k tokens'
         },
         input_cost_per_token_above_200k_tokens: {
             anyOf: [
@@ -7068,7 +7225,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Input Cost Per Token Above 200K Tokens'
+            title: 'Input Cost Per Token Above 200K Tokens',
+            description: 'Cost per input token for contexts above 200k tokens'
         },
         input_cost_per_audio_token: {
             anyOf: [
@@ -7079,7 +7237,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Input Cost Per Audio Token'
+            title: 'Input Cost Per Audio Token',
+            description: 'Cost per audio input token'
         },
         input_cost_per_token_batches: {
             anyOf: [
@@ -7090,7 +7249,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Input Cost Per Token Batches'
+            title: 'Input Cost Per Token Batches',
+            description: 'Cost per input token when using batch API'
         },
         output_cost_per_token_batches: {
             anyOf: [
@@ -7101,7 +7261,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Output Cost Per Token Batches'
+            title: 'Output Cost Per Token Batches',
+            description: 'Cost per output token when using batch API'
         },
         output_cost_per_audio_token: {
             anyOf: [
@@ -7112,7 +7273,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Output Cost Per Audio Token'
+            title: 'Output Cost Per Audio Token',
+            description: 'Cost per audio output token'
         },
         output_cost_per_reasoning_token: {
             anyOf: [
@@ -7123,7 +7285,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Output Cost Per Reasoning Token'
+            title: 'Output Cost Per Reasoning Token',
+            description: 'Cost per reasoning token for models with reasoning capabilities'
         },
         output_cost_per_token_above_128k_tokens: {
             anyOf: [
@@ -7134,7 +7297,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Output Cost Per Token Above 128K Tokens'
+            title: 'Output Cost Per Token Above 128K Tokens',
+            description: 'Cost per output token for contexts above 128k tokens'
         },
         output_cost_per_token_above_200k_tokens: {
             anyOf: [
@@ -7145,7 +7309,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Output Cost Per Token Above 200K Tokens'
+            title: 'Output Cost Per Token Above 200K Tokens',
+            description: 'Cost per output token for contexts above 200k tokens'
         },
         output_cost_per_image: {
             anyOf: [
@@ -7156,7 +7321,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Output Cost Per Image'
+            title: 'Output Cost Per Image',
+            description: 'Cost per image output'
         },
         search_context_cost_per_query: {
             anyOf: [
@@ -7167,7 +7333,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Search Context Cost Per Query'
+            title: 'Search Context Cost Per Query',
+            description: 'Cost per search context query'
         },
         output_vector_size: {
             anyOf: [
@@ -7178,7 +7345,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Output Vector Size'
+            title: 'Output Vector Size',
+            description: 'Size of output vectors for embedding models'
         },
         supports_system_messages: {
             anyOf: [
@@ -7189,7 +7357,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Supports System Messages'
+            title: 'Supports System Messages',
+            description: 'Whether the model supports system messages'
         },
         supports_response_schema: {
             anyOf: [
@@ -7200,7 +7369,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Supports Response Schema'
+            title: 'Supports Response Schema',
+            description: 'Whether the model supports structured response schemas'
         },
         supports_vision: {
             anyOf: [
@@ -7211,7 +7381,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Supports Vision'
+            title: 'Supports Vision',
+            description: 'Whether the model supports vision/image input'
         },
         supports_function_calling: {
             anyOf: [
@@ -7222,7 +7393,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Supports Function Calling'
+            title: 'Supports Function Calling',
+            description: 'Whether the model supports function calling'
         },
         supports_tool_choice: {
             anyOf: [
@@ -7233,7 +7405,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Supports Tool Choice'
+            title: 'Supports Tool Choice',
+            description: 'Whether the model supports tool choice selection'
         },
         supports_assistant_prefill: {
             anyOf: [
@@ -7244,7 +7417,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Supports Assistant Prefill'
+            title: 'Supports Assistant Prefill',
+            description: 'Whether the model supports assistant message prefilling'
         },
         supports_prompt_caching: {
             anyOf: [
@@ -7255,7 +7429,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Supports Prompt Caching'
+            title: 'Supports Prompt Caching',
+            description: 'Whether the model supports prompt caching'
         },
         supports_audio_input: {
             anyOf: [
@@ -7266,7 +7441,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Supports Audio Input'
+            title: 'Supports Audio Input',
+            description: 'Whether the model supports audio input'
         },
         supports_audio_output: {
             anyOf: [
@@ -7277,7 +7453,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Supports Audio Output'
+            title: 'Supports Audio Output',
+            description: 'Whether the model supports audio output'
         },
         supports_pdf_input: {
             anyOf: [
@@ -7288,7 +7465,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Supports Pdf Input'
+            title: 'Supports Pdf Input',
+            description: 'Whether the model supports PDF input'
         },
         supports_embedding_image_input: {
             anyOf: [
@@ -7299,7 +7477,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Supports Embedding Image Input'
+            title: 'Supports Embedding Image Input',
+            description: 'Whether the model supports image input for embeddings'
         },
         supports_native_streaming: {
             anyOf: [
@@ -7310,7 +7489,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Supports Native Streaming'
+            title: 'Supports Native Streaming',
+            description: 'Whether the model supports native streaming'
         },
         supports_web_search: {
             anyOf: [
@@ -7321,7 +7501,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Supports Web Search'
+            title: 'Supports Web Search',
+            description: 'Whether the model supports web search capabilities'
         },
         supports_url_context: {
             anyOf: [
@@ -7332,7 +7513,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Supports Url Context'
+            title: 'Supports Url Context',
+            description: 'Whether the model supports URL context input'
         },
         supports_reasoning: {
             anyOf: [
@@ -7343,7 +7525,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Supports Reasoning'
+            title: 'Supports Reasoning',
+            description: 'Whether the model supports reasoning capabilities'
         },
         supports_computer_use: {
             anyOf: [
@@ -7354,7 +7537,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Supports Computer Use'
+            title: 'Supports Computer Use',
+            description: 'Whether the model supports computer use capabilities'
         },
         tpm: {
             anyOf: [
@@ -7365,7 +7549,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Tpm'
+            title: 'Tpm',
+            description: 'Tokens per minute rate limit'
         },
         rpm: {
             anyOf: [
@@ -7376,7 +7561,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Rpm'
+            title: 'Rpm',
+            description: 'Requests per minute rate limit'
         },
         supported_openai_params: {
             anyOf: [
@@ -7390,7 +7576,8 @@ export const ModelInfoDTOSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Supported Openai Params'
+            title: 'Supported Openai Params',
+            description: 'List of supported OpenAI API parameters'
         }
     },
     type: 'object',
@@ -7418,6 +7605,27 @@ export const ModelResponseSchema = {
     type: 'object',
     required: ['data'],
     title: 'ModelResponse'
+} as const;
+
+export const ModelTypeGroupDTOSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The name/type of the model group'
+        },
+        models: {
+            items: {
+                '$ref': '#/components/schemas/ModelDTO'
+            },
+            type: 'array',
+            title: 'Models',
+            description: 'List of models in this group'
+        }
+    },
+    type: 'object',
+    required: ['name', 'models'],
+    title: 'ModelTypeGroupDTO'
 } as const;
 
 export const NamespaceSchema = {
@@ -10494,7 +10702,23 @@ export const openai__types__audio__transcription_verbose__UsageSchema = {
     title: 'Usage'
 } as const;
 
-export const openai__types__chat__chat_completion_message_tool_call_param__FunctionSchema = {
+export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {
+    properties: {
+        input: {
+            type: 'string',
+            title: 'Input'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        }
+    },
+    type: 'object',
+    required: ['input', 'name'],
+    title: 'Custom'
+} as const;
+
+export const openai__types__chat__chat_completion_message_function_tool_call_param__FunctionSchema = {
     properties: {
         arguments: {
             type: 'string',
@@ -10508,6 +10732,18 @@ export const openai__types__chat__chat_completion_message_tool_call_param__Funct
     type: 'object',
     required: ['arguments', 'name'],
     title: 'Function'
+} as const;
+
+export const openai__types__chat__chat_completion_named_tool_choice_custom_param__CustomSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name'
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'Custom'
 } as const;
 
 export const openai__types__chat__chat_completion_named_tool_choice_param__FunctionSchema = {

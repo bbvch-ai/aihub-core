@@ -7,13 +7,13 @@
         class="flex items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900"
       >
         <Icon
-          :name="model.icon"
+          :name="props.model.icon"
           size="1.5em"
         />
       </div>
       <div class="flex-1">
         <h3 class="font-semibold opacity-80">
-          {{ model.model_name }}
+          {{ props.model.model_name }}
         </h3>
         <div class="mt-3 flex flex-col gap-2">
           <div class="flex items-center gap-2">
@@ -21,9 +21,9 @@
               {{ t('models.card.costPer1M') }}:
             </span>
             <span class="text-sm font-light text-surface-900 dark:text-surface-100">
-              ${{ model?.model_info?.input_cost_per_token?.toFixed(2) ?? '-' }}
+              ${{ inputCostPerToken }}
               <span class="mx-1 text-surface-500">•</span>
-              ${{ model?.model_info?.output_cost_per_token?.toFixed(2) ?? '-' }}
+              ${{ outputCostPerToken }}
             </span>
           </div>
           <div class="flex items-center gap-2">
@@ -31,7 +31,7 @@
               {{ t('models.card.tokens') }}:
             </span>
             <span class="text-sm font-light text-surface-900 dark:text-surface-100">
-              {{ formatTokenLimits(model) }}
+              {{ formatTokenLimits(props.model) }}
             </span>
           </div>
         </div>
@@ -43,7 +43,7 @@
 <script setup lang="ts">
 import type { ModelDTO } from '@core/sdk/client'
 
-defineProps<{
+const props = defineProps<{
   model: ModelDTO
 }>()
 
@@ -68,4 +68,12 @@ const formatTokenLimits = (model: ModelDTO): string => {
   }
   return '- / -'
 }
+
+const inputCostPerToken = computed(() => {
+  return props.model?.model_info?.input_cost_per_token?.toFixed(2) ?? '-'
+})
+
+const outputCostPerToken = computed(() => {
+  return props.model?.model_info?.output_cost_per_token?.toFixed(2) ?? '-'
+})
 </script>
