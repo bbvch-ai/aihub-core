@@ -709,7 +709,7 @@ services:
   # === Docling ===
   # <editor-fold desc="Docling Stack">
   docling:
-    image: ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.1.0
+    image: ghcr.io/bbvch-ai/aihub-core/docling-serve:v0.16.1
     container_name: docling-serve
     <<: *restart-policy
     environment:
@@ -815,7 +815,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
-      DOCLING_API_ENDPOINT: http://docling:5001/v1/convert/source
+      DOCLING_API_ENDPOINT: http://docling:5001/v1alpha/convert/source
       MILVUS_URL: "http://milvus-standalone"
       MILVUS_DIMENSION: "3072"
       LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
