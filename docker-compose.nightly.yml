@@ -435,7 +435,7 @@ services:
       WEB_SEARCH_CONCURRENT_REQUESTS: 6
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: True
       WEB_LOADER_ENGINE: 'playwright'
-      PLAYWRIGHT_WS_URL: 'ws://playwright:3000/ws'
+      PLAYWRIGHT_WS_URL: 'ws://playwright:3000'
       FILE_IMAGE_COMPRESSION_WIDTH: 796
       FILE_IMAGE_COMPRESSION_HEIGHT: 796
 
@@ -560,10 +560,10 @@ services:
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
   playwright:
-    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy
+    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy
     container_name: playwright-server
     <<: *restart-policy
-    command: npx playwright run-server --port 3000 --host 0.0.0.0
+    command: npx playwright@v1.49.0 run-server --port 3000 --host 0.0.0.0
     environment:
       NODE_ENV: production
     healthcheck:
