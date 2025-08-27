@@ -197,7 +197,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
 
             start_event_input_type = ModelCreationService.create_input_model_from_event_specs(start_event_specs)
 
-            # Register regular endpoint (existing)
+            # Register regular endpoint
             self.app.add_api_route(
                 path=path,
                 endpoint=self._create_endpoint(
@@ -218,7 +218,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             )
             logger.info(f"Registered endpoint: {path}")
 
-            # Register streaming endpoint (new)
+            # Register streaming endpoint
             self.app.add_api_route(
                 path=stream_path,
                 endpoint=self._create_streaming_endpoint(
