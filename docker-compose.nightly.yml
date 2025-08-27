@@ -435,7 +435,7 @@ services:
       WEB_SEARCH_CONCURRENT_REQUESTS: 6
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: True
       WEB_LOADER_ENGINE: 'playwright'
-      PLAYWRIGHT_WS_URL: 'ws://playwright:3000/ws'
+      PLAYWRIGHT_WS_URL: 'ws://playwright:3000'
       FILE_IMAGE_COMPRESSION_WIDTH: 796
       FILE_IMAGE_COMPRESSION_HEIGHT: 796
 
@@ -560,10 +560,10 @@ services:
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
   playwright:
-    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy
+    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy
     container_name: playwright-server
     <<: *restart-policy
-    command: npx playwright run-server --port 3000 --host 0.0.0.0
+    command: npx playwright@v1.49.0 run-server --port 3000 --host 0.0.0.0
     environment:
       NODE_ENV: production
     healthcheck:
@@ -801,11 +801,12 @@ services:
       S3_STORAGE_URL_SIGNING_SECRET: ${MINIO_URL_SIGNING_SECRET}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      COSMOS_DOCSTORE_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
+      MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
       DOCLING_API_ENDPOINT: http://docling:5001/v1/convert/source
       MILVUS_URL: "http://milvus-standalone"
       MILVUS_DIMENSION: "3072"
-
+      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
   # === Traefik ===
   # <editor-fold desc="Traefik">
