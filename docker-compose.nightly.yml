@@ -709,7 +709,7 @@ services:
   # === Docling ===
   # <editor-fold desc="Docling Stack">
   docling:
-    image: ghcr.io/bbvch-ai/aihub-core/docling-serve:v0.16.1
+    image: ghcr.io/docling-project/docling-serve:v0.16.1
     container_name: docling-serve
     <<: *restart-policy
     environment:
