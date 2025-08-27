@@ -4,10 +4,6 @@ from functools import reduce
 from operator import or_
 from typing import Annotated, override
 
-from bson import ObjectId
-from mongoengine import DoesNotExist
-
-from aihub_api.routes.thread.dto.ThreadAgentDTO import ThreadAgentDTO
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -19,10 +15,9 @@ from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributo
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import (
     ExceptionEvent,
-    InstanceDiscoveryRequestEvent,
-    StopEvent,
-    StartEvent,
     HumanInTheLoopResponseEvent,
+    InstanceDiscoveryRequestEvent,
+    StartEvent,
 )
 from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import (
     AgentInstanceDiscoveryResponseEvent,
@@ -33,7 +28,10 @@ from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics import AgentInstanceDiscoveryTopic
+from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
+from bson import ObjectId
 from fastapi import Body, Depends, FastAPI, HTTPException, Query, Security
+from mongoengine import DoesNotExist
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from starlette.responses import StreamingResponse
@@ -46,7 +44,6 @@ from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
 from aihub_api.services.EndpointsDiscoveryService import EndpointsDiscoveryService
 from aihub_api.services.ModelCreationService import ModelCreationService
-from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity, User, Agent
 
 logger = logging.getLogger(__name__)
 

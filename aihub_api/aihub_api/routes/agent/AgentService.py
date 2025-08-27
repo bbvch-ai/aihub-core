@@ -13,9 +13,9 @@ from aihub_lib.nats.events import (
     BaseEvent,
     DisplayEvent,
     ExceptionEvent,
-    StopEvent,
     HumanInTheLoopResponseEvent,
     StartEvent,
+    StopEvent,
 )
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentClassDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent

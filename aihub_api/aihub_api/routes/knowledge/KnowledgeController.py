@@ -8,7 +8,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
 from aihub_lib.routes.Controller import Controller
-from fastapi import HTTPException, Security, Path
+from fastapi import HTTPException, Path, Security
 from mongoengine import connect
 from pymongo import MongoClient
 
