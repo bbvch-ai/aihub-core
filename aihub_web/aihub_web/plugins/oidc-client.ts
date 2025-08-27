@@ -1,4 +1,4 @@
-import { UserManager, WebStorageStateStore, Log } from 'oidc-client-ts'
+import { UserManager, WebStorageStateStore } from 'oidc-client-ts'
 
 import { defineNuxtPlugin } from '#app'
 

@@ -953,7 +953,7 @@ class StreamingService:
         event_emitter: Annotated[EventEmitter, "Event emitter function"],
         event_caller: Annotated[EventCaller, "Event caller function"],
         state_manager: Annotated[StreamingStateManager, "State manager"],
-        stream_start_callback: Annotated[Callable, "Stream start callback"],
+        stream_start_callback: Annotated[Callable | None, "Stream start callback"] = None,
     ) -> None:
         """Stream an event and process responses"""
         endpoint_url = self.build_endpoint_url(agent_class, agent_id, event_name, thread_id, display_id)
@@ -993,13 +993,14 @@ class StreamingService:
         payload: Annotated[dict[str, Any], "Request payload"],
         headers: Annotated[dict[str, str], "Request headers"],
         context: Annotated[EventContext, "Processing context"],
-        stream_start_callback: Annotated[Callable, "Stream start callback"],
+        stream_start_callback: Annotated[Callable | None, "Stream start callback"] = None,
     ) -> None:
         """Process the SSE stream"""
         async with client.stream("POST", url, json=payload, headers=headers) as response:
             response.raise_for_status()
-            # Show trace viewer
-            await stream_start_callback()
+
+            if stream_start_callback:
+                await stream_start_callback()
 
             async for line in response.aiter_lines():
                 if not await self._process_line(line, context):

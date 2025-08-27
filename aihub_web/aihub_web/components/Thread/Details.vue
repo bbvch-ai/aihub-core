@@ -99,11 +99,11 @@ import { format } from 'date-fns'
 import type {
   DisplayStatistics,
   ThreadDto,
-  WsServerAgentEventReadable,
+  AgentEventReadable,
 } from '@core/sdk/client'
 
 const props = withDefaults(defineProps<{
-  events: WsServerAgentEventReadable[]
+  events: AgentEventReadable[]
   thread: ThreadDto
   displayId?: string
   showChat?: boolean

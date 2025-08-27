@@ -13,10 +13,10 @@
 </template>
 
 <script setup lang="ts">
-import type { RetrieverEvent, ThreadDto, WsServerAgentEventReadable } from '@core/sdk/client'
+import type { RetrieverEvent, ThreadDto, AgentEventReadable } from '@core/sdk/client'
 
 defineProps<{
-  event: WsServerAgentEventReadable & { event: RetrieverEvent }
+  event: AgentEventReadable & { event: RetrieverEvent }
   thread: ThreadDto
 }>()
 </script>
