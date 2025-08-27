@@ -715,6 +715,13 @@ services:
     environment:
       DOCLING_SERVE_ENABLE_UI: false
       DOCLING_SERVE_MAX_SYNC_WAIT: 120
+      DOCLING_SERVE_ARTIFACTS_PATH: /app/models
+    command: >
+      sh -c "
+        mkdir -p /app/models &&
+        docling-tools models download --output-dir /app/models layout tableformer code_formula easyocr &&
+        docling-serve run --host 0.0.0.0 --port 5001
+      "
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
     logging: *default-logging
