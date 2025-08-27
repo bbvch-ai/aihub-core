@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "aihub-integrations"
+name = "aihub-integration"
 version = "v0.1.0"
-description = "aihub integrations"
+description = "aihub integration"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
     "Marius Högger <marius.hoegger@bbv.ch>",
