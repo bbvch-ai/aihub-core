@@ -591,6 +591,8 @@ class TestSchemaValidation:
             network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
             agent_config_specs=AgentConfigSpecs.from_agent_config_class(AgentConfig),
             default_agent_config=agent_config,
+            hitl_request_events=[],
+            hitl_response_events=[],
         )
 
         # Serialize the event

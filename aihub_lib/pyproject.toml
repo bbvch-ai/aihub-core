@@ -1,11 +1,13 @@
 [tool.poetry]
 name = "aihub_lib"
-version = "v0.240.2"
+version = "v0.241.0"
 description = ""
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
     "Marius Högger <marius.hoegger@bbv.ch>",
     "Michèle Fundneider <michele.fundneider@bbv.ch>",
+    "Thomas Mannhart <thomas.mannhart@bbv.ch>",
+    "Noah Hermann <noah.hermann@bbv.ch>",
 ]
 license = "Proprietary"
 readme = "README.md"

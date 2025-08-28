@@ -24,9 +24,3 @@ class ChunkEvent(DisplayEvent):
 
     content: Annotated[str, Field(description="The actual chunk of text or data produced at this stage.")] = ""
     model_name: Annotated[str, Field(description="The name of the AI model generating the chunks.")] = "aihub"
-    reasoning_content: Annotated[
-        str | None,
-        Field(
-            description="The textual representation of the agent’s internal reasoning at a particular point in time."
-        ),
-    ] = None

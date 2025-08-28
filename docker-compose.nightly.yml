@@ -76,7 +76,7 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_DEFAULT_BUCKETS: "open-webui,a-bucket"
     volumes:
-      - ${VOLUME_ROOT:-./local-volumes}/minio_data:/minio_data
+      - ${VOLUME_ROOT:-./.docker-volumes}/minio-data:/minio-data
       - ./configs/minio/minio-entrypoint.sh:/usr/local/bin/minio-entrypoint.sh:ro
     entrypoint: [ "/bin/sh", "/usr/local/bin/minio-entrypoint.sh" ]
     healthcheck:
@@ -104,7 +104,7 @@ services:
       ETCD_QUOTA_BACKEND_BYTES: 4294967296
       ETCD_SNAPSHOT_COUNT: 50000
     volumes:
-      - ${VOLUME_ROOT:-./local-volumes}/etcd-data:/etcd
+      - ${VOLUME_ROOT:-./.docker-volumes}/etcd-data:/etcd
     command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     healthcheck:
       test: ["CMD", "etcdctl", "endpoint", "health"]
@@ -123,7 +123,7 @@ services:
       MINIO_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
       MINIO_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
     volumes:
-      - ${VOLUME_ROOT:-./local-volumes}/milvus-data:/var/lib/milvus
+      - ${VOLUME_ROOT:-./.docker-volumes}/milvus-data:/var/lib/milvus
       - ./configs/milvus/milvus.nightly.yaml:/milvus/configs/milvus.yaml
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
@@ -155,7 +155,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_MULTIPLE_DATABASES: openwebui,phoenix,dagster,litellm
     volumes:
-      - ${VOLUME_ROOT:-./local-volumes}/postgres-data:/var/lib/postgresql/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/postgres-data:/var/lib/postgresql/data
       - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
@@ -187,7 +187,7 @@ services:
     command: -c /etc/nats/nats.conf
     volumes:
       - ./configs/nats/nats.nightly.conf:/etc/nats/nats.conf
-      - ${VOLUME_ROOT:-./local-volumes}/nats-data:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/nats-data:/data
     logging: *default-logging
 
   redis:
@@ -196,7 +196,7 @@ services:
     <<: *restart-policy
     command: "redis-server --save 30 1 --loglevel warning"
     volumes:
-      - ${VOLUME_ROOT:-./local-volumes}/redis-data:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/redis-data:/data
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       start_period: 5s
@@ -215,7 +215,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
     volumes:
-      - ${VOLUME_ROOT:-./local-volumes}/mongo-data:/data/db
+      - ${VOLUME_ROOT:-./.docker-volumes}/mongo-data:/data/db
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
     logging: *default-logging
@@ -294,7 +294,7 @@ services:
       docling:
         condition: service_healthy
     volumes:
-      - ${VOLUME_ROOT:-./local-volumes}/open-webui:/app/backend/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
     environment:
       WEBUI_NAME: "Swiss AI-Hub"
       WEBUI_URL: "https://openwebui.${DOMAIN}"
@@ -554,7 +554,7 @@ services:
     container_name: jupyter-lab
     <<: *restart-policy
     volumes:
-      - ${VOLUME_ROOT:-./local-volumes}/llama-data:/home/jovyan/work
+      - ${VOLUME_ROOT:-./.docker-volumes}/llama-data:/home/jovyan/work
     environment:
       JUPYTER_ENABLE_LAB: yes
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
@@ -622,7 +622,7 @@ services:
       - -w
       - /dagster_home/workspace.yaml
     volumes:
-      - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/dagster_home
+      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
       - ./configs/dagster/dagster.nightly.yaml:/dagster_home/dagster.yaml:ro
@@ -642,7 +642,7 @@ services:
       - dagster-daemon
       - run
     volumes:
-      - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/dagster_home
+      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
       - ./configs/dagster/dagster.nightly.yaml:/dagster_home/dagster.yaml:ro
@@ -813,7 +813,7 @@ services:
     container_name: default-rag-pipeline
     restart: always
     volumes:
-      - ${VOLUME_ROOT:-./local-volumes}/dagster-data:/dagster_home
+      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home

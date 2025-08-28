@@ -13,7 +13,7 @@ from aihub_lib.nats.topics import Topic
 logger = logging.getLogger(__name__)
 
 
-class JSSubscriber(AbstractSubscriber):
+class JSSubscriber(AbstractSubscriber[TEvent]):
     """
     A subscriber that leverages NATS JetStream for consuming events from persistent streams.
     It ensures the stream is present (creating it if necessary), subscribes to a specified subject,

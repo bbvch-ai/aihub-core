@@ -91,6 +91,11 @@ class AgentDispatcher(BaseDispatcher):
 
         if event.is_start_event:
             agent_config_dict: dict[str, Any] = event.agent_config or self.default_agent_config.model_dump()
+            if agent_config_dict.get("agent_class") != self.agent.__name__:
+                raise ValueError(
+                    f"Agent class '{agent_config_dict.get('agent_class')}' "
+                    f"does not match agent class '{self.agent.__name__}'"
+                )
             await run_context.set("_agent_config", agent_config_dict)
 
         if agent_config_dict is None:

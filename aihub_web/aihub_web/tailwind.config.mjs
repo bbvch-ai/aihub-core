@@ -15,6 +15,13 @@ module.exports = {
         '2xl': '1400px',
       },
     },
+    extend: {
+      colors: {
+        surface: {
+          850: 'var(--p-surface-850)',
+        },
+      },
+    },
   },
   plugins: [animate, primevue],
 }

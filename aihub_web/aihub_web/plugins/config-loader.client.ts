@@ -3,7 +3,7 @@ export default defineNuxtPlugin(async () => {
   const publicConfig = useRuntimeConfig().public
 
   // In dev, config is already loaded from .env. We just set loading to complete.
-  if (publicConfig.mode === 'development') {
+  if (publicConfig.env === 'dev') {
     isConfigLoaded.value = true
     return
   }

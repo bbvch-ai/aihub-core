@@ -7,7 +7,6 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.control.start.StartEvent import StartEvent
-from aihub_lib.nats.events.user.content import AssistantChatMessage, UserChatMessage
 from aihub_lib.nats.events.user.UserUploadedFile import UserUploadedFile
 
 
@@ -51,7 +50,7 @@ class UserMessageEvent(StartEvent):
     ] = LocaleHandler.DEFAULT_LOCALE
     user: Annotated[UserIdentity, Field(description="User who sent the message")]
     messages: Annotated[
-        list[ChatMessage | UserChatMessage | AssistantChatMessage],
+        list[ChatMessage],
         Field(
             description="A list of chat messages (user and assistant) that provide context, enabling the agent to "
             "understand what the user is asking for and what has been discussed so far.",
