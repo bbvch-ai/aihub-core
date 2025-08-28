@@ -133,7 +133,6 @@ const formatNumber = (num: number): string => {
   return new Intl.NumberFormat().format(num)
 }
 
-
 const capabilities = computed(() => {
   const info = props.model?.model_info
   if (!info) return []
@@ -159,7 +158,6 @@ const capabilities = computed(() => {
     .filter(key => info[key as keyof typeof info] != null)
     .map(key => capabilityMap[key as keyof typeof capabilityMap])
 })
-
 
 const advancedPricingItems = computed(() => {
   if (!props.model?.model_info) return []
@@ -221,7 +219,7 @@ const advancedPricingItems = computed(() => {
       label: t('models.modelDetails.outputCostAbove200k'),
       value: info.output_cost_per_token_above_200k_tokens,
     },
-    {key: 'output_cost_per_image', label: t('models.modelDetails.imageCost'), value: info.output_cost_per_image},
+    { key: 'output_cost_per_image', label: t('models.modelDetails.imageCost'), value: info.output_cost_per_image },
     {
       key: 'search_context_cost_per_query',
       label: t('models.modelDetails.searchContextCost'),

@@ -66,19 +66,19 @@
         </div>
       </Panel>
 
-      <ModelDetailsPanel :model="model"/>
+      <ModelDetailsPanel :model="model" />
     </div>
   </StructuralColumn>
 </template>
 
 <script setup lang="ts">
-import ModelDetailsPanel from "@core/components/Models/ModelDetailsPanel.vue";
+import ModelDetailsPanel from '@core/components/Models/ModelDetailsPanel.vue'
 
 const route = useRoute()
-const {t} = useI18n()
+const { t } = useI18n()
 
 const modelName = computed(() => decodeURIComponent(route.params?.model_name as string))
-const {model, modelIsLoading} = useSingleModel(modelName)
+const { model, modelIsLoading } = useSingleModel(modelName)
 
 const formatNumber = (num: number): string => {
   return new Intl.NumberFormat().format(num)

@@ -1,13 +1,13 @@
 from typing import Annotated
 
-from fastapi import Security
-
-from aihub_api.routes.model.ModelService import ModelService
-from aihub_api.routes.model.dto.ModelDTO import ModelDTO, ModelTypeGroupDTO
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
+from fastapi import Security
+
+from aihub_api.routes.model.dto.ModelDTO import ModelDTO, ModelTypeGroupDTO
+from aihub_api.routes.model.ModelService import ModelService
 
 
 class ModelController(Controller):
