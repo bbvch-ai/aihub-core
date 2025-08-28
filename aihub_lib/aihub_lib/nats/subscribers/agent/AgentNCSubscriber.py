@@ -12,7 +12,7 @@ from aihub_lib.nats.topics import AgentInstanceTopic
 from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
 
 
-class AgentNCSubscriber(NCSubscriber):
+class AgentNCSubscriber(NCSubscriber[BaseEvent]):
     @classmethod
     def for_all_agents_display_events(
         cls,

@@ -1,5 +1,7 @@
 import asyncio
+import logging
 from asyncio import sleep
+from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
@@ -7,19 +9,28 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from aihub_lib.nats.events import BaseEvent, ExceptionEvent, StartEvent, StopEvent
+from aihub_lib.nats.events import (
+    BaseEvent,
+    DisplayEvent,
+    ExceptionEvent,
+    HumanInTheLoopResponseEvent,
+    StartEvent,
+    StopEvent,
+)
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentClassDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
+from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import HumanInTheLoopRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from aihub_lib.nats.topics import AgentInstanceTopic
 from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
 from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
-from aihub_lib.routes.chat.ChatService import ChatService, JsonResources
+from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from bson import ObjectId
 from cachetools import TTLCache
 from fastapi import HTTPException
@@ -31,6 +42,8 @@ from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
 from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
+
+logger = logging.getLogger(__name__)
 
 # In-memory caches to avoid repeatedly querying NATS for agent info
 DISCOVER_AGENTS_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache the entire agent list for 60s
@@ -321,15 +334,19 @@ class AgentService:
 
     @staticmethod
     async def _send_event(
+        *,
         nc: NATS,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         user: UserIdentity,
-        start_event: BaseEvent,
+        input_event: BaseEvent,
         agent_class: str,
         agent_id: str,
         thread_id: ObjectId | None = None,
         display_id: ObjectId | None = None,
-    ) -> StopEvent | ExceptionEvent:
+        subscribe_to_thread: Annotated[
+            bool, "Receive all events in thread, not just the ones from the specified agents"
+        ] = False,
+    ) -> StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent:
         """Sends an event to a specific agent."""
         if thread_id:
             thread = ThreadEntity.get_thread_by_id(str(thread_id))
@@ -341,8 +358,8 @@ class AgentService:
             )
 
         topic_manager = AgentThreadTopicManager(
-            agent_class=agent_class,
-            agent_id=agent_id,
+            agent_class="*" if subscribe_to_thread else agent_class,
+            agent_id="*" if subscribe_to_thread else agent_id,
             thread_id=str(thread.id),
             display_id=display_id or str(ObjectId()),
             run_id="*",
@@ -350,7 +367,7 @@ class AgentService:
         external_event = ExternalAgentEvent(
             thread_id=topic_manager.thread_id,
             display_id=topic_manager.display_id,
-            event=start_event,
+            event=input_event,
         )
         resources: JsonResources = await ChatService.start_json_event_interaction(
             user=user,
@@ -368,12 +385,13 @@ class AgentService:
         return resources.stop_event
 
     @staticmethod
-    async def send_agent_start_event(
+    async def send_agent_input_event(
+        *,
         nc: NATS,
         agent_class: str,
         agent_id: str,
-        start_event_parents: list[str],
-        start_event_name: str,
+        input_event_parents: list[str],
+        input_event_name: str,
         raw_event_data: dict,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         thread_id: ObjectId | None,
@@ -381,32 +399,144 @@ class AgentService:
         user: UserIdentity,
         t: LocaleHandler,
         agent_config: AgentConfig,
-    ) -> StopEvent | ExceptionEvent:
+        expected_type: type[StartEvent] | type[HumanInTheLoopResponseEvent],
+        subscribe_to_thread: Annotated[
+            bool, "Receive all events in thread, not just the ones from the specified agents"
+        ] = False,
+    ) -> StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent:
         """
-        Sends a start event to a specific agent and waits for a response.
+        Sends an event (start or HITL response) to a specific agent and waits for a response.
         """
-        event: StartEvent = StartEvent.from_raw_data(
+        event: StartEvent | HumanInTheLoopResponseEvent = expected_type.from_raw_data(
             raw_event_data=raw_event_data,
             user=user,
-            start_event_name=start_event_name,
-            start_event_parents=start_event_parents,
+            start_event_name=input_event_name,
+            start_event_parents=input_event_parents,
             agent_config=agent_config,
             t=t,
         )
 
         return await AgentService._send_event(
-            nc,
-            external_agent_event_distributor,
-            user,
-            event,
-            agent_class,
-            agent_id,
-            thread_id,
-            display_id,
+            nc=nc,
+            external_agent_event_distributor=external_agent_event_distributor,
+            user=user,
+            input_event=event,
+            agent_class=agent_class,
+            agent_id=agent_id,
+            thread_id=thread_id,
+            display_id=display_id,
+            subscribe_to_thread=subscribe_to_thread,
         )
 
     @staticmethod
+    async def send_agent_input_event_stream(
+        *,
+        nc: NATS,
+        agent_class: str,
+        agent_id: str,
+        input_event_parents: list[str],
+        input_event_name: str,
+        raw_event_data: dict,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
+        thread_id: ObjectId | None,
+        display_id: ObjectId | None,
+        user: UserIdentity,
+        t: LocaleHandler,
+        agent_config: AgentConfig,
+        expected_type: type[StartEvent] | type[HumanInTheLoopResponseEvent],
+        subscribe_to_thread: Annotated[
+            bool, "Receive all events in thread, not just the ones from the specified agents"
+        ] = False,
+    ) -> StreamingResources:
+        """
+        Sends an event (start or HITL response) to a specific agent and returns streaming resources for SSE.
+        Yields ALL events (not just chunks) as raw events without conversion.
+        """
+        event: StartEvent | HumanInTheLoopResponseEvent = expected_type.from_raw_data(
+            raw_event_data=raw_event_data,
+            user=user,
+            start_event_name=input_event_name,
+            start_event_parents=input_event_parents,
+            agent_config=agent_config,
+            t=t,
+        )
+
+        if thread_id:
+            thread = ThreadEntity.get_thread_by_id(str(thread_id))
+        else:
+            thread = ThreadEntity.create_thread(
+                "chat",
+                users=[User(user_id=user.id)],
+                agents=[Agent(agent_class=agent_class, agent_id=agent_id)],
+            )
+
+        topic_manager = AgentThreadTopicManager(
+            agent_class="*" if subscribe_to_thread else agent_class,
+            agent_id="*" if subscribe_to_thread else agent_id,
+            thread_id=str(thread.id),
+            display_id=display_id or str(ObjectId()),
+            run_id="*",
+        )
+
+        external_event = ExternalAgentEvent(
+            thread_id=topic_manager.thread_id,
+            display_id=topic_manager.display_id,
+            event=event,
+        )
+
+        stop_signal = asyncio.Event()
+        event_queue = asyncio.Queue()
+
+        resources = StreamingResources(
+            stop_signal=stop_signal,
+            subscriber=None,
+            chunk_queue=event_queue,
+            stop_event=None,
+        )
+
+        async def event_handler(event: DisplayEvent, topic: AgentInstanceTopic):
+            """Handles ALL events and puts them in the queue without conversion"""
+            logger.debug(f"Received event for streaming: {event}")
+
+            # Put ALL events in the queue as raw events
+            await event_queue.put(event)
+
+            # Check if this is a stop event from the primary agent
+            is_primary_agent = topic.agent_class == agent_class and topic.agent_id == agent_id
+
+            if event.is_stop_event and is_primary_agent:
+                logger.debug("Received stop event. Stopping stream")
+                resources.stop_event = event
+                await subscriber.stop()
+                stop_signal.set()
+            elif event.is_exception_event:
+                logger.warning(f"Received exception event: {event}")
+                resources.stop_event = event
+                await subscriber.stop()
+                stop_signal.set()
+            elif event.is_hitl_request_event:
+                logger.debug(f"Received HITL request event: {event}")
+                resources.stop_event = event
+                await subscriber.stop()
+                stop_signal.set()
+
+        subscriber = AgentNCSubscriber.for_thread_display_events(
+            nc=nc,
+            topic_manager=topic_manager,
+            handler=event_handler,
+        )
+        resources.subscriber = subscriber
+        await subscriber.start()
+        logger.debug(f"Subscriber created for streaming subject: {subscriber.subject}")
+
+        # Trigger the agent interaction
+        await external_agent_event_distributor.distribute_event(external_event, user)
+
+        return resources
+
+    @staticmethod
     async def get_paginated_agent_threads(
+        *,
         agent_class: str,
         agent_id: str,
         t: LocaleHandler,

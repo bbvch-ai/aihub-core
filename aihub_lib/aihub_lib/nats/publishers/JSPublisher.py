@@ -9,7 +9,7 @@ from aihub_lib.nats.publishers.AbstractPublisher import AbstractPublisher, TEven
 logger = logging.getLogger(__name__)
 
 
-class JSPublisher(AbstractPublisher):
+class JSPublisher(AbstractPublisher[TEvent]):
     """
     A publisher that integrates with NATS JetStream, ensuring events are stored in streams
     for durability, replay, and at-least-once delivery semantics.

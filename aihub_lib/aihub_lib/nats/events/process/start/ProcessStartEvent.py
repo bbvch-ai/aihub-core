@@ -22,6 +22,7 @@ class ProcessStartEvent(WorkEvent):
         raw_event_data: dict[str, Any],
         human_in: HumanInSpecs,
         process_config: ProcessConfig,
+        **args,
     ) -> "ProcessStartEvent":
         json_data: dict[str, Any] = {
             "event_id": str(ObjectId()),
@@ -31,4 +32,4 @@ class ProcessStartEvent(WorkEvent):
             "_event_name": human_in.event_specs.event_name,
             "process_config": process_config.model_dump(),
         }
-        return ProcessStartEvent.deserialize_event(json_data)
+        return cls.deserialize_event(json_data)

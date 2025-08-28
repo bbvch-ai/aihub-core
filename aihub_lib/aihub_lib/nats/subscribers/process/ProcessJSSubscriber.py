@@ -11,7 +11,7 @@ from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
 from aihub_lib.nats.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
 
 
-class ProcessJSSubscriber(JSSubscriber):
+class ProcessJSSubscriber(JSSubscriber[BaseEvent]):
     @classmethod
     def for_process_class_work_events(
         cls,

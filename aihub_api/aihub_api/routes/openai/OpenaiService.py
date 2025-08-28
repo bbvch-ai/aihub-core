@@ -316,7 +316,6 @@ class OpenaiService:
                     message=ChatCompletionMessage(
                         role="assistant",
                         content=chat_content.content,
-                        reasoning_content=chat_content.reasoning_content,
                     ),
                     finish_reason="stop",
                 )
@@ -377,7 +376,6 @@ class OpenaiService:
                                 delta=ChoiceDelta(
                                     content=chunk_event.content,
                                     role="assistant",
-                                    reasoning_content=chunk_event.reasoning_content,
                                 ),
                             ),
                         ],

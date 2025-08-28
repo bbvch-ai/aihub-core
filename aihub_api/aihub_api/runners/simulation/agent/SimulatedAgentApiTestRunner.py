@@ -89,6 +89,8 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         simulated_events: list[BaseEvent] | None = None,
         start_events: list[EventSpecs] | None = None,
         stop_events: list[EventSpecs] | None = None,
+        hitl_request_events: list[EventSpecs] | None = None,
+        hitl_response_events: list[EventSpecs] | None = None,
     ):
         super().__init__()
         self.agent_class = agent_class
@@ -108,6 +110,8 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
 
         self.start_events: list[EventSpecs] | None = start_events
         self.stop_events: list[EventSpecs] | None = stop_events
+        self.hitl_request_events: list[EventSpecs] | None = hitl_request_events
+        self.hitl_response_events: list[EventSpecs] | None = hitl_response_events
 
         self.default_agent_config: AgentConfig = AgentConfig(
             agent_class=self.agent_class,
@@ -142,6 +146,8 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             is_conversational=True,
             start_events=self.start_events,
             stop_events=self.stop_events,
+            hitl_request_events=self.hitl_request_events or [],
+            hitl_response_events=self.hitl_response_events or [],
             network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
             agent_config_specs=AgentConfigSpecs.from_agent_config_class(AgentConfig),
             default_agent_config=self.default_agent_config,
@@ -197,6 +203,10 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
                 EventSpecs.from_event_class(StopEvent),
                 EventSpecs.from_event_class(LLMStopEvent),
             ]
+        if self.hitl_request_events is None:
+            self.hitl_request_events = []
+        if self.hitl_response_events is None:
+            self.hitl_response_events = []
 
         self.nc_publisher = NCPublisher(self.nc)
         self.discovery_subscriber = AgentNCSubscriber.for_agent_class_discovery_request_events(
@@ -228,6 +238,8 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
                 agent_id=self.agent_id,
                 start_events=self.start_events,
                 stop_events=self.stop_events,
+                hitl_request_events=self.hitl_request_events,
+                hitl_response_events=self.hitl_response_events,
                 config=self.default_agent_config,
             )
         else:

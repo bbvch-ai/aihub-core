@@ -30,7 +30,7 @@ class DoclingSettings(EnvironmentSettings):
         Field(description="Images should be embedded in Markdown or referenced or placeholder is used"),
     ] = "embedded"
     DO_OCR: Annotated[bool, Field(description="Whether to perform OCR")] = True
-    FORCE_OCR: Annotated[bool, Field(description="Whether to force OCR")] = True
+    FORCE_OCR: Annotated[bool, Field(description="Whether to force OCR")] = False
     OCR_ENGINE: Annotated[str, Field(description="OCR engine to use")] = "easyocr"
     PDF_BACKEND: Annotated[str, Field(description="PDF parsing backend")] = "dlparse_v4"
     TABLE_MODE: Annotated[str, Field(description="Table extraction mode, options: 'accurate', 'fast'")] = "accurate"

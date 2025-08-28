@@ -93,6 +93,12 @@ class AgentRunner:
         stop_events = self.agent_type.get_stop_events()
         stop_event_specs = [EventSpecs.from_event_class(e) for e in stop_events]
 
+        hitl_request_events = self.agent_type.get_hitl_request_events()
+        hitl_request_event_specs = [EventSpecs.from_event_class(e) for e in hitl_request_events]
+
+        hitl_response_events = self.agent_type.get_hitl_response_events()
+        hitl_response_event_specs = [EventSpecs.from_event_class(e) for e in hitl_response_events]
+
         network_graph = WorkflowVisualizer(agent=self.agent_type)
         network_graph.build_workflow_graph()
 
@@ -104,6 +110,8 @@ class AgentRunner:
             is_conversational=any([issubclass(event, UserMessageEvent) for event in start_events]),
             start_events=start_event_specs,
             stop_events=stop_event_specs,
+            hitl_request_events=hitl_request_event_specs,
+            hitl_response_events=hitl_response_event_specs,
             network_graph=network_graph.to_pydantic(),
             default_agent_config=self.default_agent_config,
         )

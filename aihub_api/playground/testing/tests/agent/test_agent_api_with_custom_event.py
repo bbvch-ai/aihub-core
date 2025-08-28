@@ -11,7 +11,6 @@ from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # 
 from aihub_lib.testing.logging.logger import enable_logging
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
-from stringcase import snakecase
 
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.agent.AgentService import AgentService
@@ -22,7 +21,7 @@ from playground.testing.tests.agent.events.TestStopEvent import TestStopEvent
 
 AGENT_CLASS = "TestAgent"
 AGENT_ID = "test_agent_1"
-TEST_START_EVENT_SNAKE = snakecase(TestStartEvent.event_name_from_class())
+TEST_START_EVENT = TestStartEvent.event_name_from_class()
 START_EVENT_SPECS = EventSpecs.from_event_class(TestStartEvent)
 STOP_EVENT_SPECS = EventSpecs.from_event_class(TestStopEvent)
 
@@ -99,7 +98,7 @@ async def test_send_event_to_agent(agent_api_client):
     start_event_input = ModelCreationService.create_input_model_from_event_class(TestStartEvent)(
         payload="Das ist ein test.",
     )
-    path = f"/agents/{AGENT_CLASS}/{AGENT_ID}/{TEST_START_EVENT_SNAKE}"
+    path = f"/agents/{AGENT_CLASS}/{AGENT_ID}/{TEST_START_EVENT}"
     response = await agent_api_client.post(
         url=path,
         content=start_event_input.model_dump_json(),

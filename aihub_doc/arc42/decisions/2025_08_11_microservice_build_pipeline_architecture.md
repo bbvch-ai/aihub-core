@@ -2,26 +2,31 @@
 
 ## Context
 
-The AI-Hub platform consists of multiple distinct components (agents, API, bot, pipelines, web) that previously shared 
-a monolithic build process. As the platform matured, the need arose for more granular build control, allowing individual 
+The AI-Hub platform consists of multiple distinct components (agents, API, bot, pipelines, web) that previously shared a
+monolithic build process. As the platform matured, the need arose for more granular build control, allowing individual
 components to be built, tested, and deployed independently while maintaining integration capabilities.
 
 The existing CI/CD pipeline was insufficient for:
+
 - Building individual microservices with different dependencies and requirements
 - Supporting multiple deployment environments (local, nightly, GPU, production)
 - Managing version coordination across components
 - Optimizing build times by only rebuilding changed components
 
-The monorepo structure needed to be preserved while enabling component-specific build optimization and deployment flexibility.
+The monorepo structure needed to be preserved while enabling component-specific build optimization and deployment
+flexibility.
 
 ## Decision Drivers
 
 - **Component Independence**: Each microservice should have its own build pipeline with appropriate dependencies
-- **Version Management**: Support for different versioning strategies (local development, nightly builds, semantic versioning)
+- **Version Management**: Support for different versioning strategies (local development, nightly builds, semantic
+  versioning)
 - **Environment Flexibility**: Build artifacts suitable for different deployment environments
 - **Parallel Processing**: Enable concurrent building of independent components
-- **Resource Optimization**: Different components have different build requirements (Node.js vs Python vs container-only)
-- **Deployment Coordination**: Maintain ability to deploy complete platform while enabling component-specific deployments
+- **Resource Optimization**: Different components have different build requirements (Node.js vs Python vs
+  container-only)
+- **Deployment Coordination**: Maintain ability to deploy complete platform while enabling component-specific
+  deployments
 
 ## Decision
 
@@ -93,10 +98,12 @@ Support building for different deployment environments:
 ## Implementation Notes
 
 This decision enables:
+
 - **Targeted Builds**: `gh workflow run build-agents.yml` to build only agent components
 - **Environment-Specific Deployment**: Different components can be built for different environments
 - **Rapid Iteration**: Developers can quickly test changes to specific components
 - **Scalable Architecture**: New components can easily be added with their own build pipelines
 - **Resource Efficiency**: Build resources are allocated based on actual component needs
 
-The architecture maintains the benefits of the monorepo (shared dependencies, coordinated releases) while providing the flexibility of component-specific build and deployment capabilities.
+The architecture maintains the benefits of the monorepo (shared dependencies, coordinated releases) while providing the
+flexibility of component-specific build and deployment capabilities.

@@ -5,13 +5,11 @@ icon_url: data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAw
 required_open_webui_version: 0.6.0
 """
 
-from pydantic import BaseModel, Field
-from typing import Optional, Union, Generator, Iterator, Annotated
-
-import json
 import os
-import requests
-import asyncio
+
+from pydantic import BaseModel, Field
+from typing import Optional, Annotated
+
 import hashlib
 import logging
 
@@ -19,22 +17,25 @@ from bson import ObjectId
 
 logger = logging.getLogger(__name__)
 
-def str_to_object_id(context_id: str | None) -> ObjectId:
-    if not context_id:
-        return ObjectId()
-    hashed = hashlib.md5(context_id.encode()).digest()[:12]
-    return str(ObjectId(hashed))
-
 
 class Action:
     class Valves(BaseModel):
-        AIHUB_FRONTEND_BASE_URL: Annotated[str, Field(
-            description="Base URL for accessing AI-Hub Suite Frontend.",
-        )] = "http://localhost:3000"
+        AIHUB_FRONTEND_URL: str = Field(
+            default=os.getenv("AIHUB_BASE_URL", "http://localhost:3000/"),
+            description="Base URL for the AI-Hub frontend",
+        )
 
     def __init__(self):
         self.valves = self.Valves()
-        pass
+
+    def _str_to_object_id(
+        self, context_id: Annotated[Optional[str], "Context ID to hash"]
+    ) -> Annotated[str, "ObjectId string"]:
+        """Convert a string to an ObjectId by hashing it with MD5."""
+        if not context_id:
+            return str(ObjectId())
+        hashed = hashlib.md5(context_id.encode()).digest()[:12]
+        return str(ObjectId(hashed)).lower()
 
     async def action(
         self,
@@ -43,13 +44,19 @@ class Action:
         __event_emitter__=None,
         __event_call__=None,
     ) -> dict | None:
+        chat_id = body.get("chat_id")
+        message_id = body.get("id")
+
+        thread_id = self._str_to_object_id(chat_id)
+        display_id = self._str_to_object_id(message_id)
+
         try:
             code = f"""
             window.parent.postMessage({{
                 type: 'show-traces',
-                thread_id: '{str_to_object_id(body.get("chat_id"))}',
-                display_id: '{str_to_object_id(body.get("id"))}',
-              }}, '{self.valves.AIHUB_FRONTEND_BASE_URL}');
+                thread_id: '{thread_id}',
+                display_id: '{display_id}',
+            }}, '{self.valves.AIHUB_FRONTEND_URL}');
             """
 
             await __event_call__(

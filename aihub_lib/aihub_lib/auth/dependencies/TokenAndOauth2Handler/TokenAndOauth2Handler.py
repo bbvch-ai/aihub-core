@@ -34,10 +34,13 @@ class TokenAndOauth2Handler(AuthHandler):
     @property
     def identity_provider(self) -> IdentityProvider:
         identity_providers = []
-        for oauth2_handler in self.oauth2_handlers:
-            identity_providers.append(oauth2_handler.identity_provider)
+
         for bearer_handler in self.bearer_handlers:
             identity_providers.append(bearer_handler.identity_provider)
+
+        for oauth2_handler in self.oauth2_handlers:
+            identity_providers.append(oauth2_handler.identity_provider)
+
         return MultiStrategyIdentityProvider(*identity_providers)
 
     async def __call__(
@@ -48,19 +51,19 @@ class TokenAndOauth2Handler(AuthHandler):
     ) -> UserIdentity:
         errors = []
 
-        for oauth2_handler in self.oauth2_handlers:
-            try:
-                return await oauth2_handler(oauth_token)
-            except Exception as e:
-                logger.warning(f"OAuth2 authentication {oauth2_handler.__class__.__name__} failed: {e}")
-                errors.append(f"OAuth2 authentication {{oauth2_handler.__class__.__name__}} failed: {str(e)}")
-
         for bearer_handler in self.bearer_handlers:
             try:
                 return await bearer_handler(request, bearer_token)
             except Exception as e:
                 logger.warning(f"Bearer authentication {bearer_handler.__class__.__name__} failed: {e}")
                 errors.append(f"Bearer authentication {bearer_handler.__class__.__name__} failed: {str(e)}")
+
+        for oauth2_handler in self.oauth2_handlers:
+            try:
+                return await oauth2_handler(oauth_token)
+            except Exception as e:
+                logger.warning(f"OAuth2 authentication {oauth2_handler.__class__.__name__} failed: {e}")
+                errors.append(f"OAuth2 authentication {{oauth2_handler.__class__.__name__}} failed: {str(e)}")
 
         # If no strategy succeeded, raise an error with all failure details.
         logger.exception("Authentication failed for both OAuth2 and Bearer: %s", errors)
@@ -109,25 +112,25 @@ class TokenAndOauth2Handler(AuthHandler):
         if SuperuserSettings().ENABLED:
             logger.info("Using superuser identity provider")
             bearer_handlers.append(
-                SuperuserAuthHandler(identity_provider=SuperuserIdentityProvider()),
-            )
-            bearer_handlers.append(
                 OpenWebuiAuthHandler(
                     identity_provider=identity_provider,
                     base_auth_handler=SuperuserAuthHandler(identity_provider=SuperuserIdentityProvider()),
                 ),
             )
+            bearer_handlers.append(
+                SuperuserAuthHandler(identity_provider=SuperuserIdentityProvider()),
+            )
 
         if config.ENABLE_API_ACCESS:
             logger.info("Using token identity provider")
-            bearer_handlers.append(
-                TokenAuthHandler(identity_provider=TokenIdentityProvider()),
-            )
             bearer_handlers.append(
                 OpenWebuiAuthHandler(
                     identity_provider=identity_provider,
                     base_auth_handler=TokenAuthHandler(identity_provider=TokenIdentityProvider()),
                 ),
+            )
+            bearer_handlers.append(
+                TokenAuthHandler(identity_provider=TokenIdentityProvider()),
             )
 
         return cls(

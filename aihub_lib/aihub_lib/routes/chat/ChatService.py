@@ -23,6 +23,7 @@ from aihub_lib.nats.events import (
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
     StopEvent,
+    ThoughtEvent,
 )
 from aihub_lib.nats.events.user import UserMessageEvent
 from aihub_lib.nats.events.user.UserUploadedFile import UserUploadedFile
@@ -52,7 +53,7 @@ class StreamingResources:
 class JsonResources:
     stop_signal: asyncio.Event
     subscriber: NCSubscriber
-    chunk_events: list[ChunkEvent]
+    chunk_events: list[ChunkEvent | ThoughtEvent]
     costs: LLMCosts
     model_name: str
     stop_event: StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent | None = (
@@ -278,7 +279,7 @@ class ChatService:
         external_agent_event_distributor: ExternalAgentEventDistributor,
     ):
         stop_signal = asyncio.Event()
-        chunk_events: list[ChunkEvent] = []
+        chunk_events: list[ChunkEvent | ThoughtEvent] = []
         costs = LLMCosts.from_zero()
         model_name = f"{agent_class}/{agent_id}"
 
@@ -331,7 +332,7 @@ class ChatService:
 
     @staticmethod
     def build_json_response_content(
-        chunk_events: list[ChunkEvent], stop_event: StopEvent | HumanInTheLoopRequestEvent | None
+        chunk_events: list[ChunkEvent | ThoughtEvent], stop_event: StopEvent | HumanInTheLoopRequestEvent | None
     ) -> ChatContent:
         """
         Construct a JSON response from collected chunk events.
@@ -339,7 +340,7 @@ class ChatService:
         sorted_chunks = sorted(chunk_events, key=lambda x: x.created_at)
         chat_content = ChatContent(content="", reasoning_content="")
         chat_content.content = "".join(chunk.content for chunk in sorted_chunks)
-        chat_content.reasoning_content = "".join(chunk.reasoning_content or "" for chunk in sorted_chunks)
+        chat_content.reasoning_content = "".join(getattr(chunk, "reasoning_content", "") for chunk in sorted_chunks)
         if stop_event.is_hitl_request_event:
             chat_content.content += stop_event.question
         return chat_content
