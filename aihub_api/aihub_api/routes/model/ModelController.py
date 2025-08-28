@@ -17,6 +17,7 @@ class ModelController(Controller):
     ### Why ModelController?
     The ModelController exposes routes for:
     - Listing all available models.
+    - Retrieving information about a specific model.
     """
 
     name = LocaleString(en="Models")
@@ -45,7 +46,7 @@ class ModelController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_model(
             model_name: str,
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.models.{model_name}.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.models.?>"))],
         ) -> ModelDTO:
             """
             Retrieve a specific model by name.
