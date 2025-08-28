@@ -76,7 +76,7 @@ type DocumentInfo = {
 }
 
 const extractBucket = (path: string): string => {
-  const match = path.match(/(?:s3:\/\/|^\/)([^\/]+)/)
+  const match = path.match(/(?:s3:\/\/|^\/)([^/]+)/) // Corrected: [^/]
   return match?.[1] ?? ''
 }
 

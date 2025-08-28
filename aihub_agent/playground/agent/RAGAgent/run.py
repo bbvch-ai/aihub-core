@@ -11,10 +11,10 @@ from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import Mil
 from aihub_lib.testing.logging.logger import enable_logging
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
-from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import RetrieveSummariesConfig
+from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentRunner import AgentRunner
 
 enable_logging(level=30)

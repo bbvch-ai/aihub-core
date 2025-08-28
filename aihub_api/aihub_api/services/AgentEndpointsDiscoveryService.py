@@ -187,109 +187,102 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         else:
             response_union_type = reduce(or_, all_output_types)
 
+        # Register start events
         for start_event_specs in start_events:
-            start_event_name = start_event_specs.event_name
-            start_event_namesnake = snakecase(start_event_name)
-            endpoint_name = f"send_{start_event_namesnake}_to_{agent_class_snake}_{agent_id_snake}"
-            path = f"{base_path}/{start_event_name}"
-            stream_endpoint_name = f"stream_{start_event_namesnake}_to_{agent_class_snake}_{agent_id_snake}"
-            stream_path = f"{base_path}/{start_event_name}/stream"
-
-            start_event_input_type = ModelCreationService.create_input_model_from_event_specs(start_event_specs)
-
-            # Register regular endpoint
-            self.app.add_api_route(
-                path=path,
-                endpoint=self._create_endpoint(
-                    input_type=start_event_input_type,
-                    response_union_type=response_union_type,
-                    start_event_parents=start_event_specs.event_parents,
-                    start_event_name=start_event_specs.event_name,
-                    agent_class=agent_class,
-                    agent_id=agent_id,
-                    agent_controller=self.controller,
-                    agent_config=config,
-                    expected_type=StartEvent,
-                ),
-                methods=["POST"],
-                name=endpoint_name,
-                tags=["Agents"],
-                response_model=response_union_type,
+            self._register_single_event_endpoints(
+                event_specs=start_event_specs,
+                base_path=base_path,
+                agent_class_snake=agent_class_snake,
+                agent_id_snake=agent_id_snake,
+                response_union_type=response_union_type,
+                agent_class=agent_class,
+                agent_id=agent_id,
+                config=config,
+                expected_type=StartEvent,
+                event_type_prefix="send",
             )
-            logger.info(f"Registered endpoint: {path}")
 
-            # Register streaming endpoint
-            self.app.add_api_route(
-                path=stream_path,
-                endpoint=self._create_streaming_endpoint(
-                    input_type=start_event_input_type,
-                    start_event_parents=start_event_specs.event_parents,
-                    start_event_name=start_event_specs.event_name,
-                    agent_class=agent_class,
-                    agent_id=agent_id,
-                    agent_controller=self.controller,
-                    agent_config=config,
-                    expected_type=StartEvent,
-                ),
-                methods=["POST"],
-                name=stream_endpoint_name,
-                tags=["Agents"],
-                response_class=StreamingResponse,
-            )
-            logger.info(f"Registered streaming endpoint: {stream_path}")
-
-        # Register endpoints for HITL response events (for human responses to HITL requests)
+        # Register HITL response events
         for hitl_response_event_specs in hitl_response_events:
-            hitl_response_event_name = hitl_response_event_specs.event_name
-            hitl_response_event_name_snake = snakecase(hitl_response_event_name)
-            endpoint_name = f"send_{hitl_response_event_name_snake}_to_{agent_class_snake}_{agent_id_snake}"
-            path = f"{base_path}/{hitl_response_event_name}"
-            stream_endpoint_name = f"stream_{hitl_response_event_name_snake}_to_{agent_class_snake}_{agent_id_snake}"
-            stream_path = f"{base_path}/{hitl_response_event_name}/stream"
-
-            hitl_response_input_type = ModelCreationService.create_input_model_from_event_specs(
-                hitl_response_event_specs
+            self._register_single_event_endpoints(
+                event_specs=hitl_response_event_specs,
+                base_path=base_path,
+                agent_class_snake=agent_class_snake,
+                agent_id_snake=agent_id_snake,
+                response_union_type=response_union_type,
+                agent_class=agent_class,
+                agent_id=agent_id,
+                config=config,
+                expected_type=HumanInTheLoopResponseEvent,
+                event_type_prefix="send",
             )
 
-            # Register regular endpoint
-            self.app.add_api_route(
-                path=path,
-                endpoint=self._create_endpoint(
-                    input_type=hitl_response_input_type,
-                    response_union_type=response_union_type,
-                    start_event_parents=hitl_response_event_specs.event_parents,
-                    start_event_name=hitl_response_event_specs.event_name,
-                    agent_class=agent_class,
-                    agent_id=agent_id,
-                    agent_controller=self.controller,
-                    agent_config=config,
-                    expected_type=HumanInTheLoopResponseEvent,
-                ),
-                methods=["POST"],
-                name=endpoint_name,
-                tags=["Agents"],
-            )
-            logger.info(f"Registered HITL response endpoint: {path}")
+    def _register_single_event_endpoints(
+        self,
+        *,
+        event_specs: EventSpecs,
+        base_path: str,
+        agent_class_snake: str,
+        agent_id_snake: str,
+        response_union_type: type[BaseModel],
+        agent_class: str,
+        agent_id: str,
+        config: AgentConfig,
+        expected_type: type[StartEvent] | type[HumanInTheLoopResponseEvent],
+        event_type_prefix: str,
+    ):
+        """Helper method to register both regular and streaming endpoints for a single event"""
+        event_name = event_specs.event_name
+        event_name_snake = snakecase(event_name)
+        endpoint_name = f"{event_type_prefix}_{event_name_snake}_to_{agent_class_snake}_{agent_id_snake}"
+        path = f"{base_path}/{event_name}"
+        stream_endpoint_name = f"stream_{event_name_snake}_to_{agent_class_snake}_{agent_id_snake}"
+        stream_path = f"{base_path}/{event_name}/stream"
 
-            # Register streaming endpoint
-            self.app.add_api_route(
-                path=stream_path,
-                endpoint=self._create_streaming_endpoint(
-                    input_type=hitl_response_input_type,
-                    start_event_parents=hitl_response_event_specs.event_parents,
-                    start_event_name=hitl_response_event_specs.event_name,
-                    agent_class=agent_class,
-                    agent_id=agent_id,
-                    agent_controller=self.controller,
-                    agent_config=config,
-                    expected_type=HumanInTheLoopResponseEvent,
-                ),
-                methods=["POST"],
-                name=stream_endpoint_name,
-                tags=["Agents"],
-                response_class=StreamingResponse,
-            )
-            logger.info(f"Registered HITL response streaming endpoint: {stream_path}")
+        input_type = ModelCreationService.create_input_model_from_event_specs(event_specs)
+
+        # Register regular endpoint
+        self.app.add_api_route(
+            path=path,
+            endpoint=self._create_endpoint(
+                input_type=input_type,
+                response_union_type=response_union_type,
+                start_event_parents=event_specs.event_parents,
+                start_event_name=event_specs.event_name,
+                agent_class=agent_class,
+                agent_id=agent_id,
+                agent_controller=self.controller,
+                agent_config=config,
+                expected_type=expected_type,
+            ),
+            methods=["POST"],
+            name=endpoint_name,
+            tags=["Agents"],
+            response_model=response_union_type if expected_type == StartEvent else None,
+        )
+
+        endpoint_type = "HITL response" if expected_type == HumanInTheLoopResponseEvent else ""
+        logger.info(f"Registered {endpoint_type} endpoint: {path}".strip())
+
+        # Register streaming endpoint
+        self.app.add_api_route(
+            path=stream_path,
+            endpoint=self._create_streaming_endpoint(
+                input_type=input_type,
+                start_event_parents=event_specs.event_parents,
+                start_event_name=event_specs.event_name,
+                agent_class=agent_class,
+                agent_id=agent_id,
+                agent_controller=self.controller,
+                agent_config=config,
+                expected_type=expected_type,
+            ),
+            methods=["POST"],
+            name=stream_endpoint_name,
+            tags=["Agents"],
+            response_class=StreamingResponse,
+        )
+        logger.info(f"Registered {endpoint_type} streaming endpoint: {stream_path}".strip())
 
     @staticmethod
     def _create_endpoint(
