@@ -54,36 +54,6 @@ model_list:
     model_info:
       mode: chat
 
-  - model_name: local/qwen3-0.6b
-    litellm_params:
-      model: openai/unsloth/Qwen3-0.6B-GGUF
-      api_base: http://llama-cpp:8182/v1
-      api_key: None
-    model_info:
-      mode: chat
-      max_input_tokens: 32768
-      supports_function_calling: true
-      max_output_tokens: 4096
-      input_cost_per_token: 0.00001
-      output_cost_per_token: 0.0002
-      custom_tokenizer:
-        identifier: Qwen/Qwen3-0.6B
-        revision: main
-        auth_token: os.environ/HUGGINGFACE_API_KEY
-
-  - model_name: local/text-embedding-gte
-    litellm_params:
-      model: openai/Alibaba-NLP/gte-base-en-v1.5
-      api_base: http://huggingface-text-embedding-inference:8183/v1
-      api_key: None
-    model_info:
-      mode: embedding
-      input_cost_per_token: 0.000000001
-      custom_tokenizer:
-        identifier: Alibaba-NLP/gte-base-en-v1.5
-        revision: main
-        auth_token: os.environ/HUGGINGFACE_API_KEY
-
 guardrails:
   - guardrail_name: "presidio-mask-guard"
     litellm_params:

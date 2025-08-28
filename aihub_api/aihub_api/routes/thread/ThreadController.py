@@ -108,7 +108,7 @@ class ThreadController(Controller):
     def get_thread(self, route: str = "/{thread_id}") -> "ThreadController":
         @self.router.get(route, tags=self.tags)
         async def get_thread(
-            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
+            thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ThreadDTO:
@@ -132,7 +132,7 @@ class ThreadController(Controller):
     def add_agent_to_thread(self, route: str = "/{thread_id}/agents") -> "ThreadController":
         @self.router.post(route, tags=self.tags)
         async def add_agent_to_thread(
-            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
+            thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
             req: AddAgentRequest,
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
@@ -165,7 +165,7 @@ class ThreadController(Controller):
     def thread_as_message_history(self, route: str = "/{thread_id}/history") -> "ThreadController":
         @self.router.get(route, tags=self.tags)
         async def thread_as_message_history(
-            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
+            thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> HistoryResponse:
@@ -185,7 +185,7 @@ class ThreadController(Controller):
     ) -> "ThreadController":
         @self.router.delete(route, tags=self.tags)
         async def remove_agent_from_thread(
-            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
+            thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
             agent_class: Annotated[str, Path(title="Agent Class")],
             agent_id: Annotated[str, Path(title="Agent ID")],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
@@ -209,7 +209,7 @@ class ThreadController(Controller):
     def add_user_to_thread(self, route: str = "/{thread_id}/users") -> "ThreadController":
         @self.router.post(route, tags=self.tags)
         async def add_user_to_thread(
-            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
+            thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
             add_user_dto: AddUserRequest,
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
@@ -242,7 +242,7 @@ class ThreadController(Controller):
     def remove_user_from_thread(self, route: str = "/{thread_id}/users/{remove_user_id}") -> "ThreadController":
         @self.router.delete(route, tags=self.tags)
         async def remove_user_from_thread(
-            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
+            thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
             remove_user_id: Annotated[str, Path(title="User ID")],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],

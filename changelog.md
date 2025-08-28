@@ -5,6 +5,94 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.241.0] - 2025-08-28 - Live Thinking Agents and Seamless Open-WebUI Streaming
+
+### Added
+
+- ✨ **Introduced Native Open-WebUI Integration**: A brand-new `aihub_integration` module enables seamless, event-driven
+  communication with Open-WebUI via Server-Side Events (SSE), providing a richer and more interactive user experience.
+- ⚡️ **Enabled Live Agent Thoughts**: The core streaming mechanism now parses `<think>` tags within LLM outputs,
+  allowing agents to stream their internal reasoning ("thoughts") in real-time alongside regular content.
+- 🦾 **Exposed Human-in-the-Loop (HITL) Events**: Agents can now declare and discover `HumanInTheLoopRequestEvent` and
+  `HumanInTheLoopResponseEvent` types, enabling interactive workflows where human input is explicitly requested.
+- 📄 **Dedicated SSE Streaming API Endpoints**: New API endpoints `/api/v1/agents/{class}/{id}/{event}/stream` are
+  introduced to support Server-Sent Events, facilitating real-time updates and interactive agent experiences for
+  external UIs like Open-WebUI.
+- 📚 **Integrated Docling for Document Processing**: Switched to a new `DoclingLoader` for robust document parsing,
+  enhancing the platform's ability to ingest and process various document formats.
+- 🔑 **Configurable S3 URL Signing Secret**: Added `S3_STORAGE_URL_SIGNING_SECRET` environment variable for enhanced
+  security when generating pre-signed URLs for S3 storage.
+- ⚙️ **New Docling Service Initialization Script**: A dedicated entrypoint script for the Docling service now automates
+  model downloading and ensures proper setup with correct permissions.
+- 📊 **Added `aihub_integration` to Core Makefile Checks**: Ensured linting, formatting, and type-checking for the new
+  `aihub_integration` module.
+- 🚀 **New Open-WebUI Actions for Tracing and Sources**: Pipeline actions `source_action.py` and `tracing_action.py` are
+  now integrated into the `aihub_integration` module, providing direct access to agent execution traces and document
+  sources from within Open-WebUI.
+
+### Changed
+
+- 🔄 **Refactored Streaming Logic for Thought Events**: The `EventDisplayer` now uses a new `StreamProcessor` and
+  `TagParser` to intelligently handle and display both regular and "thinking" content during LLM streaming.
+- ⬆️ **Updated RAG Agent Configuration**: The default RAG agent now uses `local/qwen3-small` and an improved embedding
+  model (`azure/text-embedding-3-large`), with enhanced retrieval settings (`retrieve_k` to 20, `node_types` to include
+  "summary") and a comprehensive system prompt.
+- 🚚 **Unified Docker Volume Paths**: Standardized local development/deployment volume paths from `local-volumes` to
+  `.docker-volumes` across all Docker Compose configurations, improving consistency.
+- 📦 **Upgraded Third-Party Docker Images**: Updated Open-WebUI to `v0.6.22`, Docling to `v1.3.1`, and `llama-cpp` to
+  `server-cuda-b5490` with updated model configurations.
+- 🔌 **Enhanced Open-WebUI Connection Parameters**: Added specific AI-Hub connection details (`AIHUB_BASE_URL`,
+  `AIHUB_SUPERUSER_API_KEY`, etc.) and updated database/S3 endpoints in Open-WebUI Docker configurations for better
+  integration.
+- 🛡️ **Improved Authentication Strategy Order**: The `TokenAndOauth2Handler` now prioritizes bearer token authentication
+  before OAuth2, ensuring more flexible and robust authentication flows.
+- ⏳ **Increased Default LLM Request Timeout**: The default timeout for LLM API requests has been extended from 60 to 600
+  seconds to accommodate longer processing times.
+- 🗑️ **Simplified Chat Message Structure**: `AssistantChatMessage` and `UserChatMessage` are deprecated and replaced by
+  the more generic `ChatMessage` from `llama_index.core.base.llms.types`, simplifying message handling across the
+  platform.
+- 🌐 **Improved Agent Discovery DTOs**: Agent DTOs (`AgentClassDTO`, `AgentDTO`, `AgentInstanceDTO`) now include
+  `hitl_request_events` and `hitl_response_events`, providing more complete information about agent capabilities.
+- 🎨 **Revised WebUI Styling**: Updated chat message background colors and event display headers for a more polished user
+  interface.
+- 🛠️ **Refined Docling API Integration**: The `DoclingLoader` now interacts with the Docling service using a revised API
+  endpoint and request body format for more reliable document conversions.
+- 📝 **Updated Event Display Components**: Frontend components for displaying events (`ChunkEvent`, `ThoughtEvent`,
+  `RetrieverEvent`, etc.) have been updated to align with the latest event schema changes and improved user experience.
+- 🔍 **Optimized Logging for Libraries**: Default logging level for third-party libraries is now set to `WARNING` during
+  development/testing to reduce log verbosity.
+- ♻️ **API Path Regex Syntax Fixed**: Corrected regex patterns for path and query parameters in API routes for
+  consistency and proper validation.
+
+### Removed
+
+- 🗑️ **Deprecated Open-WebUI OpenAI Proxy Pipelines**: The legacy `aihub_connection.py` and
+  `aihub_connection_with_file_sending.py` Open-WebUI pipelines, which mimicked the OpenAI API, have been removed in
+  favor of the new, native SSE integration.
+- 🧹 **Removed Redundant Chat Message Types**: Custom `AssistantChatMessage` and `UserChatMessage` definitions were
+  removed, simplifying the messaging interface by using the universal `ChatMessage` type.
+- 🗑️ **Consolidated LiteLLM Model Configurations**: The `local/qwen3-0.6b` and `local/text-embedding-gte` models have
+  been removed from LiteLLM configurations, streamlining available model options.
+- 🗑️ **Removed Reasoning Content from `ChunkEvent`**: The `reasoning_content` field has been removed from `ChunkEvent`,
+  now being explicitly handled by the `ThoughtEvent`.
+
+---
+
+## [v0.240.6] - 2025-08-26 - S3 Security Hardening and Configuration Alignment
+
+### Security
+
+- 🔑 **Enhanced Secret Key Handling:** Updated S3 resource configurations to securely access secret keys using
+  `.get_secret_value()`, reinforcing protection for sensitive credentials across S3 file access services and data lake
+  clients.
+
+### Changed
+
+- 🔄 **Standardized S3 Endpoint Configuration:** Renamed the S3 configuration parameter `ENDPOINT_URL` to `ENDPOINT` for
+  consistency across all related S3 services and resources, simplifying configuration management.
+
+---
+
 ## [v0.240.5] - 2025-08-22 - Core Infrastructure Updates and Build System Refinements
 
 ### Changed

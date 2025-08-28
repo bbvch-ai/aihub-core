@@ -118,11 +118,15 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         subject = self.topic_manager.get_agent_instance_discovery_subject_response(topic.call_id)
         start_events = [EventSpecs.from_event_class(StartEvent)]
         stop_events = [EventSpecs.from_event_class(StopEvent)]
+        hitl_request_events = []
+        hitl_response_events = []
         agent_discovery_response_event = AgentClassDiscoveryResponseEvent(
             agent_class=self.agent_class,
             is_conversational=True,
             start_events=start_events,
             stop_events=stop_events,
+            hitl_request_events=hitl_request_events,
+            hitl_response_events=hitl_response_events,
             network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
             agent_config_specs=AgentConfigSpecs.from_agent_config_class(AgentConfig),
             default_agent_config=self.default_agent_config,

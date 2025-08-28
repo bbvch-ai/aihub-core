@@ -29,6 +29,18 @@ class AgentClassDTO(BaseModel):
         list[EventSpecs],
         Field(description="A list of `EventSpecs` representing events that can stop this agent's workflow."),
     ]
+    hitl_request_events: Annotated[
+        list[EventSpecs],
+        Field(
+            description="A list of `EventSpecs` representing human-in-the-loop request events this agent can produce."
+        ),
+    ]
+    hitl_response_events: Annotated[
+        list[EventSpecs],
+        Field(
+            description="A list of `EventSpecs` representing human-in-the-loop response events this agent can accept."
+        ),
+    ]
     network_graph: Annotated[
         WorkflowGraph,
         Field(
@@ -62,6 +74,8 @@ class AgentClassDTO(BaseModel):
             is_conversational=event.is_conversational,
             start_events=event.start_events,
             stop_events=event.stop_events,
+            hitl_request_events=event.hitl_request_events,
+            hitl_response_events=event.hitl_response_events,
             network_graph=event.network_graph,
             is_online=True,
             default_agent_config=event.default_agent_config,

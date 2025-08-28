@@ -32,6 +32,8 @@ class AgentInstanceDTO(AgentClassDTO):
             is_conversational=class_dto.is_conversational,
             start_events=class_dto.start_events,
             stop_events=class_dto.stop_events,
+            hitl_request_events=class_dto.hitl_request_events,
+            hitl_response_events=class_dto.hitl_response_events,
             network_graph=class_dto.network_graph,
             is_online=class_dto.is_online,
             agent_config_specs=class_dto.agent_config_specs,
@@ -47,6 +49,8 @@ class AgentInstanceDTO(AgentClassDTO):
             agent_config_specs=self.agent_config_specs,
             start_events=self.start_events,
             stop_events=self.stop_events,
+            hitl_request_events=self.hitl_request_events,
+            hitl_response_events=self.hitl_response_events,
             network_graph=self.network_graph,
             is_conversational=self.is_conversational,
         )
@@ -59,5 +63,7 @@ class AgentInstanceDTO(AgentClassDTO):
             is_conversational=self.is_conversational,
             start_events=self.start_events,
             stop_events=self.stop_events,
+            hitl_request_events=self.hitl_request_events,
+            hitl_response_events=self.hitl_response_events,
             network_graph=self.network_graph,
         )

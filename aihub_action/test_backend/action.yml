@@ -65,8 +65,8 @@ runs:
       uses: actions/cache@v4
       with:
         path: |
-          ./local-volumes/hf-tei-data
-          ./local-volumes/llamacpp-data
+          ./.docker-volumes/hf-tei-data
+          ./.docker-volumes/llamacpp-data
         key: ${{ runner.os }}-hf-models-${{ hashFiles('docker-compose.dev.yml') }}
         restore-keys: |
           ${{ runner.os }}-hf-models-
@@ -89,10 +89,10 @@ runs:
       if: inputs.docker_compose_services != ''
       shell: bash
       run: |
-        mkdir -p ./local-volumes/hf-tei-data
-        mkdir -p ./local-volumes/llamacpp-data
-        chmod 777 ./local-volumes/hf-tei-data
-        chmod 777 ./local-volumes/llamacpp-data
+        mkdir -p ./.docker-volumes/hf-tei-data
+        mkdir -p ./.docker-volumes/llamacpp-data
+        chmod 777 ./.docker-volumes/hf-tei-data
+        chmod 777 ./.docker-volumes/llamacpp-data
 
     - name: Pre-pull Docker images (if services needed)
       if: inputs.docker_compose_services != ''

@@ -56,7 +56,7 @@ model_list:
 
   - model_name: local/qwen3-small
     litellm_params:
-      model: openai/unsloth/Qwen3-1.7B-GGUF
+      model: openai/Qwen3-4B-Instruct
       api_base: http://llama-cpp:8182/v1
       api_key: None
     model_info:
@@ -67,7 +67,7 @@ model_list:
       input_cost_per_token: 0.00001
       output_cost_per_token: 0.0002
       custom_tokenizer:
-        identifier: Qwen/Qwen3-0.6B
+        identifier: Qwen/Qwen3-4B-Instruct-2507
         revision: main
         auth_token: os.environ/HUGGINGFACE_API_KEY
 
