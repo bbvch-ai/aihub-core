@@ -72,7 +72,7 @@ class KnowledgeService:
                     document_title=filename,
                     namespace=file_namespace,
                     updated_at=file_info.get("last_modified", ""),
-                    created_at="",
+                    created_at=file_info.get("last_modified", ""),
                     inserted_at="",
                     source=document_uri,
                     is_ingested=False,
