@@ -1,12 +1,12 @@
 # License Report
 
-Generated on: 26.08.2025
+Generated on: 28.08.2025
 
 This document contains license information for all dependencies across the monorepo:
 
 - Python packages (Poetry): **1454 packages**
 - Node.js packages (pnpm): **193 packages**
-- External Docker images: **26 images**
+- External Docker images: **28 images**
 
 ### License Compatibility
 
@@ -1710,6 +1710,8 @@ This document contains license information for all dependencies across the monor
 | ✅     | traefik                   | `ghcr.io/bbvch-ai/aihub-core/traefik:v3.4.4`                                 | Apache-2.0         | Permissive license                                                  |
 | ✅     | presidio-analyzer         | `ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359`                      | MIT                | Permissive license                                                  |
 | ✅     | playwright                | `ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy`                       | Apache-2.0         | Permissive license                                                  |
+| ⚠️     | open-webui                | `ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.22`                             | BSD-3-Clause       | Permissive with required branding retention                         |
+| ✅     | docling-serve             | `ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.3.1`                           | MIT                | Permissive license                                                  |
 | ✅     | nats                      | `ghcr.io/bbvch-ai/aihub-core/nats:2.11.4`                                    | Apache-2.0         | Permissive license                                                  |
 | ✅     | docling-serve             | `ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.1.0`                           | MIT                | Permissive license                                                  |
 | ✅     | playwright                | `ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy`                       | Apache-2.0         | Permissive license                                                  |

@@ -16,19 +16,28 @@
 import { onMounted, onBeforeUnmount } from 'vue'
 
 const runtimeConfig = useRuntimeConfig()
+const route = useRoute()
 const router = useRouter()
 const localeRoute = useLocaleRoute()
 
 const handleMessage = (event: MessageEvent) => {
+  console.log('received post event', event)
   if (event.origin === runtimeConfig.public.webui.url) {
     const data = event.data
 
-    // Check if it's the overlay command
-    if (data.type === 'show-traces') {
-      router.push(localeRoute(`/service/openai/${data.thread_id as string}/tracing`))
+    if (!['show-traces', 'show-sources', 'set-context'].includes(data.type)) {
+      console.log('Unknown message type:', data.type)
+      return
     }
-    if (data.type === 'show-sources') {
-      router.push(localeRoute(`/service/openai/${data.thread_id as string}/${data.display_id as string}/sources`))
+
+    const thread_id = data.thread_id as string
+    const display_id = data.display_id as string
+
+    if (data.type === 'show-traces' || route.path.endsWith('/tracing')) {
+      router.push(localeRoute(`/service/openai/${thread_id}/${display_id}/tracing`))
+    }
+    if (data.type === 'show-sources' || route.path.endsWith('/sources')) {
+      router.push(localeRoute(`/service/openai/${thread_id}/${display_id}/sources`))
     }
   }
 }

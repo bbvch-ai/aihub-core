@@ -45,6 +45,7 @@ class StartEvent(ControlAndDisplayEvent):
         start_event_parents: list[str],
         agent_config: AgentConfig,
         t: LocaleHandler,
+        **args,
     ) -> "StartEvent":
         json_data: dict[str, Any] = {
             "event_id": str(ObjectId()),
@@ -56,4 +57,4 @@ class StartEvent(ControlAndDisplayEvent):
             "_event_name": start_event_name,
             "agent_config": agent_config.model_dump(),
         }
-        return StartEvent.deserialize_event(json_data)
+        return cls.deserialize_event(json_data)

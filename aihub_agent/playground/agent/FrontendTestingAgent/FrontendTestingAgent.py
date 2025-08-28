@@ -1,3 +1,4 @@
+import asyncio
 import random
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
@@ -16,7 +17,6 @@ from aihub_lib.nats.events import (
     ToolEvent,
     UserMessageEvent,
 )
-from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
 from aihub_lib.nats.events.semantic import Embedding
@@ -25,6 +25,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     DOCUMENT_ID,
     DOCUMENT_TITLE,
+    NAMESPACE,
     REFERENCE_URL,
     SOURCE,
 )
@@ -52,18 +53,20 @@ class CustomHumanInTheLoop(HumanInTheLoop):
 class FrontendTestingAgent(Agent):
     @step()
     async def start_step(self, event: UserMessageEvent) -> AgentInTheLoop.request | ExceptionEvent:
-        if random.random() > 0.5:
-            return ExceptionEvent(message="50% chance that this occurs :)", http_status_code=500)
+        if random.random() > 0.95:
+            return ExceptionEvent(message="5% chance that this occurs :)", http_status_code=500)
         print("[OrchestratorAgent.start_step]", event)
+        event.agent_config = None
         return AgentInTheLoop.invoke(agent_id="dev_agent", agent_class="LLMWrappingAgent", start_event=event)
 
     @step()
     async def guard_step(self, _: AgentInTheLoop.response, displayer: EventDisplayer) -> GuardEvent:
-        await displayer.display_thought("Now I need to check the guard")
+        await asyncio.sleep(1)
         return GuardEvent()
 
     @step()
-    async def router_step(self, _: GuardEvent) -> RouterEvent:
+    async def router_step(self, _: GuardEvent, displayer: EventDisplayer) -> RouterEvent:
+        await asyncio.sleep(1)
         routes = [
             RouteOptions(
                 name="Route A",
@@ -86,6 +89,7 @@ class FrontendTestingAgent(Agent):
 
     @step()
     async def embedding_step(self, _: FrontendTestingEventA) -> EmbeddingEvent:
+        await asyncio.sleep(1)
         return EmbeddingEvent(
             text="This is the text that was embedded",
             embedding_model_name="text-embedding-ada-002",
@@ -99,6 +103,7 @@ class FrontendTestingAgent(Agent):
 
     @step()
     async def retriever_step(self, _: EmbeddingEvent) -> RetrieverEvent:
+        await asyncio.sleep(1)
         return RetrieverEvent(
             nodes=[
                 IngestedNode.from_llama_index_node_with_score(
@@ -110,6 +115,7 @@ class FrontendTestingAgent(Agent):
                                 DOCUMENT_ID: "1",
                                 DOCUMENT_TITLE: "SBB",
                                 SOURCE: "sbb.docx",
+                                NAMESPACE: "sbb",
                                 CREATED_AT: 1743681278,
                                 REFERENCE_URL: "https://www.sbb.ch",
                             },
@@ -125,6 +131,7 @@ class FrontendTestingAgent(Agent):
                                 DOCUMENT_ID: "2",
                                 DOCUMENT_TITLE: "WHO Bericht",
                                 SOURCE: "who.pdf",
+                                NAMESPACE: "who",
                                 CREATED_AT: 1743481278,
                                 REFERENCE_URL: "https://www.who.int",
                             },
@@ -136,6 +143,7 @@ class FrontendTestingAgent(Agent):
 
     @step()
     async def rerank_step(self, event: RetrieverEvent) -> RerankerEvent:
+        await asyncio.sleep(1)
         return RerankerEvent(
             input_nodes=event.nodes,
             output_nodes=event.nodes[::-1],
@@ -146,6 +154,7 @@ class FrontendTestingAgent(Agent):
 
     @step()
     async def tool(self, _: RerankerEvent) -> ToolEvent:
+        await asyncio.sleep(1)
         return ToolEvent(
             name="Weather Tool",
             description="Fetches the current weather",
@@ -173,23 +182,29 @@ class FrontendTestingAgent(Agent):
     @step()
     async def hitl_step(self, _: ToolEvent) -> CustomHumanInTheLoop.request:
         print("[HumanInTheLoopAgent.start_step]")
+        await asyncio.sleep(1)
         return CustomHumanInTheLoop.invoke(question="Shall I continue?")
 
-    @step()
-    async def botl_start(
-        self, user_message_event: UserMessageEvent, hitl_event: CustomHumanInTheLoop.response, displayer: EventDisplayer
-    ) -> BotInTheLoop.request:
-        await displayer.display_chunk(
-            content=f"Hitl Response: {hitl_event.response}", model_name="FrontendTestingAgent"
-        )
-        print("Bot in the loop")
-        return BotInTheLoop.invoke(
-            user=user_message_event.user,
-            question="Make some noise",
-            slack_channel_id="C08MK7Z8GU9",
-        )
+    # @step()
+    # async def botl_start(
+    #     self,
+    #     user_message_event: UserMessageEvent,
+    #     hitl_event: CustomHumanInTheLoop.response,
+    #     displayer: EventDisplayer
+    # ) -> BotInTheLoop.request:
+    #     await displayer.display_chunk(
+    #         content=f"Hitl Response: {hitl_event.response}", model_name="FrontendTestingAgent"
+    #     )
+    #     print("Bot in the loop")
+    #     return BotInTheLoop.invoke(
+    #         user=user_message_event.user,
+    #         question="Make some noise",
+    #         slack_channel_id="C08MK7Z8GU9",
+    #     )
 
     @step()
-    async def stop(self, event: BotInTheLoop.response, displayer: EventDisplayer) -> StopEvent:
-        await displayer.display_chunk(content=f"Botl Response: {event.response}", model_name="FrontendTestingAgent")
+    async def stop(self, event: CustomHumanInTheLoop.response, displayer: EventDisplayer) -> StopEvent:
+        await asyncio.sleep(1)
+        await displayer.display_chunk(content=f"Hitl Response: {event.response}", model_name="FrontendTestingAgent")
+        # await displayer.display_chunk(content=f"Botl Response: {event.response}", model_name="FrontendTestingAgent")
         return StopEvent()

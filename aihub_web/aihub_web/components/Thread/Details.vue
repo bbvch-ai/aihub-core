@@ -84,6 +84,7 @@
               :events="events"
               :thread="thread"
               :display-id="activeDisplayId"
+              :show-chat="showChat"
             />
           </div>
         </TabPanel>
@@ -98,18 +99,26 @@ import { format } from 'date-fns'
 import type {
   DisplayStatistics,
   ThreadDto,
-  WsServerAgentEventReadable,
+  AgentEventReadable,
 } from '@core/sdk/client'
 
-const props = defineProps<{
-  events: WsServerAgentEventReadable[]
+const props = withDefaults(defineProps<{
+  events: AgentEventReadable[]
   thread: ThreadDto
-}>()
+  displayId?: string
+  showChat?: boolean
+}>(), {
+  showChat: false,
+})
 
 const { pendingType } = useThreadUtils()
 const { t } = useI18n()
 
 const activeDisplayId = ref(props.thread.displays?.at(-1)?.display_id)
+
+watch(() => props.displayId, (newDisplayId) => {
+  activeDisplayId.value = newDisplayId
+})
 
 const displayNameFn = (display: DisplayStatistics) => format(new Date(display.started_at), 'dd.MM.yyyy HH:mm')
 const formattedDate = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY HH:mm:ss')

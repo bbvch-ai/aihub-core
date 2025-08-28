@@ -2,23 +2,23 @@
 
 ## Context
 
-The AI-Hub platform needed a comprehensive deployment strategy that supports multiple environments 
-(local development, nightly builds, GPU-enabled deployments, and production-ready configurations) while maintaining 
-the existing monorepo structure. Previously, deployment configurations were limited and didn't provide clear separation 
-between different deployment scenarios.
+The AI-Hub platform needed a comprehensive deployment strategy that supports multiple environments (local development,
+nightly builds, GPU-enabled deployments, and production-ready configurations) while maintaining the existing monorepo
+structure. Previously, deployment configurations were limited and didn't provide clear separation between different
+deployment scenarios.
 
-The platform consists of multiple microservices (agents, API, bot, pipelines, web interface) that need to work together 
+The platform consists of multiple microservices (agents, API, bot, pipelines, web interface) that need to work together
 as a cohesive system, but also need flexibility for different deployment environments and resource configurations.
 
-Additionally, the team required a way to build, test, and deploy individual components independently while maintaining 
+Additionally, the team required a way to build, test, and deploy individual components independently while maintaining
 the ability to deploy the complete platform as an integrated solution.
 
 ## Decision Drivers
 
-- **Multi-Environment Support**: Need for distinct deployment configurations for development, testing, nightly builds, 
-and production environments
-- **Resource Optimization**: Different environments require different resource allocations (CPU vs GPU, development vs 
-production sizing)
+- **Multi-Environment Support**: Need for distinct deployment configurations for development, testing, nightly builds,
+  and production environments
+- **Resource Optimization**: Different environments require different resource allocations (CPU vs GPU, development vs
+  production sizing)
 - **Development Workflow**: Support for local development with easy infrastructure setup and teardown
 - **CI/CD Integration**: Automated building and deployment of container images with proper versioning
 - **Service Independence**: Ability to deploy and scale individual microservices independently
@@ -63,7 +63,7 @@ Standardize configuration management across all services:
 1. **Environment-Specific Configs**: Separate configuration files for each deployment environment
 2. **Service Discovery**: Consistent naming and networking configuration across services
 3. **Infrastructure Services**: Standardized configurations for supporting services (Dagster, LiteLLM, Milvus, NATS,
-PostgreSQL, MinIO)
+   PostgreSQL, MinIO)
 
 ## Consequences
 
@@ -95,6 +95,7 @@ PostgreSQL, MinIO)
 ## Implementation Notes
 
 This decision enables:
+
 - Quick environment setup: `docker compose -f docker-compose-gpu.dev.yml up -d`
 - GPU acceleration when needed: Use GPU-specific compose files
 - Independent service development: Each microservice has its own container and entry point
