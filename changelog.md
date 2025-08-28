@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.241.1] - 2025-08-28 - Enhanced Docker Image Tagging and Build Control
+
+### Added
+
+- ✨ **New `secondary_tag` input:** Introduced an optional `secondary_tag` input to all Docker image build workflows,
+  enabling more flexible tagging for images (e.g., `latest`, `nightly`).
+
+### Changed
+
+- 🔄 **Conditional Docker Tagging Logic:** The image build action now intelligently applies secondary Docker tags only
+  when a value is explicitly provided, preventing the creation of unwanted or empty tags.
+- ⚙️ **Dynamic Secondary Tag Assignment:** Build workflows have been updated to dynamically assign secondary Docker tags
+  based on the trigger event, defaulting to `nightly` for `repository_dispatch` events, or utilizing the user-specified
+  `secondary_tag` input.
+
+---
+
 ## [v0.241.0] - 2025-08-28 - Live Thinking Agents and Seamless Open-WebUI Streaming
 
 ### Added
