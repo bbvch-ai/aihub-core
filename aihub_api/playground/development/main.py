@@ -89,12 +89,11 @@ async def main():
                 MilvusSettings().URL, collection, MilvusSettings().DIMENSION
             ),
             translation_llm_config=LLMConfig(
-                model_name="azure/gpt-4o-mini",
+                model_name="local/qwen3-small",
             ),
         )
         .create_namespace()
         .update_namespace()
-        .initiate_document_upload()
         .get_databases()
         .get_documents_for_namespace()
         .get_document_by_id()
@@ -104,7 +103,9 @@ async def main():
         .get_file_url()
         .get_file_redirect()
         .get_anonymous_file_url()
-        .get_anonymous_file_redirect(),
+        .get_anonymous_file_redirect()
+        .initiate_file_upload()
+        .validate_file_upload(),
         NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
     )
 

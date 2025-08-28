@@ -54,3 +54,36 @@ class AbstractAnonymousFileAccessService(ABC):
         The secret should be kept confidential and rotated regularly.
         """
         pass
+
+    @abstractmethod
+    def generate_upload_url(self, container: str, file_path: str, content_type: str, lifetime_hours: int = 1) -> str:
+        """
+        Generate a temporary, secure URL for uploading a file to cloud storage.
+
+        Creates a time-limited URL that allows anonymous upload to a specific
+        file path without requiring authentication credentials. The URL
+        automatically expires after the specified duration for security.
+        """
+        pass
+
+    @abstractmethod
+    def verify_file_exists(self, container: str, file_path: str) -> bool:
+        """
+        Verify that a file exists in cloud storage.
+
+        This method checks whether a file was successfully uploaded to the specified
+        location in cloud storage. It's typically used after a presigned URL upload
+        to confirm the operation completed successfully.
+        """
+        pass
+
+    @abstractmethod
+    def list_files(self, container: str, prefix: str = "") -> list[dict]:
+        """
+        List files in cloud storage with optional prefix filtering.
+
+        This method retrieves a list of files/objects in the specified container
+        that match the given prefix. It's used for browsing and discovering files
+        in cloud storage.
+        """
+        pass

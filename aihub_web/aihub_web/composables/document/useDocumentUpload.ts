@@ -1,13 +1,13 @@
 import {
-  initiateDocumentUpload,
-  type DocumentUploadRequest,
+  initiateFileUpload,
+  type FileUploadRequest,
 } from '@core/sdk/client'
 
 export interface UploadFileOptions {
   filename: string
   file: File
-  namespace: string
-  database: string
+  folder: string
+  container: string
   onProgress?: () => void
 }
 
@@ -16,17 +16,17 @@ export const useDocumentUpload = defineMutation(() => {
 
   const { mutateAsync: uploadDocumentMutation } = useMutation({
     mutation: async (options: UploadFileOptions) => {
-      const { filename, file, namespace, database} = options
+      const { filename, file, folder, container } = options
 
-      const initiateRequest: DocumentUploadRequest = {
+      const initiateRequest: FileUploadRequest = {
         filename,
         content_type: file.type,
         content_length: file.size,
-        namespace,
-        database,
+        folder,
+        container,
       }
 
-      const initiateResponse = await initiateDocumentUpload({
+      const initiateResponse = await initiateFileUpload({
         composable: '$fetch',
         body: initiateRequest,
       })

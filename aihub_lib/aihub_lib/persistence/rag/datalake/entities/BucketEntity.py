@@ -21,9 +21,10 @@ class BucketEntity(Document):
     }
     bucket_name = StringField(required=True, unique=True)
     db_name = StringField(required=True)
-    name = EmbeddedDocumentField(LocaleStringEntity, required=False)
-    description = EmbeddedDocumentField(LocaleStringEntity, required=False)
+    name = EmbeddedDocumentField(LocaleStringEntity, required=True)
+    description = EmbeddedDocumentField(LocaleStringEntity, required=True)
     auto_sync = BooleanField(default=False)
+    datalake_type = StringField(default="s3", choices=["s3", "azure"])
 
     @classmethod
     def create_bucket(
@@ -33,15 +34,16 @@ class BucketEntity(Document):
         name: LocaleStringEntity | None = None,
         description: LocaleStringEntity | None = None,
         auto_sync: bool = False,
-        bucket_id: ObjectId | None = None,
+        datalake_type: str = "s3",
     ) -> "BucketEntity":
         bucket = cls(
-            id=bucket_id or ObjectId(),
+            id=ObjectId(),
             bucket_name=bucket_name,
             db_name=db_name or bucket_name,
-            name=name,
-            description=description,
+            name=name or LocaleStringEntity(en=bucket_name, de=bucket_name, fr=bucket_name, it=bucket_name),
+            description=description or LocaleStringEntity(),
             auto_sync=auto_sync,
+            datalake_type=datalake_type,
         )
         bucket.save()
         return bucket
@@ -71,6 +73,7 @@ class BucketEntity(Document):
         name: LocaleStringEntity | None = None,
         description: LocaleStringEntity | None = None,
         auto_sync: bool | None = None,
+        datalake_type: str | None = None,
     ) -> "BucketEntity":
         bucket = cls.get_bucket_by_id(bucket_id)
         if bucket_name is not None:
@@ -83,6 +86,8 @@ class BucketEntity(Document):
             bucket.description = description
         if auto_sync:
             bucket.auto_sync = auto_sync
+        if datalake_type:
+            bucket.datalake_type = datalake_type
         bucket.save()
         return bucket
 

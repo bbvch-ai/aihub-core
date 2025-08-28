@@ -3,7 +3,6 @@ from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -20,10 +19,7 @@ from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
 from aihub_api.routes.knowledge.dto.CreateNamespaceRequest import CreateNamespaceRequest
 from aihub_api.routes.knowledge.dto.DatabaseDTO import DatabaseDTO
-from aihub_api.routes.knowledge.dto.DocumentUploadCompleteRequest import DocumentUploadCompleteRequest
-from aihub_api.routes.knowledge.dto.DocumentUploadCompleteResponse import DocumentUploadCompleteResponse
-from aihub_api.routes.knowledge.dto.DocumentUploadRequest import DocumentUploadRequest
-from aihub_api.routes.knowledge.dto.DocumentUploadResponse import DocumentUploadResponse
+from aihub_api.routes.knowledge.dto.DocumentDTO import DocumentDTO
 from aihub_api.routes.knowledge.dto.NamespaceResponse import NamespaceResponse
 from aihub_api.routes.knowledge.dto.NodeSummaryDTO import NodeSummaryDTO
 from aihub_api.routes.knowledge.dto.PaginatedDocumentsResponse import PaginatedDocumentsResponse
@@ -101,10 +97,9 @@ class KnowledgeController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_document_by_id(
             database: Annotated[str, Path(title="Database name")],
-            namespace: Annotated[str, Path(title="Namespace")],
             document_id: Annotated[str, Path(title="Document ID")],
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
-        ) -> IngestedDocument:
+        ) -> DocumentDTO:
             """
             Returns a single document by its ID.
             """
@@ -190,20 +185,3 @@ class KnowledgeController(Controller):
             return await KnowledgeService.update_namespace(namespace_id, request, t, self.translation_llm_config)
 
         return self
-
-    def initiate_document_upload(self, route: str = "/documents/upload/initiate") -> "KnowledgeController":
-        @self.router.post(route, tags=self.tags)
-        async def initiate_document_upload(
-            request: DocumentUploadRequest,
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
-        ) -> DocumentUploadResponse:
-            """
-            Initiates document upload by generating a presigned S3/MinIO URL.
-
-            This endpoint validates the upload request and returns a presigned URL
-            that allows the client to upload the document directly to S3/MinIO storage.
-            """
-            return await KnowledgeService.initiate_document_upload(request)
-
-        return self
-

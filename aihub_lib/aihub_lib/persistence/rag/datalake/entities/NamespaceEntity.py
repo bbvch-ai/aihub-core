@@ -64,6 +64,10 @@ class NamespaceEntity(Document):
         return cls.objects().get(bucket_id=bucket_id, namespace_name=namespace_name)
 
     @classmethod
+    def get_namespace_by_bucket_and_folder(cls, bucket_id: str, folder_name: str) -> "NamespaceEntity":
+        return cls.objects().get(bucket_id=bucket_id, folder_name=folder_name)
+
+    @classmethod
     def get_namespaces_by_bucket(cls, bucket_id: str) -> list["NamespaceEntity"]:
         return cls.objects().filter(bucket_id=bucket_id).order_by("namespace_name")
 

@@ -30,8 +30,8 @@
 
     <KnowledgeDocumentUploadModal
       v-model:visible="uploadModalVisible"
-      :database="selectedDatabaseForUpload"
-      :preselected-namespace="selectedNamespaceForUpload"
+      :container="selectedDatabaseForUpload"
+      :preselected-folder="selectedNamespaceForUpload"
       @upload="handleUpload"
     />
 
@@ -84,7 +84,6 @@ const openUploadModal = (database_name: string, namespace_name: string) => {
 }
 
 const handleUpload = (data: { files: File[], namespace: string, database: string }) => {
-  console.log('Upload completed successfully:', data)
   uploadModalVisible.value = false
 
   // Optionally navigate to the namespace after upload

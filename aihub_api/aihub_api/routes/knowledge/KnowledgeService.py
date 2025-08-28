@@ -1,18 +1,12 @@
 import logging
-import uuid
 
-import boto3
 import mongoengine
-
-from aihub_api.routes.knowledge.dto.DocumentDTO import DocumentDTO
-from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
-from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
+from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings import AnonymousFileAccessSettings
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
-from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
@@ -32,10 +26,7 @@ from mongoengine import DoesNotExist, register_connection
 
 from aihub_api.routes.knowledge.dto.CreateNamespaceRequest import CreateNamespaceRequest
 from aihub_api.routes.knowledge.dto.DatabaseDTO import DatabaseDTO
-from aihub_api.routes.knowledge.dto.DocumentUploadCompleteRequest import DocumentUploadCompleteRequest
-from aihub_api.routes.knowledge.dto.DocumentUploadCompleteResponse import DocumentUploadCompleteResponse
-from aihub_api.routes.knowledge.dto.DocumentUploadRequest import DocumentUploadRequest
-from aihub_api.routes.knowledge.dto.DocumentUploadResponse import DocumentUploadResponse
+from aihub_api.routes.knowledge.dto.DocumentDTO import DocumentDTO
 from aihub_api.routes.knowledge.dto.NamespaceDTO import NamespaceDTO
 from aihub_api.routes.knowledge.dto.NamespaceResponse import NamespaceResponse
 from aihub_api.routes.knowledge.dto.NodeSummaryDTO import NodeSummaryDTO
@@ -52,57 +43,48 @@ class KnowledgeService:
             register_connection(alias=db, name=db, host=MongoSettings().CONNECTION_STRING.get_secret_value())
 
     @staticmethod
-    def _get_s3_client():
-        """Get S3 client for datalake operations."""
-        s3_config = S3StorageSettings()
-        return boto3.client(
-            "s3",
-            endpoint_url=s3_config.ENDPOINT,
-            aws_access_key_id=s3_config.ACCESS_KEY,
-            aws_secret_access_key=s3_config.SECRET_KEY.get_secret_value(),
-            region_name=s3_config.REGION,
-        )
-
-    @staticmethod
     def _get_datalake_files_in_namespace(bucket_name: str, namespace: str) -> list[DocumentDTO]:
         """
-        Get all files from datalake in a specific namespace using direct S3 API calls.
+        Get all files from datalake in a specific namespace using the global file access configuration.
+
+        This method supports both S3/MinIO and Azure Blob Storage based on the
+        ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND environment variable.
         """
-        s3_client = KnowledgeService._get_s3_client()
+        file_access_config = AnonymousFileAccessSettings()
 
-        all_files = []
-        paginator = s3_client.get_paginator("list_objects_v2")
-        page_iterator = paginator.paginate(
-            Bucket=bucket_name,
-            Prefix=f"{namespace}/",
-        )
+        try:
+            files_info = file_access_config.service.list_files(container=bucket_name, prefix=f"{namespace}/")
 
-        for page in page_iterator:
-            if "Contents" not in page:
-                continue
-
-            for obj in page["Contents"]:
-                key = obj["Key"]
-                if key.endswith("/"):
-                    continue
-
+            all_files = []
+            for file_info in files_info:
+                key = file_info["key"]
                 filename = key.split("/")[-1]
                 file_namespace = key.split("/")[0]
 
-                document_uri = f"s3://{bucket_name}/{key}"
+                storage_backend = file_access_config.STORAGE_BACKEND
+                if storage_backend == "azure":
+                    document_uri = f"azure://{bucket_name}/{key}"
+                else:
+                    document_uri = f"s3://{bucket_name}/{key}"
+
                 datalake_file = DocumentDTO(
                     id=key,
                     document_title=filename,
                     namespace=file_namespace,
-                    updated_at="",
+                    updated_at=file_info.get("last_modified", ""),
                     created_at="",
                     inserted_at="",
                     source=document_uri,
-                    is_ingested=False
+                    is_ingested=False,
                 )
                 all_files.append(datalake_file)
 
-        return all_files
+            return all_files
+
+        except Exception as e:
+            logger.error(f"Failed to list datalake files in {bucket_name}/{namespace}: {e}")
+            # Fallback to empty list to prevent breaking the UI
+            return []
 
     @staticmethod
     def _filter_processing_documents(
@@ -129,9 +111,7 @@ class KnowledgeService:
         skip = (page - 1) * page_size
 
         KnowledgeService._ensure_db_exists(db)
-        ref_docs_page = RefDoc.get_paginated_by_namespace(
-            db_alias=db, namespace=namespace, skip=0, limit=1000000
-        )
+        ref_docs_page = RefDoc.get_paginated_by_namespace(db_alias=db, namespace=namespace, skip=0, limit=1000000)
         processed_documents = [DocumentDTO.from_ref_doc(doc) for doc in ref_docs_page]
 
         processed_doc_sources = {doc.source for doc in processed_documents}
@@ -149,13 +129,13 @@ class KnowledgeService:
         return total, paginated_documents
 
     @staticmethod
-    def get_document_by_id(db: str, document_id: str) -> IngestedDocument:
+    def get_document_by_id(db: str, document_id: str) -> DocumentDTO:
         """
         Retrieves a single document by its ID.
         """
         KnowledgeService._ensure_db_exists(db)
         ref_doc = RefDoc.by_id(db_alias=db, doc_id=document_id)
-        return IngestedDocument.from_entity(ref_doc)
+        return DocumentDTO.from_ref_doc(ref_doc)
 
     @staticmethod
     def get_databases(t: LocaleHandler) -> list[DatabaseDTO]:
@@ -317,44 +297,4 @@ class KnowledgeService:
             folder_name=updated_entity.folder_name,
             display_name=t.extract(updated_entity.display_name) if updated_entity.display_name else None,
             description=t.extract(updated_entity.description) if updated_entity.description else None,
-        )
-
-    @staticmethod
-    async def initiate_document_upload(request: DocumentUploadRequest) -> DocumentUploadResponse:
-        """
-        Initiates document upload by generating a presigned S3/MinIO URL.
-
-        This method validates the upload request, generates a unique object key,
-        and creates a presigned URL for direct upload to S3/MinIO storage.
-        """
-
-        try:
-            bucket = BucketEntity.get_bucket_by_db_name(request.database)
-        except DoesNotExist:
-            raise HTTPException(status_code=404, detail=f"Database '{request.database}' not found")
-
-        upload_id = str(uuid.uuid4())
-        safe_filename = "".join(c for c in request.filename if c.isalnum() or c in ".-_").rstrip()
-        object_key = f"{request.namespace}/{safe_filename}"
-
-        container = bucket.bucket_name
-
-        file_service = S3AnonymousFileAccessService()
-        presigned_url = file_service.generate_upload_url(
-            container=container,
-            file_path=object_key,
-            content_type=request.content_type,
-            lifetime_hours=1,  # 1 hour expiration
-        )
-
-        logger.info(f"Generated presigned URL for upload: {upload_id}")
-
-        return DocumentUploadResponse(
-            upload_url=presigned_url,
-            upload_id=upload_id,
-            container=container,
-            object_key=object_key,
-            expires_in=3600,  # 1 hour in seconds
-            namespace=request.namespace,
-            database=request.database,
         )

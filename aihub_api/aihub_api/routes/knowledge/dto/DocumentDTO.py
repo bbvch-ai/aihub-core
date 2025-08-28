@@ -1,10 +1,9 @@
 from datetime import UTC, datetime
 from typing import Annotated
 
-from pydantic import BaseModel, Field
-
 from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
 from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
+from pydantic import BaseModel, Field
 
 
 class DocumentDTO(BaseModel):
@@ -14,7 +13,7 @@ class DocumentDTO(BaseModel):
     created_at: Annotated[str, Field(description="Date source document was created (ISO format string)")]
     updated_at: Annotated[str, Field(description="Date source document was last updated (ISO format string)")]
     inserted_at: Annotated[
-        str, Field(description="Date source document was inserted into document store (ISO format string)")
+        str | None, Field(description="Date source document was inserted into document store (ISO format string)")
     ]
     is_ingested: Annotated[bool, Field(description="Indicates if the document has been ingested.")]
     content: Annotated[str | None, Field(description="Content of the document.")] = None

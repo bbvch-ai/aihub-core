@@ -56,7 +56,7 @@
       </div>
 
       <div
-        v-if="props.preselectedNamespace && props.database"
+        v-if="props.preselectedFolder && props.container"
         class="flex flex-col gap-2"
       >
         <label class="text-sm font-medium">{{ t('document.target_location.label') }}</label>
@@ -65,7 +65,7 @@
             class="pi pi-database text-surface-400"
             style="font-size: 1rem"
           />
-          <span class="text-sm text-surface-600 dark:text-surface-300">{{ props.database }}</span>
+          <span class="text-sm text-surface-600 dark:text-surface-300">{{ props.container }}</span>
           <i
             class="pi pi-angle-right text-surface-400"
             style="font-size: 0.8rem"
@@ -74,10 +74,10 @@
             class="pi pi-folder text-primary-500"
             style="font-size: 1rem"
           />
-          <span class="text-sm font-medium text-surface-800 dark:text-surface-100">{{ props.preselectedNamespace }}</span>
+          <span class="text-sm font-medium text-surface-800 dark:text-surface-100">{{ props.preselectedFolder }}</span>
         </div>
         <small class="text-surface-500 dark:text-surface-400">
-          {{t('document.upload.target_location.help')}}
+          {{ t('document.upload.target_location.help') }}
         </small>
       </div>
 
@@ -133,8 +133,8 @@
 <script setup lang="ts">
 interface Props {
   visible: boolean
-  database?: string
-  preselectedNamespace?: string
+  container?: string
+  preselectedFolder?: string
   title?: string
 }
 
@@ -145,7 +145,7 @@ const { t } = useI18n()
 
 const emit = defineEmits<{
   'update:visible': [value: boolean]
-  'upload': [data: { files: File[], namespace: string, database: string }]
+  'upload': [data: { files: File[], folder: string, container: string }]
 }>()
 
 const { uploadDocument } = useDocumentUpload()
@@ -166,7 +166,7 @@ const isVisible = computed({
 })
 
 const modalTitle = computed(() => {
-  return `${t('document.upload.title')} ${props.preselectedNamespace}`
+  return `${t('document.upload.title')} ${props.preselectedFolder}`
 })
 
 const canUpload = computed(() => {
@@ -229,8 +229,8 @@ const handleDrop = (event: DragEvent) => {
 const handleUpload = async () => {
   if (!canUpload.value) return
 
-  const namespace = props.preselectedNamespace || ''
-  const database = props.database || 'default'
+  const folder = props.preselectedFolder || ''
+  const container = props.container || 'default'
 
   isUploading.value = true
   errorMessage.value = ''
@@ -241,14 +241,14 @@ const handleUpload = async () => {
     await uploadDocument({
       filename: file.name,
       file,
-      namespace,
-      database,
+      folder,
+      container,
     })
   }
   emit('upload', {
     files: selectedFiles.value,
-    namespace,
-    database,
+    folder,
+    container,
   })
   closeModal()
   isUploading.value = false

@@ -2393,7 +2393,7 @@ export type DocumentDto = {
      * Inserted At
      * Date source document was inserted into document store (ISO format string)
      */
-    inserted_at: string;
+    inserted_at: string | null;
     /**
      * Is Ingested
      * Indicates if the document has been ingested.
@@ -2414,86 +2414,6 @@ export type DocumentDto = {
      * Document title.
      */
     document_title?: string | null;
-};
-
-/**
- * DocumentUploadRequest
- * Request payload for initiating document upload to knowledge base.
- *
- * This request is used to get presigned URLs for direct S3/MinIO upload
- * of documents that will be processed and indexed in the knowledge base.
- */
-export type DocumentUploadRequest = {
-    /**
-     * Filename
-     * Original filename of the document
-     */
-    filename: string;
-    /**
-     * Content Type
-     * MIME type of the document
-     */
-    content_type: string;
-    /**
-     * Content Length
-     * Size of the document in bytes
-     */
-    content_length: number;
-    /**
-     * Namespace
-     * Target namespace/folder for the document
-     */
-    namespace: string;
-    /**
-     * Database
-     * Target database for the document
-     */
-    database: string;
-};
-
-/**
- * DocumentUploadResponse
- * Response payload for document upload initialization.
- *
- * Contains the presigned URL for direct S3/MinIO upload and metadata
- * needed to complete the upload process.
- */
-export type DocumentUploadResponse = {
-    /**
-     * Upload Url
-     * Presigned URL for uploading the document to S3/MinIO
-     */
-    upload_url: string;
-    /**
-     * Upload Id
-     * Unique identifier for this upload session
-     */
-    upload_id: string;
-    /**
-     * Container
-     * S3 bucket/container name where document will be stored
-     */
-    container: string;
-    /**
-     * Object Key
-     * S3 object key/path for the uploaded document
-     */
-    object_key: string;
-    /**
-     * Expires In
-     * Upload URL expiration time in seconds
-     */
-    expires_in: number;
-    /**
-     * Namespace
-     * Target namespace for the document
-     */
-    namespace: string;
-    /**
-     * Database
-     * Target database for the document
-     */
-    database: string;
 };
 
 /**
@@ -3223,6 +3143,126 @@ export type FileFile = {
 };
 
 /**
+ * FileUploadRequest
+ * Request payload for initiating file upload to knowledge base.
+ *
+ * This request is used to get presigned URLs for direct S3/MinIO upload
+ * of files that will be processed and indexed in the knowledge base.
+ */
+export type FileUploadRequest = {
+    /**
+     * Filename
+     * Original filename of the file
+     */
+    filename: string;
+    /**
+     * Content Type
+     * MIME type of the file
+     */
+    content_type: string;
+    /**
+     * Content Length
+     * Size of the file in bytes
+     */
+    content_length: number;
+    /**
+     * Folder
+     * Target folder for the file
+     */
+    folder: string;
+    /**
+     * Container
+     * Target bucket/container for the file
+     */
+    container: string;
+};
+
+/**
+ * FileUploadResponse
+ * Response payload for file upload initialization.
+ *
+ * Contains the presigned URL for direct S3/MinIO upload and metadata
+ * needed to complete the upload process.
+ */
+export type FileUploadResponse = {
+    /**
+     * Upload Url
+     * Presigned URL for uploading the file to S3/MinIO
+     */
+    upload_url: string;
+    /**
+     * Upload Id
+     * Unique identifier for this upload session
+     */
+    upload_id: string;
+    /**
+     * Container
+     * Target container/bucket for the file
+     */
+    container: string;
+    /**
+     * Object Key
+     * S3 object key/path for the uploaded file
+     */
+    object_key: string;
+    /**
+     * Expires In
+     * Upload URL expiration time in seconds
+     */
+    expires_in: number;
+    /**
+     * Folder
+     * Target folder for the file
+     */
+    folder: string;
+};
+
+/**
+ * FileUploadValidationRequest
+ * Request for validating whether a file was successfully uploaded to cloud storage.
+ *
+ * This request contains the information needed to verify that a file upload completed
+ * successfully in the globally configured datalake (S3, MinIO, or Azure Blob Storage).
+ */
+export type FileUploadValidationRequest = {
+    /**
+     * Container
+     * Name of the container/bucket where the file was uploaded
+     */
+    container: string;
+    /**
+     * File Path
+     * Path/key of the uploaded file within the container
+     */
+    file_path: string;
+};
+
+/**
+ * FileUploadValidationResponse
+ * Response containing the validation result of a file upload.
+ *
+ * This response indicates whether the uploaded file exists in the globally
+ * configured datalake and provides information about the validation process.
+ */
+export type FileUploadValidationResponse = {
+    /**
+     * Exists
+     * Whether the file exists in the datalake
+     */
+    exists: boolean;
+    /**
+     * File Path
+     * Path/key of the file that was validated
+     */
+    file_path: string;
+    /**
+     * Container
+     * Name of the container/bucket
+     */
+    container: string;
+};
+
+/**
  * Function
  */
 export type FunctionOutput = {
@@ -3877,82 +3917,6 @@ export type ImagesResponse = {
     size?: ('1024x1024' | '1024x1536' | '1536x1024') | null;
     usage?: OpenaiTypesImagesResponseUsage | null;
     [key: string]: unknown | number | (('transparent' | 'opaque') | null) | (Array<Image> | null) | (('png' | 'webp' | 'jpeg') | null) | (('low' | 'medium' | 'high') | null) | (('1024x1024' | '1024x1536' | '1536x1024') | null) | (OpenaiTypesImagesResponseUsage | null) | undefined;
-};
-
-/**
- * IngestedDocument
- * Set of default metadata for a document or - what llama index calls it - a ref_doc. A ref doc is the databae
- * representation of a document that was ingested through a pipeline. Hence, compared to the default data,
- * we also have an ID and content that was parsed from the original file.
- */
-export type IngestedDocument = {
-    /**
-     * Source
-     * Source URI of original document.
-     */
-    source: string;
-    /**
-     * Namespace
-     * The namespace of the document within its metadata.
-     */
-    namespace: string;
-    /**
-     * Version
-     * Document version.
-     */
-    version?: number;
-    /**
-     * Content Hash
-     * Hash of the document/node, helpful to track whether file changed.
-     */
-    content_hash?: string | null;
-    /**
-     * Number Of Pages
-     * Number of Pages in the Document.
-     */
-    number_of_pages?: number | null;
-    /**
-     * Document Title
-     * Document title.
-     */
-    document_title?: string | null;
-    /**
-     * Language
-     * Document language.
-     */
-    language?: ('de' | 'en' | 'fr' | 'it') | null;
-    /**
-     * Created At
-     * Date source document was created (ISO format string)
-     */
-    created_at: string;
-    /**
-     * Updated At
-     * Date source document was last updated (ISO format string)
-     */
-    updated_at: string;
-    /**
-     * Inserted At
-     * Date source document was inserted into document store (ISO format string)
-     */
-    inserted_at: string;
-    /**
-     * Metadata
-     * Additional metadata for the document.
-     */
-    metadata?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * Id
-     * Unique identifier for the document.
-     */
-    id: string;
-    /**
-     * Content
-     * Content of the document.
-     */
-    content?: string | null;
 };
 
 /**
@@ -9425,31 +9389,6 @@ export type UpdateNamespaceResponses = {
 
 export type UpdateNamespaceResponse = UpdateNamespaceResponses[keyof UpdateNamespaceResponses];
 
-export type InitiateDocumentUploadData = {
-    body: DocumentUploadRequest;
-    path?: never;
-    query?: never;
-    url: '/knowledge/documents/upload/initiate';
-};
-
-export type InitiateDocumentUploadErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type InitiateDocumentUploadError = InitiateDocumentUploadErrors[keyof InitiateDocumentUploadErrors];
-
-export type InitiateDocumentUploadResponses = {
-    /**
-     * Successful Response
-     */
-    200: DocumentUploadResponse;
-};
-
-export type InitiateDocumentUploadResponse = InitiateDocumentUploadResponses[keyof InitiateDocumentUploadResponses];
-
 export type GetDatabasesData = {
     body?: never;
     path?: never;
@@ -9520,10 +9459,6 @@ export type GetDocumentByIdData = {
          */
         database: string;
         /**
-         * Namespace
-         */
-        namespace: string;
-        /**
          * Document Id
          */
         document_id: string;
@@ -9545,7 +9480,7 @@ export type GetDocumentByIdResponses = {
     /**
      * Successful Response
      */
-    200: IngestedDocument;
+    200: DocumentDto;
 };
 
 export type GetDocumentByIdResponse = GetDocumentByIdResponses[keyof GetDocumentByIdResponses];
@@ -9641,7 +9576,7 @@ export type GetFileUrlData = {
         file_path: string;
     };
     query?: never;
-    url: '/file/logged-in/url/{container}/{file_path}';
+    url: '/files/logged-in/url/{container}/{file_path}';
 };
 
 export type GetFileUrlErrors = {
@@ -9675,7 +9610,7 @@ export type GetFileRedirectData = {
         file_path: string;
     };
     query?: never;
-    url: '/file/logged-in/redirect/{container}/{file_path}';
+    url: '/files/logged-in/redirect/{container}/{file_path}';
 };
 
 export type GetFileRedirectErrors = {
@@ -9718,7 +9653,7 @@ export type GetAnonymousFileUrlData = {
          */
         signature: string;
     };
-    url: '/file/anonymous/url/{container}/{file_path}';
+    url: '/files/anonymous/url/{container}/{file_path}';
 };
 
 export type GetAnonymousFileUrlErrors = {
@@ -9761,7 +9696,7 @@ export type GetAnonymousFileRedirectData = {
          */
         signature: string;
     };
-    url: '/file/anonymous/redirect/{container}/{file_path}';
+    url: '/files/anonymous/redirect/{container}/{file_path}';
 };
 
 export type GetAnonymousFileRedirectErrors = {
@@ -9779,6 +9714,56 @@ export type GetAnonymousFileRedirectResponses = {
      */
     200: unknown;
 };
+
+export type InitiateFileUploadData = {
+    body: FileUploadRequest;
+    path?: never;
+    query?: never;
+    url: '/files/upload/initiate';
+};
+
+export type InitiateFileUploadErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type InitiateFileUploadError = InitiateFileUploadErrors[keyof InitiateFileUploadErrors];
+
+export type InitiateFileUploadResponses = {
+    /**
+     * Successful Response
+     */
+    200: FileUploadResponse;
+};
+
+export type InitiateFileUploadResponse = InitiateFileUploadResponses[keyof InitiateFileUploadResponses];
+
+export type ValidateFileUploadData = {
+    body: FileUploadValidationRequest;
+    path?: never;
+    query?: never;
+    url: '/files/upload/validate';
+};
+
+export type ValidateFileUploadErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ValidateFileUploadError = ValidateFileUploadErrors[keyof ValidateFileUploadErrors];
+
+export type ValidateFileUploadResponses = {
+    /**
+     * Successful Response
+     */
+    200: FileUploadValidationResponse;
+};
+
+export type ValidateFileUploadResponse = ValidateFileUploadResponses[keyof ValidateFileUploadResponses];
 
 export type GetNotificationsData = {
     body?: never;

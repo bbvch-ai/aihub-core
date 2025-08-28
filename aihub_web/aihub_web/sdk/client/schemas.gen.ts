@@ -3414,7 +3414,14 @@ export const DocumentDTOSchema = {
             description: 'Date source document was last updated (ISO format string)'
         },
         inserted_at: {
-            type: 'string',
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             title: 'Inserted At',
             description: 'Date source document was inserted into document store (ISO format string)'
         },
@@ -3463,92 +3470,6 @@ export const DocumentDTOSchema = {
     type: 'object',
     required: ['id', 'source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'is_ingested'],
     title: 'DocumentDTO'
-} as const;
-
-export const DocumentUploadRequestSchema = {
-    properties: {
-        filename: {
-            type: 'string',
-            title: 'Filename',
-            description: 'Original filename of the document'
-        },
-        content_type: {
-            type: 'string',
-            title: 'Content Type',
-            description: 'MIME type of the document'
-        },
-        content_length: {
-            type: 'integer',
-            maximum: 10485760,
-            exclusiveMinimum: 0,
-            title: 'Content Length',
-            description: 'Size of the document in bytes'
-        },
-        namespace: {
-            type: 'string',
-            title: 'Namespace',
-            description: 'Target namespace/folder for the document'
-        },
-        database: {
-            type: 'string',
-            title: 'Database',
-            description: 'Target database for the document'
-        }
-    },
-    type: 'object',
-    required: ['filename', 'content_type', 'content_length', 'namespace', 'database'],
-    title: 'DocumentUploadRequest',
-    description: `Request payload for initiating document upload to knowledge base.
-
-This request is used to get presigned URLs for direct S3/MinIO upload
-of documents that will be processed and indexed in the knowledge base.`
-} as const;
-
-export const DocumentUploadResponseSchema = {
-    properties: {
-        upload_url: {
-            type: 'string',
-            title: 'Upload Url',
-            description: 'Presigned URL for uploading the document to S3/MinIO'
-        },
-        upload_id: {
-            type: 'string',
-            title: 'Upload Id',
-            description: 'Unique identifier for this upload session'
-        },
-        container: {
-            type: 'string',
-            title: 'Container',
-            description: 'S3 bucket/container name where document will be stored'
-        },
-        object_key: {
-            type: 'string',
-            title: 'Object Key',
-            description: 'S3 object key/path for the uploaded document'
-        },
-        expires_in: {
-            type: 'integer',
-            title: 'Expires In',
-            description: 'Upload URL expiration time in seconds'
-        },
-        namespace: {
-            type: 'string',
-            title: 'Namespace',
-            description: 'Target namespace for the document'
-        },
-        database: {
-            type: 'string',
-            title: 'Database',
-            description: 'Target database for the document'
-        }
-    },
-    type: 'object',
-    required: ['upload_url', 'upload_id', 'container', 'object_key', 'expires_in', 'namespace', 'database'],
-    title: 'DocumentUploadResponse',
-    description: `Response payload for document upload initialization.
-
-Contains the presigned URL for direct S3/MinIO upload and metadata
-needed to complete the upload process.`
 } as const;
 
 export const EdgeDataSchema = {
@@ -4532,6 +4453,136 @@ export const FileFileSchema = {
     title: 'FileFile'
 } as const;
 
+export const FileUploadRequestSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename',
+            description: 'Original filename of the file'
+        },
+        content_type: {
+            type: 'string',
+            title: 'Content Type',
+            description: 'MIME type of the file'
+        },
+        content_length: {
+            type: 'integer',
+            maximum: 10485760,
+            exclusiveMinimum: 0,
+            title: 'Content Length',
+            description: 'Size of the file in bytes'
+        },
+        folder: {
+            type: 'string',
+            title: 'Folder',
+            description: 'Target folder for the file'
+        },
+        container: {
+            type: 'string',
+            title: 'Container',
+            description: 'Target bucket/container for the file'
+        }
+    },
+    type: 'object',
+    required: ['filename', 'content_type', 'content_length', 'folder', 'container'],
+    title: 'FileUploadRequest',
+    description: `Request payload for initiating file upload to knowledge base.
+
+This request is used to get presigned URLs for direct S3/MinIO upload
+of files that will be processed and indexed in the knowledge base.`
+} as const;
+
+export const FileUploadResponseSchema = {
+    properties: {
+        upload_url: {
+            type: 'string',
+            title: 'Upload Url',
+            description: 'Presigned URL for uploading the file to S3/MinIO'
+        },
+        upload_id: {
+            type: 'string',
+            title: 'Upload Id',
+            description: 'Unique identifier for this upload session'
+        },
+        container: {
+            type: 'string',
+            title: 'Container',
+            description: 'Target container/bucket for the file'
+        },
+        object_key: {
+            type: 'string',
+            title: 'Object Key',
+            description: 'S3 object key/path for the uploaded file'
+        },
+        expires_in: {
+            type: 'integer',
+            title: 'Expires In',
+            description: 'Upload URL expiration time in seconds'
+        },
+        folder: {
+            type: 'string',
+            title: 'Folder',
+            description: 'Target folder for the file'
+        }
+    },
+    type: 'object',
+    required: ['upload_url', 'upload_id', 'container', 'object_key', 'expires_in', 'folder'],
+    title: 'FileUploadResponse',
+    description: `Response payload for file upload initialization.
+
+Contains the presigned URL for direct S3/MinIO upload and metadata
+needed to complete the upload process.`
+} as const;
+
+export const FileUploadValidationRequestSchema = {
+    properties: {
+        container: {
+            type: 'string',
+            title: 'Container',
+            description: 'Name of the container/bucket where the file was uploaded'
+        },
+        file_path: {
+            type: 'string',
+            title: 'File Path',
+            description: 'Path/key of the uploaded file within the container'
+        }
+    },
+    type: 'object',
+    required: ['container', 'file_path'],
+    title: 'FileUploadValidationRequest',
+    description: `Request for validating whether a file was successfully uploaded to cloud storage.
+
+This request contains the information needed to verify that a file upload completed
+successfully in the globally configured datalake (S3, MinIO, or Azure Blob Storage).`
+} as const;
+
+export const FileUploadValidationResponseSchema = {
+    properties: {
+        exists: {
+            type: 'boolean',
+            title: 'Exists',
+            description: 'Whether the file exists in the datalake'
+        },
+        file_path: {
+            type: 'string',
+            title: 'File Path',
+            description: 'Path/key of the file that was validated'
+        },
+        container: {
+            type: 'string',
+            title: 'Container',
+            description: 'Name of the container/bucket'
+        }
+    },
+    type: 'object',
+    required: ['exists', 'file_path', 'container'],
+    title: 'FileUploadValidationResponse',
+    description: `Response containing the validation result of a file upload.
+
+This response indicates whether the uploaded file exists in the globally
+configured datalake and provides information about the validation process.`
+} as const;
+
 export const Function_OutputSchema = {
     properties: {
         arguments: {
@@ -5392,127 +5443,6 @@ export const ImagesResponseSchema = {
     type: 'object',
     required: ['created'],
     title: 'ImagesResponse'
-} as const;
-
-export const IngestedDocumentSchema = {
-    properties: {
-        source: {
-            type: 'string',
-            title: 'Source',
-            description: 'Source URI of original document.'
-        },
-        namespace: {
-            type: 'string',
-            title: 'Namespace',
-            description: 'The namespace of the document within its metadata.'
-        },
-        version: {
-            type: 'integer',
-            title: 'Version',
-            description: 'Document version.',
-            default: 1
-        },
-        content_hash: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Content Hash',
-            description: 'Hash of the document/node, helpful to track whether file changed.'
-        },
-        number_of_pages: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Number Of Pages',
-            description: 'Number of Pages in the Document.'
-        },
-        document_title: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Document Title',
-            description: 'Document title.'
-        },
-        language: {
-            anyOf: [
-                {
-                    type: 'string',
-                    enum: ['de', 'en', 'fr', 'it']
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Language',
-            description: 'Document language.'
-        },
-        created_at: {
-            type: 'string',
-            title: 'Created At',
-            description: 'Date source document was created (ISO format string)'
-        },
-        updated_at: {
-            type: 'string',
-            title: 'Updated At',
-            description: 'Date source document was last updated (ISO format string)'
-        },
-        inserted_at: {
-            type: 'string',
-            title: 'Inserted At',
-            description: 'Date source document was inserted into document store (ISO format string)'
-        },
-        metadata: {
-            anyOf: [
-                {
-                    additionalProperties: true,
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Metadata',
-            description: 'Additional metadata for the document.'
-        },
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: 'Unique identifier for the document.'
-        },
-        content: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Content',
-            description: 'Content of the document.'
-        }
-    },
-    type: 'object',
-    required: ['source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'id'],
-    title: 'IngestedDocument',
-    description: `Set of default metadata for a document or - what llama index calls it - a ref_doc. A ref doc is the databae
-representation of a document that was ingested through a pipeline. Hence, compared to the default data,
-we also have an ID and content that was parsed from the original file.`
 } as const;
 
 export const IngestedNodeSchema = {
@@ -7128,7 +7058,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1756194075
+            default: 1756201359
         },
         owned_by: {
             type: 'string',
