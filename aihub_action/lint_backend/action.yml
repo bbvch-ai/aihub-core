@@ -8,6 +8,10 @@ inputs:
   working_directory:
     description: 'Working directory for the linter'
     required: true
+  python_version:
+    description: 'Python version to install'
+    required: false
+    default: '3.13'
 
 runs:
   using: "composite"
@@ -15,10 +19,10 @@ runs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Set up Python 3.13
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.13'
+        python-version: ${{ inputs.python_version }}
 
     - name: Configure Git to Use `GITHUB_TOKEN`
       shell: bash

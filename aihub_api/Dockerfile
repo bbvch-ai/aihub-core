@@ -31,6 +31,8 @@ WORKDIR /app
 COPY Makefile switch_dependencies.py pyproject.toml ./
 COPY aihub_api ./aihub_api
 COPY aihub_lib ./aihub_lib
+# TODO: remove once plugin separated!
+COPY aihub_doc/mdformat-vuepress ./aihub_doc/mdformat-vuepress
 
 RUN poetry install
 RUN make use-local-core

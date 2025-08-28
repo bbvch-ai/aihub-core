@@ -5,6 +5,113 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.240.6] - 2025-08-26 - S3 Security Hardening and Configuration Alignment
+
+### Security
+
+- 🔑 **Enhanced Secret Key Handling:** Updated S3 resource configurations to securely access secret keys using
+  `.get_secret_value()`, reinforcing protection for sensitive credentials across S3 file access services and data lake
+  clients.
+
+### Changed
+
+- 🔄 **Standardized S3 Endpoint Configuration:** Renamed the S3 configuration parameter `ENDPOINT_URL` to `ENDPOINT` for
+  consistency across all related S3 services and resources, simplifying configuration management.
+
+---
+
+## [v0.240.5] - 2025-08-22 - Core Infrastructure Updates and Build System Refinements
+
+### Changed
+
+- 🚀 **Upgraded `aihub_pipeline` Docker images to Python 3.13** from 3.11, leveraging the latest language features and
+  performance improvements for pipeline execution.
+- ⚙️ **Enhanced CI/CD workflows to support private GitHub dependencies** by configuring SSH, facilitating more robust
+  and secure access to internal repositories during automated builds.
+- 📦 **Streamlined Docker build processes** by temporarily including the `mdformat-vuepress` module in several service
+  images (`aihub_agent`, `aihub_api`, `aihub_pipeline`) to ensure internal tool compatibility.
+
+---
+
+## [v0.240.4] - 2025-08-15 - Enhanced CI/CD Actions with Python Version Flexibility
+
+### Changed
+
+- ⚡️ **Configurable Python Version for Backend Actions**: The `lint_backend` and `test_backend` GitHub Actions now
+  support a new `python_version` input. This allows users to specify the Python version used for linting and testing
+  within their workflows, providing greater flexibility while maintaining `3.13` as the default.
+
+---
+
+## [v0.240.3] - 2025-08-15 - Core Infrastructure Enhancements and Frontend Streamlining
+
+### Added
+
+- ⚙️ **New Infrastructure Components**: Introduced `Traefik` as an ingress controller and `OAuth2 Proxy` for
+  authentication, enhancing deployment capabilities and security.
+- 🚀 **Expanded Dagster Deployment Options**: Added new `dagster:latest` and `dagster:nightly` Docker images, providing
+  more flexible options for pipeline orchestration.
+- 🔒 **SSH Support for GitHub Actions**: Enabled SSH authentication within GitHub Actions to ensure more secure and
+  reliable Git operations during release workflows.
+- 🐍 **Python 3.13 Support in CI**: Updated GitHub Actions to utilize Python 3.13, aligning with the latest Python
+  version for improved compatibility and future-proofing.
+
+### Changed
+
+- 🔄 **Updated Playwright Version**: Upgraded the `Playwright` Docker image to `v1.54.1-jammy`, incorporating the latest
+  browser automation features and stability improvements.
+- ⚡️ **Streamlined CI/CD Dependency Management**: Refactored Poetry installation and dependency management steps across
+  GitHub Actions workflows for enhanced efficiency and consistency.
+
+---
+
+## [v0.240.2] - 2025-08-14 - Architectural Evolution: Containerized Deployment and New AI Capabilities
+
+### Added
+
+- 🦾 **Containerized Deployment Architecture**: Introduced comprehensive Docker Compose files
+  (`docker-compose.latest.yml`, `docker-compose.nightly.yml`, `docker-compose-gpu.*.yml`) to enable multi-environment
+  deployments for the entire AI-Hub platform, supporting local development, nightly builds, and production-ready setups.
+- 📄 **Architectural Decision Records**: Added new documentation (`arc42/decisions`) detailing the rationale and design
+  of the new containerized deployment and microservice build pipeline architectures.
+- ⚙️ **Modular Dockerfiles for Services**: Introduced dedicated Dockerfiles for `api`, `bot`, `dagster`, `web`,
+  `llm_wrapping_agent`, and `default_rag_pipeline` to enable component-specific image builds and deployments.
+- ✨ **`LLMWrappingAgent`**: A new generic agent capable of wrapping and exposing Large Language Models as a service
+  within workflows, simplifying LLM integration.
+- ⚡️ **`DefaultRAGPipeline`**: A new default Retrieval-Augmented Generation (RAG) pipeline, providing out-of-the-box
+  capabilities for knowledge retrieval and content generation.
+- 🔑 **Milvus Configuration Settings**: Introduced a new `MilvusSettings` class to standardize Milvus database connection
+  URL and embedding dimension configuration across the platform.
+- 📦 **Multi-Environment Configuration Files**: Added environment-specific configuration files for Dagster, LiteLLM,
+  Milvus, and NATS, allowing tailored setups for different deployment environments.
+
+### Changed
+
+- 🔄 **CI/CD Release Workflow Redesign**: Reworked the GitHub Actions release pipeline (`add-tag.yml`) to support a more
+  granular, event-driven build and release process for individual microservices.
+- 🚀 **Docker Image Build Action Enhancements**: Updated the shared `build_image` action to support secondary tags (e.g.,
+  `nightly`) and passing version as a build argument, improving flexibility and versioning.
+- 📈 **Agent Test Stability**: Increased `delay_before_stop` in agent test runs to enhance stability and reliability
+  during asynchronous test execution.
+- 🔒 **Web UI Container Security**: Hardened the Web UI Docker image by introducing a dedicated non-root user for
+  improved security posture.
+- 🧹 **Markdown Formatting Enforcement**: Integrated `mdformat` into PR readiness, changelog, and license check steps to
+  ensure consistent Markdown formatting across the repository.
+- 🔗 **Milvus Integration Update**: Updated API and pipeline configurations to leverage the new standardized
+  `MilvusSettings`, ensuring consistent and configurable Milvus connectivity.
+
+### Fixed
+
+- 🐛 **API Dockerfile Path Fix**: Corrected a minor syntax error in the API Dockerfile's `PATH` environment variable,
+  ensuring proper script execution.
+
+### Refactor
+
+- 📐 **Core Application Restructuring**: Restructured the main application entry points for `aihub_api` and `aihub_bot`
+  into `app/main.py` files, improving modularity and maintainability.
+
+---
+
 ## [v0.240.1] - 2025-08-13 - Enhanced Documentation Formatting and Tooling
 
 ### Added
