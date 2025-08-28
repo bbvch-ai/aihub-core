@@ -39,7 +39,7 @@ class DoclingLoader(BaseReader):
             encoded_string = base64.b64encode(pdf_file.read()).decode("utf-8")
         file_name = os.path.basename(file)
 
-        answer = self.docling_client.convert_document(encoded_string, file_name)
+        answer = self.convert_document(encoded_string, file_name)
         doc = DoclingDocument(**answer["document"]["json_content"])
         markdown_content = doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
         if len(doc.pictures) > 0:
@@ -88,7 +88,6 @@ class DoclingLoader(BaseReader):
                 "pdf_backend": self.config.PDF_BACKEND,
                 "table_mode": self.config.TABLE_MODE,
                 "abort_on_error": False,
-                "return_as_file": False,
                 "do_table_structure": True,
                 "include_images": True,
                 "images_scale": self.config.IMAGES_SCALE,
@@ -98,11 +97,11 @@ class DoclingLoader(BaseReader):
                 "do_picture_description": False,
                 "md_page_break_placeholder": self.config.MD_PAGE_BREAK_PLACEHOLDER,
             },
-            "file_sources": [{"base64_string": file_content, "filename": filename}],
+            "sources": [{"base64_string": file_content, "filename": filename, "kind": "file"}],
         }
 
         response = httpx.post(
-            self.config.API_ENDPOINT,
+            f"{self.config.API_ENDPOINT}/v1/convert/source",
             json=request_body,
             headers={"Content-Type": "application/json"},
             timeout=self.config.API_TIMEOUT,

@@ -13,10 +13,10 @@
 </template>
 
 <script setup lang="ts">
-import type { RetrieverEvent, ThreadDto, AgentEventReadable } from '@core/sdk/client'
+import type { RetrieverEventReadable, ThreadDto, AgentEventReadable } from '@core/sdk/client'
 
 defineProps<{
-  event: AgentEventReadable & { event: RetrieverEvent }
+  event: AgentEventReadable & { event: RetrieverEventReadable }
   thread: ThreadDto
 }>()
 </script>

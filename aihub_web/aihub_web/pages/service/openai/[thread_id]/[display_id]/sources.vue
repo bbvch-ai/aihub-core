@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentEventReadable, RetrieverEvent, IngestedNode } from '@core/sdk/client'
+import type { AgentEventReadable, RetrieverEventReadable, IngestedNode } from '@core/sdk/client'
 
 const route = useRoute()
 const router = useRouter()
@@ -75,13 +75,18 @@ type DocumentInfo = {
   nodes: IngestedNode[]
 }
 
+const extractBucket = (path: string): string => {
+  const match = path.match(/(?:s3:\/\/|^\/)([^\/]+)/)
+  return match?.[1] ?? ''
+}
+
 const documentMap = computed<Record<string, DocumentInfo>>(() => {
   const docs: Record<string, DocumentInfo> = {}
-  retrieveEvents.value?.forEach((event: AgentEventReadable & { event: RetrieverEvent }) => {
+  retrieveEvents.value?.forEach((event: AgentEventReadable & { event: RetrieverEventReadable }) => {
     (event.event.nodes ?? []).forEach((node: IngestedNode) => {
       if (!(node.document_id in docs)) {
         docs[node.document_id] = {
-          db: 'papers',
+          db: extractBucket(node.source),
           namespace: node.namespace,
           id: node.document_id,
           nodes: [],

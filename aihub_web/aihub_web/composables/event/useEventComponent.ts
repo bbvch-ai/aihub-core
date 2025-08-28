@@ -31,7 +31,7 @@ export const useEventComponent = () => {
       ThoughtEvent: EventDisplayThoughtEvent,
       EmbeddingEvent: EventDisplayEmbeddingEvent,
       RerankerEvent: EventDisplayRerankerEvent,
-      RetrieverEvent: EventDisplayRetrieverEvent,
+      RetrieverEventReadable: EventDisplayRetrieverEvent,
       ToolEvent: EventDisplayToolEvent,
       AgentInTheLoopRequestEvent: EventDisplayAgentInTheLoopRequestEvent,
       AgentInTheLoopResponseEvent: EventDisplayAgentInTheLoopResponseEvent,
