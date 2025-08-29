@@ -298,7 +298,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         """Create an endpoint to retrieve a form for continuing a process."""
 
         async def get_form(
-            process_walkthrough_id: Annotated[str, Path(title="Walkthrough ID", pattern="^[a-f0-9]{24}$")],
+            process_walkthrough_id: Annotated[str, Path(title="Walkthrough ID", pattern=r"^[a-f0-9]{24}$")],
             _: Annotated[
                 UserIdentity,
                 Security(process_controller.user_with_permission(f"aihub.user.process.{process_class}.{process_id}")),
@@ -381,7 +381,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         """Create an endpoint to submit a form for continuing a process."""
 
         async def send_event(
-            process_walkthrough_id: Annotated[str, Path(title="Walkthrough ID", pattern="^[a-f0-9]{24}$")],
+            process_walkthrough_id: Annotated[str, Path(title="Walkthrough ID", pattern=r"^[a-f0-9]{24}$")],
             work_event_input: Annotated[input_type, Body],
             external_process_event_distributor: Annotated[
                 ExternalProcessEventDistributor, Depends(use_external_process_event_distributor)

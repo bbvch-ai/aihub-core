@@ -24,7 +24,7 @@ def enable_logging(level: int | None = None) -> logging.Logger:
     ]
 
     for logger_name in lib_loggers:
-        logging.getLogger(logger_name).setLevel(level)
+        logging.getLogger(logger_name).setLevel(logging.WARNING)
 
     handler = logging.StreamHandler()
     handler.setFormatter(

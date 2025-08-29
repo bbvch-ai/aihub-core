@@ -3,16 +3,20 @@ name = "aihub-core"
 version = "v0.13.0"
 description = "aihub core"
 authors = [
+    "Joel Barmettler <joel.barmettler@bbv.ch>",
+    "Marius Högger <marius.hoegger@bbv.ch>",
+    "Michèle Fundneider <michele.fundneider@bbv.ch>",
     "Thomas Mannhart <thomas.mannhart@bbv.ch>",
+    "Noah Hermann <noah.hermann@bbv.ch>",
 ]
 license = "Proprietary"
 package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.13, <3.14"
-tomlkit = "^0.13.2"
 
 [tool.poetry.group.dev.dependencies]
+tomlkit = "^0.13.2"
 black = { extras = ["jupyter"], version = "^25.1.0" }
 pip-licenses = "^5.0.0"
 mdformat = "^0.7.21"
@@ -20,8 +24,9 @@ mdformat-gfm = "^0.4.1"
 mdformat-frontmatter = "^2.0.8"
 mdformat-simple-breaks = "^0.0.1"
 mdformat-pyproject = "^0.0.2"
+mdformat-vuepress = {path = "aihub_doc/mdformat-vuepress", develop = true}
 mdformat-myst = "^0.2.1"
-mdformat-vuepress = "^0.1.0"
+huggingface-hub = {extras = ["cli"], version = "^0.34.4"}
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

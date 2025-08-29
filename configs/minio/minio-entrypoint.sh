@@ -2,7 +2,7 @@
 set -e
 
 # Start MinIO in background
-minio server /minio_data --console-address ":9001" &
+minio server /minio-data --console-address ":9001" &
 MINIO_PID=$!
 
 # Wait for MinIO to be ready

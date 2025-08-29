@@ -81,7 +81,7 @@ def dummy_request() -> Request:
 # --- Scenario Declarations ---
 
 
-scenarios("features/multi_auth_handler.feature")
+scenarios("features/token_and_oauth2_handler.feature")
 
 
 # --- Given step: Build the MultiAuthHandler from a data table ---

@@ -8,10 +8,10 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentInTheLoopResponseEventReadable, ThreadDto, WsServerAgentEventReadable } from '@core/sdk/client'
+import type { AgentInTheLoopResponseEventReadable, ThreadDto, AgentEventReadable } from '@core/sdk/client'
 
 defineProps<{
-  event: WsServerAgentEventReadable & { event: AgentInTheLoopResponseEventReadable }
+  event: AgentEventReadable & { event: AgentInTheLoopResponseEventReadable }
   thread: ThreadDto
 }>()
 </script>
