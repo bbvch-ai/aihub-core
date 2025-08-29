@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 
 class ModelInfoDTO(BaseModel):
@@ -95,7 +95,49 @@ class ModelInfoDTO(BaseModel):
 class ModelDTO(BaseModel):
     model_name: Annotated[str, Field(description="The name/identifier of the model")]
     model_info: Annotated[ModelInfoDTO, Field(description="Detailed information about the model")]
-    icon: Annotated[str | None, Field(None, description="URL or path to the model's icon")]
+
+    @computed_field
+    @property
+    def icon(self) -> str:
+        mode = self.model_info.mode
+        if mode == "chat":
+            return "mdi:chat"
+        elif mode == "embedding":
+            return "mdi:vector-triangle"
+        elif mode == "image_generation":
+            return "mdi:image"
+        elif mode in ("audio_transcription", "audio_speech"):
+            return "mdi:microphone"
+        else:
+            return "mdi:robot"
+
+    def convert_costs_to_microunits(self):
+        """Creates a coopy of the model info with converted cosets."""
+        cost_fields = [
+            "input_cost_per_token",
+            "output_cost_per_token",
+            "cache_creation_input_token_cost",
+            "cache_read_input_token_cost",
+            "input_cost_per_token_above_128k_tokens",
+            "input_cost_per_token_above_200k_tokens",
+            "input_cost_per_audio_token",
+            "input_cost_per_token_batches",
+            "output_cost_per_token_batches",
+            "output_cost_per_audio_token",
+            "output_cost_per_reasoning_token",
+            "output_cost_per_token_above_128k_tokens",
+            "output_cost_per_token_above_200k_tokens",
+            "output_cost_per_image",
+            "search_context_cost_per_query",
+        ]
+
+        updates: dict[str, float] = {}
+        for field_name in cost_fields:
+            current_value = getattr(self.model_info, field_name)
+            if current_value is not None:
+                updates[field_name] = current_value * 1_000_000
+
+        return self.model_info.model_copy(update=updates)
 
 
 class ModelTypeGroupDTO(BaseModel):

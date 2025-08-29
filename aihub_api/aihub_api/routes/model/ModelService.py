@@ -1,50 +1,9 @@
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
 from fastapi import HTTPException
 from httpx import Client
 
-from aihub_api.routes.model.dto.ModelDTO import ModelDTO, ModelInfoDTO, ModelTypeGroupDTO
-
-
-def _convert_costs_to_microunits(model_info: ModelInfoDTO) -> ModelInfoDTO:
-    cost_fields = [
-        "input_cost_per_token",
-        "output_cost_per_token",
-        "cache_creation_input_token_cost",
-        "cache_read_input_token_cost",
-        "input_cost_per_token_above_128k_tokens",
-        "input_cost_per_token_above_200k_tokens",
-        "input_cost_per_audio_token",
-        "input_cost_per_token_batches",
-        "output_cost_per_token_batches",
-        "output_cost_per_audio_token",
-        "output_cost_per_reasoning_token",
-        "output_cost_per_token_above_128k_tokens",
-        "output_cost_per_token_above_200k_tokens",
-        "output_cost_per_image",
-        "search_context_cost_per_query",
-    ]
-
-    updates = {}
-    for field_name in cost_fields:
-        current_value = getattr(model_info, field_name)
-        if current_value is not None:
-            updates[field_name] = current_value * 1_000_000
-
-    return model_info.model_copy(update=updates)
-
-
-def _get_model_icon(mode: str) -> str:
-    if mode == "chat":
-        return "mdi:chat"
-    elif mode == "embedding":
-        return "mdi:vector-triangle"
-    elif mode == "image_generation":
-        return "mdi:image"
-    elif mode in ("audio_transcription", "audio_speech"):
-        return "mdi:microphone"
-    else:
-        return "mdi:robot"
+from aihub_api.routes.model.dto.ModelDTO import ModelDTO, ModelTypeGroupDTO
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
 
 
 class ModelService:
@@ -58,14 +17,13 @@ class ModelService:
 
         response = client.get(url="v1/model/info")
         data = response.json()["data"]
-        models = []
+        models: list[ModelDTO] = []
 
         for model_data in data:
             model = ModelDTO.model_validate(model_data)
-            updated_model_info = _convert_costs_to_microunits(model.model_info)
-            icon = _get_model_icon(model.model_info.mode)
+            updated_model_info = model.convert_costs_to_microunits()
 
-            updated_model = model.model_copy(update={"model_info": updated_model_info, "icon": icon})
+            updated_model = model.model_copy(update={"model_info": updated_model_info})
             models.append(updated_model)
 
         return models

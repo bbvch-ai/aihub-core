@@ -121,19 +121,19 @@
 </template>
 
 <script setup lang="ts">
-import type { ModelDto } from '@core/sdk/client'
+import type {ModelDto} from '@core/sdk/client'
 
 const props = defineProps<{
   model: ModelDto | null
 }>()
 
-const { t } = useI18n()
+const {t} = useI18n()
 
 const formatNumber = (num: number): string => {
   return new Intl.NumberFormat().format(num)
 }
 
-const capabilities = computed(() => {
+const capabilities = computed<string[]>(() => {
   const info = props.model?.model_info
   if (!info) return []
   const capabilityMap = {
@@ -159,7 +159,7 @@ const capabilities = computed(() => {
     .map(key => capabilityMap[key as keyof typeof capabilityMap])
 })
 
-const advancedPricingItems = computed(() => {
+const advancedPricingItems = computed<Array<{ key: string; label: string; value: number }>>(() => {
   if (!props.model?.model_info) return []
 
   const info = props.model.model_info
@@ -219,7 +219,7 @@ const advancedPricingItems = computed(() => {
       label: t('models.modelDetails.outputCostAbove200k'),
       value: info.output_cost_per_token_above_200k_tokens,
     },
-    { key: 'output_cost_per_image', label: t('models.modelDetails.imageCost'), value: info.output_cost_per_image },
+    {key: 'output_cost_per_image', label: t('models.modelDetails.imageCost'), value: info.output_cost_per_image},
     {
       key: 'search_context_cost_per_query',
       label: t('models.modelDetails.searchContextCost'),
@@ -230,20 +230,20 @@ const advancedPricingItems = computed(() => {
   return items.filter(item => item.value !== null && item.value !== undefined)
 })
 
-const hasAdvancedPricing = computed(() => {
+const hasAdvancedPricing = computed<boolean>(() => {
   return advancedPricingItems.value.length > 0
 })
 
-const hasCapabilities = computed(() => {
+const hasCapabilities = computed<boolean>(() => {
   return capabilities.value.length > 0
 })
 
-const hasRateLimits = computed(() => {
+const hasRateLimits = computed<boolean>(() => {
   if (!props.model) return false
   return !!(props.model.model_info?.tpm || props.model.model_info?.rpm)
 })
 
-const hasOtherDetails = computed(() => {
+const hasOtherDetails = computed<boolean>(() => {
   if (!props.model) return false
   return props.model.model_info?.output_vector_size || props.model.model_info?.supports_embedding_image_input !== null
 })

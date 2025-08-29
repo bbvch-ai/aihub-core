@@ -49,7 +49,7 @@
             </span>
             <span class="text-lg font-light">
               {{
-                model?.model_info?.input_cost_per_token !== null && model?.model_info?.input_cost_per_token !== undefined ? `$${model.model_info.input_cost_per_token.toFixed(2)}` : t('models.modelDetails.notSpecified')
+                isDefined(model?.model_info?.input_cost_per_token) ? `$${model.model_info.input_cost_per_token.toFixed(2)}` : t('models.modelDetails.notSpecified')
               }}
             </span>
           </div>
@@ -59,7 +59,7 @@
             </span>
             <span class="text-lg font-light">
               {{
-                model?.model_info?.output_cost_per_token !== null && model?.model_info?.output_cost_per_token !== undefined ? `$${model.model_info.output_cost_per_token.toFixed(2)}` : t('models.modelDetails.notSpecified')
+                isDefined(model?.model_info?.output_cost_per_token) ? `$${model.model_info.output_cost_per_token.toFixed(2)}` : t('models.modelDetails.notSpecified')
               }}
             </span>
           </div>
@@ -74,11 +74,9 @@
 <script setup lang="ts">
 import ModelDetailsPanel from '@core/components/Models/ModelDetailsPanel.vue'
 
-const route = useRoute()
 const { t } = useI18n()
 
-const modelName = computed(() => decodeURIComponent(route.params?.model_name as string))
-const { model, modelIsLoading } = useSingleModel(modelName)
+const { model, modelIsLoading } = useSingleModel()
 
 const formatNumber = (num: number): string => {
   return new Intl.NumberFormat().format(num)

@@ -31,7 +31,7 @@
               {{ t('models.card.tokens') }}:
             </span>
             <span class="text-sm font-light text-surface-900 dark:text-surface-100">
-              {{ formatTokenLimits(props.model) }}
+              {{ formatTokenLimits }}
             </span>
           </div>
         </div>
@@ -41,39 +41,37 @@
 </template>
 
 <script setup lang="ts">
-import type { ModelDTO } from '@core/sdk/client'
+import type {ModelDTO} from '@core/sdk/client'
 
 const props = defineProps<{
   model: ModelDTO
 }>()
 
-const { t } = useI18n()
+const {t} = useI18n()
 
 const formatNumber = (num: number): string => {
   return new Intl.NumberFormat().format(num)
 }
 
-const formatTokenLimits = (model: ModelDTO): string => {
-  const input = model?.model_info?.max_input_tokens
-  const output = model?.model_info?.max_output_tokens
+const formatTokenLimits = computed<string>(() => {
+  const input = props.model?.model_info?.max_input_tokens
+  const output = props.model?.model_info?.max_output_tokens
 
   if (input && output) {
     return `${formatNumber(input)} / ${formatNumber(output)}`
-  }
-  else if (input) {
+  } else if (input) {
     return `${formatNumber(input)} / -`
-  }
-  else if (output) {
+  } else if (output) {
     return `- / ${formatNumber(output)}`
   }
   return '- / -'
-}
+})
 
-const inputCostPerToken = computed(() => {
+const inputCostPerToken = computed<string | number>(() => {
   return props.model?.model_info?.input_cost_per_token?.toFixed(2) ?? '-'
 })
 
-const outputCostPerToken = computed(() => {
+const outputCostPerToken = computed<string | number>(() => {
   return props.model?.model_info?.output_cost_per_token?.toFixed(2) ?? '-'
 })
 </script>
