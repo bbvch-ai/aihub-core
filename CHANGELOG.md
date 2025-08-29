@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.241.2] - 2025-08-29 - Streamlined Builds, Dependencies, and Naming
+
+### Added
+
+- 🧰 **Introduced `format-md-win` Makefile target:** Provides a dedicated command for formatting Markdown files
+  specifically for Windows development environments, enhancing cross-platform tooling.
+
+### Changed
+
+- 🚀 **Optimized Docker image builds:** Production Docker images for agents, APIs, and pipelines now install dependencies
+  without development packages, significantly reducing image size and build times.
+- 📦 **Promoted `tomlkit` to core dependency:** The `tomlkit` library is now a primary project dependency, reflecting its
+  expanded use beyond development workflows.
+
+### Refactor
+
+- 🔄 **Standardized changelog file naming:** Renamed `changelog.md` to `CHANGELOG.md` across the repository for better
+  consistency and adherence to common project conventions, affecting GitHub Actions, documentation scripts, and
+  changelog generation.
+- 🧹 **Streamlined `mdformat-vuepress` dependency:** The `mdformat-vuepress` plugin is now managed as a standard package
+  rather than a local path dependency, simplifying project setup and maintenance.
+
+### Removed
+
+- 🗑️ **Deprecated local `mdformat-vuepress` plugin files:** Removed the now-obsolete local `mdformat-vuepress` source
+  files as the plugin is integrated via a standard package manager.
+
+---
+
 ## [v0.241.1] - 2025-08-28 - Enhanced Docker Image Tagging and Build Control
 
 ### Added
