@@ -82,3 +82,11 @@ license-check:
 	@echo "Checking licenses..."
 	/bin/bash ./generate-license.sh
 	@poetry run mdformat --number $$(git ls-files '*.md')
+
+local-cart-win:
+	@echo "Generating mkcert certificates for localhost and nip.io..."
+	mkdir -p configs/certs
+	mkcert -key-file configs/traefik/certs/dev-key.pem -cert-file configs/traefik/certs/dev-cert.pem \
+		"localhost" "*.localhost" \
+		"127.0.0.1.nip.io" "*.127.0.0.1.nip.io"
+	@echo "✅ Certificates written to configs/certs/dev-cert.pem and configs/certs/dev-key.pem"

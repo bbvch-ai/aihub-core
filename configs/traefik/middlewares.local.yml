@@ -2,7 +2,7 @@ http:
   middlewares:
     security-headers:
       headers:
-        sslRedirect: true
+        sslRedirect: false
         stsSeconds: 31536000
         stsIncludeSubdomains: true
         customFrameOptionsValue: "DENY"
