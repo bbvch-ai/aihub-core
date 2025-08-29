@@ -98,7 +98,7 @@ class S3DataLakeFileSystemResource(AbstractDataLakeFileSystemResource[s3fs.S3Fil
 
         return s3fs.S3FileSystem(
             key=s3_config.ACCESS_KEY,
-            secret=s3_config.SECRET_KEY,
+            secret=s3_config.SECRET_KEY.get_secret_value(),
             client_kwargs=client_kwargs,
             anon=False,  # Use credentials, not anonymous access
         )

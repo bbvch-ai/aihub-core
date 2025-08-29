@@ -200,29 +200,33 @@ knowledge:
     create: "Créer"
     cancel: "Annuler"
   add_folder:
-    title: "Ajouter un dossier à la base de connaissances"
-    description: "Créer un nouveau dossier dans la base de connaissances"
+    title: "Ajouter une collection"
+    description: "Créer une nouvelle collection de connaissances"
     cancel: "Annuler"
+  edit_namespace: "Modifier la collection"
+  upload_documents: "Télécharger des documents"
   form:
     create:
-      title: "Créer un dossier de base de connaissances"
+      title: "Créer une collection"
     edit:
-      title: "Modifier le dossier de la base de connaissances"
+      title: "Modifier la collection"
     database:
       label: "Base de connaissances"
       placeholder: "Nom de la base de connaissances"
     folder_name:
-      label: "Nom du dossier"
-      placeholder: "Nom du dossier"
-      help: "Nom du dossier à créer"
+      label: "Nom de la collection"
+      placeholder: "Nom de la collection"
+      help: "Nom de la collection à créer"
+      edit_help: "Nom technique de la collection"
+      edit_help: "Nom technique de la collection"
     display_name:
       label: "Nom d'affichage"
       placeholder: "Nom d'affichage"
-      help: "Nom d'affichage du dossier"
+      help: "Nom d'affichage de la collection"
     description:
       label: "Description"
       placeholder: "Description"
-      help: "Description du dossier"
+      help: "Description de la collection"
 
 auth:
   renew:

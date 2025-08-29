@@ -200,29 +200,32 @@ knowledge:
     create: "Crea"
     cancel: "Annulla"
   add_folder:
-    title: "Aggiungi cartella al database di conoscenza"
-    description: "Crea una nuova cartella nel database di conoscenza"
+    title: "Aggiungi collezione"
+    description: "Crea una nuova collezione di conoscenza"
     cancel: "Annulla"
+  edit_namespace: "Modifica collezione"
+  upload_documents: "Carica documenti"
   form:
     create:
-      title: "Crea cartella del database di conoscenza"
+      title: "Crea collezione"
     edit:
-      title: "Modifica cartella del database di conoscenza"
+      title: "Modifica collezione"
     database:
       label: "Database di conoscenza"
       placeholder: "Nome del database di conoscenza"
     folder_name:
-      label: "Nome cartella"
-      placeholder: "Nome cartella"
-      help: "Nome della cartella da creare"
+      label: "Nome collezione"
+      placeholder: "Nome collezione"
+      help: "Nome della collezione da creare"
+      edit_help: "Nome tecnico della collezione"
     display_name:
       label: "Nome visualizzato"
       placeholder: "Nome visualizzato"
-      help: "Nome visualizzato della cartella"
+      help: "Nome visualizzato della collezione"
     description:
       label: "Descrizione"
       placeholder: "Descrizione"
-      help: "Descrizione della cartella"
+      help: "Descrizione della collezione"
 
 auth:
   renew:

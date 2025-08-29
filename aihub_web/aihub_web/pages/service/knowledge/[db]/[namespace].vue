@@ -7,7 +7,7 @@
     <div class="mb-4 flex justify-end">
       <Button
         icon="pi pi-upload"
-        label="Upload Documents"
+        :label="t('knowledge.documents.upload.title')"
         @click="openUploadModal"
       />
     </div>
@@ -32,13 +32,17 @@
   <KnowledgeDocumentUploadModal
     v-model:visible="uploadModalVisible"
     :database="route.params.db as string"
-    :preselected-namespace="route.params.namespace as string"
+    :namespace="route.params.namespace as string"
+    :database-display-name="databaseDisplayName"
+    :namespace-display-name="namespaceDisplayName"
     @upload="handleUpload"
   />
 </template>
 
 <script setup lang="ts">
-import type { DocumentDTO } from '@core/sdk/client'
+import { useChangeCase } from '@vueuse/integrations/useChangeCase'
+
+import type { DocumentDto } from '@core/sdk/client'
 
 import { useLocalePath } from '#i18n'
 
@@ -46,6 +50,8 @@ const route = useRoute()
 const router = useRouter()
 const localePath = useLocalePath()
 const { t } = useI18n()
+
+const { databases } = useDatabases()
 
 const {
   documents,
@@ -60,7 +66,23 @@ const {
 
 const uploadModalVisible = ref(false)
 
-const toDocument = (document: DocumentDTO) => {
+const currentDatabase = computed(() => {
+  return databases.value?.find(db => db.name === route.params.db)
+})
+
+const currentNamespace = computed(() => {
+  return currentDatabase.value?.namespaces?.find(ns => ns.name === route.params.namespace)
+})
+
+const databaseDisplayName = computed(() => {
+  return useChangeCase(route.params.db as string, 'capitalCase')
+})
+
+const namespaceDisplayName = computed(() => {
+  return currentNamespace.value?.display_name || useChangeCase(route.params.namespace as string, 'capitalCase')
+})
+
+const toDocument = (document: DocumentDto) => {
   router.push(localePath(`/service/knowledge/${route.params.db}/${route.params.namespace}/${document.id}/overview`))
 }
 
@@ -76,8 +98,6 @@ const openUploadModal = () => {
 
 const handleUpload = async (data: { files: File[], namespace: string, database: string }) => {
   console.log('Upload completed successfully:', data)
-
-  // Refresh the document list to show the newly uploaded processing documents
   refetch()
 }
 </script>

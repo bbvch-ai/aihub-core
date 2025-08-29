@@ -6,6 +6,8 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings import AnonymousFileAccessSettings
+from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
+from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
 from fastapi import HTTPException, status
 from fastapi.responses import RedirectResponse
 
@@ -107,15 +109,27 @@ class FileService:
         """
         Initiates document upload by generating a presigned URL for the globally configured datalake.
 
-        This method validates the upload request, generates a unique object key,
-        and creates a presigned URL for direct upload to the configured datalake storage
-        using the same global AnonymousFileAccessSettings as download URLs.
+        This method resolves logical database/namespace names to physical storage locations,
+        validates the upload request, generates a unique object key, and creates a presigned URL
+        for direct upload to the configured datalake storage.
         """
 
+        try:
+            bucket_entity = BucketEntity.get_bucket_by_db_name(request.database_name)
+            namespace_entity = NamespaceEntity.get_namespace_by_bucket_and_name(
+                bucket_id=str(bucket_entity.id), namespace_name=request.namespace_name
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Database '{request.database_name}' or namespace '{request.namespace_name}' not found",
+            ) from e
+
+        container = bucket_entity.bucket_name
+        folder = namespace_entity.folder_name
+
         upload_id = str(uuid.uuid4())
-        safe_filename = "".join(c for c in request.filename if c.isalnum() or c in ".-_").rstrip()
-        object_key = f"{request.folder}/{safe_filename}"
-        container = request.container
+        object_key = f"{folder}/{request.filename}"
 
         file_access_config = AnonymousFileAccessSettings()
         presigned_url = file_access_config.service.generate_upload_url(
@@ -131,7 +145,7 @@ class FileService:
             container=container,
             object_key=object_key,
             expires_in=3600,  # 1 hour in seconds
-            folder=request.folder,
+            folder=folder,
         )
 
     @staticmethod

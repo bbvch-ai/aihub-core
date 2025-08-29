@@ -14,5 +14,5 @@ class FileUploadRequest(BaseModel):
     filename: Annotated[str, Field(description="Original filename of the file")]
     content_type: Annotated[str, Field(description="MIME type of the file")]
     content_length: Annotated[int, Field(description="Size of the file in bytes", gt=0, le=10485760)]  # 10MB max
-    folder: Annotated[str, Field(description="Target folder for the file")]
-    container: Annotated[str, Field(description="Target bucket/container for the file")]
+    namespace_name: Annotated[str, Field(description="Target namespace name")]
+    database_name: Annotated[str, Field(description="Target database name")]

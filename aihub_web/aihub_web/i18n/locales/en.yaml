@@ -178,15 +178,8 @@ document:
     number_of_pages: "Number of Pages"
     download: "Download"
     is_processing: "Processing"
-  upload:
-    title: "Dokumente hochladen"
-    drag_and_drop: "Ziehen Sie Dateien hierher oder klicken Sie, um Dateien auszuwählen"
-    target_location:
-      label: "Speicherort"
-      help: "Ordner, in dem die Dokumente gespeichert werden sollen"
-    actions:
-      upload: "Hochladen"
-      cancel: "Abbrechen"
+
+
 knowledge:
   title: "Knowledge Databases"
   created_at: "Created:"
@@ -199,6 +192,15 @@ knowledge:
       summary: "Summaries"
   documents:
     title: "Documents"
+    upload:
+      title: "Dokumente hochladen"
+      drag_and_drop: "Ziehen Sie Dateien hierher oder klicken Sie, um Dateien auszuwählen"
+      target_location:
+        label: "Speicherort"
+        help: "Ordner, in dem die Dokumente gespeichert werden sollen"
+      actions:
+        upload: "Hochladen"
+        cancel: "Abbrechen"
   nodes:
     title: "Document Chunks"
   summary:
@@ -210,29 +212,32 @@ knowledge:
     create: "Create"
     cancel: "Cancel"
   add_folder:
-    title: "Add Knowledge Database Folder"
-    description: "Create a new folder in the knowledge database"
+    title: "Add Collection"
+    description: "Create a new knowledge collection"
     cancel: "Cancel"
+  edit_namespace: "Edit collection"
+  upload_documents: "Upload documents"
   form:
     create:
-      title: "Create Knowledge Database Folder"
+      title: "Create Collection"
     edit:
-      title: "Edit Knowledge Database Folder"
+      title: "Edit Collection"
     database:
       label: "Knowledge Database"
       placeholder: "Knowledge Database Name"
     folder_name:
-      label: "Folder Name"
-      placeholder: "Folder Name"
-      help: "Name of the folder to create"
+      label: "Collection Name"
+      placeholder: "Collection Name"
+      help: "Name of the collection to create"
+      edit_help: "Technical name of the collection"
     display_name:
       label: "Display Name"
       placeholder: "Display Name"
-      help: "Display name of the folder"
+      help: "Display name of the collection"
     description:
       label: "Description"
       placeholder: "Description"
-      help: "Description of the folder"
+      help: "Description of the collection"
 
 auth:
   renew:

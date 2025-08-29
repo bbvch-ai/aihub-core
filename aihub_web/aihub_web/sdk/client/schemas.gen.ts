@@ -4472,19 +4472,19 @@ export const FileUploadRequestSchema = {
             title: 'Content Length',
             description: 'Size of the file in bytes'
         },
-        folder: {
+        namespace_name: {
             type: 'string',
-            title: 'Folder',
-            description: 'Target folder for the file'
+            title: 'Namespace Name',
+            description: 'Target namespace name'
         },
-        container: {
+        database_name: {
             type: 'string',
-            title: 'Container',
-            description: 'Target bucket/container for the file'
+            title: 'Database Name',
+            description: 'Target database name'
         }
     },
     type: 'object',
-    required: ['filename', 'content_type', 'content_length', 'folder', 'container'],
+    required: ['filename', 'content_type', 'content_length', 'namespace_name', 'database_name'],
     title: 'FileUploadRequest',
     description: `Request payload for initiating file upload to knowledge base.
 
@@ -4497,7 +4497,7 @@ export const FileUploadResponseSchema = {
         upload_url: {
             type: 'string',
             title: 'Upload Url',
-            description: 'Presigned URL for uploading the file to S3/MinIO'
+            description: 'Presigned URL for uploading the file to a datalake'
         },
         upload_id: {
             type: 'string',
@@ -4507,30 +4507,30 @@ export const FileUploadResponseSchema = {
         container: {
             type: 'string',
             title: 'Container',
-            description: 'Target container/bucket for the file'
+            description: 'The bucket/container name where file will be stored'
+        },
+        folder: {
+            type: 'string',
+            title: 'Folder',
+            description: 'The folder name within the bucket/container'
         },
         object_key: {
             type: 'string',
             title: 'Object Key',
-            description: 'S3 object key/path for the uploaded file'
+            description: 'The object key/path for the uploaded file'
         },
         expires_in: {
             type: 'integer',
             title: 'Expires In',
             description: 'Upload URL expiration time in seconds'
-        },
-        folder: {
-            type: 'string',
-            title: 'Folder',
-            description: 'Target folder for the file'
         }
     },
     type: 'object',
-    required: ['upload_url', 'upload_id', 'container', 'object_key', 'expires_in', 'folder'],
+    required: ['upload_url', 'upload_id', 'container', 'folder', 'object_key', 'expires_in'],
     title: 'FileUploadResponse',
     description: `Response payload for file upload initialization.
 
-Contains the presigned URL for direct S3/MinIO upload and metadata
+Contains the presigned URL for direct datalake upload and metadata
 needed to complete the upload process.`
 } as const;
 
@@ -7058,7 +7058,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1756201359
+            default: 1756478230
         },
         owned_by: {
             type: 'string',

@@ -6,8 +6,8 @@ import {
 export interface UploadFileOptions {
   filename: string
   file: File
-  folder: string
-  container: string
+  namespace: string
+  database: string
   onProgress?: () => void
 }
 
@@ -16,14 +16,14 @@ export const useDocumentUpload = defineMutation(() => {
 
   const { mutateAsync: uploadDocumentMutation } = useMutation({
     mutation: async (options: UploadFileOptions) => {
-      const { filename, file, folder, container } = options
+      const { filename, file, namespace, database } = options
 
       const initiateRequest: FileUploadRequest = {
         filename,
         content_type: file.type,
         content_length: file.size,
-        folder,
-        container,
+        namespace_name: namespace,
+        database_name: database,
       }
 
       const initiateResponse = await initiateFileUpload({

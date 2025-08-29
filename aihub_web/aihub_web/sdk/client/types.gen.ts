@@ -3166,28 +3166,28 @@ export type FileUploadRequest = {
      */
     content_length: number;
     /**
-     * Folder
-     * Target folder for the file
+     * Namespace Name
+     * Target namespace name
      */
-    folder: string;
+    namespace_name: string;
     /**
-     * Container
-     * Target bucket/container for the file
+     * Database Name
+     * Target database name
      */
-    container: string;
+    database_name: string;
 };
 
 /**
  * FileUploadResponse
  * Response payload for file upload initialization.
  *
- * Contains the presigned URL for direct S3/MinIO upload and metadata
+ * Contains the presigned URL for direct datalake upload and metadata
  * needed to complete the upload process.
  */
 export type FileUploadResponse = {
     /**
      * Upload Url
-     * Presigned URL for uploading the file to S3/MinIO
+     * Presigned URL for uploading the file to a datalake
      */
     upload_url: string;
     /**
@@ -3197,12 +3197,17 @@ export type FileUploadResponse = {
     upload_id: string;
     /**
      * Container
-     * Target container/bucket for the file
+     * The bucket/container name where file will be stored
      */
     container: string;
     /**
+     * Folder
+     * The folder name within the bucket/container
+     */
+    folder: string;
+    /**
      * Object Key
-     * S3 object key/path for the uploaded file
+     * The object key/path for the uploaded file
      */
     object_key: string;
     /**
@@ -3210,11 +3215,6 @@ export type FileUploadResponse = {
      * Upload URL expiration time in seconds
      */
     expires_in: number;
-    /**
-     * Folder
-     * Target folder for the file
-     */
-    folder: string;
 };
 
 /**

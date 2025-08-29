@@ -211,29 +211,32 @@ knowledge:
     create: "Erstellen"
     cancel: "Abbrechen"
   add_folder:
-    title: "Ordner zur Wissensdatenbank hinzufügen"
-    description: "Einen neuen Ordner in der Wissensdatenbank erstellen"
+    title: "Sammlung hinzufügen"
+    description: "Eine neue Wissenssammlung erstellen"
     cancel: "Abbrechen"
+  edit_namespace: "Sammlung bearbeiten"
+  upload_documents: "Dokumente hochladen"
   form:
     create:
-      title: "Ordner für Wissensdatenbank erstellen"
+      title: "Sammlung erstellen"
     edit:
-      title: "Ordner der Wissensdatenbank bearbeiten"
+      title: "Sammlung bearbeiten"
     database:
       label: "Wissensdatenbank"
       placeholder: "Name der Wissensdatenbank"
     folder_name:
-      label: "Ordnername"
-      placeholder: "Ordnername"
-      help: "Name des zu erstellenden Ordners"
+      label: "Sammlungsname"
+      placeholder: "Sammlungsname"
+      help: "Name der zu erstellenden Sammlung"
+      edit_help: "Technischer Name der Sammlung"
     display_name:
       label: "Anzeigename"
       placeholder: "Anzeigename"
-      help: "Anzeigename des Ordners"
+      help: "Anzeigename der Sammlung"
     description:
       label: "Beschreibung"
       placeholder: "Beschreibung"
-      help: "Beschreibung des Ordners"
+      help: "Beschreibung der Sammlung"
 
 auth:
   renew:

@@ -18,7 +18,7 @@
               :key="namespace.name"
               :namespace="namespace"
               @click="toNamespace(database.name, namespace)"
-              @upload="openUploadModal(database.name, namespace.name)"
+              @upload="openUploadModal(database, namespace)"
               @edit="openEditNamespaceModal(namespace)"
             />
             <KnowledgeNamespaceEmptyCard @add="openNewNamespaceModal(database.name)" />
@@ -30,9 +30,11 @@
 
     <KnowledgeDocumentUploadModal
       v-model:visible="uploadModalVisible"
-      :container="selectedDatabaseForUpload"
-      :preselected-folder="selectedNamespaceForUpload"
-      @upload="handleUpload"
+      :database="selectedDatabaseForUpload"
+      :namespace="selectedNamespaceForUpload"
+      :database-display-name="selectedDatabaseDisplayNameForUpload"
+      :namespace-display-name="selectedNamespaceDisplayNameForUpload"
+      @success="handleUploadSuccess"
     />
 
     <KnowledgeNamespaceCreateModal
@@ -53,7 +55,7 @@
 <script setup lang="ts">
 import { useChangeCase } from '@vueuse/integrations/useChangeCase'
 
-import type { NamespaceDto } from '@core/sdk/client'
+import type { DatabaseDto, NamespaceDto } from '@core/sdk/client'
 
 import { useLocalePath } from '#i18n'
 
@@ -66,6 +68,8 @@ const { databases, databasesAreLoading } = useDatabases()
 const uploadModalVisible = ref(false)
 const selectedDatabaseForUpload = ref('')
 const selectedNamespaceForUpload = ref('')
+const selectedDatabaseDisplayNameForUpload = ref('')
+const selectedNamespaceDisplayNameForUpload = ref('')
 
 const newNamespaceModalVisible = ref(false)
 const selectedDatabaseForNewNamespace = ref('')
@@ -77,18 +81,16 @@ const toNamespace = (database_name: string, namespace: NamespaceDto) => {
   router.push(localePath(`/service/knowledge/${database_name}/${namespace.name}`))
 }
 
-const openUploadModal = (database_name: string, namespace_name: string) => {
-  selectedDatabaseForUpload.value = database_name
-  selectedNamespaceForUpload.value = namespace_name
+const openUploadModal = (database: DatabaseDto, namespace: NamespaceDto) => {
+  selectedDatabaseForUpload.value = database.name
+  selectedNamespaceForUpload.value = namespace.name
+  selectedDatabaseDisplayNameForUpload.value = useChangeCase(database.name, 'capitalCase')
+  selectedNamespaceDisplayNameForUpload.value = namespace.display_name || useChangeCase(namespace.name, 'capitalCase')
   uploadModalVisible.value = true
 }
 
-const handleUpload = (data: { files: File[], namespace: string, database: string }) => {
+const handleUploadSuccess = (data: { files: File[], namespace: string, database: string }) => {
   uploadModalVisible.value = false
-
-  // Optionally navigate to the namespace after upload
-  const localePath = useLocalePath()
-  const router = useRouter()
   router.push(localePath(`/service/knowledge/${data.database}/${data.namespace}`))
 }
 
@@ -98,9 +100,7 @@ const openNewNamespaceModal = (databaseName: string) => {
 }
 
 const handleCreationSuccess = (data: { database: string, namespace: string }) => {
-  setTimeout(() => {
-    openUploadModal(data.database, data.namespace)
-  }, 100)
+  router.push(localePath(`/service/knowledge/${data.database}/${data.namespace}`))
 }
 
 const openEditNamespaceModal = (namespace: NamespaceDto) => {

@@ -14,7 +14,7 @@ def get_db_name_from_bucket_name(bucket_name: str) -> str:
     """
     # Ensure MongoDB connection is established
     connect_to_mongo_db(AIHubSettings().MONGO_MAIN_DB_NAME)
-    
+
     try:
         bucket_entity = BucketEntity.get_bucket_by_bucket_name(bucket_name)
         return bucket_entity.db_name
@@ -29,7 +29,7 @@ def get_or_create_namespace_for_directory(bucket_name: str, directory_name: str)
     """
     # Ensure MongoDB connection is established
     connect_to_mongo_db(AIHubSettings().MONGO_MAIN_DB_NAME)
-    
+
     try:
         bucket_entity = BucketEntity.get_bucket_by_bucket_name(bucket_name)
     except DoesNotExist:

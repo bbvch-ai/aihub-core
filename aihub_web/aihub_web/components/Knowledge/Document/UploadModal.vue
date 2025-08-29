@@ -2,7 +2,7 @@
   <Dialog
     v-model:visible="isVisible"
     modal
-    :header="modalTitle"
+    :header="t('knowledge.documents.upload.title')"
     :style="{ width: '30rem' }"
     :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
   >
@@ -24,7 +24,7 @@
           style="font-size: 3rem"
         />
         <p class="mb-2 text-sm text-surface-600 dark:text-surface-400">
-          <span class="font-semibold">{{ t('document.upload.drag_and_drop') }}</span>
+          <span class="font-semibold">{{ t('knowledge.documents.upload.drag_and_drop') }}</span>
         </p>
         <div
           v-if="selectedFiles.length > 0"
@@ -38,10 +38,6 @@
             <div class="flex items-center gap-2">
               <i class="pi pi-file text-surface-400" />
               <span class="text-sm">{{ file.name }}</span>
-              <Badge
-                :value="formatFileSize(file.size)"
-                size="small"
-              />
             </div>
             <Button
               icon="pi pi-times"
@@ -56,16 +52,16 @@
       </div>
 
       <div
-        v-if="props.preselectedFolder && props.container"
+        v-if="props.namespace && props.database"
         class="flex flex-col gap-2"
       >
-        <label class="text-sm font-medium">{{ t('document.target_location.label') }}</label>
+        <label class="text-sm font-medium">{{ t('knowledge.documents.upload.target_location.label') }}</label>
         <div class="flex items-center gap-2 rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-700 dark:bg-surface-800">
           <i
             class="pi pi-database text-surface-400"
             style="font-size: 1rem"
           />
-          <span class="text-sm text-surface-600 dark:text-surface-300">{{ props.container }}</span>
+          <span class="text-sm text-surface-600 dark:text-surface-300">{{ databaseDisplayName }}</span>
           <i
             class="pi pi-angle-right text-surface-400"
             style="font-size: 0.8rem"
@@ -74,10 +70,10 @@
             class="pi pi-folder text-primary-500"
             style="font-size: 1rem"
           />
-          <span class="text-sm font-medium text-surface-800 dark:text-surface-100">{{ props.preselectedFolder }}</span>
+          <span class="text-sm font-medium text-surface-800 dark:text-surface-100">{{ namespaceDisplayName }}</span>
         </div>
         <small class="text-surface-500 dark:text-surface-400">
-          {{ t('document.upload.target_location.help') }}
+          {{ t('knowledge.documents.upload.target_location.help') }}
         </small>
       </div>
 
@@ -104,14 +100,14 @@
     <template #footer>
       <div class="flex justify-end gap-2">
         <Button
-          :label="t('document.upload.actions.cancel')"
+          :label="t('knowledge.documents.upload.actions.cancel')"
           severity="secondary"
           outlined
           :disabled="isUploading"
           @click="closeModal"
         />
         <Button
-          :label="t('document.upload.actions.upload')"
+          :label="t('knowledge.documents.upload.actions.upload')"
           :disabled="!canUpload"
           :loading="isUploading"
           @click="handleUpload"
@@ -131,10 +127,14 @@
 </template>
 
 <script setup lang="ts">
+import { useChangeCase } from '@vueuse/integrations/useChangeCase'
+
 interface Props {
   visible: boolean
-  container?: string
-  preselectedFolder?: string
+  database: string
+  namespace: string
+  databaseDisplayName?: string
+  namespaceDisplayName?: string
   title?: string
 }
 
@@ -143,9 +143,17 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { t } = useI18n()
 
+const databaseDisplayName = computed(() => {
+  return props.databaseDisplayName || useChangeCase(props.database, 'capitalCase')
+})
+
+const namespaceDisplayName = computed(() => {
+  return props.namespaceDisplayName || useChangeCase(props.namespace, 'capitalCase')
+})
+
 const emit = defineEmits<{
   'update:visible': [value: boolean]
-  'upload': [data: { files: File[], folder: string, container: string }]
+  'success': [data: { files: File[], namespace: string, database: string }]
 }>()
 
 const { uploadDocument } = useDocumentUpload()
@@ -165,21 +173,9 @@ const isVisible = computed({
   set: value => emit('update:visible', value),
 })
 
-const modalTitle = computed(() => {
-  return `${t('document.upload.title')} ${props.preselectedFolder}`
-})
-
 const canUpload = computed(() => {
   return selectedFiles.value.length > 0 && !isUploading.value
 })
-
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
-}
 
 const addFiles = (files: FileList | File[]) => {
   errorMessage.value = ''
@@ -229,8 +225,8 @@ const handleDrop = (event: DragEvent) => {
 const handleUpload = async () => {
   if (!canUpload.value) return
 
-  const folder = props.preselectedFolder || ''
-  const container = props.container || 'default'
+  const namespace = props.namespace
+  const database = props.database
 
   isUploading.value = true
   errorMessage.value = ''
@@ -241,39 +237,32 @@ const handleUpload = async () => {
     await uploadDocument({
       filename: file.name,
       file,
-      folder,
-      container,
+      namespace,
+      database,
     })
   }
-  emit('upload', {
-    files: selectedFiles.value,
-    folder,
-    container,
-  })
+
+  emit('success', { files: selectedFiles.value, namespace, database })
   closeModal()
-  isUploading.value = false
-  uploadProgress.value = 0
-  currentUploadFile.value = ''
 }
 
-const closeModal = () => {
+const resetState = () => {
   selectedFiles.value = []
   errorMessage.value = ''
   hasError.value = false
   isUploading.value = false
   uploadProgress.value = 0
   currentUploadFile.value = ''
+}
+
+const closeModal = () => {
+  resetState()
   emit('update:visible', false)
 }
 
 watch(() => props.visible, (newVal) => {
   if (newVal) {
-    selectedFiles.value = []
-    errorMessage.value = ''
-    hasError.value = false
-    isUploading.value = false
-    uploadProgress.value = 0
-    currentUploadFile.value = ''
+    resetState()
   }
 })
 </script>

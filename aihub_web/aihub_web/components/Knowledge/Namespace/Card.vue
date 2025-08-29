@@ -27,7 +27,7 @@
       </div>
       <div class="flex items-center gap-2">
         <Button
-          v-tooltip.top="'Edit folder'"
+          v-tooltip.top="t('knowledge.edit_namespace')"
           icon="pi pi-pencil"
           rounded
           text
@@ -36,7 +36,7 @@
           @click.stop="handleEditClick"
         />
         <Button
-          v-tooltip.top="'Upload documents'"
+          v-tooltip.top="t('knowledge.upload_documents')"
           icon="pi pi-upload"
           rounded
           text

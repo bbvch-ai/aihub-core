@@ -4,9 +4,9 @@
     @click="handleAdd"
   >
     <div class="flex items-center justify-center">
-      <div class="flex items-center justify-center rounded-full bg-surface-100 p-3 dark:bg-surface-800">
+      <div class="flex items-center justify-center p-3">
         <i
-          class="pi pi-folder-plus text-surface-400"
+          class="pi pi-plus text-surface-400"
           style="font-size: 1.5rem"
         />
       </div>

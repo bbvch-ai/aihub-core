@@ -8,17 +8,23 @@
   >
     <div class="flex flex-col gap-4">
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium">{{ t('knowledge.form.folder_name.label') }}</label>
+        <label class="text-sm font-medium">
+          {{ t('knowledge.form.folder_name.label') }}
+          <span class="ml-1 text-xs text-gray-400">(read-only)</span>
+        </label>
         <InputText
           :value="namespace?.name || ''"
           disabled
           class="bg-surface-100 dark:bg-surface-800"
         />
-        <small class="text-gray-500">{{ t('knowledge.form.folder_name.help') }}</small>
+        <small class="text-gray-500">{{ t('knowledge.form.folder_name.edit_help') }}</small>
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium">{{ t('knowledge.form.display_name.label') }}</label>
+        <label class="text-sm font-medium">
+          {{ t('knowledge.form.display_name.label') }}
+          <span class="ml-1 text-xs text-gray-400">(optional)</span>
+        </label>
         <InputText
           v-model="displayName"
           :placeholder="t('knowledge.form.display_name.placeholder')"
@@ -27,7 +33,10 @@
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium">{{ t('knowledge.form.description.label') }}</label>
+        <label class="text-sm font-medium">
+          {{ t('knowledge.form.description.label') }}
+          <span class="ml-1 text-xs text-gray-400">(optional)</span>
+        </label>
         <Textarea
           v-model="description"
           :placeholder="t('knowledge.form.description.placeholder')"

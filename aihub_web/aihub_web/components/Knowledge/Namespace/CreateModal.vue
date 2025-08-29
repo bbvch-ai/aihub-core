@@ -9,42 +9,58 @@
   >
     <div class="flex flex-col gap-4">
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium">{{ t('knowledge.form.database.label') }}</label>
+        <label class="text-sm font-medium">
+          {{ t('knowledge.form.database.label') }}
+          <span class="ml-1 text-xs text-red-500">*</span>
+        </label>
         <Dropdown
           v-model="selectedDatabase"
           :options="databaseOptions"
-          option-label="name"
+          option-label="displayName"
           option-value="name"
           :placeholder="t('knowledge.form.database.placeholder')"
           :class="{ 'p-invalid': error }"
+          :disabled="isCreating"
           class="w-full"
         />
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium">{{ t('knowledge.form.folder_name.label') }}</label>
+        <label class="text-sm font-medium">
+          {{ t('knowledge.form.folder_name.label') }}
+          <span class="ml-1 text-xs text-red-500">*</span>
+        </label>
         <InputText
           v-model="name"
           :placeholder="t('knowledge.form.folder_name.placeholder')"
           :class="{ 'p-invalid': error }"
+          :disabled="isCreating"
         />
         <small class="text-gray-500">{{ t('knowledge.form.folder_name.help') }}</small>
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium">{{ t('knowledge.form.display_name.label') }}</label>
+        <label class="text-sm font-medium">
+          {{ t('knowledge.form.display_name.label') }}
+          <span class="ml-1 text-xs text-gray-400">(optional)</span>
+        </label>
         <InputText
           v-model="displayName"
           :placeholder="t('knowledge.form.display_name.placeholder')"
+          :disabled="isCreating"
         />
         <small class="text-gray-500">{{ t('knowledge.form.display_name.help') }}</small>
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium">{{ t('knowledge.form.description.label') }}</label>
+        <label class="text-sm font-medium">
+          {{ t('knowledge.form.description.label') }}
+          <span class="ml-1 text-xs text-gray-400">(optional)</span>
+        </label>
         <Textarea
           v-model="description"
           :placeholder="t('knowledge.form.description.placeholder')"
+          :disabled="isCreating"
           rows="3"
         />
         <small class="text-gray-500">{{ t('knowledge.form.description.help') }}</small>
@@ -66,6 +82,7 @@
         <Button
           :label="t('knowledge.actions.create')"
           :disabled="!canSubmit"
+          :loading="isCreating"
           @click="handleCreate"
         />
       </div>
@@ -74,6 +91,8 @@
 </template>
 
 <script setup lang="ts">
+import { useChangeCase } from '@vueuse/integrations/useChangeCase'
+
 import type { CreateNamespaceRequest, DatabaseDto } from '@core/sdk/client'
 
 const { t } = useI18n()
@@ -96,9 +115,15 @@ const name = ref('')
 const displayName = ref('')
 const description = ref('')
 const error = ref('')
+const isCreating = ref(false)
 
-const databaseOptions = computed(() => props.databases || [])
-const canSubmit = computed(() => selectedDatabase.value.trim() && name.value.trim())
+const databaseOptions = computed(() =>
+  (props.databases || []).map(db => ({
+    name: db.name,
+    displayName: useChangeCase(db.name, 'capitalCase'),
+  })),
+)
+const canSubmit = computed(() => selectedDatabase.value.trim() && name.value.trim() && !isCreating.value)
 
 const closeModal = () => {
   emit('update:modelValue', false)
@@ -110,22 +135,34 @@ const resetForm = () => {
   displayName.value = ''
   description.value = ''
   error.value = ''
+  isCreating.value = false
 }
 
 const handleCreate = async () => {
   if (!canSubmit.value) return
 
-  const requestBody: CreateNamespaceRequest = {
-    database_name: selectedDatabase.value,
-    namespace_name: name.value,
-    folder_name: name.value,
-    display_name: displayName.value,
-    description: description.value,
-  }
+  isCreating.value = true
+  error.value = ''
 
-  await createNamespace(ref(requestBody))
-  emit('success', { database: selectedDatabase.value, namespace: name.value })
-  closeModal()
+  try {
+    const requestBody: CreateNamespaceRequest = {
+      database_name: selectedDatabase.value,
+      namespace_name: name.value,
+      folder_name: name.value,
+      display_name: displayName.value,
+      description: description.value,
+    }
+
+    await createNamespace(ref(requestBody))
+    emit('success', { database: selectedDatabase.value, namespace: name.value })
+    closeModal()
+  }
+  catch (e: unknown) {
+    error.value = (e as Error).message || 'Failed to create namespace'
+  }
+  finally {
+    isCreating.value = false
+  }
 }
 
 watch(() => props.modelValue, (isVisible) => {
