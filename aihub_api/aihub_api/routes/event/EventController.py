@@ -46,8 +46,8 @@ class EventController(Controller):
         async def get_agent_events_in_thread(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
-            display_id: Annotated[str, Query(pattern="^[a-f0-9]{24}$")] = None,
+            thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
+            display_id: Annotated[str, Query(pattern=r"^[a-f0-9]{24}$")] = None,
         ) -> list[ContextualizedAgentEvent]:
             """
             Returns all events in a given thread

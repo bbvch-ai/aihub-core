@@ -12,7 +12,6 @@ from aihub_lib.testing.logging.logger import enable_logging
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from llama_index.core.base.llms.types import ChatMessage
-from stringcase import snakecase
 
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.agent.AgentService import AgentService
@@ -77,7 +76,7 @@ async def test_send_event_to_agent(agent_api_client):
     user_message = ModelCreationService.create_input_model_from_event_class(UserMessageEvent)(
         messages=[ChatMessage(role="user", content="Hey!")]
     )
-    path = f"/agents/{AGENT_CLASS}/{AGENT_ID}/{snakecase(UserMessageEvent.event_name_from_class())}"
+    path = f"/agents/{AGENT_CLASS}/{AGENT_ID}/{UserMessageEvent.event_name_from_class()}"
     response = await agent_api_client.post(
         url=path,
         content=user_message.model_dump_json(),

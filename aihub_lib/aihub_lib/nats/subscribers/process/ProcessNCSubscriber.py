@@ -11,7 +11,7 @@ from aihub_lib.nats.topics.discovery.process.ProcessClassDiscoveryTopic import P
 from aihub_lib.nats.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
 
 
-class ProcessNCSubscriber(NCSubscriber):
+class ProcessNCSubscriber(NCSubscriber[BaseEvent]):
     @classmethod
     def for_process_instance_discovery_request_events(
         cls,

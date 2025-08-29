@@ -34,7 +34,7 @@ class LLMParameter(BaseModel):
         le=20,
     )
     timeout: float = Field(
-        default=60.0,
+        default=600.0,
         description="The timeout, in seconds, for API requests.",
         ge=0,
     )

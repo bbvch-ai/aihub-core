@@ -126,6 +126,16 @@ export type AgentDto = {
      */
     stop_events: Array<EventSpecs>;
     /**
+     * Hitl Request Events
+     * A list of `EventSpecs` representing human-in-the-loop request events this agent can produce.
+     */
+    hitl_request_events: Array<EventSpecs>;
+    /**
+     * Hitl Response Events
+     * A list of `EventSpecs` representing human-in-the-loop response events this agent can accept.
+     */
+    hitl_response_events: Array<EventSpecs>;
+    /**
      * A network graph of the agent, showing how different components are connected and interact.
      */
     network_graph: WorkflowGraph;
@@ -605,43 +615,6 @@ export type AnnotationUrlCitation = {
 };
 
 /**
- * AssistantChatMessage
- */
-export type AssistantChatMessage = {
-    role?: MessageRole;
-    /**
-     * Additional Kwargs
-     */
-    additional_kwargs?: unknown;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlock) | ({
-        block_type: 'audio';
-    } & AudioBlock) | ({
-        block_type: 'document';
-    } & DocumentBlock) | ({
-        block_type: 'cache';
-    } & CachePoint) | ({
-        block_type: 'citable';
-    } & CitableBlock) | ({
-        block_type: 'citation';
-    } & CitationBlock)>;
-    /**
-     * Agent Id
-     */
-    agent_id: string;
-    /**
-     * Agent Class
-     */
-    agent_class: string;
-};
-
-/**
  * Audio
  */
 export type Audio = {
@@ -895,33 +868,6 @@ export type ChatCompletion = {
 };
 
 /**
- * ChatCompletionAllowedToolChoiceParam
- */
-export type ChatCompletionAllowedToolChoiceParam = {
-    allowed_tools: ChatCompletionAllowedToolsParam;
-    /**
-     * Type
-     */
-    type: 'allowed_tools';
-};
-
-/**
- * ChatCompletionAllowedToolsParam
- */
-export type ChatCompletionAllowedToolsParam = {
-    /**
-     * Mode
-     */
-    mode: 'auto' | 'required';
-    /**
-     * Tools
-     */
-    tools: Array<{
-        [key: string]: unknown;
-    }>;
-};
-
-/**
  * ChatCompletionAssistantMessageParam
  */
 export type ChatCompletionAssistantMessageParam = {
@@ -946,7 +892,7 @@ export type ChatCompletionAssistantMessageParam = {
     /**
      * Tool Calls
      */
-    tool_calls?: Array<ChatCompletionMessageFunctionToolCallParam | ChatCompletionMessageCustomToolCallParam>;
+    tool_calls?: Array<ChatCompletionMessageToolCallParam>;
 };
 
 /**
@@ -1083,17 +1029,6 @@ export type ChatCompletionFunctionMessageParam = {
 };
 
 /**
- * ChatCompletionFunctionToolParam
- */
-export type ChatCompletionFunctionToolParam = {
-    function: FunctionDefinition;
-    /**
-     * Type
-     */
-    type: 'function';
-};
-
-/**
  * ChatCompletionMessage
  */
 export type ChatCompletionMessage = {
@@ -1118,45 +1053,14 @@ export type ChatCompletionMessage = {
     /**
      * Tool Calls
      */
-    tool_calls?: Array<ChatCompletionMessageFunctionToolCall | ChatCompletionMessageCustomToolCall> | null;
-    [key: string]: unknown | (string | null) | (string | null) | 'assistant' | (Array<Annotation> | null) | (ChatCompletionAudio | null) | (FunctionCallOutput | null) | (Array<ChatCompletionMessageFunctionToolCall | ChatCompletionMessageCustomToolCall> | null) | undefined;
+    tool_calls?: Array<ChatCompletionMessageToolCall> | null;
+    [key: string]: unknown | (string | null) | (string | null) | 'assistant' | (Array<Annotation> | null) | (ChatCompletionAudio | null) | (FunctionCallOutput | null) | (Array<ChatCompletionMessageToolCall> | null) | undefined;
 };
 
 /**
- * ChatCompletionMessageCustomToolCall
+ * ChatCompletionMessageToolCall
  */
-export type ChatCompletionMessageCustomToolCall = {
-    /**
-     * Id
-     */
-    id: string;
-    custom: CustomOutput;
-    /**
-     * Type
-     */
-    type: 'custom';
-    [key: string]: unknown | string | CustomOutput | 'custom';
-};
-
-/**
- * ChatCompletionMessageCustomToolCallParam
- */
-export type ChatCompletionMessageCustomToolCallParam = {
-    /**
-     * Id
-     */
-    id: string;
-    custom: OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom;
-    /**
-     * Type
-     */
-    type: 'custom';
-};
-
-/**
- * ChatCompletionMessageFunctionToolCall
- */
-export type ChatCompletionMessageFunctionToolCall = {
+export type ChatCompletionMessageToolCall = {
     /**
      * Id
      */
@@ -1170,29 +1074,18 @@ export type ChatCompletionMessageFunctionToolCall = {
 };
 
 /**
- * ChatCompletionMessageFunctionToolCallParam
+ * ChatCompletionMessageToolCallParam
  */
-export type ChatCompletionMessageFunctionToolCallParam = {
+export type ChatCompletionMessageToolCallParam = {
     /**
      * Id
      */
     id: string;
-    function: OpenaiTypesChatChatCompletionMessageFunctionToolCallParamFunction;
+    function: OpenaiTypesChatChatCompletionMessageToolCallParamFunction;
     /**
      * Type
      */
     type: 'function';
-};
-
-/**
- * ChatCompletionNamedToolChoiceCustomParam
- */
-export type ChatCompletionNamedToolChoiceCustomParam = {
-    custom: OpenaiTypesChatChatCompletionNamedToolChoiceCustomParamCustom;
-    /**
-     * Type
-     */
-    type: 'custom';
 };
 
 /**
@@ -1233,7 +1126,7 @@ export type ChatCompletionRequest = {
      * Model
      * ID of the model to use for the chat completion.
      */
-    model: string | ('gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gpt-5-2025-08-07' | 'gpt-5-mini-2025-08-07' | 'gpt-5-nano-2025-08-07' | 'gpt-5-chat-latest' | 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613');
+    model: string | ('gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613');
     /**
      * Stream
      * Enable streaming response.
@@ -1295,7 +1188,7 @@ export type ChatCompletionRequest = {
     /**
      * Reasoning Effort
      */
-    reasoning_effort?: ('minimal' | 'low' | 'medium' | 'high') | null;
+    reasoning_effort?: ('low' | 'medium' | 'high') | null;
     /**
      * Response Format
      */
@@ -1324,11 +1217,11 @@ export type ChatCompletionRequest = {
     /**
      * Tool Choice
      */
-    tool_choice?: ('none' | 'auto' | 'required') | ChatCompletionAllowedToolChoiceParam | ChatCompletionNamedToolChoiceParam | ChatCompletionNamedToolChoiceCustomParam | null;
+    tool_choice?: ('none' | 'auto' | 'required') | ChatCompletionNamedToolChoiceParam | null;
     /**
      * Tools
      */
-    tools?: Array<ChatCompletionFunctionToolParam> | null;
+    tools?: Array<ChatCompletionToolParam> | null;
     /**
      * Top Logprobs
      */
@@ -1337,19 +1230,15 @@ export type ChatCompletionRequest = {
      * Top P
      */
     top_p?: number | null;
-    [key: string]: unknown | (Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null) | (string | ('gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gpt-5-2025-08-07' | 'gpt-5-mini-2025-08-07' | 'gpt-5-nano-2025-08-07' | 'gpt-5-chat-latest' | 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613')) | boolean | (string | null) | (ChatCompletionAudioParam | null) | (number | null) | (('none' | 'auto') | ChatCompletionFunctionCallOptionParam | null) | (Array<OpenaiTypesChatCompletionCreateParamsFunction> | null) | ({
+    [key: string]: unknown | (Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null) | (string | ('gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613')) | boolean | (string | null) | (ChatCompletionAudioParam | null) | (number | null) | (('none' | 'auto') | ChatCompletionFunctionCallOptionParam | null) | (Array<OpenaiTypesChatCompletionCreateParamsFunction> | null) | ({
         [key: string]: number;
-    } | null) | (boolean | null) | (number | null) | (number | null) | (Metadata | null) | (Array<'text' | 'audio'> | null) | (number | null) | (boolean | null) | (ChatCompletionPredictionContentParam | null) | (number | null) | (('minimal' | 'low' | 'medium' | 'high') | null) | (ResponseFormatText | ResponseFormatJsonSchema | ResponseFormatJsonObject | null) | (number | null) | (('auto' | 'default') | null) | (string | Array<string> | null) | (boolean | null) | (ChatCompletionStreamOptionsParam | null) | (number | null) | (('none' | 'auto' | 'required') | ChatCompletionAllowedToolChoiceParam | ChatCompletionNamedToolChoiceParam | ChatCompletionNamedToolChoiceCustomParam | null) | (Array<ChatCompletionFunctionToolParam> | null) | (number | null) | (number | null) | undefined;
+    } | null) | (boolean | null) | (number | null) | (number | null) | (Metadata | null) | (Array<'text' | 'audio'> | null) | (number | null) | (boolean | null) | (ChatCompletionPredictionContentParam | null) | (number | null) | (('low' | 'medium' | 'high') | null) | (ResponseFormatText | ResponseFormatJsonSchema | ResponseFormatJsonObject | null) | (number | null) | (('auto' | 'default') | null) | (string | Array<string> | null) | (boolean | null) | (ChatCompletionStreamOptionsParam | null) | (number | null) | (('none' | 'auto' | 'required') | ChatCompletionNamedToolChoiceParam | null) | (Array<ChatCompletionToolParam> | null) | (number | null) | (number | null) | undefined;
 };
 
 /**
  * ChatCompletionStreamOptionsParam
  */
 export type ChatCompletionStreamOptionsParam = {
-    /**
-     * Include Obfuscation
-     */
-    include_obfuscation?: boolean;
     /**
      * Include Usage
      */
@@ -1413,6 +1302,17 @@ export type ChatCompletionToolMessageParam = {
      * Tool Call Id
      */
     tool_call_id: string;
+};
+
+/**
+ * ChatCompletionToolParam
+ */
+export type ChatCompletionToolParam = {
+    function: FunctionDefinition;
+    /**
+     * Type
+     */
+    type: 'function';
 };
 
 /**
@@ -1536,11 +1436,6 @@ export type ChunkEventReadable = {
      */
     model_name?: string;
     /**
-     * Reasoning Content
-     * The textual representation of the agent’s internal reasoning at a particular point in time.
-     */
-    reasoning_content?: string | null;
-    /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
@@ -1551,7 +1446,7 @@ export type ChunkEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
 };
 
 /**
@@ -1594,12 +1489,7 @@ export type ChunkEventWritable = {
      * The name of the AI model generating the chunks.
      */
     model_name?: string;
-    /**
-     * Reasoning Content
-     * The textual representation of the agent’s internal reasoning at a particular point in time.
-     */
-    reasoning_content?: string | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | null) | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
 };
 
 /**
@@ -1997,21 +1887,6 @@ export type CreateTokenResponse = {
      * The generated API token, only returned at creation
      */
     token: string;
-};
-
-/**
- * Custom
- */
-export type CustomOutput = {
-    /**
-     * Input
-     */
-    input: string;
-    /**
-     * Name
-     */
-    name: string;
-    [key: string]: unknown | string;
 };
 
 /**
@@ -5132,26 +5007,6 @@ export type MinimalUserDto = {
 };
 
 /**
- * ModelDTO
- */
-export type ModelDto = {
-    /**
-     * Model Name
-     * The name/identifier of the model
-     */
-    model_name: string;
-    /**
-     * Detailed information about the model
-     */
-    model_info: ModelInfoDto;
-    /**
-     * Icon
-     * URL or path to the model's icon
-     */
-    icon?: string | null;
-};
-
-/**
  * ModelDetails
  */
 export type ModelDetails = {
@@ -5188,202 +5043,6 @@ export type ModelDetails = {
 };
 
 /**
- * ModelInfoDTO
- */
-export type ModelInfoDto = {
-    /**
-     * Mode
-     * The mode of the model (e.g., 'chat', 'completion', 'embedding')
-     */
-    mode: string;
-    /**
-     * Max Input Tokens
-     * Maximum number of input tokens the model can handle
-     */
-    max_input_tokens?: number | null;
-    /**
-     * Max Output Tokens
-     * Maximum number of output tokens the model can generate
-     */
-    max_output_tokens?: number | null;
-    /**
-     * Input Cost Per Token
-     * Cost per input token in USD
-     */
-    input_cost_per_token?: number | null;
-    /**
-     * Output Cost Per Token
-     * Cost per output token in USD
-     */
-    output_cost_per_token?: number | null;
-    /**
-     * Cache Creation Input Token Cost
-     * Cost for creating cache from input tokens
-     */
-    cache_creation_input_token_cost?: number | null;
-    /**
-     * Cache Read Input Token Cost
-     * Cost for reading cached input tokens
-     */
-    cache_read_input_token_cost?: number | null;
-    /**
-     * Input Cost Per Token Above 128K Tokens
-     * Cost per input token for contexts above 128k tokens
-     */
-    input_cost_per_token_above_128k_tokens?: number | null;
-    /**
-     * Input Cost Per Token Above 200K Tokens
-     * Cost per input token for contexts above 200k tokens
-     */
-    input_cost_per_token_above_200k_tokens?: number | null;
-    /**
-     * Input Cost Per Audio Token
-     * Cost per audio input token
-     */
-    input_cost_per_audio_token?: number | null;
-    /**
-     * Input Cost Per Token Batches
-     * Cost per input token when using batch API
-     */
-    input_cost_per_token_batches?: number | null;
-    /**
-     * Output Cost Per Token Batches
-     * Cost per output token when using batch API
-     */
-    output_cost_per_token_batches?: number | null;
-    /**
-     * Output Cost Per Audio Token
-     * Cost per audio output token
-     */
-    output_cost_per_audio_token?: number | null;
-    /**
-     * Output Cost Per Reasoning Token
-     * Cost per reasoning token for models with reasoning capabilities
-     */
-    output_cost_per_reasoning_token?: number | null;
-    /**
-     * Output Cost Per Token Above 128K Tokens
-     * Cost per output token for contexts above 128k tokens
-     */
-    output_cost_per_token_above_128k_tokens?: number | null;
-    /**
-     * Output Cost Per Token Above 200K Tokens
-     * Cost per output token for contexts above 200k tokens
-     */
-    output_cost_per_token_above_200k_tokens?: number | null;
-    /**
-     * Output Cost Per Image
-     * Cost per image output
-     */
-    output_cost_per_image?: number | null;
-    /**
-     * Search Context Cost Per Query
-     * Cost per search context query
-     */
-    search_context_cost_per_query?: number | null;
-    /**
-     * Output Vector Size
-     * Size of output vectors for embedding models
-     */
-    output_vector_size?: number | null;
-    /**
-     * Supports System Messages
-     * Whether the model supports system messages
-     */
-    supports_system_messages?: boolean | null;
-    /**
-     * Supports Response Schema
-     * Whether the model supports structured response schemas
-     */
-    supports_response_schema?: boolean | null;
-    /**
-     * Supports Vision
-     * Whether the model supports vision/image input
-     */
-    supports_vision?: boolean | null;
-    /**
-     * Supports Function Calling
-     * Whether the model supports function calling
-     */
-    supports_function_calling?: boolean | null;
-    /**
-     * Supports Tool Choice
-     * Whether the model supports tool choice selection
-     */
-    supports_tool_choice?: boolean | null;
-    /**
-     * Supports Assistant Prefill
-     * Whether the model supports assistant message prefilling
-     */
-    supports_assistant_prefill?: boolean | null;
-    /**
-     * Supports Prompt Caching
-     * Whether the model supports prompt caching
-     */
-    supports_prompt_caching?: boolean | null;
-    /**
-     * Supports Audio Input
-     * Whether the model supports audio input
-     */
-    supports_audio_input?: boolean | null;
-    /**
-     * Supports Audio Output
-     * Whether the model supports audio output
-     */
-    supports_audio_output?: boolean | null;
-    /**
-     * Supports Pdf Input
-     * Whether the model supports PDF input
-     */
-    supports_pdf_input?: boolean | null;
-    /**
-     * Supports Embedding Image Input
-     * Whether the model supports image input for embeddings
-     */
-    supports_embedding_image_input?: boolean | null;
-    /**
-     * Supports Native Streaming
-     * Whether the model supports native streaming
-     */
-    supports_native_streaming?: boolean | null;
-    /**
-     * Supports Web Search
-     * Whether the model supports web search capabilities
-     */
-    supports_web_search?: boolean | null;
-    /**
-     * Supports Url Context
-     * Whether the model supports URL context input
-     */
-    supports_url_context?: boolean | null;
-    /**
-     * Supports Reasoning
-     * Whether the model supports reasoning capabilities
-     */
-    supports_reasoning?: boolean | null;
-    /**
-     * Supports Computer Use
-     * Whether the model supports computer use capabilities
-     */
-    supports_computer_use?: boolean | null;
-    /**
-     * Tpm
-     * Tokens per minute rate limit
-     */
-    tpm?: number | null;
-    /**
-     * Rpm
-     * Requests per minute rate limit
-     */
-    rpm?: number | null;
-    /**
-     * Supported Openai Params
-     * List of supported OpenAI API parameters
-     */
-    supported_openai_params?: Array<string> | null;
-};
-
-/**
  * ModelResponse
  */
 export type ModelResponse = {
@@ -5397,22 +5056,6 @@ export type ModelResponse = {
      * The list of models.
      */
     data: Array<ModelDetails>;
-};
-
-/**
- * ModelTypeGroupDTO
- */
-export type ModelTypeGroupDto = {
-    /**
-     * Name
-     * The name/type of the model group
-     */
-    name: string;
-    /**
-     * Models
-     * List of models in this group
-     */
-    models: Array<ModelDto>;
 };
 
 /**
@@ -6988,16 +6631,6 @@ export type ThoughtEventReadable = {
      */
     display_description?: LocaleString | null;
     /**
-     * Content
-     * The actual chunk of text or data produced at this stage.
-     */
-    content?: string;
-    /**
-     * Model Name
-     * The name of the AI model generating the chunks.
-     */
-    model_name?: string;
-    /**
      * Reasoning Content
      * The textual representation of the agent’s internal reasoning at a particular point in time.
      */
@@ -7045,16 +6678,6 @@ export type ThoughtEventWritable = {
      * Display description for the event
      */
     display_description?: LocaleString | null;
-    /**
-     * Content
-     * The actual chunk of text or data produced at this stage.
-     */
-    content?: string;
-    /**
-     * Model Name
-     * The name of the AI model generating the chunks.
-     */
-    model_name?: string;
     /**
      * Reasoning Content
      * The textual representation of the agent’s internal reasoning at a particular point in time.
@@ -7616,39 +7239,6 @@ export type UserAccess = {
 };
 
 /**
- * UserChatMessage
- */
-export type UserChatMessage = {
-    role?: MessageRole;
-    /**
-     * Additional Kwargs
-     */
-    additional_kwargs?: unknown;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlock) | ({
-        block_type: 'audio';
-    } & AudioBlock) | ({
-        block_type: 'document';
-    } & DocumentBlock) | ({
-        block_type: 'cache';
-    } & CachePoint) | ({
-        block_type: 'citable';
-    } & CitableBlock) | ({
-        block_type: 'citation';
-    } & CitationBlock)>;
-    /**
-     * User Id
-     */
-    user_id: string;
-};
-
-/**
  * UserDTO
  */
 export type UserDto = {
@@ -7787,7 +7377,7 @@ export type UserMessageEventReadable = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessage | UserChatMessage | AssistantChatMessage>;
+    messages?: Array<ChatMessage>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
@@ -7806,7 +7396,7 @@ export type UserMessageEventReadable = {
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
         [key: string]: unknown;
-    } | null) | UserIdentity | Array<ChatMessage | UserChatMessage | AssistantChatMessage> | (Array<UserUploadedFile> | null) | Array<string> | undefined;
+    } | null) | UserIdentity | Array<ChatMessage> | (Array<UserUploadedFile> | null) | Array<string> | undefined;
 };
 
 /**
@@ -7872,7 +7462,7 @@ export type UserMessageEventWritable = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessage | UserChatMessage | AssistantChatMessage>;
+    messages?: Array<ChatMessage>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
@@ -7880,7 +7470,7 @@ export type UserMessageEventWritable = {
     files?: Array<UserUploadedFile> | null;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
         [key: string]: unknown;
-    } | null) | UserIdentity | Array<ChatMessage | UserChatMessage | AssistantChatMessage> | (Array<UserUploadedFile> | null) | undefined;
+    } | null) | UserIdentity | Array<ChatMessage> | (Array<UserUploadedFile> | null) | undefined;
 };
 
 /**
@@ -8021,37 +7611,13 @@ export type OpenaiTypesAudioTranscriptionVerboseUsage = {
 };
 
 /**
- * Custom
- */
-export type OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom = {
-    /**
-     * Input
-     */
-    input: string;
-    /**
-     * Name
-     */
-    name: string;
-};
-
-/**
  * Function
  */
-export type OpenaiTypesChatChatCompletionMessageFunctionToolCallParamFunction = {
+export type OpenaiTypesChatChatCompletionMessageToolCallParamFunction = {
     /**
      * Arguments
      */
     arguments: string;
-    /**
-     * Name
-     */
-    name: string;
-};
-
-/**
- * Custom
- */
-export type OpenaiTypesChatChatCompletionNamedToolChoiceCustomParamCustom = {
     /**
      * Name
      */
@@ -8161,6 +7727,7 @@ export type GetUserData = {
     path: {
         /**
          * User Id
+         * The user's unique identifier (OID).
          */
         user_id: string;
     };
@@ -8586,53 +8153,6 @@ export type RemoveUserFromThreadResponses = {
 };
 
 export type RemoveUserFromThreadResponse = RemoveUserFromThreadResponses[keyof RemoveUserFromThreadResponses];
-
-export type ModelsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/models';
-};
-
-export type ModelsResponses = {
-    /**
-     * Response Models Models Get
-     * Successful Response
-     */
-    200: Array<ModelTypeGroupDto>;
-};
-
-export type ModelsResponse = ModelsResponses[keyof ModelsResponses];
-
-export type GetModelData = {
-    body?: never;
-    path: {
-        /**
-         * Model Name
-         */
-        model_name: string;
-    };
-    query?: never;
-    url: '/models/{model_name}';
-};
-
-export type GetModelErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetModelError = GetModelErrors[keyof GetModelErrors];
-
-export type GetModelResponses = {
-    /**
-     * Successful Response
-     */
-    200: ModelDto;
-};
-
-export type GetModelResponse = GetModelResponses[keyof GetModelResponses];
 
 export type GetAgentData = {
     body?: never;
@@ -9561,7 +9081,7 @@ export type GetDocumentsForNamespaceData = {
     body?: never;
     path: {
         /**
-         * Database
+         * Database name
          */
         database: string;
         /**
@@ -9606,7 +9126,7 @@ export type GetDocumentByIdData = {
     body?: never;
     path: {
         /**
-         * Database
+         * Database name
          */
         database: string;
         /**
@@ -9614,7 +9134,7 @@ export type GetDocumentByIdData = {
          */
         namespace: string;
         /**
-         * Document Id
+         * Document ID
          */
         document_id: string;
     };
@@ -9644,7 +9164,7 @@ export type GetNodesForDocumentData = {
     body?: never;
     path: {
         /**
-         * Database
+         * Database name
          */
         database: string;
         /**
@@ -9652,7 +9172,7 @@ export type GetNodesForDocumentData = {
          */
         namespace: string;
         /**
-         * Document Id
+         * Document ID
          */
         document_id: string;
     };
@@ -9683,7 +9203,7 @@ export type GetSummaryNodesForDocumentData = {
     body?: never;
     path: {
         /**
-         * Database
+         * Database name
          */
         database: string;
         /**
@@ -9691,7 +9211,7 @@ export type GetSummaryNodesForDocumentData = {
          */
         namespace: string;
         /**
-         * Document Id
+         * Document ID
          */
         document_id: string;
     };

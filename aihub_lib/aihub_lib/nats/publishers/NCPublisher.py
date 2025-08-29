@@ -7,7 +7,7 @@ from aihub_lib.nats.publishers.AbstractPublisher import AbstractPublisher, TEven
 logger = logging.getLogger(__name__)
 
 
-class NCPublisher(AbstractPublisher):
+class NCPublisher(AbstractPublisher[TEvent]):
     """
     A generic publisher for sending typed events to NATS subjects.
 
