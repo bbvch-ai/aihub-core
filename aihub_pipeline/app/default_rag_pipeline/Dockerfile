@@ -35,12 +35,10 @@ COPY aihub_pipeline/Makefile ./aihub_pipeline/Makefile
 COPY aihub_pipeline/poetry.lock ./aihub_pipeline/poetry.lock
 COPY aihub_pipeline/pyproject.toml ./aihub_pipeline/pyproject.toml
 COPY aihub_lib ./aihub_lib
-# TODO: remove once plugin separated!
-COPY aihub_doc/mdformat-vuepress ./aihub_doc/mdformat-vuepress
 
 COPY Makefile switch_dependencies.py pyproject.toml ./
 
-RUN poetry install
+RUN poetry install --without dev
 RUN make use-local-core
 RUN rm Makefile switch_dependencies.py pyproject.toml
 

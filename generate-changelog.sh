@@ -8,7 +8,7 @@
 set -euo pipefail
 
 # --- Configuration ---
-CHANGELOG_FILE="changelog.md"
+CHANGELOG_FILE="CHANGELOG.md"
 SYSTEM_PROMPT_FILE="changelog-prompt.md"
 LLM_MODEL="gemini-2.5-flash"
 EXCLUDE_PATTERNS=(
