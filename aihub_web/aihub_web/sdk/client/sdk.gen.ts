@@ -36,6 +36,16 @@ export const getHealth = <TComposable extends Composable, DefaultT extends GetHe
  */
 export const getSuite = <TComposable extends Composable, DefaultT extends GetSuiteResponse = GetSuiteResponse>(options: Options<TComposable, GetSuiteData, GetSuiteResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetSuiteResponse | DefaultT, unknown, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/suites/',
         ...options
     });
@@ -47,6 +57,16 @@ export const getSuite = <TComposable extends Composable, DefaultT extends GetSui
  */
 export const getMyUser = <TComposable extends Composable, DefaultT extends GetMyUserResponse = GetMyUserResponse>(options: Options<TComposable, GetMyUserData, GetMyUserResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetMyUserResponse | DefaultT, unknown, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         responseTransformer: getMyUserResponseTransformer,
         url: '/users/me',
         ...options
@@ -59,6 +79,16 @@ export const getMyUser = <TComposable extends Composable, DefaultT extends GetMy
  */
 export const getUser = <TComposable extends Composable, DefaultT extends GetUserResponse = GetUserResponse>(options: Options<TComposable, GetUserData, GetUserResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetUserResponse | DefaultT, GetUserError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         responseTransformer: getUserResponseTransformer,
         url: '/users/{user_id}',
         ...options
@@ -71,6 +101,16 @@ export const getUser = <TComposable extends Composable, DefaultT extends GetUser
  */
 export const getUsers = <TComposable extends Composable, DefaultT extends GetUsersResponse = GetUsersResponse>(options: Options<TComposable, GetUsersData, GetUsersResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetUsersResponse | DefaultT, GetUsersError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         responseTransformer: getUsersResponseTransformer,
         url: '/users/',
         ...options
@@ -83,6 +123,16 @@ export const getUsers = <TComposable extends Composable, DefaultT extends GetUse
  */
 export const getMyDashboard = <TComposable extends Composable, DefaultT extends GetMyDashboardResponse = GetMyDashboardResponse>(options: Options<TComposable, GetMyDashboardData, GetMyDashboardResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetMyDashboardResponse | DefaultT, unknown, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/users/me/dashboard',
         ...options
     });
@@ -95,6 +145,16 @@ export const getMyDashboard = <TComposable extends Composable, DefaultT extends 
  */
 export const updateMyDashboard = <TComposable extends Composable, DefaultT extends UpdateMyDashboardResponse = UpdateMyDashboardResponse>(options: Options<TComposable, UpdateMyDashboardData, UpdateMyDashboardResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).put<TComposable, UpdateMyDashboardResponse | DefaultT, UpdateMyDashboardError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/users/me/dashboard',
         ...options,
         headers: {
@@ -110,6 +170,16 @@ export const updateMyDashboard = <TComposable extends Composable, DefaultT exten
  */
 export const getLocale = <TComposable extends Composable, DefaultT extends GetLocaleResponse = GetLocaleResponse>(options: Options<TComposable, GetLocaleData, GetLocaleResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetLocaleResponse | DefaultT, unknown, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/i18n/my-locale',
         ...options
     });
@@ -121,6 +191,16 @@ export const getLocale = <TComposable extends Composable, DefaultT extends GetLo
  */
 export const getAgentEventsInThread = <TComposable extends Composable, DefaultT extends GetAgentEventsInThreadResponse = GetAgentEventsInThreadResponse>(options: Options<TComposable, GetAgentEventsInThreadData, GetAgentEventsInThreadResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetAgentEventsInThreadResponse | DefaultT, GetAgentEventsInThreadError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/events/agents/threads/{thread_id}',
         ...options
     });
@@ -137,6 +217,16 @@ export const getAgentEventsInThread = <TComposable extends Composable, DefaultT 
  */
 export const getAgentEventTimeseries = <TComposable extends Composable, DefaultT extends GetAgentEventTimeseriesResponse = GetAgentEventTimeseriesResponse>(options: Options<TComposable, GetAgentEventTimeseriesData, GetAgentEventTimeseriesResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetAgentEventTimeseriesResponse | DefaultT, GetAgentEventTimeseriesError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         responseTransformer: getAgentEventTimeseriesResponseTransformer,
         url: '/events/agents/timeseries/{time_range}',
         ...options
@@ -149,6 +239,16 @@ export const getAgentEventTimeseries = <TComposable extends Composable, DefaultT
  */
 export const getUserThreads = <TComposable extends Composable, DefaultT extends GetUserThreadsResponse = GetUserThreadsResponse>(options: Options<TComposable, GetUserThreadsData, GetUserThreadsResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetUserThreadsResponse | DefaultT, GetUserThreadsError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/threads/',
         ...options
     });
@@ -161,6 +261,16 @@ export const getUserThreads = <TComposable extends Composable, DefaultT extends 
  */
 export const createThread = <TComposable extends Composable, DefaultT extends CreateThreadResponse = CreateThreadResponse>(options: Options<TComposable, CreateThreadData, CreateThreadResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).post<TComposable, CreateThreadResponse | DefaultT, CreateThreadError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/threads/',
         ...options,
         headers: {
@@ -177,6 +287,16 @@ export const createThread = <TComposable extends Composable, DefaultT extends Cr
  */
 export const getThread = <TComposable extends Composable, DefaultT extends GetThreadResponse = GetThreadResponse>(options: Options<TComposable, GetThreadData, GetThreadResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetThreadResponse | DefaultT, GetThreadError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/threads/{thread_id}',
         ...options
     });
@@ -188,6 +308,16 @@ export const getThread = <TComposable extends Composable, DefaultT extends GetTh
  */
 export const addAgentToThread = <TComposable extends Composable, DefaultT extends AddAgentToThreadResponse = AddAgentToThreadResponse>(options: Options<TComposable, AddAgentToThreadData, AddAgentToThreadResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).post<TComposable, AddAgentToThreadResponse | DefaultT, AddAgentToThreadError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/threads/{thread_id}/agents',
         ...options,
         headers: {
@@ -203,6 +333,16 @@ export const addAgentToThread = <TComposable extends Composable, DefaultT extend
  */
 export const removeAgentFromThread = <TComposable extends Composable, DefaultT extends RemoveAgentFromThreadResponse = RemoveAgentFromThreadResponse>(options: Options<TComposable, RemoveAgentFromThreadData, RemoveAgentFromThreadResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).delete<TComposable, RemoveAgentFromThreadResponse | DefaultT, RemoveAgentFromThreadError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/threads/{thread_id}/agents/{agent_class}/{agent_id}',
         ...options
     });
@@ -214,6 +354,16 @@ export const removeAgentFromThread = <TComposable extends Composable, DefaultT e
  */
 export const addUserToThread = <TComposable extends Composable, DefaultT extends AddUserToThreadResponse = AddUserToThreadResponse>(options: Options<TComposable, AddUserToThreadData, AddUserToThreadResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).post<TComposable, AddUserToThreadResponse | DefaultT, AddUserToThreadError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/threads/{thread_id}/users',
         ...options,
         headers: {
@@ -229,6 +379,16 @@ export const addUserToThread = <TComposable extends Composable, DefaultT extends
  */
 export const removeUserFromThread = <TComposable extends Composable, DefaultT extends RemoveUserFromThreadResponse = RemoveUserFromThreadResponse>(options: Options<TComposable, RemoveUserFromThreadData, RemoveUserFromThreadResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).delete<TComposable, RemoveUserFromThreadResponse | DefaultT, RemoveUserFromThreadError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/threads/{thread_id}/users/{remove_user_id}',
         ...options
     });
@@ -240,6 +400,16 @@ export const removeUserFromThread = <TComposable extends Composable, DefaultT ex
  */
 export const getAgent = <TComposable extends Composable, DefaultT extends GetAgentResponse = GetAgentResponse>(options: Options<TComposable, GetAgentData, GetAgentResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetAgentResponse | DefaultT, GetAgentError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/agents/{agent_class}/{agent_id}',
         ...options
     });
@@ -251,6 +421,16 @@ export const getAgent = <TComposable extends Composable, DefaultT extends GetAge
  */
 export const getAgentThreads = <TComposable extends Composable, DefaultT extends GetAgentThreadsResponse = GetAgentThreadsResponse>(options: Options<TComposable, GetAgentThreadsData, GetAgentThreadsResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetAgentThreadsResponse | DefaultT, GetAgentThreadsError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/agents/{agent_class}/{agent_id}/threads',
         ...options
     });
@@ -262,6 +442,16 @@ export const getAgentThreads = <TComposable extends Composable, DefaultT extends
  */
 export const getAgents = <TComposable extends Composable, DefaultT extends GetAgentsResponse = GetAgentsResponse>(options: Options<TComposable, GetAgentsData, GetAgentsResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetAgentsResponse | DefaultT, unknown, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/agents/',
         ...options
     });
@@ -273,6 +463,16 @@ export const getAgents = <TComposable extends Composable, DefaultT extends GetAg
  */
 export const discoverAgents = <TComposable extends Composable, DefaultT extends DiscoverAgentsResponse = DiscoverAgentsResponse>(options: Options<TComposable, DiscoverAgentsData, DiscoverAgentsResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, DiscoverAgentsResponse | DefaultT, unknown, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/agents/discover',
         ...options
     });
@@ -284,6 +484,16 @@ export const discoverAgents = <TComposable extends Composable, DefaultT extends 
  */
 export const getProcess = <TComposable extends Composable, DefaultT extends GetProcessResponse = GetProcessResponse>(options: Options<TComposable, GetProcessData, GetProcessResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetProcessResponse | DefaultT, GetProcessError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/processes/{process_class}/{process_id}',
         ...options
     });
@@ -296,6 +506,16 @@ export const getProcess = <TComposable extends Composable, DefaultT extends GetP
  */
 export const getProcesses = <TComposable extends Composable, DefaultT extends GetProcessesResponse = GetProcessesResponse>(options: Options<TComposable, GetProcessesData, GetProcessesResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetProcessesResponse | DefaultT, unknown, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/processes/',
         ...options
     });
@@ -307,6 +527,16 @@ export const getProcesses = <TComposable extends Composable, DefaultT extends Ge
  */
 export const discoverProcesses = <TComposable extends Composable, DefaultT extends DiscoverProcessesResponse = DiscoverProcessesResponse>(options: Options<TComposable, DiscoverProcessesData, DiscoverProcessesResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, DiscoverProcessesResponse | DefaultT, unknown, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/processes/discover',
         ...options
     });
@@ -318,6 +548,16 @@ export const discoverProcesses = <TComposable extends Composable, DefaultT exten
  */
 export const getProcessStartForms = <TComposable extends Composable, DefaultT extends GetProcessStartFormsResponse = GetProcessStartFormsResponse>(options: Options<TComposable, GetProcessStartFormsData, GetProcessStartFormsResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetProcessStartFormsResponse | DefaultT, GetProcessStartFormsError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/processes/{process_class}/{process_id}/start_forms',
         ...options
     });
@@ -329,6 +569,16 @@ export const getProcessStartForms = <TComposable extends Composable, DefaultT ex
  */
 export const sendProcessStartForm = <TComposable extends Composable, DefaultT extends SendProcessStartFormResponse = SendProcessStartFormResponse>(options: Options<TComposable, SendProcessStartFormData, SendProcessStartFormResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).post<TComposable, SendProcessStartFormResponse | DefaultT, SendProcessStartFormError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/processes/{process_class}/{process_id}/submit_start_form',
         ...options,
         headers: {
@@ -344,6 +594,16 @@ export const sendProcessStartForm = <TComposable extends Composable, DefaultT ex
  */
 export const sendProcessOpenForm = <TComposable extends Composable, DefaultT extends SendProcessOpenFormResponse = SendProcessOpenFormResponse>(options: Options<TComposable, SendProcessOpenFormData, SendProcessOpenFormResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).post<TComposable, SendProcessOpenFormResponse | DefaultT, SendProcessOpenFormError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/processes/{process_class}/{process_id}/{process_walkthrough_id}/submit_open_form',
         ...options,
         headers: {
@@ -359,6 +619,16 @@ export const sendProcessOpenForm = <TComposable extends Composable, DefaultT ext
  */
 export const getProcessOpenForms = <TComposable extends Composable, DefaultT extends GetProcessOpenFormsResponse = GetProcessOpenFormsResponse>(options: Options<TComposable, GetProcessOpenFormsData, GetProcessOpenFormsResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetProcessOpenFormsResponse | DefaultT, GetProcessOpenFormsError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/processes/{process_class}/{process_id}/{process_walkthrough_id}/open_forms',
         ...options
     });
@@ -370,6 +640,16 @@ export const getProcessOpenForms = <TComposable extends Composable, DefaultT ext
  */
 export const listTokensEndpoint = <TComposable extends Composable, DefaultT extends ListTokensEndpointResponse = ListTokensEndpointResponse>(options: Options<TComposable, ListTokensEndpointData, ListTokensEndpointResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, ListTokensEndpointResponse | DefaultT, unknown, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         responseTransformer: listTokensEndpointResponseTransformer,
         url: '/tokens/',
         ...options
@@ -382,6 +662,16 @@ export const listTokensEndpoint = <TComposable extends Composable, DefaultT exte
  */
 export const createTokenEndpoint = <TComposable extends Composable, DefaultT extends CreateTokenEndpointResponse = CreateTokenEndpointResponse>(options: Options<TComposable, CreateTokenEndpointData, CreateTokenEndpointResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).post<TComposable, CreateTokenEndpointResponse | DefaultT, CreateTokenEndpointError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         responseTransformer: createTokenEndpointResponseTransformer,
         url: '/tokens/',
         ...options,
@@ -398,6 +688,16 @@ export const createTokenEndpoint = <TComposable extends Composable, DefaultT ext
  */
 export const revokeTokenEndpoint = <TComposable extends Composable, DefaultT extends RevokeTokenEndpointResponse = RevokeTokenEndpointResponse>(options: Options<TComposable, RevokeTokenEndpointData, RevokeTokenEndpointResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).delete<TComposable, RevokeTokenEndpointResponse | DefaultT, RevokeTokenEndpointError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/tokens/{token_id}',
         ...options
     });
@@ -409,6 +709,16 @@ export const revokeTokenEndpoint = <TComposable extends Composable, DefaultT ext
  */
 export const deleteRole = <TComposable extends Composable, DefaultT extends DeleteRoleResponse2 = DeleteRoleResponse2>(options: Options<TComposable, DeleteRoleData, DeleteRoleResponse2, DefaultT>) => {
     return (options.client ?? _heyApiClient).delete<TComposable, DeleteRoleResponse2 | DefaultT, DeleteRoleError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/roles/{role_id}',
         ...options
     });
@@ -420,6 +730,16 @@ export const deleteRole = <TComposable extends Composable, DefaultT extends Dele
  */
 export const getRole = <TComposable extends Composable, DefaultT extends GetRoleResponse = GetRoleResponse>(options: Options<TComposable, GetRoleData, GetRoleResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetRoleResponse | DefaultT, GetRoleError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/roles/{role_id}',
         ...options
     });
@@ -431,6 +751,16 @@ export const getRole = <TComposable extends Composable, DefaultT extends GetRole
  */
 export const updateRole = <TComposable extends Composable, DefaultT extends UpdateRoleResponse = UpdateRoleResponse>(options: Options<TComposable, UpdateRoleData, UpdateRoleResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).patch<TComposable, UpdateRoleResponse | DefaultT, UpdateRoleError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/roles/{role_id}',
         ...options,
         headers: {
@@ -446,6 +776,16 @@ export const updateRole = <TComposable extends Composable, DefaultT extends Upda
  */
 export const getRoles = <TComposable extends Composable, DefaultT extends GetRolesResponse = GetRolesResponse>(options: Options<TComposable, GetRolesData, GetRolesResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetRolesResponse | DefaultT, unknown, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/roles/',
         ...options
     });
@@ -457,6 +797,16 @@ export const getRoles = <TComposable extends Composable, DefaultT extends GetRol
  */
 export const createRole = <TComposable extends Composable, DefaultT extends CreateRoleResponse = CreateRoleResponse>(options: Options<TComposable, CreateRoleData, CreateRoleResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).post<TComposable, CreateRoleResponse | DefaultT, CreateRoleError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/roles/',
         ...options,
         headers: {
@@ -472,6 +822,16 @@ export const createRole = <TComposable extends Composable, DefaultT extends Crea
  */
 export const getModelsWithAssistants = <TComposable extends Composable, DefaultT extends GetModelsWithAssistantsResponse = GetModelsWithAssistantsResponse>(options: Options<TComposable, GetModelsWithAssistantsData, GetModelsWithAssistantsResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetModelsWithAssistantsResponse | DefaultT, unknown, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/openai/models',
         ...options
     });
@@ -483,6 +843,16 @@ export const getModelsWithAssistants = <TComposable extends Composable, DefaultT
  */
 export const getModelWithAssistants = <TComposable extends Composable, DefaultT extends GetModelWithAssistantsResponse = GetModelWithAssistantsResponse>(options: Options<TComposable, GetModelWithAssistantsData, GetModelWithAssistantsResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetModelWithAssistantsResponse | DefaultT, GetModelWithAssistantsError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/openai/models/{full_path}',
         ...options
     });
@@ -494,6 +864,16 @@ export const getModelWithAssistants = <TComposable extends Composable, DefaultT 
  */
 export const getEmbeddings = <TComposable extends Composable, DefaultT extends GetEmbeddingsResponse = GetEmbeddingsResponse>(options: Options<TComposable, GetEmbeddingsData, GetEmbeddingsResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).post<TComposable, GetEmbeddingsResponse | DefaultT, GetEmbeddingsError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/openai/embeddings',
         ...options,
         headers: {
@@ -509,6 +889,16 @@ export const getEmbeddings = <TComposable extends Composable, DefaultT extends G
  */
 export const chatCompletionWithAssistants = <TComposable extends Composable, DefaultT extends ChatCompletionWithAssistantsResponse = ChatCompletionWithAssistantsResponse>(options: Options<TComposable, ChatCompletionWithAssistantsData, ChatCompletionWithAssistantsResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).post<TComposable, ChatCompletionWithAssistantsResponse | DefaultT, ChatCompletionWithAssistantsError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/openai/chat/completions',
         ...options,
         headers: {
@@ -524,6 +914,16 @@ export const chatCompletionWithAssistants = <TComposable extends Composable, Def
  */
 export const generateImage = <TComposable extends Composable, DefaultT extends GenerateImageResponse = GenerateImageResponse>(options: Options<TComposable, GenerateImageData, GenerateImageResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).post<TComposable, GenerateImageResponse | DefaultT, GenerateImageError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/openai/images/generations',
         ...options,
         headers: {
@@ -540,6 +940,16 @@ export const generateImage = <TComposable extends Composable, DefaultT extends G
 export const createTranscription = <TComposable extends Composable, DefaultT extends CreateTranscriptionResponse = CreateTranscriptionResponse>(options: Options<TComposable, CreateTranscriptionData, CreateTranscriptionResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).post<TComposable, CreateTranscriptionResponse | DefaultT, CreateTranscriptionError, DefaultT>({
         ...formDataBodySerializer,
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/openai/audio/transcriptions',
         ...options,
         headers: {
@@ -555,6 +965,16 @@ export const createTranscription = <TComposable extends Composable, DefaultT ext
  */
 export const createSpeech = <TComposable extends Composable, DefaultT = undefined>(options: Options<TComposable, CreateSpeechData, unknown, DefaultT>) => {
     return (options.client ?? _heyApiClient).post<TComposable, unknown | DefaultT, CreateSpeechError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/openai/audio/speech',
         ...options,
         headers: {
@@ -570,6 +990,16 @@ export const createSpeech = <TComposable extends Composable, DefaultT = undefine
  */
 export const getDatasets = <TComposable extends Composable, DefaultT extends GetDatasetsResponse = GetDatasetsResponse>(options: Options<TComposable, GetDatasetsData, GetDatasetsResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetDatasetsResponse | DefaultT, unknown, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         responseTransformer: getDatasetsResponseTransformer,
         url: '/evaluations/datasets',
         ...options
@@ -582,6 +1012,16 @@ export const getDatasets = <TComposable extends Composable, DefaultT extends Get
  */
 export const createDataset = <TComposable extends Composable, DefaultT extends CreateDatasetResponse = CreateDatasetResponse>(options: Options<TComposable, CreateDatasetData, CreateDatasetResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).post<TComposable, CreateDatasetResponse | DefaultT, CreateDatasetError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         responseTransformer: createDatasetResponseTransformer,
         url: '/evaluations/datasets',
         ...options,
@@ -598,6 +1038,16 @@ export const createDataset = <TComposable extends Composable, DefaultT extends C
  */
 export const getDataset = <TComposable extends Composable, DefaultT extends GetDatasetResponse = GetDatasetResponse>(options: Options<TComposable, GetDatasetData, GetDatasetResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetDatasetResponse | DefaultT, GetDatasetError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         responseTransformer: getDatasetResponseTransformer,
         url: '/evaluations/datasets/{dataset_id}',
         ...options
@@ -610,6 +1060,16 @@ export const getDataset = <TComposable extends Composable, DefaultT extends GetD
  */
 export const updateDataset = <TComposable extends Composable, DefaultT extends UpdateDatasetResponse = UpdateDatasetResponse>(options: Options<TComposable, UpdateDatasetData, UpdateDatasetResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).put<TComposable, UpdateDatasetResponse | DefaultT, UpdateDatasetError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         responseTransformer: updateDatasetResponseTransformer,
         url: '/evaluations/datasets/{dataset_id}',
         ...options,
@@ -626,6 +1086,16 @@ export const updateDataset = <TComposable extends Composable, DefaultT extends U
  */
 export const getExperiment = <TComposable extends Composable, DefaultT extends GetExperimentResponse = GetExperimentResponse>(options: Options<TComposable, GetExperimentData, GetExperimentResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetExperimentResponse | DefaultT, GetExperimentError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         responseTransformer: getExperimentResponseTransformer,
         url: '/evaluations/experiments/{experiment_id}',
         ...options
@@ -638,6 +1108,16 @@ export const getExperiment = <TComposable extends Composable, DefaultT extends G
  */
 export const getExperiments = <TComposable extends Composable, DefaultT extends GetExperimentsResponse = GetExperimentsResponse>(options: Options<TComposable, GetExperimentsData, GetExperimentsResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetExperimentsResponse | DefaultT, unknown, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         responseTransformer: getExperimentsResponseTransformer,
         url: '/evaluations/experiments',
         ...options
@@ -650,6 +1130,16 @@ export const getExperiments = <TComposable extends Composable, DefaultT extends 
  */
 export const runExperiment = <TComposable extends Composable, DefaultT extends RunExperimentResponse = RunExperimentResponse>(options: Options<TComposable, RunExperimentData, RunExperimentResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).post<TComposable, RunExperimentResponse | DefaultT, RunExperimentError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         responseTransformer: runExperimentResponseTransformer,
         url: '/evaluations/experiments',
         ...options,
@@ -666,6 +1156,16 @@ export const runExperiment = <TComposable extends Composable, DefaultT extends R
  */
 export const createNamespace = <TComposable extends Composable, DefaultT extends CreateNamespaceResponse = CreateNamespaceResponse>(options: Options<TComposable, CreateNamespaceData, CreateNamespaceResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).post<TComposable, CreateNamespaceResponse | DefaultT, CreateNamespaceError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/knowledge/namespaces',
         ...options,
         headers: {
@@ -681,6 +1181,16 @@ export const createNamespace = <TComposable extends Composable, DefaultT extends
  */
 export const updateNamespace = <TComposable extends Composable, DefaultT extends UpdateNamespaceResponse = UpdateNamespaceResponse>(options: Options<TComposable, UpdateNamespaceData, UpdateNamespaceResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).put<TComposable, UpdateNamespaceResponse | DefaultT, UpdateNamespaceError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/knowledge/namespaces/{namespace_id}',
         ...options,
         headers: {
@@ -697,6 +1207,16 @@ export const updateNamespace = <TComposable extends Composable, DefaultT extends
  */
 export const getDatabases = <TComposable extends Composable, DefaultT extends GetDatabasesResponse = GetDatabasesResponse>(options: Options<TComposable, GetDatabasesData, GetDatabasesResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetDatabasesResponse | DefaultT, unknown, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/knowledge/databases',
         ...options
     });
@@ -708,6 +1228,16 @@ export const getDatabases = <TComposable extends Composable, DefaultT extends Ge
  */
 export const getDocumentsForNamespace = <TComposable extends Composable, DefaultT extends GetDocumentsForNamespaceResponse = GetDocumentsForNamespaceResponse>(options: Options<TComposable, GetDocumentsForNamespaceData, GetDocumentsForNamespaceResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetDocumentsForNamespaceResponse | DefaultT, GetDocumentsForNamespaceError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/knowledge/databases/{database}/namespaces/{namespace}/documents',
         ...options
     });
@@ -719,6 +1249,16 @@ export const getDocumentsForNamespace = <TComposable extends Composable, Default
  */
 export const getDocumentById = <TComposable extends Composable, DefaultT extends GetDocumentByIdResponse = GetDocumentByIdResponse>(options: Options<TComposable, GetDocumentByIdData, GetDocumentByIdResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetDocumentByIdResponse | DefaultT, GetDocumentByIdError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}',
         ...options
     });
@@ -730,6 +1270,16 @@ export const getDocumentById = <TComposable extends Composable, DefaultT extends
  */
 export const getNodesForDocument = <TComposable extends Composable, DefaultT extends GetNodesForDocumentResponse = GetNodesForDocumentResponse>(options: Options<TComposable, GetNodesForDocumentData, GetNodesForDocumentResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetNodesForDocumentResponse | DefaultT, GetNodesForDocumentError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/nodes',
         ...options
     });
@@ -741,6 +1291,16 @@ export const getNodesForDocument = <TComposable extends Composable, DefaultT ext
  */
 export const getSummaryNodesForDocument = <TComposable extends Composable, DefaultT extends GetSummaryNodesForDocumentResponse = GetSummaryNodesForDocumentResponse>(options: Options<TComposable, GetSummaryNodesForDocumentData, GetSummaryNodesForDocumentResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetSummaryNodesForDocumentResponse | DefaultT, GetSummaryNodesForDocumentError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/summaries',
         ...options
     });
@@ -752,6 +1312,16 @@ export const getSummaryNodesForDocument = <TComposable extends Composable, Defau
  */
 export const getFileUrl = <TComposable extends Composable, DefaultT extends GetFileUrlResponse = GetFileUrlResponse>(options: Options<TComposable, GetFileUrlData, GetFileUrlResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetFileUrlResponse | DefaultT, GetFileUrlError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/files/logged-in/url/{container}/{file_path}',
         ...options
     });
@@ -763,6 +1333,16 @@ export const getFileUrl = <TComposable extends Composable, DefaultT extends GetF
  */
 export const getFileRedirect = <TComposable extends Composable, DefaultT = undefined>(options: Options<TComposable, GetFileRedirectData, unknown, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, unknown | DefaultT, GetFileRedirectError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/files/logged-in/redirect/{container}/{file_path}',
         ...options
     });
@@ -799,6 +1379,16 @@ export const getAnonymousFileRedirect = <TComposable extends Composable, Default
  */
 export const initiateFileUpload = <TComposable extends Composable, DefaultT extends InitiateFileUploadResponse = InitiateFileUploadResponse>(options: Options<TComposable, InitiateFileUploadData, InitiateFileUploadResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).post<TComposable, InitiateFileUploadResponse | DefaultT, InitiateFileUploadError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/files/upload/initiate',
         ...options,
         headers: {
@@ -817,6 +1407,16 @@ export const initiateFileUpload = <TComposable extends Composable, DefaultT exte
  */
 export const validateFileUpload = <TComposable extends Composable, DefaultT extends ValidateFileUploadResponse = ValidateFileUploadResponse>(options: Options<TComposable, ValidateFileUploadData, ValidateFileUploadResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).post<TComposable, ValidateFileUploadResponse | DefaultT, ValidateFileUploadError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/files/upload/validate',
         ...options,
         headers: {
@@ -832,6 +1432,16 @@ export const validateFileUpload = <TComposable extends Composable, DefaultT exte
  */
 export const getNotifications = <TComposable extends Composable, DefaultT extends GetNotificationsResponse = GetNotificationsResponse>(options: Options<TComposable, GetNotificationsData, GetNotificationsResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).get<TComposable, GetNotificationsResponse | DefaultT, GetNotificationsError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         responseTransformer: getNotificationsResponseTransformer,
         url: '/notifications',
         ...options
@@ -844,6 +1454,16 @@ export const getNotifications = <TComposable extends Composable, DefaultT extend
  */
 export const updateNotificationsBulk = <TComposable extends Composable, DefaultT extends UpdateNotificationsBulkResponse = UpdateNotificationsBulkResponse>(options: Options<TComposable, UpdateNotificationsBulkData, UpdateNotificationsBulkResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).patch<TComposable, UpdateNotificationsBulkResponse | DefaultT, UpdateNotificationsBulkError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         responseTransformer: updateNotificationsBulkResponseTransformer,
         url: '/notifications/',
         ...options,
@@ -860,6 +1480,16 @@ export const updateNotificationsBulk = <TComposable extends Composable, DefaultT
  */
 export const updateNotification = <TComposable extends Composable, DefaultT extends UpdateNotificationResponse = UpdateNotificationResponse>(options: Options<TComposable, UpdateNotificationData, UpdateNotificationResponse, DefaultT>) => {
     return (options.client ?? _heyApiClient).patch<TComposable, UpdateNotificationResponse | DefaultT, UpdateNotificationError, DefaultT>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         responseTransformer: updateNotificationResponseTransformer,
         url: '/notifications/{notification_id}',
         ...options,
