@@ -1,9 +1,9 @@
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
 from fastapi import HTTPException
 from httpx import Client
 
 from aihub_api.routes.model.dto.ModelDTO import ModelDTO, ModelTypeGroupDTO
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
 
 
 class ModelService:

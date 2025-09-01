@@ -121,13 +121,13 @@
 </template>
 
 <script setup lang="ts">
-import type {ModelDto} from '@core/sdk/client'
+import type { ModelDto } from '@core/sdk/client'
 
 const props = defineProps<{
   model: ModelDto | null
 }>()
 
-const {t} = useI18n()
+const { t } = useI18n()
 
 const formatNumber = (num: number): string => {
   return new Intl.NumberFormat().format(num)
@@ -159,7 +159,7 @@ const capabilities = computed<string[]>(() => {
     .map(key => capabilityMap[key as keyof typeof capabilityMap])
 })
 
-const advancedPricingItems = computed<Array<{ key: string; label: string; value: number }>>(() => {
+const advancedPricingItems = computed<Array<{ key: string, label: string, value: number }>>(() => {
   if (!props.model?.model_info) return []
 
   const info = props.model.model_info
@@ -219,7 +219,7 @@ const advancedPricingItems = computed<Array<{ key: string; label: string; value:
       label: t('models.modelDetails.outputCostAbove200k'),
       value: info.output_cost_per_token_above_200k_tokens,
     },
-    {key: 'output_cost_per_image', label: t('models.modelDetails.imageCost'), value: info.output_cost_per_image},
+    { key: 'output_cost_per_image', label: t('models.modelDetails.imageCost'), value: info.output_cost_per_image },
     {
       key: 'search_context_cost_per_query',
       label: t('models.modelDetails.searchContextCost'),

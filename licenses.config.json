@@ -94,7 +94,8 @@
     "sse-starlette": "BSD-3-Clause",
     "hf-xet": "Apache-2.0",
     "parse_type": "MIT",
-    "rpds-py": "MIT"
+    "rpds-py": "MIT",
+    "audioop": "PSF-2.0"
   },
   "reviewed_packages": [
     {

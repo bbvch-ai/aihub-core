@@ -1,13 +1,13 @@
-import {getModel, type ModelDto} from '@core/sdk/client'
-import {useQuery} from '@pinia/colada'
-import {minutesToMilliseconds} from 'date-fns'
+import { getModel, type ModelDto } from '@core/sdk/client'
+import { useQuery } from '@pinia/colada'
+import { minutesToMilliseconds } from 'date-fns'
 
 export const useSingleModel = () => {
   const route = useRoute()
 
   const modelName = computed<string>(() => decodeURIComponent(route.params?.model_name as string))
 
-  const {data: model, isPending: modelIsLoading, error} = useQuery<ModelDto>({
+  const { data: model, isPending: modelIsLoading, error } = useQuery<ModelDto>({
     key: () => ['model', modelName.value],
     staleTime: minutesToMilliseconds(5),
     enabled: () => !!modelName.value,
