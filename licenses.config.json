@@ -95,7 +95,7 @@
     "hf-xet": "Apache-2.0",
     "parse_type": "MIT",
     "rpds-py": "MIT",
-    "audioop": "PSF-2.0"
+    "audioop-lts": "PSF-2.0"
   },
   "reviewed_packages": [
     {
