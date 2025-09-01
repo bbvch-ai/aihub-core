@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -10,7 +9,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, HTTPException, Security
+from fastapi import Depends, HTTPException, Path, Security
 from mongoengine import connect
 from pymongo import MongoClient
 

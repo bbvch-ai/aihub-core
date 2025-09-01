@@ -9,6 +9,14 @@ on:
           description: 'Docker image release version'
           required: true
           default: "manual"
+      secondary_tag:
+          description: 'Secondary tag to apply (optional), [nightly, latest, *empty*]'
+          required: false
+          default: ''
+          options:
+            - ''
+            - nightly
+            - latest
 
 permissions:
   contents: write
@@ -61,4 +69,4 @@ jobs:
           context: .
           file: ./aihub_${{ matrix.image }}/Dockerfile
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          secondary_tag: nightly
+          secondary_tag: ${{ github.event_name == 'repository_dispatch' && 'nightly' || github.event.inputs.secondary_tag }}

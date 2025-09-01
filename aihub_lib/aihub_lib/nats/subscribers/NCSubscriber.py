@@ -1,23 +1,19 @@
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable
-from typing import TypeVar
 
 from nats.aio.client import Client as NATS
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
 from nats.errors import BadSubscriptionError, ConnectionDrainingError
 
-from aihub_lib.nats.events import BaseEvent
-from aihub_lib.nats.subscribers.AbstractSubscriber import AbstractSubscriber
+from aihub_lib.nats.subscribers.AbstractSubscriber import AbstractSubscriber, TEvent
 from aihub_lib.nats.topics import Topic
 
 logger = logging.getLogger(__name__)
 
-TEvent = TypeVar("TEvent", bound=BaseEvent)
 
-
-class NCSubscriber(AbstractSubscriber):
+class NCSubscriber(AbstractSubscriber[TEvent]):
     """
     A generic NATS subscriber that reads messages from a given subject and delegates handling
     to a provided async callback. It deserializes event data into a specified event class (TEvent)

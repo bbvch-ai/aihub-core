@@ -40,7 +40,7 @@ COPY aihub_doc/mdformat-vuepress ./aihub_doc/mdformat-vuepress
 
 COPY Makefile switch_dependencies.py pyproject.toml ./
 
-RUN poetry install
+RUN poetry install --without dev
 RUN make use-local-core
 RUN rm Makefile switch_dependencies.py pyproject.toml
 
