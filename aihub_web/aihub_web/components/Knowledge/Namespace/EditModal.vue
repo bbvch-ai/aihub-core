@@ -10,7 +10,6 @@
       <div class="flex flex-col gap-2">
         <label class="text-sm font-medium">
           {{ t('knowledge.form.folder_name.label') }}
-          <span class="ml-1 text-xs text-gray-400">(read-only)</span>
         </label>
         <InputText
           :value="namespace?.name || ''"
@@ -94,8 +93,9 @@ const closeModal = () => {
 }
 
 const handleSave = async () => {
-  const namespaceId = props.namespace.name
+  error.value = ''
 
+  const namespaceId = props.namespace.id
   const updatePayload: UpdateNamespaceRequest = {
     display_name: displayName.value || props.namespace.name,
     description: description.value || null,

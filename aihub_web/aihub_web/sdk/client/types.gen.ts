@@ -2007,6 +2007,16 @@ export type DatabaseDto = {
      */
     name: string;
     /**
+     * Display Name
+     * Localized display name of database
+     */
+    display_name: string | null;
+    /**
+     * Auto Sync
+     * Whether this database auto-syncs namespaces
+     */
+    auto_sync: boolean;
+    /**
      * Namespaces
      * List of namespaces
      */

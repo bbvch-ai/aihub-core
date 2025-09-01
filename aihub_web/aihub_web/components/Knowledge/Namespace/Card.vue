@@ -36,6 +36,7 @@
           @click.stop="handleEditClick"
         />
         <Button
+          v-if="!autoSync"
           v-tooltip.top="t('knowledge.upload_documents')"
           icon="pi pi-upload"
           rounded
@@ -68,6 +69,7 @@ import type { NamespaceDto } from '@core/sdk/client'
 
 const props = defineProps<{
   namespace: NamespaceDto
+  autoSync?: boolean
 }>()
 
 const emit = defineEmits<{

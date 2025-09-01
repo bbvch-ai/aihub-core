@@ -1,5 +1,7 @@
+import re
+
 from bson import ObjectId
-from mongoengine import BooleanField, Document, EmbeddedDocumentField, StringField
+from mongoengine import BooleanField, Document, EmbeddedDocumentField, StringField, ValidationError
 
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
@@ -26,6 +28,14 @@ class BucketEntity(Document):
     auto_sync = BooleanField(default=False)
     datalake_type = StringField(default="s3", choices=["s3", "azure"])
 
+    @staticmethod
+    def _validate_name(name: str, field_name: str) -> None:
+        if not name:
+            raise ValidationError(f"{field_name} cannot be empty")
+
+        if not re.match(r"^[a-zA-Z0-9]+$", name):
+            raise ValidationError(f"{field_name} '{name}' can only contain alphanumeric characters")
+
     @classmethod
     def create_bucket(
         cls,
@@ -36,6 +46,9 @@ class BucketEntity(Document):
         auto_sync: bool = False,
         datalake_type: str = "s3",
     ) -> "BucketEntity":
+        cls._validate_name(bucket_name, "bucket_name")
+        if db_name:
+            cls._validate_name(db_name, "db_name")
         bucket = cls(
             id=ObjectId(),
             bucket_name=bucket_name,

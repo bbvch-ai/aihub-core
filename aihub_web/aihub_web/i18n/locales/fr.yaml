@@ -175,7 +175,8 @@ document:
     language: "Langue"
     document_type: "Type de document"
     number_of_pages: "Nombre de pages"
-    download: "Download"
+    download: "Télécharger"
+    is_processing: "Traitement en cours"
 
 knowledge:
   title: "Bases de connaissances"
@@ -189,6 +190,15 @@ knowledge:
       summary: "Résumés"
   documents:
     title: "Documents"
+    upload:
+      title: "Télécharger des documents"
+      drag_and_drop: "Glissez les fichiers ici ou cliquez pour sélectionner des fichiers"
+      target_location:
+        label: "Emplacement cible"
+        help: "Dossier où les documents doivent être stockés"
+      actions:
+        upload: "Télécharger"
+        cancel: "Annuler"
   nodes:
     title: "Morceaux de document"
   summary:
@@ -203,6 +213,11 @@ knowledge:
     title: "Ajouter une collection"
     description: "Créer une nouvelle collection de connaissances"
     cancel: "Annuler"
+  auto_sync:
+    title: "Synchronisé automatiquement"
+    description: "Les collections sont gérées automatiquement"
+  manual_management:
+    description: "Les collections peuvent être créées et gérées manuellement"
   edit_namespace: "Modifier la collection"
   upload_documents: "Télécharger des documents"
   form:
@@ -215,10 +230,10 @@ knowledge:
       placeholder: "Nom de la base de connaissances"
     folder_name:
       label: "Nom de la collection"
-      placeholder: "Nom de la collection"
-      help: "Nom de la collection à créer"
+      placeholder: "ma-collection"
+      help: "Seuls les caractères alphanumériques, tirets (-) et underscores (_) sont autorisés"
       edit_help: "Nom technique de la collection"
-      edit_help: "Nom technique de la collection"
+      validation_error: "Le nom de la collection ne peut contenir que des caractères alphanumériques, des tirets (-) et des underscores (_)"
     display_name:
       label: "Nom d'affichage"
       placeholder: "Nom d'affichage"

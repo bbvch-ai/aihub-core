@@ -2880,6 +2880,23 @@ export const DatabaseDTOSchema = {
             title: 'Name',
             description: 'Name of database'
         },
+        display_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name',
+            description: 'Localized display name of database'
+        },
+        auto_sync: {
+            type: 'boolean',
+            title: 'Auto Sync',
+            description: 'Whether this database auto-syncs namespaces'
+        },
         namespaces: {
             items: {
                 '$ref': '#/components/schemas/NamespaceDTO'
@@ -2890,7 +2907,7 @@ export const DatabaseDTOSchema = {
         }
     },
     type: 'object',
-    required: ['name', 'namespaces'],
+    required: ['name', 'display_name', 'auto_sync', 'namespaces'],
     title: 'DatabaseDTO'
 } as const;
 
@@ -6998,7 +7015,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1756711885
+            default: 1756730147
         },
         owned_by: {
             type: 'string',

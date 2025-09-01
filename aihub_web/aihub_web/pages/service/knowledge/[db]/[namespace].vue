@@ -4,7 +4,10 @@
     close-route="/service/knowledge"
     :loading="isLoading"
   >
-    <div class="mb-4 flex justify-end">
+    <div
+      v-if="!currentDatabase?.auto_sync"
+      class="mb-4 flex justify-end"
+    >
       <Button
         icon="pi pi-upload"
         :label="t('knowledge.documents.upload.title')"
@@ -75,7 +78,7 @@ const currentNamespace = computed(() => {
 })
 
 const databaseDisplayName = computed(() => {
-  return useChangeCase(route.params.db as string, 'capitalCase')
+  return currentDatabase.value?.display_name || useChangeCase(route.params.db as string, 'capitalCase')
 })
 
 const namespaceDisplayName = computed(() => {

@@ -193,14 +193,14 @@ knowledge:
   documents:
     title: "Documents"
     upload:
-      title: "Dokumente hochladen"
-      drag_and_drop: "Ziehen Sie Dateien hierher oder klicken Sie, um Dateien auszuwählen"
+      title: "Upload Documents"
+      drag_and_drop: "Drag files here or click to select files"
       target_location:
-        label: "Speicherort"
-        help: "Ordner, in dem die Dokumente gespeichert werden sollen"
+        label: "Target Location"
+        help: "Folder where the documents should be stored"
       actions:
-        upload: "Hochladen"
-        cancel: "Abbrechen"
+        upload: "Upload"
+        cancel: "Cancel"
   nodes:
     title: "Document Chunks"
   summary:
@@ -215,6 +215,11 @@ knowledge:
     title: "Add Collection"
     description: "Create a new knowledge collection"
     cancel: "Cancel"
+  auto_sync:
+    title: "Auto-synchronized"
+    description: "Collections are automatically managed"
+  manual_management:
+    description: "Collections can be created and managed manually"
   edit_namespace: "Edit collection"
   upload_documents: "Upload documents"
   form:
@@ -227,9 +232,10 @@ knowledge:
       placeholder: "Knowledge Database Name"
     folder_name:
       label: "Collection Name"
-      placeholder: "Collection Name"
-      help: "Name of the collection to create"
+      placeholder: "my-collection"
+      help: "Only alphanumeric characters, hyphens (-), and underscores (_) are allowed"
       edit_help: "Technical name of the collection"
+      validation_error: "Collection name can only contain alphanumeric characters, hyphens (-), and underscores (_)"
     display_name:
       label: "Display Name"
       placeholder: "Display Name"

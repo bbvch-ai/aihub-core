@@ -9,19 +9,33 @@
           v-for="database in databases"
           :key="database.name"
         >
-          <div class="pb-2 pl-2 text-sm font-medium">
-            {{ useChangeCase(database.name, 'capitalCase') }}
+          <div class="flex items-center gap-2 pb-2 pl-2">
+            <span class="text-sm font-medium">{{ database.display_name || useChangeCase(database.name, 'capitalCase') }}</span>
+            <i
+              v-if="database.auto_sync"
+              class="pi pi-lock text-surface-400 dark:text-surface-500"
+              :title="t('knowledge.auto_sync.description')"
+            />
+            <i
+              v-else
+              class="pi pi-lock-open text-surface-400 dark:text-surface-500"
+              :title="t('knowledge.manual_management.description')"
+            />
           </div>
           <div class="grid grid-cols-2 gap-4 2xl:grid-cols-2">
             <KnowledgeNamespaceCard
               v-for="namespace in database.namespaces"
               :key="namespace.name"
               :namespace="namespace"
+              :auto-sync="database.auto_sync"
               @click="toNamespace(database.name, namespace)"
               @upload="openUploadModal(database, namespace)"
               @edit="openEditNamespaceModal(namespace)"
             />
-            <KnowledgeNamespaceEmptyCard @add="openNewNamespaceModal(database.name)" />
+            <KnowledgeNamespaceEmptyCard
+              v-if="!database.auto_sync"
+              @add="openNewNamespaceModal(database.name)"
+            />
           </div>
         </div>
       </div>
@@ -84,7 +98,7 @@ const toNamespace = (database_name: string, namespace: NamespaceDto) => {
 const openUploadModal = (database: DatabaseDto, namespace: NamespaceDto) => {
   selectedDatabaseForUpload.value = database.name
   selectedNamespaceForUpload.value = namespace.name
-  selectedDatabaseDisplayNameForUpload.value = useChangeCase(database.name, 'capitalCase')
+  selectedDatabaseDisplayNameForUpload.value = database.display_name || useChangeCase(database.name, 'capitalCase')
   selectedNamespaceDisplayNameForUpload.value = namespace.display_name || useChangeCase(namespace.name, 'capitalCase')
   uploadModalVisible.value = true
 }

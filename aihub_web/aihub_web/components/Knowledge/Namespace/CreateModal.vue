@@ -33,10 +33,17 @@
         <InputText
           v-model="name"
           :placeholder="t('knowledge.form.folder_name.placeholder')"
-          :class="{ 'p-invalid': error }"
+          :class="{ 'p-invalid': error || nameValidationError }"
           :disabled="isCreating"
         />
-        <small class="text-gray-500">{{ t('knowledge.form.folder_name.help') }}</small>
+        <small
+          v-if="nameValidationError"
+          class="text-red-500"
+        >{{ nameValidationError }}</small>
+        <small
+          v-else
+          class="text-gray-500"
+        >{{ t('knowledge.form.folder_name.help') }}</small>
       </div>
 
       <div class="flex flex-col gap-2">
@@ -118,12 +125,25 @@ const error = ref('')
 const isCreating = ref(false)
 
 const databaseOptions = computed(() =>
-  (props.databases || []).map(db => ({
-    name: db.name,
-    displayName: useChangeCase(db.name, 'capitalCase'),
-  })),
+  (props.databases || [])
+    .filter(db => !db.auto_sync)
+    .map(db => ({
+      name: db.name,
+      displayName: useChangeCase(db.name, 'capitalCase'),
+    })),
 )
-const canSubmit = computed(() => selectedDatabase.value.trim() && name.value.trim() && !isCreating.value)
+const nameValidationError = computed(() => {
+  if (!name.value.trim()) return ''
+
+  const namePattern = /^[a-zA-Z0-9_-]+$/
+  if (!namePattern.test(name.value)) {
+    return t('knowledge.form.folder_name.validation_error')
+  }
+
+  return ''
+})
+
+const canSubmit = computed(() => selectedDatabase.value.trim() && name.value.trim() && !nameValidationError.value && !isCreating.value)
 
 const closeModal = () => {
   emit('update:modelValue', false)
@@ -144,25 +164,17 @@ const handleCreate = async () => {
   isCreating.value = true
   error.value = ''
 
-  try {
-    const requestBody: CreateNamespaceRequest = {
-      database_name: selectedDatabase.value,
-      namespace_name: name.value,
-      folder_name: name.value,
-      display_name: displayName.value,
-      description: description.value,
-    }
+  const requestBody: CreateNamespaceRequest = {
+    database_name: selectedDatabase.value,
+    namespace_name: name.value,
+    folder_name: name.value,
+    display_name: displayName.value,
+    description: description.value,
+  }
 
-    await createNamespace(ref(requestBody))
-    emit('success', { database: selectedDatabase.value, namespace: name.value })
-    closeModal()
-  }
-  catch (e: unknown) {
-    error.value = (e as Error).message || 'Failed to create namespace'
-  }
-  finally {
-    isCreating.value = false
-  }
+  await createNamespace(ref(requestBody))
+  emit('success', { database: selectedDatabase.value, namespace: name.value })
+  closeModal()
 }
 
 watch(() => props.modelValue, (isVisible) => {

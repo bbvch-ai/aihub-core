@@ -172,7 +172,10 @@ class KnowledgeService:
                     NamespaceDTO.from_entity(entity=ns_entity, t=t, number_of_documents=total_document_count)
                 )
 
-            database_dtos.append(DatabaseDTO(name=db_name, namespaces=namespaces))
+            display_name = KnowledgeService._safe_extract_locale_string(bucket.name, t)
+            database_dtos.append(
+                DatabaseDTO(name=db_name, display_name=display_name, auto_sync=bucket.auto_sync, namespaces=namespaces)
+            )
 
         return database_dtos
 
@@ -212,10 +215,24 @@ class KnowledgeService:
         return list(summaries.values())
 
     @staticmethod
+    def _safe_extract_locale_string(entity: LocaleStringEntity | None, t: LocaleHandler) -> str | None:
+        if not entity:
+            return None
+
+        try:
+            result = t.extract(entity.to_locale_string())
+            return result if result and result.strip() else None
+        except (ValueError, AttributeError):
+            return None
+
+    @staticmethod
     async def _create_and_translate_locale_entity(
         text: str | None, t: LocaleHandler, llm_config: LLMConfig
     ) -> LocaleStringEntity | None:
         """Helper to create and translate a LocaleStringEntity."""
+        if not text or text.strip() == "":
+            return None
+
         locale_string = LocaleString(**{t.locale: text})
         entity = LocaleStringEntity.from_locale_string(locale_string)
 
@@ -261,8 +278,8 @@ class KnowledgeService:
             bucket_id=namespace_entity.bucket_id,
             namespace_name=namespace_entity.namespace_name,
             folder_name=namespace_entity.folder_name,
-            display_name=t.extract(namespace_entity.display_name),
-            description=t.extract(namespace_entity.description),
+            display_name=KnowledgeService._safe_extract_locale_string(namespace_entity.display_name, t),
+            description=KnowledgeService._safe_extract_locale_string(namespace_entity.description, t),
         )
 
     @staticmethod
@@ -295,6 +312,6 @@ class KnowledgeService:
             bucket_id=updated_entity.bucket_id,
             namespace_name=updated_entity.namespace_name,
             folder_name=updated_entity.folder_name,
-            display_name=t.extract(updated_entity.display_name) if updated_entity.display_name else None,
-            description=t.extract(updated_entity.description) if updated_entity.description else None,
+            display_name=KnowledgeService._safe_extract_locale_string(updated_entity.display_name, t),
+            description=KnowledgeService._safe_extract_locale_string(updated_entity.description, t),
         )
