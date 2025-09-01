@@ -2583,6 +2583,39 @@ By subclassing \`BaseEvent\`, \`ControlEvent\` benefits from automatic type regi
 serialization, ensuring that control signals are as easy to produce and consume as any other event.`
 } as const;
 
+export const CreateNamespaceRequestSchema = {
+    properties: {
+        database_name: {
+            type: 'string',
+            title: 'Database Name',
+            description: 'The name of the database to which the namespace belongs.'
+        },
+        namespace_name: {
+            type: 'string',
+            title: 'Namespace Name',
+            description: 'The name of the namespace to create.'
+        },
+        folder_name: {
+            type: 'string',
+            title: 'Folder Name',
+            description: 'The name of the folder to which the namespace belongs.'
+        },
+        display_name: {
+            type: 'string',
+            title: 'Display Name',
+            description: "The display name of the namespace in the user's locale."
+        },
+        description: {
+            type: 'string',
+            title: 'Description',
+            description: "A short description of the namespace in the user's locale."
+        }
+    },
+    type: 'object',
+    required: ['database_name', 'namespace_name', 'folder_name'],
+    title: 'CreateNamespaceRequest'
+} as const;
+
 export const CreateRoleRequestSchema = {
     properties: {
         name: {
@@ -2849,7 +2882,7 @@ export const DatabaseDTOSchema = {
         },
         namespaces: {
             items: {
-                '$ref': '#/components/schemas/Namespace'
+                '$ref': '#/components/schemas/NamespaceDTO'
             },
             type: 'array',
             title: 'Namespaces',
@@ -3291,6 +3324,92 @@ export const DocumentBlockSchema = {
     type: 'object',
     title: 'DocumentBlock',
     description: 'A representation of a document to directly pass to the LLM.'
+} as const;
+
+export const DocumentDTOSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'Unique identifier of the document.'
+        },
+        source: {
+            type: 'string',
+            title: 'Source',
+            description: 'Source URI of original document.'
+        },
+        namespace: {
+            type: 'string',
+            title: 'Namespace',
+            description: 'The namespace of the document within its metadata.'
+        },
+        created_at: {
+            type: 'string',
+            title: 'Created At',
+            description: 'Date source document was created (ISO format string)'
+        },
+        updated_at: {
+            type: 'string',
+            title: 'Updated At',
+            description: 'Date source document was last updated (ISO format string)'
+        },
+        inserted_at: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Inserted At',
+            description: 'Date source document was inserted into document store (ISO format string)'
+        },
+        is_ingested: {
+            type: 'boolean',
+            title: 'Is Ingested',
+            description: 'Indicates if the document has been ingested.'
+        },
+        content: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Content',
+            description: 'Content of the document.'
+        },
+        number_of_pages: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Number Of Pages',
+            description: 'Number of Pages in the Document.'
+        },
+        document_title: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Document Title',
+            description: 'Document title.'
+        }
+    },
+    type: 'object',
+    required: ['id', 'source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'is_ingested'],
+    title: 'DocumentDTO'
 } as const;
 
 export const EdgeDataSchema = {
@@ -4274,6 +4393,136 @@ export const FileFileSchema = {
     title: 'FileFile'
 } as const;
 
+export const FileUploadRequestSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename',
+            description: 'Original filename of the file'
+        },
+        content_type: {
+            type: 'string',
+            title: 'Content Type',
+            description: 'MIME type of the file'
+        },
+        content_length: {
+            type: 'integer',
+            maximum: 10485760,
+            exclusiveMinimum: 0,
+            title: 'Content Length',
+            description: 'Size of the file in bytes'
+        },
+        namespace_name: {
+            type: 'string',
+            title: 'Namespace Name',
+            description: 'Target namespace name'
+        },
+        database_name: {
+            type: 'string',
+            title: 'Database Name',
+            description: 'Target database name'
+        }
+    },
+    type: 'object',
+    required: ['filename', 'content_type', 'content_length', 'namespace_name', 'database_name'],
+    title: 'FileUploadRequest',
+    description: `Request payload for initiating file upload to knowledge base.
+
+This request is used to get presigned URLs for direct S3/MinIO upload
+of files that will be processed and indexed in the knowledge base.`
+} as const;
+
+export const FileUploadResponseSchema = {
+    properties: {
+        upload_url: {
+            type: 'string',
+            title: 'Upload Url',
+            description: 'Presigned URL for uploading the file to a datalake'
+        },
+        upload_id: {
+            type: 'string',
+            title: 'Upload Id',
+            description: 'Unique identifier for this upload session'
+        },
+        container: {
+            type: 'string',
+            title: 'Container',
+            description: 'The bucket/container name where file will be stored'
+        },
+        folder: {
+            type: 'string',
+            title: 'Folder',
+            description: 'The folder name within the bucket/container'
+        },
+        object_key: {
+            type: 'string',
+            title: 'Object Key',
+            description: 'The object key/path for the uploaded file'
+        },
+        expires_in: {
+            type: 'integer',
+            title: 'Expires In',
+            description: 'Upload URL expiration time in seconds'
+        }
+    },
+    type: 'object',
+    required: ['upload_url', 'upload_id', 'container', 'folder', 'object_key', 'expires_in'],
+    title: 'FileUploadResponse',
+    description: `Response payload for file upload initialization.
+
+Contains the presigned URL for direct datalake upload and metadata
+needed to complete the upload process.`
+} as const;
+
+export const FileUploadValidationRequestSchema = {
+    properties: {
+        container: {
+            type: 'string',
+            title: 'Container',
+            description: 'Name of the container/bucket where the file was uploaded'
+        },
+        file_path: {
+            type: 'string',
+            title: 'File Path',
+            description: 'Path/key of the uploaded file within the container'
+        }
+    },
+    type: 'object',
+    required: ['container', 'file_path'],
+    title: 'FileUploadValidationRequest',
+    description: `Request for validating whether a file was successfully uploaded to cloud storage.
+
+This request contains the information needed to verify that a file upload completed
+successfully in the globally configured datalake (S3, MinIO, or Azure Blob Storage).`
+} as const;
+
+export const FileUploadValidationResponseSchema = {
+    properties: {
+        exists: {
+            type: 'boolean',
+            title: 'Exists',
+            description: 'Whether the file exists in the datalake'
+        },
+        file_path: {
+            type: 'string',
+            title: 'File Path',
+            description: 'Path/key of the file that was validated'
+        },
+        container: {
+            type: 'string',
+            title: 'Container',
+            description: 'Name of the container/bucket'
+        }
+    },
+    type: 'object',
+    required: ['exists', 'file_path', 'container'],
+    title: 'FileUploadValidationResponse',
+    description: `Response containing the validation result of a file upload.
+
+This response indicates whether the uploaded file exists in the globally
+configured datalake and provides information about the validation process.`
+} as const;
+
 export const Function_OutputSchema = {
     properties: {
         arguments: {
@@ -5134,120 +5383,6 @@ export const ImagesResponseSchema = {
     type: 'object',
     required: ['created'],
     title: 'ImagesResponse'
-} as const;
-
-export const IngestedDocumentSchema = {
-    properties: {
-        source: {
-            type: 'string',
-            title: 'Source',
-            description: 'Source URI of original document.'
-        },
-        namespace: {
-            type: 'string',
-            title: 'Namespace',
-            description: 'The namespace of the document within its metadata.'
-        },
-        version: {
-            type: 'integer',
-            title: 'Version',
-            description: 'Document version.',
-            default: 1
-        },
-        content_hash: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Content Hash',
-            description: 'Hash of the document/node, helpful to track whether file changed.'
-        },
-        number_of_pages: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Number Of Pages',
-            description: 'Number of Pages in the Document.'
-        },
-        document_title: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Document Title',
-            description: 'Document title.'
-        },
-        language: {
-            anyOf: [
-                {
-                    type: 'string',
-                    enum: ['de', 'en', 'fr', 'it']
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Language',
-            description: 'Document language.'
-        },
-        created_at: {
-            type: 'string',
-            title: 'Created At',
-            description: 'Date source document was created (ISO format string)'
-        },
-        updated_at: {
-            type: 'string',
-            title: 'Updated At',
-            description: 'Date source document was last updated (ISO format string)'
-        },
-        inserted_at: {
-            type: 'string',
-            title: 'Inserted At',
-            description: 'Date source document was inserted into document store (ISO format string)'
-        },
-        metadata: {
-            anyOf: [
-                {
-                    additionalProperties: true,
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Metadata',
-            description: 'Additional metadata for the document.'
-        },
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: 'Unique identifier for the document.'
-        },
-        content: {
-            type: 'string',
-            title: 'Content',
-            description: 'Content of the document.'
-        }
-    },
-    type: 'object',
-    required: ['source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'id'],
-    title: 'IngestedDocument',
-    description: `Set of default metadata for a document or - what llama index calls it - a ref_doc. A ref doc is the databae
-representation of a document that was ingested through a pipeline. Hence, compared to the default data,
-we also have an ID and content that was parsed from the original file.`
 } as const;
 
 export const IngestedNodeSchema = {
@@ -6863,7 +6998,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1756278859
+            default: 1756710800
         },
         owned_by: {
             type: 'string',
@@ -6923,17 +7058,41 @@ export const ModelResponseSchema = {
     title: 'ModelResponse'
 } as const;
 
-export const NamespaceSchema = {
+export const NamespaceDTOSchema = {
     properties: {
-        database: {
+        id: {
             type: 'string',
-            title: 'Database',
-            description: 'Name of database that the namespace belongs to'
+            title: 'Id',
+            description: 'Unique identifier of the namespace'
         },
         name: {
             type: 'string',
             title: 'Name',
             description: 'Name of namespace'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name',
+            description: 'Display name of namespace, can be localized'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: 'Description of namespace, can be localized'
         },
         number_of_documents: {
             type: 'integer',
@@ -6957,8 +7116,54 @@ export const NamespaceSchema = {
         }
     },
     type: 'object',
-    required: ['database', 'name', 'number_of_documents', 'last_updated_at', 'last_inserted_at', 'created_at'],
-    title: 'Namespace'
+    required: ['id', 'name', 'number_of_documents', 'last_updated_at', 'last_inserted_at', 'created_at'],
+    title: 'NamespaceDTO'
+} as const;
+
+export const NamespaceResponseSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        bucket_id: {
+            type: 'string',
+            title: 'Bucket Id'
+        },
+        namespace_name: {
+            type: 'string',
+            title: 'Namespace Name'
+        },
+        folder_name: {
+            type: 'string',
+            title: 'Folder Name'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        }
+    },
+    type: 'object',
+    required: ['id', 'bucket_id', 'namespace_name', 'folder_name'],
+    title: 'NamespaceResponse'
 } as const;
 
 export const NodeDataSchema = {
@@ -7190,7 +7395,7 @@ export const PaginatedDocumentsResponseSchema = {
         },
         documents: {
             items: {
-                '$ref': '#/components/schemas/IngestedDocument'
+                '$ref': '#/components/schemas/DocumentDTO'
             },
             type: 'array',
             title: 'Documents',
@@ -9291,6 +9496,35 @@ export const TranscriptionWordSchema = {
     type: 'object',
     required: ['end', 'start', 'word'],
     title: 'TranscriptionWord'
+} as const;
+
+export const UpdateNamespaceRequestSchema = {
+    properties: {
+        display_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        }
+    },
+    type: 'object',
+    title: 'UpdateNamespaceRequest'
 } as const;
 
 export const UpdateNotificationRequestSchema = {

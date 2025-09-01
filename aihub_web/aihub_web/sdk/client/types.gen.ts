@@ -1806,6 +1806,37 @@ export type ControlEventWritable = {
 };
 
 /**
+ * CreateNamespaceRequest
+ */
+export type CreateNamespaceRequest = {
+    /**
+     * Database Name
+     * The name of the database to which the namespace belongs.
+     */
+    database_name: string;
+    /**
+     * Namespace Name
+     * The name of the namespace to create.
+     */
+    namespace_name: string;
+    /**
+     * Folder Name
+     * The name of the folder to which the namespace belongs.
+     */
+    folder_name: string;
+    /**
+     * Display Name
+     * The display name of the namespace in the user's locale.
+     */
+    display_name?: string;
+    /**
+     * Description
+     * A short description of the namespace in the user's locale.
+     */
+    description?: string;
+};
+
+/**
  * CreateRoleRequest
  * Request model for creating a new role.
  */
@@ -1979,7 +2010,7 @@ export type DatabaseDto = {
      * Namespaces
      * List of namespaces
      */
-    namespaces: Array<Namespace>;
+    namespaces: Array<NamespaceDto>;
 };
 
 /**
@@ -2290,6 +2321,62 @@ export type DocumentBlock = {
      * Document Mimetype
      */
     document_mimetype?: string | null;
+};
+
+/**
+ * DocumentDTO
+ */
+export type DocumentDto = {
+    /**
+     * Id
+     * Unique identifier of the document.
+     */
+    id: string;
+    /**
+     * Source
+     * Source URI of original document.
+     */
+    source: string;
+    /**
+     * Namespace
+     * The namespace of the document within its metadata.
+     */
+    namespace: string;
+    /**
+     * Created At
+     * Date source document was created (ISO format string)
+     */
+    created_at: string;
+    /**
+     * Updated At
+     * Date source document was last updated (ISO format string)
+     */
+    updated_at: string;
+    /**
+     * Inserted At
+     * Date source document was inserted into document store (ISO format string)
+     */
+    inserted_at: string | null;
+    /**
+     * Is Ingested
+     * Indicates if the document has been ingested.
+     */
+    is_ingested: boolean;
+    /**
+     * Content
+     * Content of the document.
+     */
+    content?: string | null;
+    /**
+     * Number Of Pages
+     * Number of Pages in the Document.
+     */
+    number_of_pages?: number | null;
+    /**
+     * Document Title
+     * Document title.
+     */
+    document_title?: string | null;
 };
 
 /**
@@ -3019,6 +3106,126 @@ export type FileFile = {
 };
 
 /**
+ * FileUploadRequest
+ * Request payload for initiating file upload to knowledge base.
+ *
+ * This request is used to get presigned URLs for direct S3/MinIO upload
+ * of files that will be processed and indexed in the knowledge base.
+ */
+export type FileUploadRequest = {
+    /**
+     * Filename
+     * Original filename of the file
+     */
+    filename: string;
+    /**
+     * Content Type
+     * MIME type of the file
+     */
+    content_type: string;
+    /**
+     * Content Length
+     * Size of the file in bytes
+     */
+    content_length: number;
+    /**
+     * Namespace Name
+     * Target namespace name
+     */
+    namespace_name: string;
+    /**
+     * Database Name
+     * Target database name
+     */
+    database_name: string;
+};
+
+/**
+ * FileUploadResponse
+ * Response payload for file upload initialization.
+ *
+ * Contains the presigned URL for direct datalake upload and metadata
+ * needed to complete the upload process.
+ */
+export type FileUploadResponse = {
+    /**
+     * Upload Url
+     * Presigned URL for uploading the file to a datalake
+     */
+    upload_url: string;
+    /**
+     * Upload Id
+     * Unique identifier for this upload session
+     */
+    upload_id: string;
+    /**
+     * Container
+     * The bucket/container name where file will be stored
+     */
+    container: string;
+    /**
+     * Folder
+     * The folder name within the bucket/container
+     */
+    folder: string;
+    /**
+     * Object Key
+     * The object key/path for the uploaded file
+     */
+    object_key: string;
+    /**
+     * Expires In
+     * Upload URL expiration time in seconds
+     */
+    expires_in: number;
+};
+
+/**
+ * FileUploadValidationRequest
+ * Request for validating whether a file was successfully uploaded to cloud storage.
+ *
+ * This request contains the information needed to verify that a file upload completed
+ * successfully in the globally configured datalake (S3, MinIO, or Azure Blob Storage).
+ */
+export type FileUploadValidationRequest = {
+    /**
+     * Container
+     * Name of the container/bucket where the file was uploaded
+     */
+    container: string;
+    /**
+     * File Path
+     * Path/key of the uploaded file within the container
+     */
+    file_path: string;
+};
+
+/**
+ * FileUploadValidationResponse
+ * Response containing the validation result of a file upload.
+ *
+ * This response indicates whether the uploaded file exists in the globally
+ * configured datalake and provides information about the validation process.
+ */
+export type FileUploadValidationResponse = {
+    /**
+     * Exists
+     * Whether the file exists in the datalake
+     */
+    exists: boolean;
+    /**
+     * File Path
+     * Path/key of the file that was validated
+     */
+    file_path: string;
+    /**
+     * Container
+     * Name of the container/bucket
+     */
+    container: string;
+};
+
+/**
  * Function
  */
 export type FunctionOutput = {
@@ -3673,82 +3880,6 @@ export type ImagesResponse = {
     size?: ('1024x1024' | '1024x1536' | '1536x1024') | null;
     usage?: OpenaiTypesImagesResponseUsage | null;
     [key: string]: unknown | number | (('transparent' | 'opaque') | null) | (Array<Image> | null) | (('png' | 'webp' | 'jpeg') | null) | (('low' | 'medium' | 'high') | null) | (('1024x1024' | '1024x1536' | '1536x1024') | null) | (OpenaiTypesImagesResponseUsage | null) | undefined;
-};
-
-/**
- * IngestedDocument
- * Set of default metadata for a document or - what llama index calls it - a ref_doc. A ref doc is the databae
- * representation of a document that was ingested through a pipeline. Hence, compared to the default data,
- * we also have an ID and content that was parsed from the original file.
- */
-export type IngestedDocument = {
-    /**
-     * Source
-     * Source URI of original document.
-     */
-    source: string;
-    /**
-     * Namespace
-     * The namespace of the document within its metadata.
-     */
-    namespace: string;
-    /**
-     * Version
-     * Document version.
-     */
-    version?: number;
-    /**
-     * Content Hash
-     * Hash of the document/node, helpful to track whether file changed.
-     */
-    content_hash?: string | null;
-    /**
-     * Number Of Pages
-     * Number of Pages in the Document.
-     */
-    number_of_pages?: number | null;
-    /**
-     * Document Title
-     * Document title.
-     */
-    document_title?: string | null;
-    /**
-     * Language
-     * Document language.
-     */
-    language?: ('de' | 'en' | 'fr' | 'it') | null;
-    /**
-     * Created At
-     * Date source document was created (ISO format string)
-     */
-    created_at: string;
-    /**
-     * Updated At
-     * Date source document was last updated (ISO format string)
-     */
-    updated_at: string;
-    /**
-     * Inserted At
-     * Date source document was inserted into document store (ISO format string)
-     */
-    inserted_at: string;
-    /**
-     * Metadata
-     * Additional metadata for the document.
-     */
-    metadata?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * Id
-     * Unique identifier for the document.
-     */
-    id: string;
-    /**
-     * Content
-     * Content of the document.
-     */
-    content?: string;
 };
 
 /**
@@ -5059,19 +5190,29 @@ export type ModelResponse = {
 };
 
 /**
- * Namespace
+ * NamespaceDTO
  */
-export type Namespace = {
+export type NamespaceDto = {
     /**
-     * Database
-     * Name of database that the namespace belongs to
+     * Id
+     * Unique identifier of the namespace
      */
-    database: string;
+    id: string;
     /**
      * Name
      * Name of namespace
      */
     name: string;
+    /**
+     * Display Name
+     * Display name of namespace, can be localized
+     */
+    display_name?: string | null;
+    /**
+     * Description
+     * Description of namespace, can be localized
+     */
+    description?: string | null;
     /**
      * Number Of Documents
      * Number of documents in namespace
@@ -5092,6 +5233,36 @@ export type Namespace = {
      * Oldest timestamp when any document in the namespace was created
      */
     created_at: number;
+};
+
+/**
+ * NamespaceResponse
+ */
+export type NamespaceResponse = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Bucket Id
+     */
+    bucket_id: string;
+    /**
+     * Namespace Name
+     */
+    namespace_name: string;
+    /**
+     * Folder Name
+     */
+    folder_name: string;
+    /**
+     * Display Name
+     */
+    display_name?: string | null;
+    /**
+     * Description
+     */
+    description?: string | null;
 };
 
 /**
@@ -5259,7 +5430,7 @@ export type PaginatedDocumentsResponse = {
      * Documents
      * List of Document DTOs objects for the current page
      */
-    documents: Array<IngestedDocument>;
+    documents: Array<DocumentDto>;
 };
 
 /**
@@ -7113,6 +7284,20 @@ export type TranscriptionWord = {
      */
     word: string;
     [key: string]: unknown | number | string;
+};
+
+/**
+ * UpdateNamespaceRequest
+ */
+export type UpdateNamespaceRequest = {
+    /**
+     * Display Name
+     */
+    display_name?: string | null;
+    /**
+     * Description
+     */
+    description?: string | null;
 };
 
 /**
@@ -9060,6 +9245,61 @@ export type RunExperimentResponses = {
 
 export type RunExperimentResponse = RunExperimentResponses[keyof RunExperimentResponses];
 
+export type CreateNamespaceData = {
+    body: CreateNamespaceRequest;
+    path?: never;
+    query?: never;
+    url: '/knowledge/namespaces';
+};
+
+export type CreateNamespaceErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateNamespaceError = CreateNamespaceErrors[keyof CreateNamespaceErrors];
+
+export type CreateNamespaceResponses = {
+    /**
+     * Successful Response
+     */
+    200: NamespaceResponse;
+};
+
+export type CreateNamespaceResponse = CreateNamespaceResponses[keyof CreateNamespaceResponses];
+
+export type UpdateNamespaceData = {
+    body: UpdateNamespaceRequest;
+    path: {
+        /**
+         * Namespace ID
+         */
+        namespace_id: string;
+    };
+    query?: never;
+    url: '/knowledge/namespaces/{namespace_id}';
+};
+
+export type UpdateNamespaceErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateNamespaceError = UpdateNamespaceErrors[keyof UpdateNamespaceErrors];
+
+export type UpdateNamespaceResponses = {
+    /**
+     * Successful Response
+     */
+    200: NamespaceResponse;
+};
+
+export type UpdateNamespaceResponse = UpdateNamespaceResponses[keyof UpdateNamespaceResponses];
+
 export type GetDatabasesData = {
     body?: never;
     path?: never;
@@ -9130,10 +9370,6 @@ export type GetDocumentByIdData = {
          */
         database: string;
         /**
-         * Namespace
-         */
-        namespace: string;
-        /**
          * Document ID
          */
         document_id: string;
@@ -9155,7 +9391,7 @@ export type GetDocumentByIdResponses = {
     /**
      * Successful Response
      */
-    200: IngestedDocument;
+    200: DocumentDto;
 };
 
 export type GetDocumentByIdResponse = GetDocumentByIdResponses[keyof GetDocumentByIdResponses];
@@ -9251,7 +9487,7 @@ export type GetFileUrlData = {
         file_path: string;
     };
     query?: never;
-    url: '/file/logged-in/url/{container}/{file_path}';
+    url: '/files/logged-in/url/{container}/{file_path}';
 };
 
 export type GetFileUrlErrors = {
@@ -9285,7 +9521,7 @@ export type GetFileRedirectData = {
         file_path: string;
     };
     query?: never;
-    url: '/file/logged-in/redirect/{container}/{file_path}';
+    url: '/files/logged-in/redirect/{container}/{file_path}';
 };
 
 export type GetFileRedirectErrors = {
@@ -9328,7 +9564,7 @@ export type GetAnonymousFileUrlData = {
          */
         signature: string;
     };
-    url: '/file/anonymous/url/{container}/{file_path}';
+    url: '/files/anonymous/url/{container}/{file_path}';
 };
 
 export type GetAnonymousFileUrlErrors = {
@@ -9371,7 +9607,7 @@ export type GetAnonymousFileRedirectData = {
          */
         signature: string;
     };
-    url: '/file/anonymous/redirect/{container}/{file_path}';
+    url: '/files/anonymous/redirect/{container}/{file_path}';
 };
 
 export type GetAnonymousFileRedirectErrors = {
@@ -9389,6 +9625,56 @@ export type GetAnonymousFileRedirectResponses = {
      */
     200: unknown;
 };
+
+export type InitiateFileUploadData = {
+    body: FileUploadRequest;
+    path?: never;
+    query?: never;
+    url: '/files/upload/initiate';
+};
+
+export type InitiateFileUploadErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type InitiateFileUploadError = InitiateFileUploadErrors[keyof InitiateFileUploadErrors];
+
+export type InitiateFileUploadResponses = {
+    /**
+     * Successful Response
+     */
+    200: FileUploadResponse;
+};
+
+export type InitiateFileUploadResponse = InitiateFileUploadResponses[keyof InitiateFileUploadResponses];
+
+export type ValidateFileUploadData = {
+    body: FileUploadValidationRequest;
+    path?: never;
+    query?: never;
+    url: '/files/upload/validate';
+};
+
+export type ValidateFileUploadErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ValidateFileUploadError = ValidateFileUploadErrors[keyof ValidateFileUploadErrors];
+
+export type ValidateFileUploadResponses = {
+    /**
+     * Successful Response
+     */
+    200: FileUploadValidationResponse;
+};
+
+export type ValidateFileUploadResponse = ValidateFileUploadResponses[keyof ValidateFileUploadResponses];
 
 export type GetNotificationsData = {
     body?: never;
