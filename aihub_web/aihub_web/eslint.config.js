@@ -61,6 +61,7 @@ export default withNuxt(
           'pi-folder',
           'pi-folder-plus',
           'p-invalid',
+          'pi-plus',
         ],
       },
     },
