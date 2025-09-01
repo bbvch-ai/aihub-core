@@ -277,7 +277,7 @@ services:
   # === OpenWebUI Stack ===
   # <editor-fold desc="OpenWebUI Stack">
   open-webui:
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.13
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.22
     container_name: open-webui
     <<: *restart-policy
     depends_on:
@@ -711,19 +711,17 @@ services:
   # === Docling ===
   # <editor-fold desc="Docling Stack">
   docling:
-    image: ghcr.io/docling-project/docling-serve:v0.16.1
-    container_name: docling-serve
+    image: ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.3.1
+    container_name: docling
     <<: *restart-policy
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
+      - ./configs/docling/init-models.sh:/docker-entrypoint.sh:ro
+    entrypoint: [ "/docker-entrypoint.sh" ]
     environment:
-      DOCLING_SERVE_ENABLE_UI: false
+      DOCLING_SERVE_ARTIFACTS_PATH: "/models"
       DOCLING_SERVE_MAX_SYNC_WAIT: 600
-      DOCLING_SERVE_ARTIFACTS_PATH: /opt/app-root/src/models
-    command: >
-      sh -c "
-        mkdir -p /opt/app-root/src/models &&
-        docling-tools models download --output-dir /opt/app-root/src/models layout tableformer code_formula easyocr &&
-        docling-serve run --host 0.0.0.0 --port 5001
-      "
+      DOCLING_MODELS: "layout tableformer code_formula easyocr"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
     logging: *default-logging
