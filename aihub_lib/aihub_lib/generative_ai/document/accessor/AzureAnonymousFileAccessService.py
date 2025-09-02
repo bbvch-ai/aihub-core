@@ -53,7 +53,6 @@ class AzureAnonymousFileAccessService(AbstractAnonymousFileAccessService):
         blob without requiring Azure credentials. The URL expires after the
         specified lifetime.
         """
-        # Validate input parameters
         if not container or not container.strip():
             raise ValueError("Container name cannot be empty")
         if not file_path or not file_path.strip():
@@ -87,13 +86,10 @@ class AzureAnonymousFileAccessService(AbstractAnonymousFileAccessService):
 
     def verify_file_exists(self, container: str, file_path: str) -> bool:
         """
-        Verify that a file exists in Azure Blob Storage.
-
         This method checks if a file was successfully uploaded by attempting
         to retrieve its properties. This is more efficient than downloading
         the entire file just to verify existence.
         """
-        # Validate input parameters
         if not container or not container.strip():
             raise ValueError("Container name cannot be empty")
         if not file_path or not file_path.strip():
@@ -103,7 +99,6 @@ class AzureAnonymousFileAccessService(AbstractAnonymousFileAccessService):
             blob_service_client = self._blob_storage_access.get_blob_service_client()
             blob_client = blob_service_client.get_blob_client(container=container, blob=file_path)
 
-            # Use exists() method which is efficient and doesn't download the blob
             exists = blob_client.exists()
             if exists:
                 logger.debug(f"File verification successful: {container}/{file_path}")
@@ -117,13 +112,10 @@ class AzureAnonymousFileAccessService(AbstractAnonymousFileAccessService):
 
     def list_files(self, container: str, prefix: str = "") -> list[dict]:
         """
-        List files in Azure Blob Storage with optional prefix filtering.
-
         This method retrieves a list of blobs in the specified container
         that match the given prefix. It's useful for browsing and discovering files
         in Azure Blob Storage.
         """
-        # Validate input parameters
         if not container or not container.strip():
             raise ValueError("Container name cannot be empty")
 
@@ -135,7 +127,6 @@ class AzureAnonymousFileAccessService(AbstractAnonymousFileAccessService):
             blob_list = container_client.list_blobs(name_starts_with=prefix)
 
             for blob in blob_list:
-                # Skip directories (blobs ending with '/')
                 if blob.name.endswith("/"):
                     continue
 

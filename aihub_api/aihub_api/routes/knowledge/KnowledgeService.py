@@ -116,12 +116,14 @@ class KnowledgeService:
         bucket = BucketEntity.get_bucket_by_db_name(db)
         datalake_files = KnowledgeService._get_datalake_files_in_namespace(bucket.bucket_name, namespace)
 
-        processed_ref_docs = RefDoc.get_paginated_by_namespace(db_alias=db, namespace=namespace, skip=0, limit=processed_count)
+        processed_ref_docs = RefDoc.get_paginated_by_namespace(
+            db_alias=db, namespace=namespace, skip=0, limit=processed_count
+        )
         processed_doc_sources = {doc.data.metadata.source for doc in processed_ref_docs}
-        
+
         processing_files = KnowledgeService._filter_processing_documents(datalake_files, processed_doc_sources)
         processing_count = len(processing_files)
-        
+
         total = processed_count + processing_count
 
         if skip >= total:
