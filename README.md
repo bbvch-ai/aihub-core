@@ -303,6 +303,10 @@ Wait for all services to become healthy (you can check with `docker ps`) before 
 
 ### :house: Running the AI-Hub Locally
 
+::: warning :warning: Important
+Only use self-signed SSL certificates for local development. Never use them in production or public environments.
+:::
+
 For local development with SSL support and custom domain routing, use the `docker-compose.local.yml` configuration:
 
 #### Prerequisites
@@ -327,13 +331,7 @@ For local development with SSL support and custom domain routing, use the `docke
 
 2. **Generate SSL Certificates**:
    ```bash
-   # Install CA in system trust store
-   mkcert -install
-   
-   # Generate certificates for local domains
-   mkcert -key-file configs/traefik/certs/dev-key.pem -cert-file configs/traefik/certs/dev-cert.pem \
-     "*.127.0.0.1.nip.io" "127.0.0.1.nip.io" \
-     "*.localhost" "localhost"
+   make local-cert
    ```
 
 3. **Environment Configuration**:

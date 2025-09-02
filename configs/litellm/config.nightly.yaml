@@ -5,7 +5,6 @@ model_list:
       api_base: https://aihub-dev-openai-che.openai.azure.com/
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2024-12-01-preview"
-      additional_drop_params: ["display_id", "thread_id"]
     model_info:
       mode: chat
 
@@ -15,7 +14,6 @@ model_list:
       api_base: https://aihub-dev-openai-che.openai.azure.com/
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2024-12-01-preview"
-      additional_drop_params: [ "display_id", "thread_id" ]
     model_info:
       mode: chat
 
@@ -25,7 +23,6 @@ model_list:
       api_base: https://aihub-dev-openai-che.openai.azure.com/
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2024-02-01"
-      additional_drop_params: ["display_id", "thread_id"]
     model_info:
       mode: embedding
 
@@ -35,7 +32,6 @@ model_list:
       api_base: https://joelb-mdotxdzc-australiaeast.cognitiveservices.azure.com/
       api_key: os.environ/AZURE_OPENAI_KEY_IMAGE
       api_version: "2024-02-01"
-      additional_drop_params: ["display_id", "thread_id"]
     model_info:
       mode: image_generation
       base_model: azure/dall-e-3
@@ -46,7 +42,6 @@ model_list:
       api_base: https://joelb-mdpmzqib-eastus2.cognitiveservices.azure.com/
       api_key: os.environ/AZURE_OPENAI_KEY_AUDIO
       api_version: "2025-03-01-preview"
-      additional_drop_params: ["display_id", "thread_id"]
     model_info:
       mode: audio_transcription
       base_model: azure/gpt-4o-mini-transcribe
@@ -57,7 +52,6 @@ model_list:
       api_base: https://joelb-mdpmzqib-eastus2.cognitiveservices.azure.com/
       api_key: os.environ/AZURE_OPENAI_KEY_AUDIO
       api_version: "2025-03-01-preview"
-      additional_drop_params: ["display_id", "thread_id"]
     model_info:
       mode: audio_speech
       base_model: azure/gpt-4o-mini-tts
@@ -66,7 +60,6 @@ model_list:
     litellm_params:
       model: gemini/gemini-2.5-flash
       api_key: os.environ/GEMINI_API_KEY
-      additional_drop_params: ["display_id", "thread_id"]
     model_info:
       mode: chat
 

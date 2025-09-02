@@ -74,7 +74,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_DEFAULT_BUCKETS: "open-webui,a-bucket"
+      MINIO_DEFAULT_BUCKETS: "open-webui,milvus"
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/minio-data:/minio-data
       - ./configs/minio/minio-entrypoint.sh:/usr/local/bin/minio-entrypoint.sh:ro

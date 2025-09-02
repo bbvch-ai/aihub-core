@@ -113,8 +113,8 @@ class Pipe:
             default=os.getenv("OPEN_WEBUI_SIGNING_SECRET", ""),
             description="Secret key for signing user headers",
         )
-        OPENAI_PIPELINE_PREFIX: str = Field(
-            default=os.getenv("OPENAI_PIPELINE_PREFIX", "openai/"),
+        AIHUB_OPENAI_PIPELINE_PREFIX: str = Field(
+            default=os.getenv("AIHUB_OPENAI_PIPELINE_PREFIX", "openai/"),
             description="Prefix added to model names in the UI",
         )
         AIHUB_REQUEST_TIMEOUT: int = Field(
@@ -153,7 +153,7 @@ class Pipe:
                 return [
                     {
                         "id": model["id"],
-                        "name": f'{self.valves.OPENAI_PIPELINE_PREFIX}{model.get("name", model["id"])}',
+                        "name": f'{self.valves.AIHUB_OPENAI_PIPELINE_PREFIX}{model.get("name", model["id"])}',
                     }
                     for model in models_data.get("data", [])
                 ]
@@ -175,8 +175,8 @@ class Pipe:
 
         model_id = parts[1]
 
-        if model_id.startswith(self.valves.OPENAI_PIPELINE_PREFIX):
-            return model_id[len(self.valves.OPENAI_PIPELINE_PREFIX) :]
+        if model_id.startswith(self.valves.AIHUB_OPENAI_PIPELINE_PREFIX):
+            return model_id[len(self.valves.AIHUB_OPENAI_PIPELINE_PREFIX) :]
         return model_id
 
     def _str_to_object_id(self, context_id: str | None) -> str:
@@ -299,7 +299,7 @@ class Pipe:
 
         try:
             # Use a separate client for non-streaming requests
-            async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
+            async with httpx.AsyncClient(timeout=self.valves.AIHUB_REQUEST_TIMEOUT, follow_redirects=True) as client:
                 response = await client.post(
                     url=f"{self.valves.AIHUB_BASE_URL}/api/v1/openai/chat/completions",
                     json=payload,
@@ -339,7 +339,6 @@ class Pipe:
 
         if is_streaming:
             # For streaming, we return the async generator object directly
-            # Not awaiting it, as the caller will iterate over it
             return self.pipe_stream(body, __user__, __metadata__, __request__)
         else:
             # For non-streaming, we await the result and return it

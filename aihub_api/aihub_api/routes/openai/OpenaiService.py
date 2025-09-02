@@ -563,8 +563,6 @@ class OpenaiService:
                 sdk_call_kwargs[key] = value
 
         sdk_call_kwargs["extra_body"] = {
-            "thread_id": thread_id,
-            "display_id": display_id,
             "litellm_session_id": thread_id,
             "guardrail_config": {"language": locale},
         }
