@@ -35,8 +35,6 @@ COPY aihub_agent/Makefile ./aihub_agent/Makefile
 COPY aihub_agent/poetry.lock ./aihub_agent/poetry.lock
 COPY aihub_agent/pyproject.toml ./aihub_agent/pyproject.toml
 COPY aihub_lib ./aihub_lib
-# TODO: remove once plugin separated!
-COPY aihub_doc/mdformat-vuepress ./aihub_doc/mdformat-vuepress
 
 COPY Makefile switch_dependencies.py pyproject.toml ./
 

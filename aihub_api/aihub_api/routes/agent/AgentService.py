@@ -202,6 +202,8 @@ class AgentService:
                 is_conversational=event.is_conversational,
                 start_events=event.start_events,
                 stop_events=event.stop_events,
+                hitl_request_events=event.hitl_request_events,
+                hitl_response_events=event.hitl_response_events,
                 network_graph=event.network_graph,
                 is_online=True,
                 default_agent_config=event.default_agent_config,
