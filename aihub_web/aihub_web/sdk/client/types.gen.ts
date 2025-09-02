@@ -126,16 +126,6 @@ export type AgentDto = {
      */
     stop_events: Array<EventSpecs>;
     /**
-     * Hitl Request Events
-     * A list of `EventSpecs` representing human-in-the-loop request events this agent can produce.
-     */
-    hitl_request_events: Array<EventSpecs>;
-    /**
-     * Hitl Response Events
-     * A list of `EventSpecs` representing human-in-the-loop response events this agent can accept.
-     */
-    hitl_response_events: Array<EventSpecs>;
-    /**
      * A network graph of the agent, showing how different components are connected and interact.
      */
     network_graph: WorkflowGraph;
@@ -615,6 +605,56 @@ export type AnnotationUrlCitation = {
 };
 
 /**
+ * ApiKeyBreakdownDTO
+ */
+export type ApiKeyBreakdownDto = {
+    metrics: MetricsDto;
+    /**
+     * Metadata
+     */
+    metadata: {
+        [key: string]: string | null;
+    };
+};
+
+/**
+ * AssistantChatMessage
+ */
+export type AssistantChatMessage = {
+    role?: MessageRole;
+    /**
+     * Additional Kwargs
+     */
+    additional_kwargs?: unknown;
+    /**
+     * Blocks
+     */
+    blocks?: Array<({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlock) | ({
+        block_type: 'audio';
+    } & AudioBlock) | ({
+        block_type: 'document';
+    } & DocumentBlock) | ({
+        block_type: 'cache';
+    } & CachePoint) | ({
+        block_type: 'citable';
+    } & CitableBlock) | ({
+        block_type: 'citation';
+    } & CitationBlock)>;
+    /**
+     * Agent Id
+     */
+    agent_id: string;
+    /**
+     * Agent Class
+     */
+    agent_class: string;
+};
+
+/**
  * Audio
  */
 export type Audio = {
@@ -710,6 +750,48 @@ export type BodyCreateTranscriptionOpenaiAudioTranscriptionsPost = {
      * Timestamp granularities (e.g. 'word' or 'segment'); only used with verbose_json response_format
      */
     timestamp_granularities?: Array<'word' | 'segment'> | null;
+};
+
+/**
+ * BreakdownDTO
+ */
+export type BreakdownDto = {
+    /**
+     * Mcp Servers
+     */
+    mcp_servers: {
+        [key: string]: unknown;
+    };
+    /**
+     * Models
+     */
+    models: {
+        [key: string]: ModelBreakdownDto;
+    };
+    /**
+     * Model Groups
+     */
+    model_groups: {
+        [key: string]: ModelBreakdownDto;
+    };
+    /**
+     * Providers
+     */
+    providers: {
+        [key: string]: ModelBreakdownDto;
+    };
+    /**
+     * Api Keys
+     */
+    api_keys: {
+        [key: string]: ApiKeyBreakdownDto;
+    };
+    /**
+     * Entities
+     */
+    entities: {
+        [key: string]: ModelBreakdownDto;
+    };
 };
 
 /**
@@ -868,6 +950,33 @@ export type ChatCompletion = {
 };
 
 /**
+ * ChatCompletionAllowedToolChoiceParam
+ */
+export type ChatCompletionAllowedToolChoiceParam = {
+    allowed_tools: ChatCompletionAllowedToolsParam;
+    /**
+     * Type
+     */
+    type: 'allowed_tools';
+};
+
+/**
+ * ChatCompletionAllowedToolsParam
+ */
+export type ChatCompletionAllowedToolsParam = {
+    /**
+     * Mode
+     */
+    mode: 'auto' | 'required';
+    /**
+     * Tools
+     */
+    tools: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+/**
  * ChatCompletionAssistantMessageParam
  */
 export type ChatCompletionAssistantMessageParam = {
@@ -892,7 +1001,7 @@ export type ChatCompletionAssistantMessageParam = {
     /**
      * Tool Calls
      */
-    tool_calls?: Array<ChatCompletionMessageToolCallParam>;
+    tool_calls?: Array<ChatCompletionMessageFunctionToolCallParam | ChatCompletionMessageCustomToolCallParam>;
 };
 
 /**
@@ -1029,6 +1138,17 @@ export type ChatCompletionFunctionMessageParam = {
 };
 
 /**
+ * ChatCompletionFunctionToolParam
+ */
+export type ChatCompletionFunctionToolParam = {
+    function: FunctionDefinition;
+    /**
+     * Type
+     */
+    type: 'function';
+};
+
+/**
  * ChatCompletionMessage
  */
 export type ChatCompletionMessage = {
@@ -1053,14 +1173,45 @@ export type ChatCompletionMessage = {
     /**
      * Tool Calls
      */
-    tool_calls?: Array<ChatCompletionMessageToolCall> | null;
-    [key: string]: unknown | (string | null) | (string | null) | 'assistant' | (Array<Annotation> | null) | (ChatCompletionAudio | null) | (FunctionCallOutput | null) | (Array<ChatCompletionMessageToolCall> | null) | undefined;
+    tool_calls?: Array<ChatCompletionMessageFunctionToolCall | ChatCompletionMessageCustomToolCall> | null;
+    [key: string]: unknown | (string | null) | (string | null) | 'assistant' | (Array<Annotation> | null) | (ChatCompletionAudio | null) | (FunctionCallOutput | null) | (Array<ChatCompletionMessageFunctionToolCall | ChatCompletionMessageCustomToolCall> | null) | undefined;
 };
 
 /**
- * ChatCompletionMessageToolCall
+ * ChatCompletionMessageCustomToolCall
  */
-export type ChatCompletionMessageToolCall = {
+export type ChatCompletionMessageCustomToolCall = {
+    /**
+     * Id
+     */
+    id: string;
+    custom: CustomOutput;
+    /**
+     * Type
+     */
+    type: 'custom';
+    [key: string]: unknown | string | CustomOutput | 'custom';
+};
+
+/**
+ * ChatCompletionMessageCustomToolCallParam
+ */
+export type ChatCompletionMessageCustomToolCallParam = {
+    /**
+     * Id
+     */
+    id: string;
+    custom: OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom;
+    /**
+     * Type
+     */
+    type: 'custom';
+};
+
+/**
+ * ChatCompletionMessageFunctionToolCall
+ */
+export type ChatCompletionMessageFunctionToolCall = {
     /**
      * Id
      */
@@ -1074,18 +1225,29 @@ export type ChatCompletionMessageToolCall = {
 };
 
 /**
- * ChatCompletionMessageToolCallParam
+ * ChatCompletionMessageFunctionToolCallParam
  */
-export type ChatCompletionMessageToolCallParam = {
+export type ChatCompletionMessageFunctionToolCallParam = {
     /**
      * Id
      */
     id: string;
-    function: OpenaiTypesChatChatCompletionMessageToolCallParamFunction;
+    function: OpenaiTypesChatChatCompletionMessageFunctionToolCallParamFunction;
     /**
      * Type
      */
     type: 'function';
+};
+
+/**
+ * ChatCompletionNamedToolChoiceCustomParam
+ */
+export type ChatCompletionNamedToolChoiceCustomParam = {
+    custom: OpenaiTypesChatChatCompletionNamedToolChoiceCustomParamCustom;
+    /**
+     * Type
+     */
+    type: 'custom';
 };
 
 /**
@@ -1126,7 +1288,7 @@ export type ChatCompletionRequest = {
      * Model
      * ID of the model to use for the chat completion.
      */
-    model: string | ('gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613');
+    model: string | ('gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gpt-5-2025-08-07' | 'gpt-5-mini-2025-08-07' | 'gpt-5-nano-2025-08-07' | 'gpt-5-chat-latest' | 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613');
     /**
      * Stream
      * Enable streaming response.
@@ -1188,7 +1350,7 @@ export type ChatCompletionRequest = {
     /**
      * Reasoning Effort
      */
-    reasoning_effort?: ('low' | 'medium' | 'high') | null;
+    reasoning_effort?: ('minimal' | 'low' | 'medium' | 'high') | null;
     /**
      * Response Format
      */
@@ -1217,11 +1379,11 @@ export type ChatCompletionRequest = {
     /**
      * Tool Choice
      */
-    tool_choice?: ('none' | 'auto' | 'required') | ChatCompletionNamedToolChoiceParam | null;
+    tool_choice?: ('none' | 'auto' | 'required') | ChatCompletionAllowedToolChoiceParam | ChatCompletionNamedToolChoiceParam | ChatCompletionNamedToolChoiceCustomParam | null;
     /**
      * Tools
      */
-    tools?: Array<ChatCompletionToolParam> | null;
+    tools?: Array<ChatCompletionFunctionToolParam> | null;
     /**
      * Top Logprobs
      */
@@ -1230,15 +1392,19 @@ export type ChatCompletionRequest = {
      * Top P
      */
     top_p?: number | null;
-    [key: string]: unknown | (Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null) | (string | ('gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613')) | boolean | (string | null) | (ChatCompletionAudioParam | null) | (number | null) | (('none' | 'auto') | ChatCompletionFunctionCallOptionParam | null) | (Array<OpenaiTypesChatCompletionCreateParamsFunction> | null) | ({
+    [key: string]: unknown | (Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null) | (string | ('gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gpt-5-2025-08-07' | 'gpt-5-mini-2025-08-07' | 'gpt-5-nano-2025-08-07' | 'gpt-5-chat-latest' | 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613')) | boolean | (string | null) | (ChatCompletionAudioParam | null) | (number | null) | (('none' | 'auto') | ChatCompletionFunctionCallOptionParam | null) | (Array<OpenaiTypesChatCompletionCreateParamsFunction> | null) | ({
         [key: string]: number;
-    } | null) | (boolean | null) | (number | null) | (number | null) | (Metadata | null) | (Array<'text' | 'audio'> | null) | (number | null) | (boolean | null) | (ChatCompletionPredictionContentParam | null) | (number | null) | (('low' | 'medium' | 'high') | null) | (ResponseFormatText | ResponseFormatJsonSchema | ResponseFormatJsonObject | null) | (number | null) | (('auto' | 'default') | null) | (string | Array<string> | null) | (boolean | null) | (ChatCompletionStreamOptionsParam | null) | (number | null) | (('none' | 'auto' | 'required') | ChatCompletionNamedToolChoiceParam | null) | (Array<ChatCompletionToolParam> | null) | (number | null) | (number | null) | undefined;
+    } | null) | (boolean | null) | (number | null) | (number | null) | (Metadata | null) | (Array<'text' | 'audio'> | null) | (number | null) | (boolean | null) | (ChatCompletionPredictionContentParam | null) | (number | null) | (('minimal' | 'low' | 'medium' | 'high') | null) | (ResponseFormatText | ResponseFormatJsonSchema | ResponseFormatJsonObject | null) | (number | null) | (('auto' | 'default') | null) | (string | Array<string> | null) | (boolean | null) | (ChatCompletionStreamOptionsParam | null) | (number | null) | (('none' | 'auto' | 'required') | ChatCompletionAllowedToolChoiceParam | ChatCompletionNamedToolChoiceParam | ChatCompletionNamedToolChoiceCustomParam | null) | (Array<ChatCompletionFunctionToolParam> | null) | (number | null) | (number | null) | undefined;
 };
 
 /**
  * ChatCompletionStreamOptionsParam
  */
 export type ChatCompletionStreamOptionsParam = {
+    /**
+     * Include Obfuscation
+     */
+    include_obfuscation?: boolean;
     /**
      * Include Usage
      */
@@ -1302,17 +1468,6 @@ export type ChatCompletionToolMessageParam = {
      * Tool Call Id
      */
     tool_call_id: string;
-};
-
-/**
- * ChatCompletionToolParam
- */
-export type ChatCompletionToolParam = {
-    function: FunctionDefinition;
-    /**
-     * Type
-     */
-    type: 'function';
 };
 
 /**
@@ -1436,6 +1591,11 @@ export type ChunkEventReadable = {
      */
     model_name?: string;
     /**
+     * Reasoning Content
+     * The textual representation of the agent’s internal reasoning at a particular point in time.
+     */
+    reasoning_content?: string | null;
+    /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
@@ -1446,7 +1606,7 @@ export type ChunkEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | null) | Array<string> | undefined;
 };
 
 /**
@@ -1489,7 +1649,12 @@ export type ChunkEventWritable = {
      * The name of the AI model generating the chunks.
      */
     model_name?: string;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+    /**
+     * Reasoning Content
+     * The textual representation of the agent’s internal reasoning at a particular point in time.
+     */
+    reasoning_content?: string | null;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | null) | undefined;
 };
 
 /**
@@ -1806,37 +1971,6 @@ export type ControlEventWritable = {
 };
 
 /**
- * CreateNamespaceRequest
- */
-export type CreateNamespaceRequest = {
-    /**
-     * Database Name
-     * The name of the database to which the namespace belongs.
-     */
-    database_name: string;
-    /**
-     * Namespace Name
-     * The name of the namespace to create.
-     */
-    namespace_name: string;
-    /**
-     * Folder Name
-     * The name of the folder to which the namespace belongs.
-     */
-    folder_name: string;
-    /**
-     * Display Name
-     * The display name of the namespace in the user's locale.
-     */
-    display_name?: string;
-    /**
-     * Description
-     * A short description of the namespace in the user's locale.
-     */
-    description?: string;
-};
-
-/**
  * CreateRoleRequest
  * Request model for creating a new role.
  */
@@ -1918,6 +2052,87 @@ export type CreateTokenResponse = {
      * The generated API token, only returned at creation
      */
     token: string;
+};
+
+/**
+ * Custom
+ */
+export type CustomOutput = {
+    /**
+     * Input
+     */
+    input: string;
+    /**
+     * Name
+     */
+    name: string;
+    [key: string]: unknown | string;
+};
+
+/**
+ * DailyActivityMetadataDTO
+ */
+export type DailyActivityMetadataDto = {
+    /**
+     * Total Spend
+     */
+    total_spend: number;
+    /**
+     * Total Prompt Tokens
+     */
+    total_prompt_tokens: number;
+    /**
+     * Total Completion Tokens
+     */
+    total_completion_tokens: number;
+    /**
+     * Total Tokens
+     */
+    total_tokens: number;
+    /**
+     * Total Api Requests
+     */
+    total_api_requests: number;
+    /**
+     * Total Successful Requests
+     */
+    total_successful_requests: number;
+    /**
+     * Total Failed Requests
+     */
+    total_failed_requests: number;
+    /**
+     * Total Cache Read Input Tokens
+     */
+    total_cache_read_input_tokens: number;
+    /**
+     * Total Cache Creation Input Tokens
+     */
+    total_cache_creation_input_tokens: number;
+    /**
+     * Page
+     */
+    page: number;
+    /**
+     * Total Pages
+     */
+    total_pages: number;
+    /**
+     * Has More
+     */
+    has_more: boolean;
+};
+
+/**
+ * DailyActivityResultDTO
+ */
+export type DailyActivityResultDto = {
+    /**
+     * Date
+     */
+    date: string;
+    metrics: MetricsDto;
+    breakdown: BreakdownDto;
 };
 
 /**
@@ -2007,20 +2222,10 @@ export type DatabaseDto = {
      */
     name: string;
     /**
-     * Display Name
-     * Localized display name of database
-     */
-    display_name: string | null;
-    /**
-     * Auto Sync
-     * Whether this database auto-syncs namespaces
-     */
-    auto_sync: boolean;
-    /**
      * Namespaces
      * List of namespaces
      */
-    namespaces: Array<NamespaceDto>;
+    namespaces: Array<Namespace>;
 };
 
 /**
@@ -2331,62 +2536,6 @@ export type DocumentBlock = {
      * Document Mimetype
      */
     document_mimetype?: string | null;
-};
-
-/**
- * DocumentDTO
- */
-export type DocumentDto = {
-    /**
-     * Id
-     * Unique identifier of the document.
-     */
-    id: string;
-    /**
-     * Source
-     * Source URI of original document.
-     */
-    source: string;
-    /**
-     * Namespace
-     * The namespace of the document within its metadata.
-     */
-    namespace: string;
-    /**
-     * Created At
-     * Date source document was created (ISO format string)
-     */
-    created_at: string;
-    /**
-     * Updated At
-     * Date source document was last updated (ISO format string)
-     */
-    updated_at: string;
-    /**
-     * Inserted At
-     * Date source document was inserted into document store (ISO format string)
-     */
-    inserted_at: string | null;
-    /**
-     * Is Ingested
-     * Indicates if the document has been ingested.
-     */
-    is_ingested: boolean;
-    /**
-     * Content
-     * Content of the document.
-     */
-    content?: string | null;
-    /**
-     * Number Of Pages
-     * Number of Pages in the Document.
-     */
-    number_of_pages?: number | null;
-    /**
-     * Document Title
-     * Document title.
-     */
-    document_title?: string | null;
 };
 
 /**
@@ -3116,126 +3265,6 @@ export type FileFile = {
 };
 
 /**
- * FileUploadRequest
- * Request payload for initiating file upload to knowledge base.
- *
- * This request is used to get presigned URLs for direct S3/MinIO upload
- * of files that will be processed and indexed in the knowledge base.
- */
-export type FileUploadRequest = {
-    /**
-     * Filename
-     * Original filename of the file
-     */
-    filename: string;
-    /**
-     * Content Type
-     * MIME type of the file
-     */
-    content_type: string;
-    /**
-     * Content Length
-     * Size of the file in bytes
-     */
-    content_length: number;
-    /**
-     * Namespace Name
-     * Target namespace name
-     */
-    namespace_name: string;
-    /**
-     * Database Name
-     * Target database name
-     */
-    database_name: string;
-};
-
-/**
- * FileUploadResponse
- * Response payload for file upload initialization.
- *
- * Contains the presigned URL for direct datalake upload and metadata
- * needed to complete the upload process.
- */
-export type FileUploadResponse = {
-    /**
-     * Upload Url
-     * Presigned URL for uploading the file to a datalake
-     */
-    upload_url: string;
-    /**
-     * Upload Id
-     * Unique identifier for this upload session
-     */
-    upload_id: string;
-    /**
-     * Container
-     * The bucket/container name where file will be stored
-     */
-    container: string;
-    /**
-     * Folder
-     * The folder name within the bucket/container
-     */
-    folder: string;
-    /**
-     * Object Key
-     * The object key/path for the uploaded file
-     */
-    object_key: string;
-    /**
-     * Expires In
-     * Upload URL expiration time in seconds
-     */
-    expires_in: number;
-};
-
-/**
- * FileUploadValidationRequest
- * Request for validating whether a file was successfully uploaded to cloud storage.
- *
- * This request contains the information needed to verify that a file upload completed
- * successfully in the globally configured datalake (S3, MinIO, or Azure Blob Storage).
- */
-export type FileUploadValidationRequest = {
-    /**
-     * Container
-     * Name of the container/bucket where the file was uploaded
-     */
-    container: string;
-    /**
-     * File Path
-     * Path/key of the uploaded file within the container
-     */
-    file_path: string;
-};
-
-/**
- * FileUploadValidationResponse
- * Response containing the validation result of a file upload.
- *
- * This response indicates whether the uploaded file exists in the globally
- * configured datalake and provides information about the validation process.
- */
-export type FileUploadValidationResponse = {
-    /**
-     * Exists
-     * Whether the file exists in the datalake
-     */
-    exists: boolean;
-    /**
-     * File Path
-     * Path/key of the file that was validated
-     */
-    file_path: string;
-    /**
-     * Container
-     * Name of the container/bucket
-     */
-    container: string;
-};
-
-/**
  * Function
  */
 export type FunctionOutput = {
@@ -3890,6 +3919,82 @@ export type ImagesResponse = {
     size?: ('1024x1024' | '1024x1536' | '1536x1024') | null;
     usage?: OpenaiTypesImagesResponseUsage | null;
     [key: string]: unknown | number | (('transparent' | 'opaque') | null) | (Array<Image> | null) | (('png' | 'webp' | 'jpeg') | null) | (('low' | 'medium' | 'high') | null) | (('1024x1024' | '1024x1536' | '1536x1024') | null) | (OpenaiTypesImagesResponseUsage | null) | undefined;
+};
+
+/**
+ * IngestedDocument
+ * Set of default metadata for a document or - what llama index calls it - a ref_doc. A ref doc is the databae
+ * representation of a document that was ingested through a pipeline. Hence, compared to the default data,
+ * we also have an ID and content that was parsed from the original file.
+ */
+export type IngestedDocument = {
+    /**
+     * Source
+     * Source URI of original document.
+     */
+    source: string;
+    /**
+     * Namespace
+     * The namespace of the document within its metadata.
+     */
+    namespace: string;
+    /**
+     * Version
+     * Document version.
+     */
+    version?: number;
+    /**
+     * Content Hash
+     * Hash of the document/node, helpful to track whether file changed.
+     */
+    content_hash?: string | null;
+    /**
+     * Number Of Pages
+     * Number of Pages in the Document.
+     */
+    number_of_pages?: number | null;
+    /**
+     * Document Title
+     * Document title.
+     */
+    document_title?: string | null;
+    /**
+     * Language
+     * Document language.
+     */
+    language?: ('de' | 'en' | 'fr' | 'it') | null;
+    /**
+     * Created At
+     * Date source document was created (ISO format string)
+     */
+    created_at: string;
+    /**
+     * Updated At
+     * Date source document was last updated (ISO format string)
+     */
+    updated_at: string;
+    /**
+     * Inserted At
+     * Date source document was inserted into document store (ISO format string)
+     */
+    inserted_at: string;
+    /**
+     * Metadata
+     * Additional metadata for the document.
+     */
+    metadata?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Id
+     * Unique identifier for the document.
+     */
+    id: string;
+    /**
+     * Content
+     * Content of the document.
+     */
+    content?: string;
 };
 
 /**
@@ -5025,6 +5130,48 @@ export type Metadata = {
 };
 
 /**
+ * MetricsDTO
+ */
+export type MetricsDto = {
+    /**
+     * Spend
+     */
+    spend: number;
+    /**
+     * Prompt Tokens
+     */
+    prompt_tokens: number;
+    /**
+     * Completion Tokens
+     */
+    completion_tokens: number;
+    /**
+     * Cache Read Input Tokens
+     */
+    cache_read_input_tokens: number;
+    /**
+     * Cache Creation Input Tokens
+     */
+    cache_creation_input_tokens: number;
+    /**
+     * Total Tokens
+     */
+    total_tokens: number;
+    /**
+     * Successful Requests
+     */
+    successful_requests: number;
+    /**
+     * Failed Requests
+     */
+    failed_requests: number;
+    /**
+     * Api Requests
+     */
+    api_requests: number;
+};
+
+/**
  * MinimalAgentDTO
  * Encapsulates the data transfer object (DTO) for a minimal agent.
  * Only contains minimal information about the agent.
@@ -5148,6 +5295,45 @@ export type MinimalUserDto = {
 };
 
 /**
+ * ModelBreakdownDTO
+ */
+export type ModelBreakdownDto = {
+    metrics: MetricsDto;
+    /**
+     * Metadata
+     */
+    metadata: {
+        [key: string]: unknown;
+    };
+    /**
+     * Api Key Breakdown
+     */
+    api_key_breakdown: {
+        [key: string]: ApiKeyBreakdownDto;
+    };
+};
+
+/**
+ * ModelDTO
+ */
+export type ModelDto = {
+    /**
+     * Model Name
+     * The name/identifier of the model
+     */
+    model_name: string;
+    /**
+     * Detailed information about the model
+     */
+    model_info: ModelInfoDto;
+    /**
+     * Icon
+     * URL or path to the model's icon
+     */
+    icon?: string | null;
+};
+
+/**
  * ModelDetails
  */
 export type ModelDetails = {
@@ -5184,6 +5370,202 @@ export type ModelDetails = {
 };
 
 /**
+ * ModelInfoDTO
+ */
+export type ModelInfoDto = {
+    /**
+     * Mode
+     * The mode of the model (e.g., 'chat', 'completion', 'embedding')
+     */
+    mode: string;
+    /**
+     * Max Input Tokens
+     * Maximum number of input tokens the model can handle
+     */
+    max_input_tokens?: number | null;
+    /**
+     * Max Output Tokens
+     * Maximum number of output tokens the model can generate
+     */
+    max_output_tokens?: number | null;
+    /**
+     * Input Cost Per Token
+     * Cost per input token in USD
+     */
+    input_cost_per_token?: number | null;
+    /**
+     * Output Cost Per Token
+     * Cost per output token in USD
+     */
+    output_cost_per_token?: number | null;
+    /**
+     * Cache Creation Input Token Cost
+     * Cost for creating cache from input tokens
+     */
+    cache_creation_input_token_cost?: number | null;
+    /**
+     * Cache Read Input Token Cost
+     * Cost for reading cached input tokens
+     */
+    cache_read_input_token_cost?: number | null;
+    /**
+     * Input Cost Per Token Above 128K Tokens
+     * Cost per input token for contexts above 128k tokens
+     */
+    input_cost_per_token_above_128k_tokens?: number | null;
+    /**
+     * Input Cost Per Token Above 200K Tokens
+     * Cost per input token for contexts above 200k tokens
+     */
+    input_cost_per_token_above_200k_tokens?: number | null;
+    /**
+     * Input Cost Per Audio Token
+     * Cost per audio input token
+     */
+    input_cost_per_audio_token?: number | null;
+    /**
+     * Input Cost Per Token Batches
+     * Cost per input token when using batch API
+     */
+    input_cost_per_token_batches?: number | null;
+    /**
+     * Output Cost Per Token Batches
+     * Cost per output token when using batch API
+     */
+    output_cost_per_token_batches?: number | null;
+    /**
+     * Output Cost Per Audio Token
+     * Cost per audio output token
+     */
+    output_cost_per_audio_token?: number | null;
+    /**
+     * Output Cost Per Reasoning Token
+     * Cost per reasoning token for models with reasoning capabilities
+     */
+    output_cost_per_reasoning_token?: number | null;
+    /**
+     * Output Cost Per Token Above 128K Tokens
+     * Cost per output token for contexts above 128k tokens
+     */
+    output_cost_per_token_above_128k_tokens?: number | null;
+    /**
+     * Output Cost Per Token Above 200K Tokens
+     * Cost per output token for contexts above 200k tokens
+     */
+    output_cost_per_token_above_200k_tokens?: number | null;
+    /**
+     * Output Cost Per Image
+     * Cost per image output
+     */
+    output_cost_per_image?: number | null;
+    /**
+     * Search Context Cost Per Query
+     * Cost per search context query
+     */
+    search_context_cost_per_query?: number | null;
+    /**
+     * Output Vector Size
+     * Size of output vectors for embedding models
+     */
+    output_vector_size?: number | null;
+    /**
+     * Supports System Messages
+     * Whether the model supports system messages
+     */
+    supports_system_messages?: boolean | null;
+    /**
+     * Supports Response Schema
+     * Whether the model supports structured response schemas
+     */
+    supports_response_schema?: boolean | null;
+    /**
+     * Supports Vision
+     * Whether the model supports vision/image input
+     */
+    supports_vision?: boolean | null;
+    /**
+     * Supports Function Calling
+     * Whether the model supports function calling
+     */
+    supports_function_calling?: boolean | null;
+    /**
+     * Supports Tool Choice
+     * Whether the model supports tool choice selection
+     */
+    supports_tool_choice?: boolean | null;
+    /**
+     * Supports Assistant Prefill
+     * Whether the model supports assistant message prefilling
+     */
+    supports_assistant_prefill?: boolean | null;
+    /**
+     * Supports Prompt Caching
+     * Whether the model supports prompt caching
+     */
+    supports_prompt_caching?: boolean | null;
+    /**
+     * Supports Audio Input
+     * Whether the model supports audio input
+     */
+    supports_audio_input?: boolean | null;
+    /**
+     * Supports Audio Output
+     * Whether the model supports audio output
+     */
+    supports_audio_output?: boolean | null;
+    /**
+     * Supports Pdf Input
+     * Whether the model supports PDF input
+     */
+    supports_pdf_input?: boolean | null;
+    /**
+     * Supports Embedding Image Input
+     * Whether the model supports image input for embeddings
+     */
+    supports_embedding_image_input?: boolean | null;
+    /**
+     * Supports Native Streaming
+     * Whether the model supports native streaming
+     */
+    supports_native_streaming?: boolean | null;
+    /**
+     * Supports Web Search
+     * Whether the model supports web search capabilities
+     */
+    supports_web_search?: boolean | null;
+    /**
+     * Supports Url Context
+     * Whether the model supports URL context input
+     */
+    supports_url_context?: boolean | null;
+    /**
+     * Supports Reasoning
+     * Whether the model supports reasoning capabilities
+     */
+    supports_reasoning?: boolean | null;
+    /**
+     * Supports Computer Use
+     * Whether the model supports computer use capabilities
+     */
+    supports_computer_use?: boolean | null;
+    /**
+     * Tpm
+     * Tokens per minute rate limit
+     */
+    tpm?: number | null;
+    /**
+     * Rpm
+     * Requests per minute rate limit
+     */
+    rpm?: number | null;
+    /**
+     * Supported Openai Params
+     * List of supported OpenAI API parameters
+     */
+    supported_openai_params?: Array<string> | null;
+};
+
+/**
  * ModelResponse
  */
 export type ModelResponse = {
@@ -5200,29 +5582,35 @@ export type ModelResponse = {
 };
 
 /**
- * NamespaceDTO
+ * ModelTypeGroupDTO
  */
-export type NamespaceDto = {
+export type ModelTypeGroupDto = {
     /**
-     * Id
-     * Unique identifier of the namespace
+     * Name
+     * The name/type of the model group
      */
-    id: string;
+    name: string;
+    /**
+     * Models
+     * List of models in this group
+     */
+    models: Array<ModelDto>;
+};
+
+/**
+ * Namespace
+ */
+export type Namespace = {
+    /**
+     * Database
+     * Name of database that the namespace belongs to
+     */
+    database: string;
     /**
      * Name
      * Name of namespace
      */
     name: string;
-    /**
-     * Display Name
-     * Display name of namespace, can be localized
-     */
-    display_name?: string | null;
-    /**
-     * Description
-     * Description of namespace, can be localized
-     */
-    description?: string | null;
     /**
      * Number Of Documents
      * Number of documents in namespace
@@ -5243,36 +5631,6 @@ export type NamespaceDto = {
      * Oldest timestamp when any document in the namespace was created
      */
     created_at: number;
-};
-
-/**
- * NamespaceResponse
- */
-export type NamespaceResponse = {
-    /**
-     * Id
-     */
-    id: string;
-    /**
-     * Bucket Id
-     */
-    bucket_id: string;
-    /**
-     * Namespace Name
-     */
-    namespace_name: string;
-    /**
-     * Folder Name
-     */
-    folder_name: string;
-    /**
-     * Display Name
-     */
-    display_name?: string | null;
-    /**
-     * Description
-     */
-    description?: string | null;
 };
 
 /**
@@ -5440,7 +5798,7 @@ export type PaginatedDocumentsResponse = {
      * Documents
      * List of Document DTOs objects for the current page
      */
-    documents: Array<DocumentDto>;
+    documents: Array<IngestedDocument>;
 };
 
 /**
@@ -6430,6 +6788,17 @@ export type SignedUrlDto = {
 };
 
 /**
+ * SpendingDTO
+ */
+export type SpendingDto = {
+    /**
+     * Results
+     */
+    results: Array<DailyActivityResultDto>;
+    metadata: DailyActivityMetadataDto;
+};
+
+/**
  * StandaloneQuestionCondenserEvent
  * Event to condense chat messages into a single standalone question as a chat message.
  */
@@ -6812,6 +7181,16 @@ export type ThoughtEventReadable = {
      */
     display_description?: LocaleString | null;
     /**
+     * Content
+     * The actual chunk of text or data produced at this stage.
+     */
+    content?: string;
+    /**
+     * Model Name
+     * The name of the AI model generating the chunks.
+     */
+    model_name?: string;
+    /**
      * Reasoning Content
      * The textual representation of the agent’s internal reasoning at a particular point in time.
      */
@@ -6859,6 +7238,16 @@ export type ThoughtEventWritable = {
      * Display description for the event
      */
     display_description?: LocaleString | null;
+    /**
+     * Content
+     * The actual chunk of text or data produced at this stage.
+     */
+    content?: string;
+    /**
+     * Model Name
+     * The name of the AI model generating the chunks.
+     */
+    model_name?: string;
     /**
      * Reasoning Content
      * The textual representation of the agent’s internal reasoning at a particular point in time.
@@ -7297,20 +7686,6 @@ export type TranscriptionWord = {
 };
 
 /**
- * UpdateNamespaceRequest
- */
-export type UpdateNamespaceRequest = {
-    /**
-     * Display Name
-     */
-    display_name?: string | null;
-    /**
-     * Description
-     */
-    description?: string | null;
-};
-
-/**
  * UpdateNotificationRequest
  * Request model for partially updating a notification.
  */
@@ -7431,6 +7806,39 @@ export type UserAccess = {
      * Users access level to service/agent/process
      */
     level: AccessLevel;
+};
+
+/**
+ * UserChatMessage
+ */
+export type UserChatMessage = {
+    role?: MessageRole;
+    /**
+     * Additional Kwargs
+     */
+    additional_kwargs?: unknown;
+    /**
+     * Blocks
+     */
+    blocks?: Array<({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlock) | ({
+        block_type: 'audio';
+    } & AudioBlock) | ({
+        block_type: 'document';
+    } & DocumentBlock) | ({
+        block_type: 'cache';
+    } & CachePoint) | ({
+        block_type: 'citable';
+    } & CitableBlock) | ({
+        block_type: 'citation';
+    } & CitationBlock)>;
+    /**
+     * User Id
+     */
+    user_id: string;
 };
 
 /**
@@ -7572,7 +7980,7 @@ export type UserMessageEventReadable = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessage>;
+    messages?: Array<ChatMessage | UserChatMessage | AssistantChatMessage>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
@@ -7591,7 +7999,7 @@ export type UserMessageEventReadable = {
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
         [key: string]: unknown;
-    } | null) | UserIdentity | Array<ChatMessage> | (Array<UserUploadedFile> | null) | Array<string> | undefined;
+    } | null) | UserIdentity | Array<ChatMessage | UserChatMessage | AssistantChatMessage> | (Array<UserUploadedFile> | null) | Array<string> | undefined;
 };
 
 /**
@@ -7657,7 +8065,7 @@ export type UserMessageEventWritable = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessage>;
+    messages?: Array<ChatMessage | UserChatMessage | AssistantChatMessage>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
@@ -7665,7 +8073,7 @@ export type UserMessageEventWritable = {
     files?: Array<UserUploadedFile> | null;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
         [key: string]: unknown;
-    } | null) | UserIdentity | Array<ChatMessage> | (Array<UserUploadedFile> | null) | undefined;
+    } | null) | UserIdentity | Array<ChatMessage | UserChatMessage | AssistantChatMessage> | (Array<UserUploadedFile> | null) | undefined;
 };
 
 /**
@@ -7806,13 +8214,37 @@ export type OpenaiTypesAudioTranscriptionVerboseUsage = {
 };
 
 /**
+ * Custom
+ */
+export type OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom = {
+    /**
+     * Input
+     */
+    input: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * Function
  */
-export type OpenaiTypesChatChatCompletionMessageToolCallParamFunction = {
+export type OpenaiTypesChatChatCompletionMessageFunctionToolCallParamFunction = {
     /**
      * Arguments
      */
     arguments: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * Custom
+ */
+export type OpenaiTypesChatChatCompletionNamedToolChoiceCustomParamCustom = {
     /**
      * Name
      */
@@ -7922,7 +8354,6 @@ export type GetUserData = {
     path: {
         /**
          * User Id
-         * The user's unique identifier (OID).
          */
         user_id: string;
     };
@@ -8348,6 +8779,95 @@ export type RemoveUserFromThreadResponses = {
 };
 
 export type RemoveUserFromThreadResponse = RemoveUserFromThreadResponses[keyof RemoveUserFromThreadResponses];
+
+export type ModelsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/models';
+};
+
+export type ModelsResponses = {
+    /**
+     * Response Models Models Get
+     * Successful Response
+     */
+    200: Array<ModelTypeGroupDto>;
+};
+
+export type ModelsResponse = ModelsResponses[keyof ModelsResponses];
+
+export type GetModelData = {
+    body?: never;
+    path: {
+        /**
+         * Model Name
+         */
+        model_name: string;
+    };
+    query?: never;
+    url: '/models/{model_name}';
+};
+
+export type GetModelErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetModelError = GetModelErrors[keyof GetModelErrors];
+
+export type GetModelResponses = {
+    /**
+     * Successful Response
+     */
+    200: ModelDto;
+};
+
+export type GetModelResponse = GetModelResponses[keyof GetModelResponses];
+
+export type ActivityData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Start Date
+         */
+        start_date: string;
+        /**
+         * End Date
+         */
+        end_date: string;
+        /**
+         * Page Size
+         */
+        page_size?: number;
+        /**
+         * Page
+         */
+        page?: number;
+    };
+    url: '/spending/activity';
+};
+
+export type ActivityErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ActivityError = ActivityErrors[keyof ActivityErrors];
+
+export type ActivityResponses = {
+    /**
+     * Successful Response
+     */
+    200: SpendingDto;
+};
+
+export type ActivityResponse = ActivityResponses[keyof ActivityResponses];
 
 export type GetAgentData = {
     body?: never;
@@ -9255,61 +9775,6 @@ export type RunExperimentResponses = {
 
 export type RunExperimentResponse = RunExperimentResponses[keyof RunExperimentResponses];
 
-export type CreateNamespaceData = {
-    body: CreateNamespaceRequest;
-    path?: never;
-    query?: never;
-    url: '/knowledge/namespaces';
-};
-
-export type CreateNamespaceErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type CreateNamespaceError = CreateNamespaceErrors[keyof CreateNamespaceErrors];
-
-export type CreateNamespaceResponses = {
-    /**
-     * Successful Response
-     */
-    200: NamespaceResponse;
-};
-
-export type CreateNamespaceResponse = CreateNamespaceResponses[keyof CreateNamespaceResponses];
-
-export type UpdateNamespaceData = {
-    body: UpdateNamespaceRequest;
-    path: {
-        /**
-         * Namespace ID
-         */
-        namespace_id: string;
-    };
-    query?: never;
-    url: '/knowledge/namespaces/{namespace_id}';
-};
-
-export type UpdateNamespaceErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UpdateNamespaceError = UpdateNamespaceErrors[keyof UpdateNamespaceErrors];
-
-export type UpdateNamespaceResponses = {
-    /**
-     * Successful Response
-     */
-    200: NamespaceResponse;
-};
-
-export type UpdateNamespaceResponse = UpdateNamespaceResponses[keyof UpdateNamespaceResponses];
-
 export type GetDatabasesData = {
     body?: never;
     path?: never;
@@ -9331,7 +9796,7 @@ export type GetDocumentsForNamespaceData = {
     body?: never;
     path: {
         /**
-         * Database name
+         * Database
          */
         database: string;
         /**
@@ -9376,11 +9841,15 @@ export type GetDocumentByIdData = {
     body?: never;
     path: {
         /**
-         * Database name
+         * Database
          */
         database: string;
         /**
-         * Document ID
+         * Namespace
+         */
+        namespace: string;
+        /**
+         * Document Id
          */
         document_id: string;
     };
@@ -9401,7 +9870,7 @@ export type GetDocumentByIdResponses = {
     /**
      * Successful Response
      */
-    200: DocumentDto;
+    200: IngestedDocument;
 };
 
 export type GetDocumentByIdResponse = GetDocumentByIdResponses[keyof GetDocumentByIdResponses];
@@ -9410,7 +9879,7 @@ export type GetNodesForDocumentData = {
     body?: never;
     path: {
         /**
-         * Database name
+         * Database
          */
         database: string;
         /**
@@ -9418,7 +9887,7 @@ export type GetNodesForDocumentData = {
          */
         namespace: string;
         /**
-         * Document ID
+         * Document Id
          */
         document_id: string;
     };
@@ -9449,7 +9918,7 @@ export type GetSummaryNodesForDocumentData = {
     body?: never;
     path: {
         /**
-         * Database name
+         * Database
          */
         database: string;
         /**
@@ -9457,7 +9926,7 @@ export type GetSummaryNodesForDocumentData = {
          */
         namespace: string;
         /**
-         * Document ID
+         * Document Id
          */
         document_id: string;
     };
@@ -9497,7 +9966,7 @@ export type GetFileUrlData = {
         file_path: string;
     };
     query?: never;
-    url: '/files/logged-in/url/{container}/{file_path}';
+    url: '/file/logged-in/url/{container}/{file_path}';
 };
 
 export type GetFileUrlErrors = {
@@ -9531,7 +10000,7 @@ export type GetFileRedirectData = {
         file_path: string;
     };
     query?: never;
-    url: '/files/logged-in/redirect/{container}/{file_path}';
+    url: '/file/logged-in/redirect/{container}/{file_path}';
 };
 
 export type GetFileRedirectErrors = {
@@ -9574,7 +10043,7 @@ export type GetAnonymousFileUrlData = {
          */
         signature: string;
     };
-    url: '/files/anonymous/url/{container}/{file_path}';
+    url: '/file/anonymous/url/{container}/{file_path}';
 };
 
 export type GetAnonymousFileUrlErrors = {
@@ -9617,7 +10086,7 @@ export type GetAnonymousFileRedirectData = {
          */
         signature: string;
     };
-    url: '/files/anonymous/redirect/{container}/{file_path}';
+    url: '/file/anonymous/redirect/{container}/{file_path}';
 };
 
 export type GetAnonymousFileRedirectErrors = {
@@ -9635,56 +10104,6 @@ export type GetAnonymousFileRedirectResponses = {
      */
     200: unknown;
 };
-
-export type InitiateFileUploadData = {
-    body: FileUploadRequest;
-    path?: never;
-    query?: never;
-    url: '/files/upload/initiate';
-};
-
-export type InitiateFileUploadErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type InitiateFileUploadError = InitiateFileUploadErrors[keyof InitiateFileUploadErrors];
-
-export type InitiateFileUploadResponses = {
-    /**
-     * Successful Response
-     */
-    200: FileUploadResponse;
-};
-
-export type InitiateFileUploadResponse = InitiateFileUploadResponses[keyof InitiateFileUploadResponses];
-
-export type ValidateFileUploadData = {
-    body: FileUploadValidationRequest;
-    path?: never;
-    query?: never;
-    url: '/files/upload/validate';
-};
-
-export type ValidateFileUploadErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type ValidateFileUploadError = ValidateFileUploadErrors[keyof ValidateFileUploadErrors];
-
-export type ValidateFileUploadResponses = {
-    /**
-     * Successful Response
-     */
-    200: FileUploadValidationResponse;
-};
-
-export type ValidateFileUploadResponse = ValidateFileUploadResponses[keyof ValidateFileUploadResponses];
 
 export type GetNotificationsData = {
     body?: never;
