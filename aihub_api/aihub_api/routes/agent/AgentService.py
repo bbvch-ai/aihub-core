@@ -4,7 +4,6 @@ from asyncio import sleep
 from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
