@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.243.0] - 2025-09-02 - Refined Image Tagging for Build Action
+
+### Changed
+
+- ⚡️ **Improved Image Tagging:** The `build_image` GitHub Action has been updated to use comma-separated values for
+  secondary image tags, ensuring more robust and widely compatible tag assignment for published images.
+
+---
+
 ## [v0.242.0] - 2025-09-02 - New Model Catalog and Advanced AI Features
 
 ### Added
