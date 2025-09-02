@@ -65,7 +65,7 @@ use-local-core-without-install:
 	@echo "Switching to local cores without poetry install..."
 	poetry run python switch_dependencies.py local
 
-TAG ?= v0.241.0
+TAG ?= v0.243.0
 
 # Use remote cores (with poetry install)
 use-remote-core:
@@ -87,7 +87,7 @@ license-check:
 	/bin/bash ./generate-license.sh
 	@poetry run mdformat --number $$(git ls-files '*.md')
 
-local-cart-win:
+local-cert-win:
 	@echo "Generating mkcert certificates for localhost and nip.io..."
 	mkdir -p configs/certs
 	mkcert -key-file configs/traefik/certs/dev-key.pem -cert-file configs/traefik/certs/dev-cert.pem \

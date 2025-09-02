@@ -135,22 +135,6 @@ export const AgentDTOSchema = {
             title: 'Stop Events',
             description: "A list of `EventSpecs` representing events that can stop this agent's workflow."
         },
-        hitl_request_events: {
-            items: {
-                '$ref': '#/components/schemas/EventSpecs'
-            },
-            type: 'array',
-            title: 'Hitl Request Events',
-            description: 'A list of `EventSpecs` representing human-in-the-loop request events this agent can produce.'
-        },
-        hitl_response_events: {
-            items: {
-                '$ref': '#/components/schemas/EventSpecs'
-            },
-            type: 'array',
-            title: 'Hitl Response Events',
-            description: 'A list of `EventSpecs` representing human-in-the-loop response events this agent can accept.'
-        },
         network_graph: {
             '$ref': '#/components/schemas/WorkflowGraph',
             description: 'A network graph of the agent, showing how different components are connected and interact.'
@@ -169,7 +153,7 @@ export const AgentDTOSchema = {
         }
     },
     type: 'object',
-    required: ['agent_class', 'agent_id', 'agent_config', 'is_conversational', 'start_events', 'stop_events', 'hitl_request_events', 'hitl_response_events', 'network_graph'],
+    required: ['agent_class', 'agent_id', 'agent_config', 'is_conversational', 'start_events', 'stop_events', 'network_graph'],
     title: 'AgentDTO',
     description: `A data transfer object for representing agent information in responses.
 This DTO standardizes how agent data is returned from the service layer to the controller,
@@ -608,6 +592,95 @@ export const AnnotationURLCitationSchema = {
     title: 'AnnotationURLCitation'
 } as const;
 
+export const ApiKeyBreakdownDTOSchema = {
+    properties: {
+        metrics: {
+            '$ref': '#/components/schemas/MetricsDTO'
+        },
+        metadata: {
+            additionalProperties: {
+                anyOf: [
+                    {
+                        type: 'string'
+                    },
+                    {
+                        type: 'null'
+                    }
+                ]
+            },
+            type: 'object',
+            title: 'Metadata'
+        }
+    },
+    type: 'object',
+    required: ['metrics', 'metadata'],
+    title: 'ApiKeyBreakdownDTO'
+} as const;
+
+export const AssistantChatMessageSchema = {
+    properties: {
+        role: {
+            '$ref': '#/components/schemas/MessageRole',
+            default: 'user'
+        },
+        additional_kwargs: {
+            title: 'Additional Kwargs'
+        },
+        blocks: {
+            items: {
+                oneOf: [
+                    {
+                        '$ref': '#/components/schemas/TextBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ImageBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/AudioBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/DocumentBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CachePoint'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CitableBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CitationBlock'
+                    }
+                ],
+                discriminator: {
+                    propertyName: 'block_type',
+                    mapping: {
+                        audio: '#/components/schemas/AudioBlock',
+                        cache: '#/components/schemas/CachePoint',
+                        citable: '#/components/schemas/CitableBlock',
+                        citation: '#/components/schemas/CitationBlock',
+                        document: '#/components/schemas/DocumentBlock',
+                        image: '#/components/schemas/ImageBlock',
+                        text: '#/components/schemas/TextBlock'
+                    }
+                }
+            },
+            type: 'array',
+            title: 'Blocks'
+        },
+        agent_id: {
+            type: 'string',
+            title: 'Agent Id'
+        },
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class'
+        }
+    },
+    type: 'object',
+    required: ['agent_id', 'agent_class'],
+    title: 'AssistantChatMessage'
+} as const;
+
 export const AudioSchema = {
     properties: {
         id: {
@@ -807,6 +880,54 @@ export const Body_create_transcription_openai_audio_transcriptions_postSchema = 
     title: 'Body_create_transcription_openai_audio_transcriptions_post'
 } as const;
 
+export const BreakdownDTOSchema = {
+    properties: {
+        mcp_servers: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Mcp Servers'
+        },
+        models: {
+            additionalProperties: {
+                '$ref': '#/components/schemas/ModelBreakdownDTO'
+            },
+            type: 'object',
+            title: 'Models'
+        },
+        model_groups: {
+            additionalProperties: {
+                '$ref': '#/components/schemas/ModelBreakdownDTO'
+            },
+            type: 'object',
+            title: 'Model Groups'
+        },
+        providers: {
+            additionalProperties: {
+                '$ref': '#/components/schemas/ModelBreakdownDTO'
+            },
+            type: 'object',
+            title: 'Providers'
+        },
+        api_keys: {
+            additionalProperties: {
+                '$ref': '#/components/schemas/ApiKeyBreakdownDTO'
+            },
+            type: 'object',
+            title: 'Api Keys'
+        },
+        entities: {
+            additionalProperties: {
+                '$ref': '#/components/schemas/ModelBreakdownDTO'
+            },
+            type: 'object',
+            title: 'Entities'
+        }
+    },
+    type: 'object',
+    required: ['mcp_servers', 'models', 'model_groups', 'providers', 'api_keys', 'entities'],
+    title: 'BreakdownDTO'
+} as const;
+
 export const BulkUpdateNotificationRequestSchema = {
     properties: {
         notification_ids: {
@@ -998,6 +1119,43 @@ export const ChatCompletionSchema = {
     title: 'ChatCompletion'
 } as const;
 
+export const ChatCompletionAllowedToolChoiceParamSchema = {
+    properties: {
+        allowed_tools: {
+            '$ref': '#/components/schemas/ChatCompletionAllowedToolsParam'
+        },
+        type: {
+            type: 'string',
+            const: 'allowed_tools',
+            title: 'Type'
+        }
+    },
+    type: 'object',
+    required: ['allowed_tools', 'type'],
+    title: 'ChatCompletionAllowedToolChoiceParam'
+} as const;
+
+export const ChatCompletionAllowedToolsParamSchema = {
+    properties: {
+        mode: {
+            type: 'string',
+            enum: ['auto', 'required'],
+            title: 'Mode'
+        },
+        tools: {
+            items: {
+                additionalProperties: true,
+                type: 'object'
+            },
+            type: 'array',
+            title: 'Tools'
+        }
+    },
+    type: 'object',
+    required: ['mode', 'tools'],
+    title: 'ChatCompletionAllowedToolsParam'
+} as const;
+
 export const ChatCompletionAssistantMessageParamSchema = {
     properties: {
         role: {
@@ -1066,7 +1224,14 @@ export const ChatCompletionAssistantMessageParamSchema = {
         },
         tool_calls: {
             items: {
-                '$ref': '#/components/schemas/ChatCompletionMessageToolCallParam'
+                anyOf: [
+                    {
+                        '$ref': '#/components/schemas/ChatCompletionMessageFunctionToolCallParam'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ChatCompletionMessageCustomToolCallParam'
+                    }
+                ]
             },
             type: 'array',
             title: 'Tool Calls'
@@ -1264,6 +1429,22 @@ export const ChatCompletionFunctionMessageParamSchema = {
     title: 'ChatCompletionFunctionMessageParam'
 } as const;
 
+export const ChatCompletionFunctionToolParamSchema = {
+    properties: {
+        function: {
+            '$ref': '#/components/schemas/FunctionDefinition'
+        },
+        type: {
+            type: 'string',
+            const: 'function',
+            title: 'Type'
+        }
+    },
+    type: 'object',
+    required: ['function', 'type'],
+    title: 'ChatCompletionFunctionToolParam'
+} as const;
+
 export const ChatCompletionMessageSchema = {
     properties: {
         content: {
@@ -1331,7 +1512,14 @@ export const ChatCompletionMessageSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/ChatCompletionMessageToolCall'
+                        anyOf: [
+                            {
+                                '$ref': '#/components/schemas/ChatCompletionMessageFunctionToolCall'
+                            },
+                            {
+                                '$ref': '#/components/schemas/ChatCompletionMessageCustomToolCall'
+                            }
+                        ]
                     },
                     type: 'array'
                 },
@@ -1348,7 +1536,48 @@ export const ChatCompletionMessageSchema = {
     title: 'ChatCompletionMessage'
 } as const;
 
-export const ChatCompletionMessageToolCallSchema = {
+export const ChatCompletionMessageCustomToolCallSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        custom: {
+            '$ref': '#/components/schemas/Custom-Output'
+        },
+        type: {
+            type: 'string',
+            const: 'custom',
+            title: 'Type'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['id', 'custom', 'type'],
+    title: 'ChatCompletionMessageCustomToolCall'
+} as const;
+
+export const ChatCompletionMessageCustomToolCallParamSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        custom: {
+            '$ref': '#/components/schemas/openai__types__chat__chat_completion_message_custom_tool_call_param__Custom'
+        },
+        type: {
+            type: 'string',
+            const: 'custom',
+            title: 'Type'
+        }
+    },
+    type: 'object',
+    required: ['id', 'custom', 'type'],
+    title: 'ChatCompletionMessageCustomToolCallParam'
+} as const;
+
+export const ChatCompletionMessageFunctionToolCallSchema = {
     properties: {
         id: {
             type: 'string',
@@ -1366,17 +1595,17 @@ export const ChatCompletionMessageToolCallSchema = {
     additionalProperties: true,
     type: 'object',
     required: ['id', 'function', 'type'],
-    title: 'ChatCompletionMessageToolCall'
+    title: 'ChatCompletionMessageFunctionToolCall'
 } as const;
 
-export const ChatCompletionMessageToolCallParamSchema = {
+export const ChatCompletionMessageFunctionToolCallParamSchema = {
     properties: {
         id: {
             type: 'string',
             title: 'Id'
         },
         function: {
-            '$ref': '#/components/schemas/openai__types__chat__chat_completion_message_tool_call_param__Function'
+            '$ref': '#/components/schemas/openai__types__chat__chat_completion_message_function_tool_call_param__Function'
         },
         type: {
             type: 'string',
@@ -1386,7 +1615,23 @@ export const ChatCompletionMessageToolCallParamSchema = {
     },
     type: 'object',
     required: ['id', 'function', 'type'],
-    title: 'ChatCompletionMessageToolCallParam'
+    title: 'ChatCompletionMessageFunctionToolCallParam'
+} as const;
+
+export const ChatCompletionNamedToolChoiceCustomParamSchema = {
+    properties: {
+        custom: {
+            '$ref': '#/components/schemas/openai__types__chat__chat_completion_named_tool_choice_custom_param__Custom'
+        },
+        type: {
+            type: 'string',
+            const: 'custom',
+            title: 'Type'
+        }
+    },
+    type: 'object',
+    required: ['custom', 'type'],
+    title: 'ChatCompletionNamedToolChoiceCustomParam'
 } as const;
 
 export const ChatCompletionNamedToolChoiceParamSchema = {
@@ -1475,7 +1720,7 @@ export const ChatCompletionRequestSchema = {
                 },
                 {
                     type: 'string',
-                    enum: ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4.1-2025-04-14', 'gpt-4.1-mini-2025-04-14', 'gpt-4.1-nano-2025-04-14', 'o4-mini', 'o4-mini-2025-04-16', 'o3', 'o3-2025-04-16', 'o3-mini', 'o3-mini-2025-01-31', 'o1', 'o1-2024-12-17', 'o1-preview', 'o1-preview-2024-09-12', 'o1-mini', 'o1-mini-2024-09-12', 'gpt-4o', 'gpt-4o-2024-11-20', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-audio-preview', 'gpt-4o-audio-preview-2024-10-01', 'gpt-4o-audio-preview-2024-12-17', 'gpt-4o-audio-preview-2025-06-03', 'gpt-4o-mini-audio-preview', 'gpt-4o-mini-audio-preview-2024-12-17', 'gpt-4o-search-preview', 'gpt-4o-mini-search-preview', 'gpt-4o-search-preview-2025-03-11', 'gpt-4o-mini-search-preview-2025-03-11', 'chatgpt-4o-latest', 'codex-mini-latest', 'gpt-4o-mini', 'gpt-4o-mini-2024-07-18', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4-0125-preview', 'gpt-4-turbo-preview', 'gpt-4-1106-preview', 'gpt-4-vision-preview', 'gpt-4', 'gpt-4-0314', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-4-32k-0613', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0301', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0125', 'gpt-3.5-turbo-16k-0613']
+                    enum: ['gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'gpt-5-2025-08-07', 'gpt-5-mini-2025-08-07', 'gpt-5-nano-2025-08-07', 'gpt-5-chat-latest', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4.1-2025-04-14', 'gpt-4.1-mini-2025-04-14', 'gpt-4.1-nano-2025-04-14', 'o4-mini', 'o4-mini-2025-04-16', 'o3', 'o3-2025-04-16', 'o3-mini', 'o3-mini-2025-01-31', 'o1', 'o1-2024-12-17', 'o1-preview', 'o1-preview-2024-09-12', 'o1-mini', 'o1-mini-2024-09-12', 'gpt-4o', 'gpt-4o-2024-11-20', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-audio-preview', 'gpt-4o-audio-preview-2024-10-01', 'gpt-4o-audio-preview-2024-12-17', 'gpt-4o-audio-preview-2025-06-03', 'gpt-4o-mini-audio-preview', 'gpt-4o-mini-audio-preview-2024-12-17', 'gpt-4o-search-preview', 'gpt-4o-mini-search-preview', 'gpt-4o-search-preview-2025-03-11', 'gpt-4o-mini-search-preview-2025-03-11', 'chatgpt-4o-latest', 'codex-mini-latest', 'gpt-4o-mini', 'gpt-4o-mini-2024-07-18', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4-0125-preview', 'gpt-4-turbo-preview', 'gpt-4-1106-preview', 'gpt-4-vision-preview', 'gpt-4', 'gpt-4-0314', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-4-32k-0613', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0301', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0125', 'gpt-3.5-turbo-16k-0613']
                 }
             ],
             title: 'Model',
@@ -1667,7 +1912,7 @@ export const ChatCompletionRequestSchema = {
             anyOf: [
                 {
                     type: 'string',
-                    enum: ['low', 'medium', 'high']
+                    enum: ['minimal', 'low', 'medium', 'high']
                 },
                 {
                     type: 'null'
@@ -1771,7 +2016,13 @@ export const ChatCompletionRequestSchema = {
                     enum: ['none', 'auto', 'required']
                 },
                 {
+                    '$ref': '#/components/schemas/ChatCompletionAllowedToolChoiceParam'
+                },
+                {
                     '$ref': '#/components/schemas/ChatCompletionNamedToolChoiceParam'
+                },
+                {
+                    '$ref': '#/components/schemas/ChatCompletionNamedToolChoiceCustomParam'
                 },
                 {
                     type: 'null'
@@ -1783,7 +2034,7 @@ export const ChatCompletionRequestSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/ChatCompletionToolParam'
+                        '$ref': '#/components/schemas/ChatCompletionFunctionToolParam'
                     },
                     type: 'array'
                 },
@@ -1824,6 +2075,10 @@ export const ChatCompletionRequestSchema = {
 
 export const ChatCompletionStreamOptionsParamSchema = {
     properties: {
+        include_obfuscation: {
+            type: 'boolean',
+            title: 'Include Obfuscation'
+        },
         include_usage: {
             type: 'boolean',
             title: 'Include Usage'
@@ -1931,22 +2186,6 @@ export const ChatCompletionToolMessageParamSchema = {
     type: 'object',
     required: ['content', 'role', 'tool_call_id'],
     title: 'ChatCompletionToolMessageParam'
-} as const;
-
-export const ChatCompletionToolParamSchema = {
-    properties: {
-        function: {
-            '$ref': '#/components/schemas/FunctionDefinition'
-        },
-        type: {
-            type: 'string',
-            const: 'function',
-            title: 'Type'
-        }
-    },
-    type: 'object',
-    required: ['function', 'type'],
-    title: 'ChatCompletionToolParam'
 } as const;
 
 export const ChatCompletionUserMessageParamSchema = {
@@ -2160,6 +2399,18 @@ export const ChunkEventSchema = {
             title: 'Model Name',
             description: 'The name of the AI model generating the chunks.',
             default: 'aihub'
+        },
+        reasoning_content: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Reasoning Content',
+            description: 'The textual representation of the agent’s internal reasoning at a particular point in time.'
         },
         _event_name: {
             type: 'string',
@@ -2698,6 +2949,97 @@ export const CreateTokenResponseSchema = {
     type: 'object',
     required: ['id', 'name', 'expiry_date', 'token'],
     title: 'CreateTokenResponse'
+} as const;
+
+export const Custom_OutputSchema = {
+    properties: {
+        input: {
+            type: 'string',
+            title: 'Input'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['input', 'name'],
+    title: 'Custom'
+} as const;
+
+export const DailyActivityMetadataDTOSchema = {
+    properties: {
+        total_spend: {
+            type: 'number',
+            title: 'Total Spend'
+        },
+        total_prompt_tokens: {
+            type: 'integer',
+            title: 'Total Prompt Tokens'
+        },
+        total_completion_tokens: {
+            type: 'integer',
+            title: 'Total Completion Tokens'
+        },
+        total_tokens: {
+            type: 'integer',
+            title: 'Total Tokens'
+        },
+        total_api_requests: {
+            type: 'integer',
+            title: 'Total Api Requests'
+        },
+        total_successful_requests: {
+            type: 'integer',
+            title: 'Total Successful Requests'
+        },
+        total_failed_requests: {
+            type: 'integer',
+            title: 'Total Failed Requests'
+        },
+        total_cache_read_input_tokens: {
+            type: 'integer',
+            title: 'Total Cache Read Input Tokens'
+        },
+        total_cache_creation_input_tokens: {
+            type: 'integer',
+            title: 'Total Cache Creation Input Tokens'
+        },
+        page: {
+            type: 'integer',
+            title: 'Page'
+        },
+        total_pages: {
+            type: 'integer',
+            title: 'Total Pages'
+        },
+        has_more: {
+            type: 'boolean',
+            title: 'Has More'
+        }
+    },
+    type: 'object',
+    required: ['total_spend', 'total_prompt_tokens', 'total_completion_tokens', 'total_tokens', 'total_api_requests', 'total_successful_requests', 'total_failed_requests', 'total_cache_read_input_tokens', 'total_cache_creation_input_tokens', 'page', 'total_pages', 'has_more'],
+    title: 'DailyActivityMetadataDTO'
+} as const;
+
+export const DailyActivityResultDTOSchema = {
+    properties: {
+        date: {
+            type: 'string',
+            title: 'Date'
+        },
+        metrics: {
+            '$ref': '#/components/schemas/MetricsDTO'
+        },
+        breakdown: {
+            '$ref': '#/components/schemas/BreakdownDTO'
+        }
+    },
+    type: 'object',
+    required: ['date', 'metrics', 'breakdown'],
+    title: 'DailyActivityResultDTO'
 } as const;
 
 export const DashboardDTOSchema = {
@@ -6670,6 +7012,50 @@ export const MetadataSchema = {
     title: 'Metadata'
 } as const;
 
+export const MetricsDTOSchema = {
+    properties: {
+        spend: {
+            type: 'number',
+            title: 'Spend'
+        },
+        prompt_tokens: {
+            type: 'integer',
+            title: 'Prompt Tokens'
+        },
+        completion_tokens: {
+            type: 'integer',
+            title: 'Completion Tokens'
+        },
+        cache_read_input_tokens: {
+            type: 'integer',
+            title: 'Cache Read Input Tokens'
+        },
+        cache_creation_input_tokens: {
+            type: 'integer',
+            title: 'Cache Creation Input Tokens'
+        },
+        total_tokens: {
+            type: 'integer',
+            title: 'Total Tokens'
+        },
+        successful_requests: {
+            type: 'integer',
+            title: 'Successful Requests'
+        },
+        failed_requests: {
+            type: 'integer',
+            title: 'Failed Requests'
+        },
+        api_requests: {
+            type: 'integer',
+            title: 'Api Requests'
+        }
+    },
+    type: 'object',
+    required: ['spend', 'prompt_tokens', 'completion_tokens', 'cache_read_input_tokens', 'cache_creation_input_tokens', 'total_tokens', 'successful_requests', 'failed_requests', 'api_requests'],
+    title: 'MetricsDTO'
+} as const;
+
 export const MinimalAgentDTOSchema = {
     properties: {
         agent_class: {
@@ -6846,6 +7232,58 @@ export const MinimalUserDTOSchema = {
     title: 'MinimalUserDTO'
 } as const;
 
+export const ModelBreakdownDTOSchema = {
+    properties: {
+        metrics: {
+            '$ref': '#/components/schemas/MetricsDTO'
+        },
+        metadata: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Metadata'
+        },
+        api_key_breakdown: {
+            additionalProperties: {
+                '$ref': '#/components/schemas/ApiKeyBreakdownDTO'
+            },
+            type: 'object',
+            title: 'Api Key Breakdown'
+        }
+    },
+    type: 'object',
+    required: ['metrics', 'metadata', 'api_key_breakdown'],
+    title: 'ModelBreakdownDTO'
+} as const;
+
+export const ModelDTOSchema = {
+    properties: {
+        model_name: {
+            type: 'string',
+            title: 'Model Name',
+            description: 'The name/identifier of the model'
+        },
+        model_info: {
+            '$ref': '#/components/schemas/ModelInfoDTO',
+            description: 'Detailed information about the model'
+        },
+        icon: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Icon',
+            description: "URL or path to the model's icon"
+        }
+    },
+    type: 'object',
+    required: ['model_name', 'model_info'],
+    title: 'ModelDTO'
+} as const;
+
 export const ModelDetailsSchema = {
     properties: {
         id: {
@@ -6863,7 +7301,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1756278859
+            default: 1756444464
         },
         owned_by: {
             type: 'string',
@@ -6901,6 +7339,466 @@ export const ModelDetailsSchema = {
     title: 'ModelDetails'
 } as const;
 
+export const ModelInfoDTOSchema = {
+    properties: {
+        mode: {
+            type: 'string',
+            title: 'Mode',
+            description: "The mode of the model (e.g., 'chat', 'completion', 'embedding')"
+        },
+        max_input_tokens: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max Input Tokens',
+            description: 'Maximum number of input tokens the model can handle'
+        },
+        max_output_tokens: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max Output Tokens',
+            description: 'Maximum number of output tokens the model can generate'
+        },
+        input_cost_per_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Token',
+            description: 'Cost per input token in USD'
+        },
+        output_cost_per_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Token',
+            description: 'Cost per output token in USD'
+        },
+        cache_creation_input_token_cost: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cache Creation Input Token Cost',
+            description: 'Cost for creating cache from input tokens'
+        },
+        cache_read_input_token_cost: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cache Read Input Token Cost',
+            description: 'Cost for reading cached input tokens'
+        },
+        input_cost_per_token_above_128k_tokens: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Token Above 128K Tokens',
+            description: 'Cost per input token for contexts above 128k tokens'
+        },
+        input_cost_per_token_above_200k_tokens: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Token Above 200K Tokens',
+            description: 'Cost per input token for contexts above 200k tokens'
+        },
+        input_cost_per_audio_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Audio Token',
+            description: 'Cost per audio input token'
+        },
+        input_cost_per_token_batches: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Token Batches',
+            description: 'Cost per input token when using batch API'
+        },
+        output_cost_per_token_batches: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Token Batches',
+            description: 'Cost per output token when using batch API'
+        },
+        output_cost_per_audio_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Audio Token',
+            description: 'Cost per audio output token'
+        },
+        output_cost_per_reasoning_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Reasoning Token',
+            description: 'Cost per reasoning token for models with reasoning capabilities'
+        },
+        output_cost_per_token_above_128k_tokens: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Token Above 128K Tokens',
+            description: 'Cost per output token for contexts above 128k tokens'
+        },
+        output_cost_per_token_above_200k_tokens: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Token Above 200K Tokens',
+            description: 'Cost per output token for contexts above 200k tokens'
+        },
+        output_cost_per_image: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Image',
+            description: 'Cost per image output'
+        },
+        search_context_cost_per_query: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Search Context Cost Per Query',
+            description: 'Cost per search context query'
+        },
+        output_vector_size: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Vector Size',
+            description: 'Size of output vectors for embedding models'
+        },
+        supports_system_messages: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports System Messages',
+            description: 'Whether the model supports system messages'
+        },
+        supports_response_schema: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Response Schema',
+            description: 'Whether the model supports structured response schemas'
+        },
+        supports_vision: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Vision',
+            description: 'Whether the model supports vision/image input'
+        },
+        supports_function_calling: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Function Calling',
+            description: 'Whether the model supports function calling'
+        },
+        supports_tool_choice: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Tool Choice',
+            description: 'Whether the model supports tool choice selection'
+        },
+        supports_assistant_prefill: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Assistant Prefill',
+            description: 'Whether the model supports assistant message prefilling'
+        },
+        supports_prompt_caching: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Prompt Caching',
+            description: 'Whether the model supports prompt caching'
+        },
+        supports_audio_input: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Audio Input',
+            description: 'Whether the model supports audio input'
+        },
+        supports_audio_output: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Audio Output',
+            description: 'Whether the model supports audio output'
+        },
+        supports_pdf_input: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Pdf Input',
+            description: 'Whether the model supports PDF input'
+        },
+        supports_embedding_image_input: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Embedding Image Input',
+            description: 'Whether the model supports image input for embeddings'
+        },
+        supports_native_streaming: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Native Streaming',
+            description: 'Whether the model supports native streaming'
+        },
+        supports_web_search: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Web Search',
+            description: 'Whether the model supports web search capabilities'
+        },
+        supports_url_context: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Url Context',
+            description: 'Whether the model supports URL context input'
+        },
+        supports_reasoning: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Reasoning',
+            description: 'Whether the model supports reasoning capabilities'
+        },
+        supports_computer_use: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Computer Use',
+            description: 'Whether the model supports computer use capabilities'
+        },
+        tpm: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tpm',
+            description: 'Tokens per minute rate limit'
+        },
+        rpm: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Rpm',
+            description: 'Requests per minute rate limit'
+        },
+        supported_openai_params: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supported Openai Params',
+            description: 'List of supported OpenAI API parameters'
+        }
+    },
+    type: 'object',
+    required: ['mode'],
+    title: 'ModelInfoDTO'
+} as const;
+
 export const ModelResponseSchema = {
     properties: {
         object: {
@@ -6921,6 +7819,27 @@ export const ModelResponseSchema = {
     type: 'object',
     required: ['data'],
     title: 'ModelResponse'
+} as const;
+
+export const ModelTypeGroupDTOSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The name/type of the model group'
+        },
+        models: {
+            items: {
+                '$ref': '#/components/schemas/ModelDTO'
+            },
+            type: 'array',
+            title: 'Models',
+            description: 'List of models in this group'
+        }
+    },
+    type: 'object',
+    required: ['name', 'models'],
+    title: 'ModelTypeGroupDTO'
 } as const;
 
 export const NamespaceSchema = {
@@ -8307,6 +9226,24 @@ export const SignedUrlDtoSchema = {
     title: 'SignedUrlDto'
 } as const;
 
+export const SpendingDTOSchema = {
+    properties: {
+        results: {
+            items: {
+                '$ref': '#/components/schemas/DailyActivityResultDTO'
+            },
+            type: 'array',
+            title: 'Results'
+        },
+        metadata: {
+            '$ref': '#/components/schemas/DailyActivityMetadataDTO'
+        }
+    },
+    type: 'object',
+    required: ['results', 'metadata'],
+    title: 'SpendingDTO'
+} as const;
+
 export const StandaloneQuestionCondenserEventSchema = {
     properties: {
         event_id: {
@@ -8687,6 +9624,18 @@ export const ThoughtEventSchema = {
                 }
             ],
             description: 'Display description for the event'
+        },
+        content: {
+            type: 'string',
+            title: 'Content',
+            description: 'The actual chunk of text or data produced at this stage.',
+            default: ''
+        },
+        model_name: {
+            type: 'string',
+            title: 'Model Name',
+            description: 'The name of the AI model generating the chunks.',
+            default: 'aihub'
         },
         reasoning_content: {
             anyOf: [
@@ -9490,6 +10439,66 @@ export const UserAccessSchema = {
     title: 'UserAccess'
 } as const;
 
+export const UserChatMessageSchema = {
+    properties: {
+        role: {
+            '$ref': '#/components/schemas/MessageRole',
+            default: 'user'
+        },
+        additional_kwargs: {
+            title: 'Additional Kwargs'
+        },
+        blocks: {
+            items: {
+                oneOf: [
+                    {
+                        '$ref': '#/components/schemas/TextBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ImageBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/AudioBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/DocumentBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CachePoint'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CitableBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CitationBlock'
+                    }
+                ],
+                discriminator: {
+                    propertyName: 'block_type',
+                    mapping: {
+                        audio: '#/components/schemas/AudioBlock',
+                        cache: '#/components/schemas/CachePoint',
+                        citable: '#/components/schemas/CitableBlock',
+                        citation: '#/components/schemas/CitationBlock',
+                        document: '#/components/schemas/DocumentBlock',
+                        image: '#/components/schemas/ImageBlock',
+                        text: '#/components/schemas/TextBlock'
+                    }
+                }
+            },
+            type: 'array',
+            title: 'Blocks'
+        },
+        user_id: {
+            type: 'string',
+            title: 'User Id'
+        }
+    },
+    type: 'object',
+    required: ['user_id'],
+    title: 'UserChatMessage'
+} as const;
+
 export const UserDTOSchema = {
     properties: {
         id: {
@@ -9661,7 +10670,17 @@ export const UserMessageEventSchema = {
         },
         messages: {
             items: {
-                '$ref': '#/components/schemas/ChatMessage'
+                anyOf: [
+                    {
+                        '$ref': '#/components/schemas/ChatMessage'
+                    },
+                    {
+                        '$ref': '#/components/schemas/UserChatMessage'
+                    },
+                    {
+                        '$ref': '#/components/schemas/AssistantChatMessage'
+                    }
+                ]
             },
             type: 'array',
             title: 'Messages',
@@ -9915,7 +10934,23 @@ export const openai__types__audio__transcription_verbose__UsageSchema = {
     title: 'Usage'
 } as const;
 
-export const openai__types__chat__chat_completion_message_tool_call_param__FunctionSchema = {
+export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {
+    properties: {
+        input: {
+            type: 'string',
+            title: 'Input'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        }
+    },
+    type: 'object',
+    required: ['input', 'name'],
+    title: 'Custom'
+} as const;
+
+export const openai__types__chat__chat_completion_message_function_tool_call_param__FunctionSchema = {
     properties: {
         arguments: {
             type: 'string',
@@ -9929,6 +10964,18 @@ export const openai__types__chat__chat_completion_message_tool_call_param__Funct
     type: 'object',
     required: ['arguments', 'name'],
     title: 'Function'
+} as const;
+
+export const openai__types__chat__chat_completion_named_tool_choice_custom_param__CustomSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name'
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'Custom'
 } as const;
 
 export const openai__types__chat__chat_completion_named_tool_choice_param__FunctionSchema = {

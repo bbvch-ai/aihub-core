@@ -90,8 +90,12 @@
     "click": "BSD-3-Clause",
     "jsonschema-specifications": "MIT",
     "tiktoken": "MIT",
-    "argparse":  "Python Software Foundation License",
-    "sse-starlette": "BSD-3-Clause"
+    "argparse": "Python Software Foundation License",
+    "sse-starlette": "BSD-3-Clause",
+    "hf-xet": "Apache-2.0",
+    "parse_type": "MIT",
+    "rpds-py": "MIT",
+    "audioop-lts": "PSF-2.0"
   },
   "reviewed_packages": [
     {
