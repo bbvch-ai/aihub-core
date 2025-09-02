@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.242.0] - 2025-09-02 - New Model Catalog and Advanced AI Features
+
+### Added
+
+- 🚀 **Introduced a comprehensive Models overview**: Users can now browse and view detailed information about all
+  available AI models, including their capabilities, pricing, and rate limits, through a new dedicated section in the
+  application.
+- 🦾 **New Model Information API**: A dedicated API endpoint now provides structured access to retrieve lists of AI
+  models, grouped by type, and detailed information for individual models.
+- 📈 **Core Spending and Activity Tracking DTOs**: Added new data transfer objects to support detailed tracking and
+  breakdown of model usage, costs, and API activity.
+
+### Changed
+
+- 🤖 **Expanded Chat Completion Models and Parameters**: The chat completion API now supports new `gpt-5` series models
+  and introduces a `minimal` option for reasoning effort, offering more flexibility in AI interactions.
+- 💬 **Enhanced Event and Message Schemas**: Updated core event and message structures (`ChunkEvent`, `ThoughtEvent`,
+  `UserMessageEvent`) to include additional context such as `reasoning_content` and `model_name`, improving traceability
+  and debugging.
+- ⬆️ **Dependency Updates**: Upgraded various internal and external dependencies to their latest versions, improving
+  performance, stability, and security across the platform.
+- 🌐 **Internationalization for Model Features**: Added new translations for German, English, French, and Italian to
+  support the new model browsing experience.
+
+### Removed
+
+- 🗑️ **Streamlined Agent DTOs**: Removed `hitl_request_events` and `hitl_response_events` fields from the `AgentDto`
+  schema, simplifying agent configuration related to human-in-the-loop interactions.
+
+---
+
 ## [v0.241.2] - 2025-08-29 - Streamlined Builds, Dependencies, and Naming
 
 ### Added
