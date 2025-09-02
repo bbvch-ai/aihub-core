@@ -54,7 +54,7 @@ runs:
         secrets: |
             "ssh_key=${{ inputs.ssh_key }}"
         tags: ${{ inputs.secondary_tag != '' &&
-          format('ghcr.io/{0}/{1}/{2}:{3}\nghcr.io/{0}/{1}/{2}:{4}',
+          format('ghcr.io/{0}/{1}/{2}:{3},ghcr.io/{0}/{1}/{2}:{4}',
           inputs.github_repository_owner,
           inputs.github_event_repository_name,
           inputs.image_name,
@@ -78,7 +78,7 @@ runs:
         secrets: |
             "ssh_key=${{ inputs.ssh_key }}"
         tags: ${{ inputs.secondary_tag != '' &&
-          format('ghcr.io/{0}/{1}/{2}:{3}\nghcr.io/{0}/{1}/{2}:{4}',
+          format('ghcr.io/{0}/{1}/{2}:{3},ghcr.io/{0}/{1}/{2}:{4}',
           inputs.github_repository_owner,
           inputs.github_event_repository_name,
           inputs.image_name,
