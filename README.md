@@ -312,29 +312,32 @@ For local development with SSL support and custom domain routing, use the `docke
 #### Prerequisites
 
 1. **mkcert**: Install mkcert for generating local SSL certificates
-   - **Linux (Ubuntu/Debian)**: 
+
+   - **Linux (Ubuntu/Debian)**:
      ```bash
      sudo apt install libnss3-tools
      wget -O mkcert https://dl.filippo.io/mkcert/latest?for=linux/amd64
      chmod +x mkcert
      sudo mv mkcert /usr/local/bin/
      ```
-   - **Windows**: 
+   - **Windows**:
      ```powershell
      # Using Chocolatey
      choco install mkcert
-     
+
      # Using Scoop
      scoop bucket add extras
      scoop install mkcert
      ```
 
 2. **Generate SSL Certificates**:
+
    ```bash
    make local-cert
    ```
 
 3. **Environment Configuration**:
+
    - Copy `.env.dev` to `.env` and configure with your settings
    - The default domain `127.0.0.1.nip.io` provides wildcard DNS resolution to localhost
 
@@ -353,7 +356,7 @@ docker compose -f docker-compose.local.yml ps
 Once running, access the AI-Hub services at:
 
 - **Main Web Interface**: https://127.0.0.1.nip.io
-- **OpenWebUI**: https://openwebui.127.0.0.1.nip.io  
+- **OpenWebUI**: https://openwebui.127.0.0.1.nip.io
 - **LiteLLM**: https://litellm.127.0.0.1.nip.io
 - **Dagster**: https://dagster.127.0.0.1.nip.io
 - **MinIO Console**: https://datalake.127.0.0.1.nip.io

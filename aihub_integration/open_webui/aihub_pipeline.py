@@ -280,7 +280,11 @@ class AuthenticationService:
     ) -> Annotated[dict[str, str], "HTTP headers with authentication"]:
         """Prepare authenticated request headers"""
         signature = self.sign_user_headers(user_name, user_email)
-        clean_username = base64.b64encode(user_name.encode("utf-8")).decode("ascii") if user_name else ""
+        clean_username = (
+            base64.b64encode(user_name.encode("utf-8")).decode("ascii")
+            if user_name
+            else ""
+        )
 
         return {
             "Authorization": f"Bearer {self._api_key}",
