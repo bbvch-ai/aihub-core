@@ -86,13 +86,13 @@ class AuthenticationService:
 
 
 # ============================================================================
-# Main Pipeline Facade
+# Main Pipe
 # ============================================================================
 
 
 class Pipe:
     """
-    AI-Hub OpenAI-Compatible Pipeline - Main Facade
+    AI-Hub OpenAI-Compatible Pipeline - Main Pipe
 
     This pipeline provides OpenAI-compatible access to AI-Hub agents through
     the standardized chat completions API instead of agent-specific SSE endpoints.
@@ -113,7 +113,7 @@ class Pipe:
             default=os.getenv("OPEN_WEBUI_SIGNING_SECRET", ""),
             description="Secret key for signing user headers",
         )
-        AIHUB_PIPELINE_PREFIX: str = Field(
+        OPENAI_PIPELINE_PREFIX: str = Field(
             default=os.getenv("OPENAI_PIPELINE_PREFIX", "openai/"),
             description="Prefix added to model names in the UI",
         )
@@ -153,7 +153,7 @@ class Pipe:
                 return [
                     {
                         "id": model["id"],
-                        "name": f'{self.valves.AIHUB_PIPELINE_PREFIX}{model.get("name", model["id"])}',
+                        "name": f'{self.valves.OPENAI_PIPELINE_PREFIX}{model.get("name", model["id"])}',
                     }
                     for model in models_data.get("data", [])
                 ]
@@ -175,8 +175,8 @@ class Pipe:
 
         model_id = parts[1]
 
-        if model_id.startswith(self.valves.AIHUB_PIPELINE_PREFIX):
-            return model_id[len(self.valves.AIHUB_PIPELINE_PREFIX) :]
+        if model_id.startswith(self.valves.OPENAI_PIPELINE_PREFIX):
+            return model_id[len(self.valves.OPENAI_PIPELINE_PREFIX) :]
         return model_id
 
     def _str_to_object_id(self, context_id: str | None) -> str:
