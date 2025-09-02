@@ -23,6 +23,7 @@ class DocumentDTO(BaseModel):
     @classmethod
     def from_ingested_document(cls, ingested_document: IngestedDocument) -> "DocumentDTO":
         return cls(
+            id=ingested_document.id,
             content=ingested_document.content,
             is_ingested=True,
             source=ingested_document.source,

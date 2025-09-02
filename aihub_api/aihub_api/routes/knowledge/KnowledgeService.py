@@ -111,19 +111,27 @@ class KnowledgeService:
         skip = (page - 1) * page_size
 
         KnowledgeService._ensure_db_exists(db)
-        ref_docs_page = RefDoc.get_paginated_by_namespace(db_alias=db, namespace=namespace, skip=0, limit=1000000)
-        processed_documents = [DocumentDTO.from_ref_doc(doc) for doc in ref_docs_page]
-
-        processed_doc_sources = {doc.source for doc in processed_documents}
+        processed_count = RefDoc.count_by_namespace(db_alias=db, namespace=namespace)
 
         bucket = BucketEntity.get_bucket_by_db_name(db)
         datalake_files = KnowledgeService._get_datalake_files_in_namespace(bucket.bucket_name, namespace)
+
+        processed_ref_docs = RefDoc.get_paginated_by_namespace(db_alias=db, namespace=namespace, skip=0, limit=processed_count)
+        processed_doc_sources = {doc.data.metadata.source for doc in processed_ref_docs}
+        
         processing_files = KnowledgeService._filter_processing_documents(datalake_files, processed_doc_sources)
+        processing_count = len(processing_files)
+        
+        total = processed_count + processing_count
+
+        if skip >= total:
+            return total, []
+
+        processed_documents = [DocumentDTO.from_ref_doc(doc) for doc in processed_ref_docs]
 
         all_documents = processed_documents + processing_files
         all_documents.sort(key=lambda doc: doc.updated_at, reverse=True)
 
-        total = len(all_documents)
         paginated_documents = all_documents[skip : skip + page_size]
 
         return total, paginated_documents
@@ -161,7 +169,7 @@ class KnowledgeService:
                     bucket.bucket_name, ns_entity.namespace_name
                 )
                 processed_docs = RefDoc.get_paginated_by_namespace(
-                    db_alias=db_name, namespace=ns_entity.namespace_name, skip=0, limit=1000000
+                    db_alias=db_name, namespace=ns_entity.namespace_name, skip=0, limit=processed_count
                 )
                 processed_doc_sources = {doc.data.metadata.source for doc in processed_docs}
                 processing_files = KnowledgeService._filter_processing_documents(datalake_files, processed_doc_sources)

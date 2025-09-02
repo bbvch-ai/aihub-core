@@ -23,8 +23,6 @@ def fetch_data_lake_files_to_remove(
 
     data_lake_files = fetch_data_lake_files_without_excluded_uris(
         data_lake_client=data_lake_client,
-        data_lake_container_name=data_lake_resource.container_name,
-        data_lake_directory_name=data_lake_resource.directory_name,
         excluded_uris=uris_to_exclude,
         figures_directory=data_lake_resource.figures_directory_name,
     )

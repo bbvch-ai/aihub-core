@@ -38,7 +38,7 @@
     :namespace="route.params.namespace as string"
     :database-display-name="databaseDisplayName"
     :namespace-display-name="namespaceDisplayName"
-    @upload="handleUpload"
+    @success="handleUpload"
   />
 </template>
 
