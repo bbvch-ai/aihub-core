@@ -24,7 +24,7 @@ multiple channels, making AI-Hub's capabilities accessible wherever users natura
 - **Web Chat** - Browser-based interface for testing and development
 - **Extensible Channel Support** - Any Bot Framework-supported platform
 
-**[Bot-in-the-Loop Infrastructure](../bot-in-the-loop/)** powers sophisticated human-AI collaboration by enabling AI
+**[Bot-in-the-Loop Infrastructure](../../../3_sdk/6_features_overview/bot-in-the-loop/)** powers sophisticated human-AI collaboration by enabling AI
 agents to pause their workflows and seamlessly request human input through Slack channels. When agents need expert
 knowledge or approval, they automatically post structured questions to designated channels, capture responses, and
 continue processing with human-provided context.
@@ -67,7 +67,7 @@ natural conversation flows that feel responsive and engaging.
 trails, configurable retention policies, and secure credential management. All bot interactions are logged and
 traceable, meeting enterprise security and compliance requirements.
 
-**🤝 Seamless Human-AI Collaboration**: [Bot-in-the-Loop infrastructure](../bot-in-the-loop/) enables AI agents to
+**🤝 Seamless Human-AI Collaboration**: [Bot-in-the-Loop infrastructure](../../../3_sdk/6_features_overview/bot-in-the-loop/) enables AI agents to
 naturally escalate to human experts through structured Slack workflows. Complex decisions, approvals, and knowledge gaps
 are handled smoothly without breaking user experience or losing conversation context.
 
@@ -146,7 +146,7 @@ are handled smoothly without breaking user experience or losing conversation con
 ### Slack Bot-in-the-Loop Workflows
 
 For detailed information on Bot-in-the-Loop workflows, including expert consultation processes, channel configuration,
-and agent integration patterns, see the dedicated [Bot-in-the-Loop documentation](../bot-in-the-loop/).
+and agent integration patterns, see the dedicated [Bot-in-the-Loop documentation](../../../3_sdk/6_features_overview/bot-in-the-loop/).
 
 ### Multi-Bot Deployment
 
@@ -181,7 +181,7 @@ OpenaiChatBot(
 - **Rich Message Support**: Cards, buttons, attachments, and interactive elements
 - **Conversation Management**: Persistent state with configurable TTL (default 30 days)
 
-**[Bot-in-the-Loop Infrastructure](../bot-in-the-loop/):**
+**[Bot-in-the-Loop Infrastructure](../../../3_sdk/6_features_overview/bot-in-the-loop/):**
 
 - **Slack Channel Integration**: Direct posting to expert channels with thread support
 - **Response Capture**: Automatic detection and processing of human responses
@@ -231,6 +231,6 @@ To implement Azure Bot Service Integration in your AI-Hub deployment:
    simpler interactions, with streaming support for enhanced user experience
 
 For detailed setup instructions, troubleshooting guidance, and advanced configuration options, refer to the
-[Bot-in-the-Loop documentation](../bot-in-the-loop/) for human-AI collaboration workflows, the
+[Bot-in-the-Loop documentation](../../../3_sdk/6_features_overview/bot-in-the-loop/) for human-AI collaboration workflows, the
 [Expert Agents documentation](../expert-agents/) for knowledge consultation patterns, and the AI-Hub Bot Developer's
 Guide for implementation details.

@@ -25,13 +25,13 @@ escalates to human experts.
 engaging with experts through iterative questioning, and automatically capturing expert knowledge for future use.
 
 The system integrates with **Slack channels** where subject matter experts naturally work, **OpenWebUI knowledge bases**
-for persistent learning, and the **[Bot-in-the-Loop infrastructure](../bot-in-the-loop/)** that enables seamless human
+for persistent learning, and the **[Bot-in-the-Loop infrastructure](../../../3_sdk/6_features_overview/bot-in-the-loop/)** that enables seamless human
 participation in AI workflows.
 
 **Key Technologies:**
 
 - **Agent-in-the-Loop Pattern** - Orchestration between specialized agents
-- **[Bot-in-the-Loop Integration](../bot-in-the-loop/)** - Direct Slack channel interaction for human expertise
+- **[Bot-in-the-Loop Integration](../../../3_sdk/6_features_overview/bot-in-the-loop/)** - Direct Slack channel interaction for human expertise
 - **Context Validation** - LLM-powered assessment of information sufficiency
 - **Knowledge Persistence** - Automatic storage in OpenWebUI knowledge bases
 - **Multi-language Support** - Full internationalization across German, English, French, and Italian
@@ -163,11 +163,11 @@ If expert's initial response lacks detail:
 To implement Expert Agents in your AI-Hub deployment:
 
 1. **Configure Slack Integration**: Set up dedicated expert consultation channels and ensure
-   [Bot-in-the-Loop infrastructure](../bot-in-the-loop/) is running
+   [Bot-in-the-Loop infrastructure](../../../3_sdk/6_features_overview/bot-in-the-loop/) is running
 2. **Deploy Expert Asking Agents**: Configure one or more Expert Asking Agents for different domains (HR, Legal,
    Technical, etc.)
 3. **Implement Expert Grounded Agents**: Deploy grounded agents that connect to your Expert Asking Agents for seamless
    escalation
 
 For detailed setup instructions, configuration examples, and troubleshooting guidance, refer to the AI-Hub Agent
-Developer's Guide and [Bot-in-the-Loop documentation](../bot-in-the-loop/) for integration details.
+Developer's Guide and [Bot-in-the-Loop documentation](../../../3_sdk/6_features_overview/bot-in-the-loop/) for integration details.

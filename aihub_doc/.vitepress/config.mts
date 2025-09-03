@@ -49,6 +49,7 @@ function generateSidebarItems(
           if (subItems.length > 0) {
             sidebarItem.items = subItems;
             sidebarItem.collapsible = true;
+            sidebarItem.collapsed = true;
           }
 
           items.push(sidebarItem);
@@ -91,7 +92,7 @@ function generateSidebar() {
     const rootFileContent = readFileSync(rootIndexPath, 'utf-8');
 
     allTopLevelGroups.push({
-      text: 'Technical Documentation',
+      text: 'Part VI: Code Deep Dive',
       link: '/aihub/',
       collapsible: true,
       items: generateSidebarItems(aihubBasePath, '/aihub/'),
