@@ -23,9 +23,7 @@ A single pipeline approach would either oversimplify agent capabilities or overc
   through standard OpenAI-compatible endpoints for programmatic access and existing tooling
 - **Integration Scope Separation**:
   - **Agent Integration**: Complex event processing to showcase AI-Hub's sophisticated agent capabilities in OpenWebUI
-  - **Model Integration**: Simple request/response for direct LLM access without event translation overhead
-- **Ecosystem Compatibility**: Existing OpenAI-compatible tools and libraries need seamless access to AI-Hub models
-  without requiring specialized integration patterns
+  - **Model Integration**: Direct LLM access without event translation overhead
 
 ## Decision
 

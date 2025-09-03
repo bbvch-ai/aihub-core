@@ -554,7 +554,7 @@ services:
     container_name: jupyter-lab
     <<: *restart-policy
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/llama-data:/home/jovyan/work
+      - ${VOLUME_ROOT:-./.docker-volumes}/jupyter-data:/home/jovyan/work
     environment:
       JUPYTER_ENABLE_LAB: yes
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
@@ -710,8 +710,8 @@ services:
 
   # === Docling ===
   # <editor-fold desc="Docling Stack">
-  fix-perms-docling:
-    container_name: docling-permission
+  docling-model-permission:
+    container_name: docling-model-permission
     image: alpine
     command: [ "sh", "-c", "chown -R 1001:1001 /models" ]
     restart: "no"

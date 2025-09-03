@@ -565,7 +565,7 @@ services:
     container_name: jupyter-lab
     <<: *restart-policy
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/llama-data:/home/jovyan/work
+      - ${VOLUME_ROOT:-./.docker-volumes}/jupyter-data:/home/jovyan/work
     environment:
       JUPYTER_ENABLE_LAB: yes
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
@@ -834,8 +834,6 @@ services:
       dockerfile: ./aihub_pipeline/app/default_rag_pipeline/Dockerfile
     container_name: default-rag-pipeline
     restart: always
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
