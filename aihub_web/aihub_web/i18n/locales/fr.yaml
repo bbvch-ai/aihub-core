@@ -250,6 +250,8 @@ knowledge:
       target_location:
         label: "Emplacement cible"
         help: "Dossier où les documents doivent être stockés"
+      errors:
+        "unsupported_file_type": "Un fichier est d'un type non pris en charge. Les types pris en charge sont : {supportedTypes} | {count} fichiers sont d'un type non pris en charge. Les types pris en charge sont : {supportedTypes}"
       actions:
         upload: "Télécharger"
         cancel: "Annuler"

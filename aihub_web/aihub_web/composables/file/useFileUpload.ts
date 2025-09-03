@@ -11,16 +11,33 @@ export interface UploadFileOptions {
   onProgress?: () => void
 }
 
-export const useDocumentUpload = defineMutation(() => {
+// Map extensions to MIME types for files where browser fails
+const MIME_TYPE_OVERRIDES: Record<string, string> = {
+  '.md': 'text/markdown',
+  '.markdown': 'text/markdown',
+}
+
+function getMimeType(file: File): string {
+  if (file.type) {
+    return file.type
+  }
+
+  const ext = '.' + file.name.split('.').pop()?.toLowerCase()
+  return MIME_TYPE_OVERRIDES[ext] || 'application/octet-stream'
+}
+
+export const useFileUpload = defineMutation(() => {
   const queryCache = useQueryCache()
 
-  const { mutateAsync: uploadDocumentMutation } = useMutation({
+  const { mutateAsync: uploadFileMutation } = useMutation({
     mutation: async (options: UploadFileOptions) => {
       const { filename, file, namespace, database } = options
 
+      const contentType = getMimeType(file)
+
       const initiateRequest: FileUploadRequest = {
         filename,
-        content_type: file.type,
+        content_type: contentType,
         content_length: file.size,
         namespace_name: namespace,
         database_name: database,
@@ -35,7 +52,7 @@ export const useDocumentUpload = defineMutation(() => {
         method: 'PUT',
         body: file,
         headers: {
-          'Content-Type': file.type,
+          'Content-Type': contentType,
         },
       })
       return initiateResponse.upload_id
@@ -46,6 +63,6 @@ export const useDocumentUpload = defineMutation(() => {
   })
 
   return {
-    uploadDocument: uploadDocumentMutation,
+    uploadFile: uploadFileMutation,
   }
 })

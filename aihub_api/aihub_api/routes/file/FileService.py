@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings import AnonymousFileAccessSettings
+from aihub_lib.generative_ai.document.types.FileTypeConfig import SUPPORTED_FILE_TYPES_CONFIG
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
 from fastapi import HTTPException, status
@@ -161,3 +162,7 @@ class FileService:
         exists = file_access_config.service.verify_file_exists(container=request.container, file_path=request.file_path)
 
         return FileUploadValidationResponse(exists=exists, file_path=request.file_path, container=request.container)
+
+    @staticmethod
+    def get_supported_file_types() -> list[str]:
+        return SUPPORTED_FILE_TYPES_CONFIG.get_unique_extensions()

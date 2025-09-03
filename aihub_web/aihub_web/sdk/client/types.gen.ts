@@ -5513,26 +5513,32 @@ export type NamespaceDto = {
 export type NamespaceResponse = {
     /**
      * Id
+     * The unique identifier for the namespace.
      */
     id: string;
     /**
      * Bucket Id
+     * The ID of the parent bucket containing the namespace.
      */
     bucket_id: string;
     /**
      * Namespace Name
+     * The name of the namespace.
      */
     namespace_name: string;
     /**
      * Folder Name
+     * The corresponding folder name in the data storage.
      */
     folder_name: string;
     /**
      * Display Name
+     * A user-friendly display name for the namespace.
      */
     display_name?: string | null;
     /**
      * Description
+     * A brief description of the namespace's contents.
      */
     description?: string | null;
 };
@@ -7564,10 +7570,12 @@ export type TranscriptionWord = {
 export type UpdateNamespaceRequest = {
     /**
      * Display Name
+     * The new display name for the namespace.
      */
     display_name?: string | null;
     /**
      * Description
+     * The new description of the namespace's contents.
      */
     description?: string | null;
 };
@@ -9994,6 +10002,23 @@ export type ValidateFileUploadResponses = {
 };
 
 export type ValidateFileUploadResponse = ValidateFileUploadResponses[keyof ValidateFileUploadResponses];
+
+export type GetSupportedFileTypesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/files/upload/supported-types';
+};
+
+export type GetSupportedFileTypesResponses = {
+    /**
+     * Response Get Supported File Types Files Upload Supported Types Get
+     * Successful Response
+     */
+    200: Array<string>;
+};
+
+export type GetSupportedFileTypesResponse = GetSupportedFileTypesResponses[keyof GetSupportedFileTypesResponses];
 
 export type GetNotificationsData = {
     body?: never;

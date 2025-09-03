@@ -119,7 +119,7 @@
       ref="fileInput"
       type="file"
       multiple
-      accept=".pdf,.doc,.docx,.txt,.md,.markdown"
+      :accept="acceptedFileTypesString"
       class="hidden"
       @change="handleFileSelect"
     >
@@ -156,8 +156,12 @@ const emit = defineEmits<{
   'success': [data: { files: File[], namespace: string, database: string }]
 }>()
 
-const { uploadDocument } = useDocumentUpload()
+const { uploadFile } = useFileUpload()
+const { supportedFileTypes } = useSupportedFileTypes()
 
+const acceptedFileTypesString = computed(() => {
+  return (supportedFileTypes.value ?? []).join(', ')
+})
 const selectedFiles = ref<File[]>([])
 const isDragOver = ref(false)
 const isUploading = ref(false)
@@ -181,12 +185,34 @@ const addFiles = (files: FileList | File[]) => {
   errorMessage.value = ''
   hasError.value = false
 
-  const fileArray = Array.from(files)
+  const validFiles: File[] = []
+  const invalidFiles: File[] = []
+  const supportedTypes: string[] = supportedFileTypes.value ?? []
 
-  for (const file of fileArray) {
-    if (!selectedFiles.value.some(existing => existing.name === file.name && existing.size === file.size)) {
-      selectedFiles.value.push(file)
+  for (const file of Array.from(files)) {
+    const fileExtension = `.${file.name.split('.').pop()?.toLowerCase()}`
+
+    const isDuplicate = selectedFiles.value.some(existing => existing.name === file.name && existing.size === file.size)
+    const isSupported = supportedTypes.includes(fileExtension)
+
+    if (!isDuplicate && isSupported) {
+      validFiles.push(file)
     }
+    else if (!isSupported) {
+      invalidFiles.push(file)
+    }
+  }
+
+  if (validFiles.length > 0) {
+    selectedFiles.value.push(...validFiles)
+  }
+
+  if (invalidFiles.length > 0) {
+    hasError.value = true
+    errorMessage.value = t('knowledge.documents.upload.errors.unsupported_file_type', {
+      count: invalidFiles.length,
+      supportedTypes: acceptedFileTypesString.value,
+    })
   }
 }
 
@@ -234,7 +260,7 @@ const handleUpload = async () => {
   for (const file of selectedFiles.value) {
     currentUploadFile.value = file.name
 
-    await uploadDocument({
+    await uploadFile({
       filename: file.name,
       file,
       namespace,

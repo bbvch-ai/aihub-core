@@ -125,3 +125,14 @@ class FileController(Controller):
             return await FileService.validate_file_upload(request)
 
         return self
+
+    def get_supported_file_types(self, route: str = "/upload/supported-types") -> "FileController":
+        @self.router.get(route, tags=self.tags, summary="Get supported file types")
+        async def get_supported_file_types() -> list[str]:
+            """
+            Returns a list of supported file extensions (e.g., [".pdf", ".docx"])
+            that can be used for client-side validation.
+            """
+            return FileService.get_supported_file_types()
+
+        return self

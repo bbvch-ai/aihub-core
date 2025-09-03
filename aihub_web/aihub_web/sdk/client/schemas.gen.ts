@@ -4414,6 +4414,8 @@ export const FileUploadRequestSchema = {
     properties: {
         filename: {
             type: 'string',
+            maxLength: 255,
+            minLength: 1,
             title: 'Filename',
             description: 'Original filename of the file'
         },
@@ -4424,7 +4426,6 @@ export const FileUploadRequestSchema = {
         },
         content_length: {
             type: 'integer',
-            maximum: 10485760,
             exclusiveMinimum: 0,
             title: 'Content Length',
             description: 'Size of the file in bytes'
@@ -7037,7 +7038,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1756801488
+            default: 1756828278
         },
         owned_by: {
             type: 'string',
@@ -7644,19 +7645,23 @@ export const NamespaceResponseSchema = {
     properties: {
         id: {
             type: 'string',
-            title: 'Id'
+            title: 'Id',
+            description: 'The unique identifier for the namespace.'
         },
         bucket_id: {
             type: 'string',
-            title: 'Bucket Id'
+            title: 'Bucket Id',
+            description: 'The ID of the parent bucket containing the namespace.'
         },
         namespace_name: {
             type: 'string',
-            title: 'Namespace Name'
+            title: 'Namespace Name',
+            description: 'The name of the namespace.'
         },
         folder_name: {
             type: 'string',
-            title: 'Folder Name'
+            title: 'Folder Name',
+            description: 'The corresponding folder name in the data storage.'
         },
         display_name: {
             anyOf: [
@@ -7667,7 +7672,8 @@ export const NamespaceResponseSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Display Name'
+            title: 'Display Name',
+            description: 'A user-friendly display name for the namespace.'
         },
         description: {
             anyOf: [
@@ -7678,7 +7684,8 @@ export const NamespaceResponseSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Description'
+            title: 'Description',
+            description: "A brief description of the namespace's contents."
         }
     },
     type: 'object',
@@ -10029,7 +10036,8 @@ export const UpdateNamespaceRequestSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Display Name'
+            title: 'Display Name',
+            description: 'The new display name for the namespace.'
         },
         description: {
             anyOf: [
@@ -10040,7 +10048,8 @@ export const UpdateNamespaceRequestSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Description'
+            title: 'Description',
+            description: "The new description of the namespace's contents."
         }
     },
     type: 'object',

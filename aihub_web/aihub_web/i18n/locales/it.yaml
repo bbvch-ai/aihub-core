@@ -250,6 +250,8 @@ knowledge:
       target_location:
         label: "Posizione di destinazione"
         help: "Cartella dove i documenti dovrebbero essere archiviati"
+      errors:
+       "unsupported_file_type": "Un file ha un tipo non supportato. I tipi supportati sono: {supportedTypes} | {count} file hanno un tipo non supportato. I tipi supportati sono: {supportedTypes}"
       actions:
         upload: "Carica"
         cancel: "Annulla"

@@ -233,7 +233,6 @@ document:
     download: "Download"
     is_processing: "Processing"
 
-
 knowledge:
   title: "Knowledge Databases"
   created_at: "Created:"
@@ -252,6 +251,8 @@ knowledge:
       target_location:
         label: "Target Location"
         help: "Folder where the documents should be stored"
+      errors:
+        unsupported_file_type: "One file has an unsupported type. Supported types are: {supportedTypes} | {count} files have an unsupported type. Supported types are: {supportedTypes}"
       actions:
         upload: "Upload"
         cancel: "Cancel"

@@ -102,8 +102,10 @@ runner.mount(
     .get_file_redirect()
     .get_anonymous_file_url()
     .get_anonymous_file_redirect()
+    .get_supported_file_types()
     .initiate_file_upload()
-    .validate_file_upload(),
+    .validate_file_upload()
+    .get_supported_file_types(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
 )
 

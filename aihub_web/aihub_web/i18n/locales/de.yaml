@@ -251,6 +251,8 @@ knowledge:
       target_location:
         label: "Speicherort"
         help: "Ordner, in dem die Dokumente gespeichert werden sollen"
+      errors:
+        "unsupported_file_type": "Eine Datei hat einen nicht unterstützten Dateityp. Unterstützte Typen sind: {supportedTypes} | {count} Dateien haben einen nicht unterstützten Dateityp. Unterstützte Typen sind: {supportedTypes}"
       actions:
         upload: "Hochladen"
         cancel: "Abbrechen"
