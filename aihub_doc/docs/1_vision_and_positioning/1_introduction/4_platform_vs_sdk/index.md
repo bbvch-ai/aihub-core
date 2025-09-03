@@ -4,7 +4,7 @@ index: 4
 ---
 
 
-## Platform vs SDK: Understanding the dual architecture
+# Platform vs SDK: Understanding the dual architecture
 
 The Swiss AI Hub separates platform from SDK deliberately. This separation isn't architectural complexity; it's strategic design that gives you maximum flexibility in how you adopt, deploy, and extend the system.
 
