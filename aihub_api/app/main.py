@@ -1,8 +1,4 @@
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
-from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler import OpenWebuiAuthHandler
 from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
-from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
-from aihub_lib.auth.identity.AzureIdentityProvider.AzureIdentityProvider import AzureIdentityProvider
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
@@ -15,6 +11,7 @@ from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.file.FileController import FileController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
+from aihub_api.routes.notification.NotificationController import NotificationController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.routes.process.ProcessController import ProcessController
 from aihub_api.routes.role.RoleController import RoleController
@@ -28,13 +25,8 @@ enable_logging()
 
 
 runner = ApiRunner()
-auth = TokenAndOauth2Handler(
-    bearer_handlers=[
-        OpenWebuiAuthHandler(identity_provider=AzureIdentityProvider()),
-        TokenAuthHandler(identity_provider=AzureIdentityProvider()),
-    ],
-    oauth2_handlers=[OAuth2AuthHandler(identity_provider=AzureIdentityProvider())],
-)
+auth = TokenAndOauth2Handler.from_auth_settings()
+
 
 runner.mount(
     HealthController(auth=auth).get_health(),
@@ -62,10 +54,10 @@ runner.mount(
     TokenController(auth=auth).create_token().list_tokens().revoke_token(),
     RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
     OpenaiController(auth=auth)
-    .get_models_with_assistants(exclude_webui_agents=True)
-    .get_model_with_assistants()
+    .get_models()
+    .get_model()
     .get_embeddings()
-    .chat_completion_with_assistants()
+    .chat_completion()
     .generate_image()
     .stt()
     .tts(),
@@ -92,6 +84,7 @@ runner.mount(
     .get_nodes_for_document()
     .get_summary_nodes_for_document(),
     FileController(auth=auth).get_file_url().get_file_redirect().get_anonymous_file_url().get_anonymous_file_redirect(),
+    NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
 )
 
 
