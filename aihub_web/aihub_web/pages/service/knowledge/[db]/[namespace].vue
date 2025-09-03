@@ -99,8 +99,7 @@ const openUploadModal = () => {
   uploadModalVisible.value = true
 }
 
-const handleUpload = async (data: { files: File[], namespace: string, database: string }) => {
-  console.log('Upload completed successfully:', data)
+const handleUpload = () => {
   refetch()
 }
 </script>
