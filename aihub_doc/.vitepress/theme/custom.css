@@ -8,11 +8,31 @@
 
   --vp-c-neutral: var(--vp-c-black);
   --vp-c-neutral-inverse: var(--vp-c-white);
+
+  --orb-color: rgba(255, 217, 217, 0.9);
+
+  --vp-scrollbar-track-bg: rgba(0, 0, 0, 0.05);
+  --vp-scrollbar-thumb-bg: rgba(0, 0, 0, 0.2);
+  --vp-scrollbar-thumb-hover-bg: rgba(0, 0, 0, 0.3);
+  --vp-scrollbar-thumb-border: rgba(0, 0, 0, 0.1);
+
+  /* Firefox scrollbar colors for light mode */
+  --vp-scrollbar-color: rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.05);
 }
 
 .dark {
   --vp-c-neutral: var(--vp-c-white);
   --vp-c-neutral-inverse: var(--vp-c-black);
+
+  --orb-color: rgba(60, 0, 0, 0.9);
+
+  --vp-scrollbar-track-bg: rgba(0, 0, 0, 0.3);
+  --vp-scrollbar-thumb-bg: rgba(255, 255, 255, 0.1);
+  --vp-scrollbar-thumb-hover-bg: rgba(255, 255, 255, 0.2);
+  --vp-scrollbar-thumb-border: rgba(255, 255, 255, 0.05);
+
+  /* Firefox scrollbar colors for dark mode */
+  --vp-scrollbar-color: rgba(255, 255, 255, 0.1) rgba(0, 0, 0, 0.3)
 }
 
 /**
@@ -132,10 +152,10 @@
 }
 
 .dark {
-  --vp-c-bg: #1f1b1b;
-  --vp-c-bg-alt: #181616;
-  --vp-c-bg-elv: #272020;
-  --vp-c-bg-soft: #272020;
+  --vp-c-bg: #000000;
+  --vp-c-bg-alt: #000000;
+  --vp-c-bg-elv: #232323;
+  --vp-c-bg-soft: #131313;
 }
 
 /**
@@ -262,17 +282,17 @@
 
 :root {
   --vp-font-family-base:
-    'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Outfit', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
     'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   --vp-font-family-mono:
-    ui-monospace, 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono',
+    'JetBrains Mono', ui-monospace, 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono',
     'Courier New', monospace;
   font-optical-sizing: auto;
 }
 
 :root:where(:lang(zh)) {
   --vp-font-family-base:
-    'Punctuation SC', 'Inter', ui-sans-serif, system-ui, sans-serif,
+    'Punctuation SC', 'Outfit', ui-sans-serif, system-ui, sans-serif,
     'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
@@ -584,4 +604,68 @@
   --vp-local-search-result-selected-border: var(--vp-c-brand-1);
   --vp-local-search-highlight-bg: var(--vp-c-brand-1);
   --vp-local-search-highlight-text: var(--vp-c-neutral-inverse);
+}
+
+aside.VPSidebar {
+    position: relative;
+}
+
+div.curtain {
+    background: transparent !important;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+
+.VPSidebar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.VPSidebar::-webkit-scrollbar-track {
+  background: var(--vp-scrollbar-track-bg);
+  border-radius: 4px;
+}
+
+.VPSidebar::-webkit-scrollbar-thumb {
+  background: var(--vp-scrollbar-thumb-bg);
+  border-radius: 4px;
+  border: 1px solid var(--vp-scrollbar-thumb-border);
+  transition: background 0.2s ease;
+}
+
+.VPSidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--vp-scrollbar-thumb-hover-bg);
+}
+
+/* Firefox support */
+.VPSidebar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--vp-scrollbar-color);
+}
+
+/* Main page scrollbar with theme support */
+html::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html::-webkit-scrollbar-track {
+  background: var(--vp-scrollbar-track-bg);
+}
+
+html::-webkit-scrollbar-thumb {
+  background: var(--vp-scrollbar-thumb-bg);
+  border-radius: 5px;
+  transition: background 0.2s ease;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background: var(--vp-scrollbar-thumb-hover-bg);
+}
+
+/* Firefox support for main scrollbar */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--vp-scrollbar-color);
 }

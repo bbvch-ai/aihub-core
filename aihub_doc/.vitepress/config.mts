@@ -169,7 +169,7 @@ export default withMermaid({
   themeConfig: {
     logo: './media/logo.png',
     footer: {
-      message: 'Released under the Business Source License (BSL) 1.1',
+      message: 'Built with ❤️ in Switzerland 🇨🇭',
       copyright: 'Copyright © 2025-bbv Software Services AG.'
     },
     search: {
