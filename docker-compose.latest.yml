@@ -74,7 +74,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_DEFAULT_BUCKETS: "open-webui,a-bucket" 
+      MINIO_DEFAULT_BUCKETS: "open-webui,milvus"
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/minio-data:/minio-data
       - ./configs/minio/minio-entrypoint.sh:/usr/local/bin/minio-entrypoint.sh:ro
@@ -252,7 +252,7 @@ services:
       PRESIDIO_ANONYMIZER_API_BASE: "http://presidio-anonymizer:3000"
       SET_VERBOSE: "false"
     volumes:
-      - ./configs/litellm/litellm.latest.yaml:/app/config.yaml
+      - ./configs/litellm/config.latest.yaml:/app/config.yaml
     command: --config /app/config.yaml --detailed_debug
     depends_on:
       postgres:
@@ -481,12 +481,6 @@ services:
       USER_PERMISSIONS_FEATURES_IMAGE_GENERATION: True
       USER_PERMISSIONS_FEATURES_CODE_INTERPRETER: True
       USER_PERMISSIONS_FEATURES_NOTES: True
-
-
-
-
-
-
     logging: *default-logging
     labels:
       - "traefik.enable=true"

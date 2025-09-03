@@ -8,7 +8,16 @@ model_list:
     model_info:
       mode: chat
 
-  - model_name: text-embedding-3-large
+  - model_name: azure/gpt-4o
+    litellm_params:
+      model: azure/gpt-4o
+      api_base: https://aihub-dev-openai-che.openai.azure.com/
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_version: "2024-12-01-preview"
+    model_info:
+      mode: chat
+
+  - model_name: azure/text-embedding-3-large
     litellm_params:
       model: azure/text-embedding-3-large
       api_base: https://aihub-dev-openai-che.openai.azure.com/
@@ -58,9 +67,9 @@ guardrails:
   - guardrail_name: "presidio-mask-guard"
     litellm_params:
       guardrail: presidio
-      default_on: true
+      default_on: false
       mode: "pre_call"
-      presidio_language: ["en", "es", "fr", "de", "it"]
+      presidio_language: "de"
       presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
       presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
       output_parse_pii: true
@@ -71,9 +80,9 @@ guardrails:
   - guardrail_name: "presidio-block-guard"
     litellm_params:
       guardrail: presidio
-      default_on: true
+      default_on: false
       mode: "pre_call"
-      presidio_language: ["en", "es", "fr", "de", "it"]
+      presidio_language: "de"
       presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
       presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
       output_parse_pii: true
@@ -93,6 +102,7 @@ litellm_settings:
   default_fallbacks: ["azure/gpt-4o-mini"]
   telemetry: false
   json_logs: true
+  drop_params: true
 
 router_settings:
   routing_strategy: "usage-based-routing-v2"

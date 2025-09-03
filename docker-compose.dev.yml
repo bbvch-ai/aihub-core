@@ -454,7 +454,7 @@ services:
     ports:
       - "8888:8888"
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/home/jovyan/work
+      - ${VOLUME_ROOT:-./.docker-volumes}/jupyter:/home/jovyan/work
     environment:
       JUPYTER_ENABLE_LAB: yes
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}

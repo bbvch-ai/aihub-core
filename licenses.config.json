@@ -17,7 +17,8 @@
     "process",
     "pipeline",
     "llm_wrapping_agent",
-    "default_rag_pipeline"
+    "default_rag_pipeline",
+    "rag_agent"
   ],
   "license_categories": {
     "restrictive": [

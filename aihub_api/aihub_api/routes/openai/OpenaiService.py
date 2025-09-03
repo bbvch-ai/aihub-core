@@ -562,11 +562,14 @@ class OpenaiService:
             if key in sdk_known_param_names and key != "metadata":
                 sdk_call_kwargs[key] = value
 
+        metadata_tags = [
+            f"{key}:{value}" for key, value in [("thread_id", thread_id), ("display_id", display_id)] if value
+        ]
+
         sdk_call_kwargs["extra_body"] = {
-            "thread_id": thread_id,
-            "display_id": display_id,
             "litellm_session_id": thread_id,
             "guardrail_config": {"language": locale},
+            "metadata": {"tags": metadata_tags},
         }
 
         return sdk_call_kwargs

@@ -8,5 +8,6 @@ __pycache__/
 aihub_doc/node_modules
 aihub_doc/.vitepress/cache
 aihub_doc/.vitepress/dist
-aihub_doc/aihub
 /aihub_pipeline/.tmp*
+/configs/traefik/certs/dev-cert.pem
+/configs/traefik/certs/dev-key.pem
