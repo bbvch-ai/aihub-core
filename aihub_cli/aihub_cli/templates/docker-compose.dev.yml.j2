@@ -1,58 +1,3 @@
-#############################################################################
-# TRAEFIK PRIORITY RULES
-#############################################################################
-#
-# This file follows state-of-the-art Traefik routing priority best practices:
-#
-# RULE: Higher priority numbers = more specific routes (evaluated first)
-# RULE: Leave gaps of 100-500 between priority tiers for future expansion
-# RULE: Use consistent ranges for similar route types across services
-#
-# PRIORITY HIERARCHY (10000 → 1):
-#
-# 10000-9000: SYSTEM & INFRASTRUCTURE
-#   - 10000: Emergency overrides
-#   - 9500:  Health checks, monitoring endpoints
-#   - 9000:  ACME/Let's Encrypt challenges
-#
-# 8000-7000: SECURITY & AUTHENTICATION
-#   - 8000:  Rate limiting, IP blocking
-#   - 7500:  OAuth callbacks, OIDC endpoints
-#   - 7000:  Authentication APIs, login endpoints
-#
-# 6000-5000: APPLICATION APIs
-#   - 6000:  Specific API endpoints (e.g., /api/v1/auth)
-#   - 5500:  Versioned API routes (e.g., /api/v2)
-#   - 5000:  General API routes (e.g., /api)
-#
-# 4000-3000: APPLICATION FEATURES
-#   - 4000:  Admin interfaces, management UIs
-#   - 3500:  User-specific routes (e.g., /user/profile)
-#   - 3000:  Feature-specific paths (e.g., /reports, /dashboard)
-#
-# 2500-1500: STATIC CONTENT & ASSETS
-#   - 2500:  CDN, external assets
-#   - 2000:  Static files (JS, CSS, images)
-#   - 1500:  Application-specific assets, uploads
-#
-# 1000-500: GENERAL ROUTES
-#   - 1000:  Service-specific catch-all routes
-#   - 750:   Language/locale routing (e.g., /en, /de)
-#   - 500:   Subdomain routing (service.domain.com)
-#
-# 400-1: FALLBACK & DEFAULT
-#   - 400:   Domain catch-all with path restrictions
-#   - 100:   Default domain catch-all
-#   - 50:    Global fallback handlers
-#   - 10:    HTTP to HTTPS redirect (non-ACME)
-#
-# NAMING CONVENTIONS:
-#   - Router names: {service}-{type}-{variant}
-#   - Examples: openwebui-api-auth, web-static-assets, minio-admin-ui
-#   - Middleware chains: {service}-{purpose}-middleware
-#
-#############################################################################
-
 # YAML Anchors for common configurations
 x-logging: &default-logging
   driver: "json-file"
@@ -65,8 +10,6 @@ x-restart-policy: &restart-policy
 
 
 services:
-  # === MinIO Stack ===
-  # <editor-fold desc="Minio Stack">
   minio:
     image: ghcr.io/bbvch-ai/aihub-core/minio:release.2025-05-24t17-08-30z
     container_name: minio
@@ -82,18 +25,7 @@ services:
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
     logging: *default-logging
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.minio.rule=Host(`datalake.${DOMAIN}`)"
-      - "traefik.http.routers.minio.entrypoints=websecure"
-      - "traefik.http.routers.minio.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.minio.middlewares=security-headers@file"
-      - "traefik.http.services.minio.loadbalancer.server.port=9001"
 
-  # </editor-fold>
-
-  # === Milvus Stack ===
-  # <editor-fold desc="Milvus Stack">
   etcd:
     image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.16
     container_name: etcd
@@ -142,10 +74,7 @@ services:
     environment:
       MILVUS_URL: milvus-standalone:19530
     logging: *default-logging
-  # </editor-fold>
 
-  # === Postgres Stack ===
-  # <editor-fold desc="Postgres Stack">
   postgres:
     image: ghcr.io/bbvch-ai/aihub-core/pgvector:pg17
     container_name: postgres
@@ -161,10 +90,7 @@ services:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
       start_period: 5s
     logging: *default-logging
-  # </editor-fold>
 
-  # === Phoenix Stack ===
-  # <editor-fold desc="Phoenix Stack">
   phoenix:
     image: ghcr.io/bbvch-ai/aihub-core/phoenix:version-10.0.4
     container_name: phoenix
@@ -176,10 +102,7 @@ services:
       PHOENIX_ENABLE_AUTH: "False"
       VERSION: ""
     logging: *default-logging
-  # </editor-fold>
 
-  # === Nats & Redis Stack ===
-  # <editor-fold desc="NATS & Redis Stack">
   nats:
     image: ghcr.io/bbvch-ai/aihub-core/nats:2.11.4
     container_name: nats
@@ -201,10 +124,7 @@ services:
       test: [ "CMD", "redis-cli", "ping" ]
       start_period: 5s
     logging: *default-logging
-  # </editor-fold>
 
-  # === Mongo Stack ===
-  # <editor-fold desc="Mongo Stack">
   mongo:
     image: ghcr.io/bbvch-ai/aihub-core/mongo:8.0.9
     container_name: mongo
@@ -219,10 +139,7 @@ services:
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
     logging: *default-logging
-  # </editor-fold>
 
-  # === LiteLLM Stack ===
-  # <editor-fold desc="LiteLLM Stack">
   presidio-analyzer:
     image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359
     container_name: presidio-analyzer
@@ -264,18 +181,7 @@ services:
     healthcheck:
       test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:4000/health/liveliness" ]
     logging: *default-logging
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.litellm.rule=Host(`litellm.${DOMAIN}`)"
-      - "traefik.http.routers.litellm.entrypoints=websecure"
-      - "traefik.http.routers.litellm.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.litellm.middlewares=security-headers@file"
-      - "traefik.http.services.litellm.loadbalancer.server.port=4000"
 
-  # </editor-fold>
-
-  # === OpenWebUI Stack ===
-  # <editor-fold desc="OpenWebUI Stack">
   open-webui:
     image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.22
     container_name: open-webui
@@ -482,72 +388,6 @@ services:
       USER_PERMISSIONS_FEATURES_CODE_INTERPRETER: True
       USER_PERMISSIONS_FEATURES_NOTES: True
     logging: *default-logging
-    labels:
-      - "traefik.enable=true"
-
-      # === ROUTERS (by priority) ===
-
-      # Specific API auth endpoint (priority 7000 - Authentication APIs)
-      - "traefik.http.routers.openwebui-api-auth.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/api/v1/auths`)"
-      - "traefik.http.routers.openwebui-api-auth.priority=7000"
-      - "traefik.http.routers.openwebui-api-auth.entrypoints=websecure"
-      - "traefik.http.routers.openwebui-api-auth.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.openwebui-api-auth.middlewares=openwebui-api-middleware"
-
-      # General API routes (priority 6000 - Specific API endpoints)
-      - "traefik.http.routers.openwebui-api.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.openwebui-api.priority=6000"
-      - "traefik.http.routers.openwebui-api.entrypoints=websecure"
-      - "traefik.http.routers.openwebui-api.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.openwebui-api.middlewares=openwebui-api-middleware"
-
-      # Static assets (priority 2000 - Static files)
-      - "traefik.http.routers.openwebui-static.rule=Host(`openwebui.${DOMAIN}`) && (PathPrefix(`/oauth`) || PathPrefix(`/assets`) || PathPrefix(`/_app`) || PathPrefix(`/static`))"
-      - "traefik.http.routers.openwebui-static.priority=2000"
-      - "traefik.http.routers.openwebui-static.entrypoints=websecure"
-      - "traefik.http.routers.openwebui-static.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.openwebui-static.middlewares=openwebui-static-middleware"
-
-      # OpenWebUI path with prefix stripping (priority 3000 - Feature-specific paths)
-      - "traefik.http.routers.openwebui-path.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/openwebui`)"
-      - "traefik.http.routers.openwebui-path.priority=3000"
-      - "traefik.http.routers.openwebui-path.entrypoints=websecure"
-      - "traefik.http.routers.openwebui-path.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.openwebui-path.middlewares=openwebui-strip-middleware"
-
-      # Default catch-all (priority 500 - Subdomain routing)
-      - "traefik.http.routers.openwebui-default.rule=Host(`openwebui.${DOMAIN}`)"
-      - "traefik.http.routers.openwebui-default.priority=500"
-      - "traefik.http.routers.openwebui-default.entrypoints=websecure"
-      - "traefik.http.routers.openwebui-default.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.openwebui-default.middlewares=openwebui-default-middleware"
-
-      # === SERVICE ===
-      - "traefik.http.services.openwebui.loadbalancer.server.port=8080"
-
-      # === MIDDLEWARES ===
-      # API middleware (security + iframe + forwarded headers)
-      - "traefik.http.middlewares.openwebui-api-middleware.chain.middlewares=security-headers@file,openwebui-iframe,openwebui-forwarded-headers"
-
-      # Static assets middleware (security + iframe only)
-      - "traefik.http.middlewares.openwebui-static-middleware.chain.middlewares=security-headers@file,openwebui-iframe"
-
-      # Path stripping middleware (strip + security + iframe)
-      - "traefik.http.middlewares.openwebui-strip-middleware.chain.middlewares=openwebui-strip-prefix,security-headers@file,openwebui-iframe"
-      - "traefik.http.middlewares.openwebui-strip-prefix.stripprefix.prefixes=/openwebui"
-
-      # Default middleware (security + iframe + forwarded headers)
-      - "traefik.http.middlewares.openwebui-default-middleware.chain.middlewares=security-headers@file,openwebui-iframe,openwebui-forwarded-headers"
-
-      # Shared iframe middleware
-      - "traefik.http.middlewares.openwebui-iframe.headers.customResponseHeaders.Content-Security-Policy=frame-ancestors 'self' https://${DOMAIN}"
-      - "traefik.http.middlewares.openwebui-iframe.headers.customResponseHeaders.X-Frame-Options=SAMEORIGIN"
-
-      # Shared forwarded headers middleware
-      - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
-      - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customrequestheaders.X-Forwarded-Host=openwebui.${DOMAIN}"
-      - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Forwarded-Port=443"
-      - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Real-IP=%{remote_addr}"
 
   jupyter:
     image: ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6
@@ -573,10 +413,6 @@ services:
       retries: 3
       start_period: 40s
 
-  # </editor-fold>
-
-  # === Dagster Stack ===
-  # <editor-fold desc="Dagster Stack">
   oauth2proxy:
     image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
     container_name: oauth2proxy
@@ -599,15 +435,6 @@ services:
       OAUTH2_PROXY_REVERSE_PROXY: true
       OAUTH2_PROXY_REDIRECT_URL: "https://dagster.${DOMAIN}"
     logging: *default-logging
-    labels:
-      - "traefik.enable=true"
-
-      # --- dagster Subdomain ---
-      - "traefik.http.routers.dagster.rule=Host(`dagster.${DOMAIN}`)"
-      - "traefik.http.routers.dagster.entrypoints=websecure"
-      - "traefik.http.routers.dagster.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.dagster.middlewares=security-headers@file"
-      - "traefik.http.services.dagster.loadbalancer.server.port=4180"
 
   dagster-webserver:
     image: "ghcr.io/bbvch-ai/aihub-core/dagster:{{ version }}"
@@ -653,10 +480,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     logging: *default-logging
-  # </editor-fold>
 
-  # === API Stack ===
-  # <editor-fold desc="API Stack">
   api:
     image: "ghcr.io/bbvch-ai/aihub-core/api:{{ version }}"
     container_name: api
@@ -696,20 +520,7 @@ services:
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
     logging: *default-logging
-    labels:
-      - "traefik.enable=true"
 
-      # API endpoint (priority 6000 - Specific API endpoints)
-      - "traefik.http.routers.api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/v1`)"
-      - "traefik.http.routers.api.priority=6000"
-      - "traefik.http.routers.api.entrypoints=websecure"
-      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.api.middlewares=security-headers@file"
-      - "traefik.http.services.api.loadbalancer.server.port=8000"
-  # </editor-fold>
-
-  # === Docling ===
-  # <editor-fold desc="Docling Stack">
   docling-model-permission:
     container_name: docling-model-permission
     image: alpine
@@ -735,10 +546,7 @@ services:
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
     logging: *default-logging
-  # </editor-fold>
 
-  # === SUITE UI Stack ===
-  # <editor-fold desc="SUITE UI Stack">
   web:
     image: "ghcr.io/bbvch-ai/aihub-core/web:{{ version }}"
     container_name: web
@@ -749,146 +557,6 @@ services:
       WEBUI_URL: "https://openwebui.${DOMAIN}"
       WS_ENDPOINT: "wss://${DOMAIN}/api/v1/event/ws"
     logging: *default-logging
-    labels:
-      - "traefik.enable=true"
-
-      # === ROUTERS (by priority) ===
-
-      # Static assets (priority 2000 - Static files)
-      - "traefik.http.routers.web-static.rule=Host(`${DOMAIN}`) && PathPrefix(`/_nuxt`)"
-      - "traefik.http.routers.web-static.priority=2000"
-      - "traefik.http.routers.web-static.entrypoints=websecure"
-      - "traefik.http.routers.web-static.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.web-static.middlewares=web-standard-middleware"
-
-      # Authentication routes (priority 750 - Language/locale routing)
-      - "traefik.http.routers.web-auth.rule=Host(`${DOMAIN}`) && (PathPrefix(`/en/auth`) || PathPrefix(`/de/auth`) || PathPrefix(`/fr/auth`) || PathPrefix(`/it/auth`))"
-      - "traefik.http.routers.web-auth.priority=750"
-      - "traefik.http.routers.web-auth.entrypoints=websecure"
-      - "traefik.http.routers.web-auth.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.web-auth.middlewares=web-standard-middleware"
-
-      # Specific index pages (priority 400 - Domain catch-all with path restrictions)
-      - "traefik.http.routers.web-index.rule=Host(`${DOMAIN}`) && (Path(`/`) || Path(`/index.html`) || Path(`/config.json`))"
-      - "traefik.http.routers.web-index.priority=400"
-      - "traefik.http.routers.web-index.entrypoints=websecure"
-      - "traefik.http.routers.web-index.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.web-index.middlewares=web-standard-middleware"
-
-      # Default catch-all (priority 100)
-      - "traefik.http.routers.web-default.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.web-default.priority=100"
-      - "traefik.http.routers.web-default.entrypoints=websecure"
-      - "traefik.http.routers.web-default.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.web-default.middlewares=web-standard-middleware"
-
-      # === SERVICE ===
-      - "traefik.http.services.web.loadbalancer.server.port=80"
-
-      # === MIDDLEWARE ===
-      - "traefik.http.middlewares.web-standard-middleware.chain.middlewares=security-headers@file"
-  # </editor-fold>
-
-  # === Common Agents ===
-  # <editor-fold desc="Common Agents">
-  llm_wrapping_agent:
-    image: "ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:{{ version }}"
-    container_name: llm-wrapping-agent
-    restart: always
-    environment:
-      NATS_ENDPOINT: "nats://nats:4222"
-      REDIS_URL: "redis://redis:6379"
-      PHOENIX_ENDPOINT: "http://phoenix:6006"
-      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
-      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
-
-  rag_agent:
-    image: "ghcr.io/bbvch-ai/aihub-core/rag_agent:{{ version }}"
-    container_name: rag-agent
-    restart: always
-    environment:
-      NATS_ENDPOINT: "nats://nats:4222"
-      REDIS_URL: "redis://redis:6379"
-      PHOENIX_ENDPOINT: "http://phoenix:6006"
-      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
-      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
-      MILVUS_URL: "http://milvus-standalone"
-      MILVUS_DIMENSION: "3072"
-  # </editor-fold>
-
-  default_rag_pipeline:
-    image: "ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:{{ version }}"
-    container_name: default-rag-pipeline
-    restart: always
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
-    environment:
-      PYTHONUNBUFFERED: 1
-      DAGSTER_HOME: /dagster_home
-      S3_STORAGE_ENDPOINT: http://minio:9000
-      S3_STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER}
-      S3_STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      S3_STORAGE_URL_SIGNING_SECRET: ${MINIO_URL_SIGNING_SECRET}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
-      DOCLING_API_ENDPOINT: http://docling:5001/v1alpha/convert/source
-      DOCLING_API_TIMEOUT: 600
-      MILVUS_URL: "http://milvus-standalone"
-      MILVUS_DIMENSION: "3072"
-      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
-      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
-
-  # === Traefik ===
-  # <editor-fold desc="Traefik">
-  traefik:
-    image: ghcr.io/bbvch-ai/aihub-core/traefik:v3.4.4
-    container_name: traefik
-    <<: *restart-policy
-    command:
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--providers.file.filename=/etc/traefik/middlewares.yml"
-      - "--providers.docker=true"
-      - "--providers.docker.watch=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/srv/app/traefik/acme.json"
-      - "--api=true"
-      - "--api.dashboard=true"
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
-      - "./traefik/middlewares.yml:/etc/traefik/middlewares.yml:ro"
-      - "/srv/app/traefik/acme.json:/srv/app/traefik/acme.json"
-    labels:
-    - "traefik.enable=true"
-
-    # ACME Challenge router (higher priority)
-    - "traefik.http.routers.acme-challenge.rule=PathPrefix(`/.well-known/acme-challenge/`)"
-    - "traefik.http.routers.acme-challenge.entrypoints=web"
-    - "traefik.http.routers.acme-challenge.priority=9000"
-
-    # HTTP to HTTPS redirect (lower priority, excludes ACME)
-    - "traefik.http.routers.http-catch.rule=HostRegexp(`{host:.+}`) && !PathPrefix(`/.well-known/acme-challenge/`)"
-    - "traefik.http.routers.http-catch.entrypoints=web"
-    - "traefik.http.routers.http-catch.priority=10"
-    - "traefik.http.routers.http-catch.middlewares=https-redirect"
-    - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
-
-    # Dashboard
-    - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
-    - "traefik.http.routers.traefik.entrypoints=websecure"
-    - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
-    - "traefik.http.routers.traefik.service=api@internal"
-    - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:${ADMIN_PASSWORD_HASH}"
-    - "traefik.http.routers.traefik.middlewares=traefik-auth"
-  # </editor-fold>
-
 
 volumes:
   api-venv:

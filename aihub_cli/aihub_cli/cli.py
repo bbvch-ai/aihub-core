@@ -1,81 +1,44 @@
 #!/usr/bin/env python3
 
-import argparse
-import sys
-from pathlib import Path
-from jinja2 import Environment, PackageLoader, select_autoescape
+"""Main CLI module using Click."""
+
+import click
 from aihub_cli import __version__
 
 
-def get_package_version():
-    """Get the version of the current package."""
-    return __version__
+@click.group()
+@click.version_option(version=__version__, prog_name="aihub-cli")
+def cli():
+    """CLI tool for AI-Hub development and deployment."""
+    pass
 
 
-def generate_docker_compose(output_path=None):
-    """Generate docker-compose.yml from template."""
-    try:
-        # Get package version
-        version = get_package_version()
+@cli.command()
+def version():
+    """Show package version."""
+    click.echo(f"aihub version: {__version__}")
 
-        # Set up Jinja environment
-        env = Environment(loader=PackageLoader("aihub_cli", "templates"), autoescape=select_autoescape(["html", "xml"]))
 
-        # Load template
-        template = env.get_template("docker-compose.yml.j2")
+def register_commands():
+    """Register commands from separate modules."""
+    # This approach avoids type issues by importing at runtime
+    import importlib
+    
+    # Import and add commands dynamically
+    compose_module = importlib.import_module("aihub_cli.commands.generate_compose")
+    env_module = importlib.import_module("aihub_cli.commands.generate_env")
+    
+    cli.add_command(compose_module.generate_compose)
+    cli.add_command(env_module.generate_env)
 
-        # Render template with version
-        rendered = template.render(version=version)
 
-        # Determine output path
-        if output_path is None:
-            output_path = Path.cwd() / "docker-compose.yml"
-        else:
-            output_path = Path(output_path)
-
-        # Write file
-        output_path.write_text(rendered)
-
-        print(f"Generated docker-compose.yml (version: {version}) at: {output_path}")
-        return str(output_path)
-
-    except Exception as e:
-        raise RuntimeError(f"Failed to generate docker-compose.yml: {e}")
+# Register commands
+register_commands()
 
 
 def main():
-    parser = argparse.ArgumentParser(description="CLI tool for your package", prog="your-cli")
-
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
-
-    # Docker-compose generation command
-    compose_parser = subparsers.add_parser("generate-compose", help="Generate docker-compose.yml from template")
-    compose_parser.add_argument(
-        "-o", "--output", help="Output path for docker-compose.yml (default: ./docker-compose.yml)", default=None
-    )
-
-    # Version command
-    version_parser = subparsers.add_parser("version", help="Show package version")
-
-    args = parser.parse_args()
-
-    if not args.command:
-        parser.print_help()
-        return
-
-    try:
-        if args.command == "generate-compose":
-            generate_docker_compose(args.output)
-        elif args.command == "version":
-            version = get_package_version()
-            print(f"aihub version: {version}")
-        else:
-            print(f"Unknown command: {args.command}", file=sys.stderr)
-            sys.exit(1)
-
-    except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
+    """Entry point for the CLI."""
+    cli()
 
 
 if __name__ == "__main__":
