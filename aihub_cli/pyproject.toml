@@ -1,0 +1,30 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "aihub_cli"
+version = "v0.240.2"
+description = "CLI tool for aihub"
+authors = [
+    "Joel Barmettler <joel.barmettler@bbv.ch>",
+    "Marius Högger <marius.hoegger@bbv.ch>",
+    "Michèle Fundneider <michele.fundneider@bbv.ch>",
+    "Thomas Mannhart <thomas.mannhart@bbv.ch>",
+    "Noah Hermann <noah.hermann@bbv.ch>",
+]
+readme = "README.md"
+packages = [{include = "aihub_cli"}]
+
+[tool.poetry.dependencies]
+python = ">=3.13, <3.14"
+jinja2 = "^3.0"
+toml = "^0.10"
+# This is the key part - defines the CLI command
+[tool.poetry.scripts]
+aihub = "aihub_cli.cli:main"
+
+# Alternative syntax for multiple commands:
+# [tool.poetry.scripts]
+# your-cli = "your_package.cli:main"
+# your-cli-alt = "your_package.cli:alternative_main"
