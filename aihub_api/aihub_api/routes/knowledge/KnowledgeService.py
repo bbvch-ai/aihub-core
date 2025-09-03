@@ -244,11 +244,11 @@ class KnowledgeService:
             return None
 
         locale_string = LocaleString(**{t.locale: text})
-        entity = LocaleStringEntity.from_locale_string(locale_string)
 
-        return await TranslationService.translate(
-            translatable=entity, llm_config=llm_config, t=t, source_locale=t.locale
+        translated_locale_string = await TranslationService.translate(
+            locale_string=locale_string, llm_config=llm_config, t=t, source_locale=t.locale
         )
+        return LocaleStringEntity.from_locale_string(translated_locale_string)
 
     @staticmethod
     async def create_namespace(

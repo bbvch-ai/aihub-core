@@ -1,87 +1,55 @@
 import json
 import logging
-from typing import TypeVar
 
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core import PromptTemplate
+from llama_index.llms.openai_like import OpenAILike
 
 logger = logging.getLogger(__name__)
-
-T = TypeVar("T", LocaleStringEntity, LocaleString)
 
 LOCALE_NAMES = {"en": "English", "de": "German", "fr": "French", "it": "Italian"}
 
 
 class TranslationService:
     """
-    Service for automatically translating content to all supported locales using a single, efficient LLM call.
+    Service for automatically translating content to all supported locales using a single LLM call.
     """
 
     @classmethod
-    async def translate(cls, translatable: T, llm_config: LLMConfig, t: LocaleHandler, source_locale: str = "en") -> T:
+    async def translate(
+        cls, locale_string: LocaleString, llm_config: LLMConfig, t: LocaleHandler, source_locale: str = "en"
+    ) -> LocaleString:
         """
-        Translates missing fields in a translatable object (LocaleString or LocaleStringEntity).
+        Translates fields in a translatable object (LocaleString).
         """
-        source_text = getattr(translatable, source_locale, None)
-        if not source_text:
-            return translatable
-
-        missing_locales = [
-            locale
-            for locale in t.supported_locales
-            if locale != source_locale and not getattr(translatable, locale, None)
-        ]
-
-        if not missing_locales:
-            return translatable
-
-        translations = await cls._get_translations_from_llm(
+        source_text = locale_string.in_locale(source_locale)
+        target_locales = [locale for locale in t.supported_locales if locale != source_locale]
+        new_translations = await cls._get_translations_from_llm(
             text=source_text,
-            source_locale=source_locale,
-            target_locales=missing_locales,
-            llm_config=llm_config,
+            source_language_code=source_locale,
+            target_language_codes=target_locales,
+            llm=llm_config.to_llama_index()[0],
+            t=t,
         )
-
-        if isinstance(translatable, LocaleStringEntity):
-            for locale, translation in translations.items():
-                if translation:
-                    setattr(translatable, locale, translation)
-            return translatable
-        elif isinstance(translatable, LocaleString):
-            existing_data = translatable.model_dump()
-            existing_data.update(translations)
-            return LocaleString(**existing_data)
-
-        return translatable
+        final_data = locale_string.model_dump()
+        new_data = new_translations.model_dump(exclude_unset=True)
+        final_data.update(new_data)
+        return LocaleString(**final_data)
 
     @classmethod
     async def _get_translations_from_llm(
-        cls, text: str, source_locale: str, target_locales: list[str], llm_config: LLMConfig
-    ) -> dict[str, str]:
-        if not target_locales:
-            return {}
-
-        source_language = LOCALE_NAMES.get(source_locale, source_locale)
-        target_languages = ", ".join([LOCALE_NAMES.get(locale, locale) for locale in target_locales])
-
-        system_prompt = (
-            "You are a professional and precise translator. "
-            f"Translate the given text from {source_language} into the following languages: {target_languages}. "
-            "Your response must be a single, valid JSON object. The keys should be the two-letter "
-            f"locale codes ({', '.join(target_locales)}), and the values should be the translated strings. "
-            "Do not include any other text, explanations, or markdown."
+        cls, text: str, source_language_code: str, target_language_codes: list[str], llm: OpenAILike, t: LocaleHandler
+    ) -> LocaleString:
+        target_languages = ", ".join([t(f"api.common.translation.{lang}") for lang in target_language_codes])
+        prompt = PromptTemplate(t("api.common.translation.prompt"))
+        response = await llm.apredict(
+            prompt,
+            source_language=t(f"api.common.translation.{source_language_code}"),
+            target_languages=target_languages,
+            locale_codes=target_language_codes,
+            text=text,
         )
-
-        messages = [
-            ChatMessage(role=MessageRole.SYSTEM, content=system_prompt),
-            ChatMessage(role=MessageRole.USER, content=text),
-        ]
-
-        llm, _ = llm_config.to_llama_index()
-
-        response = await llm.achat(messages)
-        content = response.message.content.strip()
-        return json.loads(content)
+        translations = json.loads(response)
+        return LocaleString(**translations)

@@ -85,9 +85,7 @@ async def main():
             vector_store_factory=lambda collection: create_milvus_vector_store(
                 MilvusSettings().URL, collection, MilvusSettings().DIMENSION
             ),
-            translation_llm_config=LLMConfig(
-                model_name="local/qwen3-small",
-            ),
+            translation_llm_config=LLMConfig(model_name="azure/gpt-4o-mini"),
         )
         .create_namespace()
         .update_namespace()
