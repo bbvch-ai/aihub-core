@@ -722,7 +722,7 @@ services:
     container_name: docling
     <<: *restart-policy
     depends_on:
-      fix-perms-docling:
+      docling-model-permission:
         condition: service_completed_successfully
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
