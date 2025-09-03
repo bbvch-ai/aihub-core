@@ -22,7 +22,7 @@ function getMimeType(file: File): string {
     return file.type
   }
 
-  const ext = '.' + file.name.split('.').pop()?.toLowerCase()
+  const ext = '.' + (file.name.split('.').pop()?.toLowerCase() ?? '')
   return MIME_TYPE_OVERRIDES[ext] || 'application/octet-stream'
 }
 
