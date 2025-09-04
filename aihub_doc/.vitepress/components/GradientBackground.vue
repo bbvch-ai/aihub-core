@@ -32,9 +32,7 @@
       <div class="gradient-orb g5" />
     </div>
 
-    <div class="absolute inset-0">
-      <slot />
-    </div>
+    <div class="fadeout-gradient"></div>
   </div>
 </template>
 
@@ -56,6 +54,15 @@
   bottom: 0;
   background: transparent;
   overflow: hidden;
+}
+
+.fadeout-gradient {
+  position: absolute;
+  height: 150px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 100%);
 }
 
 .gradient-orb {
