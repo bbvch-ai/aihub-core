@@ -1,6 +1,6 @@
 ---
 title: AI-Hub Frontend
-index: 6
+index: 8
 ---
 
 # AI-Hub Web Frontend Developer's Guide

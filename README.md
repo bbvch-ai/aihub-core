@@ -1,3 +1,8 @@
+---
+title: Introduction
+index: 1
+---
+
 # AI-Hub Developer Guide
 
 ## 1. :rocket: Introduction

@@ -1,6 +1,6 @@
 ---
 title: Infrastructure
-index: 8
+index: 10
 ---
 
 # 🏢 AIHub Infrastructure as Code (IaC)

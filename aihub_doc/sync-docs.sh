@@ -29,7 +29,10 @@ find ../ -path '*/node_modules' -prune -o -path '../aihub_doc' -prune -o -name "
     # Check if the file is the root README.md.
     if [[ "$source_file" == "../README.md" ]]; then
         # If it is, set the destination to 'aihub/index.md'.
-        dest_file="aihub/index.md"
+        dest_file="./docs/6_code_deep_dive/1_introduction/index.md"
+    # Ignore files in .docker-volumes
+    elif [[ "$source_file" == *".docker-volumes"* ]]; then
+        continue
     else
         # Otherwise, handle the 'aihub_X' directories.
         # Get the directory of the source file (e.g., ../aihub_api)
@@ -38,11 +41,8 @@ find ../ -path '*/node_modules' -prune -o -path '../aihub_doc' -prune -o -name "
         # Remove the leading '../' (e.g., aihub_api)
         relative_dir="${source_dir#../}"
 
-        # Replace 'aihub_' with 'aihub/' to create the new structure (e.g., aihub/api)
-        transformed_dir="${relative_dir/aihub_/aihub/}"
-
         # Set the final destination path.
-        dest_file="${transformed_dir}/index.md"
+        dest_file="./docs/6_code_deep_dive/${relative_dir}/index.md"
     fi
 
     # Get the directory part of the destination path.

@@ -87,17 +87,7 @@ function generateSidebar() {
 
   // --- Part 1: Handle 'aihub' as a single top-level group ---
   try {
-    const aihubBasePath = path.join(docsRoot, 'aihub');
-    const rootIndexPath = path.join(aihubBasePath, 'index.md');
-    const rootFileContent = readFileSync(rootIndexPath, 'utf-8');
-
-    allTopLevelGroups.push({
-      text: 'Part VI: Code Deep Dive',
-      link: '/aihub/',
-      collapsible: true,
-      items: generateSidebarItems(aihubBasePath, '/aihub/'),
-      index: 500,
-    });
+    const aihubBasePath = path.join(docsRoot, 'docs', '6_code_deep_dive');
 
     allTopLevelGroups.push({
       text: 'Changelog',

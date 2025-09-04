@@ -1,6 +1,6 @@
 ---
 title: AI-Hub Pipelines
-index: 3
+index: 5
 ---
 
 # 🚰 AI-Hub Pipeline Developer's Guide
