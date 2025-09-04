@@ -1,5 +1,5 @@
 ---
-title: "SDK Introduction"
+title: "Quick Start"
 index: 1
 ---
 
