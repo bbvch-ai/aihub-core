@@ -1,10 +1,9 @@
 ---
-title: "Why Swiss AI Hub?"
+title: "Our solution"
 index: 2
 ---
 
-
-## Our solution: Enterprise AI infrastructure as a product
+# Our solution: Enterprise AI infrastructure as a product
 
 The Swiss AI Hub is a complete, open-source AI platform that you deploy, own, and control. It's not a service you subscribe to or a framework you build upon—it's production-ready infrastructure that becomes yours.
 

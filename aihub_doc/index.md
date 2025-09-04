@@ -9,7 +9,7 @@ hero:
   actions:
     - theme: brand
       text: Quick Start
-      link: /docs/quickstart
+      link: /docs/2_platform/1_quick_start/
     - theme: alt
       text: Platform Overview
       link: /docs/platform

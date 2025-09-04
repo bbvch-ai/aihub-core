@@ -1,5 +1,6 @@
 ---
-title: "Part III: The ADK Journey"
+title: "Part III: The SDK Journey"
 index: 3
 ---
 
+@joelbarmettlerUZH
