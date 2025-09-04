@@ -152,11 +152,11 @@ docker compose \
 
 ### Step 1: Verify Agent Registration
 
-Check the web interface at `http://localhost:8080`. You should now see your `my_custom_agent` agent listed and available for chat.
+Check the web interface at `http://localhost:8080`. You should now see your `my_custom_agent` agent listed in th agents and is shown as `online`.
 
 ### Step 2: Test Agent Interaction
 
-Click on your agent and send a test message like "Analyze this document content". You should receive a response showing your agent processed the request.
+Click on your agent and send a test message. You should receive a response showing your agent processed the request.
 
 ### Step 3: Observe Agent Behavior
 
