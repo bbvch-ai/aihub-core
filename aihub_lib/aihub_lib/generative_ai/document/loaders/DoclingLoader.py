@@ -125,7 +125,8 @@ class DoclingLoader(BaseReader):
 
             if status_response.status_code != 200:
                 raise ValueError(
-                    f"Docling task status request failed with status code {status_response.status_code}: {status_response.text}"
+                    f"Docling task status request failed with status code {status_response.status_code}: "
+                    f"{status_response.text}"
                 )
 
             task_status = status_response.json()
@@ -138,7 +139,8 @@ class DoclingLoader(BaseReader):
 
                 if result_response.status_code != 200:
                     raise ValueError(
-                        f"Docling result request failed with status code {result_response.status_code}: {result_response.text}"
+                        f"Docling result request failed with status code {result_response.status_code}: "
+                        f"{result_response.text}"
                     )
 
                 return result_response.json()
@@ -150,7 +152,8 @@ class DoclingLoader(BaseReader):
                 await asyncio.sleep(self.config.POLL_INTERVAL)
             elif task_status["task_status"] == "skipped":
                 raise ValueError(
-                    f"Docling conversion task was skipped: {task_status.get('task_meta', {}).get('reason', 'Unknown reason')}"
+                    f"Docling conversion task was skipped: "
+                    f"{task_status.get('task_meta', {}).get('reason', 'Unknown reason')}"
                 )
             else:
                 raise ValueError(f"Unknown task status: {task_status['task_status']}")
