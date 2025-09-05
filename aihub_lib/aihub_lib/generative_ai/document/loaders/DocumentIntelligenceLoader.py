@@ -30,7 +30,7 @@ class DocumentIntelligenceLoader(BaseReader):
 
         self.document_intelligence_client = DocumentIntelligenceAccess().get_client()
 
-    def load_data(
+    async def aload_data(
         self,
         file: str,
         extra_info: dict | None = None,
