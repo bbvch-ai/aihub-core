@@ -17,7 +17,7 @@ This quickstart covers the essential building blocks:
 
 ## Prerequisites
 
-You need the AI-Hub development environment running. Before you start, make sure you completed the [Development Environment Setup](/3_sdk/1_dev_environment_setup/) steps.
+You need the AI-Hub development environment running. Before you start, make sure you completed the [Development Environment Setup](/3_sdk/1_quick_start/1_dev_environment_setup/) steps.
 
 ## How agents work
 
