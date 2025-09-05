@@ -1,27 +1,31 @@
 ---
-title: "Your First Agent"
+title: Your First Agent
 index: 3
 ---
 
 # Your First Agent
 
-Build your first agent using the AI-Hub Agent (`aihub_agent`) SDK - a simple message processing agent with a 2-step workflow.
+Build your first agent using the AI-Hub Agent (`aihub_agent`) SDK - a simple message processing agent with a 2-step
+workflow.
 
 ## What you'll learn
 
 This quickstart covers the essential building blocks:
+
 - **Agent structure**: How agents process messages in steps
 - **Event flow**: Data flowing between workflow steps
-- **Configuration**: Settings that control agent behavior  
+- **Configuration**: Settings that control agent behavior
 - **Testing**: Running your agent locally
 
 ## Prerequisites
 
-You need the AI-Hub development environment running. Before you start, make sure you completed the [Development Environment Setup](/3_sdk/1_quick_start/1_dev_environment_setup/) steps.
+You need the AI-Hub development environment running. Before you start, make sure you completed the
+[Development Environment Setup](/3_sdk/1_quick_start/1_dev_environment_setup/) steps.
 
 ## How agents work
 
 AI-Hub agents are **event-driven workflows** with three essential parts:
+
 - **Steps**: Functions decorated with `@step()` that process events
 - **Events**: Data objects flowing between steps
 - **Configuration**: Typed settings that control agent behavior
@@ -33,6 +37,7 @@ Let's build a simple message processor that takes a user message, processes it i
 ### 1. Create a Custom Event (`MessageEvent.py`):
 
 First, create an event to pass data between steps:
+
 ```python
 from typing import Annotated
 
@@ -142,11 +147,13 @@ if __name__ == "__main__":
 ## Run and debug your agent
 
 1. **Run the test script**:
+
 ```bash
 python trigger.py
 ```
 
 Expected output:
+
 ```
 [Step 1] Processing message: 'Hello world this is my first agent' -> 'HELLO WORLD THIS IS MY FIRST AGENT'
 [Step 2] Creating response: 'Processed: HELLO WORLD THIS IS MY FIRST AGENT (Words: 7)'
@@ -154,6 +161,7 @@ Agent completed: True
 ```
 
 2. **Debug with Phoenix Tracing** - Open `http://localhost:6006` to see:
+
    - Step-by-step execution flow
    - Event data flowing between steps
    - Timing and performance metrics
@@ -164,10 +172,12 @@ Agent completed: True
 ## Understanding the workflow
 
 Your agent follows this event flow:
-1. **UserMessageEvent** → `process_message()` → **MessageEvent** 
+
+1. **UserMessageEvent** → `process_message()` → **MessageEvent**
 2. **MessageEvent** → `create_response()` → **StopEvent**
 
 Each step:
+
 - Receives an event as input
 - Processes the data
 - Returns a new event
@@ -183,5 +193,5 @@ Each step:
 
 ## Next steps
 
-- [Your First Pipeline](/3_sdk/1_quick_start/4_your_first_pipeline/) - 
+- [Your First Pipeline](/3_sdk/1_quick_start/4_your_first_pipeline/) -
 - [Building Agents](/3_sdk/2_building_agents/) - Learn more advanced agent patterns

@@ -1,5 +1,5 @@
 ---
-title: "Your First Pipeline"
+title: Your First Pipeline
 index: 4
 ---
 
@@ -10,17 +10,20 @@ Build your first data processing pipeline using the AI-Hub Pipeline (`aihub_pipe
 ## What you'll learn
 
 This quickstart covers pipeline basics:
+
 - **Assets**: Data entities that depend on each other
 - **Dependencies**: How data flows between assets
 - **Execution**: Running pipelines locally with Dagster UI
 
 ## Prerequisites
 
-You need the AI-Hub development environment running. Before you start, make sure you completed the [Development Environment Setup](/3_sdk/1_dev_environment_setup/) steps.
+You need the AI-Hub development environment running. Before you start, make sure you completed the
+[Development Environment Setup](/3_sdk/1_dev_environment_setup/) steps.
 
 ## How pipelines work
 
 Pipelines are **data processing workflows** that transform data through connected steps:
+
 - **Assets**: Functions that create or transform data
 - **Dependencies**: Assets can depend on outputs from other assets
 - **Execution**: Dagster runs assets in the right order automatically
@@ -71,6 +74,7 @@ defs = Definitions(
 :::
 
 That's it! This simple pipeline:
+
 - **hello_data**: Creates a text message
 - **processed_data**: Takes the message, makes it uppercase, and adds word count
 
@@ -83,6 +87,7 @@ dagster dev -m my_pipeline
 ```
 
 Open `http://localhost:3000` to see:
+
 - **Asset lineage graph**: hello_data → processed_data
 - **Materialize buttons** to run individual assets or the whole pipeline
 - **Asset details** showing inputs, outputs, and logs
@@ -91,7 +96,7 @@ Open `http://localhost:3000` to see:
 
 1. Click **"Assets"** in the left sidebar
 2. Select both assets or click on **processed_data**
-3. Click **"Materialize selected"** 
+3. Click **"Materialize selected"**
 4. Watch the execution progress and see the results
 
 ## Understanding the data flow
