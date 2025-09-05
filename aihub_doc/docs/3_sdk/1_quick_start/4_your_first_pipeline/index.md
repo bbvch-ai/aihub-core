@@ -1,144 +1,116 @@
 ---
-title: Your First Pipeline
+title: "Your First Pipeline"
 index: 4
 ---
 
 # Your First Pipeline
 
-Build your first data processing pipeline using the AI-Hub Pipeline SDK - a simple text processor that reads files,
-transforms them, and produces outputs.
+Build your first data processing pipeline using the AI-Hub Pipeline (`aihub_pipeline`) SDK.
 
 ## What you'll learn
 
-This quickstart covers pipeline essentials:
-
-- **Assets**: Data objects created and managed by the pipeline
-- **Operations**: Functions that transform data between assets
-- **Resources**: Configurations for external services
+This quickstart covers pipeline basics:
+- **Assets**: Data entities that depend on each other
+- **Dependencies**: How data flows between assets
 - **Execution**: Running pipelines locally with Dagster UI
 
 ## Prerequisites
 
-You need the AI-Hub development environment running. Before you start, make sure you completed the
-[Development Environment Setup](/3_sdk/1_dev_environment_setup/) steps.
+You need the AI-Hub development environment running. Before you start, make sure you completed the [Development Environment Setup](/3_sdk/1_dev_environment_setup/) steps.
 
 ## How pipelines work
 
-AI-Hub pipelines are **data processing workflows** built on Dagster with:
-
-- **Assets**: Data entities that get created and updated (files, processed data, reports)
-- **Operations**: Functions that transform data between assets
-- **Resources**: Shared services and configurations
+Pipelines are **data processing workflows** that transform data through connected steps:
+- **Assets**: Functions that create or transform data
+- **Dependencies**: Assets can depend on outputs from other assets
+- **Execution**: Dagster runs assets in the right order automatically
 
 ## Create your first pipeline
 
-Let's build a simple pipeline with just 2 assets that demonstrate the basic concept: one asset creates data, another
-uses it.
+Let's build a simple pipeline with 2 assets that process text data.
 
-### Create Assets (`my_pipeline.py`):
+### Create your assets (`assets.py`)
 
+::: code-group
 ```python
-from dagster import asset, AssetIn, Definitions
+from dagster import asset, AssetExecutionContext
 
-@asset
-def hello_asset():
-    """First asset that creates some data."""
-    message = "Hello from first asset!"
-    print(f"Creating: {message}")
+@asset(description="Raw text data")
+def hello_data(context: AssetExecutionContext) -> str:
+    message = "Hello from my first pipeline!"
+    context.log.info(f"Created: {message}")
     return message
 
-@asset(ins={"hello_asset": AssetIn()})
-def world_asset(hello_asset: str):
-    """Second asset that depends on the first asset."""
-    response = f"{hello_asset} World from second asset!"
-    print(f"Processing: {response}")
-    return response
+@asset(description="Processed text with word count")  
+def processed_data(context: AssetExecutionContext, hello_data: str) -> str:
+    # Simple processing: count words and make uppercase
+    words = hello_data.split()
+    processed = hello_data.upper()
+    result = f"{processed} (Word count: {len(words)})"
+    
+    context.log.info(f"Processed: {result}")
+    return result
 
-# Define your pipeline with both assets
+```
+:::
+
+### Create your pipeline definition (`my_pipeline.py`):
+
+::: code-group
+```python
+from dagster import Definitions
+
+from assets import hello_data, processed_data
+
+
+# Pipeline definition
 defs = Definitions(
-    assets=[hello_asset, world_asset]
+    assets=[hello_data, processed_data]
 )
 ```
+:::
 
-That's it! This simple pipeline shows:
-
-- **hello_asset**: Creates a message (no dependencies)
-- **world_asset**: Takes the message and extends it (depends on hello_asset)
+That's it! This simple pipeline:
+- **hello_data**: Creates a text message
+- **processed_data**: Takes the message, makes it uppercase, and adds word count
 
 ## Run your pipeline
 
-### 1. Test the pipeline programmatically:
-
-Add this test code to your file:
-
-```python
-if __name__ == "__main__":
-    from dagster import materialize
-    
-    # Run both assets
-    result = materialize([hello_asset, world_asset])
-    
-    print("Pipeline completed!")
-    print(f"Final result: {result.asset_value(world_asset)}")
-```
-
-Run it:
-
-```bash
-python my_pipeline.py
-```
-
-Expected output:
-
-```
-Creating: Hello from first asset!
-Processing: Hello from first asset! World from second asset!
-Pipeline completed!
-Final result: Hello from first asset! World from second asset!
-```
-
-### 2. Start the Dagster UI:
-
-Start the Dagster development server to visualize your pipeline:
+### 1. Start the Dagster UI:
 
 ```bash
 dagster dev -m my_pipeline
 ```
 
 Open `http://localhost:3000` to see:
+- **Asset lineage graph**: hello_data → processed_data
+- **Materialize buttons** to run individual assets or the whole pipeline
+- **Asset details** showing inputs, outputs, and logs
 
-- **Asset lineage graph** showing: hello_asset → world_asset
-- **Materialize buttons** to run individual assets
-- **Logs and execution details** for each asset
-- **Asset values** to inspect the data
+### 2. Run in Dagster UI:
 
-### 3. Run in the Dagster UI:
-
-1. Click on **"Assets"** in the left sidebar
-2. Select both assets (hello_asset, world_asset)
-3. Click **"Materialize selected"** to run the pipeline
-4. Watch the execution and see the outputs
+1. Click **"Assets"** in the left sidebar
+2. Select both assets or click on **processed_data**
+3. Click **"Materialize selected"** 
+4. Watch the execution progress and see the results
 
 ## Understanding the data flow
 
-Your pipeline follows this simple flow:
+Your pipeline demonstrates:
 
-1. **hello_asset** → Creates a message
-2. **world_asset** → Receives the message and extends it
-
-Each asset:
-
-- Returns typed data that flows to dependent assets
-- Can be run independently or together
-- Has clear dependencies that Dagster manages automatically
+1. **Asset dependencies**: `processed_data` automatically gets the output from `hello_data`
+2. **Automatic execution order**: Dagster runs `hello_data` first, then `processed_data`
+3. **Data passing**: The return value from one asset becomes input to the next
 
 ## What you learned
 
-- **Asset-based modeling**: Data entities with clear dependencies
-- **Data lineage**: How data flows through processing stages
-- **Pipeline execution**: Running locally and via Dagster UI
-- **Debugging**: Inspecting asset values and execution logs
+- **Asset basics**: Creating assets with `@asset` decorator
+- **Dependencies**: How assets automatically depend on each other
+- **Pipeline execution**: Running assets programmatically and via UI
+- **Data flow**: How data passes between connected assets
 
 ## Next steps
 
-- [Building Pipelines](/3_sdk/3_building_pipelines/)
+- [Building Pipelines](/3_sdk/3_building_pipelines/) - Learn more advanced patterns
+- Explore the Dagster UI to understand asset management
+- Try modifying the pipeline to add more processing steps

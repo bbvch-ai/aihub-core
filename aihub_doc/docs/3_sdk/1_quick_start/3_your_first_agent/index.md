@@ -1,30 +1,27 @@
 ---
-title: Your First Agent
+title: "Your First Agent"
 index: 3
 ---
 
 # Your First Agent
 
-Build your first agent using the AI-Hub Agent SDK - a simple message processing agent with a 2-step workflow.
+Build your first agent using the AI-Hub Agent (`aihub_agent`) SDK - a simple message processing agent with a 2-step workflow.
 
 ## What you'll learn
 
 This quickstart covers the essential building blocks:
-
 - **Agent structure**: How agents process messages in steps
 - **Event flow**: Data flowing between workflow steps
-- **Configuration**: Settings that control agent behavior
+- **Configuration**: Settings that control agent behavior  
 - **Testing**: Running your agent locally
 
 ## Prerequisites
 
-You need the AI-Hub development environment running. Before you start, make sure you completed the
-[Development Environment Setup](/3_sdk/1_dev_environment_setup/) steps.
+You need the AI-Hub development environment running. Before you start, make sure you completed the [Development Environment Setup](/3_sdk/1_quick_start/1_dev_environment_setup/) steps.
 
 ## How agents work
 
 AI-Hub agents are **event-driven workflows** with three essential parts:
-
 - **Steps**: Functions decorated with `@step()` that process events
 - **Events**: Data objects flowing between steps
 - **Configuration**: Typed settings that control agent behavior
@@ -36,13 +33,16 @@ Let's build a simple message processor that takes a user message, processes it i
 ### 1. Create a Custom Event (`MessageEvent.py`):
 
 First, create an event to pass data between steps:
-
 ```python
-from aihub_lib.nats.events import ControlEvent
+from typing import Annotated
 
-class MessageEvent(ControlEvent):
-    processed_content: str
-    word_count: int
+from aihub_lib.nats.events import ControlEvent
+from pydantic import Field
+
+
+class MyAgentEvent(ControlEvent):
+    word_count: Annotated[int, Field(description="The word count of the processed content")]
+
 ```
 
 ### 2. Agent Configuration (`MyAgentConfig.py`):
@@ -66,39 +66,29 @@ from aihub_lib.nats.events import StopEvent, UserMessageEvent
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
 
-from .MessageEvent import MessageEvent
-from .MyAgentConfig import MyAgentConfig
+from MyAgentEvent import MyAgentEvent
+from MyAgentConfig import MyAgentConfig
 
 class MyAgent(Agent):
     
     @step()
-    async def process_message(self, event: UserMessageEvent) -> MessageEvent:
+    async def process_message(self, event: UserMessageEvent) -> MyAgentEvent:
         """First step: Process the incoming message."""
         content = event.messages[-1].content
         word_count = len(content.split())
-        
-        # Simple processing - convert to uppercase
-        processed = content.upper()
-        
-        print(f"[Step 1] Processing message: '{content}' -> '{processed}'")
-        
-        return MessageEvent(
-            processed_content=processed,
-            word_count=word_count
-        )
+        print(f"[Step 1] Processing message: '{content}'")
+        return MyAgentEvent(word_count=word_count)
     
     @step()
     async def create_response(
         self, 
-        event: MessageEvent, 
+        event: MyAgentEvent, 
         config: MyAgentConfig
     ) -> StopEvent:
         """Second step: Create final response with configuration."""
-        response = f"{config.prefix} {event.processed_content} (Words: {event.word_count})"
-        
+        response = f"{config.prefix} (Words: {event.word_count})"
         print(f"[Step 2] Creating response: '{response}'")
-        
-        return StopEvent(final_message=response)
+        return StopEvent()
 ```
 
 ### 4. Test Script (`trigger.py`):
@@ -128,7 +118,7 @@ async def main():
     )
     
     # Create test runner
-    runner = AgentTestRunner(agent_type=MyAgent, agent_config=config)
+    runner = AgentTestRunner(agent_type=MyAgent, default_agent_config=config)
     
     # Run the agent with a test message
     async with runner.test_run() as topic:
@@ -144,8 +134,6 @@ async def main():
         )
     
     print(f"Agent completed: {runner.has_stop_event}")
-    if runner.has_stop_event:
-        print(f"Final response: {runner.stop_event.final_message}")
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -154,22 +142,18 @@ if __name__ == "__main__":
 ## Run and debug your agent
 
 1. **Run the test script**:
-
 ```bash
 python trigger.py
 ```
 
 Expected output:
-
 ```
 [Step 1] Processing message: 'Hello world this is my first agent' -> 'HELLO WORLD THIS IS MY FIRST AGENT'
 [Step 2] Creating response: 'Processed: HELLO WORLD THIS IS MY FIRST AGENT (Words: 7)'
 Agent completed: True
-Final response: Processed: HELLO WORLD THIS IS MY FIRST AGENT (Words: 7)
 ```
 
 2. **Debug with Phoenix Tracing** - Open `http://localhost:6006` to see:
-
    - Step-by-step execution flow
    - Event data flowing between steps
    - Timing and performance metrics
@@ -180,12 +164,10 @@ Final response: Processed: HELLO WORLD THIS IS MY FIRST AGENT (Words: 7)
 ## Understanding the workflow
 
 Your agent follows this event flow:
-
-1. **UserMessageEvent** → `process_message()` → **MessageEvent**
+1. **UserMessageEvent** → `process_message()` → **MessageEvent** 
 2. **MessageEvent** → `create_response()` → **StopEvent**
 
 Each step:
-
 - Receives an event as input
 - Processes the data
 - Returns a new event
@@ -201,5 +183,5 @@ Each step:
 
 ## Next steps
 
-- [Your First Pipeline](/3_sdk/1_quick_start/4_your_first_pipeline/)
-- [Building Agents](/3_sdk/2_building_agents/)
+- [Your First Pipeline](/3_sdk/1_quick_start/4_your_first_pipeline/) - 
+- [Building Agents](/3_sdk/2_building_agents/) - Learn more advanced agent patterns

@@ -106,7 +106,7 @@ If any services fail to start, check that ports 8080, 27017, 6379, and 4222 aren
 Create your first custom agent:
 
 ```bash
-poetry run aihub new-agent document_analyzer
+poetry run aihub new-agent my_custom_agent
 ```
 
 This creates a complete agent structure:
