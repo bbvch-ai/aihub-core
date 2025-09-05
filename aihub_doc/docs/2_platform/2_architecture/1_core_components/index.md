@@ -3,8 +3,6 @@ title: Core Components
 index: 1
 ---
 
-## title: Core components index: 1
-
 # Core components
 
 The Swiss AI-Hub is a complete platform that includes infrastructure for agents, pipelines, and process automation. The
