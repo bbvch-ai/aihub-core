@@ -5,7 +5,7 @@ index: 4
 
 # Full Competitor Analysis
 
-This comprehensive analysis compares the Swiss AI Hub against it's competitors in the market, which are categorized in
+This comprehensive analysis compares the Swiss AI Hub against its competitors in the market, which are categorized in
 to platforms, frameworks, and solutions.
 
 ## Libraries and Frameworks
@@ -134,9 +134,9 @@ for research and prototypes but requiring significant additional work for produc
 resources to build production infrastructure. Your primary focus is on experimental AI techniques rather than deployed
 applications.
 
-**Choose Swiss AI Hub when** you want systematic AI optimization within a production-ready platform that handles
-deployment, monitoring, and governance automatically. You get optimization capabilities plus the infrastructure to
-deploy them reliably in enterprise environments.
+**Choose Swiss AI Hub when** you want a production-ready platform for building AI systems with comprehensive monitoring
+and governance. You get enterprise infrastructure for deploying reliable AI applications, though optimization and
+development require coding expertise rather than automated tools.
 :::
 
 ## Swiss/European AI Providers
@@ -428,9 +428,9 @@ observability.
 applications, and your use cases fit well within drag-and-drop paradigms. You prioritize development speed and
 accessibility over deep customization.
 
-**Choose Swiss AI Hub when** you need enterprise-grade governance and observability with the flexibility for both visual
-and code-based development. You get rapid development capabilities plus the power to build complex, auditable AI systems
-that can be fully customized and transparently monitored.
+**Choose Swiss AI Hub when** you need enterprise-grade governance and observability with code-based development for
+complex AI systems. You get a complete platform for building auditable, customizable AI applications with transparent
+monitoring, but development requires coding rather than visual tools.
 :::
 
 ::: details Flowise
@@ -442,9 +442,9 @@ production-grade reliability. Best suited for rapid prototyping and citizen deve
 **Choose Flowise when** you're prototyping AI workflows, want a simple visual interface, and don't need enterprise-grade
 features. Your use case is experimental or educational rather than production-focused.
 
-**Choose Swiss AI Hub when** you want visual development capabilities within a production-ready platform that includes
-enterprise authentication, governance, scaling, and reliability. You get the accessibility of visual tools plus
-enterprise readiness.
+**Choose Swiss AI Hub when** you want a production-ready platform with enterprise authentication, governance, scaling,
+and reliability, and you're comfortable with code-based development. You get enterprise readiness with complete platform
+control, though you'll need coding skills rather than visual tools.
 :::
 
 ::: details LangFlow
@@ -456,9 +456,9 @@ how to run, scale, and secure your flows in production.
 **Choose LangFlow when** you want to quickly prototype LangChain-based workflows with a visual interface and have the
 resources to build production infrastructure around your prototypes. Your focus is on rapid experimentation.
 
-**Choose Swiss AI Hub when** you want visual workflow capabilities (including LangChain patterns) within a complete
-production platform that handles authentication, monitoring, deployment, and scaling automatically. You get prototype
-speed with production readiness.
+**Choose Swiss AI Hub when** you want to build LangChain-compatible workflows within a complete production platform that
+handles authentication, monitoring, deployment, and scaling automatically. You get production readiness with code-based
+development rather than visual prototyping tools.
 :::
 
 ## Automation Platforms with AI
@@ -541,9 +541,9 @@ needs.
 orchestration, and have teams with BPMN expertise. Your primary focus is on process management with AI as a supporting
 component.
 
-**Choose Swiss AI Hub when** you want AI-first process automation without BPMN complexity, with built-in AI capabilities
-and user-friendly interfaces. You get powerful process orchestration designed specifically for AI workflows without
-requiring specialized BPMN knowledge.
+**Choose Swiss AI Hub when** you want AI-first process automation through code-based development, with built-in AI
+capabilities and enterprise interfaces. You get powerful process orchestration designed specifically for AI workflows,
+though you'll need programming skills rather than visual modeling tools.
 :::
 
 ::: details Pega
@@ -587,8 +587,8 @@ integration, it may require significant additional tooling for complete AI solut
 integrations around established BPM patterns. Your primary focus is on traditional business process management.
 
 **Choose Swiss AI Hub when** you want process management designed for AI workflows from the ground up, with built-in AI
-development tools and user-friendly interfaces. You get the benefits of open-source with comprehensive AI capabilities
-included.
+development tools and enterprise interfaces. You get the benefits of open-source with comprehensive AI capabilities
+included, though development requires programming skills.
 :::
 
 ::: details Blue Prism
@@ -601,9 +601,9 @@ simpler AI solutions.
 **Choose Blue Prism when** you have substantial RPA investments, need to automate highly structured processes, and have
 teams with specialized RPA expertise. Your automation needs are primarily traditional RPA with some AI enhancement.
 
-**Choose Swiss AI Hub when** you want intelligent automation without RPA complexity, with AI-native design and
-user-friendly development. You get powerful automation capabilities designed for AI workflows without requiring
-specialized RPA knowledge.
+**Choose Swiss AI Hub when** you want intelligent automation without RPA complexity, with AI-native design through
+code-based development. You get powerful automation capabilities designed for AI workflows without requiring specialized
+RPA knowledge, though you'll need programming skills.
 :::
 
 ::: details Automation Anywhere
