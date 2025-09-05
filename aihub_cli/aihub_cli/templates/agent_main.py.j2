@@ -1,0 +1,33 @@
+import asyncio
+
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
+from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
+from aihub_lib.testing.logging.logger import enable_logging
+
+from {{ agent_name }}.{{ agent_class_name }}.{{ agent_class_name }} import {{ agent_class_name }}
+from {{ agent_name }}.{{ agent_class_name }}.{{ agent_class_name }}Config import {{ agent_class_name }}Config
+from aihub_agent.runners.AgentRunner import AgentRunner
+
+enable_logging()
+
+
+async def main():
+    servers_list = [NatsSettings().ENDPOINT]
+    runner = AgentRunner(
+        agent_type={{ agent_class_name }},
+        default_agent_config={{ agent_class_name }}Config(
+            agent_id={{ agent_name }},
+            name=LocaleString(en={{ agent_name.replace('_', ' ').title() }}),
+            description=LocaleString(en="This is a simple agent created from a template."),
+            config_value="My first Config Value"
+        ),
+        redis_url=RedisSettings().REDIS_URL,
+        servers=servers_list,
+    )
+
+    await runner.run_forever()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

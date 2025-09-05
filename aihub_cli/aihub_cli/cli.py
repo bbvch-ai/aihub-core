@@ -27,9 +27,11 @@ def register_commands():
     # Import and add commands dynamically
     compose_module = importlib.import_module("aihub_cli.commands.generate_compose")
     env_module = importlib.import_module("aihub_cli.commands.generate_env")
+    new_agent_module = importlib.import_module("aihub_cli.commands.new_agent")
     
     cli.add_command(compose_module.generate_compose)
     cli.add_command(env_module.generate_env)
+    cli.add_command(new_agent_module.new_agent)
 
 
 # Register commands

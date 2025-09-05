@@ -1,0 +1,26 @@
+"""{{ agent_name.replace('_', ' ').title() }} Agent implementation."""
+
+import logging
+from typing import Any, Dict, Optional
+
+from aihub_agent.agent import Agent
+from aihub_lib.generative_ai.messaging import Message
+
+from .{{ agent_class_name }}Config import {{ agent_class_name }}Config
+
+logger = logging.getLogger(__name__)
+
+
+class {{ agent_class_name }}(Agent):
+    """{{ agent_name.replace('_', ' ').title() }} Agent implementation."""
+
+    @step()
+    async def start_step(
+        self,
+        event: UserMessageEvent,
+        agent_config: {{ agent_class_name }}Config,
+    ) -> StopEvent:
+        content = event.messages[-1].content
+        response = f"Hello World! You said: {content}! And in my config I have: {agent_config.config_value}"
+        return StopEvent(final_message=response)
+

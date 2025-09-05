@@ -1,0 +1,16 @@
+"""Configuration for {{ agent_name.replace('_', ' ').title() }} Agent."""
+
+import os
+from typing import Optional
+
+from pydantic import BaseModel, Field
+from aihub_agent.config import AgentConfig
+
+
+class {{ agent_class_name }}Config(AgentConfig):
+    """Configuration class for {{ agent_name.replace('_', ' ').title() }} Agent."""
+
+    config_value: Annotated[str, Field(
+        default="Default Config Value",
+        description="Some configuration value for the agent"
+    )]
