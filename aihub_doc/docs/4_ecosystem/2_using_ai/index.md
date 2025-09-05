@@ -1,5 +1,5 @@
 ---
-title: "Using AI to Contribute"
+title: Using AI to Contribute
 index: 2
 ---
 

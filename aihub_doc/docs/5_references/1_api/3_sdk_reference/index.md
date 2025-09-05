@@ -1,5 +1,5 @@
 ---
-title: "SDK Reference"
+title: SDK Reference
 index: 3
 ---
 

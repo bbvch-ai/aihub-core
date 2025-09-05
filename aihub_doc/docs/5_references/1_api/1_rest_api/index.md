@@ -1,5 +1,5 @@
 ---
-title: "REST & Sockets API"
+title: REST & Sockets API
 index: 1
 ---
 

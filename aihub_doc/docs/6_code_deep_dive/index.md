@@ -1,4 +1,4 @@
 ---
-title: "Part VI: Contributor Deep Dive"
+title: 'Part VI: Contributor Deep Dive'
 index: 6
 ---

@@ -1,5 +1,5 @@
 ---
-title: "Certification Path"
+title: Certification Path
 index: 1
 ---
 

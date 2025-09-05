@@ -1,5 +1,5 @@
 ---
-title: "MCP Servers"
+title: MCP Servers
 index: 2
 ---
 

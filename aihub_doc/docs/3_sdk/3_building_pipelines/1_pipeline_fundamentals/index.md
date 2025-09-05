@@ -1,17 +1,20 @@
 ---
-title: "Pipeline Fundamentals"
+title: Pipeline Fundamentals
 index: 1
 ---
+
 [WIP]
 
 # Pipeline Fundamentals
 
-Understanding the core architecture and concepts of AI-Hub pipelines is essential before building your own data processing workflows. This section covers the foundational patterns and terminology you need to work effectively with the `aihub_pipeline` library.
+Understanding the core architecture and concepts of AI-Hub pipelines is essential before building your own data
+processing workflows. This section covers the foundational patterns and terminology you need to work effectively with
+the `aihub_pipeline` library.
 
 ## Architecture overview {#architecture}
 
-> [!NOTE]
-> AI-Hub pipelines are built using Dagster's asset-based approach, where each processing step produces concrete, versioned data artifacts.
+> [!NOTE] AI-Hub pipelines are built using Dagster's asset-based approach, where each processing step produces concrete,
+> versioned data artifacts.
 
 This provides several advantages over traditional ETL pipelines:
 
@@ -26,10 +29,10 @@ This provides several advantages over traditional ETL pipelines:
 
 ### Assets and asset factories {#assets-factories}
 
-**Assets** represent data objects produced by your pipeline. Instead of defining assets directly, use **asset factories** to create configurable, reusable definitions:
+**Assets** represent data objects produced by your pipeline. Instead of defining assets directly, use **asset
+factories** to create configurable, reusable definitions:
 
 ::: code-group
-
 ```python [Asset Factory Definition]
 def documents_factory(
     key: AssetKey,
@@ -69,12 +72,12 @@ assets = [
     nodes_factory(NODES_KEY, DOCUMENT_KEY, partitions),
 ]
 ```
-
 :::
 
 ### Operations (ops) {#operations}
 
-**Operations** are the individual processing steps that transform data. They specify inputs, outputs, and required resources:
+**Operations** are the individual processing steps that transform data. They specify inputs, outputs, and required
+resources:
 
 ::: details Operation Implementation
 ```python
@@ -100,7 +103,6 @@ def parse_document_from_data_lake(
 **Resources** manage external dependencies and configurations that operations need:
 
 ::: code-group
-
 ```python [Resource Definition]
 class DocumentParserResource(ConfigurableResource):
     """Resource for configuring document parsing."""
@@ -129,27 +131,26 @@ resources = {
     ),
 }
 ```
-
 :::
 
 ## Data types and flow {#data-types}
 
 ### Pipeline data types {#pipeline-types}
 
-> [!NOTE]
-> The pipeline uses strongly-typed data structures to ensure reliability throughout the **data lake to vector store** processing flow.
+> [!NOTE] The pipeline uses strongly-typed data structures to ensure reliability throughout the **data lake to vector
+> store** processing flow.
 
-| Type | Purpose | Key Attributes |
-|------|---------|---------------|
-| **`DataLakeFile`** | File in data lake with metadata | `uri`, `filetype`, `modified_time`, `size` |
-| **`RefDocDocument`** | Parsed document with content | `doc_id`, `text`, `metadata`, `images` |
-| **`TextNode`** | Text chunk for embedding | `text`, `metadata`, `embedding` |
-| **Custom types** | Domain-specific structures | Defined per use case |
+| Type                 | Purpose                         | Key Attributes                             |
+| -------------------- | ------------------------------- | ------------------------------------------ |
+| **`DataLakeFile`**   | File in data lake with metadata | `uri`, `filetype`, `modified_time`, `size` |
+| **`RefDocDocument`** | Parsed document with content    | `doc_id`, `text`, `metadata`, `images`     |
+| **`TextNode`**       | Text chunk for embedding        | `text`, `metadata`, `embedding`            |
+| **Custom types**     | Domain-specific structures      | Defined per use case                       |
 
 ### Core data flow: Data lake to vector store {#data-flow}
 
-> [!IMPORTANT]
-> The standard AI-Hub pipeline follows the **data lake to vector store** pattern, optimized for RAG agent knowledge retrieval.
+> [!IMPORTANT] The standard AI-Hub pipeline follows the **data lake to vector store** pattern, optimized for RAG agent
+> knowledge retrieval.
 
 ```mermaid
 graph LR
@@ -175,17 +176,17 @@ graph LR
 5. **`Vector Store`** → **`RAG Agents`**: Enable knowledge retrieval and question answering
 :::
 
-Each stage adds value and maintains traceability back to the original source, ensuring RAG agents can provide accurate, source-attributed responses.
+Each stage adds value and maintains traceability back to the original source, ensuring RAG agents can provide accurate,
+source-attributed responses.
 
 ## Partitioning for scalability {#partitioning}
 
 ### Dynamic partitions {#dynamic-partitions}
 
-> [!TIP]
-> Use **Dynamic Partitions** to handle datasets where individual items (documents, files) need separate processing.
+> [!TIP] Use **Dynamic Partitions** to handle datasets where individual items (documents, files) need separate
+> processing.
 
 ::: code-group
-
 ```python [Partition Definition]
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 ```
@@ -197,7 +198,6 @@ document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 # - Reprocess only changed documents
 # - Scale processing across multiple workers
 ```
-
 :::
 
 ### Partition benefits {#partition-benefits}
@@ -216,7 +216,6 @@ document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 Control when assets materialize using automation conditions:
 
 ::: code-group
-
 ```python [Eager Automation]
 @graph_asset(
     automation_condition=AutomationCondition.eager(),  # Run immediately
@@ -241,7 +240,6 @@ business_hours_condition = (
     AutomationCondition.cron_tick_passed("0 9-17 * * MON-FRI")  # Business hours only
 )
 ```
-
 :::
 
 ### Dependency management {#dependencies}
@@ -265,7 +263,6 @@ def nodes(document: RefDocDocument) -> List[TextNode]:
 Create different resource configurations for different environments:
 
 ::: code-group
-
 ```python [Development Resources]
 def development_resources():
     """Local development setup."""
@@ -292,7 +289,6 @@ def production_resources():
         ),
     }
 ```
-
 :::
 
 ### Asset composition {#asset-composition}
@@ -323,11 +319,9 @@ defs = Definitions(
 
 ### Examine the playground {#playground}
 
-> [!IMPORTANT]
-> The best way to understand pipeline fundamentals is to examine the working example in the playground.
+> [!IMPORTANT] The best way to understand pipeline fundamentals is to examine the working example in the playground.
 
 ::: code-group
-
 ```bash [Start Development Server]
 cd aihub_pipeline
 poetry shell
@@ -338,7 +332,6 @@ make playground
 ```bash [Alternative Command]
 poetry run dagster dev -m playground
 ```
-
 :::
 
 Navigate to `http://localhost:3000` to explore the pipeline visually in the Dagster web interface.
@@ -347,7 +340,7 @@ Navigate to `http://localhost:3000` to explore the pipeline visually in the Dags
 
 ::: info Important Files
 - [`playground/__init__.py`](../../aihub_pipeline/playground/__init__.py) - Complete pipeline definition
-- [`assets/factories/`](../../aihub_pipeline/aihub_pipeline/assets/factories/) - Asset factory patterns  
+- [`assets/factories/`](../../aihub_pipeline/aihub_pipeline/assets/factories/) - Asset factory patterns
 - [`ops/`](../../aihub_pipeline/aihub_pipeline/ops/) - Individual operation implementations
 - [`resources/`](../../aihub_pipeline/aihub_pipeline/resources/) - Resource configurations
 :::

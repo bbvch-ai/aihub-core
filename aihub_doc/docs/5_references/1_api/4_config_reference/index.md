@@ -1,5 +1,5 @@
 ---
-title: "Config Reference"
+title: Config Reference
 index: 4
 ---
 

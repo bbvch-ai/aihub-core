@@ -669,3 +669,7 @@ html {
   scrollbar-width: thin;
   scrollbar-color: var(--vp-scrollbar-color);
 }
+
+.vp-doc li + li {
+    margin-top: 2px;
+}

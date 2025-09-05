@@ -1,5 +1,5 @@
 ---
-title: "Arch42 Decision Records"
+title: Arch42 Decision Records
 index: 2
 ---
 

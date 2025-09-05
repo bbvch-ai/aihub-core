@@ -1,4 +1,4 @@
 ---
-title: "Building Processes"
+title: Building Processes
 index: 4
 ---

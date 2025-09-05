@@ -1,22 +1,23 @@
 ---
-title: "Building Pipelines"
+title: Building Pipelines
 index: 3
 ---
+
 [WIP]
 
 # Building Pipelines
 
-In the Swiss AI-Hub, pipelines handle the complete lifecycle from raw document ingestion to creating search-ready vector 
+In the Swiss AI-Hub, pipelines handle the complete lifecycle from raw document ingestion to creating search-ready vector
 embeddings that power your agents' knowledge retrieval capabilities.
-> [!NOTE]
-> AI-Hub pipelines are built on [Dagster](https://dagster.io/), providing a robust, observable approach to data processing. 
-This chapter does not cover Dagster fundamentals; please refer to the [Dagster documentation](https://docs.dagster.io/) for that.
 
+> [!NOTE] AI-Hub pipelines are built on [Dagster](https://dagster.io/), providing a robust, observable approach to data
+> processing. This chapter does not cover Dagster fundamentals; please refer to the
+> [Dagster documentation](https://docs.dagster.io/) for that.
 
-## The default pipeline  {#data-flow}
+## The default pipeline {#data-flow}
 
-> [!IMPORTANT]
-> AI-Hub's core pipeline follows a **data lake to vector store** pattern, designed specifically to power RAG agents with searchable document knowledge.
+> [!IMPORTANT] AI-Hub's core pipeline follows a **data lake to vector store** pattern, designed specifically to power
+> RAG agents with searchable document knowledge.
 
 ```mermaid
 graph TD
@@ -56,7 +57,6 @@ graph TD
     style I fill:#9c27b0
 ```
 
-
 ## Pipeline architecture patterns {#architecture-patterns}
 
 ### Asset factories for reusability {#asset-factories}
@@ -64,7 +64,6 @@ graph TD
 Create configurable asset definitions that can be adapted across different projects:
 
 ::: code-group
-
 ```python [Asset Factory]
 def documents_factory(
     key: AssetKey, 
@@ -97,7 +96,6 @@ document_asset = documents_factory(
     partitions=DynamicPartitionsDefinition(name="doc_partitions"),
 )
 ```
-
 :::
 
 ### Observable automation {#observable-automation}
@@ -105,7 +103,6 @@ document_asset = documents_factory(
 Instead of running on schedules, pipelines react to data changes:
 
 ::: code-group
-
 ```python [Observable Asset]
 @observable_source_asset(
     key=AssetKey(["data_lake"]),
@@ -132,7 +129,6 @@ def reactive_processing(data_lake_file):
     """Process immediately when data changes."""
     return process_document(data_lake_file)
 ```
-
 :::
 
 ### Resource management {#resource-management}
@@ -157,8 +153,8 @@ Configure external dependencies like parsers, databases, and AI models:
 
 ## When to build pipelines {#use-cases}
 
-> [!IMPORTANT]
-> Pipelines are essential when you need to process business documents at scale and maintain data freshness for AI agents.
+> [!IMPORTANT] Pipelines are essential when you need to process business documents at scale and maintain data freshness
+> for AI agents.
 
 ::: tip Pipeline Use Cases
 - **Process business documents at scale** - Convert your organization's knowledge into AI-readable formats

@@ -1,5 +1,5 @@
 ---
-title: "Support and Training"
+title: Support and Training
 index: 4
 ---
 

@@ -1,11 +1,15 @@
 ---
-title: "Production Scheduling"
+title: Production Scheduling
 index: 5
 ---
+
 [WIP]
+
 # Production Scheduling
 
-Deploying pipelines to production requires careful consideration of scheduling, resource management, and operational reliability. This section covers strategies for running AI-Hub pipelines at scale, from basic scheduling patterns to advanced deployment configurations.
+Deploying pipelines to production requires careful consideration of scheduling, resource management, and operational
+reliability. This section covers strategies for running AI-Hub pipelines at scale, from basic scheduling patterns to
+advanced deployment configurations.
 
 ## Scheduling strategies
 
@@ -34,6 +38,7 @@ def production_documents(data_lake_file: DataLakeFile) -> RefDocDocument:
 ```
 
 **Benefits:**
+
 - Immediate response to data changes
 - Efficient resource utilization
 - Natural backpressure handling
@@ -683,4 +688,5 @@ def handle_resource_exhaustion():
 ## Next steps
 
 With production scheduling mastered, complete your pipeline expertise with:
+
 - [Pipeline observation](../6_pipeline_observation/) for monitoring and debugging production systems

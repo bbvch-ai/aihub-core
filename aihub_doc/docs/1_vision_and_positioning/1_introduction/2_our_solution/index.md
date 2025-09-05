@@ -1,19 +1,25 @@
 ---
-title: "Our solution"
+title: Our solution
 index: 2
 ---
 
 # Our solution: Enterprise AI infrastructure as a product
 
-The Swiss AI Hub is a complete, open-source AI platform that you deploy, own, and control. It's not a service you subscribe to or a framework you build upon—it's production-ready infrastructure that becomes yours.
+The Swiss AI Hub is a complete, open-source AI platform that you deploy, own, and control. It's not a service you
+subscribe to or a framework you build upon—it's production-ready infrastructure that becomes yours.
 
 ## Platform + SDK: The complete package
 
 The Swiss AI Hub consists of two complementary parts:
 
-**The platform** is your AI infrastructure. Apache 2.0 licensed, it includes everything needed to run AI in production: LLM gateway, vector databases, data pipelines, authentication, monitoring, and user interfaces. Deploy it with `docker compose up` and you have a working AI system.
+**The platform** is your AI infrastructure. Apache 2.0 licensed, it includes everything needed to run AI in production:
+LLM gateway, vector databases, data pipelines, authentication, monitoring, and user interfaces. Deploy it with
+`docker compose up` and you have a working AI system.
 
-**The SDK** is how you extend the platform. It provides the patterns, tools, and frameworks for building agents, pipelines, and processes that automatically integrate with the platform. When you build with our SDK, your components inherit all platform capabilities—they don't need custom deployment, monitoring, or user access because the platform handles it.
+**The SDK** is how you extend the platform. It provides the patterns, tools, and frameworks for building agents,
+pipelines, and processes that automatically integrate with the platform. When you build with our SDK, your components
+inherit all platform capabilities—they don't need custom deployment, monitoring, or user access because the platform
+handles it.
 
 ## What you get out of the box
 
@@ -22,7 +28,7 @@ When you deploy the Swiss AI Hub, you immediately have:
 ::: details Infrastructure layer
 - **Unified LLM gateway** through LiteLLM, connecting to any model provider
 - **Vector databases** (Milvus) for semantic search and RAG
-- **Document processing** with Docling for PDFs, Office files, and more  
+- **Document processing** with Docling for PDFs, Office files, and more
 - **Data pipelines** using Dagster for ingestion and processing
 - **Message queuing** with NATS for event-driven architecture
 - **Object storage** via MinIO S3-compatible layer
@@ -59,26 +65,28 @@ When you deploy the Swiss AI Hub, you immediately have:
 
 Remember those hard questions from before? Here's how the platform answers them:
 
-**"How do we deploy this?"**  
+**"How do we deploy this?"**\
 Everything runs in containers. One command starts the entire stack. Scale by adjusting container counts.
 
-**"Where does our data stay?"**  
-Wherever you deploy it. Run on-premise, in a Swiss data center, or your preferred cloud. Your infrastructure, your control.
+**"Where does our data stay?"**\
+Wherever you deploy it. Run on-premise, in a Swiss data center, or your preferred cloud. Your infrastructure, your
+control.
 
-**"Can we track what the AI is doing?"**  
+**"Can we track what the AI is doing?"**\
 Every agent action is traced through Phoenix. Every API call is logged. Every decision is auditable.
 
-**"How do we control costs?"**  
+**"How do we control costs?"**\
 LiteLLM provides unified cost tracking across all models. Set limits by user, team, or globally.
 
-**"What happens when it fails?"**  
+**"What happens when it fails?"**\
 Built-in error handling, automatic failover between models, and graceful degradation to human review.
 
-**"How do users actually access it?"**  
+**"How do users actually access it?"**\
 Through the web UI, Teams, Slack, or API. Authentication handled by your existing identity provider.
 
-**"Can we integrate it with our existing tools?"**  
-OpenAI-compatible API for tool compatibility. Event-driven architecture for custom integrations. Webhook endpoints for external systems.
+**"Can we integrate it with our existing tools?"**\
+OpenAI-compatible API for tool compatibility. Event-driven architecture for custom integrations. Webhook endpoints for
+external systems.
 
 ## Why open source changes everything
 
@@ -92,10 +100,11 @@ The Apache 2.0 license means you're not adopting a platform—you're acquiring o
 
 ## The SDK advantage
 
-While the platform solves infrastructure, the SDK solves development complexity. Building with our SDK means your agents automatically:
+While the platform solves infrastructure, the SDK solves development complexity. Building with our SDK means your agents
+automatically:
 
 - Stream real-time updates to users through WebSocket connections
-- Appear in the chat interface without custom UI development  
+- Appear in the chat interface without custom UI development
 - Get traced in Phoenix without instrumentation code
 - Handle authentication and authorization without security logic
 - Store state in provided databases without connection management
@@ -114,6 +123,7 @@ Here's what deploying your first AI capability looks like:
 5. **Connect your data sources** through the admin interface
 6. **Build custom agents** using SDK patterns when needed
 
-No infrastructure setup. No service provisioning. No complex configurations. The platform is ready for production from day one.
+No infrastructure setup. No service provisioning. No complex configurations. The platform is ready for production from
+day one.
 
 This is infrastructure as a product: complete, functional, and yours to build upon.

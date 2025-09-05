@@ -1,5 +1,5 @@
 ---
-title: "Vibe Coding Guidelines"
+title: Vibe Coding Guidelines
 index: 3
 ---
 

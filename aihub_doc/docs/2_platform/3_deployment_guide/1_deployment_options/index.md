@@ -1,5 +1,5 @@
 ---
-title: "Deployment Options"
+title: Deployment Options
 index: 1
 ---
 

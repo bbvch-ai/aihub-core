@@ -1,7 +1,6 @@
 ---
-title: "Building Agents"
+title: Building Agents
 index: 2
 ---
 
-@mhoegger
-@mfundn
+@mhoegger @mfundn

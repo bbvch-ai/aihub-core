@@ -1,7 +1,6 @@
 ---
-title: "Production Deployment"
+title: Production Deployment
 index: 6
 ---
 
-@mhoegger
-@mfundn
+@mhoegger @mfundn

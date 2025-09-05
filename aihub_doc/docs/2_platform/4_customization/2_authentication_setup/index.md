@@ -1,5 +1,5 @@
 ---
-title: "Authentication Setup"
+title: Authentication Setup
 index: 2
 ---
 

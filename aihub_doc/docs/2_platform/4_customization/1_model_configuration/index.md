@@ -1,5 +1,5 @@
 ---
-title: "Model Configuration"
+title: Model Configuration
 index: 1
 ---
 

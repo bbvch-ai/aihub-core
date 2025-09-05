@@ -1,61 +1,71 @@
 ---
-title: "Prerequisites Check"
+title: Prerequisites Check
 index: 1
 ---
 
 # Prerequisites: Preparing for Platform Deployment
 
-Before deploying the Swiss AI Hub platform, ensure your infrastructure meets the minimum requirements and that you have the necessary authentication setup. This checklist ensures a smooth deployment experience.
+Before deploying the Swiss AI Hub platform, ensure your infrastructure meets the minimum requirements and that you have
+the necessary authentication setup. This checklist ensures a smooth deployment experience.
 
 ## Hardware Requirements
 
 The Swiss AI Hub platform requires substantial resources to run all components effectively:
 
 **Minimum Specifications:**
+
 - **CPU**: 8 cores
 - **RAM**: 32 GB
 - **Storage**: 200 GB free space
 - **Network**: Stable internet connection for Docker image downloads
 
 **Recommended Specifications:**
+
 - **CPU**: 12+ cores for optimal performance
 - **RAM**: 48+ GB for comfortable operation
 - **Storage**: 300+ GB with SSD recommended for database performance
 - **Network**: High-bandwidth connection for faster initial setup
 
 ::: warning Resource Impact
-The platform runs multiple services simultaneously: databases (MongoDB, Redis), vector databases (Milvus), LLM proxy servers, web interfaces, and processing engines. Insufficient resources will cause service failures or poor performance.
+The platform runs multiple services simultaneously: databases (MongoDB, Redis), vector databases (Milvus), LLM proxy
+servers, web interfaces, and processing engines. Insufficient resources will cause service failures or poor performance.
 :::
 
 ## Operating System and Software
 
 **Operating System:**
+
 - **Linux** (Ubuntu 20.04+ recommended and tested)
 - **Docker-compatible** Linux distribution
 
 **Required Software:**
+
 - **Docker** (latest stable version)
 - **Docker Compose** (v2.0+)
 - **sudo/root access** for installation and configuration
 
 **Network Configuration:**
+
 - **Open ports**: 80 (HTTP), 443 (HTTPS), and any custom ports for your configuration
 - **Internet access** for downloading Docker images and updates
 - **Domain/DNS setup** if deploying for external access
 
 ::: tip Installation Verification
 Test your Docker setup:
+
 ```bash
 docker --version
 docker compose --version
 docker run hello-world
 ```
+
 All commands should complete successfully.
 :::
 
 ## Authentication Provider Setup
 
-The Swiss AI Hub platform requires an OAuth2/OpenID Connect identity provider. This guide covers Azure Entra ID setup, but other providers like Google, Okta, or Auth0 can be used with similar configuration patterns.
+The Swiss AI Hub platform requires an OAuth2/OpenID Connect identity provider. This guide covers Azure Entra ID setup,
+but other providers like Google, Okta, or Auth0 can be used with similar configuration patterns.
 
 ### Azure Entra ID Configuration
 
@@ -81,11 +91,11 @@ Follow these steps to set up Azure authentication:
 2. Select "Microsoft Graph" → "Delegated permissions"
 3. Add these permissions:
    - `openid`
-   - `profile` 
+   - `profile`
    - `email`
    - `offline_access`
    - `User.Read`
-4. Select "Microsoft Graph" → "Application permissions"  
+4. Select "Microsoft Graph" → "Application permissions"
 5. Add these permissions:
    - `User.ReadBasic.All`
    - `Directory.Read.All`
@@ -107,7 +117,7 @@ Follow these steps to set up Azure authentication:
    - **Allowed member types**: "Users/Groups"
    - **Value**: `AIHubAdmin`
 3. Create role for regular users:
-   - **Display name**: `AIHubUser` 
+   - **Display name**: `AIHubUser`
    - **Allowed member types**: "Users/Groups"
    - **Value**: `AIHubUser`
 
@@ -126,14 +136,16 @@ Follow these steps to set up Azure authentication:
 **Step 6: Collect Configuration Values**
 
 From your App Registration "Overview" page, copy these values:
+
 - **Application (client) ID** → Save as `[CLIENT_ID]`
 - **Directory (tenant) ID** → Save as `[TENANT_ID]`
 
 ### Required Authentication Information
 
 After completing Azure setup, you should have:
+
 - `[CLIENT_ID]` - Application (client) ID
-- `[CLIENT_SECRET]` - Client secret value  
+- `[CLIENT_SECRET]` - Client secret value
 - `[TENANT_ID]` - Directory (tenant) ID
 
 You'll need these values during platform deployment configuration.

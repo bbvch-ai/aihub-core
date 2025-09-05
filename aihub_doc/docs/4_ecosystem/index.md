@@ -1,5 +1,4 @@
 ---
-title: "Part IV: The Ecosystem Journey"
+title: 'Part IV: The Ecosystem Journey'
 index: 4
 ---
-

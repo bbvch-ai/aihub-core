@@ -1,5 +1,5 @@
 ---
-title: "Production Observation"
+title: Production Observation
 index: 6
 ---
 

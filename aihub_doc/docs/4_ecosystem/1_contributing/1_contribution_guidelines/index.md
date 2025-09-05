@@ -1,5 +1,5 @@
 ---
-title: "Contribution Guidelines"
+title: Contribution Guidelines
 index: 1
 ---
 

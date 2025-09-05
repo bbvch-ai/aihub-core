@@ -1,5 +1,5 @@
 ---
-title: "UI Customization"
+title: UI Customization
 index: 3
 ---
 

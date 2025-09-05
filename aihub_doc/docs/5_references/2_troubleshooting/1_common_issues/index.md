@@ -1,10 +1,6 @@
 ---
-title: "Common Issues"
+title: Common Issues
 index: 1
 ---
 
-@mhoegger
-@mfundn
-@SkypeForBusiness
-@joelbarmettlerUZH
-@thommann
+@mhoegger @mfundn @SkypeForBusiness @joelbarmettlerUZH @thommann

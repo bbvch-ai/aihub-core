@@ -1,7 +1,6 @@
 ---
-title: "API Reference"
+title: API Reference
 index: 1
 ---
 
-@mhoegger
-@joelbarmettlerUZH
+@mhoegger @joelbarmettlerUZH

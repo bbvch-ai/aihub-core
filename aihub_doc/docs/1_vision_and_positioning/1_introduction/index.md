@@ -1,12 +1,12 @@
 ---
-title: "Introduction: The Swiss AI Hub Vision"
+title: 'Introduction: The Swiss AI Hub Vision'
 index: 1
 ---
 
-
 # Introduction: The Swiss AI Hub vision
 
-Building production AI systems requires solving two distinct challenges: creating intelligent capabilities and deploying reliable infrastructure. Most organizations focus on the first while struggling with the second.
+Building production AI systems requires solving two distinct challenges: creating intelligent capabilities and deploying
+reliable infrastructure. Most organizations focus on the first while struggling with the second.
 
 This chapter introduces the Swiss AI Hub's approach to this challenge. You'll understand:
 
@@ -16,5 +16,3 @@ This chapter introduces the Swiss AI Hub's approach to this challenge. You'll un
 - The strategic separation between platform and SDK that enables both adoption and innovation
 
 Start here to understand what the Swiss AI Hub is and the principles that guide its development.
-
-

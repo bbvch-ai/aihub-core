@@ -1,12 +1,12 @@
 ---
-title: "Why Swiss AI Hub"
+title: Why Swiss AI Hub
 index: 2
 ---
 
-
 # Why Swiss AI Hub?
 
-Every AI solution makes trade-offs. Some prioritize ease of use over control. Others offer power but require massive engineering investment. Understanding these trade-offs helps you choose the right approach for your organization.
+Every AI solution makes trade-offs. Some prioritize ease of use over control. Others offer power but require massive
+engineering investment. Understanding these trade-offs helps you choose the right approach for your organization.
 
 This chapter provides practical comparisons and concrete advantages. You'll learn:
 
@@ -14,4 +14,5 @@ This chapter provides practical comparisons and concrete advantages. You'll lear
 - Which production challenges are already solved in the platform
 - How the collaborative ecosystem benefits every participant
 
-Read this section when you need to justify your platform choice, understand what differentiates the Swiss AI Hub, or explain the ecosystem model to stakeholders.
+Read this section when you need to justify your platform choice, understand what differentiates the Swiss AI Hub, or
+explain the ecosystem model to stakeholders.

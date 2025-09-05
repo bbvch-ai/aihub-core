@@ -1,5 +1,5 @@
 ---
-title: "SDK Licensing"
+title: SDK Licensing
 index: 2
 ---
 

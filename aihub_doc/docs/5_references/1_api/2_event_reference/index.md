@@ -1,5 +1,5 @@
 ---
-title: "Event Reference"
+title: Event Reference
 index: 2
 ---
 

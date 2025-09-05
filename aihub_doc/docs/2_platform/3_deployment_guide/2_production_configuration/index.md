@@ -1,5 +1,5 @@
 ---
-title: "Production Configuration"
+title: Production Configuration
 index: 2
 ---
 

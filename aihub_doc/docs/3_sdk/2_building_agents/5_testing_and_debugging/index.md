@@ -1,7 +1,6 @@
 ---
-title: "Testing and Debugging"
+title: Testing and Debugging
 index: 5
 ---
 
-@mhoegger
-@mfundn
+@mhoegger @mfundn

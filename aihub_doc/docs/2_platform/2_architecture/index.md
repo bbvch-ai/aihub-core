@@ -1,7 +1,6 @@
 ---
-title: "Platform Architecture Deep Dive"
+title: Platform Architecture Deep Dive
 index: 2
 ---
 
-@joelbarmettlerUZH
-@mhoegger
+@joelbarmettlerUZH @mhoegger

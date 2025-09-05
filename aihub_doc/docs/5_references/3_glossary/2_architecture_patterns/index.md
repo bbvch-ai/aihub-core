@@ -1,5 +1,5 @@
 ---
-title: "Architecture Patterns"
+title: Architecture Patterns
 index: 2
 ---
 

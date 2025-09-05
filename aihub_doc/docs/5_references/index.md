@@ -1,10 +1,6 @@
 ---
-title: "Part V: Reference & Resources"
+title: 'Part V: Reference & Resources'
 index: 5
 ---
 
-@mhoegger
-@mfundn
-@SkypeForBusiness
-@joelbarmettlerUZH
-@thommann
+@mhoegger @mfundn @SkypeForBusiness @joelbarmettlerUZH @thommann

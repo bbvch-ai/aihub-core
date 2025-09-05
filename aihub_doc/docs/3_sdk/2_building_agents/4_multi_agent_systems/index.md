@@ -1,7 +1,6 @@
 ---
-title: "Multi Agent Systems"
+title: Multi Agent Systems
 index: 4
 ---
 
-@mhoegger
-@mfundn
+@mhoegger @mfundn

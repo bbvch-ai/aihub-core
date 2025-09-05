@@ -1,5 +1,5 @@
 ---
-title: "Delegation Patterns"
+title: Delegation Patterns
 index: 2
 ---
 

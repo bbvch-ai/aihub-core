@@ -9,10 +9,10 @@ hero:
   actions:
     - theme: brand
       text: Quick Start
-      link: /docs/2_platform/1_quick_start/
+      link: docs/2_platform/1_quick_start/
     - theme: alt
       text: Platform Overview
-      link: /docs/platform
+      link: /docs/2_platform/2_architecture/1_core_components/
     - theme: alt
       text: Why Swiss AI Hub
       link: /docs/1_vision_and_positioning/1_introduction

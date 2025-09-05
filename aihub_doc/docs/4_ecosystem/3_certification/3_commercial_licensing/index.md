@@ -1,5 +1,5 @@
 ---
-title: "Commercial Licensing"
+title: Commercial Licensing
 index: 3
 ---
 

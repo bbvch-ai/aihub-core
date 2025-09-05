@@ -1,7 +1,6 @@
 ---
-title: "Security Model"
+title: Security Model
 index: 4
 ---
 
-@joelbarmettlerUZH
-@mhoegger
+@joelbarmettlerUZH @mhoegger

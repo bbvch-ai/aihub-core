@@ -1,5 +1,5 @@
 ---
-title: "Performance Optimizations"
+title: Performance Optimizations
 index: 3
 ---
 

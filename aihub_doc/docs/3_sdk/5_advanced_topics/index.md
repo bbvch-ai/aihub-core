@@ -1,4 +1,4 @@
 ---
-title: "Advanced SDK Topics"
+title: Advanced SDK Topics
 index: 5
 ---

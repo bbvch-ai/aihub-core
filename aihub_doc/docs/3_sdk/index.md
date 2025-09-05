@@ -1,5 +1,5 @@
 ---
-title: "Part III: The SDK Journey"
+title: 'Part III: The SDK Journey'
 index: 3
 ---
 

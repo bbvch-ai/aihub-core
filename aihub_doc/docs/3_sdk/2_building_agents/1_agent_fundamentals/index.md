@@ -1,7 +1,6 @@
 ---
-title: "Agent Fundamentals"
+title: Agent Fundamentals
 index: 1
 ---
 
-@mhoegger
-@mfundn
+@mhoegger @mfundn

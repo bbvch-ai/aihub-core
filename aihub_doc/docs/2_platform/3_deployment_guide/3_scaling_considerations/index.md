@@ -1,5 +1,5 @@
 ---
-title: "Scaling Considerations"
+title: Scaling Considerations
 index: 3
 ---
 

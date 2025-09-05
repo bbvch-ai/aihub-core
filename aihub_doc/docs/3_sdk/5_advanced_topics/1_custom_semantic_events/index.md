@@ -1,5 +1,5 @@
 ---
-title: "Custom Semantic Events"
+title: Custom Semantic Events
 index: 1
 ---
 

@@ -1,7 +1,6 @@
 ---
-title: "Human in the Loop"
+title: Human in the Loop
 index: 3
 ---
 
-@mhoegger
-@mfundn
+@mhoegger @mfundn

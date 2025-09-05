@@ -1,5 +1,5 @@
 ---
-title: "Pull-Request Process"
+title: Pull-Request Process
 index: 5
 ---
 

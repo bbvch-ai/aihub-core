@@ -1,5 +1,5 @@
 ---
-title: "Documentation Standards"
+title: Documentation Standards
 index: 4
 ---
 

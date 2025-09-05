@@ -1,5 +1,5 @@
 ---
-title: "Monitoring and Maintenance"
+title: Monitoring and Maintenance
 index: 5
 ---
 

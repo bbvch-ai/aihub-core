@@ -1,20 +1,23 @@
 ---
-title: "One-Command Deployment"
+title: One-Command Deployment
 index: 2
 ---
 
 # One-Command Deployment: Launch Your AI Platform
 
-The Swiss AI Hub platform deploys with a single Docker Compose command. This streamlined process gets your complete AI infrastructure running in minutes, not hours.
+The Swiss AI Hub platform deploys with a single Docker Compose command. This streamlined process gets your complete AI
+infrastructure running in minutes, not hours.
 
 ## Deployment Overview
 
 The deployment consists of three simple steps:
+
 1. **Download** the deployment configuration
 2. **Configure** environment variables with your settings
 3. **Deploy** with one command
 
-The entire platform runs as containerized services, automatically handling service discovery, networking, and startup orchestration.
+The entire platform runs as containerized services, automatically handling service discovery, networking, and startup
+orchestration.
 
 ## Step 1: Download Deployment Files
 
@@ -31,11 +34,13 @@ cd swiss-ai-hub-deployment
 curl -O https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docker-compose.latest.yml
 ```
 
-Alternatively, navigate to the [aihub-core repository](https://github.com/bbvch-ai/aihub-core) and download `docker-compose.latest.yml` manually.
+Alternatively, navigate to the [aihub-core repository](https://github.com/bbvch-ai/aihub-core) and download
+`docker-compose.latest.yml` manually.
 
 ### Verify Download
 
 Check that you have the deployment file:
+
 ```bash
 ls -la docker-compose.latest.yml
 ```
@@ -174,28 +179,34 @@ MILVUS_DIMENSION="3072"
 **Critical Values to Replace:**
 
 1. **Authentication Values** (from Prerequisites):
+
    - `REPLACE_WITH_YOUR_CLIENT_ID` → Your Azure App Registration Client ID
    - `REPLACE_WITH_YOUR_CLIENT_SECRET` → Your Azure App Registration Client Secret
    - `REPLACE_WITH_YOUR_TENANT_ID` → Your Azure Tenant ID (appears twice)
 
 2. **AI Model Access** (configure at least one):
+
    - `REPLACE_WITH_AZURE_OPENAI_KEY` → Your Azure OpenAI API key
    - `REPLACE_WITH_GEMINI_KEY` → Your Google Gemini API key
 
 3. **Random Strings** (generate unique values):
+
    - Replace all `REPLACE_WITH_RANDOM_STRING_X` with unique random strings
    - Use different values for each placeholder
    - Minimum 32 characters recommended for security
 
 **Domain Configuration:**
+
 - For local testing: Keep `AIHUB_FRONTEND_ORIGIN="https://127.0.0.1.nip.io"`
 - For production: Change to your actual domain (e.g., `https://ai-hub.your-company.com`)
 
 ::: tip Generate Random Strings
 Use this command to generate secure random strings:
+
 ```bash
 openssl rand -base64 32
 ```
+
 Run it multiple times to get different values for each placeholder.
 :::
 
@@ -221,6 +232,7 @@ docker compose -f docker-compose.latest.yml up -d
 ```
 
 This command will:
+
 - Download all necessary Docker images
 - Create required networks and volumes
 - Start all platform services in the correct order
@@ -238,10 +250,10 @@ docker compose -f docker-compose.latest.yml logs -f
 docker compose -f docker-compose.latest.yml ps
 ```
 
-**Expected Services:**
-The platform includes these core services:
+**Expected Services:** The platform includes these core services:
+
 - **Web Interface** (aihub-web)
-- **API** (aihub-api) 
+- **API** (aihub-api)
 - **Authentication** (auth services)
 - **Databases** (MongoDB, PostgreSQL, Redis)
 - **Vector Database** (Milvus)
@@ -267,11 +279,12 @@ docker compose -f docker-compose.latest.yml ps --format "table {{.Name}}\t{{.Sta
 1. **Make sure your User that you test with have the role "AIHubAdmin" assigned in the Azure Enterprise Application**
 
 2. **Web Interface:**
+
    - Local: `https://127.0.0.1.nip.io`
    - Production: `https://your-domain.com`
 
 3. **Expected Login Flow:**
+
    - Redirects to Azure authentication
    - After login, returns to AI-Hub interface
    - Should see the main dashboard
-

@@ -1,7 +1,6 @@
 ---
-title: "Core Patterns"
+title: Core Patterns
 index: 2
 ---
 
-@mhoegger
-@mfundn
+@mhoegger @mfundn

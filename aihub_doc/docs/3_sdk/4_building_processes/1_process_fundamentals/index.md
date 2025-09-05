@@ -1,5 +1,5 @@
 ---
-title: "Process Fundamentals"
+title: Process Fundamentals
 index: 1
 ---
 

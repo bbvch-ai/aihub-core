@@ -1,10 +1,6 @@
 ---
-title: "Glossary"
+title: Glossary
 index: 3
 ---
 
-@mhoegger
-@mfundn
-@SkypeForBusiness
-@joelbarmettlerUZH
-@thommann
+@mhoegger @mfundn @SkypeForBusiness @joelbarmettlerUZH @thommann

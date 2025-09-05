@@ -1,10 +1,6 @@
 ---
-title: "Debugging Techniques"
+title: Debugging Techniques
 index: 2
 ---
 
-@mhoegger
-@mfundn
-@SkypeForBusiness
-@joelbarmettlerUZH
-@thommann
+@mhoegger @mfundn @SkypeForBusiness @joelbarmettlerUZH @thommann

@@ -1,5 +1,5 @@
 ---
-title: "Certification"
+title: Certification
 index: 3
 ---
 

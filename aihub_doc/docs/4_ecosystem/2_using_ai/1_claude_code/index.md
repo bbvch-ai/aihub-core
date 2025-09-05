@@ -1,5 +1,5 @@
 ---
-title: "Core Terminology"
+title: Core Terminology
 index: 1
 ---
 

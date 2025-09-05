@@ -1,5 +1,5 @@
 ---
-title: "Deployment Guide"
+title: Deployment Guide
 index: 3
 ---
 

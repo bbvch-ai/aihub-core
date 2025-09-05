@@ -1,10 +1,6 @@
 ---
-title: "FAQ"
+title: FAQ
 index: 4
 ---
 
-@mhoegger
-@mfundn
-@SkypeForBusiness
-@joelbarmettlerUZH
-@thommann
+@mhoegger @mfundn @SkypeForBusiness @joelbarmettlerUZH @thommann
