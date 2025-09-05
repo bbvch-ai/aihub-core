@@ -98,22 +98,21 @@ class DoclingLoader(BaseReader):
             "sources": [{"base64_string": file_content, "filename": filename, "kind": "file"}],
         }
 
-        response = httpx.post(
-            f"{self.config.API_ENDPOINT}/v1/convert/source/async",
-            json=request_body,
-            headers={"Content-Type": "application/json"},
-            timeout=self.config.API_TIMEOUT,
-        )
-
-        if response.status_code != 200:
-            raise ValueError(
-                f"Docling async API request failed with status code {response.status_code}: {response.text}"
+        async with httpx.AsyncClient(timeout=self.config.API_TIMEOUT) as client:
+            response = await client.post(
+                f"{self.config.API_ENDPOINT}/v1/convert/source/async",
+                json=request_body,
+                headers={"Content-Type": "application/json"},
             )
 
-        job_response = response.json()
-        task_id = job_response["task_id"]
+            if response.status_code != 200:
+                raise ValueError(
+                    f"Docling async API request failed with status code {response.status_code}: {response.text}"
+                )
 
-        async with httpx.AsyncClient() as client:
+            job_response = response.json()
+            task_id = job_response["task_id"]
+
             return await self._poll_job_completion(client, task_id)
 
     async def _poll_job_completion(self, client: httpx.AsyncClient, task_id: str):
