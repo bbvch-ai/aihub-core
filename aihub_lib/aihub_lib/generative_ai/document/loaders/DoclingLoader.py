@@ -112,16 +112,13 @@ class DoclingLoader(BaseReader):
 
         job_response = response.json()
         task_id = job_response["task_id"]
-        client = httpx.AsyncClient()
 
-        return await self._poll_job_completion(client, task_id)
+        async with httpx.AsyncClient() as client:
+            return await self._poll_job_completion(client, task_id)
 
     async def _poll_job_completion(self, client: httpx.AsyncClient, task_id: str):
         """Poll the task status until completion and return the result."""
-        poll_interval = 4
-        max_polls = 300
-
-        for _ in range(max_polls):
+        for _ in range(self.config.MAX_POLLS):
             status_response = await client.get(
                 f"{self.config.API_ENDPOINT}/v1/status/poll/{task_id}",
                 headers={"Content-Type": "application/json"},
@@ -151,7 +148,7 @@ class DoclingLoader(BaseReader):
                     f"Docling conversion task failed: {task_status.get('task_meta', {}).get('error', 'Unknown error')}"
                 )
             elif task_status["task_status"] in ["pending", "started"]:
-                await asyncio.sleep(poll_interval)
+                await asyncio.sleep(self.config.POLL_INTERVAL)
             elif task_status["task_status"] == "skipped":
                 raise ValueError(
                     f"Docling conversion task was skipped: {task_status.get('task_meta', {}).get('reason', 'Unknown reason')}"

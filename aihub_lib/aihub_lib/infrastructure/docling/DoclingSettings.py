@@ -79,3 +79,5 @@ class DoclingSettings(EnvironmentSettings):
         "wav",
         "mp3",
     ]
+    POLL_INTERVAL: Annotated[int, Field(description="Interval between polling attempts in seconds")] = 4
+    MAX_POLLS: Annotated[int, Field(description="Maximum number of polling attempts")] = 300
