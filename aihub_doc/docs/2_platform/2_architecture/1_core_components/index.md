@@ -83,7 +83,7 @@ The platform uses the Azure Bot Framework for integrations. Supported channels i
 - WeChat
 - Web
 - ... and more
-    :::
+:::
 
 Each integration adapts to the interaction patterns of the host tool. For example, an AI response in Slack might be
 posted in a thread, while in Outlook it might assist with drafting email replies. The central API layer ensures that all

@@ -52,11 +52,11 @@ Before you begin, you need to install several tools. Follow the instructions for
 
   - **Option 2: Docker Desktop (License)**
 
-        ::: warning Commercial Licensing
+::: warning Commercial Licensing
 ```
     Docker Desktop requires a paid license for commercial use. Verify your compliance with Docker Desktop's licensing terms.
 ```
-        :::
+:::
 
 ```
       - [Download here](https://www.docker.com/products/docker-desktop/)
