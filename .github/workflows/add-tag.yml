@@ -91,6 +91,13 @@ jobs:
           # Expose it to subsequent steps via outputs (not just GITHUB_ENV).
           echo "version=$new_tag" >> $GITHUB_OUTPUT
 
+      - name: Tag the commit and push the tag
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ steps.create-tag.outputs.version }}
+          git push origin ${{ steps.create-tag.outputs.version }}
+
   changelog:
     name: Generate Changelog
     needs: [compute-and-initial-tag]
