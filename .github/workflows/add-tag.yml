@@ -91,125 +91,9 @@ jobs:
           # Expose it to subsequent steps via outputs (not just GITHUB_ENV).
           echo "version=$new_tag" >> $GITHUB_OUTPUT
 
-      - name: Tag the commit and push the tag
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git tag ${{ steps.create-tag.outputs.version }}
-          git push origin ${{ steps.create-tag.outputs.version }}
-          git pull --rebase origin main
-
-  update-and-dependencies:
-    name: Update Files & Install Deps
-    needs: compute-and-initial-tag
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout the repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Define directories
-        id: define-directories
-        run: |
-          echo "directories=aihub_pipeline aihub_agent aihub_api aihub_bot aihub_iac aihub_process" >> $GITHUB_OUTPUT
-
-      - name: Set up Python 3.13 and Poetry
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-
-      - name: Increment version-tag in project files
-        run: |
-          VERSION="${{ needs.compute-and-initial-tag.outputs.version }}"
-          update_version() {
-            echo "Update package version in $1"
-            sed -i '/\[tool.poetry\]/,/^version =/ s/version = "[^"]*"/version = "'"$VERSION"'"/' $1
-          }
-          update_lib_tag() {
-            echo "Update package version in $1"
-            sed -i '/\[tool.poetry.dependencies.aihub_lib\]/,/^tag =/ s/tag = "[^"]*"/tag = "'"$VERSION"'"/' $1
-          }
-          update_makefile_tag() {
-            echo "Update TAG in $1"
-            sed -i 's/^TAG ?= .*/TAG ?= '"$VERSION"'/' $1
-          }
-
-          directories="${{ steps.define-directories.outputs.directories }}"
-          IFS=' ' read -r -a dir_array <<< "$directories"
-          for dir in "${dir_array[@]}"; do
-            update_version "$dir/pyproject.toml"
-            update_lib_tag "$dir/pyproject.toml"
-          done
-          update_version aihub_lib/pyproject.toml
-          update_makefile_tag Makefile
-
-      - name: Install Make
-        run: sudo apt-get update && sudo apt-get install -y make
-
-      - name: Install Dependencies
-        run: |
-          # Use pip to install pipx as it's not on the runner by default
-          python -m pip install --user pipx
-          python -m pipx ensurepath
-          pipx install poetry
-          poetry config virtualenvs.in-project true
-          poetry install --no-interaction --no-root
-
-      - name: Set up SSH for GitHub private dependencies
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          git config --global url."git@github.com:".insteadOf "https://github.com/"
-
-      - name: Use Remote Core
-        run: make use-remote-core
-
-      - name: Install dependencies in sub-directories
-        run: |
-          directories="${{ steps.define-directories.outputs.directories }}"
-          IFS=' ' read -r -a dir_array <<< "$directories"
-          for dir in "${dir_array[@]}"; do
-            cd "$dir"
-            poetry lock
-            poetry install --with dev
-            cd -
-          done
-
-      - name: Update lib version tag in poetry.lock
-        run: |
-          VERSION="${{ needs.compute-and-initial-tag.outputs.version }}"
-          update_version_tag() {
-              echo "Update version tag in $1"
-              sed -i '/name = "aihub-lib"/,/^version =/ s/version = "[^"]*"/version = "'"$VERSION"'"/' "$1"
-          }
-          directories="${{ steps.define-directories.outputs.directories }}"
-          IFS=' ' read -r -a dir_array <<< "$directories"
-          for dir in "${dir_array[@]}"; do
-              update_version_tag "$dir/poetry.lock"
-          done
-
-      - name: Commit version updates
-        run: |
-          VERSION="${{ needs.compute-and-initial-tag.outputs.version }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -u
-          git commit -m "ops(bot): Update tag number to ${VERSION} [skip ci]" || echo "No file changes to commit."
-          git push origin --force
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Clean up SSH keys
-        run: |
-          rm -rf ~/.ssh
-          git config --global --unset url."git@github.com:".insteadOf
-
   changelog:
     name: Generate Changelog
-    needs: [compute-and-initial-tag, update-and-dependencies]
+    needs: [compute-and-initial-tag]
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -260,7 +144,7 @@ jobs:
 
   license-report:
     name: Generate License Report
-    needs: [compute-and-initial-tag, update-and-dependencies]
+    needs: [compute-and-initial-tag]
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -310,7 +194,7 @@ jobs:
 
   finalize-release:
     name: Commit Artifacts & Finalize Tag
-    needs: [compute-and-initial-tag, update-and-dependencies, changelog, license-report]
+    needs: [compute-and-initial-tag, changelog, license-report]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
@@ -332,6 +216,53 @@ jobs:
           path: .
         continue-on-error: true
 
+      - name: Define directories
+        id: define-directories
+        run: |
+          echo "directories=aihub_pipeline aihub_agent aihub_api aihub_bot aihub_iac aihub_process" >> $GITHUB_OUTPUT
+
+      - name: Set up Python 3.13 and Poetry
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Increment version-tag in project files
+        run: |
+          VERSION="${{ needs.compute-and-initial-tag.outputs.version }}"
+          update_version() {
+            echo "Update package version in $1"
+            sed -i '/\[tool.poetry\]/,/^version =/ s/version = "[^"]*"/version = "'"$VERSION"'"/' $1
+          }
+          update_lib_tag() {
+            echo "Update package version in $1"
+            sed -i '/\[tool.poetry.dependencies.aihub_lib\]/,/^tag =/ s/tag = "[^"]*"/tag = "'"$VERSION"'"/' $1
+          }
+          update_makefile_tag() {
+            echo "Update TAG in $1"
+            sed -i 's/^TAG ?= .*/TAG ?= '"$VERSION"'/' $1
+          }
+          
+          directories="${{ steps.define-directories.outputs.directories }}"
+          IFS=' ' read -r -a dir_array <<< "$directories"
+          for dir in "${dir_array[@]}"; do
+            update_version "$dir/pyproject.toml"
+            update_lib_tag "$dir/pyproject.toml"
+          done
+          update_version aihub_lib/pyproject.toml
+          update_makefile_tag Makefile
+
+      - name: Install Make
+        run: sudo apt-get update && sudo apt-get install -y make
+
+      - name: Install Dependencies
+        run: |
+          # Use pip to install pipx as it's not on the runner by default
+          python -m pip install --user pipx
+          python -m pipx ensurepath
+          pipx install poetry
+          poetry config virtualenvs.in-project true
+          poetry install --no-interaction --no-root
+
       - name: Set up SSH for GitHub bypass
         run: |
           mkdir -p ~/.ssh
@@ -340,7 +271,34 @@ jobs:
           ssh-keyscan github.com >> ~/.ssh/known_hosts
           git config --global url."git@github.com:".insteadOf "https://github.com/"
 
-      - name: Commit Changelog and License Report, Finalize Tag
+      - name: Use Remote Core
+        run: make use-remote-core
+
+      - name: Install dependencies in sub-directories
+        run: |
+          directories="${{ steps.define-directories.outputs.directories }}"
+          IFS=' ' read -r -a dir_array <<< "$directories"
+          for dir in "${dir_array[@]}"; do
+            cd "$dir"
+            poetry lock
+            poetry install --with dev
+            cd -
+          done
+
+      - name: Update lib version tag in poetry.lock
+        run: |
+          VERSION="${{ needs.compute-and-initial-tag.outputs.version }}"
+          update_version_tag() {
+              echo "Update version tag in $1"
+              sed -i '/name = "aihub-lib"/,/^version =/ s/version = "[^"]*"/version = "'"$VERSION"'"/' "$1"
+          }
+          directories="${{ steps.define-directories.outputs.directories }}"
+          IFS=' ' read -r -a dir_array <<< "$directories"
+          for dir in "${dir_array[@]}"; do
+              update_version_tag "$dir/poetry.lock"
+          done
+
+      - name: Commit Changelog, License Report, Version Update and Finalize Tag
         run: |
           VERSION="${{ needs.compute-and-initial-tag.outputs.version }}"
           git config user.name "github-actions[bot]"
@@ -363,17 +321,17 @@ jobs:
             fi
           fi
   
-          if [ "$changed" = true ]; then
-            git commit --amend --no-edit || true
-            git push origin HEAD --force
-          else
-            echo "No new changelog or license changes to commit."
-          fi
+          git commit -m "ops(bot): Update tag number to ${VERSION} [skip ci]" || echo "No file changes to commit."
 
           echo "Creating final tag ${VERSION} and pushing..."
           git tag -f "${VERSION}"
           git push origin --force
           git push origin --tags --force
+
+      - name: Clean up SSH keys
+        run: |
+          rm -rf ~/.ssh
+          git config --global --unset url."git@github.com:".insteadOf
 
   notify-release:
     name: Notify Release Dispatch
