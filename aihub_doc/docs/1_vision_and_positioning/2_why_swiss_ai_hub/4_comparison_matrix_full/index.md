@@ -5,8 +5,8 @@ index: 4
 
 # Full Competitor Analysis
 
-This comprehensive analysis compares the Swiss AI Hub against its competitors in the market, which are categorized in
-to platforms, frameworks, and solutions.
+This comprehensive analysis compares the Swiss AI Hub against its competitors in the market, which are categorized in to
+platforms, frameworks, and solutions.
 
 ## Libraries and Frameworks
 
