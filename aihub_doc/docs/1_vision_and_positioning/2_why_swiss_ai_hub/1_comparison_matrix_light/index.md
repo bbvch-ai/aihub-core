@@ -8,6 +8,35 @@ index: 1
 Different organizations need different AI solutions. Some prioritize ease of use, others need complete control.
 Understanding these trade-offs helps you choose the right approach for your requirements.
 
+## Market positioning (TL;DR)
+
+This chapter explains when Swiss AI Hub is the right solution and when it isn't. But if you want the oversimplified
+version:
+
+```mermaid
+quadrantChart
+    x-axis Low Data Sovereignty --> Full Data Sovereignty
+    y-axis Incomplete Platform --> Complete Platform
+    Swiss AI Hub: [0.9, 0.9]
+    LangChain: [0.90, 0.10]
+    Azure AI Foundry: [0.35, 0.80]
+    OpenAI Assistants: [0.10, 0.65]
+    Dify: [0.80, 0.45]
+    n8n: [0.75, 0.40]
+```
+
+Big cloud platforms give you everything out-of-the-box—authentication, monitoring, interfaces, the works. But you own
+nothing and pay forever.
+
+Programming frameworks like LangChain let you deploy anywhere and own the code. But they're just libraries. You handle
+authentication, deployment, monitoring, and interfaces yourself.
+
+Swiss AI Hub sits in the "Own Everything" quadrant: a complete, batteries-included platform that you deploy and own. You
+get the completeness of cloud platforms with the ownership of open-source frameworks.
+
+The rest of this chapter details the specific trade-offs. Read on for the nuanced picture, but if you're short on time:
+**we give you a complete platform without vendor lock-in**.
+
 ## The 12 enterprise AI needs
 
 We've identified twelve critical needs organizations face when adopting AI:
