@@ -3,8 +3,10 @@
 import logging
 from typing import Any, Dict, Optional
 
-from aihub_agent.agent import Agent
-from aihub_lib.generative_ai.messaging import Message
+from aihub_agent.agents.Agent import Agent
+from aihub_lib.nats.events.user import UserMessageEvent
+from aihub_lib.nats.events import StopEvent
+from aihub_agent.workflow.decorators.step import step
 
 from .{{ agent_class_name }}Config import {{ agent_class_name }}Config
 
