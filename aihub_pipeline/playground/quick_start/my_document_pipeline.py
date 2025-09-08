@@ -1,0 +1,88 @@
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
+
+# Import AI-Hub pipeline factories
+from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
+from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
+from aihub_pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
+    observable_data_lake_factory,
+)
+
+# Import AI-Hub resources and utilities
+from aihub_pipeline.resources.factory import (
+    default_io_manager_s3_datalake_resources,
+    local_mongo_milvus_storage_context_resource,
+    s3_data_lake_resources,
+)
+from aihub_pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelResource
+from aihub_pipeline.resources.llm.LanguageModelResource import LanguageModelResource
+from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource, LoaderType
+from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
+from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
+
+# Pipeline configuration
+DATA_LAKE_KEY = AssetKey(["wiki", "data_lake"])
+DOCUMENT_KEY = AssetKey(["wiki", "documents"])
+NODES_KEY = AssetKey(["wiki", "nodes"])
+
+CONTAINER_NAME = "bbv"
+DIRECTORY_NAME = "wiki"
+NAMESPACE_NAME = DIRECTORY_NAME
+STORE_NAME = CONTAINER_NAME
+
+# Dynamic partitions for scalable document processing
+document_partitions = DynamicPartitionsDefinition(name="document_partitions")
+
+# Create the pipeline assets using AI-Hub factories
+observable_asset = observable_data_lake_factory(DATA_LAKE_KEY, document_partitions)
+
+assets = [
+    # Observable asset watches the data lake for new/changed documents
+    observable_asset,
+
+    # Document factory processes raw files into RefDocs with metadata
+    documents_factory(DOCUMENT_KEY, data_lake_key=DATA_LAKE_KEY, partitions=document_partitions),
+
+    # Nodes factory chunks documents into searchable nodes with embeddings
+    nodes_factory(NODES_KEY, document_key=DOCUMENT_KEY, partitions=document_partitions),
+]
+
+# Define the complete pipeline
+defs = Definitions(
+    assets=assets,
+    resources={
+        # Data lake I/O managers for S3-compatible storage
+        **default_io_manager_s3_datalake_resources(
+            container_name=CONTAINER_NAME,
+            directory_name=DIRECTORY_NAME
+        ),
+
+        # Document processing resources
+        "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
+        "node_parser": MarkdownStructuralNodeParserResource(),
+        "summary_parser": RecursiveSummaryParserResource(),
+
+        # Vector store and document store (MongoDB + Milvus)
+        **local_mongo_milvus_storage_context_resource(
+            vector_store_uri="http://localhost:19530",
+            store_name=STORE_NAME,
+            namespace_name=NAMESPACE_NAME,
+        ),
+
+        # Data lake resources for file management
+        **s3_data_lake_resources(
+            container_name=CONTAINER_NAME,
+            directory_name=DIRECTORY_NAME,
+            figures_directory_name="__figures__",
+        ),
+
+        # AI models for embeddings and summaries
+        "embedding_model": EmbeddingModelResource(
+            embedding_config=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
+        ),
+        "language_model": LanguageModelResource(
+            llm_config=LLMConfig(model_name="azure/gpt-4o-mini")
+        ),
+    },
+)
