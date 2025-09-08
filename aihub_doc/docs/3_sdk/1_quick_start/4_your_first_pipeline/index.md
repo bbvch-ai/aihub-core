@@ -38,46 +38,58 @@ Let's build a realistic data pipeline that processes user feedback data.
 
 First, let's understand pipeline basics with a minimal example:
 
-#### 1. Create your basic assets (`simple_assets.py`):
+#### 1. Create your basic assets (`simple_pipeline.py`):
 
 ```python
-from dagster import asset, AssetExecutionContext
+from dagster import AssetExecutionContext, Output, asset
+
 
 @asset(description="Raw text data source")
-def raw_feedback_data(context: AssetExecutionContext) -> str:
+def raw_feedback_data(context: AssetExecutionContext) -> Output[str]:
     """Source asset that provides raw user feedback data."""
     feedback = "The product is amazing but the documentation could be better!"
     context.log.info(f"Loaded raw feedback: {feedback}")
-    return feedback
+    return Output(feedback, metadata={"feedback": feedback, "length": len(feedback)})
 
-@asset(description="Cleaned and processed feedback")  
-def cleaned_feedback(context: AssetExecutionContext, raw_feedback_data: str) -> dict:
+
+@asset(description="Cleaned and processed feedback")
+def cleaned_feedback(context: AssetExecutionContext, raw_feedback_data: str) -> Output[dict]:
     """Transform raw feedback into structured data."""
     # Simple processing: clean text and extract basic metrics
     text = raw_feedback_data.strip().lower()
     words = text.split()
-    
+
     processed = {
         "original_text": raw_feedback_data,
         "cleaned_text": text,
         "word_count": len(words),
-        "sentiment": "positive" if "amazing" in text else "neutral"
+        "sentiment": "positive" if "amazing" in text else "neutral",
     }
-    
+
     context.log.info(f"Processed feedback: {processed}")
-    return processed
+    return Output(
+        processed,
+        metadata={
+            "original_text": processed["original_text"],
+            "cleaned_text": processed["cleaned_text"],
+            "word_count": processed["word_count"],
+            "sentiment": processed["sentiment"],
+        },
+    )
+
+
+
 ```
 
-#### 2. Create your pipeline definition (`simple_pipeline.py`):
+#### 2. Add the pipeline definition (`simple_pipeline.py`):
 
 ```python
 from dagster import Definitions
-from simple_assets import raw_feedback_data, cleaned_feedback
+
+## ... your asset definitions from above ...
 
 # Basic pipeline definition
-defs = Definitions(
-    assets=[raw_feedback_data, cleaned_feedback]
-)
+defs = Definitions(assets=[raw_feedback_data, cleaned_feedback])
 ```
 
 #### 3. Run your basic pipeline:
@@ -129,11 +141,11 @@ from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParse
 from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
 
 # Pipeline configuration
-DATA_LAKE_KEY = AssetKey(["project", "data_lake"])
-DOCUMENT_KEY = AssetKey(["project", "documents"])  
-NODES_KEY = AssetKey(["project", "nodes"])
+DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
+DOCUMENT_KEY = AssetKey(["playground", "documents"])  
+NODES_KEY = AssetKey(["playground", "nodes"])
 
-CONTAINER_NAME = "project"
+CONTAINER_NAME = "playground"
 DIRECTORY_NAME = "documents"
 NAMESPACE_NAME = DIRECTORY_NAME
 STORE_NAME = CONTAINER_NAME

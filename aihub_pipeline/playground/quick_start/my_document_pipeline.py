@@ -8,6 +8,7 @@ from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory imp
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
     observable_data_lake_factory,
 )
+from aihub_pipeline.jobs.factory import observe_source_job
 
 # Import AI-Hub resources and utilities
 from aihub_pipeline.resources.factory import (
@@ -20,14 +21,16 @@ from aihub_pipeline.resources.llm.LanguageModelResource import LanguageModelReso
 from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource, LoaderType
 from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
+from aihub_pipeline.schedules.factory import daily_schedule_at
+from aihub_pipeline.sensors.factory import default_automation_sensor
 
 # Pipeline configuration
-DATA_LAKE_KEY = AssetKey(["wiki", "data_lake"])
-DOCUMENT_KEY = AssetKey(["wiki", "documents"])
-NODES_KEY = AssetKey(["wiki", "nodes"])
+DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
+DOCUMENT_KEY = AssetKey(["playground", "documents"])
+NODES_KEY = AssetKey(["playground", "nodes"])
 
-CONTAINER_NAME = "bbv"
-DIRECTORY_NAME = "wiki"
+CONTAINER_NAME = "playground"
+DIRECTORY_NAME = "focus_day"
 NAMESPACE_NAME = DIRECTORY_NAME
 STORE_NAME = CONTAINER_NAME
 
@@ -40,49 +43,51 @@ observable_asset = observable_data_lake_factory(DATA_LAKE_KEY, document_partitio
 assets = [
     # Observable asset watches the data lake for new/changed documents
     observable_asset,
-
     # Document factory processes raw files into RefDocs with metadata
     documents_factory(DOCUMENT_KEY, data_lake_key=DATA_LAKE_KEY, partitions=document_partitions),
-
     # Nodes factory chunks documents into searchable nodes with embeddings
     nodes_factory(NODES_KEY, document_key=DOCUMENT_KEY, partitions=document_partitions),
 ]
+# Define the job to observe the data lake and trigger processing
+observe_job = observe_source_job(
+    observable_asset=observable_asset,
+    namespace_name=NAMESPACE_NAME,
+)
 
 # Define the complete pipeline
 defs = Definitions(
     assets=assets,
     resources={
         # Data lake I/O managers for S3-compatible storage
-        **default_io_manager_s3_datalake_resources(
-            container_name=CONTAINER_NAME,
-            directory_name=DIRECTORY_NAME
-        ),
-
+        **default_io_manager_s3_datalake_resources(container_name=CONTAINER_NAME, directory_name=DIRECTORY_NAME),
         # Document processing resources
         "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
         "node_parser": MarkdownStructuralNodeParserResource(),
         "summary_parser": RecursiveSummaryParserResource(),
-
         # Vector store and document store (MongoDB + Milvus)
         **local_mongo_milvus_storage_context_resource(
             vector_store_uri="http://localhost:19530",
             store_name=STORE_NAME,
             namespace_name=NAMESPACE_NAME,
         ),
-
         # Data lake resources for file management
         **s3_data_lake_resources(
             container_name=CONTAINER_NAME,
             directory_name=DIRECTORY_NAME,
             figures_directory_name="__figures__",
         ),
-
         # AI models for embeddings and summaries
         "embedding_model": EmbeddingModelResource(
             embedding_config=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
         ),
-        "language_model": LanguageModelResource(
-            llm_config=LLMConfig(model_name="azure/gpt-4o-mini")
-        ),
+        "language_model": LanguageModelResource(llm_config=LLMConfig(model_name="azure/gpt-4o-mini")),
     },
+    # Add jobs for pipeline operations
+    jobs=[observe_job],
+
+    # Add scheduling - observe daily at midnight
+    schedules=[daily_schedule_at(observe_job, hour=0, minute=0)],
+
+    # Add sensors for automation
+    sensors=[default_automation_sensor(assets)],
 )
