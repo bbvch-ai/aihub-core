@@ -144,6 +144,7 @@ class MyCustomAgent(Agent):
 ```
 
 We just added a second chunk that is displayed. When you run the agent again now you see that it will responde with `Hello World!` first and after 2 seconds answers with `You said: Hello!`
+<video controls="controls" src="./media/show_chunk_delay.mp4" type="video/mp4" />
 
 #### Add some thinking steps
 
