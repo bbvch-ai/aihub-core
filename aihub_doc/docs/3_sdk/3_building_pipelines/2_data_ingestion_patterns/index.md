@@ -69,7 +69,7 @@ graph TD
 - Optimized for RAG agent retrieval and knowledge access
 :::
 
-## The document processing journey {#processing-journey}
+## The document ingestion process {#processing-journey}
 
 > [!NOTE]
 > The data lake to vector store processing follows a standardized multi-stage approach that ensures consistency, reliability, and observability.
@@ -80,7 +80,7 @@ graph TD
 4. **Content enrichment**: Add metadata, generate descriptions, and ensure data quality
 5. **Vector storage**: Create embeddings and store in vector database for RAG agent access
 
-## Complete RAG pipeline example {#complete-rag-pipeline}
+## Complete document ingestion pipeline example {#complete-rag-pipeline}
 
 > [!TIP] End-to-End Implementation
 > This section provides a complete, runnable example of building a production-ready RAG pipeline using the aihub_pipeline SDK. Follow along to understand how all the components work together.
@@ -308,92 +308,19 @@ The Dagster UI provides comprehensive observability:
 ## Document parsing strategies {#parsing-strategies}
 AI-Hub supports multiple document parsing approaches depending on your requirements.
 
-### Docling parser (recommended) {#docling-parser}
-
-
 ::: code-group
 
-```python [Configuration]
+```python [Docling Configuration]
 "document_parser": DocumentParserResource(
     loader_type=LoaderType.DOCLING,
 )
 ```
 
 
-:::
-
-### Azure Document Intelligence {#azure-doc-intelligence}
-
-::: code-group
-
-```python [Configuration]
+```python [Document Intelligence Configuration]
 "document_parser": DocumentParserResource(
     loader_type=LoaderType.DOCUMENT_INTELLIGENCE,
 )
-```
-
-:::
-
-## Content enrichment patterns {#enrichment}
-
-### Metadata standardization {#metadata-standardization}
-
-Ensure all documents have consistent metadata:
-
-::: details Metadata Enhancement
-```python
-@op
-def ensure_refdoc_default_metadata(
-    context: OpExecutionContext,
-    ref_doc: RefDocDocument
-) -> RefDocDocument:
-    """Add standard metadata fields to document."""
-    
-    # Add processing timestamp
-    ref_doc.metadata["processed_at"] = datetime.utcnow().isoformat()
-    
-    # Generate document hash for deduplication
-    ref_doc.metadata["content_hash"] = hashlib.sha256(
-        ref_doc.text.encode()
-    ).hexdigest()
-    
-    # Extract document statistics
-    ref_doc.metadata["word_count"] = len(ref_doc.text.split())
-    ref_doc.metadata["char_count"] = len(ref_doc.text)
-    
-    return ref_doc
-```
-:::
-
-### Figure description generation {#figure-descriptions}
-
-Automatically describe images and figures for better retrieval:
-
-::: code-group
-
-```python [Figure Processing]
-@op(required_resource_keys={"language_model"})
-def generate_figure_descriptions(
-    context: OpExecutionContext,
-    ref_doc: RefDocDocument,
-    language_model: LanguageModelResource,
-) -> RefDocDocument:
-    """Generate descriptions for figures in the document."""
-    
-    llm = language_model.get_llm()
-    
-    for image in ref_doc.images:
-        if not image.description:
-            prompt = f"Describe this figure from a {ref_doc.metadata.get('document_type', 'business')} document"
-            image.description = llm.complete(prompt, images=[image.data]).text
-    
-    return ref_doc
-```
-
-```python [Smart Enhancement]
-# Only process images that need descriptions
-if any(not img.description for img in ref_doc.images):
-    ref_doc = generate_figure_descriptions(context, ref_doc, language_model)
 ```
 
 :::
@@ -404,7 +331,7 @@ if any(not img.description for img in ref_doc.images):
 Once you've implemented basic ingestion patterns, explore:
 
 ::: info Related Topics
-- [Observable assets](../3_observable_assets/) for reactive pipeline triggers
-- [Testing pipelines](../4_testing_pipelines/) to ensure reliability
+- [Observable assets](../3_observable_assets/) for reactive pipelines
+- [Job Scheduling](../4_job_scheduling/) to run pipelines on a time-based schedule
 - [Pipeline observation](../5_pipeline_observation/) for monitoring and debugging
 :::

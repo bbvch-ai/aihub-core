@@ -5,7 +5,7 @@ index: 3
 
 # Building Pipelines
 
-Pipelines for Retrieval-Augmented Generation (RAG) systems ingest, process, and index documents from multiple sources. 
+Pipelines are an integral part of AI systems, Retrieval-Augmented Generation (RAG) pipelines ingest, process, and index documents from multiple sources. 
 These sources can vary in format, update frequency, and access methods. This section describes a set of patterns for building such pipelines, focusing on concepts like observable assets, eager automation, dynamic partitioning, and configurable resources.
 
 > [!NOTE] Foundation
