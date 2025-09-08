@@ -144,10 +144,6 @@ class MyCustomAgent(Agent):
 ```
 
 We just added a second chunk that is displayed. When you run the agent again now you see that it will responde with `Hello World!` first and after 2 seconds answers with `You said: Hello!`
-<video controls width="600">
-  <source src="./media/show_chunk_delay.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
 
 #### Add some thinking steps
 
@@ -249,7 +245,7 @@ class MyCustomAgent(Agent):
         event: MyCustomAgentEvent, # [!code ++]
         displayer: EventDisplayer, # [!code ++]
     ) -> StopEvent: # [!code ++]
-        await displayer.display_chunk(f"The word count is {event.word_count} words\n", "MyCustomAgent") # [!code ++]
+        await displayer.display_chunk(f"The word count is {event.word_count} words\n", "MyCustomAgent") // [!code ++]
         return StopEvent() # [!code ++]
 ```
 
