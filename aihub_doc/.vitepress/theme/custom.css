@@ -670,6 +670,28 @@ html {
   scrollbar-color: var(--vp-scrollbar-color);
 }
 
+.mermaid {
+  font-family: var(--vp-font-family-base) !important;
+}
+
+
+.mermaid .nodeLabel,
+.mermaid .edgeLabel {
+  font-family: var(--vp-font-family-base) !important;
+}
+
+
+.mermaid .cluster rect {
+  fill: none !important;
+  fill-opacity: 0 !important;
+  stroke: var(--vp-c-divider) !important;
+}
+
+
+.mermaid .edgeLabel p {
+  background: var(--vp-backdrop-bg-color) !important;
+}
+
 .vp-doc li + li {
     margin-top: 2px;
 }

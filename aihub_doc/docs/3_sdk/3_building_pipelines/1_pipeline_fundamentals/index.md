@@ -3,41 +3,199 @@ title: Pipeline Fundamentals
 index: 1
 ---
 
-[WIP]
-
 # Pipeline Fundamentals
 
-Understanding the core architecture and concepts of AI-Hub pipelines is essential before building your own data
-processing workflows. This section covers the foundational patterns and terminology you need to work effectively with
-the `aihub_pipeline` library.
+This section covers the core components used in AI-Hub pipelines. 
+Understanding these fundamentals is necessary for implementing document processing workflows using the `aihub_pipeline` library.
 
-## Architecture overview {#architecture}
+## Core architecture {#core-architecture}
 
-> [!NOTE] AI-Hub pipelines are built using Dagster's asset-based approach, where each processing step produces concrete,
-> versioned data artifacts.
+AI-Hub pipelines are built on Dagster's asset-based architecture, where data processing is organized as a graph of interconnected assets that produce and consume typed data artifacts.
 
-This provides several advantages over traditional ETL pipelines:
+### Asset-based processing model {#asset-based-model}
 
-::: tip Asset-Based Benefits
-- **Materialized assets**: Every processing stage creates tangible data you can inspect and debug
-- **Automatic lineage**: Dependencies between assets create clear data flow visualization
-- **Incremental processing**: Only reprocess data when upstream dependencies change
-- **Built-in observability**: Monitor execution progress and investigate failures
-:::
+Each processing step produces concrete, versioned data artifacts:
 
-## Core components {#core-components}
+```python
+@asset
+def processed_documents(raw_documents: List[RawDocument]) -> List[ProcessedDocument]:
+    """Asset that transforms raw documents into processed documents."""
+    return [process_document(doc) for doc in raw_documents]
+```
 
-### Assets and asset factories {#assets-factories}
+**Key characteristics:**
+- **Materialization**: Each asset execution creates a concrete data artifact
+- **Versioning**: Assets track data versions and dependencies
+- **Lineage**: Automatic dependency tracking between assets
+- **Incremental processing**: Assets only recompute when upstream dependencies change
 
-**Assets** represent data objects produced by your pipeline. Instead of defining assets directly, use **asset
-factories** to create configurable, reusable definitions:
+## Component hierarchy {#component-hierarchy}
 
-::: code-group
-```python [Asset Factory Definition]
+AI-Hub pipelines consist of these components:
+
+```
+Pipeline Definition (Definitions)
+├── Assets (graph_asset, observable_source_asset)
+│   ├── Operations (@op)
+│   └── Asset Dependencies (AssetIn)
+├── Resources (ConfigurableResource)
+├── I/O Managers (ConfigurableIOManager)
+├── Jobs (observe_source_job, materialize_asset_job)
+├── Schedules (daily_schedule_at)
+└── Sensors (default_automation_sensor)
+```
+
+## Assets {#assets}
+
+Assets represent data artifacts produced by the pipeline. AI-Hub uses several asset types:
+
+### Graph assets {#graph-assets}
+
+Graph assets compose multiple operations into processing workflows:
+
+```python
+@graph_asset(
+    key=AssetKey(["documents"]),
+    partitions_def=document_partitions,
+    automation_condition=AutomationCondition.eager(),
+)
+def documents(data_lake_file: DataLakeFile) -> RefDocDocument:
+    """Multi-step document processing."""
+    parsed = parse_document_from_data_lake(data_lake_file)
+    enriched = ensure_refdoc_default_metadata(parsed)
+    return insert_ref_doc_into_docstore(enriched)
+```
+
+### Observable source assets {#observable-assets}
+
+Observable source assets monitor external systems for changes:
+
+```python
+@observable_source_asset(
+    key=AssetKey(["data_lake"]),
+    partitions_def=document_partitions,
+)
+def data_lake_observer(context: OpExecutionContext):
+    """Observe data lake and create partitions for new/changed documents."""
+    changed_files = scan_data_lake_for_changes()
+    
+    data_versions = {}
+    for file_info in changed_files:
+        partition_key = file_info.document_id
+        data_version = DataVersion(file_info.modified_time.isoformat())
+        data_versions[partition_key] = data_version
+    
+    return DataVersions(data_versions)
+```
+
+## Operations {#operations}
+
+Operations are individual processing steps within graph assets:
+
+```python
+@op(
+    required_resource_keys={"document_parser"},
+    ins={"data_lake_file": In(DataLakeFile)},
+    out=Out(RefDocDocument),
+)
+def parse_document_from_data_lake(
+    context: OpExecutionContext,
+    data_lake_file: DataLakeFile,
+) -> RefDocDocument:
+    """Parse a single document from data lake file."""
+    parser = context.resources.document_parser
+    reader = parser.get_document_parser_for_filetype(data_lake_file.filetype)
+    documents = reader.load_data(data_lake_file.uri)
+    
+    context.log.info(f"Parsed document: {data_lake_file.uri}")
+    return RefDocDocument(**documents[0].model_dump())
+```
+
+## Resources {#resources}
+
+Resources manage external dependencies and configuration:
+
+```python
+class DocumentParserResource(ConfigurableResource):
+    """Configurable document parsing resource."""
+    
+    loader_type: LoaderType = LoaderType.DOCLING
+    
+    def get_document_parser_for_filetype(self, filetype: str) -> BaseReader:
+        """Get parser instance for specific file type."""
+        if self.loader_type == LoaderType.DOCLING:
+            return DoclingReader()
+        elif self.loader_type == LoaderType.DOCUMENT_INTELLIGENCE:
+            return AzureDocIntelligenceReader()
+        else:
+            raise ValueError(f"Unsupported loader type: {self.loader_type}")
+```
+
+## I/O Managers {#io-managers}
+
+I/O Managers control how data flows between assets. When an asset produces output, its I/O manager handles storage. When a downstream asset needs that data as input, the I/O manager retrieves it.
+
+AI-Hub includes several specialized I/O managers:
+
+### Document Store I/O Manager {#doc-store-io-manager}
+
+Handles RefDoc documents using MongoDB storage:
+
+```python
+@asset(
+    partitions_def=document_partitions,
+    io_manager_key="doc_store_io_manager"
+)
+def documents(data_lake_file: DataLakeFile) -> RefDocDocument:
+    """Asset that stores documents in document store."""
+    return parse_document(data_lake_file)
+    # DocStoreIOManager.handle_output() stores the RefDoc
+
+@asset(partitions_def=document_partitions)
+def nodes(ref_doc: RefDocDocument) -> List[TextNode]:
+    """Asset that loads documents from document store."""
+    # DocStoreIOManager.load_input() loads the RefDoc
+    return chunk_document(ref_doc)
+```
+
+### Vector Store I/O Manager {#vector-store-io-manager}
+
+Handles embedded nodes using vector storage:
+
+```python
+@asset(
+    partitions_def=document_partitions,
+    io_manager_key="vector_store_io_manager"
+)
+def embeddings(nodes: List[TextNode]) -> List[TextNode]:
+    """Asset that stores embeddings in vector store."""
+    return embed_nodes(nodes)
+    # VectorStoreIOManager.handle_output() stores embedded nodes
+```
+
+### Data Lake I/O Manager {#data-lake-io-manager}
+
+Handles file references and data lake operations:
+
+```python
+@asset(
+    partitions_def=document_partitions,
+    io_manager_key="data_lake_io_manager"
+)
+def processed_files(input_files: List[DataLakeFile]) -> List[DataLakeFile]:
+    """Asset using data lake storage."""
+    return process_files(input_files)
+```
+
+## Asset factories {#asset-factories}
+
+Asset factories provide configurable, reusable asset definitions:
+
+```python
 def documents_factory(
     key: AssetKey,
-    data_lake_key: AssetKey, 
-    partitions: DynamicPartitionsDefinition
+    data_lake_key: AssetKey,
+    partitions: DynamicPartitionsDefinition,
 ) -> graph_asset:
     """Factory for creating document processing assets."""
     
@@ -48,320 +206,203 @@ def documents_factory(
         automation_condition=AutomationCondition.eager(),
     )
     def documents(data_lake_file: DataLakeFile) -> RefDocDocument:
-        return insert_ref_doc_into_docstore(
-            ensure_refdoc_default_metadata(
-                parse_document_from_data_lake(data_lake_file)
-            )
-        )
+        parsed = parse_document_from_data_lake(data_lake_file)
+        enriched = ensure_refdoc_default_metadata(parsed)
+        return insert_ref_doc_into_docstore(enriched)
     
     return documents
 ```
 
-```python [Asset Factory Usage]
-# Create document processing asset
-document_asset = documents_factory(
-    key=AssetKey(["production", "documents"]),
-    data_lake_key=AssetKey(["production", "data_lake"]),
-    partitions=DynamicPartitionsDefinition(name="doc_partitions"),
-)
+Factories compose to create complete pipelines:
 
-# Use in pipeline definition
-assets = [
-    observable_data_lake_factory(DATA_LAKE_KEY, partitions),
-    document_asset,
-    nodes_factory(NODES_KEY, DOCUMENT_KEY, partitions),
-]
-```
-:::
-
-### Operations (ops) {#operations}
-
-**Operations** are the individual processing steps that transform data. They specify inputs, outputs, and required
-resources:
-
-::: details Operation Implementation
 ```python
-@op(
-    required_resource_keys={"document_parser"},
-    ins={"data_lake_file": In(DataLakeFile)},
-    out=Out(RefDocDocument),
+def create_rag_pipeline(namespace: str, partitions: DynamicPartitionsDefinition):
+    """Create complete RAG processing pipeline using factories."""
+    data_lake_key = AssetKey([namespace, "data_lake"])
+    documents_key = AssetKey([namespace, "documents"])
+    nodes_key = AssetKey([namespace, "nodes"])
+    
+    return [
+        observable_data_lake_factory(data_lake_key, partitions),
+        documents_factory(documents_key, data_lake_key, partitions),
+        nodes_factory(nodes_key, documents_key, partitions),
+        summary_nodes_factory(
+            key=AssetKey([namespace, "summary_nodes"]),
+            document_key=documents_key,
+            nodes_key=nodes_key,
+            partitions=partitions
+        ),
+    ]
+```
+
+## Dynamic partitioning {#dynamic-partitioning}
+
+Dynamic partitions are created at runtime based on discovered data:
+
+```python
+document_partitions = DynamicPartitionsDefinition(name="documents")
+
+# Observable asset creates partitions when it detects new documents
+@observable_source_asset(
+    key=AssetKey(["data_lake"]),
+    partitions_def=document_partitions,
 )
-def parse_document_from_data_lake(
-    context: OpExecutionContext,
+def data_lake_observer(context):
+    changed_files = scan_data_lake_for_changes()
+    data_versions = {}
+    
+    for file_info in changed_files:
+        partition_key = file_info.document_id
+        data_versions[partition_key] = DataVersion(file_info.modified_time.isoformat())
+    
+    return DataVersions(data_versions)
+```
+
+Assets can be partitioned to process documents independently:
+
+```python
+@asset(
+    partitions_def=document_partitions,
+    automation_condition=AutomationCondition.eager(),
+)
+def process_document_partition(
+    context: AssetExecutionContext,
     data_lake_file: DataLakeFile,
-    document_parser: DocumentParserResource,
 ) -> RefDocDocument:
-    """Parse document from data lake file."""
-    reader = document_parser.get_document_parser_for_filetype(data_lake_file.filetype)
-    documents = reader.load_data(data_lake_file.uri)
-    return RefDocDocument(**documents[0].model_dump())
-```
-:::
-
-### Resources {#resources}
-
-**Resources** manage external dependencies and configurations that operations need:
-
-::: code-group
-```python [Resource Definition]
-class DocumentParserResource(ConfigurableResource):
-    """Resource for configuring document parsing."""
-    
-    loader_type: LoaderType = LoaderType.DOCLING
-    
-    def get_document_parser_for_filetype(self, filetype: str) -> BaseReader:
-        """Get appropriate parser for file type."""
-        # Implementation logic here
-        pass
+    """Process a single document partition."""
+    partition_key = context.partition_key
+    return process_single_document(data_lake_file, partition_key)
 ```
 
-```python [Resource Usage]
-# Configure resources for different environments
-resources = {
+## Pipeline data types {#data-types}
+
+AI-Hub pipelines use strongly-typed data structures:
+
+| Type             | Purpose                      | Key Attributes                             |
+|------------------|------------------------------|--------------------------------------------|
+| `DataLakeFile`   | File reference in data lake  | `uri`, `filetype`, `modified_time`, `size` |
+| `RefDocDocument` | Parsed document with content | `doc_id`, `text`, `metadata`, `images`     |
+| `TextNode`       | Text chunk for processing    | `text`, `metadata`, `relationships`        |
+
+## Jobs and schedules {#jobs-schedules}
+
+### Jobs {#jobs}
+
+AI-Hub provides factory functions for common job types:
+
+```python
+# Job for observing data sources
+observe_job = observe_source_job(
+    observable_asset=data_lake_observer,
+    namespace_name="documents",
+)
+
+# Job for materializing specific assets
+materialize_job = materialize_asset_job(
+    namespace_name="documents",
+    job_name="process_documents",
+    asset_selection=AssetSelection.keys(documents_key, nodes_key),
+)
+```
+
+### Schedules {#schedules}
+
+Schedules trigger jobs at specified times:
+
+```python
+# Schedule observation job to run daily
+observe_schedule = daily_schedule_at(
+    job=observe_job,
+    hour=2,  # Run at 2 AM daily
+    minute=0,
+)
+```
+
+### Automation sensor {#automation-sensor}
+
+AI-Hub provides a default automation sensor for eager asset materialization:
+
+```python
+# Sensor enables eager automation for assets
+automation_sensor = default_automation_sensor(
+    assets=pipeline_assets,
+)
+```
+
+## Resource configuration {#resource-configuration}
+
+AI-Hub provides resource factory functions for common configurations:
+
+### Local development resources {#local-resources}
+
+```python
+# Local MongoDB + Milvus setup
+local_resources = {
+    **local_mongo_milvus_storage_context_resource(
+        vector_store_uri="http://localhost:19530",
+        store_name="dev_store",
+        namespace_name="development",
+    ),
+    **default_io_manager_s3_datalake_resources(
+        container_name="dev-container",
+        directory_name="documents"
+    ),
     "document_parser": DocumentParserResource(
-        loader_type=LoaderType.DOCLING
-    ),
-    "vector_store": VectorStoreResource(
-        connection_string="mongodb://localhost:27017"
-    ),
-    "embedding_model": EmbeddingModelResource(
-        embedding_config=EmbeddingModelConfig(
-            model_name="azure/text-embedding-3-large"
-        )
+        loader_type=LoaderType.DOCLING,
     ),
 }
 ```
-:::
 
-## Data types and flow {#data-types}
+### Cloud resources {#cloud-resources}
 
-### Pipeline data types {#pipeline-types}
+```python
+# MongoDB + Azure AI Search setup
+production_resources = {
+    **mongo_aisearch_storage_context_resources(
+        store_name="prod_store",
+        namespace_name="production",
+    ),
+    "document_parser": DocumentParserResource(
+        loader_type=LoaderType.DOCUMENT_INTELLIGENCE,
+        timeout=300,
+    ),
+}
+```
 
-> [!NOTE] The pipeline uses strongly-typed data structures to ensure reliability throughout the **data lake to vector
-> store** processing flow.
+## Complete pipeline definition {#complete-pipeline}
 
-| Type                 | Purpose                         | Key Attributes                             |
-| -------------------- | ------------------------------- | ------------------------------------------ |
-| **`DataLakeFile`**   | File in data lake with metadata | `uri`, `filetype`, `modified_time`, `size` |
-| **`RefDocDocument`** | Parsed document with content    | `doc_id`, `text`, `metadata`, `images`     |
-| **`TextNode`**       | Text chunk for embedding        | `text`, `metadata`, `embedding`            |
-| **Custom types**     | Domain-specific structures      | Defined per use case                       |
+All components combine in a Definitions object:
 
-### Core data flow: Data lake to vector store {#data-flow}
-
-> [!IMPORTANT] The standard AI-Hub pipeline follows the **data lake to vector store** pattern, optimized for RAG agent
-> knowledge retrieval.
-
-```mermaid
-graph LR
-    A[DataLakeFile] --> B[RefDocDocument] 
-    B --> C[List&lt;TextNode&gt;]
-    C --> D[Embedded Nodes]
-    D --> E[Vector Store]
-    E --> F[RAG Agents]
+```python
+def create_document_pipeline(namespace: str) -> Definitions:
+    """Create complete document processing pipeline."""
     
-    style A fill:#2196f3
-    style B fill:#f3e5f5
-    style C fill:#e8f5e8
-    style D fill:#fff3e0
-    style E fill:#9c27b0
-    style F fill:#4caf50
-```
-
-::: info Data Transformation Stages
-1. **`DataLakeFile`** → **`RefDocDocument`**: Parse document content and extract metadata
-2. **`RefDocDocument`** → **`List<TextNode>`**: Intelligent chunking for optimal retrieval
-3. **`List<TextNode>`** → **`Embedded Nodes`**: Generate vector embeddings
-4. **`Embedded Nodes`** → **`Vector Store`**: Index for fast similarity search
-5. **`Vector Store`** → **`RAG Agents`**: Enable knowledge retrieval and question answering
-:::
-
-Each stage adds value and maintains traceability back to the original source, ensuring RAG agents can provide accurate,
-source-attributed responses.
-
-## Partitioning for scalability {#partitioning}
-
-### Dynamic partitions {#dynamic-partitions}
-
-> [!TIP] Use **Dynamic Partitions** to handle datasets where individual items (documents, files) need separate
-> processing.
-
-::: code-group
-```python [Partition Definition]
-document_partitions = DynamicPartitionsDefinition(name="document_partitions")
-```
-
-```python [Partition Benefits]
-# This allows the pipeline to:
-# - Process each document independently
-# - Add new partitions as documents arrive  
-# - Reprocess only changed documents
-# - Scale processing across multiple workers
-```
-:::
-
-### Partition benefits {#partition-benefits}
-
-::: info Scalability Advantages
-- **Parallelization**: Process multiple documents simultaneously
-- **Incremental updates**: Only reprocess changed content
-- **Failure isolation**: One document failure doesn't break the entire pipeline
-- **Resource efficiency**: Allocate compute resources based on actual workload
-:::
-
-## Asset automation and dependencies {#automation}
-
-### Automation conditions {#automation-conditions}
-
-Control when assets materialize using automation conditions:
-
-::: code-group
-```python [Eager Automation]
-@graph_asset(
-    automation_condition=AutomationCondition.eager(),  # Run immediately
-)
-def immediate_processing(...):
-    """Runs immediately when dependencies change."""
-    pass
-```
-
-```python [Scheduled Automation]
-@graph_asset(
-    automation_condition=AutomationCondition.cron_tick_passed("0 9 * * *"),
-)
-def daily_processing(...):
-    """Runs daily at 9 AM."""
-    pass
-```
-
-```python [Combined Conditions]
-business_hours_condition = (
-    AutomationCondition.eager() &  # Eager when dependencies change
-    AutomationCondition.cron_tick_passed("0 9-17 * * MON-FRI")  # Business hours only
-)
-```
-:::
-
-### Dependency management {#dependencies}
-
-Assets automatically track dependencies through their `ins` parameter:
-
-```python
-@graph_asset(
-    ins={"document": AssetIn(key=document_key)},  # Depends on document asset
-    partitions_def=partitions,
-)
-def nodes(document: RefDocDocument) -> List[TextNode]:
-    """Automatically runs when document asset materializes."""
-    return chunk_document_into_nodes(document)
-```
-
-## Configuration patterns {#configuration}
-
-### Environment-specific resources {#env-resources}
-
-Create different resource configurations for different environments:
-
-::: code-group
-```python [Development Resources]
-def development_resources():
-    """Local development setup."""
-    return {
-        **local_mongo_milvus_storage_context_resource(
+    partitions = DynamicPartitionsDefinition(name=f"{namespace}_documents")
+    assets = create_rag_pipeline(namespace, partitions)
+    
+    observe_job = observe_source_job(
+        observable_asset=assets[0],  # Observable data lake asset
+        namespace_name=namespace,
+    )
+    
+    return Definitions(
+        assets=assets,
+        resources=local_mongo_milvus_storage_context_resource(
             vector_store_uri="http://localhost:19530",
+            store_name="enterprise_kb",
+            namespace_name=namespace,
         ),
-        "document_parser": DocumentParserResource(
-            loader_type=LoaderType.DOCLING
-        ),
-    }
+        jobs=[observe_job],
+        schedules=[daily_schedule_at(observe_job, hour=2, minute=0)],
+        sensors=[default_automation_sensor(assets)],
+    )
 ```
 
-```python [Production Resources]
-def production_resources():
-    """Production environment setup.""" 
-    return {
-        **mongo_aisearch_storage_context_resources(
-            store_name="prod_store"
-        ),
-        "document_parser": DocumentParserResource(
-            loader_type=LoaderType.BOTH,
-            timeout=300,
-        ),
-    }
-```
-:::
+## Next sections {#next-sections}
 
-### Asset composition {#asset-composition}
+The following sections provide implementation guidance building on these fundamentals:
 
-Combine multiple asset factories to create complete processing pipelines:
-
-::: details Complete Pipeline Example
-```python
-# Create all pipeline assets
-assets = [
-    observable_data_lake_factory(DATA_LAKE_KEY, document_partitions),
-    documents_factory(DOCUMENT_KEY, DATA_LAKE_KEY, document_partitions),
-    nodes_factory(NODES_KEY, DOCUMENT_KEY, document_partitions),
-    summary_nodes_factory(SUMMARY_KEY, DOCUMENT_KEY, NODES_KEY, document_partitions),
-]
-
-# Define complete pipeline
-defs = Definitions(
-    assets=assets,
-    resources=development_resources(),
-    schedules=[daily_schedule_at(observe_job, hour=2, minute=0)],
-    sensors=[default_automation_sensor(assets)],
-)
-```
-:::
-
-## Getting started {#getting-started}
-
-### Examine the playground {#playground}
-
-> [!IMPORTANT] The best way to understand pipeline fundamentals is to examine the working example in the playground.
-
-::: code-group
-```bash [Start Development Server]
-cd aihub_pipeline
-poetry shell
-# Start the Dagster development server
-make playground
-```
-
-```bash [Alternative Command]
-poetry run dagster dev -m playground
-```
-:::
-
-Navigate to `http://localhost:3000` to explore the pipeline visually in the Dagster web interface.
-
-### Key files to examine {#key-files}
-
-::: info Important Files
-- [`playground/__init__.py`](../../aihub_pipeline/playground/__init__.py) - Complete pipeline definition
-- [`assets/factories/`](../../aihub_pipeline/aihub_pipeline/assets/factories/) - Asset factory patterns
-- [`ops/`](../../aihub_pipeline/aihub_pipeline/ops/) - Individual operation implementations
-- [`resources/`](../../aihub_pipeline/aihub_pipeline/resources/) - Resource configurations
-:::
-
-### Development workflow {#workflow}
-
-::: tip Development Steps
-1. **Start with the playground** - Understand existing patterns
-2. **Create your asset factories** - Build reusable components
-3. **Define operations** - Implement processing logic
-4. **Configure resources** - Set up external dependencies
-5. **Test locally** - Use the Dagster web interface
-6. **Deploy to production** - Follow production deployment patterns
-:::
-
-## Next steps {#next-steps}
-
-Once you understand these fundamentals, you're ready to explore:
-
-::: info Next Topics
-- [Data ingestion patterns](../2_data_ingestion_patterns/) for common document processing scenarios
-- [Observable assets](../3_observable_assets/) for building reactive pipelines
-- [Testing pipelines](../4_testing_pipelines/) for ensuring reliability
-:::
+- **[Data Ingestion Patterns](../2_data_ingestion_patterns/)** - Complete RAG pipeline implementation examples
+- **[Observable Assets](../3_observable_assets/)** - Change-driven processing implementation  
+- **[Job Scheduling](../4_job_scheduling/)** - Orchestration configuration
+- **[Pipeline Observation](../5_pipeline_observation/)** - Monitoring and debugging
