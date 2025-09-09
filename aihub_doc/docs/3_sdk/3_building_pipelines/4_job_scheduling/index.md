@@ -51,59 +51,6 @@ daily_batch = daily_schedule_at(
 This observes an asset every night at 2 AM.
 
 
-## Resource configuration for production
-
-### Environment-specific resources
-
-Configure different resource settings for production environments:
-
-```python
-def production_resources() -> dict[str, ConfigurableResource]:
-    return {
-        # High-performance document parsing
-        "document_parser": DocumentParserResource(
-            loader_type=LoaderType.BOTH,
-            timeout=300,  # Longer timeout for complex documents
-            max_retries=3,
-        ),
-        
-        # Production vector store
-        **mongo_aisearch_storage_context_resources(
-            store_name="production_knowledge",
-            namespace_name="main",
-            connection_pool_size=20,
-        ),
-        
-        # Production data lake
-        **azure_data_lake_resources(
-            account_name=os.getenv("AZURE_STORAGE_ACCOUNT"),
-            container_name="production-documents",
-            directory_name="processed",
-            connection_timeout=60,
-        ),
-        
-        # High-capacity embedding model
-        "embedding_model": EmbeddingModelResource(
-            embedding_config=EmbeddingModelConfig(
-                model_name="azure/text-embedding-3-large",
-                batch_size=100,
-                max_concurrent_requests=10,
-            )
-        ),
-        
-        # Production language model
-        "language_model": LanguageModelResource(
-            llm_config=LLMConfig(
-                model_name="azure/gpt-4o",
-                max_tokens=4000,
-                temperature=0.1,
-                request_timeout=120,
-            )
-        ),
-    }
-```
-
-
 ## Job definitions and organization
 
 ### Structured job organization
