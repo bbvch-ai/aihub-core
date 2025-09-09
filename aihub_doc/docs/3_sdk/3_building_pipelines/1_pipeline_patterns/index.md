@@ -410,4 +410,4 @@ These Dagster patterns work together to create efficient, maintainable pipelines
 
 ## Next steps
 
-- [Data Ingestion Pipeline](/3_sdk/3_building_pipelines/2_data_ingestion_pipeline/) - Apply these patterns to a working pipeline
+- [Data Ingestion Pipeline](../2_data_ingestion_pipeline/) - Apply these patterns to a working pipeline

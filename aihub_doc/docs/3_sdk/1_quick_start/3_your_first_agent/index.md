@@ -20,7 +20,7 @@ This quickstart covers the essential building blocks:
 ## Prerequisites
 
 You need the AI-Hub development environment running. Before you start, make sure you completed the
-[Development Environment Setup](/3_sdk/1_quick_start/1_dev_environment_setup/) steps.
+[Development Environment Setup](../1_dev_environment_setup/) steps.
 
 ## How agents work
 
@@ -461,5 +461,5 @@ Each step:
 
 ## Next steps
 
-- [Your First Pipeline](/3_sdk/1_quick_start/4_your_first_pipeline/) -
-- [Building Agents](/3_sdk/2_building_agents/) - Learn more advanced agent patterns
+- [Your First Pipeline](../4_your_first_pipeline/) -
+- [Building Agents](../../2_building_agents/) - Learn more advanced agent patterns
