@@ -93,12 +93,7 @@ class KnowledgeService:
         """
         Filter datalake files to only include those not already processed (not in docstore).
         """
-        processing_files = []
-        for file in datalake_files:
-            if file.source not in processed_doc_sources:
-                processing_files.append(file)
-
-        return processing_files
+        return [file for file in datalake_files if file.source not in processed_doc_sources]
 
     @staticmethod
     def get_paginated_documents(

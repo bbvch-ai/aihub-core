@@ -17,7 +17,7 @@ const MIME_TYPE_OVERRIDES: Record<string, string> = {
   '.markdown': 'text/markdown',
 }
 
-function getMimeType(file: File): string {
+const getMimeType = (file: File): string => {
   if (file.type) {
     return file.type
   }
