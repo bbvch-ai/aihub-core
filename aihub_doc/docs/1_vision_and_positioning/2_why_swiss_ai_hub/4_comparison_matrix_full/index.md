@@ -10,6 +10,9 @@ platforms, frameworks, and solutions.
 
 ## Libraries and Frameworks
 
+These are developer-focused tools and frameworks that provide building blocks for AI applications. They offer
+flexibility and control but require significant development effort to build complete, production-ready systems.
+
 | Framework        | Data sovereignty | Predictable costs | Trust in outputs | Time to Value | Tool integration | Skill accessibility | Scalability | Vendor independence | Unified governance | Production reliability | Visual development | Zero maintenance |
 | :--------------- | :--------------: | :---------------: | :--------------: | :-----------: | :--------------: | :-----------------: | :---------: | :-----------------: | :----------------: | :--------------------: | :----------------: | :--------------: |
 | **Swiss AI Hub** |        ✅        |        ✅         |        ✅        |      ⚠️       |        ✅        |         ✅          |     ✅      |         ✅          |         ✅         |           ✅           |         ❌         |        ❌        |
@@ -36,7 +39,7 @@ a specialized AI product where the framework is just one component.
 
 **Choose Swiss AI Hub when** you want the power of frameworks like LangChain but with a complete platform that handles
 deployment, authentication, monitoring, user interfaces, and governance out-of-the-box. You get the same development
-flexibility but without years of infrastructure work.
+flexibility but without all the infrastructure work.
 :::
 
 ::: details LangGraph
@@ -69,9 +72,7 @@ platform features from day one.
 
 ::: details Semantic Kernel
 Semantic Kernel is Microsoft's well-designed orchestration framework that provides excellent abstractions for AI
-development. As a library, it offers powerful planning and plugin capabilities but leaves infrastructure, deployment,
-monitoring, and governance entirely to the developer. While it integrates well with Azure services, you still need to
-build the platform layer yourself.
+development. As a library, it offers powerful planning and plugin capabilities and integrates well with Azure services.
 
 **Choose Semantic Kernel when** you're deeply invested in the Microsoft ecosystem, need sophisticated AI planning
 capabilities, and have the resources to build production infrastructure. You want Microsoft's AI abstractions with
@@ -97,13 +98,11 @@ infrastructure to run it reliably in production.
 :::
 
 ::: details CrewAI
-CrewAI is a multi-agent orchestration library that simplifies building collaborative AI teams. While it excels at
-defining agent roles and workflows, it's a Python library, not a platform. You get powerful abstractions for agent
-collaboration but must build your own deployment, monitoring, authentication, and user interfaces. The framework is open
-source and runs wherever you deploy it, but lacks the infrastructure components needed for production AI systems.
+CrewAI is a multi-agent orchestration library that simplifies building collaborative AI teams and excels at defining
+agent roles and workflows. It is open source and runs wherever you deploy it.
 
-**Choose CrewAI when** you want to experiment with multi-agent teams and have strong development capabilities to build
-supporting infrastructure. Your focus is on agent collaboration patterns rather than production deployment.
+**Choose CrewAI when** you want to experiment with multi-agent scenarios and have strong development capabilities to
+build supporting infrastructure. Your focus is on agent collaboration patterns rather than production deployment.
 
 **Choose Swiss AI Hub when** you want multi-agent orchestration within a complete, production-ready platform that
 includes deployment, authentication, monitoring, and governance. You get agent collaboration plus enterprise features
@@ -111,10 +110,8 @@ without building infrastructure from scratch.
 :::
 
 ::: details Haystack
-Haystack is an excellent open-source framework for building RAG pipelines and search systems. While it provides powerful
-abstractions for document processing and retrieval, it's a library, not a platform. You get the building blocks for AI
-applications but must handle deployment, authentication, monitoring, and user interfaces yourself. The partial ratings
-reflect capabilities you can build but aren't provided out-of-the-box.
+Haystack is an excellent open-source framework for building RAG pipelines and search systems. It provides powerful
+abstractions for document processing and retrieval, which are the building blocks for AI applications.
 
 **Choose Haystack when** you need specialized search and RAG capabilities with deep customization, and you have the
 resources to build all supporting infrastructure. Your search requirements are highly specialized or research-focused.
@@ -125,10 +122,8 @@ get search power plus enterprise readiness.
 :::
 
 ::: details DSPy
-DSPy is a powerful framework for programmatically optimizing LLM applications through automatic prompt engineering.
-While it excels at systematic evaluation and prompt optimization, it's a Python library, not a platform. Organizations
-must build their own deployment, monitoring, authentication, and user interfaces around DSPy code, making it suitable
-for research and prototypes but requiring significant additional work for production systems.
+DSPy is a powerful framework for programmatically optimizing LLM applications through automatic prompt engineering. It
+excels at systematic evaluation and prompt optimization, which makes it great for research and prototypes.
 
 **Choose DSPy when** you're conducting AI research or need advanced prompt optimization techniques and have the
 resources to build production infrastructure. Your primary focus is on experimental AI techniques rather than deployed
@@ -141,26 +136,80 @@ development require coding expertise rather than automated tools.
 
 ## Swiss/European AI Providers
 
+These are AI platforms and providers based in Switzerland or Europe, focusing on data sovereignty, regulatory
+compliance, and regional data protection requirements. They prioritize keeping data within European jurisdictions while
+offering various AI capabilities.
+
 | Framework           | Data sovereignty | Predictable costs | Trust in outputs | Time to Value | Tool integration | Skill accessibility | Scalability | Vendor independence | Unified governance | Production reliability | Visual development | Zero maintenance |
 | :------------------ | :--------------: | :---------------: | :--------------: | :-----------: | :--------------: | :-----------------: | :---------: | :-----------------: | :----------------: | :--------------------: | :----------------: | :--------------: |
 | **Swiss AI Hub**    |        ✅        |        ✅         |        ✅        |      ⚠️       |        ✅        |         ✅          |     ✅      |         ✅          |         ✅         |           ✅           |         ❌         |        ❌        |
-| Aleph Alpha         |        ✅        |        ❌         |        ✅        |      ⚠️       |        ⚠️        |         ❌          |     ⚠️      |         ✅          |         ⚠️         |           ⚠️           |         ❌         |        ❌        |
-| owwn.ai             |        ✅        |        ❌         |        ⚠️        |      ⚠️       |        ⚠️        |         ⚠️          |     ❌      |         ⚠️          |         ⚠️         |           ❌           |         ❌         |        ❌        |
-| PREM                |        ✅        |        ❌         |        ⚠️        |      ❌       |        ⚠️        |         ❌          |     ❌      |         ✅          |         ❌         |           ❌           |         ❌         |        ❌        |
+| Alpine AI           |        ✅        |        ❌         |        ⚠️        |      ❌       |        ❌        |         ❌          |     ❌      |         ❌          |         ⚠️         |           ❌           |         ❌         |        ❌        |
 | Abacus Deep         |        ✅        |        ⚠️         |        ✅        |      ✅       |        ✅        |         ✅          |     ⚠️      |         ❌          |         ✅         |           ✅           |         ⚠️         |        ⚠️        |
 | BrandBot (Begasoft) |        ✅        |        ❌         |        ⚠️        |      ⚠️       |        ⚠️        |         ⚠️          |     ⚠️      |         ⚠️          |         ✅         |           ⚠️           |         ❌         |        ❌        |
 | Envoya AI           |        ✅        |        ✅         |        ⚠️        |      ⚠️       |        ⚠️        |         ⚠️          |     ⚠️      |         ⚠️          |         ⚠️         |           ❌           |         ⚠️         |        ❌        |
-| Alpine AI           |        ✅        |        ❌         |        ⚠️        |      ❌       |        ❌        |         ❌          |     ❌      |         ❌          |         ⚠️         |           ❌           |         ❌         |        ❌        |
+| Aleph Alpha         |        ✅        |        ❌         |        ✅        |      ⚠️       |        ⚠️        |         ❌          |     ⚠️      |         ✅          |         ⚠️         |           ⚠️           |         ❌         |        ❌        |
+| owwn.ai             |        ✅        |        ❌         |        ⚠️        |      ⚠️       |        ⚠️        |         ⚠️          |     ❌      |         ⚠️          |         ⚠️         |           ❌           |         ❌         |        ❌        |
+| PREM                |        ✅        |        ❌         |        ⚠️        |      ❌       |        ⚠️        |         ❌          |     ❌      |         ✅          |         ❌         |           ❌           |         ❌         |        ❌        |
 | Private AI Suite    |        ✅        |        ❌         |        ⚠️        |      ⚠️       |        ⚠️        |         ⚠️          |     ⚠️      |         ⚠️          |         ✅         |           ⚠️           |         ⚠️         |        ❌        |
 
 ### Swiss/European Provider Details
+::: details Alpine AI
+Alpine AI (SwissGPT) is a Swiss AI platform specifically targeting critical and regulated sectors with strong compliance
+focus. While they excel at Swiss data sovereignty and regulatory compliance.
+
+**Choose Alpine AI when** you're in a highly regulated sector that requires Swiss compliance.
+
+**Choose Swiss AI Hub when** you want Swiss sovereignty with complete transparency about platform capabilities,
+architecture, and costs. You get regulatory compliance with full visibility into how the platform works, enabling
+informed technical and business decisions.
+:::
+
+::: details Abacus Deep
+Abacus Deep is a comprehensive Swiss ERP platform with AI-powered modules for document management and autonomous
+accounting. Hosted exclusively in Swiss data centers with ISO 27001:2022 certification, it excels at Swiss compliance
+and security. However, as an integrated ERP solution, it creates significant vendor lock-in.
+
+**Choose Abacus Deep when** you're a Swiss SME that needs a complete ERP system and wants AI features integrated into
+your business processes. You're looking for an all-in-one business management solution rather than a dedicated AI
+platform.
+
+**Choose Swiss AI Hub when** you want to build custom AI applications that integrate with your existing ERP system
+(including Abacus) without being locked into a single vendor's business software. You get AI platform flexibility while
+maintaining Swiss compliance and data sovereignty.
+:::
+
+::: details BrandBot (Begasoft)
+BrandBot is a 100% Swiss-hosted AI platform with ISO compliance and OpenAI-compatible APIs, targeting Swiss enterprises
+and public administration. It provides strong Swiss regulatory compliance, audit logging, and role-based access
+controls.
+
+**Choose BrandBot when** you need a Swiss-hosted AI platform with OpenAI-compatible APIs and your requirements are
+relatively straightforward. You value simplicity and Swiss hosting over advanced platform features.
+
+**Choose Swiss AI Hub when** you want Swiss hosting plus a comprehensive, enterprise-grade platform with advanced
+features like workflow orchestration, data pipelines, observability, and extensible architecture. You get Swiss
+sovereignty with platform completeness and transparency.
+:::
+
+::: details Envoya AI
+Envoya AI is a Swiss AI platform offering comprehensive enterprise tools and Swiss data center hosting. It provides
+DSG/GDPR compliance, pre-configured AI agents, and flexible scaling. However, as a newer platform, it may lack
+production reliability proof and creates some platform dependency. While excellent for Swiss enterprises seeking
+cost-effective AI with sovereignty, it may need time to mature.
+
+**Choose Envoya AI when** you want cost-effective Swiss AI with simple flat-rate pricing and your needs fit their
+pre-configured agents.
+
+**Choose Swiss AI Hub when** you need Swiss sovereignty, transparent costs, and complete control over your AI platform.
+You get infrastructure with full customization capabilities and vendor independence through open-source architecture.
+:::
 
 ::: details Aleph Alpha
 Aleph Alpha is a European AI company providing the PhariaAI sovereign AI suite for governments and enterprises. They
-emphasize "explainable AI" with their AtMan transparency technology and offer domain-specific solutions. While they
-excel at European sovereignty and compliance, they lack transparent pricing and require significant technical expertise.
-Their "no vendor lock-in" promise and German sovereign infrastructure make them attractive for regulated industries, but
-they're more of an AI model provider than a complete platform.
+emphasize "explainable AI" with their AtMan (Attention Manipulation) transparency technology and offer domain-specific
+solutions. While they excel at European sovereignty and compliance, they lack transparent pricing and require
+significant technical expertise. Their "no vendor lock-in" promise and German sovereign infrastructure make them
+attractive for regulated industries, but they're more of an AI model provider than a complete platform.
 
 **Choose Aleph Alpha when** you're a government or highly regulated enterprise that needs European AI models with
 explainability features, and you have the technical expertise to integrate their models into your own infrastructure.
@@ -202,70 +251,13 @@ specialized AI research expertise. You get data protection and vendor independen
 interfaces, and operational simplicity.
 :::
 
-::: details Abacus Deep
-Abacus Deep is a comprehensive Swiss ERP platform with AI-powered modules for document management and autonomous
-accounting. Hosted exclusively in Swiss data centers with ISO 27001:2022 certification, it excels at Swiss compliance
-and security. However, as an integrated ERP solution, it creates significant vendor lock-in. While excellent for Swiss
-SMEs seeking digital transformation, it's primarily an ERP system with AI features rather than an AI platform.
-
-**Choose Abacus Deep when** you're a Swiss SME that needs a complete ERP system and wants AI features integrated into
-your business processes. You're looking for an all-in-one business management solution rather than a dedicated AI
-platform.
-
-**Choose Swiss AI Hub when** you want to build custom AI applications that integrate with your existing ERP system
-(including Abacus) without being locked into a single vendor's business software. You get AI platform flexibility while
-maintaining Swiss compliance and data sovereignty.
-:::
-
-::: details BrandBot (Begasoft)
-BrandBot is a 100% Swiss-hosted AI platform with ISO compliance and OpenAI-compatible APIs, targeting Swiss enterprises
-and public administration. It provides strong Swiss regulatory compliance, audit logging, and role-based access
-controls. However, it may create platform dependency and requires configuration management. While excellent for Swiss
-data sovereignty requirements, it may lack the comprehensive features of larger platforms.
-
-**Choose BrandBot when** you need a Swiss-hosted AI platform with OpenAI-compatible APIs and your requirements are
-relatively straightforward. You value simplicity and Swiss hosting over advanced platform features.
-
-**Choose Swiss AI Hub when** you want Swiss hosting plus a comprehensive, enterprise-grade platform with advanced
-features like workflow orchestration, data pipelines, observability, and extensible architecture. You get Swiss
-sovereignty with platform completeness and transparency.
-:::
-
-::: details Envoya AI
-Envoya AI is a Swiss AI platform offering flat-rate pricing from CHF 99/month with comprehensive enterprise tools and
-Swiss data center hosting. It provides DSG/GDPR compliance, pre-configured AI agents, and flexible scaling. However, as
-a newer platform, it may lack production reliability proof and creates some platform dependency. While excellent for
-Swiss enterprises seeking cost-effective AI with sovereignty, it may need time to mature.
-
-**Choose Envoya AI when** you want cost-effective Swiss AI with simple flat-rate pricing and your needs fit their
-pre-configured agents.
-
-**Choose Swiss AI Hub when** you need Swiss sovereignty, transparent costs, and complete control over your AI platform.
-You get infrastructure with full customization capabilities and vendor independence through open-source architecture.
-:::
-
-::: details Alpine AI
-Alpine AI (SwissGPT) is a Swiss AI platform specifically targeting critical and regulated sectors with strong compliance
-focus. While they excel at Swiss data sovereignty and regulatory compliance, limited public information makes
-comprehensive evaluation difficult. They appear focused on regulated industries but may lack the transparency and
-feature breadth needed for general enterprise adoption.
-
-**Choose Alpine AI when** you're in a highly regulated sector that requires Swiss compliance and you're comfortable with
-limited public information about the platform's capabilities and pricing.
-
-**Choose Swiss AI Hub when** you want Swiss sovereignty with complete transparency about platform capabilities,
-architecture, and costs. You get regulatory compliance with full visibility into how the platform works, enabling
-informed technical and business decisions.
-:::
-
 ::: details Private AI Suite
 Private AI Suite is a comprehensive Swiss AI platform with modular privacy-focused components and "Swiss-grade privacy"
 guarantees. It provides Swiss regulatory compliance, modular architecture, and serves government and enterprise clients.
-However, it has enterprise-focused pricing and may create platform dependency through its comprehensive suite. While
-excellent for organizations prioritizing Swiss sovereignty and privacy, it may be costly for smaller deployments.
 
 **Choose Private AI Suite when** you're a large enterprise or government organization with substantial budget and need
-comprehensive privacy guarantees. You value their modular approach and can justify enterprise-level pricing.
+comprehensive privacy guarantees. You value their modular approach and can justify enterprise-level pricing and vendor
+lock-in.
 
 **Choose Swiss AI Hub when** you want Swiss privacy and sovereignty with predictable costs and complete vendor
 independence. You get comprehensive AI capabilities with transparent pricing, open-source architecture, and the
@@ -273,6 +265,10 @@ flexibility to deploy at any scale without vendor lock-in.
 :::
 
 ## Managed Cloud Platforms
+
+These are comprehensive, fully-managed cloud services from major technology vendors that handle infrastructure, scaling,
+and operations. They offer convenience and enterprise-grade reliability but typically require vendor lock-in and limit
+data sovereignty options.
 
 | Framework           | Data sovereignty | Predictable costs | Trust in outputs | Time to Value | Tool integration | Skill accessibility | Scalability | Vendor independence | Unified governance | Production reliability | Visual development | Zero maintenance |
 | :------------------ | :--------------: | :---------------: | :--------------: | :-----------: | :--------------: | :-----------------: | :---------: | :-----------------: | :----------------: | :--------------------: | :----------------: | :--------------: |
@@ -321,8 +317,7 @@ AI solutions for your organization.
 Google Vertex AI is a comprehensive, managed AI platform that handles infrastructure complexity for you. While it
 provides enterprise-grade reliability and seamless scaling within Google Cloud, you trade control for convenience. Data
 remains in Google's infrastructure (though region-selectable), costs can be unpredictable with complex pricing tiers,
-and you're locked into their ecosystem. It's an excellent choice if you're already committed to Google Cloud and
-prioritize operational simplicity over sovereignty.
+and you're locked into their ecosystem.
 
 **Choose Google Vertex AI when** you're fully committed to Google Cloud, have complex AI workloads that benefit from
 Google's ML expertise, and operational simplicity is more important than data sovereignty or cost predictability.
@@ -364,8 +359,7 @@ structure.
 Oracle AI provides comprehensive AI services through Oracle Cloud Infrastructure, including generative AI, language,
 speech, and vision capabilities. It offers enterprise-grade security and customizable models, but is cloud-only with
 strong potential for vendor lock-in. While it provides reliable infrastructure and 20+ years of data science experience,
-it lacks data sovereignty options and requires commitment to Oracle's ecosystem. Best suited for existing Oracle
-customers seeking AI capabilities.
+it lacks data sovereignty options and requires commitment to Oracle's ecosystem.
 
 **Choose Oracle AI when** you're an existing Oracle customer with significant investment in Oracle infrastructure and
 want AI capabilities deeply integrated with your Oracle systems. You value Oracle's enterprise reliability over
@@ -373,7 +367,7 @@ sovereignty.
 
 **Choose Swiss AI Hub when** you want enterprise AI capabilities without being locked into Oracle's ecosystem, with full
 data sovereignty and deployment flexibility. You get comprehensive AI features with the freedom to integrate with any
-system, including Oracle.
+system.
 :::
 
 ::: details SAP Business AI
@@ -407,6 +401,10 @@ organization.
 
 ## Visual Development Platforms
 
+These are platforms that emphasize drag-and-drop, no-code/low-code approaches to building AI applications. They
+prioritize accessibility for non-technical users but may sacrifice flexibility and enterprise-grade features for ease of
+use.
+
 | Framework        | Data sovereignty | Predictable costs | Trust in outputs | Time to Value | Tool integration | Skill accessibility | Scalability | Vendor independence | Unified governance | Production reliability | Visual development | Zero maintenance |
 | :--------------- | :--------------: | :---------------: | :--------------: | :-----------: | :--------------: | :-----------------: | :---------: | :-----------------: | :----------------: | :--------------------: | :----------------: | :--------------: |
 | **Swiss AI Hub** |        ✅        |        ✅         |        ✅        |      ⚠️       |        ✅        |         ✅          |     ✅      |         ✅          |         ✅         |           ✅           |         ❌         |        ❌        |
@@ -419,10 +417,8 @@ organization.
 ::: details Dify
 Dify is an open-source platform for building AI applications using visual, drag-and-drop workflows. It allows
 non-technical team members to create AI applications by connecting nodes (like calling AI models, searching databases,
-or executing logic) on a visual canvas. With 180k+ developers, it excels at rapid prototyping and making AI development
-accessible to product managers and domain experts. However, while production-ready, its visual approach can become
-limiting for complex enterprise workflows that require deep customization, comprehensive governance, and detailed
-observability.
+or executing logic) on a visual canvas. It excels at rapid prototyping and making AI development accessible to product
+managers and domain experts.
 
 **Choose Dify when** you want rapid prototyping with visual workflows, need non-technical team members to build AI
 applications, and your use cases fit well within drag-and-drop paradigms. You prioritize development speed and
@@ -437,13 +433,13 @@ monitoring, but development requires coding rather than visual tools.
 Flowise excels at making AI accessible through visual, drag-and-drop flow building. It's self-hostable and open source,
 which provides sovereignty and independence. However, it's primarily a development tool rather than a production
 platform. It lacks enterprise features like proper authentication, scaling mechanisms, governance controls, and
-production-grade reliability. Best suited for rapid prototyping and citizen development, not enterprise deployments.
+production-grade reliability. Best suited for rapid prototyping and development, not enterprise deployments.
 
 **Choose Flowise when** you're prototyping AI workflows, want a simple visual interface, and don't need enterprise-grade
 features. Your use case is experimental or educational rather than production-focused.
 
-**Choose Swiss AI Hub when** you want a production-ready platform with enterprise authentication, governance, scaling,
-and reliability, and you're comfortable with code-based development. You get enterprise readiness with complete platform
+**Choose Swiss AI Hub when** you want a production-ready platform with authentication, governance, scaling, and
+reliability, and you're comfortable with code-based development. You get enterprise readiness with complete platform
 control, though you'll need coding skills rather than visual tools.
 :::
 
@@ -463,6 +459,10 @@ development rather than visual prototyping tools.
 
 ## Automation Platforms with AI
 
+These are workflow automation platforms that have integrated AI capabilities as additional features. They excel at
+connecting systems and automating business processes, with AI serving as supporting functionality rather than their
+primary focus.
+
 | Framework        | Data sovereignty | Predictable costs | Trust in outputs | Time to Value | Tool integration | Skill accessibility | Scalability | Vendor independence | Unified governance | Production reliability | Visual development | Zero maintenance |
 | :--------------- | :--------------: | :---------------: | :--------------: | :-----------: | :--------------: | :-----------------: | :---------: | :-----------------: | :----------------: | :--------------------: | :----------------: | :--------------: |
 | **Swiss AI Hub** |        ✅        |        ✅         |        ✅        |      ⚠️       |        ✅        |         ✅          |     ✅      |         ✅          |         ✅         |           ✅           |         ❌         |        ❌        |
@@ -473,7 +473,7 @@ development rather than visual prototyping tools.
 ### Automation Platform Details
 
 ::: details n8n
-n8n is an excellent workflow automation platform that added AI capabilities through nodes. While it excels at visual
+n8n is an excellent workflow automation platform that adds AI capabilities through nodes. While it excels at visual
 workflow creation and has hundreds of integrations, it lacks the deep AI infrastructure of a dedicated platform. There's
 no built-in observability for AI decisions, no unified LLM gateway, and limited enterprise governance features. It's
 automation-first with AI added, not AI-native.
@@ -489,9 +489,7 @@ AI-first applications.
 ::: details Zapier AI
 Zapier AI extends a workflow automation platform with AI capabilities rather than providing AI infrastructure. While it
 excels at connecting tools and enabling non-technical users to build automations, it operates as a black-box cloud
-service without visibility into AI decision-making, data sovereignty options, or deployment flexibility. Perfect for
-simple AI-enhanced automations, but unsuitable for organizations needing control, transparency, or on-premise
-deployment.
+service without visibility into AI decision-making, data sovereignty options, or deployment flexibility.
 
 **Choose Zapier AI when** you need simple AI-enhanced automations between SaaS tools, want zero maintenance, and are
 comfortable with cloud-only deployment and black-box AI operations. Your needs are straightforward and compliance
@@ -517,33 +515,49 @@ vendor independence. You get powerful automation plus transparent AI operations 
 
 ## Business Process Platforms
 
+These are enterprise-grade platforms designed for managing, automating, and optimizing complex business processes. They
+focus on workflow orchestration, case management, and process mining, with AI capabilities integrated to enhance
+traditional business process management.
+
 | Framework           | Data sovereignty | Predictable costs | Trust in outputs | Time to Value | Tool integration | Skill accessibility | Scalability | Vendor independence | Unified governance | Production reliability | Visual development | Zero maintenance |
 | :------------------ | :--------------: | :---------------: | :--------------: | :-----------: | :--------------: | :-----------------: | :---------: | :-----------------: | :----------------: | :--------------------: | :----------------: | :--------------: |
 | **Swiss AI Hub**    |        ✅        |        ✅         |        ✅        |      ⚠️       |        ✅        |         ✅          |     ✅      |         ✅          |         ✅         |           ✅           |         ❌         |        ❌        |
 | Camunda             |        ✅        |        ⚠️         |        ✅        |      ⚠️       |        ✅        |         ⚠️          |     ✅      |         ✅          |         ✅         |           ✅           |         ✅         |        ❌        |
+| Automation Anywhere |        ✅        |        ❌         |        ✅        |      ❌       |        ✅        |         ❌          |     ✅      |         ❌          |         ✅         |           ✅           |         ✅         |        ❌        |
 | Pega                |        ✅        |        ⚠️         |        ✅        |      ⚠️       |        ✅        |         ⚠️          |     ✅      |         ❌          |         ✅         |           ✅           |         ✅         |        ❌        |
 | Appian              |        ✅        |        ⚠️         |        ✅        |      ✅       |        ✅        |         ✅          |     ✅      |         ❌          |         ✅         |           ✅           |         ✅         |        ❌        |
-| Flowable            |        ✅        |        ✅         |        ✅        |      ⚠️       |        ✅        |         ⚠️          |     ✅      |         ✅          |         ✅         |           ✅           |         ✅         |        ❌        |
 | Blue Prism          |        ✅        |        ⚠️         |        ✅        |      ⚠️       |        ✅        |         ⚠️          |     ✅      |         ⚠️          |         ✅         |           ✅           |         ✅         |        ❌        |
-| Automation Anywhere |        ✅        |        ❌         |        ✅        |      ❌       |        ✅        |         ❌          |     ✅      |         ❌          |         ✅         |           ✅           |         ✅         |        ❌        |
 | Celonis             |        ⚠️        |        ⚠️         |        ✅        |      ⚠️       |        ✅        |         ❌          |     ✅      |         ❌          |         ⚠️         |           ✅           |         ⚠️         |        ❌        |
+| Flowable            |        ✅        |        ✅         |        ✅        |      ⚠️       |        ✅        |         ⚠️          |     ✅      |         ✅          |         ✅         |           ✅           |         ✅         |        ❌        |
 
 ### Business Process Platform Details
 
 ::: details Camunda
 Camunda is a process orchestration platform that has integrated AI agent capabilities while maintaining its BPMN-based
 approach. It provides excellent process transparency, open standards compliance, and enterprise-proven scalability.
-While it offers strong process governance and cloud-native architecture, it requires BPMN expertise and ongoing process
-management. The platform excels at complex workflow orchestration but may be overly complex for simpler AI automation
-needs.
 
 **Choose Camunda when** you have complex business processes that require BPMN modeling, need enterprise-grade process
 orchestration, and have teams with BPMN expertise. Your primary focus is on process management with AI as a supporting
 component.
 
 **Choose Swiss AI Hub when** you want AI-first process automation through code-based development, with built-in AI
-capabilities and enterprise interfaces. You get powerful process orchestration designed specifically for AI workflows,
-though you'll need programming skills rather than visual modeling tools.
+capabilities. You get powerful process orchestration designed specifically for AI workflows, though you'll need
+programming skills rather than visual modeling tools.
+:::
+
+::: details Automation Anywhere
+Automation Anywhere is an enterprise RPA platform leader with agentic process automation. It provides comprehensive
+governance, enterprise app compatibility, and Process Reasoning Engine transparency. However, it requires RPA expertise,
+creates platform lock-in, and needs significant IT management. While proven at enterprise scale, it may be overly
+complex for organizations seeking simpler AI solutions.
+
+**Choose Automation Anywhere when** you're a large enterprise with significant RPA investments, need to scale
+traditional automation massively, and have teams with deep RPA expertise. Your automation strategy is RPA-first with AI
+integration.
+
+**Choose Swiss AI Hub when** you want AI-first automation without RPA complexity, with transparent architecture and
+vendor independence. You get enterprise-scale capabilities designed for modern AI workflows without the overhead of
+traditional RPA platforms.
 :::
 
 ::: details Pega
@@ -577,20 +591,6 @@ and transparent costs. You get rapid development capabilities plus the flexibili
 platform constraints.
 :::
 
-::: details Flowable
-Flowable is an open-source business process management platform with AI agent integration and strong process governance.
-It provides open standards compliance, enterprise-proven adoption, and vendor independence. However, it requires BPM
-expertise and ongoing process management without built-in AI development tools. While excellent for process-centric AI
-integration, it may require significant additional tooling for complete AI solutions.
-
-**Choose Flowable when** you have BPM expertise, need open-source process management, and want to build custom AI
-integrations around established BPM patterns. Your primary focus is on traditional business process management.
-
-**Choose Swiss AI Hub when** you want process management designed for AI workflows from the ground up, with built-in AI
-development tools and enterprise interfaces. You get the benefits of open-source with comprehensive AI capabilities
-included, though development requires programming skills.
-:::
-
 ::: details Blue Prism
 Blue Prism is a mature enterprise RPA platform that has evolved to include AI integration and intelligent automation. It
 provides strong governance, enterprise-proven scalability, and comprehensive process automation capabilities. While it
@@ -606,27 +606,12 @@ code-based development. You get powerful automation capabilities designed for AI
 RPA knowledge, though you'll need programming skills.
 :::
 
-::: details Automation Anywhere
-Automation Anywhere is an enterprise RPA platform leader with agentic process automation handling 400M+ automations
-annually. It provides comprehensive governance, enterprise app compatibility, and Process Reasoning Engine transparency.
-However, it requires RPA expertise, creates platform lock-in, and needs significant IT management. While proven at
-enterprise scale, it may be overly complex for organizations seeking simpler AI solutions.
-
-**Choose Automation Anywhere when** you're a large enterprise with significant RPA investments, need to scale
-traditional automation massively, and have teams with deep RPA expertise. Your automation strategy is RPA-first with AI
-integration.
-
-**Choose Swiss AI Hub when** you want AI-first automation without RPA complexity, with transparent architecture and
-vendor independence. You get enterprise-scale capabilities designed for modern AI workflows without the overhead of
-traditional RPA platforms.
-:::
-
 ::: details Celonis
 Celonis is a process intelligence platform specializing in AI-powered process mining and optimization. It provides
-data-driven insights with enterprise-proven scalability across 1,400+ companies. However, it requires specialized
-process mining expertise, creates platform dependency, and focuses primarily on process analysis rather than automation.
-While excellent for process optimization, it's not a general-purpose AI platform and may require significant additional
-tooling for complete AI solutions.
+data-driven insights with enterprise-proven scalability. However, it requires specialized process mining expertise,
+creates platform dependency, and focuses primarily on process analysis rather than automation. While excellent for
+process optimization, it's not a general-purpose AI platform and may require significant additional tooling for complete
+AI solutions.
 
 **Choose Celonis when** your primary need is process mining and optimization, you have specialized process intelligence
 expertise, and you're focused on understanding existing processes rather than building new AI applications.
@@ -634,4 +619,18 @@ expertise, and you're focused on understanding existing processes rather than bu
 **Choose Swiss AI Hub when** you want comprehensive AI capabilities that include process optimization plus the ability
 to build and deploy AI applications. You get process intelligence as part of a complete AI platform rather than as a
 specialized standalone tool.
+:::
+
+::: details Flowable
+Flowable is an open-source business process management platform with AI agent integration and strong process governance.
+It provides open standards compliance, enterprise-proven adoption, and vendor independence. However, it requires BPM
+expertise and ongoing process management without built-in AI development tools. While excellent for process-centric AI
+integration, it may require significant additional tooling for complete AI solutions.
+
+**Choose Flowable when** you have BPM expertise, need open-source process management, and want to build custom AI
+integrations around established BPM patterns. Your primary focus is on traditional business process management.
+
+**Choose Swiss AI Hub when** you want process management designed for AI workflows from the ground up, with built-in AI
+development tools and enterprise interfaces. You get the benefits of open-source with comprehensive AI capabilities
+included, though development requires programming skills.
 :::
