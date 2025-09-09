@@ -1,7 +1,7 @@
 import re
 from typing import Annotated
 
-from aihub_lib.generative_ai.document.types.FileTypeConfig import SUPPORTED_FILE_TYPES_CONFIG
+from aihub_lib.generative_ai.document.types.FileTypeConfig import FileTypeConfig
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
@@ -48,25 +48,28 @@ class FileUploadRequest(BaseModel):
     @model_validator(mode="after")
     def validate_file_type_and_consistency(self) -> "FileUploadRequest":
         """
-        Performs file type validation by asking the central config service.
+        Performs file type validation using our extension-based allowlist and mimetypes.
         """
         try:
             mime_type = self.content_type.lower().split(";")[0].strip()
             file_ext = "." + self.filename.split(".")[-1].lower()
         except (AttributeError, IndexError):
             raise ValueError("Invalid filename or content_type format.")
+        file_type = FileTypeConfig()
+        # First check: Is the extension allowed?
+        if not file_type.is_extension_supported(file_ext):
+            supported_extensions = file_type.get_unique_extensions()
+            raise ValueError(
+                f"File extension '{file_ext}' is not supported. "
+                f"Supported extensions: {', '.join(supported_extensions)}"
+            )
 
-        if not SUPPORTED_FILE_TYPES_CONFIG.is_mime_type_supported(mime_type):
-            raise ValueError(f"Content type '{mime_type}' is not supported.")
-
-        if not SUPPORTED_FILE_TYPES_CONFIG.is_extension_supported(file_ext):
-            raise ValueError(f"File extension '{file_ext}' is not supported.")
-
-        if not SUPPORTED_FILE_TYPES_CONFIG.is_pair_consistent(file_ext, mime_type):
-            allowed = SUPPORTED_FILE_TYPES_CONFIG.get_allowed_extensions_for_mime(mime_type)
+        # Second check: Does the MIME type match what we expect for this extension?
+        expected_mime_type = file_type.get_mime_type_for_extension(file_ext)
+        if expected_mime_type and mime_type != expected_mime_type:
             raise ValueError(
                 f"File extension '{file_ext}' does not match content type '{mime_type}'. "
-                f"Expected one of: {', '.join(allowed or [])}"
+                f"Expected MIME type: {expected_mime_type}"
             )
 
         self.content_type = mime_type
