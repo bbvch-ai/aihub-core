@@ -30,7 +30,7 @@ DOCUMENT_KEY = AssetKey(["playground", "documents"])
 NODES_KEY = AssetKey(["playground", "nodes"])
 
 CONTAINER_NAME = "playground"
-DIRECTORY_NAME = "focus_day"
+DIRECTORY_NAME = "focus_day_2"
 NAMESPACE_NAME = DIRECTORY_NAME
 STORE_NAME = CONTAINER_NAME
 
@@ -84,10 +84,8 @@ defs = Definitions(
     },
     # Add jobs for pipeline operations
     jobs=[observe_job],
-
     # Add scheduling - observe daily at midnight
     schedules=[daily_schedule_at(observe_job, hour=0, minute=0)],
-
     # Add sensors for automation
     sensors=[default_automation_sensor(assets)],
 )
