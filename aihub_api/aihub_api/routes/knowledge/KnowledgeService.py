@@ -39,7 +39,9 @@ logger = logging.getLogger(__name__)
 class KnowledgeService:
     @staticmethod
     def _ensure_db_exists(db: str):
-        if db not in mongoengine.connection._connections:
+        try:
+            mongoengine.connection.get_connection(alias=db)
+        except Exception:
             register_connection(alias=db, name=db, host=MongoSettings().CONNECTION_STRING.get_secret_value())
 
     @staticmethod
@@ -52,39 +54,33 @@ class KnowledgeService:
         """
         file_access_config = AnonymousFileAccessSettings()
 
-        try:
-            files_info = file_access_config.service.list_files(container=bucket_name, prefix=f"{namespace}/")
+        files_info = file_access_config.service.list_files(container=bucket_name, prefix=f"{namespace}/")
 
-            all_files = []
-            for file_info in files_info:
-                key = file_info["key"]
-                filename = key.split("/")[-1]
-                file_namespace = key.split("/")[0]
+        all_files = []
+        for file_info in files_info:
+            key = file_info["key"]
+            filename = key.split("/")[-1]
+            file_namespace = key.split("/")[0]
 
-                storage_backend = file_access_config.STORAGE_BACKEND
-                if storage_backend == "azure":
-                    document_uri = f"azure://{bucket_name}/{key}"
-                else:
-                    document_uri = f"s3://{bucket_name}/{key}"
+            storage_backend = file_access_config.STORAGE_BACKEND
+            if storage_backend == "azure":
+                document_uri = f"azure://{bucket_name}/{key}"
+            else:
+                document_uri = f"s3://{bucket_name}/{key}"
 
-                datalake_file = DocumentDTO(
-                    id=key,
-                    document_title=filename,
-                    namespace=file_namespace,
-                    updated_at=file_info.get("last_modified", ""),
-                    created_at=file_info.get("last_modified", ""),
-                    inserted_at="",
-                    source=document_uri,
-                    is_ingested=False,
-                )
-                all_files.append(datalake_file)
+            datalake_file = DocumentDTO(
+                id=key,
+                document_title=filename,
+                namespace=file_namespace,
+                updated_at=file_info.get("last_modified", ""),
+                created_at=file_info.get("last_modified", ""),
+                inserted_at="",
+                source=document_uri,
+                is_ingested=False,
+            )
+            all_files.append(datalake_file)
 
-            return all_files
-
-        except Exception as e:
-            logger.error(f"Failed to list datalake files in {bucket_name}/{namespace}: {e}")
-            # Fallback to empty list to prevent breaking the UI
-            return []
+        return all_files
 
     @staticmethod
     def _filter_processing_documents(
