@@ -1,12 +1,12 @@
 # License Report
 
-Generated on: 02.09.2025
+Generated on: 03.09.2025
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (Poetry): **1454 packages**
+- Python packages (Poetry): **1455 packages**
 - Node.js packages (pnpm): **193 packages**
-- External Docker images: **28 images**
+- External Docker images: **29 images**
 
 ### License Compatibility
 
@@ -417,6 +417,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | filetype                                         | 1.2.0         | MIT License                                                  |                                                    |
 | ✅     | graphql-core                                     | 3.2.6         | MIT License                                                  |                                                    |
 | ✅     | grpc-interceptor                                 | 0.15.4        | MIT License                                                  |                                                    |
+| ✅     | gunicorn                                         | 23.0.0        | MIT License                                                  |                                                    |
 | ✅     | h11                                              | 0.16.0        | MIT License                                                  |                                                    |
 | ✅     | httptools                                        | 0.6.4         | MIT License                                                  |                                                    |
 | ✅     | iniconfig                                        | 2.1.0         | MIT License                                                  |                                                    |
@@ -1698,41 +1699,43 @@ This document contains license information for all dependencies across the monor
 
 ### External Docker Service Licenses
 
-| Status | Service                   | Image                                                                        | License            | Notes                                                               |
-| ------ | ------------------------- | ---------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------- |
-| ✅     | oauth2-proxy              | `ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest`                              | MIT                | Permissive license                                                  |
-| ✅     | milvus                    | `ghcr.io/bbvch-ai/aihub-core/milvus:v2.5.15`                                 | Apache-2.0         | Permissive license                                                  |
-| ✅     | llama.cpp                 | `ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b5490`                    | MIT                | Permissive license                                                  |
-| ✅     | minimal-notebook          | `ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6`                | BSD-3-Clause       | Jupyter base image                                                  |
-| ✅     | litellm                   | `ghcr.io/bbvch-ai/aihub-core/litellm:main-v1.74.8-nightly`                   | MIT                | Permissive license                                                  |
-| ⚠️     | mongo                     | `ghcr.io/bbvch-ai/aihub-core/mongo:8.0.9`                                    | SSPL               | Source-available; allowed for internal use, not for DB-as-a-service |
-| ✅     | pgvector                  | `ghcr.io/bbvch-ai/aihub-core/pgvector:pg17`                                  | PostgreSQL License | BSD-style permissive license                                        |
-| ✅     | traefik                   | `ghcr.io/bbvch-ai/aihub-core/traefik:v3.4.4`                                 | Apache-2.0         | Permissive license                                                  |
-| ✅     | presidio-analyzer         | `ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359`                      | MIT                | Permissive license                                                  |
-| ✅     | playwright                | `ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy`                       | Apache-2.0         | Permissive license                                                  |
-| ⚠️     | open-webui                | `ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.22`                             | BSD-3-Clause       | Permissive with required branding retention                         |
-| ✅     | docling-serve             | `ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.3.1`                           | MIT                | Permissive license                                                  |
-| ✅     | nats                      | `ghcr.io/bbvch-ai/aihub-core/nats:2.11.4`                                    | Apache-2.0         | Permissive license                                                  |
-| ✅     | docling-serve             | `ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.1.0`                           | MIT                | Permissive license                                                  |
-| ✅     | playwright                | `ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy`                       | Apache-2.0         | Permissive license                                                  |
-| ✅     | dagster                   | `ghcr.io/bbvch-ai/aihub-core/dagster:latest`                                 | Apache-2.0         | Permissive license                                                  |
-| ✅     | text-embeddings-inference | `ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cpu-ipex-sha-c8ff435` | Apache-2.0         | Permissive license                                                  |
-| ✅     | attu                      | `ghcr.io/bbvch-ai/aihub-core/attu:v2.5.12`                                   | Apache-2.0         | Permissive license                                                  |
-| ✅     | presidio-anonymizer       | `ghcr.io/bbvch-ai/aihub-core/presidio-anonymizer:2.2.359`                    | MIT                | Permissive license                                                  |
-| ✅     | etcd                      | `ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.16`                                   | Apache-2.0         | Permissive license                                                  |
-| ✅     | llama.cpp                 | `ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b5490`                         | MIT                | Permissive license                                                  |
-| ⚠️     | minio                     | `ghcr.io/bbvch-ai/aihub-core/minio:release.2024-05-28T17-19-04Z`             | AGPL-3.0           | Copyleft - modifications must be open sourced                       |
-| ⚠️     | redis                     | `ghcr.io/bbvch-ai/aihub-core/redis:8.0.1`                                    | AGPL-3.0           | Copyleft - modifications must be open sourced if changed            |
-| ⚠️     | minio                     | `ghcr.io/bbvch-ai/aihub-core/minio:release.2025-05-24t17-08-30z`             | AGPL-3.0           | Copyleft - modifications must be open sourced                       |
-| ⚠️     | open-webui                | `ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.13`                             | BSD-3-Clause       | Permissive with required branding retention                         |
-| ⚠️     | phoenix                   | `ghcr.io/bbvch-ai/aihub-core/phoenix:version-10.0.4`                         | ELv2               | Source-available; cannot offer as a service, internal use allowed   |
-| ✅     | dagster                   | `ghcr.io/bbvch-ai/aihub-core/dagster:nightly`                                | Apache-2.0         | Permissive license                                                  |
-| ✅     | text-embeddings-inference | `ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:89-1.8`               | Apache-2.0         | Permissive license                                                  |
+| Status | Service                   | Image                                                                        | License                          | Notes                                                               |
+| ------ | ------------------------- | ---------------------------------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------- |
+| ✅     | oauth2-proxy              | `ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest`                              | MIT                              | Permissive license                                                  |
+| ✅     | milvus                    | `ghcr.io/bbvch-ai/aihub-core/milvus:v2.5.15`                                 | Apache-2.0                       | Permissive license                                                  |
+| ✅     | llama.cpp                 | `ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b5490`                    | MIT                              | Permissive license                                                  |
+| ✅     | minimal-notebook          | `ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6`                | BSD-3-Clause                     | Jupyter base image                                                  |
+| ✅     | litellm                   | `ghcr.io/bbvch-ai/aihub-core/litellm:main-v1.74.8-nightly`                   | MIT                              | Permissive license                                                  |
+| ⚠️     | mongo                     | `ghcr.io/bbvch-ai/aihub-core/mongo:8.0.9`                                    | SSPL                             | Source-available; allowed for internal use, not for DB-as-a-service |
+| ✅     | pgvector                  | `ghcr.io/bbvch-ai/aihub-core/pgvector:pg17`                                  | PostgreSQL License               | BSD-style permissive license                                        |
+| ✅     | traefik                   | `ghcr.io/bbvch-ai/aihub-core/traefik:v3.4.4`                                 | Apache-2.0                       | Permissive license                                                  |
+| ✅     | presidio-analyzer         | `ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359`                      | MIT                              | Permissive license                                                  |
+| ✅     | playwright                | `ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy`                       | Apache-2.0                       | Permissive license                                                  |
+| ⚠️     | open-webui                | `ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.22`                             | BSD-3-Clause                     | Permissive with required branding retention                         |
+| ✅     | docling-serve             | `ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.3.1`                           | MIT                              | Permissive license                                                  |
+| ✅     | nats                      | `ghcr.io/bbvch-ai/aihub-core/nats:2.11.4`                                    | Apache-2.0                       | Permissive license                                                  |
+| ✅     | docling-serve             | `ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.1.0`                           | MIT                              | Permissive license                                                  |
+| ✅     | playwright                | `ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy`                       | Apache-2.0                       | Permissive license                                                  |
+| ✅     | dagster                   | `ghcr.io/bbvch-ai/aihub-core/dagster:latest`                                 | Apache-2.0                       | Permissive license                                                  |
+| ✅     | text-embeddings-inference | `ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cpu-ipex-sha-c8ff435` | Apache-2.0                       | Permissive license                                                  |
+| ✅     | attu                      | `ghcr.io/bbvch-ai/aihub-core/attu:v2.5.12`                                   | Apache-2.0                       | Permissive license                                                  |
+| ✅     | presidio-anonymizer       | `ghcr.io/bbvch-ai/aihub-core/presidio-anonymizer:2.2.359`                    | MIT                              | Permissive license                                                  |
+| ✅     | etcd                      | `ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.16`                                   | Apache-2.0                       | Permissive license                                                  |
+| ✅     | llama.cpp                 | `ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b5490`                         | MIT                              | Permissive license                                                  |
+| ⚠️     | minio                     | `ghcr.io/bbvch-ai/aihub-core/minio:release.2024-05-28T17-19-04Z`             | AGPL-3.0                         | Copyleft - modifications must be open sourced                       |
+| ⚠️     | redis                     | `ghcr.io/bbvch-ai/aihub-core/redis:8.0.1`                                    | AGPL-3.0                         | Copyleft - modifications must be open sourced if changed            |
+| ⚠️     | minio                     | `ghcr.io/bbvch-ai/aihub-core/minio:release.2025-05-24t17-08-30z`             | AGPL-3.0                         | Copyleft - modifications must be open sourced                       |
+| ⚠️     | open-webui                | `ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.13`                             | BSD-3-Clause                     | Permissive with required branding retention                         |
+| ⚠️     | phoenix                   | `ghcr.io/bbvch-ai/aihub-core/phoenix:version-10.0.4`                         | ELv2                             | Source-available; cannot offer as a service, internal use allowed   |
+| ✅     | dagster                   | `ghcr.io/bbvch-ai/aihub-core/dagster:nightly`                                | Apache-2.0                       | Permissive license                                                  |
+| ✅     | text-embeddings-inference | `ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:89-1.8`               | Apache-2.0                       | Permissive license                                                  |
+| ⚠️     | alpine                    | `alpine`                                                                     | Various (GPL-2.0 and permissive) | Primarily permissive, some copyleft components (e.g., BusyBox)      |
 
 ### Internal Docker Images (Our Code)
 
 The following are our own services and inherit the license we choose:
 
+- rag_agent (`ghcr.io/bbvch-ai/aihub-core/rag_agent:nightly`)
 - web (`ghcr.io/bbvch-ai/aihub-core/web:latest`)
 - web (`ghcr.io/bbvch-ai/aihub-core/web:nightly`)
 - llm_wrapping_agent (`ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:nightly`)

@@ -5,6 +5,65 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.243.1] - 2025-09-03 - Advanced RAG Agent, Secure Local Dev & OpenWebUI Enhancements
+
+### Added
+
+- 🦾 **Advanced RAG Agent**: Introduced a new Retrieval Augmented Generation (RAG) agent, designed for sophisticated
+  knowledge retrieval and integration into workflows.
+- 🚀 **Secure Local Development Setup**: Implemented a comprehensive local development environment
+  (`docker-compose.local.yml`) featuring Traefik, self-signed SSL certificates, and custom `nip.io` domains for a more
+  realistic and secure local testing experience.
+- 🔑 **`make local-cert` Command**: Added a convenient Makefile target to generate local SSL certificates effortlessly
+  using `mkcert` for `localhost` and `nip.io` domains.
+- 📄 **Expanded Local Development Documentation**: Provided extensive new documentation in the `README.md` to guide users
+  through setting up the enhanced local AI-Hub stack with HTTPS.
+- ⚡️ **OpenAI-Compatible OpenWebUI Pipeline**: Introduced a new OpenWebUI pipeline (`openai_pipeline.py`) that offers a
+  standard OpenAI-compatible interface for accessing AI-Hub models, complementing the existing event-based agent
+  integration.
+- 🔔 **Notification System Foundation**: Added a new NotificationController to the API, laying the groundwork for future
+  in-application notifications.
+- ⚙️ **Dagster Local Workspace Configuration**: Included a `workspace.local.yaml` to simplify the setup and management
+  of Dagster pipelines in local development environments.
+
+### Changed
+
+- 🔄 **Core Library Dependency Management**: Transitioned `aihub_lib` dependencies across all core projects (agent, API,
+  bot, pipeline, process) from local paths to specific Git tags, ensuring more stable and versioned dependency
+  resolution.
+- 🛡️ **OpenWebUI API Key Security**: Enhanced security for OpenWebUI's RAG, Audio STT/TTS, and Image Generation API
+  calls by switching to the `SUPERUSER_TOKEN`.
+- 🌐 **Configurable Phoenix Endpoint**: Updated the Phoenix client to utilize a configurable endpoint, offering greater
+  flexibility for integration with monitoring and evaluation systems.
+- 📊 **Refined LiteLLM Guardrail Defaults**: Adjusted LiteLLM guardrail defaults for Presidio (mask and block) to be off
+  by default and narrowed the default `presidio_language` to "de" for optimized control.
+- 🧹 **Standardized Milvus Bucket Naming**: Aligned and standardized the default Milvus bucket name in MinIO
+  configurations to "milvus" across environments.
+- 📦 **Updated Docling Service**: Upgraded the Docling service to `v1.3.1` and refined its Docker Compose configuration
+  for improved model loading and permission handling.
+- 🚀 **OpenWebUI Version Update**: Upgraded the OpenWebUI image to `v0.6.22`, incorporating the latest features and bug
+  fixes.
+- 📝 **Streamlined AI-Hub API OpenAI Endpoints**: Simplified the API's OpenAI endpoints by consolidating methods like
+  `get_models_with_assistants` to `get_models`, removing redundant "with assistants" naming.
+- 🔒 **Enhanced User Header Encoding**: Implemented base64 encoding for the `X-OpenWebUI-User-Name` header in OpenWebUI
+  interactions, improving security and compatibility.
+
+### Removed
+
+- 🗑️ **Deprecated Pipeline Runner Settings File**: Removed `PipelineRunnerSettings.py` to streamline configuration, with
+  settings now primarily managed through environment variables.
+
+---
+
+## [v0.243.0] - 2025-09-02 - Refined Image Tagging for Build Action
+
+### Changed
+
+- ⚡️ **Improved Image Tagging:** The `build_image` GitHub Action has been updated to use comma-separated values for
+  secondary image tags, ensuring more robust and widely compatible tag assignment for published images.
+
+---
+
 ## [v0.242.0] - 2025-09-02 - New Model Catalog and Advanced AI Features
 
 ### Added

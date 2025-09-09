@@ -24,7 +24,7 @@ async def main():
             description=LocaleString(en="This is the default Dev Agent config"),
             llm=LLMConfig(model_name="azure/gpt-4o-mini"),
         ),
-        redis_url=RedisSettings().REDIS_URL,
+        redis_url=RedisSettings().URL,
         servers=servers_list,
     )
 

@@ -74,7 +74,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_DEFAULT_BUCKETS: "open-webui,a-bucket"
+      MINIO_DEFAULT_BUCKETS: "open-webui,milvus"
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/minio-data:/minio-data
       - ./configs/minio/minio-entrypoint.sh:/usr/local/bin/minio-entrypoint.sh:ro
@@ -252,7 +252,7 @@ services:
       PRESIDIO_ANONYMIZER_API_BASE: "http://presidio-anonymizer:3000"
       SET_VERBOSE: "false"
     volumes:
-      - ./configs/litellm/litellm.nightly.yaml:/app/config.yaml
+      - ./configs/litellm/config.nightly.yaml:/app/config.yaml
     command: --config /app/config.yaml --detailed_debug
     depends_on:
       postgres:
@@ -277,7 +277,7 @@ services:
   # === OpenWebUI Stack ===
   # <editor-fold desc="OpenWebUI Stack">
   open-webui:
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.13
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.22
     container_name: open-webui
     <<: *restart-policy
     depends_on:
@@ -356,14 +356,14 @@ services:
       OPENAI_API_BASE_URL: ""
       OPENAI_API_KEY: ""
       RAG_OPENAI_API_BASE_URL: "http://api:8000/api/v1"
-      RAG_OPENAI_API_KEY: ${AIHUB_API_KEY}
+      RAG_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       AUDIO_STT_OPENAI_API_BASE_URL: "http://api:8000/api/v1"
-      AUDIO_STT_OPENAI_API_KEY: ${AIHUB_API_KEY}
+      AUDIO_STT_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       AUDIO_TTS_OPENAI_API_BASE_URL: "http://api:8000/api/v1"
-      AUDIO_TTS_OPENAI_API_KEY: ${AIHUB_API_KEY}
+      AUDIO_TTS_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       ENABLE_IMAGE_GENERATION: True
       IMAGES_OPENAI_API_BASE_URL: "http://api:8000/api/v1"
-      IMAGES_OPENAI_API_KEY: ${AIHUB_API_KEY}
+      IMAGES_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       MODELS_CACHE_TTL: 60
       TASK_MODEL: 'azure/gpt-4o-mini'
       TASK_MODEL_EXTERNAL: 'azure/gpt-4o-mini'
@@ -435,7 +435,7 @@ services:
       WEB_SEARCH_CONCURRENT_REQUESTS: 6
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: True
       WEB_LOADER_ENGINE: 'playwright'
-      PLAYWRIGHT_WS_URL: 'ws://playwright:3000/ws'
+      PLAYWRIGHT_WS_URL: 'ws://playwright:3000'
       FILE_IMAGE_COMPRESSION_WIDTH: 796
       FILE_IMAGE_COMPRESSION_HEIGHT: 796
 
@@ -554,16 +554,16 @@ services:
     container_name: jupyter-lab
     <<: *restart-policy
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/llama-data:/home/jovyan/work
+      - ${VOLUME_ROOT:-./.docker-volumes}/jupyter-data:/home/jovyan/work
     environment:
       JUPYTER_ENABLE_LAB: yes
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
   playwright:
-    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy
+    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy
     container_name: playwright-server
     <<: *restart-policy
-    command: npx playwright run-server --port 3000 --host 0.0.0.0
+    command: npx playwright@v1.49.0 run-server --port 3000 --host 0.0.0.0
     environment:
       NODE_ENV: production
     healthcheck:
@@ -626,6 +626,7 @@ services:
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
       - ./configs/dagster/dagster.nightly.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.yaml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -645,6 +646,7 @@ services:
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
       - ./configs/dagster/dagster.nightly.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.yaml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -663,23 +665,34 @@ services:
       - "mongo"
       - "nats"
       - "traefik"
-    volumes:
-      - api-venv:/app/.venv
-      - api-api-venv:/app/aihub_api/.venv
     environment:
       NATS_ENDPOINT: "nats://nats:4222"
       MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
       NUM_WORKERS: 1
       LOG_LEVEL: ${LOG_LEVEL}
+      AUTH_ENABLE_API_ACCESS: True
+      AUTH_OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
+      AUTH_IDENTITY_PROVIDER: ${AUTH_IDENTITY_PROVIDER}
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
+      SUPERUSER_ENABLED: true
+      SUPERUSER_NAME: ${SUPERUSER_NAME}
+      SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
+      SUPERUSER_OID: ${SUPERUSER_OID}
+      SUPERUSER_ROLE: "AIHubSuperuser"
+      SUPERUSER_TOKEN: ${SUPERUSER_TOKEN}
+      AIHUB_API_VERSION: "dev"
+      AIHUB_FRONTEND_ORIGIN: "${DOMAIN}"
+      AIHUB_CREATE_DEFAULT_ROLES: True
+      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
       AZURE_CLIENT_ID: ${OAUTH_CLIENT_ID}
       AZURE_TENANT_ID: ${OAUTH_TENANT_ID}
       AZURE_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
-      OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
-      AIHUB_API_VERSION: "dev"
-      AIHUB_FRONTEND_ORIGIN: "${DOMAIN}"
-      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000/v1"
-      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+      PHOENIX_ENDPOINT: "http://phoenix:6006"
+      MILVUS_URL: "http://milvus-standalone"
+      MILVUS_DIMENSION: "3072"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
     logging: *default-logging
@@ -697,13 +710,28 @@ services:
 
   # === Docling ===
   # <editor-fold desc="Docling Stack">
+  docling-model-permission:
+    container_name: docling-model-permission
+    image: alpine
+    command: [ "sh", "-c", "chown -R 1001:1001 /models" ]
+    restart: "no"
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
   docling:
-    image: ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.1.0
-    container_name: docling-serve
+    image: ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.3.1
+    container_name: docling
     <<: *restart-policy
+    depends_on:
+      docling-model-permission:
+        condition: service_completed_successfully
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
+      - ./configs/docling/init-models.sh:/docker-entrypoint.sh:ro
+    entrypoint: [ "/docker-entrypoint.sh" ]
     environment:
-      DOCLING_SERVE_ENABLE_UI: false
-      DOCLING_SERVE_MAX_SYNC_WAIT: 120
+      DOCLING_SERVE_ARTIFACTS_PATH: "/models"
+      DOCLING_SERVE_MAX_SYNC_WAIT: 600
+      DOCLING_MODELS: "layout tableformer code_formula easyocr"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
     logging: *default-logging
@@ -770,9 +798,24 @@ services:
     environment:
       NATS_ENDPOINT: "nats://nats:4222"
       REDIS_URL: "redis://redis:6379"
+      PHOENIX_ENDPOINT: "http://phoenix:6006"
+      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+  rag_agent:
+    image: ghcr.io/bbvch-ai/aihub-core/rag_agent:nightly
+    container_name: rag-agent
+    restart: always
+    environment:
+      NATS_ENDPOINT: "nats://nats:4222"
+      REDIS_URL: "redis://redis:6379"
+      PHOENIX_ENDPOINT: "http://phoenix:6006"
+      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+      MILVUS_URL: "http://milvus-standalone"
+      MILVUS_DIMENSION: "3072"
   # </editor-fold>
 
-  # === Common Pipelines ===
   default_rag_pipeline:
     image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:nightly
     container_name: default-rag-pipeline
@@ -782,19 +825,19 @@ services:
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
-      S3_ENDPOINT_URL: http://minio:9000
-      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
-      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      S3_REGION: "local"
+      S3_STORAGE_ENDPOINT: http://minio:9000
+      S3_STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER}
+      S3_STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_STORAGE_URL_SIGNING_SECRET: ${MINIO_URL_SIGNING_SECRET}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      COSMOS_DOCSTORE_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
-      VECTOR_STORE_URI: http://milvus-standalone:19530
-      DOCLING_API_ENDPOINT: http://docling:5001/v1/convert/source
-  # </editor-fold>
-
-  # <editor-fold desc="Common Pipelines">
-  # </editor-fold>
+      MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
+      DOCLING_API_ENDPOINT: http://docling:5001/v1alpha/convert/source
+      DOCLING_API_TIMEOUT: 600
+      MILVUS_URL: "http://milvus-standalone"
+      MILVUS_DIMENSION: "3072"
+      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
   # === Traefik ===
   # <editor-fold desc="Traefik">

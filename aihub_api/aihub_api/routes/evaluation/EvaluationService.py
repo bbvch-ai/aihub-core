@@ -61,7 +61,7 @@ class EvaluationService:
     @staticmethod
     def _get_phoenix_client() -> px.Client:
         """Initializes and returns a Phoenix client."""
-        return px.Client(warn_if_server_not_running=False)
+        return px.Client(endpoint=PhoenixSettings().ENDPOINT, warn_if_server_not_running=False)
 
     @staticmethod
     def _get_phoenix_request_config() -> tuple[str, dict[str, str]]:
