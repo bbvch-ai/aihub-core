@@ -102,80 +102,11 @@ def partitioned_processing(context: AssetExecutionContext) -> ProcessingResult:
     return process_partition_data(partition_key)
 ```
 
-## Error handling and debugging
-
-### Structured error logging
-
-Implement comprehensive error handling with context:
-
-```python
-from aihub_pipeline.types.ProcessingError import ProcessingError
-
-@op
-def robust_document_processing(
-    context: OpExecutionContext,
-    data_lake_file: DataLakeFile,
-    document_parser: DocumentParserResource,
-) -> RefDocDocument:
-    """Operation with structured error handling."""
-    try:
-        context.log.info(f"Processing file: {data_lake_file.name}")
-        
-        # Attempt document processing
-        document = document_parser.parse_file(data_lake_file.uri)
-        
-        # Validate result
-        if not document or not document.text.strip():
-            raise ProcessingError(
-                error_type="empty_document",
-                file_uri=data_lake_file.uri,
-                details="Document parsing resulted in empty content"
-            )
-        
-        context.log.info(f"Successfully processed: {data_lake_file.name}")
-        return document
-        
-    except ProcessingError as e:
-        # Log structured error with context
-        context.log.error(
-            f"Processing error: {e.error_type}",
-            extra={
-                "file_uri": data_lake_file.uri,
-                "file_size": data_lake_file.size,
-                "error_details": e.details,
-                "retry_count": context.retry_number,
-            }
-        )
-        
-        # Add error metadata for monitoring
-        context.add_output_metadata(
-            metadata={
-                "error_type": e.error_type,
-                "error_details": e.details,
-                "processing_status": "failed",
-            }
-        )
-        raise
-        
-    except Exception as e:
-        # Handle unexpected errors
-        context.log.error(
-            f"Unexpected error processing {data_lake_file.name}: {str(e)}",
-            extra={
-                "file_uri": data_lake_file.uri,
-                "exception_type": type(e).__name__,
-                "stack_trace": traceback.format_exc(),
-            }
-        )
-        raise
-```
-
 
 ## What you learned
 
 - **Comprehensive monitoring**: Use Dagster UI and custom metrics for full observability
-- **Error handling**: Implement structured error logging with context
 
 ## Next steps
 
-- Explore `aihub_pipeline/playground/__init__.py` for complete observable pipeline examples
+- Explore `aihub_pipeline/playground/` for complete observable pipeline examples

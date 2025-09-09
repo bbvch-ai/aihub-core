@@ -5,7 +5,8 @@ index: 4
 
 # Your First Pipeline
 
-Build your first data processing pipeline using the AI-Hub Pipeline (`aihub_pipeline`) SDK - a complete data transformation pipeline with multiple connected assets.
+Build your first data processing pipeline using the AI-Hub Pipeline (`aihub_pipeline`) SDK - a complete data 
+transformation pipeline with multiple connected assets.
 
 ## What you'll learn
 
@@ -32,7 +33,7 @@ AI-Hub pipelines are **data processing workflows** built on Dagster with three e
 
 ## Create your first pipeline
 
-Let's build a realistic data pipeline that processes user feedback data.
+Let's build a data pipeline that processes user feedback data.
 
 ### Start with a simple pipeline
 
@@ -49,7 +50,7 @@ def raw_feedback_data(context: AssetExecutionContext) -> Output[str]:
     """Source asset that provides raw user feedback data."""
     feedback = "The product is amazing but the documentation could be better!"
     context.log.info(f"Loaded raw feedback: {feedback}")
-    return Output(feedback, metadata={"feedback": feedback, "length": len(feedback)})
+    return Output(feedback, metadata={"feedback": feedback})
 
 
 @asset(description="Cleaned and processed feedback")
@@ -108,7 +109,7 @@ Click **"Materialize all"** to run the pipeline and see the data flow!
 
 ## Build a real AI-Hub pipeline
 
-Now let's create a realistic pipeline using the `aihub_pipeline` SDK that demonstrates document processing patterns:
+Now let's create a realistic pipeline using the `aihub_pipeline` SDK that demonstrates document processing patterns. We'll break this down step by step to understand each component.
 
 ### 1. Understanding AI-Hub Pipeline Structure
 
@@ -117,7 +118,9 @@ AI-Hub pipelines follow these key patterns:
 - **Resources**: Configured services like parsers, stores, and embedding models  
 - **Dynamic Partitions**: Each document becomes a separate partition for parallel processing
 
-### 2. Create a document processing pipeline (`my_document_pipeline.py`):
+### 2. Set up your pipeline configuration
+
+Start by creating the basic configuration and imports (`my_document_pipeline.py`):
 
 ```python
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
@@ -140,70 +143,189 @@ from aihub_pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelRe
 from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource, LoaderType
 from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
 
-# Pipeline configuration
+# Pipeline configuration - defines where data flows between assets
+DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])      # Raw file storage 
+DOCUMENT_KEY = AssetKey(["playground", "documents"])       # Parsed documents
+NODES_KEY = AssetKey(["playground", "nodes"])              # Document chunks with embeddings
+
+# Storage configuration
+CONTAINER_NAME = "playground"    # S3 bucket/container name
+DIRECTORY_NAME = "documents"     # Folder for documents
+NAMESPACE_NAME = DIRECTORY_NAME  # Vector store namespace
+STORE_NAME = CONTAINER_NAME      # Document store name
+
+# Dynamic partitions allow parallel processing of individual documents
+document_partitions = DynamicPartitionsDefinition(name="document_partitions")
+```
+
+### 3. Create your pipeline assets
+
+Next, create the three main assets that form your processing pipeline:
+
+```python
+# Create the pipeline assets using AI-Hub factories
+
+# 1. Observable Data Lake - watches for new/changed files
+observable_asset = observable_data_lake_factory(
+    asset_key=DATA_LAKE_KEY, 
+    partitions=document_partitions
+)
+
+# 2. Documents Asset - processes raw files into structured documents
+documents_asset = documents_factory(
+    asset_key=DOCUMENT_KEY,
+    data_lake_key=DATA_LAKE_KEY,    # Depends on data lake 
+    partitions=document_partitions   # One partition per document
+)
+
+# 3. Nodes Asset - chunks documents and creates embeddings
+nodes_asset = nodes_factory(
+    asset_key=NODES_KEY,
+    document_key=DOCUMENT_KEY,       # Depends on documents
+    partitions=document_partitions   # One partition per document
+)
+
+# Combine all assets
+assets = [observable_asset, documents_asset, nodes_asset]
+```
+
+**Understanding the asset factories:**
+- `observable_data_lake_factory`: Creates an asset that monitors file changes
+- `documents_factory`: Creates an asset that parses files into RefDoc objects with metadata  
+- `nodes_factory`: Creates an asset that chunks documents and generates vector embeddings
+
+### 4. Configure your pipeline resources
+
+Now configure the resources (services) your pipeline needs:
+
+```python
+# Resource configuration - split into logical groups for clarity
+
+# A. Storage and I/O Resources
+storage_resources = {
+    # Data lake I/O managers for S3-compatible storage
+    **default_io_manager_s3_datalake_resources(
+        container_name=CONTAINER_NAME, 
+        directory_name=DIRECTORY_NAME
+    ),
+    
+    # Data lake resources for file management
+    **s3_data_lake_resources(
+        container_name=CONTAINER_NAME,
+        directory_name=DIRECTORY_NAME,
+        figures_directory_name="__figures__",  # For extracted images/figures
+    ),
+}
+
+# B. Document Processing Resources  
+processing_resources = {
+    # Document parser - uses AI-powered Docling for PDF/Word/etc
+    "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
+    
+    # Node parser - chunks documents using structural elements  
+    "node_parser": MarkdownStructuralNodeParserResource(),
+}
+
+# C. Database and Search Resources
+database_resources = {
+    # Vector store and document store (MongoDB + Milvus)
+    **local_mongo_milvus_storage_context_resource(
+        vector_store_uri="http://localhost:19530",  # Milvus connection
+        store_name=STORE_NAME,
+        namespace_name=NAMESPACE_NAME,
+    ),
+}
+
+# D. AI Model Resources
+ai_resources = {
+    # Embedding model for creating vector representations
+    "embedding_model": EmbeddingModelResource(
+        embedding_config=EmbeddingModelConfig(
+            model_name="azure/text-embedding-3-large"
+        ),
+    ),
+}
+
+# Combine all resources
+all_resources = {
+    **storage_resources,
+    **processing_resources, 
+    **database_resources,
+    **ai_resources,
+}
+```
+
+### 5. Define your complete pipeline
+
+Finally, bring everything together in the pipeline definition:
+
+```python
+# Define the complete pipeline
+defs = Definitions(
+    assets=assets,           # The three processing assets
+    resources=all_resources, # All configured services
+)
+```
+
+**Complete pipeline file** (`my_document_pipeline.py`):
+
+Here's the complete file with all components together:
+
+```python
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
+
+from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
+from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
+from aihub_pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
+    observable_data_lake_factory,
+)
+
+from aihub_pipeline.resources.factory import (
+    default_io_manager_s3_datalake_resources,
+    local_mongo_milvus_storage_context_resource,
+    s3_data_lake_resources,
+)
+from aihub_pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelResource
+from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource, LoaderType
+from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
+
+# Configuration
 DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
 DOCUMENT_KEY = AssetKey(["playground", "documents"])  
 NODES_KEY = AssetKey(["playground", "nodes"])
 
 CONTAINER_NAME = "playground"
-DIRECTORY_NAME = "documents"
+DIRECTORY_NAME = "documents" 
 NAMESPACE_NAME = DIRECTORY_NAME
 STORE_NAME = CONTAINER_NAME
 
-# Dynamic partitions for scalable document processing
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
-# Create the pipeline assets using AI-Hub factories
+# Assets
 observable_asset = observable_data_lake_factory(DATA_LAKE_KEY, document_partitions)
+documents_asset = documents_factory(DOCUMENT_KEY, data_lake_key=DATA_LAKE_KEY, partitions=document_partitions)
+nodes_asset = nodes_factory(NODES_KEY, document_key=DOCUMENT_KEY, partitions=document_partitions)
 
-assets = [
-    # Observable asset watches the data lake for new/changed documents
-    observable_asset,
-    
-    # Document factory processes raw files into RefDocs with metadata
-    documents_factory(DOCUMENT_KEY, data_lake_key=DATA_LAKE_KEY, partitions=document_partitions),
-    
-    # Nodes factory chunks documents into searchable nodes with embeddings  
-    nodes_factory(NODES_KEY, document_key=DOCUMENT_KEY, partitions=document_partitions),
-]
+assets = [observable_asset, documents_asset, nodes_asset]
 
-# Define the complete pipeline
+# Resources
 defs = Definitions(
     assets=assets,
     resources={
-        # Data lake I/O managers for S3-compatible storage
-        **default_io_manager_s3_datalake_resources(
-            container_name=CONTAINER_NAME, 
-            directory_name=DIRECTORY_NAME
-        ),
-        
-        # Document processing resources
+        **default_io_manager_s3_datalake_resources(CONTAINER_NAME, DIRECTORY_NAME),
+        **s3_data_lake_resources(CONTAINER_NAME, DIRECTORY_NAME, "__figures__"),
+        **local_mongo_milvus_storage_context_resource("http://localhost:19530", STORE_NAME, NAMESPACE_NAME),
         "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
         "node_parser": MarkdownStructuralNodeParserResource(),
-        
-        # Vector store and document store (MongoDB + Milvus)
-        **local_mongo_milvus_storage_context_resource(
-            vector_store_uri="http://localhost:19530",
-            store_name=STORE_NAME,
-            namespace_name=NAMESPACE_NAME,
-        ),
-        
-        # Data lake resources for file management
-        **s3_data_lake_resources(
-            container_name=CONTAINER_NAME,
-            directory_name=DIRECTORY_NAME,
-            figures_directory_name="__figures__",
-        ),
-        
-        # AI models for embeddings
         "embedding_model": EmbeddingModelResource(
-            embedding_config=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
+            embedding_config=EmbeddingModelConfig(model_name="azure/text-embedding-3-large")
         ),
     },
 )
 ```
 
-### 3. Run your AI-Hub pipeline:
+### 6. Run your AI-Hub pipeline:
 
 ```bash
 poetry run dagster dev -f my_document_pipeline.py
@@ -217,13 +339,13 @@ data_lake (observable) → documents → nodes
                        (DocStore)  (VectorStore)
 ```
 
-### 4. Understanding the data flow:
+### 7. Understanding the data flow:
 
 1. **Observable Data Lake**: Monitors for new PDF, Word, Markdown, etc. files
 2. **Documents**: Parses files using AI-powered document intelligence (Docling)
 3. **Nodes**: Chunks documents using structural parsing and generates embeddings
 
-### 5. Add jobs and scheduling to your pipeline
+### 8. Add jobs and scheduling to your pipeline
 
 For production pipelines, you'll want to add jobs and scheduling. Let's extend the pipeline:
 
@@ -268,7 +390,7 @@ Your pipeline now supports:
 - **Scheduled observation**: Daily checks for new documents
 - **Automatic processing**: Assets process automatically when upstream changes detected
 
-### 7. Monitor with AI-Hub observability tools:
+### 9. Monitor with AI-Hub observability tools:
 
 - **Dagster UI** (`http://localhost:3000`): Asset lineage, execution logs, and materialization history 
 - **MinIO Console** (`http://localhost:9001`): Data lake file management
@@ -276,7 +398,7 @@ Your pipeline now supports:
 - **Milvus (Attu)**: Vector database monitoring
 
 
-### 8. Understanding AI-Hub pipeline patterns
+### 10. Understanding AI-Hub pipeline patterns
 
 Your AI-Hub pipeline demonstrates key patterns:
 

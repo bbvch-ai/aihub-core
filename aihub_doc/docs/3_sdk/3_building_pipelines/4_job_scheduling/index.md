@@ -1,8 +1,8 @@
 ---
-title: "Scheduling"
+title: " Job Scheduling"
 index: 4
 ---
-# Scheduling
+# Job Scheduling
 
 
 ## Scheduling strategy
@@ -129,5 +129,4 @@ observe_filesystem_job = observe_source_job(
 
 ## Next steps
 
-With production scheduling mastered, complete your pipeline expertise with:
 - [Pipeline observation](../5_pipeline_observation/) for monitoring and debugging production systems

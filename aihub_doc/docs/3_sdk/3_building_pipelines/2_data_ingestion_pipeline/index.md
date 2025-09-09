@@ -1,9 +1,9 @@
 ---
-title: Data Ingestion Patterns
+title: Data Ingestion Pipeline
 index: 2
 ---
 
-# Data Ingestion Patterns
+# Data Ingestion Pipeline
 
 Data ingestion is the foundation of any knowledge processing pipeline. 
 AI-Hub provides proven patterns for extracting, parsing, and transforming business documents from various sources into 
@@ -227,41 +227,34 @@ defs = Definitions(
 ```
 :::
 
-### Understanding the pipeline components {#pipeline-components}
+### Understanding the pipeline components (assets) {#pipeline-components}
 
 > [!NOTE] Asset Flow Explanation
 > Each asset in the pipeline represents a concrete data transformation stage with automatic dependency management.
 
-::: details Asset Breakdown
 
-**1. Observable Data Lake Asset** (`data_lake_observer`)
-```python
-# Monitors your data source for changes
-# Automatically creates new partitions when documents are added/modified
-# Triggers downstream processing only for changed content
-```
+1. **Observable Data Lake Asset** (`observable_data_lake`)
+   - Monitors your data source for changes
+   - Automatically creates new partitions when documents are added/modified
+   - Triggers downstream processing only for changed content
 
-**2. Documents Asset** (`documents_asset`)  
-```python
-# Parses raw files (PDF, DOCX, MD) into structured RefDoc format
-# Extracts text content, images, and metadata
-# Stores parsed documents in MongoDB document store
-```
+2. **Documents Asset** (`document`)  
+   - Parses raw files (PDF, DOCX, MD) into structured RefDoc format
+   - Extracts text content, images, and metadata
+   - Stores parsed documents in MongoDB document store
 
-**3. Nodes Asset** (`nodes_asset`)
-```python
-# Chunks documents into optimally-sized text nodes
-# Uses intelligent parsing to respect document structure
-# Prepares content for vector embedding generation
-```
+3. **Nodes Asset** (`nodes`)
+   - Chunks documents into optimally-sized text nodes
+   - Uses intelligent parsing to respect document structure
+   - Prepares content for vector embedding generation
 
-**4. Summary Nodes Asset** (`summary_nodes_asset`)
-```python
-# Creates hierarchical summaries of document sections
-# Improves context preservation for RAG retrieval
-# Generates multi-level abstractions of content
-```
-:::
+4. **Summary Nodes Asset** (`summary_nodes`)
+   - Creates hierarchical summaries of document sections
+   - Improves context preservation for RAG retrieval
+   - Generates multi-level abstractions of content
+
+5. **Removed Documents Asset** (`removed_documents`)
+   - Pseudo-Asset that removes documents from the document store and vector store that are no longer present in the Data Lake
 
 ### Running your Ingestion pipeline {#running-pipeline}
 
@@ -305,7 +298,7 @@ The Dagster UI provides comprehensive observability:
 :::
 
 
-## Document parsing strategies {#parsing-strategies}
+## Configuration Options {#configuration-options}
 AI-Hub supports multiple document parsing approaches depending on your requirements.
 
 ::: code-group
@@ -328,10 +321,4 @@ AI-Hub supports multiple document parsing approaches depending on your requireme
 
 ## Next steps {#next-steps}
 
-Once you've implemented basic ingestion patterns, explore:
-
-::: info Related Topics
-- [Observable assets](../3_observable_assets/) for reactive pipelines
-- [Job Scheduling](../4_job_scheduling/) to run pipelines on a time-based schedule
-- [Pipeline observation](../5_pipeline_observation/) for monitoring and debugging
-:::
+- [Job Scheduling](/3_sdk/3_building_pipelines/4_job_scheduling/) - Make your pipeline production-ready by configuring jobs and schedules

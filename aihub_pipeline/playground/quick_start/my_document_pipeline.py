@@ -30,7 +30,7 @@ DOCUMENT_KEY = AssetKey(["playground", "documents"])
 NODES_KEY = AssetKey(["playground", "nodes"])
 
 CONTAINER_NAME = "playground"
-DIRECTORY_NAME = "focus_day_2"
+DIRECTORY_NAME = "quick_start"
 NAMESPACE_NAME = DIRECTORY_NAME
 STORE_NAME = CONTAINER_NAME
 

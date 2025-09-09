@@ -6,7 +6,7 @@ def raw_feedback_data(context: AssetExecutionContext) -> Output[str]:
     """Source asset that provides raw user feedback data."""
     feedback = "The product is amazing but the documentation could be better!"
     context.log.info(f"Loaded raw feedback: {feedback}")
-    return Output(feedback, metadata={"feedback": feedback, "length": len(feedback)})
+    return Output(feedback, metadata={"feedback": feedback})
 
 
 @asset(description="Cleaned and processed feedback")
