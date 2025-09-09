@@ -61,7 +61,7 @@ class MyCustomAgent(Agent):
 
 When you start the UI and try to use the Agent in the OpenWebUI. You notice that the agent does not respond.
 
-![image](./media/pre_chunk_event.png)
+![image](../../../../media/sdk/your_first_agent/pre_chunk_event.png)
 
 ### Use Chunk Events to display live Chat Responses
 
@@ -102,7 +102,7 @@ class MyCustomAgent(Agent):
 
 How we see that the Agent responds with an actual message.
 
-![image](./media/post_chunk_event.png)
+![image](../../../../media/sdk/your_first_agent/post_chunk_event.png)
 
 ### See the power of streaming
 
@@ -141,7 +141,7 @@ class MyCustomAgent(Agent):
 ```
 
 We just added a second chunk that is displayed. When you run the agent again now you see that it will responde with `Hello World!` first and after 2 seconds answers with `You said: Hello!`  
-<video controls="controls" src="./media/show_chunk_delay.mp4" type="video/mp4" />
+<video controls="controls" src="../../../../media/sdk/your_first_agent/show_chunk_delay.mp4" type="video/mp4" />
 
 ### Add some thinking steps
 
@@ -180,7 +180,7 @@ class MyCustomAgent(Agent):
         return StopEvent(final_message=hello_world_message)
 ```
 Now you see there is an additional section in the response called `Thinking...` if you expand it you can see our thought that has been created with the content `Drinking coffee...`
-![image](./media/show_thought.png)
+![image](../../../../media/sdk/your_first_agent/show_thought.png)
 
 ## Create your first Multistep Agent
 
@@ -253,7 +253,7 @@ We have connected the two steps by defining out new Event `MyCustomAgentEvent` a
 
 If you Navigate to the Agent Overview, select you agent there and then go to `Workflow`, then you can see the Workflow and the steps of your agent. You can see which steps are defined and which input and output events these steps have.
 
-![image](./media/simple_workflow.png)
+![image](../../../../media/sdk/your_first_agent/simple_workflow.png)
 
 
 ### 3. Add some Agent Configuration (`MyCustomAgentConfig.py`):
