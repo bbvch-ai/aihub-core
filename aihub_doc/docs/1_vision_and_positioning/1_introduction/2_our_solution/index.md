@@ -65,28 +65,36 @@ When you deploy the Swiss AI Hub, you immediately have:
 
 Remember those hard questions from before? Here's how the platform answers them:
 
-**"How do we deploy this?"**\
+::: tip "How do we deploy this?"
 Everything runs in containers. One command starts the entire stack. Scale by adjusting container counts.
+:::
 
-**"Where does our data stay?"**\
+::: tip "Where does our data stay?"
 Wherever you deploy it. Run on-premise, in a Swiss data center, or your preferred cloud. Your infrastructure, your
 control.
+:::
 
-**"Can we track what the AI is doing?"**\
+::: tip "Can we track what the AI is doing?"
 Every agent action is traced through Phoenix. Every API call is logged. Every decision is auditable.
+:::
 
-**"How do we control costs?"**\
+::: tip "How do we control costs?"
 LiteLLM provides unified cost tracking across all models. Set limits by user, team, or globally.
+:::
 
-**"What happens when it fails?"**\
+::: tip "What happens when it fails?"
 Built-in error handling, automatic failover between models, and graceful degradation to human review.
+:::
 
-**"How do users actually access it?"**\
+::: tip "How do users actually access it?"
 Through the web UI, Teams, Slack, or API. Authentication handled by your existing identity provider.
+:::
 
-**"Can we integrate it with our existing tools?"**\
+::: tip "Can we integrate it with our existing tools?"
 OpenAI-compatible API for tool compatibility. Event-driven architecture for custom integrations. Webhook endpoints for
 external systems.
+:::
+
 
 ## Why open source changes everything
 
@@ -105,7 +113,7 @@ automatically:
 
 - Stream real-time updates to users through WebSocket connections
 - Appear in the chat interface without custom UI development
-- Get traced in Phoenix without instrumentation code
+- Get traced without instrumentation code
 - Handle authentication and authorization without security logic
 - Store state in provided databases without connection management
 - Process documents through existing pipelines without custom parsing

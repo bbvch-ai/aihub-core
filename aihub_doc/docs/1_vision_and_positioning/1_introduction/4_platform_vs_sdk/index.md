@@ -52,7 +52,7 @@ This agent automatically:
 ## Why the separation matters
 
 **Deployment flexibility**\
-You can deploy the platform without any custom development. Teams can start using AI immediately with pre-built
+You can deploy the platform without any custom development code. Teams can start using AI immediately with pre-built
 capabilities while developers work on custom agents. The platform provides value from day one.
 
 **Development independence**\
