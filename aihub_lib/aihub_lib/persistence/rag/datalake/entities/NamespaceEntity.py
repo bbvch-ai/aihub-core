@@ -28,7 +28,7 @@ class NamespaceEntity(Document):
     display_name = EmbeddedDocumentField(LocaleStringEntity, required=False)
     description = EmbeddedDocumentField(LocaleStringEntity, required=False)
     created_at = IntField(required=True)
-    last_updated = IntField(required=True)
+    updated_at = IntField(required=True)
     inserted_at = IntField(required=True)
 
     @staticmethod
@@ -120,7 +120,7 @@ class NamespaceEntity(Document):
             namespace.display_name = display_name
         if description:
             namespace.description = description
-        namespace.last_updated = int(time.time())
+        namespace.updated_at = int(time.time())
         namespace.save()
         return namespace
 

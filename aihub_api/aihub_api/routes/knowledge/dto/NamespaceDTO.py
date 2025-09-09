@@ -12,10 +12,10 @@ class NamespaceDTO(BaseModel):
     display_name: Annotated[str | None, Field(None, description="Display name of namespace, can be localized")]
     description: Annotated[str | None, Field(None, description="Description of namespace, can be localized")]
     number_of_documents: Annotated[int, Field(..., description="Number of documents in namespace")]
-    last_updated_at: Annotated[
+    updated_at: Annotated[
         int, Field(..., description="Latest timestamp when any document in the namespace was updated")
     ]
-    last_inserted_at: Annotated[
+    inserted_at: Annotated[
         int, Field(..., description="Latest timestamp when any document in the namespace was inserted")
     ]
     created_at: Annotated[
@@ -41,8 +41,8 @@ class NamespaceDTO(BaseModel):
             name=entity.namespace_name,
             display_name=cls._safe_extract_locale_from_entity(entity.display_name, t),
             description=cls._safe_extract_locale_from_entity(entity.description, t),
-            last_updated_at=entity.last_updated,
-            last_inserted_at=entity.inserted_at,
+            updated_at=entity.updated_at,
+            inserted_at=entity.inserted_at,
             created_at=entity.created_at,
             number_of_documents=number_of_documents,
         )
