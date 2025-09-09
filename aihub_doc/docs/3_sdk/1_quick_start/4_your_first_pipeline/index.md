@@ -21,7 +21,7 @@ This quickstart covers the essential building blocks:
 ## Prerequisites
 
 You need the AI-Hub development environment running. Before you start, make sure you completed the
-[Development Environment Setup](/3_sdk/1_quick_start/1_dev_environment_setup/) steps.
+[Development Environment Setup](../1_dev_environment_setup/) steps.
 
 ## How pipelines work
 
@@ -418,4 +418,4 @@ Your AI-Hub pipeline demonstrates key patterns:
 
 ## Next steps
 
-- [Building Pipelines](/3_sdk/3_building_pipelines/) - Learn advanced AI-Hub pipeline patterns
+- [Building Pipelines](../../3_building_pipelines/) - Learn advanced AI-Hub pipeline patterns

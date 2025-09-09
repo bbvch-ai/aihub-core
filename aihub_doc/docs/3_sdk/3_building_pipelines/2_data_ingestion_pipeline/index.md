@@ -321,4 +321,4 @@ AI-Hub supports multiple document parsing approaches depending on your requireme
 
 ## Next steps {#next-steps}
 
-- [Job Scheduling](/3_sdk/3_building_pipelines/4_job_scheduling/) - Make your pipeline production-ready by configuring jobs and schedules
+- [Job Scheduling](../4_job_scheduling/) - Make your pipeline production-ready by configuring jobs and schedules

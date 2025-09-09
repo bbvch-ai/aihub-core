@@ -306,6 +306,74 @@ docker compose -f milvus-standalone-docker-compose.yml -f docker-compose-webui.y
 Wait for all services to become healthy (you can check with `docker ps`) before proceeding.
 :::
 
+### :house: Running the AI-Hub Locally
+
+::: warning :warning: Important
+Only use self-signed SSL certificates for local development. Never use them in production or public environments.
+:::
+
+For local development with SSL support and custom domain routing, use the `docker-compose.local.yml` configuration:
+
+#### Prerequisites
+
+1. **mkcert**: Install mkcert for generating local SSL certificates
+
+   - **Linux (Ubuntu/Debian)**:
+     ```bash
+     sudo apt install libnss3-tools
+     wget -O mkcert https://dl.filippo.io/mkcert/latest?for=linux/amd64
+     chmod +x mkcert
+     sudo mv mkcert /usr/local/bin/
+     ```
+   - **Windows**:
+     ```powershell
+     # Using Chocolatey
+     choco install mkcert
+
+     # Using Scoop
+     scoop bucket add extras
+     scoop install mkcert
+     ```
+
+2. **Generate SSL Certificates**:
+
+   ```bash
+   make local-cert
+   ```
+
+3. **Environment Configuration**:
+
+   - Copy `.env.dev` to `.env` and configure with your settings
+   - The default domain `127.0.0.1.nip.io` provides wildcard DNS resolution to localhost
+
+#### Start the Local Stack
+
+```bash
+# Start all services with local configuration
+docker compose -f docker-compose.local.yml up -d
+
+# Check service health
+docker compose -f docker-compose.local.yml ps
+```
+
+#### Access Points
+
+Once running, access the AI-Hub services at:
+
+- **Main Web Interface**: https://127.0.0.1.nip.io
+- **OpenWebUI**: https://openwebui.127.0.0.1.nip.io
+- **LiteLLM**: https://litellm.127.0.0.1.nip.io
+- **Dagster**: https://dagster.127.0.0.1.nip.io
+- **MinIO Console**: https://datalake.127.0.0.1.nip.io
+- **Traefik Dashboard**: https://traefik.localhost (admin credentials required)
+
+::: tip :bulb: Local Development Tips
+- The `.nip.io` domain automatically resolves to your localhost, providing a production-like domain experience
+- SSL certificates are valid for both `*.127.0.0.1.nip.io` and `*.localhost` domains
+- All services use Traefik for SSL termination and routing
+- Volume data is stored in `${VOLUME_ROOT:-./.docker-volumes}/` (defaults to `.docker-volumes/`)
+:::
+
 ### :key: Configure Environment Variables
 
 ::: warning
@@ -870,7 +938,7 @@ Before writing any code, check your local environment.
    `aihub_agent`, `aihub_api`, etc.). If code is used by more than one service, it belongs in `aihub_lib`.
 3. **Write the code**. As you implement your solution, rigorously follow all rules defined in the Chapter **Code
    Conventions**.
- :::
+:::
 
 ### :white_check_mark: Step 4: Verify Code Quality
 
@@ -925,7 +993,7 @@ We follow a **README.md-only** documentation principle. All project documentatio
    docstrings directly in the implementation file. This is the most common form of documentation.
 2. **README.md Files**: For documentation that holds true for a larger part of the codebase (a specific folder, a scope,
    or the entire project), we use `README.md` files.
- :::
+:::
 
 ::: tip :file_folder: Hierarchical Structure
 These README files are hierarchical. A `README.md` can exist at the project root, within each scope (e.g.,

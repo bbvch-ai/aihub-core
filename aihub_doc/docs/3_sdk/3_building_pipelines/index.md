@@ -16,7 +16,7 @@ Learn how to use, configure, and extend the `aihub_pipeline` SDK for your docume
 
 ## Prerequisites
 
-Complete the [Development Environment Setup](/3_sdk/1_quick_start/1_dev_environment_setup/) and [Your First Pipeline](/3_sdk/1_quick_start/4_your_first_pipeline/) before starting.
+Complete the [Development Environment Setup](../1_quick_start/1_dev_environment_setup/) and [Your First Pipeline](../1_quick_start/4_your_first_pipeline/) before starting.
 
 ## The Default Data Lake to Vector Store Pipeline
 
@@ -182,7 +182,7 @@ These patterns enable pipelines that are efficient, scalable, and maintainable w
 
 If you're new to the AI-Hub Pipeline SDK, follow this learning path:
 
-1. **[Pipeline Patterns](/3_sdk/3_building_pipelines/1_pipeline_patterns/)** - Understand the architectural decisions and patterns for building pipelines
-2. **[Data Ingestion Pipeline](/3_sdk/3_building_pipelines/2_data_ingestion_pipeline/)** - Configure and extend the default pipeline
-3. **[Job Scheduling](/3_sdk/3_building_pipelines/4_job_scheduling/)** - Schedule your pipelines for automatic runs
-4. **[Pipeline Observation](/3_sdk/3_building_pipelines/5_pipeline_observation/)** Monitor your pipelines for performance and errors
+1. **[Pipeline Patterns](./1_pipeline_patterns/)** - Understand the architectural decisions and patterns for building pipelines
+2. **[Data Ingestion Pipeline](./2_data_ingestion_pipeline/)** - Configure and extend the default pipeline
+3. **[Job Scheduling](./4_job_scheduling/)** - Schedule your pipelines for automatic runs
+4. **[Pipeline Observation](./5_pipeline_observation/)** Monitor your pipelines for performance and errors
