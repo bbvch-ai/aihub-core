@@ -127,10 +127,10 @@ jobs:
             if [ $i -eq 5 ]; then
               echo "Error: Tag $TAG_NAME not found on remote after 5 attempts."
               echo "Remote tags:"
-              git ls-remote --tags origin | tail -10
+              git ls-remote --tags origin | sort -V | tail -10
               exit 1
             fi
-            sleep 2
+            sleep 5
           done
 
   changelog:
