@@ -172,7 +172,7 @@ const handleCreate = async () => {
     description: description.value,
   }
 
-  await createNamespace(ref(requestBody))
+  await createNamespace(requestBody)
   emit('success', { database: selectedDatabase.value, namespace: name.value })
   closeModal()
 }
