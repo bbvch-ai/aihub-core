@@ -1,6 +1,6 @@
 ---
 title: AI-Hub Library
-index: 0
+index: 2
 ---
 
 # 📚 AI-Hub Library Developer's Guide

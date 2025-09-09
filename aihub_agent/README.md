@@ -1,6 +1,6 @@
 ---
 title: AI-Hub Agents
-index: 1
+index: 3
 ---
 
 # 🤖 AI-Hub Agent Developer's Guide
