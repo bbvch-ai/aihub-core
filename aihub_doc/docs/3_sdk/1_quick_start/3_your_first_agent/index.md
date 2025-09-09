@@ -30,11 +30,8 @@ AI-Hub agents are **event-driven workflows** with three essential parts:
 - **Events**: Data objects flowing between steps
 - **Configuration**: Typed settings that control agent behavior
 
-## Create your first agent
 
-Let's build a simple message processor that takes a user message, processes it in two steps, and returns a response.
-
-### Some Basic Concepts to start with!
+## Some Basic Concepts to start with!
 
 Let's look at the default agent created in the setup of the development environment:
 
@@ -66,7 +63,7 @@ When you start the UI and try to use the Agent in the OpenWebUI. You notice that
 
 ![image](./media/pre_chunk_event.png)
 
-#### Use Chunk Events to display live Chat Responses
+### Use Chunk Events to display live Chat Responses
 
 The reason you don't see a response in the chat interface is that only special events (`DisplayEvents`) are displayed in the UI.
 And for Chat interfaces especially the Response is composed from `ChunkEvent`'s.
@@ -107,7 +104,7 @@ How we see that the Agent responds with an actual message.
 
 ![image](./media/post_chunk_event.png)
 
-#### See the power of streaming
+### See the power of streaming
 
 As you might know from other AI Tools, large language models produce their responses chunk by chunk. Instead of just displaying the response as a whole at the end we can build up the final response part by part which enables us to show the user some part of the response as quickly as possible.
 let's demonstrate:
@@ -143,10 +140,10 @@ class MyCustomAgent(Agent):
         return StopEvent(final_message=hello_world_message)
 ```
 
-We just added a second chunk that is displayed. When you run the agent again now you see that it will responde with `Hello World!` first and after 2 seconds answers with `You said: Hello!`
+We just added a second chunk that is displayed. When you run the agent again now you see that it will responde with `Hello World!` first and after 2 seconds answers with `You said: Hello!`  
 <video controls="controls" src="./media/show_chunk_delay.mp4" type="video/mp4" />
 
-#### Add some thinking steps
+### Add some thinking steps
 
 Especially when the agent need longer to finalize it's result it is good practice to inform the user about what is going on in the agent.
 To allow this you can display `ThoughtEvent`'s. Again we use the `EventDisplayer` but this time with the `display_thought` method.
@@ -185,9 +182,9 @@ class MyCustomAgent(Agent):
 Now you see there is an additional section in the response called `Thinking...` if you expand it you can see our thought that has been created with the content `Drinking coffee...`
 ![image](./media/show_thought.png)
 
-### Create your first Multistep Agent
+## Create your first Multistep Agent
 
-#### 1. Create a Custom Event (`events/MyCustomAgentEvent.py`):
+### 1. Create a Custom Event (`events/MyCustomAgentEvent.py`):
 
 First, create an event to pass data between steps:
 
@@ -246,7 +243,7 @@ class MyCustomAgent(Agent):
         event: MyCustomAgentEvent, # [!code ++]
         displayer: EventDisplayer, # [!code ++]
     ) -> StopEvent: # [!code ++]
-        await displayer.display_chunk(f"The word count is {event.word_count} words\n", "MyCustomAgent") // [!code ++]
+        await displayer.display_chunk(f"The word count is {event.word_count} words\n", "MyCustomAgent") # [!code ++]
         return StopEvent() # [!code ++]
 ```
 
@@ -359,13 +356,19 @@ if __name__ == "__main__":
 
 
 
-
-
-
-
 ### 4. Test Script (`trigger.py`):
 
-```python
+
+
+## Run and debug your agent
+
+1. **Run the test script**:
+
+To quickly test your agent you can write a `trigger.py` script which starts the agent and posts it's StartEvent.
+This way you can test the agent without any UI.
+
+::: code-group
+```python [trigger.py]
 import asyncio
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
@@ -383,10 +386,11 @@ enable_logging()
 async def main():
     # Configure the agent
     config = MyAgentConfig(
-        agent_id="my_agent",
-        name=LocaleString(en="My First Agent"),
-        description=LocaleString(en="A simple message processing agent"),
-        prefix="Processed:"
+        agent_class=MyCustomAgent.__name__,
+        agent_id="my_custom_agent",
+        name=LocaleString(en="My Custom Agent"),
+        description=LocaleString(en="This is a simple agent created from a template."),
+        config_value="My first Config Value"
     )
     
     # Create test runner
@@ -411,9 +415,6 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## Run and debug your agent
-
-1. **Run the test script**:
 
 ```bash
 python trigger.py
