@@ -105,8 +105,15 @@ jobs:
             echo "Error: Tag $TAG_NAME already exists. Aborting."
             exit 1
           fi
+          
           # Create annotated tag
-          git tag -a "$TAG_NAME" -m "$TAG_MESSAGE"
+          TARGET_SHA="null"
+          if [ -z "$TARGET_SHA" ] || [ "$TARGET_SHA" == "null" ] ; then
+            # For squash/rebase merges, use the base branch tip after merge
+            git fetch origin main
+            TARGET_SHA="$(git rev-parse origin/main)"
+          fi
+          git tag -a "$TAG_NAME" -m "$TAG_MESSAGE" "$TARGET_SHA"
       
           # Verify tag exists locally
           if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
