@@ -107,7 +107,7 @@ jobs:
           fi
           
           # Create annotated tag
-          TARGET_SHA="null"
+          TARGET_SHA="${{ github.event.pull_request.merge_commit_sha }}"
           if [ -z "$TARGET_SHA" ] || [ "$TARGET_SHA" == "null" ] ; then
             # For squash/rebase merges, use the base branch tip after merge
             git fetch origin main
