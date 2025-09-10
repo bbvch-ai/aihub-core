@@ -1,6 +1,5 @@
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, Tuple, List, Set
 
 import mongoengine
 from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings import AnonymousFileAccessSettings
@@ -93,21 +92,23 @@ class KnowledgeService:
             protocol = "azure" if storage_backend == "azure" else "s3"
             document_uri = f"{protocol}://{bucket_name}/{key}"
 
-            all_files.append(DocumentDTO(
-                id=key,
-                document_title=filename,
-                namespace=file_namespace,
-                updated_at=file_info.get("last_modified", ""),
-                created_at=file_info.get("last_modified", ""),
-                inserted_at="",
-                source=document_uri,
-                is_ingested=False,
-            ))
+            all_files.append(
+                DocumentDTO(
+                    id=key,
+                    document_title=filename,
+                    namespace=file_namespace,
+                    updated_at=file_info.get("last_modified", ""),
+                    created_at=file_info.get("last_modified", ""),
+                    inserted_at="",
+                    source=document_uri,
+                    is_ingested=False,
+                )
+            )
 
         return all_files
 
     @classmethod
-    def _get_processed_sources(cls, db: str, namespace: str) -> Set[str]:
+    def _get_processed_sources(cls, db: str, namespace: str) -> set[str]:
         cache_key = f"{db}:{namespace}:sources"
         cached = cls.cache.get(cache_key)
         if cached is not None:
@@ -124,7 +125,7 @@ class KnowledgeService:
         return sources
 
     @classmethod
-    def _get_processed_documents_sorted(cls, db: str, namespace: str) -> List[DocumentDTO]:
+    def _get_processed_documents_sorted(cls, db: str, namespace: str) -> list[DocumentDTO]:
         cache_key = f"{db}:{namespace}:processed"
         cached = cls.cache.get(cache_key)
         if cached is not None:
@@ -142,7 +143,7 @@ class KnowledgeService:
         return documents
 
     @classmethod
-    def _get_unprocessed_files(cls, db: str, namespace: str, bucket_name: str) -> List[DocumentDTO]:
+    def _get_unprocessed_files(cls, db: str, namespace: str, bucket_name: str) -> list[DocumentDTO]:
         cache_key = f"{db}:{namespace}:unprocessed"
         cached = cls.cache.get(cache_key)
         if cached is not None:
@@ -223,14 +224,10 @@ class KnowledgeService:
                 unprocessed = KnowledgeService._get_unprocessed_files(
                     db_name, ns_entity.namespace_name, bucket.bucket_name
                 )
-                processed_count = RefDoc.count_by_namespace(
-                    db_alias=db_name, namespace=ns_entity.namespace_name
-                )
+                processed_count = RefDoc.count_by_namespace(db_alias=db_name, namespace=ns_entity.namespace_name)
                 total_count = len(unprocessed) + processed_count
 
-                namespaces.append(
-                    NamespaceDTO.from_entity(entity=ns_entity, t=t, number_of_documents=total_count)
-                )
+                namespaces.append(NamespaceDTO.from_entity(entity=ns_entity, t=t, number_of_documents=total_count))
 
             display_name = KnowledgeService._safe_extract_locale_string(bucket.name, t)
             database_dtos.append(
