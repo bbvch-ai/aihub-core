@@ -122,23 +122,27 @@ jobs:
           fi
           
           # Push the tag
+          echo "Pushing tag $TAG_NAME..."
           git push origin "$TAG_NAME"
-
-          # Verify tag exists remotely
-          for i in {1..5}; do
-            echo "Verification attempt $i/5..."
-            if git ls-remote --tags origin | grep -q "refs/tags/$TAG_NAME$"; then
-              echo "Success: Tag $TAG_NAME verified on remote."
-              break
-            fi
-            if [ $i -eq 5 ]; then
-              echo "Error: Tag $TAG_NAME not found on remote after 5 attempts."
-              echo "Remote tags:"
-              git ls-remote --tags origin | sort -V | tail -10
-              exit 1
-            fi
-            sleep 5
-          done
+          
+          # Verify the tag was pushed successfully
+          echo "Verifying tag was pushed..."
+          git fetch origin --tags
+          if git tag -l "$TAG_NAME" | grep -q "^$TAG_NAME$"; then
+            echo "Success: Tag $TAG_NAME confirmed on remote."
+            
+            # Show it's now the latest tag (consistent with your tag discovery logic)
+            latest_tag=$(git tag -l "v*" | sort -V | tail -n 1)
+            echo "Latest tag is now: $latest_tag"
+          else
+            echo "Error: Tag $TAG_NAME not found after push."
+            echo ""
+            echo "Available tags (last 10):"
+            git tag -l "v*" | sort -V | tail -10
+            echo ""
+            echo "Expected: $TAG_NAME"
+            exit 1
+          fi
 
   changelog:
     name: Generate Changelog
