@@ -1,6 +1,6 @@
 ---
 title: AI-Hub API
-index: 2
+index: 4
 ---
 
 # 🚀 AI-Hub API Developer's Guide

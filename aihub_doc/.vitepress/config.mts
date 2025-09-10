@@ -49,6 +49,7 @@ function generateSidebarItems(
           if (subItems.length > 0) {
             sidebarItem.items = subItems;
             sidebarItem.collapsible = true;
+            sidebarItem.collapsed = true;
           }
 
           items.push(sidebarItem);
@@ -86,17 +87,7 @@ function generateSidebar() {
 
   // --- Part 1: Handle 'aihub' as a single top-level group ---
   try {
-    const aihubBasePath = path.join(docsRoot, 'aihub');
-    const rootIndexPath = path.join(aihubBasePath, 'index.md');
-    const rootFileContent = readFileSync(rootIndexPath, 'utf-8');
-
-    allTopLevelGroups.push({
-      text: 'Technical Documentation',
-      link: '/aihub/',
-      collapsible: true,
-      items: generateSidebarItems(aihubBasePath, '/aihub/'),
-      index: 500,
-    });
+    const aihubBasePath = path.join(docsRoot, 'docs', '6_code_deep_dive');
 
     allTopLevelGroups.push({
       text: 'Changelog',
@@ -169,7 +160,7 @@ export default withMermaid({
   themeConfig: {
     logo: './media/logo.png',
     footer: {
-      message: 'Released under the Business Source License (BSL) 1.1',
+      message: 'Built with ❤️ in Switzerland 🇨🇭',
       copyright: 'Copyright © 2025-bbv Software Services AG.'
     },
     search: {

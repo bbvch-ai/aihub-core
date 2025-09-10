@@ -1,6 +1,6 @@
 ---
 title: AI-Hub Bot Integration
-index: 4
+index: 6
 ---
 
 # 🤖 AI-Hub Bot Developer's Guide

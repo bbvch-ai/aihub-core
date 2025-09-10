@@ -1,6 +1,6 @@
 ---
 title: AI-Hub Agentic Process Automation
-index: 5
+index: 7
 ---
 
 # 🔄 AI-Hub Process Developer's Guide

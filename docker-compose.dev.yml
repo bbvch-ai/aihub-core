@@ -488,6 +488,7 @@ services:
       - ./configs/docling/init-models.sh:/docker-entrypoint.sh:ro
     entrypoint: [ "/docker-entrypoint.sh" ]
     environment:
+      DOCLING_SERVE_ENABLE_UI: 1
       DOCLING_SERVE_ARTIFACTS_PATH: "/models"
       DOCLING_SERVE_MAX_SYNC_WAIT: 600
       DOCLING_MODELS: "layout tableformer code_formula easyocr"
