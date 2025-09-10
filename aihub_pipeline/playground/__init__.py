@@ -1,7 +1,7 @@
-from dagster import AssetKey, AssetSelection, Definitions, DynamicPartitionsDefinition
-
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from dagster import AssetKey, AssetSelection, Definitions, DynamicPartitionsDefinition
+
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (

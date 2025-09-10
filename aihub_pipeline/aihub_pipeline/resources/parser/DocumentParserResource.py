@@ -1,11 +1,6 @@
 from enum import Enum
 from typing import Annotated
 
-from dagster import ConfigurableResource
-from llama_index.core.readers.base import BaseReader
-from llama_index.readers.file import EpubReader, IPYNBReader, RTFReader
-from pydantic import Field
-
 from aihub_lib.generative_ai.document.loaders.DoclingLoader import DoclingLoader
 from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import DocumentIntelligenceLoader
 from aihub_lib.generative_ai.document.loaders.RawLoader import RawLoader
@@ -13,6 +8,10 @@ from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.Azu
     AzureDocumentIntelligenceSettings,
 )
 from aihub_lib.infrastructure.docling.DoclingSettings import DoclingSettings
+from dagster import ConfigurableResource
+from llama_index.core.readers.base import BaseReader
+from llama_index.readers.file import EpubReader, IPYNBReader, RTFReader
+from pydantic import Field
 
 
 class LoaderType(Enum):
