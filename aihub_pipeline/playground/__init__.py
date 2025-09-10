@@ -1,7 +1,7 @@
-from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
-from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from dagster import AssetKey, AssetSelection, Definitions, DynamicPartitionsDefinition
 
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
@@ -69,7 +69,7 @@ defs = Definitions(
         **default_io_manager_s3_datalake_resources(
             container_name=DATALAKE_CONTAINER_NAME, directory_name=DATALAKE_DIRECTORY_NAME
         ),
-        "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
+        "document_parser": DocumentParserResource(loader_type=LoaderType.DOCUMENT_INTELLIGENCE, include_images=False),
         "node_parser": MarkdownStructuralNodeParserResource(),
         "summary_parser": RecursiveSummaryParserResource(),
         **local_mongo_milvus_storage_context_resource(
