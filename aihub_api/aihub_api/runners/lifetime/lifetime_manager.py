@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
+from aihub_lib.infrastructure.opentelemetry.OpenTelemetrySettings import OpenTelemetrySettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
@@ -67,6 +68,11 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     """
 
     logging.info("Initializing NATS connection and resources")
+
+    # Configure OpenTelemetry tracing FIRST, before any database connections
+    # This ensures MongoDB instrumentation captures all database operations
+    otel_settings = OpenTelemetrySettings()
+    otel_settings.configure_tracing()
 
     nc = NATS()
 

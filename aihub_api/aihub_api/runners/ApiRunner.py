@@ -3,15 +3,19 @@ from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import override
 
+from opentelemetry.trace import ProxyTracerProvider
+
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.routes.Controller import Controller
 from aihub_lib.runners.Runner import Runner
 from fastapi import FastAPI
 from fastmcp import FastMCP
 from fastmcp.server.openapi import MCPType, RouteMap
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Mount
+from opentelemetry import trace
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.i18n.middleware.I18nMiddleware import I18nMiddleware
@@ -107,6 +111,9 @@ class ApiRunner(Runner):
         self._api_app.state = app.state
         mcp_app.state = app.state
 
+        # Configure OpenTelemetry tracing and instrument the FastAPI application
+        self._configure_opentelemetry()
+
         return app
 
     def _get_api_app(self) -> FastAPI:
@@ -150,3 +157,25 @@ class ApiRunner(Runner):
         ]
 
         return self
+
+    def _configure_opentelemetry(self) -> None:
+        """
+        Configure FastAPI-specific OpenTelemetry instrumentation.
+
+        Note: Core OpenTelemetry configuration (including MongoDB) happens earlier
+        in the lifetime_manager to ensure proper timing with database connections.
+
+        This method only handles FastAPI-specific instrumentation.
+        """
+        # Check if OpenTelemetry is configured by checking for a proper tracer provider
+        tracer_provider = trace.get_tracer_provider()
+
+        # If no proper tracer provider is set, skip instrumentation
+        if not isinstance(tracer_provider, ProxyTracerProvider):
+            logger.info("Skipping OpenTelemetry instrumentation - not configured")
+            return
+
+        FastAPIInstrumentor.instrument_app(self._api_app)
+
+        logger.info("FastAPI application instrumented with OpenTelemetry")
+        logger.info("Note: Core OpenTelemetry, MongoDB, and HTTP client configuration handled in lifetime_manager")

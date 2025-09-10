@@ -67,6 +67,14 @@ class AgentDispatcher(BaseDispatcher):
 
         self.agent_config_type: type[AgentConfig] = self.default_agent_config.__class__
 
+        self.tracer = RunTraceCoordinator(
+            nc=self.nc,
+            project_name=self.locale_handler.extract_multi_locale(
+                locale_data=self.default_agent_config.name,
+                locale="en",
+            ),
+        )
+
     @override
     async def handle_event(
         self,
@@ -108,13 +116,8 @@ class AgentDispatcher(BaseDispatcher):
             agent_class_topic=topic,
             agent_id=run_agent_config.agent_id,
         )
-        tracer = RunTraceCoordinator(
-            nc=self.nc,
-            project_name=self.locale_handler.extract_multi_locale(
-                locale_data=run_agent_config.name,
-                locale="en",
-            ),
-        )
+
+        tracer = self.tracer
 
         if event.is_start_event:
             event = cast(StartEvent, event)
