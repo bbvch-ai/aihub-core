@@ -1,33 +1,32 @@
 ## Screen Capture
 
-Select "More". [![](./images/user/img_8a871bac3d.jpeg)](../public/images/user/img_8a871bac3d.jpeg)
-
+Select "More". [![](../../../../media/feature_overview/chat_interface/user/screen_capture_more_options.jpeg)](../../../../media/feature_overview/chat_interface/user/screen_capture_more_options.jpeg)
 Then select "Capture".
 
-[![](./images/user/img_a72fd537d4.jpeg)](../public/images/user/img_a72fd537d4.jpeg)
+[![](../../../../media/feature_overview/chat_interface/user/screen_capture_button.jpeg)](../../../../media/feature_overview/chat_interface/user/screen_capture_button.jpeg)
 
 Choose what should be captured, a tab from the browser, a window, or the entire screen.
 
-[![](./images/user/img_048f5be8ad.jpeg)](../public/images/user/img_048f5be8ad.jpeg)
+[![](../../../../media/feature_overview/chat_interface/user/screen_capture_selection.jpeg)](../../../../media/feature_overview/chat_interface/user/screen_capture_selection.jpeg)
 
 Once selected it can be shared.
 
-[![](./images/user/img_9c8b35bac0.jpeg)](../public/images/user/img_9c8b35bac0.jpeg)
+[![](../../../../media/feature_overview/chat_interface/user/screen_capture_window.jpeg)](../../../../media/feature_overview/chat_interface/user/screen_capture_window.jpeg)
 
 The captured image appears in the chat box.
 
-[![](./images/user/img_a1d91dc0e3.jpeg)](../public/images/user/img_a1d91dc0e3.jpeg)
+[![](../../../../media/feature_overview/chat_interface/user/screen_capture_added.jpeg)](../../../../media/feature_overview/chat_interface/user/screen_capture_added.jpeg)
 
 Type "What can you tell me about this screenshot?"
 
 Ask something about the image.
 
-[![](./images/user/img_36f5aac0c2.jpeg)](../public/images/user/img_36f5aac0c2.jpeg)
+[![](../../../../media/feature_overview/chat_interface/user/screen_capture_message.jpeg)](../../../../media/feature_overview/chat_interface/user/screen_capture_message.jpeg)
 
 And the model will analyze it and give an answer.
 
-[![](./images/user/img_c0019300c3.jpeg)](../public/images/user/img_c0019300c3.jpeg)
+[![](../../../../media/feature_overview/chat_interface/user/screen_capture_response.jpeg)](../../../../media/feature_overview/chat_interface/user/screen_capture_response.jpeg)
 
 Models that don't support vision capabilities will produce an error.
 
-[![](./images/user/img_783b4dff15.jpeg)](../public/images/user/img_783b4dff15.jpeg)
+[![](../../../../media/feature_overview/chat_interface/user/screen_capture_error.jpeg)](../../../../media/feature_overview/chat_interface/user/screen_capture_error.jpeg)
