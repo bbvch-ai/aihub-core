@@ -72,7 +72,7 @@ export const useFileUpload = defineMutation(() => {
     },
     onSuccess: (data, variables) => {
       queryCache.invalidateQueries({
-        key: ['knowledge', 'databases', variables.database, 'namespaces', variables.namespace, 'documents']
+        key: ['knowledge', 'databases', variables.database, 'namespaces', variables.namespace, 'documents'],
       })
     },
   })
