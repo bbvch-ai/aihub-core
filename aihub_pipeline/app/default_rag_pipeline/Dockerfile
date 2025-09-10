@@ -34,6 +34,7 @@ COPY aihub_pipeline ./aihub_pipeline
 COPY aihub_pipeline/Makefile ./aihub_pipeline/Makefile
 COPY aihub_pipeline/poetry.lock ./aihub_pipeline/poetry.lock
 COPY aihub_pipeline/pyproject.toml ./aihub_pipeline/pyproject.toml
+COPY aihub_lib ./aihub_lib
 
 COPY Makefile switch_dependencies.py pyproject.toml ./
 

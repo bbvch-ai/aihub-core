@@ -78,11 +78,11 @@ const currentNamespace = computed(() => {
 })
 
 const databaseDisplayName = computed(() => {
-  return currentDatabase.value?.display_name || useChangeCase(route.params.db as string, 'capitalCase')
+  return currentDatabase.value?.display_name || useChangeCase(route.params.db as string, 'capitalCase').value
 })
 
 const namespaceDisplayName = computed(() => {
-  return currentNamespace.value?.display_name || useChangeCase(route.params.namespace as string, 'capitalCase')
+  return currentNamespace.value?.display_name || useChangeCase(route.params.namespace as string, 'capitalCase').value
 })
 
 const toDocument = (document: DocumentDto) => {

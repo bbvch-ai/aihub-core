@@ -1,6 +1,8 @@
 import {
   initiateFileUpload,
+  validateFileUpload,
   type FileUploadRequest,
+  type FileUploadValidationRequest,
 } from '@core/sdk/client'
 
 export interface UploadFileOptions {
@@ -55,10 +57,23 @@ export const useFileUpload = defineMutation(() => {
           'Content-Type': contentType,
         },
       })
+
+      const validationRequest: FileUploadValidationRequest = {
+        container: initiateResponse.container,
+        file_path: initiateResponse.object_key,
+      }
+
+      await validateFileUpload({
+        composable: '$fetch',
+        body: validationRequest,
+      })
+
       return initiateResponse.upload_id
     },
-    onSuccess: () => {
-      queryCache.invalidateQueries({ key: ['knowledge'] })
+    onSuccess: (data, variables) => {
+      queryCache.invalidateQueries({
+        key: ['knowledge', 'databases', variables.database, 'namespaces', variables.namespace, 'documents']
+      })
     },
   })
 

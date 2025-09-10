@@ -89,7 +89,7 @@ const createdAt = computed(() => {
   return useDateFormat(props.namespace.created_at * 1000, 'DD.MM.YYYY')
 })
 const updatedAt = computed(() => {
-  return useDateFormat(props.namespace.last_updated_at * 1000, 'DD.MM.YYYY HH:mm')
+  return useDateFormat(props.namespace.updated_at * 1000, 'DD.MM.YYYY HH:mm')
 })
 
 const isActive = computed(() => {

@@ -144,11 +144,11 @@ const props = withDefaults(defineProps<Props>(), {
 const { t } = useI18n()
 
 const databaseDisplayName = computed(() => {
-  return props.databaseDisplayName || useChangeCase(props.database, 'capitalCase')
+  return props.databaseDisplayName || useChangeCase(props.database, 'capitalCase').value
 })
 
 const namespaceDisplayName = computed(() => {
-  return props.namespaceDisplayName || useChangeCase(props.namespace, 'capitalCase')
+  return props.namespaceDisplayName || useChangeCase(props.namespace, 'capitalCase').value
 })
 
 const emit = defineEmits<{

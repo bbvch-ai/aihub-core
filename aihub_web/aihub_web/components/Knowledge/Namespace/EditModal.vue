@@ -73,7 +73,7 @@ import { useI18n } from '#i18n'
 
 const props = defineProps<{
   modelValue: boolean
-  namespace: NamespaceDto
+  namespace: NamespaceDto | null
 }>()
 
 const emit = defineEmits<{
@@ -93,6 +93,8 @@ const closeModal = () => {
 }
 
 const handleSave = async () => {
+  if (!props.namespace) return
+
   error.value = ''
 
   const namespaceId = props.namespace.id

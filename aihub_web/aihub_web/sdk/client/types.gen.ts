@@ -5491,15 +5491,15 @@ export type NamespaceDto = {
      */
     number_of_documents: number;
     /**
-     * Last Updated At
+     * Updated At
      * Latest timestamp when any document in the namespace was updated
      */
-    last_updated_at: number;
+    updated_at: number;
     /**
-     * Last Inserted At
+     * Inserted At
      * Latest timestamp when any document in the namespace was inserted
      */
-    last_inserted_at: number;
+    inserted_at: number;
     /**
      * Created At
      * Oldest timestamp when any document in the namespace was created

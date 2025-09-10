@@ -7038,7 +7038,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1756828278
+            default: 1757495777
         },
         owned_by: {
             type: 'string',
@@ -7620,14 +7620,14 @@ export const NamespaceDTOSchema = {
             title: 'Number Of Documents',
             description: 'Number of documents in namespace'
         },
-        last_updated_at: {
+        updated_at: {
             type: 'integer',
-            title: 'Last Updated At',
+            title: 'Updated At',
             description: 'Latest timestamp when any document in the namespace was updated'
         },
-        last_inserted_at: {
+        inserted_at: {
             type: 'integer',
-            title: 'Last Inserted At',
+            title: 'Inserted At',
             description: 'Latest timestamp when any document in the namespace was inserted'
         },
         created_at: {
@@ -7637,7 +7637,7 @@ export const NamespaceDTOSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'name', 'number_of_documents', 'last_updated_at', 'last_inserted_at', 'created_at'],
+    required: ['id', 'name', 'number_of_documents', 'updated_at', 'inserted_at', 'created_at'],
     title: 'NamespaceDTO'
 } as const;
 

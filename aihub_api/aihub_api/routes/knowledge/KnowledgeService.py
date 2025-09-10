@@ -1,4 +1,6 @@
 import logging
+from datetime import datetime, timedelta
+from typing import Optional, Tuple, List, Set
 
 import mongoengine
 from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings import AnonymousFileAccessSettings
@@ -36,7 +38,32 @@ from aihub_api.services.TranslationService import TranslationService
 logger = logging.getLogger(__name__)
 
 
+class DocumentCache:
+    def __init__(self, ttl: timedelta = timedelta(minutes=5)):
+        self.ttl = ttl
+        self._data = {}
+        self._timestamps = {}
+
+    def get(self, key: str):
+        if key in self._timestamps and datetime.now() - self._timestamps[key] < self.ttl:
+            return self._data.get(key)
+        return None
+
+    def set(self, key: str, value):
+        self._data[key] = value
+        self._timestamps[key] = datetime.now()
+
+    def invalidate(self, db: str, namespace: str):
+        patterns = [f"{db}:{namespace}:", f"{db}::"]
+        for key in list(self._data.keys()):
+            if any(key.startswith(p) for p in patterns):
+                self._data.pop(key, None)
+                self._timestamps.pop(key, None)
+
+
 class KnowledgeService:
+    cache = DocumentCache()
+
     @staticmethod
     def _ensure_db_exists(db: str):
         try:
@@ -63,12 +90,10 @@ class KnowledgeService:
             file_namespace = key.split("/")[0]
 
             storage_backend = file_access_config.STORAGE_BACKEND
-            if storage_backend == "azure":
-                document_uri = f"azure://{bucket_name}/{key}"
-            else:
-                document_uri = f"s3://{bucket_name}/{key}"
+            protocol = "azure" if storage_backend == "azure" else "s3"
+            document_uri = f"{protocol}://{bucket_name}/{key}"
 
-            datalake_file = DocumentDTO(
+            all_files.append(DocumentDTO(
                 id=key,
                 document_title=filename,
                 namespace=file_namespace,
@@ -77,19 +102,60 @@ class KnowledgeService:
                 inserted_at="",
                 source=document_uri,
                 is_ingested=False,
-            )
-            all_files.append(datalake_file)
+            ))
 
         return all_files
 
-    @staticmethod
-    def _filter_processing_documents(
-        datalake_files: list[DocumentDTO], processed_doc_sources: set[str]
-    ) -> list[DocumentDTO]:
-        """
-        Filter datalake files to only include those not already processed (not in docstore).
-        """
-        return [file for file in datalake_files if file.source not in processed_doc_sources]
+    @classmethod
+    def _get_processed_sources(cls, db: str, namespace: str) -> Set[str]:
+        cache_key = f"{db}:{namespace}:sources"
+        cached = cls.cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        count = RefDoc.count_by_namespace(db_alias=db, namespace=namespace)
+        if count == 0:
+            sources = set()
+        else:
+            docs = RefDoc.get_paginated_by_namespace(db_alias=db, namespace=namespace, skip=0, limit=count)
+            sources = {doc.data.metadata.source for doc in docs}
+
+        cls.cache.set(cache_key, sources)
+        return sources
+
+    @classmethod
+    def _get_processed_documents_sorted(cls, db: str, namespace: str) -> List[DocumentDTO]:
+        cache_key = f"{db}:{namespace}:processed"
+        cached = cls.cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        count = RefDoc.count_by_namespace(db_alias=db, namespace=namespace)
+        if count == 0:
+            documents = []
+        else:
+            docs = RefDoc.get_paginated_by_namespace(db_alias=db, namespace=namespace, skip=0, limit=count)
+            documents = [DocumentDTO.from_ref_doc(doc) for doc in docs]
+            documents.sort(key=lambda doc: doc.updated_at, reverse=True)
+
+        cls.cache.set(cache_key, documents)
+        return documents
+
+    @classmethod
+    def _get_unprocessed_files(cls, db: str, namespace: str, bucket_name: str) -> List[DocumentDTO]:
+        cache_key = f"{db}:{namespace}:unprocessed"
+        cached = cls.cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        datalake_files = cls._get_datalake_files_in_namespace(bucket_name, namespace)
+        processed_sources = cls._get_processed_sources(db, namespace)
+
+        unprocessed = [f for f in datalake_files if f.source not in processed_sources]
+        unprocessed.sort(key=lambda doc: doc.updated_at, reverse=True)
+
+        cls.cache.set(cache_key, unprocessed)
+        return unprocessed
 
     @staticmethod
     def get_paginated_documents(
@@ -102,32 +168,30 @@ class KnowledgeService:
         skip = (page - 1) * page_size
 
         KnowledgeService._ensure_db_exists(db)
-        processed_count = RefDoc.count_by_namespace(db_alias=db, namespace=namespace)
-
         bucket = BucketEntity.get_bucket_by_db_name(db)
-        datalake_files = KnowledgeService._get_datalake_files_in_namespace(bucket.bucket_name, namespace)
 
-        processed_ref_docs = RefDoc.get_paginated_by_namespace(
-            db_alias=db, namespace=namespace, skip=0, limit=processed_count
-        )
-        processed_doc_sources = {doc.data.metadata.source for doc in processed_ref_docs}
+        unprocessed = KnowledgeService._get_unprocessed_files(db, namespace, bucket.bucket_name)
+        unprocessed_count = len(unprocessed)
 
-        processing_files = KnowledgeService._filter_processing_documents(datalake_files, processed_doc_sources)
-        processing_count = len(processing_files)
+        processed = KnowledgeService._get_processed_documents_sorted(db, namespace)
+        processed_count = len(processed)
 
-        total = processed_count + processing_count
+        total = unprocessed_count + processed_count
 
         if skip >= total:
             return total, []
 
-        processed_documents = [DocumentDTO.from_ref_doc(doc) for doc in processed_ref_docs]
+        if skip + page_size <= unprocessed_count:
+            return total, unprocessed[skip : skip + page_size]
 
-        all_documents = processed_documents + processing_files
-        all_documents.sort(key=lambda doc: doc.updated_at, reverse=True)
+        if skip < unprocessed_count:
+            result = unprocessed[skip:]
+            remaining = page_size - len(result)
+            result.extend(processed[:remaining])
+            return total, result
 
-        paginated_documents = all_documents[skip : skip + page_size]
-
-        return total, paginated_documents
+        processed_skip = skip - unprocessed_count
+        return total, processed[processed_skip : processed_skip + page_size]
 
     @staticmethod
     def get_document_by_id(db: str, document_id: str) -> DocumentDTO:
@@ -156,21 +220,16 @@ class KnowledgeService:
 
             namespaces = []
             for ns_entity in namespace_entities:
-                processed_count = RefDoc.count_by_namespace(db_alias=db_name, namespace=ns_entity.namespace_name)
-
-                datalake_files = KnowledgeService._get_datalake_files_in_namespace(
-                    bucket.bucket_name, ns_entity.namespace_name
+                unprocessed = KnowledgeService._get_unprocessed_files(
+                    db_name, ns_entity.namespace_name, bucket.bucket_name
                 )
-                processed_docs = RefDoc.get_paginated_by_namespace(
-                    db_alias=db_name, namespace=ns_entity.namespace_name, skip=0, limit=processed_count
+                processed_count = RefDoc.count_by_namespace(
+                    db_alias=db_name, namespace=ns_entity.namespace_name
                 )
-                processed_doc_sources = {doc.data.metadata.source for doc in processed_docs}
-                processing_files = KnowledgeService._filter_processing_documents(datalake_files, processed_doc_sources)
-                processing_count = len(processing_files)
+                total_count = len(unprocessed) + processed_count
 
-                total_document_count = processed_count + processing_count
                 namespaces.append(
-                    NamespaceDTO.from_entity(entity=ns_entity, t=t, number_of_documents=total_document_count)
+                    NamespaceDTO.from_entity(entity=ns_entity, t=t, number_of_documents=total_count)
                 )
 
             display_name = KnowledgeService._safe_extract_locale_string(bucket.name, t)
@@ -274,6 +333,8 @@ class KnowledgeService:
             description=description_entity,
         )
 
+        KnowledgeService.cache.invalidate(request.database_name, request.namespace_name)
+
         return NamespaceResponse(
             id=str(namespace_entity.id),
             bucket_id=namespace_entity.bucket_id,
@@ -307,6 +368,9 @@ class KnowledgeService:
             display_name=display_name_entity,
             description=description_entity,
         )
+
+        bucket = BucketEntity.objects.get(id=updated_entity.bucket_id)
+        KnowledgeService.cache.invalidate(bucket.db_name, updated_entity.namespace_name)
 
         return NamespaceResponse(
             id=str(updated_entity.id),
