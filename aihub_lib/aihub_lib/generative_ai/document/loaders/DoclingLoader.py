@@ -33,13 +33,14 @@ class DoclingLoader(BaseReader):
         extra_info: dict | None = None,
         fs: AbstractFileSystem | None = None,
         figures_directory_name: str | None = None,
+        include_images: bool | None = None,
     ) -> list[Document]:
         fs = fs or get_default_fs()
         with fs.open(file, "rb") as pdf_file:
             encoded_string = base64.b64encode(pdf_file.read()).decode("utf-8")
         file_name = os.path.basename(file)
 
-        answer = self.convert_document(encoded_string, file_name)
+        answer = self.convert_document(encoded_string, file_name, include_images)
         doc = DoclingDocument(**answer["document"]["json_content"])
         markdown_content = doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
         if len(doc.pictures) > 0:
@@ -76,7 +77,7 @@ class DoclingLoader(BaseReader):
             )
         ]
 
-    def convert_document(self, file_content: str, filename: str):
+    def convert_document(self, file_content: str, filename: str, include_images: bool):
         request_body = {
             "options": {
                 "from_formats": self.config.FROM_FORMATS,
@@ -89,7 +90,7 @@ class DoclingLoader(BaseReader):
                 "table_mode": self.config.TABLE_MODE,
                 "abort_on_error": False,
                 "do_table_structure": True,
-                "include_images": True,
+                "include_images": include_images,
                 "images_scale": self.config.IMAGES_SCALE,
                 "do_code_enrichment": True,
                 "do_formula_enrichment": True,
