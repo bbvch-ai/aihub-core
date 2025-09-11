@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.243.9] - 2025-09-11 - Fine-Grained Control Over Document Image Extraction
+
+### Added
+
+- ⚙️ **`include_images` Configuration:** Introduced a new configurable option `include_images` in the
+  `DocumentParserResource`, enabling users to specify whether images should be extracted and embedded during document
+  parsing.
+- 🖼️ **Image Inclusion Parameter:** Added `include_images` as a new parameter to both `DoclingLoader` and
+  `DocumentIntelligenceLoader`, providing explicit control over image extraction at the individual loader level.
+- 📄 **Figure Content Management:** Implemented the `remove_figure_tags_keep_content` utility within
+  `DocumentIntelligenceLoader` to ensure textual content from figures is retained even when image embedding is disabled.
+
+### Changed
+
+- 🔄 **Conditional Image Processing:** Updated **DoclingLoader** and **DocumentIntelligenceLoader** to honor the new
+  `include_images` setting, allowing for more flexible document processing where images can be optionally excluded from
+  the final document content.
+- ⚡️ **Pipeline Integration:** The `parse_document_from_data_lake` operation now passes the `include_images` setting
+  from the `DocumentParserResource` to the document loaders, ensuring consistent behavior across the pipeline.
+
+---
+
 ## [v0.243.8] - 2025-09-11 - Enhanced Asynchronous Document Loading and Docling Integration
 
 ### Added
