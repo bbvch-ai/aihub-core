@@ -34,7 +34,7 @@ pydub = "^0.25.1"
 arize-phoenix = "^10.0.0"
 audioop-lts = "^0.2.1"
 fastmcp = "^2.11.2"
-opentelemetry-instrumentation-fastapi = "^0.57b0"
+opentelemetry-instrumentation-fastapi = "^0.58b0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"

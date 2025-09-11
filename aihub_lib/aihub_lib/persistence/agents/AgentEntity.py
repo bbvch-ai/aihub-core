@@ -18,6 +18,7 @@ from mongoengine import (
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from aihub_lib.persistence.agents.AgentConfigEntityEmbeddedDocument import AgentConfigEntityEmbeddedDocument
@@ -119,6 +120,7 @@ class AgentEntity(Document):
     last_discovered = DateTimeField(required=True, default=datetime.now)
 
     @classmethod
+    @trace_fn
     def create_agent(
         cls,
         agent_class: str,
@@ -152,6 +154,7 @@ class AgentEntity(Document):
         return agent
 
     @classmethod
+    @trace_fn
     def create_or_update(
         cls,
         agent_id: str,
@@ -216,13 +219,16 @@ class AgentEntity(Document):
             )
 
     @classmethod
+    @trace_fn
     def get_agents(cls):
         return cls.objects()
 
     @classmethod
+    @trace_fn
     def get_agent_by_id(cls, agent_entity_id: str) -> "AgentEntity":
         return cls.objects().get(id=ObjectId(agent_entity_id))
 
     @classmethod
+    @trace_fn
     def get_agent(cls, agent_class: str, agent_id: str) -> "AgentEntity":
         return cls.objects(agent_class=agent_class, agent_id=agent_id).first()

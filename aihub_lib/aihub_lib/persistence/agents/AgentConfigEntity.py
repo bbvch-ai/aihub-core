@@ -2,6 +2,7 @@ from mongoengine import DictField, EmbeddedDocumentField, StringField
 from mongoengine.base import BaseDocument
 
 from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
 
@@ -25,6 +26,7 @@ class AgentConfigEntity(BaseDocument):
     config_data = DictField(required=True, description="The configuration data matching the Pydantic model.")
 
     @classmethod
+    @trace_fn
     def from_agent_config(cls, agent_config: AgentConfig) -> "AgentConfigEntity":
         """Create an instance entity from an AgentConfig."""
         return cls(
@@ -36,6 +38,7 @@ class AgentConfigEntity(BaseDocument):
             config_data=agent_config.model_dump(),
         )
 
+    @trace_fn
     def update_from_agent_config(self, agent_config: AgentConfig) -> "AgentConfigEntity":
         """Update an existing instance entity from an AgentConfig."""
         self.agent_class = agent_config.agent_class

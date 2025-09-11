@@ -10,6 +10,7 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.evaluation.PhoenixExperimentEvaluator import PhoenixExperimentEvaluator
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
 from aihub_lib.infrastructure.phoenix.PhoenixSettings import PhoenixSettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from nats.aio.client import Client as NATS
@@ -152,6 +153,7 @@ class EvaluationService:
         return DataFrameCreationResult(dataframe=df, input_keys=input_keys, output_keys=output_keys)
 
     @staticmethod
+    @trace_fn
     async def create_dataset(create_dto: DatasetCreate) -> Dataset:
         """Creates a new dataset in Arize Phoenix."""
         client = EvaluationService._get_phoenix_client()
@@ -184,6 +186,7 @@ class EvaluationService:
         )
 
     @staticmethod
+    @trace_fn
     async def update_dataset(dataset_id: str, append_dto: DatasetUpdate) -> Dataset:
         """Appends new items to an existing dataset in Arize Phoenix."""
         client = EvaluationService._get_phoenix_client()
@@ -217,6 +220,7 @@ class EvaluationService:
         )
 
     @staticmethod
+    @trace_fn
     async def get_dataset(dataset_id: str) -> Dataset:
         """Retrieves detailed information for a specific dataset from Arize Phoenix."""
         client = EvaluationService._get_phoenix_client()
@@ -243,6 +247,7 @@ class EvaluationService:
         )
 
     @staticmethod
+    @trace_fn
     async def get_datasets() -> list[MinimalDataset]:
         """Retrieves a list of summary information for all datasets from Arize Phoenix."""
         datasets = await EvaluationService._fetch_datasets_from_phoenix()
@@ -258,6 +263,7 @@ class EvaluationService:
         ]
 
     @staticmethod
+    @trace_fn
     async def get_experiments(t: LocaleHandler) -> list[MinimalExperiment]:
         """Retrieves a list of summary information for all experiments from Arize Phoenix."""
         experiments_list = []
@@ -286,6 +292,7 @@ class EvaluationService:
         return experiments_list
 
     @staticmethod
+    @trace_fn
     async def get_experiment(experiment_id: str, t: LocaleHandler) -> Experiment:
         """Retrieves detailed run results and evaluations for a specific experiment."""
         experiment_meta = await EvaluationService._fetch_experiment_meta_from_phoenix(experiment_id)
@@ -355,6 +362,7 @@ class EvaluationService:
         )
 
     @staticmethod
+    @trace_fn
     async def run_experiment_evaluation(
         create_dto: ExperimentCreate,
         nats_client: NATS,

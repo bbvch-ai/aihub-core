@@ -1,5 +1,6 @@
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
 from fastapi import HTTPException
 from httpx import Client
 
@@ -12,6 +13,7 @@ class ModelService:
     """
 
     @staticmethod
+    @trace_fn
     async def get_model_list(user: UserIdentity) -> list[ModelDTO]:
         client: Client = await LiteLLMService.httpx_client_for_user(user)
 
@@ -29,6 +31,7 @@ class ModelService:
         return models
 
     @staticmethod
+    @trace_fn
     async def get_model_by_name(user: UserIdentity, model_name: str) -> ModelDTO:
         models = await ModelService.get_model_list(user)
 
@@ -39,6 +42,7 @@ class ModelService:
         raise HTTPException(status_code=404, detail=f"Model '{model_name}' not found")
 
     @staticmethod
+    @trace_fn
     async def get_grouped_model_list(user: UserIdentity) -> list[ModelTypeGroupDTO]:
         models = await ModelService.get_model_list(user)
 

@@ -2,6 +2,7 @@ from typing import Annotated
 
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.llms.openai_like import OpenAILike
+from opentelemetry.propagate import inject
 from pydantic import BaseModel, Field
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
@@ -77,6 +78,9 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
             completion_tokens_costs_per_thousand=model_info["model_info"]["output_cost_per_token"] * 1000,
         )
 
+        default_headers = {}
+        inject(default_headers)
+
         open_ai_like = OpenAILike(
             model=self.model_name,
             api_base=config.BASE_URL,
@@ -91,6 +95,7 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
             top_logprobs=self.default_parameter.top_logprobs,
             callback_manager=CallbackManager([token_counter]),
             timeout=self.default_parameter.timeout,
+            default_headers=default_headers,
         )
 
         return open_ai_like, cost_tracker

@@ -15,6 +15,7 @@ from pydantic import ConfigDict, Field, model_validator
 from aihub_lib.generative_ai.document.extractors import MetadataExtractor
 from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import PAGE_BREAK
 from aihub_lib.generative_ai.document.parsers.Split import Split
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     DEFAULT_METADATA,
     HEADING_LEVEL,
@@ -375,6 +376,7 @@ class MarkdownStructuralNodeParser(NodeParser):
 
         return result
 
+    @trace_fn
     def get_nodes_from_node(self, node: BaseNode) -> list[TextNode]:
         """
         Parse nodes from a markdown node. The node content is split into smaller nodes based on headers.

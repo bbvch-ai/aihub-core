@@ -3,6 +3,8 @@ from datetime import datetime
 from bson import ObjectId
 from mongoengine import DateTimeField, Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField
 
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+
 
 class User(EmbeddedDocument):
     user_id = StringField(required=True)
@@ -33,6 +35,7 @@ class ThreadEntity(Document):
     agents = ListField(EmbeddedDocumentField(Agent))
 
     @classmethod
+    @trace_fn
     def create_thread(
         cls, name: str, users: list[User], agents: list[Agent], thread_id: ObjectId | None = None
     ) -> "ThreadEntity":
@@ -41,6 +44,7 @@ class ThreadEntity(Document):
         return thread
 
     @classmethod
+    @trace_fn
     def create_process_thread(
         cls,
         name: str,
@@ -64,29 +68,35 @@ class ThreadEntity(Document):
         return thread
 
     @classmethod
+    @trace_fn
     def get_thread_by_id(cls, thread_id: str) -> "ThreadEntity":
         return cls.objects().get(id=ObjectId(thread_id))
 
     @classmethod
+    @trace_fn
     def get_threads_by_user(cls, user_id: str) -> list["ThreadEntity"]:
         return cls.objects().filter(users__user_id=user_id)
 
     @classmethod
+    @trace_fn
     def count_threads_by_user(cls, user_id: str) -> int:
         """Count the total number of threads that include the specified user."""
         return cls.objects().filter(users__user_id=user_id).count()
 
     @classmethod
+    @trace_fn
     def count_threads_by_agent(cls, agent_class: str, agent_id: str) -> int:
         """Count the total number of threads that include the specified agent."""
         return cls.objects().filter(agents__agent_id=agent_id, agents__agent_class=agent_class).count()
 
     @classmethod
+    @trace_fn
     def get_paginated_threads_by_user(cls, user_id: str, skip: int = 0, limit: int = 20) -> list["ThreadEntity"]:
         """Get a paginated list of threads that include the specified user."""
         return cls.objects().filter(users__user_id=user_id).order_by("-created_at").skip(skip).limit(limit)
 
     @classmethod
+    @trace_fn
     def get_paginated_threads_by_agent(
         cls, agent_class: str, agent_id: str, user_id: str | None = None, skip: int = 0, limit: int = 20
     ) -> list["ThreadEntity"]:
@@ -100,14 +110,17 @@ class ThreadEntity(Document):
         return query.order_by("-created_at").skip(skip).limit(limit)
 
     @classmethod
+    @trace_fn
     def get_threads_by_users(cls, user_ids: list[str]) -> list["ThreadEntity"]:
         return cls.objects().filter(users__user_id__in=user_ids)
 
     @classmethod
+    @trace_fn
     def get_threads_by_agent(cls, agent_class: str, agent_id: str) -> list["ThreadEntity"]:
         return cls.objects().filter(agents__agent_id=agent_id, agents__agent_class=agent_class)
 
     @classmethod
+    @trace_fn
     def add_user_to_thread(cls, thread_id: str, user: User) -> "ThreadEntity":
         thread = cls.get_thread_by_id(thread_id)
         thread.users.append(user)
@@ -115,6 +128,7 @@ class ThreadEntity(Document):
         return thread
 
     @classmethod
+    @trace_fn
     def add_agent_to_thread(cls, thread_id: str, agent: Agent) -> "ThreadEntity":
         thread = cls.get_thread_by_id(thread_id)
         thread.agents.append(agent)
@@ -122,6 +136,7 @@ class ThreadEntity(Document):
         return thread
 
     @classmethod
+    @trace_fn
     def remove_user_from_thread(cls, thread_id: str, user_id: str) -> "ThreadEntity":
         thread = cls.get_thread_by_id(thread_id)
         thread.users = [user for user in thread.users if user.user_id != user_id]
@@ -129,6 +144,7 @@ class ThreadEntity(Document):
         return thread
 
     @classmethod
+    @trace_fn
     def remove_agent_from_thread(cls, thread_id: str, agent_class: str, agent_id: str) -> "ThreadEntity":
         thread = cls.get_thread_by_id(thread_id)
         thread.agents = [
@@ -137,6 +153,7 @@ class ThreadEntity(Document):
         thread.save()
         return thread
 
+    @trace_fn
     def claim_for_process(self, process_class: str, process_id: str, process_walkthrough_id: str) -> "ThreadEntity":
         self.process_class = process_class
         self.process_id = process_id
@@ -145,6 +162,7 @@ class ThreadEntity(Document):
         return self
 
     @classmethod
+    @trace_fn
     def delete_thread(cls, thread_id: str) -> "ThreadEntity":
         thread = cls.get_thread_by_id(thread_id)
         thread.delete()

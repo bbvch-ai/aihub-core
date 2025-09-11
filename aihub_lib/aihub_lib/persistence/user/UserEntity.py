@@ -13,6 +13,8 @@ from mongoengine import (
     StringField,
 )
 
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+
 
 class DashboardItem(EmbeddedDocument):
     id = StringField(required=True)
@@ -56,6 +58,7 @@ class UserEntity(Document):
     dashboard = EmbeddedDocumentField(Dashboard)
 
     @staticmethod
+    @trace_fn
     def create_default_dashboard() -> Dashboard:
         return Dashboard(
             minRow=1,
@@ -97,6 +100,7 @@ class UserEntity(Document):
         )
 
     @classmethod
+    @trace_fn
     def create_user(
         cls, oid: str, name: str, email: str, roles: list[str], profile_image: str | None = None
     ) -> "UserEntity":
@@ -115,6 +119,7 @@ class UserEntity(Document):
         return user
 
     @classmethod
+    @trace_fn
     def ensure_user_exists(
         cls, oid: str, name: str, email: str, roles: list[str], profile_image: str | None = None
     ) -> "UserEntity":
@@ -132,19 +137,23 @@ class UserEntity(Document):
             return cls.create_user(oid=oid, name=name, email=email, roles=roles, profile_image=profile_image)
 
     @classmethod
+    @trace_fn
     def by_oid(cls, user_oid: str) -> "UserEntity":
         return cls.objects.get(id=user_oid)
 
     @classmethod
+    @trace_fn
     def by_email(cls, email: str) -> "UserEntity":
         return cls.objects.get(email=email)
 
     @classmethod
+    @trace_fn
     def count_users(cls) -> int:
         """Count the total number of users."""
         return cls.objects.count()
 
     @classmethod
+    @trace_fn
     def get_paginated_users(cls, skip: int = 0, limit: int = 20) -> list["UserEntity"]:
         """Get a paginated list of users, ordered by name."""
         return cls.objects.order_by("name").skip(skip).limit(limit)

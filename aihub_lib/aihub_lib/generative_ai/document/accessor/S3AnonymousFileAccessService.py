@@ -6,6 +6,7 @@ from botocore.exceptions import ClientError
 from aihub_lib.generative_ai.document.accessor.AbstractAnonymousFileAccessService import (
     AbstractAnonymousFileAccessService,
 )
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
 from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
 
 logger = logging.getLogger(__name__)
@@ -50,6 +51,7 @@ class S3AnonymousFileAccessService(AbstractAnonymousFileAccessService):
             region_name=self._s3_config.REGION,
         )
 
+    @trace_fn
     def generate_sas_url(self, container: str, file_path: str, lifetime_hours: int = 24) -> str:
         """
         Generate a presigned URL for temporary read-only access to an S3 object.
@@ -80,6 +82,7 @@ class S3AnonymousFileAccessService(AbstractAnonymousFileAccessService):
         except ClientError as e:
             raise Exception(f"Failed to generate presigned URL: {e}")
 
+    @trace_fn
     def get_url_signing_secret(self) -> str:
         """
         Get the URL signing secret for S3/MinIO operations.

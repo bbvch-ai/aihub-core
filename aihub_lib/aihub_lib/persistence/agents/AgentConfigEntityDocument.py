@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 
 from mongoengine import DateTimeField, Document
 
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
 from aihub_lib.persistence.agents import AgentConfigEntity
 
 
@@ -22,22 +23,26 @@ class AgentConfigEntityDocument(AgentConfigEntity, Document):
     updated_at = DateTimeField(default=lambda: datetime.now(UTC))
 
     @classmethod
+    @trace_fn
     def find_for_class(cls, agent_class: str) -> list["AgentConfigEntityDocument"]:
         """Find all configurations for a specific agent class."""
         return cls.objects(agent_class=agent_class)
 
     @classmethod
+    @trace_fn
     def find_for_class_and_id(cls, agent_class: str, agent_id: str) -> "AgentConfigEntityDocument | None":
         """Find a specific configuration by agent class and ID."""
         return cls.objects(agent_class=agent_class, agent_id=agent_id).first()
 
     @classmethod
+    @trace_fn
     def delete_if_exists_for_class_and_id(cls, agent_class: str, agent_id: str) -> None:
         """Delete a specific configuration by agent class and ID if it exists."""
         existing = cls.find_for_class_and_id(agent_class, agent_id)
         if existing:
             existing.delete()
 
+    @trace_fn
     def save(self, *args, **kwargs):
         """Override save to update the updated_at timestamp."""
         self.updated_at = datetime.now(UTC)

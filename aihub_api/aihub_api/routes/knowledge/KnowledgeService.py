@@ -4,6 +4,7 @@ import mongoengine
 from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
 from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
 from aihub_lib.persistence.rag.documents.entities.types.Namespace import Namespace
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
@@ -32,6 +33,7 @@ class KnowledgeService:
             register_connection(alias=db, name=db, host=MongoSettings().CONNECTION_STRING.get_secret_value())
 
     @staticmethod
+    @trace_fn
     def get_paginated_documents(
         db: str, namespace: str, page: int = 1, page_size: int = 20
     ) -> tuple[int, list[IngestedDocument]]:
@@ -50,6 +52,7 @@ class KnowledgeService:
         return total, document_dtos
 
     @staticmethod
+    @trace_fn
     def get_document_by_id(db: str, document_id: str) -> IngestedDocument:
         """
         Retrieves a single document by its ID.
@@ -59,6 +62,7 @@ class KnowledgeService:
         return IngestedDocument.from_entity(ref_doc)
 
     @staticmethod
+    @trace_fn
     def get_databases(mongo_client: MongoClient) -> list[DatabaseDTO]:
         """
         Retrieves all databases with their available namespaces with the number of documents in each.
@@ -83,6 +87,7 @@ class KnowledgeService:
         return database_dtos
 
     @staticmethod
+    @trace_fn
     def get_nodes(
         db: str,
         namespace: str,
@@ -104,6 +109,7 @@ class KnowledgeService:
         return nodes
 
     @staticmethod
+    @trace_fn
     def get_summary_nodes(
         db: str, namespace: str, document_id: str, vector_store_factory: VectorStoreFactory
     ) -> list[NodeSummaryDTO]:

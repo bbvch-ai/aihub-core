@@ -7,23 +7,16 @@ from typing import Annotated, Any
 
 from aihub_lib.context.BaseContext import BaseContext
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.infrastructure.phoenix.PhoenixSettings import PhoenixSettings
 from aihub_lib.nats.events import BaseEvent, ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import ListOfSize
 from nats.aio.client import Client as NATS
-from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
-from openinference.semconv.resource import ResourceAttributes
 from openinference.semconv.trace import OpenInferenceMimeTypeValues, OpenInferenceSpanKindValues, SpanAttributes
 from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.propagate import extract, inject
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.trace import Span, StatusCode, set_tracer_provider
+from opentelemetry.trace import Span, StatusCode
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -68,26 +61,8 @@ class RunTraceCoordinator:
     def __init__(
         self,
         nc: Annotated[NATS, "NATS client for messaging."],
-        project_name: Annotated[str, "Name that shows up as project in phoenix."],
     ):
         self.nc = nc
-
-        endpoint = f"{PhoenixSettings().ENDPOINT}/v1/traces"
-
-        auth_token = PhoenixSettings().AUTH_TOKEN
-        headers = {"authorization": f"Bearer {auth_token.get_secret_value()}"} if auth_token else {}
-        tracer_provider = TracerProvider(resource=Resource({ResourceAttributes.PROJECT_NAME: project_name}))
-        set_tracer_provider(tracer_provider)
-        tracer_provider.add_span_processor(
-            BatchSpanProcessor(
-                OTLPSpanExporter(endpoint, headers=headers),
-                max_queue_size=1024 * 512,
-                max_export_batch_size=1024 * 512,
-                schedule_delay_millis=30_000,
-            )
-        )
-
-        LlamaIndexInstrumentor().instrument(tracer_provider=tracer_provider)
         self.tracer = trace.get_tracer(__name__)
         self._background_tasks: set[asyncio.Task] = set()
 
@@ -102,9 +77,10 @@ class RunTraceCoordinator:
         Returns a dict of telemetry headers to pass along for consistent parent-child relationships in spans.
         """
         user_input = event.user_query if event.is_user_message_event else ""
+
         with self.tracer.start_as_current_span(
             name=f"🤖 {topic.agent_class}",
-            kind=trace.SpanKind.SERVER,
+            kind=trace.SpanKind.INTERNAL,
             attributes={
                 SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.LLM.value,
                 SpanAttributes.INPUT_VALUE: user_input,

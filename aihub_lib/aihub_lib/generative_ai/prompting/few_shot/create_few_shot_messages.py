@@ -1,8 +1,10 @@
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
 
 
+@trace_fn
 def create_few_shot_messages(few_shot_examples: list[FewShotExample], locale: str) -> list[ChatMessage]:
     example_messages = []
 

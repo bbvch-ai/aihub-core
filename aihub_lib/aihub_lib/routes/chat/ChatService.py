@@ -13,6 +13,7 @@ from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import (
@@ -165,6 +166,7 @@ class ChatService:
         return event, topic_manager
 
     @staticmethod
+    @trace_fn
     async def start_stream_chat_interaction(
         user: UserIdentity,
         agent_class: str,
@@ -238,6 +240,7 @@ class ChatService:
         return resources
 
     @staticmethod
+    @trace_fn
     async def start_json_chat_interaction(
         user: UserIdentity,
         agent_class: str,
@@ -269,6 +272,7 @@ class ChatService:
         )
 
     @staticmethod
+    @trace_fn
     async def start_json_event_interaction(
         user: UserIdentity,
         agent_class: str,
@@ -331,6 +335,7 @@ class ChatService:
         return resources
 
     @staticmethod
+    @trace_fn
     def build_json_response_content(
         chunk_events: list[ChunkEvent | ThoughtEvent], stop_event: StopEvent | HumanInTheLoopRequestEvent | None
     ) -> ChatContent:

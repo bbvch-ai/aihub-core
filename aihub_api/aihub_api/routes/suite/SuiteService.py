@@ -4,6 +4,7 @@ from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.access.AccessLevel import AccessLevel
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
 
 from aihub_api.routes.suite.dto.ServiceDTO import ServiceDTO
 from aihub_api.routes.suite.dto.SuiteDTO import SuiteDTO
@@ -14,6 +15,7 @@ if TYPE_CHECKING:
 
 class SuiteService:
     @staticmethod
+    @trace_fn
     def get_suite(user: UserIdentity, runner: "Runner", t: LocaleHandler) -> SuiteDTO:
         services: list[ServiceDTO] = []
         access_checker = AccessChecker.from_user(user)

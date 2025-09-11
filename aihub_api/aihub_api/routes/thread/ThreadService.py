@@ -3,6 +3,7 @@ import logging
 from datetime import UTC, datetime
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
@@ -45,6 +46,7 @@ class ThreadService:
     """
 
     @staticmethod
+    @trace_fn
     async def create_thread(
         name: str,
         user_ids: list[str],
@@ -57,6 +59,7 @@ class ThreadService:
         return await ThreadService.thread_response_from_entity(created_thread, t)
 
     @staticmethod
+    @trace_fn
     async def get_thread_by_id(
         thread_id: str,
         t: LocaleHandler,
@@ -67,6 +70,7 @@ class ThreadService:
         return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
+    @trace_fn
     async def get_paginated_threads_for_user(
         user_id: str,
         t: LocaleHandler,
@@ -83,6 +87,7 @@ class ThreadService:
         return total, thread_dtos
 
     @staticmethod
+    @trace_fn
     async def get_paginated_threads_for_agent(
         agent_class: str,
         agent_id: str,
@@ -105,6 +110,7 @@ class ThreadService:
         return total, thread_dtos
 
     @staticmethod
+    @trace_fn
     async def add_agent_to_thread(
         thread_id: str,
         agent_id: str,
@@ -116,6 +122,7 @@ class ThreadService:
         return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
+    @trace_fn
     async def thread_as_message_history(thread_id: str) -> HistoryResponse:
         persisted_events = EventService.get_all_thread_display_events(thread_id)
         contextualized_events = [ContextualizedAgentEvent.from_persisted_event(event) for event in persisted_events]
@@ -187,6 +194,7 @@ class ThreadService:
         return HistoryResponse(messages=messages)
 
     @staticmethod
+    @trace_fn
     async def remove_agent_from_thread(
         thread_id: str,
         agent_class: str,
@@ -197,6 +205,7 @@ class ThreadService:
         return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
+    @trace_fn
     async def add_user_to_thread(
         thread_id: str,
         user_id: str,
@@ -207,17 +216,20 @@ class ThreadService:
         return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
+    @trace_fn
     async def remove_user_from_thread(thread_id: str, user_id: str, t: LocaleHandler) -> ThreadDTO:
         thread = ThreadEntity.remove_user_from_thread(thread_id, user_id)
         return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
+    @trace_fn
     async def delete_thread(thread_id: str, t: LocaleHandler) -> ThreadDTO:
         thread = ThreadEntity.delete_thread(thread_id)
         return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
     @cached(TTLCache(maxsize=128, ttl=60))
+    @trace_fn
     def _fetch_minimal_agent_dto(agent_class: str, agent_id: str, t: LocaleHandler) -> MinimalAgentDTO | None:
         """
         Fetches agent details and converts to MinimalAgentDTO.
@@ -235,6 +247,7 @@ class ThreadService:
             return None
 
     @staticmethod
+    @trace_fn
     def _process_aggregated_runs(aggregated_runs: list[dict], t: "LocaleHandler") -> ProcessedRunResults:
         """
         Processes raw aggregation results into intermediate display statistics
@@ -285,6 +298,7 @@ class ThreadService:
         return results
 
     @staticmethod
+    @trace_fn
     def _calculate_overall_thread_stats(
         display_aggregates: dict[str, IntermediateDisplayStats],
     ) -> CalculatedThreadStats:
@@ -328,6 +342,7 @@ class ThreadService:
         return stats
 
     @staticmethod
+    @trace_fn
     async def thread_response_from_entity(entity: ThreadEntity, t: "LocaleHandler") -> ThreadDTO:
         """
         Constructs the comprehensive ThreadDTO from a ThreadEntity, including

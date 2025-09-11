@@ -8,6 +8,7 @@ from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from mongoengine import DictField, Document, ListField, StringField
 
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.persistence.messaging.entities.types.EventBucket import EventBucket
 
@@ -94,6 +95,7 @@ class PersistedAgentEventEntity(Document):
     event_parents = ListField(StringField(), required=True)
 
     @classmethod
+    @trace_fn
     def persist_event(cls, event: "BaseEvent", topic: "AgentInstanceTopic", db: str):
         persisted_entity = cls(
             id=ObjectId(),
@@ -112,6 +114,7 @@ class PersistedAgentEventEntity(Document):
         persisted_entity.save()
 
     @classmethod
+    @trace_fn
     def display_events_for_thread(
         cls, thread_id: str, display_id: str | None = None, event_name: str | None = None
     ) -> list["PersistedAgentEventEntity"]:
@@ -126,6 +129,7 @@ class PersistedAgentEventEntity(Document):
         return query.order_by("event_data__created_at")
 
     @classmethod
+    @trace_fn
     def display_events_for_threads(
         cls, thread_ids: list[str], event_name: str | None = None
     ) -> list["PersistedAgentEventEntity"]:
@@ -137,6 +141,7 @@ class PersistedAgentEventEntity(Document):
         return query.order_by("event_data__created_at")
 
     @classmethod
+    @trace_fn
     def display_events_for_agent(cls, agent_id: str) -> list["PersistedAgentEventEntity"]:
         return (
             cls.objects()
@@ -145,6 +150,7 @@ class PersistedAgentEventEntity(Document):
         )
 
     @classmethod
+    @trace_fn
     def human_in_the_loop_request_events_for_thread(cls, thread_id: str) -> list["PersistedAgentEventEntity"]:
         return list(
             cls.objects()
@@ -153,6 +159,7 @@ class PersistedAgentEventEntity(Document):
         )
 
     @classmethod
+    @trace_fn
     def human_in_the_loop_response_events_for_thread(cls, thread_id: str) -> list["PersistedAgentEventEntity"]:
         return list(
             cls.objects()
@@ -165,6 +172,7 @@ class PersistedAgentEventEntity(Document):
         )
 
     @classmethod
+    @trace_fn
     def all_events_for_thread(cls, thread_id: str) -> list["PersistedAgentEventEntity"]:
         """
         Retrieves all events (both display and control) for a thread.
@@ -174,6 +182,7 @@ class PersistedAgentEventEntity(Document):
     # Inside ThreadService or potentially PersistedAgentEventEntity as a class method
 
     @classmethod
+    @trace_fn
     def get_aggregated_run_statistics(cls, thread_id: str) -> list[dict]:
         """
         Uses MongoDB aggregation to calculate statistics for each run within a thread.
@@ -349,6 +358,7 @@ class PersistedAgentEventEntity(Document):
         return results
 
     @classmethod
+    @trace_fn
     def to_message_history(cls, thread_id: str) -> list[ChatMessage]:
         # Retrieve and filter events from the database
         events = (
@@ -446,6 +456,7 @@ class PersistedAgentEventEntity(Document):
         return message_history
 
     @classmethod
+    @trace_fn
     def get_event_timeseries(
         cls,
         time_range: TimeRange,

@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings import AnonymousFileAccessSettings
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
 from fastapi import HTTPException, status
 from fastapi.responses import RedirectResponse
 
@@ -17,6 +18,7 @@ class FileService:
     """
 
     @staticmethod
+    @trace_fn
     def get_authenticated_file_redirect(container: str, file_path: str) -> RedirectResponse:
         """
         For logged-in users. Generates a temporary URL and returns a redirect response.
@@ -26,6 +28,7 @@ class FileService:
         return RedirectResponse(url=sas_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
     @staticmethod
+    @trace_fn
     def get_anonymous_file_url(container: str, file_path: str, expires: int, signature: str) -> str:
         """
         For anonymous users. Validates the signature and expiry, then generates a
@@ -49,6 +52,7 @@ class FileService:
         return file_access_config.service.generate_sas_url(container, file_path, lifetime_hours=lifetime_hours)
 
     @staticmethod
+    @trace_fn
     def get_anonymous_file_redirect(container: str, file_path: str, expires: int, signature: str) -> RedirectResponse:
         """
         For anonymous users. Validates the signature and expiry, then generates a
@@ -58,6 +62,7 @@ class FileService:
         return RedirectResponse(url=sas_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
     @staticmethod
+    @trace_fn
     def _generate_internal_signature(container: str, path: str, expires: int) -> str:
         """Generates an HMAC signature for our internal anonymous URL."""
         file_access_config = AnonymousFileAccessSettings()
@@ -66,6 +71,7 @@ class FileService:
         return hmac.new(secret.encode("utf-8"), msg, hashlib.sha256).hexdigest()
 
     @staticmethod
+    @trace_fn
     def create_anonymous_url(
         get_anonymous_file_redirect_api_endpoint: Annotated[
             str, "https url of FileController.get_anonymous_file_redirect route"

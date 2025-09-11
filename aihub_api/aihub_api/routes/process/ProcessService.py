@@ -5,6 +5,7 @@ from typing import Any
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
 from aihub_lib.nats.distributor.events.ExternalProcessEvent import ExternalProcessEvent
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
 from aihub_lib.nats.events import ProcessStartEvent, WorkEvent
@@ -48,6 +49,7 @@ class ProcessService:
     """
 
     @staticmethod
+    @trace_fn
     async def get_process(nc: NATS, process_class: str, process_id: str, t: LocaleHandler) -> ProcessDTO:
         """
         Returns details for a given process. If process is online, use live information reported by the process,
@@ -63,6 +65,7 @@ class ProcessService:
             return ProcessDTO.from_entity(process, t, is_online=False)
 
     @staticmethod
+    @trace_fn
     async def get_processes(nc: NATS, t: LocaleHandler) -> list[ProcessDTO]:
         """
         Returns both processes that are online (answer to a discovery broadcast) and processes
@@ -91,6 +94,7 @@ class ProcessService:
         return all_processes
 
     @staticmethod
+    @trace_fn
     async def discover_process_instance(nc: NATS, process_class: str, process_id: str) -> ProcessInstanceDTO:
         cache_key = (process_class, process_id)
 
@@ -121,6 +125,7 @@ class ProcessService:
         raise HTTPException(status_code=404, detail=f"Process {process_class}.{process_id} not found.")
 
     @staticmethod
+    @trace_fn
     async def discover_process_instances_by_class(nc: NATS, process_class: str) -> list[ProcessInstanceDTO]:
         cache_key = (process_class, "*")
 
@@ -155,6 +160,7 @@ class ProcessService:
         raise HTTPException(status_code=404, detail=f"No process instances found for class {process_class}.")
 
     @staticmethod
+    @trace_fn
     async def _discover_process_class(nc: NATS, process_class: str) -> ProcessClassDTO:
         cache_key = process_class
 
@@ -199,6 +205,7 @@ class ProcessService:
         raise HTTPException(status_code=404, detail=f"Process {process_class} not found.")
 
     @staticmethod
+    @trace_fn
     async def discover_process_instances(nc: NATS) -> list[ProcessInstanceDTO]:
         cache_key = "all_process_instances"
 
@@ -238,6 +245,7 @@ class ProcessService:
         return configured_processes
 
     @staticmethod
+    @trace_fn
     async def _discover_process_classes(nc: NATS) -> list[ProcessClassDTO]:
         cache_key = "all_process_classes"
 
@@ -284,6 +292,7 @@ class ProcessService:
         return processes
 
     @staticmethod
+    @trace_fn
     async def discover_processes(nc: NATS, t: LocaleHandler) -> list[ProcessDTO]:
         discovered_processes = await ProcessService.discover_process_instances(nc)
         return [
@@ -291,6 +300,7 @@ class ProcessService:
         ]
 
     @staticmethod
+    @trace_fn
     async def _send_event(
         external_process_event_distributor: ExternalProcessEventDistributor,
         user: UserIdentity,
@@ -310,6 +320,7 @@ class ProcessService:
         return external_event
 
     @staticmethod
+    @trace_fn
     async def get_process_start_forms(
         nc: NATS, process_class: str, process_id: str, t: LocaleHandler
     ) -> list[ProcessHumanInDto]:
@@ -333,6 +344,7 @@ class ProcessService:
         return process_human_input_dtos
 
     @staticmethod
+    @trace_fn
     async def get_process_open_forms(
         nc: NATS, process_class: str, process_id: str, process_walkthrough_id: str, t: LocaleHandler
     ) -> list[ProcessHumanInDto]:
@@ -380,6 +392,7 @@ class ProcessService:
         return process_human_input_dtos
 
     @staticmethod
+    @trace_fn
     async def submit_process_start_form(
         nc: NATS,
         process_class: str,
@@ -420,6 +433,7 @@ class ProcessService:
         )
 
     @staticmethod
+    @trace_fn
     async def submit_process_open_form(
         nc: NATS,
         process_class: str,

@@ -3,10 +3,12 @@ from datetime import UTC, datetime, timedelta
 from azure.storage.blob import BlobSasPermissions, generate_blob_sas
 
 from aihub_lib.infrastructure.azure.blob_storage.BlobStorageAccess import BlobStorageAccess
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
 
 
 class AnonymousFileAccessService:
     @staticmethod
+    @trace_fn
     def generate_sas_url(container: str, file_path: str, lifetime_hours: int = 24) -> str:
         """Generates a temporary read-only SAS URL for a specific blob."""
         access = BlobStorageAccess()

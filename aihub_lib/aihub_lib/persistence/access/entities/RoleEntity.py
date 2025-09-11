@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from mongoengine import Document, ListField, StringField
 
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+
 
 class RoleEntity(Document):
     """
@@ -21,6 +23,7 @@ class RoleEntity(Document):
     access_rules = ListField(StringField(), default=list)
 
     @classmethod
+    @trace_fn
     def get_role_by_name(cls, role_name: str) -> RoleEntity | None:
         """
         Fetches a role by its name. Returns None if the role does not exist.
@@ -28,6 +31,7 @@ class RoleEntity(Document):
         return cls.objects(name=role_name).first()
 
     @classmethod
+    @trace_fn
     def get_access_rules_for_roles(cls, role_names: list[str]) -> set[str]:
         """
         Fetches all roles corresponding to the given role names and returns a
@@ -42,6 +46,7 @@ class RoleEntity(Document):
         return all_rules
 
     @staticmethod
+    @trace_fn
     def filter_existing_roles(role_names: list[str]) -> list[str]:
         """
         Filters a list of potential role names, returning only those that

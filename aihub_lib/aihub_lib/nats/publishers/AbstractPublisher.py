@@ -28,5 +28,5 @@ class AbstractPublisher(Generic[TEvent], abc.ABC):
             logger.warning(f"Work event {event.event_name} is being published to a non-work subject: {subject}")
 
     @abc.abstractmethod
-    async def publish_event(self, event: TEvent, subject: str):
+    async def publish_event(self, event: TEvent, subject: str, **kwargs):
         pass

@@ -1,4 +1,5 @@
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
 
 from aihub_api.routes.i18n.dto.LocaleResponse import LocaleResponse
 
@@ -17,6 +18,7 @@ class I18nService:
     """
 
     @staticmethod
+    @trace_fn
     def get_user_locale(locale_handler: LocaleHandler) -> LocaleResponse:
         """
         Returns a LocaleResponse for the given user and locale_handler.

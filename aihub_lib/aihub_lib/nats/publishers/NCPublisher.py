@@ -1,8 +1,10 @@
 import logging
 
 from nats.aio.client import Client as NATS
+from opentelemetry import trace
 
 from aihub_lib.nats.publishers.AbstractPublisher import AbstractPublisher, TEvent
+from aihub_lib.nats.tracing.NATSMessageHeaders import NATSMessageHeaders
 
 logger = logging.getLogger(__name__)
 
@@ -27,17 +29,39 @@ class NCPublisher(AbstractPublisher[TEvent]):
     def __init__(self, nc: NATS):
         self.nc = nc
 
-    async def publish_event(self, event: TEvent, subject: str):
+    async def publish_event(self, event: TEvent, subject: str, **kwargs):
         """
         Publishes the given event to the specified subject, encoding it as JSON.
 
         Logs details, warns if there's a mismatch between event type and subject pattern,
         and then sends the message through the NATS client.
         """
-        self._detect_and_log_subject_mismatch(event, subject)
+        tracer = trace.get_tracer(__name__)
 
-        logger.debug(f"Publishing event {event.event_name} to {subject}")
-        serialized_event = event.model_dump_json(serialize_as_any=True)
-        logger.debug(f"Serialized event: {event.event_name}({serialized_event})")
+        with tracer.start_as_current_span(f"NATs.publish {subject}") as span:
+            span.set_attribute("messaging.system", "nats")
+            span.set_attribute("messaging.destination", subject)
+            span.set_attribute("messaging.operation", "publish")
+            span.set_attribute("event.type", event.event_name)
+            span.set_attribute("event.class", event.__class__.__name__)
 
-        await self.nc.publish(subject, serialized_event.encode())
+            try:
+                self._detect_and_log_subject_mismatch(event, subject)
+
+                logger.debug(f"Publishing event {event.event_name} to {subject}")
+                serialized_event = event.model_dump_json(serialize_as_any=True)
+                logger.debug(f"Serialized event: {event.event_name}({serialized_event})")
+
+                # Create headers with trace context
+                headers = NATSMessageHeaders().with_trace_context().to_dict()
+
+                await self.nc.publish(subject, serialized_event.encode(), headers=headers)
+
+                span.set_attribute("messaging.success", True)
+                logger.debug(f"Successfully published {event.event_name} to {subject}")
+
+            except Exception as e:
+                span.set_attribute("messaging.success", False)
+                span.record_exception(e)
+                logger.exception(f"Failed to publish {event.event_name} to {subject}: {e}")
+                raise

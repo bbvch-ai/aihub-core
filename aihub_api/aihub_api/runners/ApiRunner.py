@@ -3,19 +3,19 @@ from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import override
 
-from opentelemetry.trace import ProxyTracerProvider
-
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.routes.Controller import Controller
 from aihub_lib.runners.Runner import Runner
 from fastapi import FastAPI
 from fastmcp import FastMCP
 from fastmcp.server.openapi import MCPType, RouteMap
+from opentelemetry import trace
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.trace import ProxyTracerProvider
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Mount
-from opentelemetry import trace
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.i18n.middleware.I18nMiddleware import I18nMiddleware
@@ -171,11 +171,15 @@ class ApiRunner(Runner):
         tracer_provider = trace.get_tracer_provider()
 
         # If no proper tracer provider is set, skip instrumentation
-        if not isinstance(tracer_provider, ProxyTracerProvider):
+        if not isinstance(tracer_provider, ProxyTracerProvider | TracerProvider):
             logger.info("Skipping OpenTelemetry instrumentation - not configured")
             return
 
-        FastAPIInstrumentor.instrument_app(self._api_app)
-
+        FastAPIInstrumentor.instrument_app(
+            self._api_app,
+            exclude_spans=["receive", "send"],
+            http_capture_headers_server_request=[".*"],
+            http_capture_headers_sanitize_fields=["authorization"],
+        )
         logger.info("FastAPI application instrumented with OpenTelemetry")
         logger.info("Note: Core OpenTelemetry, MongoDB, and HTTP client configuration handled in lifetime_manager")

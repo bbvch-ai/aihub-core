@@ -1,0 +1,47 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    send_batch_size: 1000
+    timeout: 10s
+
+  filter/noise:
+    error_mode: ignore
+    traces:
+      span:
+        - 'attributes["http.route"] == "/health"'
+        - 'attributes["http.route"] == "/metrics"'
+        - 'attributes["db.system"] == "redis"'
+        - 'attributes["db.system"] == "postgresql"'
+        - 'attributes["db.system"] == "mongodb"'
+        - 'resource.attributes["service.name"] == "litellm" and attributes["service"] == "postgres"'
+        - 'resource.attributes["service.name"] == "litellm" and attributes["service"] == "auth"'
+
+exporters:
+  otlp/signoz:
+    endpoint: "${SIGNOZ_INGESTION_CLOUD_ENDPOINT}"
+    headers:
+      signoz-ingestion-key: "${SIGNOZ_INGESTION_KEY}"
+    tls:
+      insecure: false
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [filter/noise, batch]
+      exporters: [otlp/signoz]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/signoz]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/signoz]

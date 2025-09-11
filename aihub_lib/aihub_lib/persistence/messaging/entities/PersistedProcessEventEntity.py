@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 from bson import ObjectId
 from mongoengine import DictField, Document, ListField, StringField
 
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+
 if TYPE_CHECKING:
     from aihub_lib.nats.events import BaseEvent
     from aihub_lib.nats.topics import ProcessInstanceTopic
@@ -29,6 +31,7 @@ class PersistedProcessEventEntity(Document):
     event_parents = ListField(StringField(), required=True)
 
     @classmethod
+    @trace_fn
     def persist_event(cls, event: BaseEvent, topic: ProcessInstanceTopic, db: str):
         persisted_entity = cls(
             id=ObjectId(),
@@ -45,6 +48,7 @@ class PersistedProcessEventEntity(Document):
         persisted_entity.save()
 
     @classmethod
+    @trace_fn
     def get_open_human_work_requests(
         cls, process_class: str, process_id: str, process_walkthrough_id: str
     ) -> list[PersistedProcessEventEntity]:
@@ -116,6 +120,7 @@ class PersistedProcessEventEntity(Document):
         return list(cls.objects(id__in=unanswered_ids))
 
     @classmethod
+    @trace_fn
     def find_request_for_work_event(
         cls, process_class: str, process_id: str, process_walkthrough_id: str, event_name: str
     ) -> PersistedProcessEventEntity | None:

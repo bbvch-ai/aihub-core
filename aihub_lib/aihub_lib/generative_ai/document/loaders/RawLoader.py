@@ -2,8 +2,11 @@ from fsspec import AbstractFileSystem
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
+from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+
 
 class RawLoader(BaseReader):
+    @trace_fn
     def load_data(
         self,
         file: str,
