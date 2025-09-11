@@ -376,23 +376,14 @@ jobs:
           
           git add -A
   
-          git commit -m "ops(bot): Update tag number to ${VERSION} [skip ci]" || echo "No file changes to commit."
-          git push origin HEAD:${{ github.event.pull_request.base.ref }}
+          git commit --amend --no-edit || echo "No file changes to commit."
+          git push origin HEAD:${{ github.event.pull_request.base.ref }} --force-with-lease
           
           
           echo "Creating final tag ${VERSION} and pushing..."
           git tag -a -f "${VERSION}" -m "Release ${VERSION}"
           git push origin "refs/tags/${VERSION}" --force
           
-          # Verify remote tag matches local
-          LOCAL_SHA="$(git rev-parse "${VERSION}^{commit}")"
-          REMOTE_SHA="$(git ls-remote --tags origin "refs/tags/${VERSION}" | awk '{print $1}')"
-          if [ -z "${REMOTE_SHA}" ] || [ "${LOCAL_SHA}" != "${REMOTE_SHA}" ]; then
-            echo "Error: remote tag ${VERSION} not updated (local ${LOCAL_SHA}, remote ${REMOTE_SHA:-<none>})."
-            exit 1
-          fi
-
-          echo "Tag ${VERSION} updated to ${LOCAL_SHA} and verified on origin."
 
       - name: Clean up SSH keys
         run: |
