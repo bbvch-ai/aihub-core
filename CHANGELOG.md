@@ -5,6 +5,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.243.6] - 2025-09-10 - Robust Release Tagging Workflow
+
+### Fixed
+
+- 🐛 **Corrected Tagging Reference:** Ensured that release tags consistently point to the correct merge commit or the
+  latest `main` branch tip in GitHub Actions, particularly for squash and rebase merges, preventing tags from being
+  created against incorrect SHAs.
+
+### Changed
+
+- 🚀 **Improved Tag Verification Process:** Enhanced the reliability and feedback of the post-push tag verification in
+  GitHub Actions by directly fetching remote tags and performing a local check, providing clearer success and failure
+  indications during the release tagging workflow.
+
+---
+
+## [v0.243.5] - 2025-09-09 - Enhanced CI/CD Tag Verification Reliability
+
+### Changed
+
+- ⚡️ **Improved Tag Verification Reliability:** The GitHub Actions workflow for adding release tags now includes
+  multiple retry attempts with a brief delay, making the remote tag verification process more robust and resilient to
+  transient network issues or eventual consistency delays.
+
+---
+
+## [v0.243.4] - 2025-09-09 - Documentation & Local Setup Enhancements
+
+### Added
+
+- 🏠 **Enhanced Local Development Setup:** Introduced comprehensive documentation for running the AI-Hub locally,
+  including details on SSL support, custom domain routing, and configuration with `docker-compose.local.yml` for a more
+  production-like development environment.
+- 📄 **Expert-Agent Feature Overview:** Added a new documentation page providing an overview of the Expert-Agent
+  capabilities within the SDK.
+
+### Changed
+
+- 🌐 **Documentation Navigation Improvements:** Updated numerous internal links throughout the SDK documentation from
+  absolute to relative paths, enhancing navigation robustness and portability.
+
+---
+
+## [v0.243.2] - 2025-09-09 - Streamlined Release Process and Robust Tagging
+
+### Changed
+
+- ✅ **Enhanced Initial Tagging Robustness:** Implemented pre-checks to prevent duplicate tags and added explicit error
+  handling during the initial tag creation and push, ensuring greater reliability.
+- 🚀 **Improved Final Release Tagging:** Upgraded the final tag creation to use annotated tags and incorporated a robust
+  verification step to confirm successful remote tag updates.
+- 🔐 **Scoped Git Configuration:** Adjusted Git user configuration within workflow steps to use local scope, enhancing
+  security and preventing unintended global state changes.
+
+### Refactor
+
+- 🧹 **Streamlined Release Workflow:** Consolidated various dependency management, version updating, and commit
+  operations from a standalone job directly into the release finalization process, simplifying the overall workflow.
+- 🔄 **Optimized Job Dependencies:** Removed an intermediate `update-and-dependencies` job, streamlining the flow between
+  tag computation, changelog generation, license reporting, and final release actions.
+
+---
+
 ## [v0.243.1] - 2025-09-03 - Advanced RAG Agent, Secure Local Dev & OpenWebUI Enhancements
 
 ### Added
