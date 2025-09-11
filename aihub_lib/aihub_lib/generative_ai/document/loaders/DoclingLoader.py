@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import html
 import os
@@ -34,19 +35,45 @@ class DoclingLoader(BaseReader):
         fs: AbstractFileSystem | None = None,
         figures_directory_name: str | None = None,
     ) -> list[Document]:
+        """Load and process documents synchronously using the Docling service."""
         fs = fs or get_default_fs()
         with fs.open(file, "rb") as pdf_file:
             encoded_string = base64.b64encode(pdf_file.read()).decode("utf-8")
         file_name = os.path.basename(file)
 
         answer = self.convert_document(encoded_string, file_name)
+        return self._process_docling_response(answer, file, extra_info, fs, figures_directory_name)
+
+    async def aload_data(
+        self,
+        file: str,
+        extra_info: dict | None = None,
+        fs: AbstractFileSystem | None = None,
+        figures_directory_name: str | None = None,
+    ) -> list[Document]:
+        """Load and process documents asynchronously using the Docling service."""
+        fs = fs or get_default_fs()
+        with fs.open(file, "rb") as pdf_file:
+            encoded_string = base64.b64encode(pdf_file.read()).decode("utf-8")
+        file_name = os.path.basename(file)
+
+        answer = await self.convert_document_async(encoded_string, file_name)
+        return self._process_docling_response(answer, file, extra_info, fs, figures_directory_name)
+
+    def _process_docling_response(
+        self,
+        answer: dict,
+        file: str,
+        extra_info: dict | None = None,
+        fs: AbstractFileSystem | None = None,
+        figures_directory_name: str | None = None,
+    ) -> list[Document]:
+        """Process the Docling API response into Document objects."""
         doc = DoclingDocument(**answer["document"]["json_content"])
         markdown_content = doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
+
         if len(doc.pictures) > 0:
-            img_strs = [
-                f"![Image](data:image/png;base64,{picture._image_to_base64(picture.get_image(doc, idx))})"
-                for idx, picture in enumerate(doc.pictures)
-            ]
+            img_strs = [picture.export_to_markdown(doc) for picture in doc.pictures]
             markdown_content = inject_table_tags(inject_figure_tags(markdown_content, img_strs))
         else:
             markdown_content = inject_table_tags(markdown_content)
@@ -76,8 +103,9 @@ class DoclingLoader(BaseReader):
             )
         ]
 
-    def convert_document(self, file_content: str, filename: str):
-        request_body = {
+    def _build_request_body(self, file_content: str, filename: str) -> dict:
+        """Build the request body for Docling API calls."""
+        return {
             "options": {
                 "from_formats": self.config.FROM_FORMATS,
                 "to_formats": self.config.TO_FORMATS,
@@ -100,6 +128,9 @@ class DoclingLoader(BaseReader):
             "sources": [{"base64_string": file_content, "filename": filename, "kind": "file"}],
         }
 
+    def convert_document(self, file_content: str, filename: str) -> dict:
+        request_body = self._build_request_body(file_content, filename)
+
         response = httpx.post(
             f"{self.config.API_ENDPOINT}/v1/convert/source",
             json=request_body,
@@ -108,9 +139,77 @@ class DoclingLoader(BaseReader):
         )
 
         if response.status_code != 200:
-            raise ValueError(f"Docling API request failed with status code {response.status_code}: {response.text}")
+            raise ValueError(
+                f"Docling sync API request failed with status code {response.status_code}: {response.text}"
+            )
 
         return response.json()
+
+    async def convert_document_async(self, file_content: str, filename: str) -> dict:
+        request_body = self._build_request_body(file_content, filename)
+
+        async with httpx.AsyncClient(timeout=self.config.API_TIMEOUT) as client:
+            response = await client.post(
+                f"{self.config.API_ENDPOINT}/v1/convert/source/async",
+                json=request_body,
+                headers={"Content-Type": "application/json"},
+            )
+
+            if response.status_code != 200:
+                raise ValueError(
+                    f"Docling async API request failed with status code {response.status_code}: {response.text}"
+                )
+
+            job_response = response.json()
+            task_id = job_response["task_id"]
+
+            return await self._poll_job_completion(client, task_id)
+
+    async def _poll_job_completion(self, client: httpx.AsyncClient, task_id: str) -> dict:
+        """Poll the task status until completion and return the result."""
+        for _ in range(self.config.MAX_POLLS):
+            status_response = await client.get(
+                f"{self.config.API_ENDPOINT}/v1/status/poll/{task_id}",
+                headers={"Content-Type": "application/json"},
+            )
+
+            if status_response.status_code != 200:
+                raise ValueError(
+                    f"Docling task status request failed with status code {status_response.status_code}: "
+                    f"{status_response.text}"
+                )
+
+            task_status = status_response.json()
+
+            if task_status["task_status"] == "success":
+                result_response = await client.get(
+                    f"{self.config.API_ENDPOINT}/v1/result/{task_id}",
+                    headers={"Content-Type": "application/json"},
+                )
+
+                if result_response.status_code != 200:
+                    raise ValueError(
+                        f"Docling result request failed with status code {result_response.status_code}: "
+                        f"{result_response.text}"
+                    )
+
+                return result_response.json()
+
+            elif task_status["task_status"] == "failure":
+                raise ValueError(
+                    f"Docling conversion task failed: {task_status.get('task_meta', {}).get('error', 'Unknown error')}"
+                )
+            elif task_status["task_status"] in ["pending", "started"]:
+                await asyncio.sleep(self.config.POLL_INTERVAL)
+            elif task_status["task_status"] == "skipped":
+                raise ValueError(
+                    f"Docling conversion task was skipped: "
+                    f"{task_status.get('task_meta', {}).get('reason', 'Unknown reason')}"
+                )
+            else:
+                raise ValueError(f"Unknown task status: {task_status['task_status']}")
+
+        raise TimeoutError(f"Docling conversion task {task_id} did not complete within the timeout period")
 
 
 def inject_figure_tags(markdown_text: str, img_strs: list[str]):
