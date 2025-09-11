@@ -1,12 +1,12 @@
 # License Report
 
-Generated on: 03.09.2025
+Generated on: 10.09.2025
 
 This document contains license information for all dependencies across the monorepo:
 
 - Python packages (Poetry): **1455 packages**
 - Node.js packages (pnpm): **193 packages**
-- External Docker images: **29 images**
+- External Docker images: **30 images**
 
 ### License Compatibility
 
@@ -1716,6 +1716,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | nats                      | `ghcr.io/bbvch-ai/aihub-core/nats:2.11.4`                                    | Apache-2.0                       | Permissive license                                                  |
 | ✅     | docling-serve             | `ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.1.0`                           | MIT                              | Permissive license                                                  |
 | ✅     | playwright                | `ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy`                       | Apache-2.0                       | Permissive license                                                  |
+| ✅     | dagster                   | `ghcr.io/bbvch-ai/aihub-core/dagster:v0.243.1`                               | Apache-2.0                       | Permissive license                                                  |
 | ✅     | dagster                   | `ghcr.io/bbvch-ai/aihub-core/dagster:latest`                                 | Apache-2.0                       | Permissive license                                                  |
 | ✅     | text-embeddings-inference | `ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cpu-ipex-sha-c8ff435` | Apache-2.0                       | Permissive license                                                  |
 | ✅     | attu                      | `ghcr.io/bbvch-ai/aihub-core/attu:v2.5.12`                                   | Apache-2.0                       | Permissive license                                                  |
@@ -1736,11 +1737,16 @@ This document contains license information for all dependencies across the monor
 The following are our own services and inherit the license we choose:
 
 - rag_agent (`ghcr.io/bbvch-ai/aihub-core/rag_agent:nightly`)
+- default_rag_pipeline (`ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:v0.243.1`)
 - web (`ghcr.io/bbvch-ai/aihub-core/web:latest`)
+- llm_wrapping_agent (`ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:v0.243.1`)
 - web (`ghcr.io/bbvch-ai/aihub-core/web:nightly`)
 - llm_wrapping_agent (`ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:nightly`)
 - default_rag_pipeline (`ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:nightly`)
+- api (`ghcr.io/bbvch-ai/aihub-core/api:v0.243.1`)
+- rag_agent (`ghcr.io/bbvch-ai/aihub-core/rag_agent:v0.243.1`)
 - llm_wrapping_agent (`ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:latest`)
 - api (`ghcr.io/bbvch-ai/aihub-core/api:latest`)
 - default_rag_pipeline (`ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:latest`)
+- web (`ghcr.io/bbvch-ai/aihub-core/web:v0.243.1`)
 - api (`ghcr.io/bbvch-ai/aihub-core/api:nightly`)
