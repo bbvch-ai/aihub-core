@@ -37,12 +37,14 @@ class DoclingLoader(BaseReader):
         include_images: bool | None = None,
     ) -> list[Document]:
         """Load and process documents synchronously using the Docling service."""
+        include_images = include_images if include_images is not None else True
+
         fs = fs or get_default_fs()
         with fs.open(file, "rb") as pdf_file:
             encoded_string = base64.b64encode(pdf_file.read()).decode("utf-8")
         file_name = os.path.basename(file)
 
-        answer = self.convert_document(encoded_string, file_name)
+        answer = self.convert_document(encoded_string, file_name, include_images)
         return self._process_docling_response(answer, file, extra_info, fs, figures_directory_name)
 
     async def aload_data(
@@ -51,14 +53,17 @@ class DoclingLoader(BaseReader):
         extra_info: dict | None = None,
         fs: AbstractFileSystem | None = None,
         figures_directory_name: str | None = None,
+        include_images: bool | None = None,
     ) -> list[Document]:
         """Load and process documents asynchronously using the Docling service."""
+        include_images = include_images if include_images is not None else True
+
         fs = fs or get_default_fs()
         with fs.open(file, "rb") as pdf_file:
             encoded_string = base64.b64encode(pdf_file.read()).decode("utf-8")
         file_name = os.path.basename(file)
 
-        answer = await self.convert_document_async(encoded_string, file_name)
+        answer = await self.convert_document_async(encoded_string, file_name, include_images)
         return self._process_docling_response(answer, file, extra_info, fs, figures_directory_name)
 
     def _process_docling_response(
@@ -70,7 +75,6 @@ class DoclingLoader(BaseReader):
         figures_directory_name: str | None = None,
     ) -> list[Document]:
         """Process the Docling API response into Document objects."""
-        answer = self.convert_document(encoded_string, file_name, include_images)
         doc = DoclingDocument(**answer["document"]["json_content"])
         markdown_content = doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
 
@@ -105,7 +109,7 @@ class DoclingLoader(BaseReader):
             )
         ]
 
-    def _build_request_body(self, file_content: str, filename: str) -> dict:
+    def _build_request_body(self, file_content: str, filename: str, include_images: bool) -> dict:
         """Build the request body for Docling API calls."""
         return {
             "options": {
@@ -130,8 +134,8 @@ class DoclingLoader(BaseReader):
             "sources": [{"base64_string": file_content, "filename": filename, "kind": "file"}],
         }
 
-    def convert_document(self, file_content: str, filename: str) -> dict:
-        request_body = self._build_request_body(file_content, filename)
+    def convert_document(self, file_content: str, filename: str, include_images: bool) -> dict:
+        request_body = self._build_request_body(file_content, filename, include_images)
 
         response = httpx.post(
             f"{self.config.API_ENDPOINT}/v1/convert/source",
@@ -147,8 +151,8 @@ class DoclingLoader(BaseReader):
 
         return response.json()
 
-    async def convert_document_async(self, file_content: str, filename: str) -> dict:
-        request_body = self._build_request_body(file_content, filename)
+    async def convert_document_async(self, file_content: str, filename: str, include_images: bool) -> dict:
+        request_body = self._build_request_body(file_content, filename, include_images)
 
         async with httpx.AsyncClient(timeout=self.config.API_TIMEOUT) as client:
             response = await client.post(

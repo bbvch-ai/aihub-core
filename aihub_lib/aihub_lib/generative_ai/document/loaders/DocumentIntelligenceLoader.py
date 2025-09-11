@@ -39,10 +39,9 @@ class DocumentIntelligenceLoader(BaseReader):
         include_images: bool | None = None,
     ) -> list[Document]:
         """Load and process documents synchronously using the Document Intelligence service."""
-        fs = fs or get_default_fs()
-
         include_images = include_images if include_images is not None else True
 
+        fs = fs or get_default_fs()
         with fs.open(file, "rb") as pdf_file:
             output_options = [AnalyzeOutputOption.FIGURES] if include_images else []
 
@@ -55,7 +54,9 @@ class DocumentIntelligenceLoader(BaseReader):
             )
 
         result: AnalyzeResult = poller.result()
-        return self._process_document_intelligence_response(result, poller, file, extra_info, fs, figures_directory_name)
+        return self._process_document_intelligence_response(
+            result, poller, file, extra_info, fs, figures_directory_name, include_images
+        )
 
     async def aload_data(
         self,
@@ -63,8 +64,11 @@ class DocumentIntelligenceLoader(BaseReader):
         extra_info: dict | None = None,
         fs: AbstractFileSystem | None = None,
         figures_directory_name: str | None = None,
+        include_images: bool | None = None,
     ) -> list[Document]:
         """Load and process documents asynchronously using the Document Intelligence service."""
+        include_images = include_images if include_images is not None else True
+
         fs = fs or get_default_fs()
         with fs.open(file, "rb") as pdf_file:
             poller = self.document_intelligence_client.begin_analyze_document(
@@ -76,7 +80,9 @@ class DocumentIntelligenceLoader(BaseReader):
             )
 
         result: AnalyzeResult = poller.result()
-        return self._process_document_intelligence_response(result, poller, file, extra_info, fs, figures_directory_name)
+        return self._process_document_intelligence_response(
+            result, poller, file, extra_info, fs, figures_directory_name, include_images
+        )
 
     def _process_document_intelligence_response(
         self,
@@ -86,6 +92,7 @@ class DocumentIntelligenceLoader(BaseReader):
         extra_info: dict | None = None,
         fs: AbstractFileSystem | None = None,
         figures_directory_name: str | None = None,
+        include_images: bool | None = None,
     ) -> list[Document]:
         """Process the Document Intelligence API response into Document objects."""
         metadata = {NUMBER_OF_PAGES: len(result.pages)}

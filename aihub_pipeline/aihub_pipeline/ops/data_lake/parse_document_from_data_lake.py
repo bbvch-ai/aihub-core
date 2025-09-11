@@ -21,8 +21,6 @@ async def parse_document_from_data_lake(
     context.log.info(f"Using reader {reader_name} for document of type {data_lake_file.filetype}")
     context.log.info(f"Data Lake file uri: {data_lake_file.uri}")
     documents = await reader.aload_data(
-        data_lake_file.uri, fs=data_lake_file_system, figures_directory_name=data_lake_resource.figures_directory_name
-    documents = reader.load_data(
         data_lake_file.uri,
         fs=data_lake_file_system,
         figures_directory_name=data_lake_resource.figures_directory_name,
