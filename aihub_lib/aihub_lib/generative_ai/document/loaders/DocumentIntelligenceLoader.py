@@ -30,13 +30,14 @@ class DocumentIntelligenceLoader(BaseReader):
 
         self.document_intelligence_client = DocumentIntelligenceAccess().get_client()
 
-    async def aload_data(
+    def load_data(
         self,
         file: str,
         extra_info: dict | None = None,
         fs: AbstractFileSystem | None = None,
         figures_directory_name: str | None = None,
     ) -> list[Document]:
+        """Load and process documents synchronously using the Document Intelligence service."""
         fs = fs or get_default_fs()
         with fs.open(file, "rb") as pdf_file:
             poller = self.document_intelligence_client.begin_analyze_document(
@@ -48,7 +49,39 @@ class DocumentIntelligenceLoader(BaseReader):
             )
 
         result: AnalyzeResult = poller.result()
+        return self._process_document_intelligence_response(result, poller, file, extra_info, fs, figures_directory_name)
 
+    async def aload_data(
+        self,
+        file: str,
+        extra_info: dict | None = None,
+        fs: AbstractFileSystem | None = None,
+        figures_directory_name: str | None = None,
+    ) -> list[Document]:
+        """Load and process documents asynchronously using the Document Intelligence service."""
+        fs = fs or get_default_fs()
+        with fs.open(file, "rb") as pdf_file:
+            poller = self.document_intelligence_client.begin_analyze_document(
+                "prebuilt-layout",
+                body=pdf_file,
+                content_type="application/octet-stream",
+                output_content_format=DocumentContentFormat.MARKDOWN,
+                output=[AnalyzeOutputOption.FIGURES],
+            )
+
+        result: AnalyzeResult = poller.result()
+        return self._process_document_intelligence_response(result, poller, file, extra_info, fs, figures_directory_name)
+
+    def _process_document_intelligence_response(
+        self,
+        result: AnalyzeResult,
+        poller: Any,
+        file: str,
+        extra_info: dict | None = None,
+        fs: AbstractFileSystem | None = None,
+        figures_directory_name: str | None = None,
+    ) -> list[Document]:
+        """Process the Document Intelligence API response into Document objects."""
         metadata = {NUMBER_OF_PAGES: len(result.pages)}
 
         text = reformat_tables(result.content)
