@@ -1,5 +1,6 @@
 import logging
-from datetime import datetime, timedelta
+import time
+from functools import lru_cache, wraps
 
 import mongoengine
 from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings import AnonymousFileAccessSettings
@@ -37,32 +38,33 @@ from aihub_api.services.TranslationService import TranslationService
 logger = logging.getLogger(__name__)
 
 
-class DocumentCache:
-    def __init__(self, ttl: timedelta = timedelta(minutes=5)):
-        self.ttl = ttl
-        self._data = {}
-        self._timestamps = {}
+def ttl_cache(seconds: int, maxsize: int = 128):
+    def decorator(func):
+        func = lru_cache(maxsize=maxsize)(func)
+        func.lifetime = seconds
+        func.expiration = time.time() + seconds
 
-    def get(self, key: str):
-        if key in self._timestamps and datetime.now() - self._timestamps[key] < self.ttl:
-            return self._data.get(key)
-        return None
+        @wraps(func)
+        def wrapped_func(*args, **kwargs):
+            if time.time() >= func.expiration:
+                func.cache_clear()
+                func.expiration = time.time() + func.lifetime
+            return func(*args, **kwargs)
 
-    def set(self, key: str, value):
-        self._data[key] = value
-        self._timestamps[key] = datetime.now()
+        def invalidate():
+            func.cache_clear()
+            func.expiration = time.time() + func.lifetime
 
-    def invalidate(self, db: str, namespace: str):
-        patterns = [f"{db}:{namespace}:", f"{db}::"]
-        for key in list(self._data.keys()):
-            if any(key.startswith(p) for p in patterns):
-                self._data.pop(key, None)
-                self._timestamps.pop(key, None)
+        wrapped_func.invalidate = invalidate
+        wrapped_func.cache_info = func.cache_info
+        wrapped_func.cache_clear = func.cache_clear
+
+        return wrapped_func
+
+    return decorator
 
 
 class KnowledgeService:
-    cache = DocumentCache()
-
     @staticmethod
     def _ensure_db_exists(db: str):
         try:
@@ -107,56 +109,43 @@ class KnowledgeService:
 
         return all_files
 
-    @classmethod
-    def _get_processed_sources(cls, db: str, namespace: str) -> set[str]:
-        cache_key = f"{db}:{namespace}:sources"
-        cached = cls.cache.get(cache_key)
-        if cached is not None:
-            return cached
-
+    @staticmethod
+    @ttl_cache(seconds=300, maxsize=256)  # 5 minutes TTL, 256 max entries
+    def _get_processed_sources(db: str, namespace: str) -> set[str]:
         count = RefDoc.count_by_namespace(db_alias=db, namespace=namespace)
         if count == 0:
-            sources = set()
-        else:
-            docs = RefDoc.get_paginated_by_namespace(db_alias=db, namespace=namespace, skip=0, limit=count)
-            sources = {doc.data.metadata.source for doc in docs}
+            return set()
 
-        cls.cache.set(cache_key, sources)
-        return sources
+        docs = RefDoc.get_paginated_by_namespace(db_alias=db, namespace=namespace, skip=0, limit=count)
+        return {doc.data.metadata.source for doc in docs}
 
-    @classmethod
-    def _get_processed_documents_sorted(cls, db: str, namespace: str) -> list[DocumentDTO]:
-        cache_key = f"{db}:{namespace}:processed"
-        cached = cls.cache.get(cache_key)
-        if cached is not None:
-            return cached
-
+    @staticmethod
+    @ttl_cache(seconds=300, maxsize=256)  # 5 minutes TTL, 256 max entries
+    def _get_processed_documents_sorted(db: str, namespace: str) -> list[DocumentDTO]:
         count = RefDoc.count_by_namespace(db_alias=db, namespace=namespace)
         if count == 0:
-            documents = []
-        else:
-            docs = RefDoc.get_paginated_by_namespace(db_alias=db, namespace=namespace, skip=0, limit=count)
-            documents = [DocumentDTO.from_ref_doc(doc) for doc in docs]
-            documents.sort(key=lambda doc: doc.updated_at, reverse=True)
+            return []
 
-        cls.cache.set(cache_key, documents)
+        docs = RefDoc.get_paginated_by_namespace(db_alias=db, namespace=namespace, skip=0, limit=count)
+        documents = [DocumentDTO.from_ref_doc(doc) for doc in docs]
+        documents.sort(key=lambda doc: doc.updated_at, reverse=True)
         return documents
 
     @classmethod
+    @ttl_cache(seconds=300, maxsize=256)  # 5 minutes TTL, 256 max entries
     def _get_unprocessed_files(cls, db: str, namespace: str, bucket_name: str) -> list[DocumentDTO]:
-        cache_key = f"{db}:{namespace}:unprocessed"
-        cached = cls.cache.get(cache_key)
-        if cached is not None:
-            return cached
-
         datalake_files = cls._get_datalake_files_in_namespace(bucket_name, namespace)
         processed_sources = cls._get_processed_sources(db, namespace)
 
         unprocessed = [f for f in datalake_files if f.source not in processed_sources]
         unprocessed.sort(key=lambda doc: doc.updated_at, reverse=True)
-
-        cls.cache.set(cache_key, unprocessed)
         return unprocessed
+
+    @staticmethod
+    def invalidate_cache():
+        KnowledgeService._get_processed_sources.invalidate()
+        KnowledgeService._get_processed_documents_sorted.invalidate()
+        KnowledgeService._get_unprocessed_files.invalidate()
 
     @staticmethod
     def get_paginated_documents(
@@ -330,7 +319,7 @@ class KnowledgeService:
             description=description_entity,
         )
 
-        KnowledgeService.cache.invalidate(request.database_name, request.namespace_name)
+        KnowledgeService.invalidate_cache()
 
         return NamespaceResponse(
             id=str(namespace_entity.id),
@@ -367,7 +356,7 @@ class KnowledgeService:
         )
 
         bucket = BucketEntity.objects.get(id=updated_entity.bucket_id)
-        KnowledgeService.cache.invalidate(bucket.db_name, updated_entity.namespace_name)
+        KnowledgeService.invalidate_cache()
 
         return NamespaceResponse(
             id=str(updated_entity.id),
