@@ -1,5 +1,3 @@
-from typing import Any
-
 from fsspec import AbstractFileSystem
 from llama_index.core import Document
 from llama_index.core.readers.base import BaseReader
@@ -8,7 +6,6 @@ from aihub_lib.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_FI
 
 
 class ImageLoader(BaseReader):
-
     def load_data(
         self,
         file: str,
