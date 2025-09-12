@@ -16,11 +16,11 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=FanOutAgent,
-        agent_config=FanOutAgentConfig(
+        default_agent_config=FanOutAgentConfig(
             agent_id="fan_out_agent",
+            agent_class=FanOutAgent.__name__,
             name=LocaleString(en="Fan Out Agent"),
             description=LocaleString(en="This is an agent that fans out multiple steps"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
     async with runner.test_run() as topic:

@@ -1,4 +1,5 @@
 import abc
+import asyncio
 from collections.abc import Awaitable, Callable
 from typing import Generic, TypeVar
 
@@ -22,6 +23,8 @@ class AbstractSubscriber(Generic[TEvent], abc.ABC):
         self.subject = subject
         self.event_cls = event_cls
         self.handler = handler
+
+        self._background_tasks: set[asyncio.Task] = set()
 
     @abc.abstractmethod
     async def start(self) -> None:

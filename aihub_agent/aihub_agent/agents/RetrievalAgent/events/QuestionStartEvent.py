@@ -11,4 +11,4 @@ class QuestionStartEvent(StartEvent):
     """
 
     question: Annotated[str, Field(..., description="The query that initiates the workflow.")]
-    locale: Annotated[Literal["de", "en", "fr", "it"], Field(description="The language of the user.", default="en")]
+    locale: Annotated[Literal["de", "en", "fr", "it"], Field(description="The language of the user.")] = "en"

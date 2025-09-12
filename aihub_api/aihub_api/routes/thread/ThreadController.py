@@ -25,7 +25,6 @@ class ThreadController(Controller):
     """
     A controller that manages thread-related endpoints.
 
-    ### Why ThreadController?
     Conversations or workflows are often organized into "threads"—units that group users and agents together.
     The `ThreadController` provides endpoints to:
     - List user-specific threads.
@@ -35,33 +34,6 @@ class ThreadController(Controller):
 
     By structuring these operations in a controller, the API remains organized, and user authorization checks
     stay consistent and centralized.
-
-    ### Endpoints
-    - `GET /thread/`: Lists all threads for the authenticated user.
-    - `POST /thread/{thread_id}`: Creates a thread with specified users and agents.
-    - `GET /thread/{thread_id}`: Retrieves details of a specific thread, ensuring the user has access.
-    - `POST /thread/{thread_id}/agents`: Adds an agent to a thread if the user is a member.
-    - `DELETE /thread/{thread_id}/agents/{agent_class}/{agent_id}`: Removes an agent from a thread if authorized.
-    - `POST /thread/{thread_id}/users`: Adds a user to a thread if authorized.
-    - `DELETE /thread/{thread_id}/users/{remove_user_id}`: Removes a user from a thread if authorized.
-
-    ### Authentication & Authorization
-    Most operations require that the authenticated user be a member of the thread. Otherwise,
-    a `403 Forbidden` is raised.
-
-    ### Usage
-    ```python
-    app = FastAPI()
-    ThreadController(auth=some_auth_dependency)
-        .get_user_threads()
-        .create_thread()
-        .get_thread()
-        .add_agent_to_thread()
-        .remove_agent_from_thread()
-        .add_user_to_thread()
-        .remove_user_from_thread()
-        .mount(app)
-    ```
     """
 
     name = LocaleString(en="Thread")
@@ -136,7 +108,7 @@ class ThreadController(Controller):
     def get_thread(self, route: str = "/{thread_id}") -> "ThreadController":
         @self.router.get(route, tags=self.tags)
         async def get_thread(
-            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
+            thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ThreadDTO:
@@ -160,7 +132,7 @@ class ThreadController(Controller):
     def add_agent_to_thread(self, route: str = "/{thread_id}/agents") -> "ThreadController":
         @self.router.post(route, tags=self.tags)
         async def add_agent_to_thread(
-            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
+            thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
             req: AddAgentRequest,
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
@@ -193,7 +165,7 @@ class ThreadController(Controller):
     def thread_as_message_history(self, route: str = "/{thread_id}/history") -> "ThreadController":
         @self.router.get(route, tags=self.tags)
         async def thread_as_message_history(
-            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
+            thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> HistoryResponse:
@@ -213,7 +185,7 @@ class ThreadController(Controller):
     ) -> "ThreadController":
         @self.router.delete(route, tags=self.tags)
         async def remove_agent_from_thread(
-            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
+            thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
             agent_class: Annotated[str, Path(title="Agent Class")],
             agent_id: Annotated[str, Path(title="Agent ID")],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
@@ -237,7 +209,7 @@ class ThreadController(Controller):
     def add_user_to_thread(self, route: str = "/{thread_id}/users") -> "ThreadController":
         @self.router.post(route, tags=self.tags)
         async def add_user_to_thread(
-            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
+            thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
             add_user_dto: AddUserRequest,
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
@@ -270,7 +242,7 @@ class ThreadController(Controller):
     def remove_user_from_thread(self, route: str = "/{thread_id}/users/{remove_user_id}") -> "ThreadController":
         @self.router.delete(route, tags=self.tags)
         async def remove_user_from_thread(
-            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
+            thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
             remove_user_id: Annotated[str, Path(title="User ID")],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],

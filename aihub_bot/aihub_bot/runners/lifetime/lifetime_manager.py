@@ -2,10 +2,10 @@ import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
-from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from fastapi import FastAPI
@@ -24,8 +24,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
     # Connect to MongoDB via Cosmos
     connect(
-        db=ApiConfig().DB_NAME,
-        host=CosmosAccess().get_connection_string(),
+        db=AIHubSettings().MONGO_MAIN_DB_NAME,
+        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
     )
 
     # Configure TTL index after connection is established
@@ -36,7 +36,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
     try:
         # Connect to NATS and setup JetStream
-        await nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
+        await nc.connect(servers=[NatsSettings().ENDPOINT])
         js = nc.jetstream()
 
         topic_manager = AgentTopicManager()
@@ -50,13 +50,13 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         )
         await bot_in_the_loop_subscriber.start()
 
-        external_event_distributor = ExternalAgentEventDistributor(nc=nc, js=js)
+        external_agent_event_distributor = ExternalAgentEventDistributor(nc=nc, js=js)
 
         # Store resources in app state
         app.state.nc = nc
         app.state.js = js
         app.state.bot_in_the_loop_handler = bot_in_the_loop_handler
-        app.state.external_event_distributor = external_event_distributor
+        app.state.external_agent_event_distributor = external_agent_event_distributor
 
         # Yield control back to FastAPI to start serving requests
         yield

@@ -8,6 +8,7 @@
   />
   <Popover
     ref="op"
+    class="[--p-popover-background:var(--p-surface-50)] [--p-popover-border-color:var(--p-surface-200)] dark:[--p-popover-background:var(--p-surface-950)] dark:[--p-popover-border-color:var(--p-surface-800)]"
   >
     <div class="flex flex-col gap-4 p-2">
       <div class="flex flex-col gap-2">
@@ -32,8 +33,8 @@
 </template>
 
 <script setup lang="ts">
+import { changeLocale } from '@formkit/vue'
 import { useQueryCache } from '@pinia/colada'
-import { ref, computed } from 'vue'
 
 const auth = useAuth()
 const { t, locale, locales } = useI18n()
@@ -54,6 +55,8 @@ const localeOptions = computed(() => {
   }))
 })
 
+changeLocale(locale.value)
+
 // Track the selected locale
 const selectedLocale = computed({
   get: () => {
@@ -62,6 +65,7 @@ const selectedLocale = computed({
   set: (newValue) => {
     if (newValue?.code && newValue.code !== locale.value) {
       op.value.hide()
+      changeLocale(newValue.code)
       router.push(switchLocalePath(newValue.code))
         .then(() => {
           queryCache.invalidateQueries()

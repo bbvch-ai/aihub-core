@@ -25,11 +25,11 @@ import type {
   MinimalAgentDto,
   ThreadDto,
   MinimalUserDto,
-  WsServerEventReadable,
+  AgentEventReadable,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  events: WsServerEventReadable[]
+  events: AgentEventReadable[]
   thread: ThreadDto
 }>()
 
@@ -61,7 +61,7 @@ const toDisplay = (msg: ExtendedChatMessage) => {
 const createUserMessage = (
   blocks: ChatMessageInput['blocks'],
   timestamp: number,
-  event: WsServerEventReadable,
+  event: AgentEventReadable,
 ): ExtendedChatMessage => ({
   role: 'user',
   blocks,
@@ -74,7 +74,7 @@ const createUserMessage = (
 
 const createAssistantMessage = (
   text: string,
-  event: WsServerEventReadable,
+  event: AgentEventReadable,
   timestamp: number,
 ): ExtendedChatMessage => {
   const agentDto = getAgentDto(event.agent_class, event.agent_id)

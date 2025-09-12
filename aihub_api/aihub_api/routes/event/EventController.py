@@ -6,21 +6,17 @@ from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor_ws
-from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import TimeRange
 from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Security, WebSocket
 from fastapi.params import Path, Query
 
-from aihub_api.sockets.events.server_to_user.WSServerEvent import WSServerEvent
+from aihub_api.sockets.events.server_to_user.ContextualizedAgentEvent import ContextualizedAgentEvent
 
 from ...i18n.dependencies.use_locale import use_locale, use_locale_ws
 from ...sockets.manager.dependencies.use_ws_manager import use_ws_manager_ws
 from ...sockets.manager.WebSocketManager import WebSocketManager
-from ...sockets.sender.dependencies.use_ws_sender import use_ws_sender_ws
-from ...sockets.sender.WebSocketSender import WebSocketSender
 from ..thread.ThreadService import ThreadService
 from .dto.EventTimeseries import EventTimeseries
 from .EventService import EventService
@@ -33,12 +29,6 @@ class EventController(Controller):
     A controller that manages the event-related endpoints, including:
     - Retrieving a user’s persisted events.
     - Establishing a WebSocket connection for real-time two-way messaging.
-
-    ### Why EventController?
-    In interactive systems, clients often need to:
-    - Fetch historical events (e.g., from past sessions or previous steps in a workflow).
-    - Maintain a live WebSocket connection for sending commands and receiving updates in real-time.
-
     The `EventController` provides HTTP and WebSocket endpoints to handle these use cases.
     """
 
@@ -51,14 +41,14 @@ class EventController(Controller):
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
-    def get_events_in_thread(self, path: str = "/threads/{thread_id}") -> "EventController":
+    def get_agent_events_in_thread(self, path: str = "/agents/threads/{thread_id}") -> "EventController":
         @self.router.get(path, tags=self.tags)
-        async def get_events_in_thread(
+        async def get_agent_events_in_thread(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-            thread_id: Annotated[str, Path(title="Thread ID", pattern="^[a-f0-9]{24}$")],
-            display_id: Annotated[str, Query(pattern="^[a-f0-9]{24}$")] = None,
-        ) -> list[WSServerEvent]:
+            thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
+            display_id: Annotated[str, Query(pattern=r"^[a-f0-9]{24}$")] = None,
+        ) -> list[ContextualizedAgentEvent]:
             """
             Returns all events in a given thread
             """
@@ -86,61 +76,9 @@ class EventController(Controller):
 
         return self
 
-    def ws(self, path: str = "/ws") -> "EventController":
-        @self.router.websocket(path)
-        async def websocket_endpoint(
-            websocket: WebSocket,
-            external_event_distributor: Annotated[
-                ExternalAgentEventDistributor, Depends(use_external_event_distributor_ws)
-            ],
-            ws_sender: Annotated[WebSocketSender, Depends(use_ws_sender_ws)],
-            ws_manager: Annotated[WebSocketManager, Depends(use_ws_manager_ws)],
-            t: Annotated[LocaleHandler, Depends(use_locale_ws)],
-        ):
-            """
-            Establishes a WebSocket connection. The first message must contain a token for authentication.
-            If the token is valid, the user can send `ExternalAgentEvent`s and receive responses
-            (WSServerEvent or errors).
-            """
-            await websocket.accept()  # Accept the connection first
-
-            # Receive initial auth message
-            first_message = await websocket.receive_json()
-            token = first_message.get("token")
-
-            # Handle "Bearer " prefix if present
-            if token.startswith("Bearer "):
-                token = token[7:]  # Extract token after "Bearer "
-
-            if not token:
-                await websocket.close(code=4000, reason="No token provided")
-                return
-
-            try:
-                user = await self.auth.authenticate_token(token)
-            except HTTPException as e:
-                logger.exception(e)
-                await websocket.close(code=4001, reason=f"Invalid token: {e.detail}")
-                return
-            except Exception as e:
-                logger.exception(e)
-                await websocket.close(code=4002, reason="Token validation error")
-                return
-
-            await EventService.event_websocket_connection(
-                websocket,
-                ws_sender,
-                ws_manager,
-                external_event_distributor,
-                user,
-                t,
-            )
-
-        return self
-
-    def get_event_timeseries(self, route: str = "/timeseries/{time_range}") -> "EventController":
+    def get_agent_event_timeseries(self, route: str = "/agents/timeseries/{time_range}") -> "EventController":
         @self.router.get(route, tags=self.tags)
-        async def get_event_timeseries(
+        async def get_agent_event_timeseries(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
             time_range: Annotated[
@@ -198,6 +136,51 @@ class EventController(Controller):
 
             return EventService.get_event_timeseries(
                 time_range, agent_id=agent_id, agent_class=agent_class, event_name=event_name, thread_id=thread_id
+            )
+
+        return self
+
+    def ws(self, path: str = "/ws") -> "EventController":
+        @self.router.websocket(path)
+        async def websocket_endpoint(
+            websocket: WebSocket,
+            ws_manager: Annotated[WebSocketManager, Depends(use_ws_manager_ws)],
+            t: Annotated[LocaleHandler, Depends(use_locale_ws)],
+        ):
+            """
+            Establishes a WebSocket connection. The first message must contain a token for authentication.
+            If the token is valid, the user can receive live event streams.
+            Note that this websocket connection does NOT accept events from the user due to security
+            reasons. Please use the dedicated agent or process endpoints to publish events.
+            """
+            await websocket.accept()
+
+            first_message = await websocket.receive_json()
+            token = first_message.get("token")
+
+            if token.startswith("Bearer "):
+                token = token[7:]
+
+            if not token:
+                await websocket.close(code=4000, reason="No token provided")
+                return
+
+            try:
+                user = await self.auth.authenticate_token(token)
+            except HTTPException as e:
+                logger.exception(e)
+                await websocket.close(code=4001, reason=f"Invalid token: {e.detail}")
+                return
+            except Exception as e:
+                logger.exception(e)
+                await websocket.close(code=4002, reason="Token validation error")
+                return
+
+            await EventService.event_websocket_connection(
+                websocket,
+                ws_manager,
+                user,
+                t,
             )
 
         return self

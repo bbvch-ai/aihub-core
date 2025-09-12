@@ -4,7 +4,7 @@ import httpx
 import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
+from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
 
 
 def base64url_encode(data: bytes) -> str:
@@ -53,7 +53,7 @@ class DummyResponse:
 @pytest.fixture
 def oauth2_config(monkeypatch):
     """Set up the OAuth2 configuration via environment variables."""
-    return OAuth2Config()
+    return OAuth2Settings()
 
 
 @pytest.fixture

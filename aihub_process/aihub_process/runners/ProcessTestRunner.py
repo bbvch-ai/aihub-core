@@ -1,28 +1,36 @@
+import logging
 from asyncio import sleep
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from aihub_lib.infrastructure.RedisConfig import RedisConfig
+from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
+from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.nats.events import (
     BaseEvent,
-    DiscoveryRequestEvent,
     ProcessExceptionEvent,
     ProcessStartEvent,
     ProcessStopEvent,
+    WorkEvent,
 )
-from aihub_lib.nats.events.discovery import ProcessDiscoveryResponseEvent
-from aihub_lib.nats.NatsConfig import NatsConfig
+from aihub_lib.nats.events.discovery import (
+    InstanceDiscoveryRequestEvent,
+    ProcessInstanceDiscoveryResponseEvent,
+)
+from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
-from aihub_lib.nats.topics import ProcessTopic, Topic
+from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
+from aihub_lib.nats.topics import ProcessInstanceTopic, Topic
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 from openai import BaseModel
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.runners.ProcessRunner import ProcessRunner
+
+logger = logging.getLogger(__name__)
 
 
 class ObservedEvent(BaseModel):
@@ -37,7 +45,7 @@ class ObservedEvent(BaseModel):
 
 class ProcessTestRunner(ProcessRunner):
     """
-    A specialized runner intended for testing processs. It extends `ProcessRunner` by:
+    A specialized runner intended for testing processes. It extends `ProcessRunner` by:
     - Observing events published by the process and storing them for assertions in tests.
     - Providing a `test_run` context manager that sets up a test environment, including
       event subscriptions and automatic cleanup after a delay.
@@ -48,21 +56,52 @@ class ProcessTestRunner(ProcessRunner):
     def __init__(
         self,
         process_type: type[AgenticProcess],
-        process_config: ProcessConfig,
+        default_process_config: ProcessConfig,
         locale_paths: list[str] | None = None,
     ):
         super().__init__(
-            servers=[NatsConfig().NATS_ENDPOINT],
-            redis_url=RedisConfig().REDIS_URL,
+            servers=[NatsSettings().ENDPOINT],
+            redis_url=RedisSettings().URL,
             process_type=process_type,
-            process_config=process_config,
+            default_process_config=default_process_config,
             locale_paths=locale_paths,
+        )
+        self.topic_manager = ProcessInstanceTopicManager(
+            process_class=self.process_class,
+            process_id=self.default_process_config.process_id,
         )
         self.test_event_subscriber: JSSubscriber | None = None
         self.observed_events: list[ObservedEvent] = []
 
         self.observe_discovery_event_subscriber: ProcessNCSubscriber | None = None
         self.observe_discovery_response_event_subscriber: ProcessNCSubscriber | None = None
+
+    async def send_event(
+        self,
+        work_event: WorkEvent,
+        process_walkthrough_id: str,
+    ):
+        """
+        Sends an initial event (like a WorkEvent) to initiate a process walkthrough.
+        This allows external code to trigger a new run by injecting a work event.
+        """
+        publisher = JSPublisher(self.js)
+
+        topic_manager = ProcessWalkthroughTopicManager.from_process_instance_topic_manager(
+            self.topic_manager, process_walkthrough_id
+        )
+
+        subject = topic_manager.get_subject_for_work_event_in_walkthrough(
+            work_event.event_name, event_id=work_event.event_id
+        )
+        await publisher.publish_event(work_event, subject)
+
+    async def send_event_from_topic(self, work_event: WorkEvent, topic: ProcessInstanceTopic):
+        """
+        Sends a StartEvent (or another initiating event) to the run identified by the PartialAgentTopic.
+        This allows tests to inject their own events to drive the agent workflow.
+        """
+        await self.send_event(work_event, topic.process_walkthrough_id)
 
     async def observe_event(self, event: BaseEvent, topic: Topic):
         """
@@ -72,7 +111,7 @@ class ProcessTestRunner(ProcessRunner):
         self.observed_events.append(ObservedEvent(event=event, topic=topic))
 
     @asynccontextmanager
-    async def test_run(self, delay_before_stop: int = 1) -> AsyncGenerator[None, None]:
+    async def test_run(self, delay_before_stop: int = 1) -> AsyncGenerator[None]:
         await self.test_run_start()
         yield
         await sleep(delay_before_stop)
@@ -85,23 +124,25 @@ class ProcessTestRunner(ProcessRunner):
             nc=self.nc,
             topic_manager=ProcessInstanceTopicManager(
                 process_class=self.process_class,
-                process_id=self.process_config.process_id,
+                process_id=self.default_process_config.process_id,
             ),
             handler=self.observe_event,
         )
         await self.test_event_subscriber.start()
 
-        self.observe_discovery_event_subscriber = ProcessNCSubscriber.for_process_discovery_request_events(
+        self.observe_discovery_event_subscriber = ProcessNCSubscriber.for_process_class_discovery_request_events(
             nc=self.nc,
             topic_manager=ProcessTopicManager(),
             handler=self.observe_event,
         )
         await self.observe_discovery_event_subscriber.start()
 
-        self.observe_discovery_response_event_subscriber = ProcessNCSubscriber.for_process_discovery_request_events(
-            nc=self.nc,
-            topic_manager=ProcessTopicManager(),
-            handler=self.observe_event,
+        self.observe_discovery_response_event_subscriber = (
+            ProcessNCSubscriber.for_process_class_discovery_response_events(
+                nc=self.nc,
+                topic_manager=ProcessTopicManager(),
+                handler=self.observe_event,
+            )
         )
         await self.observe_discovery_response_event_subscriber.start()
 
@@ -135,15 +176,15 @@ class ProcessTestRunner(ProcessRunner):
     @property
     def has_discovery_request_event(self) -> bool:
         """Check if a DiscoveryRequestEvent was observed."""
-        return any(isinstance(event.event, DiscoveryRequestEvent) for event in self.observed_events)
+        return any(isinstance(event.event, InstanceDiscoveryRequestEvent) for event in self.observed_events)
 
     @property
     def has_own_process_discovery_response_event(self) -> bool:
         """Check if an ProcessDiscoveryResponseEvent with the process's class and ID was observed."""
         return any(
-            isinstance(event.event, ProcessDiscoveryResponseEvent)
+            isinstance(event.event, ProcessInstanceDiscoveryResponseEvent)
             and event.event.process_class == self.process_class
-            and event.event.process_id == self.process_config.process_id
+            and event.event.process_id == self.default_process_config.process_id
             for event in self.observed_events
         )
 
@@ -151,14 +192,26 @@ class ProcessTestRunner(ProcessRunner):
         self,
         event_class: type[BaseEvent],
         exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
-    ) -> list[ProcessTopic]:
+    ) -> list[ProcessInstanceTopic]:
         """Returns the topics of all observed events of the specified class, if any are ProcessTopic."""
         return [
             ev.topic
             for ev in self.observed_events
             if isinstance(ev.event, event_class)
             and (not exact or event_class.event_name_from_class() == ev.event.event_name)
-            and isinstance(ev.topic, ProcessTopic)
+            and isinstance(ev.topic, ProcessInstanceTopic)
+        ]
+
+    def get_topic_and_events_of_class(
+        self,
+        event_class: type[BaseEvent],
+        exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
+    ) -> list[ObservedEvent]:
+        return [
+            ev
+            for ev in self.observed_events
+            if isinstance(ev.event, event_class)
+            and (not exact or event_class.event_name_from_class() == ev.event.event_name)
         ]
 
     def get_events_of_class(
@@ -167,12 +220,7 @@ class ProcessTestRunner(ProcessRunner):
         exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
     ) -> list[BaseEvent]:
         """Returns all observed events of the specified class."""
-        return [
-            ev.event
-            for ev in self.observed_events
-            if isinstance(ev.event, event_class)
-            and (not exact or event_class.event_name_from_class() == ev.event.event_name)
-        ]
+        return [ev.event for ev in self.get_topic_and_events_of_class(event_class, exact)]
 
     def has_event_of_class(
         self,
@@ -196,6 +244,20 @@ class ProcessTestRunner(ProcessRunner):
             return events_of_class[0]
         raise StopIteration(f"No event of class {event_class.event_name_from_class()} was observed")
 
+    def get_topic_and_event_of_class(
+        self,
+        event_class: type[BaseEvent],
+        exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
+    ) -> ObservedEvent:
+        """
+        Returns the first observed event and its topic of the specified class.
+        Raises StopIteration if no such event is found.
+        """
+        events_of_class = self.get_topic_and_events_of_class(event_class, exact)
+        if len(events_of_class) > 0:
+            return events_of_class[0]
+        raise StopIteration(f"No event of class {event_class.event_name_from_class()} was observed")
+
     async def wait_for_event(
         self,
         event_class: type[BaseEvent],
@@ -210,6 +272,8 @@ class ProcessTestRunner(ProcessRunner):
 
         while not self.has_event_of_class(event_class):
             if attempts >= max_attempts:
+                for event in self.observed_events:
+                    logger.warning(f"Observed event: {event}")
                 raise TimeoutError(f"Timeout waiting for event of class {event_class.event_name_from_class()}")
             attempts += 1
             await sleep(interval)

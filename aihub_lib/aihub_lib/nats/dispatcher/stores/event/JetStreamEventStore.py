@@ -60,8 +60,8 @@ class JetStreamEventStore:
         js: Annotated[JetStreamContext, "JetStream context for persistent storage"],
         topic_manager: Annotated[AbstractStreamTopicManager, "Topic manager with stream capabilities"],
         topic: Annotated[type[Topic], "Topic under which these events were published"],
-        ttl_seconds: Annotated[int, "Time-to-live for cached execution context data in seconds"] = 60 * 60 * 24 * 30,
         # 30 days default TTL
+        ttl_seconds: Annotated[int, "Time-to-live for cached execution context data in seconds"] = 60 * 60 * 24 * 30,
     ):
         self.nc = nc
         self.js = js
@@ -74,6 +74,7 @@ class JetStreamEventStore:
         # Synchronization for events being processed
         self.pending_events: set[str] = set()
         self.event_sync_conditions: dict[str, asyncio.Condition] = {}
+        self._background_tasks: set[asyncio.Task] = set()
 
         # Subscription
         self.subscription = None
@@ -213,7 +214,9 @@ class JetStreamEventStore:
 
             if event_key in self.event_sync_conditions:
                 condition = self.event_sync_conditions[event_key]
-                asyncio.create_task(self._notify_condition(condition))
+                task = asyncio.create_task(self._notify_condition(condition))
+                self._background_tasks.add(task)
+                task.add_done_callback(self._background_tasks.discard)
 
     async def _notify_condition(self, condition):
         """Helper to notify a condition and clean it up."""
@@ -225,10 +228,12 @@ class JetStreamEventStore:
         Callback for handling new events from the JetStream subscription.
         """
         try:
+            logger.debug(f"Received message: {msg.subject} with event data: {msg.data}")
             topic = self.topic.from_subject(msg.subject)
             store_execution_context_id = topic.execution_context_id
             event = BaseEvent.deserialize_event(msg.data)
             event._jetstream_sequence = msg.metadata.sequence.stream
+            logger.debug(f"Deserialized event: {event}")
 
             # Add the event to the store
             self._add_event_to_store(store_execution_context_id, event)
@@ -236,7 +241,8 @@ class JetStreamEventStore:
             # Acknowledge the message
             await msg.ack()
         except Exception as e:
-            logger.exception(f"Error handling new event: {e}")
+            logger.exception(e)
+            logger.exception(f"Error in message handler for subject '{msg.subject}': {e}")
             # Still ack the message to avoid redelivery
             try:
                 await msg.ack()

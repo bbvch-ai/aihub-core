@@ -21,6 +21,7 @@ class ThreadEntity(Document):
             {"fields": ["users.user_id"]},
             {"fields": ["created_at"]},
             {"fields": ["process_walkthrough_id"]},
+            {"fields": ["agents.agent_id", "agents.agent_class"]},
         ],
     }
     name = StringField(required=True)

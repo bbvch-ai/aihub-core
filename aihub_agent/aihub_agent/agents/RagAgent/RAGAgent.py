@@ -136,12 +136,14 @@ class RAGAgent(Agent):
         Retrieves relevant nodes from the knowledge base.
         """
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
-        embedding, _ = retrieve_step_config.embed_model.to_llama_index(model_parameter=None)
+        embedding, _ = retrieve_step_config.embed_model.to_llama_index()
 
         if isinstance(event, StandaloneQuestionCondenserEvent):
             query = event.condensed_chat_message.content
         else:
             query = event.new_query
+
+        vector_store = retrieve_step_config.vector_store.to_llama_index()
 
         nodes = retrieve_nodes(
             message=query,
@@ -150,18 +152,18 @@ class RAGAgent(Agent):
             index_namespaces=retrieve_step_config.index_namespaces,
             query_mode=retrieve_step_config.query_mode,
             node_types=retrieve_step_config.node_types,
-            vector_store=retrieve_step_config.vector_store,
+            vector_store=vector_store,
         )
         if retrieve_step_config.retrieve_prev_next:
             nodes = retrieve_prev_next_nodes(
-                vector_store=retrieve_step_config.vector_store,
+                vector_store=vector_store,
                 nodes=nodes,
                 num_nodes=retrieve_step_config.retrieve_prev_next.num_nodes,
                 prev_next_mode=retrieve_step_config.retrieve_prev_next.mode,
             )
         if retrieve_step_config.retrieve_summaries:
             nodes = retrieve_parent_summary_nodes(
-                vector_store=retrieve_step_config.vector_store,
+                vector_store=vector_store,
                 nodes=nodes,
                 max_levels=retrieve_step_config.retrieve_summaries.max_parent_levels,
             )
@@ -261,7 +263,7 @@ class RAGAgent(Agent):
             context_messages=[nodes_event.context_message],
             system_messages=system_messages,
             last_user_message=ChatMessage(role=MessageRole.USER, content=start_event.user_query),
-            tokenizer=agent_config.llm.tokenizer,
+            tokenizer=agent_config.llm.token_counter,
             number_of_input_tokens=agent_config.number_of_input_tokens,
         )
         return LimitChatHistoryWithContextEvent(limited_history_with_context=limited_chat_history)
@@ -291,5 +293,11 @@ class RAGAgent(Agent):
         else:
             messages = event.limited_history_with_context
         await displayer.display_thought(t("agent.thought.write_answer_based_on_information"))
+
+        system_prompt_text = t.extract(agent_config.system_prompt) if agent_config.system_prompt else None
+        if system_prompt_text:
+            system_message = ChatMessage(role=MessageRole.SYSTEM, content=system_prompt_text)
+            messages = [system_message] + messages
+
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             return await displayer.display_llm_stream(agent_config.llm, llm, messages, as_stop_step=True)

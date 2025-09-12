@@ -3,6 +3,7 @@ from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test
+from aihub_lib.testing.logging.logger import enable_logging
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_process.runners.ProcessTestRunner import ProcessTestRunner
@@ -12,19 +13,20 @@ from playground.agents.AgentB.AgentB import AgentB
 from playground.events.CustomProcessStopEvent import CustomProcessStopEvent
 from playground.minimal_processes.agent_only_process.AgentOnlyProcess import AgentOnlyProcess
 
-# Adjust the path to your feature file if necessary
 scenarios("./features/agent_only_process.feature")
+
+enable_logging()
 
 
 @given("an AgentA runner", target_fixture="agent_a_runner")
 def agent_a_runner_fixture():
     return AgentTestRunner(
         agent_type=AgentA,
-        agent_config=AgentConfig(
+        default_agent_config=AgentConfig(
             agent_id="agent_a",
+            agent_class=AgentA.__name__,
             name=LocaleString(en="Agent A"),
             description=LocaleString(en="Test Agent A for AgentOnlyProcess"),
-            system_prompt=LocaleString(en="You are Agent A"),
         ),
     )
 
@@ -33,11 +35,11 @@ def agent_a_runner_fixture():
 def agent_b_runner_fixture():
     return AgentTestRunner(
         agent_type=AgentB,
-        agent_config=AgentConfig(
+        default_agent_config=AgentConfig(
             agent_id="agent_b",
+            agent_class=AgentB.__name__,
             name=LocaleString(en="Agent B"),
             description=LocaleString(en="Test Agent B for AgentOnlyProcess"),
-            system_prompt=LocaleString(en="You are Agent B"),
         ),
     )
 
@@ -46,8 +48,9 @@ def agent_b_runner_fixture():
 def process_runner_fixture():
     return ProcessTestRunner(
         process_type=AgentOnlyProcess,
-        process_config=ProcessConfig(
+        default_process_config=ProcessConfig(
             process_id="agent_only_process",
+            process_class=AgentOnlyProcess.__name__,
             name=LocaleString(en="Agent Only Process"),
             description=LocaleString(en="Test Agent Only Process with AgentA and AgentB"),
         ),

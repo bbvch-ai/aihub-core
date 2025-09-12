@@ -26,18 +26,18 @@ def observable_share_point_factory(key: AssetKey, partitions: DynamicPartitionsD
         key=key,
         group_name=group_name_from_asset_key(key),
         partitions_def=partitions,
-        io_manager_key="data_lake_io_manager",
+        io_manager_key="sharepoint_io_manager",
         description="Observes the SharePoint site for any changes with respect to the DataLake.",
     )
     def observable_share_point(
         context: OpExecutionContext,
-        sharepoint_client: ResourceParam[SharePointResource],
+        share_point_client: ResourceParam[SharePointResource],
     ) -> DataVersionsByPartition:
-        share_point_files: list[MinimalSharePointFile] = sharepoint_client.fetch_minimal_files()
+        share_point_files: list[MinimalSharePointFile] = share_point_client.fetch_minimal_files()
         return data_version_by_partition_for_share_point_files_no_op(
             context=context,
             partition=partitions,
-            sharepoint_files=share_point_files,
+            share_point_files=share_point_files,
             asset_key=key,
         )
 

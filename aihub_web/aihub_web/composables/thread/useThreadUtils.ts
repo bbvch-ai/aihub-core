@@ -4,7 +4,7 @@ import {
   type DisplayStatistics,
   type RunStatistics,
   type ThreadDto,
-  type WsServerEventReadable,
+  type AgentEventReadable,
 } from '@core/sdk/client'
 
 export const useThreadUtils = () => {
@@ -23,7 +23,7 @@ export const useThreadUtils = () => {
     return t('thread.utils.pendingTypes.unknown')
   }
 
-  const runForEvent = (thread: ThreadDto, event: WsServerEventReadable) => {
+  const runForEvent = (thread: ThreadDto, event: AgentEventReadable) => {
     const display = thread?.displays?.find((display: DisplayStatistics) => display.display_id == event.display_id)
     return display?.runs?.find((run: RunStatistics) => run.run_id == event.run_id)
   }

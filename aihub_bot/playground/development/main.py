@@ -6,7 +6,6 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
-from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
 
@@ -24,18 +23,7 @@ async def main():
 
     runner.mount(
         HealthController(auth=auth).get_health(),
-        OpenaiChatController(
-            auth=auth,
-            chat_models=[
-                AzureOpenAILLMConfig(
-                    name="gpt-4o-mini",
-                    base_url="https://aihub-dev-openai-che.openai.azure.com/",
-                    api_version="2024-12-01-preview",
-                    prompt_tokens_costs_per_thousand=0.00013027,
-                    completion_tokens_costs_per_thousand=0.0005211,
-                ),
-            ],
-        )
+        OpenaiChatController(auth=auth)
         .json_chat_completion(typing_timeout_seconds=60)
         .stream_chat_completion(typing_timeout_seconds=60),
         AgentChatController(auth=auth)

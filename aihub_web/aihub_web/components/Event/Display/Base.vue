@@ -5,16 +5,16 @@
       'striped-bg': isExternal || !isFromAgentInThread,
       'border-2 border-red-500 dark:!border-red-900': isError,
       'border-2 border-yellow-500 dark:!border-yellow-700': isWarning,
-      'bg-surface-50 dark:!bg-surface-800': !isError && !isWarning,
+      'border border-surface-50 dark:!border-surface-850': !isError && !isWarning,
     }"
   >
     <template #header>
       <div
-        class="absolute -top-3 right-12 rounded px-2 py-1 text-sm font-semibold"
+        class="absolute -top-3 right-12 rounded px-2 py-1 text-xs text-surface-500 dark:text-surface-400"
         :class="{
           'bg-red-500 text-white dark:!bg-red-900': isError,
           'bg-yellow-500 text-white dark:!bg-yellow-700': isWarning,
-          'bg-surface-50 dark:!bg-surface-800': !isError && !isWarning,
+          'bg-white dark:!bg-surface-900': !isError && !isWarning,
         }"
       >
         {{ event.agent_class }}
@@ -27,18 +27,16 @@
         class="border-none bg-transparent"
       >
         <template #header>
-          <div class="relative flex flex-row gap-4">
+          <div class="relative flex flex-row items-center gap-4">
             <div class="w-8 pt-1">
               <Icon
                 :name="icon ?? 'hugeicons:question'"
                 class="size-5"
               />
             </div>
-            <div>
-              <p class="text-lg font-bold">
-                {{ event.event_display_name }}
-              </p>
-            </div>
+            <p class="font-semibold">
+              {{ event.event_display_name }}
+            </p>
           </div>
         </template>
         <div
@@ -59,10 +57,10 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentDto, ThreadDto, WsServerEventReadable } from '@core/sdk/client'
+import type { AgentDto, ThreadDto, AgentEventReadable } from '@core/sdk/client'
 
 const props = withDefaults(defineProps<{
-  event: WsServerEventReadable
+  event: AgentEventReadable
   thread: ThreadDto
   icon: string
   isExternal?: boolean

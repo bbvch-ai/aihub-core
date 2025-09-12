@@ -1,8 +1,10 @@
 import asyncio
 
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
-from aihub_lib.testing.auth_utils.fake_user import fake_user
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
@@ -18,11 +20,11 @@ from playground.minimal_workflow.configured_workflow.ConfiguredAgentConfig impor
 async def main():
     runner = AgentTestRunner(
         agent_type=ConfiguredAgent,
-        agent_config=ConfiguredAgentConfig(
+        default_agent_config=ConfiguredAgentConfig(
             agent_id="configured_agent",
+            agent_class=ConfiguredAgent.__name__,
             name=LocaleString(en="Configured Agent"),
             description=LocaleString(en="This is a configured agent"),
-            system_prompt=LocaleString(en="You are an agent"),
             some_agent_value="Value on agent config",
             start_step_config=StartStepConfig(some_step_value="Value on step config"),
         ),
@@ -31,7 +33,8 @@ async def main():
         await runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
-                messages=[ChatMessage(content="Hello", role=MessageRole.USER)], user=fake_user()
+                messages=[ChatMessage(content="Hello", role=MessageRole.USER)],
+                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
             ),
         )
 

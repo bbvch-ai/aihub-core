@@ -8,9 +8,9 @@ import pandas as pd
 import phoenix as px
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.evaluation.PhoenixExperimentEvaluator import PhoenixExperimentEvaluator
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.infrastructure.phoenix.PhoenixConfig import PhoenixConfig
+from aihub_lib.infrastructure.phoenix.PhoenixSettings import PhoenixSettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from nats.aio.client import Client as NATS
 from phoenix.experiments.types import Dataset as PhoenixInternalDataset
@@ -52,32 +52,23 @@ class EvaluationService:
     """
     Handles business logic for interacting with Arize Phoenix for LLM evaluations.
 
-    ### Why EvaluationService?
     This service abstracts the complexities of interacting with the Phoenix client and its API.
     It separates the data transformation (Pandas DataFrames), HTTP requests, and experiment execution
     logic from the API controller, ensuring a clean and maintainable architecture. It provides
     methods for managing evaluation datasets and running/retrieving experiments.
     """
 
-    # --------------------------------------------------------------------------
-    # Phoenix Client and Configuration Helpers
-    # --------------------------------------------------------------------------
-
     @staticmethod
     def _get_phoenix_client() -> px.Client:
         """Initializes and returns a Phoenix client."""
-        return px.Client(warn_if_server_not_running=False)
+        return px.Client(endpoint=PhoenixSettings().ENDPOINT, warn_if_server_not_running=False)
 
     @staticmethod
     def _get_phoenix_request_config() -> tuple[str, dict[str, str]]:
         """Resolves the Phoenix base endpoint and authentication headers."""
-        config = PhoenixConfig()
-        headers = {"authorization": f"Bearer {config.PHOENIX_AUTH_TOKEN}"} if config.PHOENIX_AUTH_TOKEN else {}
-        return config.PHOENIX_ENDPOINT, headers
-
-    # --------------------------------------------------------------------------
-    # Phoenix API Fetching Helpers
-    # --------------------------------------------------------------------------
+        auth_token = PhoenixSettings().AUTH_TOKEN
+        headers = {"authorization": f"Bearer {auth_token.get_secret_value()}"} if auth_token else {}
+        return PhoenixSettings().ENDPOINT, headers
 
     @staticmethod
     async def _fetch_datasets_from_phoenix() -> list[PhoenixDataset]:
@@ -136,10 +127,6 @@ class EvaluationService:
             response.raise_for_status()
             return response.json()
 
-    # --------------------------------------------------------------------------
-    # Data Preparation Helpers
-    # --------------------------------------------------------------------------
-
     @staticmethod
     def _prepare_dataframe_for_upload(items: list[DatasetItemCreate]) -> DataFrameCreationResult:
         """
@@ -163,10 +150,6 @@ class EvaluationService:
             if key not in df.columns:
                 df[key] = None
         return DataFrameCreationResult(dataframe=df, input_keys=input_keys, output_keys=output_keys)
-
-    # --------------------------------------------------------------------------
-    # Public Service Methods - Datasets
-    # --------------------------------------------------------------------------
 
     @staticmethod
     async def create_dataset(create_dto: DatasetCreate) -> Dataset:
@@ -274,10 +257,6 @@ class EvaluationService:
             for dataset in datasets
         ]
 
-    # --------------------------------------------------------------------------
-    # Public Service Methods - Experiments
-    # --------------------------------------------------------------------------
-
     @staticmethod
     async def get_experiments(t: LocaleHandler) -> list[MinimalExperiment]:
         """Retrieves a list of summary information for all experiments from Arize Phoenix."""
@@ -379,15 +358,15 @@ class EvaluationService:
     async def run_experiment_evaluation(
         create_dto: ExperimentCreate,
         nats_client: NATS,
-        external_event_distributor: ExternalAgentEventDistributor,
-        judge: ChatLLMConfig,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
+        judge: LLMConfig,
         authenticated_user: UserIdentity,
         t: LocaleHandler,
     ) -> Experiment:
         """Runs a new evaluation experiment using the PhoenixExperimentEvaluator."""
         evaluator = PhoenixExperimentEvaluator(
             nats_client=nats_client,
-            external_event_distributor=external_event_distributor,
+            external_agent_event_distributor=external_agent_event_distributor,
             judge=judge,
             authenticated_user=authenticated_user,
             t=t,

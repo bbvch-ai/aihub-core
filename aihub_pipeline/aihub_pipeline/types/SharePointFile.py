@@ -11,7 +11,7 @@ class MinimalSharePointFile(BaseModel):
     id: Annotated[str, Field(description="SharePoint file ID")]
     size: Annotated[int, Field(description="File size in bytes")]
     modified: Annotated[str, Field(description="ISO datetime string when file was last modified")]
-    content_type: Annotated[str | None, Field(default=None, description="MIME type of the file")]
+    content_type: Annotated[str | None, Field(description="MIME type of the file")] = None
 
 
 class SharePointFile(BaseModel):
@@ -21,8 +21,8 @@ class SharePointFile(BaseModel):
     size: Annotated[int, Field(description="File size in bytes")]
     modified: Annotated[str, Field(description="ISO datetime string when file was last modified")]
     created: Annotated[str, Field(description="ISO datetime string when file was created")]
-    content_type: Annotated[str | None, Field(default=None, description="MIME type of the file")]
-    download_url: Annotated[str | None, Field(default=None, description="Direct download URL from Graph API")]
+    content_type: Annotated[str | None, Field(description="MIME type of the file")] = None
+    download_url: Annotated[str | None, Field(description="Direct download URL from Graph API")] = None
     full_url: Annotated[str, Field(description="Full SharePoint URL to the file")]
 
     @property

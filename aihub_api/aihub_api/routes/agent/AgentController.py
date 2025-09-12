@@ -1,4 +1,3 @@
-import time
 from typing import Annotated
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
@@ -8,17 +7,10 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
-from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from aihub_lib.nats.events import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.routes.Controller import Controller
-from bson import ObjectId
-from fastapi import Body, Depends, HTTPException, Security
-from fastapi.params import Query
+from fastapi import Depends, HTTPException, Security
 from nats.aio.client import Client as NATS
-from stringcase import snakecase
 
-from aihub_api.events.EventModelCreationService import EventModelCreationService
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
@@ -63,6 +55,8 @@ class AgentController(Controller):
     name = LocaleString(en="Agents")
     description = LocaleString(en="Interacts with agents")
     icon = "meteor-icons:robot"
+
+    not_authorized_to_view_exception = HTTPException(status_code=403, detail="Not authorized to view this thread")
 
     def __init__(
         self, *, auth: AuthHandler, route: str = "/agents", additionally_required_permission: str | None = None
@@ -142,8 +136,8 @@ class AgentController(Controller):
             """
             access_level = AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id)
             total, threads = await AgentService.get_paginated_agent_threads(
-                agent_class,
-                agent_id,
+                agent_class=agent_class,
+                agent_id=agent_id,
                 t=t,
                 page=page,
                 page_size=page_size,
@@ -155,64 +149,5 @@ class AgentController(Controller):
             return PaginatedThreadsResponse(
                 threads=threads, total=total, page=page, page_size=page_size, total_pages=total_pages
             )
-
-        return self
-
-    def send_event_to(
-        self,
-        agent_class,
-        agent_id,
-        start_event_class: type[StartEvent],
-        stop_event_class: type[StopEvent],
-        route_postfix="/send_event",
-    ) -> "AgentController":
-        """
-        Generates an endpoint to which an StartEvent can be send and the endpoint answers with the agents
-        StopEvent.
-        """
-        agent_class_name = snakecase(agent_class)
-        agent_id = snakecase(agent_id)
-        postfix = snakecase(route_postfix.replace("/", "", 1).replace("/", "_"))
-        name = f"send_event_to_{agent_class_name}_{agent_id}_{postfix}"
-        start_event_input_type = EventModelCreationService.create_input_model(start_event_class)
-        stop_event_output_type = EventModelCreationService.create_output_model(stop_event_class)
-
-        if route_postfix.startswith("/"):
-            route_postfix = route_postfix[1:]
-        if route_postfix.endswith("/"):
-            route_postfix = route_postfix[:-1]
-
-        @self.router.post(f"/{agent_class_name}/{agent_id}/{route_postfix}", name=name, tags=[agent_class])
-        async def send_event(
-            nc: Annotated[NATS, Depends(use_nats)],
-            start_event_input: Annotated[start_event_input_type, Body],
-            external_event_distributor: Annotated[
-                ExternalAgentEventDistributor, Depends(use_external_event_distributor)
-            ],
-            user: Annotated[
-                UserIdentity, Security(self.user_with_permission(f"aihub.user.agent.{agent_class}.{agent_id}"))
-            ],
-            t: Annotated[LocaleHandler, Depends(use_locale)],
-            thread_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
-            display_id: Annotated[str, Query(pattern="/^[a-f\d]{24}$/i")] = None,
-        ) -> stop_event_output_type:
-            """
-            Send an event to a specific agent. Raises 403 if the user lacks access.
-            """
-            start_event = start_event_class(
-                event_id=str(ObjectId()),
-                created_at=time.time_ns(),
-                user=user,
-                **start_event_input.model_dump(),
-                locale=t.locale,
-            )
-            stop_event = await AgentService.send_event(
-                nc, external_event_distributor, user, start_event, agent_class, agent_id, thread_id, display_id
-            )
-
-            if isinstance(stop_event, ExceptionEvent):
-                raise HTTPException(status_code=stop_event.http_status_code, detail=stop_event.message)
-
-            return stop_event
 
         return self

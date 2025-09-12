@@ -1,3 +1,4 @@
+import copy
 import logging
 from datetime import UTC, datetime
 from typing import Any
@@ -16,7 +17,7 @@ from phoenix.experiments.types import RanExperiment
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.evaluation.JudgeOutput import JudgeOutput
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.chat.ChatService import ChatContent, ChatService, JsonResources
@@ -43,8 +44,8 @@ class PhoenixExperimentEvaluator:
     def __init__(
         self,
         nats_client: NATS,
-        external_event_distributor: ExternalAgentEventDistributor,
-        judge: ChatLLMConfig,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
+        judge: LLMConfig,
         authenticated_user: UserIdentity,
         t: LocaleHandler,
     ):
@@ -53,7 +54,7 @@ class PhoenixExperimentEvaluator:
         """
         self.phoenix_client = px.Client(warn_if_server_not_running=False)
         self.nats_client = nats_client
-        self.external_event_distributor = external_event_distributor
+        self.external_agent_event_distributor = external_agent_event_distributor
         self.user = authenticated_user
         self.judge = judge
         self.t = t
@@ -85,7 +86,7 @@ class PhoenixExperimentEvaluator:
             agent_id=agent_id,
             messages=messages,
             nc=self.nats_client,
-            external_event_distributor=self.external_event_distributor,
+            external_agent_event_distributor=self.external_agent_event_distributor,
             thread_id=thread_id,
             display_id=display_id,
             locale=self.t.locale,
@@ -138,7 +139,7 @@ class PhoenixExperimentEvaluator:
         Directly parses the LLM's JSON output into our Pydantic `JudgeOutput` model, handling validation and structure.
         """
         llm, _ = self.judge.to_llama_index()
-        prompt_vars["output_schema"] = JudgeOutput.model_json_schema()
+        prompt_vars["output_schema"] = copy.deepcopy(JudgeOutput.model_json_schema())
         return await llm.astructured_predict(
             output_cls=JudgeOutput, prompt=prompt_template, llm_kwargs=self.llm_judge_kwargs, **prompt_vars
         )

@@ -1,0 +1,321 @@
+{
+  "python_projects": [
+    "aihub_lib",
+    "aihub_api",
+    "aihub_bot",
+    "aihub_agent",
+    "aihub_process",
+    "aihub_pipeline"
+  ],
+  "web_project": "aihub_web/aihub_web",
+  "output_file": "LICENSES.md",
+  "own_images": [
+    "api",
+    "web",
+    "bot",
+    "agent",
+    "process",
+    "pipeline",
+    "llm_wrapping_agent",
+    "default_rag_pipeline",
+    "rag_agent"
+  ],
+  "license_categories": {
+    "restrictive": [
+      "GPL",
+      "AGPL",
+      "SSPL",
+      "OSL-3.0",
+      "EUPL"
+    ],
+    "review": [
+      "EPL",
+      "CDDL",
+      "CC-BY-SA"
+    ],
+    "permissive": [
+      "MIT",
+      "Apache",
+      "BSD",
+      "ISC",
+      "PSF",
+      "Python Software Foundation",
+      "Unlicense",
+      "zlib",
+      "Elastic-2.0",
+      "Mozilla Public License",
+      "MPL",
+      "LGPL"
+    ],
+    "unknown": [
+      "UNKNOWN",
+      "UNLICENSED",
+      "Custom",
+      "SEE LICENSE",
+      "Proprietary"
+    ]
+  },
+  "license_overrides": {
+    "alembic": "MIT",
+    "anyio": "MIT",
+    "attrs": "MIT",
+    "banks": "BSD-3-Clause",
+    "docling-core": "MIT",
+    "griffe": "ISC",
+    "jsonschema": "MIT",
+    "llama-index-core": "MIT",
+    "llama-index-embeddings-azure-openai": "MIT",
+    "llama-index-embeddings-openai-like": "MIT",
+    "llama-index-instrumentation": "MIT",
+    "llama-index-llms-google-genai": "MIT",
+    "llama-index-llms-openai-like": "MIT",
+    "llama-index-llms-openai": "MIT",
+    "llama-index-readers-file": "MIT",
+    "llama-index-vector-stores-azureaisearch": "MIT",
+    "llama-index-vector-stores-milvus": "MIT",
+    "llama-index-workflows": "MIT",
+    "mdformat": "MIT",
+    "milvus-lite": "Apache-2.0",
+    "mypy_extensions": "MIT",
+    "pillow": "MIT-CMU",
+    "pypdf": "BSD-3-Clause",
+    "referencing": "MIT",
+    "regex": "Apache-2.0",
+    "scikit-learn": "BSD-3-Clause",
+    "types-networkx": "Apache-2.0",
+    "types-PyYAML": "Apache-2.0",
+    "typing_extensions": "PSF-2.0",
+    "typing-inspection": "MIT",
+    "urllib3": "MIT",
+    "zipp": "MIT",
+    "click": "BSD-3-Clause",
+    "jsonschema-specifications": "MIT",
+    "tiktoken": "MIT",
+    "argparse": "Python Software Foundation License",
+    "sse-starlette": "BSD-3-Clause",
+    "hf-xet": "Apache-2.0",
+    "parse_type": "MIT",
+    "rpds-py": "MIT",
+    "audioop-lts": "PSF-2.0"
+  },
+  "reviewed_packages": [
+    {
+      "name": "azure-cognitiveservices-speech",
+      "license": "Proprietary",
+      "status": "✅",
+      "notes": "Approved for use per Microsoft's terms of service."
+    }
+  ],
+  "docker_licenses": [
+    {
+      "service": "postgres",
+      "license": "PostgreSQL License",
+      "status": "✅",
+      "notes": "BSD-style permissive license"
+    },
+    {
+      "service": "redis",
+      "license": "AGPL-3.0",
+      "status": "⚠️",
+      "notes": "Copyleft - modifications must be open sourced if changed"
+    },
+    {
+      "service": "mongo",
+      "license": "SSPL",
+      "status": "⚠️",
+      "notes": "Source-available; allowed for internal use, not for DB-as-a-service"
+    },
+    {
+      "service": "mongodb",
+      "license": "SSPL",
+      "status": "⚠️",
+      "notes": "Source-available; allowed for internal use, not for DB-as-a-service"
+    },
+    {
+      "service": "minio",
+      "license": "AGPL-3.0",
+      "status": "⚠️",
+      "notes": "Copyleft - modifications must be open sourced"
+    },
+    {
+      "service": "etcd",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "milvus",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "attu",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "nats",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "rabbitmq",
+      "license": "MPL-2.0",
+      "status": "⚠️",
+      "notes": "Weak copyleft - modified source files must be shared"
+    },
+    {
+      "service": "kafka",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "llama.cpp",
+      "license": "MIT",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "text-embeddings-inference",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "phoenix",
+      "license": "ELv2",
+      "status": "⚠️",
+      "notes": "Source-available; cannot offer as a service, internal use allowed"
+    },
+    {
+      "service": "jupyter",
+      "license": "BSD-3-Clause",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "litellm",
+      "license": "MIT",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "open-webui",
+      "license": "BSD-3-Clause",
+      "status": "⚠️",
+      "notes": "Permissive with required branding retention"
+    },
+    {
+      "service": "playwright",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "docling",
+      "license": "MIT",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "docling-serve",
+      "license": "MIT",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "presidio-analyzer",
+      "license": "MIT",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "presidio-anonymizer",
+      "license": "MIT",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "traefik",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "oauth2-proxy",
+      "license": "MIT",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "nginx",
+      "license": "BSD-2-Clause",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "dagster",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "airflow",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "grafana",
+      "license": "AGPL-3.0",
+      "status": "⚠️",
+      "notes": "Copyleft - modifications must be open sourced"
+    },
+    {
+      "service": "prometheus",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "alpine",
+      "license": "Various (GPL-2.0 and permissive)",
+      "status": "⚠️",
+      "notes": "Primarily permissive, some copyleft components (e.g., BusyBox)"
+    },
+    {
+      "service": "ubuntu",
+      "license": "Various",
+      "status": "✅",
+      "notes": "Mix of permissive and copyleft licenses (GPL, LGPL, etc.)"
+    },
+    {
+      "service": "debian",
+      "license": "Various",
+      "status": "✅",
+      "notes": "Mix of permissive and copyleft licenses (GPL, LGPL, etc.)"
+    },
+    {
+      "service": "python",
+      "license": "PSF-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "node",
+      "license": "MIT",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "minimal-notebook",
+      "license": "BSD-3-Clause",
+      "status": "✅",
+      "notes": "Jupyter base image"
+    }
+  ]
+}

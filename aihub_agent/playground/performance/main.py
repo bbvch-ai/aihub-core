@@ -10,9 +10,9 @@ from typing import Any
 # For NATS JS benchmarking
 import nats
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.infrastructure.RedisConfig import RedisConfig
+from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
+from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.nats.events import BaseEvent, StartEvent, StopEvent
-from aihub_lib.nats.NatsConfig import NatsConfig
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
@@ -136,9 +136,9 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
     agent_type = PerformanceTestingAgent
     agent_config = PerformanceTestingAgentConfig(
         agent_id=agent_id,
+        agent_class=agent_type.__name__,
         name=LocaleString(en="Performance Testing Agent"),
         description=LocaleString(en=""),
-        system_prompt=LocaleString(en=""),
         number_of_events=n_events,
         payload_kb=payload_kb,
     )
@@ -154,8 +154,8 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
     try:
         # Start the multiprocess runner
         runner = MultiprocessAgentRunner(
-            servers=[NatsConfig().NATS_ENDPOINT],
-            redis_url=RedisConfig().REDIS_URL,
+            servers=[NatsSettings().ENDPOINT],
+            redis_url=RedisSettings().URL,
             agent_type=agent_type,
             agent_config=agent_config,
             process_count=process_count,
@@ -167,7 +167,7 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
 
         # Set up NATS connection for test coordination
         nc = NATS()
-        await nc.connect(servers=[NatsConfig().NATS_ENDPOINT])
+        await nc.connect(servers=[NatsSettings().ENDPOINT])
         js = nc.jetstream()
 
         # Generate unique IDs for this test run
@@ -323,9 +323,9 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
         "throughput_kb": throughput_kb,
         "completion": unique_events / n_events * 100 if n_events > 0 else 0,
         "timed_out": timed_out,
-        "missing_indices": sorted(missing_indices)
-        if len(missing_indices) <= 10
-        else f"{len(missing_indices)} indices missing",
+        "missing_indices": (
+            sorted(missing_indices) if len(missing_indices) <= 10 else f"{len(missing_indices)} indices missing"
+        ),
         "duplicate_indices": len(duplicate_indices),
         "index_distribution": {
             "min_index": min(event_indices) if event_indices else None,

@@ -3,7 +3,9 @@ from typing import Annotated
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
+from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
+    use_external_agent_event_distributor,
+)
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.Controller import Controller
 from botbuilder.integration.aiohttp import CloudAdapter
@@ -78,14 +80,14 @@ class AgentChatController(Controller):
             agent_class: Annotated[str, Path(title="Agent class")],
             agent_id: Annotated[str, Path(title="Agent ID")],
             nc: Annotated[NATS, Depends(use_nats)],
-            external_event_distributor: Annotated[
-                ExternalAgentEventDistributor, Depends(use_external_event_distributor)
+            external_agent_event_distributor: Annotated[
+                ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
         ) -> Response:
             path: str = RoutesService.get_path(request)
             chat_bot: AgentChatBot = AgentChatBot(
                 nc,
-                external_event_distributor,
+                external_agent_event_distributor,
                 agent_class,
                 agent_id,
                 path,
@@ -133,14 +135,14 @@ class AgentChatController(Controller):
             agent_class: Annotated[str, Path(title="Agent class")],
             agent_id: Annotated[str, Path(title="Agent ID")],
             nc: Annotated[NATS, Depends(use_nats)],
-            external_event_distributor: Annotated[
-                ExternalAgentEventDistributor, Depends(use_external_event_distributor)
+            external_agent_event_distributor: Annotated[
+                ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
         ) -> Response:
             path: str = RoutesService.get_path(request)
             chat_bot: StreamAgentChatBot = StreamAgentChatBot(
                 nc,
-                external_event_distributor,
+                external_agent_event_distributor,
                 agent_class,
                 agent_id,
                 path,

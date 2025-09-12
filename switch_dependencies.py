@@ -11,17 +11,20 @@ It specifically looks for pyproject.toml in:
   - aihub_process/
 
 Usage:
-  python switch_dependency.py [local|remote] [--tag <TAG>]
+  python switch_dependencies.py [local|remote] [--tag <TAG>] [--install]
 
 Examples:
-  # Switch to local references
-  python switch_dependency.py local
+  # Switch to local references without installing
+  python switch_dependencies.py local
 
-  # Switch to remote references (default tag="v0.1.0")
-  python switch_dependency.py remote
+  # Switch to local references and run poetry install
+  python switch_dependencies.py local --install
 
-  # Switch to remote references with a custom Git tag
-  python switch_dependency.py remote --tag v0.2.0
+  # Switch to remote references (default tag="v0.1.0") without installing
+  python switch_dependencies.py remote
+
+  # Switch to remote references with a custom Git tag and install
+  python switch_dependencies.py remote --tag v0.2.0 --install
 """
 
 import argparse
@@ -65,6 +68,11 @@ def parse_args():
         default="v0.1.0",
         help="Git tag (or branch) to use when in 'remote' mode. (Default: v0.1.0)",
     )
+    parser.add_argument(
+        "--install",
+        action="store_true",
+        help="Run poetry lock and poetry install after updating dependencies",
+    )
     return parser.parse_args()
 
 
@@ -83,23 +91,43 @@ def main():
             pyproject_path=pyproject_path,
             mode=args.mode,
             remote_tag=args.tag,
+            run_install=args.install,
         )
 
 
-def process_file(pyproject_path: Path, mode: str, remote_tag: str):
+def process_file(pyproject_path: Path, mode: str, remote_tag: str, run_install: bool):
     original_text = pyproject_path.read_text(encoding="utf-8")
     doc = tomlkit.parse(original_text)
 
     for dependency_name in MICROSERVICE_DIRS:
         update_dependency(doc, mode, remote_tag, dependency_name)
-        pyproject_path.write_text(tomlkit.dumps(doc), encoding="utf-8")
 
-    subprocess.run(["poetry", "lock"], cwd=pyproject_path.parent)
+    # Write the updated pyproject.toml
+    pyproject_path.write_text(tomlkit.dumps(doc), encoding="utf-8")
+    print(f"✅ Updated {pyproject_path}")
 
-    if mode == "local":
-        subprocess.run(["poetry", "install", "--with", "dev"], cwd=pyproject_path.parent)
+    # Only run poetry commands if --install flag is set
+    if run_install:
+        print(f"📦 Running poetry lock for {pyproject_path.parent.name}...")
+        result = subprocess.run(["poetry", "lock"], cwd=pyproject_path.parent, capture_output=True, text=True)
+        if result.returncode != 0:
+            print(f"❌ Failed to lock dependencies in {pyproject_path.parent}: {result.stderr}")
+            sys.exit(1)
+
+        print(f"📦 Running poetry install for {pyproject_path.parent.name}...")
+        if mode == "local":
+            result = subprocess.run(
+                ["poetry", "install", "--with", "dev"], cwd=pyproject_path.parent, capture_output=True, text=True
+            )
+        else:
+            result = subprocess.run(["poetry", "install"], cwd=pyproject_path.parent, capture_output=True, text=True)
+
+        if result.returncode != 0:
+            print(f"❌ Failed to install dependencies in {pyproject_path.parent}: {result.stderr}")
+            sys.exit(1)
+        print(f"✅ Successfully installed dependencies for {pyproject_path.parent.name}")
     else:
-        subprocess.run(["poetry", "install"], cwd=pyproject_path.parent)
+        print(f"ℹ️  Skipping poetry lock/install for {pyproject_path.parent.name} (--install flag not set)")
 
 
 def update_dependency(doc: tomlkit.container.Container, mode: str, remote_tag: str, dependency_name: str):

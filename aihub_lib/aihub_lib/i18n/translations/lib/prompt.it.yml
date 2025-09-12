@@ -15,7 +15,7 @@ condenser:
 
 rag:
   context_prompt: |
-    {% chat role="system" %}
+    {% chat role="user" %}
     Ti vengono fornite informazioni di contesto aggiuntive sotto forma di documenti strutturati. Ogni documento segue 
     un formato coerente, iniziando con `<REFERENCE_DOCUMENT [metadata]>` e terminando con `</REFERENCE_DOCUMENT>`. Questi documenti 
     contengono dettagli essenziali che devono essere utilizzati per comprendere e rispondere con precisione alla domanda dell'utente.

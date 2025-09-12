@@ -1,0 +1,496 @@
+services:
+  minio:
+    image: ghcr.io/bbvch-ai/aihub-core/minio:release.2024-05-28T17-19-04Z
+    container_name: minio
+    restart: always
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_DEFAULT_BUCKETS: "open-webui,milvus"  # Comma-separated list
+    ports:
+      - "9001:9001"
+      - "9000:9000"
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/minio-data:/minio-data
+      - ./configs/minio/minio-entrypoint.sh:/usr/local/bin/minio-entrypoint.sh:ro
+    entrypoint: [ "/bin/sh", "/usr/local/bin/minio-entrypoint.sh" ]
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+
+  etcd:
+    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.16
+    container_name: etcd
+    restart: always
+    environment:
+      ETCD_AUTO_COMPACTION_MODE: revision
+      ETCD_AUTO_COMPACTION_RETENTION: 1000
+      ETCD_QUOTA_BACKEND_BYTES: 4294967296
+      ETCD_SNAPSHOT_COUNT: 50000
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/etcd-data:/etcd
+    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    healthcheck:
+      test: [ "CMD", "etcdctl", "endpoint", "health" ]
+
+  milvus-standalone:
+    image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.5.15
+    container_name: milvus
+    restart: always
+    command: [ "milvus", "run", "standalone" ]
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+      MINIO_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      MINIO_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/milvus-data:/var/lib/milvus
+      - ./configs/milvus/milvus.dev.yaml:/milvus/configs/milvus.yaml
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    depends_on:
+      - "etcd"
+      - "minio"
+
+  attu:
+    image: ghcr.io/bbvch-ai/aihub-core/attu:v2.5.12
+    container_name: attu
+    restart: always
+    ports:
+      - "3003:3000"
+    depends_on:
+      - "milvus-standalone"
+    environment:
+      MILVUS_URL: 'http://milvus-standalone:19530'
+
+  postgres:
+    image: ghcr.io/bbvch-ai/aihub-core/pgvector:pg17
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_MULTIPLE_DATABASES: openwebui,phoenix,dagster,litellm
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/postgres-data:/var/lib/postgresql/data
+      - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U webui" ]
+
+  phoenix:
+    image: ghcr.io/bbvch-ai/aihub-core/phoenix:version-10.0.4
+    container_name: phoenix
+    restart: always
+    depends_on:
+      - "postgres"
+    ports:
+      - "6006:6006"
+      - "4317:4317"
+    environment:
+      PHOENIX_SQL_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix"
+      PHOENIX_ENABLE_AUTH: "False"
+      VERSION: ""
+
+  nats:
+    image: ghcr.io/bbvch-ai/aihub-core/nats:2.11.4
+    container_name: nats
+    command: -c /etc/nats/nats.conf
+    volumes:
+      - ./configs/nats/nats.dev.conf:/etc/nats/nats.conf
+      - ${VOLUME_ROOT:-./.docker-volumes}/nats-data:/data
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+
+  redis:
+    image: ghcr.io/bbvch-ai/aihub-core/redis:8.0.1
+    container_name: redis
+    command: "redis-server --save 30 1 --loglevel warning"
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/redis-data:/data
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+
+  mongo:
+    image: ghcr.io/bbvch-ai/aihub-core/mongo:8.0.9
+    container_name: mongo
+    restart: always
+    command: >
+      --quiet
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/mongo-data:/data/db
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+
+
+  llama-cpp:
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b5490
+    container_name: llama-cpp
+    platform: linux/amd64
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
+      - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
+    ports:
+      - "8182:8182"
+    environment:
+      HF_HOME: /root/.cache/huggingface
+    command: >
+      --hf-repo unsloth/Qwen3-4B-Instruct-2507-GGUF
+      --hf-file Qwen3-4B-Instruct-2507-Q3_K_M.gguf
+      --alias Qwen3-4B-Instruct
+      --port 8182
+      --jinja
+      -fa 
+      -sm row 
+      --temp 0.6 
+      --top-k 20 
+      --top-p 0.95 
+      --min-p 0 
+      -c 8196 
+      -n 4096 
+      -ngl 99
+      --no-context-shift
+    restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
+
+  huggingface-text-embedding-inference:
+    image: ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cpu-ipex-sha-c8ff435
+    container_name: huggingface-text-embedding-inference
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/hf-tei-data:/data
+      - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
+    ports:
+      - "8183:8183"
+    environment:
+      HF_HOME: /root/.cache/huggingface
+    command: >
+      --port 8183
+      --model-id Qwen/Qwen3-Embedding-0.6B
+    restart: always
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8183/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
+
+  presidio-analyzer:
+    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359
+    container_name: presidio-analyzer
+    restart: unless-stopped
+
+  presidio-anonymizer:
+    image: ghcr.io/bbvch-ai/aihub-core/presidio-anonymizer:2.2.359
+    container_name: presidio-anonymizer
+    restart: unless-stopped
+
+  litellm:
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:main-v1.74.8-nightly
+    container_name: lite-llm
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/litellm"
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
+      UI_USERNAME: ${LITELLM_UI_USERNAME}
+      UI_PASSWORD: ${LITELLM_UI_PASSWORD}
+      AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY}
+      AZURE_OPENAI_KEY_IMAGE: ${AZURE_OPENAI_KEY_IMAGE}
+      AZURE_OPENAI_KEY_AUDIO: ${AZURE_OPENAI_KEY_AUDIO}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      PRESIDIO_ANALYZER_API_BASE: "http://presidio-analyzer:3000"
+      PRESIDIO_ANONYMIZER_API_BASE: "http://presidio-anonymizer:3000"
+      SET_VERBOSE: "false"
+    volumes:
+      - ./configs/litellm/config.dev.yaml:/app/config.yaml
+    command: --config /app/config.yaml --detailed_debug
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      presidio-analyzer:
+        condition: service_started
+      presidio-anonymizer:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:4000/health/liveliness" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
+
+  open-webui:
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.22
+    network_mode: "host"
+    container_name: open-webui
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      litellm:
+        condition: service_started
+      jupyter:
+        condition: service_healthy
+      playwright:
+        condition: service_healthy
+      docling:
+        condition: service_healthy
+    environment:
+      ENABLE_PERSISTENT_CONFIG: False # REMOVE THIS FOR PRODUCTION SETTING
+
+      WEBUI_NAME: "Swiss AI-Hub"
+      WEBUI_URL: 'http://localhost:8080'
+      DEFAULT_LOCALE: 'de'
+      ENABLE_BASE_MODELS_CACHE: True
+
+      # Development
+      ENV: ${ENV}
+      GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
+
+      # Privacy
+      ENABLE_COMMUNITY_SHARING: False
+      ENABLE_USER_WEBHOOKS: False
+      ENABLE_LOGIN_FORM: False
+      ENABLE_FORWARD_USER_INFO_HEADERS: True
+      ENABLE_VERSION_UPDATE_CHECK: False
+
+      # Telemetry
+      ENABLE_OTEL: False
+      ENABLE_OTEL_METRICS: True
+      OTEL_EXPORTER_OTLP_ENDPOINT: XXX
+      OTEL_SERVICE_NAME: "open-webui"
+      OTEL_BASIC_AUTH_USERNAME: XXX
+      OTEL_BASIC_AUTH_PASSWORD: XXX
+
+      # Auth
+      WEBUI_AUTH: True
+      DEFAULT_USER_ROLE: 'user'
+      OAUTH_MERGE_ACCOUNTS_BY_EMAIL: True
+      ENABLE_API_KEY: False
+      WEBUI_SESSION_COOKIE_SAME_SITE: "lax"
+      WEBUI_SESSION_COOKIE_SECURE: False
+
+      # Oauth
+      ENABLE_OAUTH_SIGNUP: True
+      OAUTH_PROVIDER_NAME: "azure"
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OPENID_PROVIDER_URL: "${OAUTH_AUTHORITY_URL}/v2.0/.well-known/openid-configuration"
+      #OPENID_REDIRECT_URI: XXX
+      OAUTH_ALLOWED_DOMAINS: '*'
+      OAUTH_SCOPES: 'openid email profile'
+      OAUTH_TIMEOUT: 60
+      OAUTH_CODE_CHALLENGE_METHOD: 'S256'
+      OAUTH_USERNAME_CLAIM: 'name'
+      OAUTH_PICTURE_CLAIM: 'picture'
+      OAUTH_EMAIL_CLAIM: 'email'
+      OAUTH_GROUP_CLAIM: 'email'
+
+      # AI-Hub Connection
+      AIHUB_BASE_URL: http://localhost:8000
+      AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
+      OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
+      AIHUB_PIPELINE_PREFIX: "aihub/"
+      AIHUB_REQUEST_TIMEOUT: 60
+
+      # Data storage
+      STORAGE_PROVIDER: "s3"
+      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_REGION_NAME: "us-east-1"
+      S3_BUCKET_NAME: "open-webui"
+      S3_ENDPOINT_URL: 'http://localhost:9000'
+
+      # Model config
+      OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      RAG_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      AUDIO_STT_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      AUDIO_TTS_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      IMAGES_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+
+      OPENAI_API_BASE_URL: "http://localhost:4000/v1"
+      MODELS_CACHE_TTL: 60
+      TASK_MODEL: 'azure/gpt-4o-mini'
+      TASK_MODEL_EXTERNAL: 'azure/gpt-4o-mini'
+
+      # Database
+      DATABASE_TYPE: 'postgres'
+      DATABASE_USER: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_HOST: 'localhost'
+      DATABASE_PORT: 5432
+      DATABASE_NAME: 'openwebui'
+
+      # Redis
+      REDIS_URL: 'redis://localhost:6379/1'
+      REDIS_KEY_PREFIX: "open-webui"
+
+      # Web server
+      UVICORN_WORKERS: 1
+      ENABLE_WEBSOCKET_SUPPORT: True
+      WEBSOCKET_MANAGER: "redis"
+      WEBSOCKET_REDIS_URL: 'redis://localhost:6379/1'
+      THREAD_POOL_SIZE: 32
+      CORS_ALLOW_ORIGIN: "*"
+
+      # Admin
+      ENABLE_ADMIN_EXPORT: True
+      ENABLE_ADMIN_CHAT_ACCESS: True
+      SHOW_ADMIN_DETAILS: True
+      ADMIN_EMAIL: 'admin@ai-hub.bbv.ch'
+
+      # Code execution
+      CODE_EXECUTION_ENGINE: 'jupyter'
+      CODE_EXECUTION_JUPYTER_URL: 'http://localhost:8888'
+      CODE_EXECUTION_JUPYTER_AUTH: 'token'
+      CODE_EXECUTION_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
+
+      # Code Interpreter
+      CODE_INTERPRETER_ENGINE: 'jupyter'
+      CODE_INTERPRETER_JUPYTER_URL: 'http://localhost:8888'
+      CODE_INTERPRETER_JUPYTER_AUTH: 'token'
+      CODE_INTERPRETER_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
+
+      # Vector DB
+      VECTOR_DB: 'milvus'
+      MILVUS_DB: 'default'
+      MILVUS_URI: 'http://localhost:19530'
+      MILVUS_INDEX_TYPE: 'HNSW'
+      MILVUS_METRIC_TYPE: 'COSINE'
+      MILVUS_HNSW_M: '16'
+      MILVUS_HNSW_EFCONSTRUCTION: '256'
+
+      # RAG
+      RAG_FULL_CONTEXT: True
+      RAG_EMBEDDING_BATCH_SIZE: 64
+      PDF_EXTRACT_IMAGES: True
+      RAG_FILE_MAX_COUNT: 4
+
+      # Docling
+      CONTENT_EXTRACTION_ENGINE: 'docling'
+      DOCLING_SERVER_URL: 'http://localhost:5001'
+      DOCLING_OCR_ENGINE: 'easyocr'
+      DOCLING_OCR_LANG: 'en,de,fr,it'
+
+      # Web search
+      ENABLE_WEB_SEARCH: True
+      WEB_SEARCH_ENGINE: 'jina'
+      JINA_API_KEY: ${JINA_API_KEY}
+      WEB_SEARCH_RESULT_COUNT: 6
+      WEB_SEARCH_CONCURRENT_REQUESTS: 6
+      BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: True
+      WEB_LOADER_ENGINE: 'playwright'
+      PLAYWRIGHT_WS_URL: 'ws://localhost:3030'
+      FILE_IMAGE_COMPRESSION_WIDTH: 796
+      FILE_IMAGE_COMPRESSION_HEIGHT: 796
+
+      # Image Generation
+      IMAGE_GENERATION_MODEL: 'azure/dall-e-3'
+      IMAGE_SIZE: '1024x1024'
+
+      # Audio
+      AUDIO_STT_ENGINE: 'openai'
+      AUDIO_TTS_ENGINE: 'openai'
+      AUDIO_STT_MODEL: 'azure/gpt-4o-mini-transcribe'
+      AUDIO_TTS_MODEL: 'azure/gpt-4o-mini-tts'
+      AUDIO_TTS_VOICE: 'alloy'
+
+      # User Permissions
+      # Workspace
+      USER_PERMISSIONS_WORKSPACE_MODELS_ACCESS: False
+      USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ACCESS: False
+      USER_PERMISSIONS_WORKSPACE_PROMPTS_ACCESS: False
+      USER_PERMISSIONS_WORKSPACE_TOOLS_ACCESS: False
+      # Sharing
+      USER_PERMISSIONS_WORKSPACE_MODELS_ALLOW_PUBLIC_SHARING: False
+      USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ALLOW_PUBLIC_SHARING: False
+      USER_PERMISSIONS_WORKSPACE_PROMPTS_ALLOW_PUBLIC_SHARING: False
+      USER_PERMISSIONS_WORKSPACE_TOOLS_ALLOW_PUBLIC_SHARING: False
+      # Chat
+      USER_PERMISSIONS_CHAT_CONTROLS: True
+      USER_PERMISSIONS_CHAT_SYSTEM_PROMPT: True
+      USER_PERMISSIONS_CHAT_FILE_UPLOAD: True
+      USER_PERMISSIONS_CHAT_DELETE: True
+      USER_PERMISSIONS_CHAT_EDIT: True
+      USER_PERMISSIONS_CHAT_SHARE: False
+      USER_PERMISSIONS_CHAT_EXPORT: False
+      USER_PERMISSIONS_CHAT_STT: True
+      USER_PERMISSIONS_CHAT_TTS: True
+      USER_PERMISSIONS_CHAT_CALL: True
+      USER_PERMISSIONS_CHAT_MULTIPLE_MODELS: True
+      USER_PERMISSIONS_CHAT_TEMPORARY: True
+      USER_PERMISSIONS_CHAT_TEMPORARY_ENFORCED: False
+      # Features
+      USER_PERMISSIONS_FEATURES_DIRECT_TOOL_SERVERS: False
+      USER_PERMISSIONS_FEATURES_WEB_SEARCH: True
+      USER_PERMISSIONS_FEATURES_IMAGE_GENERATION: True
+      USER_PERMISSIONS_FEATURES_CODE_INTERPRETER: True
+      USER_PERMISSIONS_FEATURES_NOTES: True
+
+  jupyter:
+    image: ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6
+    container_name: jupyter-lab
+    ports:
+      - "8888:8888"
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/jupyter:/home/jovyan/work
+    environment:
+      JUPYTER_ENABLE_LAB: yes
+      JUPYTER_TOKEN: ${JUPYTER_TOKEN}
+
+  playwright:
+    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy
+    container_name: playwright-server
+    command: npx playwright@v1.49.0 run-server --port 3036 --host 0.0.0.0
+    ports:
+      - "3036:3036"
+    environment:
+      NODE_ENV: production
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3036/health" ]
+
+
+  docling-model-permission:
+    container_name: docling-model-permission
+    image: alpine
+    command: [ "sh", "-c", "chown -R 1001:1001 /models" ]
+    restart: "no"
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
+
+  docling:
+    image: ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.3.1
+    container_name: docling
+    ports:
+      - "5001:5001"
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
+      - ./configs/docling/init-models.sh:/docker-entrypoint.sh:ro
+    entrypoint: [ "/docker-entrypoint.sh" ]
+    environment:
+      DOCLING_SERVE_ENABLE_UI: 1
+      DOCLING_SERVE_ARTIFACTS_PATH: "/models"
+      DOCLING_SERVE_MAX_SYNC_WAIT: 600
+      DOCLING_MODELS: "layout tableformer code_formula easyocr"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]

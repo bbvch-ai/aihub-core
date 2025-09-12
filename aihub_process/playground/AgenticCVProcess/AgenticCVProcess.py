@@ -1,7 +1,11 @@
 from typing import Annotated
 
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
-from aihub_lib.testing.auth_utils.fake_user import fake_user
+from aihub_lib.nats.events.form.InputTextElement import InputTextElement
 from llama_index.core.base.llms.types import ChatMessage
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
@@ -23,7 +27,8 @@ class AgenticCVProcess(AgenticProcess):
     ) -> Annotated[AnalyzeCVRequest, Agent.Out(agent_class="LLMWrappingAgent", agent_id="dev_agent")]:
         return AnalyzeCVRequest(
             start_event=UserMessageEvent(
-                messages=[ChatMessage(role="user", content=f"Hey {cv.name}!")], user=fake_user()
+                messages=[ChatMessage(role="user", content=f"Hey {cv.name}!")],
+                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
             )
         )
 
@@ -33,8 +38,21 @@ class AgenticCVProcess(AgenticProcess):
         analyzed_cv: Annotated[
             AnalyzeCVRequest.submission, Agent.In(agent_class="LLMWrappingAgent", agent_id="dev_agent")
         ],
-    ) -> Annotated[AcceptRejectRequest, Human.Out()]:
-        pass
+    ) -> Annotated[AcceptRejectRequest, Human.Out(users=[])]:
+        return AcceptRejectRequest(
+            forms=[
+                AcceptRejectRequest.accept(
+                    display_name=LocaleString(en="This is Accept"),
+                    display_description=LocaleString(en="This is description"),
+                    reason=InputTextElement(label=LocaleString(en=f"Why do you accept {analyzed_cv.cv_name}?")),
+                ),
+                AcceptRejectRequest.reject(
+                    display_name=LocaleString(en="This is Reject"),
+                    display_description=LocaleString(en="This is description"),
+                    reason=InputTextElement(label=LocaleString(en=f"Why do you reject {analyzed_cv.cv_name}?")),
+                ),
+            ]
+        )
 
     @process_step()
     def accept_cv(

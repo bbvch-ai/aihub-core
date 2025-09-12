@@ -2,17 +2,17 @@ from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
-from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthConfig import (
-    DangerousDevelopmentOnlyAuthConfig,
-)
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
+)
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
 )
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
-from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
 from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
@@ -22,19 +22,19 @@ from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
 
 from aihub_api.routes.thread.ThreadController import ThreadController
-from aihub_api.runners.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
+from aihub_api.runners.simulation.agent.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 
 enable_logging()
 
 THREAD_BASE = "/api/v1/threads"
-DEFAULT_USER_ID = DangerousDevelopmentOnlyAuthConfig().OID
+DEFAULT_USER_ID = DangerousDevelopmentOnlyAuthSettings().OID
 
 
 @pytest.fixture(scope="module")
 def mongodb():
     """Setup MongoDB connection and clear data after tests."""
     yield
-    connect(db=ApiConfig().DB_NAME, host=CosmosAccess().get_connection_string())
+    connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING.get_secret_value())
     ThreadEntity.objects.delete()
     disconnect()
 
@@ -52,7 +52,7 @@ def agent_id() -> str:
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
-async def api_client(agent_class, agent_id, mongodb) -> AsyncGenerator[AsyncClient, None]:
+async def api_client(agent_class, agent_id, mongodb) -> AsyncGenerator[AsyncClient]:
     """Create an API client with ThreadController endpoints mounted."""
     runner = SimulatedAgentApiTestRunner(agent_class=agent_class, agent_id=agent_id)
     runner.with_simple_chunk_events()
@@ -69,7 +69,7 @@ async def api_client(agent_class, agent_id, mongodb) -> AsyncGenerator[AsyncClie
     )
     runner.mount(controller)
     await runner.start_simulation()
-    app = runner.get_app()
+    app = runner.create_app()
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test") as client:
             yield client

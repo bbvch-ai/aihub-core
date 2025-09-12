@@ -9,22 +9,38 @@ class AgentTopicManager(TopicManager):
     DISPLAY_EVENT = "display_event"
     CONTROL_EVENT = "control_event"
 
-    def get_agent_discovery_subject_request(
+    def get_agent_instance_discovery_subject_request(
         self,
         call_id: Annotated[str, "Unique identifier linking request and response"],
         agent_class: Annotated[str, "Agent class filter or '*'"] = "*",
         agent_id: Annotated[str, "Agent ID filter or '*'"] = "*",
     ) -> str:
-        return f"{self.DISCOVERY_TOPIC}.{self.AGENT_TOPIC}.{agent_class}.{agent_id}.request.{call_id}"
+        return f"{self.INSTANCE_DISCOVERY_TOPIC}.{self.AGENT_TOPIC}.{agent_class}.{agent_id}.request.{call_id}"
 
-    def get_agent_discovery_subject_response(
+    def get_agent_class_discovery_subject_request(
+        self,
+        call_id: Annotated[str, "Unique identifier linking request and response"],
+        agent_class: Annotated[str, "Agent class filter or '*'"] = "*",
+    ) -> str:
+        """Returns a subject for requesting agent discovery information for a specific agent class."""
+        return f"{self.CLASS_DISCOVERY_TOPIC}.{self.AGENT_TOPIC}.{agent_class}.*.request.{call_id}"
+
+    def get_agent_instance_discovery_subject_response(
         self,
         call_id: str,
         agent_class: Annotated[str, "Agent class filter or '*'"] = "*",
         agent_id: Annotated[str, "Agent ID filter or '*'"] = "*",
     ) -> str:
         """Returns a subject for receiving agent discovery responses."""
-        return f"{self.DISCOVERY_TOPIC}.{self.AGENT_TOPIC}.{agent_class}.{agent_id}.response.{call_id}"
+        return f"{self.INSTANCE_DISCOVERY_TOPIC}.{self.AGENT_TOPIC}.{agent_class}.{agent_id}.response.{call_id}"
+
+    def get_agent_class_discovery_subject_response(
+        self,
+        call_id: Annotated[str, "Unique identifier linking request and response"],
+        agent_class: Annotated[str, "Agent class filter or '*'"] = "*",
+    ) -> str:
+        """Returns a subject for receiving agent discovery information for a specific agent class."""
+        return f"{self.CLASS_DISCOVERY_TOPIC}.{self.AGENT_TOPIC}.{agent_class}.*.response.{call_id}"
 
     def get_subject_for_specific_event_in_agent(
         self,

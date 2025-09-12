@@ -1,8 +1,10 @@
 import asyncio
 
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
-from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.logging.logger import enable_logging
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
@@ -18,11 +20,11 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=SimpleAgent,
-        agent_config=SimpleAgentConfig(
+        default_agent_config=SimpleAgentConfig(
             agent_id="simple_agent",
+            agent_class=SimpleAgent.__name__,
             name=LocaleString(en="Simple Agent"),
             description=LocaleString(en="This is a very simple agent"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
 
@@ -30,7 +32,8 @@ async def main():
         await runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
-                messages=[ChatMessage(content="Hello", role=MessageRole.USER)], user=fake_user()
+                messages=[ChatMessage(content="Hello", role=MessageRole.USER)],
+                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
             ),
         )
 

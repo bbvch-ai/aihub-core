@@ -33,7 +33,7 @@
           </p>
         </div>
         <div
-          class="mb-1 w-full max-w-[90%] rounded-3xl border border-surface-100 bg-white px-5 pb-4 pt-2 text-lg dark:bg-surface-800"
+          class="mb-1 w-full max-w-[90%] rounded-3xl bg-surface-50 px-5 pb-4 pt-2 text-lg dark:bg-surface-850"
         >
           <div
             v-for="(block, index) in message.blocks"
@@ -69,10 +69,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { AssistantChatMessageOutput, ChatMessageOutput, UserChatMessageOutput } from '@core/sdk/client'
+import type { ChatMessage } from '@core/sdk/client'
 
 const props = defineProps<{
-  message: ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput
+  message: ChatMessage
   name: string
   email?: string
   date?: Date

@@ -7,6 +7,7 @@
     <inspection_tool class="CythonUsageBeforeDeclarationInspection" enabled="true" level="WARNING" enabled_by_default="false">
       <scope name="ExcludeJambo" level="WARNING" enabled="true" />
     </inspection_tool>
+    <inspection_tool class="DockerFileCopyHeredoc" enabled="false" level="ERROR" enabled_by_default="false" />
     <inspection_tool class="PoetryPackageVersionsInspection" enabled="true" level="WARNING" enabled_by_default="false">
       <scope name="ExcludeJambo" level="WARNING" enabled="true" />
     </inspection_tool>

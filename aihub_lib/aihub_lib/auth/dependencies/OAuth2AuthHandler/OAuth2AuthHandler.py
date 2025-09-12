@@ -8,7 +8,7 @@ from jwt.algorithms import RSAAlgorithm
 from pydantic import ValidationError
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Config import OAuth2Config
+from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
 from aihub_lib.auth.identity.AzureIdentityProvider.AzureIdentityProvider import AzureIdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 
@@ -43,14 +43,14 @@ class OAuth2AuthHandler(AuthHandler):
     - 422 Unprocessable Entity if token claims cannot be parsed into `UserIdentity`.
     """
 
-    _jwks_cache: TTLCache = TTLCache(maxsize=1, ttl=21600)
+    _jwks_cache: TTLCache = TTLCache(maxsize=100, ttl=21600)
     _rsa_key_cache: TTLCache = TTLCache(maxsize=10, ttl=21600)
 
     def __init__(self, identity_provider: AzureIdentityProvider):
         super().__init__(identity_provider)
-        self.config = OAuth2Config()
+        self.config = OAuth2Settings()
 
-    async def __call__(self, oauth_token: str = Security(OAuth2Config().SCHEMA)) -> UserIdentity:
+    async def __call__(self, oauth_token: str = Security(OAuth2Settings().SCHEMA)) -> UserIdentity:
         return await self.authenticate_token(oauth_token)
 
     async def _get_jwks(self) -> dict:
@@ -62,9 +62,9 @@ class OAuth2AuthHandler(AuthHandler):
             return self._jwks_cache[cache_key]
 
         try:
-            logger.debug("JWKS cache miss, fetching from %s", OAuth2Config().JWKS_URL)
+            logger.debug("JWKS cache miss, fetching from %s", OAuth2Settings().JWKS_URL)
             async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0, read=10.0)) as client:
-                jwks_response = await client.get(OAuth2Config().JWKS_URL)
+                jwks_response = await client.get(OAuth2Settings().JWKS_URL)
                 jwks_response.raise_for_status()
                 jwks = jwks_response.json()
                 self._jwks_cache[cache_key] = jwks
@@ -121,8 +121,8 @@ class OAuth2AuthHandler(AuthHandler):
                 oauth_token,
                 rsa_key,
                 algorithms=["RS256"],
-                audience=OAuth2Config().CLIENT_ID,
-                issuer=f"{OAuth2Config().AUTHORITY}/v2.0",
+                audience=OAuth2Settings().CLIENT_ID,
+                issuer=f"{OAuth2Settings().AUTHORITY_URL}/v2.0",
             )
 
             # Parse token claims into UserIdentity

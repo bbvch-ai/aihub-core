@@ -1,6 +1,6 @@
-import type { MinimalAgentDto, ThreadDto, WsServerEventReadable } from '@core/sdk/client'
+import type { MinimalAgentDto, ThreadDto, AgentEventReadable } from '@core/sdk/client'
 
-export default (event: WsServerEventReadable, thread: ThreadDto) => {
+export default (event: AgentEventReadable, thread: ThreadDto) => {
   return computed<string | undefined>(() => thread.participating_agents
     ?.find((agent: MinimalAgentDto) => agent.agent_id == event.agent_id && agent.agent_class == event.agent_class)
     ?.agent_config?.icon,

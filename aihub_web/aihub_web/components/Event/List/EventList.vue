@@ -1,6 +1,7 @@
 <template>
   <div class="flex flex-col gap-12 pt-4">
     <Panel
+      v-if="showChat"
       :header="t('event.list.chat')"
       toggleable
     >
@@ -13,9 +14,6 @@
     </Panel>
     <div class="flex flex-col gap-8">
       <div class="flex w-full items-center justify-end gap-2 pr-4">
-        <span class="font-semibold">
-          {{ t('event.list.agents') }}
-        </span>
         <MultiSelect
           v-model="activeRuns"
           display="chip"
@@ -33,7 +31,9 @@
         <template #opposite="{ item: event }">
           <div class="flex w-full flex-row justify-end">
             <div class="flex flex-col text-xs text-surface-500 dark:text-surface-400">
-              <div>{{ useDateFormat(event.event.created_at / 1_000_000, 'DD.MM.YYYY') }}</div>
+              <div class="font-semibold">
+                {{ useDateFormat(event.event.created_at / 1_000_000, 'DD.MM.YYYY') }}
+              </div>
               <div>{{ useDateFormat(event.event.created_at / 1_000_000, 'hh:mm:ss') }}</div>
             </div>
           </div>
@@ -67,14 +67,17 @@
 import type {
   DisplayStatistics, RunStatistics,
   ThreadDto,
-  WsServerEventReadable,
+  AgentEventReadable,
 } from '@core/sdk/client'
 
-const props = defineProps<{
-  events: WsServerEventReadable[]
+const props = withDefaults(defineProps<{
+  events: AgentEventReadable[]
   thread: ThreadDto
   displayId?: string
-}>()
+  showChat?: boolean
+}>(), {
+  showChat: false,
+})
 
 const route = useRoute()
 const { t } = useI18n()
@@ -90,9 +93,9 @@ watch(display, () => {
   activeRuns.value = display.value?.runs ?? []
 }, { immediate: true })
 
-const eventsInRuns = computed<WsServerEventReadable[]>(() => {
+const eventsInRuns = computed<AgentEventReadable[]>(() => {
   const runIds = activeRuns.value.map((run: RunStatistics) => run.run_id)
-  return props.events.filter((event: WsServerEventReadable) => runIds.includes(event.run_id))
+  return props.events.filter((event: AgentEventReadable) => runIds.includes(event.run_id))
 })
 
 const { resolveComponentForEvent } = useEventComponent()

@@ -18,11 +18,11 @@ scenarios("./features/fan_out_agent.feature")
 def _():
     return AgentTestRunner(
         agent_type=FanOutAgent,
-        agent_config=FanOutAgentConfig(
+        default_agent_config=FanOutAgentConfig(
             agent_id="fan_out_agent",
+            agent_class=FanOutAgent.__name__,
             name=LocaleString(en="Fan Out Agent"),
             description=LocaleString(en="This agent demonstrates fan-out processing"),
-            system_prompt=LocaleString(en="You are an agent"),
         ),
     )
 
@@ -30,7 +30,7 @@ def _():
 @when("the start event is sent")
 @async_test
 async def _(agent_runner: AgentTestRunner):
-    async with agent_runner.test_run() as topic:
+    async with agent_runner.test_run(delay_before_stop=10) as topic:
         await agent_runner.send_event_from_topic(
             start_event=StartEvent(),
             topic=topic,

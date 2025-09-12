@@ -1,5 +1,6 @@
 import logging
 import re
+from typing import override
 
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
@@ -8,7 +9,6 @@ from aihub_lib.nats.events.bot_in_the_loop.response.BotInTheLoopResponseEvent im
 from botbuilder.core import ActivityHandler, TurnContext
 from botframework.connector import Channels
 from nats.aio.client import Client as NATS
-from typing_extensions import override
 
 from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHandler
 
@@ -19,12 +19,12 @@ class BotInTheLoopBot(ActivityHandler):
     def __init__(
         self,
         nc: NATS,
-        external_event_distributor: ExternalAgentEventDistributor,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
         bot_in_the_loop_handler: BotInTheLoopHandler,
     ):
         super().__init__()
         self.nc = nc
-        self.external_event_distributor = external_event_distributor
+        self.external_agent_event_distributor = external_agent_event_distributor
         self.bot_in_the_loop_handler = bot_in_the_loop_handler
 
     @override
@@ -74,7 +74,7 @@ class BotInTheLoopBot(ActivityHandler):
             )
 
         # Distribute the response event
-        await self.external_event_distributor.distribute_event(
+        await self.external_agent_event_distributor.distribute_event(
             external_event=ExternalAgentEvent(
                 event=BotInTheLoop.response(
                     response=turn_context.activity.text,

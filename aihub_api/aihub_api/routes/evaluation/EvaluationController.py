@@ -4,11 +4,13 @@ from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.access.AccessLevel import AccessLevel
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.generative_ai.resources.models.llm.chat.ChatLLMConfig import ChatLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.nats.distributor.dependencies.use_external_event_distributor import use_external_event_distributor
+from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
+    use_external_agent_event_distributor,
+)
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.Controller import Controller
 from fastapi import Body, Depends, HTTPException, Path, Security
@@ -30,14 +32,10 @@ class EvaluationController(Controller):
     """
     Manages evaluation datasets and experiments, primarily interfacing with Arize Phoenix.
 
-    ### Why EvaluationController?
     This controller provides a structured way to handle operations related to LLM evaluations.
     It allows users to create, retrieve, and update evaluation datasets, as well as manage
     and run evaluation experiments against these datasets. It uses the `EvaluationService`
     to interact with the underlying evaluation framework (Arize Phoenix).
-
-    ### Authentication
-    Endpoints require authentication via the configured `auth` dependency.
     """
 
     name = LocaleString(en="Evaluation")
@@ -48,7 +46,7 @@ class EvaluationController(Controller):
         self,
         *,
         auth: AuthHandler,
-        judge: ChatLLMConfig,
+        judge: LLMConfig,
         route: str = "/evaluations",
         additionally_required_permission: str | None = None,
     ):
@@ -173,8 +171,8 @@ class EvaluationController(Controller):
             create_dto: Annotated[ExperimentCreate, Body()],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
             nats_client: Annotated[NATS, Depends(use_nats)],
-            external_event_distributor: Annotated[
-                ExternalAgentEventDistributor, Depends(use_external_event_distributor)
+            external_agent_event_distributor: Annotated[
+                ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> Experiment:
@@ -188,7 +186,7 @@ class EvaluationController(Controller):
             return await EvaluationService.run_experiment_evaluation(
                 create_dto=create_dto,
                 nats_client=nats_client,
-                external_event_distributor=external_event_distributor,
+                external_agent_event_distributor=external_agent_event_distributor,
                 judge=self.judge,
                 authenticated_user=user,
                 t=t,

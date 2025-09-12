@@ -1,27 +1,30 @@
 import asyncio
+import inspect
 import logging
 from collections.abc import Callable
-from typing import Annotated
+from typing import Annotated, Any, override
 
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
 from aihub_lib.nats.events import (
     AgentWorkRequestEvent,
-    BaseEvent,
     HumanWorkRequestEvent,
+    ProcessEvent,
     ProcessExceptionEvent,
     ProcessStopEvent,
     ProgramWorkRequestEvent,
     WorkEvent,
 )
-from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
+from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
-from aihub_lib.nats.topics.process.ProcessTopic import ProcessTopic
+from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
+from aihub_lib.nats.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
+from aihub_lib.processes.ProcessConfig import ProcessConfig
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
-from typing_extensions import override
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
+from aihub_process.context.walkthrough.WalkthroughContext import WalkthroughContext
 from aihub_process.delegators.agent.Agent import Agent
 from aihub_process.delegators.human.Human import Human
 from aihub_process.delegators.process.Process import Process
@@ -35,44 +38,61 @@ class ProcessDispatcher(BaseDispatcher):
     def __init__(
         self,
         process: Annotated[type[AgenticProcess], "The agentic process defining steps and logic."],
+        default_process_config: Annotated[ProcessConfig, "Default configuration for the process."],
         nc: Annotated[NATS, "NATS client for messaging."],
         js: Annotated[
             JetStreamContext,
             "JetStream context for persistent storage and event streams.",
         ],
         redis: Annotated[Redis, "Redis client for distributed storage."],
-        topic_manager: Annotated[ProcessInstanceTopicManager, "Manages event subjects for this agent instance."],
+        topic_manager: Annotated[ProcessClassTopicManager, "Manages event subjects for this agent class."],
         locale_handler: Annotated[ProcessLocaleHandler, "Manages localization for the agent."],
     ):
-        super().__init__(nc, js, redis, topic_manager, ProcessTopic)
+        super().__init__(nc, js, redis, topic_manager, ProcessClassTopic)
         self.process = process
-        self.nc = nc
-        self.js = js
+        self.default_process_config = default_process_config
         self.locale_handler = locale_handler
 
-        # Initialization flag
-        self._initialized = False
-        self._init_lock = asyncio.Lock()
+        self.process_config_type: type[ProcessConfig] = self.default_process_config.__class__
 
     @override
     async def handle_event(
         self,
         event: Annotated[WorkEvent, "The incoming work event to handle."],
-        topic: Annotated[ProcessTopic, "The parsed topic of the event."],
+        topic: Annotated[ProcessClassTopic, "The parsed topic of the event."],
     ):
         await super().handle_event(event, topic)
+
+        walkthrough_context = WalkthroughContext(self.redis, topic.process_walkthrough_id)
+
+        process_config_dict: dict[str, Any] | None = None
+        if event.is_process_start_event:
+            process_config_dict: dict[str, Any] = event.process_config or self.default_process_config.model_dump()
+            await walkthrough_context.set("_process_config", process_config_dict)
+
+        if process_config_dict is None:
+            process_config_dict = await walkthrough_context.get("_process_config")
+            if process_config_dict is None:
+                raise ValueError(f"No process config found for event {event.event_name} and topic {topic}")
+
+        walkthrough_process_config = self.process_config_type.model_validate(process_config_dict)
+        topic = ProcessInstanceTopic.from_process_class_topic(
+            process_class_topic=topic,
+            process_id=walkthrough_process_config.process_id,
+        )
 
         if event.is_process_start_event:
             logger.debug(f"Handling ProcessStartEvent: {event.event_name}")
 
         if event.is_process_stop_event:
             logger.debug(f"Handling ProcessStopEvent: {event.event_name}")
+            await walkthrough_context.delete_all()
             await self.event_store.delete_all(topic.execution_context_id)
             await self.step_store.delete_all(topic.execution_context_id)
+            return
 
         if event.is_process_exception_event:
             logger.debug(f"Handling ProcessExceptionEvent: {event.event_name}")
-            # Mark run as crashed so no further steps are executed
             await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
             return
 
@@ -86,14 +106,18 @@ class ProcessDispatcher(BaseDispatcher):
             )
             if await self.is_step_ready(step_method, events, topic):
                 logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.event_name}'")
-                asyncio.create_task(self.execute_step(event, step_method, events, topic))
+                task = asyncio.create_task(
+                    self.execute_step(event, step_method, events, topic, walkthrough_process_config)
+                )
+                self._background_tasks.add(task)
+                task.add_done_callback(self._background_tasks.discard)
 
     @override
     async def is_step_ready(
         self,
         step_method: Annotated[Callable, "The step method to check."],
         events: Annotated[dict[str, list[WorkEvent]], "All events for this run, keyed by event name."],
-        topic: Annotated[ProcessTopic, "Topic info for the current process."],
+        topic: Annotated[ProcessInstanceTopic, "Topic info for the current process."],
     ) -> bool:
         """
         Checks if a step can be run given the current state (events available, max executions, etc.).
@@ -112,9 +136,15 @@ class ProcessDispatcher(BaseDispatcher):
         trigger_event: Annotated[WorkEvent, "The event that caused this step to trigger."],
         step_method: Annotated[Callable, "The step method to execute."],
         events: Annotated[dict[str, list[WorkEvent]], "All events for this run, keyed by event name."],
-        topic: Annotated[ProcessTopic, "Topic info for the current process."],
+        topic: Annotated[ProcessInstanceTopic, "Topic info for the current process."],
+        process_config: Annotated[ProcessConfig, "Configuration for the process."],
     ):
-        events_and_kwargs: EventsAndKwargs = await self._build_event_kwargs(trigger_event, step_method, events)
+        events_and_kwargs: EventsAndKwargs = await self._build_method_kwargs(
+            trigger_event,
+            step_method,
+            events,
+            process_config,
+        )
 
         duplicated_run = await self.step_store.was_called_with_events(
             topic.execution_context_id, step_name=step_method.__name__, events=events_and_kwargs.events
@@ -175,12 +205,14 @@ class ProcessDispatcher(BaseDispatcher):
 
                 elif isinstance(event, HumanWorkRequestEvent) and isinstance(config, Human.Out):
                     logger.debug("Step return correctly identified as HumanWorkRequestEvent")
-                    event.users = config.users
+                    event.user_ids = config.user_ids
+                    event.user_emails = config.user_emails
+                    event.user_roles = config.user_roles
+                    event.notify = config.notify
 
                 elif isinstance(event, ProcessStopEvent) and isinstance(config, Process.Out):
                     logger.debug("Step return correctly identified as ProcessStopEvent")
                     event.process_class = topic.process_class
-                    event.process_id = topic.process_id
                     event.process_walkthrough_id = topic.process_walkthrough_id
                     logger.debug("Received process STOP event")
 
@@ -195,30 +227,57 @@ class ProcessDispatcher(BaseDispatcher):
     @override
     async def publish_event(
         self,
-        event: Annotated[BaseEvent, "The event to publish."],
-        topic: Annotated[ProcessTopic, "Current process topic context."],
+        event: Annotated[ProcessEvent, "The event to publish."],
+        topic: Annotated[ProcessInstanceTopic, "Current process topic context."],
     ):
         """
         Publishes a given event to the correct subject.
         Uses the per-walkthrough topic manager to form the right event subject and publishes via JSPublish.
         """
         topic_manager = self.get_topic_manager_for_process_walkthrough(topic)
-        subject = topic_manager.get_subject_for_work_request_event_in_walkthrough(event.event_name, event.event_id)
 
-        if not (event.is_work_request_event or event.is_process_exception_event or event.is_process_stop_event):
-            raise ValueError("ProcessDispatcher must only emit WorkRequest-, ProcessException-, or ProcessStop-Events")
+        if event.is_work_request_event:
+            subject = topic_manager.get_subject_for_work_request_event_in_walkthrough(event.event_name, event.event_id)
+            event.process_id = topic.process_id
+            await self.js_publisher.publish_event(event, subject)
 
-        logger.debug(f"Publishing event '{event.event_name}' to subject '{subject}'")
-        await self.js_publisher.publish_event(event, subject)
+        if event.is_work_event:
+            subject = topic_manager.get_subject_for_work_event_in_walkthrough(event.event_name, event.event_id)
+            await self.js_publisher.publish_event(event, subject)
+
+    async def _build_method_kwargs(
+        self,
+        trigger_event: Annotated[WorkEvent, "The event that triggered the step."],
+        method: Annotated[Callable, "The step method to execute."],
+        events: Annotated[dict[str, list[WorkEvent]], "All events for this run, keyed by event name."],
+        process_config: Annotated[ProcessConfig, "Configuration for the process."],
+    ) -> EventsAndKwargs:
+        events_and_kwargs: EventsAndKwargs = await self._build_event_kwargs(trigger_event, method, events)
+
+        step_signature = inspect.signature(method)
+        for param in step_signature.parameters.values():
+            if inspect.isclass(param.annotation) and issubclass(param.annotation, ProcessConfig):
+                if param.annotation != self.process_config_type:
+                    raise ValueError(
+                        f"Expected ProcessConfig type '{self.process_config_type.__name__}', "
+                        f"but got '{param.annotation.__name__}' for parameter '{param.name}'."
+                    )
+                logger.debug(
+                    f"Injected dynamic configuration for parameter '{param.name}' of type '{param.annotation.__name__}'"
+                )
+                events_and_kwargs.kwargs[param.name] = process_config
+
+        return events_and_kwargs
 
     def get_topic_manager_for_process_walkthrough(
-        self, topic: Annotated[ProcessTopic, "Topic identifying the run/thread."]
+        self, topic: Annotated[ProcessInstanceTopic, "Topic identifying the run/thread."]
     ) -> ProcessWalkthroughTopicManager:
         """
         Returns a thread-specific topic manager derived from the agent's instance topic manager.
         Useful for publishing thread-scoped events.
         """
-        return ProcessWalkthroughTopicManager.from_process_instance_topic_manager(
+        return ProcessWalkthroughTopicManager.from_process_class_topic_manager(
             topic_manager=self.topic_manager,
             process_walkthrough_id=topic.process_walkthrough_id,
+            process_id=topic.process_id,
         )

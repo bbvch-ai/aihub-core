@@ -1,12 +1,11 @@
 import asyncio
 
-from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import (
-    OpenaiLikeLLMConfig,
-    OpenaiLikeLLMParameter,
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
 )
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
-from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.logging.logger import enable_logging
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
@@ -24,23 +23,12 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=LlamaIndexAgent,
-        agent_config=LlamaIndexAgentConfig(
+        default_agent_config=LlamaIndexAgentConfig(
             agent_id="llama_index_agent",
+            agent_class=LlamaIndexAgent.__name__,
             name=LocaleString(en="Llama Index Agent"),
             description=LocaleString(en="This is an agent that uses a llama index llm"),
-            system_prompt=LocaleString(en="You are an agent"),
-            llm=OpenaiLikeLLMConfig(
-                name="unsloth/Llama-3.2-1B-Instruct",
-                base_url="http://localhost:8182/v1",
-                api_key=None,
-                context_size=512,
-                is_chat_model=True,
-                is_function_calling_model=False,
-                default_parameter=OpenaiLikeLLMParameter(
-                    logit_bias=None,
-                    logprobs=None,
-                ),
-            ),
+            llm=LLMConfig(model_name="local/qwen3-small"),
         ),
     )
 
@@ -48,7 +36,8 @@ async def main():
         await runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
-                messages=[ChatMessage(content="Hey!", role=MessageRole.USER)], user=fake_user()
+                messages=[ChatMessage(content="Hey!", role=MessageRole.USER)],
+                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
             ),
         )
 

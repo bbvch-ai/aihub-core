@@ -4,16 +4,20 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.infrastructure.RedisConfig import RedisConfig
-from aihub_lib.nats.events import AgentDiscoveryResponseEvent, BaseEvent, DiscoveryRequestEvent
+from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
+from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
+from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
-from aihub_lib.nats.NatsConfig import NatsConfig
+from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentClassDiscoveryResponseEvent
+from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
+from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
+from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics import Topic
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 from bson import ObjectId
 from pydantic import BaseModel
@@ -45,15 +49,18 @@ class AgentTestRunner(AgentRunner):
     def __init__(
         self,
         agent_type: type[Agent],
-        agent_config: AgentConfig,
+        default_agent_config: AgentConfig,
         locale_paths: list[str] | None = None,
     ):
         super().__init__(
-            servers=[NatsConfig().NATS_ENDPOINT],
-            redis_url=RedisConfig().REDIS_URL,
+            servers=[NatsSettings().ENDPOINT],
+            redis_url=RedisSettings().URL,
             agent_type=agent_type,
-            agent_config=agent_config,
+            default_agent_config=default_agent_config,
             locale_paths=locale_paths,
+        )
+        self.topic_manager = AgentInstanceTopicManager(
+            agent_class=self.agent_class, agent_id=default_agent_config.agent_id
         )
         self.test_event_subscriber: JSSubscriber | None = None
         self.observed_events: list[ObservedEvent] = []
@@ -61,6 +68,29 @@ class AgentTestRunner(AgentRunner):
 
         self.observe_discovery_event_subscriber: AgentNCSubscriber | None = None
         self.observe_discovery_response_event_subscriber: AgentNCSubscriber | None = None
+
+    async def send_event(
+        self,
+        start_event: StartEvent,
+        thread_id: str,
+        display_id: str,
+        run_id: str,
+    ):
+        """
+        Sends an initial event (like a StartEvent) to initiate a run.
+        This allows external code to trigger a new run by injecting a start event.
+        """
+        publisher = JSPublisher(self.js)
+        thread_topic_manager = AgentThreadTopicManager.from_agent_instance_topic_manager(
+            self.topic_manager,
+            thread_id,
+            display_id,
+            run_id,
+        )
+        subject = thread_topic_manager.get_subject_for_control_event_in_thread(
+            start_event.event_name, event_id=start_event.event_id
+        )
+        await publisher.publish_event(start_event, subject)
 
     async def send_event_from_topic(self, start_event: StartEvent, topic: PartialAgentTopic):
         """
@@ -79,7 +109,7 @@ class AgentTestRunner(AgentRunner):
     @asynccontextmanager
     async def test_run(
         self, delay_before_stop: int = 1, thread_id: str | None = None
-    ) -> AsyncGenerator[PartialAgentTopic, None]:
+    ) -> AsyncGenerator[PartialAgentTopic]:
         """
         A context manager that:
         1. Starts the agent runner.
@@ -117,14 +147,14 @@ class AgentTestRunner(AgentRunner):
         )
         await self.test_event_subscriber.start()
 
-        self.observe_discovery_event_subscriber = AgentNCSubscriber.for_agent_discovery_request_events(
+        self.observe_discovery_event_subscriber = AgentNCSubscriber.for_agent_class_discovery_request_events(
             nc=self.nc,
             topic_manager=AgentTopicManager(),
             handler=self.observe_event,
         )
         await self.observe_discovery_event_subscriber.start()
 
-        self.observe_discovery_response_event_subscriber = AgentNCSubscriber.for_agent_discovery_response_events(
+        self.observe_discovery_response_event_subscriber = AgentNCSubscriber.for_agent_class_discovery_response_events(
             nc=self.nc,
             topic_manager=AgentTopicManager(),
             handler=self.observe_event,
@@ -133,7 +163,7 @@ class AgentTestRunner(AgentRunner):
 
         self.topic = PartialAgentTopic(
             agent_class=self.agent_class,
-            agent_id=self.agent_config.agent_id,
+            agent_id=self.default_agent_config.agent_id,
             run_id=run_id,
             thread_id=thread_id,
             display_id=display_id,
@@ -170,15 +200,13 @@ class AgentTestRunner(AgentRunner):
     @property
     def has_discovery_request_event(self) -> bool:
         """Check if a DiscoveryRequestEvent was observed."""
-        return any(isinstance(event.event, DiscoveryRequestEvent) for event in self.observed_events)
+        return any(isinstance(event.event, ClassDiscoveryRequestEvent) for event in self.observed_events)
 
     @property
     def has_own_agent_discovery_response_event(self) -> bool:
-        """Check if an AgentDiscoveryResponseEvent with the agent's class and ID was observed."""
+        """Check if an AgentDiscoveryResponseEvent with the agent's class was observed."""
         return any(
-            isinstance(event.event, AgentDiscoveryResponseEvent)
-            and event.event.agent_class == self.agent_class
-            and event.event.agent_id == self.agent_config.agent_id
+            isinstance(event.event, AgentClassDiscoveryResponseEvent) and event.event.agent_class == self.agent_class
             for event in self.observed_events
         )
 
@@ -186,14 +214,14 @@ class AgentTestRunner(AgentRunner):
         self,
         event_class: type[BaseEvent],
         exact: Annotated[bool, "Must the event be an exact match or is subclass okay?"] = False,
-    ) -> list[AgentTopic]:
+    ) -> list[AgentInstanceTopic]:
         """Returns the topics of all observed events of the specified class, if any are AgentTopic."""
         return [
             ev.topic
             for ev in self.observed_events
             if isinstance(ev.event, event_class)
             and (not exact or event_class.event_name_from_class() == ev.event.event_name)
-            and isinstance(ev.topic, AgentTopic)
+            and isinstance(ev.topic, AgentInstanceTopic)
         ]
 
     def get_events_of_class(

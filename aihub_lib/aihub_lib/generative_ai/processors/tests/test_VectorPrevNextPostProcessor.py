@@ -6,12 +6,9 @@ from llama_index.core.schema import NodeRelationship, NodeWithScore, RelatedNode
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import VectorPrevNextPostProcessor
-from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
-    SelfHostedEmbeddingConfig,
-    SelfHostedEmbeddingParameter,
-)
-from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
-from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
+from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.milvus_vector_store_content import fill_collection
 
 
@@ -38,7 +35,7 @@ def get_node_ids(result):
 @given("these nodes:", target_fixture="nodes")
 def _(datatable):
     nodes = []
-    for row in datatable:
+    for row in datatable[1:]:
         nodes.append(TextNode(id_=row[0], text=row[1], metadata={}))
     return nodes
 
@@ -59,22 +56,11 @@ def milvus_vector_store(nodes_with_relationships, event_loop):
     # Use event_loop fixture to ensure there's an active event loop
     asyncio.set_event_loop(event_loop)
 
-    embedding_config = SelfHostedEmbeddingConfig(
-        name="Alibaba-NLP/gte-base-en-v1.5",
-        base_url="http://localhost:8183",
-        api_key=None,
-        timeout=60,
-        embed_batch_size=32,
-        default_parameter=SelfHostedEmbeddingParameter(
-            text_instruction=None,
-            query_instruction=None,
-            truncate_text=False,
-        ),
-    )
-    vector_store = create_milvus_vector_store(
+    embedding_config = EmbeddingModelConfig(model_name="local/qwen-embedding")
+    vector_store = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="prev_next_test",
-        embedding_vector_dimension=768,
+        dimensions=1024,
     )
     doc_store = create_mongo_document_store(document_store_name="development")
 
@@ -90,7 +76,7 @@ def milvus_vector_store(nodes_with_relationships, event_loop):
 
 @given("a valid vector store with all nodes", target_fixture="vector_store")
 def _(milvus_vector_store):
-    return milvus_vector_store
+    return milvus_vector_store.to_llama_index()
 
 
 @given(parsers.parse('starting node is "{target_node_id}"'), target_fixture="starting_node")

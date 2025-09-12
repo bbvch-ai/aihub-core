@@ -1,12 +1,16 @@
 <template>
   <div class="flex flex-row items-center gap-5 pr-3">
+    <NotificationsOverlay />
+
     <Button
+      v-tooltip.bottom="{ value: t('bar.toggle_dark_mode') }"
       :icon="isDark ? 'pi pi-sun' : 'pi pi-moon'"
       variant="text"
       rounded
-      aria-label="Filter"
+      :aria-label="t('bar.toggle_dark_mode')"
       @click="toggleDarkMode()"
     />
+
     <div
       v-if="myUserIsLoading"
       class="flex flex-row gap-2"
@@ -50,9 +54,12 @@
 </template>
 
 <script setup lang="ts">
+import NotificationsOverlay from '@core/components/Notification/NotificationsOverlay.vue'
 import { useDark } from '@vueuse/core'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const { myUser, myUserIsLoading } = useMyUser()
 
 const userInitials = computed(() =>

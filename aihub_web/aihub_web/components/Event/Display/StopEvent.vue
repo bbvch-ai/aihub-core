@@ -7,10 +7,10 @@
 </template>
 
 <script setup lang="ts">
-import type { StopEvent, ThreadDto, WsServerEventReadable } from '@core/sdk/client'
+import type { StopEvent, ThreadDto, AgentEventReadable } from '@core/sdk/client'
 
 defineProps<{
-  event: WsServerEventReadable & { event: StopEvent }
+  event: AgentEventReadable & { event: StopEvent }
   thread: ThreadDto
 }>()
 </script>

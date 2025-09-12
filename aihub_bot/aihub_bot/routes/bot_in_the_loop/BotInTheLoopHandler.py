@@ -3,7 +3,7 @@ from typing import Annotated
 
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
-from aihub_lib.nats.topics import AgentTopic
+from aihub_lib.nats.topics import AgentInstanceTopic
 from botbuilder.core import TurnContext
 from botbuilder.schema import ChannelAccount, ConversationAccount, ConversationReference
 from cachetools import TTLCache
@@ -48,7 +48,7 @@ class BotInTheLoopHandler:
         # Use TTLCache with max size of 100 entries
         self.slack_ids_cache = TTLCache(maxsize=100, ttl=self.CACHE_TTL_SECONDS)
 
-    async def handle_event(self, event: BaseEvent, _: AgentTopic):
+    async def handle_event(self, event: BaseEvent, _: AgentInstanceTopic):
         if event.is_bitl_request_event:
             await self._handle_bot_in_the_loop_request(event)
         else:

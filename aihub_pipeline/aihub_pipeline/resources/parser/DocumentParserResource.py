@@ -10,10 +10,14 @@ from aihub_lib.generative_ai.document.loaders.DoclingLoader import DoclingLoader
 from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import DocumentIntelligenceLoader
 from aihub_lib.generative_ai.document.loaders.ImageLoader import ImageLoader
 from aihub_lib.generative_ai.document.loaders.RawLoader import RawLoader
-from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceConfig import (
-    DocumentIntelligenceConfig,
+from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.AzureDocumentIntelligenceSettings import (
+    AzureDocumentIntelligenceSettings,
 )
-from aihub_lib.infrastructure.docling.DoclingConfig import DoclingConfig
+from aihub_lib.infrastructure.docling.DoclingSettings import DoclingSettings
+from dagster import ConfigurableResource
+from llama_index.core.readers.base import BaseReader
+from llama_index.readers.file import EpubReader, IPYNBReader, RTFReader
+from pydantic import Field
 
 
 class LoaderType(Enum):
@@ -76,7 +80,10 @@ class DocumentParserResource(ConfigurableResource):
         ),
     ]
 
-    # Base readers that are always included
+    include_images: Annotated[
+        bool, Field(default=True, description="Specifies if images should be embedded into the documents and nodes.")
+    ] = True
+
     _base_readers = {
         EpubReader: ["epub"],
         IPYNBReader: ["ipynb"],
@@ -92,10 +99,10 @@ class DocumentParserResource(ConfigurableResource):
         readers_map = self._base_readers.copy()
 
         if self.loader_type == LoaderType.DOCLING or self.loader_type == LoaderType.BOTH:
-            readers_map[DoclingLoader] = DoclingConfig().DOCLING_EXTENSIONS
+            readers_map[DoclingLoader] = DoclingSettings().EXTENSIONS
 
         if self.loader_type == LoaderType.DOCUMENT_INTELLIGENCE or self.loader_type == LoaderType.BOTH:
-            readers_map[DocumentIntelligenceLoader] = DocumentIntelligenceConfig().DOCUMENTINTELLIGENCE_EXTENSIONS
+            readers_map[DocumentIntelligenceLoader] = AzureDocumentIntelligenceSettings().EXTENSIONS
 
         return readers_map
 

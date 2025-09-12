@@ -8,7 +8,7 @@ from aihub_pipeline.types.RefDocDocument import RefDocDocument
 
 
 @op(code_version="v1")
-def parse_document_from_data_lake(
+async def parse_document_from_data_lake(
     context: OpExecutionContext,
     data_lake_file: DataLakeFile,
     data_lake_file_system: ResourceParam[AbstractFileSystem],
@@ -19,9 +19,12 @@ def parse_document_from_data_lake(
     reader = document_parser.get_document_parser_for_filetype(data_lake_file.filetype)
     reader_name = reader.__class__.__name__
     context.log.info(f"Using reader {reader_name} for document of type {data_lake_file.filetype}")
-
-    documents = reader.load_data(
-        data_lake_file.uri, fs=data_lake_file_system, figures_directory_name=data_lake_resource.figures_directory_name
+    context.log.info(f"Data Lake file uri: {data_lake_file.uri}")
+    documents = await reader.aload_data(
+        data_lake_file.uri,
+        fs=data_lake_file_system,
+        figures_directory_name=data_lake_resource.figures_directory_name,
+        include_images=document_parser.include_images,
     )
     document = documents[0]
 

@@ -3,3 +3,12 @@ __pycache__/
 /aihub_agent/playground/minimal_workflow/bounded_loop/tests/.env
 /aihub_pipeline/.env
 /aihub_agent/playground/agent/RAGAgent/.env
+.env
+.docker-volumes
+aihub_doc/node_modules
+aihub_doc/.vitepress/cache
+aihub_doc/.vitepress/dist
+/aihub_pipeline/.tmp*
+aihub_doc/aihub
+/configs/traefik/certs/dev-cert.pem
+/configs/traefik/certs/dev-key.pem

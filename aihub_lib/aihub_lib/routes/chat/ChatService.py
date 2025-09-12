@@ -9,6 +9,7 @@ from fastapi import HTTPException
 from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
 
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -22,6 +23,7 @@ from aihub_lib.nats.events import (
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
     StopEvent,
+    ThoughtEvent,
 )
 from aihub_lib.nats.events.user import UserMessageEvent
 from aihub_lib.nats.events.user.UserUploadedFile import UserUploadedFile
@@ -29,7 +31,8 @@ from aihub_lib.nats.events.utils import get_parent_classes_until_base
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
+from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 
@@ -50,7 +53,7 @@ class StreamingResources:
 class JsonResources:
     stop_signal: asyncio.Event
     subscriber: NCSubscriber
-    chunk_events: list[ChunkEvent]
+    chunk_events: list[ChunkEvent | ThoughtEvent]
     costs: LLMCosts
     model_name: str
     stop_event: StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent | None = (
@@ -131,11 +134,18 @@ class ChatService:
             )
             display_id = event.request_event.topic.display_id
         else:
+            agent_config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+            if agent_config_entity is None:
+                logger.info(f"Agent config not found for class {agent_class} and id {agent_id}. Using default config.")
+                agent_config_dict = None
+            else:
+                agent_config_dict = AgentConfig.from_entity(agent_config_entity).model_dump()
             event = UserMessageEvent(
                 messages=messages,
                 user=user,
                 locale=locale or LocaleHandler.DEFAULT_LOCALE,
                 files=files,
+                agent_config=agent_config_dict,
             )
 
         event = ExternalAgentEvent(
@@ -161,7 +171,7 @@ class ChatService:
         agent_id: str,
         messages: list[ChatMessage],
         nc: NATS,
-        external_event_distributor: ExternalAgentEventDistributor,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
         thread_id: ObjectId | None = None,
         display_id: ObjectId | None = None,
         files: list[UserUploadedFile] | None = None,
@@ -191,7 +201,7 @@ class ChatService:
             stop_event=None,
         )
 
-        async def response_aggregator(event: DisplayEvent, topic: AgentTopic):
+        async def response_aggregator(event: DisplayEvent, topic: AgentInstanceTopic):
             is_primary_agent = topic.agent_class == agent_class and topic.agent_id == agent_id
             logger.debug(f"Received display event: {event}")
             if event.is_chunk_event:
@@ -223,7 +233,7 @@ class ChatService:
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction via WebSocket
-        await external_event_distributor.distribute_event(external_event, user)
+        await external_agent_event_distributor.distribute_event(external_event, user)
 
         return resources
 
@@ -234,7 +244,7 @@ class ChatService:
         agent_id: str,
         messages: list[ChatMessage],
         nc: NATS,
-        external_event_distributor: ExternalAgentEventDistributor,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
         thread_id: ObjectId | None = None,
         display_id: ObjectId | None = None,
         files: list[UserUploadedFile] | None = None,
@@ -255,7 +265,7 @@ class ChatService:
             locale=locale,
         )
         return await ChatService.start_json_event_interaction(
-            user, agent_class, agent_id, external_event, topic_manager, nc, external_event_distributor
+            user, agent_class, agent_id, external_event, topic_manager, nc, external_agent_event_distributor
         )
 
     @staticmethod
@@ -266,10 +276,10 @@ class ChatService:
         external_event: ExternalAgentEvent,
         topic_manager: AgentThreadTopicManager,
         nc: NATS,
-        external_event_distributor: ExternalAgentEventDistributor,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
     ):
         stop_signal = asyncio.Event()
-        chunk_events: list[ChunkEvent] = []
+        chunk_events: list[ChunkEvent | ThoughtEvent] = []
         costs = LLMCosts.from_zero()
         model_name = f"{agent_class}/{agent_id}"
 
@@ -282,7 +292,7 @@ class ChatService:
             stop_event=None,
         )
 
-        async def response_aggregator(event: DisplayEvent, topic: AgentTopic):
+        async def response_aggregator(event: DisplayEvent, topic: AgentInstanceTopic):
             logger.debug(f"Received display event: {event}")
             is_primary_agent = topic.agent_class == agent_class and topic.agent_id == agent_id
             if event.is_chunk_event:
@@ -316,13 +326,13 @@ class ChatService:
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction
-        await external_event_distributor.distribute_event(external_event, user)
+        await external_agent_event_distributor.distribute_event(external_event, user)
 
         return resources
 
     @staticmethod
     def build_json_response_content(
-        chunk_events: list[ChunkEvent], stop_event: StopEvent | HumanInTheLoopRequestEvent | None
+        chunk_events: list[ChunkEvent | ThoughtEvent], stop_event: StopEvent | HumanInTheLoopRequestEvent | None
     ) -> ChatContent:
         """
         Construct a JSON response from collected chunk events.
@@ -330,7 +340,7 @@ class ChatService:
         sorted_chunks = sorted(chunk_events, key=lambda x: x.created_at)
         chat_content = ChatContent(content="", reasoning_content="")
         chat_content.content = "".join(chunk.content for chunk in sorted_chunks)
-        chat_content.reasoning_content = "".join(chunk.reasoning_content or "" for chunk in sorted_chunks)
+        chat_content.reasoning_content = "".join(getattr(chunk, "reasoning_content", "") for chunk in sorted_chunks)
         if stop_event.is_hitl_request_event:
             chat_content.content += stop_event.question
         return chat_content

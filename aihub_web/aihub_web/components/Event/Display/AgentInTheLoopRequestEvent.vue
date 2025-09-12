@@ -31,20 +31,20 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentInTheLoopRequestEvent, ThreadDto, WsServerEventReadable } from '@core/sdk/client'
+import type { AgentInTheLoopRequestEventReadable, ThreadDto, AgentEventReadable } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: WsServerEventReadable & { event: AgentInTheLoopRequestEvent }
+  event: AgentEventReadable & { event: AgentInTheLoopRequestEventReadable }
   thread: ThreadDto
 }>()
 
 const { resolveComponentForEvent } = useEventComponent()
 
 const vueComponent = computed(() => {
-  return resolveComponentForEvent(wrappedStartEvent)
+  return resolveComponentForEvent(wrappedStartEvent.value)
 })
 
-const wrappedStartEvent = computed<WsServerEventReadable>(() => {
+const wrappedStartEvent = computed<AgentEventReadable>(() => {
   return {
     ...props.event,
     ...props.event.event.start_event,

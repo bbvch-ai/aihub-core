@@ -4,20 +4,19 @@ import os
 import threading
 import time
 from datetime import datetime
-from typing import Annotated, Any, ClassVar
+from typing import Any, ClassVar, override
 
 from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, computed_field
-from typing_extensions import override
 
 from aihub_lib.nats.events.utils import get_inheritance_depth, get_parent_classes_until_base
 
 logger = logging.getLogger(__name__)
 
 
-def serialize_chat_message_blocks(chat_message: ChatMessage) -> dict:
-    msg_dict = chat_message.model_dump()
+def serialize_chat_message_blocks(chat_message: ChatMessage, **kwargs: Any) -> dict:
+    msg_dict = chat_message.model_dump(**kwargs)
     for block in msg_dict["blocks"]:
         if block["block_type"] in ["audio", "image"] and block.get("url") is not None:
             block["url"] = str(block["url"])
@@ -50,14 +49,11 @@ class BaseEvent(BaseModel):
     """
 
     _event_registry: ClassVar[dict[str, type["BaseEvent"]]] = {}
-    event_id: Annotated[str, Field(default_factory=lambda: str(ObjectId()))]
-    created_at: Annotated[
-        int,
-        Field(
-            default_factory=time.time_ns,
-            description="The time (in ns since epoch) the event was stored in the event store",
-        ),
-    ]
+    event_id: str = Field(default_factory=lambda: str(ObjectId()))
+    created_at: int = Field(
+        default_factory=time.time_ns,
+        description="The time (in ns since epoch) the event was stored in the event store",
+    )
 
     # Private attributes to handle unknown event types
     _unknown_event_name: str | None = PrivateAttr(None)
@@ -93,6 +89,18 @@ class BaseEvent(BaseModel):
     @property
     def event_name(self):
         return self._event_name
+
+    @classmethod
+    def parent_event_names_from_class(cls) -> list[str]:
+        result = [cls.event_name_from_class()]
+        parent_classes = get_parent_classes_until_base(cls, BaseEvent)
+        class_dict = {cls.__name__: cls for cls in cls.__mro__ if cls.__name__ in parent_classes}
+        sorted_parent_classes = sorted(
+            list(parent_classes), key=lambda name: get_inheritance_depth(class_dict[name], BaseEvent), reverse=True
+        )
+
+        result.extend(sorted_parent_classes)
+        return result
 
     @computed_field
     @property
@@ -144,6 +152,14 @@ class BaseEvent(BaseModel):
     @property
     def is_work_request_event(self) -> bool:
         return "WorkRequestEvent" in self._parent_event_names
+
+    @property
+    def is_human_work_event(self) -> bool:
+        return "HumanWorkEvent" in self._parent_event_names
+
+    @property
+    def is_program_work_event(self) -> bool:
+        return "ProgramWorkEvent" in self._parent_event_names
 
     @property
     def is_exception_event(self) -> bool:
@@ -218,7 +234,10 @@ class BaseEvent(BaseModel):
         BaseEvent._event_registry[cls.__name__] = cls
 
     @classmethod
-    def deserialize_event(cls, data: bytes | str | dict[str, Any]) -> "BaseEvent":
+    def deserialize_event(
+        cls,
+        data: bytes | str | dict[str, Any],
+    ) -> "BaseEvent":
         """
         Given raw event data, deserializes it into the most specific event class possible
         based on inheritance hierarchy, while preserving original type information.
@@ -323,23 +342,16 @@ class BaseEvent(BaseModel):
         Serializes the event into a dictionary. If this event was originally unknown,
         merges the original data with the known fields so nothing is lost.
         """
+        kwargs["serialize_as_any"] = True
+
         data = super().model_dump(**kwargs)
-        for field_name, value in self.__dict__.items():
+        for field_name, value in data.items():
             if isinstance(value, ChatMessage):
-                data[field_name] = serialize_chat_message_blocks(value)
+                data[field_name] = serialize_chat_message_blocks(value, **kwargs)
             elif isinstance(value, BaseModel):
-                data[field_name] = value.model_dump()
-            elif isinstance(value, list):
-                data[field_name] = [
-                    (
-                        serialize_chat_message_blocks(item)
-                        if isinstance(item, ChatMessage)
-                        else item.model_dump()
-                        if isinstance(item, BaseModel)
-                        else item
-                    )
-                    for item in value
-                ]
+                data[field_name] = value.model_dump(**kwargs)
+            elif isinstance(value, list | tuple):
+                data[field_name] = [self._item_dump(item, **kwargs) for item in value]
 
         if not self._unknown_data:
             return data
@@ -348,6 +360,15 @@ class BaseEvent(BaseModel):
             **self._unknown_data,
             **data,
         }
+
+    @staticmethod
+    def _item_dump(item: Any, **kwargs: Any):
+        if isinstance(item, ChatMessage):
+            return serialize_chat_message_blocks(item, **kwargs)
+        elif isinstance(item, BaseModel):
+            return item.model_dump(**kwargs)
+        else:
+            return item
 
     @override
     def model_dump_json(self, **kwargs: Any) -> str:

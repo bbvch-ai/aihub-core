@@ -1,6 +1,6 @@
 import copy
 
-from aihub_lib.nats.events.discovery.agent.AgentDiscoveryResponseEvent import EventSpecs
+from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from jambo import SchemaConverter
 from pydantic import BaseModel, ConfigDict, create_model
 
@@ -8,7 +8,15 @@ from pydantic import BaseModel, ConfigDict, create_model
 class EventModelCreationService:
     _input_suffix = "Input"
     _output_suffix = "Output"
-    _input_excluded_fields = {"event_id", "created_at", "user", "locale", "display_name", "display_description"}
+    _input_excluded_fields = {
+        "event_id",
+        "created_at",
+        "user",
+        "locale",
+        "display_name",
+        "display_description",
+        "agent_config",
+    }
     _output_excluded_fields = {"event_id", "created_at", "_event_name", "_parent_event_names"}
     _model_config_dict = ConfigDict(
         arbitrary_types_allowed=False,
@@ -30,20 +38,20 @@ class EventModelCreationService:
 
     @staticmethod
     def create_input_model_from_specs(event_specs: EventSpecs) -> type[BaseModel]:
-        event_class = EventModelCreationService.create_model_from_specs(event_specs)
+        event_class = EventModelCreationService._create_model_from_specs(event_specs)
         return EventModelCreationService._create_model_from_class(
             event_class, EventModelCreationService._input_excluded_fields, EventModelCreationService._input_suffix
         )
 
     @staticmethod
     def create_output_model_from_specs(event_specs: EventSpecs) -> type[BaseModel]:
-        event_class = EventModelCreationService.create_model_from_specs(event_specs)
+        event_class = EventModelCreationService._create_model_from_specs(event_specs)
         return EventModelCreationService._create_model_from_class(
             event_class, EventModelCreationService._output_excluded_fields, EventModelCreationService._output_suffix
         )
 
     @staticmethod
-    def create_model_from_specs(event_specs: EventSpecs) -> type[BaseModel]:
+    def _create_model_from_specs(event_specs: EventSpecs) -> type[BaseModel]:
         schema = copy.deepcopy(event_specs.event_schema)
         schema["title"] = event_specs.event_name
         return SchemaConverter.build(schema)

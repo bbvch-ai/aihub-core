@@ -12,10 +12,10 @@
 </template>
 
 <script setup lang="ts">
-import type { ExceptionEvent, ThreadDto, WsServerEventReadable } from '@core/sdk/client'
+import type { ExceptionEvent, ThreadDto, AgentEventReadable } from '@core/sdk/client'
 
 defineProps<{
-  event: WsServerEventReadable & { event: ExceptionEvent }
+  event: AgentEventReadable & { event: ExceptionEvent }
   thread: ThreadDto
 }>()
 </script>

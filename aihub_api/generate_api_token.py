@@ -2,8 +2,9 @@ import subprocess
 from datetime import UTC, datetime, timedelta
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
-from aihub_lib.infrastructure.azure.cosmos.CosmosAccess import CosmosAccess
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.persistence.user.UserEntity import UserEntity
 from mongoengine import connect, disconnect
 
@@ -61,9 +62,7 @@ if not all([cli_user_oid, cli_user_name, cli_user_preferred_username]):
     print("Exiting script due to missing Azure CLI user information.")
     exit()
 
-cosmos_conn_singleton = CosmosAccess()
-host = cosmos_conn_singleton.get_connection_string()
-connect(db=ApiConfig().DB_NAME, host=host)
+connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING.get_secret_value())
 
 user_name = cli_user_name
 token_name = f"{cli_user_name} Token"
@@ -84,6 +83,15 @@ UserEntity.ensure_user_exists(
 )
 
 token = TokenService.create_token(token_name, expiry, user)
+
+if RoleEntity.get_role_by_name(roles[0]) is None:
+    role = RoleEntity(
+        name=roles[0],
+        description=f"Role for {token_name}",
+        access_rules=["aihub.admin.>"],
+    )
+    role.save()
+
 print(f"Generated token for user {user.name} ({user.email}):")
 print(token.token)
 
