@@ -1,7 +1,7 @@
 import abc
 import asyncio
 from collections.abc import Awaitable, Callable
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, Annotated, Literal
 
 from nats.aio.client import Client as NATS
 
@@ -12,13 +12,17 @@ TEvent = TypeVar("TEvent", bound=BaseEvent)
 
 
 class AbstractSubscriber(Generic[TEvent], abc.ABC):
+
     def __init__(
         self,
-        nc: NATS,
-        subject: str,
-        event_cls: type[TEvent],
-        handler: Callable[[TEvent, Topic], Awaitable[None]],
+        name: Annotated[str, "Name of the subscriber shown in otel"],
+        nc: Annotated[NATS, "NATS client"],
+        subject: Annotated[str, "NATS subject to subscribe to"],
+        event_cls: Annotated[type[TEvent], "Event class to handle in the event handler"],
+        handler: Annotated[Callable[[TEvent, Topic], Awaitable[None]], "Event handler"],
+        protocol: Annotated[Literal["JetStream", "NATS"], "Protocol used to publish events, either JetStream or NATS"],
     ):
+        self.name = name if name.endswith(f"{protocol}Subscriber") else f"{name}{protocol}Subscriber"
         self.nc = nc
         self.subject = subject
         self.event_cls = event_cls

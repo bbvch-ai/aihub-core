@@ -30,9 +30,9 @@ class ExternalAgentEventDistributor:
       ensuring downstream agents or services can react.
     """
 
-    def __init__(self, nc: NATS, js: JetStreamContext):
-        self.nc_publisher = NCPublisher(nc)
-        self.js_publisher = JSPublisher(js)
+    def __init__(self, nc: NATS, js: JetStreamContext, name: str = "ExternalAgentEventDistributor"):
+        self.nc_publisher = NCPublisher(name, nc)
+        self.js_publisher = JSPublisher(name, js)
 
     async def distribute_event(self, external_event: ExternalAgentEvent, user: UserIdentity | None = None):
         """

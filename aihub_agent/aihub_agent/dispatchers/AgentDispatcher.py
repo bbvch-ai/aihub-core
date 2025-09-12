@@ -26,7 +26,7 @@ from aihub_agent.agents.Agent import Agent
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.context.thread.ThreadContext import ThreadContext
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
-from aihub_agent.tracing.coordinators.RunTraceCoordinator import RunTraceCoordinator
+from aihub_agent.tracing.coordinators.AgentRunTracer import AgentRunTracer
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class AgentDispatcher(BaseDispatcher):
         histories and step execution counts across distributed environments.
 
     2. **Tracing and Telemetry:**
-        Through `RunTraceCoordinator`, it logs start/end times of runs and steps, aiding observability.
+        Through `AgentRunTracer`, it logs start/end times of runs and steps, aiding observability.
     """
 
     _telemetry_header_cache = TTLCache(maxsize=10_000, ttl=300)
@@ -60,14 +60,14 @@ class AgentDispatcher(BaseDispatcher):
         topic_manager: Annotated[AgentClassTopicManager, "Manages event subjects for this agent instance."],
         locale_handler: Annotated[AgentLocaleHandler, "Manages localization for the agent."],
     ):
-        super().__init__(nc, js, redis, topic_manager, AgentClassTopic)
+        super().__init__(nc, js, redis, topic_manager, AgentClassTopic, dispatch_entity_name=agent.__name__)
         self.agent = agent
         self.default_agent_config = default_agent_config
         self.locale_handler = locale_handler
 
         self.agent_config_type: type[AgentConfig] = self.default_agent_config.__class__
 
-        self.tracer = RunTraceCoordinator(
+        self.tracer = AgentRunTracer(
             nc=self.nc,
         )
 
@@ -459,6 +459,7 @@ class AgentDispatcher(BaseDispatcher):
             nc=self.nc,
             topic_manager=AgentThreadTopicManager.from_agent_topic(aitl_request_event.other_agent_topic),
             handler=convert_event_to_agent_in_the_loop_response,
+            subscriber_name=f"{self.agent.__name__}DispatcherAgentInTheLoop",
         )
         await event_subscriber.start()
 

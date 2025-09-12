@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable
+from typing import Annotated
 
 from nats.aio.client import Client as NATS
 from nats.errors import MsgAlreadyAckdError
@@ -39,16 +40,17 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
 
     def __init__(
         self,
-        nc: NATS,
-        subject: str,
-        stream_name: str,
-        stream_subject: str,
-        queue_group: str,
-        event_cls: type[TEvent],
-        handler: Callable[[TEvent, Topic], Awaitable[None]],
-        js: JetStreamContext | None = None,
+        name: Annotated[str, "Name of the subscriber shown in otel"],
+        nc: Annotated[NATS, "NATS client"],
+        subject: Annotated[str, "NATS subject to subscribe to"],
+        stream_name: Annotated[str, "JetStream stream name, must be globally unique"],
+        stream_subject: Annotated[str, "Subject this JetStream stream is bound to"],
+        queue_group: Annotated[str, "Name of group that shares the responsibility to handle events in this stream"],
+        event_cls: Annotated[type[TEvent], "Event class to handle in the event handler"],
+        handler: Annotated[Callable[[TEvent, Topic], Awaitable[None]], "Event handler"],
+        js: Annotated[JetStreamContext, "JetStream instance"],
     ):
-        super().__init__(nc, subject, event_cls, handler)
+        super().__init__(name, nc, subject, event_cls, handler, protocol="JetStream")
         self.js = js or nc.jetstream()
         self.queue_group = queue_group
         self.stream_manager = StreamManager(self.js, stream_name, stream_subject)
@@ -66,14 +68,16 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
             stream=self.stream_manager.stream_name,
             queue=self.queue_group,
         )
-        logger.debug(f"Subscribed to '{self.subject}' with {self.stream_manager} and queue group '{self.queue_group}'.")
+        logger.debug(
+            f"{self.name} subscribed to '{self.subject}' with {self.stream_manager} and queue group '{self.queue_group}'."
+        )
 
     async def stop(self):
         """Unsubscribes from the JetStream subject, stopping the flow of messages."""
         if self.js_subscription:
             await self.js_subscription.unsubscribe()
         logger.debug(
-            f"Unsubscribed from '{self.subject}' with {self.stream_manager} and queue group '{self.queue_group}'."
+            f"{self.name} unsubscribed from '{self.subject}' with {self.stream_manager} and queue group '{self.queue_group}'."
         )
 
     async def message_handler(self, msg):
@@ -91,33 +95,37 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
             try:
                 parent_context = NATSTraceContextPropagator.extract_and_activate_trace_context(headers)
             except Exception as e:
-                logger.warning(f"Failed to extract trace context from headers: {e}")
+                logger.warning(f"{self.name} failed to extract trace context from headers: {e}")
 
         with tracer.start_as_current_span(
-            f"JetStream.receive {msg.subject}", context=parent_context, kind=trace.SpanKind.CONSUMER
+            f"{self.name}.receive UNKNOWN",
+            context=parent_context,
+            kind=trace.SpanKind.CONSUMER,
+            attributes={
+                "messaging.system": "nats.jetstream",
+                "messaging.source": msg.subject,
+                "messaging.operation": "receive",
+                "jetstream.stream": self.stream_manager.stream_name,
+                "jetstream.queue_group": self.queue_group,
+            },
         ) as span:
-            span.set_attribute("messaging.system", "nats.jetstream")
-            span.set_attribute("messaging.source", msg.subject)
-            span.set_attribute("messaging.operation", "receive")
-            span.set_attribute("jetstream.stream", self.stream_manager.stream_name)
-            span.set_attribute("jetstream.queue_group", self.queue_group)
-
             if hasattr(msg, "metadata") and msg.metadata:
                 span.set_attribute("jetstream.sequence", msg.metadata.sequence.stream)
                 if hasattr(msg.metadata, "num_delivered"):
                     span.set_attribute("jetstream.delivery_count", msg.metadata.num_delivered)
 
             try:
-                logger.debug(f"Received message: {msg.subject} with event data: {msg.data}")
+                logger.debug(f"{self.name} received message: {msg.subject} with event data: {msg.data}")
                 topic = Topic.from_subject(msg.subject)
                 event_data = msg.data
                 event = self.event_cls.deserialize_event(event_data)
-                event._jetstream_sequence = msg.metadata.sequence.stream  # CRITICAL: Keep this!
+                event._jetstream_sequence = msg.metadata.sequence.stream
 
+                span.update_name(f"{self.name}.receive {event.__class__.__name__}")
                 span.set_attribute("event.type", event.event_name)
                 span.set_attribute("event.class", event.__class__.__name__)
 
-                logger.debug(f"Deserialized event: {event}")
+                logger.debug(f"{self.name} deserialized event: {event}")
 
                 await msg.ack()
                 span.set_attribute("jetstream.acked", True)
@@ -134,7 +142,7 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
             except Exception as e:
                 span.set_attribute("messaging.success", False)
                 span.record_exception(e)
-                logger.exception(f"Error in message handler for subject '{msg.subject}': {e}")
+                logger.exception(f"{self.name} error in message handler for subject '{msg.subject}': {e}")
 
     async def _process(self, event, topic, msg):
         """
@@ -145,16 +153,18 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
 
         async with JSSubscriber._process_semaphore:
             with tracer.start_as_current_span(
-                f"JetStream.process {event.event_name}", kind=trace.SpanKind.INTERNAL
+                f"{self.name}.process {event.event_name}",
+                kind=trace.SpanKind.INTERNAL,
+                attributes={
+                    "handler.event_type": event.event_name,
+                    "handler.subject": msg.subject,
+                    "jetstream.processing": True,
+                },
             ) as span:
-                span.set_attribute("handler.event_type", event.event_name)
-                span.set_attribute("handler.subject", msg.subject)
-                span.set_attribute("jetstream.processing", True)
-
                 try:
                     await self.handler(event, topic)
                     span.set_attribute("handler.success", True)
                 except Exception as e:
                     span.set_attribute("handler.success", False)
                     span.record_exception(e)
-                    logger.exception(f"Error in async processor for subject '{msg.subject}': {e}")
+                    logger.exception(f"{self.name} error in async processor for subject '{msg.subject}': {e}")

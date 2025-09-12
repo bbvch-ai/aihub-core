@@ -112,6 +112,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             nc=self.nc,
             topic_manager=AgentTopicManager(),
             handler=self._discovery_handler,
+            subscriber_name="AgentEndpointDiscoveryServiceDiscoveryRequest",
         )
         await self.discovery_event_subscriber.start()
         logger.info("Agent discovery service started")

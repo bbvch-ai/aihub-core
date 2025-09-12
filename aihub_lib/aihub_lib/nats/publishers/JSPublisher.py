@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import uuid
+from typing import Annotated
 
 from nats.js import JetStreamContext
 from opentelemetry import trace
@@ -27,7 +28,12 @@ class JSPublisher(AbstractPublisher[TEvent]):
       and warns if, for example, a control event is published to a display subject.
     """
 
-    def __init__(self, js: JetStreamContext):
+    def __init__(
+        self,
+        name: Annotated[str, "Name of the publisher shown in otel"],
+        js: Annotated[JetStreamContext, "JetStream instance"],
+    ):
+        super().__init__(name, protocol="JetStream")
         self.js = js
 
     async def publish_event(self, event: TEvent, subject: str, retries=10, **kwargs):
@@ -40,20 +46,24 @@ class JSPublisher(AbstractPublisher[TEvent]):
         """
         tracer = trace.get_tracer(__name__)
 
-        with tracer.start_as_current_span(f"JetStream.publish {subject}") as span:
-            span.set_attribute("messaging.system", "nats.jetstream")
-            span.set_attribute("messaging.destination", subject)
-            span.set_attribute("messaging.operation", "publish")
-            span.set_attribute("event.type", event.event_name)
-            span.set_attribute("event.class", event.__class__.__name__)
-            span.set_attribute("jetstream.retries", retries)
-
+        with tracer.start_as_current_span(
+            f"{self.name}.publish {event.__class__.__name__}",
+            attributes={
+                "messaging.system": "nats.jetstream",
+                "messaging.destination": subject,
+                "messaging.operation": "publish",
+                "publisher.name": self.name,
+                "event.type": event.event_name,
+                "event.class": event.__class__.__name__,
+                "jetstream.retries": retries,
+            },
+        ) as span:
             try:
                 self._detect_and_log_subject_mismatch(event, subject)
 
-                logger.debug(f"Publishing event {event.event_name} to {subject}")
+                logger.debug(f"{self.name} publishing event {event.event_name} to {subject}")
                 serialized_event = event.model_dump_json(serialize_as_any=True)
-                logger.debug(f"Serialized event: {event.event_name}({serialized_event})")
+                logger.debug(f"{self.name} serialized event: {event.event_name}({serialized_event})")
 
                 message_id = str(uuid.uuid4())
                 headers = NATSMessageHeaders().with_trace_context().with_header("Nats-Msg-Id", message_id).to_dict()
@@ -76,17 +86,17 @@ class JSPublisher(AbstractPublisher[TEvent]):
 
                     except TimeoutError:
                         logger.warning(
-                            f"Publish timeout ({attempt + 1}/{retries}) for {event.event_name} to subject {subject}"
+                            f"{self.name} publish timeout ({attempt + 1}/{retries}) for {event.event_name} to subject {subject}"
                         )
                     except Exception as e:
                         logger.exception(
-                            f"NATS error while publishing event {event.event_name} to subject {subject}: {e}"
+                            f"{self.name} NATS error while publishing event {event.event_name} to subject {subject}: {e}"
                         )
 
                     await asyncio.sleep(1)  # Wait before retrying
 
                 # If we get here, all retries failed
-                error_msg = f"Failed to publish event {event.event_name} to subject {subject} after {retries} attempts"
+                error_msg = f"{self.name} failed to publish event {event.event_name} to subject {subject} after {retries} attempts"
                 span.set_attribute("messaging.success", False)
                 span.add_event("All publish attempts failed")
                 logger.exception(error_msg)
@@ -95,5 +105,5 @@ class JSPublisher(AbstractPublisher[TEvent]):
             except Exception as e:
                 span.set_attribute("messaging.success", False)
                 span.record_exception(e)
-                logger.exception(f"Failed to publish {event.event_name} to {subject}: {e}")
+                logger.exception(f"{self.name} failed to publish {event.event_name} to {subject}: {e}")
                 raise

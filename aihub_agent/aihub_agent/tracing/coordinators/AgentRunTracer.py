@@ -22,12 +22,12 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 
-class RunTraceCoordinator:
+class AgentRunTracer:
     """
     Coordinates the tracing of runs and steps using OpenTelemetry. It integrates with NATS and JetStream-based
     systems, starting and stopping spans corresponding to entire runs and individual workflow steps.
 
-    Observability is critical in complex, distributed AI workflows. The RunTraceCoordinator:
+    Observability is critical in complex, distributed AI workflows. The AgentRunTracer:
     - Starts a run-level trace on `StartEvent`.
     - Waits for a `StopEvent` or `ExceptionEvent` to conclude the run.
     - Instruments steps so their inputs/outputs are captured as child spans.
@@ -82,6 +82,7 @@ class RunTraceCoordinator:
             name=f"🤖 {topic.agent_class}",
             kind=trace.SpanKind.INTERNAL,
             attributes={
+                "phoenix.is_root": True,
                 SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.LLM.value,
                 SpanAttributes.INPUT_VALUE: user_input,
                 SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.TEXT.value,
@@ -124,6 +125,7 @@ class RunTraceCoordinator:
             nc=self.nc,
             topic_manager=AgentThreadTopicManager.from_agent_topic(topic),
             handler=handler,
+            subscriber_name=f"RunTracerStop",
         )
         logger.debug(f"Starting subscriber for {topic.agent_class}")
         await subscriber.start()

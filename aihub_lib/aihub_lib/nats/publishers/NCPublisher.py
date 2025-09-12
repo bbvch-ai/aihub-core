@@ -1,4 +1,5 @@
 import logging
+from typing import Annotated
 
 from nats.aio.client import Client as NATS
 from opentelemetry import trace
@@ -26,7 +27,12 @@ class NCPublisher(AbstractPublisher[TEvent]):
       inconsistent naming conventions early.
     """
 
-    def __init__(self, nc: NATS):
+    def __init__(
+        self,
+        name: Annotated[str, "Name of the publisher shown in otel"],
+        nc: Annotated[NATS, "NATS client"],
+    ):
+        super().__init__(name, protocol="NATS")
         self.nc = nc
 
     async def publish_event(self, event: TEvent, subject: str, **kwargs):
@@ -38,19 +44,22 @@ class NCPublisher(AbstractPublisher[TEvent]):
         """
         tracer = trace.get_tracer(__name__)
 
-        with tracer.start_as_current_span(f"NATs.publish {subject}") as span:
-            span.set_attribute("messaging.system", "nats")
-            span.set_attribute("messaging.destination", subject)
-            span.set_attribute("messaging.operation", "publish")
-            span.set_attribute("event.type", event.event_name)
-            span.set_attribute("event.class", event.__class__.__name__)
-
+        with tracer.start_as_current_span(
+            f"{self.name}.publish {event.__class__.__name__}",
+            attributes={
+                "messaging.system": "nats",
+                "messaging.destination": subject,
+                "messaging.operation": "publish",
+                "event.type": event.event_name,
+                "event.class": event.__class__.__name__,
+            },
+        ) as span:
             try:
                 self._detect_and_log_subject_mismatch(event, subject)
 
-                logger.debug(f"Publishing event {event.event_name} to {subject}")
+                logger.debug(f"{self.name} publishing event {event.event_name} to {subject}")
                 serialized_event = event.model_dump_json(serialize_as_any=True)
-                logger.debug(f"Serialized event: {event.event_name}({serialized_event})")
+                logger.debug(f"{self.name} serialized event: {event.event_name}({serialized_event})")
 
                 # Create headers with trace context
                 headers = NATSMessageHeaders().with_trace_context().to_dict()
@@ -58,10 +67,10 @@ class NCPublisher(AbstractPublisher[TEvent]):
                 await self.nc.publish(subject, serialized_event.encode(), headers=headers)
 
                 span.set_attribute("messaging.success", True)
-                logger.debug(f"Successfully published {event.event_name} to {subject}")
+                logger.debug(f"{self.name} successfully published {event.event_name} to {subject}")
 
             except Exception as e:
                 span.set_attribute("messaging.success", False)
                 span.record_exception(e)
-                logger.exception(f"Failed to publish {event.event_name} to {subject}: {e}")
+                logger.exception(f"{self.name} failed to publish {event.event_name} to {subject}: {e}")
                 raise

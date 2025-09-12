@@ -94,6 +94,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
             return
 
         self.discovery_event_subscriber = ProcessNCSubscriber.for_process_instance_discovery_request_events(
+            subscriber_name="ProcessEndpointDiscoveryService",
             nc=self.nc,
             topic_manager=ProcessTopicManager(),
             handler=self._discovery_handler,

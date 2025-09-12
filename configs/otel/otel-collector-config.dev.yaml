@@ -23,6 +23,29 @@ processors:
         - 'resource.attributes["service.name"] == "litellm" and attributes["service"] == "postgres"'
         - 'resource.attributes["service.name"] == "litellm" and attributes["service"] == "auth"'
 
+  # Filter to identify ONLY OpenInference spans for Phoenix
+  filter/phoenix:
+    error_mode: ignore
+    traces:
+      span:
+        # DROP spans that DON'T have OpenInference semantic conventions
+        - 'attributes["openinference.span.kind"] == nil'
+
+  # Transform processor for Phoenix-specific modifications
+  transform/phoenix:
+    error_mode: ignore
+    trace_statements:
+      - context: span
+        statements:
+          # Remove parent span ID for spans marked as Phoenix roots
+          - set(parent_span_id, SpanID(0x0000000000000000)) where attributes["phoenix.is_root"] == true
+          # Clean up the marker attribute
+          - delete_key(attributes, "phoenix.is_root")
+      - context: resource
+        statements:
+          # Add project name as a resource attribute
+          - set(attributes["openinference.project.name"], attributes["service.name"])
+
 exporters:
   otlp/signoz:
     endpoint: "${SIGNOZ_INGESTION_CLOUD_ENDPOINT}"
@@ -31,16 +54,34 @@ exporters:
     tls:
       insecure: false
 
+  otlp/phoenix:
+    endpoint: "phoenix:6007"
+    tls:
+      insecure: true
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+
 service:
   pipelines:
-    traces:
+    # All traces go to Signoz
+    traces/signoz:
       receivers: [otlp]
       processors: [filter/noise, batch]
       exporters: [otlp/signoz]
+
+    # Only OpenInference traces go to Phoenix
+    traces/phoenix:
+      receivers: [otlp]
+      processors: [filter/phoenix, transform/phoenix, batch]
+      exporters: [otlp/phoenix]
+
     metrics:
       receivers: [otlp]
       processors: [batch]
       exporters: [otlp/signoz]
+
     logs:
       receivers: [otlp]
       processors: [batch]

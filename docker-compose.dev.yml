@@ -92,10 +92,12 @@ services:
       - "postgres"
     ports:
       - "6006:6006"
-      - "4317:4317"
+      - "6007:6007"
     environment:
       PHOENIX_SQL_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix"
       PHOENIX_ENABLE_AUTH: "False"
+      PHOENIX_GRPC_PORT: "6007"
+      PHOENIX_PORT: "6006"
       VERSION: ""
 
   nats:

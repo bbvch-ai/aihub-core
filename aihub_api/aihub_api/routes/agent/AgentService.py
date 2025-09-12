@@ -217,9 +217,13 @@ class AgentService:
             agent_found_event.set()
 
         topic_manager = AgentClassTopicManager(agent_class=agent_class)
-        nc_publisher = NCPublisher(nc)
+        nc_publisher = NCPublisher(f"AgentService{agent_class}DiscoversRequest", nc)
         nc_subscriber = AgentNCSubscriber.for_agent_class_discovery_response_events(
-            nc, topic_manager, discovery_handler, call_id=call_id
+            nc,
+            topic_manager,
+            discovery_handler,
+            call_id=call_id,
+            subscriber_name=f"AgentService{agent_class}DiscoveryResponse",
         )
         await nc_subscriber.start()
 
@@ -305,9 +309,9 @@ class AgentService:
             discovery_responses.append(event)
 
         topic_manager = AgentTopicManager()
-        nc_publisher = NCPublisher(nc)
+        nc_publisher = NCPublisher(f"AgentServiceClassDiscoversRequest", nc)
         nc_subscriber = AgentNCSubscriber.for_agent_class_discovery_response_events(
-            nc, topic_manager, discovery_handler, call_id=call_id
+            nc, topic_manager, discovery_handler, call_id=call_id, subscriber_name=f"AgentServiceClassDiscoveryResponse"
         )
         await nc_subscriber.start()
 
@@ -538,6 +542,7 @@ class AgentService:
             nc=nc,
             topic_manager=topic_manager,
             handler=event_handler,
+            subscriber_name="AgentServiceSendAgentInputEventStream",
         )
         resources.subscriber = subscriber
         await subscriber.start()

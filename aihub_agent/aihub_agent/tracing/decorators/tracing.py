@@ -51,16 +51,13 @@ def tracing() -> Callable:
             tracer = trace.get_tracer(__name__)
             span_name = f"{func.__module__}.{func.__name__}"
 
-            with tracer.start_as_current_span(span_name) as span:
-                # Record input
-                input_params = {"args": args, "kwargs": kwargs}
-                span.set_attributes(
-                    {
-                        SpanAttributes.INPUT_VALUE: json.dumps(input_params, default=str),
-                        SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
-                    }
-                )
-
+            with tracer.start_as_current_span(
+                span_name,
+                attributes={
+                    SpanAttributes.INPUT_VALUE: json.dumps({"args": args, "kwargs": kwargs}, default=str),
+                    SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
+                },
+            ) as span:
                 try:
                     result = await func(*args, **kwargs)
                     # Record output
@@ -79,16 +76,13 @@ def tracing() -> Callable:
             tracer = trace.get_tracer(__name__)
             span_name = f"{func.__module__}.{func.__name__}"
 
-            with tracer.start_as_current_span(span_name) as span:
-                # Record input
-                input_params = {"args": args, "kwargs": kwargs}
-                span.set_attributes(
-                    {
-                        SpanAttributes.INPUT_VALUE: json.dumps(input_params, default=str),
-                        SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
-                    }
-                )
-
+            with tracer.start_as_current_span(
+                span_name,
+                attributes={
+                    SpanAttributes.INPUT_VALUE: json.dumps({"args": args, "kwargs": kwargs}, default=str),
+                    SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
+                },
+            ) as span:
                 try:
                     result = func(*args, **kwargs)
                     # Record output

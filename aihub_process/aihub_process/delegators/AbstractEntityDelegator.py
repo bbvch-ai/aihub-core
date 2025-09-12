@@ -54,7 +54,7 @@ class AbstractEntityDelegator(abc.ABC):
         self.nc = nc
         self.js = js
 
-        self.js_publisher = JSPublisher(self.js)
+        self.js_publisher = JSPublisher(f"{self.process_class.__name__}{self.__class__.__name__}", self.js)
 
         self.topic_manager = topic_manager
 
@@ -85,6 +85,7 @@ class AbstractEntityDelegator(abc.ABC):
             handler=self.handle_process_step_output,
             queue_group=self.queue_group,
             js=self.js,
+            subscriber_name=f"{self.process_class.__name__}{self.__class__.__name__}WorkRequestEvent",
         )
         await subscription.start()
         self.subscriptions.append(subscription)

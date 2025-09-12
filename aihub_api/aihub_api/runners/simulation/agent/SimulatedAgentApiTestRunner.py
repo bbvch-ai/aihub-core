@@ -208,9 +208,12 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         if self.hitl_response_events is None:
             self.hitl_response_events = []
 
-        self.nc_publisher = NCPublisher(self.nc)
+        self.nc_publisher = NCPublisher(f"Simulated{self.agent_class}ApiTestRunnerDiscoveryResponse", self.nc)
         self.discovery_subscriber = AgentNCSubscriber.for_agent_class_discovery_request_events(
-            self.nc, AgentTopicManager(), self.discovery_handler
+            self.nc,
+            AgentTopicManager(),
+            self.discovery_handler,
+            subscriber_name=f"Simulated{self.agent_class}ApiTestRunnerDiscoveryRequest",
         )
         await self.discovery_subscriber.start()
 
@@ -221,10 +224,11 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             js=self.js,
             handler=self.simulate_agent,
             queue_group="simulated-agent-runner-queue-group",
+            subscriber_name=f"Simulated{self.agent_class}ApiTestRunnerControlEvents",
         )
         await self.agent_control_event_subscriber.start()
 
-        self.js_publisher = JSPublisher(self.js)
+        self.js_publisher = JSPublisher(f"Simulated{self.agent_class}ApiTestRunner", self.js)
 
         if hasattr(self._api_app.state, "agent_controller"):
             AgentEndpointsDiscoveryService(

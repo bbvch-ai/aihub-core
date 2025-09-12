@@ -179,9 +179,13 @@ class ProcessService:
             process_found_event.set()
 
         topic_manager = ProcessClassTopicManager(process_class=process_class)
-        nc_publisher = NCPublisher(nc)
+        nc_publisher = NCPublisher(f"ProcessService{process_class}DiscoveryRequest", nc)
         nc_subscriber = ProcessNCSubscriber.for_process_class_discovery_response_events(
-            nc, topic_manager, discovery_handler, call_id=call_id
+            nc,
+            topic_manager,
+            discovery_handler,
+            call_id=call_id,
+            subscriber_name=f"ProcessService{process_class}DiscoveryResponse",
         )
         await nc_subscriber.start()
 
@@ -259,9 +263,13 @@ class ProcessService:
             discovery_responses.append(event)
 
         topic_manager = ProcessTopicManager()
-        nc_publisher = NCPublisher(nc)
+        nc_publisher = NCPublisher(f"ProcessServiceClassDiscoveryRequest", nc)
         nc_subscriber = ProcessNCSubscriber.for_process_class_discovery_response_events(
-            nc, topic_manager, discovery_handler, call_id=call_id
+            nc,
+            topic_manager,
+            discovery_handler,
+            call_id=call_id,
+            subscriber_name=f"ProcessServiceClassDiscoveryResponse",
         )
         await nc_subscriber.start()
 

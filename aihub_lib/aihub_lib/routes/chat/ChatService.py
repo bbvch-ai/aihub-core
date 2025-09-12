@@ -229,6 +229,7 @@ class ChatService:
             nc=nc,
             topic_manager=topic_manager,
             handler=response_aggregator,
+            subscriber_name="ChatServiceStreamInteraction",
         )
         resources.subscriber = subscriber
         await subscriber.start()
@@ -323,6 +324,7 @@ class ChatService:
             nc=nc,
             topic_manager=topic_manager,
             handler=response_aggregator,
+            subscriber_name="ChatServiceJsonInteraction",
         )
         resources.subscriber = subscriber
 
