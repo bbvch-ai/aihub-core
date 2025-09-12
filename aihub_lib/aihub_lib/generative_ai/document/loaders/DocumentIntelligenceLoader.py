@@ -36,20 +36,27 @@ class DocumentIntelligenceLoader(BaseReader):
         extra_info: dict | None = None,
         fs: AbstractFileSystem | None = None,
         figures_directory_name: str | None = None,
+        include_images: bool | None = None,
     ) -> list[Document]:
         """Load and process documents synchronously using the Document Intelligence service."""
+        include_images = include_images if include_images is not None else True
+
         fs = fs or get_default_fs()
         with fs.open(file, "rb") as pdf_file:
+            output_options = [AnalyzeOutputOption.FIGURES] if include_images else []
+
             poller = self.document_intelligence_client.begin_analyze_document(
                 "prebuilt-layout",
                 body=pdf_file,
                 content_type="application/octet-stream",
                 output_content_format=DocumentContentFormat.MARKDOWN,
-                output=[AnalyzeOutputOption.FIGURES],
+                output=output_options,
             )
 
         result: AnalyzeResult = poller.result()
-        return self._process_document_intelligence_response(result, poller, file, extra_info, fs, figures_directory_name)
+        return self._process_document_intelligence_response(
+            result, poller, file, extra_info, fs, figures_directory_name, include_images
+        )
 
     async def aload_data(
         self,
@@ -57,8 +64,11 @@ class DocumentIntelligenceLoader(BaseReader):
         extra_info: dict | None = None,
         fs: AbstractFileSystem | None = None,
         figures_directory_name: str | None = None,
+        include_images: bool | None = None,
     ) -> list[Document]:
         """Load and process documents asynchronously using the Document Intelligence service."""
+        include_images = include_images if include_images is not None else True
+
         fs = fs or get_default_fs()
         with fs.open(file, "rb") as pdf_file:
             poller = self.document_intelligence_client.begin_analyze_document(
@@ -70,7 +80,9 @@ class DocumentIntelligenceLoader(BaseReader):
             )
 
         result: AnalyzeResult = poller.result()
-        return self._process_document_intelligence_response(result, poller, file, extra_info, fs, figures_directory_name)
+        return self._process_document_intelligence_response(
+            result, poller, file, extra_info, fs, figures_directory_name, include_images
+        )
 
     def _process_document_intelligence_response(
         self,
@@ -80,11 +92,21 @@ class DocumentIntelligenceLoader(BaseReader):
         extra_info: dict | None = None,
         fs: AbstractFileSystem | None = None,
         figures_directory_name: str | None = None,
+        include_images: bool | None = None,
     ) -> list[Document]:
         """Process the Document Intelligence API response into Document objects."""
         metadata = {NUMBER_OF_PAGES: len(result.pages)}
 
         text = reformat_tables(result.content)
+
+        if not include_images:
+            text = remove_figure_tags_keep_content(text)
+            return [
+                Document(
+                    text=text,
+                    extra_info={**extra_info, **metadata} if extra_info else metadata,
+                )
+            ]
 
         if not figures_directory_name or not result.figures:
             return [
@@ -140,5 +162,18 @@ def reformat_tables(document_text: str) -> str:
         # TODO if table is very long split into smaller tables with copied headers
         markdown_table = pd.read_html(StringIO(str(table)))[0].fillna("").to_markdown()
         table.replace_with(f"<{NODE_CONTENT_TYPE_TABLE}>{markdown_table}</{NODE_CONTENT_TYPE_TABLE}>")
+
+    return html.unescape(str(soup))
+
+
+def remove_figure_tags_keep_content(document_text: str) -> str:
+    """Remove figure tags but keep their inner content."""
+    soup = BeautifulSoup(document_text, "html.parser")
+
+    figure_tags = soup.find_all("figure")
+
+    for figure_tag in figure_tags:
+        inner_content = figure_tag.get_text()
+        figure_tag.replace_with(inner_content)
 
     return html.unescape(str(soup))
