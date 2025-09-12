@@ -889,6 +889,23 @@ services:
     - "traefik.http.routers.traefik.middlewares=traefik-auth"
   # </editor-fold>
 
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    environment:
+      - SIGNOZ_INGESTION_CLOUD_ENDPOINT=${SIGNOZ_INGESTION_CLOUD_ENDPOINT}
+      - SIGNOZ_INGESTION_KEY=${SIGNOZ_INGESTION_KEY}
+    volumes:
+      - ./configs/otel/otel-collector-config.nightly.yaml:/etc/otel-collector-config.yaml  # Fixed path
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "13133:13133"
+      - "55679:55679"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:13133/" ]
+
 
 volumes:
   api-venv:
