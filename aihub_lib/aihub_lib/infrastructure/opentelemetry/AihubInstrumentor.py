@@ -222,8 +222,9 @@ class AihubInstrumentor(BaseInstrumentor):
         LlamaIndexInstrumentor().instrument()
         LoggingInstrumentor().instrument()
 
-        # Configure the tracing provider
+        # Configure the tracing and logging providers
         otel_settings.configure_tracing()
+        otel_settings.configure_logging()
 
         logger.info("✅ Application instrumentation completed")
 
