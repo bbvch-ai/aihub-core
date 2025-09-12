@@ -355,7 +355,6 @@ class KnowledgeService:
             description=description_entity,
         )
 
-        bucket = BucketEntity.objects.get(id=updated_entity.bucket_id)
         KnowledgeService.invalidate_cache()
 
         return NamespaceResponse(
