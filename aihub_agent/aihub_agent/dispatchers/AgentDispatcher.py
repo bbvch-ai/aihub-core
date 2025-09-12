@@ -80,11 +80,9 @@ class AgentDispatcher(BaseDispatcher):
         """
         Called whenever a new event arrives. This method:
         - Stores the event.
-        - Updates run/thread contexts if necessary.
-        - If the event is Start/Stop/Exception, handles run lifecycle changes.
-        - Checks for steps that can now execute due to the event.
-
-        If steps are ready, it triggers their execution asynchronously.
+        - Manages the run's trace lifecycle using a two-phase approach.
+        - Handles run lifecycle changes (Start, Stop, Exception).
+        - Checks for and triggers ready steps asynchronously.
         """
         await super().handle_event(event, topic)
 
@@ -116,7 +114,9 @@ class AgentDispatcher(BaseDispatcher):
         if event.is_start_event:
             event = cast(StartEvent, event)
             logger.debug(f"Handling StartEvent: {event.event_name}")
-            telemetry_headers = self.tracer.trace_run_start(topic, event)
+
+            start_time, telemetry_headers = self.tracer.trace_run_start(topic=topic, event=event)
+            await run_context.set("start_time", start_time)
             await run_context.set("telemetry_headers", telemetry_headers)
 
             # Store any initial data from the StartEvent into run_context
@@ -125,16 +125,26 @@ class AgentDispatcher(BaseDispatcher):
                 logger.debug(f"Setting key '{key}' in run_context to '{value}'")
                 await run_context.set(key, value)
 
-        if event.is_stop_event:
-            logger.debug(f"Handling StopEvent: {event.event_name}")
+        if event.is_stop_event or event.is_exception_event:
+            logger.debug(f"Handling final event: {event.event_name}")
+
+            start_time = await run_context.get("start_time")
+            telemetry_headers = await run_context.get("telemetry_headers")
+
+            if start_time and telemetry_headers:
+                self.tracer.trace_run_completion(
+                    start_time_ns=start_time,
+                    telemetry_headers=telemetry_headers,
+                    topic=topic,
+                    final_event=event,
+                )
+
             await run_context.delete_all()
             await self.event_store.delete_all(topic.execution_context_id)
             await self.step_store.delete_all(topic.execution_context_id)
-            return
 
-        if event.is_exception_event:
-            logger.debug(f"Handling ExceptionEvent: {event.event_name}")
-            await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
+            if event.is_exception_event:
+                await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
             return
 
         steps = self.agent.get_steps_waiting_for_event(type(event))
