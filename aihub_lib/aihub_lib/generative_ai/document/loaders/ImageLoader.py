@@ -8,8 +8,6 @@ from aihub_lib.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_FI
 
 
 class ImageLoader(BaseReader):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
 
     def load_data(
         self,
