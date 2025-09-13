@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.243.10] - 2025-09-13 - Quick Start Documentation Refinement
+
+### Removed
+
+- 🗑️ Removed the extensive **SDK Architecture documentation** from the Quick Start section, which previously detailed
+  the `aihub_lib`, `aihub_agent`, `aihub_pipeline`, `aihub_process`, `aihub_api`, and `aihub_bot` packages, as well as
+  cross-package integration patterns. This content, previously marked as Work In Progress (WIP), has been temporarily
+  cleared.
+- 🗑️ Removed the in-depth **"Why our SDK" documentation** from the Quick Start guides, which provided a comprehensive
+  comparison with other AI frameworks and platforms. This content, previously marked as Work In Progress (WIP), has been
+  temporarily cleared.
+
+---
+
 ## [v0.243.9] - 2025-09-11 - Fine-Grained Control Over Document Image Extraction
 
 ### Added
