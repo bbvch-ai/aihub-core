@@ -167,12 +167,12 @@ class ApiRunner(Runner):
 
         This method only handles FastAPI-specific instrumentation.
         """
-        # Check if OpenTelemetry is configured by checking for a proper tracer provider
-        tracer_provider = trace.get_tracer_provider()
+        from aihub_lib.infrastructure.opentelemetry.OpenTelemetrySettings import OpenTelemetrySettings
 
-        # If no proper tracer provider is set, skip instrumentation
-        if not isinstance(tracer_provider, ProxyTracerProvider | TracerProvider):
-            logger.info("Skipping OpenTelemetry instrumentation - not configured")
+        otel_settings = OpenTelemetrySettings()
+
+        if not otel_settings.ENABLED:
+            logger.info("OpenTelemetry instrumentation disabled: OTEL_ENABLED=False")
             return
 
         FastAPIInstrumentor.instrument_app(

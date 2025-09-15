@@ -1,3 +1,7 @@
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
 receivers:
   otlp:
     protocols:
@@ -72,6 +76,7 @@ exporters:
       max_interval: 30s
 
 service:
+  extensions: [ health_check ]
   pipelines:
     # Send traces to cloud backend
     traces/cloud:
