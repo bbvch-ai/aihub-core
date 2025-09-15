@@ -58,34 +58,6 @@ class DocumentIntelligenceLoader(BaseReader):
             result, poller, file, extra_info, fs, figures_directory_name, include_images
         )
 
-    async def aload_data(
-        self,
-        file: str,
-        extra_info: dict | None = None,
-        fs: AbstractFileSystem | None = None,
-        figures_directory_name: str | None = None,
-        include_images: bool | None = None,
-    ) -> list[Document]:
-        """Load and process documents asynchronously using the Document Intelligence service."""
-        include_images = include_images if include_images is not None else True
-
-        fs = fs or get_default_fs()
-        with fs.open(file, "rb") as pdf_file:
-            output_options = [AnalyzeOutputOption.FIGURES] if include_images else []
-
-            poller = self.document_intelligence_client.begin_analyze_document(
-                "prebuilt-layout",
-                body=pdf_file,
-                content_type="application/octet-stream",
-                output_content_format=DocumentContentFormat.MARKDOWN,
-                output=output_options,
-            )
-
-        result: AnalyzeResult = poller.result()
-        return self._process_document_intelligence_response(
-            result, poller, file, extra_info, fs, figures_directory_name, include_images
-        )
-
     def _process_document_intelligence_response(
         self,
         result: AnalyzeResult,
