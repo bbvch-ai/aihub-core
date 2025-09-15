@@ -495,8 +495,9 @@ services:
     image: otel/opentelemetry-collector-contrib:latest
     command: [ "--config=/etc/otel-collector-config.yaml" ]
     environment:
-      - SIGNOZ_INGESTION_CLOUD_ENDPOINT=${SIGNOZ_INGESTION_CLOUD_ENDPOINT}
-      - SIGNOZ_INGESTION_KEY=${SIGNOZ_INGESTION_KEY}
+      - OTEL_CLOUD_EXPORTER=${OTEL_CLOUD_EXPORTER}
+      - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
+      - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
     volumes:
       - ./configs/otel/otel-collector-config.dev.yaml:/etc/otel-collector-config.yaml  # Fixed path
     ports:

@@ -47,17 +47,28 @@ processors:
           - set(attributes["openinference.project.name"], attributes["service.name"])
 
 exporters:
-  otlp/signoz:
-    endpoint: "${SIGNOZ_INGESTION_CLOUD_ENDPOINT}"
-    headers:
-      signoz-ingestion-key: "${SIGNOZ_INGESTION_KEY}"
+  # Null exporter to sink traces when tracing is disabled
+  null:
+
+  # Generic cloud exporter with configurable headers
+  otlp/cloud:
+    endpoint: "${OTEL_CLOUD_ENDPOINT}"
+    headers: "${OTEL_CLOUD_HEADERS}"
     tls:
       insecure: false
+    compression: gzip
+    timeout: 30s
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
 
+  # Local Phoenix for development
   otlp/phoenix:
     endpoint: "phoenix:6007"
     tls:
       insecure: true
+    timeout: 10s
     retry_on_failure:
       enabled: true
       initial_interval: 5s
@@ -65,24 +76,26 @@ exporters:
 
 service:
   pipelines:
-    # All traces go to Signoz
-    traces/signoz:
+    # Send traces to cloud backend - uses otlp/cloud or null based on OTEL_CLOUD_EXPORTER
+    traces/cloud:
       receivers: [otlp]
       processors: [filter/noise, batch]
-      exporters: [otlp/signoz]
+      exporters: ["${OTEL_CLOUD_EXPORTER}"]
 
-    # Only OpenInference traces go to Phoenix
+    # Always send OpenInference traces to local Phoenix for development
     traces/phoenix:
       receivers: [otlp]
       processors: [filter/phoenix, transform/phoenix, batch]
       exporters: [otlp/phoenix]
 
+    # Send metrics to cloud backend
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlp/signoz]
+      exporters: ["${OTEL_CLOUD_EXPORTER}"]
 
+    # Send logs to cloud backend
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlp/signoz]
+      exporters: ["${OTEL_CLOUD_EXPORTER}"]

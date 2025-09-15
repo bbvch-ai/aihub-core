@@ -191,8 +191,8 @@ class AihubInstrumentor(BaseInstrumentor):
 
         otel_settings = OpenTelemetrySettings()
 
-        if not otel_settings.EXPORTER_OTLP_ENDPOINT:
-            logger.warning("OpenTelemetry not configured: OTEL_EXPORTER_OTLP_ENDPOINT not set")
+        if not otel_settings.ENABLED:
+            logger.info("OpenTelemetry instrumentation disabled: OTEL_ENABLED=False")
             return
 
         # Instrument async operations
