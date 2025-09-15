@@ -316,6 +316,12 @@
       "license": "BSD-3-Clause",
       "status": "✅",
       "notes": "Jupyter base image"
+    },
+    {
+      "service": "opentelemetry-collector-contrib",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
     }
   ]
 }
