@@ -32,6 +32,7 @@ class OpenTelemetrySettings(EnvironmentSettings):
     RESOURCE_SERVICE_NAMESPACE: Annotated[str | None, Field(description="Resource service namespace")] = None
     EXPORTER_OTLP_ENDPOINT: Annotated[str | None, Field(description="OTLP exporter endpoint URL")] = None
     EXPORTER_OTLP_PROTOCOL: Annotated[Literal["grpc", "http"], Field(description="OTLP protocol")] = "grpc"
+    EXPORTER_OTLP_INSECURE: Annotated[bool, Field(description="Use insecure connection (no TLS) for gRPC")] = True
 
     def configure_tracing(self) -> TracerProvider | None:
         """Configure OpenTelemetry tracing for any OTLP-compatible backend."""
@@ -65,7 +66,7 @@ class OpenTelemetrySettings(EnvironmentSettings):
         tracer_provider = TracerProvider(resource=resource)
 
         if self.EXPORTER_OTLP_PROTOCOL == "grpc":
-            otlp_exporter = GRPCSpanExporter(endpoint=self.EXPORTER_OTLP_ENDPOINT, insecure=True)
+            otlp_exporter = GRPCSpanExporter(endpoint=self.EXPORTER_OTLP_ENDPOINT, insecure=self.EXPORTER_OTLP_INSECURE)
         else:
             otlp_exporter = HTTPSpanExporter(endpoint=self.EXPORTER_OTLP_ENDPOINT)
 
@@ -105,7 +106,9 @@ class OpenTelemetrySettings(EnvironmentSettings):
         logger_provider = LoggerProvider(resource=resource)
 
         if self.EXPORTER_OTLP_PROTOCOL == "grpc":
-            otlp_log_exporter = GRPCLogExporter(endpoint=self.EXPORTER_OTLP_ENDPOINT, insecure=True)
+            otlp_log_exporter = GRPCLogExporter(
+                endpoint=self.EXPORTER_OTLP_ENDPOINT, insecure=self.EXPORTER_OTLP_INSECURE
+            )
         else:
             otlp_log_exporter = HTTPLogExporter(endpoint=self.EXPORTER_OTLP_ENDPOINT)
 
