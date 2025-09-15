@@ -69,7 +69,8 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
             queue=self.queue_group,
         )
         logger.debug(
-            f"{self.name} subscribed to '{self.subject}' with {self.stream_manager} and queue group '{self.queue_group}'."
+            f"{self.name} subscribed to '{self.subject}' with {self.stream_manager} "
+            f"and queue group '{self.queue_group}'."
         )
 
     async def stop(self):
@@ -77,7 +78,8 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
         if self.js_subscription:
             await self.js_subscription.unsubscribe()
         logger.debug(
-            f"{self.name} unsubscribed from '{self.subject}' with {self.stream_manager} and queue group '{self.queue_group}'."
+            f"{self.name} unsubscribed from '{self.subject}' with {self.stream_manager} "
+            f"and queue group '{self.queue_group}'."
         )
 
     async def message_handler(self, msg):

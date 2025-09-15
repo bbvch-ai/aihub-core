@@ -19,7 +19,7 @@ class AgentNCSubscriber(NCSubscriber[BaseEvent]):
         nc: NATS,
         topic_manager: AgentTopicManager,
         handler: Callable[[DisplayEvent, AgentInstanceTopic], Awaitable[None]],
-        subscriber_name: str = "Unnamed"
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to all display events from all agents."""
         subject = topic_manager.get_subject_for_all_display_events_in_agent()
@@ -37,7 +37,7 @@ class AgentNCSubscriber(NCSubscriber[BaseEvent]):
         nc: NATS,
         topic_manager: AgentThreadTopicManager,
         handler: Callable[[DisplayEvent, AgentInstanceTopic], Awaitable[None]],
-        subscriber_name: str = "Unnamed"
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to all display events within a specific thread."""
         subject = topic_manager.get_subject_for_display_event_in_thread("*", "*")
@@ -55,7 +55,7 @@ class AgentNCSubscriber(NCSubscriber[BaseEvent]):
         nc: NATS,
         topic_manager: AgentThreadTopicManager,
         handler: Callable[[ControlEvent, AgentInstanceTopic], Awaitable[None]],
-        subscriber_name: str = "Unnamed"
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to all events (display, control, etc.) within a specific thread."""
         subject = topic_manager.get_subject_for_all_event_in_thread("*", "*")

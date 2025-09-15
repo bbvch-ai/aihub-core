@@ -86,17 +86,22 @@ class JSPublisher(AbstractPublisher[TEvent]):
 
                     except TimeoutError:
                         logger.warning(
-                            f"{self.name} publish timeout ({attempt + 1}/{retries}) for {event.event_name} to subject {subject}"
+                            f"{self.name} publish timeout ({attempt + 1}/{retries}) for {event.event_name} "
+                            f"to subject {subject}"
                         )
                     except Exception as e:
                         logger.exception(
-                            f"{self.name} NATS error while publishing event {event.event_name} to subject {subject}: {e}"
+                            f"{self.name} NATS error while publishing event {event.event_name} "
+                            f"to subject {subject}: {e}"
                         )
 
                     await asyncio.sleep(1)  # Wait before retrying
 
                 # If we get here, all retries failed
-                error_msg = f"{self.name} failed to publish event {event.event_name} to subject {subject} after {retries} attempts"
+                error_msg = (
+                    f"{self.name} failed to publish event {event.event_name} to subject {subject} "
+                    f"after {retries} attempts"
+                )
                 span.set_attribute("messaging.success", False)
                 span.add_event("All publish attempts failed")
                 logger.exception(error_msg)

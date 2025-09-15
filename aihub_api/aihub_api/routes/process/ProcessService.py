@@ -263,13 +263,13 @@ class ProcessService:
             discovery_responses.append(event)
 
         topic_manager = ProcessTopicManager()
-        nc_publisher = NCPublisher(f"ProcessServiceClassDiscoveryRequest", nc)
+        nc_publisher = NCPublisher("ProcessServiceClassDiscoveryRequest", nc)
         nc_subscriber = ProcessNCSubscriber.for_process_class_discovery_response_events(
             nc,
             topic_manager,
             discovery_handler,
             call_id=call_id,
-            subscriber_name=f"ProcessServiceClassDiscoveryResponse",
+            subscriber_name="ProcessServiceClassDiscoveryResponse",
         )
         await nc_subscriber.start()
 

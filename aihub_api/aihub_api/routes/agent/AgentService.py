@@ -309,9 +309,9 @@ class AgentService:
             discovery_responses.append(event)
 
         topic_manager = AgentTopicManager()
-        nc_publisher = NCPublisher(f"AgentServiceClassDiscoversRequest", nc)
+        nc_publisher = NCPublisher("AgentServiceClassDiscoversRequest", nc)
         nc_subscriber = AgentNCSubscriber.for_agent_class_discovery_response_events(
-            nc, topic_manager, discovery_handler, call_id=call_id, subscriber_name=f"AgentServiceClassDiscoveryResponse"
+            nc, topic_manager, discovery_handler, call_id=call_id, subscriber_name="AgentServiceClassDiscoveryResponse"
         )
         await nc_subscriber.start()
 

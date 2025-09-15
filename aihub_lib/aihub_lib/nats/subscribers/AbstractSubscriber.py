@@ -1,7 +1,7 @@
 import abc
 import asyncio
 from collections.abc import Awaitable, Callable
-from typing import Generic, TypeVar, Annotated, Literal
+from typing import Annotated, Generic, Literal, TypeVar
 
 from nats.aio.client import Client as NATS
 
@@ -12,7 +12,6 @@ TEvent = TypeVar("TEvent", bound=BaseEvent)
 
 
 class AbstractSubscriber(Generic[TEvent], abc.ABC):
-
     def __init__(
         self,
         name: Annotated[str, "Name of the subscriber shown in otel"],

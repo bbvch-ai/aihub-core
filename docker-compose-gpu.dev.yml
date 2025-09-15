@@ -92,10 +92,12 @@ services:
       - "postgres"
     ports:
       - "6006:6006"
-      - "4317:4317"
+      - "6007:6007"
     environment:
       PHOENIX_SQL_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix"
       PHOENIX_ENABLE_AUTH: "False"
+      PHOENIX_GRPC_PORT: "6007"
+      PHOENIX_PORT: "6006"
       VERSION: ""
 
   nats:
@@ -498,3 +500,19 @@ services:
       DOCLING_MODELS: "layout tableformer code_formula easyocr"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    environment:
+      - SIGNOZ_INGESTION_CLOUD_ENDPOINT=${SIGNOZ_INGESTION_CLOUD_ENDPOINT}
+      - SIGNOZ_INGESTION_KEY=${SIGNOZ_INGESTION_KEY}
+    volumes:
+      - ./configs/otel/otel-collector-config.dev.yaml:/etc/otel-collector-config.yaml  # Fixed path
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "13133:13133"
+      - "55679:55679"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:13133/" ]

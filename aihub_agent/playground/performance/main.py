@@ -197,7 +197,7 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
 
         # Subscribe to events
         event_subscriber = AgentNCSubscriber.for_all_thread_events(
-            nc=nc, topic_manager=thread_topic_manager, handler=observe_event, subscriber_name=f"PerformanceTesting"
+            nc=nc, topic_manager=thread_topic_manager, handler=observe_event, subscriber_name="PerformanceTesting"
         )
         await event_subscriber.start()
 

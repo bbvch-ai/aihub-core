@@ -1,6 +1,6 @@
 import abc
 import logging
-from typing import Generic, TypeVar, Annotated, Literal
+from typing import Annotated, Generic, Literal, TypeVar
 
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
@@ -32,7 +32,8 @@ class AbstractPublisher(Generic[TEvent], abc.ABC):
 
         if f".{ProcessTopicManager.WORK_REQUEST_EVENT}." in subject and not event.is_work_request_event:
             logger.warning(
-                f"{self.name}: Work-Request event {event.event_name} is being published to a non-work-request subject: {subject}"
+                f"{self.name}: Work-Request event {event.event_name} is being published "
+                f"to a non-work-request subject: {subject}"
             )
 
         if f".{ProcessTopicManager.WORK_EVENT}." in subject and not event.is_work_event:
