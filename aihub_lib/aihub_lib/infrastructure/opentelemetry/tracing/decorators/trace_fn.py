@@ -4,7 +4,7 @@ import inspect
 from collections.abc import Callable
 from typing import Any
 
-from opentelemetry import trace
+from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 
 
 def trace_fn(func: Callable) -> Callable:
@@ -22,7 +22,7 @@ def trace_fn(func: Callable) -> Callable:
 
     @functools.wraps(func)
     async def async_wrapper(*args, **kwargs) -> Any:
-        tracer = trace.get_tracer(__name__)
+        tracer = get_tracer(__name__)
         span_name = func.__qualname__
 
         with tracer.start_as_current_span(span_name) as span:
@@ -46,7 +46,7 @@ def trace_fn(func: Callable) -> Callable:
 
     @functools.wraps(func)
     def sync_wrapper(*args, **kwargs) -> Any:
-        tracer = trace.get_tracer(__name__)
+        tracer = get_tracer(__name__)
         span_name = func.__qualname__
 
         with tracer.start_as_current_span(span_name) as span:

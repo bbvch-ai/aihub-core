@@ -8,7 +8,7 @@ from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from mongoengine import DictField, Document, ListField, StringField
 
-from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.persistence.messaging.entities.types.EventBucket import EventBucket
 

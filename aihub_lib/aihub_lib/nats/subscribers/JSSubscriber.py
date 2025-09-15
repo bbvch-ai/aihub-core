@@ -8,6 +8,7 @@ from nats.errors import MsgAlreadyAckdError
 from nats.js import JetStreamContext
 from opentelemetry import context, trace
 
+from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 from aihub_lib.nats.streams.StreamManager import StreamManager
 from aihub_lib.nats.subscribers.AbstractSubscriber import AbstractSubscriber, TEvent
 from aihub_lib.nats.topics import Topic
@@ -87,7 +88,7 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
         Processes incoming messages. Creates a task to handle the message
         processing and acknowledgment asynchronously without blocking.
         """
-        tracer = trace.get_tracer(__name__)
+        tracer = get_tracer(__name__)
 
         # Extract trace context from headers
         headers = getattr(msg, "headers", {}) or {}
@@ -151,7 +152,7 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
         Process the event and acknowledge the message based on result.
         Uses a semaphore to limit the number of concurrent processing.
         """
-        tracer = trace.get_tracer(__name__)
+        tracer = get_tracer(__name__)
 
         async with JSSubscriber._process_semaphore:
             with tracer.start_as_current_span(

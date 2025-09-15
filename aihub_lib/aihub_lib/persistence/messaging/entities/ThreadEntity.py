@@ -3,7 +3,7 @@ from datetime import datetime
 from bson import ObjectId
 from mongoengine import DateTimeField, Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField
 
-from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 
 class User(EmbeddedDocument):

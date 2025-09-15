@@ -1,4 +1,4 @@
-from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 
 from aihub_api.routes.role.dto.CreateRoleRequest import CreateRoleRequest

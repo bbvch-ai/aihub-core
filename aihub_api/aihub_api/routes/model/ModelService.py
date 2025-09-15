@@ -1,6 +1,6 @@
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
-from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from fastapi import HTTPException
 from httpx import Client
 

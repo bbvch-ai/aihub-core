@@ -7,6 +7,7 @@ from typing import Annotated, Any
 
 from aihub_lib.context.BaseContext import BaseContext
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 from aihub_lib.nats.events import BaseEvent, ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import ListOfSize
@@ -36,7 +37,7 @@ class AgentRunTracer:
         nc: Annotated[NATS, "NATS client for messaging."],
     ):
         self.nc = nc
-        self.tracer = trace.get_tracer(__name__)
+        self.tracer = get_tracer(__name__)
 
     def trace_run_start(self, topic: AgentInstanceTopic, event: StartEvent) -> tuple[int, dict[str, str]]:
         """

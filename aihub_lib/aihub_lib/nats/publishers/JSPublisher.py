@@ -4,8 +4,8 @@ import uuid
 from typing import Annotated
 
 from nats.js import JetStreamContext
-from opentelemetry import trace
 
+from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 from aihub_lib.nats.publishers.AbstractPublisher import AbstractPublisher, TEvent
 from aihub_lib.nats.tracing.NATSMessageHeaders import NATSMessageHeaders
 
@@ -44,7 +44,7 @@ class JSPublisher(AbstractPublisher[TEvent]):
         This ensures developers can catch configuration issues early and maintain consistent
         event routing conventions.
         """
-        tracer = trace.get_tracer(__name__)
+        tracer = get_tracer(__name__)
 
         with tracer.start_as_current_span(
             f"{self.name}.publish {event.__class__.__name__}",

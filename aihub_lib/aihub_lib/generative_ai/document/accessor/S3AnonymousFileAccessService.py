@@ -6,7 +6,7 @@ from botocore.exceptions import ClientError
 from aihub_lib.generative_ai.document.accessor.AbstractAnonymousFileAccessService import (
     AbstractAnonymousFileAccessService,
 )
-from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
 
 logger = logging.getLogger(__name__)

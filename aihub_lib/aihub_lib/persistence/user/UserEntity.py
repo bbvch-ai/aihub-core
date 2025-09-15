@@ -13,7 +13,7 @@ from mongoengine import (
     StringField,
 )
 
-from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 
 class DashboardItem(EmbeddedDocument):

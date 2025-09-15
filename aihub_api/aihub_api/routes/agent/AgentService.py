@@ -6,7 +6,7 @@ from typing import Annotated
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import (
@@ -183,7 +183,6 @@ class AgentService:
         raise HTTPException(status_code=404, detail=f"No instances found for agent class {agent_class}.")
 
     @staticmethod
-    @trace_fn
     async def _discover_agent_class(nc: NATS, agent_class: str) -> AgentClassDTO:
         """
         Retrieves details about a specific agent. If cached, returns immediately.
@@ -291,7 +290,6 @@ class AgentService:
         return configured_agents
 
     @staticmethod
-    @trace_fn
     async def _discover_agent_classes(nc: NATS) -> list[AgentClassDTO]:
         """
         Discovers all agents by broadcasting a discovery request and waiting for responses.
@@ -348,7 +346,6 @@ class AgentService:
         return [AgentDTO.from_instance(agent_instance, is_online=True, t=t) for agent_instance in discovered_agents]
 
     @staticmethod
-    @trace_fn
     async def _send_event(
         *,
         nc: NATS,
@@ -577,7 +574,6 @@ class AgentService:
         )
 
     @staticmethod
-    @trace_fn
     def _clear_cache() -> None:
         """
         Clears the in-memory caches used for agent discovery. Useful for testing purposes to ensure fresh discovery

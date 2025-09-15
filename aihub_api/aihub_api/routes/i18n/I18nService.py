@@ -1,5 +1,5 @@
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 from aihub_api.routes.i18n.dto.LocaleResponse import LocaleResponse
 

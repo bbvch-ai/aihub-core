@@ -3,8 +3,8 @@ import json
 from collections.abc import Callable
 from typing import Any
 
+from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 from openinference.semconv.trace import OpenInferenceMimeTypeValues, SpanAttributes
-from opentelemetry import trace
 from opentelemetry.trace import StatusCode
 
 
@@ -48,7 +48,7 @@ def tracing() -> Callable:
 
     def decorator(func: Callable) -> Callable:
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-            tracer = trace.get_tracer(__name__)
+            tracer = get_tracer(__name__)
             span_name = f"{func.__module__}.{func.__name__}"
 
             with tracer.start_as_current_span(
@@ -73,7 +73,7 @@ def tracing() -> Callable:
                     raise
 
         def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
-            tracer = trace.get_tracer(__name__)
+            tracer = get_tracer(__name__)
             span_name = f"{func.__module__}.{func.__name__}"
 
             with tracer.start_as_current_span(

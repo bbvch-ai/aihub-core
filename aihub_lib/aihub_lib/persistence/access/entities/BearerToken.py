@@ -6,7 +6,7 @@ from bson import ObjectId
 from mongoengine import DateTimeField, Document, IntField, StringField
 from mongoengine.errors import DoesNotExist
 
-from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 
 class BearerToken(Document):

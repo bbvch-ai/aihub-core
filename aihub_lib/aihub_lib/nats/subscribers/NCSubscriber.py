@@ -9,6 +9,7 @@ from nats.aio.subscription import Subscription
 from nats.errors import BadSubscriptionError, ConnectionDrainingError
 from opentelemetry import context, trace
 
+from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 from aihub_lib.nats.subscribers.AbstractSubscriber import AbstractSubscriber, TEvent
 from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.tracing.NATSTraceContextPropagator import NATSTraceContextPropagator
@@ -66,7 +67,7 @@ class NCSubscriber(AbstractSubscriber[TEvent]):
         Handle incoming messages. Deserializes the event, parses the subject into a Topic,
         and calls the handler without blocking.
         """
-        tracer = trace.get_tracer(__name__)
+        tracer = get_tracer(__name__)
 
         # Extract trace context from headers
         headers = getattr(msg, "headers", {}) or {}

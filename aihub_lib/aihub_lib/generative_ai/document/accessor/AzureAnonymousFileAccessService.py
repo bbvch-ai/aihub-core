@@ -6,7 +6,7 @@ from aihub_lib.generative_ai.document.accessor.AbstractAnonymousFileAccessServic
     AbstractAnonymousFileAccessService,
 )
 from aihub_lib.infrastructure.azure.blob_storage.BlobStorageAccess import BlobStorageAccess
-from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 
 class AzureAnonymousFileAccessService(AbstractAnonymousFileAccessService):

@@ -5,7 +5,7 @@ from typing import Any
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.nats.distributor.events.ExternalProcessEvent import ExternalProcessEvent
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
 from aihub_lib.nats.events import ProcessStartEvent, WorkEvent
@@ -160,7 +160,6 @@ class ProcessService:
         raise HTTPException(status_code=404, detail=f"No process instances found for class {process_class}.")
 
     @staticmethod
-    @trace_fn
     async def _discover_process_class(nc: NATS, process_class: str) -> ProcessClassDTO:
         cache_key = process_class
 
@@ -249,7 +248,6 @@ class ProcessService:
         return configured_processes
 
     @staticmethod
-    @trace_fn
     async def _discover_process_classes(nc: NATS) -> list[ProcessClassDTO]:
         cache_key = "all_process_classes"
 
@@ -308,7 +306,6 @@ class ProcessService:
         ]
 
     @staticmethod
-    @trace_fn
     async def _send_event(
         external_process_event_distributor: ExternalProcessEventDistributor,
         user: UserIdentity,

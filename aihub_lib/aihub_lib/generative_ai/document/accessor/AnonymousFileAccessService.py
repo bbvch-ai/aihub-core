@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 from azure.storage.blob import BlobSasPermissions, generate_blob_sas
 
 from aihub_lib.infrastructure.azure.blob_storage.BlobStorageAccess import BlobStorageAccess
-from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 
 class AnonymousFileAccessService:

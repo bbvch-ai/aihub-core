@@ -1,7 +1,7 @@
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
-from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 
 @trace_fn

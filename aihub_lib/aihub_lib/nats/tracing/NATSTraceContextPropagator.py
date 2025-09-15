@@ -2,6 +2,8 @@ import logging
 
 from opentelemetry import context, propagate, trace
 
+from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,7 +62,7 @@ class NATSTraceContextPropagator:
         parent_context = propagate.extract(headers or {})
 
         # Get tracer and create child span
-        tracer = trace.get_tracer(__name__)
+        tracer = get_tracer(__name__)
         span = tracer.start_span(span_name, context=parent_context)
 
         logger.debug(f"Created child span '{span_name}' from extracted context")

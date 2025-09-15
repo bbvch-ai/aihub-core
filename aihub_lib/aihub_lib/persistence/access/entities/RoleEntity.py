@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from mongoengine import Document, ListField, StringField
 
-from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 
 class RoleEntity(Document):

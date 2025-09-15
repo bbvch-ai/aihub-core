@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 from mongoengine import DateTimeField, Document
 
-from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.process import ProcessConfigEntity
 
 

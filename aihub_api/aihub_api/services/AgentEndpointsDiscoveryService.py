@@ -8,6 +8,7 @@ from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
     use_external_agent_event_distributor,
@@ -69,6 +70,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         self.nc_publisher: NCPublisher[AgentInstanceDiscoveryResponseEvent] | None = None
         self.discovery_event_subscriber: NCSubscriber[InstanceDiscoveryRequestEvent] | None = None
 
+    @no_trace
     async def _discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: AgentInstanceDiscoveryTopic):
         """
         Responds to discovery requests by publishing an AgentDiscoveryResponseEvent that includes the basic
@@ -102,6 +104,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
     @override
+    @no_trace
     async def start(self):
         started = await super().start()
         if not started:

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from bson import ObjectId
 from mongoengine import DictField, Document, ListField, StringField
 
-from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 if TYPE_CHECKING:
     from aihub_lib.nats.events import BaseEvent

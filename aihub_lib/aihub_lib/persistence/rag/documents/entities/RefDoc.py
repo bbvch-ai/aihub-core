@@ -11,7 +11,7 @@ from mongoengine import (
 )
 from mongoengine.context_managers import switch_db
 
-from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 
 class Metadata(DynamicEmbeddedDocument):

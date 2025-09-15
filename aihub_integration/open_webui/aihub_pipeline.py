@@ -1353,6 +1353,10 @@ class FileProcessingService:
 # ============================================================================
 
 
+def get_tracer(__name__):
+    pass
+
+
 class Pipe:
     """
     AI-Hub Agent Connector Pipeline - Main Facade
@@ -1520,7 +1524,7 @@ class Pipe:
             __metadata__.get("chat_id"), __metadata__.get("message_id")
         )
 
-        tracer = trace.get_tracer(__name__)
+        tracer = get_tracer(__name__)
         with tracer.start_as_current_span(
             f"Pipeline {agent_class}.{agent_id}",
             attributes={

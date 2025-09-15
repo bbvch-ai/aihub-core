@@ -5,7 +5,7 @@ from llama_index.core.llms import LLM
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.infrastructure.opentelemetry.trace_fn import trace_fn
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     HEADING_LEVEL,
     INDEX,

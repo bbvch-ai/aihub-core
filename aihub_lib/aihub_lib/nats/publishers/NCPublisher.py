@@ -2,8 +2,8 @@ import logging
 from typing import Annotated
 
 from nats.aio.client import Client as NATS
-from opentelemetry import trace
 
+from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 from aihub_lib.nats.publishers.AbstractPublisher import AbstractPublisher, TEvent
 from aihub_lib.nats.tracing.NATSMessageHeaders import NATSMessageHeaders
 
@@ -42,7 +42,7 @@ class NCPublisher(AbstractPublisher[TEvent]):
         Logs details, warns if there's a mismatch between event type and subject pattern,
         and then sends the message through the NATS client.
         """
-        tracer = trace.get_tracer(__name__)
+        tracer = get_tracer(__name__)
 
         with tracer.start_as_current_span(
             f"{self.name}.publish {event.__class__.__name__}",
