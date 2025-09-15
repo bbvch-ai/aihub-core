@@ -1,16 +1,12 @@
-import { UserManager, WebStorageStateStore, Log } from 'oidc-client-ts'
+import { UserManager, WebStorageStateStore } from 'oidc-client-ts'
 
 import { defineNuxtPlugin } from '#app'
 
 export default defineNuxtPlugin(async ({ $i18n, $router }) => {
   const config = useRuntimeConfig()
 
-  // Enable logging for debugging (remove in production)
-  Log.setLogger(console)
-  Log.setLevel(Log.INFO)
-
   const auth = new UserManager({
-    authority: `https://login.microsoftonline.com/${config.public.oidc.tenantId}/v2.0`,
+    authority: `${config.public.oidc.authorityUrl}/v2.0`,
     client_id: config.public.oidc.clientId,
     redirect_uri: `${window.location.origin}/${$i18n.locale.value}/auth/callback`,
     silent_redirect_uri: `${window.location.origin}/${$i18n.locale.value}/auth/renew`,

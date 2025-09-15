@@ -23,9 +23,6 @@ async def development_auth_api_client(controller_mount_func):
     """
     Create an AsyncClient with DangerousDevelopmentOnlyAuthHandler for testing.
 
-    Args:
-        controller_mount_func: A callable that takes the auth handler and returns a controller to mount
-
     Usage:
         @pytest.mark.asyncio
         async def test_something(development_auth_api_client):
@@ -39,7 +36,7 @@ async def development_auth_api_client(controller_mount_func):
     auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     runner.mount(controller_mount_func(auth))
 
-    app = runner.get_app()
+    app = runner.create_app()
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client
@@ -49,15 +46,12 @@ async def development_auth_api_client(controller_mount_func):
 async def token_auth_api_client(controller_mount_func):
     """
     Create an AsyncClient with TokenAuthHandler for testing.
-
-    Args:
-        controller_mount_func: A callable that takes the auth handler and returns a controller to mount
     """
     runner = ApiTestRunner()
     auth = TokenAuthHandler(identity_provider=TokenIdentityProvider())
     runner.mount(controller_mount_func(auth))
 
-    app = runner.get_app()
+    app = runner.create_app()
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client
@@ -67,15 +61,12 @@ async def token_auth_api_client(controller_mount_func):
 async def oauth2_auth_api_client(controller_mount_func):
     """
     Create an AsyncClient with OAuth2AuthHandler for testing.
-
-    Args:
-        controller_mount_func: A callable that takes the auth handler and returns a controller to mount
     """
     runner = ApiTestRunner()
     auth = OAuth2AuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     runner.mount(controller_mount_func(auth))
 
-    app = runner.get_app()
+    app = runner.create_app()
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client

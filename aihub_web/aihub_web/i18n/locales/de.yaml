@@ -1,6 +1,60 @@
 test: "Dies ist ein Test"
 welcome: "Willkommen im bbv ai-hub"
 
+models:
+  title: "Modelle"
+  error: "Fehler beim Laden der Modelle"
+  card:
+    tokens: "Token"
+    costPer1M: "Kosten/1M"
+  modelDetails:
+    overview: "Modell-Übersicht"
+    name: "Name"
+    mode: "Modus"
+    additionalInfo: "Zusätzliche Informationen"
+    maxInputTokens: "Max. Input-Token"
+    maxOutputTokens: "Max. Output-Token"
+    basicInputCost: "Input-Kosten pro 1M Token"
+    basicOutputCost: "Output-Kosten pro 1M Token"
+    advancedPricing: "Erweiterte Preise"
+    cacheCreationCost: "Cache-Erstellungskosten"
+    cacheReadCost: "Cache-Lesekosten"
+    inputCostAbove128k: "Input-Kosten (über 128K)"
+    inputCostAbove200k: "Input-Kosten (über 200K)"
+    inputAudioCost: "Input-Audio-Kosten"
+    inputBatchCost: "Input-Batch-Kosten"
+    outputBatchCost: "Output-Batch-Kosten"
+    outputAudioCost: "Output-Audio-Kosten"
+    reasoningTokenCost: "Reasoning-Token-Kosten"
+    outputCostAbove128k: "Output-Kosten (über 128K)"
+    outputCostAbove200k: "Output-Kosten (über 200K)"
+    imageCost: "Bild-Kosten"
+    searchContextCost: "Suchkontext-Kosten"
+    rateLimits: "Rate Limits"
+    tokensPerMinute: "Token pro Minute"
+    requestsPerMinute: "Anfragen pro Minute"
+    capabilities: "Fähigkeiten"
+    supportsSystemMessages: "System-Nachrichten"
+    supportsResponseSchema: "Response-Schema"
+    supportsVision: "Vision"
+    supportsFunctionCalling: "Function Calling"
+    supportsToolChoice: "Tool Choice"
+    supportsAssistantPrefill: "Assistant Prefill"
+    supportsPromptCaching: "Prompt Caching"
+    supportsAudioInput: "Audio-Input"
+    supportsAudioOutput: "Audio-Output"
+    supportsPdfInput: "PDF-Input"
+    supportsNativeStreaming: "Native Streaming"
+    supportsWebSearch: "Web-Suche"
+    supportsUrlContext: "URL-Kontext"
+    supportsReasoning: "Reasoning"
+    supportsComputerUse: "Computer Use"
+    otherDetails: "Weitere Details"
+    outputVectorSize: "Output-Vektor-Größe"
+    supportsEmbeddingImageInput: "Embedding Bild-Input"
+    supportedParams: "Unterstützte OpenAI-Parameter"
+    notSpecified: "Nicht spezifiziert"
+
 languages:
   en: "Englisch"
   de: "Deutsch"
@@ -177,6 +231,7 @@ document:
     document_type: "Dokumenttyp"
     number_of_pages: "Anzahl der Seiten"
     download: "Download"
+    is_processing: "Verarbeitung läuft"
 
 knowledge:
   title: "Wissensdatenbanken"
@@ -190,12 +245,60 @@ knowledge:
       summary: "Zusammenfassungen"
   documents:
     title: "Dokumente"
+    upload:
+      title: "Dokumente hochladen"
+      drag_and_drop: "Ziehen Sie Dateien hierher oder klicken Sie, um Dateien auszuwählen"
+      target_location:
+        label: "Speicherort"
+        help: "Ordner, in dem die Dokumente gespeichert werden sollen"
+      errors:
+        "unsupported_file_type": "Eine Datei hat einen nicht unterstützten Dateityp. Unterstützte Typen sind: {supportedTypes} | {count} Dateien haben einen nicht unterstützten Dateityp. Unterstützte Typen sind: {supportedTypes}"
+      actions:
+        upload: "Hochladen"
+        cancel: "Abbrechen"
   nodes:
     title: "Dokument-Chunks"
   summary:
     title: "Dokumentzusammenfassungen"
     level: "Ebene"
     no_summaries_at_level: "Keine Zusammenfassungen auf dieser Ebene"
+  actions:
+    save: "Speichern"
+    create: "Erstellen"
+    cancel: "Abbrechen"
+  add_folder:
+    title: "Sammlung hinzufügen"
+    description: "Eine neue Wissenssammlung erstellen"
+    cancel: "Abbrechen"
+  auto_sync:
+    title: "Automatisch synchronisiert"
+    description: "Sammlungen werden automatisch verwaltet"
+  manual_management:
+    description: "Sammlungen können manuell erstellt und verwaltet werden"
+  edit_namespace: "Sammlung bearbeiten"
+  upload_documents: "Dokumente hochladen"
+  form:
+    create:
+      title: "Sammlung erstellen"
+    edit:
+      title: "Sammlung bearbeiten"
+    database:
+      label: "Wissensdatenbank"
+      placeholder: "Name der Wissensdatenbank"
+    folder_name:
+      label: "Sammlungsname"
+      placeholder: "meine-sammlung"
+      help: "Nur alphanumerische Zeichen, Bindestriche (-) und Unterstriche (_) sind erlaubt"
+      edit_help: "Technischer Name der Sammlung"
+      validation_error: "Der Sammlungsname darf nur alphanumerische Zeichen, Bindestriche (-) und Unterstriche (_) enthalten"
+    display_name:
+      label: "Anzeigename"
+      placeholder: "Anzeigename"
+      help: "Anzeigename der Sammlung"
+    description:
+      label: "Beschreibung"
+      placeholder: "Beschreibung"
+      help: "Beschreibung der Sammlung"
 
 auth:
   renew:
@@ -332,3 +435,41 @@ role:
   role_saved:
     summary: "Rolle gespeichert"
     detail: "Rolle erfolgreich gespeichert, die neuen Zugriffsregeln treten sofort in Kraft."
+
+notification:
+  title: "Benachrichtigungen"
+  no_unread_notifications: "Keine ungelesenen Benachrichtigungen"
+  no_notifications: "Keine Benachrichtigungen verfügbar"
+  no_pending_notifications: "Keine ausstehenden Benachrichtigungen"
+  mark_all_as_read: "Alle als gelesen markieren"
+  mark_as_read: "Als gelesen markieren"
+  mark_as_done: "Als erledigt markieren"
+  view_all: "Alle Benachrichtigungen anzeigen"
+  click_to_view: "Klicken, um Benachrichtigung anzuzeigen"
+  clear_selection: "Auswahl aufheben"
+  select_all: "Alle Benachrichtigungen auswählen"
+  filter_notifications: "Benachrichtigungen filtern"
+  select_notification: "Benachrichtigung auswählen"
+  default_summary: "Neue Benachrichtigung"
+  view_button: "Anzeigen"
+  filter:
+    all: "Alle"
+    unread: "Ungelesen"
+    not_done: "Zu erledigen"
+  types:
+    info: "Info"
+    success: "Erfolg"
+    warn: "Warnung"
+    error: "Fehler"
+  severities:
+    low: "Niedrig"
+    medium: "Mittel"
+    high: "Hoch"
+    critical: "Kritisch"
+
+bar:
+  toggle_dark_mode: "Dunkelmodus umschalten"
+  show_notifications: "Benachrichtigungen anzeigen"
+
+process:
+  title: "Prozesse"

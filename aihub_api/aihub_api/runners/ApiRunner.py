@@ -1,12 +1,17 @@
 import logging
 from collections.abc import Callable
-from contextlib import AbstractAsyncContextManager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
+from typing import override
 
-from aihub_lib.infrastructure.ApiConfig import ApiConfig
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.routes.Controller import Controller
 from aihub_lib.runners.Runner import Runner
 from fastapi import FastAPI
+from fastmcp import FastMCP
+from fastmcp.server.openapi import MCPType, RouteMap
+from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
+from starlette.routing import Mount
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.i18n.middleware.I18nMiddleware import I18nMiddleware
@@ -38,10 +43,10 @@ class ApiRunner(Runner):
 
     ### Usage
     ```python
-    runner = ApiRunner(api_path="/api/v1", title="My API", debug=True)
+    runner = ApiRunner(api_path="/api/v1", title="My API")
     runner.mount(UserController(), ProductController())  # Mount controllers
     runner.mount_frontend("path/to/frontend/dist")  # Optional: serve frontend
-    app = runner.get_app()  # Get the FastAPI instance
+    app = runner.create_app()  # Get the FastAPI instance
     ```
 
     Run the resulting `app` using `uvicorn` or another ASGI server.
@@ -53,13 +58,56 @@ class ApiRunner(Runner):
         title: str = "AI Hub",
         description: str = "AI Hub Backend",
         origins: list[str] | None = None,
-        debug: bool = False,
     ):
-        super().__init__(api_path, title, description, origins, debug)
+        super().__init__(api_path, title, description, origins)
 
     @property
     def lifetime_manager(self) -> Callable[[FastAPI], AbstractAsyncContextManager]:
         return lifetime_manager
+
+    @override
+    def create_app(self) -> Starlette:
+        mcp = FastMCP.from_fastapi(
+            app=self._api_app,
+            route_maps=[
+                RouteMap(methods=["GET"], pattern=r".*\{.*\}.*", mcp_type=MCPType.RESOURCE_TEMPLATE),
+                RouteMap(methods=["GET"], pattern=r".*", mcp_type=MCPType.RESOURCE),
+                RouteMap(methods=["POST"], pattern=r".*", mcp_type=MCPType.EXCLUDE),
+                RouteMap(methods=["PUT"], pattern=r".*", mcp_type=MCPType.EXCLUDE),
+                RouteMap(methods=["PATCH"], pattern=r".*", mcp_type=MCPType.EXCLUDE),
+                RouteMap(methods=["DELETE"], pattern=r".*", mcp_type=MCPType.EXCLUDE),
+            ],
+        )
+        mcp_app = mcp.http_app(path="/")
+
+        @asynccontextmanager
+        async def combined_lifespan(app):
+            # Start API lifespan first
+            api_lifespan = self.lifetime_manager(self._api_app)
+
+            async with api_lifespan:
+                # Then start MCP lifespan
+                mcp_lifespan = mcp_app.lifespan(mcp_app)
+                async with mcp_lifespan:
+                    yield
+
+        app = Starlette(
+            routes=[Mount(self.api_path, app=self._api_app), Mount("/mcp", app=mcp_app)],
+            lifespan=combined_lifespan,
+        )
+
+        app.state.api_app = self._api_app
+        for controller in self.controllers:
+            if isinstance(controller, AgentController):
+                app.state.agent_controller = controller
+
+            if isinstance(controller, ProcessController):
+                app.state.process_controller = controller
+
+        self._api_app.state = app.state
+        mcp_app.state = app.state
+
+        return app
 
     def _get_api_app(self) -> FastAPI:
         """
@@ -69,8 +117,8 @@ class ApiRunner(Runner):
         app = super()._get_api_app()
 
         origins = self.origins or ["http://localhost:8080"]
-        if ApiConfig().FRONTEND_ORIGIN:
-            origins += [item.strip() for item in ApiConfig().FRONTEND_ORIGIN.split(",")]
+        if AIHubSettings().FRONTEND_ORIGIN:
+            origins += [item.strip() for item in AIHubSettings().FRONTEND_ORIGIN.split(",")]
 
         # Add CORS middleware
         app.add_middleware(
@@ -92,13 +140,6 @@ class ApiRunner(Runner):
         This attaches the controller’s routes under the prefix defined in the controller itself.
         """
         super().mount(*controllers)
-
-        for controller in controllers:
-            if isinstance(controller, AgentController):
-                self._api_app.state.agent_controller = controller
-
-            if isinstance(controller, ProcessController):
-                self._api_app.state.process_controller = controller
 
         self._api_app.openapi_tags = [
             {

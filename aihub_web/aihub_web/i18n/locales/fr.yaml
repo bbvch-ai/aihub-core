@@ -1,6 +1,60 @@
 test: "Ceci est un test"
 welcome: "Bienvenue sur bbv ai-hub"
 
+models:
+  title: "Modèles"
+  error: "Erreur lors du chargement des modèles"
+  card:
+    tokens: "Jetons"
+    costPer1M: "Coût/1M"
+  modelDetails:
+    overview: "Vue d'ensemble du modèle"
+    name: "Nom"
+    mode: "Mode"
+    additionalInfo: "Informations supplémentaires"
+    maxInputTokens: "Jetons d'entrée max."
+    maxOutputTokens: "Jetons de sortie max."
+    basicInputCost: "Coût d'entrée par 1M jetons"
+    basicOutputCost: "Coût de sortie par 1M jetons"
+    advancedPricing: "Tarification avancée"
+    cacheCreationCost: "Coût de création de cache"
+    cacheReadCost: "Coût de lecture de cache"
+    inputCostAbove128k: "Coût d'entrée (au-dessus de 128K)"
+    inputCostAbove200k: "Coût d'entrée (au-dessus de 200K)"
+    inputAudioCost: "Coût audio d'entrée"
+    inputBatchCost: "Coût de lot d'entrée"
+    outputBatchCost: "Coût de lot de sortie"
+    outputAudioCost: "Coût audio de sortie"
+    reasoningTokenCost: "Coût des jetons de raisonnement"
+    outputCostAbove128k: "Coût de sortie (au-dessus de 128K)"
+    outputCostAbove200k: "Coût de sortie (au-dessus de 200K)"
+    imageCost: "Coût d'image"
+    searchContextCost: "Coût du contexte de recherche"
+    rateLimits: "Limites de taux"
+    tokensPerMinute: "Jetons par minute"
+    requestsPerMinute: "Requêtes par minute"
+    capabilities: "Capacités"
+    supportsSystemMessages: "Messages système"
+    supportsResponseSchema: "Schéma de réponse"
+    supportsVision: "Vision"
+    supportsFunctionCalling: "Appel de fonction"
+    supportsToolChoice: "Choix d'outil"
+    supportsAssistantPrefill: "Préremplissage d'assistant"
+    supportsPromptCaching: "Mise en cache de prompt"
+    supportsAudioInput: "Entrée audio"
+    supportsAudioOutput: "Sortie audio"
+    supportsPdfInput: "Entrée PDF"
+    supportsNativeStreaming: "Streaming natif"
+    supportsWebSearch: "Recherche web"
+    supportsUrlContext: "Contexte URL"
+    supportsReasoning: "Raisonnement"
+    supportsComputerUse: "Utilisation d'ordinateur"
+    otherDetails: "Autres détails"
+    outputVectorSize: "Taille du vecteur de sortie"
+    supportsEmbeddingImageInput: "Entrée d'image d'embedding"
+    supportedParams: "Paramètres OpenAI supportés"
+    notSpecified: "Non spécifié"
+
 languages:
   en: "Anglais"
   de: "Allemand"
@@ -175,7 +229,8 @@ document:
     language: "Langue"
     document_type: "Type de document"
     number_of_pages: "Nombre de pages"
-    download: "Download"
+    download: "Télécharger"
+    is_processing: "Traitement en cours"
 
 knowledge:
   title: "Bases de connaissances"
@@ -189,12 +244,60 @@ knowledge:
       summary: "Résumés"
   documents:
     title: "Documents"
+    upload:
+      title: "Télécharger des documents"
+      drag_and_drop: "Glissez les fichiers ici ou cliquez pour sélectionner des fichiers"
+      target_location:
+        label: "Emplacement cible"
+        help: "Dossier où les documents doivent être stockés"
+      errors:
+        "unsupported_file_type": "Un fichier est d'un type non pris en charge. Les types pris en charge sont : {supportedTypes} | {count} fichiers sont d'un type non pris en charge. Les types pris en charge sont : {supportedTypes}"
+      actions:
+        upload: "Télécharger"
+        cancel: "Annuler"
   nodes:
     title: "Morceaux de document"
   summary:
     title: "Résumés de document"
     level: "Niveau"
     no_summaries_at_level: "Aucun résumé à ce niveau"
+  actions:
+    save: "Enregistrer"
+    create: "Créer"
+    cancel: "Annuler"
+  add_folder:
+    title: "Ajouter une collection"
+    description: "Créer une nouvelle collection de connaissances"
+    cancel: "Annuler"
+  auto_sync:
+    title: "Synchronisé automatiquement"
+    description: "Les collections sont gérées automatiquement"
+  manual_management:
+    description: "Les collections peuvent être créées et gérées manuellement"
+  edit_namespace: "Modifier la collection"
+  upload_documents: "Télécharger des documents"
+  form:
+    create:
+      title: "Créer une collection"
+    edit:
+      title: "Modifier la collection"
+    database:
+      label: "Base de connaissances"
+      placeholder: "Nom de la base de connaissances"
+    folder_name:
+      label: "Nom de la collection"
+      placeholder: "ma-collection"
+      help: "Seuls les caractères alphanumériques, tirets (-) et underscores (_) sont autorisés"
+      edit_help: "Nom technique de la collection"
+      validation_error: "Le nom de la collection ne peut contenir que des caractères alphanumériques, des tirets (-) et des underscores (_)"
+    display_name:
+      label: "Nom d'affichage"
+      placeholder: "Nom d'affichage"
+      help: "Nom d'affichage de la collection"
+    description:
+      label: "Description"
+      placeholder: "Description"
+      help: "Description de la collection"
 
 auth:
   renew:
@@ -331,3 +434,41 @@ role:
   role_saved:
     summary: "Rôle enregistré"
     detail: "Rôle enregistré avec succès, les nouvelles règles d'accès prennent effet immédiatement."
+
+notification:
+  title: "Notifications"
+  no_unread_notifications: "Aucune notification non lue"
+  no_notifications: "Aucune notification disponible"
+  no_pending_notifications: "Aucune notification en attente"
+  mark_all_as_read: "Tout marquer comme lu"
+  mark_as_read: "Marquer comme lu"
+  mark_as_done: "Marquer comme terminé"
+  view_all: "Voir toutes les notifications"
+  click_to_view: "Cliquer pour voir la notification"
+  clear_selection: "Effacer la sélection"
+  select_all: "Sélectionner toutes les notifications"
+  filter_notifications: "Filtrer les notifications"
+  select_notification: "Sélectionner la notification"
+  default_summary: "Nouvelle notification"
+  view_button: "Voir"
+  filter:
+    all: "Tous"
+    unread: "Non lus"
+    not_done: "À faire"
+  types:
+    info: "Info"
+    success: "Succès"
+    warn: "Avertissement"
+    error: "Erreur"
+  severities:
+    low: "Faible"
+    medium: "Moyenne"
+    high: "Élevée"
+    critical: "Critique"
+
+bar:
+  toggle_dark_mode: "Basculer le mode sombre"
+  show_notifications: "Afficher les notifications"
+
+process:
+  title: "Processus"

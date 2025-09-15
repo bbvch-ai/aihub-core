@@ -13,7 +13,7 @@ def materialize_all_job(namespace_name: str, config: RunConfig | None = None) ->
 
 def observe_source_job(
     observable_asset: observable_source_asset,
-    namespace_name: str,
+    source_location_name: str,
     config: RunConfig | None = None,
     job_name: str = "source_observation",
     job_description: str = "Job that observes a source asset",
@@ -27,14 +27,14 @@ def observe_source_job(
     """
     return define_asset_job(
         selection=[observable_asset],
-        name=f"{namespace_name}_{job_name}",
+        name=f"{source_location_name}_{job_name}",
         config=config,
         description=job_description,
     )
 
 
 def materialize_asset_job(
-    namespace_name: str,
+    source_location_name: str,
     job_name: str,
     asset_selection: AssetSelection,
     config: RunConfig | None = None,
@@ -42,7 +42,7 @@ def materialize_asset_job(
 ) -> JobDefinition:
     """Creates a job that materializes a specific selection of assets."""
     return define_asset_job(
-        name=f"{namespace_name}_{job_name}",
+        name=f"{source_location_name}_{job_name}",
         selection=asset_selection,
         config=config,
         description=description or "A job to materialize the selected assets.",

@@ -24,7 +24,11 @@ inputs:
     required: true
   ssh_key:
     description: 'ssh key to access private aihub core repository'
-    required: true
+    required: false
+  secondary_tag:
+    description: 'secondary tag for the image, besides the release version (e.g., latest, nightly, ...) (default: nightly)'
+    default: 'nightly'
+    required: false
 
 runs:
   using: "composite"
@@ -40,7 +44,8 @@ runs:
         username: ${{ github.actor }}
         password: ${{ inputs.github_token }}
 
-    - name: Build and push Docker image
+    - name: Build and push Docker image with ssh_key
+      if: ${{ inputs.ssh_key != '' }}
       uses: docker/build-push-action@v6
       with:
         context: ${{ inputs.context }}
@@ -48,20 +53,39 @@ runs:
         push: true
         secrets: |
             "ssh_key=${{ inputs.ssh_key }}"
-        tags: |
-          ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:${{ inputs.release_version }}
-          ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:latest
+        tags: ${{ inputs.secondary_tag != '' &&
+          format('ghcr.io/{0}/{1}/{2}:{3},ghcr.io/{0}/{1}/{2}:{4}',
+          inputs.github_repository_owner,
+          inputs.github_event_repository_name,
+          inputs.image_name,
+          inputs.release_version,
+          inputs.secondary_tag)
+          || format('ghcr.io/{0}/{1}/{2}:{3}',
+          inputs.github_repository_owner,
+          inputs.github_event_repository_name,
+          inputs.image_name,
+          inputs.release_version) }}
 
-
-    - name: Create GitHub Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
+    - name: Build and push Docker image
+      if: ${{ inputs.ssh_key == '' }}
+      uses: docker/build-push-action@v6
       with:
-        tag_name: ${{ inputs.image_name }}-${{ inputs.release_version }}
-        release_name: Release ${{ inputs.image_name }} ${{ inputs.release_version }}
-        body: |
-          Docker image '${{ inputs.image_name }}' for version ${{ inputs.release_version }} is available at:
-          `ghcr.io/${{ inputs.github_repository_owner }}/${{ inputs.github_event_repository_name }}/${{ inputs.image_name }}:${{ inputs.release_version }}`.
-        draft: false
-        prerelease: false
+        context: ${{ inputs.context }}
+        file: ${{ inputs.file }}
+        push: true
+        build-args: |
+          VERSION=${{ inputs.release_version }}
+        secrets: |
+            "ssh_key=${{ inputs.ssh_key }}"
+        tags: ${{ inputs.secondary_tag != '' &&
+          format('ghcr.io/{0}/{1}/{2}:{3},ghcr.io/{0}/{1}/{2}:{4}',
+          inputs.github_repository_owner,
+          inputs.github_event_repository_name,
+          inputs.image_name,
+          inputs.release_version,
+          inputs.secondary_tag)
+          || format('ghcr.io/{0}/{1}/{2}:{3}',
+          inputs.github_repository_owner,
+          inputs.github_event_repository_name,
+          inputs.image_name,
+          inputs.release_version) }}

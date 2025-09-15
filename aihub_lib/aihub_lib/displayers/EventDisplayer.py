@@ -8,6 +8,7 @@ from llama_index.core.callbacks import TokenCountingHandler
 from llama_index.core.llms import LLM
 from opentelemetry import trace
 
+from aihub_lib.displayers.stream.StreamProcessor import StreamProcessor
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.nats.events import ChunkEvent, DisplayEvent, LLMEvent, LLMStopEvent, ThoughtEvent
@@ -38,7 +39,7 @@ class EventDisplayer:
     Developers can correlate displayed content with the execution flow in distributed traces.
 
     ### Example
-    When an LLM is asked a question, `display_llm_stream` streams the model’s reply line-by-line as `ChunkEvent`s.
+    When an LLM is asked a question, `display_llm_stream` streams the model's reply line-by-line as `ChunkEvent`s.
     Another scenario: after completion, `display_llm_costs` publishes an `LLMCostEvent` summarizing token usage.
 
     """
@@ -122,61 +123,66 @@ class EventDisplayer:
 
         ### How it Works
         - Calls `llm.stream_chat(messages)` to get a generator of partial responses (chunks).
-        - For each chunk, buffers output until a newline or buffer exceeds `max_buffer_length`, then displays it.
+        - Maintains separate buffers for regular content and thinking content.
+        - Flushes buffers when encountering sentence boundaries (.), newlines,
+          or when buffer exceeds `max_buffer_length`.
+        - Content within <think>...</think> tags is streamed live as ThoughtEvents.
         - After streaming all chunks, retrieves token usage from `TokenCountingHandler`.
         - Returns an LLMEvent summarizing the entire conversation (inputs + full output).
 
         ### Example
-        If the LLM returns a three-line answer, `display_llm_stream` will publish
-        three `ChunkEvent`s as the lines appear, then produce a final LLMEvent with the aggregate content.
+        If the LLM returns content with thinking, `display_llm_stream` will stream both
+        ChunkEvents for regular content and ThoughtEvents for thinking content in real-time,
+        then produce a final LLMEvent with the aggregate content.
         """
+        processor = StreamProcessor(self, llm_config.model_name)
 
-        aggregate = ""
-        buffer = ""
-        max_buffer_length = 500
-
-        # Iterate over streamed chunks from the LLM
         for chunk in llm.stream_chat(messages):
-            content = chunk.delta
-            aggregate += content
-            buffer += content
+            await processor.process_chunk(chunk.delta)
 
-            # Flush buffer at newline boundaries
-            while "\n" in buffer:
-                section, buffer = buffer.split("\n", 1)
-                await self.display_chunk(section + "\n", model_name=llm_config.name)
+        aggregate_content = await processor.finalize()
+        prompt_tokens, completion_tokens = self._extract_token_counts(llm)
 
-            # If no newline but buffer large, flush to avoid delays
-            if len(buffer) > max_buffer_length:
-                await self.display_chunk(buffer, model_name=llm_config.name)
-                buffer = ""
-
-        # Flush remaining buffer after streaming finishes
-        if buffer:
-            await self.display_chunk(buffer, model_name=llm_config.name)
-
-        # Extract token counts from handler if present
-        handlers = llm.callback_manager.handlers
-        token_count_handler = next((h for h in handlers if isinstance(h, TokenCountingHandler)), None)
-        if token_count_handler:
-            token_count_prompt = token_count_handler.prompt_llm_token_count
-            token_count_completion = token_count_handler.completion_llm_token_count
-        else:
-            token_count_prompt = 0
-            token_count_completion = 0
-
-        llm_event = LLMEvent(
-            input_messages=[Message.from_llama_index(msg) for msg in messages],
-            output_messages=[Message.from_string(role="assistant", content=aggregate, name=llm_config.name)],
-            invocation_parameters=llm_config.model_dump(),
-            chat_model_name=llm_config.name,
-            provider=llm_config.__class__.__name__,
-            token_count_prompt=token_count_prompt,
-            token_count_completion=token_count_completion,
-            token_count_total=token_count_prompt + token_count_completion,
+        llm_event = self._create_llm_event(
+            messages=messages,
+            aggregate_content=aggregate_content,
+            llm_config=llm_config,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
         )
 
-        if not as_stop_step:
-            return llm_event
+        if as_stop_step:
+            return LLMStopEvent(**llm_event.model_dump())
+        return llm_event
 
-        return LLMStopEvent(**llm_event.model_dump())
+    @staticmethod
+    def _extract_token_counts(llm: LLM) -> tuple[int, int]:
+        """Extract token counts from LLM handlers."""
+        handlers = llm.callback_manager.handlers
+        token_handler = next((h for h in handlers if isinstance(h, TokenCountingHandler)), None)
+
+        if token_handler:
+            return (token_handler.prompt_llm_token_count, token_handler.completion_llm_token_count)
+        return (0, 0)
+
+    @staticmethod
+    def _create_llm_event(
+        messages: list[ChatMessage],
+        aggregate_content: str,
+        llm_config: LLMConfig,
+        prompt_tokens: int,
+        completion_tokens: int,
+    ) -> LLMEvent:
+        """Create an LLMEvent with the provided information."""
+        return LLMEvent(
+            input_messages=[Message.from_llama_index(msg) for msg in messages],
+            output_messages=[
+                Message.from_string(role="assistant", content=aggregate_content, name=llm_config.model_name)
+            ],
+            invocation_parameters=llm_config.model_dump(),
+            chat_model_name=llm_config.model_name,
+            provider=llm_config.__class__.__name__,
+            token_count_prompt=prompt_tokens,
+            token_count_completion=completion_tokens,
+            token_count_total=prompt_tokens + completion_tokens,
+        )

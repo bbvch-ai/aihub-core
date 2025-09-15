@@ -2,35 +2,23 @@ import asyncio
 from pathlib import Path
 
 import pytest
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
-from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import (
-    AzureOpenAILLMConfig,
-    AzureOpenAIParameter,
-)
-from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import (
-    OpenaiLikeLLMConfig,
-    OpenaiLikeLLMParameter,
-)
-from aihub_lib.generative_ai.resources.models.llm.embedding.azure.AzureOpenAIEmbeddingConfig import (
-    AzureOpenAIEmbeddingConfig,
-    AzureOpenAIEmbeddingParameter,
-)
-from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted.SelfHostedEmbeddingConfig import (
-    SelfHostedEmbeddingConfig,
-    SelfHostedEmbeddingParameter,
-)
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_lib.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
-from aihub_lib.persistence.rag.documents.stores.MongoDocumentStoreFactory import create_mongo_document_store
+from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreConfig import AzureAISearchVectorStoreConfig
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from aihub_lib.testing.auth_utils.fake_user import fake_user
 from aihub_lib.testing.logging.logger import enable_logging
 from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection
 from dotenv import load_dotenv
@@ -103,21 +91,8 @@ def azure_agent_config():
     """
     Return a RAGAgentConfig that uses Azure OpenAI for both the LLM and embeddings.
     """
-    llm_config = AzureOpenAILLMConfig(
-        name="gpt-4o-mini",
-        base_url="https://aihub-dev-openai-che.openai.azure.com/",
-        api_version="2024-08-01-preview",
-        prompt_tokens_costs_per_thousand=0.0045,
-        completion_tokens_costs_per_thousand=0.0133,
-        default_parameter=AzureOpenAIParameter(temperature=0.0),
-    )
-    embedding_config = AzureOpenAIEmbeddingConfig(
-        name="text-embedding-ada-002",
-        base_url="https://aihub-dev-openai-che.openai.azure.com/",
-        api_version="2024-12-01-preview",
-        embedding_tokens_costs_per_thousand=0.0,
-        default_parameter=AzureOpenAIEmbeddingParameter(),
-    )
+    llm_config = LLMConfig(model_name="azure/gpt-4o-mini")
+    embedding_config = EmbeddingModelConfig(model_name="azure/text-embedding-3-large")
     vector_store: AzureAISearchVectorStoreConfig = AzureAISearchVectorStoreConfig(
         # needed for embedding field
         vector_store_name="development",
@@ -132,7 +107,7 @@ def azure_agent_config():
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def self_hosted_agent_config(event_loop):
     """
     Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
@@ -140,34 +115,12 @@ def self_hosted_agent_config(event_loop):
     # Set the event loop for this function
     asyncio.set_event_loop(event_loop)
 
-    llm_config = OpenaiLikeLLMConfig(
-        name="unsloth/Llama-3.2-1B-Instruct",
-        base_url="http://localhost:8182/v1",
-        api_key=None,
-        context_size=16384,
-        is_chat_model=True,
-        is_function_calling_model=False,
-        default_parameter=OpenaiLikeLLMParameter(
-            logit_bias=None,
-            logprobs=None,
-        ),
-    )
-    embedding_config = SelfHostedEmbeddingConfig(
-        name="Alibaba-NLP/gte-base-en-v1.5",
-        base_url="http://localhost:8183",
-        api_key=None,
-        timeout=60,
-        embed_batch_size=32,
-        default_parameter=SelfHostedEmbeddingParameter(
-            text_instruction=None,
-            query_instruction=None,
-            truncate_text=False,
-        ),
-    )
+    llm_config = LLMConfig(model_name="local/qwen3-small")
+    embedding_config = EmbeddingModelConfig(model_name="local/qwen-embedding")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="development",
-        dimensions=768,
+        dimensions=1024,
     )
     doc_store = create_mongo_document_store(document_store_name="development")
 
@@ -220,12 +173,12 @@ def _(self_hosted_agent_config):
 @when(parsers.parse('the start event is sent with a user query "{query}"'))
 @async_test
 async def _(agent_runner: AgentTestRunner, query: str):
-    async with agent_runner.test_run(delay_before_stop=40) as topic:
+    async with agent_runner.test_run(delay_before_stop=120) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
                 messages=[ChatMessage(content=query, role=MessageRole.USER)],
-                user=fake_user(),
+                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
                 locale="en",
             ),
         )
@@ -306,12 +259,12 @@ def _(agent_runner: AgentTestRunner, datatable):
 @when(parsers.parse('the start event is sent with a user query "{query}" and locale {locale}'))
 @async_test
 async def _(agent_runner: AgentTestRunner, query: str, locale: str):
-    async with agent_runner.test_run(delay_before_stop=30) as topic:
+    async with agent_runner.test_run(delay_before_stop=120) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
                 locale=locale,
-                user=fake_user(),
+                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
                 messages=[ChatMessage(content=query, role=MessageRole.USER)],
             ),
         )
@@ -345,3 +298,44 @@ def _(agent_runner: AgentTestRunner):
     llm_event = agent_runner.get_event_of_class(LLMEvent)
     response_content = llm_event.output_messages[0].content
     assert response_content, "No generated response was returned for a valid user query"
+
+
+@given("with multi-language system prompt")
+def _(agent_runner: AgentTestRunner, datatable):
+    """
+    Given multi-language system prompt provided as a table.
+    The table should have columns: 'locale' and 'prompt'
+    """
+    prompts = {}
+    for row in datatable[1:]:
+        locale = row[0]
+        prompt = row[1]
+        prompts[locale] = prompt
+
+    agent_runner.default_agent_config.system_prompt = LocaleString(**prompts)
+    return agent_runner
+
+
+@given(parsers.parse('with multi-language system prompt for locale {locale} and prompt "{prompt}"'))
+def _(agent_runner: AgentTestRunner, locale: str, prompt: str):
+    """
+    Given multi-language system prompt for a specific locale and prompt.
+    Used for parameterized Scenario Outline with Examples.
+    """
+    agent_runner.default_agent_config.system_prompt = LocaleString(**{locale: prompt})
+    return agent_runner
+
+
+@then(parsers.parse('the LLM received the system prompt "{expected_prompt}"'))
+def _(agent_runner: AgentTestRunner, expected_prompt: str):
+    """
+    Verify that the LLM received the expected system prompt.
+    """
+    config = agent_runner.default_agent_config
+    assert config.system_prompt is not None, "System prompt was not configured"
+
+    start_event = agent_runner.get_start_event()
+    locale = start_event.locale
+
+    actual_prompt = config.system_prompt.in_locale(locale)
+    assert actual_prompt == expected_prompt, f"Expected system prompt '{expected_prompt}', got '{actual_prompt}'"

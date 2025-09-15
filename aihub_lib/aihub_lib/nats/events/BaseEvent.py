@@ -4,12 +4,11 @@ import os
 import threading
 import time
 from datetime import datetime
-from typing import Any, ClassVar
+from typing import Any, ClassVar, override
 
 from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, computed_field
-from typing_extensions import override
 
 from aihub_lib.nats.events.utils import get_inheritance_depth, get_parent_classes_until_base
 

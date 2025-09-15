@@ -1,16 +1,18 @@
 [tool.poetry]
 name = "aihub_api"
-version = "v0.224.0"
+version = "v0.244.0"
 description = "api core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
     "Marius Högger <marius.hoegger@bbv.ch>",
     "Michèle Fundneider <michele.fundneider@bbv.ch>",
+    "Thomas Mannhart <thomas.mannhart@bbv.ch>",
+    "Noah Hermann <noah.hermann@bbv.ch>",
 ]
 license = "Proprietary"
 
 [tool.poetry.dependencies]
-python = ">=3.11, <3.12"
+python = ">=3.13, <3.14"
 pydantic = "^2.10.3"
 nats-py = "^2.9.0"
 colorlog = "^6.9.0"
@@ -21,6 +23,7 @@ azure-identity = "^1.19.0"
 azure-mgmt-cosmosdb = "^9.7.0"
 azure-mgmt-resource = "^23.2.0"
 uvicorn = {extras = ["standard"], version = "^0.34.0"}
+gunicorn = "^23.0.0"
 httpx = "^0.28.1"
 cryptography = "^44.0.0"
 pyjwt = "^2.10.1"
@@ -29,9 +32,13 @@ python-multipart = "^0.0.20"
 stringcase = "^1.2.0"
 pydub = "^0.25.1"
 arize-phoenix = "^10.0.0"
+# audioop-lts is required as a compatibility shim for Python 3.13,
+# since the standard library's audioop module was removed in Python 3.13.
+audioop-lts = "^0.2.1"
+fastmcp = "^2.11.2"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.3.2"
+pytest = "^8.4.1"
 pytest-asyncio = "^0.24.0"
 ruff = "^0.8.1"
 mypy = "^1.13.0"
@@ -40,6 +47,7 @@ black = { extras = ["jupyter"], version = "^25.1.0" }
 pytest-bdd = "^8.1.0"
 pytest-cov = "^6.0.0"
 asgi-lifespan = "^2.1.0"
+pip-licenses = "^5.0.0"
 
 [tool.poetry.dependencies.jambo]
 git = "https://github.com/bbvch-ai/jambo.git"
@@ -47,7 +55,7 @@ tag = "v0.4.0"
 
 [tool.poetry.dependencies.aihub_lib]
 git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.224.0"
+tag = "v0.244.0"
 subdirectory = "aihub_lib"
 
 [build-system]
@@ -56,14 +64,14 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 line-length = 120
-target-version = 'py311'
+target-version = 'py313'
 
 [tool.ruff.lint]
 select = ["E", "F", "UP", "I"]
 
 [tool.black]
 line-length = 120
-target-version = ['py311']
+target-version = ['py313']
 include = '\.pyi?$'
 extend-exclude = '''
 /(

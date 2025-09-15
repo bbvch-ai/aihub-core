@@ -3,10 +3,10 @@ from typing import Annotated
 from pydantic import Field
 
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from aihub_lib.nats.topics.discovery.DiscoveryTopic import DiscoveryTopic
+from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
 
 
-class AgentInstanceDiscoveryTopic(DiscoveryTopic):
+class AgentInstanceDiscoveryTopic(AgentClassDiscoveryTopic):
     """
     Specialization of DiscoveryTopic for agent-specific discovery subjects, including agent_class and agent_id.
 
@@ -15,7 +15,6 @@ class AgentInstanceDiscoveryTopic(DiscoveryTopic):
     queries or responses, allowing the system to quickly identify which agent (by class and ID) is involved.
     """
 
-    agent_class: Annotated[str, Field(description="Agent class targeted by the discovery.")]
     agent_id: Annotated[str, Field(description="Specific agent instance targeted by the discovery.")]
 
     @classmethod

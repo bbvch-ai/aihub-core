@@ -7,8 +7,8 @@ from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from pydantic import Field
 
-from aihub_api.agents.AgentInstance import AgentInstance
 from aihub_api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO
+from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
 from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
 
 
@@ -29,6 +29,18 @@ class AgentDTO(MinimalAgentDTO):
         list[EventSpecs],
         Field(description="A list of `EventSpecs` representing events that can stop this agent's workflow."),
     ]
+    hitl_request_events: Annotated[
+        list[EventSpecs],
+        Field(
+            description="A list of `EventSpecs` representing human-in-the-loop request events this agent can produce."
+        ),
+    ]
+    hitl_response_events: Annotated[
+        list[EventSpecs],
+        Field(
+            description="A list of `EventSpecs` representing human-in-the-loop response events this agent can accept."
+        ),
+    ]
     network_graph: Annotated[
         WorkflowGraph,
         Field(
@@ -38,7 +50,7 @@ class AgentDTO(MinimalAgentDTO):
     is_online: Annotated[bool | None, Field(description="Indicates whether the agent is online and reachable.")] = None
 
     @classmethod
-    def from_instance(cls, instance: AgentInstance, t: LocaleHandler, is_online: bool | None = None) -> "AgentDTO":
+    def from_instance(cls, instance: AgentInstanceDTO, t: LocaleHandler, is_online: bool | None = None) -> "AgentDTO":
         """Creates an AgentDTO from an AgentInstanceDTO."""
         return cls(
             agent_class=instance.agent_class,
@@ -47,6 +59,8 @@ class AgentDTO(MinimalAgentDTO):
             is_conversational=instance.is_conversational,
             start_events=instance.start_events,
             stop_events=instance.stop_events,
+            hitl_request_events=instance.hitl_request_events,
+            hitl_response_events=instance.hitl_response_events,
             network_graph=instance.network_graph,
             is_online=is_online,
         )
@@ -75,6 +89,24 @@ class AgentDTO(MinimalAgentDTO):
             for event in entity.stop_events
         ]
 
+        hitl_request_events = [
+            EventSpecs(
+                event_name=event.event_name,
+                event_schema=event.event_schema,
+                event_parents=event.event_parents,
+            )
+            for event in entity.hitl_request_events
+        ]
+
+        hitl_response_events = [
+            EventSpecs(
+                event_name=event.event_name,
+                event_schema=event.event_schema,
+                event_parents=event.event_parents,
+            )
+            for event in entity.hitl_response_events
+        ]
+
         network_graph = WorkflowGraph.model_validate(entity.network_graph)
 
         return cls(
@@ -84,6 +116,8 @@ class AgentDTO(MinimalAgentDTO):
             is_conversational=entity.is_conversational,
             start_events=start_events,
             stop_events=stop_events,
+            hitl_request_events=hitl_request_events,
+            hitl_response_events=hitl_response_events,
             network_graph=network_graph,
             is_online=is_online,
         )

@@ -8,11 +8,18 @@ from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # 
 from aihub_lib.testing.logging.logger import enable_logging
 from fastapi import HTTPException
 
-from aihub_api.agents.AgentClass import AgentClass
-from aihub_api.agents.AgentInstance import AgentInstance
 from aihub_api.routes.agent.AgentService import GET_AGENT_INSTANCE_CACHE, AgentService
+from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
+from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
 
 enable_logging()
+
+
+@pytest.fixture(autouse=True)
+def cleanup_db_and_cache(sample_agent_config):
+    AgentService._clear_cache()
+    yield
+    AgentService._clear_cache()
 
 
 @pytest.fixture
@@ -42,7 +49,7 @@ def sample_default_config():
 @pytest.fixture
 def sample_agent_class(sample_default_config):
     """Create a sample AgentClass with default config."""
-    mock_agent_class = Mock(spec=AgentClass)
+    mock_agent_class = Mock(spec=AgentClassDTO)
     mock_agent_class.agent_class = "TestAgent"
     mock_agent_class.default_agent_config = sample_default_config
     return mock_agent_class
@@ -76,9 +83,9 @@ class TestAgentServiceDatabaseIntegration:
     ):
         """Test that AgentService.discover_agent_instance correctly fetches and uses DB config."""
         # Clear any existing cache
-        GET_AGENT_INSTANCE_CACHE.clear()
+        AgentService._clear_cache()
 
-        with patch.object(AgentService, "discover_agent_class") as mock_discover_class:
+        with patch.object(AgentService, "_discover_agent_class") as mock_discover_class:
             mock_discover_class.return_value = sample_agent_class
 
             with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find_configs:
@@ -87,8 +94,8 @@ class TestAgentServiceDatabaseIntegration:
                 with patch.object(AgentConfig, "from_entity") as mock_from_entity:
                     mock_from_entity.return_value = sample_agent_config
 
-                    with patch.object(AgentInstance, "from_class_and_config") as mock_from_class_config:
-                        mock_instance = Mock(spec=AgentInstance)
+                    with patch.object(AgentInstanceDTO, "from_class_and_config") as mock_from_class_config:
+                        mock_instance = Mock(spec=AgentInstanceDTO)
                         mock_instance.agent_config = sample_agent_config
                         mock_from_class_config.return_value = mock_instance
 
@@ -115,16 +122,16 @@ class TestAgentServiceDatabaseIntegration:
     ):
         """Test that AgentService.discover_agent_instance falls back to default config when no DB config exists."""
         # Clear any existing cache
-        GET_AGENT_INSTANCE_CACHE.clear()
+        AgentService._clear_cache()
 
-        with patch.object(AgentService, "discover_agent_class") as mock_discover_class:
+        with patch.object(AgentService, "_discover_agent_class") as mock_discover_class:
             mock_discover_class.return_value = sample_agent_class
 
             with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find_configs:
                 mock_find_configs.return_value = []  # No DB configs found
 
-                with patch.object(AgentInstance, "from_class_and_config") as mock_from_class_config:
-                    mock_instance = Mock(spec=AgentInstance)
+                with patch.object(AgentInstanceDTO, "from_class_and_config") as mock_from_class_config:
+                    mock_instance = Mock(spec=AgentInstanceDTO)
                     mock_instance.agent_config = sample_default_config
                     mock_from_class_config.return_value = mock_instance
 
@@ -150,7 +157,7 @@ class TestAgentServiceDatabaseIntegration:
     ):
         """Test that DB config overrides default config when both have the same agent_id."""
         # Clear any existing cache
-        GET_AGENT_INSTANCE_CACHE.clear()
+        AgentService._clear_cache()
 
         # Create a DB config with same ID as default
         db_config = AgentConfig(
@@ -164,7 +171,7 @@ class TestAgentServiceDatabaseIntegration:
         # Mock the document to have the same ID as default
         mock_agent_config_document.agent_id = "default_agent"
 
-        with patch.object(AgentService, "discover_agent_class") as mock_discover_class:
+        with patch.object(AgentService, "_discover_agent_class") as mock_discover_class:
             mock_discover_class.return_value = sample_agent_class
 
             with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find_configs:
@@ -173,8 +180,8 @@ class TestAgentServiceDatabaseIntegration:
                 with patch.object(AgentConfig, "from_entity") as mock_from_entity:
                     mock_from_entity.return_value = db_config
 
-                    with patch.object(AgentInstance, "from_class_and_config") as mock_from_class_config:
-                        mock_instance = Mock(spec=AgentInstance)
+                    with patch.object(AgentInstanceDTO, "from_class_and_config") as mock_from_class_config:
+                        mock_instance = Mock(spec=AgentInstanceDTO)
                         mock_instance.agent_config = db_config
                         mock_from_class_config.return_value = mock_instance
 
@@ -201,9 +208,9 @@ class TestAgentServiceDatabaseIntegration:
     async def test_discover_agent_instance_not_found(self, mock_nats, sample_agent_class):
         """Test that AgentService.discover_agent_instance raises 404 when agent not found."""
         # Clear any existing cache
-        GET_AGENT_INSTANCE_CACHE.clear()
+        AgentService._clear_cache()
 
-        with patch.object(AgentService, "discover_agent_class") as mock_discover_class:
+        with patch.object(AgentService, "_discover_agent_class") as mock_discover_class:
             mock_discover_class.return_value = sample_agent_class
 
             with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find_configs:
@@ -225,7 +232,7 @@ class TestAgentServiceDatabaseIntegration:
     ):
         """Test that AgentService.discover_agent_instances_by_class includes both DB and default configs."""
         # Clear any existing cache
-        GET_AGENT_INSTANCE_CACHE.clear()
+        AgentService._clear_cache()
 
         # Create a second DB config with different ID
         mock_doc2 = Mock()
@@ -244,7 +251,7 @@ class TestAgentServiceDatabaseIntegration:
             icon="db-icon2",
         )
 
-        with patch.object(AgentService, "discover_agent_class") as mock_discover_class:
+        with patch.object(AgentService, "_discover_agent_class") as mock_discover_class:
             mock_discover_class.return_value = sample_agent_class
 
             with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find_configs:
@@ -253,12 +260,12 @@ class TestAgentServiceDatabaseIntegration:
                 with patch.object(AgentConfig, "from_entity") as mock_from_entity:
                     mock_from_entity.side_effect = [sample_agent_config, config2]
 
-                    with patch.object(AgentInstance, "from_class_and_config") as mock_from_class_config:
-                        mock_instance1 = Mock(spec=AgentInstance)
+                    with patch.object(AgentInstanceDTO, "from_class_and_config") as mock_from_class_config:
+                        mock_instance1 = Mock(spec=AgentInstanceDTO)
                         mock_instance1.agent_config = sample_agent_config
-                        mock_instance2 = Mock(spec=AgentInstance)
+                        mock_instance2 = Mock(spec=AgentInstanceDTO)
                         mock_instance2.agent_config = config2
-                        mock_instance3 = Mock(spec=AgentInstance)
+                        mock_instance3 = Mock(spec=AgentInstanceDTO)
                         mock_instance3.agent_config = sample_default_config
 
                         mock_from_class_config.side_effect = [mock_instance1, mock_instance2, mock_instance3]
@@ -287,7 +294,7 @@ class TestAgentServiceDatabaseIntegration:
     ):
         """Test that default config is excluded when DB has config with same agent_id."""
         # Clear any existing cache
-        GET_AGENT_INSTANCE_CACHE.clear()
+        AgentService._clear_cache()
 
         # Create DB config with same ID as default
         db_config = AgentConfig(
@@ -300,7 +307,7 @@ class TestAgentServiceDatabaseIntegration:
 
         mock_agent_config_document.agent_id = "default_agent"
 
-        with patch.object(AgentService, "discover_agent_class") as mock_discover_class:
+        with patch.object(AgentService, "_discover_agent_class") as mock_discover_class:
             mock_discover_class.return_value = sample_agent_class
 
             with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find_configs:
@@ -309,8 +316,8 @@ class TestAgentServiceDatabaseIntegration:
                 with patch.object(AgentConfig, "from_entity") as mock_from_entity:
                     mock_from_entity.return_value = db_config
 
-                    with patch.object(AgentInstance, "from_class_and_config") as mock_from_class_config:
-                        mock_instance = Mock(spec=AgentInstance)
+                    with patch.object(AgentInstanceDTO, "from_class_and_config") as mock_from_class_config:
+                        mock_instance = Mock(spec=AgentInstanceDTO)
                         mock_instance.agent_config = db_config
                         mock_from_class_config.return_value = mock_instance
 
@@ -334,9 +341,9 @@ class TestAgentServiceDatabaseIntegration:
     async def test_discover_agent_instances_by_class_cache_behavior(self, mock_nats, sample_agent_class):
         """Test that AgentService.discover_agent_instances_by_class uses cache correctly."""
         # Clear any existing cache
-        GET_AGENT_INSTANCE_CACHE.clear()
+        AgentService._clear_cache()
 
-        cached_result = [Mock(spec=AgentInstance)]
+        cached_result = [Mock(spec=AgentInstanceDTO)]
         cache_key = ("TestAgent", "*")
         GET_AGENT_INSTANCE_CACHE[cache_key] = cached_result
 
@@ -350,9 +357,9 @@ class TestAgentServiceDatabaseIntegration:
     async def test_discover_agent_instance_cache_behavior(self, mock_nats, sample_agent_class):
         """Test that AgentService.discover_agent_instance uses cache correctly."""
         # Clear any existing cache
-        GET_AGENT_INSTANCE_CACHE.clear()
+        AgentService._clear_cache()
 
-        cached_result = Mock(spec=AgentInstance)
+        cached_result = Mock(spec=AgentInstanceDTO)
         cache_key = ("TestAgent", "test_agent_1")
         GET_AGENT_INSTANCE_CACHE[cache_key] = cached_result
 
@@ -370,16 +377,16 @@ class TestAgentServiceDatabaseIntegration:
     ):
         """Test that discover_agent_instances_by_class returns only default config when no DB configs exist."""
         # Clear any existing cache
-        GET_AGENT_INSTANCE_CACHE.clear()
+        AgentService._clear_cache()
 
-        with patch.object(AgentService, "discover_agent_class") as mock_discover_class:
+        with patch.object(AgentService, "_discover_agent_class") as mock_discover_class:
             mock_discover_class.return_value = sample_agent_class
 
             with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find_configs:
                 mock_find_configs.return_value = []  # No DB configs found
 
-                with patch.object(AgentInstance, "from_class_and_config") as mock_from_class_config:
-                    mock_instance = Mock(spec=AgentInstance)
+                with patch.object(AgentInstanceDTO, "from_class_and_config") as mock_from_class_config:
+                    mock_instance = Mock(spec=AgentInstanceDTO)
                     mock_instance.agent_config = sample_default_config
                     mock_from_class_config.return_value = mock_instance
 

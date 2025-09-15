@@ -1,6 +1,60 @@
 test: "Questo è un test"
 welcome: "Benvenuti in bbv ai-hub"
 
+models:
+  title: "Modelli"
+  error: "Errore nel caricamento dei modelli"
+  card:
+    tokens: "Token"
+    costPer1M: "Costo/1M"
+  modelDetails:
+    overview: "Panoramica del modello"
+    name: "Nome"
+    mode: "Modalità"
+    additionalInfo: "Informazioni aggiuntive"
+    maxInputTokens: "Max token di input"
+    maxOutputTokens: "Max token di output"
+    basicInputCost: "Costo input per 1M token"
+    basicOutputCost: "Costo output per 1M token"
+    advancedPricing: "Prezzi avanzati"
+    cacheCreationCost: "Costo creazione cache"
+    cacheReadCost: "Costo lettura cache"
+    inputCostAbove128k: "Costo input (sopra 128K)"
+    inputCostAbove200k: "Costo input (sopra 200K)"
+    inputAudioCost: "Costo audio input"
+    inputBatchCost: "Costo batch input"
+    outputBatchCost: "Costo batch output"
+    outputAudioCost: "Costo audio output"
+    reasoningTokenCost: "Costo token di ragionamento"
+    outputCostAbove128k: "Costo output (sopra 128K)"
+    outputCostAbove200k: "Costo output (sopra 200K)"
+    imageCost: "Costo immagine"
+    searchContextCost: "Costo contesto ricerca"
+    rateLimits: "Limiti di velocità"
+    tokensPerMinute: "Token per minuto"
+    requestsPerMinute: "Richieste per minuto"
+    capabilities: "Capacità"
+    supportsSystemMessages: "Messaggi di sistema"
+    supportsResponseSchema: "Schema di risposta"
+    supportsVision: "Visione"
+    supportsFunctionCalling: "Chiamata di funzione"
+    supportsToolChoice: "Scelta strumento"
+    supportsAssistantPrefill: "Precompilazione assistente"
+    supportsPromptCaching: "Cache del prompt"
+    supportsAudioInput: "Input audio"
+    supportsAudioOutput: "Output audio"
+    supportsPdfInput: "Input PDF"
+    supportsNativeStreaming: "Streaming nativo"
+    supportsWebSearch: "Ricerca web"
+    supportsUrlContext: "Contesto URL"
+    supportsReasoning: "Ragionamento"
+    supportsComputerUse: "Uso del computer"
+    otherDetails: "Altri dettagli"
+    outputVectorSize: "Dimensione vettore output"
+    supportsEmbeddingImageInput: "Input immagine embedding"
+    supportedParams: "Parametri OpenAI supportati"
+    notSpecified: "Non specificato"
+
 languages:
   en: "Inglese"
   de: "Tedesco"
@@ -175,7 +229,8 @@ document:
     language: "Lingua"
     document_type: "Tipo di documento"
     number_of_pages: "Numero di pagine"
-    download: "Download"
+    download: "Scarica"
+    is_processing: "Elaborazione in corso"
 
 knowledge:
   title: "Basi di conoscenza"
@@ -189,12 +244,60 @@ knowledge:
       summary: "Riassunti"
   documents:
     title: "Documenti"
+    upload:
+      title: "Carica documenti"
+      drag_and_drop: "Trascina i file qui o clicca per selezionare i file"
+      target_location:
+        label: "Posizione di destinazione"
+        help: "Cartella dove i documenti dovrebbero essere archiviati"
+      errors:
+       "unsupported_file_type": "Un file ha un tipo non supportato. I tipi supportati sono: {supportedTypes} | {count} file hanno un tipo non supportato. I tipi supportati sono: {supportedTypes}"
+      actions:
+        upload: "Carica"
+        cancel: "Annulla"
   nodes:
     title: "Chunk di documento"
   summary:
     title: "Riassunti del documento"
     level: "Livello"
     no_summaries_at_level: "Nessun riassunto a questo livello"
+  actions:
+    save: "Salva"
+    create: "Crea"
+    cancel: "Annulla"
+  add_folder:
+    title: "Aggiungi collezione"
+    description: "Crea una nuova collezione di conoscenza"
+    cancel: "Annulla"
+  auto_sync:
+    title: "Sincronizzato automaticamente"
+    description: "Le collezioni sono gestite automaticamente"
+  manual_management:
+    description: "Le collezioni possono essere create e gestite manualmente"
+  edit_namespace: "Modifica collezione"
+  upload_documents: "Carica documenti"
+  form:
+    create:
+      title: "Crea collezione"
+    edit:
+      title: "Modifica collezione"
+    database:
+      label: "Database di conoscenza"
+      placeholder: "Nome del database di conoscenza"
+    folder_name:
+      label: "Nome collezione"
+      placeholder: "mia-collezione"
+      help: "Sono consentiti solo caratteri alfanumerici, trattini (-) e trattini bassi (_)"
+      edit_help: "Nome tecnico della collezione"
+      validation_error: "Il nome della collezione può contenere solo caratteri alfanumerici, trattini (-) e trattini bassi (_)"
+    display_name:
+      label: "Nome visualizzato"
+      placeholder: "Nome visualizzato"
+      help: "Nome visualizzato della collezione"
+    description:
+      label: "Descrizione"
+      placeholder: "Descrizione"
+      help: "Descrizione della collezione"
 
 auth:
   renew:
@@ -243,7 +346,7 @@ dashboard:
     UserMessageEvent:
       label: "Messaggi chat utente"
     ExceptionEvent:
-
+      label: "Errori"
     HumanInTheLoopRequestEvent:
       label: "Umano nel loop"
     BotInTheLoopRequestEvent:
@@ -331,3 +434,41 @@ role:
   role_saved:
     summary: "Ruolo salvato"
     detail: "Ruolo salvato con successo, le nuove regole di accesso hanno effetto immediato."
+
+notification:
+  title: "Notifiche"
+  no_unread_notifications: "Nessuna notifica non letta"
+  no_notifications: "Nessuna notifica disponibile"
+  no_pending_notifications: "Nessuna notifica in sospeso"
+  mark_all_as_read: "Segna tutte come lette"
+  mark_as_read: "Segna come letto"
+  mark_as_done: "Segna come completato"
+  view_all: "Visualizza tutte le notifiche"
+  click_to_view: "Clicca per visualizzare la notifica"
+  clear_selection: "Cancella selezione"
+  select_all: "Seleziona tutte le notifiche"
+  filter_notifications: "Filtra notifiche"
+  select_notification: "Seleziona notifica"
+  default_summary: "Nuova notifica"
+  view_button: "Visualizza"
+  filter:
+    all: "Tutte"
+    unread: "Non lette"
+    not_done: "Da fare"
+  types:
+    info: "Info"
+    success: "Successo"
+    warn: "Avviso"
+    error: "Errore"
+  severities:
+    low: "Bassa"
+    medium: "Media"
+    high: "Alta"
+    critical: "Critica"
+
+bar:
+  toggle_dark_mode: "Attiva/disattiva modalità scura"
+  show_notifications: "Mostra notifiche"
+
+process:
+  title: "Processi"

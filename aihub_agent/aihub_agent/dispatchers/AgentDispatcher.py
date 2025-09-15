@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Annotated, Any, cast
+from typing import Annotated, Any, cast, override
 
 from aihub_lib.agents.AgentConfig import AgentConfig, StepConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
@@ -13,14 +13,14 @@ from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent 
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topics import PartialAgentTopic, Topic
-from aihub_lib.nats.topics.agents.AgentTopic import AgentTopic
+from aihub_lib.nats.topics import Topic
+from aihub_lib.nats.topics.agents.AgentClassTopic import AgentClassTopic
+from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from bson import ObjectId
 from cachetools import TTLCache
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
-from typing_extensions import override
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.context.run.RunContext import RunContext
@@ -60,7 +60,7 @@ class AgentDispatcher(BaseDispatcher):
         topic_manager: Annotated[AgentClassTopicManager, "Manages event subjects for this agent instance."],
         locale_handler: Annotated[AgentLocaleHandler, "Manages localization for the agent."],
     ):
-        super().__init__(nc, js, redis, topic_manager, PartialAgentTopic)
+        super().__init__(nc, js, redis, topic_manager, AgentClassTopic)
         self.agent = agent
         self.default_agent_config = default_agent_config
         self.locale_handler = locale_handler
@@ -71,7 +71,7 @@ class AgentDispatcher(BaseDispatcher):
     async def handle_event(
         self,
         event: Annotated[ControlEvent, "The incoming control event to handle."],
-        topic: Annotated[PartialAgentTopic, "The parsed topic of the event."],
+        topic: Annotated[AgentClassTopic, "The parsed topic of the event."],
     ):
         """
         Called whenever a new event arrives. This method:
@@ -91,6 +91,11 @@ class AgentDispatcher(BaseDispatcher):
 
         if event.is_start_event:
             agent_config_dict: dict[str, Any] = event.agent_config or self.default_agent_config.model_dump()
+            if agent_config_dict.get("agent_class") != self.agent.__name__:
+                raise ValueError(
+                    f"Agent class '{agent_config_dict.get('agent_class')}' "
+                    f"does not match agent class '{self.agent.__name__}'"
+                )
             await run_context.set("_agent_config", agent_config_dict)
 
         if agent_config_dict is None:
@@ -99,8 +104,8 @@ class AgentDispatcher(BaseDispatcher):
                 raise ValueError(f"No agent config found for event {event.event_name} and topic {topic}")
 
         run_agent_config = self.agent_config_type.model_validate(agent_config_dict)
-        topic = AgentTopic.from_partial_topic(
-            partial_topic=topic,
+        topic = AgentInstanceTopic.from_agent_class_topic(
+            agent_class_topic=topic,
             agent_id=run_agent_config.agent_id,
         )
         tracer = RunTraceCoordinator(
@@ -125,7 +130,6 @@ class AgentDispatcher(BaseDispatcher):
 
         if event.is_stop_event:
             logger.debug(f"Handling StopEvent: {event.event_name}")
-            # Clean up run-specific data
             await run_context.delete_all()
             await self.event_store.delete_all(topic.execution_context_id)
             await self.step_store.delete_all(topic.execution_context_id)
@@ -133,11 +137,9 @@ class AgentDispatcher(BaseDispatcher):
 
         if event.is_exception_event:
             logger.debug(f"Handling ExceptionEvent: {event.event_name}")
-            # Mark run as crashed so no further steps are executed
             await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
             return
 
-        # Determine which steps need to be executed due to this event
         steps = self.agent.get_steps_waiting_for_event(type(event))
         for step_method in steps:
             logger.debug(f"Checking step '{step_method.__name__}' for readiness")
@@ -166,7 +168,7 @@ class AgentDispatcher(BaseDispatcher):
         events: Annotated[dict[str, list[ControlEvent]], "All events for this run, keyed by event name."],
         run_context: Annotated[RunContext, "Per-run context for state and configuration."],
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
-        topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
+        topic: Annotated[AgentInstanceTopic, "Topic info for the current run and thread."],
         agent_config: Annotated[AgentConfig, "The agent configuration for this run."],
     ) -> bool:
         """
@@ -217,7 +219,7 @@ class AgentDispatcher(BaseDispatcher):
         events: Annotated[dict[str, list[ControlEvent]], "All events for this run, keyed by event name."],
         run_context: Annotated[RunContext, "Per-run context for state and configuration."],
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
-        topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
+        topic: Annotated[AgentInstanceTopic, "Topic info for the current run and thread."],
         agent_config: Annotated[AgentConfig, "The agent configuration for this run."],
         tracer: Annotated[RunTraceCoordinator, "Tracing coordinator for this run."],
     ):
@@ -292,7 +294,7 @@ class AgentDispatcher(BaseDispatcher):
                     if event.is_hitl_request_event:
                         logger.debug(f"Handling special event: HumanInTheLoopRequestEvent: {event}")
                         # Complete the event's topic info
-                        event.topic = AgentTopic.from_partial_topic(
+                        event.topic = AgentInstanceTopic.from_partial_topic(
                             partial_topic=event.topic,
                             agent_class=topic.agent_class,
                             agent_id=topic.agent_id,
@@ -305,7 +307,7 @@ class AgentDispatcher(BaseDispatcher):
                     if event.is_bitl_request_event:
                         logger.debug(f"Handling special event: BotInTheLoopRequestEvent: {event}")
                         # Complete the event's topic info
-                        event.topic = AgentTopic.from_partial_topic(
+                        event.topic = AgentInstanceTopic.from_partial_topic(
                             partial_topic=event.topic,
                             agent_class=topic.agent_class,
                             agent_id=topic.agent_id,
@@ -325,7 +327,7 @@ class AgentDispatcher(BaseDispatcher):
     async def publish_event(
         self,
         event: Annotated[BaseEvent, "The event to publish."],
-        topic: Annotated[AgentTopic, "Current run/thread topic context."],
+        topic: Annotated[AgentInstanceTopic, "Current run/thread topic context."],
     ):
         """
         Publishes a given event (Control or Display) to the correct subject.
@@ -346,7 +348,7 @@ class AgentDispatcher(BaseDispatcher):
         events: Annotated[dict[str, list[ControlEvent]], "All events for this run, keyed by event name."],
         run_context: Annotated[RunContext, "Per-run context for state and configuration."],
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
-        topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
+        topic: Annotated[AgentInstanceTopic, "Topic info for the current run and thread."],
         agent_config: Annotated[AgentConfig, "The agent configuration for this run."],
     ) -> EventsAndKwargs:
         step_signature = inspect.signature(method)
@@ -369,7 +371,7 @@ class AgentDispatcher(BaseDispatcher):
         agent_config: Annotated[AgentConfig, "The agent configuration for this run."],
         run_context: Annotated[RunContext, "Per-run context for state and configuration."],
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
-        topic: Annotated[AgentTopic, "Topic info for the current run and thread."],
+        topic: Annotated[AgentInstanceTopic, "Topic info for the current run and thread."],
     ) -> Annotated[Any, "The value to inject for the parameter."]:
         if step_configs.get(param.annotation):
             return step_configs[param.annotation]
@@ -404,7 +406,7 @@ class AgentDispatcher(BaseDispatcher):
         return None
 
     def get_topic_manager_for_thread(
-        self, topic: Annotated[AgentTopic, "Topic identifying the run/thread."]
+        self, topic: Annotated[AgentInstanceTopic, "Topic identifying the run/thread."]
     ) -> AgentThreadTopicManager:
         """
         Returns a thread-specific topic manager derived from the agent's instance topic manager.
@@ -418,7 +420,9 @@ class AgentDispatcher(BaseDispatcher):
             run_id=topic.run_id,
         )
 
-    async def trigger_agent_in_the_loop(self, aitl_request_event: AgentInTheLoopRequestEvent, topic: AgentTopic):
+    async def trigger_agent_in_the_loop(
+        self, aitl_request_event: AgentInTheLoopRequestEvent, topic: AgentInstanceTopic
+    ):
         """
         Orchestrates agent-to-agent delegation by creating a temporary subscription to the delegated agent.
         When agents collaborate, we need a way to route responses back to the requesting agent.
@@ -449,7 +453,7 @@ class AgentDispatcher(BaseDispatcher):
         aitl_thread_id = topic.thread_id if aitl_request_event.share_thread_id else str(ObjectId())
         aitl_display_id = topic.display_id if aitl_request_event.share_display_id else str(ObjectId())
 
-        aitl_request_event.other_agent_topic = AgentTopic.from_partial_topic(
+        aitl_request_event.other_agent_topic = AgentInstanceTopic.from_partial_topic(
             partial_topic=aitl_request_event.other_agent_topic,
             thread_id=aitl_thread_id,
             display_id=aitl_display_id,

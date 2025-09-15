@@ -196,6 +196,9 @@ class ProcessController(Controller):
         ) -> SubmittedFormDTO:
             """Submit an object satisfying a form to start a process"""
             # TODO: Check that user has access to form
+            process = await ProcessService.discover_process_instance(
+                nc=nc, process_class=process_class, process_id=process_id
+            )
             return await ProcessService.submit_process_start_form(
                 nc=nc,
                 process_class=process_class,
@@ -206,6 +209,7 @@ class ProcessController(Controller):
                 external_process_event_distributor=external_process_event_distributor,
                 user=user,
                 t=t,
+                process_config=process.process_config,
             )
 
         return self

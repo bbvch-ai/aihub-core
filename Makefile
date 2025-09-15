@@ -7,6 +7,7 @@ lint:
 	@(cd aihub_api && make lint)
 	@(cd aihub_bot && make lint)
 	@(cd aihub_iac && make lint)
+	@(cd aihub_integration && make lint)
 
 # Format code with Black
 format:
@@ -18,6 +19,15 @@ format:
 	@(cd aihub_api && make format)
 	@(cd aihub_bot && make format)
 	@(cd aihub_iac && make format)
+	@(cd aihub_integration && make format)
+
+format-md:
+	@echo "Formatting markdown files..."
+	@poetry run mdformat --number $$(git ls-files '*.md')
+
+format-md-win:
+	@echo "Formatting markdown files..."
+	@poetry run mdformat --number $(shell git ls-files *.md)
 
 # Type-check with MyPy
 typecheck:
@@ -29,6 +39,7 @@ typecheck:
 	@(cd aihub_api && make typecheck)
 	@(cd aihub_bot && make typecheck)
 	@(cd aihub_iac && make typecheck)
+	@(cd aihub_integration && make typecheck)
 
 # Run format, type-check, and test in sequence
 pr-ready:
@@ -40,18 +51,46 @@ pr-ready:
 	@(cd aihub_api &&  make pr-ready)
 	@(cd aihub_bot &&  make pr-ready)
 	@(cd aihub_iac &&  make pr-ready)
+	@(cd aihub_integration &&  make pr-ready)
+	@(cd aihub_web && make pr-ready)
+	@poetry run mdformat --number $$(git ls-files '*.md')
 
-# Use local cores for development
+# Use local cores for development (with poetry install)
 use-local-core:
-	@echo "Switching to local cores..."
+	@echo "Switching to local cores with poetry install..."
+	poetry run python switch_dependencies.py local --install
+
+# Use local cores without running poetry install (for CI)
+use-local-core-without-install:
+	@echo "Switching to local cores without poetry install..."
 	poetry run python switch_dependencies.py local
 
-TAG ?= v0.224.0
+TAG ?= v0.244.0
 
+# Use remote cores (with poetry install)
 use-remote-core:
 	@echo "Switching all microservices to remote with tag: $(TAG)"
+	poetry run python switch_dependencies.py remote --tag "$(TAG)" --install
+
+# Use remote cores without running poetry install (for CI)
+use-remote-core-without-install:
+	@echo "Switching all microservices to remote with tag: $(TAG) without poetry install..."
 	poetry run python switch_dependencies.py remote --tag "$(TAG)"
 
 changelog:
 	@echo "Generating changelog"
 	/bin/bash ./generate-changelog.sh
+	@poetry run mdformat --number $$(git ls-files '*.md')
+# Check licenses across all dependencies
+license-check:
+	@echo "Checking licenses..."
+	/bin/bash ./generate-license.sh
+	@poetry run mdformat --number $$(git ls-files '*.md')
+
+local-cert:
+	@echo "Generating mkcert certificates for localhost and nip.io..."
+	mkdir -p configs/traefik/certs
+	mkcert -key-file configs/traefik/certs/dev-key.pem -cert-file configs/traefik/certs/dev-cert.pem \
+		"localhost" "*.localhost" \
+		"127.0.0.1.nip.io" "*.127.0.0.1.nip.io"
+	@echo "✅ Certificates written to configs/traefik/certs/dev-cert.pem and configs/certs/dev-key.pem"

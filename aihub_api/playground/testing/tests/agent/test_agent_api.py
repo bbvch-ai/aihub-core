@@ -12,9 +12,9 @@ from aihub_lib.testing.logging.logger import enable_logging
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from llama_index.core.base.llms.types import ChatMessage
-from stringcase import snakecase
 
 from aihub_api.routes.agent.AgentController import AgentController
+from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.runners.simulation.agent.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 from aihub_api.services.ModelCreationService import ModelCreationService
 
@@ -31,11 +31,18 @@ async def agent_api_client():
     runner = SimulatedAgentApiTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID).with_simple_chunk_events()
     runner.mount(controller)
     await runner.start_simulation()
-    app = runner.get_app()
+    app = runner.create_app()
 
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1") as client:
             yield client
+
+
+@pytest.fixture(autouse=True)
+def cleanup_db_and_cache():
+    AgentService._clear_cache()
+    yield
+    AgentService._clear_cache()
 
 
 @pytest.mark.asyncio(loop_scope="module")
@@ -69,7 +76,7 @@ async def test_send_event_to_agent(agent_api_client):
     user_message = ModelCreationService.create_input_model_from_event_class(UserMessageEvent)(
         messages=[ChatMessage(role="user", content="Hey!")]
     )
-    path = f"/agents/{AGENT_CLASS}/{AGENT_ID}/{snakecase(UserMessageEvent.event_name_from_class())}"
+    path = f"/agents/{AGENT_CLASS}/{AGENT_ID}/{UserMessageEvent.event_name_from_class()}"
     response = await agent_api_client.post(
         url=path,
         content=user_message.model_dump_json(),

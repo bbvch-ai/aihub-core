@@ -1,9 +1,11 @@
+import asyncio
 import base64
 import html
 import os
 import re
 from typing import Any
 
+import httpx
 from bs4 import BeautifulSoup
 from docling_core.types import DoclingDocument
 from docling_core.types.doc import ImageRefMode
@@ -13,7 +15,7 @@ from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 
 from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
-from aihub_lib.infrastructure.docling.DoclingAccess import DoclingAccess
+from aihub_lib.infrastructure.docling.DoclingSettings import DoclingSettings
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     NODE_CONTENT_TYPE_FIGURE,
     NODE_CONTENT_TYPE_TABLE,
@@ -24,7 +26,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 class DoclingLoader(BaseReader):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.docling_client = DoclingAccess()
+        self.config = DoclingSettings()
 
     def load_data(
         self,
@@ -32,20 +34,52 @@ class DoclingLoader(BaseReader):
         extra_info: dict | None = None,
         fs: AbstractFileSystem | None = None,
         figures_directory_name: str | None = None,
+        include_images: bool | None = None,
     ) -> list[Document]:
+        """Load and process documents synchronously using the Docling service."""
+        include_images = include_images if include_images is not None else True
+
         fs = fs or get_default_fs()
         with fs.open(file, "rb") as pdf_file:
             encoded_string = base64.b64encode(pdf_file.read()).decode("utf-8")
         file_name = os.path.basename(file)
 
-        answer = self.docling_client.convert_document(encoded_string, file_name)
+        answer = self.convert_document(encoded_string, file_name, include_images)
+        return self._process_docling_response(answer, file, extra_info, fs, figures_directory_name)
+
+    async def aload_data(
+        self,
+        file: str,
+        extra_info: dict | None = None,
+        fs: AbstractFileSystem | None = None,
+        figures_directory_name: str | None = None,
+        include_images: bool | None = None,
+    ) -> list[Document]:
+        """Load and process documents asynchronously using the Docling service."""
+        include_images = include_images if include_images is not None else True
+
+        fs = fs or get_default_fs()
+        with fs.open(file, "rb") as pdf_file:
+            encoded_string = base64.b64encode(pdf_file.read()).decode("utf-8")
+        file_name = os.path.basename(file)
+
+        answer = await self.convert_document_async(encoded_string, file_name, include_images)
+        return self._process_docling_response(answer, file, extra_info, fs, figures_directory_name)
+
+    def _process_docling_response(
+        self,
+        answer: dict,
+        file: str,
+        extra_info: dict | None = None,
+        fs: AbstractFileSystem | None = None,
+        figures_directory_name: str | None = None,
+    ) -> list[Document]:
+        """Process the Docling API response into Document objects."""
         doc = DoclingDocument(**answer["document"]["json_content"])
         markdown_content = doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
+
         if len(doc.pictures) > 0:
-            img_strs = [
-                f"![Image](data:image/png;base64,{picture._image_to_base64(picture.get_image(doc, idx))})"
-                for idx, picture in enumerate(doc.pictures)
-            ]
+            img_strs = [picture.export_to_markdown(doc) for picture in doc.pictures]
             markdown_content = inject_table_tags(inject_figure_tags(markdown_content, img_strs))
         else:
             markdown_content = inject_table_tags(markdown_content)
@@ -74,6 +108,114 @@ class DoclingLoader(BaseReader):
                 extra_info={**extra_info, **metadata} if extra_info else metadata,
             )
         ]
+
+    def _build_request_body(self, file_content: str, filename: str, include_images: bool) -> dict:
+        """Build the request body for Docling API calls."""
+        return {
+            "options": {
+                "from_formats": self.config.FROM_FORMATS,
+                "to_formats": self.config.TO_FORMATS,
+                "image_export_mode": self.config.IMAGE_EXPORT_MODE,
+                "do_ocr": self.config.DO_OCR,
+                "force_ocr": self.config.FORCE_OCR,
+                "ocr_engine": self.config.OCR_ENGINE,
+                "pdf_backend": self.config.PDF_BACKEND,
+                "table_mode": self.config.TABLE_MODE,
+                "abort_on_error": False,
+                "do_table_structure": True,
+                "include_images": include_images,
+                "images_scale": self.config.IMAGES_SCALE,
+                "do_code_enrichment": True,
+                "do_formula_enrichment": True,
+                "do_picture_classification": False,
+                "do_picture_description": False,
+                "md_page_break_placeholder": self.config.MD_PAGE_BREAK_PLACEHOLDER,
+            },
+            "sources": [{"base64_string": file_content, "filename": filename, "kind": "file"}],
+        }
+
+    def convert_document(self, file_content: str, filename: str, include_images: bool) -> dict:
+        request_body = self._build_request_body(file_content, filename, include_images)
+
+        response = httpx.post(
+            f"{self.config.API_ENDPOINT}/v1/convert/source",
+            json=request_body,
+            headers={"Content-Type": "application/json"},
+            timeout=self.config.API_TIMEOUT,
+        )
+
+        if response.status_code != 200:
+            raise ValueError(
+                f"Docling sync API request failed with status code {response.status_code}: {response.text}"
+            )
+
+        return response.json()
+
+    async def convert_document_async(self, file_content: str, filename: str, include_images: bool) -> dict:
+        request_body = self._build_request_body(file_content, filename, include_images)
+
+        async with httpx.AsyncClient(timeout=self.config.API_TIMEOUT) as client:
+            response = await client.post(
+                f"{self.config.API_ENDPOINT}/v1/convert/source/async",
+                json=request_body,
+                headers={"Content-Type": "application/json"},
+            )
+
+            if response.status_code != 200:
+                raise ValueError(
+                    f"Docling async API request failed with status code {response.status_code}: {response.text}"
+                )
+
+            job_response = response.json()
+            task_id = job_response["task_id"]
+
+            return await self._poll_job_completion(client, task_id)
+
+    async def _poll_job_completion(self, client: httpx.AsyncClient, task_id: str) -> dict:
+        """Poll the task status until completion and return the result."""
+        for _ in range(self.config.MAX_POLLS):
+            status_response = await client.get(
+                f"{self.config.API_ENDPOINT}/v1/status/poll/{task_id}",
+                headers={"Content-Type": "application/json"},
+            )
+
+            if status_response.status_code != 200:
+                raise ValueError(
+                    f"Docling task status request failed with status code {status_response.status_code}: "
+                    f"{status_response.text}"
+                )
+
+            task_status = status_response.json()
+
+            if task_status["task_status"] == "success":
+                result_response = await client.get(
+                    f"{self.config.API_ENDPOINT}/v1/result/{task_id}",
+                    headers={"Content-Type": "application/json"},
+                )
+
+                if result_response.status_code != 200:
+                    raise ValueError(
+                        f"Docling result request failed with status code {result_response.status_code}: "
+                        f"{result_response.text}"
+                    )
+
+                return result_response.json()
+
+            elif task_status["task_status"] == "failure":
+                raise ValueError(
+                    f"Docling conversion task failed: {task_status.get('task_meta', {}).get('error', 'Unknown error')}"
+                )
+            elif task_status["task_status"] in ["pending", "started"]:
+                await asyncio.sleep(self.config.POLL_INTERVAL)
+            elif task_status["task_status"] == "skipped":
+                raise ValueError(
+                    f"Docling conversion task was skipped: "
+                    f"{task_status.get('task_meta', {}).get('reason', 'Unknown reason')}"
+                )
+            else:
+                raise ValueError(f"Unknown task status: {task_status['task_status']}")
+
+        raise TimeoutError(f"Docling conversion task {task_id} did not complete within the timeout period")
 
 
 def inject_figure_tags(markdown_text: str, img_strs: list[str]):

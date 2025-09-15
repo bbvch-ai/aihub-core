@@ -135,6 +135,22 @@ export const AgentDTOSchema = {
             title: 'Stop Events',
             description: "A list of `EventSpecs` representing events that can stop this agent's workflow."
         },
+        hitl_request_events: {
+            items: {
+                '$ref': '#/components/schemas/EventSpecs'
+            },
+            type: 'array',
+            title: 'Hitl Request Events',
+            description: 'A list of `EventSpecs` representing human-in-the-loop request events this agent can produce.'
+        },
+        hitl_response_events: {
+            items: {
+                '$ref': '#/components/schemas/EventSpecs'
+            },
+            type: 'array',
+            title: 'Hitl Response Events',
+            description: 'A list of `EventSpecs` representing human-in-the-loop response events this agent can accept.'
+        },
         network_graph: {
             '$ref': '#/components/schemas/WorkflowGraph',
             description: 'A network graph of the agent, showing how different components are connected and interact.'
@@ -153,7 +169,7 @@ export const AgentDTOSchema = {
         }
     },
     type: 'object',
-    required: ['agent_class', 'agent_id', 'agent_config', 'is_conversational', 'start_events', 'stop_events', 'network_graph'],
+    required: ['agent_class', 'agent_id', 'agent_config', 'is_conversational', 'start_events', 'stop_events', 'hitl_request_events', 'hitl_response_events', 'network_graph'],
     title: 'AgentDTO',
     description: `A data transfer object for representing agent information in responses.
 This DTO standardizes how agent data is returned from the service layer to the controller,
@@ -218,7 +234,7 @@ Used during deserialization to decide which subclass to instantiate.`,
     title: 'AgentEvent'
 } as const;
 
-export const AgentInDTOSchema = {
+export const AgentInSpecsSchema = {
     properties: {
         agent_class: {
             type: 'string',
@@ -242,7 +258,11 @@ export const AgentInDTOSchema = {
     },
     type: 'object',
     required: ['agent_class', 'agent_id', 'is_process_start', 'event_specs'],
-    title: 'AgentInDTO'
+    title: 'AgentInSpecs',
+    description: `Defines the specifications of a piece of work that can be submitted by an agent.
+It is limited to an exact agent by class and id and holds the event specs of the
+agents stop events, as these stop events are translated to work events and submitted
+to the agentic process as inputs.`
 } as const;
 
 export const AgentInTheLoopExceptionEventSchema = {
@@ -363,7 +383,7 @@ export const AgentInTheLoopRequestEventSchema = {
                     '$ref': '#/components/schemas/PartialAgentTopic'
                 },
                 {
-                    '$ref': '#/components/schemas/AgentTopic'
+                    '$ref': '#/components/schemas/AgentInstanceTopic'
                 }
             ],
             title: 'Other Agent Topic',
@@ -484,59 +504,7 @@ When an agent completes a task delegated through an \`AgentInTheLoopRequestEvent
 - Is visible to the UI (since it's also a \`DisplayEvent\`), enabling monitoring of agent interactions`
 } as const;
 
-export const AgentProcessStepDTOSchema = {
-    properties: {
-        step_index: {
-            type: 'integer',
-            title: 'Step Index',
-            description: 'Order of this step in the walkthrough (0-based).'
-        },
-        step_type: {
-            type: 'string',
-            title: 'Step Type',
-            description: 'Type of entity involved in this step.',
-            default: 'agent'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp when this step was created in nanoseconds.'
-        },
-        is_completed: {
-            type: 'boolean',
-            title: 'Is Completed',
-            description: 'Whether this step has been completed (has a work response).'
-        },
-        work_request: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/AgentWorkRequestDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'The agent work request for this step.'
-        },
-        work_response: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/AgentWorkResponseDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'The agent work response for this step. May be None if work is not yet completed.'
-        }
-    },
-    type: 'object',
-    required: ['step_index', 'created_at', 'is_completed'],
-    title: 'AgentProcessStepDTO',
-    description: 'DTO representing an agent process step with agent-specific work request and response information.'
-} as const;
-
-export const AgentTopicSchema = {
+export const AgentInstanceTopicSchema = {
     properties: {
         agent_class: {
             type: 'string',
@@ -581,7 +549,7 @@ export const AgentTopicSchema = {
     },
     type: 'object',
     required: ['agent_class', 'agent_id', 'run_id', 'thread_id', 'display_id', 'event_type', 'event_name', 'event_id'],
-    title: 'AgentTopic',
+    title: 'AgentInstanceTopic',
     description: `Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
 to be present. This includes identifiers for agent_class, agent_id, and the event itself.
 
@@ -596,172 +564,6 @@ routing or logging a complete event identifier.
 If an event subject is something like:
 "agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"
 then this AgentTopic can represent it, providing quick field-level access and serialization.`
-} as const;
-
-export const AgentWorkRequestDTOSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id',
-            description: 'Unique identifier of the work request event.'
-        },
-        event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: 'Name of the event type.'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp when the work was requested in nanoseconds.'
-        },
-        request_type: {
-            type: 'string',
-            enum: ['human', 'agent', 'program'],
-            title: 'Request Type',
-            description: 'Type of entity the work was requested from.'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Name',
-            description: 'Human-readable name for the work request.'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Description',
-            description: 'Human-readable description of the work request.'
-        },
-        data: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Data',
-            description: 'The work request event data.'
-        },
-        agent_class: {
-            type: 'string',
-            title: 'Agent Class',
-            description: 'The class of the agent that should handle this request.'
-        },
-        agent_id: {
-            type: 'string',
-            title: 'Agent Id',
-            description: 'The ID of the agent that should handle this request.'
-        },
-        agent_info: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/MinimalAgentDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Detailed information about the agent, if available.'
-        },
-        start_event: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Start Event',
-            description: 'The start event that will be sent to the agent.',
-            default: {}
-        }
-    },
-    type: 'object',
-    required: ['event_id', 'event_name', 'created_at', 'request_type', 'display_name', 'display_description', 'data', 'agent_class', 'agent_id'],
-    title: 'AgentWorkRequestDTO',
-    description: 'DTO representing an agent work request with specific agent-related information.'
-} as const;
-
-export const AgentWorkResponseDTOSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id',
-            description: 'Unique identifier of the work response event.'
-        },
-        event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: 'Name of the event type.'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp when the work was completed in nanoseconds.'
-        },
-        response_type: {
-            type: 'string',
-            enum: ['human', 'agent', 'program'],
-            title: 'Response Type',
-            description: 'Type of entity that completed the work.'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Name',
-            description: 'Human-readable name for the work response.'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Description',
-            description: 'Human-readable description of the work response.'
-        },
-        data: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Data',
-            description: 'The work response event data.'
-        },
-        agent_info: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/MinimalAgentDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Detailed information about the agent, if available.'
-        },
-        agent_stop_event: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Agent Stop Event',
-            description: 'The stop event returned by the agent after completing the work.',
-            default: {}
-        }
-    },
-    type: 'object',
-    required: ['event_id', 'event_name', 'created_at', 'response_type', 'display_name', 'display_description', 'data'],
-    title: 'AgentWorkResponseDTO',
-    description: 'DTO representing an agent work response with specific agent-related information.'
 } as const;
 
 export const AnnotationSchema = {
@@ -806,102 +608,6 @@ export const AnnotationURLCitationSchema = {
     title: 'AnnotationURLCitation'
 } as const;
 
-export const AssistantChatMessage_InputSchema = {
-    properties: {
-        role: {
-            '$ref': '#/components/schemas/MessageRole-Input',
-            default: 'user'
-        },
-        additional_kwargs: {
-            '$ref': '#/components/schemas/additional_kwargs'
-        },
-        blocks: {
-            items: {
-                oneOf: [
-                    {
-                        '$ref': '#/components/schemas/TextBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ImageBlock-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/AudioBlock-Input'
-                    }
-                ],
-                discriminator: {
-                    propertyName: 'block_type',
-                    mapping: {
-                        audio: '#/components/schemas/AudioBlock-Input',
-                        image: '#/components/schemas/ImageBlock-Input',
-                        text: '#/components/schemas/TextBlock'
-                    }
-                }
-            },
-            type: 'array',
-            title: 'Blocks'
-        },
-        agent_id: {
-            type: 'string',
-            title: 'Agent Id'
-        },
-        agent_class: {
-            type: 'string',
-            title: 'Agent Class'
-        }
-    },
-    type: 'object',
-    required: ['additional_kwargs', 'agent_id', 'agent_class'],
-    title: 'AssistantChatMessage'
-} as const;
-
-export const AssistantChatMessage_OutputSchema = {
-    properties: {
-        role: {
-            '$ref': '#/components/schemas/MessageRole-Output',
-            default: 'user'
-        },
-        additional_kwargs: {
-            title: 'Additional Kwargs'
-        },
-        blocks: {
-            items: {
-                oneOf: [
-                    {
-                        '$ref': '#/components/schemas/TextBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ImageBlock-Output'
-                    },
-                    {
-                        '$ref': '#/components/schemas/AudioBlock-Output'
-                    }
-                ],
-                discriminator: {
-                    propertyName: 'block_type',
-                    mapping: {
-                        audio: '#/components/schemas/AudioBlock-Output',
-                        image: '#/components/schemas/ImageBlock-Output',
-                        text: '#/components/schemas/TextBlock'
-                    }
-                }
-            },
-            type: 'array',
-            title: 'Blocks'
-        },
-        agent_id: {
-            type: 'string',
-            title: 'Agent Id'
-        },
-        agent_class: {
-            type: 'string',
-            title: 'Agent Class'
-        }
-    },
-    type: 'object',
-    required: ['agent_id', 'agent_class'],
-    title: 'AssistantChatMessage'
-} as const;
-
 export const AudioSchema = {
     properties: {
         id: {
@@ -914,72 +620,7 @@ export const AudioSchema = {
     title: 'Audio'
 } as const;
 
-export const AudioBlock_InputSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'audio',
-            title: 'Block Type',
-            default: 'audio'
-        },
-        audio: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'binary'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Audio'
-        },
-        path: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'file-path'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Path'
-        },
-        url: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 2083,
-                    minLength: 1,
-                    format: 'uri'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Url'
-        },
-        format: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Format'
-        }
-    },
-    type: 'object',
-    title: 'AudioBlock'
-} as const;
-
-export const AudioBlock_OutputSchema = {
+export const AudioBlockSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -1040,7 +681,8 @@ export const AudioBlock_OutputSchema = {
         }
     },
     type: 'object',
-    title: 'AudioBlock'
+    title: 'AudioBlock',
+    description: 'A representation of audio data to directly pass to/from the LLM.'
 } as const;
 
 export const AudioContentSchema = {
@@ -1165,224 +807,60 @@ export const Body_create_transcription_openai_audio_transcriptions_postSchema = 
     title: 'Body_create_transcription_openai_audio_transcriptions_post'
 } as const;
 
-export const CascadeSelectSchema = {
+export const BulkUpdateNotificationRequestSchema = {
     properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primeCascadeSelect',
-            title: 'Formkit',
-            description: 'PrimeVue CascadeSelect element.',
-            default: 'primeCascadeSelect'
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Validation Rules',
-            description: 'Validation expression'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        placeholder: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Placeholder',
-            description: 'Placeholder text'
-        },
-        options: {
+        notification_ids: {
             items: {
-                additionalProperties: {
-                    anyOf: [
-                        {
-                            type: 'string'
-                        },
-                        {
-                            '$ref': '#/components/schemas/LocaleString'
-                        },
-                        {}
-                    ]
-                },
-                type: 'object'
+                type: 'string'
             },
             type: 'array',
-            title: 'Options',
-            description: 'Array of hierarchical option objects'
+            title: 'Notification Ids',
+            description: 'The IDs of the notifications to update.'
         },
-        optionLabel: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Optionlabel',
-            description: 'Property name to use as the label of an option'
-        },
-        optionValue: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Optionvalue',
-            description: 'Property name to use as the value of an option'
-        },
-        optionGroupLabel: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Optiongrouplabel',
-            description: 'Property name to use as the label of an option group'
-        },
-        optionGroupChildren: {
-            anyOf: [
-                {
-                    items: {
-                        type: 'string'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Optiongroupchildren',
-            description: 'Property names that define the children of option groups'
-        },
-        filter: {
-            type: 'boolean',
-            title: 'Filter',
-            description: 'Whether to enable filtering',
-            default: false
-        },
-        multiple: {
-            type: 'boolean',
-            title: 'Multiple',
-            description: 'Whether to allow multiple selections',
-            default: false
-        },
-        validation: {
-            type: 'string',
-            title: 'Validation',
-            readOnly: true
+        updates: {
+            '$ref': '#/components/schemas/UpdateNotificationRequest',
+            description: 'The updates to apply to each notification.'
         }
     },
-    additionalProperties: true,
     type: 'object',
-    required: ['label', 'options', 'validation'],
-    title: 'CascadeSelect',
-    description: 'https://formkit-primevue.netlify.app/inputs/CascadeSelect'
+    required: ['notification_ids', 'updates'],
+    title: 'BulkUpdateNotificationRequest',
+    description: 'Request model for updating multiple notifications at once.'
+} as const;
+
+export const CacheControlSchema = {
+    properties: {
+        type: {
+            type: 'string',
+            title: 'Type'
+        },
+        ttl: {
+            type: 'string',
+            title: 'Ttl',
+            default: '5m'
+        }
+    },
+    type: 'object',
+    required: ['type'],
+    title: 'CacheControl'
+} as const;
+
+export const CachePointSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'cache',
+            title: 'Block Type',
+            default: 'cache'
+        },
+        cache_control: {
+            '$ref': '#/components/schemas/CacheControl'
+        }
+    },
+    type: 'object',
+    required: ['cache_control'],
+    title: 'CachePoint',
+    description: 'Used to set the point to cache up to, if the LLM supports caching.'
 } as const;
 
 export const ChainEventSchema = {
@@ -1484,7 +962,7 @@ export const ChatCompletionSchema = {
             anyOf: [
                 {
                     type: 'string',
-                    enum: ['auto', 'default', 'flex']
+                    enum: ['auto', 'default', 'flex', 'scale', 'priority']
                 },
                 {
                     type: 'null'
@@ -1638,7 +1116,7 @@ export const ChatCompletionAudioParamSchema = {
                 },
                 {
                     type: 'string',
-                    enum: ['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'onyx', 'nova', 'sage', 'shimmer', 'verse']
+                    enum: ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse']
                 }
             ],
             title: 'Voice'
@@ -1997,7 +1475,7 @@ export const ChatCompletionRequestSchema = {
                 },
                 {
                     type: 'string',
-                    enum: ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4.1-2025-04-14', 'gpt-4.1-mini-2025-04-14', 'gpt-4.1-nano-2025-04-14', 'o4-mini', 'o4-mini-2025-04-16', 'o3', 'o3-2025-04-16', 'o3-mini', 'o3-mini-2025-01-31', 'o1', 'o1-2024-12-17', 'o1-preview', 'o1-preview-2024-09-12', 'o1-mini', 'o1-mini-2024-09-12', 'gpt-4o', 'gpt-4o-2024-11-20', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-audio-preview', 'gpt-4o-audio-preview-2024-10-01', 'gpt-4o-audio-preview-2024-12-17', 'gpt-4o-mini-audio-preview', 'gpt-4o-mini-audio-preview-2024-12-17', 'gpt-4o-search-preview', 'gpt-4o-mini-search-preview', 'gpt-4o-search-preview-2025-03-11', 'gpt-4o-mini-search-preview-2025-03-11', 'chatgpt-4o-latest', 'gpt-4o-mini', 'gpt-4o-mini-2024-07-18', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4-0125-preview', 'gpt-4-turbo-preview', 'gpt-4-1106-preview', 'gpt-4-vision-preview', 'gpt-4', 'gpt-4-0314', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-4-32k-0613', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0301', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0125', 'gpt-3.5-turbo-16k-0613']
+                    enum: ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4.1-2025-04-14', 'gpt-4.1-mini-2025-04-14', 'gpt-4.1-nano-2025-04-14', 'o4-mini', 'o4-mini-2025-04-16', 'o3', 'o3-2025-04-16', 'o3-mini', 'o3-mini-2025-01-31', 'o1', 'o1-2024-12-17', 'o1-preview', 'o1-preview-2024-09-12', 'o1-mini', 'o1-mini-2024-09-12', 'gpt-4o', 'gpt-4o-2024-11-20', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-audio-preview', 'gpt-4o-audio-preview-2024-10-01', 'gpt-4o-audio-preview-2024-12-17', 'gpt-4o-audio-preview-2025-06-03', 'gpt-4o-mini-audio-preview', 'gpt-4o-mini-audio-preview-2024-12-17', 'gpt-4o-search-preview', 'gpt-4o-mini-search-preview', 'gpt-4o-search-preview-2025-03-11', 'gpt-4o-mini-search-preview-2025-03-11', 'chatgpt-4o-latest', 'codex-mini-latest', 'gpt-4o-mini', 'gpt-4o-mini-2024-07-18', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4-0125-preview', 'gpt-4-turbo-preview', 'gpt-4-1106-preview', 'gpt-4-vision-preview', 'gpt-4', 'gpt-4-0314', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-4-32k-0613', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0301', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0125', 'gpt-3.5-turbo-16k-0613']
                 }
             ],
             title: 'Model',
@@ -2515,50 +1993,10 @@ export const ChatCompletionUserMessageParamSchema = {
     title: 'ChatCompletionUserMessageParam'
 } as const;
 
-export const ChatMessage_InputSchema = {
+export const ChatMessageSchema = {
     properties: {
         role: {
-            '$ref': '#/components/schemas/MessageRole-Input',
-            default: 'user'
-        },
-        additional_kwargs: {
-            '$ref': '#/components/schemas/additional_kwargs'
-        },
-        blocks: {
-            items: {
-                oneOf: [
-                    {
-                        '$ref': '#/components/schemas/TextBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ImageBlock-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/AudioBlock-Input'
-                    }
-                ],
-                discriminator: {
-                    propertyName: 'block_type',
-                    mapping: {
-                        audio: '#/components/schemas/AudioBlock-Input',
-                        image: '#/components/schemas/ImageBlock-Input',
-                        text: '#/components/schemas/TextBlock'
-                    }
-                }
-            },
-            type: 'array',
-            title: 'Blocks'
-        }
-    },
-    type: 'object',
-    required: ['additional_kwargs'],
-    title: 'ChatMessage'
-} as const;
-
-export const ChatMessage_OutputSchema = {
-    properties: {
-        role: {
-            '$ref': '#/components/schemas/MessageRole-Output',
+            '$ref': '#/components/schemas/MessageRole',
             default: 'user'
         },
         additional_kwargs: {
@@ -2571,17 +2009,33 @@ export const ChatMessage_OutputSchema = {
                         '$ref': '#/components/schemas/TextBlock'
                     },
                     {
-                        '$ref': '#/components/schemas/ImageBlock-Output'
+                        '$ref': '#/components/schemas/ImageBlock'
                     },
                     {
-                        '$ref': '#/components/schemas/AudioBlock-Output'
+                        '$ref': '#/components/schemas/AudioBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/DocumentBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CachePoint'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CitableBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CitationBlock'
                     }
                 ],
                 discriminator: {
                     propertyName: 'block_type',
                     mapping: {
-                        audio: '#/components/schemas/AudioBlock-Output',
-                        image: '#/components/schemas/ImageBlock-Output',
+                        audio: '#/components/schemas/AudioBlock',
+                        cache: '#/components/schemas/CachePoint',
+                        citable: '#/components/schemas/CitableBlock',
+                        citation: '#/components/schemas/CitationBlock',
+                        document: '#/components/schemas/DocumentBlock',
+                        image: '#/components/schemas/ImageBlock',
                         text: '#/components/schemas/TextBlock'
                     }
                 }
@@ -2593,181 +2047,6 @@ export const ChatMessage_OutputSchema = {
     type: 'object',
     title: 'ChatMessage',
     description: 'Chat message.'
-} as const;
-
-export const CheckboxSchema = {
-    properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primeCheckbox',
-            title: 'Formkit',
-            description: 'PrimeVue Checkbox element.',
-            default: 'primeCheckbox'
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Validation Rules',
-            description: 'Validation expression'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        binary: {
-            type: 'boolean',
-            title: 'Binary',
-            description: 'Whether the checkbox works in binary mode',
-            default: true
-        },
-        indeterminate: {
-            type: 'boolean',
-            title: 'Indeterminate',
-            description: 'Whether the checkbox is in indeterminate state',
-            default: false
-        },
-        trueValue: {
-            title: 'Truevalue',
-            description: 'Value to emit when checked',
-            default: true
-        },
-        falseValue: {
-            title: 'Falsevalue',
-            description: 'Value to emit when unchecked',
-            default: false
-        },
-        prefix: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Prefix',
-            description: 'Prefix text'
-        },
-        suffix: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Suffix',
-            description: 'Suffix text'
-        },
-        validation: {
-            type: 'string',
-            title: 'Validation',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['label', 'validation'],
-    title: 'Checkbox',
-    description: 'https://formkit-primevue.netlify.app/inputs/Checkbox'
 } as const;
 
 export const ChoiceSchema = {
@@ -2882,18 +2161,6 @@ export const ChunkEventSchema = {
             description: 'The name of the AI model generating the chunks.',
             default: 'aihub'
         },
-        reasoning_content: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Reasoning Content',
-            description: 'The textual representation of the agent’s internal reasoning at a particular point in time.'
-        },
         _event_name: {
             type: 'string',
             title: 'Event Name',
@@ -2926,145 +2193,100 @@ responses as they are generated, improving user experience by not forcing them t
 for the entire answer.`
 } as const;
 
-export const ColorPickerSchema = {
+export const CitableBlockSchema = {
     properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
-        formkit: {
+        block_type: {
             type: 'string',
-            const: 'primeColorPicker',
-            title: 'Formkit',
-            description: 'PrimeVue ColorPicker element.',
-            default: 'primeColorPicker'
+            const: 'citable',
+            title: 'Block Type',
+            default: 'citable'
         },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Validation Rules',
-            description: 'Validation expression'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        inline: {
-            type: 'boolean',
-            title: 'Inline',
-            description: 'Whether to display the picker inline',
-            default: false
-        },
-        format: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Format',
-            description: 'Format of the color value (hex, rgb, hsl)'
-        },
-        validation: {
+        title: {
             type: 'string',
-            title: 'Validation',
-            readOnly: true
+            title: 'Title'
+        },
+        source: {
+            type: 'string',
+            title: 'Source'
+        },
+        content: {
+            items: {
+                oneOf: [
+                    {
+                        '$ref': '#/components/schemas/TextBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ImageBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/DocumentBlock'
+                    }
+                ],
+                discriminator: {
+                    propertyName: 'block_type',
+                    mapping: {
+                        document: '#/components/schemas/DocumentBlock',
+                        image: '#/components/schemas/ImageBlock',
+                        text: '#/components/schemas/TextBlock'
+                    }
+                }
+            },
+            type: 'array',
+            title: 'Content'
         }
     },
-    additionalProperties: true,
     type: 'object',
-    required: ['label', 'validation'],
-    title: 'ColorPicker',
-    description: 'https://formkit-primevue.netlify.app/inputs/ColorPicker'
+    required: ['title', 'source', 'content'],
+    title: 'CitableBlock',
+    description: 'Supports providing citable content to LLMs that have built-in citation support.'
+} as const;
+
+export const CitationBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'citation',
+            title: 'Block Type',
+            default: 'citation'
+        },
+        cited_content: {
+            oneOf: [
+                {
+                    '$ref': '#/components/schemas/TextBlock'
+                },
+                {
+                    '$ref': '#/components/schemas/ImageBlock'
+                }
+            ],
+            title: 'Cited Content',
+            discriminator: {
+                propertyName: 'block_type',
+                mapping: {
+                    image: '#/components/schemas/ImageBlock',
+                    text: '#/components/schemas/TextBlock'
+                }
+            }
+        },
+        source: {
+            type: 'string',
+            title: 'Source'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        additional_location_info: {
+            additionalProperties: {
+                type: 'integer'
+            },
+            type: 'object',
+            title: 'Additional Location Info'
+        }
+    },
+    type: 'object',
+    required: ['cited_content', 'source', 'title', 'additional_location_info'],
+    title: 'CitationBlock',
+    description: 'A representation of cited content from past messages.'
 } as const;
 
 export const CompletionTokensDetailsSchema = {
@@ -3361,6 +2583,39 @@ By subclassing \`BaseEvent\`, \`ControlEvent\` benefits from automatic type regi
 serialization, ensuring that control signals are as easy to produce and consume as any other event.`
 } as const;
 
+export const CreateNamespaceRequestSchema = {
+    properties: {
+        database_name: {
+            type: 'string',
+            title: 'Database Name',
+            description: 'The name of the database to which the namespace belongs.'
+        },
+        namespace_name: {
+            type: 'string',
+            title: 'Namespace Name',
+            description: 'The name of the namespace to create.'
+        },
+        folder_name: {
+            type: 'string',
+            title: 'Folder Name',
+            description: 'The name of the folder to which the namespace belongs.'
+        },
+        display_name: {
+            type: 'string',
+            title: 'Display Name',
+            description: "The display name of the namespace in the user's locale."
+        },
+        description: {
+            type: 'string',
+            title: 'Description',
+            description: "A short description of the namespace in the user's locale."
+        }
+    },
+    type: 'object',
+    required: ['database_name', 'namespace_name', 'folder_name'],
+    title: 'CreateNamespaceRequest'
+} as const;
+
 export const CreateRoleRequestSchema = {
     properties: {
         name: {
@@ -3625,9 +2880,26 @@ export const DatabaseDTOSchema = {
             title: 'Name',
             description: 'Name of database'
         },
+        display_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name',
+            description: 'Localized display name of database'
+        },
+        auto_sync: {
+            type: 'boolean',
+            title: 'Auto Sync',
+            description: 'Whether this database auto-syncs namespaces'
+        },
         namespaces: {
             items: {
-                '$ref': '#/components/schemas/Namespace'
+                '$ref': '#/components/schemas/NamespaceDTO'
             },
             type: 'array',
             title: 'Namespaces',
@@ -3635,7 +2907,7 @@ export const DatabaseDTOSchema = {
         }
     },
     type: 'object',
-    required: ['name', 'namespaces'],
+    required: ['name', 'display_name', 'auto_sync', 'namespaces'],
     title: 'DatabaseDTO'
 } as const;
 
@@ -3799,189 +3071,6 @@ export const DatasetUpdateSchema = {
     type: 'object',
     required: ['items'],
     title: 'DatasetUpdate'
-} as const;
-
-export const DatePickerSchema = {
-    properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primeDatePicker',
-            title: 'Formkit',
-            description: 'PrimeVue DatePicker element.',
-            default: 'primeDatePicker'
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Validation Rules',
-            description: 'Validation expression'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        placeholder: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Placeholder',
-            description: 'Placeholder text'
-        },
-        dateFormat: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Dateformat',
-            description: 'Format of the date display',
-            default: 'dd.mm.yy'
-        },
-        showIcon: {
-            type: 'boolean',
-            title: 'Showicon',
-            description: 'Whether to show the calendar icon',
-            default: false
-        },
-        icon: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^pi pi-[a-z0-9-]+$'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Icon',
-            description: 'Custom icon class'
-        },
-        selectionMode: {
-            type: 'string',
-            enum: ['single', 'range', 'multiple'],
-            title: 'Selectionmode',
-            description: 'Selection mode for dates',
-            default: 'single'
-        },
-        manualInput: {
-            type: 'boolean',
-            title: 'Manualinput',
-            description: 'Whether to allow manual input',
-            default: true
-        },
-        validation: {
-            type: 'string',
-            title: 'Validation',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['label', 'validation'],
-    title: 'DatePicker',
-    description: 'https://formkit-primevue.netlify.app/inputs/DatePicker'
 } as const;
 
 export const DeleteRoleResponseSchema = {
@@ -4178,6 +3267,166 @@ export const DisplayStatisticsSchema = {
     required: ['display_id'],
     title: 'DisplayStatistics',
     description: 'Statistics for a display, including its runs, intended for API response.'
+} as const;
+
+export const DocumentBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'document',
+            title: 'Block Type',
+            default: 'document'
+        },
+        data: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'binary'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Data'
+        },
+        path: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'file-path'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Path'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        title: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Title'
+        },
+        document_mimetype: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Document Mimetype'
+        }
+    },
+    type: 'object',
+    title: 'DocumentBlock',
+    description: 'A representation of a document to directly pass to the LLM.'
+} as const;
+
+export const DocumentDTOSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'Unique identifier of the document.'
+        },
+        source: {
+            type: 'string',
+            title: 'Source',
+            description: 'Source URI of original document.'
+        },
+        namespace: {
+            type: 'string',
+            title: 'Namespace',
+            description: 'The namespace of the document within its metadata.'
+        },
+        created_at: {
+            type: 'string',
+            title: 'Created At',
+            description: 'Date source document was created (ISO format string)'
+        },
+        updated_at: {
+            type: 'string',
+            title: 'Updated At',
+            description: 'Date source document was last updated (ISO format string)'
+        },
+        inserted_at: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Inserted At',
+            description: 'Date source document was inserted into document store (ISO format string)'
+        },
+        is_ingested: {
+            type: 'boolean',
+            title: 'Is Ingested',
+            description: 'Indicates if the document has been ingested.'
+        },
+        content: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Content',
+            description: 'Content of the document.'
+        },
+        number_of_pages: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Number Of Pages',
+            description: 'Number of Pages in the Document.'
+        },
+        document_title: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Document Title',
+            description: 'Document title.'
+        }
+    },
+    type: 'object',
+    required: ['id', 'source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'is_ingested'],
+    title: 'DocumentDTO'
 } as const;
 
 export const EdgeDataSchema = {
@@ -5161,6 +4410,137 @@ export const FileFileSchema = {
     title: 'FileFile'
 } as const;
 
+export const FileUploadRequestSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Filename',
+            description: 'Original filename of the file'
+        },
+        content_type: {
+            type: 'string',
+            title: 'Content Type',
+            description: 'MIME type of the file'
+        },
+        content_length: {
+            type: 'integer',
+            exclusiveMinimum: 0,
+            title: 'Content Length',
+            description: 'Size of the file in bytes'
+        },
+        namespace_name: {
+            type: 'string',
+            title: 'Namespace Name',
+            description: 'Target namespace name'
+        },
+        database_name: {
+            type: 'string',
+            title: 'Database Name',
+            description: 'Target database name'
+        }
+    },
+    type: 'object',
+    required: ['filename', 'content_type', 'content_length', 'namespace_name', 'database_name'],
+    title: 'FileUploadRequest',
+    description: `Request payload for initiating file upload to knowledge base.
+
+This request is used to get presigned URLs for direct S3/MinIO upload
+of files that will be processed and indexed in the knowledge base.`
+} as const;
+
+export const FileUploadResponseSchema = {
+    properties: {
+        upload_url: {
+            type: 'string',
+            title: 'Upload Url',
+            description: 'Presigned URL for uploading the file to a datalake'
+        },
+        upload_id: {
+            type: 'string',
+            title: 'Upload Id',
+            description: 'Unique identifier for this upload session'
+        },
+        container: {
+            type: 'string',
+            title: 'Container',
+            description: 'The bucket/container name where file will be stored'
+        },
+        folder: {
+            type: 'string',
+            title: 'Folder',
+            description: 'The folder name within the bucket/container'
+        },
+        object_key: {
+            type: 'string',
+            title: 'Object Key',
+            description: 'The object key/path for the uploaded file'
+        },
+        expires_in: {
+            type: 'integer',
+            title: 'Expires In',
+            description: 'Upload URL expiration time in seconds'
+        }
+    },
+    type: 'object',
+    required: ['upload_url', 'upload_id', 'container', 'folder', 'object_key', 'expires_in'],
+    title: 'FileUploadResponse',
+    description: `Response payload for file upload initialization.
+
+Contains the presigned URL for direct datalake upload and metadata
+needed to complete the upload process.`
+} as const;
+
+export const FileUploadValidationRequestSchema = {
+    properties: {
+        container: {
+            type: 'string',
+            title: 'Container',
+            description: 'Name of the container/bucket where the file was uploaded'
+        },
+        file_path: {
+            type: 'string',
+            title: 'File Path',
+            description: 'Path/key of the uploaded file within the container'
+        }
+    },
+    type: 'object',
+    required: ['container', 'file_path'],
+    title: 'FileUploadValidationRequest',
+    description: `Request for validating whether a file was successfully uploaded to cloud storage.
+
+This request contains the information needed to verify that a file upload completed
+successfully in the globally configured datalake (S3, MinIO, or Azure Blob Storage).`
+} as const;
+
+export const FileUploadValidationResponseSchema = {
+    properties: {
+        exists: {
+            type: 'boolean',
+            title: 'Exists',
+            description: 'Whether the file exists in the datalake'
+        },
+        file_path: {
+            type: 'string',
+            title: 'File Path',
+            description: 'Path/key of the file that was validated'
+        },
+        container: {
+            type: 'string',
+            title: 'Container',
+            description: 'Name of the container/bucket'
+        }
+    },
+    type: 'object',
+    required: ['exists', 'file_path', 'container'],
+    title: 'FileUploadValidationResponse',
+    description: `Response containing the validation result of a file upload.
+
+This response indicates whether the uploaded file exists in the globally
+configured datalake and provides information about the validation process.`
+} as const;
+
 export const Function_OutputSchema = {
     properties: {
         arguments: {
@@ -5421,18 +4801,6 @@ export const HtmlElementSchema = {
             title: 'If',
             description: 'Conditional expression to show this element'
         },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
         '$el': {
             type: 'string',
             title: '$El',
@@ -5495,16 +4863,14 @@ Example:
     title = HtmlElement(el="h1", children="My Title")`
 } as const;
 
-export const HumanInDTOSchema = {
+export const HumanInSpecsSchema = {
     properties: {
         name: {
-            type: 'string',
-            title: 'Name',
+            '$ref': '#/components/schemas/LocaleString',
             description: 'The name of the work event.'
         },
         description: {
-            type: 'string',
-            title: 'Description',
+            '$ref': '#/components/schemas/LocaleString',
             description: 'A description of the work event, providing details about its purpose.'
         },
         route: {
@@ -5533,64 +4899,7 @@ export const HumanInDTOSchema = {
                         '$ref': '#/components/schemas/HtmlElement'
                     },
                     {
-                        '$ref': '#/components/schemas/InputText'
-                    },
-                    {
-                        '$ref': '#/components/schemas/CascadeSelect'
-                    },
-                    {
-                        '$ref': '#/components/schemas/Checkbox'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ColorPicker'
-                    },
-                    {
-                        '$ref': '#/components/schemas/DatePicker'
-                    },
-                    {
-                        '$ref': '#/components/schemas/InputMask'
-                    },
-                    {
-                        '$ref': '#/components/schemas/InputNumber'
-                    },
-                    {
-                        '$ref': '#/components/schemas/InputOtp'
-                    },
-                    {
-                        '$ref': '#/components/schemas/Knob'
-                    },
-                    {
-                        '$ref': '#/components/schemas/Listbox'
-                    },
-                    {
-                        '$ref': '#/components/schemas/MultiSelect'
-                    },
-                    {
-                        '$ref': '#/components/schemas/Password'
-                    },
-                    {
-                        '$ref': '#/components/schemas/RadioButton'
-                    },
-                    {
-                        '$ref': '#/components/schemas/Rating'
-                    },
-                    {
-                        '$ref': '#/components/schemas/Select'
-                    },
-                    {
-                        '$ref': '#/components/schemas/SelectButton'
-                    },
-                    {
-                        '$ref': '#/components/schemas/Slider'
-                    },
-                    {
-                        '$ref': '#/components/schemas/Textarea'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ToggleButton'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ToggleSwitch'
+                        '$ref': '#/components/schemas/InputTextElement'
                     }
                 ]
             },
@@ -5602,7 +4911,12 @@ export const HumanInDTOSchema = {
     },
     type: 'object',
     required: ['name', 'description', 'route', 'method', 'is_process_start', 'event_specs'],
-    title: 'HumanInDTO'
+    title: 'HumanInSpecs',
+    description: `Defines a piece of work that can be submitted by a human.
+It holds information about the form that the user must fill in in order to generate the exact
+data structure defined in the event specs of the work event.
+It also holds the route and http method that must be used to finally post that work event data
+to the API, which will forward it to the appropriate process.`
 } as const;
 
 export const HumanInTheLoopRequestEventSchema = {
@@ -5649,7 +4963,7 @@ export const HumanInTheLoopRequestEventSchema = {
                     '$ref': '#/components/schemas/PartialAgentTopic'
                 },
                 {
-                    '$ref': '#/components/schemas/AgentTopic'
+                    '$ref': '#/components/schemas/AgentInstanceTopic'
                 }
             ],
             title: 'Topic',
@@ -5755,256 +5069,6 @@ Once a human operator provides an answer to a \`HumanInTheLoopRequestEvent\`, th
 - Is visible to the UI (since it's also a \`DisplayEvent\`), allowing transparency and auditing.`
 } as const;
 
-export const HumanProcessStepDTOSchema = {
-    properties: {
-        step_index: {
-            type: 'integer',
-            title: 'Step Index',
-            description: 'Order of this step in the walkthrough (0-based).'
-        },
-        step_type: {
-            type: 'string',
-            title: 'Step Type',
-            description: 'Type of entity involved in this step.',
-            default: 'human'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp when this step was created in nanoseconds.'
-        },
-        is_completed: {
-            type: 'boolean',
-            title: 'Is Completed',
-            description: 'Whether this step has been completed (has a work response).'
-        },
-        work_request: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/HumanWorkRequestDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'The human work request for this step.'
-        },
-        work_response: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/HumanWorkResponseDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'The human work response for this step. May be None if work is not yet completed.'
-        }
-    },
-    type: 'object',
-    required: ['step_index', 'created_at', 'is_completed'],
-    title: 'HumanProcessStepDTO',
-    description: 'DTO representing a human process step with human-specific work request and response information.'
-} as const;
-
-export const HumanWorkRequestDTOSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id',
-            description: 'Unique identifier of the work request event.'
-        },
-        event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: 'Name of the event type.'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp when the work was requested in nanoseconds.'
-        },
-        request_type: {
-            type: 'string',
-            enum: ['human', 'agent', 'program'],
-            title: 'Request Type',
-            description: 'Type of entity the work was requested from.'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Name',
-            description: 'Human-readable name for the work request.'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Description',
-            description: 'Human-readable description of the work request.'
-        },
-        data: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Data',
-            description: 'The work request event data.'
-        },
-        user_ids: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'User Ids',
-            description: 'List of user IDs that can respond to this request.',
-            default: []
-        },
-        user_emails: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'User Emails',
-            description: 'List of user emails that can respond to this request.',
-            default: []
-        },
-        user_roles: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'User Roles',
-            description: 'List of user roles that can respond to this request.',
-            default: []
-        },
-        notify: {
-            type: 'boolean',
-            title: 'Notify',
-            description: 'Whether users should be notified about this request.',
-            default: false
-        },
-        forms: {
-            items: {
-                additionalProperties: true,
-                type: 'object'
-            },
-            type: 'array',
-            title: 'Forms',
-            description: 'List of forms that users can submit.',
-            default: []
-        },
-        endpoint: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Endpoint',
-            description: 'API endpoint for form submission.'
-        },
-        method: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Method',
-            description: 'HTTP method for form submission.'
-        }
-    },
-    type: 'object',
-    required: ['event_id', 'event_name', 'created_at', 'request_type', 'display_name', 'display_description', 'data'],
-    title: 'HumanWorkRequestDTO',
-    description: 'DTO representing a human work request with specific human-related information.'
-} as const;
-
-export const HumanWorkResponseDTOSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id',
-            description: 'Unique identifier of the work response event.'
-        },
-        event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: 'Name of the event type.'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp when the work was completed in nanoseconds.'
-        },
-        response_type: {
-            type: 'string',
-            enum: ['human', 'agent', 'program'],
-            title: 'Response Type',
-            description: 'Type of entity that completed the work.'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Name',
-            description: 'Human-readable name for the work response.'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Description',
-            description: 'Human-readable description of the work response.'
-        },
-        data: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Data',
-            description: 'The work response event data.'
-        },
-        submitted_by: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/MinimalUserDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'The user who submitted this work response.'
-        }
-    },
-    type: 'object',
-    required: ['event_id', 'event_name', 'created_at', 'response_type', 'display_name', 'display_description', 'data'],
-    title: 'HumanWorkResponseDTO',
-    description: 'DTO representing a human work response with specific human-related information.'
-} as const;
-
 export const ImageSchema = {
     properties: {
         b64_json: {
@@ -6046,83 +5110,7 @@ export const ImageSchema = {
     title: 'Image'
 } as const;
 
-export const ImageBlock_InputSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'image',
-            title: 'Block Type',
-            default: 'image'
-        },
-        image: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'binary'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Image'
-        },
-        path: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'file-path'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Path'
-        },
-        url: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 2083,
-                    minLength: 1,
-                    format: 'uri'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Url'
-        },
-        image_mimetype: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Image Mimetype'
-        },
-        detail: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Detail'
-        }
-    },
-    type: 'object',
-    title: 'ImageBlock'
-} as const;
-
-export const ImageBlock_OutputSchema = {
+export const ImageBlockSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -6194,7 +5182,8 @@ export const ImageBlock_OutputSchema = {
         }
     },
     type: 'object',
-    title: 'ImageBlock'
+    title: 'ImageBlock',
+    description: 'A representation of image data to directly pass to/from the LLM.'
 } as const;
 
 export const ImageContentSchema = {
@@ -6335,6 +5324,18 @@ export const ImagesResponseSchema = {
             type: 'integer',
             title: 'Created'
         },
+        background: {
+            anyOf: [
+                {
+                    type: 'string',
+                    enum: ['transparent', 'opaque']
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Background'
+        },
         data: {
             anyOf: [
                 {
@@ -6349,10 +5350,46 @@ export const ImagesResponseSchema = {
             ],
             title: 'Data'
         },
+        output_format: {
+            anyOf: [
+                {
+                    type: 'string',
+                    enum: ['png', 'webp', 'jpeg']
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Format'
+        },
+        quality: {
+            anyOf: [
+                {
+                    type: 'string',
+                    enum: ['low', 'medium', 'high']
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Quality'
+        },
+        size: {
+            anyOf: [
+                {
+                    type: 'string',
+                    enum: ['1024x1024', '1024x1536', '1536x1024']
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Size'
+        },
         usage: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/Usage'
+                    '$ref': '#/components/schemas/openai__types__images_response__Usage'
                 },
                 {
                     type: 'null'
@@ -6364,120 +5401,6 @@ export const ImagesResponseSchema = {
     type: 'object',
     required: ['created'],
     title: 'ImagesResponse'
-} as const;
-
-export const IngestedDocumentSchema = {
-    properties: {
-        source: {
-            type: 'string',
-            title: 'Source',
-            description: 'Source URI of original document.'
-        },
-        namespace: {
-            type: 'string',
-            title: 'Namespace',
-            description: 'The namespace of the document within its metadata.'
-        },
-        version: {
-            type: 'integer',
-            title: 'Version',
-            description: 'Document version.',
-            default: 1
-        },
-        content_hash: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Content Hash',
-            description: 'Hash of the document/node, helpful to track whether file changed.'
-        },
-        number_of_pages: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Number Of Pages',
-            description: 'Number of Pages in the Document.'
-        },
-        document_title: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Document Title',
-            description: 'Document title.'
-        },
-        language: {
-            anyOf: [
-                {
-                    type: 'string',
-                    enum: ['de', 'en', 'fr', 'it']
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Language',
-            description: 'Document language.'
-        },
-        created_at: {
-            type: 'string',
-            title: 'Created At',
-            description: 'Date source document was created (ISO format string)'
-        },
-        updated_at: {
-            type: 'string',
-            title: 'Updated At',
-            description: 'Date source document was last updated (ISO format string)'
-        },
-        inserted_at: {
-            type: 'string',
-            title: 'Inserted At',
-            description: 'Date source document was inserted into document store (ISO format string)'
-        },
-        metadata: {
-            anyOf: [
-                {
-                    additionalProperties: true,
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Metadata',
-            description: 'Additional metadata for the document.'
-        },
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: 'Unique identifier for the document.'
-        },
-        content: {
-            type: 'string',
-            title: 'Content',
-            description: 'Content of the document.'
-        }
-    },
-    type: 'object',
-    required: ['source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'id'],
-    title: 'IngestedDocument',
-    description: `Set of default metadata for a document or - what llama index calls it - a ref_doc. A ref doc is the databae
-representation of a document that was ingested through a pipeline. Hence, compared to the default data,
-we also have an ID and content that was parsed from the original file.`
 } as const;
 
 export const IngestedNodeSchema = {
@@ -6812,7 +5735,7 @@ export const InputEventInfoSchema = {
     description: 'Information about an input event for a step.'
 } as const;
 
-export const InputMaskSchema = {
+export const InputTextElementSchema = {
     properties: {
         is_formkit_element: {
             type: 'boolean',
@@ -6833,661 +5756,6 @@ export const InputMaskSchema = {
             ],
             title: 'If',
             description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primeInputMask',
-            title: 'Formkit',
-            description: 'PrimeVue InputMask element.',
-            default: 'primeInputMask'
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Validation Rules',
-            description: 'Validation expression'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        placeholder: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Placeholder',
-            description: 'Placeholder text'
-        },
-        mask: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Mask',
-            description: 'Input mask pattern'
-        },
-        slotChar: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Slotchar',
-            description: 'Placeholder character for mask slots'
-        },
-        autoClear: {
-            type: 'boolean',
-            title: 'Autoclear',
-            description: 'Whether to clear incomplete values on blur',
-            default: true
-        },
-        unmask: {
-            type: 'boolean',
-            title: 'Unmask',
-            description: 'Whether to return unmasked value',
-            default: false
-        },
-        iconPrefix: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^pi pi-[a-z0-9-]+$'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Iconprefix',
-            description: 'Icon prefix'
-        },
-        iconSuffix: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^pi pi-[a-z0-9-]+$'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Iconsuffix',
-            description: 'Icon suffix'
-        },
-        validation: {
-            type: 'string',
-            title: 'Validation',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['label', 'validation'],
-    title: 'InputMask',
-    description: 'https://formkit-primevue.netlify.app/inputs/InputMask'
-} as const;
-
-export const InputNumberSchema = {
-    properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primeInputNumber',
-            title: 'Formkit',
-            description: 'PrimeVue InputNumber element.',
-            default: 'primeInputNumber'
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Validation Rules',
-            description: 'Validation expression'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        placeholder: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Placeholder',
-            description: 'Placeholder text'
-        },
-        min: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Min',
-            description: 'Minimum value'
-        },
-        max: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Max',
-            description: 'Maximum value'
-        },
-        step: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Step',
-            description: 'Step factor for increment/decrement'
-        },
-        useGrouping: {
-            type: 'boolean',
-            title: 'Usegrouping',
-            description: 'Whether to use grouping separators',
-            default: true
-        },
-        minFractionDigits: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Minfractiondigits',
-            description: 'Minimum number of fraction digits'
-        },
-        maxFractionDigits: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Maxfractiondigits',
-            description: 'Maximum number of fraction digits'
-        },
-        locale: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Locale',
-            description: 'Locale to use for number formatting'
-        },
-        mode: {
-            anyOf: [
-                {
-                    type: 'string',
-                    enum: ['decimal', 'currency']
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Mode',
-            description: 'Input mode'
-        },
-        currency: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Currency',
-            description: 'Currency code for currency mode'
-        },
-        prefix: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Prefix',
-            description: 'Prefix text'
-        },
-        suffix: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Suffix',
-            description: 'Suffix text'
-        },
-        showButtons: {
-            type: 'boolean',
-            title: 'Showbuttons',
-            description: 'Whether to show increment/decrement buttons',
-            default: false
-        },
-        buttonLayout: {
-            anyOf: [
-                {
-                    type: 'string',
-                    enum: ['stacked', 'horizontal']
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Buttonlayout',
-            description: 'Layout of increment/decrement buttons'
-        },
-        validation: {
-            type: 'string',
-            title: 'Validation',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['label', 'validation'],
-    title: 'InputNumber',
-    description: 'https://formkit-primevue.netlify.app/inputs/InputNumber'
-} as const;
-
-export const InputOtpSchema = {
-    properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primeInputOtp',
-            title: 'Formkit',
-            description: 'PrimeVue InputOtp element.',
-            default: 'primeInputOtp'
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Validation Rules',
-            description: 'Validation expression'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        length: {
-            type: 'integer',
-            title: 'Length',
-            description: 'Number of characters in the OTP',
-            default: 4
-        },
-        integerOnly: {
-            type: 'boolean',
-            title: 'Integeronly',
-            description: 'Whether to allow only integers',
-            default: false
-        },
-        mask: {
-            type: 'boolean',
-            title: 'Mask',
-            description: 'Whether to mask the input characters',
-            default: false
-        },
-        variant: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Variant',
-            description: 'Styling variant of the component'
-        },
-        validation: {
-            type: 'string',
-            title: 'Validation',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['label', 'validation'],
-    title: 'InputOtp',
-    description: 'https://formkit-primevue.netlify.app/inputs/InputOtp'
-} as const;
-
-export const InputTextSchema = {
-    properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
         },
         formkit: {
             type: 'string',
@@ -7509,15 +5777,7 @@ export const InputTextSchema = {
             description: 'Name of this field'
         },
         label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
+            '$ref': '#/components/schemas/LocaleString',
             description: 'Label of this field'
         },
         help: {
@@ -7526,22 +5786,12 @@ export const InputTextSchema = {
                     '$ref': '#/components/schemas/LocaleString'
                 },
                 {
-                    type: 'string'
-                },
-                {
                     type: 'null'
                 }
             ],
-            title: 'Help',
             description: 'Help text of this field'
         },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
+        validation: {
             anyOf: [
                 {
                     type: 'string'
@@ -7550,7 +5800,7 @@ export const InputTextSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Additional Validation Rules',
+            title: 'Validation',
             description: 'Validation expression'
         },
         disabled: {
@@ -7623,17 +5873,12 @@ export const InputTextSchema = {
             ],
             title: 'Iconsuffix',
             description: 'Icon suffix'
-        },
-        validation: {
-            type: 'string',
-            title: 'Validation',
-            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label', 'validation'],
-    title: 'InputText',
+    required: ['label'],
+    title: 'InputTextElement',
     description: 'https://formkit-primevue.netlify.app/inputs/InputText'
 } as const;
 
@@ -7667,243 +5912,6 @@ export const JSONSchemaSchema = {
     type: 'object',
     required: ['name'],
     title: 'JSONSchema'
-} as const;
-
-export const KnobSchema = {
-    properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primeKnob',
-            title: 'Formkit',
-            description: 'PrimeVue Knob element.',
-            default: 'primeKnob'
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Validation Rules',
-            description: 'Validation expression'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        min: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Min',
-            description: 'Minimum value'
-        },
-        max: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Max',
-            description: 'Maximum value'
-        },
-        step: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Step',
-            description: 'Step factor for increment/decrement'
-        },
-        size: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Size',
-            description: 'Size of the knob in pixels'
-        },
-        strokeWidth: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Strokewidth',
-            description: 'Width of the knob stroke'
-        },
-        showValue: {
-            type: 'boolean',
-            title: 'Showvalue',
-            description: 'Whether to show the value in the center',
-            default: true
-        },
-        valueColor: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Valuecolor',
-            description: 'Color of the value arc'
-        },
-        rangeColor: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Rangecolor',
-            description: 'Color of the range arc'
-        },
-        textColor: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Textcolor',
-            description: 'Color of the value text'
-        },
-        valueTemplate: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Valuetemplate',
-            description: 'Template string for value display'
-        },
-        validation: {
-            type: 'string',
-            title: 'Validation',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['label', 'validation'],
-    title: 'Knob',
-    description: 'https://formkit-primevue.netlify.app/inputs/Knob'
 } as const;
 
 export const LLMCostEventSchema = {
@@ -8042,7 +6050,7 @@ export const LLMEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
+                        '$ref': '#/components/schemas/Message'
                     },
                     type: 'array'
                 },
@@ -8057,7 +6065,7 @@ export const LLMEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
+                        '$ref': '#/components/schemas/Message'
                     },
                     type: 'array'
                 },
@@ -8268,7 +6276,7 @@ export const LLMStopEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
+                        '$ref': '#/components/schemas/Message'
                     },
                     type: 'array'
                 },
@@ -8283,7 +6291,7 @@ export const LLMStopEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
+                        '$ref': '#/components/schemas/Message'
                     },
                     type: 'array'
                 },
@@ -8457,198 +6465,6 @@ Used during deserialization to decide which subclass to instantiate.`,
     title: 'LLMStopEvent'
 } as const;
 
-export const LLMStopEventOutputSchema = {
-    properties: {
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        input_messages: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__Message'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Input Messages',
-            description: 'List of messages sent to the LLM as input.'
-        },
-        output_messages: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__Message'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Output Messages',
-            description: 'List of messages received from the LLM as output.'
-        },
-        invocation_parameters: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/invocation_parameters'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Parameters used during the invocation of the LLM.'
-        },
-        chat_model_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Chat Model Name',
-            description: 'The name of the language model being utilized.'
-        },
-        provider: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Provider',
-            description: 'The hosting provider of the LLM, e.g., OpenAI, Azure.'
-        },
-        system: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'System',
-            description: 'The AI product as identified by the client or server.'
-        },
-        prompt_template: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Prompt Template',
-            description: 'The prompt template as a Python f-string.'
-        },
-        prompt_template_variables: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/prompt_template_variables'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'A dictionary of input variables to the prompt template.'
-        },
-        prompt_template_version: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Prompt Template Version',
-            description: 'The version of the prompt template being used.'
-        },
-        token_count_prompt: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Token Count Prompt',
-            description: 'The number of tokens in the prompt.'
-        },
-        token_count_completion: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Token Count Completion',
-            description: 'The number of tokens in the completion.'
-        },
-        token_count_total: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Token Count Total',
-            description: 'The total number of tokens, including both prompt and completion.'
-        },
-        tools: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/tools'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tools',
-            description: 'List of tools that are advertised to the LLM to be able to call.'
-        }
-    },
-    type: 'object',
-    title: 'LLMStopEventOutput'
-} as const;
-
 export const LimitChatHistoryEventSchema = {
     properties: {
         event_id: {
@@ -8684,7 +6500,7 @@ export const LimitChatHistoryEventSchema = {
         },
         limited_history: {
             items: {
-                '$ref': '#/components/schemas/ChatMessage-Output'
+                '$ref': '#/components/schemas/ChatMessage'
             },
             type: 'array',
             title: 'Limited History',
@@ -8712,189 +6528,6 @@ Used during deserialization to decide which subclass to instantiate.`,
     required: ['limited_history', '_event_name', '_parent_event_names'],
     title: 'LimitChatHistoryEvent',
     description: 'Limits the chat messages based on number of input tokens.'
-} as const;
-
-export const ListboxSchema = {
-    properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primeListbox',
-            title: 'Formkit',
-            description: 'PrimeVue Listbox element.',
-            default: 'primeListbox'
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Validation Rules',
-            description: 'Validation expression'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        placeholder: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Placeholder',
-            description: 'Placeholder text'
-        },
-        options: {
-            items: {
-                additionalProperties: true,
-                type: 'object'
-            },
-            type: 'array',
-            title: 'Options',
-            description: 'Array of selectable option objects'
-        },
-        optionLabel: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Optionlabel',
-            description: 'Property name to use as the label of an option'
-        },
-        optionValue: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Optionvalue',
-            description: 'Property name to use as the value of an option'
-        },
-        multiple: {
-            type: 'boolean',
-            title: 'Multiple',
-            description: 'Whether to allow multiple selections',
-            default: false
-        },
-        filter: {
-            type: 'boolean',
-            title: 'Filter',
-            description: 'Whether to enable filtering',
-            default: false
-        },
-        validation: {
-            type: 'string',
-            title: 'Validation',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['label', 'options', 'validation'],
-    title: 'Listbox',
-    description: 'https://formkit-primevue.netlify.app/inputs/Listbox'
 } as const;
 
 export const LocaleResponseSchema = {
@@ -9017,13 +6650,115 @@ export const LogprobSchema = {
     title: 'Logprob'
 } as const;
 
-export const MessageRole_InputSchema = {
-    type: 'string',
-    enum: ['system', 'developer', 'user', 'assistant', 'function', 'tool', 'chatbot', 'model'],
-    title: 'MessageRole'
+export const MessageSchema = {
+    properties: {
+        role: {
+            type: 'string',
+            title: 'Role',
+            description: "The role of the message, such as 'user', 'assistant', or 'system'."
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'The name of the function or agent generating the message.'
+        },
+        tool_calls: {
+            anyOf: [
+                {
+                    items: {
+                        additionalProperties: true,
+                        type: 'object'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tool Calls',
+            description: 'List of tool calls generated by the model, such as function calls.'
+        },
+        function_call_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Function Call Name',
+            description: 'The name of the function being called in the message.'
+        },
+        function_call_arguments_json: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Function Call Arguments Json',
+            description: 'JSON representing arguments passed to the function during a function call.'
+        },
+        tool_call_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tool Call Id',
+            description: 'The ID of the tool call, if applicable.'
+        },
+        contents: {
+            anyOf: [
+                {
+                    items: {
+                        anyOf: [
+                            {
+                                '$ref': '#/components/schemas/TextContent'
+                            },
+                            {
+                                '$ref': '#/components/schemas/ImageContent'
+                            },
+                            {
+                                '$ref': '#/components/schemas/AudioContent'
+                            }
+                        ]
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Contents',
+            description: 'The message contents as an array of content blocks (text, image, audio).'
+        },
+        content: {
+            type: 'string',
+            title: 'Content',
+            readOnly: true
+        }
+    },
+    type: 'object',
+    required: ['role', 'content'],
+    title: 'Message'
 } as const;
 
-export const MessageRole_OutputSchema = {
+export const MessageRoleSchema = {
     type: 'string',
     enum: ['system', 'developer', 'user', 'assistant', 'function', 'tool', 'chatbot', 'model'],
     title: 'MessageRole',
@@ -9072,7 +6807,7 @@ export const MetadataSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/aihub_lib__nats__events__user__UserUploadedFile__UserUploadedFile'
+                        '$ref': '#/components/schemas/UserUploadedFile'
                     },
                     type: 'array'
                 },
@@ -9264,6 +6999,28 @@ export const MinimalUserDTOSchema = {
     title: 'MinimalUserDTO'
 } as const;
 
+export const ModelDTOSchema = {
+    properties: {
+        model_name: {
+            type: 'string',
+            title: 'Model Name',
+            description: 'The name/identifier of the model'
+        },
+        model_info: {
+            '$ref': '#/components/schemas/ModelInfoDTO',
+            description: 'Detailed information about the model'
+        },
+        icon: {
+            type: 'string',
+            title: 'Icon',
+            readOnly: true
+        }
+    },
+    type: 'object',
+    required: ['model_name', 'model_info', 'icon'],
+    title: 'ModelDTO'
+} as const;
+
 export const ModelDetailsSchema = {
     properties: {
         id: {
@@ -9281,7 +7038,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1753275611
+            default: 1757495777
         },
         owned_by: {
             type: 'string',
@@ -9319,6 +7076,466 @@ export const ModelDetailsSchema = {
     title: 'ModelDetails'
 } as const;
 
+export const ModelInfoDTOSchema = {
+    properties: {
+        mode: {
+            type: 'string',
+            title: 'Mode',
+            description: "The mode of the model (e.g., 'chat', 'completion', 'embedding')"
+        },
+        max_input_tokens: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max Input Tokens',
+            description: 'Maximum number of input tokens the model can handle'
+        },
+        max_output_tokens: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max Output Tokens',
+            description: 'Maximum number of output tokens the model can generate'
+        },
+        input_cost_per_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Token',
+            description: 'Cost per input token in USD'
+        },
+        output_cost_per_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Token',
+            description: 'Cost per output token in USD'
+        },
+        cache_creation_input_token_cost: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cache Creation Input Token Cost',
+            description: 'Cost for creating cache from input tokens'
+        },
+        cache_read_input_token_cost: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cache Read Input Token Cost',
+            description: 'Cost for reading cached input tokens'
+        },
+        input_cost_per_token_above_128k_tokens: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Token Above 128K Tokens',
+            description: 'Cost per input token for contexts above 128k tokens'
+        },
+        input_cost_per_token_above_200k_tokens: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Token Above 200K Tokens',
+            description: 'Cost per input token for contexts above 200k tokens'
+        },
+        input_cost_per_audio_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Audio Token',
+            description: 'Cost per audio input token'
+        },
+        input_cost_per_token_batches: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Token Batches',
+            description: 'Cost per input token when using batch API'
+        },
+        output_cost_per_token_batches: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Token Batches',
+            description: 'Cost per output token when using batch API'
+        },
+        output_cost_per_audio_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Audio Token',
+            description: 'Cost per audio output token'
+        },
+        output_cost_per_reasoning_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Reasoning Token',
+            description: 'Cost per reasoning token for models with reasoning capabilities'
+        },
+        output_cost_per_token_above_128k_tokens: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Token Above 128K Tokens',
+            description: 'Cost per output token for contexts above 128k tokens'
+        },
+        output_cost_per_token_above_200k_tokens: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Token Above 200K Tokens',
+            description: 'Cost per output token for contexts above 200k tokens'
+        },
+        output_cost_per_image: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Image',
+            description: 'Cost per image output'
+        },
+        search_context_cost_per_query: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Search Context Cost Per Query',
+            description: 'Cost per search context query'
+        },
+        output_vector_size: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Vector Size',
+            description: 'Size of output vectors for embedding models'
+        },
+        supports_system_messages: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports System Messages',
+            description: 'Whether the model supports system messages'
+        },
+        supports_response_schema: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Response Schema',
+            description: 'Whether the model supports structured response schemas'
+        },
+        supports_vision: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Vision',
+            description: 'Whether the model supports vision/image input'
+        },
+        supports_function_calling: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Function Calling',
+            description: 'Whether the model supports function calling'
+        },
+        supports_tool_choice: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Tool Choice',
+            description: 'Whether the model supports tool choice selection'
+        },
+        supports_assistant_prefill: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Assistant Prefill',
+            description: 'Whether the model supports assistant message prefilling'
+        },
+        supports_prompt_caching: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Prompt Caching',
+            description: 'Whether the model supports prompt caching'
+        },
+        supports_audio_input: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Audio Input',
+            description: 'Whether the model supports audio input'
+        },
+        supports_audio_output: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Audio Output',
+            description: 'Whether the model supports audio output'
+        },
+        supports_pdf_input: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Pdf Input',
+            description: 'Whether the model supports PDF input'
+        },
+        supports_embedding_image_input: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Embedding Image Input',
+            description: 'Whether the model supports image input for embeddings'
+        },
+        supports_native_streaming: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Native Streaming',
+            description: 'Whether the model supports native streaming'
+        },
+        supports_web_search: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Web Search',
+            description: 'Whether the model supports web search capabilities'
+        },
+        supports_url_context: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Url Context',
+            description: 'Whether the model supports URL context input'
+        },
+        supports_reasoning: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Reasoning',
+            description: 'Whether the model supports reasoning capabilities'
+        },
+        supports_computer_use: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Computer Use',
+            description: 'Whether the model supports computer use capabilities'
+        },
+        tpm: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tpm',
+            description: 'Tokens per minute rate limit'
+        },
+        rpm: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Rpm',
+            description: 'Requests per minute rate limit'
+        },
+        supported_openai_params: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supported Openai Params',
+            description: 'List of supported OpenAI API parameters'
+        }
+    },
+    type: 'object',
+    required: ['mode'],
+    title: 'ModelInfoDTO'
+} as const;
+
 export const ModelResponseSchema = {
     properties: {
         object: {
@@ -9341,208 +7558,76 @@ export const ModelResponseSchema = {
     title: 'ModelResponse'
 } as const;
 
-export const MultiSelectSchema = {
+export const ModelTypeGroupDTOSchema = {
     properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primeMultiSelect',
-            title: 'Formkit',
-            description: 'PrimeVue MultiSelect element.',
-            default: 'primeMultiSelect'
-        },
         name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
+            type: 'string',
             title: 'Name',
-            description: 'Name of this field'
+            description: 'The name/type of the model group'
         },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Validation Rules',
-            description: 'Validation expression'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        placeholder: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Placeholder',
-            description: 'Placeholder text'
-        },
-        options: {
+        models: {
             items: {
-                additionalProperties: true,
-                type: 'object'
+                '$ref': '#/components/schemas/ModelDTO'
             },
             type: 'array',
-            title: 'Options',
-            description: 'Array of selectable option objects'
-        },
-        optionLabel: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Optionlabel',
-            description: 'Property name to use as the label of an option'
-        },
-        optionValue: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Optionvalue',
-            description: 'Property name to use as the value of an option'
-        },
-        filter: {
-            type: 'boolean',
-            title: 'Filter',
-            description: 'Whether to enable filtering',
-            default: false
-        },
-        validation: {
-            type: 'string',
-            title: 'Validation',
-            readOnly: true
+            title: 'Models',
+            description: 'List of models in this group'
         }
     },
-    additionalProperties: true,
     type: 'object',
-    required: ['label', 'options', 'validation'],
-    title: 'MultiSelect',
-    description: 'https://formkit-primevue.netlify.app/inputs/MultiSelect'
+    required: ['name', 'models'],
+    title: 'ModelTypeGroupDTO'
 } as const;
 
-export const NamespaceSchema = {
+export const NamespaceDTOSchema = {
     properties: {
-        database: {
+        id: {
             type: 'string',
-            title: 'Database',
-            description: 'Name of database that the namespace belongs to'
+            title: 'Id',
+            description: 'Unique identifier of the namespace'
         },
         name: {
             type: 'string',
             title: 'Name',
             description: 'Name of namespace'
         },
+        display_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name',
+            description: 'Display name of namespace, can be localized'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: 'Description of namespace, can be localized'
+        },
         number_of_documents: {
             type: 'integer',
             title: 'Number Of Documents',
             description: 'Number of documents in namespace'
         },
-        last_updated_at: {
+        updated_at: {
             type: 'integer',
-            title: 'Last Updated At',
+            title: 'Updated At',
             description: 'Latest timestamp when any document in the namespace was updated'
         },
-        last_inserted_at: {
+        inserted_at: {
             type: 'integer',
-            title: 'Last Inserted At',
+            title: 'Inserted At',
             description: 'Latest timestamp when any document in the namespace was inserted'
         },
         created_at: {
@@ -9552,8 +7637,60 @@ export const NamespaceSchema = {
         }
     },
     type: 'object',
-    required: ['database', 'name', 'number_of_documents', 'last_updated_at', 'last_inserted_at', 'created_at'],
-    title: 'Namespace'
+    required: ['id', 'name', 'number_of_documents', 'updated_at', 'inserted_at', 'created_at'],
+    title: 'NamespaceDTO'
+} as const;
+
+export const NamespaceResponseSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier for the namespace.'
+        },
+        bucket_id: {
+            type: 'string',
+            title: 'Bucket Id',
+            description: 'The ID of the parent bucket containing the namespace.'
+        },
+        namespace_name: {
+            type: 'string',
+            title: 'Namespace Name',
+            description: 'The name of the namespace.'
+        },
+        folder_name: {
+            type: 'string',
+            title: 'Folder Name',
+            description: 'The corresponding folder name in the data storage.'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name',
+            description: 'A user-friendly display name for the namespace.'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: "A brief description of the namespace's contents."
+        }
+    },
+    type: 'object',
+    required: ['id', 'bucket_id', 'namespace_name', 'folder_name'],
+    title: 'NamespaceResponse'
 } as const;
 
 export const NodeDataSchema = {
@@ -9684,6 +7821,83 @@ export const NodeSummaryDTOSchema = {
     title: 'NodeSummaryDTO'
 } as const;
 
+export const NotificationDTOSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the notification.'
+        },
+        user_id: {
+            type: 'string',
+            title: 'User Id',
+            description: 'The unique identifier of the user associated with the notification.'
+        },
+        notification_group_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Notification Group Id',
+            description: 'The identifier of the notification group this notification belongs to.'
+        },
+        title: {
+            type: 'string',
+            title: 'Title',
+            description: 'The internationalized title of the notification.'
+        },
+        message: {
+            type: 'string',
+            title: 'Message',
+            description: 'The internationalized content of the notification.'
+        },
+        read: {
+            type: 'boolean',
+            title: 'Read',
+            description: 'Indicates if the notification has been read by the user.',
+            default: false
+        },
+        done: {
+            type: 'boolean',
+            title: 'Done',
+            description: 'Indicates if the task associated with the notification has been completed.',
+            default: false
+        },
+        type: {
+            type: 'string',
+            enum: ['success', 'info', 'warn', 'error'],
+            title: 'Type',
+            description: 'Categorizes the notification for visual representation (e.g., icon and color).',
+            default: 'info'
+        },
+        severity: {
+            type: 'string',
+            enum: ['low', 'medium', 'high', 'critical'],
+            title: 'Severity',
+            description: 'The priority level of the notification.'
+        },
+        link: {
+            type: 'string',
+            title: 'Link',
+            description: 'A relative internal link to navigate to the relevant resource.'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At',
+            description: 'The timestamp when the notification was created.'
+        }
+    },
+    type: 'object',
+    required: ['id', 'user_id', 'title', 'message', 'severity', 'link', 'created_at'],
+    title: 'NotificationDTO',
+    description: 'Data Transfer Object for a notification.'
+} as const;
+
 export const PaginatedDocumentsResponseSchema = {
     properties: {
         total: {
@@ -9708,7 +7922,7 @@ export const PaginatedDocumentsResponseSchema = {
         },
         documents: {
             items: {
-                '$ref': '#/components/schemas/IngestedDocument'
+                '$ref': '#/components/schemas/DocumentDTO'
             },
             type: 'array',
             title: 'Documents',
@@ -9720,41 +7934,41 @@ export const PaginatedDocumentsResponseSchema = {
     title: 'PaginatedDocumentsResponse'
 } as const;
 
-export const PaginatedProcessWalkthroughsResponseSchema = {
+export const PaginatedNotificationsResponseSchema = {
     properties: {
         total: {
             type: 'integer',
             title: 'Total',
-            description: 'Total number of items available'
+            description: 'The total number of notifications matching the filter criteria.'
         },
         page: {
             type: 'integer',
             title: 'Page',
-            description: 'Current page number (1-indexed)'
+            description: 'The current page number (1-indexed).'
         },
         page_size: {
             type: 'integer',
             title: 'Page Size',
-            description: 'Number of threads per page'
+            description: 'The number of notifications requested per page.'
         },
         total_pages: {
             type: 'integer',
             title: 'Total Pages',
-            description: 'Total number of pages available'
+            description: 'The total number of pages available based on the page size.'
         },
-        walkthroughs: {
+        notifications: {
             items: {
-                '$ref': '#/components/schemas/ProcessWalkthroughDTO'
+                '$ref': '#/components/schemas/NotificationDTO'
             },
             type: 'array',
-            title: 'Walkthroughs',
-            description: 'List of process walkthroughs for the current page'
+            title: 'Notifications',
+            description: 'The list of notifications for the current page.'
         }
     },
     type: 'object',
-    required: ['total', 'page', 'page_size', 'total_pages', 'walkthroughs'],
-    title: 'PaginatedProcessWalkthroughsResponse',
-    description: 'Paginated response containing process walkthroughs with detailed step information.'
+    required: ['total', 'page', 'page_size', 'total_pages', 'notifications'],
+    title: 'PaginatedNotificationsResponse',
+    description: 'A paginated response container for notifications.'
 } as const;
 
 export const PaginatedThreadsResponseSchema = {
@@ -9949,240 +8163,6 @@ and which remain open (None).
   unknowns as flexible conditions.`
 } as const;
 
-export const PasswordSchema = {
-    properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primePassword',
-            title: 'Formkit',
-            description: 'PrimeVue Password element.',
-            default: 'primePassword'
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Validation Rules',
-            description: 'Validation expression'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        placeholder: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Placeholder',
-            description: 'Placeholder text'
-        },
-        feedback: {
-            type: 'boolean',
-            title: 'Feedback',
-            description: 'Whether to show password strength feedback',
-            default: false
-        },
-        toggleMask: {
-            type: 'boolean',
-            title: 'Togglemask',
-            description: 'Whether to show toggle button to reveal/hide password',
-            default: false
-        },
-        mediumRegex: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Mediumregex',
-            description: 'Regex pattern for medium strength validation'
-        },
-        strongRegex: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Strongregex',
-            description: 'Regex pattern for strong strength validation'
-        },
-        promptLabel: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Promptlabel',
-            description: 'Label for password prompt'
-        },
-        weakLabel: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Weaklabel',
-            description: 'Label for weak password strength'
-        },
-        mediumLabel: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Mediumlabel',
-            description: 'Label for medium password strength'
-        },
-        strongLabel: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Stronglabel',
-            description: 'Label for strong password strength'
-        },
-        validation: {
-            type: 'string',
-            title: 'Validation',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['label', 'validation'],
-    title: 'Password',
-    description: 'https://formkit-primevue.netlify.app/inputs/Password'
-} as const;
-
 export const ProcessConfigDTOSchema = {
     properties: {
         process_id: {
@@ -10231,7 +8211,7 @@ export const ProcessDTOSchema = {
         },
         human_inputs: {
             items: {
-                '$ref': '#/components/schemas/HumanInDTO'
+                '$ref': '#/components/schemas/HumanInSpecs'
             },
             type: 'array',
             title: 'Human Inputs',
@@ -10239,7 +8219,7 @@ export const ProcessDTOSchema = {
         },
         program_inputs: {
             items: {
-                '$ref': '#/components/schemas/ProgramInDTO'
+                '$ref': '#/components/schemas/ProgramInSpecs'
             },
             type: 'array',
             title: 'Program Inputs',
@@ -10247,7 +8227,7 @@ export const ProcessDTOSchema = {
         },
         agent_inputs: {
             items: {
-                '$ref': '#/components/schemas/AgentInDTO'
+                '$ref': '#/components/schemas/AgentInSpecs'
             },
             type: 'array',
             title: 'Agent Inputs',
@@ -10269,99 +8249,62 @@ export const ProcessDTOSchema = {
     type: 'object',
     required: ['process_class', 'process_id', 'process_config', 'human_inputs', 'program_inputs', 'agent_inputs'],
     title: 'ProcessDTO',
-    description: `An agentic process is a process in which humans, agents and programs interact with each other to achieve a
-common goal.
-To interact with the process, it is necessary to know which entity (human, agent, program) can and must submit
-what kind of work to start / continue the process.
-Hence, this object offers information about the inputs (work events) that these entities can contribute.`
+    description: `A data transfer object for representing process information in responses.
+This DTO standardizes how process data is returned from the service layer to the controller,
+and subsequently to the API response. It helps maintain a clean separation between the internal
+event models and the publicly exposed fields in HTTP responses.
+By using \`ProcessDTO\`, the API can evolve independently from the internal event representations.`
 } as const;
 
-export const ProcessWalkthroughDTOSchema = {
+export const ProcessHumanInDtoSchema = {
     properties: {
-        process_walkthrough_id: {
+        name: {
             type: 'string',
-            title: 'Process Walkthrough Id',
-            description: 'Unique identifier for this specific process walkthrough.'
+            title: 'Name',
+            description: 'The name of the work event.'
         },
-        process_class: {
+        description: {
             type: 'string',
-            title: 'Process Class',
-            description: 'The class/type of the process.'
+            title: 'Description',
+            description: 'A description of the work event, providing details about its purpose.'
         },
-        process_id: {
+        route: {
             type: 'string',
-            title: 'Process Id',
-            description: 'Unique identifier for the specific process instance.'
+            title: 'Route',
+            description: 'The route of the work event.'
         },
-        process_steps: {
+        method: {
+            type: 'string',
+            title: 'Method',
+            description: 'The HTTP method of the work event.'
+        },
+        form: {
             items: {
                 anyOf: [
                     {
-                        '$ref': '#/components/schemas/AgentProcessStepDTO'
+                        '$ref': '#/components/schemas/HtmlElement'
                     },
                     {
-                        '$ref': '#/components/schemas/ProgramProcessStepDTO'
-                    },
-                    {
-                        '$ref': '#/components/schemas/HumanProcessStepDTO'
+                        '$ref': '#/components/schemas/InputTextElement'
                     }
                 ]
             },
             type: 'array',
-            title: 'Process Steps',
-            description: 'List of all steps in this walkthrough, ordered chronologically.'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp of the first event in nanoseconds.'
-        },
-        updated_at: {
-            type: 'integer',
-            title: 'Updated At',
-            description: 'Timestamp of the last event in nanoseconds.'
-        },
-        total_steps: {
-            type: 'integer',
-            title: 'Total Steps',
-            description: 'Total number of steps in this walkthrough.'
-        },
-        completed_steps: {
-            type: 'integer',
-            title: 'Completed Steps',
-            description: 'Number of completed steps in this walkthrough.'
-        },
-        is_active: {
-            type: 'boolean',
-            title: 'Is Active',
-            description: 'Whether this walkthrough is active (no ProcessStopEvent).'
-        },
-        involved_agents: {
-            items: {
-                '$ref': '#/components/schemas/MinimalAgentDTO'
-            },
-            type: 'array',
-            title: 'Involved Agents',
-            description: 'List of agents that submitted work in this walkthrough.',
-            default: []
-        },
-        involved_humans: {
-            items: {
-                '$ref': '#/components/schemas/MinimalUserDTO'
-            },
-            type: 'array',
-            title: 'Involved Humans',
-            description: 'List of humans that submitted work in this walkthrough.',
-            default: []
+            title: 'Form',
+            description: 'Formkit fields to render the UI'
         }
     },
     type: 'object',
-    required: ['process_walkthrough_id', 'process_class', 'process_id', 'process_steps', 'created_at', 'updated_at', 'total_steps', 'completed_steps', 'is_active'],
-    title: 'ProcessWalkthroughDTO',
-    description: 'DTO representing a process walkthrough with detailed step information.'
+    required: ['name', 'description', 'route', 'method', 'form'],
+    title: 'ProcessHumanInDto',
+    description: `Defines what and how a piece of work must be submitted by a user to a process.
+As humans usually submit their data by filling in forms in the frontend, this event holds
+a list of formkit form fields that can be used to generate a formkit form in the frontend.
+Submitting the form will lead to the required data structure that can be submitted
+to the <route> using the http-method <method>.`
 } as const;
 
-export const ProgramInDTOSchema = {
+export const ProgramInSpecsSchema = {
     properties: {
         route: {
             type: 'string',
@@ -10385,214 +8328,12 @@ export const ProgramInDTOSchema = {
     },
     type: 'object',
     required: ['route', 'method', 'is_process_start', 'event_specs'],
-    title: 'ProgramInDTO'
-} as const;
-
-export const ProgramProcessStepDTOSchema = {
-    properties: {
-        step_index: {
-            type: 'integer',
-            title: 'Step Index',
-            description: 'Order of this step in the walkthrough (0-based).'
-        },
-        step_type: {
-            type: 'string',
-            title: 'Step Type',
-            description: 'Type of entity involved in this step.',
-            default: 'program'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp when this step was created in nanoseconds.'
-        },
-        is_completed: {
-            type: 'boolean',
-            title: 'Is Completed',
-            description: 'Whether this step has been completed (has a work response).'
-        },
-        work_request: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/ProgramWorkRequestDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'The program work request for this step.'
-        },
-        work_response: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/ProgramWorkResponseDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'The program work response for this step. May be None if work is not yet completed.'
-        }
-    },
-    type: 'object',
-    required: ['step_index', 'created_at', 'is_completed'],
-    title: 'ProgramProcessStepDTO',
-    description: 'DTO representing a program process step with program-specific work request and response information.'
-} as const;
-
-export const ProgramWorkRequestDTOSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id',
-            description: 'Unique identifier of the work request event.'
-        },
-        event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: 'Name of the event type.'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp when the work was requested in nanoseconds.'
-        },
-        request_type: {
-            type: 'string',
-            enum: ['human', 'agent', 'program'],
-            title: 'Request Type',
-            description: 'Type of entity the work was requested from.'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Name',
-            description: 'Human-readable name for the work request.'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Description',
-            description: 'Human-readable description of the work request.'
-        },
-        data: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Data',
-            description: 'The work request event data.'
-        },
-        endpoint: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Endpoint',
-            description: 'API endpoint for the program to submit work.'
-        },
-        method: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Method',
-            description: 'HTTP method for the program to submit work.'
-        }
-    },
-    type: 'object',
-    required: ['event_id', 'event_name', 'created_at', 'request_type', 'display_name', 'display_description', 'data'],
-    title: 'ProgramWorkRequestDTO',
-    description: 'DTO representing a program work request with specific program-related information.'
-} as const;
-
-export const ProgramWorkResponseDTOSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id',
-            description: 'Unique identifier of the work response event.'
-        },
-        event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: 'Name of the event type.'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp when the work was completed in nanoseconds.'
-        },
-        response_type: {
-            type: 'string',
-            enum: ['human', 'agent', 'program'],
-            title: 'Response Type',
-            description: 'Type of entity that completed the work.'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Name',
-            description: 'Human-readable name for the work response.'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Description',
-            description: 'Human-readable description of the work response.'
-        },
-        data: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Data',
-            description: 'The work response event data.'
-        },
-        submitted_by: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/MinimalUserDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'The user who submitted this work response on behalf of the program.'
-        }
-    },
-    type: 'object',
-    required: ['event_id', 'event_name', 'created_at', 'response_type', 'display_name', 'display_description', 'data'],
-    title: 'ProgramWorkResponseDTO',
-    description: 'DTO representing a program work response with specific program-related information.'
+    title: 'ProgramInSpecs',
+    description: `Defines a piece of work that can be submitted by a program.
+It holds the information about the exact data that must be submitted as a work event
+in the event specs. It also holds the information about where that work event data
+must be submitted, aka to which route and using which http method.
+The API will then forward the data to the appropriate process.`
 } as const;
 
 export const PromptTokensDetailsSchema = {
@@ -10623,348 +8364,6 @@ export const PromptTokensDetailsSchema = {
     additionalProperties: true,
     type: 'object',
     title: 'PromptTokensDetails'
-} as const;
-
-export const RadioButtonSchema = {
-    properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primeRadioButton',
-            title: 'Formkit',
-            description: 'PrimeVue RadioButton element.',
-            default: 'primeRadioButton'
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Validation Rules',
-            description: 'Validation expression'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        options: {
-            items: {
-                additionalProperties: true,
-                type: 'object'
-            },
-            type: 'array',
-            title: 'Options',
-            description: 'Array of selectable option objects'
-        },
-        optionLabel: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Optionlabel',
-            description: 'Property name to use as the label of an option'
-        },
-        optionValue: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Optionvalue',
-            description: 'Property name to use as the value of an option'
-        },
-        optionClass: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Optionclass',
-            description: 'CSS class to apply to each option'
-        },
-        validation: {
-            type: 'string',
-            title: 'Validation',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['label', 'options', 'validation'],
-    title: 'RadioButton',
-    description: 'https://formkit-primevue.netlify.app/inputs/RadioButton'
-} as const;
-
-export const RatingSchema = {
-    properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primeRating',
-            title: 'Formkit',
-            description: 'PrimeVue Rating element.',
-            default: 'primeRating'
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Validation Rules',
-            description: 'Validation expression'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        stars: {
-            type: 'integer',
-            title: 'Stars',
-            description: 'Number of stars to display',
-            default: 5
-        },
-        cancel: {
-            type: 'boolean',
-            title: 'Cancel',
-            description: 'Whether to show cancel button to clear rating',
-            default: false
-        },
-        onIcon: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^pi pi-[a-z0-9-]+$'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Onicon',
-            description: 'Icon for selected state'
-        },
-        offIcon: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^pi pi-[a-z0-9-]+$'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Officon',
-            description: 'Icon for unselected state'
-        },
-        cancelIcon: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^pi pi-[a-z0-9-]+$'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Cancelicon',
-            description: 'Icon for cancel button'
-        },
-        validation: {
-            type: 'string',
-            title: 'Validation',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['label', 'validation'],
-    title: 'Rating',
-    description: 'https://formkit-primevue.netlify.app/inputs/Rating'
 } as const;
 
 export const RerankerEventSchema = {
@@ -11511,439 +8910,6 @@ export const RunStatisticsSchema = {
     description: 'Statistics for a single run, intended for API response.'
 } as const;
 
-export const SelectSchema = {
-    properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primeSelect',
-            title: 'Formkit',
-            description: 'PrimeVue Select element.',
-            default: 'primeSelect'
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Validation Rules',
-            description: 'Validation expression'
-        },
-        options: {
-            anyOf: [
-                {
-                    items: {
-                        anyOf: [
-                            {
-                                type: 'string'
-                            },
-                            {
-                                '$ref': '#/components/schemas/LocaleString'
-                            },
-                            {
-                                additionalProperties: {
-                                    anyOf: [
-                                        {
-                                            type: 'string'
-                                        },
-                                        {
-                                            '$ref': '#/components/schemas/LocaleString'
-                                        }
-                                    ]
-                                },
-                                type: 'object'
-                            }
-                        ]
-                    },
-                    type: 'array'
-                },
-                {
-                    items: {
-                        type: 'string'
-                    },
-                    type: 'array'
-                }
-            ],
-            title: 'Options',
-            description: 'Array of selectable options (objects or strings)'
-        },
-        optionLabel: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Optionlabel',
-            description: 'Property name to use as the label of an option'
-        },
-        optionValue: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Optionvalue',
-            description: 'Property name to use as the value of an option'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        placeholder: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Placeholder',
-            description: 'Placeholder text'
-        },
-        showClear: {
-            type: 'boolean',
-            title: 'Showclear',
-            description: 'Whether to show clear button',
-            default: false
-        },
-        filter: {
-            type: 'boolean',
-            title: 'Filter',
-            description: 'Whether to enable filtering',
-            default: false
-        },
-        validation: {
-            type: 'string',
-            title: 'Validation',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['label', 'options', 'validation'],
-    title: 'Select',
-    description: 'https://formkit-primevue.netlify.app/inputs/Select'
-} as const;
-
-export const SelectButtonSchema = {
-    properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primeSelectButton',
-            title: 'Formkit',
-            description: 'PrimeVue SelectButton element.',
-            default: 'primeSelectButton'
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Validation Rules',
-            description: 'Validation expression'
-        },
-        options: {
-            anyOf: [
-                {
-                    items: {
-                        anyOf: [
-                            {
-                                type: 'string'
-                            },
-                            {
-                                '$ref': '#/components/schemas/LocaleString'
-                            },
-                            {
-                                additionalProperties: {
-                                    anyOf: [
-                                        {
-                                            type: 'string'
-                                        },
-                                        {
-                                            '$ref': '#/components/schemas/LocaleString'
-                                        }
-                                    ]
-                                },
-                                type: 'object'
-                            }
-                        ]
-                    },
-                    type: 'array'
-                },
-                {
-                    items: {
-                        type: 'string'
-                    },
-                    type: 'array'
-                }
-            ],
-            title: 'Options',
-            description: 'Array of selectable options (objects or strings)'
-        },
-        optionLabel: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Optionlabel',
-            description: 'Property name to use as the label of an option'
-        },
-        optionValue: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Optionvalue',
-            description: 'Property name to use as the value of an option'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        optionDisabled: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Optiondisabled',
-            description: 'Property name to use as the disabled flag of an option'
-        },
-        multiple: {
-            type: 'boolean',
-            title: 'Multiple',
-            description: 'Whether to allow multiple selections',
-            default: false
-        },
-        unselectable: {
-            type: 'boolean',
-            title: 'Unselectable',
-            description: 'Whether selection can be cleared',
-            default: true
-        },
-        dataKey: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Datakey',
-            description: 'Property name for unique option identification'
-        },
-        validation: {
-            type: 'string',
-            title: 'Validation',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['label', 'options', 'validation'],
-    title: 'SelectButton',
-    description: 'https://formkit-primevue.netlify.app/inputs/SelectButton'
-} as const;
-
 export const SemanticEventSchema = {
     properties: {
         event_id: {
@@ -12073,184 +9039,6 @@ export const SignedUrlDtoSchema = {
     title: 'SignedUrlDto'
 } as const;
 
-export const SliderSchema = {
-    properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primeSlider',
-            title: 'Formkit',
-            description: 'PrimeVue Slider element.',
-            default: 'primeSlider'
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Validation Rules',
-            description: 'Validation expression'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        min: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Min',
-            description: 'Minimum value'
-        },
-        max: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Max',
-            description: 'Maximum value'
-        },
-        step: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Step',
-            description: 'Step factor for increment/decrement'
-        },
-        range: {
-            type: 'boolean',
-            title: 'Range',
-            description: 'Whether to enable range selection',
-            default: false
-        },
-        orientation: {
-            anyOf: [
-                {
-                    type: 'string',
-                    enum: ['horizontal', 'vertical']
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Orientation',
-            description: 'Orientation of the slider'
-        },
-        validation: {
-            type: 'string',
-            title: 'Validation',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['label', 'validation'],
-    title: 'Slider',
-    description: 'https://formkit-primevue.netlify.app/inputs/Slider'
-} as const;
-
 export const StandaloneQuestionCondenserEventSchema = {
     properties: {
         event_id: {
@@ -12285,7 +9073,7 @@ export const StandaloneQuestionCondenserEventSchema = {
             description: 'Display description for the event'
         },
         condensed_chat_message: {
-            '$ref': '#/components/schemas/ChatMessage-Output',
+            '$ref': '#/components/schemas/ChatMessage',
             description: 'Single chat message containing the condensed user question.'
         },
         _event_name: {
@@ -12483,7 +9271,8 @@ export const SubmittedFormDTOSchema = {
     },
     type: 'object',
     required: ['process_class', 'process_id', 'process_walkthrough_id'],
-    title: 'SubmittedFormDTO'
+    title: 'SubmittedFormDTO',
+    description: 'TODO: Define what information shall be returned on partial or sucessfull submittion of the form'
 } as const;
 
 export const SuiteDTOSchema = {
@@ -12517,7 +9306,8 @@ export const TextBlockSchema = {
     },
     type: 'object',
     required: ['text'],
-    title: 'TextBlock'
+    title: 'TextBlock',
+    description: 'A representation of text data to directly pass to/from the LLM.'
 } as const;
 
 export const TextContentSchema = {
@@ -12597,162 +9387,6 @@ export const TextToSpeechRequestSchema = {
     title: 'TextToSpeechRequest'
 } as const;
 
-export const TextareaSchema = {
-    properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primeTextarea',
-            title: 'Formkit',
-            description: 'PrimeVue Textarea element.',
-            default: 'primeTextarea'
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Validation Rules',
-            description: 'Validation expression'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        placeholder: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Placeholder',
-            description: 'Placeholder text'
-        },
-        rows: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Rows',
-            description: 'Number of rows to display'
-        },
-        autoResize: {
-            type: 'boolean',
-            title: 'Autoresize',
-            description: 'Whether to automatically resize based on content',
-            default: false
-        },
-        validation: {
-            type: 'string',
-            title: 'Validation',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['label', 'validation'],
-    title: 'Textarea',
-    description: 'https://formkit-primevue.netlify.app/inputs/Textarea'
-} as const;
-
 export const ThoughtEventSchema = {
     properties: {
         event_id: {
@@ -12785,18 +9419,6 @@ export const ThoughtEventSchema = {
                 }
             ],
             description: 'Display description for the event'
-        },
-        content: {
-            type: 'string',
-            title: 'Content',
-            description: 'The actual chunk of text or data produced at this stage.',
-            default: ''
-        },
-        model_name: {
-            type: 'string',
-            title: 'Model Name',
-            description: 'The name of the AI model generating the chunks.',
-            default: 'aihub'
         },
         reasoning_content: {
             anyOf: [
@@ -13059,359 +9681,6 @@ export const TimeRangeSchema = {
     title: 'TimeRange'
 } as const;
 
-export const ToggleButtonSchema = {
-    properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primeToggleButton',
-            title: 'Formkit',
-            description: 'PrimeVue ToggleButton element.',
-            default: 'primeToggleButton'
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Validation Rules',
-            description: 'Validation expression'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        onLabel: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Onlabel',
-            description: 'Label for the on state'
-        },
-        offLabel: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Offlabel',
-            description: 'Label for the off state'
-        },
-        onIcon: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^pi pi-[a-z0-9-]+$'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Onicon',
-            description: 'Icon for the on state'
-        },
-        offIcon: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^pi pi-[a-z0-9-]+$'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Officon',
-            description: 'Icon for the off state'
-        },
-        iconPos: {
-            anyOf: [
-                {
-                    type: 'string',
-                    enum: ['left', 'right']
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Iconpos',
-            description: 'Position of the icon'
-        },
-        validation: {
-            type: 'string',
-            title: 'Validation',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['label', 'validation'],
-    title: 'ToggleButton',
-    description: 'https://formkit-primevue.netlify.app/inputs/ToggleButton'
-} as const;
-
-export const ToggleSwitchSchema = {
-    properties: {
-        is_formkit_element: {
-            type: 'boolean',
-            const: true,
-            title: 'Is Formkit Element',
-            description: 'Indicates that this element is a FormKit element',
-            default: true
-        },
-        if: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: '^\\$.+'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'If',
-            description: 'Conditional expression to show this element'
-        },
-        id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Id',
-            description: 'Unique identifier for this element'
-        },
-        formkit: {
-            type: 'string',
-            const: 'primeToggleSwitch',
-            title: 'Formkit',
-            description: 'PrimeVue ToggleSwitch element.',
-            default: 'primeToggleSwitch'
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'Name of this field'
-        },
-        label: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Label',
-            description: 'Label of this field'
-        },
-        help: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Help',
-            description: 'Help text of this field'
-        },
-        required: {
-            type: 'boolean',
-            title: 'Required',
-            description: 'Whether this field is required',
-            default: false
-        },
-        additional_validation_rules: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Validation Rules',
-            description: 'Validation expression'
-        },
-        disabled: {
-            type: 'boolean',
-            title: 'Disabled',
-            description: 'Whether the input is disabled',
-            default: false
-        },
-        readonly: {
-            type: 'boolean',
-            title: 'Readonly',
-            description: 'Whether the input is readonly',
-            default: false
-        },
-        trueValue: {
-            title: 'Truevalue',
-            description: 'Value to emit when toggled on'
-        },
-        falseValue: {
-            title: 'Falsevalue',
-            description: 'Value to emit when toggled off'
-        },
-        prefix: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Prefix',
-            description: 'Prefix text'
-        },
-        suffix: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Suffix',
-            description: 'Suffix text'
-        },
-        validation: {
-            type: 'string',
-            title: 'Validation',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['label', 'validation'],
-    title: 'ToggleSwitch',
-    description: 'https://formkit-primevue.netlify.app/inputs/ToggleSwitch'
-} as const;
-
 export const TokenResponseSchema = {
     properties: {
         id: {
@@ -13602,6 +9871,20 @@ export const TranscriptionSchema = {
                 }
             ],
             title: 'Logprobs'
+        },
+        usage: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/UsageTokens'
+                },
+                {
+                    '$ref': '#/components/schemas/UsageDuration'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Usage'
         }
     },
     additionalProperties: true,
@@ -13690,6 +9973,16 @@ export const TranscriptionVerboseSchema = {
             ],
             title: 'Segments'
         },
+        usage: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/openai__types__audio__transcription_verbose__Usage'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
         words: {
             anyOf: [
                 {
@@ -13730,6 +10023,69 @@ export const TranscriptionWordSchema = {
     type: 'object',
     required: ['end', 'start', 'word'],
     title: 'TranscriptionWord'
+} as const;
+
+export const UpdateNamespaceRequestSchema = {
+    properties: {
+        display_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name',
+            description: 'The new display name for the namespace.'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: "The new description of the namespace's contents."
+        }
+    },
+    type: 'object',
+    title: 'UpdateNamespaceRequest'
+} as const;
+
+export const UpdateNotificationRequestSchema = {
+    properties: {
+        read: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Read',
+            description: "The new 'read' status of the notification."
+        },
+        done: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Done',
+            description: "The new 'done' status for the notification's task."
+        }
+    },
+    type: 'object',
+    title: 'UpdateNotificationRequest',
+    description: 'Request model for partially updating a notification.'
 } as const;
 
 export const UpdateRoleRequestSchema = {
@@ -13779,28 +10135,22 @@ export const UpdateRoleRequestSchema = {
     description: 'Request model for updating an existing role. All fields are optional.'
 } as const;
 
-export const UsageSchema = {
+export const UsageDurationSchema = {
     properties: {
-        input_tokens: {
-            type: 'integer',
-            title: 'Input Tokens'
+        seconds: {
+            type: 'number',
+            title: 'Seconds'
         },
-        input_tokens_details: {
-            '$ref': '#/components/schemas/UsageInputTokensDetails'
-        },
-        output_tokens: {
-            type: 'integer',
-            title: 'Output Tokens'
-        },
-        total_tokens: {
-            type: 'integer',
-            title: 'Total Tokens'
+        type: {
+            type: 'string',
+            const: 'duration',
+            title: 'Type'
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['input_tokens', 'input_tokens_details', 'output_tokens', 'total_tokens'],
-    title: 'Usage'
+    required: ['seconds', 'type'],
+    title: 'UsageDuration'
 } as const;
 
 export const UsageInputTokensDetailsSchema = {
@@ -13820,6 +10170,72 @@ export const UsageInputTokensDetailsSchema = {
     title: 'UsageInputTokensDetails'
 } as const;
 
+export const UsageTokensSchema = {
+    properties: {
+        input_tokens: {
+            type: 'integer',
+            title: 'Input Tokens'
+        },
+        output_tokens: {
+            type: 'integer',
+            title: 'Output Tokens'
+        },
+        total_tokens: {
+            type: 'integer',
+            title: 'Total Tokens'
+        },
+        type: {
+            type: 'string',
+            const: 'tokens',
+            title: 'Type'
+        },
+        input_token_details: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/UsageTokensInputTokenDetails'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['input_tokens', 'output_tokens', 'total_tokens', 'type'],
+    title: 'UsageTokens'
+} as const;
+
+export const UsageTokensInputTokenDetailsSchema = {
+    properties: {
+        audio_tokens: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Audio Tokens'
+        },
+        text_tokens: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Text Tokens'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    title: 'UsageTokensInputTokenDetails'
+} as const;
+
 export const UserAccessSchema = {
     properties: {
         name: {
@@ -13835,94 +10251,6 @@ export const UserAccessSchema = {
     type: 'object',
     required: ['name', 'level'],
     title: 'UserAccess'
-} as const;
-
-export const UserChatMessage_InputSchema = {
-    properties: {
-        role: {
-            '$ref': '#/components/schemas/MessageRole-Input',
-            default: 'user'
-        },
-        additional_kwargs: {
-            '$ref': '#/components/schemas/additional_kwargs'
-        },
-        blocks: {
-            items: {
-                oneOf: [
-                    {
-                        '$ref': '#/components/schemas/TextBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ImageBlock-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/AudioBlock-Input'
-                    }
-                ],
-                discriminator: {
-                    propertyName: 'block_type',
-                    mapping: {
-                        audio: '#/components/schemas/AudioBlock-Input',
-                        image: '#/components/schemas/ImageBlock-Input',
-                        text: '#/components/schemas/TextBlock'
-                    }
-                }
-            },
-            type: 'array',
-            title: 'Blocks'
-        },
-        user_id: {
-            type: 'string',
-            title: 'User Id'
-        }
-    },
-    type: 'object',
-    required: ['additional_kwargs', 'user_id'],
-    title: 'UserChatMessage'
-} as const;
-
-export const UserChatMessage_OutputSchema = {
-    properties: {
-        role: {
-            '$ref': '#/components/schemas/MessageRole-Output',
-            default: 'user'
-        },
-        additional_kwargs: {
-            title: 'Additional Kwargs'
-        },
-        blocks: {
-            items: {
-                oneOf: [
-                    {
-                        '$ref': '#/components/schemas/TextBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ImageBlock-Output'
-                    },
-                    {
-                        '$ref': '#/components/schemas/AudioBlock-Output'
-                    }
-                ],
-                discriminator: {
-                    propertyName: 'block_type',
-                    mapping: {
-                        audio: '#/components/schemas/AudioBlock-Output',
-                        image: '#/components/schemas/ImageBlock-Output',
-                        text: '#/components/schemas/TextBlock'
-                    }
-                }
-            },
-            type: 'array',
-            title: 'Blocks'
-        },
-        user_id: {
-            type: 'string',
-            title: 'User Id'
-        }
-    },
-    type: 'object',
-    required: ['user_id'],
-    title: 'UserChatMessage'
 } as const;
 
 export const UserDTOSchema = {
@@ -14096,17 +10424,7 @@ export const UserMessageEventSchema = {
         },
         messages: {
             items: {
-                anyOf: [
-                    {
-                        '$ref': '#/components/schemas/ChatMessage-Output'
-                    },
-                    {
-                        '$ref': '#/components/schemas/UserChatMessage-Output'
-                    },
-                    {
-                        '$ref': '#/components/schemas/AssistantChatMessage-Output'
-                    }
-                ]
+                '$ref': '#/components/schemas/ChatMessage'
             },
             type: 'array',
             title: 'Messages',
@@ -14117,7 +10435,7 @@ export const UserMessageEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/UserUploadedFile-Output'
+                        '$ref': '#/components/schemas/UserUploadedFile'
                     },
                     type: 'array'
                 },
@@ -14173,47 +10491,7 @@ This flexible design allows mixing and matching start events to adapt how and wh
 are triggered, depending on the source of the event.`
 } as const;
 
-export const UserMessageEventInputSchema = {
-    properties: {
-        messages: {
-            items: {
-                anyOf: [
-                    {
-                        '$ref': '#/components/schemas/ChatMessage-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/UserChatMessage-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/AssistantChatMessage-Input'
-                    }
-                ]
-            },
-            type: 'array',
-            title: 'Messages',
-            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
-        },
-        files: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__UserUploadedFile'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Files',
-            description: 'A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.'
-        }
-    },
-    type: 'object',
-    title: 'UserMessageEventInput'
-} as const;
-
-export const UserUploadedFile_OutputSchema = {
+export const UserUploadedFileSchema = {
     properties: {
         filename: {
             type: 'string',
@@ -14382,277 +10660,22 @@ export const WorkflowGraphSchema = {
     description: 'Complete workflow graph representation.'
 } as const;
 
-export const additional_kwargsSchema = {
-    properties: {},
-    type: 'object',
-    title: 'additional_kwargs'
-} as const;
-
-export const aihub_lib__nats__events__semantic__llm__Message__MessageSchema = {
+export const openai__types__audio__transcription_verbose__UsageSchema = {
     properties: {
-        role: {
+        seconds: {
+            type: 'number',
+            title: 'Seconds'
+        },
+        type: {
             type: 'string',
-            title: 'Role',
-            description: "The role of the message, such as 'user', 'assistant', or 'system'."
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'The name of the function or agent generating the message.'
-        },
-        tool_calls: {
-            anyOf: [
-                {
-                    items: {
-                        additionalProperties: true,
-                        type: 'object'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tool Calls',
-            description: 'List of tool calls generated by the model, such as function calls.'
-        },
-        function_call_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Function Call Name',
-            description: 'The name of the function being called in the message.'
-        },
-        function_call_arguments_json: {
-            anyOf: [
-                {
-                    additionalProperties: true,
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Function Call Arguments Json',
-            description: 'JSON representing arguments passed to the function during a function call.'
-        },
-        tool_call_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tool Call Id',
-            description: 'The ID of the tool call, if applicable.'
-        },
-        contents: {
-            anyOf: [
-                {
-                    items: {
-                        anyOf: [
-                            {
-                                '$ref': '#/components/schemas/TextContent'
-                            },
-                            {
-                                '$ref': '#/components/schemas/ImageContent'
-                            },
-                            {
-                                '$ref': '#/components/schemas/AudioContent'
-                            }
-                        ]
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Contents',
-            description: 'The message contents as an array of content blocks (text, image, audio).'
-        },
-        content: {
-            type: 'string',
-            title: 'Content',
-            readOnly: true
+            const: 'duration',
+            title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
-    required: ['role', 'content'],
-    title: 'Message'
-} as const;
-
-export const aihub_lib__nats__events__user__UserUploadedFile__UserUploadedFileSchema = {
-    properties: {
-        filename: {
-            type: 'string',
-            title: 'Filename',
-            description: 'The name of the uploaded file, including the extension.'
-        },
-        file_data: {
-            type: 'string',
-            title: 'File Data',
-            description: 'Base64 encoded content of the uploaded file.'
-        },
-        file_type: {
-            type: 'string',
-            title: 'File Type',
-            description: 'The MIME type of the uploaded file.',
-            examples: ['image/png', 'application/pdf']
-        }
-    },
-    type: 'object',
-    required: ['filename', 'file_data', 'file_type'],
-    title: 'UserUploadedFile'
-} as const;
-
-export const function_call_arguments_jsonSchema = {
-    properties: {},
-    type: 'object',
-    title: 'function_call_arguments_json'
-} as const;
-
-export const invocation_parametersSchema = {
-    properties: {},
-    type: 'object',
-    title: 'invocation_parameters'
-} as const;
-
-export const jambo__parser__object_type_parser__MessageSchema = {
-    properties: {
-        role: {
-            type: 'string',
-            title: 'Role',
-            description: "The role of the message, such as 'user', 'assistant', or 'system'."
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'The name of the function or agent generating the message.'
-        },
-        tool_calls: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/tool_calls'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tool Calls',
-            description: 'List of tool calls generated by the model, such as function calls.'
-        },
-        function_call_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Function Call Name',
-            description: 'The name of the function being called in the message.'
-        },
-        function_call_arguments_json: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/function_call_arguments_json'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'JSON representing arguments passed to the function during a function call.'
-        },
-        tool_call_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tool Call Id',
-            description: 'The ID of the tool call, if applicable.'
-        },
-        contents: {
-            anyOf: [
-                {
-                    items: {
-                        anyOf: [
-                            {
-                                '$ref': '#/components/schemas/TextContent'
-                            },
-                            {
-                                '$ref': '#/components/schemas/ImageContent'
-                            },
-                            {
-                                '$ref': '#/components/schemas/AudioContent'
-                            }
-                        ]
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Contents',
-            description: 'The message contents as an array of content blocks (text, image, audio).'
-        }
-    },
-    type: 'object',
-    required: ['role'],
-    title: 'Message'
-} as const;
-
-export const jambo__parser__object_type_parser__UserUploadedFileSchema = {
-    properties: {
-        filename: {
-            type: 'string',
-            title: 'Filename',
-            description: 'The name of the uploaded file, including the extension.'
-        },
-        file_data: {
-            type: 'string',
-            title: 'File Data',
-            description: 'Base64 encoded content of the uploaded file.'
-        },
-        file_type: {
-            type: 'string',
-            title: 'File Type',
-            description: 'The MIME type of the uploaded file.'
-        }
-    },
-    type: 'object',
-    required: ['filename', 'file_data', 'file_type'],
-    title: 'UserUploadedFile'
+    required: ['seconds', 'type'],
+    title: 'Usage'
 } as const;
 
 export const openai__types__chat__chat_completion_message_tool_call_param__FunctionSchema = {
@@ -14704,20 +10727,26 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
     title: 'Function'
 } as const;
 
-export const prompt_template_variablesSchema = {
-    properties: {},
+export const openai__types__images_response__UsageSchema = {
+    properties: {
+        input_tokens: {
+            type: 'integer',
+            title: 'Input Tokens'
+        },
+        input_tokens_details: {
+            '$ref': '#/components/schemas/UsageInputTokensDetails'
+        },
+        output_tokens: {
+            type: 'integer',
+            title: 'Output Tokens'
+        },
+        total_tokens: {
+            type: 'integer',
+            title: 'Total Tokens'
+        }
+    },
+    additionalProperties: true,
     type: 'object',
-    title: 'prompt_template_variables'
-} as const;
-
-export const tool_callsSchema = {
-    properties: {},
-    type: 'object',
-    title: 'tool_calls'
-} as const;
-
-export const toolsSchema = {
-    properties: {},
-    type: 'object',
-    title: 'tools'
+    required: ['input_tokens', 'input_tokens_details', 'output_tokens', 'total_tokens'],
+    title: 'Usage'
 } as const;

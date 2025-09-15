@@ -29,7 +29,7 @@ class CompletionHandler:
         raise NotImplementedError("Subclasses must implement this method")
 
     @staticmethod
-    async def get_stream_completion(**kwargs) -> AsyncGenerator[str, None]:
+    async def get_stream_completion(**kwargs) -> AsyncGenerator[str]:
         """Get a chat completion as a stream of chunks."""
         raise NotImplementedError("Subclasses must implement this method")
 
@@ -204,7 +204,7 @@ class CompletionHandler:
     @staticmethod
     async def send_response_stream(
         turn_context: TurnContext,
-        response_generator: AsyncGenerator[str, None],
+        response_generator: AsyncGenerator[str],
     ) -> str:
         """
         ### What

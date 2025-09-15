@@ -32,7 +32,11 @@ const fetchAndSetImageUrl = async () => {
     return props.src
   }
 
-  const parts = props.src.split('/')
+  let src = props.src
+  if (src.includes('://')) {
+    src = src.split('://')[1]
+  }
+  const parts = src.split('/')
   const [container, file_path] = [parts[0], parts.slice(1).join('/')]
 
   const { url } = await getFileUrl({

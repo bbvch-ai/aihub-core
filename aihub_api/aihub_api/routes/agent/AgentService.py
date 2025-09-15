@@ -1,36 +1,48 @@
 import asyncio
+import logging
 from asyncio import sleep
+from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from aihub_lib.nats.events import BaseEvent, ExceptionEvent, StopEvent
+from aihub_lib.nats.events import (
+    BaseEvent,
+    DisplayEvent,
+    ExceptionEvent,
+    HumanInTheLoopResponseEvent,
+    StartEvent,
+    StopEvent,
+)
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentClassDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
+from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import HumanInTheLoopRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from aihub_lib.nats.topics import AgentInstanceTopic
 from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
 from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
-from aihub_lib.routes.chat.ChatService import ChatService, JsonResources
+from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from bson import ObjectId
 from cachetools import TTLCache
 from fastapi import HTTPException
 from nats.aio.client import Client as NATS
 
-from aihub_api.agents.AgentClass import AgentClass
-from aihub_api.agents.AgentInstance import AgentInstance
+from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
+from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
 from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
+
+logger = logging.getLogger(__name__)
 
 # In-memory caches to avoid repeatedly querying NATS for agent info
 DISCOVER_AGENTS_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache the entire agent list for 60s
@@ -72,12 +84,10 @@ class AgentService:
         Returns both agents that are online (answer to a discovery broadcast) and agents
         that are saved in the database.
         """
-        discovered_agents = await AgentService.discover_agent_instances(nc)
+        discovered_agents = await AgentService.discover_agents(nc, t)
         saved_agents = [AgentDTO.from_entity(agent, t, is_online=False) for agent in AgentEntity.get_agents()]
 
-        all_agents = [
-            AgentDTO.from_instance(agent_instance, is_online=True, t=t) for agent_instance in discovered_agents
-        ]
+        all_agents = discovered_agents.copy()
         for saved_agent in saved_agents:
             was_discovered = (
                 len(
@@ -95,7 +105,7 @@ class AgentService:
         return all_agents
 
     @staticmethod
-    async def discover_agent_instance(nc: NATS, agent_class: str, agent_id: str) -> AgentInstance:
+    async def discover_agent_instance(nc: NATS, agent_class: str, agent_id: str) -> AgentInstanceDTO:
         """
         Retrieves details about a specific agent. If cached, returns immediately.
         Otherwise, sends a targeted discovery request and waits for a response.
@@ -105,31 +115,31 @@ class AgentService:
         if cache_key in GET_AGENT_INSTANCE_CACHE:
             return GET_AGENT_INSTANCE_CACHE[cache_key]
 
-        agent_class_dto = await AgentService.discover_agent_class(nc, agent_class)
+        agent_class_dto = await AgentService._discover_agent_class(nc, agent_class)
 
         configs = AgentConfigEntityDocument.find_for_class(agent_class)
         for config in configs:
             if config.agent_id == agent_id:
                 agent_config = AgentConfig.from_entity(config)
-                agent_dto = AgentInstance.from_class_and_config(
+                agent_instance_dto = AgentInstanceDTO.from_class_and_config(
                     class_dto=agent_class_dto,
                     agent_config=agent_config,
                 )
-                GET_AGENT_INSTANCE_CACHE[cache_key] = agent_dto
-                return agent_dto
+                GET_AGENT_INSTANCE_CACHE[cache_key] = agent_instance_dto
+                return agent_instance_dto
 
         if agent_class_dto.default_agent_config.agent_id == agent_id:
-            agent_dto = AgentInstance.from_class_and_config(
+            agent_instance_dto = AgentInstanceDTO.from_class_and_config(
                 class_dto=agent_class_dto,
                 agent_config=agent_class_dto.default_agent_config,
             )
-            GET_AGENT_INSTANCE_CACHE[cache_key] = agent_dto
-            return agent_dto
+            GET_AGENT_INSTANCE_CACHE[cache_key] = agent_instance_dto
+            return agent_instance_dto
 
         raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
 
     @staticmethod
-    async def discover_agent_instances_by_class(nc: NATS, agent_class: str) -> list[AgentInstance]:
+    async def discover_agent_instances_by_class(nc: NATS, agent_class: str) -> list[AgentInstanceDTO]:
         """
         Retrieves all instances of a specific agent class. If cached, returns immediately.
         Otherwise, sends a targeted discovery request and waits for responses.
@@ -139,35 +149,35 @@ class AgentService:
         if cache_key in GET_AGENT_INSTANCE_CACHE:
             return GET_AGENT_INSTANCE_CACHE[cache_key]
 
-        agent_class_dto = await AgentService.discover_agent_class(nc, agent_class)
+        agent_class_dto = await AgentService._discover_agent_class(nc, agent_class)
 
         configs = AgentConfigEntityDocument.find_for_class(agent_class)
-        agent_instances = []
+        agent_instance_dtos = []
         for config in configs:
             agent_config = AgentConfig.from_entity(config)
-            agent_dto = AgentInstance.from_class_and_config(
+            agent_instance_dto = AgentInstanceDTO.from_class_and_config(
                 class_dto=agent_class_dto,
                 agent_config=agent_config,
             )
-            agent_instances.append(agent_dto)
+            agent_instance_dtos.append(agent_instance_dto)
 
         db_agent_ids = {config.agent_id for config in configs}
 
         if agent_class_dto.default_agent_config.agent_id not in db_agent_ids:
-            agent_dto = AgentInstance.from_class_and_config(
+            agent_instance_dto = AgentInstanceDTO.from_class_and_config(
                 class_dto=agent_class_dto,
                 agent_config=agent_class_dto.default_agent_config,
             )
-            agent_instances.append(agent_dto)
+            agent_instance_dtos.append(agent_instance_dto)
 
-        if len(agent_instances) > 0:
-            GET_AGENT_INSTANCE_CACHE[cache_key] = agent_instances
-            return agent_instances
+        if len(agent_instance_dtos) > 0:
+            GET_AGENT_INSTANCE_CACHE[cache_key] = agent_instance_dtos
+            return agent_instance_dtos
 
         raise HTTPException(status_code=404, detail=f"No instances found for agent class {agent_class}.")
 
     @staticmethod
-    async def discover_agent_class(nc: NATS, agent_class: str) -> AgentClass:
+    async def _discover_agent_class(nc: NATS, agent_class: str) -> AgentClassDTO:
         """
         Retrieves details about a specific agent. If cached, returns immediately.
         Otherwise, sends a targeted discovery request and waits for a response.
@@ -178,20 +188,22 @@ class AgentService:
             return GET_AGENT_CLASS_CACHE[cache_key]
 
         call_id = str(ObjectId())
-        agent_dto: AgentClass | None = None
+        agent_class_dto: AgentClassDTO | None = None
         agent_found_event = asyncio.Event()
 
         async def discovery_handler(event: AgentClassDiscoveryResponseEvent, topic: AgentClassDiscoveryTopic):
-            nonlocal agent_dto
+            nonlocal agent_class_dto
             # Found the agent, stop subscriber and signal event
             await nc_subscriber.stop()
-            agent_dto = AgentClass(
+            agent_class_dto = AgentClassDTO(
                 agent_class=event.agent_class,
                 agent_config_specs=event.agent_config_specs,
                 is_conversational=event.is_conversational,
                 start_events=event.start_events,
                 stop_events=event.stop_events,
-                network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
+                hitl_request_events=event.hitl_request_events,
+                hitl_response_events=event.hitl_response_events,
+                network_graph=event.network_graph,
                 is_online=True,
                 default_agent_config=event.default_agent_config,
             )
@@ -217,14 +229,14 @@ class AgentService:
             await nc_subscriber.stop()
             raise HTTPException(status_code=404, detail=f"Agent {agent_class} not found.")
 
-        if agent_dto is not None:
-            GET_AGENT_CLASS_CACHE[cache_key] = agent_dto
-            return agent_dto
+        if agent_class_dto is not None:
+            GET_AGENT_CLASS_CACHE[cache_key] = agent_class_dto
+            return agent_class_dto
 
         raise HTTPException(status_code=404, detail=f"Agent {agent_class} not found.")
 
     @staticmethod
-    async def discover_agent_instances(nc: NATS) -> list[AgentInstance]:
+    async def discover_agent_instances(nc: NATS) -> list[AgentInstanceDTO]:
         """
         Discovers all agents by broadcasting a discovery request and waiting for responses.
         Returns a cached result if available.
@@ -235,7 +247,7 @@ class AgentService:
             return DISCOVER_AGENTS_CACHE[cache_key]
 
         # Step 1: Discover which agent classes are online
-        online_agents: list[AgentClass] = await AgentService.discover_agent_classes(nc)
+        online_agents: list[AgentClassDTO] = await AgentService._discover_agent_classes(nc)
 
         # Step 2: Get all configured agent instances from database
         configured_agents = []
@@ -244,22 +256,22 @@ class AgentService:
             configs = AgentConfigEntityDocument.find_for_class(agent_class)
             for config in configs:
                 config_instance = AgentConfig.from_entity(config)
-                agent_dto = AgentInstance.from_class_and_config(
+                agent_instance_dto = AgentInstanceDTO.from_class_and_config(
                     class_dto=agent,
                     agent_config=config_instance,
                 )
-                AgentEntity.create_or_update_from_dto(agent_instance=agent_dto)
-                configured_agents.append(agent_dto)
+                agent_instance_dto.create_or_update_agent_entity()
+                configured_agents.append(agent_instance_dto)
 
             # Step 3: Check if default agent config is present in database
             db_agent_ids = {configured_agent.agent_id for configured_agent in configured_agents}
             if agent.default_agent_config.agent_id not in db_agent_ids:
-                agent_dto = AgentInstance.from_class_and_config(
+                agent_instance_dto = AgentInstanceDTO.from_class_and_config(
                     class_dto=agent,
                     agent_config=agent.default_agent_config,
                 )
-                AgentEntity.create_or_update_from_dto(agent_instance=agent_dto)
-                configured_agents.append(agent_dto)
+                agent_instance_dto.create_or_update_agent_entity()
+                configured_agents.append(agent_instance_dto)
 
         if len(configured_agents) > 0:
             DISCOVER_AGENTS_CACHE[cache_key] = configured_agents
@@ -267,7 +279,7 @@ class AgentService:
         return configured_agents
 
     @staticmethod
-    async def discover_agent_classes(nc: NATS) -> list[AgentClass]:
+    async def _discover_agent_classes(nc: NATS) -> list[AgentClassDTO]:
         """
         Discovers all agents by broadcasting a discovery request and waiting for responses.
         Returns a cached result if available.
@@ -300,14 +312,14 @@ class AgentService:
         await sleep(1)
         await nc_subscriber.stop()
 
-        unique_agents_dict: dict[str, AgentClass] = {}
+        unique_agents_dict: dict[str, AgentClassDTO] = {}
 
         for response in discovery_responses:
             unique_key = response.agent_class
 
             if unique_key not in unique_agents_dict:
-                agent_dto = AgentClass.from_discovery_event(response)
-                unique_agents_dict[unique_key] = agent_dto
+                agent_class_dto = AgentClassDTO.from_discovery_event(response)
+                unique_agents_dict[unique_key] = agent_class_dto
 
         agents = list(unique_agents_dict.values())
 
@@ -317,16 +329,25 @@ class AgentService:
         return agents
 
     @staticmethod
-    async def send_event(
+    async def discover_agents(nc: NATS, t: LocaleHandler) -> list[AgentDTO]:
+        discovered_agents = await AgentService.discover_agent_instances(nc)
+        return [AgentDTO.from_instance(agent_instance, is_online=True, t=t) for agent_instance in discovered_agents]
+
+    @staticmethod
+    async def _send_event(
+        *,
         nc: NATS,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         user: UserIdentity,
-        start_event: BaseEvent,
+        input_event: BaseEvent,
         agent_class: str,
         agent_id: str,
         thread_id: ObjectId | None = None,
         display_id: ObjectId | None = None,
-    ) -> StopEvent | ExceptionEvent:
+        subscribe_to_thread: Annotated[
+            bool, "Receive all events in thread, not just the ones from the specified agents"
+        ] = False,
+    ) -> StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent:
         """Sends an event to a specific agent."""
         if thread_id:
             thread = ThreadEntity.get_thread_by_id(str(thread_id))
@@ -338,8 +359,8 @@ class AgentService:
             )
 
         topic_manager = AgentThreadTopicManager(
-            agent_class=agent_class,
-            agent_id=agent_id,
+            agent_class="*" if subscribe_to_thread else agent_class,
+            agent_id="*" if subscribe_to_thread else agent_id,
             thread_id=str(thread.id),
             display_id=display_id or str(ObjectId()),
             run_id="*",
@@ -347,7 +368,7 @@ class AgentService:
         external_event = ExternalAgentEvent(
             thread_id=topic_manager.thread_id,
             display_id=topic_manager.display_id,
-            event=start_event,
+            event=input_event,
         )
         resources: JsonResources = await ChatService.start_json_event_interaction(
             user=user,
@@ -365,7 +386,158 @@ class AgentService:
         return resources.stop_event
 
     @staticmethod
+    async def send_agent_input_event(
+        *,
+        nc: NATS,
+        agent_class: str,
+        agent_id: str,
+        input_event_parents: list[str],
+        input_event_name: str,
+        raw_event_data: dict,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
+        thread_id: ObjectId | None,
+        display_id: ObjectId | None,
+        user: UserIdentity,
+        t: LocaleHandler,
+        agent_config: AgentConfig,
+        expected_type: type[StartEvent] | type[HumanInTheLoopResponseEvent],
+        subscribe_to_thread: Annotated[
+            bool, "Receive all events in thread, not just the ones from the specified agents"
+        ] = False,
+    ) -> StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent:
+        """
+        Sends an event (start or HITL response) to a specific agent and waits for a response.
+        """
+        event: StartEvent | HumanInTheLoopResponseEvent = expected_type.from_raw_data(
+            raw_event_data=raw_event_data,
+            user=user,
+            start_event_name=input_event_name,
+            start_event_parents=input_event_parents,
+            agent_config=agent_config,
+            t=t,
+        )
+
+        return await AgentService._send_event(
+            nc=nc,
+            external_agent_event_distributor=external_agent_event_distributor,
+            user=user,
+            input_event=event,
+            agent_class=agent_class,
+            agent_id=agent_id,
+            thread_id=thread_id,
+            display_id=display_id,
+            subscribe_to_thread=subscribe_to_thread,
+        )
+
+    @staticmethod
+    async def send_agent_input_event_stream(
+        *,
+        nc: NATS,
+        agent_class: str,
+        agent_id: str,
+        input_event_parents: list[str],
+        input_event_name: str,
+        raw_event_data: dict,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
+        thread_id: ObjectId | None,
+        display_id: ObjectId | None,
+        user: UserIdentity,
+        t: LocaleHandler,
+        agent_config: AgentConfig,
+        expected_type: type[StartEvent] | type[HumanInTheLoopResponseEvent],
+        subscribe_to_thread: Annotated[
+            bool, "Receive all events in thread, not just the ones from the specified agents"
+        ] = False,
+    ) -> StreamingResources:
+        """
+        Sends an event (start or HITL response) to a specific agent and returns streaming resources for SSE.
+        Yields ALL events (not just chunks) as raw events without conversion.
+        """
+        event: StartEvent | HumanInTheLoopResponseEvent = expected_type.from_raw_data(
+            raw_event_data=raw_event_data,
+            user=user,
+            start_event_name=input_event_name,
+            start_event_parents=input_event_parents,
+            agent_config=agent_config,
+            t=t,
+        )
+
+        if thread_id:
+            thread = ThreadEntity.get_thread_by_id(str(thread_id))
+        else:
+            thread = ThreadEntity.create_thread(
+                "chat",
+                users=[User(user_id=user.id)],
+                agents=[Agent(agent_class=agent_class, agent_id=agent_id)],
+            )
+
+        topic_manager = AgentThreadTopicManager(
+            agent_class="*" if subscribe_to_thread else agent_class,
+            agent_id="*" if subscribe_to_thread else agent_id,
+            thread_id=str(thread.id),
+            display_id=display_id or str(ObjectId()),
+            run_id="*",
+        )
+
+        external_event = ExternalAgentEvent(
+            thread_id=topic_manager.thread_id,
+            display_id=topic_manager.display_id,
+            event=event,
+        )
+
+        stop_signal = asyncio.Event()
+        event_queue = asyncio.Queue()
+
+        resources = StreamingResources(
+            stop_signal=stop_signal,
+            subscriber=None,
+            chunk_queue=event_queue,
+            stop_event=None,
+        )
+
+        async def event_handler(event: DisplayEvent, topic: AgentInstanceTopic):
+            """Handles ALL events and puts them in the queue without conversion"""
+            logger.debug(f"Received event for streaming: {event}")
+
+            # Put ALL events in the queue as raw events
+            await event_queue.put(event)
+
+            # Check if this is a stop event from the primary agent
+            is_primary_agent = topic.agent_class == agent_class and topic.agent_id == agent_id
+
+            if event.is_stop_event and is_primary_agent:
+                logger.debug("Received stop event. Stopping stream")
+                resources.stop_event = event
+                await subscriber.stop()
+                stop_signal.set()
+            elif event.is_exception_event:
+                logger.warning(f"Received exception event: {event}")
+                resources.stop_event = event
+                await subscriber.stop()
+                stop_signal.set()
+            elif event.is_hitl_request_event:
+                logger.debug(f"Received HITL request event: {event}")
+                resources.stop_event = event
+                await subscriber.stop()
+                stop_signal.set()
+
+        subscriber = AgentNCSubscriber.for_thread_display_events(
+            nc=nc,
+            topic_manager=topic_manager,
+            handler=event_handler,
+        )
+        resources.subscriber = subscriber
+        await subscriber.start()
+        logger.debug(f"Subscriber created for streaming subject: {subscriber.subject}")
+
+        # Trigger the agent interaction
+        await external_agent_event_distributor.distribute_event(external_event, user)
+
+        return resources
+
+    @staticmethod
     async def get_paginated_agent_threads(
+        *,
         agent_class: str,
         agent_id: str,
         t: LocaleHandler,
@@ -386,7 +558,7 @@ class AgentService:
         )
 
     @staticmethod
-    def clear_cache() -> None:
+    def _clear_cache() -> None:
         """
         Clears the in-memory caches used for agent discovery. Useful for testing purposes to ensure fresh discovery
         requests.

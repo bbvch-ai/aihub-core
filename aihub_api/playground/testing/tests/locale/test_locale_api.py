@@ -25,7 +25,7 @@ async def api_client():
     controller = I18nController(auth=auth).get_my_locale()
     runner = ApiTestRunner()
     runner.mount(controller)
-    app = runner.get_app()
+    app = runner.create_app()
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client

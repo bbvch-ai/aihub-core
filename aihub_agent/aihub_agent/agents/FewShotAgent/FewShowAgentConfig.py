@@ -1,9 +1,7 @@
 from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.azure.AzureOpenAILLMConfig import AzureOpenAILLMConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.gemini.GeminiLLMConfig import GeminiLLMConfig
-from aihub_lib.generative_ai.resources.models.llm.chat.openai_like.OpenaiLikeLLMConfig import OpenaiLikeLLMConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
@@ -11,7 +9,7 @@ from aihub_agent.steps.prompting.few_shot_step.FewShotStepConfig import FewShotS
 
 
 class FewShotAgentConfig(AgentConfig):
-    llm: AzureOpenAILLMConfig | GeminiLLMConfig | OpenaiLikeLLMConfig
+    llm: LLMConfig
     few_shot: FewShotStepConfig
     condense_question_prompt: Annotated[
         LocaleString, Field(description="Prompt template for transforming a user query into a standalone question.")

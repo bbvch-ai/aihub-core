@@ -13,7 +13,7 @@ from aihub_lib.nats.topics import Topic
 logger = logging.getLogger(__name__)
 
 
-class JSSubscriber(AbstractSubscriber):
+class JSSubscriber(AbstractSubscriber[TEvent]):
     """
     A subscriber that leverages NATS JetStream for consuming events from persistent streams.
     It ensures the stream is present (creating it if necessary), subscribes to a specified subject,
@@ -59,7 +59,10 @@ class JSSubscriber(AbstractSubscriber):
         """
         await self.stream_manager.ensure_stream_exists()
         self.js_subscription = await self.js.subscribe(
-            self.subject, cb=self.message_handler, stream=self.stream_manager.stream_name, queue=self.queue_group
+            subject=self.subject,
+            cb=self.message_handler,
+            stream=self.stream_manager.stream_name,
+            queue=self.queue_group,
         )
         logger.debug(f"Subscribed to '{self.subject}' with {self.stream_manager} and queue group '{self.queue_group}'.")
 
@@ -67,6 +70,9 @@ class JSSubscriber(AbstractSubscriber):
         """Unsubscribes from the JetStream subject, stopping the flow of messages."""
         if self.js_subscription:
             await self.js_subscription.unsubscribe()
+        logger.debug(
+            f"Unsubscribed from '{self.subject}' with {self.stream_manager} and queue group '{self.queue_group}'."
+        )
 
     async def message_handler(self, msg):
         """

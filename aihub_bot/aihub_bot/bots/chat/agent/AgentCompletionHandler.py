@@ -67,7 +67,7 @@ class AgentCompletionHandler(CompletionHandler):
         display_id: ObjectId | None = None,
         locale: str | None = None,
         **kwargs,
-    ) -> AsyncGenerator[str, None]:
+    ) -> AsyncGenerator[str]:
         """Get a streaming Agent completion."""
         resources: StreamingResources = await AgentCompletionHandler.chat_completion(
             turn_context=turn_context,

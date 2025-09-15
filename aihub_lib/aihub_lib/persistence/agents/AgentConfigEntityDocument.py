@@ -31,6 +31,13 @@ class AgentConfigEntityDocument(AgentConfigEntity, Document):
         """Find a specific configuration by agent class and ID."""
         return cls.objects(agent_class=agent_class, agent_id=agent_id).first()
 
+    @classmethod
+    def delete_if_exists_for_class_and_id(cls, agent_class: str, agent_id: str) -> None:
+        """Delete a specific configuration by agent class and ID if it exists."""
+        existing = cls.find_for_class_and_id(agent_class, agent_id)
+        if existing:
+            existing.delete()
+
     def save(self, *args, **kwargs):
         """Override save to update the updated_at timestamp."""
         self.updated_at = datetime.now(UTC)

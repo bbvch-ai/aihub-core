@@ -7,7 +7,7 @@ from mongoengine import DictField, Document, ListField, StringField
 
 if TYPE_CHECKING:
     from aihub_lib.nats.events import BaseEvent
-    from aihub_lib.nats.topics import ProcessTopic
+    from aihub_lib.nats.topics import ProcessInstanceTopic
 
 
 class PersistedProcessEventEntity(Document):
@@ -29,7 +29,7 @@ class PersistedProcessEventEntity(Document):
     event_parents = ListField(StringField(), required=True)
 
     @classmethod
-    def persist_event(cls, event: BaseEvent, topic: ProcessTopic, db: str):
+    def persist_event(cls, event: BaseEvent, topic: ProcessInstanceTopic, db: str):
         persisted_entity = cls(
             id=ObjectId(),
             process_class=topic.process_class,

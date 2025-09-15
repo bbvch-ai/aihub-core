@@ -126,6 +126,16 @@ export type AgentDto = {
      */
     stop_events: Array<EventSpecs>;
     /**
+     * Hitl Request Events
+     * A list of `EventSpecs` representing human-in-the-loop request events this agent can produce.
+     */
+    hitl_request_events: Array<EventSpecs>;
+    /**
+     * Hitl Response Events
+     * A list of `EventSpecs` representing human-in-the-loop response events this agent can accept.
+     */
+    hitl_response_events: Array<EventSpecs>;
+    /**
      * A network graph of the agent, showing how different components are connected and interact.
      */
     network_graph: WorkflowGraph;
@@ -196,9 +206,13 @@ export type AgentEventWritable = {
 };
 
 /**
- * AgentInDTO
+ * AgentInSpecs
+ * Defines the specifications of a piece of work that can be submitted by an agent.
+ * It is limited to an exact agent by class and id and holds the event specs of the
+ * agents stop events, as these stop events are translated to work events and submitted
+ * to the agentic process as inputs.
  */
-export type AgentInDto = {
+export type AgentInSpecs = {
     /**
      * Agent Class
      * The class or category of the agent.
@@ -339,7 +353,7 @@ export type AgentInTheLoopRequestEventReadable = {
      * Other Agent Topic
      * A partial or full agent topic specifying the target agent and event routing, ensuring the task is delegated to the correct agent.
      */
-    other_agent_topic: PartialAgentTopic | AgentTopic;
+    other_agent_topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Share Thread Id
      * Whether to share the conversation thread context with the other agent.
@@ -366,7 +380,7 @@ export type AgentInTheLoopRequestEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventReadable | UserMessageEventReadable) | (PartialAgentTopic | AgentTopic) | boolean | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventReadable | UserMessageEventReadable) | (PartialAgentTopic | AgentInstanceTopic) | boolean | Array<string> | undefined;
 };
 
 /**
@@ -407,7 +421,7 @@ export type AgentInTheLoopRequestEventWritable = {
      * Other Agent Topic
      * A partial or full agent topic specifying the target agent and event routing, ensuring the task is delegated to the correct agent.
      */
-    other_agent_topic: PartialAgentTopic | AgentTopic;
+    other_agent_topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Share Thread Id
      * Whether to share the conversation thread context with the other agent.
@@ -423,7 +437,7 @@ export type AgentInTheLoopRequestEventWritable = {
      * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!
      */
     share_run_id?: boolean;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventWritable | UserMessageEventWritable) | (PartialAgentTopic | AgentTopic) | boolean | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventWritable | UserMessageEventWritable) | (PartialAgentTopic | AgentInstanceTopic) | boolean | undefined;
 };
 
 /**
@@ -506,42 +520,7 @@ export type AgentInTheLoopResponseEventWritable = {
 };
 
 /**
- * AgentProcessStepDTO
- * DTO representing an agent process step with agent-specific work request and response information.
- */
-export type AgentProcessStepDto = {
-    /**
-     * Step Index
-     * Order of this step in the walkthrough (0-based).
-     */
-    step_index: number;
-    /**
-     * Step Type
-     * Type of entity involved in this step.
-     */
-    step_type?: string;
-    /**
-     * Created At
-     * Timestamp when this step was created in nanoseconds.
-     */
-    created_at: number;
-    /**
-     * Is Completed
-     * Whether this step has been completed (has a work response).
-     */
-    is_completed: boolean;
-    /**
-     * The agent work request for this step.
-     */
-    work_request?: AgentWorkRequestDto | null;
-    /**
-     * The agent work response for this step. May be None if work is not yet completed.
-     */
-    work_response?: AgentWorkResponseDto | null;
-};
-
-/**
- * AgentTopic
+ * AgentInstanceTopic
  * Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
  * to be present. This includes identifiers for agent_class, agent_id, and the event itself.
  *
@@ -557,7 +536,7 @@ export type AgentProcessStepDto = {
  * "agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"
  * then this AgentTopic can represent it, providing quick field-level access and serialization.
  */
-export type AgentTopic = {
+export type AgentInstanceTopic = {
     /**
      * Agent Class
      * The agent's class identifier.
@@ -601,126 +580,6 @@ export type AgentTopic = {
 };
 
 /**
- * AgentWorkRequestDTO
- * DTO representing an agent work request with specific agent-related information.
- */
-export type AgentWorkRequestDto = {
-    /**
-     * Event Id
-     * Unique identifier of the work request event.
-     */
-    event_id: string;
-    /**
-     * Event Name
-     * Name of the event type.
-     */
-    event_name: string;
-    /**
-     * Created At
-     * Timestamp when the work was requested in nanoseconds.
-     */
-    created_at: number;
-    /**
-     * Request Type
-     * Type of entity the work was requested from.
-     */
-    request_type: 'human' | 'agent' | 'program';
-    /**
-     * Display Name
-     * Human-readable name for the work request.
-     */
-    display_name: string | null;
-    /**
-     * Display Description
-     * Human-readable description of the work request.
-     */
-    display_description: string | null;
-    /**
-     * Data
-     * The work request event data.
-     */
-    data: {
-        [key: string]: unknown;
-    };
-    /**
-     * Agent Class
-     * The class of the agent that should handle this request.
-     */
-    agent_class: string;
-    /**
-     * Agent Id
-     * The ID of the agent that should handle this request.
-     */
-    agent_id: string;
-    /**
-     * Detailed information about the agent, if available.
-     */
-    agent_info?: MinimalAgentDto | null;
-    /**
-     * Start Event
-     * The start event that will be sent to the agent.
-     */
-    start_event?: {
-        [key: string]: unknown;
-    };
-};
-
-/**
- * AgentWorkResponseDTO
- * DTO representing an agent work response with specific agent-related information.
- */
-export type AgentWorkResponseDto = {
-    /**
-     * Event Id
-     * Unique identifier of the work response event.
-     */
-    event_id: string;
-    /**
-     * Event Name
-     * Name of the event type.
-     */
-    event_name: string;
-    /**
-     * Created At
-     * Timestamp when the work was completed in nanoseconds.
-     */
-    created_at: number;
-    /**
-     * Response Type
-     * Type of entity that completed the work.
-     */
-    response_type: 'human' | 'agent' | 'program';
-    /**
-     * Display Name
-     * Human-readable name for the work response.
-     */
-    display_name: string | null;
-    /**
-     * Display Description
-     * Human-readable description of the work response.
-     */
-    display_description: string | null;
-    /**
-     * Data
-     * The work response event data.
-     */
-    data: {
-        [key: string]: unknown;
-    };
-    /**
-     * Detailed information about the agent, if available.
-     */
-    agent_info?: MinimalAgentDto | null;
-    /**
-     * Agent Stop Event
-     * The stop event returned by the agent after completing the work.
-     */
-    agent_stop_event?: {
-        [key: string]: unknown;
-    };
-};
-
-/**
  * Annotation
  */
 export type Annotation = {
@@ -756,61 +615,6 @@ export type AnnotationUrlCitation = {
 };
 
 /**
- * AssistantChatMessage
- */
-export type AssistantChatMessageInput = {
-    role?: MessageRoleInput;
-    additional_kwargs: AdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput)>;
-    /**
-     * Agent Id
-     */
-    agent_id: string;
-    /**
-     * Agent Class
-     */
-    agent_class: string;
-};
-
-/**
- * AssistantChatMessage
- */
-export type AssistantChatMessageOutput = {
-    role?: MessageRoleOutput;
-    /**
-     * Additional Kwargs
-     */
-    additional_kwargs?: unknown;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockOutput) | ({
-        block_type: 'audio';
-    } & AudioBlockOutput)>;
-    /**
-     * Agent Id
-     */
-    agent_id: string;
-    /**
-     * Agent Class
-     */
-    agent_class: string;
-};
-
-/**
  * Audio
  */
 export type Audio = {
@@ -822,34 +626,9 @@ export type Audio = {
 
 /**
  * AudioBlock
+ * A representation of audio data to directly pass to/from the LLM.
  */
-export type AudioBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'audio';
-    /**
-     * Audio
-     */
-    audio?: (Blob | File) | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | null;
-    /**
-     * Format
-     */
-    format?: string | null;
-};
-
-/**
- * AudioBlock
- */
-export type AudioBlockOutput = {
+export type AudioBlock = {
     /**
      * Block Type
      */
@@ -934,221 +713,45 @@ export type BodyCreateTranscriptionOpenaiAudioTranscriptionsPost = {
 };
 
 /**
- * CascadeSelect
- * https://formkit-primevue.netlify.app/inputs/CascadeSelect
+ * BulkUpdateNotificationRequest
+ * Request model for updating multiple notifications at once.
  */
-export type CascadeSelectReadable = {
+export type BulkUpdateNotificationRequest = {
     /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
+     * Notification Ids
+     * The IDs of the notifications to update.
      */
-    is_formkit_element?: true;
+    notification_ids: Array<string>;
     /**
-     * If
-     * Conditional expression to show this element
+     * The updates to apply to each notification.
      */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue CascadeSelect element.
-     */
-    formkit?: 'primeCascadeSelect';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Placeholder
-     * Placeholder text
-     */
-    placeholder?: LocaleString | string | null;
-    /**
-     * Options
-     * Array of hierarchical option objects
-     */
-    options: Array<{
-        [key: string]: string | LocaleString | unknown;
-    }>;
-    /**
-     * Optionlabel
-     * Property name to use as the label of an option
-     */
-    optionLabel?: string | null;
-    /**
-     * Optionvalue
-     * Property name to use as the value of an option
-     */
-    optionValue?: string | null;
-    /**
-     * Optiongrouplabel
-     * Property name to use as the label of an option group
-     */
-    optionGroupLabel?: string | null;
-    /**
-     * Optiongroupchildren
-     * Property names that define the children of option groups
-     */
-    optionGroupChildren?: Array<string> | null;
-    /**
-     * Filter
-     * Whether to enable filtering
-     */
-    filter?: boolean;
-    /**
-     * Multiple
-     * Whether to allow multiple selections
-     */
-    multiple?: boolean;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeCascadeSelect' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | Array<{
-        [key: string]: string | LocaleString | unknown;
-    }> | (string | null) | (string | null) | (string | null) | (Array<string> | null) | string | undefined;
+    updates: UpdateNotificationRequest;
 };
 
 /**
- * CascadeSelect
- * https://formkit-primevue.netlify.app/inputs/CascadeSelect
+ * CacheControl
  */
-export type CascadeSelectWritable = {
+export type CacheControl = {
     /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
+     * Type
      */
-    is_formkit_element?: true;
+    type: string;
     /**
-     * If
-     * Conditional expression to show this element
+     * Ttl
      */
-    if?: string | null;
+    ttl?: string;
+};
+
+/**
+ * CachePoint
+ * Used to set the point to cache up to, if the LLM supports caching.
+ */
+export type CachePoint = {
     /**
-     * Id
-     * Unique identifier for this element
+     * Block Type
      */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue CascadeSelect element.
-     */
-    formkit?: 'primeCascadeSelect';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Placeholder
-     * Placeholder text
-     */
-    placeholder?: LocaleString | string | null;
-    /**
-     * Options
-     * Array of hierarchical option objects
-     */
-    options: Array<{
-        [key: string]: string | LocaleString | unknown;
-    }>;
-    /**
-     * Optionlabel
-     * Property name to use as the label of an option
-     */
-    optionLabel?: string | null;
-    /**
-     * Optionvalue
-     * Property name to use as the value of an option
-     */
-    optionValue?: string | null;
-    /**
-     * Optiongrouplabel
-     * Property name to use as the label of an option group
-     */
-    optionGroupLabel?: string | null;
-    /**
-     * Optiongroupchildren
-     * Property names that define the children of option groups
-     */
-    optionGroupChildren?: Array<string> | null;
-    /**
-     * Filter
-     * Whether to enable filtering
-     */
-    filter?: boolean;
-    /**
-     * Multiple
-     * Whether to allow multiple selections
-     */
-    multiple?: boolean;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeCascadeSelect' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | Array<{
-        [key: string]: string | LocaleString | unknown;
-    }> | (string | null) | (string | null) | (string | null) | (Array<string> | null) | undefined;
+    block_type?: 'cache';
+    cache_control: CacheControl;
 };
 
 /**
@@ -1255,13 +858,13 @@ export type ChatCompletion = {
     /**
      * Service Tier
      */
-    service_tier?: ('auto' | 'default' | 'flex') | null;
+    service_tier?: ('auto' | 'default' | 'flex' | 'scale' | 'priority') | null;
     /**
      * System Fingerprint
      */
     system_fingerprint?: string | null;
     usage?: CompletionUsage | null;
-    [key: string]: unknown | string | Array<Choice> | number | 'chat.completion' | (('auto' | 'default' | 'flex') | null) | (string | null) | (CompletionUsage | null) | undefined;
+    [key: string]: unknown | string | Array<Choice> | number | 'chat.completion' | (('auto' | 'default' | 'flex' | 'scale' | 'priority') | null) | (string | null) | (CompletionUsage | null) | undefined;
 };
 
 /**
@@ -1326,7 +929,7 @@ export type ChatCompletionAudioParam = {
     /**
      * Voice
      */
-    voice: string | ('alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'fable' | 'onyx' | 'nova' | 'sage' | 'shimmer' | 'verse');
+    voice: string | ('alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'sage' | 'shimmer' | 'verse');
 };
 
 /**
@@ -1523,7 +1126,7 @@ export type ChatCompletionRequest = {
      * Model
      * ID of the model to use for the chat completion.
      */
-    model: string | ('gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613');
+    model: string | ('gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613');
     /**
      * Stream
      * Enable streaming response.
@@ -1627,7 +1230,7 @@ export type ChatCompletionRequest = {
      * Top P
      */
     top_p?: number | null;
-    [key: string]: unknown | (Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null) | (string | ('gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613')) | boolean | (string | null) | (ChatCompletionAudioParam | null) | (number | null) | (('none' | 'auto') | ChatCompletionFunctionCallOptionParam | null) | (Array<OpenaiTypesChatCompletionCreateParamsFunction> | null) | ({
+    [key: string]: unknown | (Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null) | (string | ('gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613')) | boolean | (string | null) | (ChatCompletionAudioParam | null) | (number | null) | (('none' | 'auto') | ChatCompletionFunctionCallOptionParam | null) | (Array<OpenaiTypesChatCompletionCreateParamsFunction> | null) | ({
         [key: string]: number;
     } | null) | (boolean | null) | (number | null) | (number | null) | (Metadata | null) | (Array<'text' | 'audio'> | null) | (number | null) | (boolean | null) | (ChatCompletionPredictionContentParam | null) | (number | null) | (('low' | 'medium' | 'high') | null) | (ResponseFormatText | ResponseFormatJsonSchema | ResponseFormatJsonObject | null) | (number | null) | (('auto' | 'default') | null) | (string | Array<string> | null) | (boolean | null) | (ChatCompletionStreamOptionsParam | null) | (number | null) | (('none' | 'auto' | 'required') | ChatCompletionNamedToolChoiceParam | null) | (Array<ChatCompletionToolParam> | null) | (number | null) | (number | null) | undefined;
 };
@@ -1732,28 +1335,10 @@ export type ChatCompletionUserMessageParam = {
 
 /**
  * ChatMessage
- */
-export type ChatMessageInput = {
-    role?: MessageRoleInput;
-    additional_kwargs: AdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput)>;
-};
-
-/**
- * ChatMessage
  * Chat message.
  */
-export type ChatMessageOutput = {
-    role?: MessageRoleOutput;
+export type ChatMessage = {
+    role?: MessageRole;
     /**
      * Additional Kwargs
      */
@@ -1765,199 +1350,17 @@ export type ChatMessageOutput = {
         block_type: 'text';
     } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockOutput) | ({
+    } & ImageBlock) | ({
         block_type: 'audio';
-    } & AudioBlockOutput)>;
-};
-
-/**
- * Checkbox
- * https://formkit-primevue.netlify.app/inputs/Checkbox
- */
-export type CheckboxReadable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue Checkbox element.
-     */
-    formkit?: 'primeCheckbox';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Binary
-     * Whether the checkbox works in binary mode
-     */
-    binary?: boolean;
-    /**
-     * Indeterminate
-     * Whether the checkbox is in indeterminate state
-     */
-    indeterminate?: boolean;
-    /**
-     * Truevalue
-     * Value to emit when checked
-     */
-    trueValue?: unknown;
-    /**
-     * Falsevalue
-     * Value to emit when unchecked
-     */
-    falseValue?: unknown;
-    /**
-     * Prefix
-     * Prefix text
-     */
-    prefix?: LocaleString | string | null;
-    /**
-     * Suffix
-     * Suffix text
-     */
-    suffix?: LocaleString | string | null;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeCheckbox' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | (LocaleString | string | null) | string | undefined;
-};
-
-/**
- * Checkbox
- * https://formkit-primevue.netlify.app/inputs/Checkbox
- */
-export type CheckboxWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue Checkbox element.
-     */
-    formkit?: 'primeCheckbox';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Binary
-     * Whether the checkbox works in binary mode
-     */
-    binary?: boolean;
-    /**
-     * Indeterminate
-     * Whether the checkbox is in indeterminate state
-     */
-    indeterminate?: boolean;
-    /**
-     * Truevalue
-     * Value to emit when checked
-     */
-    trueValue?: unknown;
-    /**
-     * Falsevalue
-     * Value to emit when unchecked
-     */
-    falseValue?: unknown;
-    /**
-     * Prefix
-     * Prefix text
-     */
-    prefix?: LocaleString | string | null;
-    /**
-     * Suffix
-     * Suffix text
-     */
-    suffix?: LocaleString | string | null;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeCheckbox' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | (LocaleString | string | null) | undefined;
+    } & AudioBlock) | ({
+        block_type: 'document';
+    } & DocumentBlock) | ({
+        block_type: 'cache';
+    } & CachePoint) | ({
+        block_type: 'citable';
+    } & CitableBlock) | ({
+        block_type: 'citation';
+    } & CitationBlock)>;
 };
 
 /**
@@ -2033,11 +1436,6 @@ export type ChunkEventReadable = {
      */
     model_name?: string;
     /**
-     * Reasoning Content
-     * The textual representation of the agent’s internal reasoning at a particular point in time.
-     */
-    reasoning_content?: string | null;
-    /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
@@ -2048,7 +1446,7 @@ export type ChunkEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
 };
 
 /**
@@ -2091,162 +1489,69 @@ export type ChunkEventWritable = {
      * The name of the AI model generating the chunks.
      */
     model_name?: string;
-    /**
-     * Reasoning Content
-     * The textual representation of the agent’s internal reasoning at a particular point in time.
-     */
-    reasoning_content?: string | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | null) | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
 };
 
 /**
- * ColorPicker
- * https://formkit-primevue.netlify.app/inputs/ColorPicker
+ * CitableBlock
+ * Supports providing citable content to LLMs that have built-in citation support.
  */
-export type ColorPickerReadable = {
+export type CitableBlock = {
     /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
+     * Block Type
      */
-    is_formkit_element?: true;
+    block_type?: 'citable';
     /**
-     * If
-     * Conditional expression to show this element
+     * Title
      */
-    if?: string | null;
+    title: string;
     /**
-     * Id
-     * Unique identifier for this element
+     * Source
      */
-    id?: string | null;
+    source: string;
     /**
-     * Formkit
-     * PrimeVue ColorPicker element.
+     * Content
      */
-    formkit?: 'primeColorPicker';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Inline
-     * Whether to display the picker inline
-     */
-    inline?: boolean;
-    /**
-     * Format
-     * Format of the color value (hex, rgb, hsl)
-     */
-    format?: string | null;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeColorPicker' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (string | null) | string | undefined;
+    content: Array<({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlock) | ({
+        block_type: 'document';
+    } & DocumentBlock)>;
 };
 
 /**
- * ColorPicker
- * https://formkit-primevue.netlify.app/inputs/ColorPicker
+ * CitationBlock
+ * A representation of cited content from past messages.
  */
-export type ColorPickerWritable = {
+export type CitationBlock = {
     /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
+     * Block Type
      */
-    is_formkit_element?: true;
+    block_type?: 'citation';
     /**
-     * If
-     * Conditional expression to show this element
+     * Cited Content
      */
-    if?: string | null;
+    cited_content: ({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlock);
     /**
-     * Id
-     * Unique identifier for this element
+     * Source
      */
-    id?: string | null;
+    source: string;
     /**
-     * Formkit
-     * PrimeVue ColorPicker element.
+     * Title
      */
-    formkit?: 'primeColorPicker';
+    title: string;
     /**
-     * Name
-     * Name of this field
+     * Additional Location Info
      */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Inline
-     * Whether to display the picker inline
-     */
-    inline?: boolean;
-    /**
-     * Format
-     * Format of the color value (hex, rgb, hsl)
-     */
-    format?: string | null;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeColorPicker' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (string | null) | undefined;
+    additional_location_info: {
+        [key: string]: number;
+    };
 };
 
 /**
@@ -2501,6 +1806,37 @@ export type ControlEventWritable = {
 };
 
 /**
+ * CreateNamespaceRequest
+ */
+export type CreateNamespaceRequest = {
+    /**
+     * Database Name
+     * The name of the database to which the namespace belongs.
+     */
+    database_name: string;
+    /**
+     * Namespace Name
+     * The name of the namespace to create.
+     */
+    namespace_name: string;
+    /**
+     * Folder Name
+     * The name of the folder to which the namespace belongs.
+     */
+    folder_name: string;
+    /**
+     * Display Name
+     * The display name of the namespace in the user's locale.
+     */
+    display_name?: string;
+    /**
+     * Description
+     * A short description of the namespace in the user's locale.
+     */
+    description?: string;
+};
+
+/**
  * CreateRoleRequest
  * Request model for creating a new role.
  */
@@ -2671,10 +2007,20 @@ export type DatabaseDto = {
      */
     name: string;
     /**
+     * Display Name
+     * Localized display name of database
+     */
+    display_name: string | null;
+    /**
+     * Auto Sync
+     * Whether this database auto-syncs namespaces
+     */
+    auto_sync: boolean;
+    /**
      * Namespaces
      * List of namespaces
      */
-    namespaces: Array<Namespace>;
+    namespaces: Array<NamespaceDto>;
 };
 
 /**
@@ -2780,196 +2126,6 @@ export type DatasetUpdate = {
      * The complete list of new question-answer items. This will replace all existing items for the dataset version being created/updated.
      */
     items: Array<DatasetItemCreate>;
-};
-
-/**
- * DatePicker
- * https://formkit-primevue.netlify.app/inputs/DatePicker
- */
-export type DatePickerReadable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue DatePicker element.
-     */
-    formkit?: 'primeDatePicker';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Placeholder
-     * Placeholder text
-     */
-    placeholder?: LocaleString | string | null;
-    /**
-     * Dateformat
-     * Format of the date display
-     */
-    dateFormat?: string | null;
-    /**
-     * Showicon
-     * Whether to show the calendar icon
-     */
-    showIcon?: boolean;
-    /**
-     * Icon
-     * Custom icon class
-     */
-    icon?: string | null;
-    /**
-     * Selectionmode
-     * Selection mode for dates
-     */
-    selectionMode?: 'single' | 'range' | 'multiple';
-    /**
-     * Manualinput
-     * Whether to allow manual input
-     */
-    manualInput?: boolean;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeDatePicker' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | (string | null) | (string | null) | ('single' | 'range' | 'multiple') | string | undefined;
-};
-
-/**
- * DatePicker
- * https://formkit-primevue.netlify.app/inputs/DatePicker
- */
-export type DatePickerWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue DatePicker element.
-     */
-    formkit?: 'primeDatePicker';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Placeholder
-     * Placeholder text
-     */
-    placeholder?: LocaleString | string | null;
-    /**
-     * Dateformat
-     * Format of the date display
-     */
-    dateFormat?: string | null;
-    /**
-     * Showicon
-     * Whether to show the calendar icon
-     */
-    showIcon?: boolean;
-    /**
-     * Icon
-     * Custom icon class
-     */
-    icon?: string | null;
-    /**
-     * Selectionmode
-     * Selection mode for dates
-     */
-    selectionMode?: 'single' | 'range' | 'multiple';
-    /**
-     * Manualinput
-     * Whether to allow manual input
-     */
-    manualInput?: boolean;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeDatePicker' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | (string | null) | (string | null) | ('single' | 'range' | 'multiple') | undefined;
 };
 
 /**
@@ -3144,6 +2300,93 @@ export type DisplayStatistics = {
      * Runs in this display, sorted by start time
      */
     runs?: Array<RunStatistics>;
+};
+
+/**
+ * DocumentBlock
+ * A representation of a document to directly pass to the LLM.
+ */
+export type DocumentBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'document';
+    /**
+     * Data
+     */
+    data?: (Blob | File) | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | null;
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * Document Mimetype
+     */
+    document_mimetype?: string | null;
+};
+
+/**
+ * DocumentDTO
+ */
+export type DocumentDto = {
+    /**
+     * Id
+     * Unique identifier of the document.
+     */
+    id: string;
+    /**
+     * Source
+     * Source URI of original document.
+     */
+    source: string;
+    /**
+     * Namespace
+     * The namespace of the document within its metadata.
+     */
+    namespace: string;
+    /**
+     * Created At
+     * Date source document was created (ISO format string)
+     */
+    created_at: string;
+    /**
+     * Updated At
+     * Date source document was last updated (ISO format string)
+     */
+    updated_at: string;
+    /**
+     * Inserted At
+     * Date source document was inserted into document store (ISO format string)
+     */
+    inserted_at: string | null;
+    /**
+     * Is Ingested
+     * Indicates if the document has been ingested.
+     */
+    is_ingested: boolean;
+    /**
+     * Content
+     * Content of the document.
+     */
+    content?: string | null;
+    /**
+     * Number Of Pages
+     * Number of Pages in the Document.
+     */
+    number_of_pages?: number | null;
+    /**
+     * Document Title
+     * Document title.
+     */
+    document_title?: string | null;
 };
 
 /**
@@ -3873,6 +3116,126 @@ export type FileFile = {
 };
 
 /**
+ * FileUploadRequest
+ * Request payload for initiating file upload to knowledge base.
+ *
+ * This request is used to get presigned URLs for direct S3/MinIO upload
+ * of files that will be processed and indexed in the knowledge base.
+ */
+export type FileUploadRequest = {
+    /**
+     * Filename
+     * Original filename of the file
+     */
+    filename: string;
+    /**
+     * Content Type
+     * MIME type of the file
+     */
+    content_type: string;
+    /**
+     * Content Length
+     * Size of the file in bytes
+     */
+    content_length: number;
+    /**
+     * Namespace Name
+     * Target namespace name
+     */
+    namespace_name: string;
+    /**
+     * Database Name
+     * Target database name
+     */
+    database_name: string;
+};
+
+/**
+ * FileUploadResponse
+ * Response payload for file upload initialization.
+ *
+ * Contains the presigned URL for direct datalake upload and metadata
+ * needed to complete the upload process.
+ */
+export type FileUploadResponse = {
+    /**
+     * Upload Url
+     * Presigned URL for uploading the file to a datalake
+     */
+    upload_url: string;
+    /**
+     * Upload Id
+     * Unique identifier for this upload session
+     */
+    upload_id: string;
+    /**
+     * Container
+     * The bucket/container name where file will be stored
+     */
+    container: string;
+    /**
+     * Folder
+     * The folder name within the bucket/container
+     */
+    folder: string;
+    /**
+     * Object Key
+     * The object key/path for the uploaded file
+     */
+    object_key: string;
+    /**
+     * Expires In
+     * Upload URL expiration time in seconds
+     */
+    expires_in: number;
+};
+
+/**
+ * FileUploadValidationRequest
+ * Request for validating whether a file was successfully uploaded to cloud storage.
+ *
+ * This request contains the information needed to verify that a file upload completed
+ * successfully in the globally configured datalake (S3, MinIO, or Azure Blob Storage).
+ */
+export type FileUploadValidationRequest = {
+    /**
+     * Container
+     * Name of the container/bucket where the file was uploaded
+     */
+    container: string;
+    /**
+     * File Path
+     * Path/key of the uploaded file within the container
+     */
+    file_path: string;
+};
+
+/**
+ * FileUploadValidationResponse
+ * Response containing the validation result of a file upload.
+ *
+ * This response indicates whether the uploaded file exists in the globally
+ * configured datalake and provides information about the validation process.
+ */
+export type FileUploadValidationResponse = {
+    /**
+     * Exists
+     * Whether the file exists in the datalake
+     */
+    exists: boolean;
+    /**
+     * File Path
+     * Path/key of the file that was validated
+     */
+    file_path: string;
+    /**
+     * Container
+     * Name of the container/bucket
+     */
+    container: string;
+};
+
+/**
  * Function
  */
 export type FunctionOutput = {
@@ -4132,11 +3495,6 @@ export type HtmlElement = {
      */
     if?: string | null;
     /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
      * $El
      * HTML element tag name
      */
@@ -4155,7 +3513,7 @@ export type HtmlElement = {
      * HTML element children
      */
     children: Array<LocaleString> | Array<string> | LocaleString | string;
-    [key: string]: unknown | true | (string | null) | (string | null) | string | {
+    [key: string]: unknown | true | (string | null) | string | {
         [key: string]: string | {
             [key: string]: unknown;
         };
@@ -4163,19 +3521,22 @@ export type HtmlElement = {
 };
 
 /**
- * HumanInDTO
+ * HumanInSpecs
+ * Defines a piece of work that can be submitted by a human.
+ * It holds information about the form that the user must fill in in order to generate the exact
+ * data structure defined in the event specs of the work event.
+ * It also holds the route and http method that must be used to finally post that work event data
+ * to the API, which will forward it to the appropriate process.
  */
-export type HumanInDtoReadable = {
+export type HumanInSpecs = {
     /**
-     * Name
      * The name of the work event.
      */
-    name: string;
+    name: LocaleString;
     /**
-     * Description
      * A description of the work event, providing details about its purpose.
      */
-    description: string;
+    description: LocaleString;
     /**
      * Route
      * The route of the work event.
@@ -4199,47 +3560,7 @@ export type HumanInDtoReadable = {
      * Form
      * Formkit elements of the work event.
      */
-    form?: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable>;
-};
-
-/**
- * HumanInDTO
- */
-export type HumanInDtoWritable = {
-    /**
-     * Name
-     * The name of the work event.
-     */
-    name: string;
-    /**
-     * Description
-     * A description of the work event, providing details about its purpose.
-     */
-    description: string;
-    /**
-     * Route
-     * The route of the work event.
-     */
-    route: string;
-    /**
-     * Method
-     * The HTTP method of the work event.
-     */
-    method: string;
-    /**
-     * Is Process Start
-     * Whether the work event is a process start event.
-     */
-    is_process_start: boolean;
-    /**
-     * The event specs of the work event.
-     */
-    event_specs: EventSpecs;
-    /**
-     * Form
-     * Formkit elements of the work event.
-     */
-    form?: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable>;
+    form?: Array<HtmlElement | InputTextElement>;
 };
 
 /**
@@ -4278,7 +3599,7 @@ export type HumanInTheLoopRequestEventReadable = {
      * Topic
      * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
      */
-    topic: PartialAgentTopic | AgentTopic;
+    topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -4290,7 +3611,7 @@ export type HumanInTheLoopRequestEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentTopic) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | Array<string> | undefined;
 };
 
 /**
@@ -4329,8 +3650,8 @@ export type HumanInTheLoopRequestEventWritable = {
      * Topic
      * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
      */
-    topic: PartialAgentTopic | AgentTopic;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentTopic) | undefined;
+    topic: PartialAgentTopic | AgentInstanceTopic;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | undefined;
 };
 
 /**
@@ -4423,170 +3744,6 @@ export type HumanInTheLoopResponseEventWritable = {
 };
 
 /**
- * HumanProcessStepDTO
- * DTO representing a human process step with human-specific work request and response information.
- */
-export type HumanProcessStepDto = {
-    /**
-     * Step Index
-     * Order of this step in the walkthrough (0-based).
-     */
-    step_index: number;
-    /**
-     * Step Type
-     * Type of entity involved in this step.
-     */
-    step_type?: string;
-    /**
-     * Created At
-     * Timestamp when this step was created in nanoseconds.
-     */
-    created_at: number;
-    /**
-     * Is Completed
-     * Whether this step has been completed (has a work response).
-     */
-    is_completed: boolean;
-    /**
-     * The human work request for this step.
-     */
-    work_request?: HumanWorkRequestDto | null;
-    /**
-     * The human work response for this step. May be None if work is not yet completed.
-     */
-    work_response?: HumanWorkResponseDto | null;
-};
-
-/**
- * HumanWorkRequestDTO
- * DTO representing a human work request with specific human-related information.
- */
-export type HumanWorkRequestDto = {
-    /**
-     * Event Id
-     * Unique identifier of the work request event.
-     */
-    event_id: string;
-    /**
-     * Event Name
-     * Name of the event type.
-     */
-    event_name: string;
-    /**
-     * Created At
-     * Timestamp when the work was requested in nanoseconds.
-     */
-    created_at: number;
-    /**
-     * Request Type
-     * Type of entity the work was requested from.
-     */
-    request_type: 'human' | 'agent' | 'program';
-    /**
-     * Display Name
-     * Human-readable name for the work request.
-     */
-    display_name: string | null;
-    /**
-     * Display Description
-     * Human-readable description of the work request.
-     */
-    display_description: string | null;
-    /**
-     * Data
-     * The work request event data.
-     */
-    data: {
-        [key: string]: unknown;
-    };
-    /**
-     * User Ids
-     * List of user IDs that can respond to this request.
-     */
-    user_ids?: Array<string>;
-    /**
-     * User Emails
-     * List of user emails that can respond to this request.
-     */
-    user_emails?: Array<string>;
-    /**
-     * User Roles
-     * List of user roles that can respond to this request.
-     */
-    user_roles?: Array<string>;
-    /**
-     * Notify
-     * Whether users should be notified about this request.
-     */
-    notify?: boolean;
-    /**
-     * Forms
-     * List of forms that users can submit.
-     */
-    forms?: Array<{
-        [key: string]: unknown;
-    }>;
-    /**
-     * Endpoint
-     * API endpoint for form submission.
-     */
-    endpoint?: string | null;
-    /**
-     * Method
-     * HTTP method for form submission.
-     */
-    method?: string | null;
-};
-
-/**
- * HumanWorkResponseDTO
- * DTO representing a human work response with specific human-related information.
- */
-export type HumanWorkResponseDto = {
-    /**
-     * Event Id
-     * Unique identifier of the work response event.
-     */
-    event_id: string;
-    /**
-     * Event Name
-     * Name of the event type.
-     */
-    event_name: string;
-    /**
-     * Created At
-     * Timestamp when the work was completed in nanoseconds.
-     */
-    created_at: number;
-    /**
-     * Response Type
-     * Type of entity that completed the work.
-     */
-    response_type: 'human' | 'agent' | 'program';
-    /**
-     * Display Name
-     * Human-readable name for the work response.
-     */
-    display_name: string | null;
-    /**
-     * Display Description
-     * Human-readable description of the work response.
-     */
-    display_description: string | null;
-    /**
-     * Data
-     * The work response event data.
-     */
-    data: {
-        [key: string]: unknown;
-    };
-    /**
-     * The user who submitted this work response.
-     */
-    submitted_by?: MinimalUserDto | null;
-};
-
-/**
  * Image
  */
 export type Image = {
@@ -4607,38 +3764,9 @@ export type Image = {
 
 /**
  * ImageBlock
+ * A representation of image data to directly pass to/from the LLM.
  */
-export type ImageBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'image';
-    /**
-     * Image
-     */
-    image?: (Blob | File) | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | null;
-    /**
-     * Image Mimetype
-     */
-    image_mimetype?: string | null;
-    /**
-     * Detail
-     */
-    detail?: string | null;
-};
-
-/**
- * ImageBlock
- */
-export type ImageBlockOutput = {
+export type ImageBlock = {
     /**
      * Block Type
      */
@@ -4741,87 +3869,27 @@ export type ImagesResponse = {
      */
     created: number;
     /**
+     * Background
+     */
+    background?: ('transparent' | 'opaque') | null;
+    /**
      * Data
      */
     data?: Array<Image> | null;
-    usage?: Usage | null;
-    [key: string]: unknown | number | (Array<Image> | null) | (Usage | null) | undefined;
-};
-
-/**
- * IngestedDocument
- * Set of default metadata for a document or - what llama index calls it - a ref_doc. A ref doc is the databae
- * representation of a document that was ingested through a pipeline. Hence, compared to the default data,
- * we also have an ID and content that was parsed from the original file.
- */
-export type IngestedDocument = {
     /**
-     * Source
-     * Source URI of original document.
+     * Output Format
      */
-    source: string;
+    output_format?: ('png' | 'webp' | 'jpeg') | null;
     /**
-     * Namespace
-     * The namespace of the document within its metadata.
+     * Quality
      */
-    namespace: string;
+    quality?: ('low' | 'medium' | 'high') | null;
     /**
-     * Version
-     * Document version.
+     * Size
      */
-    version?: number;
-    /**
-     * Content Hash
-     * Hash of the document/node, helpful to track whether file changed.
-     */
-    content_hash?: string | null;
-    /**
-     * Number Of Pages
-     * Number of Pages in the Document.
-     */
-    number_of_pages?: number | null;
-    /**
-     * Document Title
-     * Document title.
-     */
-    document_title?: string | null;
-    /**
-     * Language
-     * Document language.
-     */
-    language?: ('de' | 'en' | 'fr' | 'it') | null;
-    /**
-     * Created At
-     * Date source document was created (ISO format string)
-     */
-    created_at: string;
-    /**
-     * Updated At
-     * Date source document was last updated (ISO format string)
-     */
-    updated_at: string;
-    /**
-     * Inserted At
-     * Date source document was inserted into document store (ISO format string)
-     */
-    inserted_at: string;
-    /**
-     * Metadata
-     * Additional metadata for the document.
-     */
-    metadata?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * Id
-     * Unique identifier for the document.
-     */
-    id: string;
-    /**
-     * Content
-     * Content of the document.
-     */
-    content?: string;
+    size?: ('1024x1024' | '1024x1536' | '1536x1024') | null;
+    usage?: OpenaiTypesImagesResponseUsage | null;
+    [key: string]: unknown | number | (('transparent' | 'opaque') | null) | (Array<Image> | null) | (('png' | 'webp' | 'jpeg') | null) | (('low' | 'medium' | 'high') | null) | (('1024x1024' | '1024x1536' | '1536x1024') | null) | (OpenaiTypesImagesResponseUsage | null) | undefined;
 };
 
 /**
@@ -5015,650 +4083,10 @@ export type InputEventInfo = {
 };
 
 /**
- * InputMask
- * https://formkit-primevue.netlify.app/inputs/InputMask
- */
-export type InputMaskReadable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue InputMask element.
-     */
-    formkit?: 'primeInputMask';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Placeholder
-     * Placeholder text
-     */
-    placeholder?: LocaleString | string | null;
-    /**
-     * Mask
-     * Input mask pattern
-     */
-    mask?: string | null;
-    /**
-     * Slotchar
-     * Placeholder character for mask slots
-     */
-    slotChar?: string | null;
-    /**
-     * Autoclear
-     * Whether to clear incomplete values on blur
-     */
-    autoClear?: boolean;
-    /**
-     * Unmask
-     * Whether to return unmasked value
-     */
-    unmask?: boolean;
-    /**
-     * Iconprefix
-     * Icon prefix
-     */
-    iconPrefix?: string | null;
-    /**
-     * Iconsuffix
-     * Icon suffix
-     */
-    iconSuffix?: string | null;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeInputMask' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | (string | null) | (string | null) | (string | null) | (string | null) | string | undefined;
-};
-
-/**
- * InputMask
- * https://formkit-primevue.netlify.app/inputs/InputMask
- */
-export type InputMaskWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue InputMask element.
-     */
-    formkit?: 'primeInputMask';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Placeholder
-     * Placeholder text
-     */
-    placeholder?: LocaleString | string | null;
-    /**
-     * Mask
-     * Input mask pattern
-     */
-    mask?: string | null;
-    /**
-     * Slotchar
-     * Placeholder character for mask slots
-     */
-    slotChar?: string | null;
-    /**
-     * Autoclear
-     * Whether to clear incomplete values on blur
-     */
-    autoClear?: boolean;
-    /**
-     * Unmask
-     * Whether to return unmasked value
-     */
-    unmask?: boolean;
-    /**
-     * Iconprefix
-     * Icon prefix
-     */
-    iconPrefix?: string | null;
-    /**
-     * Iconsuffix
-     * Icon suffix
-     */
-    iconSuffix?: string | null;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeInputMask' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | (string | null) | (string | null) | (string | null) | (string | null) | undefined;
-};
-
-/**
- * InputNumber
- * https://formkit-primevue.netlify.app/inputs/InputNumber
- */
-export type InputNumberReadable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue InputNumber element.
-     */
-    formkit?: 'primeInputNumber';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Placeholder
-     * Placeholder text
-     */
-    placeholder?: LocaleString | string | null;
-    /**
-     * Min
-     * Minimum value
-     */
-    min?: number | null;
-    /**
-     * Max
-     * Maximum value
-     */
-    max?: number | null;
-    /**
-     * Step
-     * Step factor for increment/decrement
-     */
-    step?: number | null;
-    /**
-     * Usegrouping
-     * Whether to use grouping separators
-     */
-    useGrouping?: boolean;
-    /**
-     * Minfractiondigits
-     * Minimum number of fraction digits
-     */
-    minFractionDigits?: number | null;
-    /**
-     * Maxfractiondigits
-     * Maximum number of fraction digits
-     */
-    maxFractionDigits?: number | null;
-    /**
-     * Locale
-     * Locale to use for number formatting
-     */
-    locale?: string | null;
-    /**
-     * Mode
-     * Input mode
-     */
-    mode?: ('decimal' | 'currency') | null;
-    /**
-     * Currency
-     * Currency code for currency mode
-     */
-    currency?: string | null;
-    /**
-     * Prefix
-     * Prefix text
-     */
-    prefix?: LocaleString | string | null;
-    /**
-     * Suffix
-     * Suffix text
-     */
-    suffix?: LocaleString | string | null;
-    /**
-     * Showbuttons
-     * Whether to show increment/decrement buttons
-     */
-    showButtons?: boolean;
-    /**
-     * Buttonlayout
-     * Layout of increment/decrement buttons
-     */
-    buttonLayout?: ('stacked' | 'horizontal') | null;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeInputNumber' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | (number | null) | (number | null) | (number | null) | (number | null) | (number | null) | (string | null) | (('decimal' | 'currency') | null) | (string | null) | (LocaleString | string | null) | (LocaleString | string | null) | (('stacked' | 'horizontal') | null) | string | undefined;
-};
-
-/**
- * InputNumber
- * https://formkit-primevue.netlify.app/inputs/InputNumber
- */
-export type InputNumberWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue InputNumber element.
-     */
-    formkit?: 'primeInputNumber';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Placeholder
-     * Placeholder text
-     */
-    placeholder?: LocaleString | string | null;
-    /**
-     * Min
-     * Minimum value
-     */
-    min?: number | null;
-    /**
-     * Max
-     * Maximum value
-     */
-    max?: number | null;
-    /**
-     * Step
-     * Step factor for increment/decrement
-     */
-    step?: number | null;
-    /**
-     * Usegrouping
-     * Whether to use grouping separators
-     */
-    useGrouping?: boolean;
-    /**
-     * Minfractiondigits
-     * Minimum number of fraction digits
-     */
-    minFractionDigits?: number | null;
-    /**
-     * Maxfractiondigits
-     * Maximum number of fraction digits
-     */
-    maxFractionDigits?: number | null;
-    /**
-     * Locale
-     * Locale to use for number formatting
-     */
-    locale?: string | null;
-    /**
-     * Mode
-     * Input mode
-     */
-    mode?: ('decimal' | 'currency') | null;
-    /**
-     * Currency
-     * Currency code for currency mode
-     */
-    currency?: string | null;
-    /**
-     * Prefix
-     * Prefix text
-     */
-    prefix?: LocaleString | string | null;
-    /**
-     * Suffix
-     * Suffix text
-     */
-    suffix?: LocaleString | string | null;
-    /**
-     * Showbuttons
-     * Whether to show increment/decrement buttons
-     */
-    showButtons?: boolean;
-    /**
-     * Buttonlayout
-     * Layout of increment/decrement buttons
-     */
-    buttonLayout?: ('stacked' | 'horizontal') | null;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeInputNumber' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | (number | null) | (number | null) | (number | null) | (number | null) | (number | null) | (string | null) | (('decimal' | 'currency') | null) | (string | null) | (LocaleString | string | null) | (LocaleString | string | null) | (('stacked' | 'horizontal') | null) | undefined;
-};
-
-/**
- * InputOtp
- * https://formkit-primevue.netlify.app/inputs/InputOtp
- */
-export type InputOtpReadable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue InputOtp element.
-     */
-    formkit?: 'primeInputOtp';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Length
-     * Number of characters in the OTP
-     */
-    length?: number;
-    /**
-     * Integeronly
-     * Whether to allow only integers
-     */
-    integerOnly?: boolean;
-    /**
-     * Mask
-     * Whether to mask the input characters
-     */
-    mask?: boolean;
-    /**
-     * Variant
-     * Styling variant of the component
-     */
-    variant?: string | null;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeInputOtp' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | number | (string | null) | string | undefined;
-};
-
-/**
- * InputOtp
- * https://formkit-primevue.netlify.app/inputs/InputOtp
- */
-export type InputOtpWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue InputOtp element.
-     */
-    formkit?: 'primeInputOtp';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Length
-     * Number of characters in the OTP
-     */
-    length?: number;
-    /**
-     * Integeronly
-     * Whether to allow only integers
-     */
-    integerOnly?: boolean;
-    /**
-     * Mask
-     * Whether to mask the input characters
-     */
-    mask?: boolean;
-    /**
-     * Variant
-     * Styling variant of the component
-     */
-    variant?: string | null;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeInputOtp' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | number | (string | null) | undefined;
-};
-
-/**
- * InputText
+ * InputTextElement
  * https://formkit-primevue.netlify.app/inputs/InputText
  */
-export type InputTextReadable = {
+export type InputTextElement = {
     /**
      * Is Formkit Element
      * Indicates that this element is a FormKit element
@@ -5669,11 +4097,6 @@ export type InputTextReadable = {
      * Conditional expression to show this element
      */
     if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
     /**
      * Formkit
      * PrimeVue InputText element.
@@ -5685,25 +4108,18 @@ export type InputTextReadable = {
      */
     name?: string | null;
     /**
-     * Label
      * Label of this field
      */
-    label: LocaleString | string;
+    label: LocaleString;
     /**
-     * Help
      * Help text of this field
      */
-    help?: LocaleString | string | null;
+    help?: LocaleString | null;
     /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
+     * Validation
      * Validation expression
      */
-    additional_validation_rules?: string | null;
+    validation?: string | null;
     /**
      * Disabled
      * Whether the input is disabled
@@ -5736,96 +4152,7 @@ export type InputTextReadable = {
      * Icon suffix
      */
     iconSuffix?: string | null;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeInputText' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | null) | (LocaleString | null) | (LocaleString | null) | (string | null) | (string | null) | string | undefined;
-};
-
-/**
- * InputText
- * https://formkit-primevue.netlify.app/inputs/InputText
- */
-export type InputTextWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue InputText element.
-     */
-    formkit?: 'primeInputText';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Placeholder text
-     */
-    placeholder?: LocaleString | null;
-    /**
-     * Prefix text
-     */
-    prefix?: LocaleString | null;
-    /**
-     * Suffix text
-     */
-    suffix?: LocaleString | null;
-    /**
-     * Iconprefix
-     * Icon prefix
-     */
-    iconPrefix?: string | null;
-    /**
-     * Iconsuffix
-     * Icon suffix
-     */
-    iconSuffix?: string | null;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeInputText' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | null) | (LocaleString | null) | (LocaleString | null) | (string | null) | (string | null) | undefined;
+    [key: string]: unknown | true | (string | null) | 'primeInputText' | (string | null) | LocaleString | (LocaleString | null) | (string | null) | boolean | (LocaleString | null) | (LocaleString | null) | (LocaleString | null) | (string | null) | (string | null) | undefined;
 };
 
 /**
@@ -5850,236 +4177,6 @@ export type JsonSchema = {
      * Strict
      */
     strict?: boolean | null;
-};
-
-/**
- * Knob
- * https://formkit-primevue.netlify.app/inputs/Knob
- */
-export type KnobReadable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue Knob element.
-     */
-    formkit?: 'primeKnob';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Min
-     * Minimum value
-     */
-    min?: number | null;
-    /**
-     * Max
-     * Maximum value
-     */
-    max?: number | null;
-    /**
-     * Step
-     * Step factor for increment/decrement
-     */
-    step?: number | null;
-    /**
-     * Size
-     * Size of the knob in pixels
-     */
-    size?: number | null;
-    /**
-     * Strokewidth
-     * Width of the knob stroke
-     */
-    strokeWidth?: number | null;
-    /**
-     * Showvalue
-     * Whether to show the value in the center
-     */
-    showValue?: boolean;
-    /**
-     * Valuecolor
-     * Color of the value arc
-     */
-    valueColor?: string | null;
-    /**
-     * Rangecolor
-     * Color of the range arc
-     */
-    rangeColor?: string | null;
-    /**
-     * Textcolor
-     * Color of the value text
-     */
-    textColor?: string | null;
-    /**
-     * Valuetemplate
-     * Template string for value display
-     */
-    valueTemplate?: string | null;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeKnob' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (number | null) | (number | null) | (number | null) | (number | null) | (number | null) | (string | null) | (string | null) | (string | null) | (string | null) | string | undefined;
-};
-
-/**
- * Knob
- * https://formkit-primevue.netlify.app/inputs/Knob
- */
-export type KnobWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue Knob element.
-     */
-    formkit?: 'primeKnob';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Min
-     * Minimum value
-     */
-    min?: number | null;
-    /**
-     * Max
-     * Maximum value
-     */
-    max?: number | null;
-    /**
-     * Step
-     * Step factor for increment/decrement
-     */
-    step?: number | null;
-    /**
-     * Size
-     * Size of the knob in pixels
-     */
-    size?: number | null;
-    /**
-     * Strokewidth
-     * Width of the knob stroke
-     */
-    strokeWidth?: number | null;
-    /**
-     * Showvalue
-     * Whether to show the value in the center
-     */
-    showValue?: boolean;
-    /**
-     * Valuecolor
-     * Color of the value arc
-     */
-    valueColor?: string | null;
-    /**
-     * Rangecolor
-     * Color of the range arc
-     */
-    rangeColor?: string | null;
-    /**
-     * Textcolor
-     * Color of the value text
-     */
-    textColor?: string | null;
-    /**
-     * Valuetemplate
-     * Template string for value display
-     */
-    valueTemplate?: string | null;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeKnob' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (number | null) | (number | null) | (number | null) | (number | null) | (number | null) | (string | null) | (string | null) | (string | null) | (string | null) | undefined;
 };
 
 /**
@@ -6252,12 +4349,12 @@ export type LlmEventReadable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    input_messages?: Array<MessageReadable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    output_messages?: Array<MessageReadable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -6330,7 +4427,7 @@ export type LlmEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageReadable> | null) | (Array<MessageReadable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -6364,12 +4461,12 @@ export type LlmEventWritable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    input_messages?: Array<MessageWritable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    output_messages?: Array<MessageWritable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -6431,7 +4528,7 @@ export type LlmEventWritable = {
     tools?: Array<{
         [key: string]: unknown;
     }> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageWritable> | null) | (Array<MessageWritable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -6465,12 +4562,12 @@ export type LlmStopEventReadable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    input_messages?: Array<MessageReadable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    output_messages?: Array<MessageReadable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -6543,7 +4640,7 @@ export type LlmStopEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageReadable> | null) | (Array<MessageReadable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -6577,12 +4674,12 @@ export type LlmStopEventWritable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    input_messages?: Array<MessageWritable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    output_messages?: Array<MessageWritable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -6644,90 +4741,13 @@ export type LlmStopEventWritable = {
     tools?: Array<{
         [key: string]: unknown;
     }> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageWritable> | null) | (Array<MessageWritable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
     } | null) | (string | null) | (number | null) | (number | null) | (number | null) | (Array<{
         [key: string]: unknown;
     }> | null) | undefined;
-};
-
-/**
- * LLMStopEventOutput
- */
-export type LlmStopEventOutput = {
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Input Messages
-     * List of messages sent to the LLM as input.
-     */
-    input_messages?: Array<JamboParserObjectTypeParserMessage> | null;
-    /**
-     * Output Messages
-     * List of messages received from the LLM as output.
-     */
-    output_messages?: Array<JamboParserObjectTypeParserMessage> | null;
-    /**
-     * Parameters used during the invocation of the LLM.
-     */
-    invocation_parameters?: InvocationParameters | null;
-    /**
-     * Chat Model Name
-     * The name of the language model being utilized.
-     */
-    chat_model_name?: string | null;
-    /**
-     * Provider
-     * The hosting provider of the LLM, e.g., OpenAI, Azure.
-     */
-    provider?: string | null;
-    /**
-     * System
-     * The AI product as identified by the client or server.
-     */
-    system?: string | null;
-    /**
-     * Prompt Template
-     * The prompt template as a Python f-string.
-     */
-    prompt_template?: string | null;
-    /**
-     * A dictionary of input variables to the prompt template.
-     */
-    prompt_template_variables?: PromptTemplateVariables | null;
-    /**
-     * Prompt Template Version
-     * The version of the prompt template being used.
-     */
-    prompt_template_version?: string | null;
-    /**
-     * Token Count Prompt
-     * The number of tokens in the prompt.
-     */
-    token_count_prompt?: number | null;
-    /**
-     * Token Count Completion
-     * The number of tokens in the completion.
-     */
-    token_count_completion?: number | null;
-    /**
-     * Token Count Total
-     * The total number of tokens, including both prompt and completion.
-     */
-    token_count_total?: number | null;
-    /**
-     * Tools
-     * List of tools that are advertised to the LLM to be able to call.
-     */
-    tools?: Array<Tools> | null;
 };
 
 /**
@@ -6756,7 +4776,7 @@ export type LimitChatHistoryEventReadable = {
      * Limited History
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessageOutput>;
+    limited_history: Array<ChatMessage>;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -6768,7 +4788,7 @@ export type LimitChatHistoryEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessage> | Array<string> | undefined;
 };
 
 /**
@@ -6797,206 +4817,8 @@ export type LimitChatHistoryEventWritable = {
      * Limited History
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessageOutput>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessageOutput> | undefined;
-};
-
-/**
- * Listbox
- * https://formkit-primevue.netlify.app/inputs/Listbox
- */
-export type ListboxReadable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue Listbox element.
-     */
-    formkit?: 'primeListbox';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Placeholder
-     * Placeholder text
-     */
-    placeholder?: LocaleString | string | null;
-    /**
-     * Options
-     * Array of selectable option objects
-     */
-    options: Array<{
-        [key: string]: unknown;
-    }>;
-    /**
-     * Optionlabel
-     * Property name to use as the label of an option
-     */
-    optionLabel?: string | null;
-    /**
-     * Optionvalue
-     * Property name to use as the value of an option
-     */
-    optionValue?: string | null;
-    /**
-     * Multiple
-     * Whether to allow multiple selections
-     */
-    multiple?: boolean;
-    /**
-     * Filter
-     * Whether to enable filtering
-     */
-    filter?: boolean;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeListbox' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | Array<{
-        [key: string]: unknown;
-    }> | (string | null) | (string | null) | string | undefined;
-};
-
-/**
- * Listbox
- * https://formkit-primevue.netlify.app/inputs/Listbox
- */
-export type ListboxWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue Listbox element.
-     */
-    formkit?: 'primeListbox';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Placeholder
-     * Placeholder text
-     */
-    placeholder?: LocaleString | string | null;
-    /**
-     * Options
-     * Array of selectable option objects
-     */
-    options: Array<{
-        [key: string]: unknown;
-    }>;
-    /**
-     * Optionlabel
-     * Property name to use as the label of an option
-     */
-    optionLabel?: string | null;
-    /**
-     * Optionvalue
-     * Property name to use as the value of an option
-     */
-    optionValue?: string | null;
-    /**
-     * Multiple
-     * Whether to allow multiple selections
-     */
-    multiple?: boolean;
-    /**
-     * Filter
-     * Whether to enable filtering
-     */
-    filter?: boolean;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeListbox' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | Array<{
-        [key: string]: unknown;
-    }> | (string | null) | (string | null) | undefined;
+    limited_history: Array<ChatMessage>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessage> | undefined;
 };
 
 /**
@@ -7062,35 +4884,110 @@ export type Logprob = {
 };
 
 /**
- * MessageRole
+ * Message
  */
-export type MessageRoleInput = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
+export type MessageReadable = {
+    /**
+     * Role
+     * The role of the message, such as 'user', 'assistant', or 'system'.
+     */
+    role: string;
+    /**
+     * Name
+     * The name of the function or agent generating the message.
+     */
+    name?: string | null;
+    /**
+     * Tool Calls
+     * List of tool calls generated by the model, such as function calls.
+     */
+    tool_calls?: Array<{
+        [key: string]: unknown;
+    }> | null;
+    /**
+     * Function Call Name
+     * The name of the function being called in the message.
+     */
+    function_call_name?: string | null;
+    /**
+     * Function Call Arguments Json
+     * JSON representing arguments passed to the function during a function call.
+     */
+    function_call_arguments_json?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Tool Call Id
+     * The ID of the tool call, if applicable.
+     */
+    tool_call_id?: string | null;
+    /**
+     * Contents
+     * The message contents as an array of content blocks (text, image, audio).
+     */
+    contents?: Array<TextContent | ImageContent | AudioContent> | null;
+    /**
+     * Content
+     */
+    readonly content: string;
+};
 
 /**
- * MessageRole
+ * Message
  */
-export const MessageRoleInput = {
-    SYSTEM: 'system',
-    DEVELOPER: 'developer',
-    USER: 'user',
-    ASSISTANT: 'assistant',
-    FUNCTION: 'function',
-    TOOL: 'tool',
-    CHATBOT: 'chatbot',
-    MODEL: 'model'
-} as const;
+export type MessageWritable = {
+    /**
+     * Role
+     * The role of the message, such as 'user', 'assistant', or 'system'.
+     */
+    role: string;
+    /**
+     * Name
+     * The name of the function or agent generating the message.
+     */
+    name?: string | null;
+    /**
+     * Tool Calls
+     * List of tool calls generated by the model, such as function calls.
+     */
+    tool_calls?: Array<{
+        [key: string]: unknown;
+    }> | null;
+    /**
+     * Function Call Name
+     * The name of the function being called in the message.
+     */
+    function_call_name?: string | null;
+    /**
+     * Function Call Arguments Json
+     * JSON representing arguments passed to the function during a function call.
+     */
+    function_call_arguments_json?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Tool Call Id
+     * The ID of the tool call, if applicable.
+     */
+    tool_call_id?: string | null;
+    /**
+     * Contents
+     * The message contents as an array of content blocks (text, image, audio).
+     */
+    contents?: Array<TextContent | ImageContent | AudioContent> | null;
+};
 
 /**
  * MessageRole
  * Message role.
  */
-export type MessageRoleOutput = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
+export type MessageRole = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
 
 /**
  * MessageRole
  * Message role.
  */
-export const MessageRoleOutput = {
+export const MessageRole = {
     SYSTEM: 'system',
     DEVELOPER: 'developer',
     USER: 'user',
@@ -7124,7 +5021,7 @@ export type Metadata = {
      * Files
      * List of files to attach to the request, if supported by the model.
      */
-    files?: Array<AihubLibNatsEventsUserUserUploadedFileUserUploadedFile> | null;
+    files?: Array<UserUploadedFile> | null;
 };
 
 /**
@@ -7251,6 +5148,40 @@ export type MinimalUserDto = {
 };
 
 /**
+ * ModelDTO
+ */
+export type ModelDtoReadable = {
+    /**
+     * Model Name
+     * The name/identifier of the model
+     */
+    model_name: string;
+    /**
+     * Detailed information about the model
+     */
+    model_info: ModelInfoDto;
+    /**
+     * Icon
+     */
+    readonly icon: string;
+};
+
+/**
+ * ModelDTO
+ */
+export type ModelDtoWritable = {
+    /**
+     * Model Name
+     * The name/identifier of the model
+     */
+    model_name: string;
+    /**
+     * Detailed information about the model
+     */
+    model_info: ModelInfoDto;
+};
+
+/**
  * ModelDetails
  */
 export type ModelDetails = {
@@ -7287,6 +5218,202 @@ export type ModelDetails = {
 };
 
 /**
+ * ModelInfoDTO
+ */
+export type ModelInfoDto = {
+    /**
+     * Mode
+     * The mode of the model (e.g., 'chat', 'completion', 'embedding')
+     */
+    mode: string;
+    /**
+     * Max Input Tokens
+     * Maximum number of input tokens the model can handle
+     */
+    max_input_tokens?: number | null;
+    /**
+     * Max Output Tokens
+     * Maximum number of output tokens the model can generate
+     */
+    max_output_tokens?: number | null;
+    /**
+     * Input Cost Per Token
+     * Cost per input token in USD
+     */
+    input_cost_per_token?: number | null;
+    /**
+     * Output Cost Per Token
+     * Cost per output token in USD
+     */
+    output_cost_per_token?: number | null;
+    /**
+     * Cache Creation Input Token Cost
+     * Cost for creating cache from input tokens
+     */
+    cache_creation_input_token_cost?: number | null;
+    /**
+     * Cache Read Input Token Cost
+     * Cost for reading cached input tokens
+     */
+    cache_read_input_token_cost?: number | null;
+    /**
+     * Input Cost Per Token Above 128K Tokens
+     * Cost per input token for contexts above 128k tokens
+     */
+    input_cost_per_token_above_128k_tokens?: number | null;
+    /**
+     * Input Cost Per Token Above 200K Tokens
+     * Cost per input token for contexts above 200k tokens
+     */
+    input_cost_per_token_above_200k_tokens?: number | null;
+    /**
+     * Input Cost Per Audio Token
+     * Cost per audio input token
+     */
+    input_cost_per_audio_token?: number | null;
+    /**
+     * Input Cost Per Token Batches
+     * Cost per input token when using batch API
+     */
+    input_cost_per_token_batches?: number | null;
+    /**
+     * Output Cost Per Token Batches
+     * Cost per output token when using batch API
+     */
+    output_cost_per_token_batches?: number | null;
+    /**
+     * Output Cost Per Audio Token
+     * Cost per audio output token
+     */
+    output_cost_per_audio_token?: number | null;
+    /**
+     * Output Cost Per Reasoning Token
+     * Cost per reasoning token for models with reasoning capabilities
+     */
+    output_cost_per_reasoning_token?: number | null;
+    /**
+     * Output Cost Per Token Above 128K Tokens
+     * Cost per output token for contexts above 128k tokens
+     */
+    output_cost_per_token_above_128k_tokens?: number | null;
+    /**
+     * Output Cost Per Token Above 200K Tokens
+     * Cost per output token for contexts above 200k tokens
+     */
+    output_cost_per_token_above_200k_tokens?: number | null;
+    /**
+     * Output Cost Per Image
+     * Cost per image output
+     */
+    output_cost_per_image?: number | null;
+    /**
+     * Search Context Cost Per Query
+     * Cost per search context query
+     */
+    search_context_cost_per_query?: number | null;
+    /**
+     * Output Vector Size
+     * Size of output vectors for embedding models
+     */
+    output_vector_size?: number | null;
+    /**
+     * Supports System Messages
+     * Whether the model supports system messages
+     */
+    supports_system_messages?: boolean | null;
+    /**
+     * Supports Response Schema
+     * Whether the model supports structured response schemas
+     */
+    supports_response_schema?: boolean | null;
+    /**
+     * Supports Vision
+     * Whether the model supports vision/image input
+     */
+    supports_vision?: boolean | null;
+    /**
+     * Supports Function Calling
+     * Whether the model supports function calling
+     */
+    supports_function_calling?: boolean | null;
+    /**
+     * Supports Tool Choice
+     * Whether the model supports tool choice selection
+     */
+    supports_tool_choice?: boolean | null;
+    /**
+     * Supports Assistant Prefill
+     * Whether the model supports assistant message prefilling
+     */
+    supports_assistant_prefill?: boolean | null;
+    /**
+     * Supports Prompt Caching
+     * Whether the model supports prompt caching
+     */
+    supports_prompt_caching?: boolean | null;
+    /**
+     * Supports Audio Input
+     * Whether the model supports audio input
+     */
+    supports_audio_input?: boolean | null;
+    /**
+     * Supports Audio Output
+     * Whether the model supports audio output
+     */
+    supports_audio_output?: boolean | null;
+    /**
+     * Supports Pdf Input
+     * Whether the model supports PDF input
+     */
+    supports_pdf_input?: boolean | null;
+    /**
+     * Supports Embedding Image Input
+     * Whether the model supports image input for embeddings
+     */
+    supports_embedding_image_input?: boolean | null;
+    /**
+     * Supports Native Streaming
+     * Whether the model supports native streaming
+     */
+    supports_native_streaming?: boolean | null;
+    /**
+     * Supports Web Search
+     * Whether the model supports web search capabilities
+     */
+    supports_web_search?: boolean | null;
+    /**
+     * Supports Url Context
+     * Whether the model supports URL context input
+     */
+    supports_url_context?: boolean | null;
+    /**
+     * Supports Reasoning
+     * Whether the model supports reasoning capabilities
+     */
+    supports_reasoning?: boolean | null;
+    /**
+     * Supports Computer Use
+     * Whether the model supports computer use capabilities
+     */
+    supports_computer_use?: boolean | null;
+    /**
+     * Tpm
+     * Tokens per minute rate limit
+     */
+    tpm?: number | null;
+    /**
+     * Rpm
+     * Requests per minute rate limit
+     */
+    rpm?: number | null;
+    /**
+     * Supported Openai Params
+     * List of supported OpenAI API parameters
+     */
+    supported_openai_params?: Array<string> | null;
+};
+
+/**
  * ModelResponse
  */
 export type ModelResponse = {
@@ -7303,227 +5430,117 @@ export type ModelResponse = {
 };
 
 /**
- * MultiSelect
- * https://formkit-primevue.netlify.app/inputs/MultiSelect
+ * ModelTypeGroupDTO
  */
-export type MultiSelectReadable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue MultiSelect element.
-     */
-    formkit?: 'primeMultiSelect';
+export type ModelTypeGroupDtoReadable = {
     /**
      * Name
-     * Name of this field
+     * The name/type of the model group
      */
-    name?: string | null;
+    name: string;
     /**
-     * Label
-     * Label of this field
+     * Models
+     * List of models in this group
      */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Placeholder
-     * Placeholder text
-     */
-    placeholder?: LocaleString | string | null;
-    /**
-     * Options
-     * Array of selectable option objects
-     */
-    options: Array<{
-        [key: string]: unknown;
-    }>;
-    /**
-     * Optionlabel
-     * Property name to use as the label of an option
-     */
-    optionLabel?: string | null;
-    /**
-     * Optionvalue
-     * Property name to use as the value of an option
-     */
-    optionValue?: string | null;
-    /**
-     * Filter
-     * Whether to enable filtering
-     */
-    filter?: boolean;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeMultiSelect' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | Array<{
-        [key: string]: unknown;
-    }> | (string | null) | (string | null) | string | undefined;
+    models: Array<ModelDtoReadable>;
 };
 
 /**
- * MultiSelect
- * https://formkit-primevue.netlify.app/inputs/MultiSelect
+ * ModelTypeGroupDTO
  */
-export type MultiSelectWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue MultiSelect element.
-     */
-    formkit?: 'primeMultiSelect';
+export type ModelTypeGroupDtoWritable = {
     /**
      * Name
-     * Name of this field
+     * The name/type of the model group
      */
-    name?: string | null;
+    name: string;
     /**
-     * Label
-     * Label of this field
+     * Models
+     * List of models in this group
      */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Placeholder
-     * Placeholder text
-     */
-    placeholder?: LocaleString | string | null;
-    /**
-     * Options
-     * Array of selectable option objects
-     */
-    options: Array<{
-        [key: string]: unknown;
-    }>;
-    /**
-     * Optionlabel
-     * Property name to use as the label of an option
-     */
-    optionLabel?: string | null;
-    /**
-     * Optionvalue
-     * Property name to use as the value of an option
-     */
-    optionValue?: string | null;
-    /**
-     * Filter
-     * Whether to enable filtering
-     */
-    filter?: boolean;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeMultiSelect' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | Array<{
-        [key: string]: unknown;
-    }> | (string | null) | (string | null) | undefined;
+    models: Array<ModelDtoWritable>;
 };
 
 /**
- * Namespace
+ * NamespaceDTO
  */
-export type Namespace = {
+export type NamespaceDto = {
     /**
-     * Database
-     * Name of database that the namespace belongs to
+     * Id
+     * Unique identifier of the namespace
      */
-    database: string;
+    id: string;
     /**
      * Name
      * Name of namespace
      */
     name: string;
     /**
+     * Display Name
+     * Display name of namespace, can be localized
+     */
+    display_name?: string | null;
+    /**
+     * Description
+     * Description of namespace, can be localized
+     */
+    description?: string | null;
+    /**
      * Number Of Documents
      * Number of documents in namespace
      */
     number_of_documents: number;
     /**
-     * Last Updated At
+     * Updated At
      * Latest timestamp when any document in the namespace was updated
      */
-    last_updated_at: number;
+    updated_at: number;
     /**
-     * Last Inserted At
+     * Inserted At
      * Latest timestamp when any document in the namespace was inserted
      */
-    last_inserted_at: number;
+    inserted_at: number;
     /**
      * Created At
      * Oldest timestamp when any document in the namespace was created
      */
     created_at: number;
+};
+
+/**
+ * NamespaceResponse
+ */
+export type NamespaceResponse = {
+    /**
+     * Id
+     * The unique identifier for the namespace.
+     */
+    id: string;
+    /**
+     * Bucket Id
+     * The ID of the parent bucket containing the namespace.
+     */
+    bucket_id: string;
+    /**
+     * Namespace Name
+     * The name of the namespace.
+     */
+    namespace_name: string;
+    /**
+     * Folder Name
+     * The corresponding folder name in the data storage.
+     */
+    folder_name: string;
+    /**
+     * Display Name
+     * A user-friendly display name for the namespace.
+     */
+    display_name?: string | null;
+    /**
+     * Description
+     * A brief description of the namespace's contents.
+     */
+    description?: string | null;
 };
 
 /**
@@ -7602,6 +5619,68 @@ export type NodeSummaryDto = {
 };
 
 /**
+ * NotificationDTO
+ * Data Transfer Object for a notification.
+ */
+export type NotificationDto = {
+    /**
+     * Id
+     * The unique identifier of the notification.
+     */
+    id: string;
+    /**
+     * User Id
+     * The unique identifier of the user associated with the notification.
+     */
+    user_id: string;
+    /**
+     * Notification Group Id
+     * The identifier of the notification group this notification belongs to.
+     */
+    notification_group_id?: string | null;
+    /**
+     * Title
+     * The internationalized title of the notification.
+     */
+    title: string;
+    /**
+     * Message
+     * The internationalized content of the notification.
+     */
+    message: string;
+    /**
+     * Read
+     * Indicates if the notification has been read by the user.
+     */
+    read?: boolean;
+    /**
+     * Done
+     * Indicates if the task associated with the notification has been completed.
+     */
+    done?: boolean;
+    /**
+     * Type
+     * Categorizes the notification for visual representation (e.g., icon and color).
+     */
+    type?: 'success' | 'info' | 'warn' | 'error';
+    /**
+     * Severity
+     * The priority level of the notification.
+     */
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    /**
+     * Link
+     * A relative internal link to navigate to the relevant resource.
+     */
+    link: string;
+    /**
+     * Created At
+     * The timestamp when the notification was created.
+     */
+    created_at: Date;
+};
+
+/**
  * PaginatedDocumentsResponse
  */
 export type PaginatedDocumentsResponse = {
@@ -7629,39 +5708,39 @@ export type PaginatedDocumentsResponse = {
      * Documents
      * List of Document DTOs objects for the current page
      */
-    documents: Array<IngestedDocument>;
+    documents: Array<DocumentDto>;
 };
 
 /**
- * PaginatedProcessWalkthroughsResponse
- * Paginated response containing process walkthroughs with detailed step information.
+ * PaginatedNotificationsResponse
+ * A paginated response container for notifications.
  */
-export type PaginatedProcessWalkthroughsResponse = {
+export type PaginatedNotificationsResponse = {
     /**
      * Total
-     * Total number of items available
+     * The total number of notifications matching the filter criteria.
      */
     total: number;
     /**
      * Page
-     * Current page number (1-indexed)
+     * The current page number (1-indexed).
      */
     page: number;
     /**
      * Page Size
-     * Number of threads per page
+     * The number of notifications requested per page.
      */
     page_size: number;
     /**
      * Total Pages
-     * Total number of pages available
+     * The total number of pages available based on the page size.
      */
     total_pages: number;
     /**
-     * Walkthroughs
-     * List of process walkthroughs for the current page
+     * Notifications
+     * The list of notifications for the current page.
      */
-    walkthroughs: Array<ProcessWalkthroughDto>;
+    notifications: Array<NotificationDto>;
 };
 
 /**
@@ -7790,226 +5869,6 @@ export type PartialAgentTopic = {
 };
 
 /**
- * Password
- * https://formkit-primevue.netlify.app/inputs/Password
- */
-export type PasswordReadable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue Password element.
-     */
-    formkit?: 'primePassword';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Placeholder
-     * Placeholder text
-     */
-    placeholder?: LocaleString | string | null;
-    /**
-     * Feedback
-     * Whether to show password strength feedback
-     */
-    feedback?: boolean;
-    /**
-     * Togglemask
-     * Whether to show toggle button to reveal/hide password
-     */
-    toggleMask?: boolean;
-    /**
-     * Mediumregex
-     * Regex pattern for medium strength validation
-     */
-    mediumRegex?: string | null;
-    /**
-     * Strongregex
-     * Regex pattern for strong strength validation
-     */
-    strongRegex?: string | null;
-    /**
-     * Promptlabel
-     * Label for password prompt
-     */
-    promptLabel?: LocaleString | string | null;
-    /**
-     * Weaklabel
-     * Label for weak password strength
-     */
-    weakLabel?: LocaleString | string | null;
-    /**
-     * Mediumlabel
-     * Label for medium password strength
-     */
-    mediumLabel?: LocaleString | string | null;
-    /**
-     * Stronglabel
-     * Label for strong password strength
-     */
-    strongLabel?: LocaleString | string | null;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primePassword' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | (string | null) | (string | null) | (LocaleString | string | null) | (LocaleString | string | null) | (LocaleString | string | null) | (LocaleString | string | null) | string | undefined;
-};
-
-/**
- * Password
- * https://formkit-primevue.netlify.app/inputs/Password
- */
-export type PasswordWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue Password element.
-     */
-    formkit?: 'primePassword';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Placeholder
-     * Placeholder text
-     */
-    placeholder?: LocaleString | string | null;
-    /**
-     * Feedback
-     * Whether to show password strength feedback
-     */
-    feedback?: boolean;
-    /**
-     * Togglemask
-     * Whether to show toggle button to reveal/hide password
-     */
-    toggleMask?: boolean;
-    /**
-     * Mediumregex
-     * Regex pattern for medium strength validation
-     */
-    mediumRegex?: string | null;
-    /**
-     * Strongregex
-     * Regex pattern for strong strength validation
-     */
-    strongRegex?: string | null;
-    /**
-     * Promptlabel
-     * Label for password prompt
-     */
-    promptLabel?: LocaleString | string | null;
-    /**
-     * Weaklabel
-     * Label for weak password strength
-     */
-    weakLabel?: LocaleString | string | null;
-    /**
-     * Mediumlabel
-     * Label for medium password strength
-     */
-    mediumLabel?: LocaleString | string | null;
-    /**
-     * Stronglabel
-     * Label for strong password strength
-     */
-    strongLabel?: LocaleString | string | null;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primePassword' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | (string | null) | (string | null) | (LocaleString | string | null) | (LocaleString | string | null) | (LocaleString | string | null) | (LocaleString | string | null) | undefined;
-};
-
-/**
  * ProcessConfigDTO
  */
 export type ProcessConfigDto = {
@@ -8037,13 +5896,13 @@ export type ProcessConfigDto = {
 
 /**
  * ProcessDTO
- * An agentic process is a process in which humans, agents and programs interact with each other to achieve a
- * common goal.
- * To interact with the process, it is necessary to know which entity (human, agent, program) can and must submit
- * what kind of work to start / continue the process.
- * Hence, this object offers information about the inputs (work events) that these entities can contribute.
+ * A data transfer object for representing process information in responses.
+ * This DTO standardizes how process data is returned from the service layer to the controller,
+ * and subsequently to the API response. It helps maintain a clean separation between the internal
+ * event models and the publicly exposed fields in HTTP responses.
+ * By using `ProcessDTO`, the API can evolve independently from the internal event representations.
  */
-export type ProcessDtoReadable = {
+export type ProcessDto = {
     /**
      * Process Class
      * The class or category of the process (e.g., a specific type of process).
@@ -8062,17 +5921,17 @@ export type ProcessDtoReadable = {
      * Human Inputs
      * List of human work events that the process can receive.
      */
-    human_inputs: Array<HumanInDtoReadable>;
+    human_inputs: Array<HumanInSpecs>;
     /**
      * Program Inputs
      * List of program work events that the process can receive.
      */
-    program_inputs: Array<ProgramInDto>;
+    program_inputs: Array<ProgramInSpecs>;
     /**
      * Agent Inputs
      * List of agent work events that the process can receive. Agent work events are used to trigger the execution of an agent.
      */
-    agent_inputs: Array<AgentInDto>;
+    agent_inputs: Array<AgentInSpecs>;
     /**
      * Is Online
      * Indicates whether the process is online and reachable.
@@ -8081,116 +5940,50 @@ export type ProcessDtoReadable = {
 };
 
 /**
- * ProcessDTO
- * An agentic process is a process in which humans, agents and programs interact with each other to achieve a
- * common goal.
- * To interact with the process, it is necessary to know which entity (human, agent, program) can and must submit
- * what kind of work to start / continue the process.
- * Hence, this object offers information about the inputs (work events) that these entities can contribute.
+ * ProcessHumanInDto
+ * Defines what and how a piece of work must be submitted by a user to a process.
+ * As humans usually submit their data by filling in forms in the frontend, this event holds
+ * a list of formkit form fields that can be used to generate a formkit form in the frontend.
+ * Submitting the form will lead to the required data structure that can be submitted
+ * to the <route> using the http-method <method>.
  */
-export type ProcessDtoWritable = {
+export type ProcessHumanInDto = {
     /**
-     * Process Class
-     * The class or category of the process (e.g., a specific type of process).
+     * Name
+     * The name of the work event.
      */
-    process_class: string;
+    name: string;
     /**
-     * Process Id
-     * A unique identifier for the process instance.
+     * Description
+     * A description of the work event, providing details about its purpose.
      */
-    process_id: string;
+    description: string;
     /**
-     * Configuration for the process instance.
+     * Route
+     * The route of the work event.
      */
-    process_config: ProcessConfigDto;
+    route: string;
     /**
-     * Human Inputs
-     * List of human work events that the process can receive.
+     * Method
+     * The HTTP method of the work event.
      */
-    human_inputs: Array<HumanInDtoWritable>;
+    method: string;
     /**
-     * Program Inputs
-     * List of program work events that the process can receive.
+     * Form
+     * Formkit fields to render the UI
      */
-    program_inputs: Array<ProgramInDto>;
-    /**
-     * Agent Inputs
-     * List of agent work events that the process can receive. Agent work events are used to trigger the execution of an agent.
-     */
-    agent_inputs: Array<AgentInDto>;
-    /**
-     * Is Online
-     * Indicates whether the process is online and reachable.
-     */
-    is_online?: boolean | null;
+    form: Array<HtmlElement | InputTextElement>;
 };
 
 /**
- * ProcessWalkthroughDTO
- * DTO representing a process walkthrough with detailed step information.
+ * ProgramInSpecs
+ * Defines a piece of work that can be submitted by a program.
+ * It holds the information about the exact data that must be submitted as a work event
+ * in the event specs. It also holds the information about where that work event data
+ * must be submitted, aka to which route and using which http method.
+ * The API will then forward the data to the appropriate process.
  */
-export type ProcessWalkthroughDto = {
-    /**
-     * Process Walkthrough Id
-     * Unique identifier for this specific process walkthrough.
-     */
-    process_walkthrough_id: string;
-    /**
-     * Process Class
-     * The class/type of the process.
-     */
-    process_class: string;
-    /**
-     * Process Id
-     * Unique identifier for the specific process instance.
-     */
-    process_id: string;
-    /**
-     * Process Steps
-     * List of all steps in this walkthrough, ordered chronologically.
-     */
-    process_steps: Array<AgentProcessStepDto | ProgramProcessStepDto | HumanProcessStepDto>;
-    /**
-     * Created At
-     * Timestamp of the first event in nanoseconds.
-     */
-    created_at: number;
-    /**
-     * Updated At
-     * Timestamp of the last event in nanoseconds.
-     */
-    updated_at: number;
-    /**
-     * Total Steps
-     * Total number of steps in this walkthrough.
-     */
-    total_steps: number;
-    /**
-     * Completed Steps
-     * Number of completed steps in this walkthrough.
-     */
-    completed_steps: number;
-    /**
-     * Is Active
-     * Whether this walkthrough is active (no ProcessStopEvent).
-     */
-    is_active: boolean;
-    /**
-     * Involved Agents
-     * List of agents that submitted work in this walkthrough.
-     */
-    involved_agents?: Array<MinimalAgentDto>;
-    /**
-     * Involved Humans
-     * List of humans that submitted work in this walkthrough.
-     */
-    involved_humans?: Array<MinimalUserDto>;
-};
-
-/**
- * ProgramInDTO
- */
-export type ProgramInDto = {
+export type ProgramInSpecs = {
     /**
      * Route
      * The route of the work event.
@@ -8213,143 +6006,6 @@ export type ProgramInDto = {
 };
 
 /**
- * ProgramProcessStepDTO
- * DTO representing a program process step with program-specific work request and response information.
- */
-export type ProgramProcessStepDto = {
-    /**
-     * Step Index
-     * Order of this step in the walkthrough (0-based).
-     */
-    step_index: number;
-    /**
-     * Step Type
-     * Type of entity involved in this step.
-     */
-    step_type?: string;
-    /**
-     * Created At
-     * Timestamp when this step was created in nanoseconds.
-     */
-    created_at: number;
-    /**
-     * Is Completed
-     * Whether this step has been completed (has a work response).
-     */
-    is_completed: boolean;
-    /**
-     * The program work request for this step.
-     */
-    work_request?: ProgramWorkRequestDto | null;
-    /**
-     * The program work response for this step. May be None if work is not yet completed.
-     */
-    work_response?: ProgramWorkResponseDto | null;
-};
-
-/**
- * ProgramWorkRequestDTO
- * DTO representing a program work request with specific program-related information.
- */
-export type ProgramWorkRequestDto = {
-    /**
-     * Event Id
-     * Unique identifier of the work request event.
-     */
-    event_id: string;
-    /**
-     * Event Name
-     * Name of the event type.
-     */
-    event_name: string;
-    /**
-     * Created At
-     * Timestamp when the work was requested in nanoseconds.
-     */
-    created_at: number;
-    /**
-     * Request Type
-     * Type of entity the work was requested from.
-     */
-    request_type: 'human' | 'agent' | 'program';
-    /**
-     * Display Name
-     * Human-readable name for the work request.
-     */
-    display_name: string | null;
-    /**
-     * Display Description
-     * Human-readable description of the work request.
-     */
-    display_description: string | null;
-    /**
-     * Data
-     * The work request event data.
-     */
-    data: {
-        [key: string]: unknown;
-    };
-    /**
-     * Endpoint
-     * API endpoint for the program to submit work.
-     */
-    endpoint?: string | null;
-    /**
-     * Method
-     * HTTP method for the program to submit work.
-     */
-    method?: string | null;
-};
-
-/**
- * ProgramWorkResponseDTO
- * DTO representing a program work response with specific program-related information.
- */
-export type ProgramWorkResponseDto = {
-    /**
-     * Event Id
-     * Unique identifier of the work response event.
-     */
-    event_id: string;
-    /**
-     * Event Name
-     * Name of the event type.
-     */
-    event_name: string;
-    /**
-     * Created At
-     * Timestamp when the work was completed in nanoseconds.
-     */
-    created_at: number;
-    /**
-     * Response Type
-     * Type of entity that completed the work.
-     */
-    response_type: 'human' | 'agent' | 'program';
-    /**
-     * Display Name
-     * Human-readable name for the work response.
-     */
-    display_name: string | null;
-    /**
-     * Display Description
-     * Human-readable description of the work response.
-     */
-    display_description: string | null;
-    /**
-     * Data
-     * The work response event data.
-     */
-    data: {
-        [key: string]: unknown;
-    };
-    /**
-     * The user who submitted this work response on behalf of the program.
-     */
-    submitted_by?: MinimalUserDto | null;
-};
-
-/**
  * PromptTokensDetails
  */
 export type PromptTokensDetails = {
@@ -8362,364 +6018,6 @@ export type PromptTokensDetails = {
      */
     cached_tokens?: number | null;
     [key: string]: unknown | (number | null) | (number | null) | undefined;
-};
-
-/**
- * RadioButton
- * https://formkit-primevue.netlify.app/inputs/RadioButton
- */
-export type RadioButtonReadable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue RadioButton element.
-     */
-    formkit?: 'primeRadioButton';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Options
-     * Array of selectable option objects
-     */
-    options: Array<{
-        [key: string]: unknown;
-    }>;
-    /**
-     * Optionlabel
-     * Property name to use as the label of an option
-     */
-    optionLabel?: string | null;
-    /**
-     * Optionvalue
-     * Property name to use as the value of an option
-     */
-    optionValue?: string | null;
-    /**
-     * Optionclass
-     * CSS class to apply to each option
-     */
-    optionClass?: string | null;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeRadioButton' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | Array<{
-        [key: string]: unknown;
-    }> | (string | null) | (string | null) | (string | null) | string | undefined;
-};
-
-/**
- * RadioButton
- * https://formkit-primevue.netlify.app/inputs/RadioButton
- */
-export type RadioButtonWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue RadioButton element.
-     */
-    formkit?: 'primeRadioButton';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Options
-     * Array of selectable option objects
-     */
-    options: Array<{
-        [key: string]: unknown;
-    }>;
-    /**
-     * Optionlabel
-     * Property name to use as the label of an option
-     */
-    optionLabel?: string | null;
-    /**
-     * Optionvalue
-     * Property name to use as the value of an option
-     */
-    optionValue?: string | null;
-    /**
-     * Optionclass
-     * CSS class to apply to each option
-     */
-    optionClass?: string | null;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeRadioButton' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | Array<{
-        [key: string]: unknown;
-    }> | (string | null) | (string | null) | (string | null) | undefined;
-};
-
-/**
- * Rating
- * https://formkit-primevue.netlify.app/inputs/Rating
- */
-export type RatingReadable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue Rating element.
-     */
-    formkit?: 'primeRating';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Stars
-     * Number of stars to display
-     */
-    stars?: number;
-    /**
-     * Cancel
-     * Whether to show cancel button to clear rating
-     */
-    cancel?: boolean;
-    /**
-     * Onicon
-     * Icon for selected state
-     */
-    onIcon?: string | null;
-    /**
-     * Officon
-     * Icon for unselected state
-     */
-    offIcon?: string | null;
-    /**
-     * Cancelicon
-     * Icon for cancel button
-     */
-    cancelIcon?: string | null;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeRating' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | number | (string | null) | (string | null) | (string | null) | string | undefined;
-};
-
-/**
- * Rating
- * https://formkit-primevue.netlify.app/inputs/Rating
- */
-export type RatingWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue Rating element.
-     */
-    formkit?: 'primeRating';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Stars
-     * Number of stars to display
-     */
-    stars?: number;
-    /**
-     * Cancel
-     * Whether to show cancel button to clear rating
-     */
-    cancel?: boolean;
-    /**
-     * Onicon
-     * Icon for selected state
-     */
-    onIcon?: string | null;
-    /**
-     * Officon
-     * Icon for unselected state
-     */
-    offIcon?: string | null;
-    /**
-     * Cancelicon
-     * Icon for cancel button
-     */
-    cancelIcon?: string | null;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeRating' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | number | (string | null) | (string | null) | (string | null) | undefined;
 };
 
 /**
@@ -9247,412 +6545,6 @@ export type RunStatistics = {
 };
 
 /**
- * Select
- * https://formkit-primevue.netlify.app/inputs/Select
- */
-export type SelectReadable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue Select element.
-     */
-    formkit?: 'primeSelect';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Options
-     * Array of selectable options (objects or strings)
-     */
-    options: Array<string | LocaleString | {
-        [key: string]: string | LocaleString;
-    }> | Array<string>;
-    /**
-     * Optionlabel
-     * Property name to use as the label of an option
-     */
-    optionLabel?: string | null;
-    /**
-     * Optionvalue
-     * Property name to use as the value of an option
-     */
-    optionValue?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Placeholder
-     * Placeholder text
-     */
-    placeholder?: LocaleString | string | null;
-    /**
-     * Showclear
-     * Whether to show clear button
-     */
-    showClear?: boolean;
-    /**
-     * Filter
-     * Whether to enable filtering
-     */
-    filter?: boolean;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeSelect' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (Array<string | LocaleString | {
-        [key: string]: string | LocaleString;
-    }> | Array<string>) | (string | null) | (string | null) | (LocaleString | string | null) | string | undefined;
-};
-
-/**
- * Select
- * https://formkit-primevue.netlify.app/inputs/Select
- */
-export type SelectWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue Select element.
-     */
-    formkit?: 'primeSelect';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Options
-     * Array of selectable options (objects or strings)
-     */
-    options: Array<string | LocaleString | {
-        [key: string]: string | LocaleString;
-    }> | Array<string>;
-    /**
-     * Optionlabel
-     * Property name to use as the label of an option
-     */
-    optionLabel?: string | null;
-    /**
-     * Optionvalue
-     * Property name to use as the value of an option
-     */
-    optionValue?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Placeholder
-     * Placeholder text
-     */
-    placeholder?: LocaleString | string | null;
-    /**
-     * Showclear
-     * Whether to show clear button
-     */
-    showClear?: boolean;
-    /**
-     * Filter
-     * Whether to enable filtering
-     */
-    filter?: boolean;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeSelect' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (Array<string | LocaleString | {
-        [key: string]: string | LocaleString;
-    }> | Array<string>) | (string | null) | (string | null) | (LocaleString | string | null) | undefined;
-};
-
-/**
- * SelectButton
- * https://formkit-primevue.netlify.app/inputs/SelectButton
- */
-export type SelectButtonReadable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue SelectButton element.
-     */
-    formkit?: 'primeSelectButton';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Options
-     * Array of selectable options (objects or strings)
-     */
-    options: Array<string | LocaleString | {
-        [key: string]: string | LocaleString;
-    }> | Array<string>;
-    /**
-     * Optionlabel
-     * Property name to use as the label of an option
-     */
-    optionLabel?: string | null;
-    /**
-     * Optionvalue
-     * Property name to use as the value of an option
-     */
-    optionValue?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Optiondisabled
-     * Property name to use as the disabled flag of an option
-     */
-    optionDisabled?: string | null;
-    /**
-     * Multiple
-     * Whether to allow multiple selections
-     */
-    multiple?: boolean;
-    /**
-     * Unselectable
-     * Whether selection can be cleared
-     */
-    unselectable?: boolean;
-    /**
-     * Datakey
-     * Property name for unique option identification
-     */
-    dataKey?: string | null;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeSelectButton' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (Array<string | LocaleString | {
-        [key: string]: string | LocaleString;
-    }> | Array<string>) | (string | null) | (string | null) | (string | null) | (string | null) | string | undefined;
-};
-
-/**
- * SelectButton
- * https://formkit-primevue.netlify.app/inputs/SelectButton
- */
-export type SelectButtonWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue SelectButton element.
-     */
-    formkit?: 'primeSelectButton';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Options
-     * Array of selectable options (objects or strings)
-     */
-    options: Array<string | LocaleString | {
-        [key: string]: string | LocaleString;
-    }> | Array<string>;
-    /**
-     * Optionlabel
-     * Property name to use as the label of an option
-     */
-    optionLabel?: string | null;
-    /**
-     * Optionvalue
-     * Property name to use as the value of an option
-     */
-    optionValue?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Optiondisabled
-     * Property name to use as the disabled flag of an option
-     */
-    optionDisabled?: string | null;
-    /**
-     * Multiple
-     * Whether to allow multiple selections
-     */
-    multiple?: boolean;
-    /**
-     * Unselectable
-     * Whether selection can be cleared
-     */
-    unselectable?: boolean;
-    /**
-     * Datakey
-     * Property name for unique option identification
-     */
-    dataKey?: string | null;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeSelectButton' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (Array<string | LocaleString | {
-        [key: string]: string | LocaleString;
-    }> | Array<string>) | (string | null) | (string | null) | (string | null) | (string | null) | undefined;
-};
-
-/**
  * SemanticEvent
  * A base class for events that must report their data to an OpenInference-compatible tracing system,
  * such as Arize Phoenix. By inheriting from both `ControlEvent` and `DisplayEvent`, `SemanticEvent`:
@@ -9806,186 +6698,6 @@ export type SignedUrlDto = {
 };
 
 /**
- * Slider
- * https://formkit-primevue.netlify.app/inputs/Slider
- */
-export type SliderReadable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue Slider element.
-     */
-    formkit?: 'primeSlider';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Min
-     * Minimum value
-     */
-    min?: number | null;
-    /**
-     * Max
-     * Maximum value
-     */
-    max?: number | null;
-    /**
-     * Step
-     * Step factor for increment/decrement
-     */
-    step?: number | null;
-    /**
-     * Range
-     * Whether to enable range selection
-     */
-    range?: boolean;
-    /**
-     * Orientation
-     * Orientation of the slider
-     */
-    orientation?: ('horizontal' | 'vertical') | null;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeSlider' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (number | null) | (number | null) | (number | null) | (('horizontal' | 'vertical') | null) | string | undefined;
-};
-
-/**
- * Slider
- * https://formkit-primevue.netlify.app/inputs/Slider
- */
-export type SliderWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue Slider element.
-     */
-    formkit?: 'primeSlider';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Min
-     * Minimum value
-     */
-    min?: number | null;
-    /**
-     * Max
-     * Maximum value
-     */
-    max?: number | null;
-    /**
-     * Step
-     * Step factor for increment/decrement
-     */
-    step?: number | null;
-    /**
-     * Range
-     * Whether to enable range selection
-     */
-    range?: boolean;
-    /**
-     * Orientation
-     * Orientation of the slider
-     */
-    orientation?: ('horizontal' | 'vertical') | null;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeSlider' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (number | null) | (number | null) | (number | null) | (('horizontal' | 'vertical') | null) | undefined;
-};
-
-/**
  * StandaloneQuestionCondenserEvent
  * Event to condense chat messages into a single standalone question as a chat message.
  */
@@ -10010,7 +6722,7 @@ export type StandaloneQuestionCondenserEventReadable = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessageOutput;
+    condensed_chat_message: ChatMessage;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -10022,7 +6734,7 @@ export type StandaloneQuestionCondenserEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessageOutput | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessage | Array<string> | undefined;
 };
 
 /**
@@ -10050,8 +6762,8 @@ export type StandaloneQuestionCondenserEventWritable = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessageOutput;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessageOutput | undefined;
+    condensed_chat_message: ChatMessage;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessage | undefined;
 };
 
 /**
@@ -10244,6 +6956,7 @@ export type StopEventWritable = {
 
 /**
  * SubmittedFormDTO
+ * TODO: Define what information shall be returned on partial or sucessfull submittion of the form
  */
 export type SubmittedFormDto = {
     /**
@@ -10276,6 +6989,7 @@ export type SuiteDto = {
 
 /**
  * TextBlock
+ * A representation of text data to directly pass to/from the LLM.
  */
 export type TextBlock = {
     /**
@@ -10337,166 +7051,6 @@ export type TextToSpeechRequest = {
 };
 
 /**
- * Textarea
- * https://formkit-primevue.netlify.app/inputs/Textarea
- */
-export type TextareaReadable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue Textarea element.
-     */
-    formkit?: 'primeTextarea';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Placeholder
-     * Placeholder text
-     */
-    placeholder?: LocaleString | string | null;
-    /**
-     * Rows
-     * Number of rows to display
-     */
-    rows?: number | null;
-    /**
-     * Autoresize
-     * Whether to automatically resize based on content
-     */
-    autoResize?: boolean;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeTextarea' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | (number | null) | string | undefined;
-};
-
-/**
- * Textarea
- * https://formkit-primevue.netlify.app/inputs/Textarea
- */
-export type TextareaWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue Textarea element.
-     */
-    formkit?: 'primeTextarea';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Placeholder
-     * Placeholder text
-     */
-    placeholder?: LocaleString | string | null;
-    /**
-     * Rows
-     * Number of rows to display
-     */
-    rows?: number | null;
-    /**
-     * Autoresize
-     * Whether to automatically resize based on content
-     */
-    autoResize?: boolean;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeTextarea' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | (number | null) | undefined;
-};
-
-/**
  * ThoughtEvent
  * An event representing the system or agent's internal reasoning process, often displayed as
  * a "thought" or debug info stream. These "thoughts" provide insight into how the agent arrives
@@ -10525,16 +7079,6 @@ export type ThoughtEventReadable = {
      * Display description for the event
      */
     display_description?: LocaleString | null;
-    /**
-     * Content
-     * The actual chunk of text or data produced at this stage.
-     */
-    content?: string;
-    /**
-     * Model Name
-     * The name of the AI model generating the chunks.
-     */
-    model_name?: string;
     /**
      * Reasoning Content
      * The textual representation of the agent’s internal reasoning at a particular point in time.
@@ -10583,16 +7127,6 @@ export type ThoughtEventWritable = {
      * Display description for the event
      */
     display_description?: LocaleString | null;
-    /**
-     * Content
-     * The actual chunk of text or data produced at this stage.
-     */
-    content?: string;
-    /**
-     * Model Name
-     * The name of the AI model generating the chunks.
-     */
-    model_name?: string;
     /**
      * Reasoning Content
      * The textual representation of the agent’s internal reasoning at a particular point in time.
@@ -10756,356 +7290,6 @@ export const TimeRange = {
     '30D': '30d',
     '365D': '365d'
 } as const;
-
-/**
- * ToggleButton
- * https://formkit-primevue.netlify.app/inputs/ToggleButton
- */
-export type ToggleButtonReadable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue ToggleButton element.
-     */
-    formkit?: 'primeToggleButton';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Onlabel
-     * Label for the on state
-     */
-    onLabel?: LocaleString | string | null;
-    /**
-     * Offlabel
-     * Label for the off state
-     */
-    offLabel?: LocaleString | string | null;
-    /**
-     * Onicon
-     * Icon for the on state
-     */
-    onIcon?: string | null;
-    /**
-     * Officon
-     * Icon for the off state
-     */
-    offIcon?: string | null;
-    /**
-     * Iconpos
-     * Position of the icon
-     */
-    iconPos?: ('left' | 'right') | null;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeToggleButton' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | (LocaleString | string | null) | (string | null) | (string | null) | (('left' | 'right') | null) | string | undefined;
-};
-
-/**
- * ToggleButton
- * https://formkit-primevue.netlify.app/inputs/ToggleButton
- */
-export type ToggleButtonWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue ToggleButton element.
-     */
-    formkit?: 'primeToggleButton';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Onlabel
-     * Label for the on state
-     */
-    onLabel?: LocaleString | string | null;
-    /**
-     * Offlabel
-     * Label for the off state
-     */
-    offLabel?: LocaleString | string | null;
-    /**
-     * Onicon
-     * Icon for the on state
-     */
-    onIcon?: string | null;
-    /**
-     * Officon
-     * Icon for the off state
-     */
-    offIcon?: string | null;
-    /**
-     * Iconpos
-     * Position of the icon
-     */
-    iconPos?: ('left' | 'right') | null;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeToggleButton' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | (LocaleString | string | null) | (string | null) | (string | null) | (('left' | 'right') | null) | undefined;
-};
-
-/**
- * ToggleSwitch
- * https://formkit-primevue.netlify.app/inputs/ToggleSwitch
- */
-export type ToggleSwitchReadable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue ToggleSwitch element.
-     */
-    formkit?: 'primeToggleSwitch';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Truevalue
-     * Value to emit when toggled on
-     */
-    trueValue?: unknown;
-    /**
-     * Falsevalue
-     * Value to emit when toggled off
-     */
-    falseValue?: unknown;
-    /**
-     * Prefix
-     * Prefix text
-     */
-    prefix?: LocaleString | string | null;
-    /**
-     * Suffix
-     * Suffix text
-     */
-    suffix?: LocaleString | string | null;
-    /**
-     * Validation
-     */
-    readonly validation: string;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeToggleSwitch' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | (LocaleString | string | null) | string | undefined;
-};
-
-/**
- * ToggleSwitch
- * https://formkit-primevue.netlify.app/inputs/ToggleSwitch
- */
-export type ToggleSwitchWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * Formkit
-     * PrimeVue ToggleSwitch element.
-     */
-    formkit?: 'primeToggleSwitch';
-    /**
-     * Name
-     * Name of this field
-     */
-    name?: string | null;
-    /**
-     * Label
-     * Label of this field
-     */
-    label: LocaleString | string;
-    /**
-     * Help
-     * Help text of this field
-     */
-    help?: LocaleString | string | null;
-    /**
-     * Required
-     * Whether this field is required
-     */
-    required?: boolean;
-    /**
-     * Additional Validation Rules
-     * Validation expression
-     */
-    additional_validation_rules?: string | null;
-    /**
-     * Disabled
-     * Whether the input is disabled
-     */
-    disabled?: boolean;
-    /**
-     * Readonly
-     * Whether the input is readonly
-     */
-    readonly?: boolean;
-    /**
-     * Truevalue
-     * Value to emit when toggled on
-     */
-    trueValue?: unknown;
-    /**
-     * Falsevalue
-     * Value to emit when toggled off
-     */
-    falseValue?: unknown;
-    /**
-     * Prefix
-     * Prefix text
-     */
-    prefix?: LocaleString | string | null;
-    /**
-     * Suffix
-     * Suffix text
-     */
-    suffix?: LocaleString | string | null;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'primeToggleSwitch' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | (LocaleString | string | null) | undefined;
-};
 
 /**
  * TokenResponse
@@ -11279,7 +7463,11 @@ export type Transcription = {
      * Logprobs
      */
     logprobs?: Array<Logprob> | null;
-    [key: string]: unknown | string | (Array<Logprob> | null) | undefined;
+    /**
+     * Usage
+     */
+    usage?: UsageTokens | UsageDuration | null;
+    [key: string]: unknown | string | (Array<Logprob> | null) | (UsageTokens | UsageDuration | null) | undefined;
 };
 
 /**
@@ -11349,11 +7537,12 @@ export type TranscriptionVerbose = {
      * Segments
      */
     segments?: Array<TranscriptionSegment> | null;
+    usage?: OpenaiTypesAudioTranscriptionVerboseUsage | null;
     /**
      * Words
      */
     words?: Array<TranscriptionWord> | null;
-    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (Array<TranscriptionWord> | null) | undefined;
+    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (OpenaiTypesAudioTranscriptionVerboseUsage | null) | (Array<TranscriptionWord> | null) | undefined;
 };
 
 /**
@@ -11373,6 +7562,39 @@ export type TranscriptionWord = {
      */
     word: string;
     [key: string]: unknown | number | string;
+};
+
+/**
+ * UpdateNamespaceRequest
+ */
+export type UpdateNamespaceRequest = {
+    /**
+     * Display Name
+     * The new display name for the namespace.
+     */
+    display_name?: string | null;
+    /**
+     * Description
+     * The new description of the namespace's contents.
+     */
+    description?: string | null;
+};
+
+/**
+ * UpdateNotificationRequest
+ * Request model for partially updating a notification.
+ */
+export type UpdateNotificationRequest = {
+    /**
+     * Read
+     * The new 'read' status of the notification.
+     */
+    read?: boolean | null;
+    /**
+     * Done
+     * The new 'done' status for the notification's task.
+     */
+    done?: boolean | null;
 };
 
 /**
@@ -11398,23 +7620,18 @@ export type UpdateRoleRequest = {
 };
 
 /**
- * Usage
+ * UsageDuration
  */
-export type Usage = {
+export type UsageDuration = {
     /**
-     * Input Tokens
+     * Seconds
      */
-    input_tokens: number;
-    input_tokens_details: UsageInputTokensDetails;
+    seconds: number;
     /**
-     * Output Tokens
+     * Type
      */
-    output_tokens: number;
-    /**
-     * Total Tokens
-     */
-    total_tokens: number;
-    [key: string]: unknown | number | UsageInputTokensDetails;
+    type: 'duration';
+    [key: string]: unknown | number | 'duration';
 };
 
 /**
@@ -11433,6 +7650,45 @@ export type UsageInputTokensDetails = {
 };
 
 /**
+ * UsageTokens
+ */
+export type UsageTokens = {
+    /**
+     * Input Tokens
+     */
+    input_tokens: number;
+    /**
+     * Output Tokens
+     */
+    output_tokens: number;
+    /**
+     * Total Tokens
+     */
+    total_tokens: number;
+    /**
+     * Type
+     */
+    type: 'tokens';
+    input_token_details?: UsageTokensInputTokenDetails | null;
+    [key: string]: unknown | number | 'tokens' | (UsageTokensInputTokenDetails | null) | undefined;
+};
+
+/**
+ * UsageTokensInputTokenDetails
+ */
+export type UsageTokensInputTokenDetails = {
+    /**
+     * Audio Tokens
+     */
+    audio_tokens?: number | null;
+    /**
+     * Text Tokens
+     */
+    text_tokens?: number | null;
+    [key: string]: unknown | (number | null) | (number | null) | undefined;
+};
+
+/**
  * UserAccess
  */
 export type UserAccess = {
@@ -11445,53 +7701,6 @@ export type UserAccess = {
      * Users access level to service/agent/process
      */
     level: AccessLevel;
-};
-
-/**
- * UserChatMessage
- */
-export type UserChatMessageInput = {
-    role?: MessageRoleInput;
-    additional_kwargs: AdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput)>;
-    /**
-     * User Id
-     */
-    user_id: string;
-};
-
-/**
- * UserChatMessage
- */
-export type UserChatMessageOutput = {
-    role?: MessageRoleOutput;
-    /**
-     * Additional Kwargs
-     */
-    additional_kwargs?: unknown;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockOutput) | ({
-        block_type: 'audio';
-    } & AudioBlockOutput)>;
-    /**
-     * User Id
-     */
-    user_id: string;
 };
 
 /**
@@ -11633,12 +7842,12 @@ export type UserMessageEventReadable = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput>;
+    messages?: Array<ChatMessage>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
-    files?: Array<UserUploadedFileOutput> | null;
+    files?: Array<UserUploadedFile> | null;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -11652,7 +7861,7 @@ export type UserMessageEventReadable = {
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
         [key: string]: unknown;
-    } | null) | UserIdentity | Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput> | (Array<UserUploadedFileOutput> | null) | Array<string> | undefined;
+    } | null) | UserIdentity | Array<ChatMessage> | (Array<UserUploadedFile> | null) | Array<string> | undefined;
 };
 
 /**
@@ -11718,37 +7927,21 @@ export type UserMessageEventWritable = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput>;
+    messages?: Array<ChatMessage>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
-    files?: Array<UserUploadedFileOutput> | null;
+    files?: Array<UserUploadedFile> | null;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
         [key: string]: unknown;
-    } | null) | UserIdentity | Array<ChatMessageOutput | UserChatMessageOutput | AssistantChatMessageOutput> | (Array<UserUploadedFileOutput> | null) | undefined;
-};
-
-/**
- * UserMessageEventInput
- */
-export type UserMessageEventInput = {
-    /**
-     * Messages
-     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
-     */
-    messages?: Array<ChatMessageInput | UserChatMessageInput | AssistantChatMessageInput>;
-    /**
-     * Files
-     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
-     */
-    files?: Array<JamboParserObjectTypeParserUserUploadedFile> | null;
+    } | null) | UserIdentity | Array<ChatMessage> | (Array<UserUploadedFile> | null) | undefined;
 };
 
 /**
  * UserUploadedFile
  */
-export type UserUploadedFileOutput = {
+export type UserUploadedFile = {
     /**
      * Filename
      * The name of the uploaded file, including the extension.
@@ -11868,200 +8061,18 @@ export type WorkflowGraph = {
 };
 
 /**
- * additional_kwargs
+ * Usage
  */
-export type AdditionalKwargs = {
-    [key: string]: unknown;
-};
-
-/**
- * Message
- */
-export type AihubLibNatsEventsSemanticLlmMessageMessageReadable = {
+export type OpenaiTypesAudioTranscriptionVerboseUsage = {
     /**
-     * Role
-     * The role of the message, such as 'user', 'assistant', or 'system'.
+     * Seconds
      */
-    role: string;
+    seconds: number;
     /**
-     * Name
-     * The name of the function or agent generating the message.
+     * Type
      */
-    name?: string | null;
-    /**
-     * Tool Calls
-     * List of tool calls generated by the model, such as function calls.
-     */
-    tool_calls?: Array<{
-        [key: string]: unknown;
-    }> | null;
-    /**
-     * Function Call Name
-     * The name of the function being called in the message.
-     */
-    function_call_name?: string | null;
-    /**
-     * Function Call Arguments Json
-     * JSON representing arguments passed to the function during a function call.
-     */
-    function_call_arguments_json?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * Tool Call Id
-     * The ID of the tool call, if applicable.
-     */
-    tool_call_id?: string | null;
-    /**
-     * Contents
-     * The message contents as an array of content blocks (text, image, audio).
-     */
-    contents?: Array<TextContent | ImageContent | AudioContent> | null;
-    /**
-     * Content
-     */
-    readonly content: string;
-};
-
-/**
- * Message
- */
-export type AihubLibNatsEventsSemanticLlmMessageMessageWritable = {
-    /**
-     * Role
-     * The role of the message, such as 'user', 'assistant', or 'system'.
-     */
-    role: string;
-    /**
-     * Name
-     * The name of the function or agent generating the message.
-     */
-    name?: string | null;
-    /**
-     * Tool Calls
-     * List of tool calls generated by the model, such as function calls.
-     */
-    tool_calls?: Array<{
-        [key: string]: unknown;
-    }> | null;
-    /**
-     * Function Call Name
-     * The name of the function being called in the message.
-     */
-    function_call_name?: string | null;
-    /**
-     * Function Call Arguments Json
-     * JSON representing arguments passed to the function during a function call.
-     */
-    function_call_arguments_json?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * Tool Call Id
-     * The ID of the tool call, if applicable.
-     */
-    tool_call_id?: string | null;
-    /**
-     * Contents
-     * The message contents as an array of content blocks (text, image, audio).
-     */
-    contents?: Array<TextContent | ImageContent | AudioContent> | null;
-};
-
-/**
- * UserUploadedFile
- */
-export type AihubLibNatsEventsUserUserUploadedFileUserUploadedFile = {
-    /**
-     * Filename
-     * The name of the uploaded file, including the extension.
-     */
-    filename: string;
-    /**
-     * File Data
-     * Base64 encoded content of the uploaded file.
-     */
-    file_data: string;
-    /**
-     * File Type
-     * The MIME type of the uploaded file.
-     */
-    file_type: string;
-};
-
-/**
- * function_call_arguments_json
- */
-export type FunctionCallArgumentsJson = {
-    [key: string]: unknown;
-};
-
-/**
- * invocation_parameters
- */
-export type InvocationParameters = {
-    [key: string]: unknown;
-};
-
-/**
- * Message
- */
-export type JamboParserObjectTypeParserMessage = {
-    /**
-     * Role
-     * The role of the message, such as 'user', 'assistant', or 'system'.
-     */
-    role: string;
-    /**
-     * Name
-     * The name of the function or agent generating the message.
-     */
-    name?: string | null;
-    /**
-     * Tool Calls
-     * List of tool calls generated by the model, such as function calls.
-     */
-    tool_calls?: Array<ToolCalls> | null;
-    /**
-     * Function Call Name
-     * The name of the function being called in the message.
-     */
-    function_call_name?: string | null;
-    /**
-     * JSON representing arguments passed to the function during a function call.
-     */
-    function_call_arguments_json?: FunctionCallArgumentsJson | null;
-    /**
-     * Tool Call Id
-     * The ID of the tool call, if applicable.
-     */
-    tool_call_id?: string | null;
-    /**
-     * Contents
-     * The message contents as an array of content blocks (text, image, audio).
-     */
-    contents?: Array<TextContent | ImageContent | AudioContent> | null;
-};
-
-/**
- * UserUploadedFile
- */
-export type JamboParserObjectTypeParserUserUploadedFile = {
-    /**
-     * Filename
-     * The name of the uploaded file, including the extension.
-     */
-    filename: string;
-    /**
-     * File Data
-     * Base64 encoded content of the uploaded file.
-     */
-    file_data: string;
-    /**
-     * File Type
-     * The MIME type of the uploaded file.
-     */
-    file_type: string;
+    type: 'duration';
+    [key: string]: unknown | number | 'duration';
 };
 
 /**
@@ -12109,24 +8120,23 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
 };
 
 /**
- * prompt_template_variables
+ * Usage
  */
-export type PromptTemplateVariables = {
-    [key: string]: unknown;
-};
-
-/**
- * tool_calls
- */
-export type ToolCalls = {
-    [key: string]: unknown;
-};
-
-/**
- * tools
- */
-export type Tools = {
-    [key: string]: unknown;
+export type OpenaiTypesImagesResponseUsage = {
+    /**
+     * Input Tokens
+     */
+    input_tokens: number;
+    input_tokens_details: UsageInputTokensDetails;
+    /**
+     * Output Tokens
+     */
+    output_tokens: number;
+    /**
+     * Total Tokens
+     */
+    total_tokens: number;
+    [key: string]: unknown | number | UsageInputTokensDetails;
 };
 
 export type GetHealthData = {
@@ -12182,6 +8192,7 @@ export type GetUserData = {
     path: {
         /**
          * User Id
+         * The user's unique identifier (OID).
          */
         user_id: string;
     };
@@ -12608,6 +8619,53 @@ export type RemoveUserFromThreadResponses = {
 
 export type RemoveUserFromThreadResponse = RemoveUserFromThreadResponses[keyof RemoveUserFromThreadResponses];
 
+export type GetModelsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/models';
+};
+
+export type GetModelsResponses = {
+    /**
+     * Response Get Models Models Get
+     * Successful Response
+     */
+    200: Array<ModelTypeGroupDtoReadable>;
+};
+
+export type GetModelsResponse = GetModelsResponses[keyof GetModelsResponses];
+
+export type GetModelData = {
+    body?: never;
+    path: {
+        /**
+         * Model Name
+         */
+        model_name: string;
+    };
+    query?: never;
+    url: '/models/{model_name}';
+};
+
+export type GetModelErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetModelError = GetModelErrors[keyof GetModelErrors];
+
+export type GetModelResponses = {
+    /**
+     * Successful Response
+     */
+    200: ModelDtoReadable;
+};
+
+export type GetModelResponse = GetModelResponses[keyof GetModelResponses];
+
 export type GetAgentData = {
     body?: never;
     path: {
@@ -12750,7 +8808,7 @@ export type GetProcessResponses = {
     /**
      * Successful Response
      */
-    200: ProcessDtoReadable;
+    200: ProcessDto;
 };
 
 export type GetProcessResponse = GetProcessResponses[keyof GetProcessResponses];
@@ -12767,7 +8825,7 @@ export type GetProcessesResponses = {
      * Response Get Processes Processes  Get
      * Successful Response
      */
-    200: Array<ProcessDtoReadable>;
+    200: Array<ProcessDto>;
 };
 
 export type GetProcessesResponse = GetProcessesResponses[keyof GetProcessesResponses];
@@ -12784,55 +8842,10 @@ export type DiscoverProcessesResponses = {
      * Response Discover Processes Processes Discover Get
      * Successful Response
      */
-    200: Array<ProcessDtoReadable>;
+    200: Array<ProcessDto>;
 };
 
 export type DiscoverProcessesResponse = DiscoverProcessesResponses[keyof DiscoverProcessesResponses];
-
-export type GetProcessWalkthroughsData = {
-    body?: never;
-    path: {
-        /**
-         * Process Class
-         */
-        process_class: string;
-        /**
-         * Process Id
-         */
-        process_id: string;
-    };
-    query?: {
-        /**
-         * Page Number
-         * Page number to retrieve (starting from 1)
-         */
-        page?: number;
-        /**
-         * Page Size
-         * Number of items per page (maximum 100)
-         */
-        page_size?: number;
-    };
-    url: '/processes/{process_class}/{process_id}/walkthroughs';
-};
-
-export type GetProcessWalkthroughsErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetProcessWalkthroughsError = GetProcessWalkthroughsErrors[keyof GetProcessWalkthroughsErrors];
-
-export type GetProcessWalkthroughsResponses = {
-    /**
-     * Successful Response
-     */
-    200: PaginatedProcessWalkthroughsResponse;
-};
-
-export type GetProcessWalkthroughsResponse = GetProcessWalkthroughsResponses[keyof GetProcessWalkthroughsResponses];
 
 export type GetProcessStartFormsData = {
     body?: never;
@@ -12864,49 +8877,10 @@ export type GetProcessStartFormsResponses = {
      * Response Get Process Start Forms Processes  Process Class   Process Id  Start Forms Get
      * Successful Response
      */
-    200: Array<HumanInDtoReadable>;
+    200: Array<ProcessHumanInDto>;
 };
 
 export type GetProcessStartFormsResponse = GetProcessStartFormsResponses[keyof GetProcessStartFormsResponses];
-
-export type GetProcessOpenFormsData = {
-    body?: never;
-    path: {
-        /**
-         * Process Class
-         */
-        process_class: string;
-        /**
-         * Process Id
-         */
-        process_id: string;
-        /**
-         * Process Walkthrough Id
-         */
-        process_walkthrough_id: string;
-    };
-    query?: never;
-    url: '/processes/{process_class}/{process_id}/{process_walkthrough_id}/open_forms';
-};
-
-export type GetProcessOpenFormsErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetProcessOpenFormsError = GetProcessOpenFormsErrors[keyof GetProcessOpenFormsErrors];
-
-export type GetProcessOpenFormsResponses = {
-    /**
-     * Response Get Process Open Forms Processes  Process Class   Process Id   Process Walkthrough Id  Open Forms Get
-     * Successful Response
-     */
-    200: Array<HumanInDtoReadable>;
-};
-
-export type GetProcessOpenFormsResponse = GetProcessOpenFormsResponses[keyof GetProcessOpenFormsResponses];
 
 export type SendProcessStartFormData = {
     /**
@@ -13007,6 +8981,45 @@ export type SendProcessOpenFormResponses = {
 };
 
 export type SendProcessOpenFormResponse = SendProcessOpenFormResponses[keyof SendProcessOpenFormResponses];
+
+export type GetProcessOpenFormsData = {
+    body?: never;
+    path: {
+        /**
+         * Process Class
+         */
+        process_class: string;
+        /**
+         * Process Id
+         */
+        process_id: string;
+        /**
+         * Process Walkthrough Id
+         */
+        process_walkthrough_id: string;
+    };
+    query?: never;
+    url: '/processes/{process_class}/{process_id}/{process_walkthrough_id}/open_forms';
+};
+
+export type GetProcessOpenFormsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetProcessOpenFormsError = GetProcessOpenFormsErrors[keyof GetProcessOpenFormsErrors];
+
+export type GetProcessOpenFormsResponses = {
+    /**
+     * Response Get Process Open Forms Processes  Process Class   Process Id   Process Walkthrough Id  Open Forms Get
+     * Successful Response
+     */
+    200: Array<ProcessHumanInDto>;
+};
+
+export type GetProcessOpenFormsResponse = GetProcessOpenFormsResponses[keyof GetProcessOpenFormsResponses];
 
 export type ListTokensEndpointData = {
     body?: never;
@@ -13559,6 +9572,61 @@ export type RunExperimentResponses = {
 
 export type RunExperimentResponse = RunExperimentResponses[keyof RunExperimentResponses];
 
+export type CreateNamespaceData = {
+    body: CreateNamespaceRequest;
+    path?: never;
+    query?: never;
+    url: '/knowledge/namespaces';
+};
+
+export type CreateNamespaceErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateNamespaceError = CreateNamespaceErrors[keyof CreateNamespaceErrors];
+
+export type CreateNamespaceResponses = {
+    /**
+     * Successful Response
+     */
+    200: NamespaceResponse;
+};
+
+export type CreateNamespaceResponse = CreateNamespaceResponses[keyof CreateNamespaceResponses];
+
+export type UpdateNamespaceData = {
+    body: UpdateNamespaceRequest;
+    path: {
+        /**
+         * Namespace ID
+         */
+        namespace_id: string;
+    };
+    query?: never;
+    url: '/knowledge/namespaces/{namespace_id}';
+};
+
+export type UpdateNamespaceErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateNamespaceError = UpdateNamespaceErrors[keyof UpdateNamespaceErrors];
+
+export type UpdateNamespaceResponses = {
+    /**
+     * Successful Response
+     */
+    200: NamespaceResponse;
+};
+
+export type UpdateNamespaceResponse = UpdateNamespaceResponses[keyof UpdateNamespaceResponses];
+
 export type GetDatabasesData = {
     body?: never;
     path?: never;
@@ -13580,7 +9648,7 @@ export type GetDocumentsForNamespaceData = {
     body?: never;
     path: {
         /**
-         * Database
+         * Database name
          */
         database: string;
         /**
@@ -13625,15 +9693,11 @@ export type GetDocumentByIdData = {
     body?: never;
     path: {
         /**
-         * Database
+         * Database name
          */
         database: string;
         /**
-         * Namespace
-         */
-        namespace: string;
-        /**
-         * Document Id
+         * Document ID
          */
         document_id: string;
     };
@@ -13654,7 +9718,7 @@ export type GetDocumentByIdResponses = {
     /**
      * Successful Response
      */
-    200: IngestedDocument;
+    200: DocumentDto;
 };
 
 export type GetDocumentByIdResponse = GetDocumentByIdResponses[keyof GetDocumentByIdResponses];
@@ -13663,7 +9727,7 @@ export type GetNodesForDocumentData = {
     body?: never;
     path: {
         /**
-         * Database
+         * Database name
          */
         database: string;
         /**
@@ -13671,7 +9735,7 @@ export type GetNodesForDocumentData = {
          */
         namespace: string;
         /**
-         * Document Id
+         * Document ID
          */
         document_id: string;
     };
@@ -13702,7 +9766,7 @@ export type GetSummaryNodesForDocumentData = {
     body?: never;
     path: {
         /**
-         * Database
+         * Database name
          */
         database: string;
         /**
@@ -13710,7 +9774,7 @@ export type GetSummaryNodesForDocumentData = {
          */
         namespace: string;
         /**
-         * Document Id
+         * Document ID
          */
         document_id: string;
     };
@@ -13750,7 +9814,7 @@ export type GetFileUrlData = {
         file_path: string;
     };
     query?: never;
-    url: '/file/logged-in/url/{container}/{file_path}';
+    url: '/files/logged-in/url/{container}/{file_path}';
 };
 
 export type GetFileUrlErrors = {
@@ -13784,7 +9848,7 @@ export type GetFileRedirectData = {
         file_path: string;
     };
     query?: never;
-    url: '/file/logged-in/redirect/{container}/{file_path}';
+    url: '/files/logged-in/redirect/{container}/{file_path}';
 };
 
 export type GetFileRedirectErrors = {
@@ -13827,7 +9891,7 @@ export type GetAnonymousFileUrlData = {
          */
         signature: string;
     };
-    url: '/file/anonymous/url/{container}/{file_path}';
+    url: '/files/anonymous/url/{container}/{file_path}';
 };
 
 export type GetAnonymousFileUrlErrors = {
@@ -13870,7 +9934,7 @@ export type GetAnonymousFileRedirectData = {
          */
         signature: string;
     };
-    url: '/file/anonymous/redirect/{container}/{file_path}';
+    url: '/files/anonymous/redirect/{container}/{file_path}';
 };
 
 export type GetAnonymousFileRedirectErrors = {
@@ -13889,39 +9953,178 @@ export type GetAnonymousFileRedirectResponses = {
     200: unknown;
 };
 
-export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostData = {
-    body: UserMessageEventInput;
+export type InitiateFileUploadData = {
+    body: FileUploadRequest;
     path?: never;
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/LLMWrappingAgent/dev_agent/user_message_event';
+    query?: never;
+    url: '/files/upload/initiate';
 };
 
-export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostErrors = {
+export type InitiateFileUploadErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostError = SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostErrors[keyof SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostErrors];
+export type InitiateFileUploadError = InitiateFileUploadErrors[keyof InitiateFileUploadErrors];
 
-export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses = {
+export type InitiateFileUploadResponses = {
     /**
      * Successful Response
      */
-    200: LlmStopEventOutput;
+    200: FileUploadResponse;
 };
 
-export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponse = SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses[keyof SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses];
+export type InitiateFileUploadResponse = InitiateFileUploadResponses[keyof InitiateFileUploadResponses];
+
+export type ValidateFileUploadData = {
+    body: FileUploadValidationRequest;
+    path?: never;
+    query?: never;
+    url: '/files/upload/validate';
+};
+
+export type ValidateFileUploadErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ValidateFileUploadError = ValidateFileUploadErrors[keyof ValidateFileUploadErrors];
+
+export type ValidateFileUploadResponses = {
+    /**
+     * Successful Response
+     */
+    200: FileUploadValidationResponse;
+};
+
+export type ValidateFileUploadResponse = ValidateFileUploadResponses[keyof ValidateFileUploadResponses];
+
+export type GetSupportedFileTypesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/files/upload/supported-types';
+};
+
+export type GetSupportedFileTypesResponses = {
+    /**
+     * Response Get Supported File Types Files Upload Supported Types Get
+     * Successful Response
+     */
+    200: Array<string>;
+};
+
+export type GetSupportedFileTypesResponse = GetSupportedFileTypesResponses[keyof GetSupportedFileTypesResponses];
+
+export type GetNotificationsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Page
+         */
+        page?: number;
+        /**
+         * Page Size
+         */
+        page_size?: number;
+        /**
+         * Types
+         */
+        types?: Array<string> | null;
+        /**
+         * Severities
+         */
+        severities?: Array<string> | null;
+        /**
+         * Read
+         */
+        read?: boolean | null;
+        /**
+         * Done
+         */
+        done?: boolean | null;
+    };
+    url: '/notifications';
+};
+
+export type GetNotificationsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetNotificationsError = GetNotificationsErrors[keyof GetNotificationsErrors];
+
+export type GetNotificationsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PaginatedNotificationsResponse;
+};
+
+export type GetNotificationsResponse = GetNotificationsResponses[keyof GetNotificationsResponses];
+
+export type UpdateNotificationsBulkData = {
+    body: BulkUpdateNotificationRequest;
+    path?: never;
+    query?: never;
+    url: '/notifications/';
+};
+
+export type UpdateNotificationsBulkErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateNotificationsBulkError = UpdateNotificationsBulkErrors[keyof UpdateNotificationsBulkErrors];
+
+export type UpdateNotificationsBulkResponses = {
+    /**
+     * Response Update Notifications Bulk Notifications  Patch
+     * Successful Response
+     */
+    200: Array<NotificationDto>;
+};
+
+export type UpdateNotificationsBulkResponse = UpdateNotificationsBulkResponses[keyof UpdateNotificationsBulkResponses];
+
+export type UpdateNotificationData = {
+    body: UpdateNotificationRequest;
+    path: {
+        /**
+         * Notification Id
+         */
+        notification_id: string;
+    };
+    query?: never;
+    url: '/notifications/{notification_id}';
+};
+
+export type UpdateNotificationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateNotificationError = UpdateNotificationErrors[keyof UpdateNotificationErrors];
+
+export type UpdateNotificationResponses = {
+    /**
+     * Successful Response
+     */
+    200: NotificationDto;
+};
+
+export type UpdateNotificationResponse = UpdateNotificationResponses[keyof UpdateNotificationResponses];
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});

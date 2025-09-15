@@ -20,7 +20,7 @@ def api_client():
     auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     runner = ApiTestRunner()
     runner.mount(HealthController(auth=auth).get_health())
-    return TestClient(runner.get_app())
+    return TestClient(runner.create_app())
 
 
 def test_health_endpoint(api_client):

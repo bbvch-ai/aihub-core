@@ -1,17 +1,19 @@
 [tool.poetry]
 name = "aihub_lib"
-version = "v0.224.0"
+version = "v0.244.0"
 description = ""
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
     "Marius Högger <marius.hoegger@bbv.ch>",
     "Michèle Fundneider <michele.fundneider@bbv.ch>",
+    "Thomas Mannhart <thomas.mannhart@bbv.ch>",
+    "Noah Hermann <noah.hermann@bbv.ch>",
 ]
 license = "Proprietary"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.11, <3.12"
+python = ">=3.13, <3.14"
 mongoengine = "^0.29.1"
 azure-cognitiveservices-speech = "^1.41.1"
 azure-mgmt-cosmosdb = "^9.7.0"
@@ -28,7 +30,7 @@ pydantic-settings = "^2.6.1"
 python-i18n = "^0.3.9"
 nats-py = "^2.9.0"
 pyyaml = "^6.0.2"
-llama-index-vector-stores-milvus = "^0.7.3"
+llama-index-vector-stores-milvus = "^0.8.7"
 fsspec = "^2024.10.0"
 llama-index-readers-file = "^0.4.1"
 colorlog = "^6.9.0"
@@ -41,12 +43,10 @@ opentelemetry-sdk = "^1.32.1"
 opentelemetry-semantic-conventions = "^0.53b1"
 opentelemetry-exporter-otlp = "^1.32.1"
 pydantic = "^2.10.3"
-llama-index-embeddings-azure-openai = "^0.3.2"
 llama-index-storage-docstore-mongodb = "^0.3.0"
 pytest-mock = "^3.14.0"
 llama-index-llms-openai-like = "^0.3.4"
 transformers = "^4.48.1"
-llama-index-embeddings-text-embeddings-inference = "^0.3.2"
 fastapi = "^0.115.8"
 azure-mgmt-cognitiveservices = "^13.6.0"
 azure-storage-file-datalake = "^12.18.1"
@@ -54,14 +54,15 @@ adlfs = "^2024.12.0"
 redis = "^5.2.1"
 openai = "^1.76.2"
 cachetools = "^5.5.2"
-llama-index-llms-google-genai = "^0.1.7"
 google-genai = "^1.10.0"
 arize-phoenix = "^10.0.2"
 docling-core = "^2.38.0"
+boto3 = "^1.35.0"
+llama-index-embeddings-openai-like = "^0.1.1"
 
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.3.2"
+pytest = "^8.4.1"
 pytest-asyncio = "^0.24.0"
 ruff = "^0.8.1"
 matplotlib = "^3.9.3"
@@ -72,6 +73,7 @@ mypy = "^1.13.0"
 types-pyyaml = "^6.0.12.20240917"
 types-networkx = "^3.4.2.20241115"
 pytest-cov = "^6.0.0"
+pip-licenses = "^5.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -86,7 +88,7 @@ trailing_comma_inline_array = true
 
 [tool.ruff]
 line-length = 120
-target-version = 'py311'
+target-version = 'py313'
 
 [tool.ruff.lint]
 select = ["E", "F", "UP", "I"]
@@ -103,7 +105,7 @@ plugins = ['pydantic.mypy']
 
 [tool.black]
 line-length = 120
-target-version = ['py311']
+target-version = ['py313']
 include = '\.pyi?$'
 extend-exclude = '''
 /(

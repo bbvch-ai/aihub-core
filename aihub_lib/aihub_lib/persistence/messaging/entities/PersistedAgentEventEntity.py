@@ -5,16 +5,15 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from bson import ObjectId
-from llama_index.core.base.llms.types import MessageRole
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from mongoengine import DictField, Document, ListField, StringField
 
-from aihub_lib.nats.events.control import AssistantChatMessage, UserChatMessage
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.persistence.messaging.entities.types.EventBucket import EventBucket
 
 if TYPE_CHECKING:
     from aihub_lib.nats.events import BaseEvent
-    from aihub_lib.nats.topics import AgentTopic
+    from aihub_lib.nats.topics import AgentInstanceTopic
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +94,7 @@ class PersistedAgentEventEntity(Document):
     event_parents = ListField(StringField(), required=True)
 
     @classmethod
-    def persist_event(cls, event: "BaseEvent", topic: "AgentTopic", db: str):
+    def persist_event(cls, event: "BaseEvent", topic: "AgentInstanceTopic", db: str):
         persisted_entity = cls(
             id=ObjectId(),
             agent_class=topic.agent_class,
@@ -350,7 +349,7 @@ class PersistedAgentEventEntity(Document):
         return results
 
     @classmethod
-    def to_message_history(cls, thread_id: str) -> list[UserChatMessage | AssistantChatMessage]:
+    def to_message_history(cls, thread_id: str) -> list[ChatMessage]:
         # Retrieve and filter events from the database
         events = (
             cls.objects()
@@ -368,7 +367,7 @@ class PersistedAgentEventEntity(Document):
             .only("event_name", "event_data", "agent_id", "agent_class", "run_id")
         )
 
-        message_history: list[UserChatMessage | AssistantChatMessage] = []
+        message_history: list[ChatMessage] = []
         assistant_content_buffer = ""
         current_run_id = None
         current_agent_id = None
@@ -379,11 +378,13 @@ class PersistedAgentEventEntity(Document):
                 # Finalize any ongoing assistant message
                 if assistant_content_buffer:
                     message_history.append(
-                        AssistantChatMessage(
+                        ChatMessage(
                             role=MessageRole.ASSISTANT,
                             content=assistant_content_buffer,
-                            agent_id=current_agent_id,
-                            agent_class=current_agent_class,
+                            additional_kwargs={
+                                "agent_id": current_agent_id,
+                                "agent_class": current_agent_class,
+                            },
                         )
                     )
                     assistant_content_buffer = ""
@@ -394,10 +395,9 @@ class PersistedAgentEventEntity(Document):
                 # Create and append user message
                 content = event.event_data.get("content", "") or event.event_data.get("response", "")
                 message_history.append(
-                    UserChatMessage(
+                    ChatMessage(
                         role=MessageRole.USER,
                         content=content,
-                        user_id=event.agent_id,
                     )
                 )
 
@@ -411,11 +411,13 @@ class PersistedAgentEventEntity(Document):
                     # Finalize previous assistant message if it exists
                     if assistant_content_buffer:
                         message_history.append(
-                            AssistantChatMessage(
+                            ChatMessage(
                                 role=MessageRole.ASSISTANT,
                                 content=assistant_content_buffer,
-                                agent_id=current_agent_id,
-                                agent_class=current_agent_class,
+                                additional_kwargs={
+                                    "agent_id": current_agent_id,
+                                    "agent_class": current_agent_class,
+                                },
                             )
                         )
                     # Start a new assistant message
@@ -431,11 +433,13 @@ class PersistedAgentEventEntity(Document):
         # Finalize any remaining assistant message
         if assistant_content_buffer:
             message_history.append(
-                AssistantChatMessage(
+                ChatMessage(
                     role=MessageRole.ASSISTANT,
                     content=assistant_content_buffer,
-                    agent_id=current_agent_id,
-                    agent_class=current_agent_class,
+                    additional_kwargs={
+                        "agent_id": current_agent_id,
+                        "agent_class": current_agent_class,
+                    },
                 )
             )
 

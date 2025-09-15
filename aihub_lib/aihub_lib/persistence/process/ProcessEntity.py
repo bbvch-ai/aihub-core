@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from bson import ObjectId
@@ -9,6 +10,7 @@ from mongoengine import (
     EmbeddedDocument,
     EmbeddedDocumentField,
     ListField,
+    ReferenceField,
     StringField,
 )
 
@@ -16,8 +18,15 @@ from aihub_lib.nats.events.discovery import ProcessDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
 from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
+from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
+from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
+from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from aihub_lib.persistence.agents.AgentEntity import EventSpec
+from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
+from aihub_lib.persistence.process.ProcessConfigEntityEmbeddedDocument import ProcessConfigEntityEmbeddedDocument
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
+
+logger = logging.getLogger(__name__)
 
 
 class ProgramInSpecsEntity(EmbeddedDocument):
@@ -32,7 +41,7 @@ class ProgramInSpecsEntity(EmbeddedDocument):
             route=specs.route,
             method=specs.method,
             is_process_start=specs.is_process_start,
-            event_specs=EventSpec.from_dto(specs.event_specs),
+            event_specs=EventSpec.from_specs(specs.event_specs),
         )
 
 
@@ -53,7 +62,7 @@ class HumanInSpecsEntity(EmbeddedDocument):
             route=specs.route,
             method=specs.method,
             is_process_start=specs.is_process_start,
-            event_specs=EventSpec.from_dto(specs.event_specs),
+            event_specs=EventSpec.from_specs(specs.event_specs),
             form=[form_element.model_dump() for form_element in specs.form],
         )
 
@@ -70,7 +79,7 @@ class AgentInSpecsEntity(EmbeddedDocument):
             agent_class=specs.agent_class,
             agent_id=specs.agent_id,
             is_process_start=specs.is_process_start,
-            event_specs=EventSpec.from_dto(specs.event_specs),
+            event_specs=EventSpec.from_specs(specs.event_specs),
         )
 
 
@@ -89,7 +98,8 @@ class ProcessEntity(Document):
     }
     process_class = StringField(required=True)
     process_id = StringField(required=True)
-    process_config = EmbeddedDocumentField(ProcessConfig, required=True)
+    process_config = ReferenceField(ProcessConfigEntityDocument, required=False)
+    default_process_config = EmbeddedDocumentField(ProcessConfigEntityEmbeddedDocument, required=True)
     human_inputs = ListField(EmbeddedDocumentField(HumanInSpecsEntity), default=list)
     program_inputs = ListField(EmbeddedDocumentField(ProgramInSpecsEntity), default=list)
     agent_inputs = ListField(EmbeddedDocumentField(AgentInSpecsEntity), default=list)
@@ -101,7 +111,8 @@ class ProcessEntity(Document):
         cls,
         process_class: str,
         process_id: str,
-        process_config: ProcessConfig,
+        process_config: ProcessConfigEntityDocument | None,
+        default_process_config: ProcessConfigEntityEmbeddedDocument,
         human_inputs: list[HumanInSpecsEntity],
         program_inputs: list[ProgramInSpecsEntity],
         agent_inputs: list[AgentInSpecsEntity],
@@ -112,6 +123,7 @@ class ProcessEntity(Document):
             process_class=process_class,
             process_id=process_id,
             process_config=process_config,
+            default_process_config=default_process_config,
             human_inputs=human_inputs,
             agent_inputs=agent_inputs,
             program_inputs=program_inputs,
@@ -120,6 +132,53 @@ class ProcessEntity(Document):
         )
         process.save()
         return process
+
+    @classmethod
+    def create_or_update(
+        cls,
+        process_id: str,
+        process_class: str,
+        default_process_config: ProcessConfig,
+        human_inputs: list[HumanInSpecs],
+        program_inputs: list[ProgramInSpecs],
+        agent_inputs: list[AgentInSpecs],
+    ) -> "ProcessEntity":
+        existing_process = cls.objects(process_class=process_class, process_id=process_id).first()
+
+        process_config_entity = ProcessConfigEntityDocument.find_for_class_and_id(
+            process_class=process_class, process_id=process_id
+        )
+        if not process_config_entity:
+            logger.debug(f"No process config found for class {process_class} and ID {process_id}.")
+
+        default_process_config_entity = ProcessConfigEntityEmbeddedDocument.from_process_config(default_process_config)
+
+        # Create EventSpec objects, serializing the schema to avoid $ issues
+        human_inputs = [HumanInSpecsEntity.from_specs(human_in_dto) for human_in_dto in human_inputs]
+        program_inputs = [ProgramInSpecsEntity.from_specs(program_in_dto) for program_in_dto in program_inputs]
+        agent_inputs = [AgentInSpecsEntity.from_specs(agent_in_dto) for agent_in_dto in agent_inputs]
+
+        if existing_process:
+            # Update existing process
+            existing_process.default_process_config = default_process_config_entity
+            existing_process.process_config = process_config_entity
+            existing_process.human_inputs = human_inputs
+            existing_process.program_inputs = program_inputs
+            existing_process.agent_inputs = agent_inputs
+            existing_process.last_discovered = datetime.now()
+            existing_process.save()
+            return existing_process
+        else:
+            # Create new process
+            return cls.create_process(
+                process_class=process_class,
+                process_id=process_id,
+                process_config=process_config_entity,
+                default_process_config=default_process_config_entity,
+                human_inputs=human_inputs,
+                program_inputs=program_inputs,
+                agent_inputs=agent_inputs,
+            )
 
     @classmethod
     def create_or_update_from_discovery_response(cls, response: ProcessDiscoveryResponseEvent) -> "ProcessEntity":

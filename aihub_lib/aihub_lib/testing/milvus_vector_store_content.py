@@ -6,7 +6,7 @@ from llama_index.core.schema import TextNode
 from llama_index.storage.docstore.mongodb import MongoDocumentStore
 from pymilvus import MilvusClient
 
-from aihub_lib.generative_ai.resources.models.llm.embedding.self_hosted import SelfHostedEmbeddingConfig
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     DOCUMENT_ID,
@@ -64,12 +64,12 @@ DEFAULT_DOCUMENTS: list[Document] = [
 
 
 def fill_collection(
-    embed_model: SelfHostedEmbeddingConfig,
+    embed_model: EmbeddingModelConfig,
     vector_store: MilvusVectorStoreConfig,
     doc_store: MongoDocumentStore,
     nodes: list[TextNode] | None = None,
 ):
-    embeddings, _ = embed_model.to_llama_index(model_parameter=None)
+    embeddings, _ = embed_model.to_llama_index()
 
     vector_store = vector_store.to_llama_index()
 

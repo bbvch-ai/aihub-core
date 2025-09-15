@@ -2,12 +2,12 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Annotated
 
-from aihub_lib.nats.events import ProcessStopEvent, WorkRequestEvent
+from aihub_lib.nats.events import ProcessStopEvent, WorkEvent, WorkRequestEvent
 from aihub_lib.nats.events.work.process.ProcessWorkEvent import ProcessWorkEvent
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
-from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
-from aihub_lib.nats.topics import ProcessTopic
+from aihub_lib.nats.topics import ProcessInstanceTopic
+from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
 from bson import ObjectId
 
 from aihub_process.delegators.AbstractEntityDelegator import AbstractEntityDelegator
@@ -38,18 +38,18 @@ class ProcessDelegator(AbstractEntityDelegator):
         create a nats subscription to these processes with the relevant process stop event.
         """
         await super().start()
-        logger.debug(f"Starting external-process delegator for process '{self.process_id}'")
-        for work_event, config in self.process_class.get_events_with_process_in():
+        logger.debug(f"Starting external-process delegator for process class '{self.process_class}'")
+        for work_event, process_in in self.process_class.get_events_with_process_in():
             logger.debug(f"Found process step with process work input: '{work_event.event_name_from_class()}'")
             stop_events = work_event.get_stop_event_type()
 
             for stop_event in stop_events:
                 process_instance_topic_manager = ProcessInstanceTopicManager(
-                    process_class=config.process_class,
-                    process_id=config.process_id,
+                    process_class=process_in.process_class,
+                    process_id=process_in.process_id,
                 )
 
-                subscription = ProcessNCSubscriber.for_specific_work_request_event_in_process_instance(
+                subscription = ProcessNCSubscriber.for_specific_work_event_in_process_instance(
                     nc=self.nc,
                     topic_manager=process_instance_topic_manager,
                     handler=self.handle_process_step_input_factory(
@@ -62,34 +62,29 @@ class ProcessDelegator(AbstractEntityDelegator):
                 self.subscriptions.append(subscription)
 
                 logger.debug(
-                    f"Subscribed to external-process '{config.process_class}' "
-                    f"with id '{config.process_id}' for event '{stop_event.event_name_from_class()}'"
+                    f"Subscribed to external-process '{process_in.process_class}' "
+                    f"with id '{process_in.process_id}' for event '{stop_event.event_name_from_class()}'"
                 )
 
     def handle_process_step_input_factory(
         self, work_event_type: type[ProcessWorkEvent], is_process_start: bool
-    ) -> Callable[[ProcessStopEvent, ProcessTopic], Awaitable[None]]:
+    ) -> Callable[[ProcessStopEvent, ProcessInstanceTopic], Awaitable[None]]:
         async def _handle_process_step_input(
             event: Annotated[ProcessStopEvent, "The incoming process stop event to handle."],
-            topic: Annotated[ProcessTopic, "The parsed topic of the event."],
+            topic: Annotated[ProcessInstanceTopic, "The parsed topic of the event."],
         ):
             logger.debug(f"Handling process stop event: {event.event_name}")
-            work_event = work_event_type(process_stop_event=event)
+            work_event: WorkEvent = work_event_type(process_stop_event=event)
             process_walkthrough_id = str(ObjectId())
             logger.debug(f"Creating new walkthrough with ID {process_walkthrough_id}")
 
-            walkthrough_topic_manager = ProcessWalkthroughTopicManager.from_process_instance_topic_manager(
-                topic_manager=self.topic_manager, process_walkthrough_id=process_walkthrough_id
+            await self._publish_work_event(
+                work_event=work_event,
+                process_walkthrough_id=process_walkthrough_id,
             )
-            subject = walkthrough_topic_manager.get_subject_for_work_event_in_walkthrough(
-                event_name=work_event.event_name,
-                event_id=work_event.event_id,
-            )
-            logger.debug(f"Publishing work {work_event} to subject '{subject}'")
-            await self.js_publisher.publish_event(work_event, subject)
 
         return _handle_process_step_input
 
-    async def handle_process_step_output(self, event: WorkRequestEvent, topic: ProcessTopic):
+    async def handle_process_step_output(self, event: WorkRequestEvent, topic: ProcessClassTopic):
         # The ProcessOutput Event is already published in the right format anyways
         return

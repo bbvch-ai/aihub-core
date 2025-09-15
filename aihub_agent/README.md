@@ -1,592 +1,667 @@
-# AI-Hub Agents
+---
+title: AI-Hub Agents
+index: 3
+---
 
-`aihub_agent` contains **general-purpose AI agents** that follow predefined workflows. These agents are not
-customer-specific and can utilize various tools, including large language models (LLMs), to perform their tasks. Each
-agent is composed of multiple workflow steps, adhering to a well-defined process to achieve its objectives.
+# 🤖 AI-Hub Agent Developer's Guide
 
-Agents in this repository are modular and workflow-driven. Each agent consists of:
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_agents-core&metric=alert_status&token=d536ea3509f1ddb1ca2b071681be1ee5bac7d212)](https://sonarcloud.io/summary/new_code?id=aihub-core_agents-core)
 
-- **Steps**: Discrete operations that the agent performs in sequence.
-- **Events**: Signals used to trigger specific steps and define inputs/outputs.
-- **Configurations**: Parameterized settings to control agent behavior.
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_agents-core&metric=security_rating&token=d536ea3509f1ddb1ca2b071681be1ee5bac7d212)](https://sonarcloud.io/summary/new_code?id=aihub-core_agents-core)
+
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_agents-core&metric=vulnerabilities&token=d536ea3509f1ddb1ca2b071681be1ee5bac7d212)](https://sonarcloud.io/summary/new_code?id=aihub-core_agents-core)
+
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_agents-core&metric=sqale_rating&token=d536ea3509f1ddb1ca2b071681be1ee5bac7d212)](https://sonarcloud.io/summary/new_code?id=aihub-core_agents-core)
+
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=aihub-core_agents-core&metric=ncloc&token=d536ea3509f1ddb1ca2b071681be1ee5bac7d212)](https://sonarcloud.io/summary/new_code?id=aihub-core_agents-core)
+
+## 1. 🎯 Foundational Knowledge of Agent Development
+
+This section covers the foundational architecture, patterns, and terminology you need to know before building an agent.
+
+::: info
+This documentation assumes you have completed the general AI-Hub setup as described in the main README.md. Make sure you have the required infrastructure running before proceeding.
+:::
+
+### 📚 Introduction to `aihub_agent`
+
+You are contributing to the **aihub_agent** scope, which contains all agent logic and workflow definitions within the AI-Hub platform. This scope implements autonomous AI agents designed for proactive process automation—components that work alongside humans to execute tasks as part of redesigned business processes.
+
+### 📁 Project Structure
+
+The `aihub_agent` scope is organized as follows:
+
+```
+aihub_agent/
+├── aihub_agent/                # Main package source
+│   ├── agents/                 # Core agent implementations (e.g., RagAgent, LLMWrappingAgent)
+│   ├── context/                # RunContext and ThreadContext implementation
+│   ├── runners/                # AgentRunner and AgentTestRunner
+│   ├── workflow/               # Core engine, including the @step decorator
+│   └── ...                     # Other core components (tracing, i18n, etc.)
+└── playground/                 # Examples, demos, and testing code - START HERE
+    ├── agent/                  # Examples of production agents
+    └── minimal_workflow/       # Self-contained examples of every core pattern - ESSENTIAL
+```
+
+### 🤖 The Agent: A Dispatchable Workflow
+
+::: info Core Concept
+An agent is a **dispatchable workflow** that performs structured operations on input data to achieve a pre-defined goal. Agents follow a step-based approach where complex tasks are broken down into discrete, testable operations.
+:::
+
+```python
+class Agent(DispatchableWorkflow):
+    """
+    An agent defines a series of operations performed on input data to achieve a
+    pre-defined goal - the agent's output. Each step brings the agent's input
+    (StartEvent) one step closer to the desired output (StopEvent).
+    """
+```
+
+::: tip Key Principles
+- **Single Responsibility**: Each agent should do one thing and do it well.
+- **Transparency**: All operations are explicit steps that can be traced and debugged.
+- **Flexibility**: Agents can function as assistants, process components, or services for other agents.
+:::
+
+### 📶 The Event-Driven Architecture
+
+::: info Event Communication
+Agents communicate through **events**—structured data objects that represent specific occurrences or states.
+:::
+
+- **Control Events**: Manage the workflow lifecycle (`StartEvent`, `StopEvent`, `ExceptionEvent`).
+- **Semantic Events**: Carry business logic and data specific to a domain.
+- **Display Events**: Used for presenting results to users in a frontend.
+
+### 🏷️ The `@step` Decorator: Building Blocks of Workflows
+
+::: tip Step Decorator
+Steps are the fundamental building blocks of agent workflows, defined using the `@step()` decorator. This decorator orchestrates the flow of events between functions.
+:::
+
+```python
+@step(
+    max_executions_per_run=3,
+    stop_on_error=True,
+    name=LocaleString(en="Classification Step"),
+    description=LocaleString(en="Classifies incoming requests")
+)
+async def classify_request(self, event: UserMessageEvent) -> ClassificationEvent:
+    # Step implementation
+    return ClassificationEvent(classification="question")
+```
+
+**Key Parameters:**
+
+- `max_executions_per_run`: Limits how many times a step can run within a single execution.
+- `stop_on_error`: Controls whether the workflow halts on an exception in this step.
+- `name` / `description`: Localized metadata for UI and logging.
+- `icon`: An identifier for a UI icon.
+- `precondition`: A function that must return `True` for the step to execute.
+
+### 💾 State Management: `RunContext` and `ThreadContext`
+
+::: info Context Types
+Agents use two types of context for state management:
+:::
+
+- **RunContext**: Short-lived storage for ephemeral data **within a single run**. It's isolated between different runs and is ideal for intermediate calculations or temporary caching. It expires after 30 days.
+- **ThreadContext**: Persistent storage for state **across multiple runs** within the same conversation thread. It maintains conversational history and user preferences, enabling contextual follow-up interactions. It also has a 30-day TTL.
 
 ---
 
-## Developing New Agents - Guide
+## 2. 🚀 The Step-by-Step Development Workflow
 
-### Create a New Agent
+This section provides a practical, step-by-step guide to building, testing, and debugging an agent.
 
-To create a new agent:
+### ⚙️ Prerequisites: Infrastructure and Environment
 
-1. Navigate to the `aihub_agent/aihub_agent/agents` directory.
-    - For customer-specific agents, use the `agents` directory in the respective customer repository.
-2. Create a new Python file named after your agent (e.g., `RAGAgent.py`).
-3. Inherit from the `Agent` class or a specific base agent class.
+Before you begin, ensure you have completed the infrastructure setup from the root project documentation.
 
-<details>
-<summary>Example</summary>
+::: warning
+Always activate the Poetry environment before working. All subsequent commands must be run from within this activated shell.
+:::
 
-```python
-from aihub_agent.agents.Agent import Agent
-
-
-class RAGAgent(Agent):
-    pass
+```bash
+# Start required services from the project root
+docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml -f docker-compose-webui.yml up -d
 ```
 
-</details>
-
----
-
-### Create an Agent Configuration
-
-Agents require a configuration file to define their settings:
-
-1. Create a Python file for your configuration (e.g., `RAGAgentConfig.py`).
-2. Inherit from the `AgentConfig` class.
-3. **Use `Field` with meaningful `description`** entries.
-
-<details>
-<summary>Example</summary>
-
-```python
-from aihub_lib.agents.AgentConfig import AgentConfig
-from pydantic import Field
-
-
-class RAGAgentConfig(AgentConfig):
-    number_of_input_tokens: int = Field(
-        ...,
-        description="Limits the length of the conversation history to reduce costs or prevent context overflow."
-    )
+```bash
+cd aihub_agent
+poetry shell
 ```
 
-</details>
+### 🛠️ Step 1: Create the Agent, Configuration, and Events
 
----
+::: info
+Follow this three-part process to define a new agent. Each part builds on the previous one to create a complete agent implementation.
+:::
 
-### Define Start and Stop Methods
+1. **Create the Agent Class**: Define the agent's workflow by creating a class that inherits from `Agent` and uses the `@step` decorator.
+   ```python
+   # my_agent/MyAgent.py
+   from aihub_agent.agents.Agent import Agent
+   from aihub_agent.workflow.decorators.step import step
+   # ... other imports
 
-Each agent must include a **start step** (triggered by a `StartEvent`) and a **stop step** (producing a `StopEvent`).
+   class MyAgent(Agent):
+       @step()
+       async def start_step(self, event: UserMessageEvent) -> MyCustomEvent:
+           # ...
+       @step()
+       async def process_step(self, event: MyCustomEvent) -> StopEvent:
+           # ...
+   ```
+2. **Define the Agent Configuration**: Create a Pydantic model inheriting from `AgentConfig` to hold the agent's settings. Use `Annotated` and `Field` for validation and documentation.
+   ```python
+   # my_agent/MyAgentConfig.py
+   from typing import Annotated
+   from aihub_lib.agents.AgentConfig import AgentConfig
+   from pydantic import Field
 
-- Use the `@step` decorator for these methods.
-- Append `_step` to method names for clarity.
-- Include docstrings explaining what the step **achieves**.
+   class MyAgentConfig(AgentConfig):
+       temperature: Annotated[float, Field(0.7, description="LLM temperature", ge=0.0, le=1.0)]
+       confidence_threshold: Annotated[float, Field(0.5, description="Minimum confidence threshold")]
+   ```
+3. **Define Custom Events**: If your workflow requires custom data structures to be passed between steps, define them as Pydantic models inheriting from `Event`.
+   ```python
+   # my_agent/events/MyCustomEvent.py
+   from aihub_lib.nats.events import Event
 
-<details>
-<summary>Example</summary>
+   class MyCustomEvent(Event):
+       data: Annotated[str, Field(description="Some data")]
+       confidence: Annotated[float, Field(description="Certainty level between 0 and 1")]
+   ```
 
-```python
-from aihub_agent.agents.Agent import Agent
-from aihub_lib.nats.events.control.start import StartEvent
-from aihub_lib.nats.events.control.stop import StopEvent
-from aihub_lib.workflow.decorators import step
-from aihub_lib.nats.events import ControlEvent
+### 🧪 Step 2: Write and Run Tests
 
+::: tip Testing with BDD
+We use Behavior-Driven Development (BDD) with `pytest-bdd` as the primary method for testing agent workflows.
+:::
 
-class SomeEvent(ControlEvent):
-    """
-    Example custom event
-    """
-    pass
+1. **Write a Feature File**: Describe the agent's behavior in Gherkin syntax.
+   ```gherkin
+   # tests/features/my_agent.feature
+   Feature: My Agent
+     Scenario: Test basic functionality
+       Given a MyAgent configuration
+       When the user sends a message with content: "Hello"
+       Then the agent run should complete
+   ```
+2. **Implement the Test Steps**: Write Python code to implement the Gherkin steps using the `AgentTestRunner`. The test runner provides a sandboxed environment to execute the agent and inspect the resulting events.
+   ```python
+   # tests/test_MyAgent.py
+   from aihub_lib.i18n.LocaleString import LocaleString
+   from aihub_lib.nats.events import UserMessageEvent
+   from aihub_lib.testing.asyncio_utils.bdd import async_test
+   from aihub_lib.testing.auth_utils.fake_user import fake_user
+   from llama_index.core.base.llms.types import ChatMessage, MessageRole
+   from pytest_bdd import given, parsers, scenarios, then, when
+   from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
+   scenarios("./features/my_agent.feature")
 
-class RAGAgent(Agent):
+   @given("a MyAgent configuration", target_fixture="agent_runner")
+   def _():
+       return AgentTestRunner(
+           agent_type=MyAgent,
+           agent_config=MyAgentConfig(
+               agent_id="my_agent",
+               name=LocaleString(en="My Agent"),
+               description=LocaleString(en="Test agent"),
+               system_prompt=LocaleString(en="You are a helpful agent"),
+               temperature=0.7,
+               confidence_threshold=0.5
+           ),
+       )
 
-    @step()
-    async def start_step(self, event: StartEvent) -> SomeEvent:
-        return SomeEvent()
+   @when(parsers.parse('the user sends a message with content: "{payload}"'))
+   @async_test
+   async def _(agent_runner: AgentTestRunner, payload: str):
+       async with agent_runner.test_run() as topic:
+           await agent_runner.send_event_from_topic(
+               start_event=UserMessageEvent(
+                   messages=[ChatMessage(content=payload, role=MessageRole.USER)], 
+                   user=fake_user()
+               ),
+               topic=topic,
+           )
 
-    @step()
-    async def stop_step(self, event: SomeEvent) -> StopEvent:
-        return StopEvent()
-```
+   @then("the agent run should complete")
+   def _(agent_runner: AgentTestRunner):
+       assert agent_runner.has_stop_event, "Agent did not receive stop event"
+   ```
+3. **Run the Tests**: Execute tests from your activated Poetry shell.
+   ```bash
+   # Run all tests (excluding cloud dependencies)
+   poetry run pytest -k "not azure"
 
-</details>
+   # Run a specific test file
+   poetry run pytest tests/test_MyAgent.py
+   ```
 
----
+### 🔍 Step 3: Debug and Observe Your Agent
 
-### Workflow Design
+::: warning Debugging Approach
+Due to the asynchronous, event-driven nature of agents, traditional debugging with breakpoints is often ineffective. Instead, adopt a trace-driven debugging methodology.
+:::
 
-Design the agent's workflow by defining the sequence of steps it will execute:
+#### 🔍 The Debugging Mindset: Tracing and Logging over Breakpoints
 
-1. Identify all the steps required to achieve the agent’s goal.
-2. Use events to define the input and output of each step.
-3. Start with a step taking a `StartEvent` as input and end with a step outputting a `StopEvent`.
+::: tip Debugging Tools
+Your primary tools are **Phoenix Tracing** for visual flow analysis and **structured logging** for detailed event inspection. Use `print` statements within steps for quick checks.
+:::
 
-<details>
-<summary>Example Workflow</summary>
+#### 📝 Essential Debugging Tool: The `trigger.py` Script
 
-1. Receive a `StartEvent` with chat history.
-2. Limit the chat history to a specific token count.
-3. Generate a response based on the chat history.
-4. Send the response to the user.
-5. Trigger a `StopEvent`.
-
-</details>
-
----
-
-### Implement Logic for Each Step
-
-#### Define Custom Events
-
-Define custom events (or use general events) to flow between steps, create **Pydantic-based events** with docstrings
-that
-explain their purpose. Inherit from `ControlEvent`, or use specialized events like `LLMEvent` (avoid inheriting directly
-from `SemanticEvent`).
-
-<details>
-<summary>Example</summary>
-
-```python
-from aihub_lib.nats.events import ControlEvent
-from llama_index.core.base.llms.types import ChatMessage
-from pydantic import Field
-
-
-class LimitChatHistoryEvent(ControlEvent):
-    """
-    Represents the result of limiting a user's chat history to a specified 
-    number of tokens to optimize cost and context usage.
-    """
-    limited_history: list[ChatMessage] = Field(
-        ...,
-        description="A trimmed list of messages that fit within the token limit."
-    )
-```
-
-</details>
-
-#### Use Helper Functions
-
-Leverage helper functions from the `aihub_lib` for reusable logic and keep step docstrings brief yet informative.
-
-<details>
-<summary>Example</summary>
-
-```python
-from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
-from aihub_lib.workflow.decorators import step
-from aihub_lib.nats.events.control.start import StartEvent
-
-
-@step()
-async def limit_chat_history_step(self, event: StartEvent) -> LimitChatHistoryEvent:
-    """
-    Reduces the chat history to a predefined token limit.
-    """
-    limited_chat_history = limit_chat_history(
-        chat_history=event.messages,
-        number_of_input_tokens=2048,  # Example value; could be from config
-    )
-    return LimitChatHistoryEvent(limited_history=limited_chat_history)
-```
-
-</details>
-
-#### Incorporate Configs
-
-Use configurations to parameterize agent behavior. This can be done via dedicated step configuration objects or directly
-via the main `AgentConfig`. Always give your Pydantic fields **valuable** descriptions.
-
-<details>
-<summary>Example Using Step Configurations</summary>
+::: tip Trigger Script
+For any non-trivial agent, create a `trigger.py` script. This script programmatically starts your agent and sends it a specific `StartEvent`, allowing you to test a precise scenario in isolation without needing a frontend.
+:::
 
 ```python
-from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
-from aihub_lib.workflow.decorators import step
-from aihub_lib.agents.AgentConfig import AgentConfig, StepConfig
-from pydantic import Field
-
-
-class LimitChatHistoryStepConfig(StepConfig):
-    """
-    Configuration for the limit_chat_history_step,
-    specifying how many tokens to allow in the conversation.
-    """
-    number_of_input_tokens: int = Field(
-        ...,
-        description="Specifies the maximum number of tokens permitted in the chat history."
-    )
-
-
-class RAGAgentConfig(AgentConfig):
-    limit_chat_history_step_config: LimitChatHistoryStepConfig
-
-
-@step()
-async def limit_chat_history_step(
-        self,
-        event: StartEvent,
-        limit_chat_history_step_config: LimitChatHistoryStepConfig,
-) -> LimitChatHistoryEvent:
-    """
-    Reduces the chat history to a token limit defined in the step config.
-    """
-    limited_chat_history = limit_chat_history(
-        chat_history=event.messages,
-        number_of_input_tokens=limit_chat_history_step_config.number_of_input_tokens,
-    )
-    return LimitChatHistoryEvent(limited_history=limited_chat_history)
-```
-
-</details>
-
-<details>
-<summary>Or directly in the <code>AgentConfig</code> class</summary>
-
-```python
-from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
-from aihub_lib.workflow.decorators import step
-
-
-class RAGAgentConfig(AgentConfig):
-    number_of_input_tokens: int = Field(
-        ...,
-        description="Sets the maximum chat history token length to reduce costs or prevent overflow."
-    )
-
-
-@step()
-async def limit_chat_history_step(
-        self,
-        event: StartEvent,
-        agent_config: RAGAgentConfig,
-) -> LimitChatHistoryEvent:
-    """
-    Reduces the chat history to a token limit specified in the agent configuration.
-    """
-    limited_chat_history = limit_chat_history(
-        chat_history=event.messages,
-        number_of_input_tokens=agent_config.number_of_input_tokens,
-    )
-    return LimitChatHistoryEvent(limited_history=limited_chat_history)
-```
-
-</details>
-
----
-
-### Testing the Agent
-
-Agents can be tested using the **playground tool** (ensure Docker is running):
-
-1. Load the agent in a controlled environment.
-2. Simulate events and validate workflows.
-3. Confirm that inputs and outputs align with expectations.
-
----
-
-#### Using `AgentTestRunner`
-
-- The `AgentTestRunner` provides a controlled test environment.
-- Capture events to ensure the agent behaves as expected.
-- To test a production-like scenario with the frontend:
-    - Create a `run.py` file.
-    - Use `run_forever` to keep the agent running.
-- To test a limited runtime scenario:
-    - Create a `trigger.py` file.
-    - Use `test_run` with a specified delay before stopping.
-- Leverage Phoenix (localhost:6006) to view traces of each step.
-
-<details>
-<summary>Example </summary>
-
-`trigger.py`:
-
-```python
-from aihub_lib.nats.events.control.start import StartEvent
+# my_agent/trigger.py - Essential for debugging
+import asyncio
+from aihub_lib.testing.logging.logger import enable_logging
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
+# ... other imports
+
+# ALWAYS enable logging for debugging
+enable_logging()
 
 async def main():
-    runner = AgentTestRunner(
-        agent_type=RAGAgent,
-        default_agent_config=RAGAgentConfig(
-            agent_id="rag_agent",
-            agent_class=RAGAgent.__name__,
-            name="RAG Agent",
-            description="Agent for frontend development",
-            # Additional configuration parameters...
-        ),
-    )
-
-    # Example for limited runtime testing
-    async with runner.test_run(delay_before_stop=60) as topic:
-        await runner.send_event_from_topic(
-            topic=topic,
-            start_event=StartEvent(
-                messages=[
-                    ChatMessage(
-                        content="You're an agent answering user requests. Only use the context information provided.",
-                        role=MessageRole.SYSTEM,
-                    ),
-                    ChatMessage(content="Hey! What is AI?", role=MessageRole.USER),
-                ]
-            ),
-        )
-
+    runner = AgentTestRunner(agent_type=MyAgent, agent_config=MyAgentConfig(...))
+    async with runner.test_run() as topic:
+        await runner.send_event_from_topic(topic=topic, start_event=UserMessageEvent(...))
 
 if __name__ == "__main__":
-    import asyncio
-
     asyncio.run(main())
 ```
 
-</details>
+#### 👁️ Primary Observability Tool: Phoenix Tracing (Port 6006)
+
+::: warning Phoenix Tracing
+**Phoenix** is your most important debugging tool. It provides a web UI to visualize the step-by-step execution of your agent, showing the flow of events, timings, and errors.
+:::
+
+- **Access**: `http://localhost:6006` (available when the Docker stack is running).
+- **Usage**: Run your agent via its `trigger.py` script, then open the Phoenix UI to find the execution trace. Click on steps to inspect inputs, outputs, and metadata.
+
+#### 🔗 Phoenix MCP Server Integration
+
+::: info Phoenix MCP Server
+The Phoenix MCP server is running alongside the development environment and provides programmatic access to trace data for debugging and monitoring agent executions. This integration allows you to query trace information directly from your development tools.
+:::
+
+**Key Concepts:**
+
+- **Projects**: Each agent is its own project in Phoenix
+- **Traces**: Each agent run is its own trace
+- **Spans**: Each step within an agent run is its own span
+
+**Usage in Development:**
+
+- Use the Phoenix MCP server to programmatically check if an agent run was successful
+- Query trace data to analyze agent performance and behavior patterns
+- Access span annotations and metadata for detailed debugging
+- Retrieve experiment results and dataset information for evaluation
+
+**Common MCP Commands:**
+
+- List all projects to see available agents
+- Get spans from a specific project to analyze agent steps
+- Retrieve span annotations to understand step outcomes
+- Access experiment data for agent evaluation workflows
+
+This integration is particularly useful for automated testing, performance analysis, and building monitoring dashboards around agent behavior.
+
+#### 📝 Analyzing Event Flow with Logging
+
+::: tip Event Flow Analysis
+Enable logging in your `trigger.py` script to see a detailed, real-time feed of events being produced and consumed by each step. This is invaluable for understanding why a workflow might be stalled or taking an unexpected path.
+:::
+
+```python
+# Add this to the top of your trigger.py or run.py
+from aihub_lib.testing.logging.logger import enable_logging
+enable_logging()
+```
+
+### ✅ Step 4: Ensure Code Quality
+
+::: warning
+Before committing your changes, use the provided Makefile commands to format, lint, and type-check your code.
+:::
+
+```bash
+# Run this before creating a pull request
+make pr-ready
+
+# Or run commands individually
+make format
+make lint
+```
+
+::: danger
+All agent code must use strict Python type annotations. This is enforced by CI/CD.
+:::
 
 ---
 
-#### Wrting tests with `pytest-bdd`
+## 3. 🎨 A Library of Agent Design Patterns
 
-Agents (and their supporting utility functions) can be tested at two levels using **BDD**:
+This section provides a library of established patterns for building robust and sophisticated agents. Each pattern includes a conceptual explanation, use cases, and a reference to a working example in the playground.
 
-##### 1. Unit-Like BDD Tests (Helper Functions or Single Steps)
+### 📎 Basic Patterns
 
-A simplified BDD approach to testing **individual functions** (e.g., helper functions or single steps).  
-We want to write a BDD test for a single function or step in isolation.
+#### ➡️ Simple Linear Workflow
 
-<details>
-<summary>Example</summary> 
+- **Concept**: A basic, sequential workflow where one step follows another in a straight line.
+- **Reference**: `/playground/minimal_workflow/simple_workflow/`
+  ```python
+  class SimpleAgent(Agent):
+      @step()
+      async def start_step(self, event: UserMessageEvent) -> SimpleEventA: ...
+      @step()
+      async def end_step(self, event: SimpleEventA) -> StopEvent: ...
+  ```
 
-`.feature` file: `limit_chat_history.feature`
+#### 🔀 Conditional Workflow
 
-```gherkin
-Feature: limit_chat_history Utility Function
-  Tests the limit_chat_history function in isolation.
+- **Concept**: A workflow that takes different paths based on data or logic. A step returns one of several possible event types, and the workflow engine routes it to the appropriate downstream step.
+- **Reference**: `/playground/minimal_workflow/conditional_workflow/`
+  ```python
+  class ConditionalAgent(Agent):
+      @step()
+      async def start_step(self, event: StartEvent) -> AboveThresholdEvent | BelowThresholdEvent: ...
+      @step()
+      async def end_step(self, event: AboveThresholdEvent | BelowThresholdEvent) -> StopEvent: ...
+  ```
 
-  Scenario: Limit chat history to 2 messages
-    Given a list of 3 chat messages
-    When limit_chat_history is called with max tokens that only allow for 2 messages
-    Then only 2 messages remain
-```
+### 🔄 Interaction Patterns
 
-In your `test_limit_chat_history.py`, you might have:
+#### 👥 Human-in-the-Loop
 
-```python
-import pytest
-from pytest_bdd import scenarios, given, when, then
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
+- **Concept**: Pauses the workflow to request input from a human user. The agent emits a request event and waits for a corresponding response event before continuing.
+- **Reference**: `/playground/minimal_workflow/human_in_the_loop_workflow/`
+  ```python
+  class HumanInTheLoopAgent(Agent):
+      @step()
+      async def start_step(self, event: StartEvent) -> HumanInTheLoop.request:
+          return HumanInTheLoop.invoke(question="Shall I continue?")
+      @step()
+      async def end_step(self, event: HumanInTheLoop.response) -> StopEvent: ...
+  ```
 
-scenarios("./features/limit_chat_history.feature")
+#### 🤖 Agent-in-the-Loop (Orchestration)
 
+- **Concept**: An agent (the orchestrator) invokes another agent (the worker) and waits for its result. This allows for creating complex workflows by composing smaller, specialized agents.
+- **Reference**: `/playground/minimal_workflow/agent_in_the_loop_workflow/`
+  ```python
+  class OrchestratorAgent(Agent):
+      @step()
+      async def start_step(self, event: UserMessageEvent) -> AgentInTheLoop.request:
+          return AgentInTheLoop.invoke(agent_id="worker_agent", agent_class="WorkerAgent", start_event=event)
+      @step()
+      async def end_step(self, response: AgentInTheLoop.response) -> OrchestrationResultEvent: ...
+  ```
 
-@pytest.fixture
-def messages():
-    return [
-        ChatMessage(content="Message 1", role=MessageRole.USER, token_length=100),
-        ChatMessage(content="Message 2", role=MessageRole.USER, token_length=100),
-        ChatMessage(content="Message 3", role=MessageRole.USER, token_length=100),
-    ]
+#### 🔄 Multistep Human-in-the-Loop
 
+- **Concept**: A workflow with multiple, distinct points of human interaction, often used for multi-stage approval processes.
+- **Reference**: `/playground/minimal_workflow/multistep_human_in_the_loop_workflow/`
+  ```python
+  class MultistepHumanInTheLoopAgent(Agent):
+      @step()
+      async def start_step(self, event: StartEvent) -> FirstStepHumanInTheLoop.request:
+          return FirstStepHumanInTheLoop.invoke(question="Shall I continue?")
+      @step()
+      async def second_hitl(self, event: FirstStepHumanInTheLoop.response) -> SecondStepHumanInTheLoop.request:
+          return SecondStepHumanInTheLoop.invoke(question="Are you sure?")
+      @step()
+      async def end_step(self, event: SecondStepHumanInTheLoop.response) -> StopEvent: ...
+  ```
 
-@given("a list of 3 chat messages", target_fixture="chat_messages")
-def _(messages):
-    return messages
+### 🔀 Flow Control Patterns
 
+#### 🔁 Bounded Loop
 
-@when("limit_chat_history is called with max tokens that only allow for 2 messages", target_fixture="result")
-def _(chat_messages):
-    # Suppose each message is roughly 100 tokens, so we allow for 200 tokens total
-    return limit_chat_history(chat_messages, number_of_input_tokens=200)
+- **Concept**: An iterative workflow that repeats a cycle of steps until a condition is met or a maximum number of iterations is reached. State (like a loop counter) is managed using `RunContext`.
+- **Reference**: `/playground/minimal_workflow/bounded_loop/`
+  ```python
+  class BoundedLoopAgent(Agent):
+      @step()
+      async def start_step(self, event: UserMessageEvent, run_context: RunContext) -> BeginEvent:
+          await run_context.set("loop_count", 0)
+          return BeginEvent(count=0)
+      @step()
+      async def decision_step(self, event: BoundedLoopAEvent, agent_config: BoundedLoopAgentConfig, run_context: RunContext) -> DecisionEvent | BeginEvent:
+          loop_count = await run_context.get("loop_count")
+          if loop_count < agent_config.loop_max:
+              await run_context.set("loop_count", loop_count + 1)
+              return BeginEvent(count=loop_count + 1)  # Continue loop
+          return DecisionEvent()  # Exit loop
+      @step()
+      async def end_step(self, event: DecisionEvent) -> StopEvent: ...
+  ```
 
+#### 🔀 Fan-Out (Parallel Processing)
 
-@then("only 2 messages remain")
-def _(result):
-    assert len(result) == 2, f"Expected 2 messages, got {len(result)}"
-```
+- **Concept**: A single step returns a `list` of events, which are then processed in parallel by downstream steps. This is useful for batch processing or concurrent operations.
+- **Reference**: `/playground/minimal_workflow/fan_out_workflow/`
+  ```python
+  class FanOutAgent(Agent):
+      @step()
+      async def start_step(self, event: StartEvent) -> list[FanOutA]:
+          return [FanOutA(payload=str(i)) for i in range(5)]
+      @step()
+      async def process_a(self, event: FanOutA) -> FanOutB:
+          return FanOutB(payload=event.payload)
+      @step()
+      async def stop_step(self, events: list[FanOutB]) -> StopEvent: ...
+  ```
 
-</details>
+#### ✅ Precondition-Based Control
+
+- **Concept**: A step is decorated with a `@precondition` function that must return `True` for the step to execute. This is useful for synchronizing parallel branches of a workflow.
+- **Reference**: `/playground/minimal_workflow/precondition_workflow/`
+  ```python
+  @precondition()
+  async def ensure_enough_events(parallel_events: list[ParallelEvent], config: PreconditionAgentConfig) -> bool:
+      return len(parallel_events) == config.number_of_events
+
+  class PreconditionAgent(Agent):
+      @step()
+      async def start_step(self, event: StartEvent, config: PreconditionAgentConfig) -> list[ParallelEvent]:
+          return [ParallelEvent(payload=str(i)) for i in range(config.number_of_events)]
+      @step(precondition=ensure_enough_events)
+      async def stop_step(self, events: list[ParallelEvent]) -> StopEvent: ...
+  ```
+
+### 💾 State and Configuration Patterns
+
+#### 💾 Context Management
+
+- **Concept**: Using `RunContext` and `ThreadContext` to manage state within and across agent runs.
+- **Reference**: `/playground/minimal_workflow/context_workflow/`
+  ```python
+  class ContextAgent(Agent):
+      @step()
+      async def start_step(self, event: CustomStartEvent, thread_context: ThreadContext, run_context: RunContext) -> ContextEvent:
+          thread_count = await thread_context.get("count", 0)
+          run_count = await run_context.get("count", 0)
+          await thread_context.set("count", thread_count + 1)
+          await run_context.set("count", run_count + 1)
+          return ContextEvent(thread_count=thread_count + 1, run_count=run_count + 1)
+      @step()
+      async def end_step(self, event: ContextEvent, thread_context: ThreadContext, run_context: RunContext) -> StopEvent: ...
+  ```
+
+#### ⚙️ Complex, Validated Configuration
+
+- **Concept**: Using nested Pydantic models with detailed `Annotated` fields to create sophisticated, self-validating configurations for production-grade agents.
+- **Reference**: `/aihub_agent/agents/RagAgent/configs/RAGAgentConfig.py`
+  ```python
+  class RAGAgentConfig(AgentConfig):
+      llm: Annotated[ChatLLMConfig, Field(description="The LLM configuration for the agent.")]
+      number_of_input_tokens: Annotated[int, Field(description="Maximum tokens allowed in input.")]
+      context_prompt: Annotated[LocaleString | None, Field(description="Prompt template for context.")] = None
+      max_hops: Annotated[int, Field(description="Maximum number of retrieval hops.", ge=1)] = 1
+  ```
+
+#### 📶 Configuration-Driven Behavior
+
+- **Concept**: The agent's internal logic branches based on values from its configuration object, allowing its behavior to be changed without altering code.
+- **Reference**: Many agents, such as `BoundedLoopAgent`, use this.
+  ```python
+  class ConfigurableAgent(Agent):
+      @step()
+      async def process_input(self, event: InputEvent, config: ConfigurableAgentConfig) -> ProcessedEvent | HumanReviewEvent:
+          if config.processing_mode == "thorough":
+              result = await thorough_processing(event.data)
+          elif config.processing_mode == "fast":
+              result = await fast_processing(event.data)
+          else:
+              result = await standard_processing(event.data)
+          
+          if config.enable_human_review and result.confidence < config.confidence_threshold:
+              return HumanReviewEvent(data=result.data, confidence=result.confidence)
+          return ProcessedEvent(data=result.data)
+  ```
+
+### 🚀 Advanced & Utility Patterns
+
+#### 🌍 Multi-Locale Support (i18n)
+
+- **Concept**: Building agents that support multiple languages by using the `LocaleHandler` to fetch translated strings from YAML files.
+- **Reference**: `/playground/minimal_workflow/multi_locale_workflow/`
+  ```python
+  class MultiLocaleAgent(Agent):
+      @step()
+      async def start_step(self, event: UserMessageEvent, t: LocaleHandler, agent_config: MultiLocaleAgentConfig) -> MultiLocaleEvent:
+          greeting = t('myagent.myscope.greeting')
+          config_message = t(agent_config.locale_path)
+          return MultiLocaleEvent(payload=config_message)
+      @step()
+      async def end_step(self, event: MultiLocaleEvent) -> StopEvent: ...
+  ```
+
+#### 🛡️ Error Handling and Resilience
+
+- **Concept**: Building robust workflows by setting `stop_on_error=False` on steps that might fail, allowing the agent to catch `ExceptionEvent` and proceed along a failure path.
+- **Reference**: The `@step` decorator parameters.
+  ```python
+  class ResilientAgent(Agent):
+      @step(stop_on_error=False, max_executions_per_run=3)
+      async def resilient_step(self, event: MyEvent) -> MyResponse | ExceptionEvent:
+          try:
+              result = await risky_operation()
+              return MyResponse(result=result)
+          except Exception as e:
+              return ExceptionEvent(error=str(e))
+      @step()
+      async def handle_success(self, event: MyResponse) -> StopEvent: ...
+      @step()
+      async def handle_failure(self, event: ExceptionEvent) -> StopEvent: ...
+  ```
+
+#### 📱 Agent Step Metadata for UI
+
+- **Concept**: Providing `name`, `description`, and `icon` metadata in the `@step` decorator to automatically populate monitoring and user-facing UIs.
+- **Reference**: The `@step` decorator parameters.
+  ```python
+  class DocumentProcessingAgent(Agent):
+      @step(
+          name=LocaleString(en="Document Analysis", de="Dokumentenanalyse"),
+          description=LocaleString(en="Analyzes uploaded documents", de="Analysiert hochgeladene Dokumente"),
+          icon="document-text"
+      )
+      async def analyze_document(self, event: DocumentUploadEvent) -> DocumentAnalysisEvent: ...
+      @step(
+          name=LocaleString(en="Generate Report", de="Bericht erstellen"),
+          icon="document-report"
+      )
+      async def generate_report(self, event: DocumentAnalysisEvent) -> StopEvent: ...
+  ```
+
+#### 🚀 Performance Testing & Optimization
+
+- **Concept**: Using a dedicated agent and framework to measure performance, identify bottlenecks, and test workflows under load.
+- **Reference**: `/playground/performance/PerformanceTestingAgent/`
+  ```python
+  class PerformanceTestingAgent(Agent):
+      @step()
+      async def start_step(self, event: StartEvent, config: PerformanceTestingAgentConfig) -> list[ParallelEvent]:
+          start_time = time.time()
+          events = [ParallelEvent(payload=str(i), timestamp=start_time) for i in range(config.number_of_parallel_events)]
+          return events
+      @step()
+      async def parallel_processing_step(self, events: list[ParallelEvent]) -> StopEvent:
+          await asyncio.gather(*[self._process_single_event(event) for event in events])
+          return StopEvent()
+  ```
+
 ---
 
-##### 2. Full Agent BDD Tests
+## 4. 📚 Reference Material
 
-Validating the **complete workflow** of the agent from start to stop.
-We want to write a BDD test for the full workflow of the agent, from start to stop.
+This section serves as an appendix for locating key files and running specific tasks.
 
-<details>
-<summary>Example</summary>
+### 🎮 Running Agents Interactively (`run.py`)
 
-**`.feature` file: `simple_agent.feature`**
+::: tip Interactive Testing
+While `trigger.py` is for debugging specific, one-shot scenarios, `run.py` is used for interactive testing. A script named `run.py` starts an agent and keeps it running, allowing it to be triggered multiple times from a frontend application. This is useful for testing conversational flows and stateful behavior.
+:::
 
-```gherkin
-Feature: Simple Agent
-  A minimal agent workflow demonstrating start and stop steps.
-
-  Scenario: Send a user query and receive a simple response
-    Given a SimpleAgent runner with a basic configuration
-    When the start event is sent with a user query "Hello world"
-    Then a StartEvent is present with payload "Hello world"
-    And a StopEvent is present
+```bash
+# Example for starting an agent to interact with from the frontend
+cd playground/agent/ExpertAskingAgent
+python run.py
 ```
 
-**Test file: `test_simple_agent.py`**
+### 📝 Key Takeaways and Essential Files
 
-```python
-import pytest
-from pytest_bdd import scenarios, given, when, then, parsers
-from aihub_lib.nats.events.control.start import StartEvent
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+::: tip Key Takeaways
+- **Start in the Playground**: The best way to learn is to study the examples in `/playground/minimal_workflow/`. Each directory demonstrates a specific pattern.
+- **Debug with Phoenix**: Always have `http://localhost:6006` open during development.
+- **Test with BDD**: Follow the `pytest-bdd` and `AgentTestRunner` patterns for all new agents.
+- **Compose Patterns**: Advanced agents are built by combining the simple patterns outlined in this guide.
+:::
 
-from .simple_agent import SimpleAgent, SimpleAgentConfig  # Example imports
+::: warning Essential Files to Read
+- `/aihub_agent/agents/Agent.py`: The base class for all agents.
+- `/aihub_agent/workflow/decorators/step.py`: The implementation of the core `@step` decorator.
+- `/aihub_agent/runners/AgentTestRunner.py`: The foundation for all agent testing.
+- `/aihub_agent/context/`: The context management system.
+:::
 
-scenarios("./features/simple_agent.feature")
+### 📖 Glossary of Agent-Specific Terms
 
+This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_agent` scope, building upon the core AI-Hub terminology.
 
-@given("a SimpleAgent runner with a basic configuration", target_fixture="agent_runner")
-def _():
-    return AgentTestRunner(
-        agent_type=SimpleAgent,
-        default_agent_config=SimpleAgentConfig(
-            agent_id="simple_agent",
-            agent_class=SimpleAgent.__name__,
-            name="Simple Agent",
-            description="A minimal agent demo",
-        ),
-    )
-
-
-@when(parsers.parse('the start event is sent with a user query "{query}"'))
-@pytest.mark.asyncio
-async def _(agent_runner: AgentTestRunner, query: str):
-    async with agent_runner.test_run(delay_before_stop=5) as topic:
-        await agent_runner.send_event_from_topic(
-            topic=topic,
-            start_event=UserMessageEvent(messages=[ChatMessage(content=query, role=MessageRole.USER)])
-        )
-
-
-@then(parsers.parse('a StartEvent is present with payload "{payload}"'))
-def _(agent_runner: AgentTestRunner, payload: str):
-    assert agent_runner.has_start_event, "Agent did not receive a StartEvent"
-    start_event = agent_runner.get_start_event
-    assert start_event.messages[0].content == payload, f"Expected {payload}, got {start_event.messages[0].content}"
-
-
-@then("a StopEvent is present")
-def _(agent_runner: AgentTestRunner):
-    assert agent_runner.has_stop_event, "Agent did not produce a StopEvent"
-```
-
-Here’s what’s happening:
-
-1. **`@given`** sets up a `SimpleAgent` with a minimal config.
-2. **`@when`** sends a `StartEvent` with the query `"Hello world"`.
-3. **`@then`** checks that a `StartEvent` with the correct payload was received and that the agent produced a
-   `StopEvent`.
-
-</details>
-
----
-
-## Documentation Guidelines
-
-### 1. Docstrings for Agents
-
-- **What**: Provide a docstring at the class level describing what the agent does and when it is used.
-- **Why**: Helps future developers quickly grasp the agent’s purpose, usage scenarios, and workflow overview.
-- **How**: For agents with special start or stop events, consider adding a small coding example illustrating usage.
-
-<details>
-<summary>Example</summary>
-
-```python
-class PersonaAgent(Agent):
-    """
-    Imitates a given persona by fetching similar personas from a knowledge base 
-    and responding in a style consistent with that persona.
-
-    This agent is used when a user wants to chat with a particular persona. 
-    The workflow typically includes:
-    1. Fetching similar personas from an index.
-    2. Generating a persona-consistent response.
-    3. Returning the response to the user.
-
-    Example:
-        >>> # Code usage example
-        >>> ... 
-    """
-    pass
-```
-
-</details>
-
----
-
-### 2. Docstrings for Steps
-
-- **What**: Provide a simple docstring for each step method explaining what the step **achieves** (its purpose).
-- **Why**: Keeps step-level logic understandable without overexposing implementation details.
-
-<details>
-<summary>Example</summary>
-
-```python
-@step()
-async def retrieve_documents_step(self, event: SomeEvent) -> RetrieveEvent:
-    """
-    Retrieves documents similar to the user query from the vector database.
-    """
-    # Step logic ...
-    return RetrieveEvent(documents=similar_docs)
-```
-
-</details>
-
----
-
-### 3. Docstrings and Field Descriptions for Pydantic Objects
-
-1. **Fields**: Always provide a meaningful `description` that adds value. Avoid trivial descriptions like
-   `"Number of input tokens"` if you can provide more context, e.g.
-   `"Limits the length of the conversation history to reduce costs or prevent context overflow."`
-
-2. **Class-Level Docstring**: For non-trivial classes, add a docstring that explains:
-    - **Why** this Pydantic model exists (its purpose).
-    - **How** it can be used within the agent or events workflow.
-
-<details>
-<summary>Examples</summary>
-
-```python
-from pydantic import BaseModel, Field
-from typing import List
-
-
-class RetrieveEvent(BaseModel):
-    """
-    Represents a set of documents that were retrieved from a vector database 
-    because they were most similar to a given query. This event should be used 
-    whenever the agent needs to pass relevant documents down the workflow 
-    (e.g., for summarizing or for further analysis).
-    """
-    documents: list[str] = Field(
-        ...,
-        description="List of retrieved documents ranked by similarity."
-    )
-```
-
-```python
-class RAGAgentConfig(AgentConfig):
-    """
-    Configuration for the Retrieval-Augmented Generation (RAG) Agent.
-
-    This configuration controls how many tokens to allow in the conversation 
-    history, as well as other RAG-specific parameters like number of retrieved 
-    documents or the vector index to query.
-    """
-    number_of_input_tokens: int = Field(
-        ...,
-        description="Limits the length of the conversation history to reduce costs or prevent context overflow."
-    )
-    max_retrieved_docs: int = Field(
-        5,
-        description="Defines how many documents should be retrieved for context augmentation."
-    )
-```
-
-</details>
+| Term                      | Definition                                                                                                                                                                                                                             |
+| :------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Agent**                 | A **dispatchable workflow** that performs structured operations on input data to achieve a pre-defined goal. Agents are autonomous AI components designed for proactive process automation, working alongside humans to execute tasks. |
+| **Agent Configuration**   | A Pydantic model inheriting from `AgentConfig` that defines agent settings, parameters, and behavior. Uses `Annotated` fields with `Field()` for validation and documentation.                                                         |
+| **Agent Test Runner**     | A specialized testing framework (`AgentTestRunner`) that provides a sandboxed environment to execute agents and inspect resulting events. Essential for BDD testing with pytest-bdd.                                                   |
+| **Agent-in-the-Loop**     | A pattern where one agent (orchestrator) invokes another agent (worker) and waits for its result. Enables complex workflows by composing smaller, specialized agents.                                                                  |
+| **Context**               | State management system with two types: `RunContext` (ephemeral, single-run) and `ThreadContext` (persistent, cross-run). Used for maintaining state within and across agent executions.                                               |
+| **Dispatchable Workflow** | The base class for all agents. Provides the infrastructure for event-driven step execution, event routing, and workflow orchestration.                                                                                                 |
+| **Event**                 | The atomic unit of communication in agent workflows. Pydantic models representing specific occurrences (e.g., `UserMessageEvent`, `StopEvent`, custom domain events).                                                                  |
+| **Event Flow**            | The sequence of events produced and consumed by agent steps. Visible in logs and Phoenix traces, crucial for debugging agent workflows.                                                                                                |
+| **Fan-Out**               | A workflow pattern where a single step returns a list of events processed in parallel by downstream steps. Used for batch processing and concurrent operations.                                                                        |
+| **Human-in-the-Loop**     | A pattern where the workflow pauses to request input from a human user, emitting a request event and waiting for a response before continuing.                                                                                         |
+| **Phoenix Tracing**       | A web-based debugging tool available at `http://localhost:6006` that provides step-by-step visualization of agent execution, event flow, and performance analysis.                                                                     |
+| **Playground**            | The `/playground` directory containing self-contained examples of every agent pattern. Essential for learning and reference, organized into `agent/` (production examples) and `minimal_workflow/` (pattern examples).                 |
+| **Precondition**          | A function decorated with `@precondition()` that must return `True` for a step to execute. Used for synchronizing parallel workflow branches and ensuring data availability.                                                           |
+| **Run**                   | A single, traceable execution of an agent's workflow, beginning with a `StartEvent` and ending with a `StopEvent`. Has an ephemeral `RunContext` for state management.                                                                 |
+| **Run Context**           | Short-lived storage for ephemeral data within a single agent run. Isolated between runs, ideal for intermediate calculations and temporary caching. Expires after 30 days.                                                             |
+| **Step**                  | A method decorated with `@step()` that represents a single operation in an agent workflow. Steps consume events as input and produce events as output, enabling clear workflow composition.                                            |
+| **Step Metadata**         | Rich information attached to steps via the `@step()` decorator, including localized names, descriptions, and icons for UI integration and monitoring.                                                                                  |
+| **Thread**                | A logical grouping of multiple runs that form a continuous conversation. Maintains state across runs via persistent `ThreadContext` for contextual follow-up interactions.                                                             |
+| **Thread Context**        | Persistent storage for state across multiple agent runs within the same conversation thread. Maintains conversational history and user preferences with 30-day TTL.                                                                    |
+| **Trigger Script**        | A Python script (`trigger.py`) that programmatically starts an agent, sends it a specific event, and terminates. Essential for focused debugging and testing specific scenarios.                                                       |
+| **Workflow**              | The fundamental design pattern for agents. A task broken down into a series of structured, explicit `@step`-decorated methods ensuring testability and transparency.                                                                   |

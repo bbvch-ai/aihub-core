@@ -1,5 +1,8 @@
 from typing import Annotated
 
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.nats.events.form import (
@@ -13,7 +16,7 @@ from aihub_lib.nats.events.form import (
     Textarea,
 )
 from aihub_lib.nats.events.form.elements.InputText import InputText
-from aihub_lib.testing.auth_utils.fake_user import fake_user
+from aihub_lib.nats.events.form.InputTextElement import InputTextElement
 from llama_index.core.base.llms.types import ChatMessage
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
@@ -103,7 +106,8 @@ class AgenticCVProcess(AgenticProcess):
         print("[AgenticCVProcess].received_cv_2_analyzed_cv")
         return AnalyzeCVRequest(
             start_event=UserMessageEvent(
-                messages=[ChatMessage(role="user", content=f"Hey {cv.name}!")], user=fake_user()
+                messages=[ChatMessage(role="user", content=f"Hey {cv.name}!")],
+                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
             )
         )
 
