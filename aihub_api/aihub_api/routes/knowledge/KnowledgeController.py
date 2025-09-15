@@ -2,21 +2,27 @@ from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
 from aihub_lib.routes.Controller import Controller
-from fastapi import HTTPException, Path, Security
+from fastapi import Depends, HTTPException, Path, Security
 from mongoengine import connect
 from pymongo import MongoClient
 
+from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
+from aihub_api.routes.knowledge.dto.CreateNamespaceRequest import CreateNamespaceRequest
 from aihub_api.routes.knowledge.dto.DatabaseDTO import DatabaseDTO
+from aihub_api.routes.knowledge.dto.DocumentDTO import DocumentDTO
+from aihub_api.routes.knowledge.dto.NamespaceResponse import NamespaceResponse
 from aihub_api.routes.knowledge.dto.NodeSummaryDTO import NodeSummaryDTO
 from aihub_api.routes.knowledge.dto.PaginatedDocumentsResponse import PaginatedDocumentsResponse
+from aihub_api.routes.knowledge.dto.UpdateNamespaceRequest import UpdateNamespaceRequest
 from aihub_api.routes.knowledge.KnowledgeService import KnowledgeService
 
 
@@ -32,6 +38,7 @@ class KnowledgeController(Controller):
         vector_store_factory: VectorStoreFactory,
         route: str = "/knowledge",
         additionally_required_permission: str | None = None,
+        translation_llm_config: LLMConfig | None = None,
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
         self.docstore_client: MongoClient = connect(
@@ -39,16 +46,19 @@ class KnowledgeController(Controller):
         )
 
         self.vector_store_factory = vector_store_factory
+        self.translation_llm_config = translation_llm_config
 
     def get_databases(self, route: str = "/databases") -> "KnowledgeController":
         @self.router.get(route, tags=self.tags)
         async def get_databases(
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> list[DatabaseDTO]:
             """
-            Returns all available knowledge namespaces with the number of documents in each.
+            Returns all available buckets with their namespaces and document counts.
+            Gets data from BucketEntity and NamespaceEntity in MongoDB.
             """
-            return KnowledgeService.get_databases(self.docstore_client)
+            return KnowledgeService.get_databases(t)
 
         return self
 
@@ -86,10 +96,9 @@ class KnowledgeController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_document_by_id(
             database: Annotated[str, Path(title="Database name")],
-            namespace: Annotated[str, Path(title="Namespace")],
             document_id: Annotated[str, Path(title="Document ID")],
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
-        ) -> IngestedDocument:
+        ) -> DocumentDTO:
             """
             Returns a single document by its ID.
             """
@@ -144,5 +153,34 @@ class KnowledgeController(Controller):
                 document_id=document_id,
                 vector_store_factory=self.vector_store_factory,
             )
+
+        return self
+
+    def create_namespace(self, route: str = "/namespaces") -> "KnowledgeController":
+        @self.router.post(route, tags=self.tags)
+        async def create_namespace(
+            request: CreateNamespaceRequest,
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> NamespaceResponse:
+            """
+            Creates a new namespace (folder) in the specified database.
+            """
+            return await KnowledgeService.create_namespace(request, t, self.translation_llm_config)
+
+        return self
+
+    def update_namespace(self, route: str = "/namespaces/{namespace_id}") -> "KnowledgeController":
+        @self.router.put(route, tags=self.tags)
+        async def update_namespace(
+            namespace_id: Annotated[str, Path(title="Namespace ID")],
+            request: UpdateNamespaceRequest,
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> NamespaceResponse:
+            """
+            Updates display name and description for an existing namespace.
+            """
+            return await KnowledgeService.update_namespace(namespace_id, request, t, self.translation_llm_config)
 
         return self

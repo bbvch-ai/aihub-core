@@ -9,6 +9,7 @@ from botocore.exceptions import BotoCoreError, ClientError, NoCredentialsError
 
 from aihub_pipeline.resources.data_lake.base.AbstractDataLakeClient import AbstractDataLakeClient
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
+from aihub_pipeline.util.bucket_utils import get_or_create_namespace_for_directory
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,6 @@ class S3DataLakeClient(AbstractDataLakeClient):
 
     def get_all_files(
         self,
-        directory_name: str,
         figures_directory_name: str,
     ) -> list[DataLakeFile]:
         """
@@ -44,7 +44,6 @@ class S3DataLakeClient(AbstractDataLakeClient):
         paginator = self._client.get_paginator("list_objects_v2")
         page_iterator = paginator.paginate(
             Bucket=self.container_name,
-            Prefix=f"{directory_name}/",
         )
 
         for page in page_iterator:
@@ -59,12 +58,11 @@ class S3DataLakeClient(AbstractDataLakeClient):
                     continue
 
                 path_parts = key.split("/")
-                dir_name = path_parts[0]
 
                 is_root_folder = len(path_parts) == 1
-                is_wrong_name = dir_name != directory_name
                 is_figure_folder = figures_directory_name in path_parts
-                if is_root_folder or is_wrong_name or is_figure_folder:
+                is_dagster_folder = any(part.startswith(".") and part.endswith("dagster") for part in path_parts)
+                if is_root_folder or is_figure_folder or is_dagster_folder:
                     continue
 
                 # S3 URI format: s3://bucket/key
@@ -118,7 +116,8 @@ class S3DataLakeClient(AbstractDataLakeClient):
         handling content type detection, hash conversion, and timestamp processing.
         """
         uri_parts = document_uri.split("/")
-        namespace = uri_parts[3]  # s3://bucket/namespace/...
+        directory_name = uri_parts[3]  # s3://bucket/directory_name/...
+        namespace = get_or_create_namespace_for_directory(self.container_name, directory_name)
         filename = key.split("/")[-1]
 
         _, extension = os.path.splitext(filename)

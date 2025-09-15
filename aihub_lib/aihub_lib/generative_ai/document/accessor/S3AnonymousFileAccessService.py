@@ -87,4 +87,115 @@ class S3AnonymousFileAccessService(AbstractAnonymousFileAccessService):
         Returns the secret access key from S3StorageSettings, which is used as the
         signing secret for generating secure URLs and request signatures.
         """
-        return self._s3_config.SECRET_KEY
+        return self._s3_config.URL_SIGNING_SECRET.get_secret_value()
+
+    def generate_upload_url(self, container: str, file_path: str, content_type: str, lifetime_hours: int = 1) -> str:
+        """
+        Generate a presigned URL for uploading a file to S3/MinIO.
+
+        Creates a time-limited URL that allows anonymous upload to a specific
+        S3 object path without requiring AWS credentials. The URL expires after
+        the specified lifetime.
+        """
+        # Validate input parameters
+        if not container or not container.strip():
+            raise ValueError("Container name cannot be empty")
+        if not file_path or not file_path.strip():
+            raise ValueError("File path cannot be empty")
+        if not content_type or not content_type.strip():
+            raise ValueError("Content type cannot be empty")
+        if lifetime_hours <= 0 or lifetime_hours > 24:  # 24 hours max for uploads
+            raise ValueError("Lifetime must be between 1 and 24 hours")
+
+        try:
+            # Generate presigned URL for PUT operation
+            presigned_url = self._s3_client.generate_presigned_url(
+                "put_object",
+                Params={"Bucket": container, "Key": file_path, "ContentType": content_type},
+                ExpiresIn=int(lifetime_hours * 3600),  # Convert hours to seconds
+            )
+            logger.debug(f"Generated presigned upload URL for {container}/{file_path}, expires in {lifetime_hours}h")
+            return presigned_url
+        except ClientError as e:
+            raise Exception(f"Failed to generate presigned upload URL: {e}")
+
+    def verify_file_exists(self, container: str, file_path: str) -> bool:
+        """
+        Verify that a file exists in S3/MinIO storage.
+
+        This method checks if a file was successfully uploaded by attempting
+        to retrieve its metadata. This is more efficient than downloading
+        the entire file just to verify existence.
+        """
+        # Validate input parameters
+        if not container or not container.strip():
+            raise ValueError("Container name cannot be empty")
+        if not file_path or not file_path.strip():
+            raise ValueError("File path cannot be empty")
+
+        try:
+            # Use head_object to check existence without downloading the file
+            self._s3_client.head_object(Bucket=container, Key=file_path)
+            logger.debug(f"File verification successful: {container}/{file_path}")
+            return True
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "")
+            if error_code in ["404", "NoSuchKey"]:
+                # File doesn't exist - this is expected behavior, not an error
+                logger.debug(f"File does not exist: {container}/{file_path}")
+                return False
+            else:
+                # Unexpected error occurred
+                logger.error(f"Failed to verify file existence {container}/{file_path}: {e}")
+                raise Exception(f"Failed to verify file existence: {e}")
+        except Exception as e:
+            logger.error(f"Failed to verify file existence {container}/{file_path}: {e}")
+            raise Exception(f"Failed to verify file existence: {e}")
+
+    def list_files(self, container: str, prefix: str = "") -> list[dict]:
+        """
+        List files in S3/MinIO storage with optional prefix filtering.
+
+        This method retrieves a list of objects in the specified bucket
+        that match the given prefix. It's useful for browsing and discovering files
+        in S3/MinIO storage.
+        """
+        # Validate input parameters
+        if not container or not container.strip():
+            raise ValueError("Container name cannot be empty")
+
+        try:
+            files = []
+            paginator = self._s3_client.get_paginator("list_objects_v2")
+            page_iterator = paginator.paginate(
+                Bucket=container,
+                Prefix=prefix,
+            )
+
+            for page in page_iterator:
+                if "Contents" not in page:
+                    continue
+
+                for obj in page["Contents"]:
+                    # Skip directories (keys ending with '/')
+                    if obj["Key"].endswith("/"):
+                        continue
+
+                    files.append(
+                        {
+                            "key": obj["Key"],
+                            "size": obj["Size"],
+                            "last_modified": obj["LastModified"].isoformat(),
+                            "etag": obj.get("ETag", "").strip('"'),
+                        }
+                    )
+
+            logger.debug(f"Listed {len(files)} files in {container} with prefix '{prefix}'")
+            return files
+
+        except ClientError as e:
+            logger.error(f"Failed to list files in {container} with prefix '{prefix}': {e}")
+            raise Exception(f"Failed to list files: {e}")
+        except Exception as e:
+            logger.error(f"Failed to list files in {container} with prefix '{prefix}': {e}")
+            raise Exception(f"Failed to list files: {e}")

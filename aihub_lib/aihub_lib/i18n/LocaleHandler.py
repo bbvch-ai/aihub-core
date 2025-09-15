@@ -6,6 +6,7 @@ import i18n
 import yaml
 
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,10 @@ class LocaleHandler:
     @property
     def locale(self):
         return self._locale
+
+    @property
+    def supported_locales(self):
+        return self.LOCALE_WHITE_LIST
 
     def get_locale_paths(self) -> list[str]:
         current_file_directory = os.path.dirname(os.path.abspath(__file__))
@@ -58,7 +63,7 @@ class LocaleHandler:
             if len(locale_data) == 0:
                 return None
             return self.extract_dict(locale_data, locale)
-        elif isinstance(locale_data, LocaleString):
+        elif isinstance(locale_data, LocaleString | LocaleStringEntity):
             return self.extract_multi_locale(locale_data, locale)
         return locale_data
 

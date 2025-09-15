@@ -74,7 +74,6 @@ class DoclingSettings(EnvironmentSettings):
         "xlsx",
         "xlsm",
         "xml",
-        "txt",
         "json",
         "wav",
         "mp3",

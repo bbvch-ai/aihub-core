@@ -231,6 +231,7 @@ document:
     document_type: "Dokumenttyp"
     number_of_pages: "Anzahl der Seiten"
     download: "Download"
+    is_processing: "Verarbeitung läuft"
 
 knowledge:
   title: "Wissensdatenbanken"
@@ -244,12 +245,60 @@ knowledge:
       summary: "Zusammenfassungen"
   documents:
     title: "Dokumente"
+    upload:
+      title: "Dokumente hochladen"
+      drag_and_drop: "Ziehen Sie Dateien hierher oder klicken Sie, um Dateien auszuwählen"
+      target_location:
+        label: "Speicherort"
+        help: "Ordner, in dem die Dokumente gespeichert werden sollen"
+      errors:
+        "unsupported_file_type": "Eine Datei hat einen nicht unterstützten Dateityp. Unterstützte Typen sind: {supportedTypes} | {count} Dateien haben einen nicht unterstützten Dateityp. Unterstützte Typen sind: {supportedTypes}"
+      actions:
+        upload: "Hochladen"
+        cancel: "Abbrechen"
   nodes:
     title: "Dokument-Chunks"
   summary:
     title: "Dokumentzusammenfassungen"
     level: "Ebene"
     no_summaries_at_level: "Keine Zusammenfassungen auf dieser Ebene"
+  actions:
+    save: "Speichern"
+    create: "Erstellen"
+    cancel: "Abbrechen"
+  add_folder:
+    title: "Sammlung hinzufügen"
+    description: "Eine neue Wissenssammlung erstellen"
+    cancel: "Abbrechen"
+  auto_sync:
+    title: "Automatisch synchronisiert"
+    description: "Sammlungen werden automatisch verwaltet"
+  manual_management:
+    description: "Sammlungen können manuell erstellt und verwaltet werden"
+  edit_namespace: "Sammlung bearbeiten"
+  upload_documents: "Dokumente hochladen"
+  form:
+    create:
+      title: "Sammlung erstellen"
+    edit:
+      title: "Sammlung bearbeiten"
+    database:
+      label: "Wissensdatenbank"
+      placeholder: "Name der Wissensdatenbank"
+    folder_name:
+      label: "Sammlungsname"
+      placeholder: "meine-sammlung"
+      help: "Nur alphanumerische Zeichen, Bindestriche (-) und Unterstriche (_) sind erlaubt"
+      edit_help: "Technischer Name der Sammlung"
+      validation_error: "Der Sammlungsname darf nur alphanumerische Zeichen, Bindestriche (-) und Unterstriche (_) enthalten"
+    display_name:
+      label: "Anzeigename"
+      placeholder: "Anzeigename"
+      help: "Anzeigename der Sammlung"
+    description:
+      label: "Beschreibung"
+      placeholder: "Beschreibung"
+      help: "Beschreibung der Sammlung"
 
 auth:
   renew:
