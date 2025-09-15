@@ -505,7 +505,6 @@ services:
     image: otel/opentelemetry-collector-contrib:latest
     command: [ "--config=/etc/otel-collector-config.yaml" ]
     environment:
-      - OTEL_CLOUD_EXPORTER=${OTEL_CLOUD_EXPORTER}
       - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
     volumes:

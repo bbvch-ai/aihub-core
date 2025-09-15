@@ -47,9 +47,6 @@ processors:
           - set(attributes["openinference.project.name"], attributes["service.name"])
 
 exporters:
-  # Null exporter to sink traces when tracing is disabled
-  null:
-
   # Generic cloud exporter with configurable headers
   otlp/cloud:
     endpoint: "${OTEL_CLOUD_ENDPOINT}"
@@ -76,11 +73,11 @@ exporters:
 
 service:
   pipelines:
-    # Send traces to cloud backend - uses otlp/cloud or null based on OTEL_CLOUD_EXPORTER
+    # Send traces to cloud backend
     traces/cloud:
       receivers: [otlp]
       processors: [filter/noise, batch]
-      exporters: ["${OTEL_CLOUD_EXPORTER}"]
+      exporters: [otlp/cloud]
 
     # Always send OpenInference traces to local Phoenix for development
     traces/phoenix:
@@ -92,10 +89,10 @@ service:
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: ["${OTEL_CLOUD_EXPORTER}"]
+      exporters: [otlp/cloud]
 
     # Send logs to cloud backend
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: ["${OTEL_CLOUD_EXPORTER}"]
+      exporters: [otlp/cloud]
