@@ -74,7 +74,10 @@ class DocumentParserResource(ConfigurableResource):
         ),
     ]
 
-    # Base readers that are always included
+    include_images: Annotated[
+        bool, Field(default=True, description="Specifies if images should be embedded into the documents and nodes.")
+    ] = True
+
     _base_readers = {
         EpubReader: ["epub"],
         IPYNBReader: ["ipynb"],

@@ -69,7 +69,7 @@ defs = Definitions(
         **default_io_manager_s3_datalake_resources(
             container_name=DATALAKE_CONTAINER_NAME, directory_name=DATALAKE_DIRECTORY_NAME
         ),
-        "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
+        "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING, include_images=True),
         "node_parser": MarkdownStructuralNodeParserResource(),
         "summary_parser": RecursiveSummaryParserResource(),
         **local_mongo_milvus_storage_context_resource(

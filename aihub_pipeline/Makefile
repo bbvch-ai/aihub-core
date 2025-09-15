@@ -28,3 +28,7 @@ test:
 playground:
 	@echo "Running playground..."
 	poetry run dagster dev -m playground --use-legacy-code-server-behavior
+
+quickstart:
+	@echo "Running quickstart..."
+	poetry run dagster dev -f playground/quick_start/simple_pipeline.py -f playground/quick_start/my_document_pipeline.py

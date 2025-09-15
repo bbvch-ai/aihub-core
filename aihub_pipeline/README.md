@@ -1,6 +1,6 @@
 ---
 title: AI-Hub Pipelines
-index: 3
+index: 5
 ---
 
 # 🚰 AI-Hub Pipeline Developer's Guide
@@ -358,7 +358,7 @@ This starts the Dagster web interface at `http://localhost:3000` where you can:
 - Materialize assets manually
 - Monitor pipeline runs
 - Debug failures and inspect outputs
-  :::
+:::
 
 #### 🔄 Interactive Development Workflow
 

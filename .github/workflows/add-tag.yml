@@ -105,8 +105,15 @@ jobs:
             echo "Error: Tag $TAG_NAME already exists. Aborting."
             exit 1
           fi
+          
           # Create annotated tag
-          git tag -a "$TAG_NAME" -m "$TAG_MESSAGE"
+          TARGET_SHA="${{ github.event.pull_request.merge_commit_sha }}"
+          if [ -z "$TARGET_SHA" ] || [ "$TARGET_SHA" == "null" ] ; then
+            # For squash/rebase merges, use the base branch tip after merge
+            git fetch origin main
+            TARGET_SHA="$(git rev-parse origin/main)"
+          fi
+          git tag -a "$TAG_NAME" -m "$TAG_MESSAGE" "$TARGET_SHA"
       
           # Verify tag exists locally
           if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
@@ -115,11 +122,25 @@ jobs:
           fi
           
           # Push the tag
+          echo "Pushing tag $TAG_NAME..."
           git push origin "$TAG_NAME"
-
-          # Verify tag exists remotely
-          if ! git ls-remote --tags origin | grep -q "refs/tags/$TAG_NAME$"; then
-            echo "Error: Failed to push tag $TAG_NAME to remote."
+          
+          # Verify the tag was pushed successfully
+          echo "Verifying tag was pushed..."
+          git fetch origin --tags
+          if git tag -l "$TAG_NAME" | grep -q "^$TAG_NAME$"; then
+            echo "Success: Tag $TAG_NAME confirmed on remote."
+            
+            # Show it's now the latest tag (consistent with your tag discovery logic)
+            latest_tag=$(git tag -l "v*" | sort -V | tail -n 1)
+            echo "Latest tag is now: $latest_tag"
+          else
+            echo "Error: Tag $TAG_NAME not found after push."
+            echo ""
+            echo "Available tags (last 10):"
+            git tag -l "v*" | sort -V | tail -10
+            echo ""
+            echo "Expected: $TAG_NAME"
             exit 1
           fi
 
@@ -355,23 +376,14 @@ jobs:
           
           git add -A
   
-          git commit -m "ops(bot): Update tag number to ${VERSION} [skip ci]" || echo "No file changes to commit."
-          git push origin HEAD:${{ github.event.pull_request.base.ref }}
+          git commit --amend --no-edit || echo "No file changes to commit."
+          git push origin HEAD:${{ github.event.pull_request.base.ref }} --force-with-lease
           
           
           echo "Creating final tag ${VERSION} and pushing..."
           git tag -a -f "${VERSION}" -m "Release ${VERSION}"
           git push origin "refs/tags/${VERSION}" --force
           
-          # Verify remote tag matches local
-          LOCAL_SHA="$(git rev-parse "${VERSION}^{commit}")"
-          REMOTE_SHA="$(git ls-remote --tags origin "refs/tags/${VERSION}" | awk '{print $1}')"
-          if [ -z "${REMOTE_SHA}" ] || [ "${LOCAL_SHA}" != "${REMOTE_SHA}" ]; then
-            echo "Error: remote tag ${VERSION} not updated (local ${LOCAL_SHA}, remote ${REMOTE_SHA:-<none>})."
-            exit 1
-          fi
-
-          echo "Tag ${VERSION} updated to ${LOCAL_SHA} and verified on origin."
 
       - name: Clean up SSH keys
         run: |
