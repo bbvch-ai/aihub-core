@@ -9,10 +9,7 @@ from aihub_lib.runners.Runner import Runner
 from fastapi import FastAPI
 from fastmcp import FastMCP
 from fastmcp.server.openapi import MCPType, RouteMap
-from opentelemetry import trace
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.trace import ProxyTracerProvider
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Mount
