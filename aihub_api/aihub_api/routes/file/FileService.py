@@ -7,6 +7,7 @@ from typing import Annotated
 
 from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings import AnonymousFileAccessSettings
 from aihub_lib.generative_ai.document.types.FileTypeConfig import FileTypeConfig
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
 from fastapi import HTTPException, status

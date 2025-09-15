@@ -9,10 +9,10 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
-from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
 from aihub_lib.persistence.rag.vectors.node_metadata import (
