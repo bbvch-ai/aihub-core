@@ -71,12 +71,14 @@ class DocumentIntelligenceLoader(BaseReader):
 
         fs = fs or get_default_fs()
         with fs.open(file, "rb") as pdf_file:
+            output_options = [AnalyzeOutputOption.FIGURES] if include_images else []
+
             poller = self.document_intelligence_client.begin_analyze_document(
                 "prebuilt-layout",
                 body=pdf_file,
                 content_type="application/octet-stream",
                 output_content_format=DocumentContentFormat.MARKDOWN,
-                output=[AnalyzeOutputOption.FIGURES],
+                output=output_options,
             )
 
         result: AnalyzeResult = poller.result()
