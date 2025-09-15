@@ -7,10 +7,17 @@ from aihub_lib.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_FI
 
 
 class ImageLoader(BaseReader):
-    def _create_document(
+    """
+    A custom document loader for image files that creates a Document with an HTML figure tag.
+    This loader does not perform any OCR or image analysis; it simply wraps the image in a figure tag.
+    Useful for pipeline ingestion where we generate descriptions for embeddings.
+    """
+
+    def load_data(
         self,
         file: str,
         extra_info: dict | None = None,
+        **kwargs: Any,
     ):
         metadata = {NUMBER_OF_PAGES: 1}
         figure_tag = f"<{NODE_CONTENT_TYPE_FIGURE}>![]({file})</{NODE_CONTENT_TYPE_FIGURE}>"
@@ -21,19 +28,3 @@ class ImageLoader(BaseReader):
                 extra_info={**extra_info, **metadata} if extra_info else metadata,
             )
         ]
-
-    def load_data(
-        self,
-        file: str,
-        extra_info: dict | None = None,
-        **kwargs: Any,
-    ):
-        return self._create_document(file, extra_info)
-
-    async def aload_data(
-        self,
-        file: str,
-        extra_info: dict | None = None,
-        **kwargs: Any,
-    ):
-        return self._create_document(file, extra_info)
