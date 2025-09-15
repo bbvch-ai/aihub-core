@@ -224,13 +224,14 @@ agent:
 
 document:
   list:
-    title: "Document Titel"
+    title: "Document Title"
     created: "Created"
     updated_at: "Last updated"
     language: "Language"
     document_type: "Document Type"
     number_of_pages: "Number of Pages"
     download: "Download"
+    is_processing: "Processing"
 
 knowledge:
   title: "Knowledge Databases"
@@ -244,12 +245,60 @@ knowledge:
       summary: "Summaries"
   documents:
     title: "Documents"
+    upload:
+      title: "Upload Documents"
+      drag_and_drop: "Drag files here or click to select files"
+      target_location:
+        label: "Target Location"
+        help: "Folder where the documents should be stored"
+      errors:
+        unsupported_file_type: "One file has an unsupported type. Supported types are: {supportedTypes} | {count} files have an unsupported type. Supported types are: {supportedTypes}"
+      actions:
+        upload: "Upload"
+        cancel: "Cancel"
   nodes:
     title: "Document Chunks"
   summary:
     title: "Document Summaries"
     level: "Level"
     no_summaries_at_level: "No summaries on this Level"
+  actions:
+    save: "Save"
+    create: "Create"
+    cancel: "Cancel"
+  add_folder:
+    title: "Add Collection"
+    description: "Create a new knowledge collection"
+    cancel: "Cancel"
+  auto_sync:
+    title: "Auto-synchronized"
+    description: "Collections are automatically managed"
+  manual_management:
+    description: "Collections can be created and managed manually"
+  edit_namespace: "Edit collection"
+  upload_documents: "Upload documents"
+  form:
+    create:
+      title: "Create Collection"
+    edit:
+      title: "Edit Collection"
+    database:
+      label: "Knowledge Database"
+      placeholder: "Knowledge Database Name"
+    folder_name:
+      label: "Collection Name"
+      placeholder: "my-collection"
+      help: "Only alphanumeric characters, hyphens (-), and underscores (_) are allowed"
+      edit_help: "Technical name of the collection"
+      validation_error: "Collection name can only contain alphanumeric characters, hyphens (-), and underscores (_)"
+    display_name:
+      label: "Display Name"
+      placeholder: "Display Name"
+      help: "Display name of the collection"
+    description:
+      label: "Description"
+      placeholder: "Description"
+      help: "Description of the collection"
 
 auth:
   renew:

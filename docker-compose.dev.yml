@@ -1,4 +1,3 @@
-
 services:
   minio:
     image: ghcr.io/bbvch-ai/aihub-core/minio:release.2024-05-28T17-19-04Z
@@ -31,13 +30,13 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/etcd-data:/etcd
     command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     healthcheck:
-      test: ["CMD", "etcdctl", "endpoint", "health"]
+      test: [ "CMD", "etcdctl", "endpoint", "health" ]
 
   milvus-standalone:
     image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.5.15
     container_name: milvus
     restart: always
-    command: ["milvus", "run", "standalone"]
+    command: [ "milvus", "run", "standalone" ]
     security_opt:
       - seccomp:unconfined
     environment:
@@ -49,7 +48,7 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/milvus-data:/var/lib/milvus
       - ./configs/milvus/milvus.dev.yaml:/milvus/configs/milvus.yaml
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
     ports:
       - "19530:19530"
       - "9091:9091"
@@ -66,7 +65,7 @@ services:
     depends_on:
       - "milvus-standalone"
     environment:
-     MILVUS_URL: 'http://milvus-standalone:19530'
+      MILVUS_URL: 'http://milvus-standalone:19530'
 
   postgres:
     image: ghcr.io/bbvch-ai/aihub-core/pgvector:pg17
@@ -190,7 +189,7 @@ services:
       --model-id Qwen/Qwen3-Embedding-0.6B
     restart: always
     healthcheck:
-      test: [  "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8183/health" ]
+      test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8183/health" ]
       timeout: 10s
       interval: 30s
       retries: 3
@@ -473,6 +472,15 @@ services:
       NODE_ENV: production
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:3036/health" ]
+
+
+  docling-model-permission:
+    container_name: docling-model-permission
+    image: alpine
+    command: [ "sh", "-c", "chown -R 1001:1001 /models" ]
+    restart: "no"
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
 
   docling:
     image: ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.3.1

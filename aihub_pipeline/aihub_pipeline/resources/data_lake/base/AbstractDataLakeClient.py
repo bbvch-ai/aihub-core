@@ -43,7 +43,6 @@ class AbstractDataLakeClient(ABC):
     @abstractmethod
     def get_all_files(
         self,
-        directory_name: str,
         figures_directory_name: str,
     ) -> list[DataLakeFile]:
         """

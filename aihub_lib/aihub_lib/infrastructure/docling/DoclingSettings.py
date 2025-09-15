@@ -24,7 +24,7 @@ class DoclingSettings(EnvironmentSettings):
         "json_docling",
         "audio",
     ]
-    TO_FORMATS: Annotated[list[str], Field(description="Output formats")] = ["md", "json"]
+    TO_FORMATS: Annotated[list[str], Field(description="Output formats")] = ["json"]
     IMAGE_EXPORT_MODE: Annotated[
         str,
         Field(description="Images should be embedded in Markdown or referenced or placeholder is used"),
@@ -74,8 +74,9 @@ class DoclingSettings(EnvironmentSettings):
         "xlsx",
         "xlsm",
         "xml",
-        "txt",
         "json",
         "wav",
         "mp3",
     ]
+    POLL_INTERVAL: Annotated[int, Field(description="Interval between polling attempts in seconds")] = 4
+    MAX_POLLS: Annotated[int, Field(description="Maximum number of polling attempts")] = 300

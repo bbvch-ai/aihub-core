@@ -90,7 +90,10 @@ async def main():
             vector_store_factory=lambda collection: create_milvus_vector_store(
                 MilvusSettings().URL, collection, MilvusSettings().DIMENSION
             ),
+            translation_llm_config=LLMConfig(model_name="azure/gpt-4o-mini"),
         )
+        .create_namespace()
+        .update_namespace()
         .get_databases()
         .get_documents_for_namespace()
         .get_document_by_id()
@@ -100,7 +103,10 @@ async def main():
         .get_file_url()
         .get_file_redirect()
         .get_anonymous_file_url()
-        .get_anonymous_file_redirect(),
+        .get_anonymous_file_redirect()
+        .initiate_file_upload()
+        .validate_file_upload()
+        .get_supported_file_types(),
         NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
     )
 

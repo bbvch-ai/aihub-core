@@ -1,13 +1,21 @@
 import hashlib
 import hmac
 import math
+import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings import AnonymousFileAccessSettings
-from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from aihub_lib.generative_ai.document.types.FileTypeConfig import FileTypeConfig
+from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
+from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
 from fastapi import HTTPException, status
 from fastapi.responses import RedirectResponse
+
+from aihub_api.routes.file.dto.FileUploadRequest import FileUploadRequest
+from aihub_api.routes.file.dto.FileUploadResponse import FileUploadResponse
+from aihub_api.routes.file.dto.FileUploadValidationRequest import FileUploadValidationRequest
+from aihub_api.routes.file.dto.FileUploadValidationResponse import FileUploadValidationResponse
 
 
 class FileService:
@@ -101,3 +109,65 @@ class FileService:
             f"{get_anonymous_file_redirect_api_endpoint}/{container}/{file_path}"
             f"?expires={expires_timestamp}&signature={signature}"
         )
+
+    @staticmethod
+    async def initiate_file_upload(request: FileUploadRequest) -> FileUploadResponse:
+        """
+        Initiates document upload by generating a presigned URL for the globally configured datalake.
+
+        This method resolves logical database/namespace names to physical storage locations,
+        validates the upload request, generates a unique object key, and creates a presigned URL
+        for direct upload to the configured datalake storage.
+        """
+
+        try:
+            bucket_entity = BucketEntity.get_bucket_by_db_name(request.database_name)
+            namespace_entity = NamespaceEntity.get_namespace_by_bucket_and_name(
+                bucket_id=str(bucket_entity.id), namespace_name=request.namespace_name
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Database '{request.database_name}' or namespace '{request.namespace_name}' not found",
+            ) from e
+
+        container = bucket_entity.bucket_name
+        folder = namespace_entity.folder_name
+
+        upload_id = str(uuid.uuid4())
+        object_key = f"{folder}/{request.filename}"
+
+        file_access_config = AnonymousFileAccessSettings()
+        presigned_url = file_access_config.service.generate_upload_url(
+            container=container,
+            file_path=object_key,
+            content_type=request.content_type,
+            lifetime_hours=1,  # 1 hour expiration
+        )
+
+        return FileUploadResponse(
+            upload_url=presigned_url,
+            upload_id=upload_id,
+            container=container,
+            object_key=object_key,
+            expires_in=3600,  # 1 hour in seconds
+            folder=folder,
+        )
+
+    @staticmethod
+    async def validate_file_upload(request: FileUploadValidationRequest) -> FileUploadValidationResponse:
+        """
+        Validates whether a file was successfully uploaded to the globally configured datalake.
+
+        This method uses the same global AnonymousFileAccessSettings as upload and download URLs
+        to verify that the uploaded file exists in the datalake storage.
+        """
+        file_access_config = AnonymousFileAccessSettings()
+
+        exists = file_access_config.service.verify_file_exists(container=request.container, file_path=request.file_path)
+
+        return FileUploadValidationResponse(exists=exists, file_path=request.file_path, container=request.container)
+
+    @staticmethod
+    def get_supported_file_types() -> list[str]:
+        return FileTypeConfig().get_unique_extensions()
