@@ -344,6 +344,15 @@ services:
       OAUTH_EMAIL_CLAIM: 'email'
       OAUTH_GROUP_CLAIM: 'email'
 
+      # AI-Hub Connection
+      AIHUB_BASE_URL: http://api:8000
+      AIHUB_FRONTEND_URL: "https://${DOMAIN}"
+      AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
+      OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
+      AIHUB_PIPELINE_PREFIX: "aihub/"
+      AIHUB_OPENAI_PIPELINE_PREFIX: "openai/"
+      AIHUB_REQUEST_TIMEOUT: 60
+
       # Data storage
       STORAGE_PROVIDER: "s3"
       S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
