@@ -109,3 +109,7 @@ exception_event:
 user_message_event:
   name: "Demande de l'Utilisateur"
   description: "L'agent a reçu un message de l'utilisateur et le traite, en tenant compte de l'historique de chat précédent."
+
+standalone_question_condenser_event:
+  name: "Demande Indépendante Condensée"
+  description: "Une demande complexe a été transformée en une demande indépendante plus claire et concise pour faciliter le traitement."

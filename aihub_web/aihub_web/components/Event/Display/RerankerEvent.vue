@@ -13,9 +13,13 @@
           readonly
         />
       </IconField>
-      <p class="pt-5 font-bold">
-        Top: {{ event.event.top_k }} relevanteste Dokumente:
-      </p>
+      <div class="flex items-center gap-2 pt-5 text-sm font-medium text-surface-600 dark:text-surface-400">
+        <Icon
+          name="material-symbols:filter-list"
+          class="size-4"
+        />
+        <span>{{ t('event.reranker.topDocuments', { count: event.event.top_k }) }}</span>
+      </div>
       <ChatSourceNodes
         :nodes="event.event.output_nodes ?? []"
       />
@@ -30,4 +34,6 @@ defineProps<{
   event: AgentEventReadable & { event: RerankerEvent }
   thread: ThreadDto
 }>()
+
+const { t } = useI18n()
 </script>

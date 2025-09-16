@@ -109,3 +109,7 @@ exception_event:
 user_message_event:
   name: "Benutzeranfrage"
   description: "Der Agent hat eine Nachricht vom Benutzer erhalten und verarbeitet diese unter Berücksichtigung des bisherigen Chatverlaufs."
+
+standalone_question_condenser_event:
+  name: "Kondensierte Einzelanfrage"
+  description: "Eine komplexe Anfrage wurde in eine klarere und prägnantere Einzelanfrage umgewandelt, um die Bearbeitung zu erleichtern."

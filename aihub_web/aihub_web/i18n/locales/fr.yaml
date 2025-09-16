@@ -153,6 +153,31 @@ event:
     successful: "Réussi"
     chat: "Chat"
     agents: "Agents:"
+  limitChatHistory:
+    summary: "Historique de chat limité à {count} messages"
+    assistant: "Assistant"
+    system: "Système"
+    user: "Utilisateur"
+    description: "L'historique de chat a été tronqué en fonction des limites de jetons pour rester dans les contraintes du modèle"
+  reranker:
+    topDocuments: "Top {count} documents les plus pertinents:"
+    query: "Requête de recherche"
+  retriever:
+    foundDocuments: "{count} documents pertinents trouvés"
+    query: "Requête de recherche"
+    chunksFound: "{count} fragments trouvés"
+    documentsSpanning: "Dans {count} documents"
+    avgScore: "Pertinence moy: {score}%"
+    chunksFromDoc: "{count} fragments"
+    chunk: "Fragment"
+    position: "Pos: {pos}"
+    lines: "Lignes {start}-{end}"
+    chars: "{count} caractères"
+  standaloneQuestionCondenser:
+    summary: "Question affinée et condensée"
+    condensedQuestion: "Question Condensée"
+    user: "Utilisateur"
+    description: "La question originale a été reformulée pour être plus spécifique et contextuelle afin d'améliorer les résultats de recherche"
   statistics:
     charts:
       agentInvocations: "Invocations d'agents"

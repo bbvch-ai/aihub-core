@@ -153,6 +153,31 @@ event:
     successful: "Riuscito"
     chat: "Chat"
     agents: "Agenti:"
+  limitChatHistory:
+    summary: "Cronologia chat limitata a {count} messaggi"
+    assistant: "Assistente"
+    system: "Sistema"
+    user: "Utente"
+    description: "La cronologia della chat è stata troncata in base ai limiti di token per rimanere entro i vincoli del modello"
+  reranker:
+    topDocuments: "Top {count} documenti più rilevanti:"
+    query: "Query di ricerca"
+  retriever:
+    foundDocuments: "{count} documenti rilevanti trovati"
+    query: "Query di ricerca"
+    chunksFound: "{count} frammenti trovati"
+    documentsSpanning: "In {count} documenti"
+    avgScore: "Rilevanza media: {score}%"
+    chunksFromDoc: "{count} frammenti"
+    chunk: "Frammento"
+    position: "Pos: {pos}"
+    lines: "Righe {start}-{end}"
+    chars: "{count} caratteri"
+  standaloneQuestionCondenser:
+    summary: "Domanda rifinita e condensata"
+    condensedQuestion: "Domanda Condensata"
+    user: "Utente"
+    description: "La domanda originale è stata riformulata per essere più specifica e consapevole del contesto per migliori risultati di ricerca"
   statistics:
     charts:
       agentInvocations: "Invocazioni di agenti"

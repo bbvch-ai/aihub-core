@@ -109,3 +109,7 @@ exception_event:
 user_message_event:
   name: "User Request"
   description: "The agent has received a message from the user and is processing it, taking into account the previous chat history."
+
+standalone_question_condenser_event:
+  name: "Question Condensed"
+  description: "The user's request has been condensed to a standalone question sfor better retrieval."

@@ -154,6 +154,31 @@ event:
     successful: "Erfolgreich"
     chat: "Chat"
     agents: "Agenten:"
+  limitChatHistory:
+    summary: "Chat-Verlauf auf {count} Nachrichten begrenzt"
+    assistant: "Assistent"
+    system: "System"
+    user: "Benutzer/in"
+    description: "Chat-Verlauf wurde aufgrund von Token-Limits gekürzt, um innerhalb der Modellbeschränkungen zu bleiben"
+  reranker:
+    topDocuments: "Top {count} relevanteste Dokumente:"
+    query: "Suchanfrage"
+  retriever:
+    foundDocuments: "{count} relevante Dokumente gefunden"
+    query: "Suchanfrage"
+    chunksFound: "{count} Textabschnitte gefunden"
+    documentsSpanning: "Aus {count} Dokumenten"
+    avgScore: "Ø Relevanz: {score}%"
+    chunksFromDoc: "{count} Abschnitte"
+    chunk: "Abschnitt"
+    position: "Pos: {pos}"
+    lines: "Zeilen {start}-{end}"
+    chars: "{count} Zeichen"
+  standaloneQuestionCondenser:
+    summary: "Frage verfeinert und verdichtet"
+    condensedQuestion: "Verdichtete Frage"
+    user: "Benutzer/in"
+    description: "Die ursprüngliche Frage wurde reformuliert, um spezifischer und kontextbewusster für bessere Suchergebnisse zu sein"
   statistics:
     charts:
       agentInvocations: "Agentenaufrufe"

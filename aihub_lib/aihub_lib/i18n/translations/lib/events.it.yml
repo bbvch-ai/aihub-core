@@ -109,3 +109,7 @@ exception_event:
 user_message_event:
   name: "Richiesta dell'Utente"
   description: "L'agente ha ricevuto un messaggio dall'utente e lo sta elaborando, tenendo conto della cronologia della chat precedente."
+
+standalone_question_condenser_event:
+  name: "Condensatore di Domande Autonome"
+  description: "L'agente riformula una domanda autonoma per migliorarne la chiarezza e la pertinenza, facilitando una risposta più precisa."
