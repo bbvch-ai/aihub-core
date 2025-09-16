@@ -14,17 +14,13 @@ from mongoengine import (
     StringField,
 )
 
-from aihub_lib.nats.events.discovery import ProcessDiscoveryResponseEvent
-from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
-from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
-from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
 from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from aihub_lib.persistence.agents.AgentEntity import EventSpec
+from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
 from aihub_lib.persistence.process.ProcessConfigEntityEmbeddedDocument import ProcessConfigEntityEmbeddedDocument
-from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
 logger = logging.getLogger(__name__)
 
@@ -175,42 +171,6 @@ class ProcessEntity(Document):
                 process_id=process_id,
                 process_config=process_config_entity,
                 default_process_config=default_process_config_entity,
-                human_inputs=human_inputs,
-                program_inputs=program_inputs,
-                agent_inputs=agent_inputs,
-            )
-
-    @classmethod
-    def create_or_update_from_discovery_response(cls, response: ProcessDiscoveryResponseEvent) -> "ProcessEntity":
-        existing_process = cls.objects(process_class=response.process_class, process_id=response.process_id).first()
-
-        process_config = ProcessConfig(
-            process_id=response.process_config.process_id,
-            name=LocaleStringEntity.from_locale_string(response.process_config.name),
-            description=LocaleStringEntity.from_locale_string(response.process_config.description),
-            icon=response.process_config.icon,
-        )
-
-        # Create EventSpec objects, serializing the schema to avoid $ issues
-        human_inputs = [HumanInSpecsEntity.from_specs(human_in_dto) for human_in_dto in response.human_inputs]
-        program_inputs = [ProgramInSpecsEntity.from_specs(program_in_dto) for program_in_dto in response.program_inputs]
-        agent_inputs = [AgentInSpecsEntity.from_specs(agent_in_dto) for agent_in_dto in response.agent_inputs]
-
-        if existing_process:
-            # Update existing process
-            existing_process.process_config = process_config
-            existing_process.human_inputs = human_inputs
-            existing_process.program_inputs = program_inputs
-            existing_process.agent_inputs = agent_inputs
-            existing_process.last_discovered = datetime.now()
-            existing_process.save()
-            return existing_process
-        else:
-            # Create new process
-            return cls.create_process(
-                process_class=response.process_class,
-                process_id=response.process_id,
-                process_config=process_config,
                 human_inputs=human_inputs,
                 program_inputs=program_inputs,
                 agent_inputs=agent_inputs,

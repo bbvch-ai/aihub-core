@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING, Annotated, Any
 
+from aihub_lib.persistence.agents import AgentEntity
 from pydantic import Field
 
 from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
-from aihub_lib.persistence.agents import AgentEntity
 
 from .WorkRequestDTO import WorkRequestDTO
 

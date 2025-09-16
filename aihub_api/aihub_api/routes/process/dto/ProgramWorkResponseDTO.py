@@ -81,4 +81,3 @@ class ProgramWorkResponseDTO(WorkResponseDTO):
             data=event_data,
             submitted_by=submitted_by,
         )
-

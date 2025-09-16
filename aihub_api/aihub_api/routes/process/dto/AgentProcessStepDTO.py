@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING, Annotated
 from pydantic import Field
 
 from aihub_api.routes.process.dto import PersistedEventDTO
-from aihub_api.routes.process.dto.BaseProcessStepDTO import BaseProcessStepDTO
 from aihub_api.routes.process.dto.AgentWorkRequestDTO import AgentWorkRequestDTO
 from aihub_api.routes.process.dto.AgentWorkResponseDTO import AgentWorkResponseDTO
+from aihub_api.routes.process.dto.BaseProcessStepDTO import BaseProcessStepDTO
 
 if TYPE_CHECKING:
     from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -71,4 +71,3 @@ class AgentProcessStepDTO(BaseProcessStepDTO):
             work_request=work_request,
             work_response=work_response,
         )
-

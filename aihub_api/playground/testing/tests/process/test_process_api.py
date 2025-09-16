@@ -174,7 +174,7 @@ async def test_walk_through_process_dynamic_methods(process_api_client):
     assert data.get("form")[0].get("formkit") == "primeInputText"
     assert data.get("form")[0].get("name") == "payload"
     assert not data.get("form")[0].get("disabled")
-    assert data.get("form")[0].get("label") == "This is some label for HumanStartEvent"
+    assert data.get("form")[0].get("label") == "This is some label for HumanStartEvent *"
 
     # Step 2: Send initial form
     response = await process_api_client.post(

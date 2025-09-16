@@ -3,9 +3,9 @@ from typing import Annotated
 from pydantic import BaseModel, Field
 
 from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
+from aihub_api.routes.process.dto.AgentProcessStepDTO import AgentProcessStepDTO
 from aihub_api.routes.process.dto.HumanProcessStepDTO import HumanProcessStepDTO
 from aihub_api.routes.process.dto.ProgramProcessStepDTO import ProgramProcessStepDTO
-from aihub_api.routes.process.dto.AgentProcessStepDTO import AgentProcessStepDTO
 from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
 
 
@@ -17,7 +17,10 @@ class ProcessWalkthroughDTO(BaseModel):
     ]
     process_class: Annotated[str, Field(description="The class/type of the process.")]
     process_id: Annotated[str, Field(description="Unique identifier for the specific process instance.")]
-    process_steps: Annotated[list[AgentProcessStepDTO | ProgramProcessStepDTO | HumanProcessStepDTO], Field(description="List of all steps in this walkthrough, ordered chronologically.")]
+    process_steps: Annotated[
+        list[AgentProcessStepDTO | ProgramProcessStepDTO | HumanProcessStepDTO],
+        Field(description="List of all steps in this walkthrough, ordered chronologically."),
+    ]
     created_at: Annotated[int, Field(description="Timestamp of the first event in nanoseconds.")]
     updated_at: Annotated[int, Field(description="Timestamp of the last event in nanoseconds.")]
     total_steps: Annotated[int, Field(description="Total number of steps in this walkthrough.")]
@@ -29,5 +32,3 @@ class ProcessWalkthroughDTO(BaseModel):
     involved_humans: Annotated[
         list[MinimalUserDTO], Field(description="List of humans that submitted work in this walkthrough.")
     ] = []
-
-

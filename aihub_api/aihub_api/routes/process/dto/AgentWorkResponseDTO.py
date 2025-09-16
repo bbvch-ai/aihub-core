@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING, Annotated, Any
 
+from aihub_lib.persistence.agents import AgentEntity
 from pydantic import Field
 
 from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
-from aihub_lib.persistence.agents import AgentEntity
 
 from .WorkResponseDTO import WorkResponseDTO
 
@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 class AgentWorkResponseDTO(WorkResponseDTO):
     """DTO representing an agent work response with specific agent-related information."""
+
     agent_class: Annotated[str, Field(description="The class of the agent that should handle this request.")]
     agent_id: Annotated[str, Field(description="The ID of the agent that should handle this request.")]
     agent_info: Annotated[

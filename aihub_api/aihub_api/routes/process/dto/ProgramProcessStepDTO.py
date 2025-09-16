@@ -72,4 +72,3 @@ class ProgramProcessStepDTO(BaseProcessStepDTO):
             work_request=work_request,
             work_response=work_response,
         )
-

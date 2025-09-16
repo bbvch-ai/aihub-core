@@ -30,14 +30,11 @@ from aihub_api.routes.process.dto import (
     PersistedEventDTO,
     ProgramProcessStepDTO,
 )
-from aihub_api.routes.process.dto.in_specs.AgentInDTO import AgentInDTO
 from aihub_api.routes.process.dto.in_specs.HumanInDTO import HumanInDTO
-from aihub_api.routes.process.dto.in_specs.ProgramInDTO import ProgramInDTO
 from aihub_api.routes.process.dto.ProcessClassDTO import ProcessClassDTO
 from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
-from aihub_api.routes.process.dto.ProcessWalkthroughDTO import ProcessWalkthroughDTO
-from aihub_api.routes.process.dto.ProcessHumanInDto import ProcessHumanInDto
 from aihub_api.routes.process.dto.ProcessInstanceDTO import ProcessInstanceDTO
+from aihub_api.routes.process.dto.ProcessWalkthroughDTO import ProcessWalkthroughDTO
 from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 
 # In-memory caches to avoid repeatedly querying NATS for process info

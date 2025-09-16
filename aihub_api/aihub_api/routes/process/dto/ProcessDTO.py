@@ -40,17 +40,15 @@ class ProcessDTO(MinimalProcessDTO):
     )
 
     @classmethod
-    def from_instance(
-        cls, instance: ProcessInstanceDTO, t: LocaleHandler, is_online: bool
-    ) -> "ProcessDTO":
+    def from_instance(cls, instance: ProcessInstanceDTO, t: LocaleHandler, is_online: bool) -> "ProcessDTO":
         """Creates a ProcessDTO from a ProcessInstanceDTO."""
         return cls(
             process_class=instance.process_class,
             process_id=instance.process_id,
             process_config=ProcessConfigDTO.from_process_config(instance.process_config, t),
-            human_inputs=instance.human_inputs,
-            program_inputs=instance.program_inputs,
-            agent_inputs=instance.agent_inputs,
+            human_inputs=[HumanInDTO.from_human_in_specs(human_in, t=t) for human_in in instance.human_inputs],
+            program_inputs=[ProgramInDTO.from_program_in_specs(program_in) for program_in in instance.program_inputs],
+            agent_inputs=[AgentInDTO.from_agent_in_specs(agent_in, t=t) for agent_in in instance.agent_inputs],
             is_online=is_online,
         )
 
