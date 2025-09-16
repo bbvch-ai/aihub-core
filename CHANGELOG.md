@@ -5,6 +5,111 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.244.1] - 2025-09-16 - Persistence Layer Refinement
+
+### Refactor
+
+- 🧹 **Namespace Entity field renamed:** Renamed the `last_updated` field to `updated_at` in the `NamespaceEntity` for
+  improved consistency and clarity in data lake persistence.
+
+---
+
+## [v0.244.0] - 2025-09-15 - Knowledge Base Evolution: Streamlined Uploads, Localized Collections, and Improved Pipeline Harmony
+
+### Added
+
+- 🚀 **Direct File Uploads API:** Introduced new API endpoints for initiating and validating direct file uploads to the
+  datalake, and for retrieving a list of supported file types.
+- 🖼️ **Frontend Document Upload Modal:** Implemented a new user interface component allowing drag-and-drop file uploads
+  directly into knowledge collections.
+- ✨ **Knowledge Collection Management API:** New API endpoints for creating and updating knowledge namespaces (now
+  referred to as collections).
+- 🎨 **Frontend Collection Management UI:** Added user interfaces for creating new knowledge collections and editing
+  existing ones, including display names and descriptions.
+- 🗄️ **Datalake Entity Models:** Introduced `BucketEntity` and `NamespaceEntity` for a more structured and persistent
+  representation of datalake containers and their collections.
+- 🗣️ **LLM-Powered Translation Service:** A new `TranslationService` to automatically localize collection display names
+  and descriptions using an integrated Large Language Model.
+- 📄 **Unified Document DTO:** Added `DocumentDTO` to consistently represent both fully ingested (processed) and
+  in-progress (processing) documents across the API and UI.
+- 🛡️ **File Type Configuration:** Implemented `FileTypeConfig` to centralize the management of supported file extensions
+  and their corresponding MIME types, enhancing upload validation.
+- ⚡️ **Knowledge Service Caching:** Integrated `ttl_cache` for efficient caching of knowledge service data, improving
+  performance for database and document listings.
+- 🌐 **Expanded Internationalization:** Added comprehensive French and Italian translations for core API prompts and all
+  new user interface elements, alongside new i18n keys for better clarity.
+- 🛠️ **Pipeline Bucket Utilities:** Introduced new utility functions (`bucket_utils`) to dynamically manage the mapping
+  between datalake buckets/directories and knowledge base entities.
+- 📦 **Container-Level Data Lake Resource:** Added `DataLakeContainerResource` to enable pipeline operations across
+  entire datalake containers, supporting multi-namespace processing.
+- 🤖 **Agent HITL Events:** Enhanced `AgentDTO` with `hitl_request_events` and `hitl_response_events` to support
+  Human-in-the-Loop workflows for agents.
+
+### Changed
+
+- 📝 **Enhanced Knowledge Collection Listings:** The knowledge base now visually differentiates and lists both
+  successfully ingested documents and those still undergoing processing.
+- 📊 **Enriched Knowledge Base Metadata:** Knowledge databases (buckets) and collections (namespaces) now feature
+  localized display names, descriptions, and an `auto_sync` status, providing more context in the UI.
+- 🔄 **API Route Standardization:** Renamed `/file` API routes to `/files` for improved consistency across the API
+  surface.
+- ⚙️ **Refined Pipeline Operations:** RAG pipelines are now optimized to dynamically resolve namespaces and operate on a
+  container-wide basis, adapting to the new structured datalake model.
+- 💡 **Updated Default LLM Configurations:** Adjusted the default embedding and language model configurations within the
+  RAG pipeline to better suit new requirements.
+- 🌍 **Locale Handling Extension:** Updated `LocaleHandler` to seamlessly process `LocaleStringEntity` objects, improving
+  i18n integration with persistent data.
+- 🗃️ **Nullable Document Content:** The `content` field in `IngestedDocument` is now nullable, accommodating scenarios
+  where document content may not always be present or fully parsed.
+
+### Removed
+
+- 🗑️ **Legacy Activity Tracking:** Eliminated deprecated endpoints and associated DTOs related to historical spending
+  and activity tracking.
+- 🧹 **Obsolete `gpt-5` Model References:** Removed `gpt-5` model names from the `ChatCompletionRequest` enum,
+  streamlining model selection options.
+- ✂️ **Simplified Tool Call Types:** Removed support for custom tool calls and simplified related types in the
+  `ChatCompletion` API.
+- 🚫 **Redundant Event Fields:** Removed `reasoning_content` from `ChunkEvent` and `ThoughtEvent` and
+  `include_obfuscation` from `ChatCompletionStreamOptionsParam`.
+- ⚠️ **`minimal` Reasoning Effort:** The `minimal` option for reasoning effort in `ChatCompletionRequest` has been
+  removed.
+- ❌ **Old Namespace Model:** The legacy `Namespace` Pydantic model has been replaced by the new `NamespaceEntity` and
+  `NamespaceDTO`.
+- ⛔ **`txt` from Docling Extensions:** Removed `.txt` from the Docling supported extensions list, deferring to the new
+  `FileTypeConfig` for document type management.
+- 🗺️ **Directory-Specific Data Lake Arguments:** Removed the `directory_name` argument from various Data Lake resources
+  and operations, shifting to a more flexible, container-based processing model.
+- 🗑️ **DocStore Namespace Configuration:** The `namespace_name` field has been removed from `DocStoreResource`,
+  centralizing namespace management within the new datalake entities.
+
+### Refactor
+
+- 🦾 **Standardized Datalake Access:** Abstract `AnonymousFileAccessService` now includes generic methods for generating
+  upload URLs, verifying file existence, and listing files, with concrete implementations for Azure and S3 services.
+- 🔀 **Centralized Knowledge Listing Logic:** The `get_databases` logic in `KnowledgeService` has been thoroughly
+  refactored to leverage the new `BucketEntity` and `NamespaceEntity` data models, providing a unified source of truth.
+- 🌐 **Optimized i18n Translation Workflow:** Reorganized the i18n translation structure to seamlessly integrate with the
+  new LLM-based translation service.
+- ⚙️ **Streamlined Pipeline Resources:** Refactored pipeline asset factories and jobs to align with the new, simplified
+  data lake resource model, reducing redundancy and improving maintainability.
+
+---
+
+## [v0.243.10] - 2025-09-13 - Quick Start Documentation Refinement
+
+### Removed
+
+- 🗑️ Removed the extensive **SDK Architecture documentation** from the Quick Start section, which previously detailed
+  the `aihub_lib`, `aihub_agent`, `aihub_pipeline`, `aihub_process`, `aihub_api`, and `aihub_bot` packages, as well as
+  cross-package integration patterns. This content, previously marked as Work In Progress (WIP), has been temporarily
+  cleared.
+- 🗑️ Removed the in-depth **"Why our SDK" documentation** from the Quick Start guides, which provided a comprehensive
+  comparison with other AI frameworks and platforms. This content, previously marked as Work In Progress (WIP), has been
+  temporarily cleared.
+
+---
+
 ## [v0.243.9] - 2025-09-11 - Fine-Grained Control Over Document Image Extraction
 
 ### Added

@@ -12,6 +12,7 @@ export const useDatabases = defineQuery(() => {
       })
     },
   })
+
   return {
     databases,
     databasesAreLoading,

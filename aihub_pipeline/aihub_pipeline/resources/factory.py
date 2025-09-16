@@ -23,7 +23,7 @@ from aihub_pipeline.resources.vector_store.MilvusVectorStoreResource import Milv
 
 
 def azure_data_lake_resources(
-    container_name: str, directory_name: str, figures_directory_name: str
+    container_name: str, figures_directory_name: str
 ) -> dict[str, ConfigurableResourceFactory]:
     """Factory function for Azure Data Lake resources."""
     data_lake_client = AzureDataLakeClientResource(container_name=container_name)
@@ -32,9 +32,7 @@ def azure_data_lake_resources(
         data_lake_client=data_lake_client,
         data_lake_file_system=data_lake_file_system,
     )
-    data_lake_resource = DataLakeResource(
-        container_name=container_name, directory_name=directory_name, figures_directory_name=figures_directory_name
-    )
+    data_lake_resource = DataLakeResource(container_name=container_name, figures_directory_name=figures_directory_name)
     return {
         "data_lake_client": data_lake_client,
         "data_lake_file_system": data_lake_file_system,
@@ -43,9 +41,7 @@ def azure_data_lake_resources(
     }
 
 
-def s3_data_lake_resources(
-    container_name: str, directory_name: str, figures_directory_name: str
-) -> dict[str, ConfigurableResourceFactory]:
+def s3_data_lake_resources(container_name: str, figures_directory_name: str) -> dict[str, ConfigurableResourceFactory]:
     """Factory function for S3 Data Lake resources (MinIO)."""
     data_lake_client = S3DataLakeClientResource(container_name=container_name)
     data_lake_file_system = S3DataLakeFileSystemResource()
@@ -53,9 +49,7 @@ def s3_data_lake_resources(
         data_lake_client=data_lake_client,
         data_lake_file_system=data_lake_file_system,
     )
-    data_lake_resource = DataLakeResource(
-        container_name=container_name, directory_name=directory_name, figures_directory_name=figures_directory_name
-    )
+    data_lake_resource = DataLakeResource(container_name=container_name, figures_directory_name=figures_directory_name)
     return {
         "data_lake_client": data_lake_client,
         "data_lake_file_system": data_lake_file_system,
@@ -66,11 +60,10 @@ def s3_data_lake_resources(
 
 def mongo_document_store_resource(
     document_store_name: str,
-    namespace_name: str,
 ) -> dict[str, ConfigurableResourceFactory]:
     doc_store = MongoDocumentStoreResource(document_store_name=document_store_name)
     doc_store_io_manager = DocStoreIOManager(doc_store=doc_store)
-    doc_store_resource = DocStoreResource(document_store_name=document_store_name, namespace_name=namespace_name)
+    doc_store_resource = DocStoreResource(document_store_name=document_store_name)
     return {
         "doc_store": doc_store,
         "doc_store_io_manager": doc_store_io_manager,
@@ -96,11 +89,10 @@ def milvus_vector_store_resource(
 def local_mongo_milvus_storage_context_resource(
     vector_store_uri: str,
     store_name: str,
-    namespace_name: str,
     dimensions: int = 3072,
 ) -> dict[str, ConfigurableResourceFactory]:
     return {
-        **mongo_document_store_resource(document_store_name=store_name, namespace_name=namespace_name),
+        **mongo_document_store_resource(document_store_name=store_name),
         **milvus_vector_store_resource(
             vector_store_uri=vector_store_uri, vector_store_name=store_name, dimensions=dimensions
         ),
@@ -127,9 +119,7 @@ def default_io_manager_azure_datalake_resources(
     }
 
 
-def default_io_manager_s3_datalake_resources(
-    container_name: str, directory_name: str
-) -> dict[str, ConfigurableResourceFactory]:
+def default_io_manager_s3_datalake_resources(container_name: str) -> dict[str, ConfigurableResourceFactory]:
     """Factory function for S3 default IO manager resources (MinIO)."""
     s3_config = S3StorageSettings()
 
@@ -142,7 +132,7 @@ def default_io_manager_s3_datalake_resources(
     s3_pickle_io_manager = S3PickleIOManager(
         s3_resource=s3_resource,
         s3_bucket=container_name,
-        s3_prefix=f".{directory_name}-dagster/",
+        s3_prefix=f".{container_name}-dagster/",
     )
 
     return {
