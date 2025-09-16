@@ -39,14 +39,7 @@ processors:
     detectors: [env, docker]
     timeout: 2s
     override: false
-    docker:
-      resource_attributes:
-        container.name:
-          enabled: true
-        container.image.name:
-          enabled: true
-        container.labels:
-          enabled: true
+
 
   resource/docker:
     attributes:
@@ -77,15 +70,15 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlp]
+      exporters: [otlp/signoz]
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlp]
+      exporters: [otlp/signoz]
     metrics/docker:
       receivers: [ docker_stats ]
       processors: [ resourcedetection/docker, resource/docker, batch ]
-      exporters: [ otlp ]
+      exporters: [ otlp/signoz ]
     logs:
       receivers: [otlp]
       processors: [batch]
