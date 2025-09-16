@@ -65,7 +65,7 @@ class NamespaceEntity(Document):
             display_name=display_name,
             description=description,
             created_at=current_time,
-            last_updated=current_time,
+            updated_at=current_time,
             inserted_at=current_time,
         )
         namespace.save()

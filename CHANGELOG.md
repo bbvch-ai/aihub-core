@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.244.1] - 2025-09-16 - Persistence Layer Refinement
+
+### Refactor
+
+- 🧹 **Namespace Entity field renamed:** Renamed the `last_updated` field to `updated_at` in the `NamespaceEntity` for
+  improved consistency and clarity in data lake persistence.
+
+---
+
 ## [v0.244.0] - 2025-09-15 - Knowledge Base Evolution: Streamlined Uploads, Localized Collections, and Improved Pipeline Harmony
 
 ### Added
