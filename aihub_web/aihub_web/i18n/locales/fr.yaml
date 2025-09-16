@@ -229,7 +229,8 @@ document:
     language: "Langue"
     document_type: "Type de document"
     number_of_pages: "Nombre de pages"
-    download: "Download"
+    download: "Télécharger"
+    is_processing: "Traitement en cours"
 
 knowledge:
   title: "Bases de connaissances"
@@ -243,12 +244,60 @@ knowledge:
       summary: "Résumés"
   documents:
     title: "Documents"
+    upload:
+      title: "Télécharger des documents"
+      drag_and_drop: "Glissez les fichiers ici ou cliquez pour sélectionner des fichiers"
+      target_location:
+        label: "Emplacement cible"
+        help: "Dossier où les documents doivent être stockés"
+      errors:
+        "unsupported_file_type": "Un fichier est d'un type non pris en charge. Les types pris en charge sont : {supportedTypes} | {count} fichiers sont d'un type non pris en charge. Les types pris en charge sont : {supportedTypes}"
+      actions:
+        upload: "Télécharger"
+        cancel: "Annuler"
   nodes:
     title: "Morceaux de document"
   summary:
     title: "Résumés de document"
     level: "Niveau"
     no_summaries_at_level: "Aucun résumé à ce niveau"
+  actions:
+    save: "Enregistrer"
+    create: "Créer"
+    cancel: "Annuler"
+  add_folder:
+    title: "Ajouter une collection"
+    description: "Créer une nouvelle collection de connaissances"
+    cancel: "Annuler"
+  auto_sync:
+    title: "Synchronisé automatiquement"
+    description: "Les collections sont gérées automatiquement"
+  manual_management:
+    description: "Les collections peuvent être créées et gérées manuellement"
+  edit_namespace: "Modifier la collection"
+  upload_documents: "Télécharger des documents"
+  form:
+    create:
+      title: "Créer une collection"
+    edit:
+      title: "Modifier la collection"
+    database:
+      label: "Base de connaissances"
+      placeholder: "Nom de la base de connaissances"
+    folder_name:
+      label: "Nom de la collection"
+      placeholder: "ma-collection"
+      help: "Seuls les caractères alphanumériques, tirets (-) et underscores (_) sont autorisés"
+      edit_help: "Nom technique de la collection"
+      validation_error: "Le nom de la collection ne peut contenir que des caractères alphanumériques, des tirets (-) et des underscores (_)"
+    display_name:
+      label: "Nom d'affichage"
+      placeholder: "Nom d'affichage"
+      help: "Nom d'affichage de la collection"
+    description:
+      label: "Description"
+      placeholder: "Description"
+      help: "Description de la collection"
 
 auth:
   renew:

@@ -229,7 +229,8 @@ document:
     language: "Lingua"
     document_type: "Tipo di documento"
     number_of_pages: "Numero di pagine"
-    download: "Download"
+    download: "Scarica"
+    is_processing: "Elaborazione in corso"
 
 knowledge:
   title: "Basi di conoscenza"
@@ -243,12 +244,60 @@ knowledge:
       summary: "Riassunti"
   documents:
     title: "Documenti"
+    upload:
+      title: "Carica documenti"
+      drag_and_drop: "Trascina i file qui o clicca per selezionare i file"
+      target_location:
+        label: "Posizione di destinazione"
+        help: "Cartella dove i documenti dovrebbero essere archiviati"
+      errors:
+       "unsupported_file_type": "Un file ha un tipo non supportato. I tipi supportati sono: {supportedTypes} | {count} file hanno un tipo non supportato. I tipi supportati sono: {supportedTypes}"
+      actions:
+        upload: "Carica"
+        cancel: "Annulla"
   nodes:
     title: "Chunk di documento"
   summary:
     title: "Riassunti del documento"
     level: "Livello"
     no_summaries_at_level: "Nessun riassunto a questo livello"
+  actions:
+    save: "Salva"
+    create: "Crea"
+    cancel: "Annulla"
+  add_folder:
+    title: "Aggiungi collezione"
+    description: "Crea una nuova collezione di conoscenza"
+    cancel: "Annulla"
+  auto_sync:
+    title: "Sincronizzato automaticamente"
+    description: "Le collezioni sono gestite automaticamente"
+  manual_management:
+    description: "Le collezioni possono essere create e gestite manualmente"
+  edit_namespace: "Modifica collezione"
+  upload_documents: "Carica documenti"
+  form:
+    create:
+      title: "Crea collezione"
+    edit:
+      title: "Modifica collezione"
+    database:
+      label: "Database di conoscenza"
+      placeholder: "Nome del database di conoscenza"
+    folder_name:
+      label: "Nome collezione"
+      placeholder: "mia-collezione"
+      help: "Sono consentiti solo caratteri alfanumerici, trattini (-) e trattini bassi (_)"
+      edit_help: "Nome tecnico della collezione"
+      validation_error: "Il nome della collezione può contenere solo caratteri alfanumerici, trattini (-) e trattini bassi (_)"
+    display_name:
+      label: "Nome visualizzato"
+      placeholder: "Nome visualizzato"
+      help: "Nome visualizzato della collezione"
+    description:
+      label: "Descrizione"
+      placeholder: "Descrizione"
+      help: "Descrizione della collezione"
 
 auth:
   renew:

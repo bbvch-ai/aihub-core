@@ -1,7 +1,9 @@
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from dagster import AssetKey, AssetSelection, Definitions, DynamicPartitionsDefinition
+from mongoengine import disconnect
 
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
@@ -26,8 +28,9 @@ from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
 from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
+from aihub_pipeline.util.bucket_utils import get_db_name_from_bucket_name
+from aihub_pipeline.util.connection_utils import connect_to_mongo_db
 
-# Configuration: Change this to switch between cloud providers
 DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
 DOCUMENT_KEY = AssetKey(["playground", "documents"])
 NODES_KEY = AssetKey(["playground", "nodes"])
@@ -35,10 +38,16 @@ REMOVED_DOCUMENTS_KEY = AssetKey(["playground", "removed_documents"])
 SUMMARY_NODES_KEY = AssetKey(["playground", "summary_nodes"])
 
 DATALAKE_CONTAINER_NAME = "playground"
-DATALAKE_DIRECTORY_NAME = "test"
-NAMESPACE_NAME = DATALAKE_DIRECTORY_NAME
-STORE_NAME = DATALAKE_CONTAINER_NAME
 FIGURES_DIRECTORY_NAME = "__figures__"
+
+
+def get_store_name() -> str:
+    connect_to_mongo_db(AIHubSettings().MONGO_MAIN_DB_NAME)
+    try:
+        return get_db_name_from_bucket_name(DATALAKE_CONTAINER_NAME)
+    finally:
+        disconnect()
+
 
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
@@ -55,11 +64,11 @@ assets = [
 
 job = observe_source_job(
     observable_asset=observable_asset,
-    namespace_name=NAMESPACE_NAME,
+    source_location_name=DATALAKE_CONTAINER_NAME,
 )
 
 remove_job = materialize_asset_job(
-    namespace_name=NAMESPACE_NAME,
+    source_location_name=DATALAKE_CONTAINER_NAME,
     job_name="remove_documents",
     asset_selection=AssetSelection.keys(REMOVED_DOCUMENTS_KEY),
 )
@@ -67,26 +76,22 @@ remove_job = materialize_asset_job(
 defs = Definitions(
     assets=assets,
     resources={
-        **default_io_manager_s3_datalake_resources(
-            container_name=DATALAKE_CONTAINER_NAME, directory_name=DATALAKE_DIRECTORY_NAME
-        ),
+        **default_io_manager_s3_datalake_resources(container_name=DATALAKE_CONTAINER_NAME),
         "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
         "node_parser": MarkdownStructuralNodeParserResource(),
         "summary_parser": RecursiveSummaryParserResource(),
         **local_mongo_milvus_storage_context_resource(
             vector_store_uri=MilvusSettings().URL,
-            store_name=STORE_NAME,
-            namespace_name=NAMESPACE_NAME,
+            store_name=get_store_name(),
         ),
         **s3_data_lake_resources(
             container_name=DATALAKE_CONTAINER_NAME,
-            directory_name=DATALAKE_DIRECTORY_NAME,
             figures_directory_name=FIGURES_DIRECTORY_NAME,
         ),
         "embedding_model": EmbeddingModelResource(
-            embedding_config=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
+            embedding_config=EmbeddingModelConfig(model_name="local/qwen-embedding"),
         ),
-        "language_model": LanguageModelResource(llm_config=LLMConfig(model_name="azure/gpt-4o-mini")),
+        "language_model": LanguageModelResource(llm_config=LLMConfig(model_name="local/qwen3-small")),
     },
     sensors=[default_automation_sensor(assets)],
     executor=default_process_executor(),
