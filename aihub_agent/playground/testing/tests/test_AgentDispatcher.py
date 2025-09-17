@@ -231,15 +231,15 @@ class TestAgentDispatcherHandleEvent:
 
         start_event = StartEvent(agent_config=custom_config.model_dump())
 
-        # Mock only the external dependencies and tracing
+        # Mock the tracer instance on the dispatcher
+        mock_tracer = Mock(spec=AgentRunTracer)
+        mock_tracer.trace_run_start = AsyncMock(return_value=None)
+        agent_dispatcher.agent_run_tracer = mock_tracer
+
         with (
-            patch("aihub_agent.dispatchers.AgentDispatcher.AgentRunTracer") as mock_tracer_class,
             patch.object(agent_dispatcher, "is_step_ready", return_value=False),
             patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
-            mock_tracer = Mock(spec=AgentRunTracer)
-            mock_tracer.trace_run_start.return_value = {"trace": "headers"}
-            mock_tracer_class.return_value = mock_tracer
             mock_base_handle.return_value = None
 
             # Act
@@ -261,14 +261,15 @@ class TestAgentDispatcherHandleEvent:
         # Arrange
         start_event = StartEvent()
 
+        # Mock the tracer instance on the dispatcher
+        mock_tracer = Mock(spec=AgentRunTracer)
+        mock_tracer.trace_run_start = AsyncMock(return_value=None)
+        agent_dispatcher.agent_run_tracer = mock_tracer
+
         with (
-            patch("aihub_agent.dispatchers.AgentDispatcher.AgentRunTracer") as mock_tracer_class,
             patch.object(agent_dispatcher, "is_step_ready", return_value=False),
             patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
-            mock_tracer = Mock(spec=AgentRunTracer)
-            mock_tracer.trace_run_start.return_value = {"trace": "headers"}
-            mock_tracer_class.return_value = mock_tracer
             mock_base_handle.return_value = None
 
             # Act
@@ -288,8 +289,12 @@ class TestAgentDispatcherHandleEvent:
         await run_context.set("_agent_config", agent_dispatcher.default_agent_config.model_dump())
         await run_context.set("test_data", "test_value")
 
+        # Mock tracer for stop event processing
+        mock_tracer = Mock(spec=AgentRunTracer)
+        mock_tracer.trace_run_completion = AsyncMock(return_value=None)
+        agent_dispatcher.agent_run_tracer = mock_tracer
+
         with (
-            patch("aihub_agent.dispatchers.AgentDispatcher.AgentRunTracer"),
             patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None
@@ -314,10 +319,14 @@ class TestAgentDispatcherHandleEvent:
 
         mock_thread_context = Mock(spec=ThreadContext)
 
+        # Mock tracer for exception event processing
+        mock_tracer = Mock(spec=AgentRunTracer)
+        mock_tracer.trace_run_completion = AsyncMock(return_value=None)
+        agent_dispatcher.agent_run_tracer = mock_tracer
+
         with (
-            patch("aihub_agent.dispatchers.AgentDispatcher.RunContext", return_value=mock_run_context),
-            patch("aihub_agent.dispatchers.AgentDispatcher.ThreadContext", return_value=mock_thread_context),
-            patch("aihub_agent.dispatchers.AgentDispatcher.AgentRunTracer"),
+            patch("aihub_agent.dispatchers.AgentDispatcher.RunContext.for_topic", return_value=mock_run_context),
+            patch("aihub_agent.dispatchers.AgentDispatcher.ThreadContext.for_topic", return_value=mock_thread_context),
         ):
             with patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle:
                 mock_base_handle.return_value = None
@@ -348,16 +357,17 @@ class TestAgentDispatcherHandleEvent:
 
         # Mock step readiness is already set up in the fixture
 
+        # Mock the tracer instance
+        mock_tracer = Mock(spec=AgentRunTracer)
+        mock_tracer.trace_run_start = AsyncMock(return_value=None)
+        agent_dispatcher.agent_run_tracer = mock_tracer
+
         with (
-            patch("aihub_agent.dispatchers.AgentDispatcher.RunContext", return_value=mock_run_context),
-            patch("aihub_agent.dispatchers.AgentDispatcher.ThreadContext", return_value=mock_thread_context),
-            patch("aihub_agent.dispatchers.AgentDispatcher.AgentRunTracer") as mock_tracer_class,
+            patch("aihub_agent.dispatchers.AgentDispatcher.RunContext.for_topic", return_value=mock_run_context),
+            patch("aihub_agent.dispatchers.AgentDispatcher.ThreadContext.for_topic", return_value=mock_thread_context),
             patch.object(agent_dispatcher, "is_step_ready", return_value=True) as mock_is_ready,
             patch.object(agent_dispatcher, "execute_step"),
         ):
-            mock_tracer = Mock(spec=AgentRunTracer)
-            mock_tracer.trace_run_start.return_value = {"trace": "headers"}
-            mock_tracer_class.return_value = mock_tracer
 
             with patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle:
                 mock_base_handle.return_value = None
@@ -391,7 +401,6 @@ class TestAgentDispatcherHandleEvent:
         agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[])
 
         with (
-            patch("aihub_agent.dispatchers.AgentDispatcher.AgentRunTracer"),
             patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None
@@ -429,13 +438,14 @@ class TestAgentDispatcherHandleEvent:
         start_event = StartEvent()
         agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[])
 
+        # Mock the tracer instance
+        mock_tracer = Mock(spec=AgentRunTracer)
+        mock_tracer.trace_run_start = AsyncMock(return_value=None)
+        agent_dispatcher.agent_run_tracer = mock_tracer
+
         with (
-            patch("aihub_agent.dispatchers.AgentDispatcher.AgentRunTracer") as mock_tracer_class,
             patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
-            mock_tracer = Mock(spec=AgentRunTracer)
-            mock_tracer.trace_run_start.return_value = {"trace": "headers"}
-            mock_tracer_class.return_value = mock_tracer
             mock_base_handle.return_value = None
 
             # Act
@@ -467,13 +477,14 @@ class TestAgentDispatcherStepExecution:
         # Override the default step store mock to return execution count at max (1 for limited_step)
         agent_dispatcher.step_store.get_execution_count = AsyncMock(return_value=1)  # Already at max
 
+        # Mock the tracer instance
+        mock_tracer = Mock(spec=AgentRunTracer)
+        mock_tracer.trace_run_start = AsyncMock(return_value=None)
+        agent_dispatcher.agent_run_tracer = mock_tracer
+
         with (
-            patch("aihub_agent.dispatchers.AgentDispatcher.AgentRunTracer") as mock_tracer_class,
             patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
-            mock_tracer = Mock(spec=AgentRunTracer)
-            mock_tracer.trace_run_start.return_value = {"trace": "headers"}
-            mock_tracer_class.return_value = mock_tracer
             mock_base_handle.return_value = None
 
             # Act
@@ -501,15 +512,16 @@ class TestAgentDispatcherStepExecution:
         mock_events_and_kwargs = EventsAndKwargs(events=[start_event], kwargs={"start_event": start_event})
         agent_dispatcher._build_method_kwargs = AsyncMock(return_value=mock_events_and_kwargs)
 
+        # Mock the tracer instance
+        mock_tracer = Mock(spec=AgentRunTracer)
+        mock_tracer.trace_run_start = AsyncMock(return_value=None)
+        agent_dispatcher.agent_run_tracer = mock_tracer
+
         with (
-            patch("aihub_agent.dispatchers.AgentDispatcher.AgentRunTracer") as mock_tracer_class,
             patch.object(agent_dispatcher, "is_step_ready", return_value=True),
             patch.object(agent_dispatcher, "execute_step"),
             patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
-            mock_tracer = Mock(spec=AgentRunTracer)
-            mock_tracer.trace_run_start.return_value = {"trace": "headers"}
-            mock_tracer_class.return_value = mock_tracer
             mock_base_handle.return_value = None
 
             # Mock asyncio task creation
@@ -538,7 +550,7 @@ class TestAgentDispatcherErrorHandling:
         mock_run_context.set = AsyncMock()
 
         with (
-            patch("aihub_agent.dispatchers.AgentDispatcher.RunContext", return_value=mock_run_context),
+            patch("aihub_agent.dispatchers.AgentDispatcher.RunContext.for_topic", return_value=mock_run_context),
             patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None
@@ -557,8 +569,13 @@ class TestAgentDispatcherErrorHandling:
         mock_run_context = Mock(spec=RunContext)
         mock_run_context.set = AsyncMock(side_effect=RuntimeError("Context setup failed"))
 
+        # Mock tracer for start event processing
+        mock_tracer = Mock(spec=AgentRunTracer)
+        mock_tracer.trace_run_start = AsyncMock(return_value=None)
+        agent_dispatcher.agent_run_tracer = mock_tracer
+
         with (
-            patch("aihub_agent.dispatchers.AgentDispatcher.RunContext", return_value=mock_run_context),
+            patch("aihub_agent.dispatchers.AgentDispatcher.RunContext.for_topic", return_value=mock_run_context),
             patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None
@@ -595,15 +612,16 @@ class TestAgentDispatcherIntegration:
         mock_events_and_kwargs = EventsAndKwargs(events=[start_event], kwargs={"start_event": start_event})
         agent_dispatcher._build_method_kwargs = AsyncMock(return_value=mock_events_and_kwargs)
 
+        # Mock the tracer instance
+        mock_tracer = Mock()
+        mock_tracer.trace_run_start = AsyncMock(return_value=None)
+        agent_dispatcher.agent_run_tracer = mock_tracer
+
         with (
-            patch("aihub_agent.dispatchers.AgentDispatcher.AgentRunTracer") as mock_tracer_class,
             patch.object(agent_dispatcher, "is_step_ready", return_value=True),
             patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
             patch("asyncio.create_task") as mock_create_task,
         ):
-            mock_tracer = Mock()
-            mock_tracer.trace_run_start.return_value = {"integration": "headers"}
-            mock_tracer_class.return_value = mock_tracer
             mock_base_handle.return_value = None
 
             mock_task = Mock()

@@ -46,7 +46,7 @@ class AgentRunTracer:
         self.redis = redis
         self.tracer = get_tracer(__name__)
 
-    async def trace_run_start(self, topic: AgentInstanceTopic, event: StartEvent) -> tuple[int, dict[str, str]]:
+    async def trace_run_start(self, topic: AgentInstanceTopic, event: StartEvent):
         """
         Creates the initial parent 'AGENT' span for the run.
 
@@ -177,7 +177,7 @@ class AgentRunTracer:
             finally:
                 logger.debug(f"Finished tracing step: {span_name}")
 
-    async def trace_step_stop(self, span: Span, output_events: list[BaseEvent] | None):
+    def trace_step_stop(self, span: Span, output_events: list[BaseEvent] | None):
         """
         Ends the step span with a success status.
         """
@@ -193,7 +193,7 @@ class AgentRunTracer:
                 span.set_attributes(semantic_event.to_semantic_convention())
         span.set_status(StatusCode.OK)
 
-    async def trace_step_error(self, span: Span, error: Exception):
+    def trace_step_error(self, span: Span, error: Exception):
         """
         Marks the step span as errored and ends it.
         """

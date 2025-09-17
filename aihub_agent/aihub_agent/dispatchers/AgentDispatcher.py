@@ -259,7 +259,7 @@ class AgentDispatcher(BaseDispatcher):
             try:
                 result = await step_method(agent_instance, **events_and_kwargs.kwargs)
             except Exception as e:
-                await self.agent_run_tracer.trace_step_error(step_span, e)
+                self.agent_run_tracer.trace_step_error(step_span, e)
                 if getattr(step_method, Agent.STOP_ON_ERROR_ANNOTATION, False):
                     event = ExceptionEvent(message=str(e))
                     await self.publish_event(event, topic)
@@ -272,7 +272,7 @@ class AgentDispatcher(BaseDispatcher):
                 if not isinstance(result, list):
                     result = [result]
 
-                await self.agent_run_tracer.trace_step_stop(step_span, result)
+                self.agent_run_tracer.trace_step_stop(step_span, result)
 
                 for event in result:
                     if event.is_hitl_request_event:
