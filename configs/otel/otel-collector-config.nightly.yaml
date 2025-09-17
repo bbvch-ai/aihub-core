@@ -32,14 +32,16 @@ receivers:
         enabled: true
       container.restarts:
         enabled: true
-  dockerevents:
-    endpoint: unix:///var/run/docker.sock
-    filters:
-      type: container
-      event:
-        - health_status
-        - health_status:healthy
-        - health_status:unhealthy
+  exec/docker_events:
+    # requires otel/opentelemetry-collector-contrib v0.133+ (approx)
+    # command is long-running; receiver reconnects if it dies
+    commands:
+      - name: docker_health_events
+        command: ["docker","events",
+                  "--filter","type=container",
+                  "--filter","event=health_status",
+                  "--format","json"]
+        restart: true
 processors:
   batch:
 
@@ -62,11 +64,13 @@ processors:
     log_statements:
       - context: log
         statements:
-          # Just pass through the basic info
+          # parse stdout (string) into a JSON object
+          - set(body, parse_json(body))
+          # your mappings
           - set(attributes["container_name"], body["Actor"]["Attributes"]["name"]) where body["Type"] == "container"
           - set(attributes["docker_action"], body["Action"]) where body["Type"] == "container"
-          - set(attributes["event_type"], "docker_health") where body["Type"] == "container"
-          - set(severity_text, "INFO")
+          - set(attributes["event_type"], "docker_health")   where body["Type"] == "container"
+          - set(severity_text, "INFO"
 
 
 exporters:
@@ -101,9 +105,9 @@ service:
       processors: [ resourcedetection/docker, resource/docker, batch ]
       exporters: [ otlp/signoz ]
     logs/docker_health:
-      receivers: [dockerevents]
+      receivers: [exec/docker_events]
       processors: [transform/health_logs, batch]
-      exporters: [otlp/signoz, logging]
+      exporters: [otlp/signoz]
     logs:
       receivers: [otlp]
       processors: [batch]
