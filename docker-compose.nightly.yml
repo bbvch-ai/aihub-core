@@ -911,7 +911,6 @@ services:
     volumes:
       - ./configs/otel/otel-collector-config.nightly.yaml:/etc/otel-collector-config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
-      - /usr/bin/docker:/usr/bin/docker:ro
     ports:
       - "4317:4317"
       - "4318:4318"
