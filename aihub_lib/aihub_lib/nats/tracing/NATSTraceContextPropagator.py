@@ -24,7 +24,6 @@ class NATSTraceContextPropagator:
         if headers is None:
             headers = {}
 
-        # Use OpenTelemetry's propagate API to inject current context into headers
         current_context = context.get_current()
         propagate.inject(headers, context=current_context)
 
@@ -40,14 +39,12 @@ class NATSTraceContextPropagator:
             logger.debug("No headers provided, using current context")
             return context.get_current()
 
-        # Extract context from headers
         extracted_context = propagate.extract(headers)
 
         if extracted_context == context.get_current():
             logger.debug("No trace context found in headers")
             return extracted_context
 
-        # Activate the extracted context
         context.attach(extracted_context)
         logger.debug(f"Activated trace context from headers: {headers}")
 
@@ -58,10 +55,8 @@ class NATSTraceContextPropagator:
         """
         Create a child span from trace context in headers.
         """
-        # Extract parent context from headers
         parent_context = propagate.extract(headers or {})
 
-        # Get tracer and create child span
         tracer = get_tracer(__name__)
         span = tracer.start_span(span_name, context=parent_context)
 

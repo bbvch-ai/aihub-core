@@ -32,10 +32,6 @@ logger = logging.getLogger(__name__)
 
 
 class CustomSpanAttributes(SpanAttributes):
-    """
-    Span Attributes
-    """
-
     DB_INSTANCE = "db.instance"
     DB_TYPE = "db.type"
     DB_IP = "db.ip"
@@ -49,10 +45,6 @@ class CustomSpanAttributes(SpanAttributes):
 
 
 def requests_hook(span: Span, request: PreparedRequest):
-    """
-    Http Request Hook
-    """
-
     span.update_name(f"{request.method} {request.url}")
     span.set_attributes(
         attributes={
@@ -63,10 +55,6 @@ def requests_hook(span: Span, request: PreparedRequest):
 
 
 def response_hook(span: Span, request: PreparedRequest, response: Response):
-    """
-    HTTP Response Hook
-    """
-
     span.set_attributes(
         attributes={
             CustomSpanAttributes.HTTP_STATUS_CODE: response.status_code,
@@ -76,10 +64,6 @@ def response_hook(span: Span, request: PreparedRequest, response: Response):
 
 
 def redis_request_hook(span: Span, instance: Redis, *args, **kwargs):
-    """
-    Redis Request Hook
-    """
-
     try:
         connection_kwargs: dict = instance.connection_pool.connection_kwargs
         host = connection_kwargs.get("host")
@@ -101,10 +85,6 @@ def redis_request_hook(span: Span, instance: Redis, *args, **kwargs):
 
 
 def httpx_request_hook(span: Span, request: RequestInfo):
-    """
-    HTTPX Request Hook
-    """
-
     span.update_name(f"{request.method.decode()} {str(request.url)}")
     span.set_attributes(
         attributes={
@@ -115,35 +95,19 @@ def httpx_request_hook(span: Span, request: RequestInfo):
 
 
 def httpx_response_hook(span: Span, request: RequestInfo, response: ResponseInfo):
-    """
-    HTTPX Response Hook
-    """
-
     span.set_attribute(CustomSpanAttributes.HTTP_STATUS_CODE, response.status_code)
     span.set_status(StatusCode.ERROR if response.status_code >= status.HTTP_400_BAD_REQUEST else StatusCode.OK)
 
 
 async def httpx_async_request_hook(span: Span, request: RequestInfo):
-    """
-    Async Request Hook
-    """
-
     httpx_request_hook(span, request)
 
 
 async def httpx_async_response_hook(span: Span, request: RequestInfo, response: ResponseInfo):
-    """
-    Async Response Hook
-    """
-
     httpx_response_hook(span, request, response)
 
 
 def aiohttp_request_hook(span: Span, request: TraceRequestStartParams):
-    """
-    Aiohttp Request Hook
-    """
-
     span.update_name(f"{request.method} {str(request.url)}")
     span.set_attributes(
         attributes={
@@ -154,10 +118,6 @@ def aiohttp_request_hook(span: Span, request: TraceRequestStartParams):
 
 
 def aiohttp_response_hook(span: Span, response: TraceRequestExceptionParams | TraceRequestEndParams):
-    """
-    Aiohttp Response Hook
-    """
-
     if isinstance(response, TraceRequestEndParams):
         span.set_attribute(CustomSpanAttributes.HTTP_STATUS_CODE, response.response.status)
         span.set_status(StatusCode.ERROR if response.response.status >= status.HTTP_400_BAD_REQUEST else StatusCode.OK)

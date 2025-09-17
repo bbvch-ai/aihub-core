@@ -75,7 +75,7 @@ class AgentDispatcher(BaseDispatcher):
         """
         Called whenever a new event arrives. This method:
         - Stores the event.
-        - Manages the run's trace lifecycle using a two-phase approach.
+        - Manages the run's open-telemetry trace.
         - Handles run lifecycle changes (Start, Stop, Exception).
         - Checks for and triggers ready steps asynchronously.
         """
