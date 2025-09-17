@@ -62,10 +62,17 @@ processors:
     log_statements:
       - context: log
         statements:
-          - set(attributes["container_name"], body["Actor"]["Attributes"]["name"]) where body["Type"] == "container"
-          - set(attributes["docker_action"], body["Action"]) where body["Type"] == "container"
-          - set(attributes["event_type"], "docker_health")   where body["Type"] == "container"
+          - set(_raw, body)
+          - set(body, parse_json(body)) where IsString(body) and len(body) > 0
+          - set(attributes["container_name"], body["Actor"]["Attributes"]["name"]) where body != nil and body["Type"] == "container"
+          - set(attributes["docker_action"], body["Action"])                      where body != nil and body["Type"] == "container"
+          - set(attributes["event_type"], "docker_health")                         where body != nil and body["Type"] == "container"
           - set(severity_text, "INFO")
+  resource/health_logs_service:
+    attributes:
+      - key: service.name
+        value: docker-health-events
+        action: upsert
 
 
 exporters:
@@ -101,7 +108,7 @@ service:
       exporters: [ otlp/signoz ]
     logs/docker_health:
       receivers: [exec/docker_events]
-      processors: [transform/health_logs, batch]
+      processors: [resource/health_logs_service, transform/health_logs, batch]
       exporters: [logging, otlp/signoz]
     logs:
       receivers: [otlp]
