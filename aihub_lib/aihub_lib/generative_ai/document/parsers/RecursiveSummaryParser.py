@@ -9,6 +9,8 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     HEADING_LEVEL,
     INDEX,
     LANGUAGE,
+    NODE_CONTENT_TYPE,
+    NODE_CONTENT_TYPE_TEXT,
     NODE_LANGUAGE_ENGLISH,
     NODE_TYPE_SUMMARY,
     SECTION_START_LINE,
@@ -215,6 +217,7 @@ class RecursiveNodeSummarizer:
         if index is not None:
             metadata[INDEX] = index
 
+        metadata[NODE_CONTENT_TYPE] = NODE_CONTENT_TYPE_TEXT
         summary_node = TextNode(
             text=summary_text,
             metadata=metadata,

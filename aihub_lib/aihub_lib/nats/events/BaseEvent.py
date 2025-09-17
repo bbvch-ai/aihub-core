@@ -345,7 +345,7 @@ class BaseEvent(BaseModel):
         kwargs["serialize_as_any"] = True
 
         data = super().model_dump(**kwargs)
-        for field_name, value in data.items():
+        for field_name, value in self.__dict__.items():
             if isinstance(value, ChatMessage):
                 data[field_name] = serialize_chat_message_blocks(value, **kwargs)
             elif isinstance(value, BaseModel):
