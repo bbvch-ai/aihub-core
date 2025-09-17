@@ -368,7 +368,6 @@ class TestAgentDispatcherHandleEvent:
             patch.object(agent_dispatcher, "is_step_ready", return_value=True) as mock_is_ready,
             patch.object(agent_dispatcher, "execute_step"),
         ):
-
             with patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle:
                 mock_base_handle.return_value = None
 
