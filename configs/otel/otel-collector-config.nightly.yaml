@@ -62,18 +62,11 @@ processors:
     log_statements:
       - context: log
         statements:
-          # Extract container name
-          - set(attributes["container.name"], body["Actor"]["Attributes"]["name"]) where body["Type"] == "container"
-          # Extract health status from action
-          - set(attributes["health.status"], body["Action"]) where body["Type"] == "container" and body["Action"] matches "health_status.*"
-          # Clean up health status (remove "health_status:" prefix)
-          - replace_pattern(attributes["health.status"], "health_status:", "") where attributes["health.status"] != nil
-          - replace_pattern(attributes["health.status"], "health_status", "unknown") where attributes["health.status"] != nil
-          # Add timestamp
-          - set(attributes["event.time"], time_unix_nano) where body["Type"] == "container"
-          # Set severity based on health status
-          - set(severity_text, "INFO") where attributes["health.status"] == "healthy"
-          - set(severity_text, "WARN") where attributes["health.status"] == "unhealthy"
+          # Just pass through the basic info
+          - set(attributes["container_name"], body["Actor"]["Attributes"]["name"]) where body["Type"] == "container"
+          - set(attributes["docker_action"], body["Action"]) where body["Type"] == "container"
+          - set(attributes["event_type"], "docker_health") where body["Type"] == "container"
+          - set(severity_text, "INFO")
 
 
 exporters:
