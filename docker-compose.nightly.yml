@@ -919,9 +919,22 @@ services:
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://0.0.0.0:13133/" ]
 
+  docker-events-sidecar:
+    image: alpine:3.20
+    user: "0"
+    command: [ "/bin/sh","-lc",
+      "apk add --no-cache curl && \
+         curl --no-buffer --unix-socket /var/run/docker.sock \
+         'http://localhost/events?filters={\"type\":[\"container\"],\"event\":[\"health_status\"]}' \
+         >> /events/docker-health.jsonl" ]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - events-data:/events:rw
+
 
 volumes:
   api-venv:
   api-api-venv:
   dagster-venv:
   dagster-pipeline-venv:
+  events-data:

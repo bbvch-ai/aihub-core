@@ -32,13 +32,12 @@ receivers:
         enabled: true
       container.restarts:
         enabled: true
-  exec/docker_events:
-    commands:
-      - name: docker_health_events
-        command:
-          ["curl","--no-buffer","--unix-socket","/var/run/docker.sock",
-           "http://localhost/events?filters={\"type\":[\"container\"],\"event\":[\"health_status\"]}"]
-        restart: true
+  filelog/docker_health:
+    include: [ /events/docker-health.jsonl ]
+    start_at: beginning
+    operators:
+      - type: json_parser
+        parse_from: body
 processors:
   batch:
 
@@ -61,9 +60,6 @@ processors:
     log_statements:
       - context: log
         statements:
-          # parse stdout (string) into a JSON object
-          - set(body, parse_json(body))
-          # your mappings
           - set(attributes["container_name"], body["Actor"]["Attributes"]["name"]) where body["Type"] == "container"
           - set(attributes["docker_action"], body["Action"]) where body["Type"] == "container"
           - set(attributes["event_type"], "docker_health")   where body["Type"] == "container"
@@ -102,9 +98,9 @@ service:
       processors: [ resourcedetection/docker, resource/docker, batch ]
       exporters: [ otlp/signoz ]
     logs/docker_health:
-      receivers: [exec/docker_events]
+      receivers: [filelog/docker_health]
       processors: [transform/health_logs, batch]
-      exporters: [otlp/signoz]
+      exporters: [logging, otlp/signoz]
     logs:
       receivers: [otlp]
       processors: [batch]
