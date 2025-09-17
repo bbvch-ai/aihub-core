@@ -1,13 +1,64 @@
 import asyncio
 import functools
 import inspect
-from collections.abc import Callable
-from typing import Any
+import io
+import types
+from collections.abc import AsyncGenerator, AsyncIterator, Callable, Generator, Iterator
+from functools import lru_cache
+from typing import Any, ParamSpec, TypeVar
 
 from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 
+P = ParamSpec("P")
+T = TypeVar("T")
 
-def trace_fn(func: Callable) -> Callable:
+
+class TracingConfig:
+    """Configuration for tracing behavior"""
+
+    STRING_TRUNCATE_LENGTH = 500
+    REPR_TRUNCATE_LENGTH = 100
+    CONCISE_REPR_LENGTH = 50
+    MAX_COLLECTION_ITEMS_FULL = 5
+    MAX_DICT_ITEMS_FULL = 3
+    SAMPLE_ITEMS_COUNT = 2
+    SKIP_PARAMS = frozenset(("self", "cls"))
+
+
+@lru_cache(maxsize=256)
+def _is_optional_dependency_dangerous(type_name: str) -> bool:
+    """
+    Check type names ONLY for optional dependencies that might not be installed.
+    """
+    optional_dangerous_types = {
+        # Data science libraries (might not be installed)
+        "DataFrame",
+        "Series",
+        "ndarray",
+        "Tensor",
+        "Dataset",
+        "DataLoader",
+        # Database types from various optional DB libraries
+        "Cursor",
+        "Connection",
+        "Session",
+        "Transaction",
+        "AsyncCursor",
+        "AsyncConnection",
+        "AsyncSession",
+        # Response types from optional web frameworks
+        "StreamingResponse",
+        "FileResponse",
+        "HTMLResponse",
+        # Other specialized optional types
+        "HTTPResponse",
+        "HTTPSConnection",
+        "Socket",
+    }
+    return type_name in optional_dangerous_types
+
+
+def trace_fn(func: Callable[P, T]) -> Callable[P, T]:
     """
     A completely generic decorator that traces any function with its inputs and outputs.
 
@@ -20,77 +71,92 @@ def trace_fn(func: Callable) -> Callable:
     - Follows KISS principle
     """
 
+    # Pre-compute function metadata to avoid repeated computation
+    func_qualname = func.__qualname__
+    func_module = func.__module__ or __name__
+    is_async = asyncio.iscoroutinefunction(func)
+
+    # Pre-parse signature for better performance
+    try:
+        func_signature = inspect.signature(func)
+    except (ValueError, TypeError):
+        func_signature = None
+
+    def _trace_execution(span, args, kwargs, is_async_execution=False):
+        """Common tracing logic for both sync and async execution"""
+        # Trace inputs
+        _trace_inputs(span, args, kwargs, func_signature)
+
+        # Set common attributes
+        span.set_attribute("function.name", func_qualname)
+        span.set_attribute("function.module", func_module)
+        span.set_attribute("function.is_async", is_async_execution)
+
+    def _handle_result(span, result):
+        """Common result handling logic"""
+        span.set_attribute("operation.success", True)
+        _trace_output(span, result)
+        return result
+
+    def _handle_exception(span, exception):
+        """Common exception handling logic"""
+        span.set_attribute("operation.success", False)
+        span.set_attribute("error.type", type(exception).__name__)
+        _safe_set_attribute(span, "error.message", str(exception))
+        span.record_exception(exception)
+
     @functools.wraps(func)
     async def async_wrapper(*args, **kwargs) -> Any:
-        tracer = get_tracer(__name__)
-        span_name = func.__qualname__
+        tracer = get_tracer(func_module)
 
-        with tracer.start_as_current_span(span_name) as span:
-            # Trace inputs
-            _trace_inputs(span, func, args, kwargs)
+        with tracer.start_as_current_span(func_qualname) as span:
+            _trace_execution(span, args, kwargs, is_async_execution=True)
 
             try:
                 result = await func(*args, **kwargs)
-                span.set_attribute("operation.success", True)
-
-                # Trace output
-                _trace_output(span, result)
-
-                return result
+                return _handle_result(span, result)
             except Exception as e:
-                span.set_attribute("success", False)
-                span.set_attribute("error.type", type(e).__name__)
-                _safe_set_attribute(span, "error.message", str(e))
-                span.record_exception(e)
+                _handle_exception(span, e)
                 raise
 
     @functools.wraps(func)
     def sync_wrapper(*args, **kwargs) -> Any:
-        tracer = get_tracer(__name__)
-        span_name = func.__qualname__
+        tracer = get_tracer(func_module)
 
-        with tracer.start_as_current_span(span_name) as span:
-            # Trace inputs
-            _trace_inputs(span, func, args, kwargs)
+        with tracer.start_as_current_span(func_qualname) as span:
+            _trace_execution(span, args, kwargs, is_async_execution=False)
 
             try:
                 result = func(*args, **kwargs)
-                span.set_attribute("operation.success", True)
-
-                # Trace output
-                _trace_output(span, result)
-
-                return result
+                return _handle_result(span, result)
             except Exception as e:
-                span.set_attribute("success", False)
-                span.set_attribute("error.type", type(e).__name__)
-                _safe_set_attribute(span, "error.message", str(e))
-                span.record_exception(e)
+                _handle_exception(span, e)
                 raise
 
-    return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
+    return async_wrapper if is_async else sync_wrapper
 
 
-def _trace_inputs(span, func: Callable, args: tuple, kwargs: dict) -> None:
+def _trace_inputs(span, args: tuple, kwargs: dict, func_signature: inspect.Signature | None = None) -> None:
     """Trace function inputs by trying to convert them to strings."""
-    # Get parameter names
-    try:
-        sig = inspect.signature(func)
-        bound_args = sig.bind(*args, **kwargs)
-        bound_args.apply_defaults()
+    if func_signature:
+        try:
+            bound_args = func_signature.bind(*args, **kwargs)
+            bound_args.apply_defaults()
 
-        for param_name, param_value in bound_args.arguments.items():
-            # Optionally skip self/cls parameters
-            if param_name in ("self", "cls"):
-                continue
-            _safe_set_attribute(span, f"input.{param_name}", param_value)
-    except Exception:
-        # Fallback: trace positional and keyword args without names
-        for i, arg in enumerate(args):
-            _safe_set_attribute(span, f"input.arg_{i}", arg)
+            for param_name, param_value in bound_args.arguments.items():
+                if param_name in TracingConfig.SKIP_PARAMS:
+                    continue
+                _safe_set_attribute(span, f"input.{param_name}", param_value)
+            return
+        except Exception:
+            pass  # Fall through to fallback
 
-        for k, v in kwargs.items():
-            _safe_set_attribute(span, f"input.{k}", v)
+    # Fallback: trace positional and keyword args without names
+    for i, arg in enumerate(args):
+        _safe_set_attribute(span, f"input.arg_{i}", arg)
+
+    for k, v in kwargs.items():
+        _safe_set_attribute(span, f"input.{k}", v)
 
 
 def _trace_output(span, result: Any) -> None:
@@ -104,164 +170,86 @@ def _safe_set_attribute(span, key: str, value: Any) -> None:
     Handles binary data, streams, and large objects safely.
     Falls back to [NO_REPR] if all attempts fail.
     """
-    try:
-        # Handle primitives directly
-        if isinstance(value, str | int | float | bool) or value is None:
-            # Truncate very long strings to avoid bloating traces
-            if isinstance(value, str) and len(value) > 500:
-                span.set_attribute(key, value[:500] + "...")
-            else:
-                span.set_attribute(key, value)
-            return
-    except Exception:
-        pass
-
-    # Check for dangerous types that we should NOT try to convert
-    if _is_dangerous_type(value):
-        try:
-            type_name = type(value).__name__
-            span.set_attribute(key, f"[{type_name}]")
-            return
-        except Exception:
-            span.set_attribute(key, "[BINARY_OR_STREAM]")
-            return
-
-    try:
-        # Handle collections with concise representation
-        if isinstance(value, list | tuple):
-            if len(value) == 0:
-                span.set_attribute(key, "[]" if isinstance(value, list) else "()")
-                return
-            elif len(value) <= 5:
-                # Show concise representation of small collections
-                items = []
-                for item in value:
-                    items.append(_get_concise_repr(item))
-                bracket_open = "[" if isinstance(value, list) else "("
-                bracket_close = "]" if isinstance(value, list) else ")"
-                span.set_attribute(key, f"{bracket_open}{', '.join(items)}{bracket_close}")
-                return
-            else:
-                # For large collections, show count and sample
-                sample_items = [_get_concise_repr(item) for item in value[:2]]
-                bracket_open = "[" if isinstance(value, list) else "("
-                bracket_close = "]" if isinstance(value, list) else ")"
-                span.set_attribute(
-                    key, f"{bracket_open}{', '.join(sample_items)}, ...{len(value)} items{bracket_close}"
-                )
-                return
-    except Exception:
-        pass
-
-    try:
-        # Handle dictionaries
-        if isinstance(value, dict):
-            if len(value) == 0:
-                span.set_attribute(key, "{}")
-                return
-            elif len(value) <= 3:
-                items = []
-                for k, v in list(value.items())[:3]:
-                    key_repr = _get_concise_repr(k)
-                    val_repr = _get_concise_repr(v)
-                    items.append(f"{key_repr}: {val_repr}")
-                span.set_attribute(key, f"{{{', '.join(items)}}}")
-                return
-            else:
-                span.set_attribute(key, f"{{...{len(value)} items}}")
-                return
-    except Exception:
-        pass
-
-    try:
-        # For class instances, just show the class name
-        class_name = type(value).__name__
-        # Check if it's likely a custom class (not a built-in type)
-        if hasattr(value, "__dict__") or hasattr(value, "__slots__"):
-            span.set_attribute(key, class_name)
-            return
-        else:
-            # For built-in types, try str() but with safety checks
-            str_value = str(value)
-            if len(str_value) > 100:
-                str_value = str_value[:100] + "..."
-            span.set_attribute(key, str_value)
-            return
-    except Exception:
-        pass
-
-    try:
-        # Fallback to type name
-        type_name = type(value).__name__
-        span.set_attribute(key, f"[{type_name}]")
+    # Fast path for primitives
+    if value is None or isinstance(value, bool | int | float):
+        span.set_attribute(key, value)
         return
-    except Exception:
-        pass
 
-    # Complete fallback
-    span.set_attribute(key, "[NO_REPR]")
+    if isinstance(value, str):
+        if len(value) > TracingConfig.STRING_TRUNCATE_LENGTH:
+            span.set_attribute(key, value[: TracingConfig.STRING_TRUNCATE_LENGTH] + "...")
+        else:
+            span.set_attribute(key, value)
+        return
+
+    # Check for dangerous types
+    if _is_dangerous_type(value):
+        _set_type_name_attribute(span, key, value)
+        return
+
+    # Handle collections
+    if isinstance(value, list | tuple):
+        _handle_sequence_attribute(span, key, value)
+        return
+
+    if isinstance(value, dict):
+        _handle_dict_attribute(span, key, value)
+        return
+
+    # Handle other objects
+    _handle_object_attribute(span, key, value)
 
 
 def _is_dangerous_type(value: Any) -> bool:
     """
     Check if a value is a dangerous type that we should NOT try to convert to string.
-    This includes binary data, streams, generators, and other types that could:
-    - Consume the stream/generator
-    - Generate massive strings
-    - Block for long periods
-    - Use excessive memory
+
+    Uses a hybrid approach that:
+    1. Properly handles inheritance using isinstance() with ABCs
+    2. Uses duck-typing for file-like and cursor-like objects
+    3. Only uses type name matching for optional dependencies
+
+    This approach correctly identifies:
+    - Subclasses of dangerous types (e.g., custom BytesIO subclasses)
+    - Duck-typed objects (e.g., objects with file-like interfaces)
+    - Standard dangerous types and their descendants
     """
     try:
-        # Check by type name for common dangerous types
+        if value is None or isinstance(value, bool | int | float | str):
+            return False
+
+        if isinstance(value, bytes | bytearray | memoryview):
+            return True
+
+        if isinstance(value, io.IOBase):
+            return True
+
+        if isinstance(
+            value,
+            Iterator | AsyncIterator | Generator | AsyncGenerator | types.GeneratorType | types.AsyncGeneratorType,
+        ):
+            # These are technically iterators but safe to represent
+            if not isinstance(
+                value, str | list | tuple | dict | set | frozenset | range | enumerate | zip | map | filter
+            ):
+                return True
+
+        # Duck-typing for file-like objects
+        if hasattr(value, "read"):
+            if hasattr(value, "seek") or hasattr(value, "write"):
+                return True
+
+            if hasattr(value, "status_code") or hasattr(value, "headers"):
+                return True
+
+        # Duck-typing for database cursors
+        if hasattr(value, "execute") and hasattr(value, "fetchone"):
+            return True
+
+        # Only use type name checking for optional dependencies
+        # that might not be installed (pandas, numpy, etc.)
         type_name = type(value).__name__
-        dangerous_type_names = {
-            # Binary data
-            "bytes",
-            "bytearray",
-            "memoryview",
-            # Streams and responses
-            "StreamingResponse",
-            "HttpxBinaryResponseContent",
-            "Response",
-            # Generators and iterators
-            "generator",
-            "async_generator",
-            "GeneratorType",
-            "AsyncGeneratorType",
-            "map",
-            "filter",
-            "zip",
-            "enumerate",
-            "range",
-            # File-like objects
-            "TextIOWrapper",
-            "BufferedReader",
-            "BufferedWriter",
-            "BytesIO",
-            "StringIO",
-            # Database cursors and connections
-            "Cursor",
-            "Connection",
-            "Session",
-            # Large data structures
-            "DataFrame",
-            "Series",
-            "ndarray",  # pandas/numpy
-        }
-
-        if type_name in dangerous_type_names:
-            return True
-
-        # Check if it's a generator or iterator by looking for __iter__ and __next__
-        if hasattr(value, "__iter__") and hasattr(value, "__next__"):
-            return True
-
-        # Check if it's an async generator
-        if hasattr(value, "__aiter__") and hasattr(value, "__anext__"):
-            return True
-
-        # Check if it looks like binary data (has bytes-like interface)
-        if hasattr(value, "read") and hasattr(value, "seek"):
+        if _is_optional_dependency_dangerous(type_name):
             return True
 
         return False
@@ -271,22 +259,117 @@ def _is_dangerous_type(value: Any) -> bool:
         return True
 
 
+def _set_type_name_attribute(span, key: str, value: Any) -> None:
+    """Set attribute with type name for dangerous types"""
+    try:
+        type_name = type(value).__name__
+        # Add size info if available
+        if hasattr(value, "__len__"):
+            try:
+                size = len(value)
+                span.set_attribute(key, f"[{type_name}(len={size})]")
+            except Exception:
+                span.set_attribute(key, f"[{type_name}]")
+        else:
+            span.set_attribute(key, f"[{type_name}]")
+    except Exception:
+        span.set_attribute(key, "[BINARY_OR_STREAM]")
+
+
+def _handle_sequence_attribute(span, key: str, value: Any) -> None:
+    """Handle list/tuple attributes efficiently"""
+    try:
+        length = len(value)
+        is_list = isinstance(value, list)
+        bracket_open = "[" if is_list else "("
+        bracket_close = "]" if is_list else ")"
+
+        if length == 0:
+            span.set_attribute(key, f"{bracket_open}{bracket_close}")
+        elif length <= TracingConfig.MAX_COLLECTION_ITEMS_FULL:
+            items = [_get_concise_repr(item) for item in value]
+            span.set_attribute(key, f"{bracket_open}{', '.join(items)}{bracket_close}")
+        else:
+            sample_items = [_get_concise_repr(value[i]) for i in range(min(TracingConfig.SAMPLE_ITEMS_COUNT, length))]
+            span.set_attribute(key, f"{bracket_open}{', '.join(sample_items)}, ...{length} items{bracket_close}")
+    except Exception:
+        _handle_object_attribute(span, key, value)
+
+
+def _handle_dict_attribute(span, key: str, value: dict) -> None:
+    """Handle dictionary attributes efficiently"""
+    try:
+        length = len(value)
+
+        if length == 0:
+            span.set_attribute(key, "{}")
+        elif length <= TracingConfig.MAX_DICT_ITEMS_FULL:
+            items = []
+            for k, v in list(value.items())[: TracingConfig.MAX_DICT_ITEMS_FULL]:
+                key_repr = _get_concise_repr(k)
+                val_repr = _get_concise_repr(v)
+                items.append(f"{key_repr}: {val_repr}")
+            span.set_attribute(key, f"{{{', '.join(items)}}}")
+        else:
+            # Just show count for large dicts
+            span.set_attribute(key, f"{{...{length} items}}")
+    except Exception:
+        _handle_object_attribute(span, key, value)
+
+
+def _handle_object_attribute(span, key: str, value: Any) -> None:
+    """Handle general object attributes"""
+    try:
+        class_name = type(value).__name__
+        if hasattr(value, "__dict__") or hasattr(value, "__slots__"):
+            if hasattr(value, "__repr__"):
+                try:
+                    repr_str = repr(value)
+                    if len(repr_str) <= TracingConfig.REPR_TRUNCATE_LENGTH and not repr_str.startswith("<"):
+                        span.set_attribute(key, repr_str)
+                        return
+                except Exception:
+                    pass
+            span.set_attribute(key, class_name)
+        else:
+            str_value = str(value)
+            if len(str_value) > TracingConfig.REPR_TRUNCATE_LENGTH:
+                str_value = str_value[: TracingConfig.REPR_TRUNCATE_LENGTH] + "..."
+            span.set_attribute(key, str_value)
+    except Exception:
+        try:
+            type_name = type(value).__name__
+            span.set_attribute(key, f"[{type_name}]")
+        except Exception:
+            span.set_attribute(key, "[NO_REPR]")
+
+
 def _get_concise_repr(value: Any) -> str:
     """Get a concise representation of a value for use in collections."""
     try:
-        if isinstance(value, str | int | float | bool) or value is None:
-            str_val = str(value)
-            return str_val[:50] + "..." if len(str_val) > 50 else str_val
-        elif _is_dangerous_type(value):
-            # Don't try to convert dangerous types
+        if value is None:
+            return "None"
+        if isinstance(value, bool):
+            return str(value)
+        if isinstance(value, int | float):
+            return str(value)
+        if isinstance(value, str):
+            if len(value) > TracingConfig.CONCISE_REPR_LENGTH:
+                return f"'{value[:TracingConfig.CONCISE_REPR_LENGTH]}...'"
+            return f"'{value}'"
+
+        if _is_dangerous_type(value):
             return f"[{type(value).__name__}]"
-        elif hasattr(value, "__dict__") or hasattr(value, "__slots__"):
-            # Custom class instance
+
+        if hasattr(value, "__dict__") or hasattr(value, "__slots__"):
             return type(value).__name__
-        else:
-            # Built-in type, try str but keep it short
-            str_val = str(value)
-            return str_val[:50] + "..." if len(str_val) > 50 else str_val
+
+        # Other types
+        str_val = str(value)
+        if len(str_val) > TracingConfig.CONCISE_REPR_LENGTH:
+            return str_val[: TracingConfig.CONCISE_REPR_LENGTH] + "..."
+        return str_val
+
     except Exception:
         try:
             return f"[{type(value).__name__}]"

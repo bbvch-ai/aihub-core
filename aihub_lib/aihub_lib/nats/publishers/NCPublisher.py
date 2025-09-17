@@ -35,7 +35,7 @@ class NCPublisher(AbstractPublisher[TEvent]):
         super().__init__(name, protocol="NATS")
         self.nc = nc
 
-    async def publish_event(self, event: TEvent, subject: str, **kwargs):
+    async def publish_event(self, event: TEvent, subject: str):
         """
         Publishes the given event to the specified subject, encoding it as JSON.
 

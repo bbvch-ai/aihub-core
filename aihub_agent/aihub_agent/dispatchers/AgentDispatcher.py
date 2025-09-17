@@ -17,7 +17,6 @@ from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentClassTopic import AgentClassTopic
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from bson import ObjectId
-from cachetools import TTLCache
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
@@ -26,7 +25,7 @@ from aihub_agent.agents.Agent import Agent
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.context.thread.ThreadContext import ThreadContext
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
-from aihub_agent.tracing.coordinators.AgentRunTracer import AgentRunTracer
+from aihub_agent.tracing.AgentRunTracer import AgentRunTracer
 
 logger = logging.getLogger(__name__)
 
@@ -44,8 +43,6 @@ class AgentDispatcher(BaseDispatcher):
     2. **Tracing and Telemetry:**
         Through `AgentRunTracer`, it logs start/end times of runs and steps, aiding observability.
     """
-
-    _telemetry_header_cache = TTLCache(maxsize=10_000, ttl=300)
 
     def __init__(
         self,
@@ -67,9 +64,7 @@ class AgentDispatcher(BaseDispatcher):
 
         self.agent_config_type: type[AgentConfig] = self.default_agent_config.__class__
 
-        self.tracer = AgentRunTracer(
-            nc=self.nc,
-        )
+        self.agent_run_tracer = AgentRunTracer(redis=redis)
 
     @override
     async def handle_event(
@@ -87,8 +82,8 @@ class AgentDispatcher(BaseDispatcher):
         await super().handle_event(event, topic)
 
         # Retrieve contexts (run and thread)
-        run_context = RunContext(self.redis, topic.thread_id, topic.run_id)
-        thread_context = ThreadContext(self.redis, topic.thread_id)
+        run_context = RunContext.for_topic(self.redis, topic)
+        thread_context = ThreadContext.for_topic(self.redis, topic)
         agent_config_dict: dict[str, Any] | None = None
 
         if event.is_start_event:
@@ -115,9 +110,7 @@ class AgentDispatcher(BaseDispatcher):
             event = cast(StartEvent, event)
             logger.debug(f"Handling StartEvent: {event.event_name}")
 
-            start_time, telemetry_headers = self.tracer.trace_run_start(topic=topic, event=event)
-            await run_context.set("start_time", start_time)
-            await run_context.set("telemetry_headers", telemetry_headers)
+            await self.agent_run_tracer.trace_run_start(topic=topic, event=event)
 
             # Store any initial data from the StartEvent into run_context
             event_data = event.to_context_dict()
@@ -128,16 +121,10 @@ class AgentDispatcher(BaseDispatcher):
         if event.is_stop_event or event.is_exception_event:
             logger.debug(f"Handling final event: {event.event_name}")
 
-            start_time = await run_context.get("start_time")
-            telemetry_headers = await run_context.get("telemetry_headers")
-
-            if start_time and telemetry_headers:
-                self.tracer.trace_run_completion(
-                    start_time_ns=start_time,
-                    telemetry_headers=telemetry_headers,
-                    topic=topic,
-                    final_event=event,
-                )
+            await self.agent_run_tracer.trace_run_completion(
+                topic=topic,
+                final_event=event,
+            )
 
             await run_context.delete_all()
             await self.event_store.delete_all(topic.execution_context_id)
@@ -267,19 +254,12 @@ class AgentDispatcher(BaseDispatcher):
 
         # Instantiate the agent and run the step
         agent_instance = self.agent()
-        if topic.run_id not in self._telemetry_header_cache:
-            telemetry_headers = await run_context.get("telemetry_headers")
-            self._telemetry_header_cache[topic.run_id] = telemetry_headers
-        else:
-            telemetry_headers = self._telemetry_header_cache[topic.run_id]
 
-        async with self.tracer.trace_step_start(
-            telemetry_headers, topic, step_method, events_and_kwargs.kwargs
-        ) as step_span:
+        async with self.agent_run_tracer.trace_step_start(topic, step_method, events_and_kwargs.kwargs) as step_span:
             try:
                 result = await step_method(agent_instance, **events_and_kwargs.kwargs)
             except Exception as e:
-                await self.tracer.trace_step_error(step_span, e)
+                await self.agent_run_tracer.trace_step_error(step_span, e)
                 if getattr(step_method, Agent.STOP_ON_ERROR_ANNOTATION, False):
                     event = ExceptionEvent(message=str(e))
                     await self.publish_event(event, topic)
@@ -292,7 +272,7 @@ class AgentDispatcher(BaseDispatcher):
                 if not isinstance(result, list):
                     result = [result]
 
-                await self.tracer.trace_step_stop(step_span, result)
+                await self.agent_run_tracer.trace_step_stop(step_span, result)
 
                 for event in result:
                     if event.is_hitl_request_event:

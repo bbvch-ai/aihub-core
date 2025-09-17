@@ -506,7 +506,7 @@ services:
       - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
     volumes:
-      - ./configs/otel/otel-collector-config.dev.yaml:/etc/otel-collector-config.yaml  # Fixed path
+      - ./configs/otel/otel-collector-config.dev.yaml:/etc/otel-collector-config.yaml
     ports:
       - "4317:4317"
       - "4318:4318"

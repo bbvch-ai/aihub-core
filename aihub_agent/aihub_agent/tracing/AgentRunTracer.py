@@ -11,12 +11,15 @@ from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_trace
 from aihub_lib.nats.events import BaseEvent, ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import ListOfSize
-from nats.aio.client import Client as NATS
+from cachetools import TTLCache
 from openinference.semconv.trace import OpenInferenceMimeTypeValues, OpenInferenceSpanKindValues, SpanAttributes
 from opentelemetry import context, trace
 from opentelemetry.propagate import extract, inject
 from opentelemetry.trace import Span, StatusCode
 from pydantic import BaseModel
+from redis.asyncio import Redis
+
+from aihub_agent.context.run.RunContext import RunContext
 
 logger = logging.getLogger(__name__)
 
@@ -28,27 +31,27 @@ class AgentRunTracer:
     This implementation uses a two-span approach for the agent run:
     1.  An initial, short-lived 'AGENT' span is created to act as the parent
         for all nested step spans.
-    2.  A final, long-running 'LLM' span is created at the end of the run
+    2.  A final, long-running 'CHAIN' span is created at the end of the run
         to capture the total duration and final input/output.
     """
 
+    _telemetry_headers = "__telemetry_headers__"
+    _run_start_time_ns = "__run_start_time_ns__"
+    _telemetry_header_cache = TTLCache(maxsize=10_000, ttl=300)
+
     def __init__(
         self,
-        nc: Annotated[NATS, "NATS client for messaging."],
+        redis: Annotated[Redis, "Redis client for distributed storage."],
     ):
-        self.nc = nc
+        self.redis = redis
         self.tracer = get_tracer(__name__)
 
-    def trace_run_start(self, topic: AgentInstanceTopic, event: StartEvent) -> tuple[int, dict[str, str]]:
+    async def trace_run_start(self, topic: AgentInstanceTopic, event: StartEvent) -> tuple[int, dict[str, str]]:
         """
         Creates the initial parent 'AGENT' span for the run.
 
         This span has a near-zero duration and acts as the root for all
         subsequent step spans, establishing a clear hierarchy.
-
-        Returns:
-            A tuple containing the run's start time and the telemetry headers
-            pointing to the new AGENT span as the parent.
         """
         start_time_ns = time.time_ns()
         user_input = event.user_query if event.is_user_message_event else ""
@@ -71,25 +74,31 @@ class AgentRunTracer:
             inject(telemetry_headers, context=context.get_current())
 
         logger.debug(f"Created parent AGENT span with headers: {telemetry_headers}")
-        return start_time_ns, telemetry_headers
 
-    def trace_run_completion(
+        run_context = RunContext.for_topic(self.redis, topic)
+        await run_context.set(self._run_start_time_ns, start_time_ns)
+        await run_context.set(self._telemetry_headers, telemetry_headers)
+
+    async def trace_run_completion(
         self,
-        start_time_ns: int,
-        telemetry_headers: dict[str, str],
         topic: AgentInstanceTopic,
         final_event: StopEvent | ExceptionEvent,
     ):
         """
         Creates the final child span that captures the run's total duration and output.
         """
+        run_context = RunContext.for_topic(self.redis, topic)
+
+        start_time = await run_context.get(self._run_start_time_ns)
+        telemetry_headers = await run_context.get(self._telemetry_headers)
+
         parent_context = extract(telemetry_headers)
 
         with self.tracer.start_as_current_span(
             name=f"Run {topic.run_id}",
             context=parent_context,
             kind=trace.SpanKind.INTERNAL,
-            start_time=start_time_ns,
+            start_time=start_time,
         ) as span:
             span.set_attributes(
                 {
@@ -108,7 +117,6 @@ class AgentRunTracer:
     @asynccontextmanager
     async def trace_step_start(
         self,
-        telemetry_headers: dict[str, str],
         topic: AgentInstanceTopic,
         step_method: Callable,
         kwargs: dict[str, Any],
@@ -116,6 +124,14 @@ class AgentRunTracer:
         """
         Starts a step-level span as a child of the main 'AGENT' span.
         """
+        run_context = RunContext.for_topic(self.redis, topic)
+
+        if topic.run_id not in self._telemetry_header_cache:
+            telemetry_headers = await run_context.get(self._telemetry_headers)
+            self._telemetry_header_cache[topic.run_id] = telemetry_headers
+        else:
+            telemetry_headers = self._telemetry_header_cache[topic.run_id]
+
         parent_context = extract(telemetry_headers)
         logger.debug(
             f"Tracing step start for {topic.agent_class}.{step_method.__name__} with headers {telemetry_headers}"

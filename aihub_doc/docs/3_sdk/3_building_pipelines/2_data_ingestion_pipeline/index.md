@@ -11,8 +11,10 @@ common ingestion scenarios and implementation approaches.
 
 ## The core ingestion architecture {#ingestion-architecture}
 
-> [!IMPORTANT] AI-Hub follows a **universal data lake pattern** where all document sources feed into a centralized data
-> lake, which then feeds the standardized **data lake to vector store** pipeline that powers RAG agents.
+::: warning
+AI-Hub follows a **universal data lake pattern** where all document sources feed into a centralized data
+lake, which then feeds the standardized **data lake to vector store** pipeline that powers RAG agents.
+:::
 
 ```mermaid
 graph TD
@@ -73,8 +75,10 @@ graph TD
 
 ## The document ingestion process {#processing-journey}
 
-> [!NOTE] The data lake to vector store processing follows a standardized multi-stage approach that ensures consistency,
-> reliability, and observability.
+::: info
+The data lake to vector store processing follows a standardized multi-stage approach that ensures consistency,
+reliability, and observability.
+:::
 
 1. **Data lake monitoring**: Detect new or changed documents in the centralized data lake
 2. **Document retrieval**: Fetch document data and metadata for processing
@@ -84,8 +88,10 @@ graph TD
 
 ## Complete document ingestion pipeline example {#complete-rag-pipeline}
 
-> [!TIP] End-to-End Implementation This section provides a complete, runnable example of building a production-ready RAG
-> pipeline using the aihub_pipeline SDK. Follow along to understand how all the components work together.
+::: tip
+End-to-End Implementation This section provides a complete, runnable example of building a production-ready RAG
+pipeline using the aihub_pipeline SDK. Follow along to understand how all the components work together.
+:::
 
 ### Prerequisites and setup {#pipeline-setup}
 
@@ -232,8 +238,10 @@ defs = Definitions(
 
 ### Understanding the pipeline components (assets) {#pipeline-components}
 
-> [!NOTE] Asset Flow Explanation Each asset in the pipeline represents a concrete data transformation stage with
-> automatic dependency management.
+::: info
+Asset Flow Explanation Each asset in the pipeline represents a concrete data transformation stage with
+automatic dependency management.
+::: 
 
 1. **Observable Data Lake Asset** (`observable_data_lake`)
 
@@ -278,8 +286,10 @@ them.
 
 ### Pipeline execution flow {#execution-flow}
 
-> [!IMPORTANT] Automatic Processing Chain When you add documents to the data lake, the pipeline automatically processes
-> them through all stages.
+::: warning
+Automatic Processing Chain When you add documents to the data lake, the pipeline automatically processes
+them through all stages.
+:::
 
 ::: info Processing Sequence
 1. **Detection**: Observable asset detects new file

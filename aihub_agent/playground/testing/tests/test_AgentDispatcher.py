@@ -18,7 +18,7 @@ from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.context.thread.ThreadContext import ThreadContext
 from aihub_agent.dispatchers.AgentDispatcher import AgentDispatcher
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
-from aihub_agent.tracing.coordinators.AgentRunTracer import AgentRunTracer
+from aihub_agent.tracing.AgentRunTracer import AgentRunTracer
 from aihub_agent.workflow.decorators.precondition import precondition
 from aihub_agent.workflow.decorators.step import step
 
@@ -246,7 +246,7 @@ class TestAgentDispatcherHandleEvent:
             await agent_dispatcher.handle_event(start_event, agent_topic)
 
             # Assert - Check that the config was properly stored in the real context
-            run_context = RunContext(agent_dispatcher.redis, agent_topic.thread_id, agent_topic.run_id)
+            run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
             stored_config = await run_context.get("_agent_config")
             assert stored_config == custom_config.model_dump()
 
@@ -275,7 +275,7 @@ class TestAgentDispatcherHandleEvent:
             await agent_dispatcher.handle_event(start_event, agent_topic)
 
             # Assert - Check that default config was used
-            run_context = RunContext(agent_dispatcher.redis, agent_topic.thread_id, agent_topic.run_id)
+            run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
             stored_config = await run_context.get("_agent_config")
             assert stored_config == mock_agent_config.model_dump()
 
@@ -284,7 +284,7 @@ class TestAgentDispatcherHandleEvent:
         """Test handling StopEvent cleans up run context and stores."""
         # Arrange - First set up some data in the context
         stop_event = StopEvent()
-        run_context = RunContext(agent_dispatcher.redis, agent_topic.thread_id, agent_topic.run_id)
+        run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
         await run_context.set("_agent_config", agent_dispatcher.default_agent_config.model_dump())
         await run_context.set("test_data", "test_value")
 
@@ -383,7 +383,7 @@ class TestAgentDispatcherHandleEvent:
         stored_config = agent_dispatcher.default_agent_config.model_dump()
 
         # Pre-populate the context with config
-        run_context = RunContext(agent_dispatcher.redis, agent_topic.thread_id, agent_topic.run_id)
+        run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
         await run_context.set("_agent_config", stored_config)
 
         # Now test with a control event
@@ -412,7 +412,7 @@ class TestAgentDispatcherHandleEvent:
         control_event = ControlEvent()
 
         # Ensure the context is empty (no config stored)
-        run_context = RunContext(agent_dispatcher.redis, agent_topic.thread_id, agent_topic.run_id)
+        run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
         await run_context.delete("_agent_config")  # Make sure no config exists
 
         with patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle:
@@ -442,7 +442,7 @@ class TestAgentDispatcherHandleEvent:
             await agent_dispatcher.handle_event(start_event, agent_topic)
 
             # Assert - verify that context data from start event is actually stored in real context
-            run_context = RunContext(agent_dispatcher.redis, agent_topic.thread_id, agent_topic.run_id)
+            run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
             event_data = start_event.to_context_dict()
 
             # Check that each piece of event data was stored
@@ -614,7 +614,7 @@ class TestAgentDispatcherIntegration:
             await agent_dispatcher.handle_event(start_event, agent_topic)
 
             # Assert - verify complete flow using real context verification
-            run_context = RunContext(agent_dispatcher.redis, agent_topic.thread_id, agent_topic.run_id)
+            run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
 
             # 1. Config should be stored in real context
             stored_config = await run_context.get("_agent_config")

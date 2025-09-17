@@ -85,7 +85,7 @@ class SmartTracerProvider(TracerProvider):
         instrumenting_module_name: str,
         instrumenting_library_version: str | None = None,
         schema_url: str | None = None,
-        attributes: Attributes | None = None,  # <-- Added missing parameter
+        attributes: Attributes | None = None,
     ) -> Tracer:
         """Get a SmartTracer that wraps the real tracer."""
         real_tracer = self._provider.get_tracer(

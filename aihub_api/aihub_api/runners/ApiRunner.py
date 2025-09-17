@@ -108,7 +108,6 @@ class ApiRunner(Runner):
         self._api_app.state = app.state
         mcp_app.state = app.state
 
-        # Configure OpenTelemetry tracing and instrument the FastAPI application
         self._configure_opentelemetry()
 
         return app
@@ -158,11 +157,6 @@ class ApiRunner(Runner):
     def _configure_opentelemetry(self) -> None:
         """
         Configure FastAPI-specific OpenTelemetry instrumentation.
-
-        Note: Core OpenTelemetry configuration (including MongoDB) happens earlier
-        in the lifetime_manager to ensure proper timing with database connections.
-
-        This method only handles FastAPI-specific instrumentation.
         """
         from aihub_lib.infrastructure.opentelemetry.OpenTelemetrySettings import OpenTelemetrySettings
 

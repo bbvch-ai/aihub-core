@@ -90,7 +90,6 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
         """
         tracer = get_tracer(__name__)
 
-        # Extract trace context from headers
         headers = getattr(msg, "headers", {}) or {}
         parent_context = context.get_current()
 

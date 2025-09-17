@@ -36,7 +36,7 @@ class JSPublisher(AbstractPublisher[TEvent]):
         super().__init__(name, protocol="JetStream")
         self.js = js
 
-    async def publish_event(self, event: TEvent, subject: str, retries=10, **kwargs):
+    async def publish_event(self, event: TEvent, subject: str, retries=10):
         """
         Publishes the given event to the specified JetStream subject, encoding it as JSON.
 

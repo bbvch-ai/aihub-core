@@ -36,12 +36,10 @@ class OpenTelemetrySettings(EnvironmentSettings):
 
     def configure_tracing(self) -> TracerProvider | None:
         """Configure OpenTelemetry tracing for any OTLP-compatible backend."""
-        # Master switch - if disabled, no tracing at all
         if not self.ENABLED:
             logger.info("OpenTelemetry tracing disabled: OTEL_ENABLED=False")
             return None
 
-        # If enabled, validate required configuration
         if not self.EXPORTER_OTLP_ENDPOINT:
             raise ValueError(
                 "OpenTelemetry is enabled (OTEL_ENABLED=True) but OTEL_EXPORTER_OTLP_ENDPOINT is not configured. "
