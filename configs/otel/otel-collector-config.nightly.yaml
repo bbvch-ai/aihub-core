@@ -32,6 +32,14 @@ receivers:
         enabled: true
       container.restarts:
         enabled: true
+  dockerevents:
+    endpoint: unix:///var/run/docker.sock
+    filters:
+      type: container
+      event:
+        - health_status
+        - health_status:healthy
+        - health_status:unhealthy
 processors:
   batch:
 
@@ -49,6 +57,23 @@ processors:
       - key: service.version
         from_attribute: container.image.tag
         action: upsert
+
+  transform/health_logs:
+    log_statements:
+      - context: log
+        statements:
+          # Extract container name
+          - set(attributes["container.name"], body["Actor"]["Attributes"]["name"]) where body["Type"] == "container"
+          # Extract health status from action
+          - set(attributes["health.status"], body["Action"]) where body["Type"] == "container" and body["Action"] matches "health_status.*"
+          # Clean up health status (remove "health_status:" prefix)
+          - replace_pattern(attributes["health.status"], "health_status:", "") where attributes["health.status"] != nil
+          - replace_pattern(attributes["health.status"], "health_status", "unknown") where attributes["health.status"] != nil
+          # Add timestamp
+          - set(attributes["event.time"], time_unix_nano) where body["Type"] == "container"
+          # Set severity based on health status
+          - set(severity_text, "INFO") where attributes["health.status"] == "healthy"
+          - set(severity_text, "WARN") where attributes["health.status"] == "unhealthy"
 
 
 exporters:
@@ -79,6 +104,10 @@ service:
       receivers: [ docker_stats ]
       processors: [ resourcedetection/docker, resource/docker, batch ]
       exporters: [ otlp/signoz ]
+    logs/docker_health:
+      receivers: [dockerevents]
+      processors: [transform/health_logs, batch]
+      exporters: [otlp/signoz]
     logs:
       receivers: [otlp]
       processors: [batch]
