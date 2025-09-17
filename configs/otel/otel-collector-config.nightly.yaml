@@ -32,14 +32,7 @@ receivers:
         enabled: true
       container.restarts:
         enabled: true
-  exec/docker_events:
-    commands:
-      - name: docker_health_events
-        command: ["/usr/bin/docker","events",
-                  "--filter","type=container",
-                  "--filter","event=health_status",
-                  "--format","{{json .}}"]   # JSON lines
-        restart: true
+
 processors:
   batch:
 
@@ -56,22 +49,6 @@ processors:
         action: upsert
       - key: service.version
         from_attribute: container.image.tag
-        action: upsert
-
-  transform/health_logs:
-    log_statements:
-      - context: log
-        statements:
-          - set(_raw, body)
-          - set(body, parse_json(body)) where IsString(body) and len(body) > 0
-          - set(attributes["container_name"], body["Actor"]["Attributes"]["name"]) where body != nil and body["Type"] == "container"
-          - set(attributes["docker_action"], body["Action"])                      where body != nil and body["Type"] == "container"
-          - set(attributes["event_type"], "docker_health")                         where body != nil and body["Type"] == "container"
-          - set(severity_text, "INFO")
-  resource/health_logs_service:
-    attributes:
-      - key: service.name
-        value: docker-health-events
         action: upsert
 
 
@@ -106,10 +83,6 @@ service:
       receivers: [ docker_stats ]
       processors: [ resourcedetection/docker, resource/docker, batch ]
       exporters: [ otlp/signoz ]
-    logs/docker_health:
-      receivers: [exec/docker_events]
-      processors: [resource/health_logs_service, transform/health_logs, batch]
-      exporters: [logging, otlp/signoz]
     logs:
       receivers: [otlp]
       processors: [batch]
