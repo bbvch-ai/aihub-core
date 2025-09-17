@@ -3,6 +3,7 @@ from typing import Annotated
 
 from aihub_lib.generative_ai.document.loaders.DoclingLoader import DoclingLoader
 from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import DocumentIntelligenceLoader
+from aihub_lib.generative_ai.document.loaders.ImageLoader import ImageLoader
 from aihub_lib.generative_ai.document.loaders.RawLoader import RawLoader
 from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.AzureDocumentIntelligenceSettings import (
     AzureDocumentIntelligenceSettings,
@@ -83,6 +84,7 @@ class DocumentParserResource(ConfigurableResource):
         IPYNBReader: ["ipynb"],
         RawLoader: ["txt", "md"],
         RTFReader: ["rtf"],
+        ImageLoader: ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", "tif", "heif"],
     }
 
     def _get_readers_map(self) -> dict[type[BaseReader], list[str]]:

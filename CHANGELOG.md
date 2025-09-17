@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.244.2] - 2025-09-16 - Specialized Image Processing and Loader Refinements
+
+### Added
+
+- ✨ **Introduced `ImageLoader`:** A new dedicated document loader for image files, designed to wrap images in HTML
+  figure tags for pipeline ingestion, enabling specialized processing without performing OCR or detailed image analysis.
+- 🚀 **Integrated `ImageLoader` into Document Parsing:** The new `ImageLoader` is now utilized within the
+  `DocumentParserResource` to specifically handle a comprehensive range of image formats (`jpg`, `jpeg`, `png`, `gif`,
+  `bmp`, `tiff`, `webp`, `tif`, `heif`).
+
+### Removed
+
+- 🗑️ **Deprecated Asynchronous Loading in Document Intelligence Loader:** The `aload_data` asynchronous method has been
+  removed from the `DocumentIntelligenceLoader`, simplifying its API surface.
+- 🗑️ **Image Support from Document Intelligence Settings:** Direct support for image file types (`jpg`, `jpeg`, `png`,
+  `bmp`, `tiff`, `heif`) has been removed from `AzureDocumentIntelligenceSettings`, aligning the Document Intelligence
+  loader's focus solely on structured document processing.
+- 🗑️ **Image Support from Docling Settings:** Image-related file types (`image`, `jpg`, `jpeg`, `png`, `tif`, `tiff`,
+  `bmp`, `webp`) have been removed from `DoclingSettings`, specializing the Docling loader for textual and specific
+  document formats.
+
+### Refactor
+
+- 🔄 **Centralized Image File Handling:** The overall strategy for processing image files has been refactored, dedicating
+  the new `ImageLoader` to all image formats and removing redundant image handling capabilities from
+  `DocumentIntelligenceLoader` and `DoclingLoader`. This improves modularity and clarifies responsibility across
+  document loaders.
+
+---
+
+## [v0.244.1] - 2025-09-16 - Persistence Layer Refinement
+
+### Refactor
+
+- 🧹 **Namespace Entity field renamed:** Renamed the `last_updated` field to `updated_at` in the `NamespaceEntity` for
+  improved consistency and clarity in data lake persistence.
+
+---
+
 ## [v0.244.0] - 2025-09-15 - Knowledge Base Evolution: Streamlined Uploads, Localized Collections, and Improved Pipeline Harmony
 
 ### Added
