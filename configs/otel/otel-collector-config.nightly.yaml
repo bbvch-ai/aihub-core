@@ -33,14 +33,11 @@ receivers:
       container.restarts:
         enabled: true
   exec/docker_events:
-    # requires otel/opentelemetry-collector-contrib v0.133+ (approx)
-    # command is long-running; receiver reconnects if it dies
     commands:
       - name: docker_health_events
-        command: ["docker","events",
-                  "--filter","type=container",
-                  "--filter","event=health_status",
-                  "--format","json"]
+        command:
+          ["curl","--no-buffer","--unix-socket","/var/run/docker.sock",
+           "http://localhost/events?filters={\"type\":[\"container\"],\"event\":[\"health_status\"]}"]
         restart: true
 processors:
   batch:
@@ -70,7 +67,7 @@ processors:
           - set(attributes["container_name"], body["Actor"]["Attributes"]["name"]) where body["Type"] == "container"
           - set(attributes["docker_action"], body["Action"]) where body["Type"] == "container"
           - set(attributes["event_type"], "docker_health")   where body["Type"] == "container"
-          - set(severity_text, "INFO"
+          - set(severity_text, "INFO")
 
 
 exporters:
