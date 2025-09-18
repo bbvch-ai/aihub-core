@@ -1,6 +1,7 @@
 ## Screen Capture
 
-Select "More". [![](../../../../media/feature_overview/chat_interface/user/screen_capture_more_options.jpeg)](../../../../media/feature_overview/chat_interface/user/screen_capture_more_options.jpeg)
+Select "More".
+[![](../../../../media/feature_overview/chat_interface/user/screen_capture_more_options.jpeg)](../../../../media/feature_overview/chat_interface/user/screen_capture_more_options.jpeg)
 Then select "Capture".
 
 [![](../../../../media/feature_overview/chat_interface/user/screen_capture_button.jpeg)](../../../../media/feature_overview/chat_interface/user/screen_capture_button.jpeg)
