@@ -34,7 +34,7 @@ async def main():
                 fr="Ceci est l'agent RAG par défaut",
                 it="Questo è l'agente RAG predefinito",
             ),
-            llm=LLMConfig(model_name="local/gemma-3-multimodal-small"),
+            llm=LLMConfig(model_name="local/qwen3-small"),
             check_context_sufficiency=False,
             number_of_input_tokens=12000,
             system_prompt=LocaleString(
