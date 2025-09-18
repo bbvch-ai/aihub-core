@@ -7,30 +7,28 @@ When it comes to coding with the help of a model, there are two main ways to do 
    writing code.
 2. Alternatively the chat can also be used to run and further develop existing code.
 
-## Coding with the LLM
-
 Enter a prompt mentioning the "Pydiode environment" in order to generate code.
 
-[![](../../../../media/feature_overview/chat_interface/user/img_94f419405c.jpeg)](../public/images/user/img_94f419405c.jpeg)
+[![](../../../../media/feature_overview/chat_interface/user/coding_env.jpeg)](../../../../media/feature_overview/chat_interface/user/coding_env.jpeg)
 
 Using the "Run" button the code can be tested directly inside the chat.
 
-[![](../../../../media/feature_overview/chat_interface/user/img_f836240606.jpeg)](../public/images/user/img_f836240606.jpeg)
+[![](../../../../media/feature_overview/chat_interface/user/coding_run.jpeg)](../../../../media/feature_overview/chat_interface/user/coding_run.jpeg)
 
 After running the code snippet prints the result below the cell.
 
-[![](../../../../media/feature_overview/chat_interface/user/img_9ed591ae67.jpeg)](../public/images/user/img_9ed591ae67.jpeg)
+[![](../../../../media/feature_overview/chat_interface/user/coding_output.jpeg)](../../../../media/feature_overview/chat_interface/user/coding_output.jpeg)
 
-## Executing existing code
+### Executing existing code
 
 Select "Code Interpreter".
 
-[![](../../../../media/feature_overview/chat_interface/user/img_3a55a1f373.jpeg)](../public/images/user/img_3a55a1f373.jpeg)
+[![](../../../../media/feature_overview/chat_interface/user/coding_interpreter.jpeg)](../../../../media/feature_overview/chat_interface/user/coding_interpreter.jpeg)
 
 Encase the code in back-ticks to mark it as code for execution.
 
-[![](../../../../media/feature_overview/chat_interface/user/img_0c63fdc248.jpeg)](../public/images/user/img_0c63fdc248.jpeg)
+[![](../../../../media/feature_overview/chat_interface/user/coding_backticks.jpeg)](../../../../media/feature_overview/chat_interface/user/coding_backticks.jpeg)
 
 When the code has run through the result is printed out.
 
-[![](../../../../media/feature_overview/chat_interface/user/img_df67f54c96.jpeg)](../public/images/user/img_df67f54c96.jpeg)
+[![](../../../../media/feature_overview/chat_interface/user/coding_result.jpeg)](../../../../media/feature_overview/chat_interface/user/coding_result.jpeg)
