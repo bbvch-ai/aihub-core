@@ -1,14 +1,18 @@
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable
+from typing import Annotated
 
 from nats.aio.client import Client as NATS
 from nats.aio.msg import Msg
 from nats.aio.subscription import Subscription
 from nats.errors import BadSubscriptionError, ConnectionDrainingError
+from opentelemetry import context, trace
 
+from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 from aihub_lib.nats.subscribers.AbstractSubscriber import AbstractSubscriber, TEvent
 from aihub_lib.nats.topics import Topic
+from aihub_lib.nats.tracing.NATSTraceContextPropagator import NATSTraceContextPropagator
 
 logger = logging.getLogger(__name__)
 
@@ -35,50 +39,93 @@ class NCSubscriber(AbstractSubscriber[TEvent]):
 
     def __init__(
         self,
-        nc: NATS,
-        subject: str,
-        event_cls: type[TEvent],
-        handler: Callable[[TEvent, Topic], Awaitable[None]],
+        name: Annotated[str, "Name of the subscriber shown in otel"],
+        nc: Annotated[NATS, "NATS client"],
+        subject: Annotated[str, "NATS subject to subscribe to"],
+        event_cls: Annotated[type[TEvent], "Event class to handle in the event handler"],
+        handler: Annotated[Callable[[TEvent, Topic], Awaitable[None]], "Event handler"],
     ):
-        super().__init__(nc, subject, event_cls, handler)
+        super().__init__(name, nc, subject, event_cls, handler, protocol="NATS")
         self.subscription: Subscription | None = None
 
     async def start(self) -> None:
         """Subscribe to the configured subject and begin receiving messages."""
         self.subscription = await self.nc.subscribe(self.subject, cb=self.message_handler)
-        logger.debug(f"Subscribed to '{self.subject}'.")
+        logger.debug(f"{self.name} subscribed to '{self.subject}'.")
 
     async def stop(self) -> None:
         """Unsubscribe from the subject, stopping incoming messages."""
         if self.subscription:
             try:
                 await self.subscription.unsubscribe()
-                logger.debug(f"Unsubscribed from '{self.subject}'.")
+                logger.debug(f"{self.name} unsubscribed from '{self.subject}'.")
             except (BadSubscriptionError, ConnectionDrainingError):
-                logger.debug(f"Subscription '{self.subject}' was already unsubscribed.")
+                logger.debug(f"{self.name} subscription '{self.subject}' was already unsubscribed.")
 
     async def message_handler(self, msg: Msg) -> None:
         """
         Handle incoming messages. Deserializes the event, parses the subject into a Topic,
         and calls the handler without blocking.
         """
-        try:
-            logger.debug(f"Received message: {msg.subject} with event data: {msg.data!r}")
-            topic = Topic.from_subject(msg.subject)
-            event_data = msg.data
-            event = self.event_cls.deserialize_event(event_data)
-            logger.debug(f"Deserialized event: {event}")
-            task = asyncio.create_task(self._run_handler_with_error_handling(event, topic, msg.subject))
-            self._background_tasks.add(task)
-            task.add_done_callback(self._background_tasks.discard)
-        except Exception as e:
-            logger.exception(e)
-            logger.exception(f"Error in message handler for subject '{msg.subject}': {e}")
+        tracer = get_tracer(__name__)
+
+        headers = getattr(msg, "headers", {}) or {}
+        parent_context = context.get_current()
+
+        if headers:
+            try:
+                parent_context = NATSTraceContextPropagator.extract_and_activate_trace_context(headers)
+            except Exception as e:
+                logger.warning(f"{self.name} failed to extract trace context from headers: {e}")
+
+        with tracer.start_as_current_span(
+            f"{self.name}.receive UNKNOWN",
+            context=parent_context,
+            kind=trace.SpanKind.CONSUMER,
+            attributes={
+                "messaging.system": "nats",
+                "messaging.source": msg.subject,
+                "messaging.operation": "receive",
+            },
+        ) as span:
+            try:
+                logger.debug(f"{self.name} received message: {msg.subject} with event data: {msg.data!r}")
+                topic = Topic.from_subject(msg.subject)
+                event_data = msg.data
+                event = self.event_cls.deserialize_event(event_data)
+
+                span.update_name(f"{self.name}.receive {event.__class__.__name__}")
+                span.set_attribute("event.type", event.event_name)
+                span.set_attribute("event.class", event.__class__.__name__)
+
+                logger.debug(f"{self.name} deserialized event: {event}")
+                task = asyncio.create_task(self._run_handler_with_error_handling(event, topic, msg.subject))
+                self._background_tasks.add(task)
+                task.add_done_callback(self._background_tasks.discard)
+
+                span.set_attribute("messaging.success", True)
+
+            except Exception as e:
+                span.set_attribute("messaging.success", False)
+                span.record_exception(e)
+                logger.exception(f"{self.name} error in message handler for subject '{msg.subject}': {e}")
 
     async def _run_handler_with_error_handling(self, event, topic, subject):
         """Helper method to run handler with proper error handling"""
-        try:
-            await self.handler(event, topic)
-        except Exception as e:
-            logger.exception(e)
-            logger.exception(f"Error in async handler for subject '{subject}': {e}")
+        tracer = trace.get_tracer(__name__)
+
+        with tracer.start_as_current_span(
+            f"{self.name}.process {event.event_name}",
+            kind=trace.SpanKind.INTERNAL,
+            attributes={
+                "handler.event_type": event.event_name,
+                "handler.subject": subject,
+            },
+        ) as span:
+            try:
+                await self.handler(event, topic)
+                span.set_attribute("handler.success", True)
+            except Exception as e:
+                span.set_attribute("handler.success", False)
+                span.record_exception(e)
+                logger.exception(f"{self.name} error in async handler for subject '{subject}': {e}")

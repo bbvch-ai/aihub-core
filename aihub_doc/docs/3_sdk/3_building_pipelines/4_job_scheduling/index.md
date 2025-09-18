@@ -1,9 +1,9 @@
 ---
-title: " Job Scheduling"
+title: ' Job Scheduling'
 index: 4
 ---
-# Job Scheduling
 
+# Job Scheduling
 
 ## Scheduling strategy
 
@@ -48,8 +48,8 @@ daily_batch = daily_schedule_at(
 
 
 ```
-This observes an asset every night at 2 AM.
 
+This observes an asset every night at 2 AM.
 
 ## Job definitions and organization
 
@@ -72,7 +72,6 @@ observe_filesystem_job = observe_source_job(
 )
 
 ```
-
 
 ## Next steps
 

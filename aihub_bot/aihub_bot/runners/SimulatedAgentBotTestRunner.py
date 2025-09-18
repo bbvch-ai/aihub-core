@@ -169,9 +169,12 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         self.nc = NATS()
         await self.nc.connect(servers=["nats://localhost:4222"])
 
-        self.nc_publisher = NCPublisher(self.nc)
+        self.nc_publisher = NCPublisher(f"Simulated{self.agent_class}BotTestRunnerDiscoveryResponse", self.nc)
         self.discovery_subscriber = AgentNCSubscriber.for_agent_instance_discovery_request_events(
-            self.nc, AgentTopicManager(), self.discovery_handler
+            self.nc,
+            AgentTopicManager(),
+            self.discovery_handler,
+            subscriber_name=f"Simulated{self.agent_class}BotTestRunnerDiscoveryRequest",
         )
         await self.discovery_subscriber.start()
 
@@ -182,10 +185,11 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
             js=self.js,
             handler=self.simulate_agent,
             queue_group="simulated-agent-bot-runner-queue-group",
+            subscriber_name=f"Simulated{self.agent_class}BotTestRunnerControlEvents",
         )
         await self.agent_control_event_subscriber.start()
 
-        self.js_publisher = JSPublisher(self.js)
+        self.js_publisher = JSPublisher(f"Simulated{self.agent_class}BotTestRunner", self.js)
 
     async def run(self):
         await self.start_simulation()

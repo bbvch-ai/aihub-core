@@ -1,15 +1,17 @@
 ---
-title: "Pipeline Observation"
+title: Pipeline Observation
 index: 5
 ---
 
 # Pipeline Observation
 
-Effective monitoring and debugging are essential for maintaining reliable data processing pipelines. AI-Hub provides comprehensive observability tools to track pipeline execution, diagnose issues, and optimize performance.
+Effective monitoring and debugging are essential for maintaining reliable data processing pipelines. AI-Hub provides
+comprehensive observability tools to track pipeline execution, diagnose issues, and optimize performance.
 
 ## What you'll learn
 
 This guide covers pipeline observation:
+
 - **Monitoring**: Track pipeline execution and performance metrics
 - **Debugging**: Diagnose and resolve pipeline failures
 - **Tracing**: Understand data lineage and processing history
@@ -101,7 +103,6 @@ def partitioned_processing(context: AssetExecutionContext) -> ProcessingResult:
     
     return process_partition_data(partition_key)
 ```
-
 
 ## What you learned
 

@@ -153,6 +153,7 @@ offering various AI capabilities.
 | Private AI Suite    |        ✅        |        ❌         |        ⚠️        |      ⚠️       |        ⚠️        |         ⚠️          |     ⚠️      |         ⚠️          |         ✅         |           ⚠️           |         ⚠️         |        ❌        |
 
 ### Swiss/European Provider Details
+
 ::: details Alpine AI
 Alpine AI (SwissGPT) is a Swiss AI platform specifically targeting critical and regulated sectors with strong compliance
 focus. While they excel at Swiss data sovereignty and regulatory compliance.

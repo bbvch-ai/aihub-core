@@ -1,6 +1,7 @@
 import math
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.notification.NotificationEntity import NotificationEntity
 from mongoengine import DoesNotExist
 
@@ -18,6 +19,7 @@ class NotificationService:
     """Service layer for handling notification-related business logic."""
 
     @staticmethod
+    @trace_fn
     def get_notifications_for_user(
         user_id: str, page: int, page_size: int, t: LocaleHandler, **filters
     ) -> PaginatedNotificationsResponse:
@@ -33,6 +35,7 @@ class NotificationService:
         )
 
     @staticmethod
+    @trace_fn
     def update_one(
         notification_id: str, user_id: str, updates: UpdateNotificationRequest, t: LocaleHandler
     ) -> NotificationDTO:
@@ -49,6 +52,7 @@ class NotificationService:
         return NotificationDTO.from_entity(entity=notification, t=t)
 
     @staticmethod
+    @trace_fn
     def update_many(
         user_id: str, bulk_updates: BulkUpdateNotificationRequest, t: LocaleHandler
     ) -> list[NotificationDTO]:

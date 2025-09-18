@@ -6,6 +6,7 @@ from typing import Annotated
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import (
@@ -58,12 +59,14 @@ class AgentService:
     """
 
     @staticmethod
+    @trace_fn
     def get_minimal_agent(agent_class: str, agent_id: str, t: LocaleHandler) -> MinimalAgentDTO:
         """Returns minimal details for an agent from database."""
         agent_entity = AgentEntity.get_agent(agent_class=agent_class, agent_id=agent_id)
         return MinimalAgentDTO.from_entity(agent_entity, t)
 
     @staticmethod
+    @trace_fn
     async def get_agent(nc: NATS, agent_class: str, agent_id: str, t: LocaleHandler) -> AgentDTO:
         """
         Returns details for a given agent. If agent is online, use live information reported by the agent,
@@ -79,6 +82,7 @@ class AgentService:
             return AgentDTO.from_entity(agent, t, is_online=False)
 
     @staticmethod
+    @trace_fn
     async def get_agents(nc: NATS, t: LocaleHandler) -> list[AgentDTO]:
         """
         Returns both agents that are online (answer to a discovery broadcast) and agents
@@ -105,6 +109,7 @@ class AgentService:
         return all_agents
 
     @staticmethod
+    @trace_fn
     async def discover_agent_instance(nc: NATS, agent_class: str, agent_id: str) -> AgentInstanceDTO:
         """
         Retrieves details about a specific agent. If cached, returns immediately.
@@ -139,6 +144,7 @@ class AgentService:
         raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
 
     @staticmethod
+    @trace_fn
     async def discover_agent_instances_by_class(nc: NATS, agent_class: str) -> list[AgentInstanceDTO]:
         """
         Retrieves all instances of a specific agent class. If cached, returns immediately.
@@ -210,9 +216,13 @@ class AgentService:
             agent_found_event.set()
 
         topic_manager = AgentClassTopicManager(agent_class=agent_class)
-        nc_publisher = NCPublisher(nc)
+        nc_publisher = NCPublisher(f"AgentService{agent_class}DiscoversRequest", nc)
         nc_subscriber = AgentNCSubscriber.for_agent_class_discovery_response_events(
-            nc, topic_manager, discovery_handler, call_id=call_id
+            nc,
+            topic_manager,
+            discovery_handler,
+            call_id=call_id,
+            subscriber_name=f"AgentService{agent_class}DiscoveryResponse",
         )
         await nc_subscriber.start()
 
@@ -236,6 +246,7 @@ class AgentService:
         raise HTTPException(status_code=404, detail=f"Agent {agent_class} not found.")
 
     @staticmethod
+    @trace_fn
     async def discover_agent_instances(nc: NATS) -> list[AgentInstanceDTO]:
         """
         Discovers all agents by broadcasting a discovery request and waiting for responses.
@@ -296,9 +307,9 @@ class AgentService:
             discovery_responses.append(event)
 
         topic_manager = AgentTopicManager()
-        nc_publisher = NCPublisher(nc)
+        nc_publisher = NCPublisher("AgentServiceClassDiscoversRequest", nc)
         nc_subscriber = AgentNCSubscriber.for_agent_class_discovery_response_events(
-            nc, topic_manager, discovery_handler, call_id=call_id
+            nc, topic_manager, discovery_handler, call_id=call_id, subscriber_name="AgentServiceClassDiscoveryResponse"
         )
         await nc_subscriber.start()
 
@@ -329,6 +340,7 @@ class AgentService:
         return agents
 
     @staticmethod
+    @trace_fn
     async def discover_agents(nc: NATS, t: LocaleHandler) -> list[AgentDTO]:
         discovered_agents = await AgentService.discover_agent_instances(nc)
         return [AgentDTO.from_instance(agent_instance, is_online=True, t=t) for agent_instance in discovered_agents]
@@ -386,6 +398,7 @@ class AgentService:
         return resources.stop_event
 
     @staticmethod
+    @trace_fn
     async def send_agent_input_event(
         *,
         nc: NATS,
@@ -430,6 +443,7 @@ class AgentService:
         )
 
     @staticmethod
+    @trace_fn
     async def send_agent_input_event_stream(
         *,
         nc: NATS,
@@ -525,6 +539,7 @@ class AgentService:
             nc=nc,
             topic_manager=topic_manager,
             handler=event_handler,
+            subscriber_name="AgentServiceSendAgentInputEventStream",
         )
         resources.subscriber = subscriber
         await subscriber.start()
@@ -536,6 +551,7 @@ class AgentService:
         return resources
 
     @staticmethod
+    @trace_fn
     async def get_paginated_agent_threads(
         *,
         agent_class: str,

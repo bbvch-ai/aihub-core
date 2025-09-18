@@ -6,6 +6,8 @@ from bson import ObjectId
 from mongoengine import DateTimeField, Document, IntField, StringField
 from mongoengine.errors import DoesNotExist
 
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+
 
 class BearerToken(Document):
     meta = {"collection": "tokens", "strict": False, "indexes": [{"fields": ["token"], "unique": True}]}
@@ -19,6 +21,7 @@ class BearerToken(Document):
     TOKEN_REGEX = re.compile(r"^(?P<oid>[a-fA-F0-9]{24})\.(?P<rand>[A-Za-z0-9\-_]{128})$")
 
     @classmethod
+    @trace_fn
     def verify_token(cls, token_str: str) -> "BearerToken":
         """
         Verifies that the provided token string is valid:
@@ -55,6 +58,7 @@ class BearerToken(Document):
         return token_obj
 
     @classmethod
+    @trace_fn
     def create_new_token(cls, name: str, expiry_date: datetime, user_oid: str) -> "BearerToken":
         """
         Creates a new API token. The token is generated using the document's ID

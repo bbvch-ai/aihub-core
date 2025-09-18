@@ -5,7 +5,7 @@ index: 4
 
 # Your First Pipeline
 
-Build your first data processing pipeline using the AI-Hub Pipeline (`aihub_pipeline`) SDK - a complete data 
+Build your first data processing pipeline using the AI-Hub Pipeline (`aihub_pipeline`) SDK - a complete data
 transformation pipeline with multiple connected assets.
 
 ## What you'll learn
@@ -28,7 +28,7 @@ You need the AI-Hub development environment running. Before you start, make sure
 AI-Hub pipelines are **data processing workflows** built on Dagster with three essential parts:
 
 - **Assets**: Functions that create, transform, or consume data
-- **Dependencies**: Automatic data flow between assets based on function parameters  
+- **Dependencies**: Automatic data flow between assets based on function parameters
 - **Resources**: Shared configuration and services to external systems
 
 ## Create your first pipeline
@@ -101,7 +101,7 @@ poetry run dagster dev -f simple_pipeline.py
 
 Open `http://localhost:3000` and you'll see:
 
-- **Asset lineage graph**: raw_feedback_data → cleaned_feedback  
+- **Asset lineage graph**: raw_feedback_data → cleaned_feedback
 - **Materialize buttons** to execute assets
 - **Asset details** showing inputs, outputs, and execution logs
 
@@ -109,13 +109,15 @@ Click **"Materialize all"** to run the pipeline and see the data flow!
 
 ## Build a real AI-Hub pipeline
 
-Now let's create a realistic pipeline using the `aihub_pipeline` SDK that demonstrates document processing patterns. We'll break this down step by step to understand each component.
+Now let's create a realistic pipeline using the `aihub_pipeline` SDK that demonstrates document processing patterns.
+We'll break this down step by step to understand each component.
 
 ### 1. Understanding AI-Hub Pipeline Structure
 
 AI-Hub pipelines follow these key patterns:
+
 - **Asset Factories**: Reusable functions that create configured assets
-- **Resources**: Configured services like parsers, stores, and embedding models  
+- **Resources**: Configured services like parsers, stores, and embedding models
 - **Dynamic Partitions**: Each document becomes a separate partition for parallel processing
 
 ### 2. Set up your pipeline configuration
@@ -190,8 +192,9 @@ assets = [observable_asset, documents_asset, nodes_asset]
 ```
 
 **Understanding the asset factories:**
+
 - `observable_data_lake_factory`: Creates an asset that monitors file changes
-- `documents_factory`: Creates an asset that parses files into RefDoc objects with metadata  
+- `documents_factory`: Creates an asset that parses files into RefDoc objects with metadata
 - `nodes_factory`: Creates an asset that chunks documents and generates vector embeddings
 
 ### 4. Configure your pipeline resources
@@ -386,17 +389,17 @@ defs = Definitions(
 - **default_automation_sensor**: Automatically trigger asset processing when dependencies change
 
 Your pipeline now supports:
+
 - **Manual execution**: Materialize individual assets in Dagster UI
 - **Scheduled observation**: Daily checks for new documents
 - **Automatic processing**: Assets process automatically when upstream changes detected
 
 ### 9. Monitor with AI-Hub observability tools:
 
-- **Dagster UI** (`http://localhost:3000`): Asset lineage, execution logs, and materialization history 
+- **Dagster UI** (`http://localhost:3000`): Asset lineage, execution logs, and materialization history
 - **MinIO Console** (`http://localhost:9001`): Data lake file management
 - **MongoDB Compass**: Document store inspection
 - **Milvus (Attu)**: Vector database monitoring
-
 
 ### 10. Understanding AI-Hub pipeline patterns
 

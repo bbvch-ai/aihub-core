@@ -47,10 +47,13 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             nc=nc,
             topic_manager=topic_manager,
             handler=bot_in_the_loop_handler.handle_event,
+            subscriber_name="BotInTheLoop",
         )
         await bot_in_the_loop_subscriber.start()
 
-        external_agent_event_distributor = ExternalAgentEventDistributor(nc=nc, js=js)
+        external_agent_event_distributor = ExternalAgentEventDistributor(
+            nc=nc, js=js, name="BotExternalAgentEventDistributor"
+        )
 
         # Store resources in app state
         app.state.nc = nc

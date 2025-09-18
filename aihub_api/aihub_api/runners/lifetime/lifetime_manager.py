@@ -86,13 +86,19 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         agent_topic_manager = AgentTopicManager()
         agent_event_persist_subscriber = AgentNCSubscriber.for_all_agent_events(
-            nc=nc, topic_manager=agent_topic_manager, handler=persister.persist_agent_event
+            nc=nc,
+            topic_manager=agent_topic_manager,
+            handler=persister.persist_agent_event,
+            subscriber_name="AgentEventPersister",
         )
         await agent_event_persist_subscriber.start()
 
         process_topic_manager = ProcessTopicManager()
         process_event_persist_subscriber = ProcessNCSubscriber.for_all_process_events(
-            nc=nc, topic_manager=process_topic_manager, handler=persister.persist_process_event
+            nc=nc,
+            topic_manager=process_topic_manager,
+            handler=persister.persist_process_event,
+            subscriber_name="ProcessEventPersister",
         )
         await process_event_persist_subscriber.start()
 
@@ -100,13 +106,13 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         ws_manager = WebSocketManager()
         ws_sender = WebSocketSender(ws_manager=ws_manager)
         ws_subscriber = AgentNCSubscriber.for_all_agents_display_events(
-            nc=nc,
-            topic_manager=agent_topic_manager,
-            handler=ws_sender.send_event,
+            nc=nc, topic_manager=agent_topic_manager, handler=ws_sender.send_event, subscriber_name="WebSockets"
         )
         await ws_subscriber.start()
 
-        external_agent_event_distributor = ExternalAgentEventDistributor(nc=nc, js=js)
+        external_agent_event_distributor = ExternalAgentEventDistributor(
+            nc=nc, js=js, name="AgentExternalAgentEventDistributor"
+        )
         external_process_event_distributor = ExternalProcessEventDistributor(nc=nc, js=js)
 
         # Store resources in app state

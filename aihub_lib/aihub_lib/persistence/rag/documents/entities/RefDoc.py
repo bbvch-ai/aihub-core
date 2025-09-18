@@ -11,6 +11,8 @@ from mongoengine import (
 )
 from mongoengine.context_managers import switch_db
 
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+
 
 class Metadata(DynamicEmbeddedDocument):
     source = StringField(required=True)
@@ -58,11 +60,13 @@ class RefDoc(Document):
     type_ = StringField(db_field="__type__")
 
     @classmethod
+    @trace_fn
     def by_id(cls, db_alias: str, doc_id: str) -> "RefDoc":
         with switch_db(cls, db_alias) as SwitchedRefDoc:
             return SwitchedRefDoc.objects.get(id=doc_id)
 
     @classmethod
+    @trace_fn
     def by_namespace(
         cls,
         db_alias: str,
@@ -73,6 +77,7 @@ class RefDoc(Document):
             return list(SwitchedRefDoc.objects.filter(data__metadata__namespace=namespace, id__nin=(exclude_ids or [])))
 
     @classmethod
+    @trace_fn
     def count_by_namespace(
         cls,
         db_alias: str,
@@ -84,6 +89,7 @@ class RefDoc(Document):
             return SwitchedRefDoc.objects.filter(**query_filter).count()
 
     @classmethod
+    @trace_fn
     def get_paginated_by_namespace(
         cls,
         db_alias: str,
@@ -100,6 +106,7 @@ class RefDoc(Document):
             return list(SwitchedRefDoc.objects.filter(**query_filter).skip(skip).limit(limit).order_by("id"))
 
     @classmethod
+    @trace_fn
     def get_all_namespaces(cls, db_alias: str) -> list[str]:
         """
         Returns a list of all unique namespace values.
@@ -108,6 +115,7 @@ class RefDoc(Document):
             return SwitchedRefDoc.objects.distinct("data.metadata.namespace")
 
     @classmethod
+    @trace_fn
     def get_namespaces(cls, db_alias: str) -> list[dict[str, Any]]:
         """
         Returns a list of dictionaries containing namespace names and document counts.

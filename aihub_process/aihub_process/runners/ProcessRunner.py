@@ -199,9 +199,12 @@ class ProcessRunner:
         )
         await self.process_delegator.start()
 
-        self.nc_publisher = NCPublisher(self.nc)
+        self.nc_publisher = NCPublisher(f"{self.process_class}RunnerDiscoveryResponse", self.nc)
         self.discovery_event_subscriber = ProcessNCSubscriber.for_process_class_discovery_request_events(
-            self.nc, ProcessTopicManager(), self.discovery_handler
+            self.nc,
+            ProcessTopicManager(),
+            self.discovery_handler,
+            subscriber_name=f"{self.process_class}RunnerDiscoveryRequest",
         )
         await self.discovery_event_subscriber.start()
 
@@ -211,6 +214,7 @@ class ProcessRunner:
             handler=self.dispatcher.handle_event,
             js=self.js,
             queue_group=f"process_runner_{self.process_class}",
+            subscriber_name=f"{self.process_class}RunnerWorkEvents",
         )
         await self.work_event_subscriber.start()
 

@@ -1,6 +1,7 @@
 from mongoengine import DictField, EmbeddedDocumentField, StringField
 from mongoengine.base import BaseDocument
 
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 
@@ -28,6 +29,7 @@ class ProcessConfigEntity(BaseDocument):
     config_data = DictField(required=True, description="The configuration data matching the Pydantic model.")
 
     @classmethod
+    @trace_fn
     def from_process_config(cls, process_config: ProcessConfig) -> "ProcessConfigEntity":
         """Create an instance entity from a ProcessConfig."""
         return cls(
@@ -39,6 +41,7 @@ class ProcessConfigEntity(BaseDocument):
             config_data=process_config.model_dump(),
         )
 
+    @trace_fn
     def update_from_process_config(self, process_config: ProcessConfig) -> "ProcessConfigEntity":
         """Update an existing instance entity from a ProcessConfig."""
         self.process_class = process_config.process_class

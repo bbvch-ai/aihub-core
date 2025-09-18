@@ -197,15 +197,13 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
 
         # Subscribe to events
         event_subscriber = AgentNCSubscriber.for_all_thread_events(
-            nc=nc,
-            topic_manager=thread_topic_manager,
-            handler=observe_event,
+            nc=nc, topic_manager=thread_topic_manager, handler=observe_event, subscriber_name="PerformanceTesting"
         )
         await event_subscriber.start()
 
         # Create and publish the start event
         start_event = StartEvent()
-        publisher = JSPublisher(js)
+        publisher = JSPublisher("PerformanceTesting", js)
 
         subject = thread_topic_manager.get_subject_for_control_event_in_thread(
             start_event.event_name, event_id=start_event.event_id

@@ -80,7 +80,7 @@ class AgentTestRunner(AgentRunner):
         Sends an initial event (like a StartEvent) to initiate a run.
         This allows external code to trigger a new run by injecting a start event.
         """
-        publisher = JSPublisher(self.js)
+        publisher = JSPublisher(f"{self.agent_class}TestRunner", self.js)
         thread_topic_manager = AgentThreadTopicManager.from_agent_instance_topic_manager(
             self.topic_manager,
             thread_id,
@@ -144,6 +144,7 @@ class AgentTestRunner(AgentRunner):
                 run_id=run_id,
             ),
             handler=self.observe_event,
+            subscriber_name=f"{self.agent_class}TestRunnerEventLog",
         )
         await self.test_event_subscriber.start()
 
@@ -151,6 +152,7 @@ class AgentTestRunner(AgentRunner):
             nc=self.nc,
             topic_manager=AgentTopicManager(),
             handler=self.observe_event,
+            subscriber_name="AgentTestRunnerDiscoveryRequestEventLog",
         )
         await self.observe_discovery_event_subscriber.start()
 
@@ -158,6 +160,7 @@ class AgentTestRunner(AgentRunner):
             nc=self.nc,
             topic_manager=AgentTopicManager(),
             handler=self.observe_event,
+            subscriber_name="AgentTestRunnerDiscoveryResponseEventLog",
         )
         await self.observe_discovery_response_event_subscriber.start()
 

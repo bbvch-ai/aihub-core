@@ -20,12 +20,14 @@ class ProcessJSSubscriber(JSSubscriber[BaseEvent]):
         handler: Callable[[WorkEvent, ProcessClassTopic], Awaitable[None]],
         queue_group: str,
         js: JetStreamContext | None = None,
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to all work events within a specific process class."""
         subject = topic_manager.get_subject_for_all_work_events_within_process_class()
         stream_name, stream_subject = topic_manager.get_stream()
 
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             stream_subject=stream_subject,
@@ -44,12 +46,14 @@ class ProcessJSSubscriber(JSSubscriber[BaseEvent]):
         handler: Callable[[WorkRequestEvent, ProcessClassTopic], Awaitable[None]],
         queue_group: str,
         js: JetStreamContext | None = None,
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to all work request events within a specific process class."""
         subject = topic_manager.get_subject_for_all_work_request_events_within_process_class()
         stream_name, stream_subject = topic_manager.get_stream()
 
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             stream_subject=stream_subject,
@@ -68,12 +72,14 @@ class ProcessJSSubscriber(JSSubscriber[BaseEvent]):
         handler: Callable[[BaseEvent, ProcessInstanceTopic], Awaitable[None]],
         queue_group: str,
         js: JetStreamContext | None = None,
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to all events within a specific process instance."""
         subject = topic_manager.get_subject_for_all_work_events_within_process_instance()
         stream_name, stream_subject = topic_manager.get_stream()
 
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             stream_subject=stream_subject,
