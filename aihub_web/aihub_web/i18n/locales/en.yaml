@@ -154,6 +154,10 @@ event:
     successful: "Successful"
     chat: "Chat"
     agents: "Agents:"
+  base:
+    view_raw_data: "View raw event data"
+    view_formatted: "View formatted event"
+    event_data: "Event Data"
   limitChatHistory:
     summary: "Chat history limited to {count} messages"
     assistant: "Assistant"

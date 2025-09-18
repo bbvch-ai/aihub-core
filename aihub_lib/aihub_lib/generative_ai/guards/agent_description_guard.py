@@ -11,8 +11,11 @@ from aihub_lib.i18n.LocaleString import LocaleString
 
 
 class GuardResult(BaseModel):
-    reasoning: str
-    success: bool
+    reasoning: Annotated[str, Field(description="Reasoning for the guard decision.")]
+    success: Annotated[
+        bool,
+        Field(description="True if the request is suitable for this agent, false otherwise."),
+    ]
 
 
 def guard_result_factory(t: LocaleHandler) -> type[GuardResult]:

@@ -153,6 +153,10 @@ event:
     successful: "Riuscito"
     chat: "Chat"
     agents: "Agenti:"
+  base:
+    view_raw_data: "Visualizza dati evento grezzi"
+    view_formatted: "Visualizza evento formattato"
+    event_data: "Dati evento"
   limitChatHistory:
     summary: "Cronologia chat limitata a {count} messaggi"
     assistant: "Assistente"

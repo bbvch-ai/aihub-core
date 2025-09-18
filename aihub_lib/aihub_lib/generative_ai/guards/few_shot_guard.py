@@ -10,8 +10,10 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 
 
 class GuardResult(BaseModel):
-    reasoning: str
-    success: bool
+    reasoning: Annotated[str, Field(description="Reasoning for the guard decision.")]
+    success: Annotated[
+        bool, Field(description="True if the request is allowed, false if the request should be blocked.")
+    ]
 
 
 def guard_result_factory(t: LocaleHandler) -> type[GuardResult]:

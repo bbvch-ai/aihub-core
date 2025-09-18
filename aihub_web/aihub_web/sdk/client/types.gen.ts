@@ -3364,13 +3364,20 @@ export type GuardEventWritable = {
 
 /**
  * GuardRejectionEvent
- * A class representing a guard rejection event.
- * This event is used to communicate the reason for the rejection to the client.
+ * Base class for all guard rejection events.
  *
+ * This event is triggered when a guard mechanism determines that a request
+ * does not meet security, policy, or validation requirements and must be blocked.
+ * Guard rejection events are critical for maintaining system security and ensuring
+ * only authorized and valid requests proceed through the workflow.
  *
  * ### Why GuardRejectionEvent?
  * Safeguarding the system from invalid requests is a critical part of any system. This event
- * is used to communicate the reason for the rejection to the client.
+ * is used to communicate the reason for the rejection to the client and halt processing
+ * of potentially harmful or invalid requests.
+ *
+ * All specific guard rejection events should inherit from this base class
+ * to ensure consistent behavior and proper event handling throughout the system.
  */
 export type GuardRejectionEventReadable = {
     /**
@@ -3382,14 +3389,6 @@ export type GuardRejectionEventReadable = {
      * The time (in ns since epoch) the event was stored in the event store
      */
     created_at?: number;
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
     /**
      * Reason
      * Reason why the Guard rejected the request.
@@ -3406,18 +3405,25 @@ export type GuardRejectionEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | Array<string> | undefined;
 };
 
 /**
  * GuardRejectionEvent
- * A class representing a guard rejection event.
- * This event is used to communicate the reason for the rejection to the client.
+ * Base class for all guard rejection events.
  *
+ * This event is triggered when a guard mechanism determines that a request
+ * does not meet security, policy, or validation requirements and must be blocked.
+ * Guard rejection events are critical for maintaining system security and ensuring
+ * only authorized and valid requests proceed through the workflow.
  *
  * ### Why GuardRejectionEvent?
  * Safeguarding the system from invalid requests is a critical part of any system. This event
- * is used to communicate the reason for the rejection to the client.
+ * is used to communicate the reason for the rejection to the client and halt processing
+ * of potentially harmful or invalid requests.
+ *
+ * All specific guard rejection events should inherit from this base class
+ * to ensure consistent behavior and proper event handling throughout the system.
  */
 export type GuardRejectionEventWritable = {
     /**
@@ -3430,19 +3436,11 @@ export type GuardRejectionEventWritable = {
      */
     created_at?: number;
     /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
      * Reason
      * Reason why the Guard rejected the request.
      */
     reason: string;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+    [key: string]: unknown | string | number | undefined;
 };
 
 /**

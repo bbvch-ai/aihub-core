@@ -9,9 +9,12 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 
 
 class ContextGuardResult(BaseModel):
-    reasoning: str
-    success: bool
-    new_query: str | None = None
+    reasoning: Annotated[str, Field(description="Reasoning for the context sufficiency decision.")]
+    success: Annotated[bool, Field(description="True if the context is sufficient, false if more context is needed.")]
+    new_query: Annotated[
+        str | None,
+        Field(description="A revised query to get better search results if context was insufficient.", default=None),
+    ]
 
 
 def context_guard_result_factory(t: LocaleHandler, more_hops_available: bool) -> type[ContextGuardResult]:

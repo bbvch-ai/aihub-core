@@ -4,8 +4,9 @@ from aihub_lib.generative_ai.prompting.few_shot.create_few_shot_messages import 
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.events import GuardRejectionEvent, LLMEvent, StopEvent, UserMessageEvent
+from aihub_lib.nats.events import LLMStopEvent, StopEvent, UserMessageEvent
 from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
+from aihub_lib.nats.events.guard import AgentSuitabilityAcceptEvent, AgentSuitabilityRejectEvent
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_agent.agents.Agent import Agent
@@ -13,7 +14,6 @@ from aihub_agent.agents.FewShotAgent.events.FewShotEvent import FewShotEvent
 from aihub_agent.agents.FewShotAgent.events.FewShotStandaloneQuestionCondenserEvent import (
     FewShotStandaloneQuestionCondenserEvent,
 )
-from aihub_agent.agents.FewShotAgent.events.RightAgentEvent import RightAgentEvent
 from aihub_agent.agents.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
 from aihub_agent.workflow.decorators.step import step
 
@@ -55,7 +55,7 @@ class FewShotAgent(Agent):
         t: LocaleHandler,
         agent_config: FewShotAgentConfig,
         displayer: EventDisplayer,
-    ) -> RightAgentEvent | GuardRejectionEvent:
+    ) -> AgentSuitabilityAcceptEvent | AgentSuitabilityRejectEvent:
         messages = event.limited_history
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             guard_result = await agent_description_guard(
@@ -66,16 +66,15 @@ class FewShotAgent(Agent):
                 messages=messages,
             )
         if not guard_result.success:
-            return GuardRejectionEvent(reason=guard_result.reasoning)
-        return RightAgentEvent(
-            success=guard_result.success,
-            reasoning=guard_result.reasoning,
+            return AgentSuitabilityRejectEvent(reason=guard_result.reasoning)
+        return AgentSuitabilityAcceptEvent(
+            reason=guard_result.reasoning,
         )
 
     @step()
     async def condense_standalone_question_step(
         self,
-        _: RightAgentEvent,
+        _: AgentSuitabilityAcceptEvent,
         start_event: UserMessageEvent,
         chat_history_event: LimitChatHistoryEvent,
         agent_config: FewShotAgentConfig,
@@ -137,14 +136,14 @@ class FewShotAgent(Agent):
         agent_config: FewShotAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> LLMEvent:
+    ) -> LLMStopEvent:
         """
         Generates a response using the configured LLM.
         """
         await displayer.display_thought(t("agent.thought.write_answer_based_on_few_shot_examples"))
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            return await displayer.display_llm_stream(agent_config.llm, llm, event.full_context)
+            return await displayer.display_llm_stream(agent_config.llm, llm, event.full_context, as_stop_step=True)
 
     @step()
-    async def stop_step(self, event: LLMEvent) -> StopEvent:
+    async def stop_step(self, _: AgentSuitabilityRejectEvent) -> StopEvent:
         return StopEvent()

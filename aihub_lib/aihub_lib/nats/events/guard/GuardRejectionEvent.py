@@ -3,19 +3,25 @@ from typing import Annotated, ClassVar
 from pydantic import Field
 
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events.control.ControlEvent import ControlEvent
 
-from ..control import StopEvent
 
-
-class GuardRejectionEvent(StopEvent):
+class GuardRejectionEvent(ControlEvent):
     """
-    A class representing a guard rejection event.
-    This event is used to communicate the reason for the rejection to the client.
+    Base class for all guard rejection events.
 
+    This event is triggered when a guard mechanism determines that a request
+    does not meet security, policy, or validation requirements and must be blocked.
+    Guard rejection events are critical for maintaining system security and ensuring
+    only authorized and valid requests proceed through the workflow.
 
     ### Why GuardRejectionEvent?
     Safeguarding the system from invalid requests is a critical part of any system. This event
-    is used to communicate the reason for the rejection to the client.
+    is used to communicate the reason for the rejection to the client and halt processing
+    of potentially harmful or invalid requests.
+
+    All specific guard rejection events should inherit from this base class
+    to ensure consistent behavior and proper event handling throughout the system.
     """
 
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.guard_rejection_event.name")

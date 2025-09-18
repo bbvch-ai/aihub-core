@@ -50,9 +50,53 @@ thought_event:
   name: "Processo di Pensiero"
   description: "L'agente condivide il suo processo di pensiero interno, che lo aiuta a comprendere e risolvere il compito."
 
+guard_accept_event:
+  name: "Richiesta Accettata"
+  description: "La richiesta ha superato tutti i controlli di sicurezza ed è autorizzata a procedere."
+
 guard_rejection_event:
   name: "Richiesta Respinta"
   description: "La richiesta è stata respinta per motivi di sicurezza o a causa di violazioni delle politiche."
+
+few_shot_guard_accept_event:
+  name: "Guardia Few-Shot Accettato"
+  description: "La richiesta corrisponde ai modelli degli esempi few-shot ed è autorizzata a procedere."
+
+few_shot_guard_reject_event:
+  name: "Guardia Few-Shot Respinto"
+  description: "La richiesta non corrisponde ai modelli degli esempi few-shot ed è bloccata."
+
+right_agent_accept_event:
+  name: "Agente Giusto Selezionato"
+  description: "L'agente corretto è stato identificato per gestire questo compito specifico."
+
+wrong_agent_reject_event:
+  name: "Agente Sbagliato Selezionato"
+  description: "L'agente selezionato non è appropriato per gestire questo compito specifico."
+
+agent_suitability_accept_event:
+  name: "Agente Adatto al Compito"
+  description: "Le capacità dell'agente corrispondono alla richiesta dell'utente e possono gestire il compito."
+
+agent_suitability_reject_event:
+  name: "Agente Inadatto al Compito"
+  description: "Le capacità dell'agente non corrispondono alla richiesta dell'utente e non possono gestire il compito."
+
+context_sufficient_accept_event:
+  name: "Contesto Sufficiente Disponibile"
+  description: "C'è abbastanza contesto disponibile per rispondere alla query dell'utente senza recupero aggiuntivo."
+
+context_insufficient_reject_event:
+  name: "Contesto Insufficiente Disponibile"
+  description: "È necessario più contesto per rispondere correttamente alla query dell'utente."
+
+sensitive_info_accept_event:
+  name: "Risposta Sicura da Condividere"
+  description: "La risposta non contiene informazioni sensibili e può essere condivisa in sicurezza."
+
+sensitive_info_reject_event:
+  name: "Informazioni Sensibili Rilevate"
+  description: "La risposta conteneva informazioni sensibili che sono state rimosse o oscurate."
 
 hitl_request_event:
   name: "Richiesta all'Utente"

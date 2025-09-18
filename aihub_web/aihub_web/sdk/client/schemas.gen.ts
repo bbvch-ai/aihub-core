@@ -4690,28 +4690,6 @@ export const GuardRejectionEventSchema = {
             title: 'Created At',
             description: 'The time (in ns since epoch) the event was stored in the event store'
         },
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
         reason: {
             type: 'string',
             title: 'Reason',
@@ -4738,13 +4716,20 @@ Used during deserialization to decide which subclass to instantiate.`,
     type: 'object',
     required: ['reason', '_event_name', '_parent_event_names'],
     title: 'GuardRejectionEvent',
-    description: `A class representing a guard rejection event.
-This event is used to communicate the reason for the rejection to the client.
+    description: `Base class for all guard rejection events.
 
+This event is triggered when a guard mechanism determines that a request
+does not meet security, policy, or validation requirements and must be blocked.
+Guard rejection events are critical for maintaining system security and ensuring
+only authorized and valid requests proceed through the workflow.
 
 ### Why GuardRejectionEvent?
 Safeguarding the system from invalid requests is a critical part of any system. This event
-is used to communicate the reason for the rejection to the client.`
+is used to communicate the reason for the rejection to the client and halt processing
+of potentially harmful or invalid requests.
+
+All specific guard rejection events should inherit from this base class
+to ensure consistent behavior and proper event handling throughout the system.`
 } as const;
 
 export const HTTPValidationErrorSchema = {
@@ -7038,7 +7023,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1757495777
+            default: 1758186465
         },
         owned_by: {
             type: 'string',

@@ -11,6 +11,12 @@ from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import LimitChatHistoryEvent, StandaloneQuestionCondenserEvent
+from aihub_lib.nats.events.guard import (
+    ContextInsufficientRejectEvent,
+    ContextSufficientAcceptEvent,
+    FewShotAcceptEvent,
+    FewShotRejectEvent,
+)
 from aihub_lib.nats.events.semantic.llm import LLMStopEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
@@ -20,11 +26,7 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.RagAgent.events.ContextInsufficientEvent import ContextInsufficientEvent
 from aihub_agent.agents.RagAgent.events.ContextInsufficientWithQueryEvent import ContextInsufficientWithQueryEvent
-from aihub_agent.agents.RagAgent.events.ContextSufficientEvent import ContextSufficientEvent
-from aihub_agent.agents.RagAgent.events.FewShotAcceptEvent import FewShotAcceptEvent
-from aihub_agent.agents.RagAgent.events.FewShotRejectEvent import FewShotRejectEvent
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.context.run.RunContext import RunContext
@@ -105,7 +107,7 @@ class RAGAgent(Agent):
         t: LocaleHandler,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
         if not agent_config.few_shot_guard_examples:
-            return FewShotAcceptEvent(reasoning=t("agent.thought.no_few_shot_examples"))
+            return FewShotAcceptEvent(reason=t("agent.thought.no_few_shot_examples"))
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             guard_result = await few_shot_guard(
@@ -116,9 +118,9 @@ class RAGAgent(Agent):
             )
 
         if not guard_result.success:
-            return FewShotRejectEvent(reasoning=guard_result.reasoning)
+            return FewShotRejectEvent(reason=guard_result.reasoning)
 
-        return FewShotAcceptEvent(reasoning=guard_result.reasoning)
+        return FewShotAcceptEvent(reason=guard_result.reasoning)
 
     @step(
         name=LocaleString(en="Retrieve Nodes"),
@@ -204,14 +206,14 @@ class RAGAgent(Agent):
         event: InOrderNodeCombinerEvent,
         user_query_event: StandaloneQuestionCondenserEvent,
         run_context: RunContext,
-    ) -> ContextSufficientEvent | ContextInsufficientEvent | ContextInsufficientWithQueryEvent:
+    ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
         """
         Guards the context to ensure it is sufficient for generating a response.
         If it is insufficient a new query is generated to find more data in order
         to generate the response.
         """
         if not agent_config.check_context_sufficiency:
-            return ContextSufficientEvent()
+            return ContextSufficientAcceptEvent()
 
         prev_queries = await run_context.get("prev_queries", [])
         hop_count = await run_context.get("hop_count", 1)
@@ -229,10 +231,10 @@ class RAGAgent(Agent):
 
         if guard_result.success:
             await displayer.display_thought(t("agent.thought.context_sufficient"))
-            return ContextSufficientEvent()
+            return ContextSufficientAcceptEvent(reason=guard_result.reasoning)
 
         if not more_hops_available:
-            return ContextInsufficientEvent(reasoning=guard_result.reasoning)
+            return ContextInsufficientRejectEvent(reason=guard_result.reasoning)
 
         await run_context.set("hop_count", hop_count + 1)
         new_query = guard_result.new_query
@@ -249,7 +251,7 @@ class RAGAgent(Agent):
         self,
         nodes_event: InOrderNodeCombinerEvent,
         chat_history_event: LimitChatHistoryEvent,
-        _: ContextSufficientEvent,
+        _: ContextSufficientAcceptEvent,
         start_event: UserMessageEvent,
         agent_config: RAGAgentConfig,
     ) -> LimitChatHistoryWithContextEvent:
@@ -274,7 +276,7 @@ class RAGAgent(Agent):
     )
     async def respond_with_llm_step(
         self,
-        event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ContextInsufficientEvent,
+        event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ContextInsufficientRejectEvent,
         limited_history_without_context: LimitChatHistoryEvent,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
@@ -283,7 +285,7 @@ class RAGAgent(Agent):
         """
         Generates a response using the configured LLM.
         """
-        if isinstance(event, FewShotRejectEvent) or isinstance(event, ContextInsufficientEvent):
+        if isinstance(event, FewShotRejectEvent) or isinstance(event, ContextInsufficientRejectEvent):
             messages = limited_history_without_context.limited_history + [
                 ChatMessage(
                     role=MessageRole.SYSTEM,
