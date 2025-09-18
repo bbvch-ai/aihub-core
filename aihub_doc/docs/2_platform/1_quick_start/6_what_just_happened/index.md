@@ -8,18 +8,18 @@ index: 6
 # What Just Happened?
 
 If this short introduction was too quick, please just go back and revisit the parts that are still unclear. If not, then
-welcome to the Swiss AI-Hub Platform. There is so much more to unpack which we will do in the next chapters.
+welcome to the Swiss AI-Hub Platform. There is so much more to unpack which we will do in the following chapters.
 
 ## Where to go next?
 
-There are really three options on where you can go next.
+There are three options on where you can go next.
 
 <script setup>
 import NavigationBoxes from '../../../../.vitepress/components/NavigationBoxes.vue'
 
 const navigationItems = [
   {
-    title: 'Deep Dive',
+    title: 'Architecture',
     description: 'Dive deep into the architecture behind the platform and get to know its ins and outs.',
     href: '../../2_architecture/'
   },
