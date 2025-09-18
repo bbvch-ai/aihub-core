@@ -15,7 +15,7 @@ from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
 MODELS_ENDPOINT = "/api/v1/openai/models"
-CHAT_MODEL = "local/gemma-3-multimodal-small"
+CHAT_MODEL = "local/qwen3-small"
 EMBEDDING_MODEL = "local/qwen-embedding"
 
 
