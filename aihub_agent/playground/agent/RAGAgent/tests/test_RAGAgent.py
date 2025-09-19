@@ -114,7 +114,6 @@ def test_collection(event_loop):
     """
     asyncio.set_event_loop(event_loop)
 
-    llm_config = LLMConfig(model_name="local/qwen3-small")
     embedding_config = EmbeddingModelConfig(model_name="local/qwen-embedding")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
