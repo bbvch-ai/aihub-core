@@ -932,8 +932,8 @@ services:
         done
         mkdir -p /var/log/docker-health
         touch /var/log/docker-health/events.ndjson
-        # Stream only health_status; include events right after startup
-        docker -H unix:///var/run/docker.sock events --since 0s --filter event=health_status --format "{{json .}}" \
+        # Capture events since container start time (captures recent history)
+        docker -H unix:///var/run/docker.sock events --since 5m --filter event=health_status --format "{{json .}}" \
           | tee -a /var/log/docker-health/events.ndjson
       '
     volumes:
