@@ -48,11 +48,11 @@ receivers:
     include: [ /var/log/docker-health/events.ndjson ]
     start_at: end
     operators:
+      # Parse the JSON line and place fields directly into log attributes
       - type: json_parser
         parse_from: body
-      - type: move
-        from: attributes
-        to: resource
+        parse_to: attributes
+      # Tag these records so you can filter in SigNoz
       - type: add
         field: attributes.log_type
         value: docker_health_event
