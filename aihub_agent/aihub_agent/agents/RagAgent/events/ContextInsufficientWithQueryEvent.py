@@ -1,9 +1,8 @@
 from typing import Annotated
 
+from aihub_lib.nats.events.guard.ContextInsufficientRejectEvent import ContextInsufficientRejectEvent
 from llama_index.core.base.llms.types import ChatMessage
 from pydantic import Field
-
-from aihub_lib.nats.events.guard.ContextInsufficientRejectEvent import ContextInsufficientRejectEvent
 
 
 class ContextInsufficientWithQueryEvent(ContextInsufficientRejectEvent):

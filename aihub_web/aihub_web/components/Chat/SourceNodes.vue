@@ -1,87 +1,69 @@
 <template>
-  <div class="flex flex-col gap-3">
-    <div class="flex flex-wrap items-center gap-4 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50">
+  <div class="flex flex-col gap-4">
+    <div class="flex items-center gap-6 text-sm text-surface-600 dark:text-surface-400">
       <div class="flex items-center gap-2">
         <Icon
           name="material-symbols:article-outline"
-          class="size-4 text-surface-500"
+          class="size-4"
         />
-        <span class="text-sm text-surface-600 dark:text-surface-400">
-          {{ documentCount }} {{ documentCount === 1 ? 'source document' : 'source documents' }}
-        </span>
+        <span>{{ t('event.retriever.sourceDocument', documentCount) }}</span>
       </div>
       <div class="flex items-center gap-2">
         <Icon
           name="material-symbols:view-agenda-outline"
-          class="size-4 text-surface-500"
+          class="size-4"
         />
-        <span class="text-sm text-surface-600 dark:text-surface-400">
-          {{ totalNodeCount }} {{ totalNodeCount === 1 ? 'content chunk' : 'content chunks' }}
-        </span>
-      </div>
-      <div
-        v-if="averageScore > 0"
-        class="flex items-center gap-2"
-      >
-        <Icon
-          name="material-symbols:percent"
-          class="size-4 text-surface-500"
-        />
-        <span class="text-sm text-surface-600 dark:text-surface-400">
-          {{ Math.round(averageScore * 100) }}% avg relevance
-        </span>
+        <span>{{ t('event.retriever.contentChunk', totalNodeCount) }}</span>
       </div>
     </div>
 
-    <!-- Empty State -->
     <div
       v-if="totalNodeCount === 0"
-      class="flex flex-col items-center gap-3 rounded-2xl border border-surface-200 bg-white p-12 text-center dark:border-surface-700 dark:bg-surface-800"
+      class="flex flex-col items-center gap-3 rounded-lg p-8 text-center"
     >
       <Icon
         name="material-symbols:search-off"
-        class="size-12 text-surface-400"
+        class="size-8 text-surface-400"
       />
-      <h3 class="font-semibold text-surface-700 dark:text-surface-300">
-        No chunks found
-      </h3>
-      <p class="text-sm text-surface-500 dark:text-surface-400">
-        The retrieval search didn't find any relevant content chunks.
-      </p>
+      <div>
+        <p class="font-medium text-surface-700 dark:text-surface-300">
+          {{ t('event.retriever.noChunksFound') }}
+        </p>
+        <p class="text-sm text-surface-500 dark:text-surface-400">
+          {{ t('event.retriever.noChunksFoundDescription') }}
+        </p>
+      </div>
     </div>
 
-    <!-- Document Sections -->
     <div
       v-else
-      class="flex flex-col gap-4"
+      class="flex flex-col gap-3"
     >
       <div
         v-for="(documentNodes, doc) in nodesByDocument"
         :key="doc"
-        class="relative rounded-2xl border border-surface-200 bg-white shadow-sm dark:border-surface-700 dark:bg-surface-800"
+        class="rounded-lg border border-surface-200 dark:border-surface-700"
       >
         <div
           v-if="getDocumentTitle(documentNodes)"
-          class="flex items-center justify-between border-b border-surface-100 px-6 py-4 dark:border-surface-700"
+          class="flex items-center justify-between border-b border-surface-100 px-4 py-3 dark:border-surface-700"
         >
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2">
             <Icon
               name="material-symbols:article-outline"
-              class="size-5 text-surface-500"
+              class="size-4 text-surface-500"
             />
-            <h3 class="font-semibold text-surface-700 dark:text-surface-300">
+            <h3 class="font-medium text-surface-700 dark:text-surface-300">
               {{ getDocumentTitle(documentNodes) }}
             </h3>
           </div>
-          <Tag
-            :value="t('event.retriever.chunksFromDoc', { count: documentNodes.length })"
-            severity="info"
-            class="text-xs"
-          />
+          <span class="text-xs text-surface-500 dark:text-surface-400">
+            {{ t('event.retriever.chunksFromDoc', documentNodes.length) }}
+          </span>
         </div>
 
-        <div class="p-6">
-          <div class="flex flex-col gap-4">
+        <div class="p-4">
+          <div class="flex flex-col gap-3">
             <KnowledgeNodeContent
               v-for="node in documentNodes"
               :key="node.id"
@@ -115,7 +97,6 @@ const nodesByDocument = computed<Record<string, IngestedNode[]>>(() => {
   return nodeMap
 })
 
-// Statistics computed properties
 const documentCount = computed(() => {
   return Object.keys(nodesByDocument.value).length
 })
@@ -124,31 +105,16 @@ const totalNodeCount = computed(() => {
   return props.nodes.length
 })
 
-const averageScore = computed(() => {
-  const scoresWithValues = props.nodes
-    .map(node => node.score)
-    .filter((score): score is number => score !== undefined && score !== null)
-
-  if (scoresWithValues.length === 0) return 0
-
-  const sum = scoresWithValues.reduce((acc, score) => acc + score, 0)
-  return sum / scoresWithValues.length
-})
-
-const getDocumentTitle = (nodes: IngestedNode[]): string | null => {
-  // Get title from the first node that has one, or fallback to source filename
-  const nodeWithTitle = nodes.find(node => node.document_title)
+const getDocumentTitle = (nodes: IngestedNode[]): string => {
+  const nodeWithTitle = nodes.find(node => node.document_title?.trim())
   if (nodeWithTitle?.document_title) {
-    return nodeWithTitle.document_title
+    return nodeWithTitle.document_title.trim()
   }
 
-  // Fallback to filename from source if no title available
-  const firstNode = nodes[0]
-  if (firstNode?.source) {
-    const filename = firstNode.source.split('/').pop() || firstNode.source
-    return filename
+  const nodeWithSource = nodes.find(node => node.source?.trim())
+  if (nodeWithSource?.source) {
+    return nodeWithSource.source
   }
-
-  return null
+  return ''
 }
 </script>
