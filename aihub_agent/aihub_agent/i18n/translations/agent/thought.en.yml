@@ -4,3 +4,5 @@ write_answer_based_on_few_shot_examples: "Writing an answer based on predefined 
 searching_knowledge: "Searching for knowledge"
 preparing_knowledge: "Preparing knowledge"
 test: "Test"
+no_context_sufficiency_check: "No context sufficiency check was configured and performed."
+no_few_shot_examples: "No few-shot examples were configured and used."

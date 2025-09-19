@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ChatMessage, ChunkEventReadable, ThreadDto, AgentEventReadable } from '@core/sdk/client'
+import type { ChatMessageOutput, ChunkEventReadable, ThreadDto, AgentEventReadable } from '@core/sdk/client'
 
 const props = defineProps<{
   event: AgentEventReadable & { event: ChunkEventReadable }
@@ -26,7 +26,7 @@ const props = defineProps<{
 
 const agentIcon = useAgentIconFromThread(props.event, props.thread)
 
-const message = computed<ChatMessage>(() => {
+const message = computed<ChatMessageOutput>(() => {
   return {
     role: 'assistant',
     blocks: [

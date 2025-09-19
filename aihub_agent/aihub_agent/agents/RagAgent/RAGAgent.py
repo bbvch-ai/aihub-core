@@ -107,7 +107,7 @@ class RAGAgent(Agent):
         t: LocaleHandler,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
         if not agent_config.few_shot_guard_examples:
-            return FewShotAcceptEvent(reason=t("agent.thought.no_few_shot_examples"))
+            return FewShotAcceptEvent(reason=t("agent.reason.no_few_shot_examples"))
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             guard_result = await few_shot_guard(
@@ -213,7 +213,7 @@ class RAGAgent(Agent):
         to generate the response.
         """
         if not agent_config.check_context_sufficiency:
-            return ContextSufficientAcceptEvent()
+            return ContextSufficientAcceptEvent(reason=t("agent.thought.no_context_sufficiency_check"))
 
         prev_queries = await run_context.get("prev_queries", [])
         hop_count = await run_context.get("hop_count", 1)
@@ -241,7 +241,7 @@ class RAGAgent(Agent):
         prev_queries.append(new_query)
         await run_context.set("prev_queries", prev_queries)
         await displayer.display_thought(t("agent.thought.trying_another_retrieval_hop"))
-        return ContextInsufficientWithQueryEvent(reasoning=guard_result.reasoning, new_query=new_query)
+        return ContextInsufficientWithQueryEvent(reason=guard_result.reasoning, new_query=new_query)
 
     @step(
         name=LocaleString(en="Limit Chat History with Context"),

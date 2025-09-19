@@ -156,4 +156,4 @@ user_message_event:
 
 standalone_question_condenser_event:
   name: "Question Condensed"
-  description: "The user's request has been condensed to a standalone question sfor better retrieval."
+  description: "The user's request has been condensed to a standalone question for better retrieval."

@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import type {
-  HumanInTheLoopResponseEventReadable, ThreadDto, ChatMessage,
+  HumanInTheLoopResponseEventReadable, ThreadDto, ChatMessageOutput,
   AgentEventReadable,
 } from '@core/sdk/client'
 
@@ -26,7 +26,7 @@ const props = defineProps<{
   thread: ThreadDto
 }>()
 
-const message = computed<ChatMessage>(() => {
+const message = computed<ChatMessageOutput>(() => {
   return {
     role: 'user',
     blocks: [
