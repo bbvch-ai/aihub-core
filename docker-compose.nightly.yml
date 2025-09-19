@@ -922,22 +922,26 @@ services:
       test: [ "CMD", "curl", "-f", "http://0.0.0.0:13133/" ]
 
   docker-health-events:
-    image: alpine:3.20
+    image: docker:26-cli
     container_name: docker-health-events
     restart: unless-stopped
     command: >
-      sh -c "
-      apk add --no-cache docker-cli jq >/dev/null &&
-      mkdir -p /var/log/docker-health &&
-      touch /var/log/docker-health/events.ndjson &&
-      docker events --filter event=health_status --format '{{json .}}' |
-      jq -c '{time, status: .status, id: .id, from: .from, Type: .Type, Action: .Action, Actor: .Actor, scope: .scope}' \
-        >> /var/log/docker-health/events.ndjson
-      "
+      sh -c '
+        set -euo pipefail
+        for i in $(seq 1 30); do
+          docker -H unix:///var/run/docker.sock version >/dev/null 2>&1 && break
+          echo "[health-events] waiting for dockerd..." >&2
+          sleep 1
+        done
+        mkdir -p /var/log/docker-health
+        touch /var/log/docker-health/events.ndjson
+        # Stream only health_status; include events right after startup
+        docker -H unix:///var/run/docker.sock events --since 0s --filter event=health_status --format "{{json .}}" \
+          | tee -a /var/log/docker-health/events.ndjson
+      '
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/log/docker-health:/var/log/docker-health
-
 volumes:
   api-venv:
   api-api-venv:
