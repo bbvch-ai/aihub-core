@@ -38,11 +38,39 @@ receivers:
     include: [ /var/log/docker-health/events.ndjson ]
     start_at: end
     operators:
-      # Parse the JSON line and place fields directly into log attributes
+      # 1) Parse the JSON into BODY (not attributes)
       - type: json_parser
         parse_from: body
-        parse_to: attributes
-      # Tag these records so you can filter in SigNoz
+        parse_to: body
+
+      # 2) Put convenient fields directly in the body
+      - type: move
+        from: body.Actor.Attributes.name
+        to: body.container_name
+      - type: move
+        from: body.id
+        to: body.container_id
+      - type: move
+        from: body.from
+        to: body.image
+      - type: move
+        from: body.Action
+        to: body.health_status
+      - type: move
+        from: body.status
+        to: body.health_status_raw       # optional, keep original
+
+      # 3) (Optional) Keep the body minimal/clean
+      - type: retain
+        fields:
+          - body.container_name
+          - body.container_id
+          - body.image
+          - body.health_status
+          - body.time
+          - body.timeNano
+
+      # 4) Tag for easy filtering in SigNoz
       - type: add
         field: attributes.log_type
         value: docker_health_event
@@ -111,7 +139,7 @@ service:
       processors: [ resourcedetection/docker, resource/docker, batch ]
       exporters: [ otlp/signoz ]
     logs/docker:
-      receivers: [ filelog/docker, filelog/docker_health_events ]
+      receivers: [ filelog/docker_health_events ]
       processors: [ attributes/docker_common, batch ]
       exporters: [otlp/signoz, debug]
     logs:
