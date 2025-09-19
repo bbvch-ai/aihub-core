@@ -107,7 +107,7 @@ class RAGAgent(Agent):
         t: LocaleHandler,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
         if not agent_config.few_shot_guard_examples:
-            return FewShotAcceptEvent(reason=t("agent.reason.no_few_shot_examples"))
+            return FewShotAcceptEvent(reason=t("agent.thought.no_few_shot_examples"))
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             guard_result = await few_shot_guard(

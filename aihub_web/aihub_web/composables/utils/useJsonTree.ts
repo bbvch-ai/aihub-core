@@ -17,8 +17,10 @@ export const useJsonTree = () => {
       value: unknown,
       label: string,
       depth: number = 0,
+      parentPath: string = '',
     ): TreeNode => {
-      const nodeKey = `${key}_${label}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`
+      const currentPath = parentPath ? `${parentPath}.${label}` : label
+      const nodeKey = `${key}_${currentPath}_${depth}`.replace(/[^a-zA-Z0-9_.-]/g, '_')
 
       if (value === null) {
         return {
@@ -71,7 +73,7 @@ export const useJsonTree = () => {
         }
 
         const children = value.map((item, index) =>
-          createNode(item, `[${index}]`, depth + 1),
+          createNode(item, `[${index}]`, depth + 1, currentPath),
         )
 
         return {
@@ -98,7 +100,7 @@ export const useJsonTree = () => {
         }
 
         const children = entries.map(([objKey, objValue]) =>
-          createNode(objValue, objKey, depth + 1),
+          createNode(objValue, objKey, depth + 1, currentPath),
         )
 
         return {
@@ -123,11 +125,11 @@ export const useJsonTree = () => {
     if (typeof data === 'object' && data !== null) {
       const entries = Object.entries(data)
       return entries.map(([objKey, objValue]) =>
-        createNode(objValue, objKey, 0),
+        createNode(objValue, objKey, 0, ''),
       )
     }
 
-    return [createNode(data, 'value', 0)]
+    return [createNode(data, 'value', 0, '')]
   }
 
   return {
