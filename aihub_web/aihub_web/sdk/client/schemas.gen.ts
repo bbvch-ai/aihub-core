@@ -380,10 +380,10 @@ export const AgentInTheLoopRequestEventSchema = {
         other_agent_topic: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/aihub_lib__nats__topics__agents__PartialAgentTopic__PartialAgentTopic'
+                    '$ref': '#/components/schemas/PartialAgentTopic'
                 },
                 {
-                    '$ref': '#/components/schemas/aihub_lib__nats__topics__agents__AgentInstanceTopic__AgentInstanceTopic'
+                    '$ref': '#/components/schemas/AgentInstanceTopic'
                 }
             ],
             title: 'Other Agent Topic',
@@ -504,7 +504,7 @@ When an agent completes a task delegated through an \`AgentInTheLoopRequestEvent
 - Is visible to the UI (since it's also a \`DisplayEvent\`), enabling monitoring of agent interactions`
 } as const;
 
-export const AgentInstanceTopic_InputSchema = {
+export const AgentInstanceTopicSchema = {
     properties: {
         agent_class: {
             type: 'string',
@@ -549,7 +549,154 @@ export const AgentInstanceTopic_InputSchema = {
     },
     type: 'object',
     required: ['agent_class', 'agent_id', 'run_id', 'thread_id', 'display_id', 'event_type', 'event_name', 'event_id'],
-    title: 'AgentInstanceTopic'
+    title: 'AgentInstanceTopic',
+    description: `Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
+to be present. This includes identifiers for agent_class, agent_id, and the event itself.
+
+### Why This Class Exists
+
+In a hierarchical event topic model, PartialAgentTopic might not have all details filled out.
+AgentTopic guarantees that every piece of the event route—from agent class to event ID—is known.
+This makes AgentTopic ideal for scenarios where the full path is required, such as final message
+routing or logging a complete event identifier.
+
+### Example:
+If an event subject is something like:
+"agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"
+then this AgentTopic can represent it, providing quick field-level access and serialization.`
+} as const;
+
+export const AgentSuitabilityAcceptEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason why the guard accepted the request.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['reason', '_event_name', '_parent_event_names'],
+    title: 'AgentSuitabilityAcceptEvent',
+    description: `Event indicating that the agent suitability guard accepted the request.
+
+This event is triggered when the agent suitability guard determines that
+the user query matches the agent's capabilities and description.
+It signifies that this agent is appropriate for handling the user's request.`
+} as const;
+
+export const AgentSuitabilityRejectEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason why the Guard rejected the request.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['reason', '_event_name', '_parent_event_names'],
+    title: 'AgentSuitabilityRejectEvent',
+    description: `Event indicating that the agent suitability guard rejected the request.
+
+This event is triggered when the agent suitability guard determines that
+the user query does not match the agent's capabilities and description.
+It signifies that this agent is not appropriate for handling the user's request
+and the request should be routed to a different agent.`
 } as const;
 
 export const AnnotationSchema = {
@@ -606,72 +753,7 @@ export const AudioSchema = {
     title: 'Audio'
 } as const;
 
-export const AudioBlock_InputSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'audio',
-            title: 'Block Type',
-            default: 'audio'
-        },
-        audio: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'binary'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Audio'
-        },
-        path: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'file-path'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Path'
-        },
-        url: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 2083,
-                    minLength: 1,
-                    format: 'uri'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Url'
-        },
-        format: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Format'
-        }
-    },
-    type: 'object',
-    title: 'AudioBlock'
-} as const;
-
-export const AudioBlock_OutputSchema = {
+export const AudioBlockSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -896,24 +978,7 @@ export const CacheControlSchema = {
     title: 'CacheControl'
 } as const;
 
-export const CachePoint_InputSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'cache',
-            title: 'Block Type',
-            default: 'cache'
-        },
-        cache_control: {
-            '$ref': '#/components/schemas/CacheControl'
-        }
-    },
-    type: 'object',
-    required: ['cache_control'],
-    title: 'CachePoint'
-} as const;
-
-export const CachePoint_OutputSchema = {
+export const CachePointSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -1066,6 +1131,43 @@ export const ChatCompletionSchema = {
     title: 'ChatCompletion'
 } as const;
 
+export const ChatCompletionAllowedToolChoiceParamSchema = {
+    properties: {
+        allowed_tools: {
+            '$ref': '#/components/schemas/ChatCompletionAllowedToolsParam'
+        },
+        type: {
+            type: 'string',
+            const: 'allowed_tools',
+            title: 'Type'
+        }
+    },
+    type: 'object',
+    required: ['allowed_tools', 'type'],
+    title: 'ChatCompletionAllowedToolChoiceParam'
+} as const;
+
+export const ChatCompletionAllowedToolsParamSchema = {
+    properties: {
+        mode: {
+            type: 'string',
+            enum: ['auto', 'required'],
+            title: 'Mode'
+        },
+        tools: {
+            items: {
+                additionalProperties: true,
+                type: 'object'
+            },
+            type: 'array',
+            title: 'Tools'
+        }
+    },
+    type: 'object',
+    required: ['mode', 'tools'],
+    title: 'ChatCompletionAllowedToolsParam'
+} as const;
+
 export const ChatCompletionAssistantMessageParamSchema = {
     properties: {
         role: {
@@ -1134,7 +1236,14 @@ export const ChatCompletionAssistantMessageParamSchema = {
         },
         tool_calls: {
             items: {
-                '$ref': '#/components/schemas/ChatCompletionMessageToolCallParam'
+                anyOf: [
+                    {
+                        '$ref': '#/components/schemas/ChatCompletionMessageFunctionToolCallParam'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ChatCompletionMessageCustomToolCallParam'
+                    }
+                ]
             },
             type: 'array',
             title: 'Tool Calls'
@@ -1332,6 +1441,22 @@ export const ChatCompletionFunctionMessageParamSchema = {
     title: 'ChatCompletionFunctionMessageParam'
 } as const;
 
+export const ChatCompletionFunctionToolParamSchema = {
+    properties: {
+        function: {
+            '$ref': '#/components/schemas/FunctionDefinition'
+        },
+        type: {
+            type: 'string',
+            const: 'function',
+            title: 'Type'
+        }
+    },
+    type: 'object',
+    required: ['function', 'type'],
+    title: 'ChatCompletionFunctionToolParam'
+} as const;
+
 export const ChatCompletionMessageSchema = {
     properties: {
         content: {
@@ -1399,7 +1524,14 @@ export const ChatCompletionMessageSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/ChatCompletionMessageToolCall'
+                        anyOf: [
+                            {
+                                '$ref': '#/components/schemas/ChatCompletionMessageFunctionToolCall'
+                            },
+                            {
+                                '$ref': '#/components/schemas/ChatCompletionMessageCustomToolCall'
+                            }
+                        ]
                     },
                     type: 'array'
                 },
@@ -1416,7 +1548,48 @@ export const ChatCompletionMessageSchema = {
     title: 'ChatCompletionMessage'
 } as const;
 
-export const ChatCompletionMessageToolCallSchema = {
+export const ChatCompletionMessageCustomToolCallSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        custom: {
+            '$ref': '#/components/schemas/Custom-Output'
+        },
+        type: {
+            type: 'string',
+            const: 'custom',
+            title: 'Type'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['id', 'custom', 'type'],
+    title: 'ChatCompletionMessageCustomToolCall'
+} as const;
+
+export const ChatCompletionMessageCustomToolCallParamSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        custom: {
+            '$ref': '#/components/schemas/openai__types__chat__chat_completion_message_custom_tool_call_param__Custom'
+        },
+        type: {
+            type: 'string',
+            const: 'custom',
+            title: 'Type'
+        }
+    },
+    type: 'object',
+    required: ['id', 'custom', 'type'],
+    title: 'ChatCompletionMessageCustomToolCallParam'
+} as const;
+
+export const ChatCompletionMessageFunctionToolCallSchema = {
     properties: {
         id: {
             type: 'string',
@@ -1434,17 +1607,17 @@ export const ChatCompletionMessageToolCallSchema = {
     additionalProperties: true,
     type: 'object',
     required: ['id', 'function', 'type'],
-    title: 'ChatCompletionMessageToolCall'
+    title: 'ChatCompletionMessageFunctionToolCall'
 } as const;
 
-export const ChatCompletionMessageToolCallParamSchema = {
+export const ChatCompletionMessageFunctionToolCallParamSchema = {
     properties: {
         id: {
             type: 'string',
             title: 'Id'
         },
         function: {
-            '$ref': '#/components/schemas/openai__types__chat__chat_completion_message_tool_call_param__Function'
+            '$ref': '#/components/schemas/openai__types__chat__chat_completion_message_function_tool_call_param__Function'
         },
         type: {
             type: 'string',
@@ -1454,7 +1627,23 @@ export const ChatCompletionMessageToolCallParamSchema = {
     },
     type: 'object',
     required: ['id', 'function', 'type'],
-    title: 'ChatCompletionMessageToolCallParam'
+    title: 'ChatCompletionMessageFunctionToolCallParam'
+} as const;
+
+export const ChatCompletionNamedToolChoiceCustomParamSchema = {
+    properties: {
+        custom: {
+            '$ref': '#/components/schemas/openai__types__chat__chat_completion_named_tool_choice_custom_param__Custom'
+        },
+        type: {
+            type: 'string',
+            const: 'custom',
+            title: 'Type'
+        }
+    },
+    type: 'object',
+    required: ['custom', 'type'],
+    title: 'ChatCompletionNamedToolChoiceCustomParam'
 } as const;
 
 export const ChatCompletionNamedToolChoiceParamSchema = {
@@ -1543,7 +1732,7 @@ export const ChatCompletionRequestSchema = {
                 },
                 {
                     type: 'string',
-                    enum: ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4.1-2025-04-14', 'gpt-4.1-mini-2025-04-14', 'gpt-4.1-nano-2025-04-14', 'o4-mini', 'o4-mini-2025-04-16', 'o3', 'o3-2025-04-16', 'o3-mini', 'o3-mini-2025-01-31', 'o1', 'o1-2024-12-17', 'o1-preview', 'o1-preview-2024-09-12', 'o1-mini', 'o1-mini-2024-09-12', 'gpt-4o', 'gpt-4o-2024-11-20', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-audio-preview', 'gpt-4o-audio-preview-2024-10-01', 'gpt-4o-audio-preview-2024-12-17', 'gpt-4o-audio-preview-2025-06-03', 'gpt-4o-mini-audio-preview', 'gpt-4o-mini-audio-preview-2024-12-17', 'gpt-4o-search-preview', 'gpt-4o-mini-search-preview', 'gpt-4o-search-preview-2025-03-11', 'gpt-4o-mini-search-preview-2025-03-11', 'chatgpt-4o-latest', 'codex-mini-latest', 'gpt-4o-mini', 'gpt-4o-mini-2024-07-18', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4-0125-preview', 'gpt-4-turbo-preview', 'gpt-4-1106-preview', 'gpt-4-vision-preview', 'gpt-4', 'gpt-4-0314', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-4-32k-0613', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0301', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0125', 'gpt-3.5-turbo-16k-0613']
+                    enum: ['gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'gpt-5-2025-08-07', 'gpt-5-mini-2025-08-07', 'gpt-5-nano-2025-08-07', 'gpt-5-chat-latest', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4.1-2025-04-14', 'gpt-4.1-mini-2025-04-14', 'gpt-4.1-nano-2025-04-14', 'o4-mini', 'o4-mini-2025-04-16', 'o3', 'o3-2025-04-16', 'o3-mini', 'o3-mini-2025-01-31', 'o1', 'o1-2024-12-17', 'o1-preview', 'o1-preview-2024-09-12', 'o1-mini', 'o1-mini-2024-09-12', 'gpt-4o', 'gpt-4o-2024-11-20', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-audio-preview', 'gpt-4o-audio-preview-2024-10-01', 'gpt-4o-audio-preview-2024-12-17', 'gpt-4o-audio-preview-2025-06-03', 'gpt-4o-mini-audio-preview', 'gpt-4o-mini-audio-preview-2024-12-17', 'gpt-4o-search-preview', 'gpt-4o-mini-search-preview', 'gpt-4o-search-preview-2025-03-11', 'gpt-4o-mini-search-preview-2025-03-11', 'chatgpt-4o-latest', 'codex-mini-latest', 'gpt-4o-mini', 'gpt-4o-mini-2024-07-18', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4-0125-preview', 'gpt-4-turbo-preview', 'gpt-4-1106-preview', 'gpt-4-vision-preview', 'gpt-4', 'gpt-4-0314', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-4-32k-0613', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0301', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0125', 'gpt-3.5-turbo-16k-0613']
                 }
             ],
             title: 'Model',
@@ -1735,7 +1924,7 @@ export const ChatCompletionRequestSchema = {
             anyOf: [
                 {
                     type: 'string',
-                    enum: ['low', 'medium', 'high']
+                    enum: ['minimal', 'low', 'medium', 'high']
                 },
                 {
                     type: 'null'
@@ -1839,7 +2028,13 @@ export const ChatCompletionRequestSchema = {
                     enum: ['none', 'auto', 'required']
                 },
                 {
+                    '$ref': '#/components/schemas/ChatCompletionAllowedToolChoiceParam'
+                },
+                {
                     '$ref': '#/components/schemas/ChatCompletionNamedToolChoiceParam'
+                },
+                {
+                    '$ref': '#/components/schemas/ChatCompletionNamedToolChoiceCustomParam'
                 },
                 {
                     type: 'null'
@@ -1851,7 +2046,7 @@ export const ChatCompletionRequestSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/ChatCompletionToolParam'
+                        '$ref': '#/components/schemas/ChatCompletionFunctionToolParam'
                     },
                     type: 'array'
                 },
@@ -1892,6 +2087,10 @@ export const ChatCompletionRequestSchema = {
 
 export const ChatCompletionStreamOptionsParamSchema = {
     properties: {
+        include_obfuscation: {
+            type: 'boolean',
+            title: 'Include Obfuscation'
+        },
         include_usage: {
             type: 'boolean',
             title: 'Include Usage'
@@ -2001,22 +2200,6 @@ export const ChatCompletionToolMessageParamSchema = {
     title: 'ChatCompletionToolMessageParam'
 } as const;
 
-export const ChatCompletionToolParamSchema = {
-    properties: {
-        function: {
-            '$ref': '#/components/schemas/FunctionDefinition'
-        },
-        type: {
-            type: 'string',
-            const: 'function',
-            title: 'Type'
-        }
-    },
-    type: 'object',
-    required: ['function', 'type'],
-    title: 'ChatCompletionToolParam'
-} as const;
-
 export const ChatCompletionUserMessageParamSchema = {
     properties: {
         content: {
@@ -2061,10 +2244,10 @@ export const ChatCompletionUserMessageParamSchema = {
     title: 'ChatCompletionUserMessageParam'
 } as const;
 
-export const ChatMessage_OutputSchema = {
+export const ChatMessageSchema = {
     properties: {
         role: {
-            '$ref': '#/components/schemas/MessageRole-Output',
+            '$ref': '#/components/schemas/MessageRole',
             default: 'user'
         },
         additional_kwargs: {
@@ -2074,37 +2257,37 @@ export const ChatMessage_OutputSchema = {
             items: {
                 oneOf: [
                     {
-                        '$ref': '#/components/schemas/TextBlock-Output'
+                        '$ref': '#/components/schemas/TextBlock'
                     },
                     {
-                        '$ref': '#/components/schemas/ImageBlock-Output'
+                        '$ref': '#/components/schemas/ImageBlock'
                     },
                     {
-                        '$ref': '#/components/schemas/AudioBlock-Output'
+                        '$ref': '#/components/schemas/AudioBlock'
                     },
                     {
-                        '$ref': '#/components/schemas/DocumentBlock-Output'
+                        '$ref': '#/components/schemas/DocumentBlock'
                     },
                     {
-                        '$ref': '#/components/schemas/CachePoint-Output'
+                        '$ref': '#/components/schemas/CachePoint'
                     },
                     {
-                        '$ref': '#/components/schemas/CitableBlock-Output'
+                        '$ref': '#/components/schemas/CitableBlock'
                     },
                     {
-                        '$ref': '#/components/schemas/CitationBlock-Output'
+                        '$ref': '#/components/schemas/CitationBlock'
                     }
                 ],
                 discriminator: {
                     propertyName: 'block_type',
                     mapping: {
-                        audio: '#/components/schemas/AudioBlock-Output',
-                        cache: '#/components/schemas/CachePoint-Output',
-                        citable: '#/components/schemas/CitableBlock-Output',
-                        citation: '#/components/schemas/CitationBlock-Output',
-                        document: '#/components/schemas/DocumentBlock-Output',
-                        image: '#/components/schemas/ImageBlock-Output',
-                        text: '#/components/schemas/TextBlock-Output'
+                        audio: '#/components/schemas/AudioBlock',
+                        cache: '#/components/schemas/CachePoint',
+                        citable: '#/components/schemas/CitableBlock',
+                        citation: '#/components/schemas/CitationBlock',
+                        document: '#/components/schemas/DocumentBlock',
+                        image: '#/components/schemas/ImageBlock',
+                        text: '#/components/schemas/TextBlock'
                     }
                 }
             },
@@ -2261,7 +2444,7 @@ responses as they are generated, improving user experience by not forcing them t
 for the entire answer.`
 } as const;
 
-export const CitableBlock_InputSchema = {
+export const CitableBlockSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -2281,68 +2464,21 @@ export const CitableBlock_InputSchema = {
             items: {
                 oneOf: [
                     {
-                        '$ref': '#/components/schemas/TextBlock-Input'
+                        '$ref': '#/components/schemas/TextBlock'
                     },
                     {
-                        '$ref': '#/components/schemas/ImageBlock-Input'
+                        '$ref': '#/components/schemas/ImageBlock'
                     },
                     {
-                        '$ref': '#/components/schemas/DocumentBlock-Input'
+                        '$ref': '#/components/schemas/DocumentBlock'
                     }
                 ],
                 discriminator: {
                     propertyName: 'block_type',
                     mapping: {
-                        document: '#/components/schemas/DocumentBlock-Input',
-                        image: '#/components/schemas/ImageBlock-Input',
-                        text: '#/components/schemas/TextBlock-Input'
-                    }
-                }
-            },
-            type: 'array',
-            title: 'Content'
-        }
-    },
-    type: 'object',
-    required: ['title', 'source', 'content'],
-    title: 'CitableBlock'
-} as const;
-
-export const CitableBlock_OutputSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'citable',
-            title: 'Block Type',
-            default: 'citable'
-        },
-        title: {
-            type: 'string',
-            title: 'Title'
-        },
-        source: {
-            type: 'string',
-            title: 'Source'
-        },
-        content: {
-            items: {
-                oneOf: [
-                    {
-                        '$ref': '#/components/schemas/TextBlock-Output'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ImageBlock-Output'
-                    },
-                    {
-                        '$ref': '#/components/schemas/DocumentBlock-Output'
-                    }
-                ],
-                discriminator: {
-                    propertyName: 'block_type',
-                    mapping: {
-                        document: '#/components/schemas/DocumentBlock-Output',
-                        image: '#/components/schemas/ImageBlock-Output',
-                        text: '#/components/schemas/TextBlock-Output'
+                        document: '#/components/schemas/DocumentBlock',
+                        image: '#/components/schemas/ImageBlock',
+                        text: '#/components/schemas/TextBlock'
                     }
                 }
             },
@@ -2356,7 +2492,7 @@ export const CitableBlock_OutputSchema = {
     description: 'Supports providing citable content to LLMs that have built-in citation support.'
 } as const;
 
-export const CitationBlock_InputSchema = {
+export const CitationBlockSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -2367,61 +2503,18 @@ export const CitationBlock_InputSchema = {
         cited_content: {
             oneOf: [
                 {
-                    '$ref': '#/components/schemas/TextBlock-Input'
+                    '$ref': '#/components/schemas/TextBlock'
                 },
                 {
-                    '$ref': '#/components/schemas/ImageBlock-Input'
+                    '$ref': '#/components/schemas/ImageBlock'
                 }
             ],
             title: 'Cited Content',
             discriminator: {
                 propertyName: 'block_type',
                 mapping: {
-                    image: '#/components/schemas/ImageBlock-Input',
-                    text: '#/components/schemas/TextBlock-Input'
-                }
-            }
-        },
-        source: {
-            type: 'string',
-            title: 'Source'
-        },
-        title: {
-            type: 'string',
-            title: 'Title'
-        },
-        additional_location_info: {
-            '$ref': '#/components/schemas/additional_location_info'
-        }
-    },
-    type: 'object',
-    required: ['cited_content', 'source', 'title', 'additional_location_info'],
-    title: 'CitationBlock'
-} as const;
-
-export const CitationBlock_OutputSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'citation',
-            title: 'Block Type',
-            default: 'citation'
-        },
-        cited_content: {
-            oneOf: [
-                {
-                    '$ref': '#/components/schemas/TextBlock-Output'
-                },
-                {
-                    '$ref': '#/components/schemas/ImageBlock-Output'
-                }
-            ],
-            title: 'Cited Content',
-            discriminator: {
-                propertyName: 'block_type',
-                mapping: {
-                    image: '#/components/schemas/ImageBlock-Output',
-                    text: '#/components/schemas/TextBlock-Output'
+                    image: '#/components/schemas/ImageBlock',
+                    text: '#/components/schemas/TextBlock'
                 }
             }
         },
@@ -2540,6 +2633,139 @@ export const CompletionUsageSchema = {
     title: 'CompletionUsage'
 } as const;
 
+export const ContextInsufficientRejectEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason why the Guard rejected the request.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['reason', '_event_name', '_parent_event_names'],
+    title: 'ContextInsufficientRejectEvent',
+    description: `Event indicating that the context sufficiency guard rejected the request.
+
+This event is triggered when the context sufficiency guard determines that
+there is insufficient context available to answer the user's query and
+additional information retrieval or processing is required. The event includes
+a new query suggestion for additional context retrieval.`
+} as const;
+
+export const ContextSufficientAcceptEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason why the guard accepted the request.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['reason', '_event_name', '_parent_event_names'],
+    title: 'ContextSufficientAcceptEvent',
+    description: `Event indicating that the context sufficiency guard accepted the request.
+
+This event is triggered when the context sufficiency guard determines that
+there is sufficient context available to answer the user's query without
+requiring additional information retrieval or processing.`
+} as const;
+
 export const ContextualizedAgentEventSchema = {
     properties: {
         locale: {
@@ -2607,7 +2833,7 @@ export const ContextualizedAgentEventSchema = {
                     '$ref': '#/components/schemas/AgentInTheLoopResponseEvent'
                 },
                 {
-                    '$ref': '#/components/schemas/HumanInTheLoopRequestEvent-Output'
+                    '$ref': '#/components/schemas/HumanInTheLoopRequestEvent'
                 },
                 {
                     '$ref': '#/components/schemas/AgentInTheLoopRequestEvent'
@@ -2680,6 +2906,33 @@ export const ContextualizedAgentEventSchema = {
                 },
                 {
                     '$ref': '#/components/schemas/DisplayEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/GuardAcceptEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentSuitabilityAcceptEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentSuitabilityRejectEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/ContextSufficientAcceptEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/ContextInsufficientRejectEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/FewShotAcceptEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/FewShotRejectEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/SensitiveInfoAcceptEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/SensitiveInfoRejectEvent'
                 }
             ],
             title: 'Event',
@@ -2891,68 +3144,21 @@ export const CreateTokenResponseSchema = {
     title: 'CreateTokenResponse'
 } as const;
 
-export const CustomHumanInTheLoopRequestEventOutputSchema = {
+export const Custom_OutputSchema = {
     properties: {
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        question: {
+        input: {
             type: 'string',
-            title: 'Question',
-            description: 'The query or prompt presented to the human operator.'
+            title: 'Input'
         },
-        topic: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/jambo__parser__object_type_parser__PartialAgentTopic'
-                },
-                {
-                    '$ref': '#/components/schemas/jambo__parser__object_type_parser__AgentInstanceTopic'
-                }
-            ],
-            title: 'Topic',
-            description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
+        name: {
+            type: 'string',
+            title: 'Name'
         }
     },
+    additionalProperties: true,
     type: 'object',
-    required: ['question', 'topic'],
-    title: 'CustomHumanInTheLoopRequestEventOutput'
-} as const;
-
-export const CustomHumanInTheLoopResponseEventInputSchema = {
-    properties: {
-        response: {
-            type: 'string',
-            title: 'Response',
-            description: "The human operator's answer or decision."
-        },
-        request_event: {
-            '$ref': '#/components/schemas/HumanInTheLoopRequestEvent-Input',
-            description: 'The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.'
-        }
-    },
-    type: 'object',
-    required: ['response', 'request_event'],
-    title: 'CustomHumanInTheLoopResponseEventInput'
+    required: ['input', 'name'],
+    title: 'Custom'
 } as const;
 
 export const DashboardDTOSchema = {
@@ -3491,80 +3697,7 @@ export const DisplayStatisticsSchema = {
     description: 'Statistics for a display, including its runs, intended for API response.'
 } as const;
 
-export const DocumentBlock_InputSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'document',
-            title: 'Block Type',
-            default: 'document'
-        },
-        data: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'binary'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Data'
-        },
-        path: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'file-path'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Path'
-        },
-        url: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Url'
-        },
-        title: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Title'
-        },
-        document_mimetype: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Document Mimetype'
-        }
-    },
-    type: 'object',
-    title: 'DocumentBlock'
-} as const;
-
-export const DocumentBlock_OutputSchema = {
+export const DocumentBlockSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -4670,6 +4803,140 @@ export const ExperimentRunRecordSchema = {
     title: 'ExperimentRunRecord'
 } as const;
 
+export const FewShotAcceptEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason why the guard accepted the request.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['reason', '_event_name', '_parent_event_names'],
+    title: 'FewShotAcceptEvent',
+    description: `Event indicating that the few-shot guard accepted the request.
+
+This event is triggered when the few-shot guard determines that
+the user query is appropriate based on analysis of provided examples.
+It signifies that the request matches the patterns of acceptable queries
+demonstrated in the few-shot examples.`
+} as const;
+
+export const FewShotRejectEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason why the Guard rejected the request.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['reason', '_event_name', '_parent_event_names'],
+    title: 'FewShotRejectEvent',
+    description: `Event indicating that the few-shot guard rejected the request.
+
+This event is triggered when the few-shot guard determines that
+the user query is inappropriate based on analysis of provided examples.
+It signifies that the request does not match the patterns of acceptable queries
+demonstrated in the few-shot examples and should be blocked.`
+} as const;
+
 export const FileSchema = {
     properties: {
         file: {
@@ -4916,6 +5183,76 @@ export const FunctionDefinitionSchema = {
     type: 'object',
     required: ['name'],
     title: 'FunctionDefinition'
+} as const;
+
+export const GuardAcceptEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason why the guard accepted the request.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['reason', '_event_name', '_parent_event_names'],
+    title: 'GuardAcceptEvent',
+    description: `Base class for all guard acceptance events.
+
+This event is triggered when a guard mechanism determines that a request
+meets all security, policy, and validation requirements and can proceed.
+Guard events are critical for maintaining system security and ensuring
+proper workflow control.
+
+All specific guard acceptance events should inherit from this base class
+to ensure consistent behavior and proper event handling throughout the system.`
 } as const;
 
 export const GuardEventSchema = {
@@ -5221,7 +5558,7 @@ It also holds the route and http method that must be used to finally post that w
 to the API, which will forward it to the appropriate process.`
 } as const;
 
-export const HumanInTheLoopRequestEvent_InputSchema = {
+export const HumanInTheLoopRequestEventSchema = {
     properties: {
         event_id: {
             type: 'string',
@@ -5262,66 +5599,10 @@ export const HumanInTheLoopRequestEvent_InputSchema = {
         topic: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/PartialAgentTopic-Input'
+                    '$ref': '#/components/schemas/PartialAgentTopic'
                 },
                 {
-                    '$ref': '#/components/schemas/AgentInstanceTopic-Input'
-                }
-            ],
-            title: 'Topic',
-            description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
-        }
-    },
-    type: 'object',
-    required: ['question', 'topic'],
-    title: 'HumanInTheLoopRequestEvent'
-} as const;
-
-export const HumanInTheLoopRequestEvent_OutputSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'The time (in ns since epoch) the event was stored in the event store'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        question: {
-            type: 'string',
-            title: 'Question',
-            description: 'The query or prompt presented to the human operator.'
-        },
-        topic: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/aihub_lib__nats__topics__agents__PartialAgentTopic__PartialAgentTopic'
-                },
-                {
-                    '$ref': '#/components/schemas/aihub_lib__nats__topics__agents__AgentInstanceTopic__AgentInstanceTopic'
+                    '$ref': '#/components/schemas/AgentInstanceTopic'
                 }
             ],
             title: 'Topic',
@@ -5395,7 +5676,7 @@ export const HumanInTheLoopResponseEventSchema = {
             description: "The human operator's answer or decision."
         },
         request_event: {
-            '$ref': '#/components/schemas/HumanInTheLoopRequestEvent-Output',
+            '$ref': '#/components/schemas/HumanInTheLoopRequestEvent',
             description: 'The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.'
         },
         _event_name: {
@@ -5468,83 +5749,7 @@ export const ImageSchema = {
     title: 'Image'
 } as const;
 
-export const ImageBlock_InputSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'image',
-            title: 'Block Type',
-            default: 'image'
-        },
-        image: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'binary'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Image'
-        },
-        path: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'file-path'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Path'
-        },
-        url: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 2083,
-                    minLength: 1,
-                    format: 'uri'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Url'
-        },
-        image_mimetype: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Image Mimetype'
-        },
-        detail: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Detail'
-        }
-    },
-    type: 'object',
-    title: 'ImageBlock'
-} as const;
-
-export const ImageBlock_OutputSchema = {
+export const ImageBlockSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -6484,7 +6689,7 @@ export const LLMEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
+                        '$ref': '#/components/schemas/Message'
                     },
                     type: 'array'
                 },
@@ -6499,7 +6704,7 @@ export const LLMEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
+                        '$ref': '#/components/schemas/Message'
                     },
                     type: 'array'
                 },
@@ -6710,7 +6915,7 @@ export const LLMStopEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
+                        '$ref': '#/components/schemas/Message'
                     },
                     type: 'array'
                 },
@@ -6725,7 +6930,7 @@ export const LLMStopEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
+                        '$ref': '#/components/schemas/Message'
                     },
                     type: 'array'
                 },
@@ -6899,198 +7104,6 @@ Used during deserialization to decide which subclass to instantiate.`,
     title: 'LLMStopEvent'
 } as const;
 
-export const LLMStopEventOutputSchema = {
-    properties: {
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        input_messages: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__Message'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Input Messages',
-            description: 'List of messages sent to the LLM as input.'
-        },
-        output_messages: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__Message'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Output Messages',
-            description: 'List of messages received from the LLM as output.'
-        },
-        invocation_parameters: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/invocation_parameters'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Parameters used during the invocation of the LLM.'
-        },
-        chat_model_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Chat Model Name',
-            description: 'The name of the language model being utilized.'
-        },
-        provider: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Provider',
-            description: 'The hosting provider of the LLM, e.g., OpenAI, Azure.'
-        },
-        system: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'System',
-            description: 'The AI product as identified by the client or server.'
-        },
-        prompt_template: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Prompt Template',
-            description: 'The prompt template as a Python f-string.'
-        },
-        prompt_template_variables: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/prompt_template_variables'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'A dictionary of input variables to the prompt template.'
-        },
-        prompt_template_version: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Prompt Template Version',
-            description: 'The version of the prompt template being used.'
-        },
-        token_count_prompt: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Token Count Prompt',
-            description: 'The number of tokens in the prompt.'
-        },
-        token_count_completion: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Token Count Completion',
-            description: 'The number of tokens in the completion.'
-        },
-        token_count_total: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Token Count Total',
-            description: 'The total number of tokens, including both prompt and completion.'
-        },
-        tools: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/tools'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tools',
-            description: 'List of tools that are advertised to the LLM to be able to call.'
-        }
-    },
-    type: 'object',
-    title: 'LLMStopEventOutput'
-} as const;
-
 export const LimitChatHistoryEventSchema = {
     properties: {
         event_id: {
@@ -7126,7 +7139,7 @@ export const LimitChatHistoryEventSchema = {
         },
         limited_history: {
             items: {
-                '$ref': '#/components/schemas/ChatMessage-Output'
+                '$ref': '#/components/schemas/ChatMessage'
             },
             type: 'array',
             title: 'Limited History',
@@ -7276,13 +7289,115 @@ export const LogprobSchema = {
     title: 'Logprob'
 } as const;
 
-export const MessageRole_InputSchema = {
-    type: 'string',
-    enum: ['system', 'developer', 'user', 'assistant', 'function', 'tool', 'chatbot', 'model'],
-    title: 'MessageRole'
+export const MessageSchema = {
+    properties: {
+        role: {
+            type: 'string',
+            title: 'Role',
+            description: "The role of the message, such as 'user', 'assistant', or 'system'."
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'The name of the function or agent generating the message.'
+        },
+        tool_calls: {
+            anyOf: [
+                {
+                    items: {
+                        additionalProperties: true,
+                        type: 'object'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tool Calls',
+            description: 'List of tool calls generated by the model, such as function calls.'
+        },
+        function_call_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Function Call Name',
+            description: 'The name of the function being called in the message.'
+        },
+        function_call_arguments_json: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Function Call Arguments Json',
+            description: 'JSON representing arguments passed to the function during a function call.'
+        },
+        tool_call_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tool Call Id',
+            description: 'The ID of the tool call, if applicable.'
+        },
+        contents: {
+            anyOf: [
+                {
+                    items: {
+                        anyOf: [
+                            {
+                                '$ref': '#/components/schemas/TextContent'
+                            },
+                            {
+                                '$ref': '#/components/schemas/ImageContent'
+                            },
+                            {
+                                '$ref': '#/components/schemas/AudioContent'
+                            }
+                        ]
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Contents',
+            description: 'The message contents as an array of content blocks (text, image, audio).'
+        },
+        content: {
+            type: 'string',
+            title: 'Content',
+            readOnly: true
+        }
+    },
+    type: 'object',
+    required: ['role', 'content'],
+    title: 'Message'
 } as const;
 
-export const MessageRole_OutputSchema = {
+export const MessageRoleSchema = {
     type: 'string',
     enum: ['system', 'developer', 'user', 'assistant', 'function', 'tool', 'chatbot', 'model'],
     title: 'MessageRole',
@@ -7331,7 +7446,7 @@ export const MetadataSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/aihub_lib__nats__events__user__UserUploadedFile__UserUploadedFile'
+                        '$ref': '#/components/schemas/UserUploadedFile'
                     },
                     type: 'array'
                 },
@@ -7562,7 +7677,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1758204815
+            default: 1758282791
         },
         owned_by: {
             type: 'string',
@@ -8568,7 +8683,7 @@ export const PaginatedUsersResponseSchema = {
     description: 'Represents a paginated response containing a list of users.'
 } as const;
 
-export const PartialAgentTopic_InputSchema = {
+export const PartialAgentTopicSchema = {
     properties: {
         agent_class: {
             anyOf: [
@@ -8668,7 +8783,23 @@ export const PartialAgentTopic_InputSchema = {
         }
     },
     type: 'object',
-    title: 'PartialAgentTopic'
+    title: 'PartialAgentTopic',
+    description: `Represents a partially qualified agent event topic, where some fields may be unspecified.
+Wildcards (represented by "*") in the subject translate into None values here.
+
+### Why PartialAgentTopic?
+Sometimes you deal with generic subscriptions to broad categories of events—like all display events
+or all events from a particular agent class—without knowing the exact agent_id, thread_id, or event_id.
+PartialAgentTopic captures this scenario, making it explicit which parts of the topic are defined
+and which remain open (None).
+
+### Use Cases
+- **Generic Monitoring:** You might subscribe to \`agent.myclass.*.*.*.*.display_event.*.*\` to monitor
+  all display events for a given agent class, regardless of the specific agent instance or thread.
+  The resulting PartialAgentTopic shows which filters have been fixed and which are open.
+- **Routing Decisions:** If a system receives a message on a wildcard topic, it can inspect this
+  PartialAgentTopic to decide dynamically which handler to invoke based on known fields, leaving
+  unknowns as flexible conditions.`
 } as const;
 
 export const ProcessConfigDTOSchema = {
@@ -9500,6 +9631,143 @@ Since \`to_semantic_convention()\` is not implemented here, subclasses must prov
 to translate the event’s internal state into OpenInference semantic attributes.`
 } as const;
 
+export const SensitiveInfoAcceptEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason why the guard accepted the request.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['reason', '_event_name', '_parent_event_names'],
+    title: 'SensitiveInfoAcceptEvent',
+    description: `Event indicating that the sensitive information guard accepted the response.
+
+This event is triggered when the sensitive information guard determines that
+the response does not contain any sensitive or confidential information and
+can be safely presented to the user without modifications.`
+} as const;
+
+export const SensitiveInfoRejectEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason why the Guard rejected the request.'
+        },
+        cleaned_answer: {
+            type: 'string',
+            title: 'Cleaned Answer',
+            description: 'The revised response with sensitive information removed.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['reason', 'cleaned_answer', '_event_name', '_parent_event_names'],
+    title: 'SensitiveInfoRejectEvent',
+    description: `Event indicating that the sensitive information guard rejected the response.
+
+This event is triggered when the sensitive information guard determines that
+the response contains sensitive or confidential information. The event includes
+a cleaned version of the response with the sensitive information removed.`
+} as const;
+
 export const ServiceDTOSchema = {
     properties: {
         name: {
@@ -9581,7 +9849,7 @@ export const StandaloneQuestionCondenserEventSchema = {
             description: 'Display description for the event'
         },
         condensed_chat_message: {
-            '$ref': '#/components/schemas/ChatMessage-Output',
+            '$ref': '#/components/schemas/ChatMessage',
             description: 'Single chat message containing the condensed user question.'
         },
         _event_name: {
@@ -9759,35 +10027,6 @@ By inheriting from both \`ControlEvent\` and \`DisplayEvent\`:
 - Informing the user interface that the conversation or task has concluded.`
 } as const;
 
-export const StopEventOutputSchema = {
-    properties: {
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        }
-    },
-    type: 'object',
-    title: 'StopEventOutput'
-} as const;
-
 export const SubmittedFormDTOSchema = {
     properties: {
         process_class: {
@@ -9828,25 +10067,7 @@ export const SuiteDTOSchema = {
     title: 'SuiteDTO'
 } as const;
 
-export const TextBlock_InputSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'text',
-            title: 'Block Type',
-            default: 'text'
-        },
-        text: {
-            type: 'string',
-            title: 'Text'
-        }
-    },
-    type: 'object',
-    required: ['text'],
-    title: 'TextBlock'
-} as const;
-
-export const TextBlock_OutputSchema = {
+export const TextBlockSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -10979,7 +11200,7 @@ export const UserMessageEventSchema = {
         },
         messages: {
             items: {
-                '$ref': '#/components/schemas/ChatMessage-Output'
+                '$ref': '#/components/schemas/ChatMessage'
             },
             type: 'array',
             title: 'Messages',
@@ -10990,7 +11211,7 @@ export const UserMessageEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/UserUploadedFile-Output'
+                        '$ref': '#/components/schemas/UserUploadedFile'
                     },
                     type: 'array'
                 },
@@ -11046,7 +11267,7 @@ This flexible design allows mixing and matching start events to adapt how and wh
 are triggered, depending on the source of the event.`
 } as const;
 
-export const UserUploadedFile_OutputSchema = {
+export const UserUploadedFileSchema = {
     properties: {
         filename: {
             type: 'string',
@@ -11215,789 +11436,6 @@ export const WorkflowGraphSchema = {
     description: 'Complete workflow graph representation.'
 } as const;
 
-export const additional_kwargsSchema = {
-    properties: {},
-    type: 'object',
-    title: 'additional_kwargs'
-} as const;
-
-export const additional_location_infoSchema = {
-    properties: {},
-    type: 'object',
-    title: 'additional_location_info'
-} as const;
-
-export const aihub_api__services__ModelCreationService__UserMessageEventInput__1Schema = {
-    properties: {
-        messages: {
-            items: {
-                '$ref': '#/components/schemas/jambo__parser__object_type_parser__ChatMessage__1'
-            },
-            type: 'array',
-            title: 'Messages',
-            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
-        },
-        files: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__UserUploadedFile'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Files',
-            description: 'A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.'
-        }
-    },
-    type: 'object',
-    title: 'UserMessageEventInput'
-} as const;
-
-export const aihub_api__services__ModelCreationService__UserMessageEventInput__2Schema = {
-    properties: {
-        messages: {
-            items: {
-                '$ref': '#/components/schemas/jambo__parser__object_type_parser__ChatMessage__2'
-            },
-            type: 'array',
-            title: 'Messages',
-            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
-        },
-        files: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__UserUploadedFile'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Files',
-            description: 'A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.'
-        }
-    },
-    type: 'object',
-    title: 'UserMessageEventInput'
-} as const;
-
-export const aihub_lib__nats__events__semantic__llm__Message__MessageSchema = {
-    properties: {
-        role: {
-            type: 'string',
-            title: 'Role',
-            description: "The role of the message, such as 'user', 'assistant', or 'system'."
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'The name of the function or agent generating the message.'
-        },
-        tool_calls: {
-            anyOf: [
-                {
-                    items: {
-                        additionalProperties: true,
-                        type: 'object'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tool Calls',
-            description: 'List of tool calls generated by the model, such as function calls.'
-        },
-        function_call_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Function Call Name',
-            description: 'The name of the function being called in the message.'
-        },
-        function_call_arguments_json: {
-            anyOf: [
-                {
-                    additionalProperties: true,
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Function Call Arguments Json',
-            description: 'JSON representing arguments passed to the function during a function call.'
-        },
-        tool_call_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tool Call Id',
-            description: 'The ID of the tool call, if applicable.'
-        },
-        contents: {
-            anyOf: [
-                {
-                    items: {
-                        anyOf: [
-                            {
-                                '$ref': '#/components/schemas/TextContent'
-                            },
-                            {
-                                '$ref': '#/components/schemas/ImageContent'
-                            },
-                            {
-                                '$ref': '#/components/schemas/AudioContent'
-                            }
-                        ]
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Contents',
-            description: 'The message contents as an array of content blocks (text, image, audio).'
-        },
-        content: {
-            type: 'string',
-            title: 'Content',
-            readOnly: true
-        }
-    },
-    type: 'object',
-    required: ['role', 'content'],
-    title: 'Message'
-} as const;
-
-export const aihub_lib__nats__events__user__UserUploadedFile__UserUploadedFileSchema = {
-    properties: {
-        filename: {
-            type: 'string',
-            title: 'Filename',
-            description: 'The name of the uploaded file, including the extension.'
-        },
-        file_data: {
-            type: 'string',
-            title: 'File Data',
-            description: 'Base64 encoded content of the uploaded file.'
-        },
-        file_type: {
-            type: 'string',
-            title: 'File Type',
-            description: 'The MIME type of the uploaded file.',
-            examples: ['image/png', 'application/pdf']
-        }
-    },
-    type: 'object',
-    required: ['filename', 'file_data', 'file_type'],
-    title: 'UserUploadedFile'
-} as const;
-
-export const aihub_lib__nats__topics__agents__AgentInstanceTopic__AgentInstanceTopicSchema = {
-    properties: {
-        agent_class: {
-            type: 'string',
-            title: 'Agent Class',
-            description: "The agent's class identifier."
-        },
-        agent_id: {
-            type: 'string',
-            title: 'Agent Id',
-            description: 'Unique identifier for the specific agent instance.'
-        },
-        run_id: {
-            type: 'string',
-            title: 'Run Id',
-            description: 'The run ID within the thread.'
-        },
-        thread_id: {
-            type: 'string',
-            title: 'Thread Id',
-            description: 'Unique identifier for the conversation or workflow thread.'
-        },
-        display_id: {
-            type: 'string',
-            title: 'Display Id',
-            description: 'UI-facing grouping ID, used to distinguish or group related runs.'
-        },
-        event_type: {
-            type: 'string',
-            title: 'Event Type',
-            description: "Type of event (e.g., 'display_event', 'control_event')."
-        },
-        event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: "Name of the event (e.g., 'StartEvent', 'StopEvent', 'ExceptionEvent, ...')."
-        },
-        event_id: {
-            type: 'string',
-            title: 'Event Id',
-            description: 'Unique identifier for this particular event instance.'
-        }
-    },
-    type: 'object',
-    required: ['agent_class', 'agent_id', 'run_id', 'thread_id', 'display_id', 'event_type', 'event_name', 'event_id'],
-    title: 'AgentInstanceTopic',
-    description: `Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
-to be present. This includes identifiers for agent_class, agent_id, and the event itself.
-
-### Why This Class Exists
-
-In a hierarchical event topic model, PartialAgentTopic might not have all details filled out.
-AgentTopic guarantees that every piece of the event route—from agent class to event ID—is known.
-This makes AgentTopic ideal for scenarios where the full path is required, such as final message
-routing or logging a complete event identifier.
-
-### Example:
-If an event subject is something like:
-"agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"
-then this AgentTopic can represent it, providing quick field-level access and serialization.`
-} as const;
-
-export const aihub_lib__nats__topics__agents__PartialAgentTopic__PartialAgentTopicSchema = {
-    properties: {
-        agent_class: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Agent Class',
-            description: 'Agent class or None if unspecified.'
-        },
-        agent_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Agent Id',
-            description: 'Agent ID or None if unspecified.'
-        },
-        run_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Run Id',
-            description: 'Run ID or None if unspecified.'
-        },
-        thread_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Thread Id',
-            description: 'Thread ID or None if unspecified.'
-        },
-        display_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Id',
-            description: 'Display ID or None if unspecified.'
-        },
-        event_type: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Event Type',
-            description: 'Event type or None if unspecified.'
-        },
-        event_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Event Name',
-            description: 'Event name or None if unspecified.'
-        },
-        event_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Event Id',
-            description: 'Event ID or None if unspecified.'
-        }
-    },
-    type: 'object',
-    title: 'PartialAgentTopic',
-    description: `Represents a partially qualified agent event topic, where some fields may be unspecified.
-Wildcards (represented by "*") in the subject translate into None values here.
-
-### Why PartialAgentTopic?
-Sometimes you deal with generic subscriptions to broad categories of events—like all display events
-or all events from a particular agent class—without knowing the exact agent_id, thread_id, or event_id.
-PartialAgentTopic captures this scenario, making it explicit which parts of the topic are defined
-and which remain open (None).
-
-### Use Cases
-- **Generic Monitoring:** You might subscribe to \`agent.myclass.*.*.*.*.display_event.*.*\` to monitor
-  all display events for a given agent class, regardless of the specific agent instance or thread.
-  The resulting PartialAgentTopic shows which filters have been fixed and which are open.
-- **Routing Decisions:** If a system receives a message on a wildcard topic, it can inspect this
-  PartialAgentTopic to decide dynamically which handler to invoke based on known fields, leaving
-  unknowns as flexible conditions.`
-} as const;
-
-export const function_call_arguments_jsonSchema = {
-    properties: {},
-    type: 'object',
-    title: 'function_call_arguments_json'
-} as const;
-
-export const invocation_parametersSchema = {
-    properties: {},
-    type: 'object',
-    title: 'invocation_parameters'
-} as const;
-
-export const jambo__parser__object_type_parser__AgentInstanceTopicSchema = {
-    properties: {
-        agent_class: {
-            type: 'string',
-            title: 'Agent Class',
-            description: "The agent's class identifier."
-        },
-        agent_id: {
-            type: 'string',
-            title: 'Agent Id',
-            description: 'Unique identifier for the specific agent instance.'
-        },
-        run_id: {
-            type: 'string',
-            title: 'Run Id',
-            description: 'The run ID within the thread.'
-        },
-        thread_id: {
-            type: 'string',
-            title: 'Thread Id',
-            description: 'Unique identifier for the conversation or workflow thread.'
-        },
-        display_id: {
-            type: 'string',
-            title: 'Display Id',
-            description: 'UI-facing grouping ID, used to distinguish or group related runs.'
-        },
-        event_type: {
-            type: 'string',
-            title: 'Event Type',
-            description: "Type of event (e.g., 'display_event', 'control_event')."
-        },
-        event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: "Name of the event (e.g., 'StartEvent', 'StopEvent', 'ExceptionEvent, ...')."
-        },
-        event_id: {
-            type: 'string',
-            title: 'Event Id',
-            description: 'Unique identifier for this particular event instance.'
-        }
-    },
-    type: 'object',
-    required: ['agent_class', 'agent_id', 'run_id', 'thread_id', 'display_id', 'event_type', 'event_name', 'event_id'],
-    title: 'AgentInstanceTopic'
-} as const;
-
-export const jambo__parser__object_type_parser__ChatMessage__1Schema = {
-    properties: {
-        role: {
-            '$ref': '#/components/schemas/MessageRole-Input',
-            default: 'user'
-        },
-        additional_kwargs: {
-            '$ref': '#/components/schemas/additional_kwargs'
-        },
-        blocks: {
-            items: {
-                oneOf: [
-                    {
-                        '$ref': '#/components/schemas/TextBlock-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ImageBlock-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/AudioBlock-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/DocumentBlock-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/CachePoint-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/CitableBlock-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/CitationBlock-Input'
-                    }
-                ],
-                discriminator: {
-                    propertyName: 'block_type',
-                    mapping: {
-                        audio: '#/components/schemas/AudioBlock-Input',
-                        cache: '#/components/schemas/CachePoint-Input',
-                        citable: '#/components/schemas/CitableBlock-Input',
-                        citation: '#/components/schemas/CitationBlock-Input',
-                        document: '#/components/schemas/DocumentBlock-Input',
-                        image: '#/components/schemas/ImageBlock-Input',
-                        text: '#/components/schemas/TextBlock-Input'
-                    }
-                }
-            },
-            type: 'array',
-            title: 'Blocks'
-        }
-    },
-    type: 'object',
-    required: ['additional_kwargs'],
-    title: 'ChatMessage'
-} as const;
-
-export const jambo__parser__object_type_parser__ChatMessage__2Schema = {
-    properties: {
-        role: {
-            '$ref': '#/components/schemas/MessageRole-Input',
-            default: 'user'
-        },
-        additional_kwargs: {
-            '$ref': '#/components/schemas/additional_kwargs'
-        },
-        blocks: {
-            items: {
-                oneOf: [
-                    {
-                        '$ref': '#/components/schemas/TextBlock-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ImageBlock-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/AudioBlock-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/DocumentBlock-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/CachePoint-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/CitableBlock-Input'
-                    },
-                    {
-                        '$ref': '#/components/schemas/CitationBlock-Input'
-                    }
-                ],
-                discriminator: {
-                    propertyName: 'block_type',
-                    mapping: {
-                        audio: '#/components/schemas/AudioBlock-Input',
-                        cache: '#/components/schemas/CachePoint-Input',
-                        citable: '#/components/schemas/CitableBlock-Input',
-                        citation: '#/components/schemas/CitationBlock-Input',
-                        document: '#/components/schemas/DocumentBlock-Input',
-                        image: '#/components/schemas/ImageBlock-Input',
-                        text: '#/components/schemas/TextBlock-Input'
-                    }
-                }
-            },
-            type: 'array',
-            title: 'Blocks'
-        }
-    },
-    type: 'object',
-    required: ['additional_kwargs'],
-    title: 'ChatMessage'
-} as const;
-
-export const jambo__parser__object_type_parser__MessageSchema = {
-    properties: {
-        role: {
-            type: 'string',
-            title: 'Role',
-            description: "The role of the message, such as 'user', 'assistant', or 'system'."
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'The name of the function or agent generating the message.'
-        },
-        tool_calls: {
-            anyOf: [
-                {
-                    items: {
-                        '$ref': '#/components/schemas/tool_calls'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tool Calls',
-            description: 'List of tool calls generated by the model, such as function calls.'
-        },
-        function_call_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Function Call Name',
-            description: 'The name of the function being called in the message.'
-        },
-        function_call_arguments_json: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/function_call_arguments_json'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'JSON representing arguments passed to the function during a function call.'
-        },
-        tool_call_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tool Call Id',
-            description: 'The ID of the tool call, if applicable.'
-        },
-        contents: {
-            anyOf: [
-                {
-                    items: {
-                        anyOf: [
-                            {
-                                '$ref': '#/components/schemas/TextContent'
-                            },
-                            {
-                                '$ref': '#/components/schemas/ImageContent'
-                            },
-                            {
-                                '$ref': '#/components/schemas/AudioContent'
-                            }
-                        ]
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Contents',
-            description: 'The message contents as an array of content blocks (text, image, audio).'
-        }
-    },
-    type: 'object',
-    required: ['role'],
-    title: 'Message'
-} as const;
-
-export const jambo__parser__object_type_parser__PartialAgentTopicSchema = {
-    properties: {
-        agent_class: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Agent Class',
-            description: 'Agent class or None if unspecified.'
-        },
-        agent_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Agent Id',
-            description: 'Agent ID or None if unspecified.'
-        },
-        run_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Run Id',
-            description: 'Run ID or None if unspecified.'
-        },
-        thread_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Thread Id',
-            description: 'Thread ID or None if unspecified.'
-        },
-        display_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Id',
-            description: 'Display ID or None if unspecified.'
-        },
-        event_type: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Event Type',
-            description: 'Event type or None if unspecified.'
-        },
-        event_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Event Name',
-            description: 'Event name or None if unspecified.'
-        },
-        event_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Event Id',
-            description: 'Event ID or None if unspecified.'
-        }
-    },
-    type: 'object',
-    title: 'PartialAgentTopic'
-} as const;
-
-export const jambo__parser__object_type_parser__UserUploadedFileSchema = {
-    properties: {
-        filename: {
-            type: 'string',
-            title: 'Filename',
-            description: 'The name of the uploaded file, including the extension.'
-        },
-        file_data: {
-            type: 'string',
-            title: 'File Data',
-            description: 'Base64 encoded content of the uploaded file.'
-        },
-        file_type: {
-            type: 'string',
-            title: 'File Type',
-            description: 'The MIME type of the uploaded file.'
-        }
-    },
-    type: 'object',
-    required: ['filename', 'file_data', 'file_type'],
-    title: 'UserUploadedFile'
-} as const;
-
 export const openai__types__audio__transcription_verbose__UsageSchema = {
     properties: {
         seconds: {
@@ -12016,7 +11454,23 @@ export const openai__types__audio__transcription_verbose__UsageSchema = {
     title: 'Usage'
 } as const;
 
-export const openai__types__chat__chat_completion_message_tool_call_param__FunctionSchema = {
+export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {
+    properties: {
+        input: {
+            type: 'string',
+            title: 'Input'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        }
+    },
+    type: 'object',
+    required: ['input', 'name'],
+    title: 'Custom'
+} as const;
+
+export const openai__types__chat__chat_completion_message_function_tool_call_param__FunctionSchema = {
     properties: {
         arguments: {
             type: 'string',
@@ -12030,6 +11484,18 @@ export const openai__types__chat__chat_completion_message_tool_call_param__Funct
     type: 'object',
     required: ['arguments', 'name'],
     title: 'Function'
+} as const;
+
+export const openai__types__chat__chat_completion_named_tool_choice_custom_param__CustomSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name'
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'Custom'
 } as const;
 
 export const openai__types__chat__chat_completion_named_tool_choice_param__FunctionSchema = {
@@ -12087,22 +11553,4 @@ export const openai__types__images_response__UsageSchema = {
     type: 'object',
     required: ['input_tokens', 'input_tokens_details', 'output_tokens', 'total_tokens'],
     title: 'Usage'
-} as const;
-
-export const prompt_template_variablesSchema = {
-    properties: {},
-    type: 'object',
-    title: 'prompt_template_variables'
-} as const;
-
-export const tool_callsSchema = {
-    properties: {},
-    type: 'object',
-    title: 'tool_calls'
-} as const;
-
-export const toolsSchema = {
-    properties: {},
-    type: 'object',
-    title: 'tools'
 } as const;

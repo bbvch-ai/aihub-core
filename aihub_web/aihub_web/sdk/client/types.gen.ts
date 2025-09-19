@@ -353,7 +353,7 @@ export type AgentInTheLoopRequestEventReadable = {
      * Other Agent Topic
      * A partial or full agent topic specifying the target agent and event routing, ensuring the task is delegated to the correct agent.
      */
-    other_agent_topic: AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic;
+    other_agent_topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Share Thread Id
      * Whether to share the conversation thread context with the other agent.
@@ -380,7 +380,7 @@ export type AgentInTheLoopRequestEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventReadable | UserMessageEventReadable) | (AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic) | boolean | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventReadable | UserMessageEventReadable) | (PartialAgentTopic | AgentInstanceTopic) | boolean | Array<string> | undefined;
 };
 
 /**
@@ -421,7 +421,7 @@ export type AgentInTheLoopRequestEventWritable = {
      * Other Agent Topic
      * A partial or full agent topic specifying the target agent and event routing, ensuring the task is delegated to the correct agent.
      */
-    other_agent_topic: AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic;
+    other_agent_topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Share Thread Id
      * Whether to share the conversation thread context with the other agent.
@@ -437,7 +437,7 @@ export type AgentInTheLoopRequestEventWritable = {
      * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!
      */
     share_run_id?: boolean;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventWritable | UserMessageEventWritable) | (AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic) | boolean | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventWritable | UserMessageEventWritable) | (PartialAgentTopic | AgentInstanceTopic) | boolean | undefined;
 };
 
 /**
@@ -521,8 +521,22 @@ export type AgentInTheLoopResponseEventWritable = {
 
 /**
  * AgentInstanceTopic
+ * Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
+ * to be present. This includes identifiers for agent_class, agent_id, and the event itself.
+ *
+ * ### Why This Class Exists
+ *
+ * In a hierarchical event topic model, PartialAgentTopic might not have all details filled out.
+ * AgentTopic guarantees that every piece of the event route—from agent class to event ID—is known.
+ * This makes AgentTopic ideal for scenarios where the full path is required, such as final message
+ * routing or logging a complete event identifier.
+ *
+ * ### Example:
+ * If an event subject is something like:
+ * "agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"
+ * then this AgentTopic can represent it, providing quick field-level access and serialization.
  */
-export type AgentInstanceTopicInput = {
+export type AgentInstanceTopic = {
     /**
      * Agent Class
      * The agent's class identifier.
@@ -563,6 +577,166 @@ export type AgentInstanceTopicInput = {
      * Unique identifier for this particular event instance.
      */
     event_id: string;
+};
+
+/**
+ * AgentSuitabilityAcceptEvent
+ * Event indicating that the agent suitability guard accepted the request.
+ *
+ * This event is triggered when the agent suitability guard determines that
+ * the user query matches the agent's capabilities and description.
+ * It signifies that this agent is appropriate for handling the user's request.
+ */
+export type AgentSuitabilityAcceptEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+};
+
+/**
+ * AgentSuitabilityAcceptEvent
+ * Event indicating that the agent suitability guard accepted the request.
+ *
+ * This event is triggered when the agent suitability guard determines that
+ * the user query matches the agent's capabilities and description.
+ * It signifies that this agent is appropriate for handling the user's request.
+ */
+export type AgentSuitabilityAcceptEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+};
+
+/**
+ * AgentSuitabilityRejectEvent
+ * Event indicating that the agent suitability guard rejected the request.
+ *
+ * This event is triggered when the agent suitability guard determines that
+ * the user query does not match the agent's capabilities and description.
+ * It signifies that this agent is not appropriate for handling the user's request
+ * and the request should be routed to a different agent.
+ */
+export type AgentSuitabilityRejectEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the Guard rejected the request.
+     */
+    reason: string;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+};
+
+/**
+ * AgentSuitabilityRejectEvent
+ * Event indicating that the agent suitability guard rejected the request.
+ *
+ * This event is triggered when the agent suitability guard determines that
+ * the user query does not match the agent's capabilities and description.
+ * It signifies that this agent is not appropriate for handling the user's request
+ * and the request should be routed to a different agent.
+ */
+export type AgentSuitabilityRejectEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the Guard rejected the request.
+     */
+    reason: string;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
 };
 
 /**
@@ -612,35 +786,9 @@ export type Audio = {
 
 /**
  * AudioBlock
- */
-export type AudioBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'audio';
-    /**
-     * Audio
-     */
-    audio?: (Blob | File) | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | null;
-    /**
-     * Format
-     */
-    format?: string | null;
-};
-
-/**
- * AudioBlock
  * A representation of audio data to directly pass to/from the LLM.
  */
-export type AudioBlockOutput = {
+export type AudioBlock = {
     /**
      * Block Type
      */
@@ -756,20 +904,9 @@ export type CacheControl = {
 
 /**
  * CachePoint
- */
-export type CachePointInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'cache';
-    cache_control: CacheControl;
-};
-
-/**
- * CachePoint
  * Used to set the point to cache up to, if the LLM supports caching.
  */
-export type CachePointOutput = {
+export type CachePoint = {
     /**
      * Block Type
      */
@@ -891,6 +1028,33 @@ export type ChatCompletion = {
 };
 
 /**
+ * ChatCompletionAllowedToolChoiceParam
+ */
+export type ChatCompletionAllowedToolChoiceParam = {
+    allowed_tools: ChatCompletionAllowedToolsParam;
+    /**
+     * Type
+     */
+    type: 'allowed_tools';
+};
+
+/**
+ * ChatCompletionAllowedToolsParam
+ */
+export type ChatCompletionAllowedToolsParam = {
+    /**
+     * Mode
+     */
+    mode: 'auto' | 'required';
+    /**
+     * Tools
+     */
+    tools: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+/**
  * ChatCompletionAssistantMessageParam
  */
 export type ChatCompletionAssistantMessageParam = {
@@ -915,7 +1079,7 @@ export type ChatCompletionAssistantMessageParam = {
     /**
      * Tool Calls
      */
-    tool_calls?: Array<ChatCompletionMessageToolCallParam>;
+    tool_calls?: Array<ChatCompletionMessageFunctionToolCallParam | ChatCompletionMessageCustomToolCallParam>;
 };
 
 /**
@@ -1052,6 +1216,17 @@ export type ChatCompletionFunctionMessageParam = {
 };
 
 /**
+ * ChatCompletionFunctionToolParam
+ */
+export type ChatCompletionFunctionToolParam = {
+    function: FunctionDefinition;
+    /**
+     * Type
+     */
+    type: 'function';
+};
+
+/**
  * ChatCompletionMessage
  */
 export type ChatCompletionMessage = {
@@ -1076,14 +1251,45 @@ export type ChatCompletionMessage = {
     /**
      * Tool Calls
      */
-    tool_calls?: Array<ChatCompletionMessageToolCall> | null;
-    [key: string]: unknown | (string | null) | (string | null) | 'assistant' | (Array<Annotation> | null) | (ChatCompletionAudio | null) | (FunctionCallOutput | null) | (Array<ChatCompletionMessageToolCall> | null) | undefined;
+    tool_calls?: Array<ChatCompletionMessageFunctionToolCall | ChatCompletionMessageCustomToolCall> | null;
+    [key: string]: unknown | (string | null) | (string | null) | 'assistant' | (Array<Annotation> | null) | (ChatCompletionAudio | null) | (FunctionCallOutput | null) | (Array<ChatCompletionMessageFunctionToolCall | ChatCompletionMessageCustomToolCall> | null) | undefined;
 };
 
 /**
- * ChatCompletionMessageToolCall
+ * ChatCompletionMessageCustomToolCall
  */
-export type ChatCompletionMessageToolCall = {
+export type ChatCompletionMessageCustomToolCall = {
+    /**
+     * Id
+     */
+    id: string;
+    custom: CustomOutput;
+    /**
+     * Type
+     */
+    type: 'custom';
+    [key: string]: unknown | string | CustomOutput | 'custom';
+};
+
+/**
+ * ChatCompletionMessageCustomToolCallParam
+ */
+export type ChatCompletionMessageCustomToolCallParam = {
+    /**
+     * Id
+     */
+    id: string;
+    custom: OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom;
+    /**
+     * Type
+     */
+    type: 'custom';
+};
+
+/**
+ * ChatCompletionMessageFunctionToolCall
+ */
+export type ChatCompletionMessageFunctionToolCall = {
     /**
      * Id
      */
@@ -1097,18 +1303,29 @@ export type ChatCompletionMessageToolCall = {
 };
 
 /**
- * ChatCompletionMessageToolCallParam
+ * ChatCompletionMessageFunctionToolCallParam
  */
-export type ChatCompletionMessageToolCallParam = {
+export type ChatCompletionMessageFunctionToolCallParam = {
     /**
      * Id
      */
     id: string;
-    function: OpenaiTypesChatChatCompletionMessageToolCallParamFunction;
+    function: OpenaiTypesChatChatCompletionMessageFunctionToolCallParamFunction;
     /**
      * Type
      */
     type: 'function';
+};
+
+/**
+ * ChatCompletionNamedToolChoiceCustomParam
+ */
+export type ChatCompletionNamedToolChoiceCustomParam = {
+    custom: OpenaiTypesChatChatCompletionNamedToolChoiceCustomParamCustom;
+    /**
+     * Type
+     */
+    type: 'custom';
 };
 
 /**
@@ -1149,7 +1366,7 @@ export type ChatCompletionRequest = {
      * Model
      * ID of the model to use for the chat completion.
      */
-    model: string | ('gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613');
+    model: string | ('gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gpt-5-2025-08-07' | 'gpt-5-mini-2025-08-07' | 'gpt-5-nano-2025-08-07' | 'gpt-5-chat-latest' | 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613');
     /**
      * Stream
      * Enable streaming response.
@@ -1211,7 +1428,7 @@ export type ChatCompletionRequest = {
     /**
      * Reasoning Effort
      */
-    reasoning_effort?: ('low' | 'medium' | 'high') | null;
+    reasoning_effort?: ('minimal' | 'low' | 'medium' | 'high') | null;
     /**
      * Response Format
      */
@@ -1240,11 +1457,11 @@ export type ChatCompletionRequest = {
     /**
      * Tool Choice
      */
-    tool_choice?: ('none' | 'auto' | 'required') | ChatCompletionNamedToolChoiceParam | null;
+    tool_choice?: ('none' | 'auto' | 'required') | ChatCompletionAllowedToolChoiceParam | ChatCompletionNamedToolChoiceParam | ChatCompletionNamedToolChoiceCustomParam | null;
     /**
      * Tools
      */
-    tools?: Array<ChatCompletionToolParam> | null;
+    tools?: Array<ChatCompletionFunctionToolParam> | null;
     /**
      * Top Logprobs
      */
@@ -1253,15 +1470,19 @@ export type ChatCompletionRequest = {
      * Top P
      */
     top_p?: number | null;
-    [key: string]: unknown | (Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null) | (string | ('gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613')) | boolean | (string | null) | (ChatCompletionAudioParam | null) | (number | null) | (('none' | 'auto') | ChatCompletionFunctionCallOptionParam | null) | (Array<OpenaiTypesChatCompletionCreateParamsFunction> | null) | ({
+    [key: string]: unknown | (Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null) | (string | ('gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gpt-5-2025-08-07' | 'gpt-5-mini-2025-08-07' | 'gpt-5-nano-2025-08-07' | 'gpt-5-chat-latest' | 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613')) | boolean | (string | null) | (ChatCompletionAudioParam | null) | (number | null) | (('none' | 'auto') | ChatCompletionFunctionCallOptionParam | null) | (Array<OpenaiTypesChatCompletionCreateParamsFunction> | null) | ({
         [key: string]: number;
-    } | null) | (boolean | null) | (number | null) | (number | null) | (Metadata | null) | (Array<'text' | 'audio'> | null) | (number | null) | (boolean | null) | (ChatCompletionPredictionContentParam | null) | (number | null) | (('low' | 'medium' | 'high') | null) | (ResponseFormatText | ResponseFormatJsonSchema | ResponseFormatJsonObject | null) | (number | null) | (('auto' | 'default') | null) | (string | Array<string> | null) | (boolean | null) | (ChatCompletionStreamOptionsParam | null) | (number | null) | (('none' | 'auto' | 'required') | ChatCompletionNamedToolChoiceParam | null) | (Array<ChatCompletionToolParam> | null) | (number | null) | (number | null) | undefined;
+    } | null) | (boolean | null) | (number | null) | (number | null) | (Metadata | null) | (Array<'text' | 'audio'> | null) | (number | null) | (boolean | null) | (ChatCompletionPredictionContentParam | null) | (number | null) | (('minimal' | 'low' | 'medium' | 'high') | null) | (ResponseFormatText | ResponseFormatJsonSchema | ResponseFormatJsonObject | null) | (number | null) | (('auto' | 'default') | null) | (string | Array<string> | null) | (boolean | null) | (ChatCompletionStreamOptionsParam | null) | (number | null) | (('none' | 'auto' | 'required') | ChatCompletionAllowedToolChoiceParam | ChatCompletionNamedToolChoiceParam | ChatCompletionNamedToolChoiceCustomParam | null) | (Array<ChatCompletionFunctionToolParam> | null) | (number | null) | (number | null) | undefined;
 };
 
 /**
  * ChatCompletionStreamOptionsParam
  */
 export type ChatCompletionStreamOptionsParam = {
+    /**
+     * Include Obfuscation
+     */
+    include_obfuscation?: boolean;
     /**
      * Include Usage
      */
@@ -1328,17 +1549,6 @@ export type ChatCompletionToolMessageParam = {
 };
 
 /**
- * ChatCompletionToolParam
- */
-export type ChatCompletionToolParam = {
-    function: FunctionDefinition;
-    /**
-     * Type
-     */
-    type: 'function';
-};
-
-/**
  * ChatCompletionUserMessageParam
  */
 export type ChatCompletionUserMessageParam = {
@@ -1360,8 +1570,8 @@ export type ChatCompletionUserMessageParam = {
  * ChatMessage
  * Chat message.
  */
-export type ChatMessageOutput = {
-    role?: MessageRoleOutput;
+export type ChatMessage = {
+    role?: MessageRole;
     /**
      * Additional Kwargs
      */
@@ -1371,19 +1581,19 @@ export type ChatMessageOutput = {
      */
     blocks?: Array<({
         block_type: 'text';
-    } & TextBlockOutput) | ({
+    } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockOutput) | ({
+    } & ImageBlock) | ({
         block_type: 'audio';
-    } & AudioBlockOutput) | ({
+    } & AudioBlock) | ({
         block_type: 'document';
-    } & DocumentBlockOutput) | ({
+    } & DocumentBlock) | ({
         block_type: 'cache';
-    } & CachePointOutput) | ({
+    } & CachePoint) | ({
         block_type: 'citable';
-    } & CitableBlockOutput) | ({
+    } & CitableBlock) | ({
         block_type: 'citation';
-    } & CitationBlockOutput)>;
+    } & CitationBlock)>;
 };
 
 /**
@@ -1517,37 +1727,9 @@ export type ChunkEventWritable = {
 
 /**
  * CitableBlock
- */
-export type CitableBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'citable';
-    /**
-     * Title
-     */
-    title: string;
-    /**
-     * Source
-     */
-    source: string;
-    /**
-     * Content
-     */
-    content: Array<({
-        block_type: 'text';
-    } & TextBlockInput) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput)>;
-};
-
-/**
- * CitableBlock
  * Supports providing citable content to LLMs that have built-in citation support.
  */
-export type CitableBlockOutput = {
+export type CitableBlock = {
     /**
      * Block Type
      */
@@ -1565,45 +1747,18 @@ export type CitableBlockOutput = {
      */
     content: Array<({
         block_type: 'text';
-    } & TextBlockOutput) | ({
+    } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockOutput) | ({
+    } & ImageBlock) | ({
         block_type: 'document';
-    } & DocumentBlockOutput)>;
-};
-
-/**
- * CitationBlock
- */
-export type CitationBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'citation';
-    /**
-     * Cited Content
-     */
-    cited_content: ({
-        block_type: 'text';
-    } & TextBlockInput) | ({
-        block_type: 'image';
-    } & ImageBlockInput);
-    /**
-     * Source
-     */
-    source: string;
-    /**
-     * Title
-     */
-    title: string;
-    additional_location_info: AdditionalLocationInfo;
+    } & DocumentBlock)>;
 };
 
 /**
  * CitationBlock
  * A representation of cited content from past messages.
  */
-export type CitationBlockOutput = {
+export type CitationBlock = {
     /**
      * Block Type
      */
@@ -1613,9 +1768,9 @@ export type CitationBlockOutput = {
      */
     cited_content: ({
         block_type: 'text';
-    } & TextBlockOutput) | ({
+    } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockOutput);
+    } & ImageBlock);
     /**
      * Source
      */
@@ -1674,6 +1829,166 @@ export type CompletionUsage = {
     completion_tokens_details?: CompletionTokensDetails | null;
     prompt_tokens_details?: PromptTokensDetails | null;
     [key: string]: unknown | number | (CompletionTokensDetails | null) | (PromptTokensDetails | null) | undefined;
+};
+
+/**
+ * ContextInsufficientRejectEvent
+ * Event indicating that the context sufficiency guard rejected the request.
+ *
+ * This event is triggered when the context sufficiency guard determines that
+ * there is insufficient context available to answer the user's query and
+ * additional information retrieval or processing is required. The event includes
+ * a new query suggestion for additional context retrieval.
+ */
+export type ContextInsufficientRejectEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the Guard rejected the request.
+     */
+    reason: string;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+};
+
+/**
+ * ContextInsufficientRejectEvent
+ * Event indicating that the context sufficiency guard rejected the request.
+ *
+ * This event is triggered when the context sufficiency guard determines that
+ * there is insufficient context available to answer the user's query and
+ * additional information retrieval or processing is required. The event includes
+ * a new query suggestion for additional context retrieval.
+ */
+export type ContextInsufficientRejectEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the Guard rejected the request.
+     */
+    reason: string;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+};
+
+/**
+ * ContextSufficientAcceptEvent
+ * Event indicating that the context sufficiency guard accepted the request.
+ *
+ * This event is triggered when the context sufficiency guard determines that
+ * there is sufficient context available to answer the user's query without
+ * requiring additional information retrieval or processing.
+ */
+export type ContextSufficientAcceptEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+};
+
+/**
+ * ContextSufficientAcceptEvent
+ * Event indicating that the context sufficiency guard accepted the request.
+ *
+ * This event is triggered when the context sufficiency guard determines that
+ * there is sufficient context available to answer the user's query without
+ * requiring additional information retrieval or processing.
+ */
+export type ContextSufficientAcceptEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
 };
 
 /**
@@ -1744,7 +2059,7 @@ export type ContextualizedAgentEventReadable = {
      * Event
      * Data of the event itself.
      */
-    event: StartEventReadable | AgentInTheLoopResponseEventReadable | HumanInTheLoopRequestEventOutputReadable | AgentInTheLoopRequestEventReadable | AgentInTheLoopExceptionEventReadable | HumanInTheLoopResponseEventReadable | LimitChatHistoryEventReadable | StandaloneQuestionCondenserEventReadable | LlmCostEventReadable | ChunkEventReadable | ThoughtEventReadable | GuardEventReadable | RouterEventReadable | GuardRejectionEventReadable | SemanticEventReadable | AgentEventReadable | ChainEventReadable | EmbeddingEventReadable | LlmEventReadable | LlmStopEventReadable | RerankerEventReadable | RetrieverEventReadable | ToolEventReadable | UserMessageEventReadable | ExceptionEventReadable | StopEventReadable | DisplayEventReadable;
+    event: StartEventReadable | AgentInTheLoopResponseEventReadable | HumanInTheLoopRequestEventReadable | AgentInTheLoopRequestEventReadable | AgentInTheLoopExceptionEventReadable | HumanInTheLoopResponseEventReadable | LimitChatHistoryEventReadable | StandaloneQuestionCondenserEventReadable | LlmCostEventReadable | ChunkEventReadable | ThoughtEventReadable | GuardEventReadable | RouterEventReadable | GuardRejectionEventReadable | SemanticEventReadable | AgentEventReadable | ChainEventReadable | EmbeddingEventReadable | LlmEventReadable | LlmStopEventReadable | RerankerEventReadable | RetrieverEventReadable | ToolEventReadable | UserMessageEventReadable | ExceptionEventReadable | StopEventReadable | DisplayEventReadable | GuardAcceptEventReadable | AgentSuitabilityAcceptEventReadable | AgentSuitabilityRejectEventReadable | ContextSufficientAcceptEventReadable | ContextInsufficientRejectEventReadable | FewShotAcceptEventReadable | FewShotRejectEventReadable | SensitiveInfoAcceptEventReadable | SensitiveInfoRejectEventReadable;
 };
 
 /**
@@ -1815,7 +2130,7 @@ export type ContextualizedAgentEventWritable = {
      * Event
      * Data of the event itself.
      */
-    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopRequestEventOutputWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | ExceptionEventWritable | StopEventWritable | DisplayEventWritable;
+    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | ExceptionEventWritable | StopEventWritable | DisplayEventWritable | GuardAcceptEventWritable | AgentSuitabilityAcceptEventWritable | AgentSuitabilityRejectEventWritable | ContextSufficientAcceptEventWritable | ContextInsufficientRejectEventWritable | FewShotAcceptEventWritable | FewShotRejectEventWritable | SensitiveInfoAcceptEventWritable | SensitiveInfoRejectEventWritable;
 };
 
 /**
@@ -1999,42 +2314,18 @@ export type CreateTokenResponse = {
 };
 
 /**
- * CustomHumanInTheLoopRequestEventOutput
+ * Custom
  */
-export type CustomHumanInTheLoopRequestEventOutput = {
+export type CustomOutput = {
     /**
-     * Display name for the event
+     * Input
      */
-    display_name?: LocaleString | null;
+    input: string;
     /**
-     * Display description for the event
+     * Name
      */
-    display_description?: LocaleString | null;
-    /**
-     * Question
-     * The query or prompt presented to the human operator.
-     */
-    question: string;
-    /**
-     * Topic
-     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
-     */
-    topic: JamboParserObjectTypeParserPartialAgentTopic | JamboParserObjectTypeParserAgentInstanceTopic;
-};
-
-/**
- * CustomHumanInTheLoopResponseEventInput
- */
-export type CustomHumanInTheLoopResponseEventInput = {
-    /**
-     * Response
-     * The human operator's answer or decision.
-     */
-    response: string;
-    /**
-     * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
-     */
-    request_event: HumanInTheLoopRequestEventInput;
+    name: string;
+    [key: string]: unknown | string;
 };
 
 /**
@@ -2421,39 +2712,9 @@ export type DisplayStatistics = {
 
 /**
  * DocumentBlock
- */
-export type DocumentBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'document';
-    /**
-     * Data
-     */
-    data?: (Blob | File) | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | null;
-    /**
-     * Title
-     */
-    title?: string | null;
-    /**
-     * Document Mimetype
-     */
-    document_mimetype?: string | null;
-};
-
-/**
- * DocumentBlock
  * A representation of a document to directly pass to the LLM.
  */
-export type DocumentBlockOutput = {
+export type DocumentBlock = {
     /**
      * Block Type
      */
@@ -3234,6 +3495,168 @@ export type ExperimentRunRecord = {
 };
 
 /**
+ * FewShotAcceptEvent
+ * Event indicating that the few-shot guard accepted the request.
+ *
+ * This event is triggered when the few-shot guard determines that
+ * the user query is appropriate based on analysis of provided examples.
+ * It signifies that the request matches the patterns of acceptable queries
+ * demonstrated in the few-shot examples.
+ */
+export type FewShotAcceptEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+};
+
+/**
+ * FewShotAcceptEvent
+ * Event indicating that the few-shot guard accepted the request.
+ *
+ * This event is triggered when the few-shot guard determines that
+ * the user query is appropriate based on analysis of provided examples.
+ * It signifies that the request matches the patterns of acceptable queries
+ * demonstrated in the few-shot examples.
+ */
+export type FewShotAcceptEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+};
+
+/**
+ * FewShotRejectEvent
+ * Event indicating that the few-shot guard rejected the request.
+ *
+ * This event is triggered when the few-shot guard determines that
+ * the user query is inappropriate based on analysis of provided examples.
+ * It signifies that the request does not match the patterns of acceptable queries
+ * demonstrated in the few-shot examples and should be blocked.
+ */
+export type FewShotRejectEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the Guard rejected the request.
+     */
+    reason: string;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+};
+
+/**
+ * FewShotRejectEvent
+ * Event indicating that the few-shot guard rejected the request.
+ *
+ * This event is triggered when the few-shot guard determines that
+ * the user query is inappropriate based on analysis of provided examples.
+ * It signifies that the request does not match the patterns of acceptable queries
+ * demonstrated in the few-shot examples and should be blocked.
+ */
+export type FewShotRejectEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the Guard rejected the request.
+     */
+    reason: string;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+};
+
+/**
  * File
  */
 export type File = {
@@ -3448,6 +3871,93 @@ export type FunctionDefinition = {
      * Strict
      */
     strict?: boolean | null;
+};
+
+/**
+ * GuardAcceptEvent
+ * Base class for all guard acceptance events.
+ *
+ * This event is triggered when a guard mechanism determines that a request
+ * meets all security, policy, and validation requirements and can proceed.
+ * Guard events are critical for maintaining system security and ensuring
+ * proper workflow control.
+ *
+ * All specific guard acceptance events should inherit from this base class
+ * to ensure consistent behavior and proper event handling throughout the system.
+ */
+export type GuardAcceptEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+};
+
+/**
+ * GuardAcceptEvent
+ * Base class for all guard acceptance events.
+ *
+ * This event is triggered when a guard mechanism determines that a request
+ * meets all security, policy, and validation requirements and can proceed.
+ * Guard events are critical for maintaining system security and ensuring
+ * proper workflow control.
+ *
+ * All specific guard acceptance events should inherit from this base class
+ * to ensure consistent behavior and proper event handling throughout the system.
+ */
+export type GuardAcceptEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
 };
 
 /**
@@ -3726,39 +4236,6 @@ export type HumanInSpecs = {
 
 /**
  * HumanInTheLoopRequestEvent
- */
-export type HumanInTheLoopRequestEventInput = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Question
-     * The query or prompt presented to the human operator.
-     */
-    question: string;
-    /**
-     * Topic
-     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
-     */
-    topic: PartialAgentTopicInput | AgentInstanceTopicInput;
-};
-
-/**
- * HumanInTheLoopRequestEvent
  * An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
  * ### Why HumanInTheLoopRequestEvent?
@@ -3766,7 +4243,7 @@ export type HumanInTheLoopRequestEventInput = {
  * - Is a `DisplayEvent`, so it can appear in user interfaces.
  * - Carries a question and a topic indicating where the subsequent response should be sent.
  */
-export type HumanInTheLoopRequestEventOutputReadable = {
+export type HumanInTheLoopRequestEventReadable = {
     /**
      * Event Id
      */
@@ -3793,7 +4270,7 @@ export type HumanInTheLoopRequestEventOutputReadable = {
      * Topic
      * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
      */
-    topic: AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic;
+    topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -3805,7 +4282,7 @@ export type HumanInTheLoopRequestEventOutputReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | Array<string> | undefined;
 };
 
 /**
@@ -3817,7 +4294,7 @@ export type HumanInTheLoopRequestEventOutputReadable = {
  * - Is a `DisplayEvent`, so it can appear in user interfaces.
  * - Carries a question and a topic indicating where the subsequent response should be sent.
  */
-export type HumanInTheLoopRequestEventOutputWritable = {
+export type HumanInTheLoopRequestEventWritable = {
     /**
      * Event Id
      */
@@ -3844,8 +4321,8 @@ export type HumanInTheLoopRequestEventOutputWritable = {
      * Topic
      * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
      */
-    topic: AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic) | undefined;
+    topic: PartialAgentTopic | AgentInstanceTopic;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | undefined;
 };
 
 /**
@@ -3883,7 +4360,7 @@ export type HumanInTheLoopResponseEventReadable = {
     /**
      * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
      */
-    request_event: HumanInTheLoopRequestEventOutputReadable;
+    request_event: HumanInTheLoopRequestEventReadable;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -3895,7 +4372,7 @@ export type HumanInTheLoopResponseEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | HumanInTheLoopRequestEventOutputReadable | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | HumanInTheLoopRequestEventReadable | Array<string> | undefined;
 };
 
 /**
@@ -3933,8 +4410,8 @@ export type HumanInTheLoopResponseEventWritable = {
     /**
      * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
      */
-    request_event: HumanInTheLoopRequestEventOutputWritable;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | HumanInTheLoopRequestEventOutputWritable | undefined;
+    request_event: HumanInTheLoopRequestEventWritable;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | HumanInTheLoopRequestEventWritable | undefined;
 };
 
 /**
@@ -3958,39 +4435,9 @@ export type Image = {
 
 /**
  * ImageBlock
- */
-export type ImageBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'image';
-    /**
-     * Image
-     */
-    image?: (Blob | File) | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | null;
-    /**
-     * Image Mimetype
-     */
-    image_mimetype?: string | null;
-    /**
-     * Detail
-     */
-    detail?: string | null;
-};
-
-/**
- * ImageBlock
  * A representation of image data to directly pass to/from the LLM.
  */
-export type ImageBlockOutput = {
+export type ImageBlock = {
     /**
      * Block Type
      */
@@ -4573,12 +5020,12 @@ export type LlmEventReadable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    input_messages?: Array<MessageReadable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    output_messages?: Array<MessageReadable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -4651,7 +5098,7 @@ export type LlmEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageReadable> | null) | (Array<MessageReadable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -4685,12 +5132,12 @@ export type LlmEventWritable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    input_messages?: Array<MessageWritable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    output_messages?: Array<MessageWritable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -4752,7 +5199,7 @@ export type LlmEventWritable = {
     tools?: Array<{
         [key: string]: unknown;
     }> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageWritable> | null) | (Array<MessageWritable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -4786,12 +5233,12 @@ export type LlmStopEventReadable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    input_messages?: Array<MessageReadable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    output_messages?: Array<MessageReadable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -4864,7 +5311,7 @@ export type LlmStopEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageReadable> | null) | (Array<MessageReadable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -4898,12 +5345,12 @@ export type LlmStopEventWritable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    input_messages?: Array<MessageWritable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    output_messages?: Array<MessageWritable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -4965,90 +5412,13 @@ export type LlmStopEventWritable = {
     tools?: Array<{
         [key: string]: unknown;
     }> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageWritable> | null) | (Array<MessageWritable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
     } | null) | (string | null) | (number | null) | (number | null) | (number | null) | (Array<{
         [key: string]: unknown;
     }> | null) | undefined;
-};
-
-/**
- * LLMStopEventOutput
- */
-export type LlmStopEventOutput = {
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Input Messages
-     * List of messages sent to the LLM as input.
-     */
-    input_messages?: Array<JamboParserObjectTypeParserMessage> | null;
-    /**
-     * Output Messages
-     * List of messages received from the LLM as output.
-     */
-    output_messages?: Array<JamboParserObjectTypeParserMessage> | null;
-    /**
-     * Parameters used during the invocation of the LLM.
-     */
-    invocation_parameters?: InvocationParameters | null;
-    /**
-     * Chat Model Name
-     * The name of the language model being utilized.
-     */
-    chat_model_name?: string | null;
-    /**
-     * Provider
-     * The hosting provider of the LLM, e.g., OpenAI, Azure.
-     */
-    provider?: string | null;
-    /**
-     * System
-     * The AI product as identified by the client or server.
-     */
-    system?: string | null;
-    /**
-     * Prompt Template
-     * The prompt template as a Python f-string.
-     */
-    prompt_template?: string | null;
-    /**
-     * A dictionary of input variables to the prompt template.
-     */
-    prompt_template_variables?: PromptTemplateVariables | null;
-    /**
-     * Prompt Template Version
-     * The version of the prompt template being used.
-     */
-    prompt_template_version?: string | null;
-    /**
-     * Token Count Prompt
-     * The number of tokens in the prompt.
-     */
-    token_count_prompt?: number | null;
-    /**
-     * Token Count Completion
-     * The number of tokens in the completion.
-     */
-    token_count_completion?: number | null;
-    /**
-     * Token Count Total
-     * The total number of tokens, including both prompt and completion.
-     */
-    token_count_total?: number | null;
-    /**
-     * Tools
-     * List of tools that are advertised to the LLM to be able to call.
-     */
-    tools?: Array<Tools> | null;
 };
 
 /**
@@ -5077,7 +5447,7 @@ export type LimitChatHistoryEventReadable = {
      * Limited History
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessageOutput>;
+    limited_history: Array<ChatMessage>;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -5089,7 +5459,7 @@ export type LimitChatHistoryEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessage> | Array<string> | undefined;
 };
 
 /**
@@ -5118,8 +5488,8 @@ export type LimitChatHistoryEventWritable = {
      * Limited History
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessageOutput>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessageOutput> | undefined;
+    limited_history: Array<ChatMessage>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessage> | undefined;
 };
 
 /**
@@ -5185,35 +5555,110 @@ export type Logprob = {
 };
 
 /**
- * MessageRole
+ * Message
  */
-export type MessageRoleInput = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
+export type MessageReadable = {
+    /**
+     * Role
+     * The role of the message, such as 'user', 'assistant', or 'system'.
+     */
+    role: string;
+    /**
+     * Name
+     * The name of the function or agent generating the message.
+     */
+    name?: string | null;
+    /**
+     * Tool Calls
+     * List of tool calls generated by the model, such as function calls.
+     */
+    tool_calls?: Array<{
+        [key: string]: unknown;
+    }> | null;
+    /**
+     * Function Call Name
+     * The name of the function being called in the message.
+     */
+    function_call_name?: string | null;
+    /**
+     * Function Call Arguments Json
+     * JSON representing arguments passed to the function during a function call.
+     */
+    function_call_arguments_json?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Tool Call Id
+     * The ID of the tool call, if applicable.
+     */
+    tool_call_id?: string | null;
+    /**
+     * Contents
+     * The message contents as an array of content blocks (text, image, audio).
+     */
+    contents?: Array<TextContent | ImageContent | AudioContent> | null;
+    /**
+     * Content
+     */
+    readonly content: string;
+};
 
 /**
- * MessageRole
+ * Message
  */
-export const MessageRoleInput = {
-    SYSTEM: 'system',
-    DEVELOPER: 'developer',
-    USER: 'user',
-    ASSISTANT: 'assistant',
-    FUNCTION: 'function',
-    TOOL: 'tool',
-    CHATBOT: 'chatbot',
-    MODEL: 'model'
-} as const;
+export type MessageWritable = {
+    /**
+     * Role
+     * The role of the message, such as 'user', 'assistant', or 'system'.
+     */
+    role: string;
+    /**
+     * Name
+     * The name of the function or agent generating the message.
+     */
+    name?: string | null;
+    /**
+     * Tool Calls
+     * List of tool calls generated by the model, such as function calls.
+     */
+    tool_calls?: Array<{
+        [key: string]: unknown;
+    }> | null;
+    /**
+     * Function Call Name
+     * The name of the function being called in the message.
+     */
+    function_call_name?: string | null;
+    /**
+     * Function Call Arguments Json
+     * JSON representing arguments passed to the function during a function call.
+     */
+    function_call_arguments_json?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Tool Call Id
+     * The ID of the tool call, if applicable.
+     */
+    tool_call_id?: string | null;
+    /**
+     * Contents
+     * The message contents as an array of content blocks (text, image, audio).
+     */
+    contents?: Array<TextContent | ImageContent | AudioContent> | null;
+};
 
 /**
  * MessageRole
  * Message role.
  */
-export type MessageRoleOutput = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
+export type MessageRole = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
 
 /**
  * MessageRole
  * Message role.
  */
-export const MessageRoleOutput = {
+export const MessageRole = {
     SYSTEM: 'system',
     DEVELOPER: 'developer',
     USER: 'user',
@@ -5247,7 +5692,7 @@ export type Metadata = {
      * Files
      * List of files to attach to the request, if supported by the model.
      */
-    files?: Array<AihubLibNatsEventsUserUserUploadedFileUserUploadedFile> | null;
+    files?: Array<UserUploadedFile> | null;
 };
 
 /**
@@ -6034,8 +6479,24 @@ export type PaginatedUsersResponse = {
 
 /**
  * PartialAgentTopic
+ * Represents a partially qualified agent event topic, where some fields may be unspecified.
+ * Wildcards (represented by "*") in the subject translate into None values here.
+ *
+ * ### Why PartialAgentTopic?
+ * Sometimes you deal with generic subscriptions to broad categories of events—like all display events
+ * or all events from a particular agent class—without knowing the exact agent_id, thread_id, or event_id.
+ * PartialAgentTopic captures this scenario, making it explicit which parts of the topic are defined
+ * and which remain open (None).
+ *
+ * ### Use Cases
+ * - **Generic Monitoring:** You might subscribe to `agent.myclass.*.*.*.*.display_event.*.*` to monitor
+ * all display events for a given agent class, regardless of the specific agent instance or thread.
+ * The resulting PartialAgentTopic shows which filters have been fixed and which are open.
+ * - **Routing Decisions:** If a system receives a message on a wildcard topic, it can inspect this
+ * PartialAgentTopic to decide dynamically which handler to invoke based on known fields, leaving
+ * unknowns as flexible conditions.
  */
-export type PartialAgentTopicInput = {
+export type PartialAgentTopic = {
     /**
      * Agent Class
      * Agent class or None if unspecified.
@@ -6866,6 +7327,174 @@ export type SemanticEventWritable = {
 };
 
 /**
+ * SensitiveInfoAcceptEvent
+ * Event indicating that the sensitive information guard accepted the response.
+ *
+ * This event is triggered when the sensitive information guard determines that
+ * the response does not contain any sensitive or confidential information and
+ * can be safely presented to the user without modifications.
+ */
+export type SensitiveInfoAcceptEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+};
+
+/**
+ * SensitiveInfoAcceptEvent
+ * Event indicating that the sensitive information guard accepted the response.
+ *
+ * This event is triggered when the sensitive information guard determines that
+ * the response does not contain any sensitive or confidential information and
+ * can be safely presented to the user without modifications.
+ */
+export type SensitiveInfoAcceptEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+};
+
+/**
+ * SensitiveInfoRejectEvent
+ * Event indicating that the sensitive information guard rejected the response.
+ *
+ * This event is triggered when the sensitive information guard determines that
+ * the response contains sensitive or confidential information. The event includes
+ * a cleaned version of the response with the sensitive information removed.
+ */
+export type SensitiveInfoRejectEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the Guard rejected the request.
+     */
+    reason: string;
+    /**
+     * Cleaned Answer
+     * The revised response with sensitive information removed.
+     */
+    cleaned_answer: string;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+};
+
+/**
+ * SensitiveInfoRejectEvent
+ * Event indicating that the sensitive information guard rejected the response.
+ *
+ * This event is triggered when the sensitive information guard determines that
+ * the response contains sensitive or confidential information. The event includes
+ * a cleaned version of the response with the sensitive information removed.
+ */
+export type SensitiveInfoRejectEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the Guard rejected the request.
+     */
+    reason: string;
+    /**
+     * Cleaned Answer
+     * The revised response with sensitive information removed.
+     */
+    cleaned_answer: string;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+};
+
+/**
  * ServiceDTO
  */
 export type ServiceDto = {
@@ -6932,7 +7561,7 @@ export type StandaloneQuestionCondenserEventReadable = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessageOutput;
+    condensed_chat_message: ChatMessage;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -6944,7 +7573,7 @@ export type StandaloneQuestionCondenserEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessageOutput | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessage | Array<string> | undefined;
 };
 
 /**
@@ -6972,8 +7601,8 @@ export type StandaloneQuestionCondenserEventWritable = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessageOutput;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessageOutput | undefined;
+    condensed_chat_message: ChatMessage;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessage | undefined;
 };
 
 /**
@@ -7165,20 +7794,6 @@ export type StopEventWritable = {
 };
 
 /**
- * StopEventOutput
- */
-export type StopEventOutput = {
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-};
-
-/**
  * SubmittedFormDTO
  * TODO: Define what information shall be returned on partial or sucessfull submittion of the form
  */
@@ -7213,23 +7828,9 @@ export type SuiteDto = {
 
 /**
  * TextBlock
- */
-export type TextBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'text';
-    /**
-     * Text
-     */
-    text: string;
-};
-
-/**
- * TextBlock
  * A representation of text data to directly pass to/from the LLM.
  */
-export type TextBlockOutput = {
+export type TextBlock = {
     /**
      * Block Type
      */
@@ -8080,12 +8681,12 @@ export type UserMessageEventReadable = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessageOutput>;
+    messages?: Array<ChatMessage>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
-    files?: Array<UserUploadedFileOutput> | null;
+    files?: Array<UserUploadedFile> | null;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -8099,7 +8700,7 @@ export type UserMessageEventReadable = {
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
         [key: string]: unknown;
-    } | null) | UserIdentity | Array<ChatMessageOutput> | (Array<UserUploadedFileOutput> | null) | Array<string> | undefined;
+    } | null) | UserIdentity | Array<ChatMessage> | (Array<UserUploadedFile> | null) | Array<string> | undefined;
 };
 
 /**
@@ -8165,21 +8766,21 @@ export type UserMessageEventWritable = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessageOutput>;
+    messages?: Array<ChatMessage>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
-    files?: Array<UserUploadedFileOutput> | null;
+    files?: Array<UserUploadedFile> | null;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
         [key: string]: unknown;
-    } | null) | UserIdentity | Array<ChatMessageOutput> | (Array<UserUploadedFileOutput> | null) | undefined;
+    } | null) | UserIdentity | Array<ChatMessage> | (Array<UserUploadedFile> | null) | undefined;
 };
 
 /**
  * UserUploadedFile
  */
-export type UserUploadedFileOutput = {
+export type UserUploadedFile = {
     /**
      * Filename
      * The name of the uploaded file, including the extension.
@@ -8299,508 +8900,6 @@ export type WorkflowGraph = {
 };
 
 /**
- * additional_kwargs
- */
-export type AdditionalKwargs = {
-    [key: string]: unknown;
-};
-
-/**
- * additional_location_info
- */
-export type AdditionalLocationInfo = {
-    [key: string]: unknown;
-};
-
-/**
- * UserMessageEventInput
- */
-export type AihubApiServicesModelCreationServiceUserMessageEventInput1 = {
-    /**
-     * Messages
-     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
-     */
-    messages?: Array<JamboParserObjectTypeParserChatMessage1>;
-    /**
-     * Files
-     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
-     */
-    files?: Array<JamboParserObjectTypeParserUserUploadedFile> | null;
-};
-
-/**
- * UserMessageEventInput
- */
-export type AihubApiServicesModelCreationServiceUserMessageEventInput2 = {
-    /**
-     * Messages
-     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
-     */
-    messages?: Array<JamboParserObjectTypeParserChatMessage2>;
-    /**
-     * Files
-     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
-     */
-    files?: Array<JamboParserObjectTypeParserUserUploadedFile> | null;
-};
-
-/**
- * Message
- */
-export type AihubLibNatsEventsSemanticLlmMessageMessageReadable = {
-    /**
-     * Role
-     * The role of the message, such as 'user', 'assistant', or 'system'.
-     */
-    role: string;
-    /**
-     * Name
-     * The name of the function or agent generating the message.
-     */
-    name?: string | null;
-    /**
-     * Tool Calls
-     * List of tool calls generated by the model, such as function calls.
-     */
-    tool_calls?: Array<{
-        [key: string]: unknown;
-    }> | null;
-    /**
-     * Function Call Name
-     * The name of the function being called in the message.
-     */
-    function_call_name?: string | null;
-    /**
-     * Function Call Arguments Json
-     * JSON representing arguments passed to the function during a function call.
-     */
-    function_call_arguments_json?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * Tool Call Id
-     * The ID of the tool call, if applicable.
-     */
-    tool_call_id?: string | null;
-    /**
-     * Contents
-     * The message contents as an array of content blocks (text, image, audio).
-     */
-    contents?: Array<TextContent | ImageContent | AudioContent> | null;
-    /**
-     * Content
-     */
-    readonly content: string;
-};
-
-/**
- * Message
- */
-export type AihubLibNatsEventsSemanticLlmMessageMessageWritable = {
-    /**
-     * Role
-     * The role of the message, such as 'user', 'assistant', or 'system'.
-     */
-    role: string;
-    /**
-     * Name
-     * The name of the function or agent generating the message.
-     */
-    name?: string | null;
-    /**
-     * Tool Calls
-     * List of tool calls generated by the model, such as function calls.
-     */
-    tool_calls?: Array<{
-        [key: string]: unknown;
-    }> | null;
-    /**
-     * Function Call Name
-     * The name of the function being called in the message.
-     */
-    function_call_name?: string | null;
-    /**
-     * Function Call Arguments Json
-     * JSON representing arguments passed to the function during a function call.
-     */
-    function_call_arguments_json?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * Tool Call Id
-     * The ID of the tool call, if applicable.
-     */
-    tool_call_id?: string | null;
-    /**
-     * Contents
-     * The message contents as an array of content blocks (text, image, audio).
-     */
-    contents?: Array<TextContent | ImageContent | AudioContent> | null;
-};
-
-/**
- * UserUploadedFile
- */
-export type AihubLibNatsEventsUserUserUploadedFileUserUploadedFile = {
-    /**
-     * Filename
-     * The name of the uploaded file, including the extension.
-     */
-    filename: string;
-    /**
-     * File Data
-     * Base64 encoded content of the uploaded file.
-     */
-    file_data: string;
-    /**
-     * File Type
-     * The MIME type of the uploaded file.
-     */
-    file_type: string;
-};
-
-/**
- * AgentInstanceTopic
- * Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
- * to be present. This includes identifiers for agent_class, agent_id, and the event itself.
- *
- * ### Why This Class Exists
- *
- * In a hierarchical event topic model, PartialAgentTopic might not have all details filled out.
- * AgentTopic guarantees that every piece of the event route—from agent class to event ID—is known.
- * This makes AgentTopic ideal for scenarios where the full path is required, such as final message
- * routing or logging a complete event identifier.
- *
- * ### Example:
- * If an event subject is something like:
- * "agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"
- * then this AgentTopic can represent it, providing quick field-level access and serialization.
- */
-export type AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic = {
-    /**
-     * Agent Class
-     * The agent's class identifier.
-     */
-    agent_class: string;
-    /**
-     * Agent Id
-     * Unique identifier for the specific agent instance.
-     */
-    agent_id: string;
-    /**
-     * Run Id
-     * The run ID within the thread.
-     */
-    run_id: string;
-    /**
-     * Thread Id
-     * Unique identifier for the conversation or workflow thread.
-     */
-    thread_id: string;
-    /**
-     * Display Id
-     * UI-facing grouping ID, used to distinguish or group related runs.
-     */
-    display_id: string;
-    /**
-     * Event Type
-     * Type of event (e.g., 'display_event', 'control_event').
-     */
-    event_type: string;
-    /**
-     * Event Name
-     * Name of the event (e.g., 'StartEvent', 'StopEvent', 'ExceptionEvent, ...').
-     */
-    event_name: string;
-    /**
-     * Event Id
-     * Unique identifier for this particular event instance.
-     */
-    event_id: string;
-};
-
-/**
- * PartialAgentTopic
- * Represents a partially qualified agent event topic, where some fields may be unspecified.
- * Wildcards (represented by "*") in the subject translate into None values here.
- *
- * ### Why PartialAgentTopic?
- * Sometimes you deal with generic subscriptions to broad categories of events—like all display events
- * or all events from a particular agent class—without knowing the exact agent_id, thread_id, or event_id.
- * PartialAgentTopic captures this scenario, making it explicit which parts of the topic are defined
- * and which remain open (None).
- *
- * ### Use Cases
- * - **Generic Monitoring:** You might subscribe to `agent.myclass.*.*.*.*.display_event.*.*` to monitor
- * all display events for a given agent class, regardless of the specific agent instance or thread.
- * The resulting PartialAgentTopic shows which filters have been fixed and which are open.
- * - **Routing Decisions:** If a system receives a message on a wildcard topic, it can inspect this
- * PartialAgentTopic to decide dynamically which handler to invoke based on known fields, leaving
- * unknowns as flexible conditions.
- */
-export type AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic = {
-    /**
-     * Agent Class
-     * Agent class or None if unspecified.
-     */
-    agent_class?: string | null;
-    /**
-     * Agent Id
-     * Agent ID or None if unspecified.
-     */
-    agent_id?: string | null;
-    /**
-     * Run Id
-     * Run ID or None if unspecified.
-     */
-    run_id?: string | null;
-    /**
-     * Thread Id
-     * Thread ID or None if unspecified.
-     */
-    thread_id?: string | null;
-    /**
-     * Display Id
-     * Display ID or None if unspecified.
-     */
-    display_id?: string | null;
-    /**
-     * Event Type
-     * Event type or None if unspecified.
-     */
-    event_type?: string | null;
-    /**
-     * Event Name
-     * Event name or None if unspecified.
-     */
-    event_name?: string | null;
-    /**
-     * Event Id
-     * Event ID or None if unspecified.
-     */
-    event_id?: string | null;
-};
-
-/**
- * function_call_arguments_json
- */
-export type FunctionCallArgumentsJson = {
-    [key: string]: unknown;
-};
-
-/**
- * invocation_parameters
- */
-export type InvocationParameters = {
-    [key: string]: unknown;
-};
-
-/**
- * AgentInstanceTopic
- */
-export type JamboParserObjectTypeParserAgentInstanceTopic = {
-    /**
-     * Agent Class
-     * The agent's class identifier.
-     */
-    agent_class: string;
-    /**
-     * Agent Id
-     * Unique identifier for the specific agent instance.
-     */
-    agent_id: string;
-    /**
-     * Run Id
-     * The run ID within the thread.
-     */
-    run_id: string;
-    /**
-     * Thread Id
-     * Unique identifier for the conversation or workflow thread.
-     */
-    thread_id: string;
-    /**
-     * Display Id
-     * UI-facing grouping ID, used to distinguish or group related runs.
-     */
-    display_id: string;
-    /**
-     * Event Type
-     * Type of event (e.g., 'display_event', 'control_event').
-     */
-    event_type: string;
-    /**
-     * Event Name
-     * Name of the event (e.g., 'StartEvent', 'StopEvent', 'ExceptionEvent, ...').
-     */
-    event_name: string;
-    /**
-     * Event Id
-     * Unique identifier for this particular event instance.
-     */
-    event_id: string;
-};
-
-/**
- * ChatMessage
- */
-export type JamboParserObjectTypeParserChatMessage1 = {
-    role?: MessageRoleInput;
-    additional_kwargs: AdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlockInput) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput) | ({
-        block_type: 'cache';
-    } & CachePointInput) | ({
-        block_type: 'citable';
-    } & CitableBlockInput) | ({
-        block_type: 'citation';
-    } & CitationBlockInput)>;
-};
-
-/**
- * ChatMessage
- */
-export type JamboParserObjectTypeParserChatMessage2 = {
-    role?: MessageRoleInput;
-    additional_kwargs: AdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlockInput) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput) | ({
-        block_type: 'cache';
-    } & CachePointInput) | ({
-        block_type: 'citable';
-    } & CitableBlockInput) | ({
-        block_type: 'citation';
-    } & CitationBlockInput)>;
-};
-
-/**
- * Message
- */
-export type JamboParserObjectTypeParserMessage = {
-    /**
-     * Role
-     * The role of the message, such as 'user', 'assistant', or 'system'.
-     */
-    role: string;
-    /**
-     * Name
-     * The name of the function or agent generating the message.
-     */
-    name?: string | null;
-    /**
-     * Tool Calls
-     * List of tool calls generated by the model, such as function calls.
-     */
-    tool_calls?: Array<ToolCalls> | null;
-    /**
-     * Function Call Name
-     * The name of the function being called in the message.
-     */
-    function_call_name?: string | null;
-    /**
-     * JSON representing arguments passed to the function during a function call.
-     */
-    function_call_arguments_json?: FunctionCallArgumentsJson | null;
-    /**
-     * Tool Call Id
-     * The ID of the tool call, if applicable.
-     */
-    tool_call_id?: string | null;
-    /**
-     * Contents
-     * The message contents as an array of content blocks (text, image, audio).
-     */
-    contents?: Array<TextContent | ImageContent | AudioContent> | null;
-};
-
-/**
- * PartialAgentTopic
- */
-export type JamboParserObjectTypeParserPartialAgentTopic = {
-    /**
-     * Agent Class
-     * Agent class or None if unspecified.
-     */
-    agent_class?: string | null;
-    /**
-     * Agent Id
-     * Agent ID or None if unspecified.
-     */
-    agent_id?: string | null;
-    /**
-     * Run Id
-     * Run ID or None if unspecified.
-     */
-    run_id?: string | null;
-    /**
-     * Thread Id
-     * Thread ID or None if unspecified.
-     */
-    thread_id?: string | null;
-    /**
-     * Display Id
-     * Display ID or None if unspecified.
-     */
-    display_id?: string | null;
-    /**
-     * Event Type
-     * Event type or None if unspecified.
-     */
-    event_type?: string | null;
-    /**
-     * Event Name
-     * Event name or None if unspecified.
-     */
-    event_name?: string | null;
-    /**
-     * Event Id
-     * Event ID or None if unspecified.
-     */
-    event_id?: string | null;
-};
-
-/**
- * UserUploadedFile
- */
-export type JamboParserObjectTypeParserUserUploadedFile = {
-    /**
-     * Filename
-     * The name of the uploaded file, including the extension.
-     */
-    filename: string;
-    /**
-     * File Data
-     * Base64 encoded content of the uploaded file.
-     */
-    file_data: string;
-    /**
-     * File Type
-     * The MIME type of the uploaded file.
-     */
-    file_type: string;
-};
-
-/**
  * Usage
  */
 export type OpenaiTypesAudioTranscriptionVerboseUsage = {
@@ -8816,13 +8915,37 @@ export type OpenaiTypesAudioTranscriptionVerboseUsage = {
 };
 
 /**
+ * Custom
+ */
+export type OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom = {
+    /**
+     * Input
+     */
+    input: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * Function
  */
-export type OpenaiTypesChatChatCompletionMessageToolCallParamFunction = {
+export type OpenaiTypesChatChatCompletionMessageFunctionToolCallParamFunction = {
     /**
      * Arguments
      */
     arguments: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * Custom
+ */
+export type OpenaiTypesChatChatCompletionNamedToolChoiceCustomParamCustom = {
     /**
      * Name
      */
@@ -8877,27 +9000,6 @@ export type OpenaiTypesImagesResponseUsage = {
      */
     total_tokens: number;
     [key: string]: unknown | number | UsageInputTokensDetails;
-};
-
-/**
- * prompt_template_variables
- */
-export type PromptTemplateVariables = {
-    [key: string]: unknown;
-};
-
-/**
- * tool_calls
- */
-export type ToolCalls = {
-    [key: string]: unknown;
-};
-
-/**
- * tools
- */
-export type Tools = {
-    [key: string]: unknown;
 };
 
 export type GetHealthData = {
@@ -10886,203 +10988,6 @@ export type UpdateNotificationResponses = {
 };
 
 export type UpdateNotificationResponse = UpdateNotificationResponses[keyof UpdateNotificationResponses];
-
-export type SendUserMessageEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingUserMessageEventPostData = {
-    body: AihubApiServicesModelCreationServiceUserMessageEventInput1;
-    path?: never;
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/FrontendTestingAgent/frontend_testing/UserMessageEvent';
-};
-
-export type SendUserMessageEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingUserMessageEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendUserMessageEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingUserMessageEventPostError = SendUserMessageEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingUserMessageEventPostErrors[keyof SendUserMessageEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingUserMessageEventPostErrors];
-
-export type SendUserMessageEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingUserMessageEventPostResponses = {
-    /**
-     * Response Send User Message Event To Frontend Testing Agent Frontend Testing Agents Frontendtestingagent Frontend Testing Usermessageevent Post
-     * Successful Response
-     */
-    200: StopEventOutput | CustomHumanInTheLoopRequestEventOutput;
-};
-
-export type SendUserMessageEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingUserMessageEventPostResponse = SendUserMessageEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingUserMessageEventPostResponses[keyof SendUserMessageEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingUserMessageEventPostResponses];
-
-export type StreamUserMessageEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingUserMessageEventStreamPostData = {
-    body: AihubApiServicesModelCreationServiceUserMessageEventInput1;
-    path?: never;
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/FrontendTestingAgent/frontend_testing/UserMessageEvent/stream';
-};
-
-export type StreamUserMessageEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingUserMessageEventStreamPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type StreamUserMessageEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingUserMessageEventStreamPostError = StreamUserMessageEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingUserMessageEventStreamPostErrors];
-
-export type StreamUserMessageEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingUserMessageEventStreamPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type SendCustomHumanInTheLoopResponseEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingCustomHumanInTheLoopResponseEventPostData = {
-    body: CustomHumanInTheLoopResponseEventInput;
-    path?: never;
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/FrontendTestingAgent/frontend_testing/CustomHumanInTheLoopResponseEvent';
-};
-
-export type SendCustomHumanInTheLoopResponseEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingCustomHumanInTheLoopResponseEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendCustomHumanInTheLoopResponseEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingCustomHumanInTheLoopResponseEventPostError = SendCustomHumanInTheLoopResponseEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingCustomHumanInTheLoopResponseEventPostErrors[keyof SendCustomHumanInTheLoopResponseEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingCustomHumanInTheLoopResponseEventPostErrors];
-
-export type SendCustomHumanInTheLoopResponseEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingCustomHumanInTheLoopResponseEventPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type StreamCustomHumanInTheLoopResponseEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingCustomHumanInTheLoopResponseEventStreamPostData = {
-    body: CustomHumanInTheLoopResponseEventInput;
-    path?: never;
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/FrontendTestingAgent/frontend_testing/CustomHumanInTheLoopResponseEvent/stream';
-};
-
-export type StreamCustomHumanInTheLoopResponseEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingCustomHumanInTheLoopResponseEventStreamPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type StreamCustomHumanInTheLoopResponseEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingCustomHumanInTheLoopResponseEventStreamPostError = StreamCustomHumanInTheLoopResponseEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingCustomHumanInTheLoopResponseEventStreamPostErrors[keyof StreamCustomHumanInTheLoopResponseEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingCustomHumanInTheLoopResponseEventStreamPostErrors];
-
-export type StreamCustomHumanInTheLoopResponseEventToFrontendTestingAgentFrontendTestingAgentsFrontendTestingAgentFrontendTestingCustomHumanInTheLoopResponseEventStreamPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostData = {
-    body: AihubApiServicesModelCreationServiceUserMessageEventInput2;
-    path?: never;
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/LLMWrappingAgent/dev_agent/UserMessageEvent';
-};
-
-export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostError = SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostErrors[keyof SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostErrors];
-
-export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: LlmStopEventOutput;
-};
-
-export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponse = SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses[keyof SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses];
-
-export type StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostData = {
-    body: AihubApiServicesModelCreationServiceUserMessageEventInput2;
-    path?: never;
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/LLMWrappingAgent/dev_agent/UserMessageEvent/stream';
-};
-
-export type StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostError = StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostErrors];
-
-export type StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});
