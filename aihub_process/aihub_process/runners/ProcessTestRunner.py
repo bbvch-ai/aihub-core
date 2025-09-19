@@ -85,7 +85,7 @@ class ProcessTestRunner(ProcessRunner):
         Sends an initial event (like a WorkEvent) to initiate a process walkthrough.
         This allows external code to trigger a new run by injecting a work event.
         """
-        publisher = JSPublisher(self.js)
+        publisher = JSPublisher(f"{self.process_class}TestRuner", self.js)
 
         topic_manager = ProcessWalkthroughTopicManager.from_process_instance_topic_manager(
             self.topic_manager, process_walkthrough_id
@@ -127,6 +127,7 @@ class ProcessTestRunner(ProcessRunner):
                 process_id=self.default_process_config.process_id,
             ),
             handler=self.observe_event,
+            subscriber_name=f"{self.process_class}TestRunerEventLog",
         )
         await self.test_event_subscriber.start()
 
@@ -134,6 +135,7 @@ class ProcessTestRunner(ProcessRunner):
             nc=self.nc,
             topic_manager=ProcessTopicManager(),
             handler=self.observe_event,
+            subscriber_name=f"{self.process_class}TestRunerDiscoveryRequest",
         )
         await self.observe_discovery_event_subscriber.start()
 
@@ -142,6 +144,7 @@ class ProcessTestRunner(ProcessRunner):
                 nc=self.nc,
                 topic_manager=ProcessTopicManager(),
                 handler=self.observe_event,
+                subscriber_name=f"{self.process_class}TestRunerDiscoveryResponse",
             )
         )
         await self.observe_discovery_response_event_subscriber.start()

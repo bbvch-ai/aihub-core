@@ -7,20 +7,22 @@ index: 3
 
 Learn how to use, configure, and extend the `aihub_pipeline` SDK for your document processing workflows.
 
-
 ## What you'll learn
 
-- **How the AI Hub Uses Dagster**: Observable assets, automation conditions, I/O managers, and why these patterns are effective
+- **How the AI Hub Uses Dagster**: Observable assets, automation conditions, I/O managers, and why these patterns are
+  effective
 - **Configuring the Default Pipeline**: Set up, configure, and customize the ready-made document processing pipeline
 - **Production Usage**: Add jobs, schedules, and sensors for automated operation and monitor your pipelines
 
 ## Prerequisites
 
-Complete the [Development Environment Setup](../1_quick_start/1_dev_environment_setup/) and [Your First Pipeline](../1_quick_start/4_your_first_pipeline/) before starting.
+Complete the [Development Environment Setup](../1_quick_start/1_dev_environment_setup/) and
+[Your First Pipeline](../1_quick_start/4_your_first_pipeline/) before starting.
 
 ## The Default Data Lake to Vector Store Pipeline
 
-The AI-Hub Pipeline SDK provides a production-ready pipeline that handles the most common document processing workflow: ingesting documents from various sources, parsing them, and creating searchable vector embeddings for RAG systems.
+The AI-Hub Pipeline SDK provides a production-ready pipeline that handles the most common document processing workflow:
+ingesting documents from various sources, parsing them, and creating searchable vector embeddings for RAG systems.
 
 ```mermaid
 graph TD
@@ -63,9 +65,8 @@ graph TD
 
 ## Quick Start: Using the Default Pipeline
 
-The simplest way to get started is to use our pre-built asset factories and resource configurations. 
-Create a new Python file (e.g. `my_pipeline.py`) and add the following code:
-
+The simplest way to get started is to use our pre-built asset factories and resource configurations. Create a new Python
+file (e.g. `my_pipeline.py`) and add the following code:
 
 ```python
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
@@ -158,31 +159,36 @@ defs = Definitions(
 ```
 
 **What this gives you:**
+
 - **Observable Data Lake**: Automatically detects new/changed documents
-- **Document Processing**: Parses PDFs, Word docs, Markdown using Docling AI  
+- **Document Processing**: Parses PDFs, Word docs, Markdown using Docling AI
 - **Vector Search**: Creates searchable embeddings stored in Milvus
 - **Production Ready**: Includes error handling, retries, and observability
-
 
 ## Architecture Philosophy
 
 The AI-Hub Pipeline SDK follows several key principles:
 
-**Change-Driven Processing**: Instead of running pipelines on fixed schedules, we use observable assets that detect changes in external systems and trigger processing only for changed data.
+**Change-Driven Processing**: Instead of running pipelines on fixed schedules, we use observable assets that detect
+changes in external systems and trigger processing only for changed data.
 
-**Document-Level Partitioning**: Each document gets its own partition, enabling independent processing, fault isolation, and selective reprocessing.
+**Document-Level Partitioning**: Each document gets its own partition, enabling independent processing, fault isolation,
+and selective reprocessing.
 
-**Environment Consistency**: The same pipeline code works across development, testing, and production environments using resource factory patterns.
+**Environment Consistency**: The same pipeline code works across development, testing, and production environments using
+resource factory patterns.
 
 **Type Safety**: Custom I/O managers and strongly typed data models ensure reliable data flow and better error handling.
 
-These patterns enable pipelines that are efficient, scalable, and maintainable while providing production-grade reliability.
+These patterns enable pipelines that are efficient, scalable, and maintainable while providing production-grade
+reliability.
 
 ## Getting Started
 
 If you're new to the AI-Hub Pipeline SDK, follow this learning path:
 
-1. **[Pipeline Patterns](./1_pipeline_patterns/)** - Understand the architectural decisions and patterns for building pipelines
+1. **[Pipeline Patterns](./1_pipeline_patterns/)** - Understand the architectural decisions and patterns for building
+   pipelines
 2. **[Data Ingestion Pipeline](./2_data_ingestion_pipeline/)** - Configure and extend the default pipeline
 3. **[Job Scheduling](./4_job_scheduling/)** - Schedule your pipelines for automatic runs
 4. **[Pipeline Observation](./5_pipeline_observation/)** Monitor your pipelines for performance and errors

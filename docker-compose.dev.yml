@@ -91,10 +91,12 @@ services:
       - "postgres"
     ports:
       - "6006:6006"
-      - "4317:4317"
+      - "6007:6007"
     environment:
       PHOENIX_SQL_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix"
       PHOENIX_ENABLE_AUTH: "False"
+      PHOENIX_GRPC_PORT: "6007"
+      PHOENIX_PORT: "6006"
       VERSION: ""
 
   nats:
@@ -220,6 +222,8 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       PRESIDIO_ANALYZER_API_BASE: "http://presidio-analyzer:3000"
       PRESIDIO_ANONYMIZER_API_BASE: "http://presidio-anonymizer:3000"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: "false"
     volumes:
       - ./configs/litellm/config.dev.yaml:/app/config.yaml
@@ -276,12 +280,12 @@ services:
       ENABLE_VERSION_UPDATE_CHECK: False
 
       # Telemetry
-      ENABLE_OTEL: False
+      ENABLE_OTEL: True
       ENABLE_OTEL_METRICS: True
-      OTEL_EXPORTER_OTLP_ENDPOINT: XXX
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://localhost:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_INSECURE: True
       OTEL_SERVICE_NAME: "open-webui"
-      OTEL_BASIC_AUTH_USERNAME: XXX
-      OTEL_BASIC_AUTH_PASSWORD: XXX
 
       # Auth
       WEBUI_AUTH: True
@@ -495,3 +499,19 @@ services:
       DOCLING_MODELS: "layout tableformer code_formula easyocr"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    environment:
+      - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
+      - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
+    volumes:
+      - ./configs/otel/otel-collector-config.dev.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "13133:13133"
+      - "55679:55679"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:13133/" ]

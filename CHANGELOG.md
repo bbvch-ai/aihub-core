@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.245.0] - 2025-09-18 - Comprehensive Distributed Tracing with OpenTelemetry
+
+### Added
+
+- ✨ **Introduced Comprehensive Distributed Tracing:** Integrated OpenTelemetry across all AI-Hub services to provide
+  end-to-end visibility into complex AI workflows.
+- 🔭 **New OpenTelemetry Collector Service:** Added a dedicated OpenTelemetry Collector to the development environment,
+  simplifying observability data ingestion and routing to various backends like Phoenix.
+- ⚙️ **Centralized OpenTelemetry Configuration:** Implemented a new `OpenTelemetrySettings` module for unified
+  management of tracing and logging providers across all Python services.
+- 🏷️ **Explicit Function Tracing:** Introduced the `@trace_fn` decorator for explicit tracing of key service and
+  persistence methods, automatically capturing their inputs and outputs.
+- 🚫 **Selective Tracing Control:** Added the `@no_trace` decorator and `SmartTracer` to enable selective disabling of
+  OpenTelemetry instrumentation for specific functions or modules, optimizing trace data for relevance.
+- 📚 **Deep Observability Documentation:** Introduced new documentation for "Deep Observability with OpenTelemetry" and
+  an Architectural Decision Record (ADR) detailing the rationale and implementation of end-to-end tracing.
+- 📦 **Automated Library Instrumentation:** Implemented `AihubInstrumentor` for automatic instrumentation of critical
+  libraries like `pymongo`, `milvus`, `redis`, `requests`, `httpx`, `aiohttp`, `jinja2`, `botocore`, `llama_index`, and
+  `logging`, ensuring broad coverage without manual code changes.
+- 📊 **LLM Client Trace Propagation:** Enhanced LLM client configurations to automatically propagate OpenTelemetry trace
+  context to underlying model calls, enabling full traceability of generative AI interactions.
+
+### Changed
+
+- 🔄 **Updated NATS Client API for Observability:** Modified NATS `Publisher` and `Subscriber` constructors to require
+  explicit naming, which improves trace readability and component identification in observability tools.
+- 🚀 **Optimized NATS Development Configuration:** Adjusted NATS development server settings (e.g., `max_payload`,
+  `max_connections`) for better performance and resource utilization in local environments.
+- 🗺️ **Restructured Documentation Paths:** Updated documentation paths for feature overviews and internal command
+  documentation, enhancing overall clarity and consistency.
+- 📊 **Enabled OpenTelemetry for LiteLLM:** Configured LiteLLM to activate its native OpenTelemetry callback and
+  telemetry, extending distributed tracing to all LLM router interactions.
+- 🧩 **Enhanced FastAPI OpenTelemetry Integration:** Implemented FastAPI-specific OpenTelemetry instrumentation,
+  including automatic span enrichment with user, service, and request context for API endpoints.
+
+### Refactor
+
+- 🧹 **Overhauled Agent Tracing Architecture:** Replaced the legacy `RunTraceCoordinator` with a new `AgentRunTracer` for
+  more robust and flexible agent run and step tracing using a two-span approach.
+- 📂 **Consolidated OpenTelemetry Infrastructure:** Centralized OpenTelemetry-related utilities and base instrumentation
+  within `aihub_lib/infrastructure/opentelemetry` for improved modularity and maintainability.
+- 🔗 **Streamlined Context Initialization:** Refactored `RunContext` and `ThreadContext` initialization in agents to use
+  a new `for_topic` class method, simplifying context management from NATS topic information.
+
+### Removed
+
+- 🗑️ **Deprecated Legacy Tracing Modules:** Removed `RunTraceCoordinator` and the generic `tracing` decorator, which
+  have been superseded by the new OpenTelemetry instrumentation framework.
+
+---
+
 ## [v0.244.2] - 2025-09-16 - Specialized Image Processing and Loader Refinements
 
 ### Added

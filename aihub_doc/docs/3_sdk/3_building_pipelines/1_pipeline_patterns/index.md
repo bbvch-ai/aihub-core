@@ -5,7 +5,8 @@ index: 1
 
 # Pipeline Patterns
 
-The specific Dagster patterns that power the `aihub_pipeline` SDK. Understanding these patterns enables developers to build robust, scalable pipelines using the same architectural foundations.
+The specific Dagster patterns that power the `aihub_pipeline` SDK. Understanding these patterns enables developers to
+build robust, scalable pipelines using the same architectural foundations.
 
 ## What you'll learn
 
@@ -18,7 +19,8 @@ The specific Dagster patterns that power the `aihub_pipeline` SDK. Understanding
 
 ## 1. Observable Assets - Change Detection Based on Hashes
 
-Observable assets monitor external data sources and detect changes using content hashes and/or timestamps. They create dynamic partitions when new data is discovered.
+Observable assets monitor external data sources and detect changes using content hashes and/or timestamps. They create
+dynamic partitions when new data is discovered.
 
 ```python
 @observable_source_asset(
@@ -109,13 +111,16 @@ def data_version_by_partition_for_data_lake_files_no_op(
 ```
 
 **Why timestamp + hash is critical:**
+
 - **File deletion handling**: If a file is deleted and re-added with identical content, the hash alone would be the same
 - **Dagster optimization**: Dagster assumes files with identical data versions were already processed
 - **Reprocessing guarantee**: The timestamp component ensures deleted/re-added files trigger reprocessing
-- **Future improvement**: When Dagster resolves issue [#14749](https://github.com/dagster-io/dagster/issues/14749), `wipe_asset_partitions` will enable using hash-only versioning
+- **Future improvement**: When Dagster resolves issue [#14749](https://github.com/dagster-io/dagster/issues/14749),
+  `wipe_asset_partitions` will enable using hash-only versioning
 
 **Key aspects of observable assets:**
-- **Hash-based change detection**: Combines file timestamps and content hashes  
+
+- **Hash-based change detection**: Combines file timestamps and content hashes
 - **Dynamic partition creation**: Each file URI becomes a partition key
 - **Asset materialization reporting**: Provides rich metadata about discovered files
 - **Efficient processing**: Only changed files trigger downstream processing
@@ -141,6 +146,7 @@ def documents(data_lake_file: DataLakeFile) -> RefDocDocument:
 ```
 
 **Benefits of dynamic partitions:**
+
 - **Fault isolation**: Failure processing one document doesn't affect others
 - **Parallel processing**: Multiple documents can be processed simultaneously
 - **Selective reprocessing**: Only changed documents are reprocessed
@@ -148,7 +154,8 @@ def documents(data_lake_file: DataLakeFile) -> RefDocDocument:
 
 ## 3. I/O Managers - Data Flow Between Operations
 
-I/O managers handle loading inputs and storing outputs for assets. They sit between operations and manage data persistence.
+I/O managers handle loading inputs and storing outputs for assets. They sit between operations and manage data
+persistence.
 
 ::: code-group
 ```python [I/O Manager]
@@ -185,6 +192,7 @@ class DocStoreIOManager(IOManager):
             metadata=document_data["metadata"],
         )
 ```
+
 ```python [Usage]
 @op(code_version="v1", out=Out(io_manager_key="doc_store_io_manager"))
 def insert_ref_doc_into_docstore(ref_doc: RefDocDocument) -> Output[RefDocDocument]:
@@ -211,19 +219,19 @@ defs = Definitions(
     }
 )
 ```
-
 :::
 
 **I/O manager responsibilities:**
+
 - **Input loading**: Automatically fetch data from storage systems before operations run
-- **Output storing**: Automatically persist operation results to appropriate storage  
+- **Output storing**: Automatically persist operation results to appropriate storage
 - **Type safety**: Handle specific data types with optimized serialization
 - **Storage abstraction**: Operations don't need to know about storage implementation details
 - **Partition awareness**: Use partition keys to organize data storage and retrieval
 
 ## 4. Resources - External System Management
 
-Resources provide configuration, authentication, connections and operations to external systems. 
+Resources provide configuration, authentication, connections and operations to external systems.
 
 ```python
 from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
@@ -246,8 +254,9 @@ class MongoDocumentStoreResource(ConfigurableResource[MongoDocumentStore]):
 ```
 
 **Resource responsibilities:**
+
 - **Authentication**: Handle API keys, connection strings, and credentials
-- **Configuration**: Provide settings like timeouts, retries, and endpoints  
+- **Configuration**: Provide settings like timeouts, retries, and endpoints
 - **Connection management**: Maintain database connections and client instances
 - **Error handling**: Implement retry logic and failure recovery
 
@@ -293,6 +302,7 @@ def documents(data_lake_file: DataLakeFile) -> RefDocDocument:
 ```
 
 **Graph asset characteristics:**
+
 - **Operation composition**: Chain multiple ops to create complex processing
 - **Reusable ops**: Individual ops can be reused across different graph assets
 - **Clear data flow**: Each op receives typed inputs and produces typed outputs
@@ -342,6 +352,7 @@ assets = [
 ```
 
 **Asset factory benefits:**
+
 - **Reusability**: Same factory can create assets for different environments
 - **Parameterization**: Customize asset behavior through factory parameters
 - **Consistency**: Ensures assets are created with proper configuration
@@ -349,7 +360,8 @@ assets = [
 
 ## 7. Resource Factory Pattern
 
-Resource factory functions create complete sets of resources for different environments, ensuring consistent configuration.
+Resource factory functions create complete sets of resources for different environments, ensuring consistent
+configuration.
 
 ```python
 def local_mongo_milvus_storage_context_resource(
@@ -383,6 +395,7 @@ defs = Definitions(
 ```
 
 **Resource factory benefits:**
+
 - **Environment consistency**: Same pipeline code works across dev/test/prod
 - **Complete configuration**: All related resources configured together
 - **Easy switching**: Change environments by swapping factory functions
@@ -393,7 +406,7 @@ defs = Definitions(
 These Dagster patterns work together to create efficient, maintainable pipelines:
 
 - **Observable Assets**: Monitor external data sources using content hashes and timestamps
-- **Dynamic Partitions**: Process each document independently for fault isolation and parallelism  
+- **Dynamic Partitions**: Process each document independently for fault isolation and parallelism
 - **I/O Managers**: Handle data persistence between operations and storage systems
 - **Resources**: Manage external system connections, authentication, and configuration
 - **Graph Assets**: Compose complex processing from reusable operations

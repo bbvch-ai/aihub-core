@@ -16,6 +16,7 @@ from llama_index.core.schema import Document
 
 from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
 from aihub_lib.infrastructure.docling.DoclingSettings import DoclingSettings
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     NODE_CONTENT_TYPE_FIGURE,
     NODE_CONTENT_TYPE_TABLE,
@@ -28,6 +29,7 @@ class DoclingLoader(BaseReader):
         super().__init__(*args, **kwargs)
         self.config = DoclingSettings()
 
+    @trace_fn
     def load_data(
         self,
         file: str,
@@ -109,6 +111,7 @@ class DoclingLoader(BaseReader):
             )
         ]
 
+    @trace_fn
     def _build_request_body(self, file_content: str, filename: str, include_images: bool) -> dict:
         """Build the request body for Docling API calls."""
         return {
