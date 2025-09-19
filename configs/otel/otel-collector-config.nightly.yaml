@@ -33,14 +33,51 @@ receivers:
       container.restarts:
         enabled: true
 
+  # Docker container stdout/stderr (json-file driver)
+  filelog/docker:
+    include: [ /var/lib/docker/containers/*/*-json.log ]
+    start_at: end
+    poll_interval: 200ms
+    operators:
+      - id: docker-container
+        type: container
+        format: docker
+
+  # Structured health_status events from sidecar
+  filelog/docker_health_events:
+    include: [ /var/log/docker-health/events.ndjson ]
+    start_at: end
+    operators:
+      - type: json_parser
+        parse_from: body
+      - type: move
+        from: attributes
+        to: resource
+      - type: add
+        field: attributes.log_type
+        value: docker_health_event
+
 processors:
-  batch:
+  batch: {}
+  attributes/docker_common:
+    actions:
+      - key: telemetry.source
+        value: docker
+        action: upsert
 
   resourcedetection/docker:
     detectors: [env, docker]
     timeout: 2s
     override: false
 
+  attributes/common:
+    actions:
+      - key: deployment.environment
+        value: prod
+        action: upsert
+      - key: telemetry.source
+        value: docker
+        action: upsert
 
   resource/docker:
     attributes:
@@ -83,6 +120,10 @@ service:
       receivers: [ docker_stats ]
       processors: [ resourcedetection/docker, resource/docker, batch ]
       exporters: [ otlp/signoz ]
+    logs/docker:
+      receivers: [ filelog/docker, filelog/docker_health_events ]
+      processors: [ attributes/docker_common, batch ]
+      exporters: [ otlp ]
     logs:
       receivers: [otlp]
       processors: [batch]
