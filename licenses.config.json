@@ -96,7 +96,15 @@
     "hf-xet": "Apache-2.0",
     "parse_type": "MIT",
     "rpds-py": "MIT",
-    "audioop-lts": "PSF-2.0"
+    "audioop-lts": "PSF-2.0",
+    "opentelemetry-api": "Apache-2.0",
+    "opentelemetry-exporter-otlp": "Apache-2.0",
+    "opentelemetry-exporter-otlp-proto-common": "Apache-2.0",
+    "opentelemetry-exporter-otlp-proto-grpc": "Apache-2.0",
+    "opentelemetry-exporter-otlp-proto-http": "Apache-2.0",
+    "opentelemetry-proto": "Apache-2.0",
+    "opentelemetry-sdk": "Apache-2.0",
+    "opentelemetry-semantic-conventions": "Apache-2.0"
   },
   "reviewed_packages": [
     {
@@ -316,6 +324,12 @@
       "license": "BSD-3-Clause",
       "status": "✅",
       "notes": "Jupyter base image"
+    },
+    {
+      "service": "opentelemetry-collector-contrib",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
     }
   ]
 }

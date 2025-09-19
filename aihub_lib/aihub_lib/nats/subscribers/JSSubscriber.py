@@ -1,14 +1,18 @@
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable
+from typing import Annotated
 
 from nats.aio.client import Client as NATS
 from nats.errors import MsgAlreadyAckdError
 from nats.js import JetStreamContext
+from opentelemetry import context, trace
 
+from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 from aihub_lib.nats.streams.StreamManager import StreamManager
 from aihub_lib.nats.subscribers.AbstractSubscriber import AbstractSubscriber, TEvent
 from aihub_lib.nats.topics import Topic
+from aihub_lib.nats.tracing.NATSTraceContextPropagator import NATSTraceContextPropagator
 
 logger = logging.getLogger(__name__)
 
@@ -37,16 +41,17 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
 
     def __init__(
         self,
-        nc: NATS,
-        subject: str,
-        stream_name: str,
-        stream_subject: str,
-        queue_group: str,
-        event_cls: type[TEvent],
-        handler: Callable[[TEvent, Topic], Awaitable[None]],
-        js: JetStreamContext | None = None,
+        name: Annotated[str, "Name of the subscriber shown in otel"],
+        nc: Annotated[NATS, "NATS client"],
+        subject: Annotated[str, "NATS subject to subscribe to"],
+        stream_name: Annotated[str, "JetStream stream name, must be globally unique"],
+        stream_subject: Annotated[str, "Subject this JetStream stream is bound to"],
+        queue_group: Annotated[str, "Name of group that shares the responsibility to handle events in this stream"],
+        event_cls: Annotated[type[TEvent], "Event class to handle in the event handler"],
+        handler: Annotated[Callable[[TEvent, Topic], Awaitable[None]], "Event handler"],
+        js: Annotated[JetStreamContext, "JetStream instance"],
     ):
-        super().__init__(nc, subject, event_cls, handler)
+        super().__init__(name, nc, subject, event_cls, handler, protocol="JetStream")
         self.js = js or nc.jetstream()
         self.queue_group = queue_group
         self.stream_manager = StreamManager(self.js, stream_name, stream_subject)
@@ -64,14 +69,18 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
             stream=self.stream_manager.stream_name,
             queue=self.queue_group,
         )
-        logger.debug(f"Subscribed to '{self.subject}' with {self.stream_manager} and queue group '{self.queue_group}'.")
+        logger.debug(
+            f"{self.name} subscribed to '{self.subject}' with {self.stream_manager} "
+            f"and queue group '{self.queue_group}'."
+        )
 
     async def stop(self):
         """Unsubscribes from the JetStream subject, stopping the flow of messages."""
         if self.js_subscription:
             await self.js_subscription.unsubscribe()
         logger.debug(
-            f"Unsubscribed from '{self.subject}' with {self.stream_manager} and queue group '{self.queue_group}'."
+            f"{self.name} unsubscribed from '{self.subject}' with {self.stream_manager} "
+            f"and queue group '{self.queue_group}'."
         )
 
     async def message_handler(self, msg):
@@ -79,31 +88,85 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
         Processes incoming messages. Creates a task to handle the message
         processing and acknowledgment asynchronously without blocking.
         """
-        try:
-            logger.debug(f"Received message: {msg.subject} with event data: {msg.data}")
-            topic = Topic.from_subject(msg.subject)
-            event_data = msg.data
-            event = self.event_cls.deserialize_event(event_data)
-            event._jetstream_sequence = msg.metadata.sequence.stream
-            logger.debug(f"Deserialized event: {event}")
-            await msg.ack()
-            task = asyncio.create_task(self._process(event, topic, msg))
-            self._background_tasks.add(task)
-            task.add_done_callback(self._background_tasks.discard)
-        except MsgAlreadyAckdError:
-            pass
-        except Exception as e:
-            logger.exception(e)
-            logger.exception(f"Error in message handler for subject '{msg.subject}': {e}")
+        tracer = get_tracer(__name__)
+
+        headers = getattr(msg, "headers", {}) or {}
+        parent_context = context.get_current()
+
+        if headers:
+            try:
+                parent_context = NATSTraceContextPropagator.extract_and_activate_trace_context(headers)
+            except Exception as e:
+                logger.warning(f"{self.name} failed to extract trace context from headers: {e}")
+
+        with tracer.start_as_current_span(
+            f"{self.name}.receive UNKNOWN",
+            context=parent_context,
+            kind=trace.SpanKind.CONSUMER,
+            attributes={
+                "messaging.system": "nats.jetstream",
+                "messaging.source": msg.subject,
+                "messaging.operation": "receive",
+                "jetstream.stream": self.stream_manager.stream_name,
+                "jetstream.queue_group": self.queue_group,
+            },
+        ) as span:
+            if hasattr(msg, "metadata") and msg.metadata:
+                span.set_attribute("jetstream.sequence", msg.metadata.sequence.stream)
+                if hasattr(msg.metadata, "num_delivered"):
+                    span.set_attribute("jetstream.delivery_count", msg.metadata.num_delivered)
+
+            try:
+                logger.debug(f"{self.name} received message: {msg.subject} with event data: {msg.data}")
+                topic = Topic.from_subject(msg.subject)
+                event_data = msg.data
+                event = self.event_cls.deserialize_event(event_data)
+                event._jetstream_sequence = msg.metadata.sequence.stream
+
+                span.update_name(f"{self.name}.receive {event.__class__.__name__}")
+                span.set_attribute("event.type", event.event_name)
+                span.set_attribute("event.class", event.__class__.__name__)
+
+                logger.debug(f"{self.name} deserialized event: {event}")
+
+                await msg.ack()
+                span.set_attribute("jetstream.acked", True)
+
+                task = asyncio.create_task(self._process(event, topic, msg))
+                self._background_tasks.add(task)
+                task.add_done_callback(self._background_tasks.discard)
+
+                span.set_attribute("messaging.success", True)
+
+            except MsgAlreadyAckdError:
+                span.set_attribute("jetstream.acked", False)
+                span.add_event("Message already acknowledged")
+            except Exception as e:
+                span.set_attribute("messaging.success", False)
+                span.record_exception(e)
+                logger.exception(f"{self.name} error in message handler for subject '{msg.subject}': {e}")
 
     async def _process(self, event, topic, msg):
         """
         Process the event and acknowledge the message based on result.
         Uses a semaphore to limit the number of concurrent processing.
         """
+        tracer = get_tracer(__name__)
+
         async with JSSubscriber._process_semaphore:
-            try:
-                await self.handler(event, topic)
-            except Exception as e:
-                logger.exception(e)
-                logger.exception(f"Error in async processor for subject '{msg.subject}': {e}")
+            with tracer.start_as_current_span(
+                f"{self.name}.process {event.event_name}",
+                kind=trace.SpanKind.INTERNAL,
+                attributes={
+                    "handler.event_type": event.event_name,
+                    "handler.subject": msg.subject,
+                    "jetstream.processing": True,
+                },
+            ) as span:
+                try:
+                    await self.handler(event, topic)
+                    span.set_attribute("handler.success", True)
+                except Exception as e:
+                    span.set_attribute("handler.success", False)
+                    span.record_exception(e)
+                    logger.exception(f"{self.name} error in async processor for subject '{msg.subject}': {e}")

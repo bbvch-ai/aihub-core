@@ -89,9 +89,9 @@ general_settings:
   maximum_spend_logs_retention_interval: "30d"
 
 litellm_settings:
-  callbacks: ["detect_prompt_injection"]
+  callbacks: ["detect_prompt_injection", "otel"]
   default_fallbacks: ["azure/gpt-4o-mini"]
-  telemetry: false
+  telemetry: true
   json_logs: true
 
 router_settings:

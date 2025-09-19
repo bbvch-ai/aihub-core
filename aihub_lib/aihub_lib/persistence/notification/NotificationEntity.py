@@ -8,6 +8,7 @@ from mongoengine import (
     StringField,
 )
 
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
 
@@ -33,6 +34,7 @@ class NotificationEntity(Document):
     created_at = DateTimeField(default=lambda: datetime.now(UTC))
 
     @classmethod
+    @trace_fn
     def get_for_user(
         cls,
         user_id: str,
@@ -61,20 +63,24 @@ class NotificationEntity(Document):
         total = query.count()
         return notifications, total
 
+    @trace_fn
     def mark_as_read(self):
         self.read = True
         self.save()
         return self
 
+    @trace_fn
     def mark_as_done(self):
         self.done = True
         self.save()
         return self
 
     @classmethod
+    @trace_fn
     def mark_multiple_as_read(cls, user_id: str, notification_ids: list[str]) -> int:
         return cls.objects(id__in=notification_ids, user_id=user_id).update(set__read=True)
 
     @classmethod
+    @trace_fn
     def mark_multiple_as_done(cls, user_id: str, notification_ids: list[str]) -> int:
         return cls.objects(id__in=notification_ids, user_id=user_id).update(set__done=True)

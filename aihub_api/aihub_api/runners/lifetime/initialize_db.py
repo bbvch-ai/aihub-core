@@ -9,12 +9,14 @@ import logging
 
 from aihub_lib.auth.dependencies.SuperuserAuthHandler.SuperuserSettings import SuperuserSettings
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
 from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.persistence.user.UserEntity import UserEntity
 
 logger = logging.getLogger(__name__)
 
 
+@no_trace
 async def initialize_roles() -> None:
     """
     Initialize all required roles in the database.

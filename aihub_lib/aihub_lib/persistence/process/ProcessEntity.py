@@ -14,6 +14,7 @@ from mongoengine import (
     StringField,
 )
 
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
 from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
@@ -102,6 +103,7 @@ class ProcessEntity(Document):
     last_discovered = DateTimeField(required=True, default=datetime.now)
 
     @classmethod
+    @trace_fn
     def create_process(
         cls,
         process_class: str,
@@ -129,6 +131,7 @@ class ProcessEntity(Document):
         return process
 
     @classmethod
+    @trace_fn
     def create_or_update(
         cls,
         process_id: str,
@@ -176,13 +179,16 @@ class ProcessEntity(Document):
             )
 
     @classmethod
+    @trace_fn
     def get_processes(cls):
         return cls.objects()
 
     @classmethod
+    @trace_fn
     def get_process_by_id(cls, process_entity_id: str) -> "ProcessEntity":
         return cls.objects().get(id=ObjectId(process_entity_id))
 
     @classmethod
+    @trace_fn
     def get_process(cls, process_class: str, process_id: str) -> "ProcessEntity":
         return cls.objects(process_class=process_class, process_id=process_id).first()

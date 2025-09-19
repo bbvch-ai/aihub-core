@@ -19,12 +19,14 @@ class AgentJSSubscriber(JSSubscriber[BaseEvent]):
         handler: Callable[[ControlEvent, AgentInstanceTopic], Awaitable[None]],
         queue_group: str,
         js: JetStreamContext | None = None,
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to all control events within a specific agent instance."""
         subject = topic_manager.get_subject_for_all_control_events_within_agent_instance()
         stream_name, stream_subject = topic_manager.get_stream()
 
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             stream_subject=stream_subject,
@@ -43,12 +45,14 @@ class AgentJSSubscriber(JSSubscriber[BaseEvent]):
         handler: Callable[[ControlEvent, AgentInstanceTopic], Awaitable[None]],
         queue_group: str,
         js: JetStreamContext | None = None,
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to all control events for a specific agent class."""
         subject = topic_manager.get_subject_for_all_control_events_within_agent_class()
         stream_name, stream_subject = topic_manager.get_stream()
 
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             stream_subject=stream_subject,

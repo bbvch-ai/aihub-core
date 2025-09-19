@@ -10,3 +10,5 @@ class ProcessConfigEntityEmbeddedDocument(ProcessConfigEntity, EmbeddedDocument)
     within other documents, such as `ProcessEntity`.
     This is commonly used to store default configurations defined in the ProcessRunner constructor by the implementer.
     """
+
+    pass

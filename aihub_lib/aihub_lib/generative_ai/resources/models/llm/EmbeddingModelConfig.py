@@ -2,6 +2,7 @@ from typing import Annotated, Literal
 
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.embeddings.openai_like import OpenAILikeEmbedding
+from opentelemetry.propagate import inject
 from pydantic import BaseModel, Field
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
@@ -60,6 +61,9 @@ class EmbeddingModelConfig(LiteLLMBase[OpenAILikeEmbedding]):
             embedding_tokens_costs_per_thousand=model_info["model_info"]["input_cost_per_token"] * 1000,
         )
 
+        default_headers = {}
+        inject(default_headers)
+
         open_ai_like_embedding = OpenAILikeEmbedding(
             model_name=self.model_name,
             api_base=config.BASE_URL,
@@ -67,6 +71,7 @@ class EmbeddingModelConfig(LiteLLMBase[OpenAILikeEmbedding]):
             max_retries=self.default_parameter.max_retries,
             callback_manager=CallbackManager([token_counter]),
             timeout=self.default_parameter.timeout,
+            default_headers=default_headers,
         )
 
         return open_ai_like_embedding, cost_tracker
