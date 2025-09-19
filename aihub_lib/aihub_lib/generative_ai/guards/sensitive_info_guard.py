@@ -30,7 +30,7 @@ def sensitive_info_guard_result_factory(t: LocaleHandler) -> type[SensitiveInfoG
     return LocalizedSensitiveInfoGuardResult
 
 
-async def sensitive_info_guard(
+def sensitive_info_guard(
     llm: LLM,
     t: LocaleHandler,
     answer: str,
