@@ -17,7 +17,7 @@ from aihub_agent.agents.FewShotAgent.events.FewShotEvent import FewShotEvent
 from aihub_agent.agents.FewShotAgent.events.FewShotStandaloneQuestionCondenserEvent import (
     FewShotStandaloneQuestionCondenserEvent,
 )
-from aihub_agent.agents.FewShotAgent.events.RightAgentEvent import RightAgentEvent
+from aihub_lib.nats.events.guard.AgentSuitabilityAcceptEvent import AgentSuitabilityAcceptEvent
 from aihub_agent.agents.FewShotAgent.FewShotAgent import FewShotAgent
 from aihub_agent.agents.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
@@ -188,7 +188,7 @@ def then_limit_chat_history_event(agent_runner: AgentTestRunner):
 
 @then("a RightAgentEvent is present")
 def then_guard_or_rejection_event(agent_runner: AgentTestRunner):
-    assert agent_runner.has_event_of_class(RightAgentEvent), "Agent did not produce either RightAgentEvent"
+    assert agent_runner.has_event_of_class(AgentSuitabilityAcceptEvent), "Agent did not produce AgentSuitabilityAcceptEvent"
 
 
 @then("a FewShotStandaloneQuestionCondenserEvent is present with condensed question")
