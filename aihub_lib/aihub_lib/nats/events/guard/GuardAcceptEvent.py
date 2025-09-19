@@ -5,6 +5,7 @@ from pydantic import Field
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.semantic import GuardEvent
 
+
 class GuardAcceptEvent(GuardEvent):
     """
     Base class for all guard acceptance events.
