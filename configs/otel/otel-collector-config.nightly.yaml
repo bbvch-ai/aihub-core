@@ -33,16 +33,6 @@ receivers:
       container.restarts:
         enabled: true
 
-  # Docker container stdout/stderr (json-file driver)
-  filelog/docker:
-    include: [ /var/lib/docker/containers/*/*-json.log ]
-    start_at: end
-    poll_interval: 200ms
-    operators:
-      - id: docker-container
-        type: container
-        format: docker
-
   # Structured health_status events from sidecar
   filelog/docker_health_events:
     include: [ /var/log/docker-health/events.ndjson ]
