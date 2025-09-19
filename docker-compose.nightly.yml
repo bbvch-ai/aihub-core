@@ -917,8 +917,6 @@ services:
       - "4318:4318"
       - "13133:13133"
       - "55679:55679"
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://0.0.0.0:13133/" ]
 
   docker-health-events:
     image: docker:26-cli

@@ -115,9 +115,6 @@ exporters:
     tls:
       insecure: false
 
-  debug:
-    verbosity: detailed
-
 extensions:
   health_check:
   pprof:
@@ -141,7 +138,7 @@ service:
     logs/docker:
       receivers: [ filelog/docker_health_events ]
       processors: [ attributes/docker_common, batch ]
-      exporters: [otlp/signoz, debug]
+      exporters: [otlp/signoz]
     logs:
       receivers: [otlp]
       processors: [batch]
