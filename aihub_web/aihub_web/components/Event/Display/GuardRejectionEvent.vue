@@ -4,7 +4,12 @@
     :thread="thread"
     icon="icon-park-twotone:shield"
   >
-    <Message severity="error" icon="pi pi-times-circle" variant="simple" size="small">
+    <Message
+      severity="error"
+      icon="pi pi-times-circle"
+      variant="simple"
+      size="small"
+    >
       {{ event.event.reason }}
     </Message>
   </EventDisplayBase>
