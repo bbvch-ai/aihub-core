@@ -3,10 +3,10 @@ from typing import Annotated, ClassVar
 from pydantic import Field
 
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.control.ControlEvent import ControlEvent
+from aihub_lib.nats.events.semantic import GuardEvent
 
 
-class GuardRejectionEvent(ControlEvent):
+class GuardRejectionEvent(GuardEvent):
     """
     Base class for all guard rejection events.
 
