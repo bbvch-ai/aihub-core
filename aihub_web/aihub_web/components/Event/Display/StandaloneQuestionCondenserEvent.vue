@@ -4,20 +4,20 @@
     :thread="thread"
     icon="material-symbols:quiz"
   >
-      <div class="flex flex-col gap-2">
-        <span class="text-sm font-medium text-surface-600 dark:text-surface-400">
-           <Icon
-              name="material-symbols:compress"
-              class="size-4"
-            />
-           {{ t('event.standaloneQuestionCondenser.condensedQuestion') }}
-        </span>
-        <ChatMessage
-          :message="event.event.condensed_chat_message"
-          :name="t('event.standaloneQuestionCondenser.user')"
-          :icon="agentIcon"
+    <div class="flex flex-col gap-2">
+      <span class="text-sm font-medium text-surface-600 dark:text-surface-400">
+        <Icon
+          name="material-symbols:compress"
+          class="size-4"
         />
-      </div>
+        {{ t('event.standaloneQuestionCondenser.condensedQuestion') }}
+      </span>
+      <ChatMessage
+        :message="event.event.condensed_chat_message"
+        :name="t('event.standaloneQuestionCondenser.user')"
+        :icon="agentIcon"
+      />
+    </div>
   </EventDisplayBase>
 </template>
 
