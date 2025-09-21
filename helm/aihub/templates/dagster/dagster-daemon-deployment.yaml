@@ -1,0 +1,73 @@
+{{- if .Values.dagsterDaemon.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aihub.deploymentName" (dict "component" "dagster-daemon" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dagster-daemon
+spec:
+  replicas: {{ .Values.dagsterDaemon.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aihub.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: dagster-daemon
+  template:
+    metadata:
+      labels:
+        {{- include "aihub.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: dagster-daemon
+    spec:
+      securityContext:
+        {{- include "aihub.podSecurityContext" . | nindent 8 }}
+      tolerations:
+        {{- include "aihub.globalTolerations" . | nindent 8 }}
+      containers:
+      - name: dagster-daemon
+        image: {{ .Values.dagster.image.repository }}:{{ .Values.dagster.image.tag }}
+        imagePullPolicy: {{ .Values.dagsterDaemon.image.pullPolicy }}
+        securityContext:
+          {{- include "aihub.securityContext" . | nindent 10 }}
+        command:
+        - dagster-daemon
+        - run
+        env:
+        {{- include "aihub.commonEnv" . | nindent 8 }}
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: DAGSTER_HOME
+          value: "/dagster_home"
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: POSTGRES_PASSWORD
+        volumeMounts:
+        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
+        - name: dagster-data
+          mountPath: /dagster_home
+        - name: dagster-config
+          mountPath: /dagster_home/dagster.yaml
+          subPath: dagster.yaml
+        - name: dagster-workspace
+          mountPath: /dagster_home/workspace.yaml
+          subPath: workspace.yaml
+        resources:
+          {{- toYaml .Values.dagsterDaemon.resources | nindent 10 }}
+      volumes:
+      {{- include "aihub.commonVolumes" . | nindent 6 }}
+      - name: dagster-data
+        persistentVolumeClaim:
+          claimName: {{ include "aihub.pvcName" (dict "component" "dagster-data" "Release" .Release) }}
+      - name: dagster-config
+        configMap:
+          name: {{ include "aihub.fullname" . }}-dagster-config
+      - name: dagster-workspace
+        configMap:
+          name: {{ include "aihub.fullname" . }}-dagster-workspace
+{{- end }}

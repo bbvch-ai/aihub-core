@@ -1,0 +1,19 @@
+{{- if .Values.docling.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aihub.serviceName" (dict "component" "docling" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: docling
+spec:
+  type: {{ .Values.docling.service.type }}
+  ports:
+  - port: {{ .Values.docling.service.port }}
+    targetPort: 5001
+    protocol: TCP
+    name: docling
+  selector:
+    {{- include "aihub.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: docling
+{{- end }}

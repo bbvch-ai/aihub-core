@@ -1,0 +1,40 @@
+{{- if .Values.nats.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" . }}-nats-config
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: nats
+data:
+  nats.conf: |
+    # NATS configuration
+    port: 4222
+    http: 8222
+    server_name: "aihub-nats"
+    
+    # Clustering
+    cluster {
+      port: 6222
+      routes = []
+    }
+    
+    # JetStream
+    jetstream {
+      store_dir: "/data"
+      max_memory_store: 1GB
+      max_file_store: 10GB
+    }
+    
+    # Logging
+    log_file: "/dev/stdout"
+    logtime: true
+    debug: false
+    trace: false
+    
+    # Limits
+    max_connections: 1000
+    max_payload: 1MB
+    max_pending: 64MB
+    max_control_line: 4KB
+{{- end }}

@@ -1,0 +1,93 @@
+# External Secrets Operator Configuration
+# This file contains the configuration for External Secrets Operator to sync Azure Key Vault secrets
+
+# Global configuration
+global:
+  # Node selector for all components
+  nodeSelector:
+    kubernetes.io/os: linux
+  
+  # Tolerations for all components
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+      effect: NoSchedule
+  
+  # Affinity
+  affinity: {}
+
+# Install CRDs
+installCRDs: true
+
+# Resource limits for main controller
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+# Cert Controller configuration
+certController:
+  # Enable cert controller
+  create: true
+  
+  # Tolerations for cert controller
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+      effect: NoSchedule
+  
+  # Resource limits
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+# Webhook configuration
+webhook:
+  # Enable webhook
+  create: true
+  
+  # Tolerations for webhook
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+      effect: NoSchedule
+  
+  # Resource limits
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+# Security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# Container security context
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+
+# Prometheus monitoring
+prometheus:
+  enabled: false  # Set to true if using Prometheus Operator
+
+# Service monitor
+serviceMonitor:
+  enabled: false  # Set to true if using Prometheus Operator

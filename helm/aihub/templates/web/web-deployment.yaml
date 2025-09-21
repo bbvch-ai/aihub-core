@@ -1,0 +1,54 @@
+{{- if .Values.web.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aihub.fullname" (dict "component" "web" "Values" .Values "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  replicas: {{ .Values.web.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aihub.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        {{- include "aihub.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: web
+    spec:
+      securityContext:
+        {{- include "aihub.podSecurityContext" . | nindent 8 }}
+      tolerations:
+        {{- include "aihub.globalTolerations" . | nindent 8 }}
+      containers:
+      - name: web
+        image: {{ .Values.web.image.repository }}:{{ .Values.web.image.tag }}
+        imagePullPolicy: {{ .Values.web.image.pullPolicy }}
+        securityContext:
+          {{- include "aihub.securityContext" . | nindent 10 }}
+        env:
+        {{- include "aihub.commonEnv" . | nindent 8 }}
+        - name: OAUTH_CLIENT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: OAUTH_CLIENT_ID
+        - name: OAUTH_AUTHORITY_URL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: OAUTH_AUTHORITY_URL
+        - name: WEBUI_URL
+          value: "https://openwebui.{{ .Values.global.domain }}"
+        - name: WS_ENDPOINT
+          value: "wss://{{ .Values.global.domain }}/api/v1/event/ws"
+        ports:
+        - containerPort: 80
+          name: web
+        resources:
+          {{- toYaml .Values.web.resources | nindent 10 }}
+      volumes:
+      {{- include "aihub.commonVolumes" . | nindent 6 }}
+{{- end }}

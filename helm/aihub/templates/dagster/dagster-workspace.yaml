@@ -1,0 +1,15 @@
+{{- if .Values.dagsterWebserver.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" . }}-dagster-workspace
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dagster
+data:
+  workspace.yaml: |
+    # Dagster workspace configuration
+    load_from:
+      - python_module:
+          module_name: "aihub_pipeline"
+{{- end }}

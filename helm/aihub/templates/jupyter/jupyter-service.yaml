@@ -1,0 +1,19 @@
+{{- if .Values.jupyter.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aihub.serviceName" (dict "component" "jupyter" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: jupyter
+spec:
+  type: {{ .Values.jupyter.service.type }}
+  ports:
+  - port: {{ .Values.jupyter.service.port }}
+    targetPort: 8888
+    protocol: TCP
+    name: jupyter
+  selector:
+    {{- include "aihub.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: jupyter
+{{- end }}

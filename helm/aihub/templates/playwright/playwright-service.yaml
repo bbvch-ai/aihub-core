@@ -1,0 +1,19 @@
+{{- if .Values.playwright.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aihub.serviceName" (dict "component" "playwright" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: playwright
+spec:
+  type: {{ .Values.playwright.service.type }}
+  ports:
+  - port: {{ .Values.playwright.service.port }}
+    targetPort: 3000
+    protocol: TCP
+    name: playwright
+  selector:
+    {{- include "aihub.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: playwright
+{{- end }}

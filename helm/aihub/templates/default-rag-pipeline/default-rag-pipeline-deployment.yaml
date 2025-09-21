@@ -1,0 +1,102 @@
+{{- if .Values.defaultRagPipeline.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aihub.deploymentName" (dict "component" "default-rag-pipeline" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: default-rag-pipeline
+spec:
+  replicas: {{ .Values.defaultRagPipeline.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aihub.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: default-rag-pipeline
+  template:
+    metadata:
+      labels:
+        {{- include "aihub.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: default-rag-pipeline
+    spec:
+      securityContext:
+        {{- include "aihub.podSecurityContext" . | nindent 8 }}
+      tolerations:
+        {{- include "aihub.globalTolerations" . | nindent 8 }}
+      containers:
+      - name: default-rag-pipeline
+        image: {{ .Values.defaultRagPipeline.image.repository }}:{{ .Values.defaultRagPipeline.image.tag }}
+        imagePullPolicy: {{ .Values.defaultRagPipeline.image.pullPolicy }}
+        securityContext:
+          {{- include "aihub.securityContext" . | nindent 10 }}
+        env:
+        {{- include "aihub.commonEnv" . | nindent 8 }}
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: DAGSTER_HOME
+          value: "/dagster_home"
+        - name: S3_STORAGE_ENDPOINT
+          value: "http://{{ include "aihub.serviceName" (dict "component" "minio" "Release" .Release) }}:9000"
+        - name: S3_STORAGE_ACCESS_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: MINIO_ROOT_USER
+        - name: S3_STORAGE_SECRET_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: MINIO_ROOT_PASSWORD
+        - name: S3_STORAGE_URL_SIGNING_SECRET
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: MINIO_URL_SIGNING_SECRET
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: POSTGRES_PASSWORD
+        - name: MONGO_CONNECTION_STRING
+          value: "mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@{{ include "aihub.serviceName" (dict "component" "mongo" "Release" .Release) }}:27017"
+        - name: MONGO_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: MONGO_USERNAME
+        - name: MONGO_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: MONGO_PASSWORD
+        - name: DOCLING_API_ENDPOINT
+          value: "http://{{ include "aihub.serviceName" (dict "component" "docling" "Release" .Release) }}:5001/v1alpha/convert/source"
+        - name: DOCLING_API_TIMEOUT
+          value: "600"
+        - name: MILVUS_URL
+          value: "http://{{ include "aihub.serviceName" (dict "component" "milvus" "Release" .Release) }}"
+        - name: MILVUS_DIMENSION
+          value: "3072"
+        - name: LITE_LLM_PROXY_BASE_URL
+          value: "http://{{ include "aihub.serviceName" (dict "component" "litellm" "Release" .Release) }}:4000"
+        - name: LITE_LLM_PROXY_API_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: LITELLM_MASTER_KEY
+        volumeMounts:
+        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
+        - name: dagster-data
+          mountPath: /dagster_home
+        resources:
+          {{- toYaml .Values.defaultRagPipeline.resources | nindent 10 }}
+      volumes:
+      {{- include "aihub.commonVolumes" . | nindent 6 }}
+      - name: dagster-data
+        persistentVolumeClaim:
+          claimName: {{ include "aihub.pvcName" (dict "component" "dagster-data" "Release" .Release) }}
+{{- end }}

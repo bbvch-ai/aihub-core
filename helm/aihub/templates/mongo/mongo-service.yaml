@@ -1,0 +1,19 @@
+{{- if .Values.mongo.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aihub.serviceName" (dict "component" "mongo" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mongo
+spec:
+  type: {{ .Values.mongo.service.type }}
+  ports:
+  - port: {{ .Values.mongo.service.port }}
+    targetPort: 27017
+    protocol: TCP
+    name: mongo
+  selector:
+    {{- include "aihub.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: mongo
+{{- end }}

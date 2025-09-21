@@ -1,0 +1,19 @@
+{{- if .Values.dagsterWebserver.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aihub.serviceName" (dict "component" "dagster-webserver" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dagster-webserver
+spec:
+  type: {{ .Values.dagsterWebserver.service.type }}
+  ports:
+  - port: {{ .Values.dagsterWebserver.service.port }}
+    targetPort: 3000
+    protocol: TCP
+    name: dagster
+  selector:
+    {{- include "aihub.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: dagster-webserver
+{{- end }}

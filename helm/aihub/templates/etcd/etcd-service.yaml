@@ -1,0 +1,19 @@
+{{- if .Values.etcd.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aihub.serviceName" (dict "component" "etcd" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: etcd
+spec:
+  type: {{ .Values.etcd.service.type }}
+  ports:
+  - port: {{ .Values.etcd.service.port }}
+    targetPort: 2379
+    protocol: TCP
+    name: etcd
+  selector:
+    {{- include "aihub.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: etcd
+{{- end }}

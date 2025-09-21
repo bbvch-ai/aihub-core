@@ -1,0 +1,19 @@
+{{- if .Values.docling.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" . }}-docling-init
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: docling
+data:
+  init-models.sh: |
+    #!/bin/bash
+    set -e
+    
+    # Initialize Docling models
+    docling download --artifacts-path /models layout tableformer code_formula easyocr
+    
+    # Start Docling server
+    exec docling serve --artifacts-path /models --port 5001
+{{- end }}

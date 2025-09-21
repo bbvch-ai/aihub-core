@@ -1,0 +1,21 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" . }}-postgres-init
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+data:
+  init-multiple-dbs.sh: |
+    #!/bin/bash
+    set -e
+    
+    # Create multiple databases
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+        CREATE DATABASE openwebui;
+        CREATE DATABASE phoenix;
+        CREATE DATABASE dagster;
+        CREATE DATABASE litellm;
+    EOSQL
+{{- end }}

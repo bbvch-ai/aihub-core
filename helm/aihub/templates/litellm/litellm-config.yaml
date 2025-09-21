@@ -1,0 +1,59 @@
+{{- if .Values.litellm.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" . }}-litellm-config
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: litellm
+data:
+  config.yaml: |
+    # LiteLLM configuration
+    model_list:
+      - model_name: azure/gpt-4o-mini
+        litellm_params:
+          model: azure/gpt-4o-mini
+          api_base: "https://ai-hub-openai.openai.azure.com/"
+          api_key: "${AZURE_OPENAI_KEY}"
+          api_version: "2024-02-15-preview"
+      - model_name: azure/gpt-4o
+        litellm_params:
+          model: azure/gpt-4o
+          api_base: "https://ai-hub-openai.openai.azure.com/"
+          api_key: "${AZURE_OPENAI_KEY}"
+          api_version: "2024-02-15-preview"
+      - model_name: azure/dall-e-3
+        litellm_params:
+          model: azure/dall-e-3
+          api_base: "https://ai-hub-openai.openai.azure.com/"
+          api_key: "${AZURE_OPENAI_KEY_IMAGE}"
+          api_version: "2024-02-15-preview"
+      - model_name: azure/gpt-4o-mini-transcribe
+        litellm_params:
+          model: azure/gpt-4o-mini-transcribe
+          api_base: "https://ai-hub-openai.openai.azure.com/"
+          api_key: "${AZURE_OPENAI_KEY_AUDIO}"
+          api_version: "2024-02-15-preview"
+      - model_name: azure/gpt-4o-mini-tts
+        litellm_params:
+          model: azure/gpt-4o-mini-tts
+          api_base: "https://ai-hub-openai.openai.azure.com/"
+          api_key: "${AZURE_OPENAI_KEY_AUDIO}"
+          api_version: "2024-02-15-preview"
+      - model_name: gemini/gemini-1.5-pro
+        litellm_params:
+          model: gemini/gemini-1.5-pro
+          api_key: "${GEMINI_API_KEY}"
+    
+    # General settings
+    general_settings:
+      master_key: "${LITELLM_MASTER_KEY}"
+      database_url: "${DATABASE_URL}"
+      ui_username: "${UI_USERNAME}"
+      ui_password: "${UI_PASSWORD}"
+      set_verbose: false
+    
+    # Presidio settings
+    presidio_analyzer_api_base: "${PRESIDIO_ANALYZER_API_BASE}"
+    presidio_anonymizer_api_base: "${PRESIDIO_ANONYMIZER_API_BASE}"
+{{- end }}

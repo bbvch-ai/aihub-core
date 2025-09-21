@@ -1,0 +1,37 @@
+{{- if .Values.attu.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aihub.deploymentName" (dict "component" "attu" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: attu
+spec:
+  replicas: {{ .Values.attu.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aihub.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: attu
+  template:
+    metadata:
+      labels:
+        {{- include "aihub.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: attu
+    spec:
+      securityContext:
+        {{- include "aihub.podSecurityContext" . | nindent 8 }}
+      containers:
+      - name: attu
+        image: {{ .Values.attu.image.repository }}:{{ .Values.attu.image.tag }}
+        imagePullPolicy: {{ .Values.attu.image.pullPolicy }}
+        securityContext:
+          {{- include "aihub.securityContext" . | nindent 10 }}
+        env:
+        {{- include "aihub.commonEnv" . | nindent 8 }}
+        - name: MILVUS_URL
+          value: "{{ include "aihub.serviceName" (dict "component" "milvus" "Release" .Release) }}:19530"
+        resources:
+          {{- toYaml .Values.attu.resources | nindent 10 }}
+      volumes:
+      {{- include "aihub.commonVolumes" . | nindent 6 }}
+{{- end }}

@@ -1,0 +1,17 @@
+apiVersion: v2
+name: aihub
+description: A Helm chart for AIHub - Swiss AI Platform
+type: application
+version: 0.1.0
+appVersion: "nightly"
+keywords:
+  - ai
+  - platform
+  - swiss
+  - hub
+home: https://github.com/bbvch-ai/aihub-core
+sources:
+  - https://github.com/bbvch-ai/aihub-core
+maintainers:
+  - name: AIHub Team
+    email: admin@ai-hub.bbv.ch

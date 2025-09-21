@@ -49,8 +49,8 @@ variable "system_pool_name" {
 variable "system_vm_size" {
   description = "VM size for system pool"
   type        = string
-  # B2als_v2 is cheap for system pods; alternative: D2as_v5
-  default     = "Standard_B2als_v2"
+  # D4s_v5 provides 4 vCPUs, 16 GB for AIHub workloads
+  default     = "Standard_D4s_v5"
 }
 
 variable "system_node_count" {

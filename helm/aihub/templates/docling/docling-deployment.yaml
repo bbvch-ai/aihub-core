@@ -1,0 +1,70 @@
+{{- if .Values.docling.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aihub.deploymentName" (dict "component" "docling" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: docling
+spec:
+  replicas: {{ .Values.docling.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aihub.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: docling
+  template:
+    metadata:
+      labels:
+        {{- include "aihub.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: docling
+    spec:
+      securityContext:
+        {{- include "aihub.podSecurityContext" . | nindent 8 }}
+      containers:
+      - name: docling
+        image: {{ .Values.docling.image.repository }}:{{ .Values.docling.image.tag }}
+        imagePullPolicy: {{ .Values.docling.image.pullPolicy }}
+        securityContext:
+          {{- include "aihub.securityContext" . | nindent 10 }}
+        env:
+        {{- include "aihub.commonEnv" . | nindent 8 }}
+        - name: DOCLING_SERVE_ARTIFACTS_PATH
+          value: "/models"
+        - name: DOCLING_SERVE_MAX_SYNC_WAIT
+          value: "600"
+        - name: DOCLING_MODELS
+          value: "layout tableformer code_formula easyocr"
+        ports:
+        - containerPort: 5001
+          name: docling
+        volumeMounts:
+        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
+        - name: docling-data
+          mountPath: /models
+        - name: docling-init
+          mountPath: /docker-entrypoint.sh
+          subPath: init-models.sh
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5001
+          initialDelaySeconds: 30
+          periodSeconds: 5
+        resources:
+          {{- toYaml .Values.docling.resources | nindent 10 }}
+      volumes:
+      {{- include "aihub.commonVolumes" . | nindent 6 }}
+      - name: docling-data
+        persistentVolumeClaim:
+          claimName: {{ include "aihub.pvcName" (dict "component" "docling-data" "Release" .Release) }}
+      - name: docling-init
+        configMap:
+          name: {{ include "aihub.fullname" . }}-docling-init
+          defaultMode: 0755
+{{- end }}

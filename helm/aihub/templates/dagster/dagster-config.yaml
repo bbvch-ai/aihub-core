@@ -1,0 +1,20 @@
+{{- if .Values.dagsterWebserver.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" . }}-dagster-config
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dagster
+data:
+  dagster.yaml: |
+    # Dagster configuration
+    storage:
+      postgres:
+        postgres_db:
+          username: "${POSTGRES_USER}"
+          password: "${POSTGRES_PASSWORD}"
+          hostname: "{{ include "aihub.serviceName" (dict "component" "postgres" "Release" .Release) }}"
+          db_name: "dagster"
+          port: 5432
+{{- end }}

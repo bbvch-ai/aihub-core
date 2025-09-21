@@ -1,0 +1,77 @@
+{{- if .Values.milvus.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aihub.deploymentName" (dict "component" "milvus" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: milvus
+spec:
+  replicas: {{ .Values.milvus.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aihub.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: milvus
+  template:
+    metadata:
+      labels:
+        {{- include "aihub.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: milvus
+    spec:
+      securityContext:
+        {{- include "aihub.podSecurityContext" . | nindent 8 }}
+      tolerations:
+        {{- include "aihub.globalTolerations" . | nindent 8 }}
+      containers:
+      - name: milvus
+        image: {{ .Values.milvus.image.repository }}:{{ .Values.milvus.image.tag }}
+        imagePullPolicy: {{ .Values.milvus.image.pullPolicy }}
+        securityContext:
+          {{- include "aihub.securityContext" . | nindent 10 }}
+        command:
+        - milvus
+        - run
+        - standalone
+        env:
+        {{- include "aihub.commonEnv" . | nindent 8 }}
+        - name: ETCD_ENDPOINTS
+          value: "{{ include "aihub.serviceName" (dict "component" "etcd" "Release" .Release) }}:2379"
+        - name: MINIO_ADDRESS
+          value: "{{ include "aihub.serviceName" (dict "component" "minio" "Release" .Release) }}:9000"
+        - name: MINIO_ACCESS_KEY_ID
+          value: "{{ .Values.minio.env.MINIO_ROOT_USER }}"
+        - name: MINIO_SECRET_ACCESS_KEY
+          value: "{{ .Values.minio.env.MINIO_ROOT_PASSWORD }}"
+        ports:
+        - containerPort: 19530
+          name: milvus
+        volumeMounts:
+        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
+        - name: milvus-data
+          mountPath: /var/lib/milvus
+        - name: milvus-config
+          mountPath: /milvus/configs/milvus.yaml
+          subPath: milvus.yaml
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 9091
+          initialDelaySeconds: 90
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 9091
+          initialDelaySeconds: 90
+          periodSeconds: 5
+        resources:
+          {{- toYaml .Values.milvus.resources | nindent 10 }}
+      volumes:
+      {{- include "aihub.commonVolumes" . | nindent 6 }}
+      - name: milvus-data
+        persistentVolumeClaim:
+          claimName: {{ include "aihub.pvcName" (dict "component" "milvus-data" "Release" .Release) }}
+      - name: milvus-config
+        configMap:
+          name: {{ include "aihub.fullname" . }}-milvus-config
+{{- end }}

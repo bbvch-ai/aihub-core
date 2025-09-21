@@ -1,0 +1,29 @@
+{{- if .Values.milvus.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" . }}-milvus-config
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: milvus
+data:
+  milvus.yaml: |
+    # Milvus configuration
+    common:
+      security:
+        authorizationEnabled: false
+      defaultIndexType: "HNSW"
+      defaultMetricType: "COSINE"
+    
+    etcd:
+      endpoints:
+        - "{{ include "aihub.serviceName" (dict "component" "etcd" "Release" .Release) }}:2379"
+    
+    minio:
+      address: "{{ include "aihub.serviceName" (dict "component" "minio" "Release" .Release) }}"
+      port: 9000
+      accessKeyID: "${MINIO_ACCESS_KEY_ID}"
+      secretAccessKey: "${MINIO_SECRET_ACCESS_KEY}"
+      bucketName: "milvus"
+      rootPath: "milvus"
+{{- end }}

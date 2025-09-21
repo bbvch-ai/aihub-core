@@ -1,0 +1,19 @@
+{{- if .Values.oauth2proxy.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aihub.serviceName" (dict "component" "oauth2proxy" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: oauth2proxy
+spec:
+  type: {{ .Values.oauth2proxy.service.type }}
+  ports:
+  - port: {{ .Values.oauth2proxy.service.port }}
+    targetPort: 4180
+    protocol: TCP
+    name: oauth2proxy
+  selector:
+    {{- include "aihub.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: oauth2proxy
+{{- end }}

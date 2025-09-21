@@ -1,0 +1,19 @@
+{{- if .Values.milvus.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aihub.serviceName" (dict "component" "milvus" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: milvus
+spec:
+  type: {{ .Values.milvus.service.type }}
+  ports:
+  - port: {{ .Values.milvus.service.port }}
+    targetPort: 19530
+    protocol: TCP
+    name: milvus
+  selector:
+    {{- include "aihub.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: milvus
+{{- end }}

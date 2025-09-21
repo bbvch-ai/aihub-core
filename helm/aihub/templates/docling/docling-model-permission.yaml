@@ -1,0 +1,35 @@
+{{- if .Values.docling.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "aihub.fullname" . }}-docling-model-permission
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: docling
+spec:
+  template:
+    metadata:
+      labels:
+        {{- include "aihub.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: docling-model-permission
+    spec:
+      restartPolicy: Never
+      securityContext:
+        {{- include "aihub.podSecurityContext" . | nindent 8 }}
+      containers:
+      - name: docling-model-permission
+        image: alpine:latest
+        securityContext:
+          {{- include "aihub.securityContext" . | nindent 10 }}
+        command:
+        - sh
+        - -c
+        - "chown -R 1001:1001 /models"
+        volumeMounts:
+        - name: docling-data
+          mountPath: /models
+      volumes:
+      - name: docling-data
+        persistentVolumeClaim:
+          claimName: {{ include "aihub.pvcName" (dict "component" "docling-data" "Release" .Release) }}
+{{- end }}

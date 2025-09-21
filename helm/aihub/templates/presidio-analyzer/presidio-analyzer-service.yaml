@@ -1,0 +1,19 @@
+{{- if .Values.presidioAnalyzer.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aihub.serviceName" (dict "component" "presidio-analyzer" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: presidio-analyzer
+spec:
+  type: {{ .Values.presidioAnalyzer.service.type }}
+  ports:
+  - port: {{ .Values.presidioAnalyzer.service.port }}
+    targetPort: 3000
+    protocol: TCP
+    name: analyzer
+  selector:
+    {{- include "aihub.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: presidio-analyzer
+{{- end }}

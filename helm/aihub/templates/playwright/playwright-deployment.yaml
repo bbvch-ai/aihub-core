@@ -1,0 +1,64 @@
+{{- if .Values.playwright.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aihub.deploymentName" (dict "component" "playwright" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: playwright
+spec:
+  replicas: {{ .Values.playwright.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aihub.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: playwright
+  template:
+    metadata:
+      labels:
+        {{- include "aihub.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: playwright
+    spec:
+      securityContext:
+        {{- include "aihub.podSecurityContext" . | nindent 8 }}
+      containers:
+      - name: playwright
+        image: {{ .Values.playwright.image.repository }}:{{ .Values.playwright.image.tag }}
+        imagePullPolicy: {{ .Values.playwright.image.pullPolicy }}
+        securityContext:
+          {{- include "aihub.securityContext" . | nindent 10 }}
+        command:
+        - npx
+        - playwright@v1.49.0
+        - run-server
+        - --port
+        - "3000"
+        - --host
+        - "0.0.0.0"
+        env:
+        {{- include "aihub.commonEnv" . | nindent 8 }}
+        - name: NODE_ENV
+          value: "production"
+        ports:
+        - containerPort: 3000
+          name: playwright
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 40
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 40
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        resources:
+          {{- toYaml .Values.playwright.resources | nindent 10 }}
+      volumes:
+      {{- include "aihub.commonVolumes" . | nindent 6 }}
+{{- end }}

@@ -1,0 +1,16 @@
+{{- if .Values.minio.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" . }}-minio-entrypoint
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: minio
+data:
+  minio-entrypoint.sh: |
+    #!/bin/sh
+    set -e
+    
+    # Start MinIO server
+    exec /usr/bin/minio server /minio-data --console-address ":9001"
+{{- end }}

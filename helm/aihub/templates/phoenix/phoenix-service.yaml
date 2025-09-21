@@ -1,0 +1,19 @@
+{{- if .Values.phoenix.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aihub.serviceName" (dict "component" "phoenix" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: phoenix
+spec:
+  type: {{ .Values.phoenix.service.type }}
+  ports:
+  - port: {{ .Values.phoenix.service.port }}
+    targetPort: 6006
+    protocol: TCP
+    name: phoenix
+  selector:
+    {{- include "aihub.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: phoenix
+{{- end }}

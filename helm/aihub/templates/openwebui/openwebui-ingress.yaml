@@ -1,0 +1,98 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "aihub.fullname" . }}-openwebui-ingress
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      # Security headers
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+      add_header Content-Security-Policy "frame-ancestors 'self' https://{{ .Values.global.domain }};" always;
+      # Forwarded headers
+      proxy_set_header X-Forwarded-Proto https;
+      proxy_set_header X-Forwarded-Host openwebui.{{ .Values.global.domain }};
+      proxy_set_header X-Forwarded-Port 443;
+      proxy_set_header X-Real-IP $remote_addr;
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  tls:
+    - secretName: {{ include "aihub.fullname" . }}-openwebui-tls
+      hosts:
+        - "openwebui.{{ .Values.global.domain }}"
+  rules:
+    - host: "openwebui.{{ .Values.global.domain }}"
+      http:
+        paths:
+          # Specific API auth endpoint (priority 7000 - Authentication APIs)
+          - path: /api/v1/auths
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "aihub.fullname" . }}-openwebui
+                port:
+                  number: 8080
+          # General API routes (priority 6000 - Specific API endpoints)
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "aihub.fullname" . }}-openwebui
+                port:
+                  number: 8080
+          # Static assets (priority 2000 - Static files)
+          - path: /oauth
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "aihub.fullname" . }}-openwebui
+                port:
+                  number: 8080
+          - path: /assets
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "aihub.fullname" . }}-openwebui
+                port:
+                  number: 8080
+          - path: /_app
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "aihub.fullname" . }}-openwebui
+                port:
+                  number: 8080
+          - path: /static
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "aihub.fullname" . }}-openwebui
+                port:
+                  number: 8080
+          # Feature-specific paths (priority 3000 - Feature-specific paths)
+          - path: /openwebui
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "aihub.fullname" . }}-openwebui
+                port:
+                  number: 8080
+          # Default catch-all (priority 500 - General routes)
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "aihub.fullname" . }}-openwebui
+                port:
+                  number: 8080
+{{- end }}

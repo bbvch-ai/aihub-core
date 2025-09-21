@@ -1,0 +1,87 @@
+{{- if .Values.oauth2proxy.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aihub.deploymentName" (dict "component" "oauth2proxy" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: oauth2proxy
+spec:
+  replicas: {{ .Values.oauth2proxy.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aihub.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: oauth2proxy
+  template:
+    metadata:
+      labels:
+        {{- include "aihub.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: oauth2proxy
+    spec:
+      securityContext:
+        {{- include "aihub.podSecurityContext" . | nindent 8 }}
+      containers:
+      - name: oauth2proxy
+        image: {{ .Values.oauth2proxy.image.repository }}:{{ .Values.oauth2proxy.image.tag }}
+        imagePullPolicy: {{ .Values.oauth2proxy.image.pullPolicy }}
+        securityContext:
+          {{- include "aihub.securityContext" . | nindent 10 }}
+        env:
+        {{- include "aihub.commonEnv" . | nindent 8 }}
+        - name: OAUTH2_PROXY_HTTP_ADDRESS
+          value: "0.0.0.0:4180"
+        - name: OAUTH2_PROXY_COOKIE_SECURE
+          value: "false"
+        - name: OAUTH2_PROXY_CODE_CHALLENGE_METHOD
+          value: "S256"
+        - name: OAUTH2_PROXY_UPSTREAMS
+          value: "http://{{ include "aihub.serviceName" (dict "component" "dagster-webserver" "Release" .Release) }}:3000"
+        - name: OAUTH2_PROXY_ALLOWED_GROUPS
+          value: "DagsterAdmin"
+        - name: OAUTH2_PROXY_OIDC_GROUPS_CLAIM
+          value: "roles"
+        - name: OAUTH2_PROXY_CLIENT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: OAUTH_CLIENT_ID
+        - name: OAUTH2_PROXY_PROVIDER
+          value: "oidc"
+        - name: OAUTH2_PROXY_PROVIDER_DISPLAY_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: OAUTH_PROVIDER_NAME
+        - name: OAUTH2_PROXY_OIDC_ISSUER_URL
+          value: "$(OAUTH_AUTHORITY_URL)/v2.0"
+        - name: OAUTH_AUTHORITY_URL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: OAUTH_AUTHORITY_URL
+        - name: OAUTH2_PROXY_COOKIE_SECRET
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: OAUTH_COOKIE_SECRET
+        - name: OAUTH2_PROXY_CLIENT_SECRET
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: OAUTH_CLIENT_SECRET
+        - name: OAUTH2_PROXY_EMAIL_DOMAINS
+          value: "*"
+        - name: OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO
+          value: "https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png"
+        - name: OAUTH2_PROXY_REVERSE_PROXY
+          value: "true"
+        - name: OAUTH2_PROXY_REDIRECT_URL
+          value: "https://dagster.{{ .Values.global.domain }}"
+        ports:
+        - containerPort: 4180
+          name: oauth2proxy
+        resources:
+          {{- toYaml .Values.oauth2proxy.resources | nindent 10 }}
+      volumes:
+      {{- include "aihub.commonVolumes" . | nindent 6 }}
+{{- end }}

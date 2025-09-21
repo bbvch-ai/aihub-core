@@ -1,0 +1,42 @@
+# Cert-Manager Configuration for Let's Encrypt SSL Certificates
+# Minimal configuration that works with cert-manager Helm chart
+
+# Install CRDs
+installCRDs: true
+
+# Global configuration
+global:
+  priorityClassName: "system-cluster-critical"
+
+# Tolerations for CriticalAddonsOnly taint
+tolerations:
+  - key: CriticalAddonsOnly
+    operator: Exists
+    effect: NoSchedule
+
+# Node selector
+nodeSelector:
+  kubernetes.io/os: linux
+
+# Resource limits
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+# CA Injector configuration
+cainjector:
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+      effect: NoSchedule
+
+# Webhook configuration
+webhook:
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+      effect: NoSchedule

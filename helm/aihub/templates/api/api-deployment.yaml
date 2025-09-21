@@ -1,0 +1,160 @@
+{{- if .Values.api.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aihub.deploymentName" (dict "component" "api" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  replicas: {{ .Values.api.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aihub.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        {{- include "aihub.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: api
+    spec:
+      securityContext:
+        {{- include "aihub.podSecurityContext" . | nindent 8 }}
+      tolerations:
+        {{- include "aihub.globalTolerations" . | nindent 8 }}
+      containers:
+      - name: api
+        image: {{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}
+        imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+        securityContext:
+          {{- include "aihub.securityContext" . | nindent 10 }}
+        env:
+        {{- include "aihub.commonEnv" . | nindent 8 }}
+        - name: NATS_ENDPOINT
+          value: "nats://{{ include "aihub.serviceName" (dict "component" "nats" "Release" .Release) }}:4222"
+        - name: MONGO_CONNECTION_STRING
+          value: "mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@{{ include "aihub.serviceName" (dict "component" "mongo" "Release" .Release) }}:27017"
+        - name: MONGO_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: MONGO_USERNAME
+        - name: MONGO_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: MONGO_PASSWORD
+        - name: NUM_WORKERS
+          value: "1"
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: LOG_LEVEL
+        - name: AUTH_ENABLE_API_ACCESS
+          value: "True"
+        - name: AUTH_OPEN_WEBUI_SIGNING_SECRET
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: AUTH_OPEN_WEBUI_SIGNING_SECRET
+        - name: AUTH_IDENTITY_PROVIDER
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: AUTH_IDENTITY_PROVIDER
+        - name: OAUTH_CLIENT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: OAUTH_CLIENT_ID
+        - name: OAUTH_CLIENT_SECRET
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: OAUTH_CLIENT_SECRET
+        - name: OAUTH_AUTHORITY_URL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: OAUTH_AUTHORITY_URL
+        - name: SUPERUSER_ENABLED
+          value: "true"
+        - name: SUPERUSER_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: SUPERUSER_NAME
+        - name: SUPERUSER_EMAIL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: SUPERUSER_EMAIL
+        - name: SUPERUSER_OID
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: SUPERUSER_OID
+        - name: SUPERUSER_ROLE
+          value: "AIHubSuperuser"
+        - name: SUPERUSER_TOKEN
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: SUPERUSER_TOKEN
+        - name: AIHUB_API_VERSION
+          value: "dev"
+        - name: AIHUB_FRONTEND_ORIGIN
+          value: "{{ .Values.global.domain }}"
+        - name: AIHUB_CREATE_DEFAULT_ROLES
+          value: "True"
+        - name: LITE_LLM_PROXY_BASE_URL
+          value: "http://{{ include "aihub.serviceName" (dict "component" "litellm" "Release" .Release) }}:4000"
+        - name: LITE_LLM_PROXY_API_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: LITELLM_MASTER_KEY
+        - name: AZURE_CLIENT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: OAUTH_CLIENT_ID
+        - name: AZURE_TENANT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: OAUTH_TENANT_ID
+        - name: AZURE_CLIENT_SECRET
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: OAUTH_CLIENT_SECRET
+        - name: PHOENIX_ENDPOINT
+          value: "http://{{ include "aihub.serviceName" (dict "component" "phoenix" "Release" .Release) }}:6006"
+        - name: MILVUS_URL
+          value: "http://{{ include "aihub.serviceName" (dict "component" "milvus" "Release" .Release) }}"
+        - name: MILVUS_DIMENSION
+          value: "3072"
+        ports:
+        - containerPort: 8000
+          name: api
+        volumeMounts:
+        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
+        livenessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          {{- toYaml .Values.api.resources | nindent 10 }}
+      volumes:
+      {{- include "aihub.commonVolumes" . | nindent 6 }}
+{{- end }}

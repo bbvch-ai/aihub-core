@@ -1,0 +1,52 @@
+{{- if .Values.jupyter.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aihub.deploymentName" (dict "component" "jupyter" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: jupyter
+spec:
+  replicas: {{ .Values.jupyter.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aihub.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: jupyter
+  template:
+    metadata:
+      labels:
+        {{- include "aihub.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: jupyter
+    spec:
+      securityContext:
+        {{- include "aihub.podSecurityContext" . | nindent 8 }}
+      containers:
+      - name: jupyter
+        image: {{ .Values.jupyter.image.repository }}:{{ .Values.jupyter.image.tag }}
+        imagePullPolicy: {{ .Values.jupyter.image.pullPolicy }}
+        securityContext:
+          {{- include "aihub.securityContext" . | nindent 10 }}
+        env:
+        {{- include "aihub.commonEnv" . | nindent 8 }}
+        - name: JUPYTER_ENABLE_LAB
+          value: "yes"
+        - name: JUPYTER_TOKEN
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: JUPYTER_TOKEN
+        ports:
+        - containerPort: 8888
+          name: jupyter
+        volumeMounts:
+        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
+        - name: jupyter-data
+          mountPath: /home/jovyan/work
+        resources:
+          {{- toYaml .Values.jupyter.resources | nindent 10 }}
+      volumes:
+      {{- include "aihub.commonVolumes" . | nindent 6 }}
+      - name: jupyter-data
+        persistentVolumeClaim:
+          claimName: {{ include "aihub.pvcName" (dict "component" "jupyter-data" "Release" .Release) }}
+{{- end }}

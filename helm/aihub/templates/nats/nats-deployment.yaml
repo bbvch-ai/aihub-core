@@ -1,0 +1,54 @@
+{{- if .Values.nats.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aihub.deploymentName" (dict "component" "nats" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: nats
+spec:
+  replicas: {{ .Values.nats.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aihub.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: nats
+  template:
+    metadata:
+      labels:
+        {{- include "aihub.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: nats
+    spec:
+      securityContext:
+        {{- include "aihub.podSecurityContext" . | nindent 8 }}
+      tolerations:
+        {{- include "aihub.globalTolerations" . | nindent 8 }}
+      containers:
+      - name: nats
+        image: {{ .Values.nats.image.repository }}:{{ .Values.nats.image.tag }}
+        imagePullPolicy: {{ .Values.nats.image.pullPolicy }}
+        securityContext:
+          {{- include "aihub.securityContext" . | nindent 10 }}
+        command:
+        - nats-server
+        - -c
+        - /etc/nats/nats.conf
+        ports:
+        - containerPort: 4222
+          name: nats
+        volumeMounts:
+        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
+        - name: nats-config
+          mountPath: /etc/nats
+        - name: nats-data
+          mountPath: /data
+        resources:
+          {{- toYaml .Values.nats.resources | nindent 10 }}
+      volumes:
+      {{- include "aihub.commonVolumes" . | nindent 6 }}
+      - name: nats-config
+        configMap:
+          name: {{ include "aihub.fullname" . }}-nats-config
+      - name: nats-data
+        persistentVolumeClaim:
+          claimName: {{ include "aihub.pvcName" (dict "component" "nats-data" "Release" .Release) }}
+{{- end }}

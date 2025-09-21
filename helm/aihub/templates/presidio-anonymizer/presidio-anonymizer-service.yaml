@@ -1,0 +1,19 @@
+{{- if .Values.presidioAnonymizer.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aihub.serviceName" (dict "component" "presidio-anonymizer" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: presidio-anonymizer
+spec:
+  type: {{ .Values.presidioAnonymizer.service.type }}
+  ports:
+  - port: {{ .Values.presidioAnonymizer.service.port }}
+    targetPort: 3000
+    protocol: TCP
+    name: anonymizer
+  selector:
+    {{- include "aihub.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: presidio-anonymizer
+{{- end }}

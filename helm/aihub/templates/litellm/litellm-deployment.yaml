@@ -1,0 +1,113 @@
+{{- if .Values.litellm.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aihub.deploymentName" (dict "component" "litellm" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: litellm
+spec:
+  replicas: {{ .Values.litellm.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aihub.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: litellm
+  template:
+    metadata:
+      labels:
+        {{- include "aihub.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: litellm
+    spec:
+      securityContext:
+        {{- include "aihub.podSecurityContext" . | nindent 8 }}
+      tolerations:
+        {{- include "aihub.globalTolerations" . | nindent 8 }}
+      containers:
+      - name: litellm
+        image: {{ .Values.litellm.image.repository }}:{{ .Values.litellm.image.tag }}
+        imagePullPolicy: {{ .Values.litellm.image.pullPolicy }}
+        securityContext:
+          {{- include "aihub.securityContext" . | nindent 10 }}
+        env:
+        {{- include "aihub.commonEnv" . | nindent 8 }}
+        - name: DATABASE_URL
+          value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@{{ include "aihub.serviceName" (dict "component" "postgres" "Release" .Release) }}:5432/litellm"
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: POSTGRES_PASSWORD
+        - name: LITELLM_MASTER_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: LITELLM_MASTER_KEY
+        - name: UI_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: LITELLM_UI_USERNAME
+        - name: UI_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: LITELLM_UI_PASSWORD
+        - name: AZURE_OPENAI_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: AZURE_OPENAI_KEY
+        - name: AZURE_OPENAI_KEY_IMAGE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: AZURE_OPENAI_KEY_IMAGE
+        - name: AZURE_OPENAI_KEY_AUDIO
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: AZURE_OPENAI_KEY_AUDIO
+        - name: GEMINI_API_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "aihub.fullname" . }}-env
+              key: GEMINI_API_KEY
+        - name: PRESIDIO_ANALYZER_API_BASE
+          value: "http://{{ include "aihub.serviceName" (dict "component" "presidio-analyzer" "Release" .Release) }}:3000"
+        - name: PRESIDIO_ANONYMIZER_API_BASE
+          value: "http://{{ include "aihub.serviceName" (dict "component" "presidio-anonymizer" "Release" .Release) }}:3000"
+        - name: SET_VERBOSE
+          value: "false"
+        ports:
+        - containerPort: 4000
+          name: litellm
+        volumeMounts:
+        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
+        - name: litellm-config
+          mountPath: /app/config.yaml
+          subPath: config.yaml
+        livenessProbe:
+          httpGet:
+            path: /health/liveliness
+            port: 4000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health/liveliness
+            port: 4000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          {{- toYaml .Values.litellm.resources | nindent 10 }}
+      volumes:
+      {{- include "aihub.commonVolumes" . | nindent 6 }}
+      - name: litellm-config
+        configMap:
+          name: {{ include "aihub.fullname" . }}-litellm-config
+{{- end }}

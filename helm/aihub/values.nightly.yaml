@@ -1,0 +1,97 @@
+# Nightly values for aihub.
+# This file overrides the default values.yaml to use nightly tags for development.
+# Use with: helm upgrade -i aihub ./helm/aihub --namespace aihub --create-namespace --values values.yaml --values values.nightly.yaml
+
+# Override image tags to use nightly versions
+minio:
+  image:
+    tag: "nightly"
+
+etcd:
+  image:
+    tag: "nightly"
+
+milvus:
+  image:
+    tag: "nightly"
+
+attu:
+  image:
+    tag: "nightly"
+
+postgres:
+  image:
+    tag: "nightly"
+
+phoenix:
+  image:
+    tag: "nightly"
+
+nats:
+  image:
+    tag: "nightly"
+
+redis:
+  image:
+    tag: "nightly"
+
+mongo:
+  image:
+    tag: "nightly"
+
+presidioAnalyzer:
+  image:
+    tag: "nightly"
+
+presidioAnonymizer:
+  image:
+    tag: "nightly"
+
+litellm:
+  image:
+    tag: "main-v1.74.8-nightly"
+
+openWebui:
+  image:
+    tag: "nightly"
+
+jupyter:
+  image:
+    tag: "nightly"
+
+playwright:
+  image:
+    tag: "nightly"
+
+dagsterWebserver:
+  image:
+    tag: "nightly"
+
+dagsterDaemon:
+  image:
+    tag: "nightly"
+
+api:
+  image:
+    tag: "nightly"
+
+web:
+  image:
+    tag: "nightly"
+
+llmWrappingAgent:
+  image:
+    tag: "nightly"
+
+ragAgent:
+  image:
+    tag: "nightly"
+
+defaultRagPipeline:
+  image:
+    tag: "nightly"
+
+docling:
+  image:
+    tag: "nightly"
+

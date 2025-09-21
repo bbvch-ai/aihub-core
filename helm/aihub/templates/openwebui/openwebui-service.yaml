@@ -1,0 +1,19 @@
+{{- if .Values.openWebui.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aihub.serviceName" (dict "component" "openwebui" "Release" .Release) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: openwebui
+spec:
+  type: {{ .Values.openWebui.service.type }}
+  ports:
+  - port: {{ .Values.openWebui.service.port }}
+    targetPort: 8080
+    protocol: TCP
+    name: webui
+  selector:
+    {{- include "aihub.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: openwebui
+{{- end }}
