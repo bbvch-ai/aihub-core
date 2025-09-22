@@ -5,7 +5,6 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.generative_ai.guards.sensitive_info_guard import SensitiveInfoGuardResult, sensitive_info_guard
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 scenarios("./features/sensitive_info_guard.feature")
 
@@ -49,9 +48,8 @@ def _(llm, success, reasoning, cleaned_answer):
 
 
 @when("the sensitive info guard is executed", target_fixture="guard_result")
-@async_test
-async def _(llm, locale_handler, response):
-    result = await sensitive_info_guard(
+def _(llm, locale_handler, response):
+    result = sensitive_info_guard(
         llm=llm,
         t=locale_handler,
         answer=response,
