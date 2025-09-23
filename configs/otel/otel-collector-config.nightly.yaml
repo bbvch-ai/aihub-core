@@ -238,6 +238,11 @@ processors:
 
 
 exporters:
+  debug:
+    verbosity: detailed
+    sampling_initial: 10
+    sampling_thereafter: 10
+
   otlp/signoz:
     endpoint: "${SIGNOZ_INGESTION_CLOUD_ENDPOINT}"
     headers:
@@ -272,7 +277,7 @@ service:
     logs/service_health:
       receivers: [ filelog/service_health_events ]
       processors: [ attributes/docker_common, batch ]
-      exporters: [ otlp/signoz ]
+      exporters: [ debug, otlp/signoz ]
     logs:
       receivers: [otlp]
       processors: [batch]
