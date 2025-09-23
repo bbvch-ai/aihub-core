@@ -203,21 +203,36 @@ services:
     logging: *default-logging
   # </editor-fold>
 
-  # === Mongo Stack ===
-  # <editor-fold desc="Mongo Stack">
-  mongo:
-    image: ghcr.io/bbvch-ai/aihub-core/mongo:8.0.9
-    container_name: mongo
+  # === FerretDB Stack ===
+  # <editor-fold desc="FerretDB Stack">
+  postgres-ferretdb:
+    image: ghcr.io/ferretdb/postgres-documentdb:17-0.106.0-ferretdb-2.5.0
+    container_name: postgres-ferretdb
     <<: *restart-policy
-    command: >
-      --quiet
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      POSTGRES_USER: ${MONGO_USERNAME}
+      POSTGRES_PASSWORD: ${MONGO_PASSWORD}
+      POSTGRES_DB: postgres
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/mongo-data:/data/db
+      - ${VOLUME_ROOT:-./.docker-volumes}/ferretdb-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging: *default-logging
+
+  ferretdb:
+    image: ghcr.io/ferretdb/ferretdb:2.5.0
+    container_name: ferretdb
+    <<: *restart-policy
+    ports:
+      - "27017:27017"
+    environment:
+      - FERRETDB_POSTGRESQL_URL=postgres://${MONGO_USERNAME}:${MONGO_PASSWORD}@postgres-ferretdb:5432/postgres
+    depends_on:
+      postgres-ferretdb:
+        condition: service_healthy
     logging: *default-logging
   # </editor-fold>
 
@@ -660,7 +675,7 @@ services:
     container_name: api
     <<: *restart-policy
     depends_on:
-      - "mongo"
+      - "ferretdb"
       - "nats"
       - "traefik"
     volumes:
@@ -668,7 +683,7 @@ services:
       - api-api-venv:/app/aihub_api/.venv
     environment:
       NATS_ENDPOINT: "nats://nats:4222"
-      MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
+      MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017"
       NUM_WORKERS: 1
       LOG_LEVEL: ${LOG_LEVEL}
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
@@ -790,7 +805,7 @@ services:
       S3_REGION: "local"
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      COSMOS_DOCSTORE_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
+      COSMOS_DOCSTORE_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017"
       VECTOR_STORE_URI: http://milvus-standalone:19530
       DOCLING_API_ENDPOINT: http://docling:5001/v1/convert/source
   # </editor-fold>

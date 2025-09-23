@@ -127,13 +127,13 @@ services:
     container_name: postgres-ferretdb
     restart: on-failure
     environment:
-      POSTGRES_USER: ${FERRETDB_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${FERRETDB_POSTGRES_PASSWORD}
+      POSTGRES_USER: ${MONGO_USERNAME}
+      POSTGRES_PASSWORD: ${MONGO_PASSWORD}
       POSTGRES_DB: postgres
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/ferretdb-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${FERRETDB_POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -145,7 +145,7 @@ services:
     ports:
       - "27017:27017"
     environment:
-      - FERRETDB_POSTGRESQL_URL=postgres://${FERRETDB_POSTGRES_USER}:${FERRETDB_POSTGRES_PASSWORD}@postgres-ferretdb:5432/postgres
+      - FERRETDB_POSTGRESQL_URL=postgres://${MONGO_USERNAME}:${MONGO_PASSWORD}@postgres-ferretdb:5432/postgres
     depends_on:
       postgres-ferretdb:
         condition: service_healthy
