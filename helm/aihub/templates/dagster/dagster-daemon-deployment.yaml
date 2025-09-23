@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.deploymentName" (dict "component" "dagster-daemon" "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "dagster-daemon" "Values" .Values "Release" .Release) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: dagster-daemon
@@ -24,7 +24,7 @@ spec:
         {{- include "aihub.globalTolerations" . | nindent 8 }}
       containers:
       - name: dagster-daemon
-        image: {{ .Values.dagster.image.repository }}:{{ .Values.dagster.image.tag }}
+        image: {{ .Values.dagsterDaemon.image.repository }}:{{ .Values.dagsterDaemon.image.tag }}
         imagePullPolicy: {{ .Values.dagsterDaemon.image.pullPolicy }}
         securityContext:
           {{- include "aihub.securityContext" . | nindent 10 }}
@@ -40,12 +40,12 @@ spec:
         - name: POSTGRES_USER
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" . }}-env
+              name: {{ include "aihub.fullname" .  }}-env
               key: POSTGRES_USER
         - name: POSTGRES_PASSWORD
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" . }}-env
+              name: {{ include "aihub.fullname" .  }}-env
               key: POSTGRES_PASSWORD
         volumeMounts:
         {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
@@ -60,14 +60,13 @@ spec:
         resources:
           {{- toYaml .Values.dagsterDaemon.resources | nindent 10 }}
       volumes:
-      {{- include "aihub.commonVolumes" . | nindent 6 }}
       - name: dagster-data
         persistentVolumeClaim:
-          claimName: {{ include "aihub.pvcName" (dict "component" "dagster-data" "Release" .Release) }}
+          claimName: {{ include "aihub.fullname" (dict "component" "dagster-data" "Values" .Values "Release" .Release) }}
       - name: dagster-config
         configMap:
-          name: {{ include "aihub.fullname" . }}-dagster-config
+          name: {{ include "aihub.fullname" (dict "component" "dagster-config" "Values" .Values "Release" .Release) }}
       - name: dagster-workspace
         configMap:
-          name: {{ include "aihub.fullname" . }}-dagster-workspace
+          name: {{ include "aihub.fullname" (dict "component" "dagster-workspace" "Values" .Values "Release" .Release) }}
 {{- end }}

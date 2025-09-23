@@ -3,7 +3,7 @@ apiVersion: v1
 kind: Service
 metadata:
 
-  name: {{ include "aihub.fullname" (dict "component" "web" "Values" .Values "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "web" "Values" .Values "Values" .Values "Release" .Release) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: web

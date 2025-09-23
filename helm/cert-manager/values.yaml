@@ -40,3 +40,10 @@ webhook:
     - key: CriticalAddonsOnly
       operator: Exists
       effect: NoSchedule
+
+# Startup API check job configuration
+startupapicheck:
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+      effect: NoSchedule

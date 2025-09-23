@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.deploymentName" (dict "component" "mongo" "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "mongo" "Values" .Values "Release" .Release) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: mongo
@@ -36,12 +36,12 @@ spec:
         - name: MONGO_INITDB_ROOT_USERNAME
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" . }}-env
+              name: {{ include "aihub.fullname" .  }}-env
               key: MONGO_USERNAME
         - name: MONGO_INITDB_ROOT_PASSWORD
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" . }}-env
+              name: {{ include "aihub.fullname" .  }}-env
               key: MONGO_PASSWORD
         ports:
         - containerPort: 27017
@@ -73,8 +73,7 @@ spec:
         resources:
           {{- toYaml .Values.mongo.resources | nindent 10 }}
       volumes:
-      {{- include "aihub.commonVolumes" . | nindent 6 }}
       - name: mongo-data
         persistentVolumeClaim:
-          claimName: {{ include "aihub.pvcName" (dict "component" "mongo-data" "Release" .Release) }}
+          claimName: {{ include "aihub.fullname" (dict "component" "mongo-data" "Values" .Values "Release" .Release) }}
 {{- end }}

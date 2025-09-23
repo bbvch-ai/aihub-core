@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.deploymentName" (dict "component" "playwright" "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "playwright" "Values" .Values "Release" .Release) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: playwright
@@ -60,5 +60,4 @@ spec:
         resources:
           {{- toYaml .Values.playwright.resources | nindent 10 }}
       volumes:
-      {{- include "aihub.commonVolumes" . | nindent 6 }}
 {{- end }}

@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.deploymentName" (dict "component" "phoenix" "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "phoenix" "Values" .Values "Release" .Release) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: phoenix
@@ -29,16 +29,16 @@ spec:
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
         - name: PHOENIX_SQL_DATABASE_URL
-          value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@{{ include "aihub.serviceName" (dict "component" "postgres" "Release" .Release) }}:5432/phoenix"
+          value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@{{ include "aihub.fullname" (dict "component" "postgres" "Values" .Values "Release" .Release) }}:5432/phoenix"
         - name: POSTGRES_USER
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" . }}-env
+              name: {{ include "aihub.fullname" .  }}-env
               key: POSTGRES_USER
         - name: POSTGRES_PASSWORD
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" . }}-env
+              name: {{ include "aihub.fullname" .  }}-env
               key: POSTGRES_PASSWORD
         - name: PHOENIX_ENABLE_AUTH
           value: "False"
@@ -50,5 +50,4 @@ spec:
         resources:
           {{- toYaml .Values.phoenix.resources | nindent 10 }}
       volumes:
-      {{- include "aihub.commonVolumes" . | nindent 6 }}
 {{- end }}

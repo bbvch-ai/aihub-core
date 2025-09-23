@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.deploymentName" (dict "component" "nats" "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "nats" "Values" .Values "Release" .Release) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: nats
@@ -44,11 +44,10 @@ spec:
         resources:
           {{- toYaml .Values.nats.resources | nindent 10 }}
       volumes:
-      {{- include "aihub.commonVolumes" . | nindent 6 }}
       - name: nats-config
         configMap:
-          name: {{ include "aihub.fullname" . }}-nats-config
+          name: {{ include "aihub.fullname" .  }}-nats-config
       - name: nats-data
         persistentVolumeClaim:
-          claimName: {{ include "aihub.pvcName" (dict "component" "nats-data" "Release" .Release) }}
+          claimName: {{ include "aihub.fullname" (dict "component" "nats-data" "Values" .Values "Release" .Release) }}
 {{- end }}

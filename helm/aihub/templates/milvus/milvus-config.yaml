@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "aihub.fullname" . }}-milvus-config
+  name: {{ include "aihub.fullname" (dict "component" "milvus-config" "Values" .Values "Release" .Release) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: milvus
@@ -17,10 +17,10 @@ data:
     
     etcd:
       endpoints:
-        - "{{ include "aihub.serviceName" (dict "component" "etcd" "Release" .Release) }}:2379"
+        - "{{ include "aihub.fullname" (dict "component" "etcd" "Values" .Values "Release" .Release) }}:2379"
     
     minio:
-      address: "{{ include "aihub.serviceName" (dict "component" "minio" "Release" .Release) }}"
+      address: "{{ include "aihub.fullname" (dict "component" "minio" "Values" .Values "Release" .Release) }}"
       port: 9000
       accessKeyID: "${MINIO_ACCESS_KEY_ID}"
       secretAccessKey: "${MINIO_SECRET_ACCESS_KEY}"

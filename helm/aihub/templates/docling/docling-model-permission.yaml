@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "aihub.fullname" . }}-docling-model-permission
+  name: {{ include "aihub.fullname" (dict "component" "docling-model-permission" "Values" .Values "Release" .Release) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: docling
@@ -31,5 +31,5 @@ spec:
       volumes:
       - name: docling-data
         persistentVolumeClaim:
-          claimName: {{ include "aihub.pvcName" (dict "component" "docling-data" "Release" .Release) }}
+          claimName: {{ include "aihub.fullname" (dict "component" "docling-data" "Values" .Values "Release" .Release) }}
 {{- end }}

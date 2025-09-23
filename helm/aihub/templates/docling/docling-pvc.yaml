@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ include "aihub.pvcName" (dict "component" "docling-data" "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "docling-data" "Values" .Values "Release" .Release) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: docling

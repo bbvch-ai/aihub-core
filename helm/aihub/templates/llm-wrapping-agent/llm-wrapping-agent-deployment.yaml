@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.deploymentName" (dict "component" "llm-wrapping-agent" "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "llm-wrapping-agent" "Values" .Values "Release" .Release) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: llm-wrapping-agent
@@ -31,20 +31,19 @@ spec:
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
         - name: NATS_ENDPOINT
-          value: "nats://{{ include "aihub.serviceName" (dict "component" "nats" "Release" .Release) }}:4222"
+          value: "nats://{{ include "aihub.fullname" (dict "component" "nats" "Values" .Values "Release" .Release) }}:4222"
         - name: REDIS_URL
-          value: "redis://{{ include "aihub.serviceName" (dict "component" "redis" "Release" .Release) }}:6379"
+          value: "redis://{{ include "aihub.fullname" (dict "component" "redis" "Values" .Values "Release" .Release) }}:6379"
         - name: PHOENIX_ENDPOINT
-          value: "http://{{ include "aihub.serviceName" (dict "component" "phoenix" "Release" .Release) }}:6006"
+          value: "http://{{ include "aihub.fullname" (dict "component" "phoenix" "Values" .Values "Release" .Release) }}:6006"
         - name: LITE_LLM_PROXY_BASE_URL
-          value: "http://{{ include "aihub.serviceName" (dict "component" "litellm" "Release" .Release) }}:4000"
+          value: "http://{{ include "aihub.fullname" (dict "component" "litellm" "Values" .Values "Release" .Release) }}:4000"
         - name: LITE_LLM_PROXY_API_KEY
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" . }}-env
+              name: {{ include "aihub.fullname" .  }}-env
               key: LITELLM_MASTER_KEY
         resources:
           {{- toYaml .Values.llmWrappingAgent.resources | nindent 10 }}
       volumes:
-      {{- include "aihub.commonVolumes" . | nindent 6 }}
 {{- end }}

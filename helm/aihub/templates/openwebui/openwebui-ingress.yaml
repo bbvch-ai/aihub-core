@@ -2,7 +2,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "aihub.fullname" . }}-openwebui-ingress
+  name: {{ include "aihub.fullname" (dict "component" "openwebui-ingress" "Values" .Values "Release" .Release) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
   annotations:
@@ -27,7 +27,7 @@ metadata:
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   tls:
-    - secretName: {{ include "aihub.fullname" . }}-openwebui-tls
+    - secretName: {{ include "aihub.fullname" (dict "component" "openwebui-tls" "Values" .Values "Release" .Release) }}
       hosts:
         - "openwebui.{{ .Values.global.domain }}"
   rules:
@@ -39,7 +39,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "aihub.fullname" . }}-openwebui
+                name: {{ include "aihub.fullname" (dict "component" "openwebui" "Values" .Values "Release" .Release) }}
                 port:
                   number: 8080
           # General API routes (priority 6000 - Specific API endpoints)
@@ -47,7 +47,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "aihub.fullname" . }}-openwebui
+                name: {{ include "aihub.fullname" (dict "component" "openwebui" "Values" .Values "Release" .Release) }}
                 port:
                   number: 8080
           # Static assets (priority 2000 - Static files)
@@ -55,28 +55,28 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "aihub.fullname" . }}-openwebui
+                name: {{ include "aihub.fullname" (dict "component" "openwebui" "Values" .Values "Release" .Release) }}
                 port:
                   number: 8080
           - path: /assets
             pathType: Prefix
             backend:
               service:
-                name: {{ include "aihub.fullname" . }}-openwebui
+                name: {{ include "aihub.fullname" (dict "component" "openwebui" "Values" .Values "Release" .Release) }}
                 port:
                   number: 8080
           - path: /_app
             pathType: Prefix
             backend:
               service:
-                name: {{ include "aihub.fullname" . }}-openwebui
+                name: {{ include "aihub.fullname" (dict "component" "openwebui" "Values" .Values "Release" .Release) }}
                 port:
                   number: 8080
           - path: /static
             pathType: Prefix
             backend:
               service:
-                name: {{ include "aihub.fullname" . }}-openwebui
+                name: {{ include "aihub.fullname" (dict "component" "openwebui" "Values" .Values "Release" .Release) }}
                 port:
                   number: 8080
           # Feature-specific paths (priority 3000 - Feature-specific paths)
@@ -84,7 +84,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "aihub.fullname" . }}-openwebui
+                name: {{ include "aihub.fullname" (dict "component" "openwebui" "Values" .Values "Release" .Release) }}
                 port:
                   number: 8080
           # Default catch-all (priority 500 - General routes)
@@ -92,7 +92,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "aihub.fullname" . }}-openwebui
+                name: {{ include "aihub.fullname" (dict "component" "openwebui" "Values" .Values "Release" .Release) }}
                 port:
                   number: 8080
 {{- end }}

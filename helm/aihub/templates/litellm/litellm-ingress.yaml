@@ -2,7 +2,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "aihub.fullname" . }}-litellm-ingress
+  name: {{ include "aihub.fullname" (dict "component" "litellm-ingress" "Values" .Values "Release" .Release) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
   annotations:
@@ -22,7 +22,7 @@ metadata:
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   tls:
-    - secretName: {{ include "aihub.fullname" . }}-litellm-tls
+    - secretName: {{ include "aihub.fullname" (dict "component" "litellm-tls" "Values" .Values "Release" .Release) }}
       hosts:
         - "litellm.{{ .Values.global.domain }}"
   rules:
@@ -34,7 +34,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "aihub.fullname" . }}-litellm
+                name: {{ include "aihub.fullname" (dict "component" "litellm" "Values" .Values "Release" .Release) }}
                 port:
                   number: 4000
 {{- end }}

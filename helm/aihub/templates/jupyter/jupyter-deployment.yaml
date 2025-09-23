@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.deploymentName" (dict "component" "jupyter" "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "jupyter" "Values" .Values "Release" .Release) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: jupyter
@@ -33,7 +33,7 @@ spec:
         - name: JUPYTER_TOKEN
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" . }}-env
+              name: {{ include "aihub.fullname" .  }}-env
               key: JUPYTER_TOKEN
         ports:
         - containerPort: 8888
@@ -45,8 +45,7 @@ spec:
         resources:
           {{- toYaml .Values.jupyter.resources | nindent 10 }}
       volumes:
-      {{- include "aihub.commonVolumes" . | nindent 6 }}
       - name: jupyter-data
         persistentVolumeClaim:
-          claimName: {{ include "aihub.pvcName" (dict "component" "jupyter-data" "Release" .Release) }}
+          claimName: {{ include "aihub.fullname" (dict "component" "jupyter-data" "Values" .Values "Release" .Release) }}
 {{- end }}

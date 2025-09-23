@@ -2,7 +2,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "aihub.fullname" . }}-web-ingress
+  name: {{ include "aihub.fullname" .  }}-web-ingress
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
   annotations:
@@ -22,7 +22,7 @@ metadata:
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   tls:
-    - secretName: {{ include "aihub.fullname" . }}-web-tls
+    - secretName: {{ include "aihub.fullname" .  }}-web-tls
       hosts:
         - "{{ .Values.global.domain }}"
   rules:
@@ -34,7 +34,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "aihub.fullname" . }}-web
+                name: {{ include "aihub.fullname" .  }}-web
                 port:
                   number: 80
           # Auth routes (priority 750 - Language/locale routing)
@@ -42,28 +42,28 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "aihub.fullname" . }}-web
+                name: {{ include "aihub.fullname" .  }}-web
                 port:
                   number: 80
           - path: /de/auth
             pathType: Prefix
             backend:
               service:
-                name: {{ include "aihub.fullname" . }}-web
+                name: {{ include "aihub.fullname" .  }}-web
                 port:
                   number: 80
           - path: /fr/auth
             pathType: Prefix
             backend:
               service:
-                name: {{ include "aihub.fullname" . }}-web
+                name: {{ include "aihub.fullname" .  }}-web
                 port:
                   number: 80
           - path: /it/auth
             pathType: Prefix
             backend:
               service:
-                name: {{ include "aihub.fullname" . }}-web
+                name: {{ include "aihub.fullname" .  }}-web
                 port:
                   number: 80
           # Index routes (priority 400 - Domain catch-all with path restrictions)
@@ -71,21 +71,21 @@ spec:
             pathType: Exact
             backend:
               service:
-                name: {{ include "aihub.fullname" . }}-web
+                name: {{ include "aihub.fullname" .  }}-web
                 port:
                   number: 80
           - path: /index.html
             pathType: Exact
             backend:
               service:
-                name: {{ include "aihub.fullname" . }}-web
+                name: {{ include "aihub.fullname" .  }}-web
                 port:
                   number: 80
           - path: /config.json
             pathType: Exact
             backend:
               service:
-                name: {{ include "aihub.fullname" . }}-web
+                name: {{ include "aihub.fullname" .  }}-web
                 port:
                   number: 80
           # Default catch-all (priority 100 - Default domain catch-all)
@@ -93,7 +93,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "aihub.fullname" . }}-web
+                name: {{ include "aihub.fullname" .  }}-web
                 port:
                   number: 80
 {{- end }}

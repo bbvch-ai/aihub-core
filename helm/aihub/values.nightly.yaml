@@ -95,3 +95,7 @@ docling:
   image:
     tag: "nightly"
 
+oauth2proxy:
+  image:
+    tag: "nightly"
+
