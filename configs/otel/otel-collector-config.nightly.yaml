@@ -75,34 +75,16 @@ receivers:
         field: attributes.log_type
         value: docker_health_event
 
-filelog/service_health_events:
-  include: [ /var/log/docker-health/service-events.ndjson ]
-  start_at: end
-  operators:
-    - type: json_parser
-      parse_from: body
-      parse_to: body
-
-    # Transform to Docker events format
-    - type: add
-      field: body.Type
-      value: "container"
-    - type: move
-      from: body.health_status
-      to: body.Action
-    - type: add
-      field: body.Actor.Attributes.name
-      value: EXPR(body.container_name)
-
-    # Clean up
-    - type: remove
-      field: body.container_name
-    - type: remove
-      field: body.container_id
-
-    - type: add
-      field: attributes.log_type
-      value: service_health_check
+  filelog/service_health_events:
+    include: [ /var/log/docker-health/service-events.ndjson ]
+    start_at: end
+    operators:
+      - type: json_parser
+        parse_from: body
+        parse_to: body
+      - type: add
+        field: attributes.log_type
+        value: service_health_check
 
 processors:
   batch: {}
