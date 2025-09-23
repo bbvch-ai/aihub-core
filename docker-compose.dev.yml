@@ -129,7 +129,7 @@ services:
     environment:
       POSTGRES_USER: ${FERRETDB_POSTGRES_USER}
       POSTGRES_PASSWORD: ${FERRETDB_POSTGRES_PASSWORD}
-      POSTGRES_DB: ferretdb
+      POSTGRES_DB: postgres
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/ferretdb-postgres-data:/var/lib/postgresql/data
     healthcheck:
