@@ -33,6 +33,16 @@ receivers:
       container.restarts:
         enabled: true
 
+  httpcheck/service_health:
+    targets:
+      - endpoint: http://attu:3000/api/v1/healthy
+        method: GET
+      - endpoint: http://nats:8222/healthz
+        method: GET
+      - endpoint: http://phoenix:6006
+        method: GET
+    collection_interval: 60s  # Check every 30 seconds
+
   # Structured health_status events from sidecar
   filelog/docker_health_events:
     include: [ /var/log/docker-health/events.ndjson ]
@@ -106,6 +116,18 @@ processors:
         from_attribute: container.image.tag
         action: upsert
 
+  attributes/httpcheck_to_logs:
+    actions:
+      - key: log_type
+        value: service_health_check
+        action: upsert
+      - key: health_status
+        from_attribute: http.status_code
+        action: upsert
+      - key: service_name
+        from_attribute: http.url
+        action: upsert
+
 
 exporters:
   otlp/signoz:
@@ -139,6 +161,10 @@ service:
       receivers: [ filelog/docker_health_events ]
       processors: [ attributes/docker_common, batch ]
       exporters: [otlp/signoz]
+    logs/service_health:
+      receivers: [ httpcheck/service_health ]
+      processors: [ attributes/httpcheck_to_logs, batch ]
+      exporters: [ otlp/signoz ]
     logs:
       receivers: [otlp]
       processors: [batch]
