@@ -141,6 +141,8 @@ services:
       - "milvus-standalone"
     environment:
       MILVUS_URL: milvus-standalone:19530
+    healthcheck:
+      test: ["NONE"] # minimal image, no healthcheck available within the image
     logging: *default-logging
   # </editor-fold>
 
@@ -175,6 +177,8 @@ services:
       PHOENIX_SQL_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix"
       PHOENIX_ENABLE_AUTH: "False"
       VERSION: ""
+    healthcheck:
+      test: ["NONE"] # minimal image, no healthcheck available within the image
     logging: *default-logging
   # </editor-fold>
 
@@ -188,6 +192,8 @@ services:
     volumes:
       - ./configs/nats/nats.nightly.conf:/etc/nats/nats.conf
       - ${VOLUME_ROOT:-./.docker-volumes}/nats-data:/data
+    healthcheck:
+      test: [ "NONE" ] # minimal image, no healthcheck available within the image
     logging: *default-logging
 
   redis:
@@ -933,7 +939,7 @@ services:
         mkdir -p /var/log/docker-health
         touch /var/log/docker-health/events.ndjson
         # Capture events since container start time (captures recent history)
-        docker -H unix:///var/run/docker.sock events --since 5m --filter event=health_status --format "{{json .}}" \
+        docker -H unix:///var/run/docker.sock events --since 15m --filter event=health_status --format "{{json .}}" \
           | tee -a /var/log/docker-health/events.ndjson
       '
     volumes:
