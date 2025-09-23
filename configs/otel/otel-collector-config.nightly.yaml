@@ -75,16 +75,34 @@ receivers:
         field: attributes.log_type
         value: docker_health_event
 
-  filelog/service_health_events:
-    include: [ /var/log/docker-health/service-events.ndjson ]
-    start_at: end
-    operators:
-      - type: json_parser
-        parse_from: body
-        parse_to: body
-      - type: add
-        field: attributes.log_type
-        value: service_health_check
+filelog/service_health_events:
+  include: [ /var/log/docker-health/service-events.ndjson ]
+  start_at: end
+  operators:
+    - type: json_parser
+      parse_from: body
+      parse_to: body
+
+    # Transform to Docker events format
+    - type: add
+      field: body.Type
+      value: "container"
+    - type: move
+      from: body.health_status
+      to: body.Action
+    - type: add
+      field: body.Actor.Attributes.name
+      value: EXPR(body.container_name)
+
+    # Clean up
+    - type: remove
+      field: body.container_name
+    - type: remove
+      field: body.container_id
+
+    - type: add
+      field: attributes.log_type
+      value: service_health_check
 
 processors:
   batch: {}
@@ -116,23 +134,6 @@ processors:
       - key: service.version
         from_attribute: container.image.tag
         action: upsert
-
-  # Transform httpcheck metrics to look like Docker health events
-  transform/httpcheck_to_docker_format:
-    error_mode: ignore
-    log_statements:
-      - context: log
-        statements:
-          # Extract service name from URL
-          - set(body["container_name"], Split(attributes["http.url"], "/")[2])
-          - set(body["container_name"], Split(body["container_name"], ":")[0])
-          - set(body["container_id"], body["container_name"])
-          - set(body["image"], attributes["http.url"])
-          - |
-            set(body["health_status"], "health_status: healthy") where attributes["http.status_code"] == 200
-          - |
-            set(body["health_status"], "health_status: unhealthy") where attributes["http.status_code"] != 200
-          - set(attributes["log_type"], "service_health_check")
 
 
 exporters:
