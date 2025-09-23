@@ -945,6 +945,62 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/log/docker-health:/var/log/docker-health
+
+  healthcheck-poller:
+    image: alpine:latest
+    container_name: healthcheck-poller
+    volumes:
+      - /var/log/docker-health:/var/log/docker-health
+    environment:
+      # Define your health check endpoints here - one per line for easy editing
+      ENDPOINTS: |
+        attu:3000/api/v1/healthy
+        nats:8222/healthz
+        phoenix:6006
+    command:
+      - /bin/sh
+      - -c
+      - |
+        echo "$$ENDPOINTS" | while IFS= read -r endpoint; do
+          [ -z "$$endpoint" ] && continue
+        
+          ts=$$(date +%s)
+          tsn=$$(date +%s%N)
+        
+          name=$$(echo "$$endpoint" | cut -d: -f1)
+          url="http://$$endpoint"
+        
+          if wget -q --spider "$$url" 2>/dev/null; then
+            status="health_status: healthy"
+          else
+            status="health_status: unhealthy"
+          fi
+        
+          echo "{\"container_name\":\"$$name\",\"container_id\":\"$$name\",\"image\":\"$$url\",\"health_status\":\"$$status\",\"time\":$$ts,\"timeNano\":$$tsn}" >> /var/log/docker-health/service-events.ndjson
+        done &
+        
+        # Main loop - check all endpoints every 30 seconds
+        while true; do
+          sleep 30
+          echo "$$ENDPOINTS" | while IFS= read -r endpoint; do
+            [ -z "$$endpoint" ] && continue
+        
+            ts=$$(date +%s)
+            tsn=$$(date +%s%N)
+        
+            name=$$(echo "$$endpoint" | cut -d: -f1)
+            url="http://$$endpoint"
+        
+            if wget -q --spider "$$url" 2>/dev/null; then
+              status="health_status: healthy"
+            else
+              status="health_status: unhealthy"
+            fi
+        
+            echo "{\"container_name\":\"$$name\",\"container_id\":\"$$name\",\"image\":\"$$url\",\"health_status\":\"$$status\",\"time\":$$ts,\"timeNano\":$$tsn}" >> /var/log/docker-health/service-events.ndjson
+          done
+        done
+    restart: unless-stopped
 volumes:
   api-venv:
   api-api-venv:
