@@ -98,35 +98,142 @@ processors:
     timeout: 2s
     override: false
 
-  attributes/common:
-    actions:
-      - key: deployment.environment
-        value: prod
-        action: upsert
-      - key: telemetry.source
-        value: docker
-        action: upsert
+  You're right! The YAML syntax error is because of how the transform processor statements are formatted. Here's the corrected version with proper OTTL syntax:
+  yamlreceivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+    docker_stats:
+      endpoint: unix:///var/run/docker.sock
+      metrics: # https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/dockerstatsreceiver/documentation.md
+        container.cpu.utilization:
+          enabled: true
+        container.cpu.usage.total:
+          enabled: true
+        container.cpu.logical.count:
+          enabled: true
+        container.memory.percent:
+          enabled: true
+        container.memory.usage.limit:
+          enabled: true
+        container.memory.usage.total:
+          enabled: true
+        container.network.io.usage.rx_bytes:
+          enabled: true
+        container.network.io.usage.tx_bytes:
+          enabled: true
+        container.network.io.usage.rx_dropped:
+          enabled: true
+        container.network.io.usage.tx_dropped:
+          enabled: true
+        container.blockio.io_service_bytes_recursive:
+          enabled: true
+        container.restarts:
+          enabled: true
 
-  resource/docker:
-    attributes:
-      - key: service.name
-        from_attribute: container.name
-        action: upsert
-      - key: service.version
-        from_attribute: container.image.tag
-        action: upsert
+    httpcheck/service_health:
+      targets:
+        - endpoint: http://attu:3000/api/v1/healthy
+          method: GET
+        - endpoint: http://nats:8222/healthz
+          method: GET
+        - endpoint: http://phoenix:6006
+          method: GET
+      collection_interval: 60s
 
-  attributes/httpcheck_to_logs:
-    actions:
-      - key: log_type
-        value: service_health_check
-        action: upsert
-      - key: health_status
-        from_attribute: http.status_code
-        action: upsert
-      - key: service_name
-        from_attribute: http.url
-        action: upsert
+    # Structured health_status events from sidecar
+    filelog/docker_health_events:
+      include: [ /var/log/docker-health/events.ndjson ]
+      start_at: end
+      operators:
+        # 1) Parse the JSON into BODY (not attributes)
+        - type: json_parser
+          parse_from: body
+          parse_to: body
+
+        # 2) Put convenient fields directly in the body
+        - type: move
+          from: body.Actor.Attributes.name
+          to: body.container_name
+        - type: move
+          from: body.id
+          to: body.container_id
+        - type: move
+          from: body.from
+          to: body.image
+        - type: move
+          from: body.Action
+          to: body.health_status
+        - type: move
+          from: body.status
+          to: body.health_status_raw       # optional, keep original
+
+        # 3) (Optional) Keep the body minimal/clean
+        - type: retain
+          fields:
+            - body.container_name
+            - body.container_id
+            - body.image
+            - body.health_status
+            - body.time
+            - body.timeNano
+
+        # 4) Tag for easy filtering in SigNoz
+        - type: add
+          field: attributes.log_type
+          value: docker_health_event
+
+  processors:
+    batch: { }
+
+    attributes/docker_common:
+      actions:
+        - key: telemetry.source
+          value: docker
+          action: upsert
+
+    resourcedetection/docker:
+      detectors: [ env, docker ]
+      timeout: 2s
+      override: false
+
+    attributes/common:
+      actions:
+        - key: deployment.environment
+          value: prod
+          action: upsert
+        - key: telemetry.source
+          value: docker
+          action: upsert
+
+    resource/docker:
+      attributes:
+        - key: service.name
+          from_attribute: container.name
+          action: upsert
+        - key: service.version
+          from_attribute: container.image.tag
+          action: upsert
+
+    # Transform httpcheck metrics to look like Docker health events
+    transform/httpcheck_to_docker_format:
+      error_mode: ignore
+      log_statements:
+        - context: log
+          statements:
+            # Extract service name from URL
+            - set(body["container_name"], Split(attributes["http.url"], "/")[2])
+            - set(body["container_name"], Split(body["container_name"], ":")[0])
+            - set(body["container_id"], body["container_name"])
+            - set(body["image"], attributes["http.url"])
+            - |
+              set(body["health_status"], "health_status: healthy") where attributes["http.status_code"] == 200
+            - |
+              set(body["health_status"], "health_status: unhealthy") where attributes["http.status_code"] != 200
+            - set(attributes["log_type"], "service_health_check")
 
 
 exporters:
@@ -163,7 +270,7 @@ service:
       exporters: [otlp/signoz]
     logs/service_health:
       receivers: [ httpcheck/service_health ]
-      processors: [ attributes/httpcheck_to_logs, batch ]
+      processors: [ transform/httpcheck_to_docker_format, attributes/docker_common, batch ]
       exporters: [ otlp/signoz ]
     logs:
       receivers: [otlp]
