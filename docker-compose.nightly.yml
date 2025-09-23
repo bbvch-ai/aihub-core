@@ -961,6 +961,9 @@ services:
       - /bin/sh
       - -c
       - |
+        # Install wget first
+        apk add --no-cache wget
+        
         echo "$$ENDPOINTS" | while IFS= read -r endpoint; do
           [ -z "$$endpoint" ] && continue
         
