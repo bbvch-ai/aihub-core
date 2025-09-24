@@ -16,12 +16,10 @@ class SensitiveInfoGuardResult(GuardResult):
     Extends GuardResult with an additional field for cleaned content
     when sensitive information is detected and needs to be removed.
     """
+
     cleaned_answer: Annotated[
         str | None,
-        Field(
-            description="The revised response with sensitive information removed, if applicable.",
-            default=None
-        ),
+        Field(description="The revised response with sensitive information removed, if applicable.", default=None),
     ]
 
 

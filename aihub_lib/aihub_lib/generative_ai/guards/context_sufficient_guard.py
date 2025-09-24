@@ -16,12 +16,10 @@ class ContextGuardResult(GuardResult):
     Extends GuardResult with an additional field for new query suggestions
     when the current context is insufficient.
     """
+
     new_query: Annotated[
         str | None,
-        Field(
-            description="A revised query to get better search results if context was insufficient.",
-            default=None
-        ),
+        Field(description="A revised query to get better search results if context was insufficient.", default=None),
     ]
 
 
