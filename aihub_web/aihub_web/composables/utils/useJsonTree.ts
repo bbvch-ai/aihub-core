@@ -20,7 +20,7 @@ export const useJsonTree = () => {
       parentPath: string = '',
     ): TreeNode => {
       const currentPath = parentPath ? `${parentPath}.${label}` : label
-      const nodeKey = `${key}_${currentPath}_${depth}`.replace(/[^a-zA-Z0-9_.-]/g, '_')
+      const nodeKey = `${key}_${currentPath}_${depth}`.replaceAll(/[^a-zA-Z0-9_.-]/g, '_')
 
       if (value === null) {
         return {
