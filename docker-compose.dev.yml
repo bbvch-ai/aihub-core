@@ -157,6 +157,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
       - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-cache:/root/.cache/llama.cpp
     ports:
       - "8182:8182"
     environment:

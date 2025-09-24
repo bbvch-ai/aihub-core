@@ -31,9 +31,11 @@ def limit_chat_history_with_context(
     )
     limited_history = memory.get()
 
-    return [
+    final_messages = [
         *system_messages,
         *context_messages,
         *limited_history,
         last_user_message,
     ]
+
+    return final_messages

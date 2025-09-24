@@ -91,7 +91,7 @@ defs = Definitions(
         "embedding_model": EmbeddingModelResource(
             embedding_config=EmbeddingModelConfig(model_name="local/qwen-embedding"),
         ),
-        "language_model": LanguageModelResource(llm_config=LLMConfig(model_name="local/qwen3-small")),
+        "language_model": LanguageModelResource(llm_config=LLMConfig(model_name="local/gemma-3-multimodal-small")),
     },
     sensors=[default_automation_sensor(assets)],
     executor=default_process_executor(),
