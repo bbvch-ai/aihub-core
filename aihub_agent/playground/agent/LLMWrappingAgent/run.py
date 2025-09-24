@@ -24,7 +24,7 @@ async def main():
             agent_id="dev_agent",
             name=LocaleString(en="Dev Agent"),
             description=LocaleString(en="This is the default Dev Agent config"),
-            llm=LLMConfig(model_name="local/qwen3-small"),
+            llm=LLMConfig(model_name="local/gemma-3-multimodal-small"),
         ),
     )
 
