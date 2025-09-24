@@ -345,13 +345,16 @@ class BaseEvent(BaseModel):
         kwargs["serialize_as_any"] = True
 
         data = super().model_dump(**kwargs)
-        for field_name, value in data.items():
-            if isinstance(value, ChatMessage):
-                data[field_name] = serialize_chat_message_blocks(value, **kwargs)
-            elif isinstance(value, BaseModel):
-                data[field_name] = value.model_dump(**kwargs)
-            elif isinstance(value, list | tuple):
-                data[field_name] = [self._item_dump(item, **kwargs) for item in value]
+
+        for field_name in self.model_fields.keys():
+            if field_name in data:
+                value = getattr(self, field_name)
+                if isinstance(value, ChatMessage):
+                    data[field_name] = serialize_chat_message_blocks(value, **kwargs)
+                elif isinstance(value, BaseModel):
+                    data[field_name] = value.model_dump(**kwargs)
+                elif isinstance(value, list | tuple):
+                    data[field_name] = [self._item_dump(item, **kwargs) for item in value]
 
         if not self._unknown_data:
             return data

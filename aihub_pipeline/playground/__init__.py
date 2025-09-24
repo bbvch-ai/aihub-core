@@ -54,11 +54,11 @@ assets = [
 
 job = observe_source_job(
     observable_asset=observable_asset,
-    namespace_name=NAMESPACE_NAME,
+    source_location_name=NAMESPACE_NAME,
 )
 
 remove_job = materialize_asset_job(
-    namespace_name=NAMESPACE_NAME,
+    source_location_name=NAMESPACE_NAME,
     job_name="remove_documents",
     asset_selection=AssetSelection.keys(REMOVED_DOCUMENTS_KEY),
 )
@@ -66,20 +66,16 @@ remove_job = materialize_asset_job(
 defs = Definitions(
     assets=assets,
     resources={
-        **default_io_manager_s3_datalake_resources(
-            container_name=DATALAKE_CONTAINER_NAME, directory_name=DATALAKE_DIRECTORY_NAME
-        ),
+        **default_io_manager_s3_datalake_resources(container_name=DATALAKE_CONTAINER_NAME),
         "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING, include_images=True),
         "node_parser": MarkdownStructuralNodeParserResource(),
         "summary_parser": RecursiveSummaryParserResource(),
         **local_mongo_milvus_storage_context_resource(
             vector_store_uri="http://localhost:19530",
             store_name=STORE_NAME,
-            namespace_name=NAMESPACE_NAME,
         ),
         **s3_data_lake_resources(
             container_name=DATALAKE_CONTAINER_NAME,
-            directory_name=DATALAKE_DIRECTORY_NAME,
             figures_directory_name=FIGURES_DIRECTORY_NAME,
         ),
         "embedding_model": EmbeddingModelResource(
