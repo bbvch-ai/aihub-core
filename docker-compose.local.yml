@@ -209,7 +209,7 @@ services:
   # === FerretDB Stack===
   # <editor-fold desc="FerretDB Stack">
   postgres-ferretdb:
-    image: ghcr.io/ferretdb/postgres-documentdb:17-0.106.0-ferretdb-2.5.0
+    image: ghcr.io/bbvch-ai/aihub-core/postgres-documentdb:17.0.106.0-ferretdb-2.5.0
     container_name: postgres-ferretdb
     <<: *restart-policy
     environment:
@@ -226,7 +226,7 @@ services:
     logging: *default-logging
 
   ferretdb:
-    image: ghcr.io/ferretdb/ferretdb:2.5.0
+    image: ghcr.io/bbvch-ai/aihub-core/ferretdb:2.5.0
     container_name: ferretdb
     <<: *restart-policy
     ports:
