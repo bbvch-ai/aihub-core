@@ -3,20 +3,25 @@ from typing import Annotated
 from llama_index.core import PromptTemplate
 from llama_index.core.llms import LLM
 from openai import NOT_GIVEN
-from pydantic import BaseModel, Field
+from pydantic import Field
 
+from aihub_lib.generative_ai.guards.GuardResult import GuardResult
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 
 
-class SensitiveInfoGuardResult(BaseModel):
-    reasoning: Annotated[str, Field(description="The reasoning behind whether sensitive information is present.")]
-    success: Annotated[
-        bool,
-        Field(description="True if no sensitive information was found, false if sensitive information was detected."),
-    ]
+class SensitiveInfoGuardResult(GuardResult):
+    """
+    Specialized result for sensitive information guards.
+
+    Extends GuardResult with an additional field for cleaned content
+    when sensitive information is detected and needs to be removed.
+    """
     cleaned_answer: Annotated[
         str | None,
-        Field(description="The revised response with sensitive information removed, if applicable.", default=None),
+        Field(
+            description="The revised response with sensitive information removed, if applicable.",
+            default=None
+        ),
     ]
 
 
