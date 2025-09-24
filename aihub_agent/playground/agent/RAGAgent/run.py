@@ -22,7 +22,7 @@ from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import Retrieve
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentRunner import AgentRunner
 
-enable_logging(level=30)
+enable_logging()
 
 
 async def main():
@@ -39,9 +39,9 @@ async def main():
                 fr="Ceci est l'agent RAG par défaut",
                 it="Questo è l'agente RAG predefinito",
             ),
-            llm=LLMConfig(model_name="local/qwen3-small"),
+            llm=LLMConfig(model_name="local/gemma-3-multimodal-small"),
             check_context_sufficiency=False,
-            number_of_input_tokens=12000,
+            number_of_input_tokens=50000,
             system_prompt=LocaleString(
                 en="""
                 <persona>
@@ -147,7 +147,7 @@ async def main():
                     collection_name="playground",
                 ),
                 retrieve_prev_next=RetrievePrevNextConfig(
-                    num_nodes=5,
+                    num_nodes=3,
                     mode="both",
                 ),
                 retrieve_summaries=RetrieveSummariesConfig(

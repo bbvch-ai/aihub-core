@@ -151,7 +151,7 @@ services:
     environment:
       HF_HOME: /root/.cache/huggingface
     command: >
-      -hf unsloth/gemma-3-4b-it-GGUF
+      -hf unsloth/gemma-3-1b-it-GGUF
       --alias gemma-3-4b-it
       --port 8182
       --jinja
@@ -161,8 +161,8 @@ services:
       --top-k 20 
       --top-p 0.95 
       --min-p 0 
-      -c 8196 
-      -n 4096 
+      -c 50000 
+      -n 8196
       -ngl 99
       --no-context-shift
     deploy:
@@ -209,6 +209,40 @@ services:
       retries: 3
       start_period: 60s
 
+  vllm-reranker:
+    image: vllm/vllm-openai:latest
+    container_name: vllm-reranker
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/vllm-reranker-data:/root/.cache/huggingface
+      - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
+    ports:
+      - "8184:8000"
+    environment:
+      HF_HOME: /root/.cache/huggingface
+      CUDA_VISIBLE_DEVICES: "0"
+    command: >
+      --model Qwen/Qwen3-Reranker-0.6B
+      --port 8000
+      --host 0.0.0.0
+      --served-model-name qwen3-reranker
+      --max-model-len 2048
+      --gpu-memory-utilization 0.25
+      --trust-remote-code
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
+    restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/v1/models" ]
+      timeout: 30s
+      interval: 60s
+      retries: 5
+      start_period: 120s
+
   presidio-analyzer:
     image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359
     container_name: presidio-analyzer
@@ -254,6 +288,7 @@ services:
       interval: 30s
       retries: 3
       start_period: 60s
+
   open-webui:
     image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.22
     network_mode: "host"
