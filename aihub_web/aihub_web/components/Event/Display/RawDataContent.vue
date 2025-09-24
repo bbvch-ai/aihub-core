@@ -1,7 +1,7 @@
 <template>
   <div>
     <Divider class="my-4" />
-    <div class="max-h-96 overflow-auto rounded-lg border bg-surface-0 p-4 dark:border-surface-700 dark:bg-surface-900">
+    <div class="max-h-96 overflow-auto break-words rounded-lg border bg-surface-0 p-4 dark:border-surface-700 dark:bg-surface-900">
       <Tree
         :value="treeData"
         selection-mode="single"
