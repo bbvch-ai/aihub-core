@@ -5,6 +5,65 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.245.2] - 2025-09-24 - Introducing Advanced Guardrails & Granular Event Visibility
+
+### Added
+
+- 🔑 **Sensitive Information Guard:** Introduced a new guard mechanism to detect and redact sensitive or confidential
+  information from LLM responses, significantly enhancing data privacy and security.
+- 🦾 **Granular Guard Events:** Implemented a comprehensive suite of new guard events, including
+  `AgentSuitabilityAcceptEvent`, `AgentSuitabilityRejectEvent`, `ContextSufficientAcceptEvent`,
+  `ContextInsufficientRejectEvent`, `FewShotAcceptEvent`, `FewShotRejectEvent`, `SensitiveInfoAcceptEvent`, and
+  `SensitiveInfoRejectEvent`. These events provide detailed insights into guard decisions at various stages of agent
+  execution.
+- 📄 **Language Detection Event:** Introduced `LanguageEvent` to explicitly capture and signal the detected language of a
+  user request, enabling more robust internationalization within agent workflows.
+- 🖼️ **Raw Event Data Viewer:** Added the capability to view the raw JSON data for any event directly within the
+  frontend, improving debugging and transparency for developers.
+- 🧪 **Expanded Frontend Testing Agent:** The `FrontendTestingAgent` now includes new steps to demonstrate various guard
+  mechanisms and common workflow events, making it a powerful tool for UI development and testing.
+- 🚀 **New LLM Model Support:** Added support for the upcoming `gpt-5` series of models and `minimal` reasoning effort to
+  the API models.
+- ⚙️ **Enhanced Tool Calling Flexibility:** Introduced more flexible tool calling options, including custom tool
+  definitions and explicit allowed tool choices for richer agent-LLM interactions.
+- ⚡️ **LLM Stream Obfuscation Option:** Added an `include_obfuscation` option to LLM stream requests, allowing for more
+  control over sensitive information during streaming.
+- 🌐 **Comprehensive i18n for Guards and Events:** Extended internationalization support to cover all new guard events
+  and significantly improved descriptions for various common events in multiple languages.
+
+### Changed
+
+- 🔄 **Standardized Agent Guard Integration:** The `FewShotAgent` and `RAGAgent` have been updated to utilize the new
+  standardized `AgentSuitabilityAcceptEvent`, `AgentSuitabilityRejectEvent`, and other specific guard events, ensuring
+  consistent guardrail application across agents.
+- 🖼️ **Improved Source Node Display:** RAG agent's source node display in the frontend has been significantly improved,
+  providing clearer grouping by document, chunk counts, and an explicit message when no relevant chunks are found.
+- 💬 **Enhanced Chat History Event Display:** The `LimitChatHistoryEvent` now offers a more detailed and user-friendly
+  display on the frontend, showing the limited messages clearly.
+- ❓ **Refined Standalone Question Display:** The `StandaloneQuestionCondenserEvent` now has a dedicated and improved
+  display in the UI, making the condensed question more prominent.
+- 🔍 **Clearer Reranker Output:** The `RerankerEvent` display has been updated to explicitly highlight the `top_k`
+  relevant documents chosen by the reranker.
+
+### Fixed
+
+- 🐛 **API Endpoint Duplication:** Addressed a minor issue in the API configuration where a `NotificationController`
+  endpoint was inadvertently registered twice.
+
+### Refactor
+
+- 🧹 **Unified Guard Result Structure:** Introduced a base `GuardResult` model and refactored existing guards
+  (`agent_description_guard`, `context_sufficient_guard`, `few_shot_guard`) to inherit from it, standardizing the output
+  and improving maintainability.
+- ⚡️ **Decoupled Guard Rejection:** The `GuardRejectionEvent` now correctly inherits from `GuardEvent` instead of
+  `StopEvent`, providing a clearer separation of concerns between guard decisions and workflow control.
+- 🗑️ **Internal Event Cleanup:** Removed deprecated `RightAgentEvent` and consolidated internal agent-specific guard
+  event classes into the shared `aihub_lib`.
+- ⚙️ **Refined Async Test Utility:** The `async_test` decorator in the testing utilities now correctly returns the
+  result of the decorated asynchronous function, improving testing flexibility.
+
+---
+
 ## [v0.245.1] - 2025-09-24 - LLM Preprocessing, Gemma 3 Support, and Core System Refinements
 
 ### Added

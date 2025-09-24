@@ -111,5 +111,41 @@ context_sufficient_guard:
     <Previous_Queries>
     {prev_queries}
     <\Previous_Queries>
+  reason_no_hops: |
+    Begründung, warum der Kontext ausreichend ist oder nicht (keine zusätzlichen Sprünge verfügbar).
+  success_no_hops: |
+    true, wenn der Kontext für die Beantwortung der Benutzeranfrage ausreicht, false, wenn er nicht ausreicht (keine zusätzlichen Sprünge verfügbar).
+  docstring_no_hops: |
+    Ergebnis der Auswertung, ob der Kontext ausreicht, um die Benutzeranfrage zu beantworten (keine zusätzlichen Sprünge verfügbar).
+sensitive_info_guard:
+  prompt: |
+    Sie sind ein Sicherheitswächter, der für den Schutz sensibler Unternehmensinformationen verantwortlich ist. Ihre Aufgabe ist es, die folgende Antwort zu analysieren und zu bestimmen, ob sie sensible Informationen enthält, die nicht extern geteilt werden sollten.
 
+    Suchen Sie nach:
+    - Internen Unternehmensprozessen, -verfahren oder -richtlinien
+    - Vertraulichen Geschäftsstrategien oder -plänen
+    - Mitarbeiternamen, E-Mail-Adressen oder persönlichen Informationen
+    - Finanzdaten, Budgets oder Preisinformationen
+    - Technischen Spezifikationen oder proprietären Methoden
+    - Kundendaten oder vertraulichen Kundeninformationen
+    - Internen Systemdetails, Servernamen oder Infrastrukturinformationen
+    - Allen Informationen, die als vertraulich oder nur intern markiert sind
 
+    Wenn Sie sensible Informationen finden, stellen Sie eine bereinigte Version der Antwort zur Verfügung, bei der die sensiblen Teile entfernt oder verallgemeinert wurden.
+
+    <Zu analysierende Antwort>
+    {answer}
+    </Zu analysierende Antwort>
+
+    Ihre Ausgabe muss ein JSON-Objekt mit genau drei Schlüsseln sein:
+    - "success": true, wenn keine sensiblen Informationen gefunden wurden, false, wenn sensible Informationen erkannt wurden
+    - "reasoning": Erklärung Ihrer Entscheidung
+    - "cleaned_answer": wenn sensible Informationen gefunden wurden, stellen Sie eine bereinigte Version zur Verfügung; andernfalls null
+  reason: |
+    Erklärung, ob sensible Informationen erkannt wurden und welche Maßnahmen ergriffen wurden.
+  success: |
+    true, wenn keine sensiblen Informationen gefunden wurden, false, wenn sensible Informationen erkannt und bereinigt wurden.
+  cleaned_answer: |
+    Die überarbeitete Antwort mit entfernten oder geschwärzten sensiblen Informationen, falls zutreffend.
+  docstring: |
+    Ergebnis der Analyse einer Antwort auf sensible Informationen, die nicht extern geteilt werden sollten.

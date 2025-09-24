@@ -22,7 +22,7 @@
     </template>
     <template #content>
       <Panel
-        :toggleable="!isEmpty"
+        toggleable
         collapsed
         class="border-none bg-transparent"
       >
@@ -39,17 +39,32 @@
             </p>
           </div>
         </template>
-        <div
-          v-if="!isEmpty"
-        >
-          <p class="text-sm text-surface-800 dark:text-surface-200">
-            {{ event.event_display_description }}
-          </p>
-          <Divider />
-          <br>
-          <div class="pb-3 pr-3 ">
-            <slot />
+        <div>
+          <div class="flex items-start justify-between gap-4">
+            <p class="flex-1 text-sm text-surface-800 dark:text-surface-200">
+              {{ event.event_display_description }}
+            </p>
+            <Button
+              variant="text"
+              class="text-xs text-surface-500 underline hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-300"
+              @click="showRawData = !showRawData"
+            >
+              {{ showRawData ? t('event.base.view_formatted') : t('event.base.view_raw_data') }}
+            </Button>
           </div>
+
+          <div v-if="!isEmpty && !showRawData">
+            <Divider />
+            <br>
+            <div class="pb-3 pr-3 ">
+              <slot />
+            </div>
+          </div>
+
+          <EventDisplayRawDataContent
+            v-if="showRawData"
+            :event="event"
+          />
         </div>
       </Panel>
     </template>
@@ -73,6 +88,10 @@ const props = withDefaults(defineProps<{
   isWarning: false,
   isError: false,
 })
+
+const { t } = useI18n()
+
+const showRawData = ref(false)
 
 const agentIds = computed<string[]>(() => {
   const agents = props.thread.agents ?? []

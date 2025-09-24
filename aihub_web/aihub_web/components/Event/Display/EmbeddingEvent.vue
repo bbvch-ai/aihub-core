@@ -16,10 +16,10 @@
 </template>
 
 <script setup lang="ts">
-import type { EmbeddingEvent, ThreadDto, AgentEventReadable } from '@core/sdk/client'
+import type { EmbeddingEventReadable, ThreadDto, AgentEventReadable } from '@core/sdk/client'
 
 defineProps<{
-  event: AgentEventReadable & { event: EmbeddingEvent }
+  event: AgentEventReadable & { event: EmbeddingEventReadable }
   thread: ThreadDto
 }>()
 </script>
