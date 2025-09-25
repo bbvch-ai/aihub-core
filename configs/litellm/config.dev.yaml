@@ -71,9 +71,9 @@ model_list:
         revision: main
         auth_token: os.environ/HUGGINGFACE_API_KEY
 
-  - model_name: local/gemma-3-multimodal-small
+  - model_name: local/qwen-2.5-multimodal-small
     litellm_params:
-      model: openai/gemma-3-4b-it
+      model: openai/Qwen2.5-VL-3B-Instruct
       api_base: http://llama-cpp:8182/v1
       api_key: None
     model_info:
@@ -85,7 +85,7 @@ model_list:
       input_cost_per_token: 0.00001
       output_cost_per_token: 0.0002
       custom_tokenizer:
-        identifier: google/gemma-3-4b-it
+        identifier: Qwen/Qwen2.5-VL-3B-Instruct
         revision: main
         auth_token: os.environ/HUGGINGFACE_API_KEY
 
@@ -102,10 +102,10 @@ model_list:
         revision: main
         auth_token: os.environ/HUGGINGFACE_API_KEY
 
-  - model_name: local/qwen-reranker
+  - model_name: local/reranker
     litellm_params:
-      model: qwen3-reranker
-      api_base: http://vllm-reranker:8000/v1
+      model: huggingface/Qwen/Qwen3-Reranker-0.6B
+      api_base: http://huggingface-text-embedding-inference:8184/v1
       api_key: None
     model_info:
       mode: rerank

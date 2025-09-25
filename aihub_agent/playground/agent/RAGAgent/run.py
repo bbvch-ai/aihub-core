@@ -1,3 +1,6 @@
+from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
+from aihub_lib.generative_ai.resources.models.llm.RerankingModelConfig import RerankingModelConfig
+
 # ruff: noqa: E402
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
@@ -22,7 +25,7 @@ from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import Retrieve
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentRunner import AgentRunner
 
-enable_logging()
+enable_logging(level=30)
 
 
 async def main():
@@ -39,7 +42,7 @@ async def main():
                 fr="Ceci est l'agent RAG par défaut",
                 it="Questo è l'agente RAG predefinito",
             ),
-            llm=LLMConfig(model_name="local/gemma-3-multimodal-small"),
+            llm=LLMConfig(model_name="local/qwen-2.5-multimodal-small"),
             check_context_sufficiency=False,
             number_of_input_tokens=50000,
             system_prompt=LocaleString(
@@ -138,7 +141,7 @@ async def main():
             retrieve_step_config=RetrieveStepConfig(
                 embed_model=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
                 index_namespaces=["test"],
-                retrieve_k=5,
+                retrieve_k=20,
                 query_mode=VectorStoreQueryMode.DEFAULT,
                 node_types=["content", "summary"],
                 vector_store=MilvusVectorStoreConfig(
@@ -147,12 +150,15 @@ async def main():
                     collection_name="playground",
                 ),
                 retrieve_prev_next=RetrievePrevNextConfig(
-                    num_nodes=3,
+                    num_nodes=5,
                     mode="both",
                 ),
                 retrieve_summaries=RetrieveSummariesConfig(
                     max_parent_levels=2,
                 ),
+            ),
+            reranking_config=RerankingConfig(
+                enabled=True, top_k=5, reranking_model=RerankingModelConfig(model_name="local/reranker")
             ),
         ),
         redis_url=RedisSettings().URL,

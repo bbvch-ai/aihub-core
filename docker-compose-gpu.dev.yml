@@ -151,20 +151,21 @@ services:
     environment:
       HF_HOME: /root/.cache/huggingface
     command: >
-      -hf unsloth/gemma-3-1b-it-GGUF
-      --alias gemma-3-4b-it
+      -hf unsloth/Qwen2.5-VL-3B-Instruct-GGUF
+      --alias Qwen2.5-VL-3B-Instruct
       --port 8182
       --jinja
-      --flash-attn on 
-      -sm row 
-      --temp 0.6 
+      --flash-attn on
+      -sm row
+      --temp 0.6
       --top-k 20 
       --top-p 0.95 
       --min-p 0 
-      -c 50000 
+      -c 32000 
       -n 8196
-      -ngl 99
+      -ngl 90
       --no-context-shift
+      --split-mode row
     deploy:
       resources:
         reservations:
@@ -179,6 +180,9 @@ services:
       interval: 30s
       retries: 3
       start_period: 60s
+    depends_on:
+      huggingface-reranking-inference:
+        condition: service_healthy
 
   huggingface-text-embedding-inference:
     image: ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:89-1.8
@@ -209,25 +213,21 @@ services:
       retries: 3
       start_period: 60s
 
-  vllm-reranker:
-    image: vllm/vllm-openai:latest
-    container_name: vllm-reranker
+  huggingface-reranking-inference:
+    image: ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:89-1.8
+    container_name: huggingface-reranking-inference
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/vllm-reranker-data:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/hf-reranking-data:/data
       - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
     ports:
-      - "8184:8000"
+      - "8184:8184"
     environment:
       HF_HOME: /root/.cache/huggingface
-      CUDA_VISIBLE_DEVICES: "0"
     command: >
-      --model Qwen/Qwen3-Reranker-0.6B
-      --port 8000
-      --host 0.0.0.0
-      --served-model-name qwen3-reranker
-      --max-model-len 2048
-      --gpu-memory-utilization 0.25
-      --trust-remote-code
+      --port 8184
+      --model-id Qwen/Qwen3-Reranker-0.6B
+      --max-batch-tokens 8192
+      --pooling mean
     deploy:
       resources:
         reservations:
@@ -237,11 +237,11 @@ services:
               capabilities: [ gpu ]
     restart: always
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/v1/models" ]
-      timeout: 30s
-      interval: 60s
-      retries: 5
-      start_period: 120s
+      test: [ "CMD", "curl", "-f", "http://localhost:8184/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
 
   presidio-analyzer:
     image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359
@@ -254,7 +254,7 @@ services:
     restart: unless-stopped
 
   litellm:
-    image: ghcr.io/bbvch-ai/aihub-core/litellm:main-v1.50.0
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:main-v1.74.8-nightly
     container_name: lite-llm
     ports:
       - "4000:4000"

@@ -74,3 +74,14 @@ Feature: RAG Agent
     * a LimitChatHistoryWithContextEvent is present with limited history and context
     * an LLMEvent is present with a generated response
     * a StopEvent is present
+
+  @self_hosted
+  Scenario: Test RAGAgent with reranking enabled
+    Given a RAGAgent runner with a valid self hosted configuration
+    * with reranking enabled
+    When the start event is sent with a user query "What is AI Hub?"
+    Then a RerankerEvent is present with reranked nodes
+    * the RerankerEvent model name should be "local/reranker"
+    * the RerankerEvent should limit results to "2" nodes
+    * an LLMEvent is present with a generated response
+    * a StopEvent is present
