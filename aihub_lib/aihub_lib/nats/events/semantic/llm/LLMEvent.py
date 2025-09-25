@@ -102,7 +102,7 @@ class LLMEvent(SemanticEvent):
             input_messages=[Message.from_llama_index(msg) for msg in input_messages],
             output_messages=[Message.from_llama_index(output_message)],
             invocation_parameters=agent_config.llm.model_dump(),
-            chat_model_name=agent_config.llm.name,
+            chat_model_name=agent_config.llm.model_name,
             provider=agent_config.llm.__class__.__name__,
             token_count_prompt=token_count_prompt,
             token_count_completion=token_count_completion,
