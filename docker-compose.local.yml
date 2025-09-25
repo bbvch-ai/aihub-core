@@ -193,15 +193,15 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/nats-data:/data
     logging: *default-logging
 
-  redis:
-    image: ghcr.io/bbvch-ai/aihub-core/redis:8.0.1
-    container_name: redis
+  valkey:
+    image: ghcr.io/bbvch-ai/aihub-core/valkey:8.0.5
+    container_name: valkey
     <<: *restart-policy
-    command: "redis-server --save 30 1 --loglevel warning"
+    command: "valkey-server --save 30 1 --loglevel warning"
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/redis-data:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/valkey-data:/data
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: [ "CMD", "valkey-cli", "ping" ]
       start_period: 5s
     logging: *default-logging
   # </editor-fold>
@@ -693,7 +693,7 @@ services:
     container_name: api
     <<: *restart-policy
     depends_on:
-      - "mongo"
+      - "ferretdb"
       - "nats"
       - "traefik"
     environment:

@@ -1,4 +1,4 @@
-import { models, type ModelTypeGroupDto } from '@core/sdk/client'
+import { getModels, type ModelTypeGroupDto } from '@core/sdk/client'
 import { useQuery } from '@pinia/colada'
 import { minutesToMilliseconds } from 'date-fns'
 
@@ -8,7 +8,7 @@ export const useModelsList = defineQuery(() => {
     staleTime: minutesToMilliseconds(5),
     enabled: true,
     query: async () => {
-      return await models({
+      return await getModels({
         composable: '$fetch',
       })
     },
