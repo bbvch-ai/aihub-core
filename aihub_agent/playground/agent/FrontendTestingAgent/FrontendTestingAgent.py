@@ -17,6 +17,18 @@ from aihub_lib.nats.events import (
     ToolEvent,
     UserMessageEvent,
 )
+from aihub_lib.nats.events.common import LanguageEvent, LimitChatHistoryEvent, StandaloneQuestionCondenserEvent
+from aihub_lib.nats.events.display import ChunkEvent, ThoughtEvent
+from aihub_lib.nats.events.guard import (
+    AgentSuitabilityAcceptEvent,
+    AgentSuitabilityRejectEvent,
+    ContextInsufficientRejectEvent,
+    ContextSufficientAcceptEvent,
+    FewShotAcceptEvent,
+    FewShotRejectEvent,
+    SensitiveInfoAcceptEvent,
+    SensitiveInfoRejectEvent,
+)
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
 from aihub_lib.nats.events.semantic import Embedding
@@ -29,6 +41,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     REFERENCE_URL,
     SOURCE,
 )
+from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.schema import NodeWithScore, TextNode
 
 from aihub_agent.agents.Agent import Agent
@@ -65,7 +78,79 @@ class FrontendTestingAgent(Agent):
         return GuardEvent()
 
     @step()
-    async def router_step(self, _: GuardEvent, displayer: EventDisplayer) -> RouterEvent:
+    async def sensitive_info_check(self, _: GuardEvent) -> SensitiveInfoAcceptEvent | SensitiveInfoRejectEvent:
+        # Randomly accept or reject for demonstration - high acceptance rate to show more events
+        if random.random() > 0.05:  # 95% acceptance rate
+            return SensitiveInfoAcceptEvent(reason="No sensitive information detected in the content")
+        return SensitiveInfoRejectEvent(
+            reason="Potential sensitive information detected", cleaned_answer="[Content Redacted for Privacy]"
+        )
+
+    @step()
+    async def context_suitability_check(
+        self, _: SensitiveInfoAcceptEvent
+    ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent:
+        if random.random() > 0.05:  # 95% acceptance rate
+            return ContextSufficientAcceptEvent(reason="Sufficient context available for accurate response")
+        return ContextInsufficientRejectEvent(reason="Insufficient context to provide accurate answer", new_query=None)
+
+    @step()
+    async def agent_suitability_check(
+        self, _: ContextSufficientAcceptEvent
+    ) -> AgentSuitabilityAcceptEvent | AgentSuitabilityRejectEvent:
+        if random.random() > 0.05:  # 95% acceptance rate
+            return AgentSuitabilityAcceptEvent(reason="Agent is suitable for this type of request")
+        return AgentSuitabilityRejectEvent(
+            reason="Agent not suitable for this request type",
+        )
+
+    @step()
+    async def few_shot_evaluation(self, _: AgentSuitabilityAcceptEvent) -> FewShotAcceptEvent | FewShotRejectEvent:
+        if random.random() > 0.05:  # 95% acceptance rate
+            return FewShotAcceptEvent(reason="Few-shot examples are relevant and helpful")
+        return FewShotRejectEvent(
+            reason="Few-shot examples not suitable for this query",
+        )
+
+    @step()
+    async def display_thought_process(self, _: FewShotAcceptEvent) -> ThoughtEvent:
+        await asyncio.sleep(0.5)
+        return ThoughtEvent(
+            reasoning_content="I'm analyzing the user's request and considering the best approach to provide a "
+            "comprehensive answer."
+        )
+
+    @step()
+    async def display_chunk_processing(self, _: ThoughtEvent) -> ChunkEvent:
+        await asyncio.sleep(0.5)
+        return ChunkEvent(
+            content="Processing information step by step to ensure accuracy...", model_name="FrontendTestingAgent"
+        )
+
+    @step()
+    async def language_detection(self, _: ChunkEvent) -> LanguageEvent:
+        await asyncio.sleep(0.3)
+        languages = ["en", "de", "fr", "it"]
+        return LanguageEvent(language_short_name=random.choice(languages))
+
+    @step()
+    async def chat_history_limit(self, _: LanguageEvent) -> LimitChatHistoryEvent:
+        return LimitChatHistoryEvent(
+            limited_history=[
+                ChatMessage(role="user", content="Hello, how are you?"),
+                ChatMessage(role="assistant", content="I'm doing well, thank you!"),
+                ChatMessage(role="user", content="What can you help me with?"),
+            ]
+        )
+
+    @step()
+    async def question_condenser(self, _: LimitChatHistoryEvent) -> StandaloneQuestionCondenserEvent:
+        return StandaloneQuestionCondenserEvent(
+            condensed_chat_message=ChatMessage(role="user", content="What is the capital of France?")
+        )
+
+    @step()
+    async def router_step(self, _: StandaloneQuestionCondenserEvent) -> RouterEvent:
         await asyncio.sleep(1)
         routes = [
             RouteOptions(
@@ -201,6 +286,37 @@ class FrontendTestingAgent(Agent):
     #         question="Make some noise",
     #         slack_channel_id="C08MK7Z8GU9",
     #     )
+
+    # Error handling steps for rejection events
+    @step()
+    async def handle_sensitive_info_rejection(
+        self, event: SensitiveInfoRejectEvent, displayer: EventDisplayer
+    ) -> StopEvent:
+        await displayer.display_chunk(
+            content=f"Request blocked due to sensitive information: {event.reason}", model_name="FrontendTestingAgent"
+        )
+        return StopEvent()
+
+    @step()
+    async def handle_context_insufficient_rejection(
+        self, event: ContextInsufficientRejectEvent, displayer: EventDisplayer
+    ) -> StopEvent:
+        await displayer.display_chunk(content=f"Cannot proceed: {event.reason}", model_name="FrontendTestingAgent")
+        return StopEvent()
+
+    @step()
+    async def handle_agent_suitability_rejection(
+        self, event: AgentSuitabilityRejectEvent, displayer: EventDisplayer
+    ) -> StopEvent:
+        await displayer.display_chunk(content=f"Agent not suitable: {event.reason}", model_name="FrontendTestingAgent")
+        return StopEvent()
+
+    @step()
+    async def handle_few_shot_rejection(self, event: FewShotRejectEvent, displayer: EventDisplayer) -> StopEvent:
+        await displayer.display_chunk(
+            content=f"Few-shot evaluation failed: {event.reason}", model_name="FrontendTestingAgent"
+        )
+        return StopEvent()
 
     @step()
     async def stop(self, event: CustomHumanInTheLoop.response, displayer: EventDisplayer) -> StopEvent:

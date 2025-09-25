@@ -96,7 +96,6 @@ runner.mount(
     .validate_file_upload()
     .get_supported_file_types(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
-    NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
 )
 
 

@@ -1,7 +1,7 @@
 <template>
   <div
-    class="group relative rounded-lg border border-transparent px-2 pb-2 hover:border-surface-100 hover:opacity-100 hover:shadow-lg hover:dark:border-surface-800"
-    :class="{ 'opacity-30': !active }"
+    class="group relative rounded-lg border border-surface-200 bg-white p-4 dark:border-surface-700 dark:bg-surface-800"
+    :class="{ 'opacity-50': !active }"
   >
     <Tag
       v-if="node.score"

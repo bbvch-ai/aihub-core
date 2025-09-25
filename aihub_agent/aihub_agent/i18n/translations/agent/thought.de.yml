@@ -4,3 +4,5 @@ write_answer_based_on_few_shot_examples: "Schreibe eine Antwort basierend auf vo
 searching_knowledge: "Suche nach Wissen"
 preparing_knowledge: "Wissen wird aufbearbeitet"
 test: "Test"
+no_context_sufficiency_check: "Es wurde keine Kontext-Prüfung konfiguriert und durchgeführt."
+no_few_shot_examples: "Es wurden keine Few-Shot-Beispiele konfiguriert und verwendet."

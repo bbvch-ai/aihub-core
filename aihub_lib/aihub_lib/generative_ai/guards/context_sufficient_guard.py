@@ -3,15 +3,24 @@ from typing import Annotated
 from llama_index.core import PromptTemplate
 from llama_index.core.llms import LLM
 from openai import NOT_GIVEN
-from pydantic import BaseModel, Field
+from pydantic import Field
 
+from aihub_lib.generative_ai.guards.GuardResult import GuardResult
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 
 
-class ContextGuardResult(BaseModel):
-    reasoning: str
-    success: bool
-    new_query: str | None = None
+class ContextGuardResult(GuardResult):
+    """
+    Specialized result for context sufficiency guards.
+
+    Extends GuardResult with an additional field for new query suggestions
+    when the current context is insufficient.
+    """
+
+    new_query: Annotated[
+        str | None,
+        Field(description="A revised query to get better search results if context was insufficient.", default=None),
+    ]
 
 
 def context_guard_result_factory(t: LocaleHandler, more_hops_available: bool) -> type[ContextGuardResult]:
