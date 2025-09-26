@@ -1,39 +1,19 @@
-from typing import Annotated, Any, Callable
+from collections.abc import Callable
+from typing import Annotated, Any
 
+import httpx
 from llama_index.core.callbacks import TokenCountingHandler
 from llama_index.core.utilities.token_counting import TokenCounter
 from opentelemetry.propagate import inject
 from pydantic import BaseModel, Field
-import httpx
-import logging
+
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
 from aihub_lib.generative_ai.resources.models.llm.LiteLLMBase import LiteLLMBase
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
 
 
-"""
-{
-    "id":"eb7bfb5d-a1bd-4cc0-9b8b-e8b612faf379",
-    "results":
-        [
-            {"index":0,"relevance_score":0.996852},
-            {"index":2,"relevance_score":0.2821962},
-            {"index":1,"relevance_score":0.00003734357}
-        ],
-    "meta":
-        {"api_version":{"version":"1.0"},"billed_units":{"search_units":1},"tokens":{"input_tokens":24,"output_tokens":50}}}%   (
-"""
-
-
 class RerankingLLMParameter(BaseModel):
-    """
-    Parameters specific to reranking models.
-
-    ### Why RerankingLLMParameter?
-    Reranking models may not have as many parameters as generative models, but by keeping a separate class,
-    we maintain consistency with other model configs and facilitate extension if reranking models
-    require additional parameters in the future.
-    """
+    """Parameters specific to reranking models."""
 
     max_retries: int = Field(default=10, description="Maximum number of retries.", ge=0)
     timeout: float = Field(default=60.0, description="Timeout for each request.", ge=0)
@@ -56,13 +36,8 @@ class RerankingService(BaseModel):
     default_headers: dict[str, str]
     tokenizer: Callable[[str], list[int]]
 
-    def _chunk_document(self, document: str, max_tokens: int = 30) -> list[str]:
-        """
-        Chunk a document into smaller pieces that fit within token limits.
-
-        Uses proper token counting with word-based chunking and overlap to ensure
-        we don't lose context while staying strictly under the token limit.
-        """
+    def _chunk_document(self, document: str, max_tokens: int) -> list[str]:
+        """Chunk a document into smaller pieces that fit within token limits."""
         if not document.strip():
             return [document]
 
@@ -79,22 +54,8 @@ class RerankingService(BaseModel):
         return chunks
 
     async def rerank(self, query: str, documents: list[str], top_k: int, max_tokens: int) -> dict[str, Any]:
-        """
-        Rerank documents using the configured reranking model.
+        """Rerank documents using the configured reranking model."""
 
-        Handles batching internally to avoid exceeding service batch size limits.
-
-        Args:
-            query: The search query
-            documents: List of document texts to rerank
-            top_k: Number of top documents to return
-
-        Returns:
-            Dictionary with reranking results from LiteLLM
-        """
-
-        # Handle batching to avoid exceeding the reranker's batch size limit
-        batch_size = 32  # Maximum batch size for huggingface-reranking-inference
         all_results = []
         token_counter = TokenCounter(self.tokenizer)
         query_tokens = token_counter.get_string_tokens(query)
@@ -107,53 +68,37 @@ class RerankingService(BaseModel):
                 timeout=self.timeout,
                 headers=self.default_headers,
             ) as client:
-                for i in range(0, len(chunks), batch_size):
-                    batch_chunks = chunks[i : i + batch_size]
-                    batch_top_k = min(len(batch_chunks), top_k - len(all_results))
+                response = await client.post(
+                    f"{self.api_base}/rerank",
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json",
+                        **self.default_headers,
+                    },
+                    json={
+                        "model": self.model_name,
+                        "query": query,
+                        "documents": chunks,
+                        "top_n": top_k,
+                    },
+                )
+                response.raise_for_status()
+                result = response.json()
 
-                    if batch_top_k <= 0:
-                        break
+                results = result.get("results", [])
 
-                    response = await client.post(
-                        f"{self.api_base}/rerank",
-                        headers={
-                            "Authorization": f"Bearer {self.api_key}",
-                            "Content-Type": "application/json",
-                            **self.default_headers,
-                        },
-                        json={
-                            "model": self.model_name,
-                            "query": query,
-                            "documents": batch_chunks,
-                            "top_n": batch_top_k,
-                        },
-                    )
-                    response.raise_for_status()
-                    batch_result = response.json()
+                score = max([res.get("relevance_score", 0) for res in results])
 
-                    batch_results = batch_result.get("results", [])
+                all_results.append({"index": idx, "relevance_score": score})
 
-                    score = max([batch_result.get("relevance_score", 0) for batch_result in batch_results])
-
-                    all_results.append({"index": idx, "relevance_score": score})
-
-        # Sort all results by score (descending) and take top_k
         all_results.sort(key=lambda x: x.get("relevance_score", 0), reverse=True)
         final_results = all_results[:top_k]
 
-        # Return in the same format as the original service
         return {"results": final_results}
 
 
 class RerankingModelConfig(LiteLLMBase[RerankingService]):
-    """
-    Configuration for a reranking model.
-
-    ### Why RerankingModelConfig?
-    Reranking models produce relevance scores for document-query pairs. They may have different endpoints
-    and possibly fewer parameters compared to chat models. This config ensures each reranking
-    model can be integrated uniformly with cost tracking and proper configuration management.
-    """
+    """Configuration for a reranking model."""
 
     model_name: Annotated[str, Field(description="Name of the reranking model.")]
     default_parameter: Annotated[
@@ -171,7 +116,7 @@ class RerankingModelConfig(LiteLLMBase[RerankingService]):
         cost_tracker = LLMCostTracker(
             token_counter=token_counter,
             prompt_tokens_costs_per_thousand=model_info["model_info"]["input_cost_per_token"] * 1000,
-            completion_tokens_costs_per_thousand=0,  # Reranking typically doesn't have completion tokens
+            completion_tokens_costs_per_thousand=0,
         )
 
         default_headers = {}
@@ -190,11 +135,6 @@ class RerankingModelConfig(LiteLLMBase[RerankingService]):
         return reranking_service, cost_tracker
 
     def get_reranking_service(self) -> RerankingService:
-        """
-        Get a configured reranking service instance.
-
-        This is the preferred way to get a reranking service, following
-        the same pattern as EmbeddingModelConfig.
-        """
+        """Get a configured reranking service instance."""
         reranking_service, _ = self.to_llama_index()
         return reranking_service

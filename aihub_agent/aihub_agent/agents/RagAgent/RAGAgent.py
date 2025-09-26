@@ -5,10 +5,10 @@ from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_i
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
+from aihub_lib.generative_ai.utils.rerank_nodes import rerank_nodes
 from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
 from aihub_lib.generative_ai.utils.retrieve_parent_summary_nodes import retrieve_parent_summary_nodes
 from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev_next_nodes
-from aihub_lib.generative_ai.utils.rerank_nodes import rerank_nodes
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import LimitChatHistoryEvent, StandaloneQuestionCondenserEvent
@@ -19,8 +19,8 @@ from aihub_lib.nats.events.guard import (
     FewShotRejectEvent,
 )
 from aihub_lib.nats.events.semantic.llm import LLMStopEvent
-from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
+from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -120,9 +120,9 @@ class RAGAgent(Agent):
             )
 
         if not guard_result.success:
-            return FewShotRejectEvent(reason=guard_result.reasoning)
+            return FewShotRejectEvent(reason=guard_result.reason)
 
-        return FewShotAcceptEvent(reason=guard_result.reasoning)
+        return FewShotAcceptEvent(reason=guard_result.reason)
 
     @step(
         name=LocaleString(en="Retrieve Nodes"),
@@ -188,11 +188,7 @@ class RAGAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> RerankerEvent:
-        """
-        Reranks retrieved nodes using a dedicated reranking model for improved relevance.
-
-        If reranking is disabled, passes through the original nodes unchanged.
-        """
+        """Reranks retrieved nodes using a dedicated reranking model for improved relevance."""
         if not agent_config.reranking_config.enabled:
             return RerankerEvent(
                 input_nodes=event.nodes,
@@ -205,18 +201,16 @@ class RAGAgent(Agent):
 
         await displayer.display_thought(t("agent.thought.reranking_results"))
 
-        query = condense_event.condensed_chat_message.content
-
         reranked_nodes = await rerank_nodes(
             nodes=event.nodes,
-            query=query,
+            query=condense_event.condensed_chat_message.content,
             reranking_model=agent_config.reranking_config.reranking_model,
             top_k=agent_config.reranking_config.top_k,
             max_tokens=agent_config.reranking_config.max_tokens,
         )
 
         return RerankerEvent(
-            query=query,
+            query=condense_event.condensed_chat_message.content,
             rerank_model_name=agent_config.reranking_config.reranking_model.model_name,
             top_k=len(reranked_nodes),
             max_tokens=agent_config.reranking_config.max_tokens,
@@ -284,17 +278,17 @@ class RAGAgent(Agent):
 
         if guard_result.success:
             await displayer.display_thought(t("agent.thought.context_sufficient"))
-            return ContextSufficientAcceptEvent(reason=guard_result.reasoning)
+            return ContextSufficientAcceptEvent(reason=guard_result.reason)
 
         if not more_hops_available:
-            return ContextInsufficientRejectEvent(reason=guard_result.reasoning)
+            return ContextInsufficientRejectEvent(reason=guard_result.reason)
 
         await run_context.set("hop_count", hop_count + 1)
         new_query = guard_result.new_query
         prev_queries.append(new_query)
         await run_context.set("prev_queries", prev_queries)
         await displayer.display_thought(t("agent.thought.trying_another_retrieval_hop"))
-        return ContextInsufficientWithQueryEvent(reason=guard_result.reasoning, new_query=new_query)
+        return ContextInsufficientWithQueryEvent(reason=guard_result.reason, new_query=new_query)
 
     @step(
         name=LocaleString(en="Limit Chat History with Context"),
@@ -342,7 +336,7 @@ class RAGAgent(Agent):
             messages = limited_history_without_context.limited_history + [
                 ChatMessage(
                     role=MessageRole.SYSTEM,
-                    content=PromptTemplate(t("agent.prompt.guard.reject")).format(reason=event.reasoning),
+                    content=PromptTemplate(t("agent.prompt.guard.reject")).format(reason=event.reason),
                 ),
             ]
         else:

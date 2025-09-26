@@ -206,6 +206,9 @@ services:
               device_ids: [ '0' ]
               capabilities: [ gpu ]
     restart: always
+    depends_on:
+      vllm-reranker:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8183/health" ]
       timeout: 10s
@@ -230,7 +233,7 @@ services:
       --host 0.0.0.0
       --served-model-name jina-reranker
       --max-model-len 1024
-      --gpu-memory-utilization 0.25
+      --gpu-memory-utilization 0.2
       --trust-remote-code
     deploy:
       resources:

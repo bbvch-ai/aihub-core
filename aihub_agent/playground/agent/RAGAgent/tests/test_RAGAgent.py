@@ -1,3 +1,8 @@
+# ruff: noqa: E402
+from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
+
+AihubInstrumentor().instrument()
+
 import asyncio
 from pathlib import Path
 
@@ -17,8 +22,8 @@ from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryE
 from aihub_lib.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from aihub_lib.nats.events.guard.FewShotAcceptEvent import FewShotAcceptEvent
 from aihub_lib.nats.events.guard.FewShotRejectEvent import FewShotRejectEvent
-from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
+from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreConfig import AzureAISearchVectorStoreConfig
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
@@ -31,22 +36,16 @@ from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
+from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
-enable_logging(level=30)
-
-# ruff: noqa: E402
-from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
-
-AihubInstrumentor().instrument()
+enable_logging()
 
 
-# Set up an event loop for the test session
 @pytest.fixture(scope="session")
 def event_loop():
     """Create an instance of the default event loop for the test session."""
@@ -356,9 +355,6 @@ def _(agent_runner: AgentTestRunner, locale: str, prompt: str):
 
 @then(parsers.parse('the LLM received the system prompt "{expected_prompt}"'))
 def _(agent_runner: AgentTestRunner, expected_prompt: str):
-    """
-    Verify that the LLM received the expected system prompt.
-    """
     config = agent_runner.default_agent_config
     assert config.system_prompt is not None, "System prompt was not configured"
 
@@ -369,14 +365,8 @@ def _(agent_runner: AgentTestRunner, expected_prompt: str):
     assert actual_prompt == expected_prompt, f"Expected system prompt '{expected_prompt}', got '{actual_prompt}'"
 
 
-# Reranking test functions for Phase 1 integration
 @given("with reranking enabled")
 def _(agent_runner: AgentTestRunner):
-    """
-    Enable reranking in the agent configuration.
-    """
-
-    # Configure reranking
     agent_runner.default_agent_config.reranking_config = RerankingConfig(
         enabled=True,
         top_k=2,
@@ -386,9 +376,6 @@ def _(agent_runner: AgentTestRunner):
 
 @given("with reranking disabled")
 def _(agent_runner: AgentTestRunner):
-    """
-    Ensure reranking is disabled in the agent configuration.
-    """
     agent_runner.default_agent_config.reranking_config = RerankingConfig(
         enabled=False,
     )
@@ -397,9 +384,6 @@ def _(agent_runner: AgentTestRunner):
 
 @then("a RerankerEvent is present with reranked nodes")
 def _(agent_runner: AgentTestRunner):
-    """
-    Verify that a RerankerEvent was produced with reranked nodes.
-    """
     reranker_event = agent_runner.get_event_of_class(RerankerEvent)
     assert reranker_event, "RerankerEvent was not produced"
     assert reranker_event.output_nodes, "RerankerEvent did not contain reranked nodes"
@@ -407,13 +391,8 @@ def _(agent_runner: AgentTestRunner):
 
 @then("a RerankerEvent is present without reranking")
 def _(agent_runner: AgentTestRunner):
-    """
-    Verify that a RerankerEvent was produced but without actual reranking (pass-through mode).
-    """
     reranker_event = agent_runner.get_event_of_class(RerankerEvent)
     assert reranker_event, "RerankerEvent was not produced"
-    # In pass-through mode, the model name is still present but no actual reranking occurs
-    # The test should verify that input and output nodes are identical
     assert len(reranker_event.input_nodes) == len(
         reranker_event.output_nodes
     ), "Pass-through mode should preserve all nodes"
@@ -421,9 +400,6 @@ def _(agent_runner: AgentTestRunner):
 
 @then("the RerankerEvent contains the original nodes from the RetrieverEvent")
 def _(agent_runner: AgentTestRunner):
-    """
-    Verify that when reranking is disabled, nodes are passed through unchanged.
-    """
     retriever_event = agent_runner.get_event_of_class(RetrieverEvent)
     reranker_event = agent_runner.get_event_of_class(RerankerEvent)
 
@@ -438,9 +414,6 @@ def _(agent_runner: AgentTestRunner):
 
 @then(parsers.parse('the RerankerEvent should limit results to "{top_k:d}" nodes'))
 def _(agent_runner: AgentTestRunner, top_k: int):
-    """
-    Verify that reranking limits results to the specified top_k value.
-    """
     reranker_event = agent_runner.get_event_of_class(RerankerEvent)
     assert reranker_event, "RerankerEvent was not found"
     assert (
@@ -450,9 +423,6 @@ def _(agent_runner: AgentTestRunner, top_k: int):
 
 @then(parsers.parse('the RerankerEvent model name should be "{model_name}"'))
 def _(agent_runner: AgentTestRunner, model_name: str):
-    """
-    Verify that the correct reranking model was used.
-    """
     reranker_event = agent_runner.get_event_of_class(RerankerEvent)
     assert reranker_event, "RerankerEvent was not found"
     assert (
