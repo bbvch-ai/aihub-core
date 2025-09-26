@@ -225,9 +225,8 @@ services:
       HF_HOME: /root/.cache/huggingface
     command: >
       --port 8184
-      --model-id Qwen/Qwen3-Reranker-0.6B
-      --max-batch-tokens 8192
-      --pooling mean
+      --model-id BAAI/bge-reranker-base
+      --max-batch-tokens 4096
     deploy:
       resources:
         reservations:
