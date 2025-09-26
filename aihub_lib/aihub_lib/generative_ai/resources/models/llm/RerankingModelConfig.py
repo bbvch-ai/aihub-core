@@ -1,12 +1,28 @@
-from typing import Annotated, Any
+from typing import Annotated, Any, Callable
 
-from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
+from llama_index.core.callbacks import TokenCountingHandler
+from llama_index.core.utilities.token_counting import TokenCounter
 from opentelemetry.propagate import inject
 from pydantic import BaseModel, Field
-
+import httpx
+import logging
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
 from aihub_lib.generative_ai.resources.models.llm.LiteLLMBase import LiteLLMBase
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
+
+
+"""
+{
+    "id":"eb7bfb5d-a1bd-4cc0-9b8b-e8b612faf379",
+    "results":
+        [
+            {"index":0,"relevance_score":0.996852},
+            {"index":2,"relevance_score":0.2821962},
+            {"index":1,"relevance_score":0.00003734357}
+        ],
+    "meta":
+        {"api_version":{"version":"1.0"},"billed_units":{"search_units":1},"tokens":{"input_tokens":24,"output_tokens":50}}}%   (
+"""
 
 
 class RerankingLLMParameter(BaseModel):
@@ -38,13 +54,31 @@ class RerankingService(BaseModel):
     max_retries: int
     timeout: float
     default_headers: dict[str, str]
+    tokenizer: Callable[[str], list[int]]
 
-    async def rerank(
-        self,
-        query: str,
-        documents: list[str],
-        top_k: int,
-    ) -> dict[str, Any]:
+    def _chunk_document(self, document: str, max_tokens: int = 30) -> list[str]:
+        """
+        Chunk a document into smaller pieces that fit within token limits.
+
+        Uses proper token counting with word-based chunking and overlap to ensure
+        we don't lose context while staying strictly under the token limit.
+        """
+        if not document.strip():
+            return [document]
+
+        token_counter = TokenCounter(self.tokenizer)
+        tokens = token_counter.get_string_tokens(document)
+
+        if tokens <= max_tokens:
+            return [document]
+
+        word_count = int(max_tokens * 0.75)
+        words = document.split()
+        chunks = [document[i : i + word_count] for i in range(0, len(words), word_count)]
+
+        return chunks
+
+    async def rerank(self, query: str, documents: list[str], top_k: int, max_tokens: int) -> dict[str, Any]:
         """
         Rerank documents using the configured reranking model.
 
@@ -58,46 +92,50 @@ class RerankingService(BaseModel):
         Returns:
             Dictionary with reranking results from LiteLLM
         """
-        import httpx
 
         # Handle batching to avoid exceeding the reranker's batch size limit
         batch_size = 32  # Maximum batch size for huggingface-reranking-inference
         all_results = []
+        token_counter = TokenCounter(self.tokenizer)
+        query_tokens = token_counter.get_string_tokens(query)
+        max_chunk_tokens = max_tokens - query_tokens
 
-        async with httpx.AsyncClient(
-            timeout=self.timeout,
-            headers=self.default_headers,
-        ) as client:
-            for i in range(0, len(documents), batch_size):
-                batch_documents = documents[i:i + batch_size]
-                batch_top_k = min(len(batch_documents), top_k - len(all_results))
+        for idx, document in enumerate(documents):
+            chunks = self._chunk_document(document, max_tokens=max_chunk_tokens)
 
-                if batch_top_k <= 0:
-                    break
+            async with httpx.AsyncClient(
+                timeout=self.timeout,
+                headers=self.default_headers,
+            ) as client:
+                for i in range(0, len(chunks), batch_size):
+                    batch_chunks = chunks[i : i + batch_size]
+                    batch_top_k = min(len(batch_chunks), top_k - len(all_results))
 
-                response = await client.post(
-                    f"{self.api_base}/rerank",
-                    headers={
-                        "Authorization": f"Bearer {self.api_key}",
-                        "Content-Type": "application/json",
-                        **self.default_headers,
-                    },
-                    json={
-                        "model": self.model_name,
-                        "query": query,
-                        "documents": batch_documents,
-                        "top_n": batch_top_k,
-                    }
-                )
-                response.raise_for_status()
-                batch_result = response.json()
+                    if batch_top_k <= 0:
+                        break
 
-                batch_results = batch_result.get("results", [])
+                    response = await client.post(
+                        f"{self.api_base}/rerank",
+                        headers={
+                            "Authorization": f"Bearer {self.api_key}",
+                            "Content-Type": "application/json",
+                            **self.default_headers,
+                        },
+                        json={
+                            "model": self.model_name,
+                            "query": query,
+                            "documents": batch_chunks,
+                            "top_n": batch_top_k,
+                        },
+                    )
+                    response.raise_for_status()
+                    batch_result = response.json()
 
-                # Adjust indices to account for the batch offset
-                for result in batch_results:
-                    result["index"] = result["index"] + i
-                    all_results.append(result)
+                    batch_results = batch_result.get("results", [])
+
+                    score = max([batch_result.get("relevance_score", 0) for batch_result in batch_results])
+
+                    all_results.append({"index": idx, "relevance_score": score})
 
         # Sort all results by score (descending) and take top_k
         all_results.sort(key=lambda x: x.get("relevance_score", 0), reverse=True)
@@ -146,6 +184,7 @@ class RerankingModelConfig(LiteLLMBase[RerankingService]):
             max_retries=self.default_parameter.max_retries,
             timeout=self.default_parameter.timeout,
             default_headers=default_headers,
+            tokenizer=self.token_counter,
         )
 
         return reranking_service, cost_tracker

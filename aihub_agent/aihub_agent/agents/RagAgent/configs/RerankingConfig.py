@@ -25,6 +25,7 @@ class RerankingConfig(BaseModel):
         int,
         Field(description="Number of documents to return after reranking", ge=1, le=100),
     ] = 5
+    max_tokens: Annotated[int, Field(description="Maximum number of tokens supported by the reranking model.")] = 512
 
     def get_reranking_service(self):
         """

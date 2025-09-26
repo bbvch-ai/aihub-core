@@ -38,7 +38,7 @@ from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import 
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
-enable_logging()
+enable_logging(level=30)
 
 # ruff: noqa: E402
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip

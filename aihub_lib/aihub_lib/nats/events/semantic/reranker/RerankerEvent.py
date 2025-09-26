@@ -28,6 +28,9 @@ class RerankerEvent(SemanticEvent):
             description="The top K parameter, representing the number of results to be reranked.",
         ),
     ] = None
+    max_tokens: Annotated[
+        int | None, Field(description="Maximum number of tokens supported by the reranking model.")
+    ] = None
 
     def to_semantic_convention(self) -> dict[str, str]:
         attributes = {
