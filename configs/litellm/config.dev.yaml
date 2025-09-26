@@ -104,14 +104,14 @@ model_list:
 
   - model_name: local/reranker
     litellm_params:
-      model: huggingface/BAAI/bge-reranker-base
-      api_base: http://huggingface-reranking-inference:8184
+      model: hosted_vllm/jina-reranker
+      api_base: http://vllm-reranker:8000
       api_key: None
     model_info:
       mode: rerank
       input_cost_per_token: 0.000000001
       custom_tokenizer:
-        identifier: BAAI/bge-reranker-base
+        identifier: jinaai/jina-reranker-v2-base-multilingual
         revision: main
         auth_token: os.environ/HUGGINGFACE_API_KEY
 

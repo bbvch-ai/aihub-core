@@ -158,7 +158,10 @@ async def main():
                 ),
             ),
             reranking_config=RerankingConfig(
-                enabled=True, top_k=5, reranking_model=RerankingModelConfig(model_name="local/reranker")
+                enabled=True,
+                top_k=5,
+                max_tokens=1024,
+                reranking_model=RerankingModelConfig(model_name="local/reranker"),
             ),
         ),
         redis_url=RedisSettings().URL,

@@ -181,7 +181,7 @@ services:
       retries: 3
       start_period: 60s
     depends_on:
-      huggingface-reranking-inference:
+      vllm-reranker:
         condition: service_healthy
 
   huggingface-text-embedding-inference:
@@ -213,20 +213,25 @@ services:
       retries: 3
       start_period: 60s
 
-  huggingface-reranking-inference:
-    image: ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:89-1.8
-    container_name: huggingface-reranking-inference
+  vllm-reranker:
+    image: vllm/vllm-openai:latest
+    container_name: vllm-reranker
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/hf-reranking-data:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/vllm-reranker-data:/root/.cache/huggingface
       - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
     ports:
-      - "8184:8184"
+      - "8184:8000"
     environment:
       HF_HOME: /root/.cache/huggingface
+      CUDA_VISIBLE_DEVICES: "0"
     command: >
-      --port 8184
-      --model-id BAAI/bge-reranker-base
-      --max-batch-tokens 4096
+      --model jinaai/jina-reranker-v2-base-multilingual
+      --port 8000
+      --host 0.0.0.0
+      --served-model-name jina-reranker
+      --max-model-len 1024
+      --gpu-memory-utilization 0.25
+      --trust-remote-code
     deploy:
       resources:
         reservations:
@@ -236,11 +241,11 @@ services:
               capabilities: [ gpu ]
     restart: always
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8184/health" ]
-      timeout: 10s
-      interval: 30s
-      retries: 3
-      start_period: 60s
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/v1/models" ]
+      timeout: 30s
+      interval: 60s
+      retries: 5
+      start_period: 120s
 
   presidio-analyzer:
     image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359
