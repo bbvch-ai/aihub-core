@@ -70,43 +70,101 @@ x-common-cert-resolver: &common-cert-resolver "letsencrypt"
 services:
   # === SeaweedFS Stack ===
   # <editor-fold desc="SeaweedFS Stack">
-  seaweedfs-master:
+  seaweedfs-master-1:
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
-    container_name: seaweedfs-master
+    container_name: seaweedfs-master-1
     <<: *restart-policy
     command: >
       master
-      -ip=seaweedfs-master
-      -ip.bind=0.0.0.0
-      -defaultReplication=000
+      -ip=seaweedfs-master-1
+      -peers=seaweedfs-master-1:9333,seaweedfs-master-2:9333,seaweedfs-master-3:9333
+      -defaultReplication=001
       -volumeSizeLimitMB=512
       -volumePreallocate=false
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master-1:/data$
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9333/dir/status"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9333/dir/status" ]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 10s
     logging: *default-logging
 
-  seaweedfs-volume:
+  seaweedfs-master-2:
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
-    container_name: seaweedfs-volume
+    container_name: seaweedfs-master-2
+    <<: *restart-policy
+    command: >
+      master
+      -ip=seaweedfs-master-2
+      -peers=seaweedfs-master-1:9333,seaweedfs-master-2:9333,seaweedfs-master-3:9333
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master-2:/data
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9333/dir/status" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    logging: *default-logging
+
+  seaweedfs-master-3:
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    container_name: seaweedfs-master-3
+    <<: *restart-policy
+    command: >
+      master
+      -ip=seaweedfs-master-3
+      -peers=seaweedfs-master-1:9333,seaweedfs-master-2:9333,seaweedfs-master-3:9333
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master-3:/data
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9333/dir/status" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    logging: *default-logging
+
+  seaweedfs-volume-1:
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    container_name: seaweedfs-volume-1
     <<: *restart-policy
     command: >
       volume
-      -mserver="seaweedfs-master:9333"
+      -mserver="seaweedfs-master-1:9333,seaweedfs-master-2:9333,seaweedfs-master-3:9333"
       -ip.bind=0.0.0.0
       -port=8080
-      -max=100
+      -max=50 
       -dataCenter=dc1
+      -rack=rack1
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-volume:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-volume-1:/data
     depends_on:
-      seaweedfs-master:
-        condition: service_healthy
+      - seaweedfs-master-1
+      - seaweedfs-master-2
+      - seaweedfs-master-3
+    logging: *default-logging
+
+  seaweedfs-volume-2:
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    container_name: seaweedfs-volume-2
+    <<: *restart-policy
+    command: >
+      volume
+      -mserver="seaweedfs-master-1:9333,seaweedfs-master-2:9333,seaweedfs-master-3:9333"
+      -ip.bind=0.0.0.0
+      -port=8081
+      -max=50 
+      -dataCenter=dc1
+      -rack=rack2 # Placed in a different rack for replication
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-volume-2:/data
+    depends_on:
+      - seaweedfs-master-1
+      - seaweedfs-master-2
+      - seaweedfs-master-3
     logging: *default-logging
 
   seaweedfs-filer:
@@ -115,15 +173,23 @@ services:
     <<: *restart-policy
     command: >
       filer
-      -master="seaweedfs-master:9333"
+      -master="seaweedfs-master-1:9333,seaweedfs-master-2:9333,seaweedfs-master-3:9333"
       -ip.bind=0.0.0.0
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-filer:/data
     depends_on:
-      - seaweedfs-master
-      - seaweedfs-volume
+      seaweedfs-master-1:
+        condition: service_healthy
+      seaweedfs-master-2:
+        condition: service_healthy
+      seaweedfs-master-3:
+        condition: service_healthy
+      seaweedfs-volume-1:
+        condition: service_started
+      seaweedfs-volume-2:
+        condition: service_started
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "8888"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -133,7 +199,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.seaweedfs-filer.rule=Host(`datalake.${DOMAIN}`)"
       - "traefik.http.routers.seaweedfs-filer.entrypoints=websecure"
-      - "traefik.http.routers.seaweedfs-filer.tls=true"
+      - "traefik.http.routers.seaweedfs-filer.tls.certresolver=letsencrypt"
       - "traefik.http.routers.seaweedfs-filer.middlewares=security-headers@file"
       - "traefik.http.services.seaweedfs-filer.loadbalancer.server.port=8888"
 
@@ -143,11 +209,11 @@ services:
     <<: *restart-policy
     volumes:
       - ./configs/seaweedfs/s3-entrypoint.sh:/usr/local/bin/s3-entrypoint.sh:ro
-    entrypoint: ["/bin/sh", "/usr/local/bin/s3-entrypoint.sh"]
+    entrypoint: [ "/bin/sh", "/usr/local/bin/s3-entrypoint.sh" ]
     environment:
       # S3 Authentication
-      SEAWEEDFS_S3_USER: ${SEAWEEDFS_S3_USER}
-      SEAWEEDFS_S3_PASSWORD: ${SEAWEEDFS_S3_PASSWORD}
+      SEAWEEDFS_S3_USER: ${S3_ACCESS_KEY_ID}
+      SEAWEEDFS_S3_PASSWORD: ${S3_SECRET_ACCESS_KEY}
       # S3 Service Configuration
       S3_PORT: "9000"
       S3_FILER: "seaweedfs-filer:8888"
@@ -159,7 +225,7 @@ services:
       seaweedfs-filer:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "9000"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/status" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -173,9 +239,8 @@ services:
       seaweedfs-s3:
         condition: service_healthy
     environment:
-      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
-      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
-      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
     volumes:
       - ./configs/seaweedfs/init-buckets.sh:/usr/local/bin/init-buckets.sh:ro
     entrypoint: [ "/bin/sh", "/usr/local/bin/init-buckets.sh" ]
@@ -211,8 +276,8 @@ services:
     environment:
       ETCD_ENDPOINTS: etcd:2379
       MINIO_ADDRESS: seaweedfs-s3:9000
-      MINIO_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
-      MINIO_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      MINIO_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/milvus-data:/var/lib/milvus
       - ./configs/milvus/milvus.nightly.yaml:/milvus/configs/milvus.yaml
@@ -454,8 +519,8 @@ services:
 
       # Data storage
       STORAGE_PROVIDER: "s3"
-      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
-      S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
       S3_REGION_NAME: "us-east-1"
       S3_BUCKET_NAME: "open-webui"
       S3_ENDPOINT_URL: 'http://seaweedfs-s3:9000'
@@ -943,8 +1008,8 @@ services:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
-      S3_STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER}
-      S3_STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_STORAGE_ACCESS_KEY: ${S3_ACCESS_KEY_ID}
+      S3_STORAGE_SECRET_KEY: ${S3_SECRET_ACCESS_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${MINIO_URL_SIGNING_SECRET}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
