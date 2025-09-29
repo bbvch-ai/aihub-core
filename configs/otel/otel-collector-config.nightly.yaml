@@ -85,7 +85,7 @@ processors:
         action: upsert
 
   resourcedetection/docker:
-    detectors: [env, docker]
+    detectors: [env, system, docker]
     timeout: 2s
     override: false
 
