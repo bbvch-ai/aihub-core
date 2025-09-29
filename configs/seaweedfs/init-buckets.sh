@@ -4,8 +4,8 @@ set -e
 echo "Waiting for S3 to be ready..."
 sleep 5
 
-ENDPOINT="http://seaweedfs-s3:9000"
-BUCKETS="open-webui milvus playground"
+ENDPOINT=${S3_ENDPOINT:-"http://seaweedfs-s3:9000"}
+BUCKETS=${DEFAULT_BUCKETS:-"open-webui milvus playground"}
 
 echo "Creating buckets..."
 for bucket in $BUCKETS; do

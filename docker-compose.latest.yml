@@ -143,8 +143,8 @@ services:
     entrypoint: ["/bin/sh", "/usr/local/bin/s3-entrypoint.sh"]
     environment:
       # S3 Authentication
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      SEAWEEDFS_S3_USER: ${SEAWEEDFS_S3_USER}
+      SEAWEEDFS_S3_PASSWORD: ${SEAWEEDFS_S3_PASSWORD}
       # S3 Service Configuration
       S3_PORT: "9000"
       S3_FILER: "seaweedfs-filer:8888"
@@ -170,9 +170,8 @@ services:
       seaweedfs-s3:
         condition: service_healthy
     environment:
-      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
-      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
-      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ${SEAWEEDFS_S3_USER}
+      AWS_SECRET_ACCESS_KEY: ${SEAWEEDFS_S3_PASSWORD}
     volumes:
       - ./configs/seaweedfs/init-buckets.sh:/usr/local/bin/init-buckets.sh:ro
     entrypoint: [ "/bin/sh", "/usr/local/bin/init-buckets.sh" ]

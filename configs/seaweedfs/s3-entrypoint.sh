@@ -1,8 +1,9 @@
 #!/bin/sh
 set -e
 
-MINIO_ROOT_USER=${MINIO_ROOT_USER:-admin}
-MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-admin123}
+# SeaweedFS S3 credentials
+SEAWEEDFS_S3_USER=${SEAWEEDFS_S3_USER}
+SEAWEEDFS_S3_PASSWORD=${SEAWEEDFS_S3_PASSWORD}
 
 S3_PORT=${S3_PORT:-9000}
 S3_FILER=${S3_FILER:-seaweedfs-filer:8888}
@@ -19,8 +20,8 @@ cat > /tmp/s3.json <<EOF
       "name": "admin",
       "credentials": [
         {
-          "accessKey": "${MINIO_ROOT_USER}",
-          "secretKey": "${MINIO_ROOT_PASSWORD}"
+          "accessKey": "${SEAWEEDFS_S3_USER}",
+          "secretKey": "${SEAWEEDFS_S3_PASSWORD}"
         }
       ],
       "actions": [
@@ -46,7 +47,7 @@ EOF
 echo "Starting SeaweedFS S3 Gateway"
 echo "  - Port: ${S3_PORT}"
 echo "  - Filer: ${S3_FILER}"
-echo "  - User: ${MINIO_ROOT_USER}"
+echo "  - User: ${SEAWEEDFS_S3_USER}"
 
 S3_CMD="weed s3 \
   -filer=${S3_FILER} \

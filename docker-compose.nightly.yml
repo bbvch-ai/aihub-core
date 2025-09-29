@@ -143,8 +143,8 @@ services:
     entrypoint: ["/bin/sh", "/usr/local/bin/s3-entrypoint.sh"]
     environment:
       # S3 Authentication
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      SEAWEEDFS_S3_USER: ${SEAWEEDFS_S3_USER}
+      SEAWEEDFS_S3_PASSWORD: ${SEAWEEDFS_S3_PASSWORD}
       # S3 Service Configuration
       S3_PORT: "9000"
       S3_FILER: "seaweedfs-filer:8888"
