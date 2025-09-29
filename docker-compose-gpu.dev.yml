@@ -174,15 +174,15 @@ services:
               device_ids: [ '0' ]
               capabilities: [ gpu ]
     restart: always
+    depends_on:
+      vllm-reranker:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
       timeout: 10s
       interval: 30s
       retries: 3
       start_period: 60s
-    depends_on:
-      vllm-reranker:
-        condition: service_healthy
 
   huggingface-text-embedding-inference:
     image: ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:89-1.8
@@ -217,7 +217,7 @@ services:
       start_period: 60s
 
   vllm-reranker:
-    image: vllm/vllm-openai:latest
+    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:latest
     container_name: vllm-reranker
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/vllm-reranker-data:/root/.cache/huggingface
