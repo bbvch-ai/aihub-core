@@ -956,6 +956,7 @@ services:
         attu:3000/api/v1/healthy
         nats:8222/healthz
         phoenix:6006
+        dagster-webserver:3000/server_info
       GRPC_ENDPOINTS: |
         default-rag-pipeline:4000
     command:
