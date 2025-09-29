@@ -667,6 +667,12 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "grep -q dagster-daemon /proc/1/cmdline || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     logging: *default-logging
   # </editor-fold>
 
@@ -1004,20 +1010,6 @@ services:
 
             echo "{\"Type\":\"container\",\"Action\":\"$$status\",\"Actor\":{\"Attributes\":{\"name\":\"$$name\"}},\"id\":\"$$name\",\"from\":\"grpc://$$endpoint\",\"time\":$$ts,\"timeNano\":$$tsn}" >> /var/log/docker-health/events.ndjson
           done
-        
-          # Dagster daemon heartbeat check
-          ts=$$(date +%s)
-          tsn=$$(date +%s%N)
-          
-          # Check if heartbeat file was modified in last 2 minutes
-          if find /opt/dagster/dagster_home/storage -name "heartbeat" -mmin -2 2>/dev/null | grep -q .; then
-            status="health_status: healthy"
-          else
-            status="health_status: unhealthy"
-          fi
-          
-          echo "{\"Type\":\"container\",\"Action\":\"$$status\",\"Actor\":{\"Attributes\":{\"name\":\"dagster-daemon\"}},\"id\":\"dagster-daemon\",\"from\":\"file:///opt/dagster/dagster_home\",\"time\":$$ts,\"timeNano\":$$tsn}" >> /var/log/docker-health/events.ndjson
-  
           
           sleep 60
         done
