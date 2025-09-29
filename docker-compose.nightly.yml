@@ -961,22 +961,22 @@ services:
       - -c
       - |
         apk add --no-cache wget
-        
+
         while true; do
           echo "$$ENDPOINTS" | while IFS= read -r endpoint; do
             [ -z "$$endpoint" ] && continue
-            
+
             ts=$$(date +%s)
             tsn=$$(date +%s%N)
             name=$$(echo "$$endpoint" | cut -d: -f1)
             url="http://$$endpoint"
-            
+
             if wget -q --spider "$$url" 2>/dev/null; then
               status="health_status: healthy"
             else
               status="health_status: unhealthy"
             fi
-            
+
             # Write in Docker events format with Actor.Attributes.name
             echo "{\"Type\":\"container\",\"Action\":\"$$status\",\"Actor\":{\"Attributes\":{\"name\":\"$$name\"}},\"id\":\"$$name\",\"from\":\"$$url\",\"time\":$$ts,\"timeNano\":$$tsn}" >> /var/log/docker-health/events.ndjson
           done

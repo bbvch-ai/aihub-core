@@ -38,39 +38,29 @@ receivers:
     include: [ /var/log/docker-health/events.ndjson ]
     start_at: end
     operators:
-      # 1) Parse the JSON into BODY (not attributes)
+      # 1) Parse the JSON into BODY as a proper object
       - type: json_parser
         parse_from: body
         parse_to: body
 
-      # 2) Put convenient fields directly in the body
-      - type: move
+      # 2) Add convenient attributes for OTEL filtering (keeps body intact)
+      - type: copy
         from: body.Actor.Attributes.name
-        to: body.container_name
-      - type: move
+        to: attributes.container_name
+
+      - type: copy
         from: body.id
-        to: body.container_id
-      - type: move
-        from: body.from
-        to: body.image
-      - type: move
+        to: attributes.container_id
+
+      - type: copy
         from: body.Action
-        to: body.health_status
-      - type: move
-        from: body.status
-        to: body.health_status_raw       # optional, keep original
+        to: attributes.health_status
 
-      # 3) (Optional) Keep the body minimal/clean
-      - type: retain
-        fields:
-          - body.container_name
-          - body.container_id
-          - body.image
-          - body.health_status
-          - body.time
-          - body.timeNano
+      - type: copy
+        from: body.Type
+        to: attributes.event_type
 
-      # 4) Tag for easy filtering in SigNoz
+      # 3) Tag for easy filtering
       - type: add
         field: attributes.log_type
         value: docker_health_event
