@@ -952,73 +952,73 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/log/docker-health:/var/log/docker-health
 
-healthcheck-poller:
-  image: alpine:latest
-  container_name: healthcheck-poller
-  hostname: ${HOSTNAME:-unknown-host}  # Add hostname
-  volumes:
-    - /var/log/docker-health:/var/log/docker-health
-  environment:
-    HOSTNAME: ${HOSTNAME:-unknown-host}  # Pass hostname as env var
-    ENDPOINTS: |
-      attu:3000/api/v1/healthy
-      nats:8222/healthz
-      phoenix:6006
-      dagster-webserver:3000/server_info
-    GRPC_ENDPOINTS: |
-      default-rag-pipeline:4000
-  command:
-    - /bin/sh
-    - -c
-    - |
-      apk add --no-cache wget curl
-
-      # Download grpc_health_probe
-      wget -qO /usr/local/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.24/grpc_health_probe-linux-amd64
-      chmod +x /usr/local/bin/grpc_health_probe
-
-      # Get hostname
-      HOST_NAME=$${HOSTNAME:-$$(hostname)}
-
-      while true; do
-        # HTTP endpoints
-        echo "$$ENDPOINTS" | while IFS= read -r endpoint; do
-          [ -z "$$endpoint" ] && continue
-
-          ts=$$(date +%s)
-          tsn=$$(date +%s%N)
-          name=$$(echo "$$endpoint" | cut -d: -f1)
-          url="http://$$endpoint"
-
-          if wget -q --spider "$$url" 2>/dev/null; then
-            status="health_status: healthy"
-          else
-            status="health_status: unhealthy"
-          fi
-
-          echo "{\"Type\":\"container\",\"Action\":\"$$status\",\"Actor\":{\"Attributes\":{\"name\":\"$$name\",\"host.name\":\"$$HOST_NAME\"}},\"id\":\"$$name\",\"from\":\"$$url\",\"time\":$$ts,\"timeNano\":$$tsn}" >> /var/log/docker-health/events.ndjson
+  healthcheck-poller:
+    image: alpine:latest
+    container_name: healthcheck-poller
+    hostname: ${HOSTNAME:-unknown-host}  # Add hostname
+    volumes:
+      - /var/log/docker-health:/var/log/docker-health
+    environment:
+      HOSTNAME: ${HOSTNAME:-unknown-host}  # Pass hostname as env var
+      ENDPOINTS: |
+        attu:3000/api/v1/healthy
+        nats:8222/healthz
+        phoenix:6006
+        dagster-webserver:3000/server_info
+      GRPC_ENDPOINTS: |
+        default-rag-pipeline:4000
+    command:
+      - /bin/sh
+      - -c
+      - |
+        apk add --no-cache wget curl
+  
+        # Download grpc_health_probe
+        wget -qO /usr/local/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.24/grpc_health_probe-linux-amd64
+        chmod +x /usr/local/bin/grpc_health_probe
+  
+        # Get hostname
+        HOST_NAME=$${HOSTNAME:-$$(hostname)}
+  
+        while true; do
+          # HTTP endpoints
+          echo "$$ENDPOINTS" | while IFS= read -r endpoint; do
+            [ -z "$$endpoint" ] && continue
+  
+            ts=$$(date +%s)
+            tsn=$$(date +%s%N)
+            name=$$(echo "$$endpoint" | cut -d: -f1)
+            url="http://$$endpoint"
+  
+            if wget -q --spider "$$url" 2>/dev/null; then
+              status="health_status: healthy"
+            else
+              status="health_status: unhealthy"
+            fi
+  
+            echo "{\"Type\":\"container\",\"Action\":\"$$status\",\"Actor\":{\"Attributes\":{\"name\":\"$$name\",\"host.name\":\"$$HOST_NAME\"}},\"id\":\"$$name\",\"from\":\"$$url\",\"time\":$$ts,\"timeNano\":$$tsn}" >> /var/log/docker-health/events.ndjson
+          done
+  
+          # gRPC endpoints
+          echo "$$GRPC_ENDPOINTS" | while IFS= read -r endpoint; do
+            [ -z "$$endpoint" ] && continue
+  
+            ts=$$(date +%s)
+            tsn=$$(date +%s%N)
+            name=$$(echo "$$endpoint" | cut -d: -f1)
+  
+            if /usr/local/bin/grpc_health_probe -addr="$$endpoint" 2>/dev/null; then
+              status="health_status: healthy"
+            else
+              status="health_status: unhealthy"
+            fi
+  
+            echo "{\"Type\":\"container\",\"Action\":\"$$status\",\"Actor\":{\"Attributes\":{\"name\":\"$$name\",\"host.name\":\"$$HOST_NAME\"}},\"id\":\"$$name\",\"from\":\"grpc://$$endpoint\",\"time\":$$ts,\"timeNano\":$$tsn}" >> /var/log/docker-health/events.ndjson
+          done
+          
+          sleep 60
         done
-
-        # gRPC endpoints
-        echo "$$GRPC_ENDPOINTS" | while IFS= read -r endpoint; do
-          [ -z "$$endpoint" ] && continue
-
-          ts=$$(date +%s)
-          tsn=$$(date +%s%N)
-          name=$$(echo "$$endpoint" | cut -d: -f1)
-
-          if /usr/local/bin/grpc_health_probe -addr="$$endpoint" 2>/dev/null; then
-            status="health_status: healthy"
-          else
-            status="health_status: unhealthy"
-          fi
-
-          echo "{\"Type\":\"container\",\"Action\":\"$$status\",\"Actor\":{\"Attributes\":{\"name\":\"$$name\",\"host.name\":\"$$HOST_NAME\"}},\"id\":\"$$name\",\"from\":\"grpc://$$endpoint\",\"time\":$$ts,\"timeNano\":$$tsn}" >> /var/log/docker-health/events.ndjson
-        done
-        
-        sleep 60
-      done
-  restart: unless-stopped
+    restart: unless-stopped
 volumes:
   api-venv:
   api-api-venv:
