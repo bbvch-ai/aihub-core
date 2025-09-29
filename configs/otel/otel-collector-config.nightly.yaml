@@ -143,7 +143,7 @@ service:
       exporters: [ otlp/signoz ]
     logs/docker:
       receivers: [ filelog/docker_health_events ]
-      processors: [ attributes/docker_common, batch ]
+      processors: [ resourcedetection/docker, attributes/docker_common, batch ]
       exporters: [otlp/signoz]
     logs/service_health:
       receivers: [ filelog/service_health_events ]
