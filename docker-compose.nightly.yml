@@ -942,16 +942,16 @@ services:
           echo "[health-events] waiting for dockerd..." >&2
           sleep 1
         done
-        
+
         # Get hostname
         HOST_NAME=$$(docker info --format "{{.Name}}")
-        
+
         mkdir -p /var/log/docker-health
         touch /var/log/docker-health/events.ndjson
-        
-        # Capture events and add host.name to each event
+
+        # Capture events and add host.name using sed
         docker -H unix:///var/run/docker.sock events --since 15m --filter event=health_status --format "{{json .}}" \
-          | jq -c --arg hostname "$$HOST_NAME" ".Actor.Attributes[\"host.name\"] = \$$hostname" \
+          | sed "s/\"name\":\"\\([^\"]*\\)\"/\"name\":\"\\1\",\"host.name\":\"$$HOST_NAME\"/" \
           | tee -a /var/log/docker-health/events.ndjson
       '
     volumes:
