@@ -45,9 +45,9 @@ jobs:
           # Tag with {source_tag}-latest
           docker tag "${IMAGE_NAME}:${SOURCE_TAG}" "${IMAGE_NAME}:${SOURCE_TAG}-latest"
           docker push "${IMAGE_NAME}:${SOURCE_TAG}-latest"
-          echo "✓ Tagged ${IMAGE_NAME_SUFFIX}:${SOURCE_TAG}-latest"
+          echo "✓ Tagged ${IMAGE_NAME}:${SOURCE_TAG}-latest"
           
           # Tag with latest
           docker tag "${IMAGE_NAME}:${SOURCE_TAG}" "${IMAGE_NAME}:latest"
           docker push "${IMAGE_NAME}:latest"
-          echo "✓ Tagged ${IMAGE_NAME_SUFFIX}:latest"
+          echo "✓ Tagged ${IMAGE_NAME}:latest"
