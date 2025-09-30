@@ -6,10 +6,10 @@ import withNuxt from './.nuxt/eslint.config.mjs'
 
 export default withNuxt(
   globalIgnores([
-    '.nuxt/**',
-    '.output/**',
-    'node_modules/**',
-    '.app/**',
+    '**/.nuxt/**',
+    '**/.output/**',
+    '**/node_modules/**',
+    '**/dist/**',
     'sdk/**/*',
   ]),
   {
