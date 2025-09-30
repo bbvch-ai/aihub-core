@@ -1,9 +1,9 @@
-import { getModels, type ModelTypeGroupDto } from '@core/sdk/client'
+import { getModels, type ModelTypeGroupDtoReadable } from '@core/sdk/client'
 import { useQuery } from '@pinia/colada'
 import { minutesToMilliseconds } from 'date-fns'
 
 export const useModelsList = defineQuery(() => {
-  const { data: modelTypes, isPending: modelsAreLoading, error } = useQuery<ModelTypeGroupDto[]>({
+  const { data: modelTypes, isPending: modelsAreLoading, error } = useQuery<ModelTypeGroupDtoReadable[]>({
     key: () => ['models'],
     staleTime: minutesToMilliseconds(5),
     enabled: true,
