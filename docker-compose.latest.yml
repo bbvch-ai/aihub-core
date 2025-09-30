@@ -3,7 +3,7 @@
 #############################################################################
 #
 # This file follows state-of-the-art Traefik routing priority best practices:
-# 
+#
 # RULE: Higher priority numbers = more specific routes (evaluated first)
 # RULE: Leave gaps of 100-500 between priority tiers for future expansion
 # RULE: Use consistent ranges for similar route types across services
@@ -12,10 +12,10 @@
 #
 # 10000-9000: SYSTEM & INFRASTRUCTURE
 #   - 10000: Emergency overrides
-#   - 9500:  Health checks, monitoring endpoints  
+#   - 9500:  Health checks, monitoring endpoints
 #   - 9000:  ACME/Let's Encrypt challenges
 #
-# 8000-7000: SECURITY & AUTHENTICATION  
+# 8000-7000: SECURITY & AUTHENTICATION
 #   - 8000:  Rate limiting, IP blocking
 #   - 7500:  OAuth callbacks, OIDC endpoints
 #   - 7000:  Authentication APIs, login endpoints
@@ -141,6 +141,8 @@ services:
       - "milvus-standalone"
     environment:
       MILVUS_URL: milvus-standalone:19530
+    healthcheck:
+      test: ["NONE"] # minimal image, no healthcheck available within the image
     logging: *default-logging
   # </editor-fold>
 
@@ -158,7 +160,7 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/postgres-data:/var/lib/postgresql/data
       - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U webui" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
       start_period: 5s
     logging: *default-logging
   # </editor-fold>
@@ -175,6 +177,8 @@ services:
       PHOENIX_SQL_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix"
       PHOENIX_ENABLE_AUTH: "False"
       VERSION: ""
+    healthcheck:
+      test: ["NONE"] # minimal image, no healthcheck available within the image
     logging: *default-logging
   # </editor-fold>
 
@@ -188,6 +192,8 @@ services:
     volumes:
       - ./configs/nats/nats.latest.conf:/etc/nats/nats.conf
       - ${VOLUME_ROOT:-./.docker-volumes}/nats-data:/data
+    healthcheck:
+      test: [ "NONE" ] # minimal image, no healthcheck available within the image
     logging: *default-logging
 
   redis:
@@ -277,7 +283,7 @@ services:
   # === OpenWebUI Stack ===
   # <editor-fold desc="OpenWebUI Stack">
   open-webui:
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.13
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.22
     container_name: open-webui
     <<: *restart-policy
     depends_on:
@@ -344,6 +350,15 @@ services:
       OAUTH_EMAIL_CLAIM: 'email'
       OAUTH_GROUP_CLAIM: 'email'
 
+      # AI-Hub Connection
+      AIHUB_BASE_URL: http://api:8000
+      AIHUB_FRONTEND_URL: "https://${DOMAIN}"
+      AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
+      OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
+      AIHUB_PIPELINE_PREFIX: "aihub/"
+      AIHUB_OPENAI_PIPELINE_PREFIX: "openai/"
+      AIHUB_REQUEST_TIMEOUT: 60
+
       # Data storage
       STORAGE_PROVIDER: "s3"
       S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
@@ -356,14 +371,14 @@ services:
       OPENAI_API_BASE_URL: ""
       OPENAI_API_KEY: ""
       RAG_OPENAI_API_BASE_URL: "http://api:8000/api/v1"
-      RAG_OPENAI_API_KEY: ${AIHUB_API_KEY}
+      RAG_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       AUDIO_STT_OPENAI_API_BASE_URL: "http://api:8000/api/v1"
-      AUDIO_STT_OPENAI_API_KEY: ${AIHUB_API_KEY}
+      AUDIO_STT_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       AUDIO_TTS_OPENAI_API_BASE_URL: "http://api:8000/api/v1"
-      AUDIO_TTS_OPENAI_API_KEY: ${AIHUB_API_KEY}
+      AUDIO_TTS_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       ENABLE_IMAGE_GENERATION: True
       IMAGES_OPENAI_API_BASE_URL: "http://api:8000/api/v1"
-      IMAGES_OPENAI_API_KEY: ${AIHUB_API_KEY}
+      IMAGES_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       MODELS_CACHE_TTL: 60
       TASK_MODEL: 'azure/gpt-4o-mini'
       TASK_MODEL_EXTERNAL: 'azure/gpt-4o-mini'
@@ -435,7 +450,7 @@ services:
       WEB_SEARCH_CONCURRENT_REQUESTS: 6
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: True
       WEB_LOADER_ENGINE: 'playwright'
-      PLAYWRIGHT_WS_URL: 'ws://playwright:3000/ws'
+      PLAYWRIGHT_WS_URL: 'ws://playwright:3000'
       FILE_IMAGE_COMPRESSION_WIDTH: 796
       FILE_IMAGE_COMPRESSION_HEIGHT: 796
 
@@ -554,16 +569,16 @@ services:
     container_name: jupyter-lab
     <<: *restart-policy
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/llama-data:/home/jovyan/work
+      - ${VOLUME_ROOT:-./.docker-volumes}/jupyter-data:/home/jovyan/work
     environment:
       JUPYTER_ENABLE_LAB: yes
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
   playwright:
-    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy
+    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy
     container_name: playwright-server
     <<: *restart-policy
-    command: npx playwright run-server --port 3000 --host 0.0.0.0
+    command: npx playwright@v1.49.0 run-server --port 3000 --host 0.0.0.0
     environment:
       NODE_ENV: production
     healthcheck:
@@ -626,6 +641,7 @@ services:
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
       - ./configs/dagster/dagster.latest.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.yaml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -645,11 +661,18 @@ services:
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
       - ./configs/dagster/dagster.latest.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.yaml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "grep -q dagster-daemon /proc/1/cmdline || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     logging: *default-logging
   # </editor-fold>
 
@@ -663,23 +686,34 @@ services:
       - "mongo"
       - "nats"
       - "traefik"
-    volumes:
-      - api-venv:/app/.venv
-      - api-api-venv:/app/aihub_api/.venv
     environment:
       NATS_ENDPOINT: "nats://nats:4222"
       MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
       NUM_WORKERS: 1
       LOG_LEVEL: ${LOG_LEVEL}
+      AUTH_ENABLE_API_ACCESS: True
+      AUTH_OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
+      AUTH_IDENTITY_PROVIDER: ${AUTH_IDENTITY_PROVIDER}
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
+      SUPERUSER_ENABLED: true
+      SUPERUSER_NAME: ${SUPERUSER_NAME}
+      SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
+      SUPERUSER_OID: ${SUPERUSER_OID}
+      SUPERUSER_ROLE: "AIHubSuperuser"
+      SUPERUSER_TOKEN: ${SUPERUSER_TOKEN}
+      AIHUB_API_VERSION: "dev"
+      AIHUB_FRONTEND_ORIGIN: "${DOMAIN}"
+      AIHUB_CREATE_DEFAULT_ROLES: True
+      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
       AZURE_CLIENT_ID: ${OAUTH_CLIENT_ID}
       AZURE_TENANT_ID: ${OAUTH_TENANT_ID}
       AZURE_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
-      OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
-      AIHUB_API_VERSION: "dev"
-      AIHUB_FRONTEND_ORIGIN: "${DOMAIN}"
-      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000/v1"
-      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+      PHOENIX_ENDPOINT: "http://phoenix:6006"
+      MILVUS_URL: "http://milvus-standalone"
+      MILVUS_DIMENSION: "3072"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
     logging: *default-logging
@@ -697,13 +731,28 @@ services:
 
   # === Docling ===
   # <editor-fold desc="Docling Stack">
+  docling-model-permission:
+    container_name: docling-model-permission
+    image: alpine
+    command: [ "sh", "-c", "chown -R 1001:1001 /models" ]
+    restart: "no"
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
   docling:
-    image: ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.1.0
-    container_name: docling-serve
+    image: ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.3.1
+    container_name: docling
     <<: *restart-policy
+    depends_on:
+      docling-model-permission:
+        condition: service_completed_successfully
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
+      - ./configs/docling/init-models.sh:/docker-entrypoint.sh:ro
+    entrypoint: [ "/docker-entrypoint.sh" ]
     environment:
-      DOCLING_SERVE_ENABLE_UI: false
-      DOCLING_SERVE_MAX_SYNC_WAIT: 120
+      DOCLING_SERVE_ARTIFACTS_PATH: "/models"
+      DOCLING_SERVE_MAX_SYNC_WAIT: 600
+      DOCLING_MODELS: "layout tableformer code_formula easyocr"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
     logging: *default-logging
@@ -725,7 +774,7 @@ services:
       - "traefik.enable=true"
 
       # === ROUTERS (by priority) ===
-      
+
       # Static assets (priority 2000 - Static files)
       - "traefik.http.routers.web-static.rule=Host(`${DOMAIN}`) && PathPrefix(`/_nuxt`)"
       - "traefik.http.routers.web-static.priority=2000"
@@ -759,9 +808,7 @@ services:
 
       # === MIDDLEWARE ===
       - "traefik.http.middlewares.web-standard-middleware.chain.middlewares=security-headers@file"
-
   # </editor-fold>
-
 
   # === Common Agents ===
   # <editor-fold desc="Common Agents">
@@ -772,9 +819,24 @@ services:
     environment:
       NATS_ENDPOINT: "nats://nats:4222"
       REDIS_URL: "redis://redis:6379"
+      PHOENIX_ENDPOINT: "http://phoenix:6006"
+      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+  rag_agent:
+    image: ghcr.io/bbvch-ai/aihub-core/rag_agent:latest
+    container_name: rag-agent
+    restart: always
+    environment:
+      NATS_ENDPOINT: "nats://nats:4222"
+      REDIS_URL: "redis://redis:6379"
+      PHOENIX_ENDPOINT: "http://phoenix:6006"
+      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+      MILVUS_URL: "http://milvus-standalone"
+      MILVUS_DIMENSION: "3072"
   # </editor-fold>
 
-  # === Common Pipelines ===
   default_rag_pipeline:
     image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:latest
     container_name: default-rag-pipeline
@@ -784,19 +846,21 @@ services:
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
-      S3_ENDPOINT_URL: http://minio:9000
-      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
-      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      S3_REGION: "local"
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${AIHUB_FRONTEND_ORIGIN}
+      S3_STORAGE_ENDPOINT: http://minio:9000
+      S3_STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER}
+      S3_STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_STORAGE_URL_SIGNING_SECRET: ${MINIO_URL_SIGNING_SECRET}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      COSMOS_DOCSTORE_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
-      VECTOR_STORE_URI: http://milvus-standalone:19530
-      DOCLING_API_ENDPOINT: http://docling:5001/v1/convert/source
-  # </editor-fold>
-
-  # <editor-fold desc="Common Pipelines">
-  # </editor-fold>
+      MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
+      DOCLING_API_ENDPOINT: http://docling:5001/v1alpha/convert/source
+      DOCLING_API_TIMEOUT: 600
+      MILVUS_URL: "http://milvus-standalone"
+      MILVUS_DIMENSION: "3072"
+      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
   # === Traefik ===
   # <editor-fold desc="Traefik">
@@ -848,7 +912,113 @@ services:
     - "traefik.http.routers.traefik.middlewares=traefik-auth"
   # </editor-fold>
 
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    user: "0"
+    environment:
+      - SIGNOZ_INGESTION_CLOUD_ENDPOINT=${SIGNOZ_INGESTION_CLOUD_ENDPOINT}
+      - SIGNOZ_INGESTION_KEY=${SIGNOZ_INGESTION_KEY}
+    volumes:
+      - ./configs/otel/otel-collector-config.latest.yaml:/etc/otel-collector-config.yaml
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/log/docker-health:/var/log/docker-health
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "13133:13133"
+      - "55679:55679"
 
+  docker-health-events:
+    image: docker:26-cli
+    container_name: docker-health-events
+    restart: unless-stopped
+    command: >
+      sh -c '
+        set -euo pipefail
+        for i in $(seq 1 30); do
+          docker -H unix:///var/run/docker.sock version >/dev/null 2>&1 && break
+          echo "[health-events] waiting for dockerd..." >&2
+          sleep 1
+        done
+        mkdir -p /var/log/docker-health
+        touch /var/log/docker-health/events.ndjson
+        # Capture events since container start time (captures recent history)
+        docker -H unix:///var/run/docker.sock events --since 15m --filter event=health_status --format "{{json .}}" \
+          | tee -a /var/log/docker-health/events.ndjson
+      '
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/log/docker-health:/var/log/docker-health
+
+  healthcheck-poller:
+    image: alpine:latest
+    container_name: healthcheck-poller
+    hostname: ${HOSTNAME:-unknown-host}  # Add hostname
+    volumes:
+      - /var/log/docker-health:/var/log/docker-health
+    environment:
+      HOSTNAME: ${HOSTNAME:-unknown-host}  # Pass hostname as env var
+      ENDPOINTS: |
+        attu:3000/api/v1/healthy
+        nats:8222/healthz
+        phoenix:6006
+        dagster-webserver:3000/server_info
+      GRPC_ENDPOINTS: |
+        default-rag-pipeline:4000
+    command:
+      - /bin/sh
+      - -c
+      - |
+        apk add --no-cache wget curl
+  
+        # Download grpc_health_probe
+        wget -qO /usr/local/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.24/grpc_health_probe-linux-amd64
+        chmod +x /usr/local/bin/grpc_health_probe
+  
+        # Get hostname
+        HOST_NAME=$${HOSTNAME:-$$(hostname)}
+  
+        while true; do
+          # HTTP endpoints
+          echo "$$ENDPOINTS" | while IFS= read -r endpoint; do
+            [ -z "$$endpoint" ] && continue
+  
+            ts=$$(date +%s)
+            tsn=$$(date +%s%N)
+            name=$$(echo "$$endpoint" | cut -d: -f1)
+            url="http://$$endpoint"
+  
+            if wget -q --spider "$$url" 2>/dev/null; then
+              status="health_status: healthy"
+            else
+              status="health_status: unhealthy"
+            fi
+  
+            echo "{\"Type\":\"container\",\"Action\":\"$$status\",\"Actor\":{\"Attributes\":{\"name\":\"$$name\",\"host.name\":\"$$HOST_NAME\"}},\"id\":\"$$name\",\"from\":\"$$url\",\"time\":$$ts,\"timeNano\":$$tsn}" >> /var/log/docker-health/events.ndjson
+          done
+  
+          # gRPC endpoints
+          echo "$$GRPC_ENDPOINTS" | while IFS= read -r endpoint; do
+            [ -z "$$endpoint" ] && continue
+  
+            ts=$$(date +%s)
+            tsn=$$(date +%s%N)
+            name=$$(echo "$$endpoint" | cut -d: -f1)
+  
+            if /usr/local/bin/grpc_health_probe -addr="$$endpoint" 2>/dev/null; then
+              status="health_status: healthy"
+            else
+              status="health_status: unhealthy"
+            fi
+  
+            echo "{\"Type\":\"container\",\"Action\":\"$$status\",\"Actor\":{\"Attributes\":{\"name\":\"$$name\",\"host.name\":\"$$HOST_NAME\"}},\"id\":\"$$name\",\"from\":\"grpc://$$endpoint\",\"time\":$$ts,\"timeNano\":$$tsn}" >> /var/log/docker-health/events.ndjson
+          done
+          
+          sleep 60
+        done
+    restart: unless-stopped
 volumes:
   api-venv:
   api-api-venv:

@@ -1,0 +1,155 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  docker_stats:
+    endpoint: unix:///var/run/docker.sock
+    metrics: # https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/dockerstatsreceiver/documentation.md
+      container.cpu.utilization:
+        enabled: true
+      container.cpu.usage.total:
+        enabled: true
+      container.cpu.logical.count:
+        enabled: true
+      container.memory.percent:
+        enabled: true
+      container.memory.usage.limit:
+        enabled: true
+      container.memory.usage.total:
+        enabled: true
+      container.network.io.usage.rx_bytes:
+        enabled: true
+      container.network.io.usage.tx_bytes:
+        enabled: true
+      container.network.io.usage.rx_dropped:
+        enabled: true
+      container.network.io.usage.tx_dropped:
+        enabled: true
+      container.blockio.io_service_bytes_recursive:
+        enabled: true
+      container.restarts:
+        enabled: true
+
+  # Structured health_status events from sidecar
+  filelog/docker_health_events:
+    include: [ /var/log/docker-health/events.ndjson ]
+    start_at: end
+    operators:
+      # 1) Parse the JSON into BODY as a proper object
+      - type: json_parser
+        parse_from: body
+        parse_to: body
+
+      # 2) Add convenient attributes for OTEL filtering (keeps body intact)
+      - type: copy
+        from: body.Actor.Attributes.name
+        to: attributes.container_name
+
+      - type: copy
+        from: body.id
+        to: attributes.container_id
+
+      - type: copy
+        from: body.Action
+        to: attributes.health_status
+
+      - type: copy
+        from: body.Type
+        to: attributes.event_type
+
+      # 3) Tag for easy filtering
+      - type: add
+        field: attributes.log_type
+        value: docker_health_event
+
+  filelog/service_health_events:
+    include: [ /var/log/docker-health/service-events.ndjson ]
+    start_at: end
+    operators:
+      - type: json_parser
+        parse_from: body
+        parse_to: body
+      - type: add
+        field: attributes.log_type
+        value: service_health_check
+
+processors:
+  batch: {}
+  attributes/docker_common:
+    actions:
+      - key: telemetry.source
+        value: docker
+        action: upsert
+
+  resourcedetection/docker:
+    detectors: [env, system, docker]
+    timeout: 2s
+    override: false
+
+  attributes/common:
+    actions:
+      - key: deployment.environment
+        value: prod
+        action: upsert
+      - key: telemetry.source
+        value: docker
+        action: upsert
+
+  resource/docker:
+    attributes:
+      - key: service.name
+        from_attribute: container.name
+        action: upsert
+      - key: service.version
+        from_attribute: container.image.tag
+        action: upsert
+
+
+exporters:
+  debug:
+    verbosity: detailed
+    sampling_initial: 10
+    sampling_thereafter: 10
+
+  otlp/signoz:
+    endpoint: "${SIGNOZ_INGESTION_CLOUD_ENDPOINT}"
+    headers:
+      signoz-ingestion-key: "${SIGNOZ_INGESTION_KEY}"
+    tls:
+      insecure: false
+
+extensions:
+  health_check:
+  pprof:
+  zpages:
+
+service:
+  extensions: [health_check, pprof, zpages]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/signoz]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/signoz]
+    metrics/docker:
+      receivers: [ docker_stats ]
+      processors: [ resourcedetection/docker, resource/docker, batch ]
+      exporters: [ otlp/signoz ]
+    logs/docker:
+      receivers: [ filelog/docker_health_events ]
+      processors: [ resourcedetection/docker, attributes/docker_common, batch ]
+      exporters: [otlp/signoz]
+    logs/service_health:
+      receivers: [ filelog/service_health_events ]
+      processors: [ resourcedetection/docker, attributes/docker_common, batch ]
+      exporters: [ debug, otlp/signoz ]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/signoz]
