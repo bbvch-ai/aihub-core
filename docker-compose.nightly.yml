@@ -209,8 +209,8 @@ services:
     entrypoint: [ "/bin/sh", "/usr/local/bin/s3-entrypoint.sh" ]
     environment:
       # S3 Authentication
-      SEAWEEDFS_S3_USER: ${S3_ACCESS_KEY_ID}
-      SEAWEEDFS_S3_PASSWORD: ${S3_SECRET_ACCESS_KEY}
+      SEAWEEDFS_S3_USER: ${S3_STORAGE_ACCESS_KEY}
+      SEAWEEDFS_S3_PASSWORD: ${S3_STORAGE_ACCESS_KEY}
       # S3 Service Configuration
       S3_PORT: "9000"
       S3_FILER: "seaweedfs-filer:8888"
@@ -236,8 +236,8 @@ services:
       seaweedfs-s3:
         condition: service_healthy
     environment:
-      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+      AWS_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
     volumes:
       - ./configs/seaweedfs/init-buckets.sh:/usr/local/bin/init-buckets.sh:ro
     entrypoint: [ "/bin/sh", "/usr/local/bin/init-buckets.sh" ]
@@ -273,8 +273,8 @@ services:
     environment:
       ETCD_ENDPOINTS: etcd:2379
       MINIO_ADDRESS: seaweedfs-s3:9000
-      MINIO_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
-      MINIO_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+      MINIO_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
+      MINIO_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/milvus-data:/var/lib/milvus
       - ./configs/milvus/milvus.nightly.yaml:/milvus/configs/milvus.yaml
@@ -516,8 +516,8 @@ services:
 
       # Data storage
       STORAGE_PROVIDER: "s3"
-      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
-      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+      S3_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
+      S3_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_REGION_NAME: "us-east-1"
       S3_BUCKET_NAME: "open-webui"
       S3_ENDPOINT_URL: 'http://seaweedfs-s3:9000'
@@ -996,9 +996,9 @@ services:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
       S3_STORAGE_ENDPOINT: http://minio:9000
-      S3_STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER}
-      S3_STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      S3_STORAGE_URL_SIGNING_SECRET: ${MINIO_URL_SIGNING_SECRET}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017"
