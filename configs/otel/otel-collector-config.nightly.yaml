@@ -90,7 +90,7 @@ processors:
     override: false
 
   resourcedetection/logs:
-    detectors: [ system, docker, env ]  # Keep all three
+    detectors: [ system, docker, env ]
     timeout: 2s
     override: false
 
