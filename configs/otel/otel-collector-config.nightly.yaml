@@ -85,7 +85,12 @@ processors:
         action: upsert
 
   resourcedetection/docker:
-    detectors: [env, system, docker]
+    detectors: [env, docker]
+    timeout: 2s
+    override: false
+
+  resourcedetection/logs:
+    detectors: [ system, docker, env ]  # Keep all three
     timeout: 2s
     override: false
 
@@ -143,11 +148,11 @@ service:
       exporters: [ otlp/signoz ]
     logs/docker:
       receivers: [ filelog/docker_health_events ]
-      processors: [ resourcedetection/docker, attributes/docker_common, batch ]
+      processors: [ resourcedetection/logs, attributes/docker_common, batch ]
       exporters: [otlp/signoz]
     logs/service_health:
       receivers: [ filelog/service_health_events ]
-      processors: [ resourcedetection/docker, attributes/docker_common, batch ]
+      processors: [ resourcedetection/logs, attributes/docker_common, batch ]
       exporters: [ debug, otlp/signoz ]
     logs:
       receivers: [otlp]
