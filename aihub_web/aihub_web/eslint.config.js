@@ -9,16 +9,9 @@ export default withNuxt(
     '.nuxt/**',
     '.output/**',
     'node_modules/**',
-    'dist/**',
-    'coverage/**',
-    'public/**',
-    '.vercel/**',
-    '.vite/**',
+    '.app/**',
     'sdk/**/*',
   ]),
-
-  { files: ['**/*.{js,jsx,ts,tsx,vue}'] },
-
   {
     rules: {
       'import/order': ['error', {
@@ -38,7 +31,7 @@ export default withNuxt(
       'vue/no-multiple-template-root': 'off',
     },
     settings: {
-      'tailwindcss': {
+      tailwindcss: {
         whitelist: [
           'pi',
           'pi-search',
@@ -72,11 +65,6 @@ export default withNuxt(
           'pi-plus',
         ],
       },
-      'import/resolver': {
-        node: { extensions: ['.js', '.jsx', '.ts', '.tsx', '.vue'] },
-        typescript: { project: ['./tsconfig.json'] },
-      },
-      'import/ignore': ['node_modules', '\\.nuxt', '\\.output'],
     },
   },
   tailwindPlugin.configs['flat/recommended'],
