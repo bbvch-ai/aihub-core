@@ -977,10 +977,7 @@ services:
         # Download grpc_health_probe
         wget -qO /usr/local/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.24/grpc_health_probe-linux-amd64
         chmod +x /usr/local/bin/grpc_health_probe
-  
-        # Get hostname
-        HOST_NAME=$${HOSTNAME:-$$(hostname)}
-  
+    
         while true; do
           # HTTP endpoints
           echo "$$ENDPOINTS" | while IFS= read -r endpoint; do
