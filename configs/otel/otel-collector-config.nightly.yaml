@@ -60,6 +60,10 @@ receivers:
         from: body.Type
         to: attributes.event_type
 
+      - type: copy
+        from: body.Actor.Attributes["host.name"]
+        to: resource["host.name"]
+
       # 3) Tag for easy filtering
       - type: add
         field: attributes.log_type
