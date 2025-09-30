@@ -1,21 +1,104 @@
 services:
-  minio:
-    image: ghcr.io/bbvch-ai/aihub-core/minio:release.2024-05-28T17-19-04Z
-    container_name: minio
+  seaweedfs-master:
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    container_name: seaweedfs-master
     restart: always
-    environment:
-      MINIO_ROOT_USER: ${S3_SECRET_ACCESS_KEY}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY}
-      MINIO_DEFAULT_BUCKETS: "open-webui,milvus"
+    command: >
+      master
+      -ip=seaweedfs-master
+      -ip.bind=0.0.0.0
+      -defaultReplication=000
+      -volumeSizeLimitMB=1024
+      -volumePreallocate=false
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master:/data
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9333/dir/status" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+  seaweedfs-volume:
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    container_name: seaweedfs-volume
+    restart: always
+    command: >
+      volume
+      -mserver="seaweedfs-master:9333"
+      -ip.bind=0.0.0.0
+      -port=8080
+      -max=100
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-volume:/data
+    depends_on:
+      seaweedfs-master:
+        condition: service_healthy
+
+  seaweedfs-filer:
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    container_name: seaweedfs-filer
+    restart: always
+    command: >
+      filer
+      -master="seaweedfs-master:9333"
+      -ip.bind=0.0.0.0
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-filer:/data
+    depends_on:
+      seaweedfs-master:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  seaweedfs-s3:
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    container_name: seaweedfs-s3
+    restart: always
     ports:
-      - "9001:9001"
       - "9000:9000"
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/minio-data:/minio-data
-      - ./configs/minio/minio-entrypoint.sh:/usr/local/bin/minio-entrypoint.sh:ro
-    entrypoint: [ "/bin/sh", "/usr/local/bin/minio-entrypoint.sh" ]
+      - ./configs/seaweedfs/s3-entrypoint.sh:/usr/local/bin/s3-entrypoint.sh:ro
+    entrypoint: [ "/bin/sh", "/usr/local/bin/s3-entrypoint.sh" ]
+    environment:
+      SEAWEEDFS_S3_USER: ${S3_STORAGE_ACCESS_KEY}
+      SEAWEEDFS_S3_PASSWORD: ${S3_STORAGE_SECRET_KEY}
+      S3_PORT: "9000"
+      S3_FILER: "seaweedfs-filer:8888"
+      S3_BIND_IP: "0.0.0.0"
+      S3_ALLOW_EMPTY_FOLDER: true
+      S3_DOMAIN_NAME: ${S3_DOMAIN_NAME:-}
+      S3_DATACENTER: ${S3_DATACENTER:-}
+    depends_on:
+      seaweedfs-filer:
+        condition: service_healthy
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/status" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  seaweedfs-init:
+    image: ghcr.io/bbvch-ai/aihub-core/aws-cli-alpine:3.22.1
+    container_name: seaweedfs-init
+    depends_on:
+      seaweedfs-s3:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
+      AWS_DEFAULT_REGION: us-east-1
+      S3_ENDPOINT: "http://seaweedfs-s3:9000"
+      DEFAULT_BUCKETS: "open-webui milvus"
+    volumes:
+      - ./configs/seaweedfs/init-buckets.sh:/usr/local/bin/init-buckets.sh:ro
+    entrypoint: [ "/bin/sh", "/usr/local/bin/init-buckets.sh" ]
+    restart: "no"
 
   etcd:
     image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.16

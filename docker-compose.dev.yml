@@ -46,8 +46,8 @@ services:
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
     container_name: seaweedfs-filer
     restart: always
-    expose:
-      - "8888"   # Filer HTTP port
+    ports:
+      - "8889:8888"   # Filer HTTP port
       - "18888" # Filer gRPC port
     command: >
       filer 

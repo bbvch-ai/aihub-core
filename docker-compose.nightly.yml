@@ -65,21 +65,21 @@ x-restart-policy: &restart-policy
 
 
 services:
-  # === SeaweedFS Stack===
+  # === SeaweedFS Stack ===
   # <editor-fold desc="SeaweedFS Stack">
-  seaweedfs-master-1:
+  seaweedfs-master:
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
-    container_name: seaweedfs-master-1
+    container_name: seaweedfs-master
     <<: *restart-policy
     command: >
       master
-      -ip=seaweedfs-master-1
-      -peers=seaweedfs-master-1:9333,seaweedfs-master-2:9333,seaweedfs-master-3:9333
-      -defaultReplication=001
-      -volumeSizeLimitMB=512
+      -ip=seaweedfs-master
+      -ip.bind=0.0.0.0
+      -defaultReplication=000
+      -volumeSizeLimitMB=1024
       -volumePreallocate=false
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master-1:/data$
+      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master:/data
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9333/dir/status" ]
       interval: 30s
@@ -88,80 +88,21 @@ services:
       start_period: 10s
     logging: *default-logging
 
-  seaweedfs-master-2:
+  seaweedfs-volume:
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
-    container_name: seaweedfs-master-2
-    <<: *restart-policy
-    command: >
-      master
-      -ip=seaweedfs-master-2
-      -peers=seaweedfs-master-1:9333,seaweedfs-master-2:9333,seaweedfs-master-3:9333
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master-2:/data
-    healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9333/dir/status" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 10s
-    logging: *default-logging
-
-  seaweedfs-master-3:
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
-    container_name: seaweedfs-master-3
-    <<: *restart-policy
-    command: >
-      master
-      -ip=seaweedfs-master-3
-      -peers=seaweedfs-master-1:9333,seaweedfs-master-2:9333,seaweedfs-master-3:9333
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master-3:/data
-    healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9333/dir/status" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 10s
-    logging: *default-logging
-
-  seaweedfs-volume-1:
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
-    container_name: seaweedfs-volume-1
+    container_name: seaweedfs-volume
     <<: *restart-policy
     command: >
       volume
-      -mserver="seaweedfs-master-1:9333,seaweedfs-master-2:9333,seaweedfs-master-3:9333"
+      -mserver="seaweedfs-master:9333"
       -ip.bind=0.0.0.0
       -port=8080
-      -max=50 
-      -dataCenter=dc1
-      -rack=rack1
+      -max=100
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-volume-1:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-volume:/data
     depends_on:
-      - seaweedfs-master-1
-      - seaweedfs-master-2
-      - seaweedfs-master-3
-    logging: *default-logging
-
-  seaweedfs-volume-2:
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
-    container_name: seaweedfs-volume-2
-    <<: *restart-policy
-    command: >
-      volume
-      -mserver="seaweedfs-master-1:9333,seaweedfs-master-2:9333,seaweedfs-master-3:9333"
-      -ip.bind=0.0.0.0
-      -port=8081
-      -max=50 
-      -dataCenter=dc1
-      -rack=rack2 # Placed in a different rack for replication
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-volume-2:/data
-    depends_on:
-      - seaweedfs-master-1
-      - seaweedfs-master-2
-      - seaweedfs-master-3
+      seaweedfs-master:
+        condition: service_healthy
     logging: *default-logging
 
   seaweedfs-filer:
@@ -170,21 +111,13 @@ services:
     <<: *restart-policy
     command: >
       filer
-      -master="seaweedfs-master-1:9333,seaweedfs-master-2:9333,seaweedfs-master-3:9333"
+      -master="seaweedfs-master:9333"
       -ip.bind=0.0.0.0
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-filer:/data
     depends_on:
-      seaweedfs-master-1:
+      seaweedfs-master:
         condition: service_healthy
-      seaweedfs-master-2:
-        condition: service_healthy
-      seaweedfs-master-3:
-        condition: service_healthy
-      seaweedfs-volume-1:
-        condition: service_started
-      seaweedfs-volume-2:
-        condition: service_started
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/" ]
       interval: 30s
@@ -203,31 +136,6 @@ services:
   seaweedfs-s3:
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
     container_name: seaweedfs-s3
-    <<: *restart-policy
-    volumes:
-      - ./configs/seaweedfs/s3-entrypoint.sh:/usr/local/bin/s3-entrypoint.sh:ro
-    entrypoint: [ "/bin/sh", "/usr/local/bin/s3-entrypoint.sh" ]
-    environment:
-      # S3 Authentication
-      SEAWEEDFS_S3_USER: ${S3_STORAGE_ACCESS_KEY}
-      SEAWEEDFS_S3_PASSWORD: ${S3_STORAGE_ACCESS_KEY}
-      # S3 Service Configuration
-      S3_PORT: "9000"
-      S3_FILER: "seaweedfs-filer:8888"
-      S3_BIND_IP: "0.0.0.0"
-      S3_ALLOW_EMPTY_FOLDER: true
-      S3_DOMAIN_NAME: ${S3_DOMAIN_NAME:-}
-      S3_DATACENTER: ${S3_DATACENTER:-}
-    depends_on:
-      seaweedfs-filer:
-        condition: service_healthy
-    healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/status" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 20s
-    logging: *default-logging
 
   seaweedfs-init:
     image: ghcr.io/bbvch-ai/aihub-core/aws-cli-alpine:3.22.1
