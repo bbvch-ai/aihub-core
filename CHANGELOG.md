@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.245.5] - 2025-09-30 - Infrastructure and Developer Experience Enhancements
+
+### Added
+
+- ⚙️ **Introduced `set-latest` GitHub Action:** A new automated workflow for managing container image tags, ensuring the
+  `latest` tag is correctly applied to published images, improving deployment consistency.
+
+### Refactor
+
+- 🧹 **Refined Model Data Fetching:** Updated the web application's SDK to use clearer `getModels` API calls and
+  `ModelTypeGroupDtoReadable` types, enhancing code readability and maintainability.
+- ⚡️ **Optimized ESLint Configuration:** Streamlined the ESLint setup by expanding global ignore rules to skip
+  unnecessary files and simplifying plugin imports, leading to faster linting and a cleaner development environment.
+
+---
+
 ## [v0.245.4] - 2025-09-30 - Internal Codebase Refinements
 
 ### Refactor
