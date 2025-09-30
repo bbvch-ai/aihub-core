@@ -955,11 +955,10 @@ services:
   healthcheck-poller:
     image: alpine:latest
     container_name: healthcheck-poller
-    hostname: ${HOSTNAME:-unknown-host}  # Add hostname
     volumes:
       - /var/log/docker-health:/var/log/docker-health
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      HOSTNAME: ${HOSTNAME:-unknown-host}  # Pass hostname as env var
       ENDPOINTS: |
         attu:3000/api/v1/healthy
         nats:8222/healthz
@@ -971,7 +970,9 @@ services:
       - /bin/sh
       - -c
       - |
-        apk add --no-cache wget curl
+        apk add --no-cache wget curl jq docker-cli
+              
+        HOST_NAME=$(docker info --format '{{.Name}}')
   
         # Download grpc_health_probe
         wget -qO /usr/local/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.24/grpc_health_probe-linux-amd64
