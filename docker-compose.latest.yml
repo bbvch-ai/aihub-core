@@ -851,6 +851,10 @@ services:
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
       MILVUS_URL: "http://milvus-standalone"
       MILVUS_DIMENSION: "3072"
+      S3_STORAGE_ENDPOINT: "https://datalake-api.${DOMAIN}"
+      S3_STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER}
+      S3_STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_STORAGE_URL_SIGNING_SECRET: ${MINIO_URL_SIGNING_SECRET}
   # </editor-fold>
 
   default_rag_pipeline:
