@@ -295,7 +295,7 @@ services:
     logging: *default-logging
   # </editor-fold>
 
-  # === FerretDB Stack===
+  # === FerretDB Stack ===
   # <editor-fold desc="FerretDB Stack">
   postgres-ferretdb:
     image: ghcr.io/bbvch-ai/aihub-core/postgres-documentdb:17.0.106.0-ferretdb-2.5.0
