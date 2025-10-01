@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.245.6] - 2025-10-01 - Containerization of Aihub Bot for Enhanced Deployment
+
+### Added
+
+- ✨ **Introduced Dockerfile for Aihub Bot:** Added a comprehensive Docker configuration to containerize the Aihub Bot,
+  enabling consistent and portable deployments across various environments.
+- 🚀 **Streamlined Build and Runtime Environments:** Implemented a multi-stage Docker build process to optimize image
+  size and efficiency, ensuring a lean runtime environment.
+- 🔒 **Enhanced Operational Security and Dependency Management:** Configured a non-root user for improved security and
+  integrated Poetry for robust Python dependency management within the container.
+
+---
+
 ## [v0.245.5] - 2025-09-30 - Infrastructure and Developer Experience Enhancements
 
 ### Added
