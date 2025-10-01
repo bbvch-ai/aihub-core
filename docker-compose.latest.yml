@@ -65,7 +65,7 @@ x-restart-policy: &restart-policy
 
 
 services:
-  # === SeaweedFS Stack  ===
+  # === SeaweedFS Stack ===
   # <editor-fold desc="SeaweedFS Stack">
   seaweedfs-master:
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
