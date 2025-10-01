@@ -84,15 +84,20 @@ services:
     logging: *default-logging
     labels:
       - "traefik.enable=true"
+
+      # Console UI (port 9001)
       - "traefik.http.routers.minio.rule=Host(`datalake.${DOMAIN}`)"
       - "traefik.http.routers.minio.entrypoints=websecure"
       - "traefik.http.routers.minio.tls.certresolver=letsencrypt"
       - "traefik.http.routers.minio.middlewares=security-headers@file"
+      - "traefik.http.routers.minio.service=minio"  # ← EXPLICITLY LINK
       - "traefik.http.services.minio.loadbalancer.server.port=9001"
 
+      # S3 API (port 9000)
       - "traefik.http.routers.minio-api.rule=Host(`datalake-api.${DOMAIN}`)"
       - "traefik.http.routers.minio-api.entrypoints=websecure"
       - "traefik.http.routers.minio-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.minio-api.service=minio-api"  # ← EXPLICITLY LINK
       - "traefik.http.services.minio-api.loadbalancer.server.port=9000"
 
   # </editor-fold>
