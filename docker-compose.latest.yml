@@ -612,6 +612,7 @@ services:
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: http://dagster-webserver:3000
       OAUTH2_PROXY_ALLOWED_GROUPS: "DagsterAdmin"
+      OAUTH2_PROXY_SCOPE: "openid profile email Group.Read.All"
       OAUTH2_PROXY_OIDC_GROUPS_CLAIM: "roles"
       OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH2_PROXY_PROVIDER: "oidc"
