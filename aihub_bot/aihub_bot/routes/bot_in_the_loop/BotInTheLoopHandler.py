@@ -1,11 +1,12 @@
 from collections.abc import Callable
 from typing import Annotated
 
+from microsoft_agents.activity import ConversationReference, ConversationAccount, ChannelAccount
+
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
 from aihub_lib.nats.topics import AgentInstanceTopic
-from botbuilder.core import TurnContext
-from botbuilder.schema import ChannelAccount, ConversationAccount, ConversationReference
+from microsoft_agents.hosting.core import TurnContext
 from cachetools import TTLCache
 from fastapi import Request
 from pydantic import BaseModel, Field
