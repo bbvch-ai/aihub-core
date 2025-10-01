@@ -90,6 +90,11 @@ services:
       - "traefik.http.routers.minio.middlewares=security-headers@file"
       - "traefik.http.services.minio.loadbalancer.server.port=9001"
 
+      - "traefik.http.routers.minio-api.rule=Host(`datalake-api.${DOMAIN}`)"
+      - "traefik.http.routers.minio-api.entrypoints=websecure"
+      - "traefik.http.routers.minio-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.minio-api.loadbalancer.server.port=9000"
+
   # </editor-fold>
 
   # === Milvus Stack ===
@@ -714,7 +719,7 @@ services:
       PHOENIX_ENDPOINT: "http://phoenix:6006"
       MILVUS_URL: "http://milvus-standalone"
       MILVUS_DIMENSION: "3072"
-      S3_STORAGE_ENDPOINT: "https://datalake.${DOMAIN}"
+      S3_STORAGE_ENDPOINT: "https://datalake-api.${DOMAIN}"
       S3_STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER}
       S3_STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       S3_STORAGE_URL_SIGNING_SECRET: ${MINIO_URL_SIGNING_SECRET}
