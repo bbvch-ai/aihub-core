@@ -231,8 +231,12 @@ class S3DataLakeClient(AbstractDataLakeClient):
         """Ensure bucket exists and configure CORS for web access."""
         try:
             self._client.head_bucket(Bucket=self.container_name)
-        except ClientError:
-            self._client.create_bucket(Bucket=self.container_name)
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code")
+            if error_code in ("404", "NoSuchBucket"):
+                self._client.create_bucket(Bucket=self.container_name)
+            else:
+                raise
 
         cors_config = {
             "CORSRules": [
