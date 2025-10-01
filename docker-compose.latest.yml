@@ -753,6 +753,7 @@ services:
     restart: "no"
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
+
   docling:
     image: ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.3.1
     container_name: docling
@@ -870,7 +871,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
-      DOCLING_API_ENDPOINT: http://docling:5001/v1alpha/convert/source
+      DOCLING_API_ENDPOINT: http://docling:5001
       DOCLING_API_TIMEOUT: 600
       MILVUS_URL: "http://milvus-standalone"
       MILVUS_DIMENSION: "3072"
