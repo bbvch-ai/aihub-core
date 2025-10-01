@@ -65,8 +65,8 @@ guardrails:
       presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
       output_parse_pii: true
       pii_entities_config:
-        PERSON: { action: MASK }
-        EMAIL_ADDRESS: { action: MASK }
+        PERSON: "MASK"
+        EMAIL_ADDRESS: "MASK"
 
   - guardrail_name: "presidio-block-guard"
     litellm_params:
@@ -78,7 +78,7 @@ guardrails:
       presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
       output_parse_pii: true
       pii_entities_config:
-        CREDIT_CARD: { action: BLOCK }
+        CREDIT_CARD: "BLOCK"
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
