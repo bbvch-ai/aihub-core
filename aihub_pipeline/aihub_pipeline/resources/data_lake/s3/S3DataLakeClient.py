@@ -31,6 +31,7 @@ class S3DataLakeClient(AbstractDataLakeClient):
             raise ValueError("Container name cannot be empty")
         super().__init__(container_name)
         self._client = s3_client
+        self._ensure_bucket_with_cors()
 
     def get_all_files(
         self,
@@ -225,6 +226,28 @@ class S3DataLakeClient(AbstractDataLakeClient):
             for i in range(0, len(objects_to_delete), 1000):
                 batch = objects_to_delete[i : i + 1000]
                 self._client.delete_objects(Bucket=self.container_name, Delete={"Objects": batch})
+
+    def _ensure_bucket_with_cors(self) -> None:
+        """Ensure bucket exists and configure CORS for web access."""
+        try:
+            self._client.head_bucket(Bucket=self.container_name)
+        except ClientError:
+            self._client.create_bucket(Bucket=self.container_name)
+
+        cors_config = {
+            "CORSRules": [
+                {
+                    "AllowedOrigins": ["*"],
+                    "AllowedHeaders": ["Content-Type", "x-amz-date", "authorization", "x-amz-security-token"],
+                    "AllowedMethods": ["PUT", "POST", "DELETE", "GET", "HEAD"],
+                    "MaxAgeSeconds": 3000,
+                    "ExposeHeaders": ["ETag"],
+                }
+            ]
+        }
+
+        self._client.put_bucket_cors(Bucket=self.container_name, CORSConfiguration=cors_config)
+        logger.info(f"CORS configured for bucket: {self.container_name}")
 
     @property
     def raw_client(self) -> boto3.client:
