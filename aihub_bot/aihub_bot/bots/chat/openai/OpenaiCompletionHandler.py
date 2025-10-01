@@ -1,13 +1,15 @@
 import asyncio
 import logging
 import re
+
+import openai
 import unicodedata
 from asyncio import Event, Task
 from collections.abc import AsyncGenerator
 from typing import override
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from botbuilder.core import TurnContext
+from microsoft_agents.hosting.core import TurnContext
 from openai import APIStatusError, AsyncAzureOpenAI, AsyncOpenAI, AsyncStream
 from openai.types.chat import (
     ChatCompletion,
@@ -37,7 +39,7 @@ class OpenaiCompletionHandler(CompletionHandler):
         turn_context: TurnContext,
         path: str,
         model_name: str,
-        client: AsyncOpenAI | AsyncAzureOpenAI,
+        client: openai.AsyncClient,
         **kwargs,
     ) -> str:
         chat_completion: ChatCompletion = await OpenaiCompletionHandler.chat_completion(
@@ -54,7 +56,7 @@ class OpenaiCompletionHandler(CompletionHandler):
         turn_context: TurnContext,
         path: str,
         model_name: str,
-        client: AsyncOpenAI | AsyncAzureOpenAI,
+        client: openai.AsyncClient,
         **kwargs,
     ) -> AsyncGenerator[str]:
         """Get a streaming OpenAI completion."""
@@ -83,7 +85,7 @@ class OpenaiCompletionHandler(CompletionHandler):
         turn_context: TurnContext,
         path: str,
         model_name: str,
-        client: AsyncOpenAI | AsyncAzureOpenAI,
+        client: openai.AsyncClient,
         stream: bool,
     ) -> ChatCompletion | AsyncStream[ChatCompletionChunk]:
         """
