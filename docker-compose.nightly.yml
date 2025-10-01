@@ -125,17 +125,43 @@ services:
       retries: 3
       start_period: 15s
     logging: *default-logging
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.seaweedfs-filer.rule=Host(`datalake.${DOMAIN}`)"
-      - "traefik.http.routers.seaweedfs-filer.entrypoints=websecure"
-      - "traefik.http.routers.seaweedfs-filer.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.seaweedfs-filer.middlewares=security-headers@file"
-      - "traefik.http.services.seaweedfs-filer.loadbalancer.server.port=8888"
 
   seaweedfs-s3:
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
     container_name: seaweedfs-s3
+    <<: *restart-policy
+    volumes:
+      - ./configs/seaweedfs/s3-entrypoint.sh:/usr/local/bin/s3-entrypoint.sh:ro
+    entrypoint: [ "/bin/sh", "/usr/local/bin/s3-entrypoint.sh" ]
+    environment:
+      # S3 Authentication
+      SEAWEEDFS_S3_USER: ${S3_STORAGE_ACCESS_KEY}
+      SEAWEEDFS_S3_PASSWORD: ${S3_STORAGE_SECRET_KEY}
+      # S3 Service Configuration
+      S3_PORT: "9000"
+      S3_FILER: "seaweedfs-filer:8888"
+      S3_BIND_IP: "0.0.0.0"
+      S3_ALLOW_EMPTY_FOLDER: true
+      S3_DOMAIN_NAME: ${S3_DOMAIN_NAME:-}
+      S3_DATACENTER: ${S3_DATACENTER:-}
+    depends_on:
+      seaweedfs-filer:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/status" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    logging: *default-logging
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seaweedfs-s3.rule=Host(`datalake.${DOMAIN}`)"
+      - "traefik.http.routers.seaweedfs-s3.priority=500"
+      - "traefik.http.routers.seaweedfs-s3.entrypoints=websecure"
+      - "traefik.http.routers.seaweedfs-s3.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.seaweedfs-s3.middlewares=security-headers@file"
+      - "traefik.http.services.seaweedfs-s3.loadbalancer.server.port=9000"
 
   seaweedfs-init:
     image: ghcr.io/bbvch-ai/aihub-core/aws-cli-alpine:3.22.1
