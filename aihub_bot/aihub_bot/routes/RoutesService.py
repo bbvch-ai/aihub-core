@@ -45,9 +45,19 @@ class RoutesService(ChatService):
         """
         credentials: Credentials = RoutesService.get_credentials(path)
         auth: AgentAuthConfiguration = credentials.to_agent_auth_configuration()
-        connections_configurations: dict[str, AgentAuthConfiguration] = {"SERVICE_CONNECTION": auth}
+        connections_configurations: dict = {
+            "CONNECTIONS": {
+                "SERVICE_CONNECTION": {
+                    "SETTINGS": {
+                        "CLIENTID": auth.CLIENT_ID,
+                        "CLIENTSECRET": auth.CLIENT_SECRET,
+                        "TENANTID": auth.TENANT_ID,
+                    }
+                }
+            }
+        }
         return CloudAdapter(
-            connection_manager=MsalConnectionManager(connections_configurations=connections_configurations)
+            connection_manager=MsalConnectionManager(**connections_configurations),
         )
 
     @staticmethod
