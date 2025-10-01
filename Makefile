@@ -94,3 +94,7 @@ local-cert:
 		"localhost" "*.localhost" \
 		"127.0.0.1.nip.io" "*.127.0.0.1.nip.io"
 	@echo "✅ Certificates written to configs/traefik/certs/dev-cert.pem and configs/certs/dev-key.pem"
+
+up-dev:
+	@echo "Starting development environment with Docker Compose..."
+	docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build
