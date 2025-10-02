@@ -61,7 +61,7 @@ class BotInTheLoopHandler:
             return self.slack_ids_cache[path]
 
         # Get the Slack token from the path entity
-        slack_token = PathEntity.get_slack_token_by_path(path)
+        slack_token = await PathEntity.get_slack_token_by_path(path)
         if not slack_token:
             raise ValueError(f"No Slack token found for path {path}")
 
