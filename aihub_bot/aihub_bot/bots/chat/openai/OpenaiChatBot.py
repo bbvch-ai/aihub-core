@@ -1,4 +1,4 @@
-import openai
+from openai import AsyncAzureOpenAI, AsyncOpenAI
 
 from aihub_bot.bots.chat.BaseChatBot import BaseChatBot
 from aihub_bot.bots.chat.openai.OpenaiCompletionHandler import OpenaiCompletionHandler
@@ -8,7 +8,7 @@ class OpenaiChatBot(BaseChatBot):
     def __init__(
         self,
         model_name: str,
-        client: openai.AsyncClient,
+        client: AsyncOpenAI | AsyncAzureOpenAI,
         path: str,
         typing_timeout_seconds: int = 60,
     ):

@@ -4,8 +4,9 @@ from typing import Any, override
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.utils import str_to_object_id
-from microsoft_agents.hosting.core import ActivityHandler, TurnContext
-from microsoft_agents.activity import Activity, ActivityTypes, Channels
+from botbuilder.core import ActivityHandler, TurnContext
+from botbuilder.schema import Activity, ActivityTypes
+from botframework.connector import Channels
 
 from aihub_bot.bots.chat.CompletionHandler import CompletionHandler
 from aihub_bot.persistence.entities.ConversationEntity import ConversationTracker

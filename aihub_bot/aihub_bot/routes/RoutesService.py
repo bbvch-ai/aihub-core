@@ -1,12 +1,7 @@
 import logging
 
-from microsoft_agents.hosting.core import AgentAuthConfiguration
-
 from aihub_lib.routes.chat.ChatService import ChatService
-from microsoft_agents.hosting.aiohttp import CloudAdapter
-from microsoft_agents.authentication.msal import MsalConnectionManager
-from microsoft_agents.activity import load_configuration_from_env
-
+from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
 from fastapi import Request
 
 from aihub_bot.persistence.entities.PathEntity import Credentials, PathEntity
@@ -44,11 +39,7 @@ class RoutesService(ChatService):
         - The credential is needed to verify that requests are coming from the correct bot service.
         """
         credentials: Credentials = RoutesService.get_credentials(path)
-        auth: AgentAuthConfiguration = credentials.to_agent_auth_configuration()
-        connections_configurations: dict[str, AgentAuthConfiguration] = {"SERVICE_CONNECTION": auth}
-        return CloudAdapter(
-            connection_manager=MsalConnectionManager(connections_configurations=connections_configurations)
-        )
+        return CloudAdapter(ConfigurationBotFrameworkAuthentication(credentials))
 
     @staticmethod
     def get_credentials(path: str) -> Credentials:

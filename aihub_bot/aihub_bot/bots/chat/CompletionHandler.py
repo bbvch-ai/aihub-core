@@ -5,8 +5,8 @@ from asyncio import Event, Task
 from collections.abc import AsyncGenerator
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from microsoft_agents.hosting.core import TurnContext
-from microsoft_agents.activity import Activity, ActivityTypes, Entity
+from botbuilder.core import TurnContext
+from botbuilder.schema import Activity, ActivityTypes, Entity, ErrorResponseException
 
 from aihub_bot.bots.chat.ContentExtractor import ContentExtractor
 from aihub_bot.persistence.entities.ConversationEntity import Content, ConversationEntity, Message
@@ -232,7 +232,7 @@ class CompletionHandler:
             try:
                 await _turn_context.update_activity(_activity)
                 return _activity, ""
-            except Exception as e:
+            except ErrorResponseException as e:
                 if "msg_too_long" in str(e):
                     new_text = _buffer.replace(_sent_text, "", 1)
                     _response = await _turn_context.send_activity(new_text)
