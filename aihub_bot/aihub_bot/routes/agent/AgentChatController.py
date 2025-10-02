@@ -32,8 +32,8 @@ class AgentChatController(Controller):
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
+    @staticmethod
     async def _process_agent_chat_request(
-        self,
         request: Request,
         nc: NATS,
         external_agent_event_distributor: ExternalAgentEventDistributor,

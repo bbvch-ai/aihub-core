@@ -63,9 +63,6 @@ class BaseChatBot(ActivityHandler):
     @override
     async def on_message_activity(self, turn_context: TurnContext):
         """Process the main message flow with stream=False by default."""
-        logger.debug(f"on_message_activity called with activity: {turn_context.activity}")
-        logger.debug(f"Service URL: {turn_context.activity.service_url}")
-        logger.debug(f"Conversation ID: {turn_context.activity.conversation.id}")
         await self._process_message(turn_context, is_streaming=False)
 
     def _get_locale_handler(self, turn_context: TurnContext) -> LocaleHandler:
@@ -167,10 +164,10 @@ class BaseChatBot(ActivityHandler):
             try:
                 await asyncio.wait_for(typing_task, timeout=5.0)
             except TimeoutError:
-                # If typing task hangs, cancel it and continue
+                logger.warning("Typing task timed out during streaming response")
                 typing_task.cancel()
-            except Exception:
-                # Ignore typing task errors - focus on sending the actual response
+            except Exception as e:
+                logger.warning(f"Typing task failed during streaming response: {e}")
                 pass
 
             # Send streaming response
@@ -193,17 +190,15 @@ class BaseChatBot(ActivityHandler):
             try:
                 await asyncio.wait_for(typing_task, timeout=5.0)
             except TimeoutError:
-                # If typing task hangs, cancel it and continue
+                logger.warning("Typing task timed out during json response")
                 typing_task.cancel()
-            except Exception:
-                # Ignore typing task errors - focus on sending the actual response
+            except Exception as e:
+                logger.warning(f"Typing task failed during json response: {e}")
                 pass
 
             # Send json response
             try:
                 await turn_context.send_activity(response)
             except Exception as e:
-                # If sending fails, wrap and re-raise so handle_exception can deal with it
-                # This ensures proper error logging and user notification
                 raise RuntimeError(f"Failed to send response: {e}") from e
             return response
