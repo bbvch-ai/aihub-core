@@ -207,7 +207,7 @@ Follow this three-part process to implement a new bot integration. Each part bui
    # my_bot/MyCustomBot.py
    from aihub_bot.bots.chat.BaseChatBot import BaseChatBot
    from aihub_bot.bots.chat.CompletionHandler import CompletionHandler
-   from microsoft_agents.hosting.core import TurnContext
+   from botbuilder.core import TurnContext
    from typing_extensions import override
 
    class MyCustomBot(BaseChatBot):

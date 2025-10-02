@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from microsoft_agents.activity import (
+from botbuilder.schema import (
     Activity,
     Attachment,
     ChannelAccount,
@@ -17,15 +17,11 @@ from pydantic import create_model
 
 
 def _type_to_pydantic(str_type: type[Model]) -> Any:
-    # Check if this is an msrest Model with _attribute_map
-    if hasattr(str_type, "_attribute_map") and str_type._attribute_map:
+    if str_type._attribute_map:
         fields = {}
         for info in str_type._attribute_map.values():
             fields[info["key"]] = (_string_to_type(info["type"]), None)
         return create_model(str_type.__name__, **fields)
-
-    # Fallback for other types
-    return Any
 
 
 def _string_to_type(type_str: str) -> Any:

@@ -2,13 +2,12 @@ import logging
 import re
 from typing import override
 
-from microsoft_agents.activity import Channels
-
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
 from aihub_lib.nats.events.bot_in_the_loop.response.BotInTheLoopResponseEvent import SlackResponderInfo
-from microsoft_agents.hosting.core import ActivityHandler, TurnContext
+from botbuilder.core import ActivityHandler, TurnContext
+from botframework.connector import Channels
 from nats.aio.client import Client as NATS
 
 from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHandler
