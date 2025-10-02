@@ -23,20 +23,6 @@ logger = logging.getLogger(__name__)
 
 
 class AgentChatController(Controller):
-    """
-    Exposes API endpoints for handling Azure Bot Service interactions with AI agents.
-
-    ### Purpose
-    - Acts as an intermediary between the Azure Bot Service and the AI agents.
-
-    ### Key Endpoints
-    - **JSON (`/completions/{agent_class}/{agent_id}/json`)**:
-      - Returns a complete response only after the full conversation is processed.
-      - Ensures structured interactions, useful for logging or non-streaming clients.
-
-    ### Authentication & Access Control
-    """
-
     name = LocaleString(en="Agent Chat")
     description = LocaleString(en="Chat with agents")
     icon = "mage:we-chat"
@@ -56,21 +42,6 @@ class AgentChatController(Controller):
         bot_class: type[AgentChatBot] | type[StreamAgentChatBot],
         typing_timeout_seconds: int,
     ) -> Response:
-        """
-        Common processing logic for both streaming and non-streaming agent chat completions.
-
-        Args:
-            request: The incoming HTTP request
-            nc: NATS client for messaging
-            external_agent_event_distributor: Agent event distributor
-            agent_class: Agent class identifier
-            agent_id: Agent ID
-            bot_class: Bot class to instantiate (AgentChatBot or StreamAgentChatBot)
-            typing_timeout_seconds: Timeout for typing indicators
-
-        Returns:
-            Response from the Bot Framework adapter
-        """
         logger.info(f"Starting agent chat completion for {agent_class}/{agent_id}")
 
         path: str = RoutesService.get_path(request)
@@ -84,7 +55,6 @@ class AgentChatController(Controller):
         )
         adapter: CloudAdapter = RoutesService.get_adapter(path)
 
-        # Add timeout to prevent MSAL/Bot Framework hangs
         adapter_task = asyncio.create_task(adapter.process(request, chat_bot))
         try:
             result = await asyncio.wait_for(adapter_task, timeout=120.0)
@@ -94,7 +64,7 @@ class AgentChatController(Controller):
             logger.error("Bot adapter processing timed out after 120 seconds")
             adapter_task.cancel()
             try:
-                await adapter_task  # Wait for cancellation to complete
+                await adapter_task
             except asyncio.CancelledError:
                 pass
             return Response(status_code=504, content="Gateway timeout - bot processing took too long")
@@ -104,15 +74,6 @@ class AgentChatController(Controller):
         route: str = "/completions/{agent_class}/{agent_id}/json",
         typing_timeout_seconds: int = 60,
     ) -> "AgentChatController":
-        """
-        Registers an endpoint for JSON-based chat completions.
-
-        ### Functionality
-        - Handles Azure Bot Service interactions directed at an AI agent.
-        - Waits for the full response.
-        - Sends a message Activity with the response to the Azure Bot Service.
-        """
-
         @self.router.post(
             route,
             summary="Synchronous chat completions",
@@ -158,14 +119,6 @@ class AgentChatController(Controller):
         route: str = "/completions/{agent_class}/{agent_id}/stream",
         typing_timeout_seconds: int = 60,
     ) -> "AgentChatController":
-        """
-        Registers an endpoint for streaming chat completions.
-
-        ### Functionality
-        - Handles Azure Bot Service interactions directed at an AI agent.
-        - Streams responses as they are produced by updating the response Activity.
-        """
-
         @self.router.post(
             route,
             summary="Asynchronous chat completions",
