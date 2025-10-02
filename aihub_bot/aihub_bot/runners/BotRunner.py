@@ -1,15 +1,46 @@
 import logging
+import time
 from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager
 from typing import override
 
 from aihub_lib.runners.Runner import Runner
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from starlette.applications import Starlette
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from aihub_bot.runners.lifetime.lifetime_manager import lifetime_manager
 
 logger = logging.getLogger(__name__)
+
+
+class HTTPLoggingMiddleware(BaseHTTPMiddleware):
+    """Middleware to log all incoming requests and outgoing responses."""
+
+    async def dispatch(self, request: Request, call_next):
+        # Log incoming request
+        client_host = request.client.host if request.client else "unknown"
+        client_port = request.client.port if request.client else "unknown"
+        logger.info(
+            f"→ Incoming: {request.method} {request.url.path} "
+            f"from {client_host}:{client_port} "
+            f"query={dict(request.query_params)}"
+        )
+
+        # Log headers (excluding sensitive auth data)
+        headers_to_log = {k: v for k, v in request.headers.items() if k.lower() not in ("authorization",)}
+        logger.debug(f"  Headers: {headers_to_log}")
+
+        start_time = time.time()
+        response = await call_next(request)
+        duration = time.time() - start_time
+
+        # Log outgoing response
+        logger.info(
+            f"← Outgoing: {response.status_code} " f"for {request.method} {request.url.path} " f"({duration:.3f}s)"
+        )
+
+        return response
 
 
 class BotRunner(Runner):
@@ -65,6 +96,11 @@ class BotRunner(Runner):
     def _get_base_app(self) -> Starlette:
         app = super().create_app()
         app.state.conversation_ttl_days = self.conversation_ttl_days
+
+        # Add HTTP logging middleware
+        app.add_middleware(HTTPLoggingMiddleware)
+        logger.info("HTTP request/response logging middleware enabled")
+
         return app
 
     @property
