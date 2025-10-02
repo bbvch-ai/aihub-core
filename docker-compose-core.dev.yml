@@ -128,6 +128,15 @@ services:
       retries: 3
       start_period: 15s
     logging: *default-logging
+    labels:
+      - "traefik.enable=true"
+      # Filer Web UI
+      - "traefik.http.routers.seaweedfs-filer-ui.rule=Host(`datalake.${DOMAIN}`)"
+      - "traefik.http.routers.seaweedfs-filer-ui.priority=4000"
+      - "traefik.http.routers.seaweedfs-filer-ui.entrypoints=websecure"
+      - "traefik.http.routers.seaweedfs-filer-ui.tls=true"
+      - "traefik.http.routers.seaweedfs-filer-ui.middlewares=security-headers@file"
+      - "traefik.http.services.seaweedfs-filer-ui.loadbalancer.server.port=8888"
 
   seaweedfs-s3:
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
@@ -157,14 +166,6 @@ services:
       retries: 5
       start_period: 20s
     logging: *default-logging
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.seaweedfs-s3.rule=Host(`datalake.${DOMAIN}`)"
-      - "traefik.http.routers.seaweedfs-s3.priority=500"
-      - "traefik.http.routers.seaweedfs-s3.entrypoints=websecure"
-      - "traefik.http.routers.seaweedfs-s3.tls=true"
-      - "traefik.http.routers.seaweedfs-s3.middlewares=security-headers@file"
-      - "traefik.http.services.seaweedfs-s3.loadbalancer.server.port=9000"
 
   seaweedfs-init:
     image: ghcr.io/bbvch-ai/aihub-core/aws-cli-alpine:3.22.1
