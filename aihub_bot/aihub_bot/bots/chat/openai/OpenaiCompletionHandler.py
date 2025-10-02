@@ -192,7 +192,7 @@ class OpenaiCompletionHandler(CompletionHandler):
                 response = exception.message
             return response
         else:
-            return await super().handle_exception(
+            return await CompletionHandler.handle_exception(
                 turn_context=turn_context,
                 exception=exception,
                 typing_task=typing_task,
