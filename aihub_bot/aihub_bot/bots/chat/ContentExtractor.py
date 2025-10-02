@@ -37,13 +37,13 @@ class ContentExtractor:
     """Unified handler for file processing from various sources."""
 
     @staticmethod
-    async def extract_content_from_activity(path: str, activity: Activity) -> list[Content]:
+    def extract_content_from_activity(path: str, activity: Activity) -> list[Content]:
         """Extract all content (text and files) from an activity."""
         content = []
 
         # Process different content types
         content.extend(ContentExtractor._extract_text_content(activity))
-        content.extend(await ContentExtractor._extract_slack_files(path, activity))
+        content.extend(ContentExtractor._extract_slack_files(path, activity))
         content.extend(ContentExtractor._extract_attachments(activity))
 
         # Ensure we have at least some content
@@ -61,7 +61,7 @@ class ContentExtractor:
         return []
 
     @staticmethod
-    async def _extract_slack_files(path: str, activity: Activity) -> list[Content]:
+    def _extract_slack_files(path: str, activity: Activity) -> list[Content]:
         """Extract files from Slack channel data."""
         content = []
 
@@ -72,7 +72,7 @@ class ContentExtractor:
         if not slack_files:
             return content
 
-        slack_token = await PathEntity.get_slack_token_by_path(path)
+        slack_token = PathEntity.get_slack_token_by_path(path)
         if not slack_token:
             return content
 

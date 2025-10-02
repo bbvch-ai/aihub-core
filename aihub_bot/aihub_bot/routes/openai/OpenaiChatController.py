@@ -62,7 +62,7 @@ class OpenaiChatController(Controller):
                 model_name=model_name, client=client, path=path, typing_timeout_seconds=typing_timeout_seconds
             )
 
-            adapter: CloudAdapter = await RoutesService.get_adapter(path)
+            adapter: CloudAdapter = RoutesService.get_adapter(path)
             return await adapter.process(request, chat_bot)
 
         return self
@@ -85,7 +85,7 @@ class OpenaiChatController(Controller):
                 model_name=model_name, client=client, path=path, typing_timeout_seconds=typing_timeout_seconds
             )
 
-            adapter: CloudAdapter = await RoutesService.get_adapter(path)
+            adapter: CloudAdapter = RoutesService.get_adapter(path)
             return await adapter.process(request, chat_bot)
 
         return self
