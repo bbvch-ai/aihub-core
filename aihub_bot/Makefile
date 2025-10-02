@@ -45,4 +45,4 @@ run-prod:
 
 agents-playground:
 	@echo "Starting Agents Playground with Azure OpenAI configuration (secret: ${CLIENT_SECRET})..."
-	~/agentsplayground -e "http://localhost:8001/api/v1/openai/chat/completions/json?model_name=azure/gpt-4o-mini" -c "emulator" --client-id "aed8ad1c-a393-4cfe-a296-7468914e2151" --client-secret "${CLIENT_SECRET}" --tenant-id "37314c94-c755-48ab-85bb-acb83e492c42"
+	~/agentsplayground -e "http://localhost:8001/api/v1/openai/chat/completions/json?model_name=azure/gpt-4o-mini" -c "emulator" --client-id "aed8ad1c-a393-4cfe-a296-7468914e2151" --client-secret "${CLIENT_SECRET}"
