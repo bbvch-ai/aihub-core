@@ -289,7 +289,7 @@ class RAGAgent(Agent):
             messages = limited_history_without_context.limited_history + [
                 ChatMessage(
                     role=MessageRole.SYSTEM,
-                    content=PromptTemplate(t("agent.prompt.guard.reject")).format(reason=event.reasoning),
+                    content=PromptTemplate(t("agent.prompt.guard.reject")).format(reason=event.reason),
                 ),
             ]
         else:
