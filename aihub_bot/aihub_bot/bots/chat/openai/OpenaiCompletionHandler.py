@@ -1,16 +1,15 @@
 import asyncio
 import logging
 import re
-
-import openai
 import unicodedata
 from asyncio import Event, Task
 from collections.abc import AsyncGenerator
 from typing import override
 
+import openai
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from botbuilder.core import TurnContext
-from openai import APIStatusError, AsyncAzureOpenAI, AsyncOpenAI, AsyncStream
+from openai import APIStatusError, AsyncStream
 from openai.types.chat import (
     ChatCompletion,
     ChatCompletionAssistantMessageParam,

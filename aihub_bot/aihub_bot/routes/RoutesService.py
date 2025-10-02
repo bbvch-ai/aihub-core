@@ -15,6 +15,9 @@ class RoutesService(ChatService):
     - Shared functionality for all ChatControllers and ChatBots.
     """
 
+    # Cache for CloudAdapter instances, keyed by path
+    _adapter_cache: dict[str, CloudAdapter] = {}
+
     @staticmethod
     def get_path(request: Request) -> str:
         """
@@ -32,14 +35,40 @@ class RoutesService(ChatService):
     def get_adapter(path: str) -> CloudAdapter:
         """
         ### What
-        - Returns the adapter for the given path.
+        - Returns a cached CloudAdapter for the given path, or creates a new one if not cached.
 
         ### Why
         - Each path has a unique set of credentials.
         - The credential is needed to verify that requests are coming from the correct bot service.
+        - Caching prevents repeated MSAL authentication and improves performance.
         """
+        # Check cache first
+        if path in RoutesService._adapter_cache:
+            logger.debug(f"Using cached CloudAdapter for path: {path}")
+            return RoutesService._adapter_cache[path]
+
+        # Create new adapter and cache it
+        logger.debug(f"Creating new CloudAdapter for path: {path}")
         credentials: Credentials = RoutesService.get_credentials(path)
-        return CloudAdapter(ConfigurationBotFrameworkAuthentication(credentials))
+        adapter = CloudAdapter(ConfigurationBotFrameworkAuthentication(credentials))
+        RoutesService._adapter_cache[path] = adapter
+        return adapter
+
+    @staticmethod
+    def clear_adapter_cache(path: str | None = None) -> None:
+        """
+        ### What
+        - Clears the CloudAdapter cache for a specific path or all paths.
+
+        ### Why
+        - Useful when credentials are updated and the adapter needs to be recreated.
+        """
+        if path is None:
+            logger.info("Clearing all cached CloudAdapters")
+            RoutesService._adapter_cache.clear()
+        elif path in RoutesService._adapter_cache:
+            logger.info(f"Clearing cached CloudAdapter for path: {path}")
+            del RoutesService._adapter_cache[path]
 
     @staticmethod
     def get_credentials(path: str) -> Credentials:
