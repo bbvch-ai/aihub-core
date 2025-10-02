@@ -34,7 +34,7 @@ class CompletionHandler:
         raise NotImplementedError("Subclasses must implement this method")
 
     @staticmethod
-    def get_system_message(turn_context: TurnContext, path: str) -> Message | None:
+    async def get_system_message(turn_context: TurnContext, path: str) -> Message | None:
         """
         ### What
         - Returns the configured system message for the given path.
@@ -46,7 +46,7 @@ class CompletionHandler:
         - The LLM and Agents should get instructions on how to interact with the user.
         - The instructions should be personalized with the user's name.
         """
-        system_message: str | None = PathEntity.get_system_message_by_path(path)
+        system_message: str | None = await PathEntity.get_system_message_by_path(path)
         if system_message is None:
             return None
         username = turn_context.activity.from_property.name
@@ -131,7 +131,7 @@ class CompletionHandler:
         ConversationEntity.delete_conversation(conversation_id)
 
     @staticmethod
-    def add_user_message_to_conversation(path: str, turn_context: TurnContext) -> ConversationEntity:
+    async def add_user_message_to_conversation(path: str, turn_context: TurnContext) -> ConversationEntity:
         """
         ### What
         - Add the user message to the persisted conversation.
@@ -141,14 +141,14 @@ class CompletionHandler:
         """
         user_message = Message(
             user_id=turn_context.activity.from_property.id,
-            content=ContentExtractor.extract_content_from_activity(path=path, activity=turn_context.activity),
+            content=await ContentExtractor.extract_content_from_activity(path=path, activity=turn_context.activity),
             role=turn_context.activity.from_property.role or "user",
             name=turn_context.activity.from_property.name,
         )
         return CompletionHandler.add_messages_to_conversation(turn_context, user_message)
 
     @staticmethod
-    def add_bot_message_to_conversation(
+    async def add_bot_message_to_conversation(
         path: str,
         turn_context: TurnContext,
         message: str,
@@ -162,7 +162,7 @@ class CompletionHandler:
         """
         bot_message = Message(
             user_id=turn_context.activity.recipient.id,
-            content=ContentExtractor.extract_content_from_activity(path=path, activity=Activity(text=message)),
+            content=await ContentExtractor.extract_content_from_activity(path=path, activity=Activity(text=message)),
             role=turn_context.activity.recipient.role or "bot",
             name=turn_context.activity.recipient.name,
         )

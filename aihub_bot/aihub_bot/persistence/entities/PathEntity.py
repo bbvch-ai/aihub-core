@@ -1,3 +1,5 @@
+import asyncio
+
 from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentField, StringField
 
 
@@ -34,16 +36,21 @@ class PathEntity(Document):
     slack_token = StringField(required=False)
 
     @classmethod
-    def get_credentials_by_path(cls, path: str) -> Credentials | None:
-        doc = cls.objects().filter(path=path).first()
+    def _get_doc_by_path_sync(cls, path: str) -> "PathEntity | None":
+        """Synchronous helper to fetch document by path."""
+        return cls.objects().filter(path=path).first()
+
+    @classmethod
+    async def get_credentials_by_path(cls, path: str) -> Credentials | None:
+        doc = await asyncio.get_event_loop().run_in_executor(None, cls._get_doc_by_path_sync, path)
         return doc.credentials if doc else None
 
     @classmethod
-    def get_system_message_by_path(cls, path: str) -> str | None:
-        doc = cls.objects().filter(path=path).first()
+    async def get_system_message_by_path(cls, path: str) -> str | None:
+        doc = await asyncio.get_event_loop().run_in_executor(None, cls._get_doc_by_path_sync, path)
         return doc.system_message if doc else None
 
     @classmethod
-    def get_slack_token_by_path(cls, path: str) -> str | None:
-        doc = cls.objects().filter(path=path).first()
+    async def get_slack_token_by_path(cls, path: str) -> str | None:
+        doc = await asyncio.get_event_loop().run_in_executor(None, cls._get_doc_by_path_sync, path)
         return doc.slack_token if doc else None
