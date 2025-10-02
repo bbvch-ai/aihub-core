@@ -46,6 +46,71 @@ class AgentChatController(Controller):
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
+    async def _process_agent_chat_request(
+        self,
+        request: Request,
+        nc: NATS,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
+        agent_class: str,
+        agent_id: str,
+        bot_class: type[AgentChatBot] | type[StreamAgentChatBot],
+        typing_timeout_seconds: int,
+    ) -> Response:
+        """
+        Common processing logic for both streaming and non-streaming agent chat completions.
+
+        Args:
+            request: The incoming HTTP request
+            nc: NATS client for messaging
+            external_agent_event_distributor: Agent event distributor
+            agent_class: Agent class identifier
+            agent_id: Agent ID
+            bot_class: Bot class to instantiate (AgentChatBot or StreamAgentChatBot)
+            typing_timeout_seconds: Timeout for typing indicators
+
+        Returns:
+            Response from the Bot Framework adapter
+        """
+        logger.info(f"Starting agent chat completion for {agent_class}/{agent_id} with {bot_class.__name__}")
+
+        path: str = RoutesService.get_path(request)
+        logger.debug(f"Request path: {path}")
+
+        chat_bot = bot_class(
+            nc,
+            external_agent_event_distributor,
+            agent_class,
+            agent_id,
+            path,
+            typing_timeout_seconds=typing_timeout_seconds,
+        )
+        logger.debug("Chat bot created")
+
+        logger.debug(f"Getting adapter for path: {path}")
+        adapter: CloudAdapter = RoutesService.get_adapter(path)
+        logger.debug(f"CloudAdapter acquired: {adapter}")
+        logger.debug(f"CloudAdapter auth config: {adapter.bot_framework_authentication}")
+        logger.debug(f"Request headers: {dict(request.headers)}")
+        logger.debug(f"Request URL: {request.url}")
+
+        # Add timeout to prevent MSAL/Bot Framework hangs
+        # Create a task so we can cancel it properly if it times out
+        logger.debug("Creating adapter.process() task...")
+        adapter_task = asyncio.create_task(adapter.process(request, chat_bot))
+        try:
+            logger.debug("Waiting for adapter.process() with 120s timeout...")
+            result = await asyncio.wait_for(adapter_task, timeout=120.0)
+            logger.info("Adapter processing completed successfully")
+            return result
+        except TimeoutError:
+            logger.error("Bot adapter processing timed out after 120 seconds - cancelling task")
+            adapter_task.cancel()
+            try:
+                await adapter_task  # Wait for cancellation to complete
+            except asyncio.CancelledError:
+                pass
+            return Response(status_code=504, content="Gateway timeout - bot processing took too long")
+
     def completions_json(
         self,
         route: str = "/completions/{agent_class}/{agent_id}/json",
@@ -88,45 +153,15 @@ class AgentChatController(Controller):
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
         ) -> Response:
-            logger.info(f"Starting json chat completion for agent {agent_class}/{agent_id}")
-
-            path: str = RoutesService.get_path(request)
-            logger.debug(f"Request path: {path}")
-
-            chat_bot: AgentChatBot = AgentChatBot(
-                nc,
-                external_agent_event_distributor,
-                agent_class,
-                agent_id,
-                path,
+            return await self._process_agent_chat_request(
+                request=request,
+                nc=nc,
+                external_agent_event_distributor=external_agent_event_distributor,
+                agent_class=agent_class,
+                agent_id=agent_id,
+                bot_class=AgentChatBot,
                 typing_timeout_seconds=typing_timeout_seconds,
             )
-            logger.debug("Chat bot created")
-
-            logger.debug(f"Getting adapter for path: {path}")
-            adapter: CloudAdapter = RoutesService.get_adapter(path)
-            logger.debug(f"CloudAdapter acquired: {adapter}")
-            logger.debug(f"CloudAdapter auth config: {adapter.bot_framework_authentication}")
-            logger.debug(f"Request headers: {dict(request.headers)}")
-            logger.debug(f"Request URL: {request.url}")
-
-            # Add timeout to prevent MSAL/Bot Framework hangs
-            # Create a task so we can cancel it properly if it times out
-            logger.debug("Creating adapter.process() task...")
-            adapter_task = asyncio.create_task(adapter.process(request, chat_bot))
-            try:
-                logger.debug("Waiting for adapter.process() with 120s timeout...")
-                result = await asyncio.wait_for(adapter_task, timeout=120.0)
-                logger.info("Adapter processing completed successfully")
-                return result
-            except TimeoutError:
-                logger.error("Bot adapter processing timed out after 120 seconds - cancelling task")
-                adapter_task.cancel()
-                try:
-                    await adapter_task  # Wait for cancellation to complete
-                except asyncio.CancelledError:
-                    pass
-                return Response(status_code=504, content="Gateway timeout - bot processing took too long")
 
         return self
 
@@ -171,44 +206,14 @@ class AgentChatController(Controller):
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
         ) -> Response:
-            logger.info(f"Starting stream chat completion for agent {agent_class}/{agent_id}")
-
-            path: str = RoutesService.get_path(request)
-            logger.debug(f"Request path: {path}")
-
-            chat_bot: StreamAgentChatBot = StreamAgentChatBot(
-                nc,
-                external_agent_event_distributor,
-                agent_class,
-                agent_id,
-                path,
+            return await self._process_agent_chat_request(
+                request=request,
+                nc=nc,
+                external_agent_event_distributor=external_agent_event_distributor,
+                agent_class=agent_class,
+                agent_id=agent_id,
+                bot_class=StreamAgentChatBot,
                 typing_timeout_seconds=typing_timeout_seconds,
             )
-            logger.debug("Chat bot created")
-
-            logger.debug(f"Getting adapter for path: {path}")
-            adapter: CloudAdapter = RoutesService.get_adapter(path)
-            logger.debug(f"CloudAdapter acquired: {adapter}")
-            logger.debug(f"CloudAdapter auth config: {adapter.bot_framework_authentication}")
-            logger.debug(f"Request headers: {dict(request.headers)}")
-            logger.debug(f"Request URL: {request.url}")
-
-            # Add timeout to prevent MSAL/Bot Framework hangs
-            # Create a task so we can cancel it properly if it times out
-            logger.debug("Creating adapter.process() task...")
-            adapter_task = asyncio.create_task(adapter.process(request, chat_bot))
-            try:
-                logger.debug("Waiting for adapter.process() with 120s timeout...")
-                result = await asyncio.wait_for(adapter_task, timeout=120.0)
-                logger.info("Adapter processing completed successfully")
-                return result
-            except TimeoutError:
-                logger.error("Bot adapter processing timed out after 120 seconds - cancelling task")
-                adapter_task.cancel()
-                try:
-                    await adapter_task  # Wait for cancellation to complete
-                except asyncio.CancelledError:
-                    pass
-                return Response(status_code=504, content="Gateway timeout - bot processing took too long")
 
         return self
