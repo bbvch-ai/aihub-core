@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -16,6 +18,8 @@ from aihub_bot.bots.chat.agent.AgentChatBot import AgentChatBot
 from aihub_bot.bots.chat.agent.StreamAgentChatBot import StreamAgentChatBot
 from aihub_bot.routes.activity_model import ActivityModel
 from aihub_bot.routes.RoutesService import RoutesService
+
+logger = logging.getLogger(__name__)
 
 
 class AgentChatController(Controller):
@@ -84,7 +88,11 @@ class AgentChatController(Controller):
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
         ) -> Response:
+            logger.info(f"Starting json chat completion for agent {agent_class}/{agent_id}")
+
             path: str = RoutesService.get_path(request)
+            logger.debug(f"Request path: {path}")
+
             chat_bot: AgentChatBot = AgentChatBot(
                 nc,
                 external_agent_event_distributor,
@@ -93,8 +101,32 @@ class AgentChatController(Controller):
                 path,
                 typing_timeout_seconds=typing_timeout_seconds,
             )
+            logger.debug("Chat bot created")
+
+            logger.debug(f"Getting adapter for path: {path}")
             adapter: CloudAdapter = RoutesService.get_adapter(path)
-            return await adapter.process(request, chat_bot)
+            logger.debug(f"CloudAdapter acquired: {adapter}")
+            logger.debug(f"CloudAdapter auth config: {adapter.bot_framework_authentication}")
+            logger.debug(f"Request headers: {dict(request.headers)}")
+            logger.debug(f"Request URL: {request.url}")
+
+            # Add timeout to prevent MSAL/Bot Framework hangs
+            # Create a task so we can cancel it properly if it times out
+            logger.debug("Creating adapter.process() task...")
+            adapter_task = asyncio.create_task(adapter.process(request, chat_bot))
+            try:
+                logger.debug("Waiting for adapter.process() with 120s timeout...")
+                result = await asyncio.wait_for(adapter_task, timeout=120.0)
+                logger.info("Adapter processing completed successfully")
+                return result
+            except TimeoutError:
+                logger.error("Bot adapter processing timed out after 120 seconds - cancelling task")
+                adapter_task.cancel()
+                try:
+                    await adapter_task  # Wait for cancellation to complete
+                except asyncio.CancelledError:
+                    pass
+                return Response(status_code=504, content="Gateway timeout - bot processing took too long")
 
         return self
 
@@ -139,7 +171,11 @@ class AgentChatController(Controller):
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
         ) -> Response:
+            logger.info(f"Starting stream chat completion for agent {agent_class}/{agent_id}")
+
             path: str = RoutesService.get_path(request)
+            logger.debug(f"Request path: {path}")
+
             chat_bot: StreamAgentChatBot = StreamAgentChatBot(
                 nc,
                 external_agent_event_distributor,
@@ -148,7 +184,31 @@ class AgentChatController(Controller):
                 path,
                 typing_timeout_seconds=typing_timeout_seconds,
             )
+            logger.debug("Chat bot created")
+
+            logger.debug(f"Getting adapter for path: {path}")
             adapter: CloudAdapter = RoutesService.get_adapter(path)
-            return await adapter.process(request, chat_bot)
+            logger.debug(f"CloudAdapter acquired: {adapter}")
+            logger.debug(f"CloudAdapter auth config: {adapter.bot_framework_authentication}")
+            logger.debug(f"Request headers: {dict(request.headers)}")
+            logger.debug(f"Request URL: {request.url}")
+
+            # Add timeout to prevent MSAL/Bot Framework hangs
+            # Create a task so we can cancel it properly if it times out
+            logger.debug("Creating adapter.process() task...")
+            adapter_task = asyncio.create_task(adapter.process(request, chat_bot))
+            try:
+                logger.debug("Waiting for adapter.process() with 120s timeout...")
+                result = await asyncio.wait_for(adapter_task, timeout=120.0)
+                logger.info("Adapter processing completed successfully")
+                return result
+            except TimeoutError:
+                logger.error("Bot adapter processing timed out after 120 seconds - cancelling task")
+                adapter_task.cancel()
+                try:
+                    await adapter_task  # Wait for cancellation to complete
+                except asyncio.CancelledError:
+                    pass
+                return Response(status_code=504, content="Gateway timeout - bot processing took too long")
 
         return self
