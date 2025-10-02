@@ -71,11 +71,9 @@ class AgentChatController(Controller):
         Returns:
             Response from the Bot Framework adapter
         """
-        logger.info(f"Starting agent chat completion for {agent_class}/{agent_id} with {bot_class.__name__}")
+        logger.info(f"Starting agent chat completion for {agent_class}/{agent_id}")
 
         path: str = RoutesService.get_path(request)
-        logger.debug(f"Request path: {path}")
-
         chat_bot = bot_class(
             nc,
             external_agent_event_distributor,
@@ -84,26 +82,16 @@ class AgentChatController(Controller):
             path,
             typing_timeout_seconds=typing_timeout_seconds,
         )
-        logger.debug("Chat bot created")
-
-        logger.debug(f"Getting adapter for path: {path}")
         adapter: CloudAdapter = RoutesService.get_adapter(path)
-        logger.debug(f"CloudAdapter acquired: {adapter}")
-        logger.debug(f"CloudAdapter auth config: {adapter.bot_framework_authentication}")
-        logger.debug(f"Request headers: {dict(request.headers)}")
-        logger.debug(f"Request URL: {request.url}")
 
         # Add timeout to prevent MSAL/Bot Framework hangs
-        # Create a task so we can cancel it properly if it times out
-        logger.debug("Creating adapter.process() task...")
         adapter_task = asyncio.create_task(adapter.process(request, chat_bot))
         try:
-            logger.debug("Waiting for adapter.process() with 120s timeout...")
             result = await asyncio.wait_for(adapter_task, timeout=120.0)
-            logger.info("Adapter processing completed successfully")
+            logger.info("Agent chat completion successful")
             return result
         except TimeoutError:
-            logger.error("Bot adapter processing timed out after 120 seconds - cancelling task")
+            logger.error("Bot adapter processing timed out after 120 seconds")
             adapter_task.cancel()
             try:
                 await adapter_task  # Wait for cancellation to complete
