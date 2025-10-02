@@ -41,8 +41,8 @@ class OpenaiChatController(Controller):
             if not isinstance(model, OpenAI):
                 raise ValueError(f"Chat model {chat_model.name} is not an OpenAI compatible model.")
 
+    @staticmethod
     async def _process_chat_request(
-        self,
         request: Request,
         user: UserIdentity,
         model_name: str,

@@ -276,19 +276,15 @@ class CompletionHandler:
             if signal.is_set():
                 break
             try:
-                # Add timeout to typing indicator to prevent hanging on unreachable service URLs
                 await asyncio.wait_for(turn_context.send_activity(Activity(type=ActivityTypes.typing)), timeout=5.0)
             except TimeoutError:
-                # If typing indicator times out, log and stop sending more
                 logger.warning(
                     f"Typing indicator timed out (service URL may be unreachable: {turn_context.activity.service_url})"
                 )
                 break
             except ErrorResponseException as e:
-                # If we get an auth error while sending typing, stop silently
-                # The main response handler will deal with the auth issue
                 if "Unauthorized" in str(e):
-                    logger.debug("Typing indicator stopped due to auth expiration")
+                    logger.warning("Typing indicator stopped due to auth expiration")
                     break
                 raise
             await asyncio.sleep(2)
@@ -303,9 +299,8 @@ class CompletionHandler:
                     )
                 )
             except ErrorResponseException as e:
-                # If timeout message fails to send, just log it
                 if "Unauthorized" in str(e):
-                    logger.debug("Could not send timeout message due to auth expiration")
+                    logger.warning("Could not send timeout message due to auth expiration")
                 else:
                     raise
 
@@ -323,10 +318,10 @@ class CompletionHandler:
         try:
             await asyncio.wait_for(typing_task, timeout=5.0)
         except TimeoutError:
-            logger.debug("Typing task timed out during error handling - cancelling it")
+            logger.warning("Typing task timed out during error handling - cancelling it")
             typing_task.cancel()
         except Exception as typing_exception:
-            logger.debug(f"Typing task also failed (expected during error handling): {typing_exception}")
+            logger.warning(f"Typing task also failed (expected during error handling): {typing_exception}")
         response = t("bot.error.generic_error")
         try:
             await turn_context.send_activity(
@@ -336,7 +331,6 @@ class CompletionHandler:
                 )
             )
         except ErrorResponseException as e:
-            # If we can't send the error message due to auth expiration, just log it
             if "Unauthorized" in str(e):
                 logger.error("Could not send error message due to auth expiration - conversation state may be stale")
             else:
