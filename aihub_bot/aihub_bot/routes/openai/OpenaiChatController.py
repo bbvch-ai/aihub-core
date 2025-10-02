@@ -62,45 +62,31 @@ class OpenaiChatController(Controller):
         Returns:
             Response from the Bot Framework adapter
         """
-        logger.info(f"Starting chat completion for model {model_name} with {bot_class.__name__}")
+        logger.info(f"Starting chat completion for model {model_name}")
 
         # Add timeout for LiteLLM service call to prevent hanging
         try:
-            logger.debug("Getting LiteLLM client...")
             client: openai.AsyncClient = await asyncio.wait_for(
                 LiteLLMService.openai_aclient_for_user(user=user), timeout=30.0
             )
-            logger.debug("LiteLLM client acquired")
         except TimeoutError:
             logger.error("LiteLLM service call timed out after 30 seconds")
             return Response(status_code=504, content="Gateway timeout - LiteLLM service not responding")
 
         path = RoutesService.get_path(request)
-        logger.debug(f"Request path: {path}")
-
         chat_bot = bot_class(
             model_name=model_name, client=client, path=path, typing_timeout_seconds=typing_timeout_seconds
         )
-        logger.debug("Chat bot created")
-
-        logger.debug(f"Getting adapter for path: {path}")
         adapter: CloudAdapter = RoutesService.get_adapter(path)
-        logger.debug(f"CloudAdapter acquired: {adapter}")
-        logger.debug(f"CloudAdapter auth config: {adapter.bot_framework_authentication}")
-        logger.debug(f"Request headers: {dict(request.headers)}")
-        logger.debug(f"Request URL: {request.url}")
 
         # Add timeout to prevent MSAL/Bot Framework hangs
-        # Create a task so we can cancel it properly if it times out
-        logger.debug("Creating adapter.process() task...")
         adapter_task = asyncio.create_task(adapter.process(request, chat_bot))
         try:
-            logger.debug("Waiting for adapter.process() with 120s timeout...")
             result = await asyncio.wait_for(adapter_task, timeout=120.0)
-            logger.info("Adapter processing completed successfully")
+            logger.info("Chat completion successful")
             return result
         except TimeoutError:
-            logger.error("Bot adapter processing timed out after 120 seconds - cancelling task")
+            logger.error("Bot adapter processing timed out after 120 seconds")
             adapter_task.cancel()
             try:
                 await adapter_task  # Wait for cancellation to complete
