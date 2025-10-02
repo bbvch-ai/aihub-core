@@ -1,8 +1,8 @@
+import asyncio
 import logging
 from typing import Annotated
 
 import openai
-
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
@@ -54,16 +54,51 @@ class OpenaiChatController(Controller):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             model_name: Annotated[str, Query(title="Model Name")],
         ) -> Response:
-            client: openai.AsyncClient = await LiteLLMService.openai_aclient_for_user(user=user)
+            logger.info(f"Starting json_chat_completion for model {model_name}")
+
+            # Add timeout for LiteLLM service call to prevent hanging
+            try:
+                logger.debug("Getting LiteLLM client...")
+                client: openai.AsyncClient = await asyncio.wait_for(
+                    LiteLLMService.openai_aclient_for_user(user=user), timeout=30.0
+                )
+                logger.debug("LiteLLM client acquired")
+            except TimeoutError:
+                logger.error("LiteLLM service call timed out after 30 seconds")
+                return Response(status_code=504, content="Gateway timeout - LiteLLM service not responding")
 
             path = RoutesService.get_path(request)
+            logger.debug(f"Request path: {path}")
 
             chat_bot = OpenaiChatBot(
                 model_name=model_name, client=client, path=path, typing_timeout_seconds=typing_timeout_seconds
             )
+            logger.debug("Chat bot created")
 
+            logger.debug(f"Getting adapter for path: {path}")
             adapter: CloudAdapter = RoutesService.get_adapter(path)
-            return await adapter.process(request, chat_bot)
+            logger.debug(f"CloudAdapter acquired: {adapter}")
+            logger.debug(f"CloudAdapter auth config: {adapter.bot_framework_authentication}")
+            logger.debug(f"Request headers: {dict(request.headers)}")
+            logger.debug(f"Request URL: {request.url}")
+
+            # Add timeout to prevent MSAL/Bot Framework hangs
+            # Create a task so we can cancel it properly if it times out
+            logger.debug("Creating adapter.process() task...")
+            adapter_task = asyncio.create_task(adapter.process(request, chat_bot))
+            try:
+                logger.debug("Waiting for adapter.process() with 120s timeout...")
+                result = await asyncio.wait_for(adapter_task, timeout=120.0)
+                logger.info("Adapter processing completed successfully")
+                return result
+            except TimeoutError:
+                logger.error("Bot adapter processing timed out after 120 seconds - cancelling task")
+                adapter_task.cancel()
+                try:
+                    await adapter_task  # Wait for cancellation to complete
+                except asyncio.CancelledError:
+                    pass
+                return Response(status_code=504, content="Gateway timeout - bot processing took too long")
 
         return self
 

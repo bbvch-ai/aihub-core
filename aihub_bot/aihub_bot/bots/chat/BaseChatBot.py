@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from asyncio import Event, Task
 from typing import Any, override
 
@@ -10,6 +11,8 @@ from botframework.connector import Channels
 
 from aihub_bot.bots.chat.CompletionHandler import CompletionHandler
 from aihub_bot.persistence.entities.ConversationEntity import ConversationTracker
+
+logger = logging.getLogger(__name__)
 
 
 class BaseChatBot(ActivityHandler):
@@ -60,6 +63,9 @@ class BaseChatBot(ActivityHandler):
     @override
     async def on_message_activity(self, turn_context: TurnContext):
         """Process the main message flow with stream=False by default."""
+        logger.debug(f"on_message_activity called with activity: {turn_context.activity}")
+        logger.debug(f"Service URL: {turn_context.activity.service_url}")
+        logger.debug(f"Conversation ID: {turn_context.activity.conversation.id}")
         await self._process_message(turn_context, is_streaming=False)
 
     def _get_locale_handler(self, turn_context: TurnContext) -> LocaleHandler:
@@ -158,7 +164,14 @@ class BaseChatBot(ActivityHandler):
 
             # Stop typing indicator
             typing_stop_signal.set()
-            await typing_task
+            try:
+                await asyncio.wait_for(typing_task, timeout=5.0)
+            except TimeoutError:
+                # If typing task hangs, cancel it and continue
+                typing_task.cancel()
+            except Exception:
+                # Ignore typing task errors - focus on sending the actual response
+                pass
 
             # Send streaming response
             return await self.completion_handler.send_response_stream(
@@ -177,8 +190,20 @@ class BaseChatBot(ActivityHandler):
 
             # Stop typing indicator
             typing_stop_signal.set()
-            await typing_task
+            try:
+                await asyncio.wait_for(typing_task, timeout=5.0)
+            except TimeoutError:
+                # If typing task hangs, cancel it and continue
+                typing_task.cancel()
+            except Exception:
+                # Ignore typing task errors - focus on sending the actual response
+                pass
 
             # Send json response
-            await turn_context.send_activity(response)
+            try:
+                await turn_context.send_activity(response)
+            except Exception as e:
+                # If sending fails, wrap and re-raise so handle_exception can deal with it
+                # This ensures proper error logging and user notification
+                raise RuntimeError(f"Failed to send response: {e}") from e
             return response
