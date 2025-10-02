@@ -1,4 +1,3 @@
-from microsoft_agents.hosting.core import AgentAuthConfiguration
 from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentField, StringField
 
 
@@ -7,13 +6,6 @@ class Credentials(EmbeddedDocument):
     APP_ID = StringField(required=False)
     APP_PASSWORD = StringField(required=False)
     APP_TENANTID = StringField(required=False)
-
-    def to_agent_auth_configuration(self) -> AgentAuthConfiguration:
-        return AgentAuthConfiguration(
-            client_id=self.APP_ID,
-            client_secret=self.APP_PASSWORD,
-            tenant_id=self.APP_TENANTID,
-        )
 
 
 class PathEntity(Document):

@@ -5,7 +5,7 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import ExceptionEvent
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
-from microsoft_agents.hosting.core import TurnContext
+from botbuilder.core import TurnContext
 from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage, ContentBlock, ImageBlock, MessageRole, TextBlock
 from nats.aio.client import Client as NATS

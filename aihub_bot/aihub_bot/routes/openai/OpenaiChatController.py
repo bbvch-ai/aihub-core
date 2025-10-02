@@ -2,13 +2,11 @@ import logging
 from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
 from aihub_lib.routes.Controller import Controller
-from microsoft_agents.hosting.aiohttp import CloudAdapter
-from fastapi import Body, Query, Request, Response, Security
+from botbuilder.integration.aiohttp import CloudAdapter
+from fastapi import Body, Query, Request, Response
 from llama_index.llms.openai import OpenAI
 from openai import AsyncAzureOpenAI, AsyncOpenAI
 
@@ -48,12 +46,10 @@ class OpenaiChatController(Controller):
         @self.router.post(route, tags=self.tags)
         async def json_chat_completion(
             request: Request,
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             _: Annotated[ActivityModel, Body],
             model_name: Annotated[str, Query(title="Model Name")],
         ) -> Response:
-            client = LiteLLMService.openai_aclient_for_user(user=user)
-
+            client = self.get_client(self.chat_models, model_name)
             path = RoutesService.get_path(request)
 
             chat_bot = OpenaiChatBot(
