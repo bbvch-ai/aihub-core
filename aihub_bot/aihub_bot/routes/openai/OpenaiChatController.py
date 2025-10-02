@@ -49,22 +49,8 @@ class OpenaiChatController(Controller):
         bot_class: type[OpenaiChatBot] | type[StreamOpenaiChatBot],
         typing_timeout_seconds: int,
     ) -> Response:
-        """
-        Common processing logic for both streaming and non-streaming chat completions.
-
-        Args:
-            request: The incoming HTTP request
-            user: Authenticated user identity
-            model_name: Name of the model to use
-            bot_class: Bot class to instantiate (OpenaiChatBot or StreamOpenaiChatBot)
-            typing_timeout_seconds: Timeout for typing indicators
-
-        Returns:
-            Response from the Bot Framework adapter
-        """
         logger.info(f"Starting chat completion for model {model_name}")
 
-        # Add timeout for LiteLLM service call to prevent hanging
         try:
             client: openai.AsyncClient = await asyncio.wait_for(
                 LiteLLMService.openai_aclient_for_user(user=user), timeout=30.0
@@ -79,7 +65,6 @@ class OpenaiChatController(Controller):
         )
         adapter: CloudAdapter = RoutesService.get_adapter(path)
 
-        # Add timeout to prevent MSAL/Bot Framework hangs
         adapter_task = asyncio.create_task(adapter.process(request, chat_bot))
         try:
             result = await asyncio.wait_for(adapter_task, timeout=120.0)
@@ -89,7 +74,7 @@ class OpenaiChatController(Controller):
             logger.error("Bot adapter processing timed out after 120 seconds")
             adapter_task.cancel()
             try:
-                await adapter_task  # Wait for cancellation to complete
+                await adapter_task
             except asyncio.CancelledError:
                 pass
             return Response(status_code=504, content="Gateway timeout - bot processing took too long")
