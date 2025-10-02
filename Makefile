@@ -97,4 +97,4 @@ local-cert:
 
 up-dev:
 	@echo "Starting development environment with Docker Compose..."
-	docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build
+	docker compose -f docker-compose.dev.yml --env-file .env up -d --build
