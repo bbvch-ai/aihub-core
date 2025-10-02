@@ -90,7 +90,7 @@ class BaseChatBot(ActivityHandler):
         ConversationTracker.track_conversation(conversation_id)
 
         # Persist user message
-        await self.completion_handler.add_user_message_to_conversation(
+        self.completion_handler.add_user_message_to_conversation(
             path=self.path,
             turn_context=turn_context,
         )
@@ -133,7 +133,7 @@ class BaseChatBot(ActivityHandler):
             )
 
         # Persist bot response
-        await self.completion_handler.add_bot_message_to_conversation(
+        self.completion_handler.add_bot_message_to_conversation(
             path=self.path,
             turn_context=turn_context,
             message=response,

@@ -51,7 +51,7 @@ class BotInTheLoopController(Controller):
                 external_agent_event_distributor=external_agent_event_distributor,
                 bot_in_the_loop_handler=bot_in_the_loop_handler,
             )
-            adapter: CloudAdapter = await RoutesService.get_adapter(path)
+            adapter: CloudAdapter = RoutesService.get_adapter(path)
             return await adapter.process(request, chat_bot)
 
         return self

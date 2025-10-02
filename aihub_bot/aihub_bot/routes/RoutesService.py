@@ -29,7 +29,7 @@ class RoutesService(ChatService):
         return str(request.url).replace(str(request.base_url), "/")
 
     @staticmethod
-    async def get_adapter(path: str) -> CloudAdapter:
+    def get_adapter(path: str) -> CloudAdapter:
         """
         ### What
         - Returns the adapter for the given path.
@@ -38,9 +38,9 @@ class RoutesService(ChatService):
         - Each path has a unique set of credentials.
         - The credential is needed to verify that requests are coming from the correct bot service.
         """
-        credentials: Credentials = await RoutesService.get_credentials(path)
+        credentials: Credentials = RoutesService.get_credentials(path)
         return CloudAdapter(ConfigurationBotFrameworkAuthentication(credentials))
 
     @staticmethod
-    async def get_credentials(path: str) -> Credentials:
-        return await PathEntity.get_credentials_by_path(path)
+    def get_credentials(path: str) -> Credentials:
+        return PathEntity.get_credentials_by_path(path)
