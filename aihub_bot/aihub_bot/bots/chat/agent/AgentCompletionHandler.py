@@ -127,7 +127,7 @@ class AgentCompletionHandler(CompletionHandler):
         persisted_messages: list[Message] = CompletionHandler.get_messages_by_conversation_id(
             conversation_id=turn_context.activity.conversation.id
         )
-        system_message: Message = await CompletionHandler.get_system_message(
+        system_message: Message = CompletionHandler.get_system_message(
             turn_context=turn_context,
             path=path,
         )
