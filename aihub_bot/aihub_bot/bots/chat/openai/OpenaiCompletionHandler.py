@@ -7,15 +7,10 @@ from collections.abc import AsyncGenerator
 from typing import override
 
 import openai
+from botbuilder.core.teams import TeamsInfo
+from botbuilder.schema.teams import TeamsChannelAccount
 from botframework.connector import Channels
 
-from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
-    DangerousDevelopmentOnlyAuthHandler,
-)
-from aihub_lib.auth.identity.AzureIdentityProvider.AzureIdentityProvider import AzureIdentityProvider
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from botbuilder.core import TurnContext
@@ -117,17 +112,25 @@ class OpenaiCompletionHandler(CompletionHandler):
         ]
 
         if turn_context.activity.channel_id == Channels.ms_teams:
-            if not turn_context.activity.from_property.aad_object_id:
-                raise RuntimeError(
-                    f"Missing AAD Object ID in MS Teams from property: {turn_context.activity.from_property}"
-                )
-            user: UserIdentity = await AzureIdentityProvider().get_user_identity_by_oid(
-                user_oid=turn_context.activity.from_property.aad_object_id
+            member: TeamsChannelAccount = await TeamsInfo.get_member(
+                turn_context,
+                turn_context.activity.from_property.id,
+            )
+            user: UserIdentity = UserIdentity(
+                id=member.aad_object_id,
+                name=member.name,
+                email=member.email,
+                roles=["TestOnlyFullAdminAccess"],
             )
         else:
-            user = await DangerousDevelopmentOnlyAuthHandler(
-                identity_provider=DangerousDevelopmentOnlyIdentityProvider()
-            ).authenticate_token("")
+            user: UserIdentity = UserIdentity(
+                id=turn_context.activity.from_property.id or "UNKNOWN",
+                name=turn_context.activity.from_property.name or "UNKNOWN",
+                email="UNKNOWN",
+                roles=["TestOnlyFullAdminAccess"],
+            )
+
+        logger.debug(f"Using user identity: {user}")
 
         try:
             client: openai.AsyncClient = await asyncio.wait_for(
