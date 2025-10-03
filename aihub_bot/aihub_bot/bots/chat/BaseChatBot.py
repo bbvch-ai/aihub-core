@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from asyncio import Event, Task
 from typing import Any, override
 
@@ -11,8 +10,6 @@ from botframework.connector import Channels
 
 from aihub_bot.bots.chat.CompletionHandler import CompletionHandler
 from aihub_bot.persistence.entities.ConversationEntity import ConversationTracker
-
-logger = logging.getLogger(__name__)
 
 
 class BaseChatBot(ActivityHandler):
@@ -161,14 +158,7 @@ class BaseChatBot(ActivityHandler):
 
             # Stop typing indicator
             typing_stop_signal.set()
-            try:
-                await asyncio.wait_for(typing_task, timeout=5.0)
-            except TimeoutError:
-                logger.warning("Typing task timed out during streaming response")
-                typing_task.cancel()
-            except Exception as e:
-                logger.warning(f"Typing task failed during streaming response: {e}")
-                pass
+            await typing_task
 
             # Send streaming response
             return await self.completion_handler.send_response_stream(
@@ -187,18 +177,8 @@ class BaseChatBot(ActivityHandler):
 
             # Stop typing indicator
             typing_stop_signal.set()
-            try:
-                await asyncio.wait_for(typing_task, timeout=5.0)
-            except TimeoutError:
-                logger.warning("Typing task timed out during json response")
-                typing_task.cancel()
-            except Exception as e:
-                logger.warning(f"Typing task failed during json response: {e}")
-                pass
+            await typing_task
 
             # Send json response
-            try:
-                await turn_context.send_activity(response)
-            except Exception as e:
-                raise RuntimeError(f"Failed to send response: {e}") from e
+            await turn_context.send_activity(response)
             return response

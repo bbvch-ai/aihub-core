@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from typing import Annotated
 
@@ -51,20 +50,9 @@ class OpenaiChatController(Controller):
         chat_bot = bot_class(model_name=model_name, path=path, typing_timeout_seconds=typing_timeout_seconds)
         adapter: CloudAdapter = RoutesService.get_adapter(path)
 
-        adapter_task = asyncio.create_task(adapter.process(request, chat_bot))
-        try:
-            logger.info(f"Waiting for chat completion for model {model_name}")
-            result = await asyncio.wait_for(adapter_task, timeout=120.0)
-            logger.info("Chat completion successful")
-            return result
-        except TimeoutError:
-            logger.error("Bot adapter processing timed out after 120 seconds")
-            adapter_task.cancel()
-            try:
-                await adapter_task
-            except asyncio.CancelledError:
-                pass
-            return Response(status_code=504, content="Gateway timeout - bot processing took too long")
+        result = await adapter.process(request, chat_bot)
+        logger.info("Chat completion successful")
+        return result
 
     def json_chat_completion(
         self,

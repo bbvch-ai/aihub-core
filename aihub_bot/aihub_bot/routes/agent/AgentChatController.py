@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from typing import Annotated
 
@@ -55,19 +54,9 @@ class AgentChatController(Controller):
         )
         adapter: CloudAdapter = RoutesService.get_adapter(path)
 
-        adapter_task = asyncio.create_task(adapter.process(request, chat_bot))
-        try:
-            result = await asyncio.wait_for(adapter_task, timeout=120.0)
-            logger.info("Agent chat completion successful")
-            return result
-        except TimeoutError:
-            logger.error("Bot adapter processing timed out after 120 seconds")
-            adapter_task.cancel()
-            try:
-                await adapter_task
-            except asyncio.CancelledError:
-                pass
-            return Response(status_code=504, content="Gateway timeout - bot processing took too long")
+        result = await adapter.process(request, chat_bot)
+        logger.info("Agent chat completion successful")
+        return result
 
     def completions_json(
         self,

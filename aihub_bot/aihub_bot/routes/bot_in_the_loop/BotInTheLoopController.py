@@ -1,5 +1,3 @@
-import asyncio
-import logging
 from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -18,8 +16,6 @@ from aihub_bot.bots.bot_in_the_loop.BotInTheLoopBot import BotInTheLoopBot
 from aihub_bot.routes.activity_model import ActivityModel
 from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHandler
 from aihub_bot.routes.RoutesService import RoutesService
-
-logger = logging.getLogger(__name__)
 
 
 class BotInTheLoopController(Controller):
@@ -48,8 +44,6 @@ class BotInTheLoopController(Controller):
                 BotInTheLoopHandler, Depends(BotInTheLoopHandler.use_bot_in_the_loop_handler)
             ],
         ) -> Response:
-            logger.info("Starting bot-in-the-loop chat completion")
-
             path: str = RoutesService.get_path(request)
             bot_in_the_loop_handler.path = path
             chat_bot: BotInTheLoopBot = BotInTheLoopBot(
@@ -58,19 +52,6 @@ class BotInTheLoopController(Controller):
                 bot_in_the_loop_handler=bot_in_the_loop_handler,
             )
             adapter: CloudAdapter = RoutesService.get_adapter(path)
-
-            adapter_task = asyncio.create_task(adapter.process(request, chat_bot))
-            try:
-                result = await asyncio.wait_for(adapter_task, timeout=120.0)
-                logger.info("Bot-in-the-loop completion successful")
-                return result
-            except TimeoutError:
-                logger.error("Bot adapter processing timed out after 120 seconds")
-                adapter_task.cancel()
-                try:
-                    await adapter_task
-                except asyncio.CancelledError:
-                    pass
-                return Response(status_code=504, content="Gateway timeout - bot processing took too long")
+            return await adapter.process(request, chat_bot)
 
         return self
