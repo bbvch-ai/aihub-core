@@ -7,13 +7,13 @@ from collections.abc import AsyncGenerator
 from typing import override
 
 import openai
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
+from botbuilder.core import TurnContext
 from botbuilder.core.teams import TeamsInfo
 from botbuilder.schema.teams import TeamsChannelAccount
 from botframework.connector import Channels
-
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from botbuilder.core import TurnContext
 from openai import APIStatusError, AsyncStream
 from openai.types.chat import (
     ChatCompletion,
@@ -29,7 +29,6 @@ from openai.types.chat.chat_completion_content_part_image_param import ChatCompl
 
 from aihub_bot.bots.chat.CompletionHandler import CompletionHandler
 from aihub_bot.persistence.entities.ConversationEntity import Content, Message
-from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
 
 logger = logging.getLogger(__name__)
 
@@ -132,13 +131,7 @@ class OpenaiCompletionHandler(CompletionHandler):
 
         logger.debug(f"Using user identity: {user}")
 
-        try:
-            client: openai.AsyncClient = await asyncio.wait_for(
-                LiteLLMService.openai_aclient_for_user(user=user), timeout=30.0
-            )
-        except TimeoutError:
-            logger.error("LiteLLM service call timed out after 30 seconds")
-            raise
+        client: openai.AsyncClient = await LiteLLMService.openai_aclient_for_user(user=user)
 
         return await client.chat.completions.create(
             model=model_name,
