@@ -71,7 +71,7 @@ defs = Definitions(
         "summary_parser": RecursiveSummaryParserResource(),
         **local_mongo_milvus_storage_context_resource(
             vector_store_uri=MilvusSettings().URL,
-            store_name=get_db_name_from_bucket_name(DATALAKE_CONTAINER_NAME),
+            store_name=get_db_name_from_bucket_name(bucket_name=DATALAKE_CONTAINER_NAME, auto_sync=False),
         ),
         **s3_data_lake_resources(
             container_name=DATALAKE_CONTAINER_NAME,

@@ -6,11 +6,13 @@ from mongoengine import DoesNotExist, disconnect
 from aihub_pipeline.util.connection_utils import connect_to_mongo_db
 
 
-def get_db_name_from_bucket_name(bucket_name: str) -> str:
+def get_db_name_from_bucket_name(bucket_name: str, auto_sync: bool = False) -> str:
     """
     Get the database name (vector/doc store name) from the bucket name (container name).
-    If the bucket doesn't exist in the database, creates a new bucket entry
-    with db_name = bucket_name as default.
+    If the bucket doesn't exist in the database, creates a new bucket entry with db_name = bucket_name as default.
+
+    Set auto_sync to True for autoloading pipelines (e.g. SharePoint to data lake) that automatically ingest data into
+    the datalake. Set to False for manual pipelines (manual upload to data lake).
     """
     connect_to_mongo_db(AIHubSettings().MONGO_MAIN_DB_NAME)
 
@@ -18,7 +20,7 @@ def get_db_name_from_bucket_name(bucket_name: str) -> str:
         bucket_entity = BucketEntity.get_bucket_by_bucket_name(bucket_name)
         return bucket_entity.db_name
     except DoesNotExist:
-        bucket_entity = BucketEntity.create_bucket(bucket_name=bucket_name, db_name=bucket_name)
+        bucket_entity = BucketEntity.create_bucket(bucket_name=bucket_name, db_name=bucket_name, auto_sync=auto_sync)
         return bucket_entity.db_name
     finally:
         disconnect()
