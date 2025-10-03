@@ -1,9 +1,7 @@
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from dagster import AssetKey, AssetSelection, Definitions, DynamicPartitionsDefinition
-from mongoengine import disconnect
 
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
@@ -29,7 +27,6 @@ from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import Recur
 from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
 from aihub_pipeline.util.bucket_utils import get_db_name_from_bucket_name
-from aihub_pipeline.util.connection_utils import connect_to_mongo_db
 
 DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
 DOCUMENT_KEY = AssetKey(["playground", "documents"])
@@ -39,14 +36,6 @@ SUMMARY_NODES_KEY = AssetKey(["playground", "summary_nodes"])
 
 DATALAKE_CONTAINER_NAME = "playground"
 FIGURES_DIRECTORY_NAME = "__figures__"
-
-
-def get_store_name() -> str:
-    connect_to_mongo_db(AIHubSettings().MONGO_MAIN_DB_NAME)
-    try:
-        return get_db_name_from_bucket_name(DATALAKE_CONTAINER_NAME)
-    finally:
-        disconnect()
 
 
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
@@ -82,7 +71,7 @@ defs = Definitions(
         "summary_parser": RecursiveSummaryParserResource(),
         **local_mongo_milvus_storage_context_resource(
             vector_store_uri=MilvusSettings().URL,
-            store_name=get_store_name(),
+            store_name=get_db_name_from_bucket_name(DATALAKE_CONTAINER_NAME),
         ),
         **s3_data_lake_resources(
             container_name=DATALAKE_CONTAINER_NAME,
