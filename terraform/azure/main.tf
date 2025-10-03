@@ -13,27 +13,26 @@ terraform {
 }
 
 provider "azurerm" {
+  subscription_id = var.subscription_id
   features {}
 }
 
+# Data source for existing resource group
 data "azurerm_resource_group" "rg" {
   name = var.resource_group_name
 }
 
-locals {
-  aks_name = var.cluster_name
-}
-
+# AKS cluster
 resource "azurerm_kubernetes_cluster" "aks" {
-  name                = local.aks_name
+  name                = var.cluster_name
   location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
-  dns_prefix          = replace(local.aks_name, "_", "-")
+  dns_prefix          = replace(var.cluster_name, "_", "-")
 
   kubernetes_version = var.kubernetes_version
 
   default_node_pool {
-    name                         = var.system_pool_name
+    name                         = "system"
     vm_size                      = var.system_vm_size
     node_count                   = var.system_node_count
     os_disk_size_gb              = var.system_os_disk_size_gb
@@ -54,12 +53,18 @@ resource "azurerm_kubernetes_cluster" "aks" {
     outbound_type  = var.outbound_type
   }
 
-  tags = var.tags
+  tags = {
+    project     = var.tag_project
+    environment = var.tag_environment
+    cloud       = var.tag_cloud
+    managed_by  = var.tag_managed_by
+  }
 }
 
-# Cost-saving CPU user pool on Spot, autoscaling down to 0
-resource "azurerm_kubernetes_cluster_node_pool" "cpu_spot" {
-  name                  = var.user_pool_name
+# User node pool (Spot instances for cost optimization)
+resource "azurerm_kubernetes_cluster_node_pool" "user_pool" {
+  count                 = var.user_max_count > 0 ? 1 : 0
+  name                  = "user"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
   vm_size               = var.user_vm_size
   mode                  = "User"
@@ -67,13 +72,13 @@ resource "azurerm_kubernetes_cluster_node_pool" "cpu_spot" {
   max_count             = var.user_max_count
   os_disk_size_gb       = var.user_os_disk_size_gb
 
-  # Spot specifics
+  # Spot configuration for cost savings
   priority         = "Spot"
   eviction_policy  = "Delete"
   spot_max_price   = var.user_spot_max_price
 
   node_labels = {
-    "pool"                                      = var.user_pool_name
+    "pool"                                      = "user"
     "kubernetes.azure.com/scalesetpriority"     = "spot"
   }
 
@@ -81,9 +86,10 @@ resource "azurerm_kubernetes_cluster_node_pool" "cpu_spot" {
     "spot=true:NoSchedule"
   ]
 
-  tags = var.tags
+  tags = {
+    project     = var.tag_project
+    environment = var.tag_environment
+    cloud       = var.tag_cloud
+    managed_by  = var.tag_managed_by
+  }
 }
-
-
-
-

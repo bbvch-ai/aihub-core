@@ -1,70 +1,128 @@
-# AKS (CPU-only, cost-optimized) Terraform
+# AI Hub Multi-Cloud Terraform
 
-This Terraform creates an AKS cluster optimized for CPU-only workloads with a small on-demand system pool and a Spot user pool that can scale to zero.
+Simple multi-cloud deployment for AI Hub Kubernetes clusters supporting both Azure and Stoney cloud.
 
-## Files
-- `main.tf` – providers, resource group, AKS, spot node pool
-- `variables.tf` – tunables (region, sizes, counts, pricing, subscription)
-- `outputs.tf` – cluster name and kubeconfig
+## 🎯 **Simple Architecture**
 
-## Default Configuration
-- **Resource Group**: `aks-test` (must exist, will not be created/modified)
-- **Cluster Name**: `aihub-aks-test` (fixed name for reliable updates)
-- **Subscription**: `57b3a4d4-5044-48ba-b2d7-83155639b3a6`
-- **System pool**: `Standard_B2als_v2` (1 node, fixed)
-- **User pool (Spot)**: `Standard_D4as_v5`, 0 nodes (autoscaling disabled)
+```
+terraform/
+├── azure/           # Standalone Azure Terraform
+├── stoney/          # Standalone Stoney cloud Terraform  
+└── deploy.sh        # Single script: ./deploy.sh azure|stoney
+```
 
-## Usage
+## 🚀 **Quick Start**
+
+### **Deploy to Azure**
 ```bash
-# 1) Login to Azure
+# Plan deployment
+./deploy.sh azure test plan
+
+# Apply deployment
+./deploy.sh azure test apply
+
+# Destroy resources
+./deploy.sh azure test destroy
+```
+
+### **Deploy to Stoney cloud**
+```bash
+# Plan deployment
+./deploy.sh stoney test plan
+
+# Apply deployment
+./deploy.sh stoney test apply
+
+# Destroy resources
+./deploy.sh stoney test destroy
+```
+
+## 📋 **Usage**
+
+```bash
+./deploy.sh <cloud-provider> [environment] [action]
+```
+
+**Parameters:**
+- `cloud-provider`: `azure` or `stoney`
+- `environment`: `test` or `prod` (default: `test`)
+- `action`: `plan`, `apply`, or `destroy` (default: `plan`)
+
+## 🔧 **Configuration**
+
+All shared variables are **automatically injected** by the script:
+- **Cluster name**: `aihub-{cloud}-{environment}`
+- **Kubernetes version**: `1.30.2`
+- **Project name**: `aihub`
+- **Node configuration**: 1 system node, 0-3 user nodes
+- **Disk sizes**: 64GB system, 128GB user
+- **Tags**: Project, environment, cloud provider
+- **Azure subscription ID**: Automatically detected from Azure CLI
+
+## ☁️ **Cloud-Specific Setup**
+
+### **Azure Prerequisites**
+```bash
+# Install Azure CLI
 az login
 
-# 2) Set subscription ID (required for Terraform)
-export ARM_SUBSCRIPTION_ID=57b3a4d4-5044-48ba-b2d7-83155639b3a6
+# Create resource groups (required)
+# Test environment
+az group create --name aks-test --location "Switzerland North"
 
-# 3) Initialize Terraform
-cd terraform
-terraform init
-
-# 4) Plan deployment
-terraform plan
-
-# 5) Apply configuration
-terraform apply
-
-# 6) Configure kubectl
-terraform output -raw kube_config > kubeconfig
-export KUBECONFIG=$PWD/kubeconfig
-kubectl get nodes
+# Production environment (name to be determined)
+az group create --name aks-prod --location "Switzerland North"
 ```
 
-## Customization
-Override defaults with variables:
+### **Stoney cloud Prerequisites**
 ```bash
-terraform plan \
-  -var resource_group_name=my-existing-rg \
-  -var cluster_name=my-cluster-name \
-  -var user_vm_size=Standard_D2as_v5 \
-  -var user_max_count=5
+# Install OpenStack CLI
+# Source your OpenStack RC file or set environment variables
+source your-project-openrc.sh
+
+# Create keypair (required)
+openstack keypair create --public-key ~/.ssh/id_rsa.pub aihub-keypair-dev
 ```
 
-**Notes**: 
-- The resource group must already exist and will not be created or modified
-- The cluster name is fixed to avoid recreation on updates
-- To enable autoscaling, set `user_max_count` > `user_min_count`
+## 🎯 **Key Features**
 
-## Cost Optimization
-- **Spot pricing**: 60-90% savings on user workloads
-- **Scale to zero**: User pool scales down when idle
-- **Small system pool**: Minimal baseline cost
-- **Taint handling**: Only fault-tolerant workloads run on Spot
+✅ **No manual configuration** - All variables injected automatically  
+✅ **Simple command** - One script for both clouds  
+✅ **Environment support** - dev/test/prod environments  
+✅ **Prerequisites checking** - Validates cloud access  
+✅ **Consistent naming** - Same patterns across clouds  
+✅ **Cost optimization** - Spot instances for user nodes (Azure)  
 
-## Cleanup
-To destroy the infrastructure and avoid ongoing costs:
+## 📊 **What Gets Created**
+
+### **Azure**
+- AKS cluster with system and user node pools
+- Spot instances for cost optimization
+- System-assigned managed identity
+- OIDC issuer and workload identity enabled
+
+### **Stoney cloud**
+- Magnum Kubernetes cluster
+- Network, subnet, and router
+- Cluster template with proper image
+- Node groups for system and user nodes
+
+## 🔍 **Examples**
+
 ```bash
-# Destroy all resources
-terraform destroy
+# Plan Azure test environment
+./deploy.sh azure test plan
 
-# Or destroy with auto-approval (be careful!)
-terraform destroy -auto-approve
+# Deploy Stoney cloud prod environment
+./deploy.sh stoney prod apply
+
+# Destroy Azure test environment
+./deploy.sh azure test destroy
+
+# Show help
+./deploy.sh
 ```
+
+## 🎉 **That's It!**
+
+No complex configuration files, no manual copying, no modules to understand. Just run the script with your cloud provider and you're done!
