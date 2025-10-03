@@ -220,54 +220,39 @@ if [ "$ACTION" = "plan" ]; then
     terraform plan
 elif [ "$ACTION" = "apply" ]; then
     terraform plan -out=tfplan
-    echo -e "${YELLOW}⚠️  This will create $CLOUD_PROVIDER resources. Do you want to continue? (y/N)${NC}"
-    read -r response
-    if [[ "$response" =~ ^[Yy]$ ]]; then
-        terraform apply tfplan
-        echo -e "${GREEN}✅ Deployment completed successfully!${NC}"
-        
-        # Show cluster information
+    terraform apply -auto-approve tfplan
+    echo -e "${GREEN}✅ Deployment completed successfully!${NC}"
+
+    echo ""
+    echo -e "${BLUE}📊 Cluster Information:${NC}"
+    echo "========================"
+    echo "Cluster Name: $CLUSTER_NAME"
+    echo "Environment: $ENVIRONMENT"
+    echo "Cloud Provider: $CLOUD_PROVIDER"
+
+    if [ "$CLOUD_PROVIDER" = "azure" ]; then
+        echo "Resource Group: $RESOURCE_GROUP_NAME"
         echo ""
-        echo -e "${BLUE}📊 Cluster Information:${NC}"
-        echo "========================"
-        echo "Cluster Name: $CLUSTER_NAME"
-        echo "Environment: $ENVIRONMENT"
-        echo "Cloud Provider: $CLOUD_PROVIDER"
-        
-        if [ "$CLOUD_PROVIDER" = "azure" ]; then
-            echo "Resource Group: $RESOURCE_GROUP_NAME"
-            echo ""
-            echo -e "${YELLOW}🔧 Setting up kubectl access...${NC}"
-            az aks get-credentials --resource-group "$RESOURCE_GROUP_NAME" --name "$CLUSTER_NAME" --overwrite-existing
-            
-        elif [ "$CLOUD_PROVIDER" = "stoney" ]; then
-            echo ""
-            echo -e "${YELLOW}🔧 Setting up kubectl access...${NC}"
-            openstack coe cluster config --dir ~/.kube "$CLUSTER_NAME"
-        fi
-        
-        # Test cluster access
-        if kubectl get nodes &> /dev/null; then
-            echo -e "${GREEN}✅ Cluster access successful!${NC}"
-            echo ""
-            echo -e "${BLUE}📋 Cluster Status:${NC}"
-            kubectl get nodes -o wide
-        else
-            echo -e "${RED}❌ Failed to access cluster. Please check your configuration.${NC}"
-        fi
-        
+        echo -e "${YELLOW}🔧 Setting up kubectl access...${NC}"
+        az aks get-credentials --resource-group "$RESOURCE_GROUP_NAME" --name "$CLUSTER_NAME" --overwrite-existing
+
+    elif [ "$CLOUD_PROVIDER" = "stoney" ]; then
+        echo ""
+        echo -e "${YELLOW}🔧 Setting up kubectl access...${NC}"
+        openstack coe cluster config --dir ~/.kube "$CLUSTER_NAME"
+    fi
+
+    if kubectl get nodes &> /dev/null; then
+        echo -e "${GREEN}✅ Cluster access successful!${NC}"
+        echo ""
+        echo -e "${BLUE}📋 Cluster Status:${NC}"
+        kubectl get nodes -o wide
     else
-        echo -e "${YELLOW}❌ Deployment cancelled by user${NC}"
+        echo -e "${RED}❌ Failed to access cluster. Please check your configuration.${NC}"
     fi
 elif [ "$ACTION" = "destroy" ]; then
-    echo -e "${YELLOW}⚠️  This will DESTROY all $CLOUD_PROVIDER resources. Are you sure? (y/N)${NC}"
-    read -r response
-    if [[ "$response" =~ ^[Yy]$ ]]; then
-        terraform destroy -auto-approve
-        echo -e "${GREEN}✅ Resources destroyed successfully!${NC}"
-    else
-        echo -e "${YELLOW}❌ Destruction cancelled by user${NC}"
-    fi
+    terraform destroy -auto-approve
+    echo -e "${GREEN}✅ Resources destroyed successfully!${NC}"
 fi
 
 # No cleanup needed - using static .tfvars files
