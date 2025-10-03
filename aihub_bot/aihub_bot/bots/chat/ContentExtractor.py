@@ -56,9 +56,21 @@ class ContentExtractor:
     @staticmethod
     def _extract_text_content(activity: Activity) -> list[Content]:
         """Extract text content from activity."""
-        if activity.text:
-            return [Content(text=activity.text, type="text")]
-        return []
+        text = activity.text or ""
+
+        # For Teams, use HTML content if available (contains emojis in correct positions)
+        if activity.channel_id == Channels.ms_teams and activity.attachments:
+            for attachment in activity.attachments:
+                if attachment.content_type == "text/html" and attachment.content:
+                    # Use the HTML directly - LLMs can parse it and extract emojis from alt attributes
+                    text = attachment.content
+                    break
+
+        if not text:
+            return []
+
+        logger.debug(f"Text content (repr): {repr(text)}")
+        return [Content(text=text, type="text")]
 
     @staticmethod
     def _extract_slack_files(path: str, activity: Activity) -> list[Content]:
@@ -94,7 +106,7 @@ class ContentExtractor:
             return content
 
         for attachment in activity.attachments:
-            # Skip Teams HTML content that's not a real file
+            # Skip Teams HTML content that's not a real file (already extracted from activity.text)
             if (
                 activity.channel_id == Channels.ms_teams
                 and attachment.content_url is None
@@ -102,7 +114,7 @@ class ContentExtractor:
             ):
                 continue
 
-            # Skip emoji attachments (they appear as attachments without names or URLs)
+            # Skip emoji image attachments without names (unicode is already in activity.text)
             if not attachment.name or not attachment.content_url:
                 logger.debug(
                     f"Skipping attachment without name or URL (likely emoji): "
