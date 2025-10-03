@@ -36,15 +36,14 @@ def get_or_create_namespace_for_directory(bucket_name: str, directory_name: str)
         except DoesNotExist:
             bucket_entity = BucketEntity.create_bucket(bucket_name=bucket_name, db_name=bucket_name)
 
-        namespace_entity = NamespaceEntity.get_namespace_by_bucket_and_folder(
-            bucket_id=str(bucket_entity.id), folder_name=directory_name
-        )
-
-        if not namespace_entity:
+        try:
+            namespace_entity = NamespaceEntity.get_namespace_by_bucket_and_folder(
+                bucket_id=str(bucket_entity.id), folder_name=directory_name
+            )
+        except DoesNotExist:
             namespace_entity = NamespaceEntity.create_namespace(
                 bucket_id=str(bucket_entity.id), namespace_name=directory_name, folder_name=directory_name
             )
-
         return namespace_entity.namespace_name
 
     finally:
