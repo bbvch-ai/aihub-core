@@ -95,15 +95,8 @@ cd "$CLOUD_DIR"
 
 # Common configuration
 CLUSTER_NAME="aihub-${CLOUD_PROVIDER}-${ENVIRONMENT}"
-KUBERNETES_VERSION="1.30.2"
 PROJECT_NAME="aihub"
 
-# Node pool configuration
-SYSTEM_NODE_COUNT=1
-SYSTEM_OS_DISK_SIZE_GB=64
-USER_MIN_COUNT=0
-USER_MAX_COUNT=3
-USER_OS_DISK_SIZE_GB=128
 
 # Tags (using individual variables instead of JSON)
 TAG_PROJECT="$PROJECT_NAME"
@@ -123,18 +116,14 @@ if [ "$CLOUD_PROVIDER" = "azure" ]; then
         RESOURCE_GROUP_NAME="aks-prod"  # To be determined
     fi
     
-    # Get subscription ID from Azure CLI
+    # Get subscription ID from Azure CLI and export for Terraform provider
     SUBSCRIPTION_ID=$(az account show --query id --output tsv)
     if [ -z "$SUBSCRIPTION_ID" ]; then
         echo -e "${RED}❌ Could not get Azure subscription ID. Please ensure you're logged in.${NC}"
         exit 1
     fi
+    export ARM_SUBSCRIPTION_ID="$SUBSCRIPTION_ID"
     
-    SYSTEM_VM_SIZE="Standard_D4s_v5"
-    USER_VM_SIZE="Standard_D4as_v5"
-    USER_SPOT_MAX_PRICE=-1
-    NETWORK_PLUGIN="azure"
-    OUTBOUND_TYPE="loadBalancer"
     
     # Check prerequisites
     echo -e "${YELLOW}🔍 Checking Azure prerequisites...${NC}"
@@ -160,18 +149,11 @@ if [ "$CLOUD_PROVIDER" = "azure" ]; then
     fi
 
 elif [ "$CLOUD_PROVIDER" = "stoney" ]; then
-    # Stoney cloud-specific variables
-    REGION="RegionOne"
-    AVAILABILITY_ZONE="nova"
-    KEYPAIR_NAME="aihub-keypair-${ENVIRONMENT}"
-    IMAGE_NAME="Ubuntu 22.04 (240702): Kubernetes v1.30.2"
-    IMAGE_ID="db68e8e8-d4b4-4c4f-af41-4166eb33973d"
-    FLAVOR_SYSTEM="Standard Düdingen c002m0004"
-    FLAVOR_USER="Standard Düdingen c002m0004"
-    NETWORK_NAME="aihub-network-${ENVIRONMENT}"
-    SUBNET_CIDR="10.0.0.0/24"
-    EXTERNAL_NETWORK="public"
-    
+    # Stoney cloud prerequisites
+    # Derive keypair name if not provided via environment
+    if [ -z "$KEYPAIR_NAME" ]; then
+        KEYPAIR_NAME="aihub-keypair-${ENVIRONMENT}"
+    fi
     # Check prerequisites
     echo -e "${YELLOW}🔍 Checking Stoney cloud prerequisites...${NC}"
     
@@ -211,96 +193,24 @@ echo -e "${GREEN}✅ Prerequisites check passed${NC}"
 echo -e "${BLUE}🔧 Initializing Terraform...${NC}"
 terraform init
 
-# Prepare terraform command with variables
-TF_VARS=""
-if [ "$CLOUD_PROVIDER" = "azure" ]; then
-    TF_VARS="-var cluster_name=$CLUSTER_NAME"
-    TF_VARS="$TF_VARS -var kubernetes_version=$KUBERNETES_VERSION"
-    TF_VARS="$TF_VARS -var project_name=$PROJECT_NAME"
-    TF_VARS="$TF_VARS -var environment=$ENVIRONMENT"
-    TF_VARS="$TF_VARS -var system_node_count=$SYSTEM_NODE_COUNT"
-    TF_VARS="$TF_VARS -var system_os_disk_size_gb=$SYSTEM_OS_DISK_SIZE_GB"
-    TF_VARS="$TF_VARS -var user_min_count=$USER_MIN_COUNT"
-    TF_VARS="$TF_VARS -var user_max_count=$USER_MAX_COUNT"
-    TF_VARS="$TF_VARS -var user_os_disk_size_gb=$USER_OS_DISK_SIZE_GB"
-    TF_VARS="$TF_VARS -var tag_project=$TAG_PROJECT"
-    TF_VARS="$TF_VARS -var tag_environment=$TAG_ENVIRONMENT"
-    TF_VARS="$TF_VARS -var tag_cloud=$TAG_CLOUD"
-    TF_VARS="$TF_VARS -var tag_managed_by=$TAG_MANAGED_BY"
-    TF_VARS="$TF_VARS -var subscription_id=$SUBSCRIPTION_ID"
-    TF_VARS="$TF_VARS -var resource_group_name=$RESOURCE_GROUP_NAME"
-    TF_VARS="$TF_VARS -var system_vm_size=$SYSTEM_VM_SIZE"
-    TF_VARS="$TF_VARS -var user_vm_size=$USER_VM_SIZE"
-    TF_VARS="$TF_VARS -var user_spot_max_price=$USER_SPOT_MAX_PRICE"
-    TF_VARS="$TF_VARS -var network_plugin=$NETWORK_PLUGIN"
-    TF_VARS="$TF_VARS -var outbound_type=$OUTBOUND_TYPE"
+## No TF_VARS construction; rely on static per-cloud terraform.tfvars
 
-elif [ "$CLOUD_PROVIDER" = "stoney" ]; then
-    TF_VARS="-var cluster_name=$CLUSTER_NAME"
-    TF_VARS="$TF_VARS -var kubernetes_version=$KUBERNETES_VERSION"
-    TF_VARS="$TF_VARS -var project_name=$PROJECT_NAME"
-    TF_VARS="$TF_VARS -var environment=$ENVIRONMENT"
-    TF_VARS="$TF_VARS -var system_node_count=$SYSTEM_NODE_COUNT"
-    TF_VARS="$TF_VARS -var system_os_disk_size_gb=$SYSTEM_OS_DISK_SIZE_GB"
-    TF_VARS="$TF_VARS -var user_min_count=$USER_MIN_COUNT"
-    TF_VARS="$TF_VARS -var user_max_count=$USER_MAX_COUNT"
-    TF_VARS="$TF_VARS -var user_os_disk_size_gb=$USER_OS_DISK_SIZE_GB"
-    TF_VARS="$TF_VARS -var tag_project=$TAG_PROJECT"
-    TF_VARS="$TF_VARS -var tag_environment=$TAG_ENVIRONMENT"
-    TF_VARS="$TF_VARS -var tag_cloud=$TAG_CLOUD"
-    TF_VARS="$TF_VARS -var tag_managed_by=$TAG_MANAGED_BY"
-    TF_VARS="$TF_VARS -var region=$REGION"
-    TF_VARS="$TF_VARS -var availability_zone=$AVAILABILITY_ZONE"
-    TF_VARS="$TF_VARS -var keypair_name=$KEYPAIR_NAME"
-    TF_VARS="$TF_VARS -var image_name='$IMAGE_NAME'"
-    TF_VARS="$TF_VARS -var flavor_system='$FLAVOR_SYSTEM'"
-    TF_VARS="$TF_VARS -var flavor_user='$FLAVOR_USER'"
-    TF_VARS="$TF_VARS -var network_name=$NETWORK_NAME"
-    TF_VARS="$TF_VARS -var subnet_cidr=$SUBNET_CIDR"
-    TF_VARS="$TF_VARS -var external_network=$EXTERNAL_NETWORK"
-fi
-
-# Create terraform.tfvars file for complex values
-echo -e "${BLUE}📝 Creating terraform.tfvars file...${NC}"
-cat > terraform.tfvars << EOF
-cluster_name = "$CLUSTER_NAME"
-kubernetes_version = "$KUBERNETES_VERSION"
-project_name = "$PROJECT_NAME"
-environment = "$ENVIRONMENT"
-system_node_count = $SYSTEM_NODE_COUNT
-system_os_disk_size_gb = $SYSTEM_OS_DISK_SIZE_GB
-user_min_count = $USER_MIN_COUNT
-user_max_count = $USER_MAX_COUNT
-user_os_disk_size_gb = $USER_OS_DISK_SIZE_GB
-tag_project = "$TAG_PROJECT"
-tag_environment = "$TAG_ENVIRONMENT"
-tag_cloud = "$TAG_CLOUD"
-tag_managed_by = "$TAG_MANAGED_BY"
-EOF
+# Set only dynamic values via environment variables
+echo -e "${BLUE}📝 Setting dynamic variables...${NC}"
+export TF_VAR_cluster_name="$CLUSTER_NAME"
+export TF_VAR_project_name="$PROJECT_NAME"
+export TF_VAR_environment="$ENVIRONMENT"
+export TF_VAR_tag_project="$TAG_PROJECT"
+export TF_VAR_tag_environment="$TAG_ENVIRONMENT"
+export TF_VAR_tag_cloud="$TAG_CLOUD"
+export TF_VAR_tag_managed_by="$TAG_MANAGED_BY"
 
 if [ "$CLOUD_PROVIDER" = "azure" ]; then
-    cat >> terraform.tfvars << EOF
-subscription_id = "$SUBSCRIPTION_ID"
-resource_group_name = "$RESOURCE_GROUP_NAME"
-system_vm_size = "$SYSTEM_VM_SIZE"
-user_vm_size = "$USER_VM_SIZE"
-user_spot_max_price = $USER_SPOT_MAX_PRICE
-network_plugin = "$NETWORK_PLUGIN"
-outbound_type = "$OUTBOUND_TYPE"
-EOF
+    export TF_VAR_subscription_id="$SUBSCRIPTION_ID"
+    export TF_VAR_resource_group_name="$RESOURCE_GROUP_NAME"
 elif [ "$CLOUD_PROVIDER" = "stoney" ]; then
-    cat >> terraform.tfvars << EOF
-region = "$REGION"
-availability_zone = "$AVAILABILITY_ZONE"
-keypair_name = "$KEYPAIR_NAME"
-image_name = "$IMAGE_NAME"
-image_id = "$IMAGE_ID"
-flavor_system = "$FLAVOR_SYSTEM"
-flavor_user = "$FLAVOR_USER"
-network_name = "$NETWORK_NAME"
-subnet_cidr = "$SUBNET_CIDR"
-external_network = "$EXTERNAL_NETWORK"
-EOF
+    export TF_VAR_keypair_name="$KEYPAIR_NAME"
+    export TF_VAR_network_name="$NETWORK_NAME"
 fi
 
 # Execute Terraform command
@@ -360,8 +270,7 @@ elif [ "$ACTION" = "destroy" ]; then
     fi
 fi
 
-# Clean up terraform.tfvars file
-rm -f terraform.tfvars
+# No cleanup needed - using static .tfvars files
 
 echo ""
 echo -e "${GREEN}🎉 $CLOUD_PROVIDER $ACTION completed!${NC}"

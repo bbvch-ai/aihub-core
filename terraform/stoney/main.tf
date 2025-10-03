@@ -71,7 +71,6 @@ resource "openstack_containerinfra_clustertemplate_v1" "cluster_template" {
   server_type         = "vm"
   cluster_distro      = "ubuntu"
   docker_storage_driver = "overlay2"
-  public              = true
   tls_disabled        = false
   registry_enabled    = false
 }

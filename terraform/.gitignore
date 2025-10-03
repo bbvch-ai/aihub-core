@@ -3,6 +3,8 @@
 *.tfstate.*
 *.tfvars
 *.tfvars.json
+!azure/test.auto.tfvars
+!stoney/test.auto.tfvars
 
 # Terraform directories
 .terraform/
