@@ -18,9 +18,8 @@ def fetch_ref_docs_to_remove(
 
     connect_to_mongo_db(doc_store_resource.document_store_name)
     try:
-        ref_docs = RefDoc.by_namespace(
+        ref_docs = RefDoc.get_documents(
             db_alias="default",
-            namespace=doc_store_resource.namespace_name,
             exclude_ids=ids,
         )
     finally:

@@ -78,6 +78,16 @@ class RefDoc(Document):
 
     @classmethod
     @trace_fn
+    def get_documents(
+        cls,
+        db_alias: str,
+        exclude_ids: list[str] | None = None,
+    ) -> list["RefDoc"]:
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return list(SwitchedRefDoc.objects.filter(id__nin=(exclude_ids or [])))
+
+    @classmethod
+    @trace_fn
     def count_by_namespace(
         cls,
         db_alias: str,
