@@ -94,15 +94,23 @@ class ContentExtractor:
             return content
 
         for attachment in activity.attachments:
-            try:
-                # Skip Teams HTML content that's not a real file
-                if (
-                    activity.channel_id == Channels.ms_teams
-                    and attachment.content_url is None
-                    and attachment.content_type == "text/html"
-                ):
-                    continue
+            # Skip Teams HTML content that's not a real file
+            if (
+                activity.channel_id == Channels.ms_teams
+                and attachment.content_url is None
+                and attachment.content_type == "text/html"
+            ):
+                continue
 
+            # Skip emoji attachments (they appear as attachments without names or URLs)
+            if not attachment.name or not attachment.content_url:
+                logger.debug(
+                    f"Skipping attachment without name or URL (likely emoji): "
+                    f"name={attachment.name}, url={attachment.content_url}, type={attachment.content_type}"
+                )
+                continue
+
+            try:
                 # Process based on attachment type
                 if attachment.content_type == "application/vnd.microsoft.teams.file.download.info":
                     file_info = ContentExtractor._from_teams_file(attachment)
@@ -146,6 +154,9 @@ class ContentExtractor:
     @staticmethod
     def _from_generic_attachment(attachment: Attachment) -> FileInfo:
         """Create FileInfo from a generic attachment."""
+        if not attachment.name or not attachment.content_url:
+            raise ValueError(f"Invalid generic attachment: missing name or URL")
+
         return FileInfo(
             name=attachment.name,
             url=attachment.content_url,
