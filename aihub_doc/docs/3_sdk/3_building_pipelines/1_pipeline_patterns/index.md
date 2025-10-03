@@ -8,15 +8,6 @@ index: 1
 The specific Dagster patterns that power the `aihub_pipeline` SDK. Understanding these patterns enables developers to
 build robust, scalable pipelines using the same architectural foundations.
 
-## What you'll learn
-
-- **Observable Assets**: How to detect changes in external data sources based on content hashes
-- **Dynamic Partitions**: Creating partitions dynamically as new data is discovered
-- **I/O Managers**: How data flows between operations and storage systems
-- **Resources**: Managing external system connections and configurations
-- **Graph Assets**: Composing complex operations from simple building blocks
-- **Asset Factories**: Creating reusable pipeline components
-
 ## 1. Observable Assets - Change Detection Based on Hashes
 
 Observable assets monitor external data sources and detect changes using content hashes and/or timestamps. They create
@@ -412,14 +403,6 @@ These Dagster patterns work together to create efficient, maintainable pipelines
 - **Graph Assets**: Compose complex processing from reusable operations
 - **Asset Factories**: Create configurable, reusable pipeline components
 
-## What you learned
-
-- **Observable Assets**: How change detection works using content hashes and dynamic partitions
-- **I/O Managers**: How data flows between operations and storage systems
-- **Resources**: How external systems are managed with authentication and configuration
-- **Graph Assets**: How complex operations are composed from simple building blocks
-- **Asset Factories**: How to create reusable, configurable pipeline components
-- **Resource Factories**: How to manage environment-specific configurations
 
 ## Next steps
 

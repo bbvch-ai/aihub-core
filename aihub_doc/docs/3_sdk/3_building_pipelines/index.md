@@ -5,6 +5,8 @@ index: 3
 
 # Building Pipelines with AI-Hub Pipeline SDK
 
+This guide will help you get started with building document processing pipelines using the AI-Hub Pipeline SDK.
+
 Learn how to use, configure, and extend the `aihub_pipeline` SDK for your document processing workflows.
 
 ## What you'll learn
