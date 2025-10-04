@@ -1,0 +1,31 @@
+{{- if .Values.api.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" (dict "component" "api-env" "context" .) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+data:
+  # Database connections
+  NATS_ENDPOINT: "nats://{{ include "aihub.fullname" (dict "component" "nats" "context" .) }}:4222"
+  MONGO_CONNECTION_STRING: "mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@{{ include "aihub.fullname" (dict "component" "mongo" "context" .) }}:27017"
+  
+  # Application settings
+  NUM_WORKERS: "1"
+  LOG_LEVEL: "{{ .Values.global.logLevel }}"
+  AUTH_ENABLE_API_ACCESS: "True"
+  AIHUB_API_VERSION: "dev"
+  AIHUB_FRONTEND_ORIGIN: "{{ .Values.global.domain }}"
+  AIHUB_CREATE_DEFAULT_ROLES: "True"
+  
+  # Superuser settings
+  SUPERUSER_ENABLED: "true"
+  SUPERUSER_ROLE: "AIHubSuperuser"
+  
+  # Service endpoints
+  LITE_LLM_PROXY_BASE_URL: "http://{{ include "aihub.fullname" (dict "component" "litellm" "context" .) }}:4000"
+  PHOENIX_ENDPOINT: "http://{{ include "aihub.fullname" (dict "component" "phoenix" "context" .) }}:6006"
+  MILVUS_URL: "http://{{ include "aihub.fullname" (dict "component" "milvus" "context" .) }}"
+  MILVUS_DIMENSION: "3072"
+{{- end }}

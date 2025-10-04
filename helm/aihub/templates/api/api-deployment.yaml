@@ -30,117 +30,16 @@ spec:
           {{- include "aihub.securityContext" . | nindent 10 }}
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
-        - name: NATS_ENDPOINT
-          value: "nats://{{ include "aihub.fullname" (dict "component" "nats" "context" .) }}:4222"
-        - name: MONGO_CONNECTION_STRING
-          value: "mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@{{ include "aihub.fullname" (dict "component" "mongo" "context" .) }}:27017"
-        - name: MONGO_USERNAME
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: MONGO_USERNAME
-        - name: MONGO_PASSWORD
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: MONGO_PASSWORD
-        - name: NUM_WORKERS
-          value: "1"
-        - name: LOG_LEVEL
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: LOG_LEVEL
-        - name: AUTH_ENABLE_API_ACCESS
-          value: "True"
-        - name: AUTH_OPEN_WEBUI_SIGNING_SECRET
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: AUTH_OPEN_WEBUI_SIGNING_SECRET
-        - name: AUTH_IDENTITY_PROVIDER
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: AUTH_IDENTITY_PROVIDER
-        - name: OAUTH_CLIENT_ID
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: OAUTH_CLIENT_ID
-        - name: OAUTH_CLIENT_SECRET
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: OAUTH_CLIENT_SECRET
-        - name: OAUTH_AUTHORITY_URL
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: OAUTH_AUTHORITY_URL
-        - name: SUPERUSER_ENABLED
-          value: "true"
-        - name: SUPERUSER_NAME
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: SUPERUSER_NAME
-        - name: SUPERUSER_EMAIL
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: SUPERUSER_EMAIL
-        - name: SUPERUSER_OID
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: SUPERUSER_OID
-        - name: SUPERUSER_ROLE
-          value: "AIHubSuperuser"
-        - name: SUPERUSER_TOKEN
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: SUPERUSER_TOKEN
-        - name: AIHUB_API_VERSION
-          value: "dev"
-        - name: AIHUB_FRONTEND_ORIGIN
-          value: "{{ .Values.global.domain }}"
-        - name: AIHUB_CREATE_DEFAULT_ROLES
-          value: "True"
-        - name: LITE_LLM_PROXY_BASE_URL
-          value: "http://{{ include "aihub.fullname" (dict "component" "litellm" "context" .) }}:4000"
-        - name: LITE_LLM_PROXY_API_KEY
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: LITELLM_MASTER_KEY
-        - name: AZURE_CLIENT_ID
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: OAUTH_CLIENT_ID
-        - name: AZURE_TENANT_ID
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: OAUTH_TENANT_ID
-        - name: AZURE_CLIENT_SECRET
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: OAUTH_CLIENT_SECRET
-        - name: PHOENIX_ENDPOINT
-          value: "http://{{ include "aihub.fullname" (dict "component" "phoenix" "context" .) }}:6006"
-        - name: MILVUS_URL
-          value: "http://{{ include "aihub.fullname" (dict "component" "milvus" "context" .) }}"
-        - name: MILVUS_DIMENSION
-          value: "3072"
+        envFrom:
+        # Non-sensitive environment variables from API ConfigMap
+        - configMapRef:
+            name: {{ include "aihub.fullname" (dict "component" "api-env" "context" .) }}
+        # Sensitive environment variables from Secret
+        - secretRef:
+            name: {{ include "aihub.fullname" (dict "component" "api-secret" "context" .) }}
         ports:
         - containerPort: 8000
           name: api
-        volumeMounts:
-        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
         livenessProbe:
           httpGet:
             path: /api/v1/health
