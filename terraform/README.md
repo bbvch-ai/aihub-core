@@ -84,6 +84,43 @@ source your-project-openrc.sh
 openstack keypair create --public-key ~/.ssh/id_rsa.pub aihub-keypair-dev
 ```
 
+### **Accessing Stoney Kubernetes Cluster**
+
+After successful deployment, set up kubectl access to your cluster:
+
+```bash
+# Get cluster name (automatically generated)
+CLUSTER_NAME="aihub-stoney-test"  # or aihub-stoney-prod
+
+# Create .kube directory if it doesn't exist
+mkdir -p ~/.kube
+
+# Download kubeconfig for the cluster
+openstack coe cluster config --dir ~/.kube "$CLUSTER_NAME"
+
+# Verify cluster access
+kubectl get nodes -o wide
+```
+
+**Alternative kubeconfig location:**
+```bash
+# If you want to store kubeconfig in a different location
+export KUBECONFIG=/path/to/your/kubeconfig
+openstack coe cluster config --dir /path/to/your/directory "$CLUSTER_NAME"
+```
+
+**Verify cluster is healthy:**
+```bash
+# Check cluster status
+openstack coe cluster list
+
+# Check nodes
+kubectl get nodes
+
+# Check system pods
+kubectl get pods -A
+```
+
 ## 🎯 **Key Features**
 
 ✅ **No manual configuration** - All variables injected automatically  
