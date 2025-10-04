@@ -55,33 +55,18 @@ resource "openstack_networking_router_interface_v2" "cluster_router_interface" {
   subnet_id = openstack_networking_subnet_v2.cluster_subnet.id
 }
 
-# Create cluster template for Magnum
-resource "openstack_containerinfra_clustertemplate_v1" "cluster_template" {
-  name                = "${var.cluster_name}-template"
-  coe                 = "kubernetes"
-  image               = local.selected_image_id
-  external_network_id = data.openstack_networking_network_v2.external_network.id
-  master_flavor       = data.openstack_compute_flavor_v2.system_flavor.id
-  flavor              = data.openstack_compute_flavor_v2.user_flavor.id
-  master_lb_enabled   = true
-  floating_ip_enabled = true
-  network_driver      = "flannel"
-  volume_driver       = "cinder"
-  docker_volume_size  = 25
-  server_type         = "vm"
-  cluster_distro      = "ubuntu"
-  docker_storage_driver = "overlay2"
-  tls_disabled        = false
-  registry_enabled    = false
+locals {
+  effective_cluster_template_id = var.cluster_template_id
 }
 
 # Create the Kubernetes cluster using Magnum
 resource "openstack_containerinfra_cluster_v1" "cluster" {
   name                = var.cluster_name
-  cluster_template_id = openstack_containerinfra_clustertemplate_v1.cluster_template.id
+  cluster_template_id = local.effective_cluster_template_id
   master_count        = 1  # Must be odd for etcd
   node_count          = var.system_node_count
   keypair             = var.keypair_name
+  docker_volume_size  = var.docker_volume_size
 
   # Wait for cluster to be ready
   depends_on = [

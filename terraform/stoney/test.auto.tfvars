@@ -11,6 +11,12 @@ network_name = "aihub-network-test"  # Will be set by deploy script
 subnet_cidr = "10.0.0.0/24"
 external_network = "public"
 
+# Use existing Magnum cluster template (provided by Stoney cloud)
+cluster_template_id = "097b9b18-28cc-42de-bb59-011c6005c26b"
+
+# Docker volume configuration
+docker_volume_size = 25
+
 # Node configuration
 system_node_count = 1
 system_os_disk_size_gb = 64
