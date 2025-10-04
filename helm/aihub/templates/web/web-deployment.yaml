@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.fullname" (dict "component" "web" "Values" .Values "Values" .Values "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "web" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: web
@@ -33,12 +33,12 @@ spec:
         - name: OAUTH_CLIENT_ID
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: OAUTH_CLIENT_ID
         - name: OAUTH_AUTHORITY_URL
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: OAUTH_AUTHORITY_URL
         - name: WEBUI_URL
           value: "https://openwebui.{{ .Values.global.domain }}"

@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.fullname" (dict "component" "milvus" "Values" .Values "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "milvus" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: milvus
@@ -35,9 +35,9 @@ spec:
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
         - name: ETCD_ENDPOINTS
-          value: "{{ include "aihub.fullname" (dict "component" "etcd" "Values" .Values "Release" .Release) }}:2379"
+          value: "{{ include "aihub.fullname" (dict "component" "etcd" "context" .) }}:2379"
         - name: MINIO_ADDRESS
-          value: "{{ include "aihub.fullname" (dict "component" "minio" "Values" .Values "Release" .Release) }}:9000"
+          value: "{{ include "aihub.fullname" (dict "component" "minio" "context" .) }}:9000"
         - name: MINIO_ACCESS_KEY_ID
           value: "{{ .Values.minio.env.MINIO_ROOT_USER }}"
         - name: MINIO_SECRET_ACCESS_KEY
@@ -69,8 +69,8 @@ spec:
       volumes:
       - name: milvus-data
         persistentVolumeClaim:
-          claimName: {{ include "aihub.fullname" (dict "component" "milvus-data" "Values" .Values "Release" .Release) }}
+          claimName: {{ include "aihub.fullname" (dict "component" "milvus-data" "context" .) }}
       - name: milvus-config
         configMap:
-          name: {{ include "aihub.fullname" .  }}-milvus-config
+          name: {{ include "aihub.fullname" (dict "component" "milvus-config" "context" .) }}
 {{- end }}

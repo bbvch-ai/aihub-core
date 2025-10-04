@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.fullname" (dict "component" "etcd" "Values" .Values "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "etcd" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: etcd
@@ -71,5 +71,5 @@ spec:
       volumes:
       - name: etcd-data
         persistentVolumeClaim:
-          claimName: {{ include "aihub.fullname" (dict "component" "etcd-data" "Values" .Values "Release" .Release) }}
+          claimName: {{ include "aihub.fullname" (dict "component" "etcd-data" "context" .) }}
 {{- end }}

@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.fullname" (dict "component" "minio" "Values" .Values "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "minio" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: minio
@@ -65,9 +65,9 @@ spec:
       volumes:
       - name: minio-data
         persistentVolumeClaim:
-          claimName: {{ include "aihub.fullname" (dict "component" "minio-data" "Values" .Values "Release" .Release) }}
+          claimName: {{ include "aihub.fullname" (dict "component" "minio-data" "context" .) }}
       - name: minio-entrypoint
         configMap:
-          name: {{ include "aihub.fullname" .  }}-minio-entrypoint
+          name: {{ include "aihub.fullname" (dict "component" "minio-entrypoint" "context" .) }}
           defaultMode: 0755
 {{- end }}

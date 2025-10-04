@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.fullname" (dict "component" "default-rag-pipeline" "Values" .Values "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "default-rag-pipeline" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: default-rag-pipeline
@@ -35,58 +35,58 @@ spec:
         - name: DAGSTER_HOME
           value: "/dagster_home"
         - name: S3_STORAGE_ENDPOINT
-          value: "http://{{ include "aihub.fullname" (dict "component" "minio" "Values" .Values "Release" .Release) }}:9000"
+          value: "http://{{ include "aihub.fullname" (dict "component" "minio" "context" .) }}:9000"
         - name: S3_STORAGE_ACCESS_KEY
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: MINIO_ROOT_USER
         - name: S3_STORAGE_SECRET_KEY
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: MINIO_ROOT_PASSWORD
         - name: S3_STORAGE_URL_SIGNING_SECRET
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: MINIO_URL_SIGNING_SECRET
         - name: POSTGRES_USER
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: POSTGRES_USER
         - name: POSTGRES_PASSWORD
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: POSTGRES_PASSWORD
         - name: MONGO_CONNECTION_STRING
-          value: "mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@{{ include "aihub.fullname" (dict "component" "mongo" "Values" .Values "Release" .Release) }}:27017"
+          value: "mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@{{ include "aihub.fullname" (dict "component" "mongo" "context" .) }}:27017"
         - name: MONGO_USERNAME
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: MONGO_USERNAME
         - name: MONGO_PASSWORD
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: MONGO_PASSWORD
         - name: DOCLING_API_ENDPOINT
-          value: "http://{{ include "aihub.fullname" (dict "component" "docling" "Values" .Values "Release" .Release) }}:5001/v1alpha/convert/source"
+          value: "http://{{ include "aihub.fullname" (dict "component" "docling" "context" .) }}:5001/v1alpha/convert/source"
         - name: DOCLING_API_TIMEOUT
           value: "600"
         - name: MILVUS_URL
-          value: "http://{{ include "aihub.fullname" (dict "component" "milvus" "Values" .Values "Release" .Release) }}"
+          value: "http://{{ include "aihub.fullname" (dict "component" "milvus" "context" .) }}"
         - name: MILVUS_DIMENSION
           value: "3072"
         - name: LITE_LLM_PROXY_BASE_URL
-          value: "http://{{ include "aihub.fullname" (dict "component" "litellm" "Values" .Values "Release" .Release) }}:4000"
+          value: "http://{{ include "aihub.fullname" (dict "component" "litellm" "context" .) }}:4000"
         - name: LITE_LLM_PROXY_API_KEY
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: LITELLM_MASTER_KEY
         volumeMounts:
         {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
@@ -97,5 +97,5 @@ spec:
       volumes:
       - name: dagster-data
         persistentVolumeClaim:
-          claimName: {{ include "aihub.fullname" (dict "component" "dagster-data" "Values" .Values "Release" .Release) }}
+          claimName: {{ include "aihub.fullname" (dict "component" "dagster-data" "context" .) }}
 {{- end }}

@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.fullname" (dict "component" "openwebui" "Values" .Values "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "openwebui" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: openwebui
@@ -43,7 +43,7 @@ spec:
         - name: GLOBAL_LOG_LEVEL
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: LOG_LEVEL
         - name: ENABLE_COMMUNITY_SHARING
           value: "False"
@@ -74,24 +74,24 @@ spec:
         - name: OAUTH_PROVIDER_NAME
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: OAUTH_PROVIDER_NAME
         - name: OAUTH_CLIENT_ID
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: OAUTH_CLIENT_ID
         - name: OAUTH_CLIENT_SECRET
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: OAUTH_CLIENT_SECRET
         - name: OPENID_PROVIDER_URL
           value: "$(OAUTH_AUTHORITY_URL)/v2.0/.well-known/openid-configuration"
         - name: OAUTH_AUTHORITY_URL
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: OAUTH_AUTHORITY_URL
         - name: OPENID_REDIRECT_URI
           value: "https://openwebui.{{ .Values.global.domain }}/oauth/oidc/callback"
@@ -116,52 +116,52 @@ spec:
         - name: S3_ACCESS_KEY_ID
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: MINIO_ROOT_USER
         - name: S3_SECRET_ACCESS_KEY
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: MINIO_ROOT_PASSWORD
         - name: S3_REGION_NAME
           value: "us-east-1"
         - name: S3_BUCKET_NAME
           value: "open-webui"
         - name: S3_ENDPOINT_URL
-          value: "http://{{ include "aihub.fullname" (dict "component" "minio" "Values" .Values "Release" .Release) }}:9000"
+          value: "http://{{ include "aihub.fullname" (dict "component" "minio" "context" .) }}:9000"
         - name: OPENAI_API_BASE_URL
           value: ""
         - name: OPENAI_API_KEY
           value: ""
         - name: RAG_OPENAI_API_BASE_URL
-          value: "http://{{ include "aihub.fullname" (dict "component" "api" "Values" .Values "Release" .Release) }}:8000/api/v1"
+          value: "http://{{ include "aihub.fullname" (dict "component" "api" "context" .) }}:8000/api/v1"
         - name: RAG_OPENAI_API_KEY
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: SUPERUSER_TOKEN
         - name: AUDIO_STT_OPENAI_API_BASE_URL
-          value: "http://{{ include "aihub.fullname" (dict "component" "api" "Values" .Values "Release" .Release) }}:8000/api/v1"
+          value: "http://{{ include "aihub.fullname" (dict "component" "api" "context" .) }}:8000/api/v1"
         - name: AUDIO_STT_OPENAI_API_KEY
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: SUPERUSER_TOKEN
         - name: AUDIO_TTS_OPENAI_API_BASE_URL
-          value: "http://{{ include "aihub.fullname" (dict "component" "api" "Values" .Values "Release" .Release) }}:8000/api/v1"
+          value: "http://{{ include "aihub.fullname" (dict "component" "api" "context" .) }}:8000/api/v1"
         - name: AUDIO_TTS_OPENAI_API_KEY
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: SUPERUSER_TOKEN
         - name: ENABLE_IMAGE_GENERATION
           value: "True"
         - name: IMAGES_OPENAI_API_BASE_URL
-          value: "http://{{ include "aihub.fullname" (dict "component" "api" "Values" .Values "Release" .Release) }}:8000/api/v1"
+          value: "http://{{ include "aihub.fullname" (dict "component" "api" "context" .) }}:8000/api/v1"
         - name: IMAGES_OPENAI_API_KEY
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: SUPERUSER_TOKEN
         - name: MODELS_CACHE_TTL
           value: "60"
@@ -174,21 +174,21 @@ spec:
         - name: DATABASE_USER
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: POSTGRES_USER
         - name: DATABASE_PASSWORD
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: POSTGRES_PASSWORD
         - name: DATABASE_HOST
-          value: "{{ include "aihub.fullname" (dict "component" "postgres" "Values" .Values "Release" .Release) }}"
+          value: "{{ include "aihub.fullname" (dict "component" "postgres" "context" .) }}"
         - name: DATABASE_PORT
           value: "5432"
         - name: DATABASE_NAME
           value: "openwebui"
         - name: REDIS_URL
-          value: "redis://{{ include "aihub.fullname" (dict "component" "redis" "Values" .Values "Release" .Release) }}:6379/1"
+          value: "redis://{{ include "aihub.fullname" (dict "component" "redis" "context" .) }}:6379/1"
         - name: REDIS_KEY_PREFIX
           value: "open-webui"
         - name: UVICORN_WORKERS
@@ -198,7 +198,7 @@ spec:
         - name: WEBSOCKET_MANAGER
           value: "redis"
         - name: WEBSOCKET_REDIS_URL
-          value: "redis://{{ include "aihub.fullname" (dict "component" "redis" "Values" .Values "Release" .Release) }}:6379/1"
+          value: "redis://{{ include "aihub.fullname" (dict "component" "redis" "context" .) }}:6379/1"
         - name: THREAD_POOL_SIZE
           value: "32"
         - name: CORS_ALLOW_ORIGIN
@@ -214,31 +214,31 @@ spec:
         - name: CODE_EXECUTION_ENGINE
           value: "jupyter"
         - name: CODE_EXECUTION_JUPYTER_URL
-          value: "http://{{ include "aihub.fullname" (dict "component" "jupyter" "Values" .Values "Release" .Release) }}:8888"
+          value: "http://{{ include "aihub.fullname" (dict "component" "jupyter" "context" .) }}:8888"
         - name: CODE_EXECUTION_JUPYTER_AUTH
           value: "token"
         - name: CODE_EXECUTION_JUPYTER_AUTH_TOKEN
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: JUPYTER_TOKEN
         - name: CODE_INTERPRETER_ENGINE
           value: "jupyter"
         - name: CODE_INTERPRETER_JUPYTER_URL
-          value: "http://{{ include "aihub.fullname" (dict "component" "jupyter" "Values" .Values "Release" .Release) }}:8888"
+          value: "http://{{ include "aihub.fullname" (dict "component" "jupyter" "context" .) }}:8888"
         - name: CODE_INTERPRETER_JUPYTER_AUTH
           value: "token"
         - name: CODE_INTERPRETER_JUPYTER_AUTH_TOKEN
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: JUPYTER_TOKEN
         - name: VECTOR_DB
           value: "milvus"
         - name: MILVUS_DB
           value: "default"
         - name: MILVUS_URI
-          value: "http://{{ include "aihub.fullname" (dict "component" "milvus" "Values" .Values "Release" .Release) }}:19530"
+          value: "http://{{ include "aihub.fullname" (dict "component" "milvus" "context" .) }}:19530"
         - name: MILVUS_INDEX_TYPE
           value: "HNSW"
         - name: MILVUS_METRIC_TYPE
@@ -258,7 +258,7 @@ spec:
         - name: CONTENT_EXTRACTION_ENGINE
           value: "docling"
         - name: DOCLING_SERVER_URL
-          value: "http://{{ include "aihub.fullname" (dict "component" "docling" "Values" .Values "Release" .Release) }}:5001"
+          value: "http://{{ include "aihub.fullname" (dict "component" "docling" "context" .) }}:5001"
         - name: DOCLING_OCR_ENGINE
           value: "easyocr"
         - name: DOCLING_OCR_LANG
@@ -270,7 +270,7 @@ spec:
         - name: JINA_API_KEY
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: JINA_API_KEY
         - name: WEB_SEARCH_RESULT_COUNT
           value: "6"
@@ -281,7 +281,7 @@ spec:
         - name: WEB_LOADER_ENGINE
           value: "playwright"
         - name: PLAYWRIGHT_WS_URL
-          value: "ws://{{ include "aihub.fullname" (dict "component" "playwright" "Values" .Values "Release" .Release) }}:3000"
+          value: "ws://{{ include "aihub.fullname" (dict "component" "playwright" "context" .) }}:3000"
         - name: FILE_IMAGE_COMPRESSION_WIDTH
           value: "796"
         - name: FILE_IMAGE_COMPRESSION_HEIGHT
@@ -364,5 +364,5 @@ spec:
       volumes:
       - name: openwebui-data
         persistentVolumeClaim:
-          claimName: {{ include "aihub.fullname" (dict "component" "openwebui-data" "Values" .Values "Release" .Release) }}
+          claimName: {{ include "aihub.fullname" (dict "component" "openwebui-data" "context" .) }}
 {{- end }}

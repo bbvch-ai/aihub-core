@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.fullname" (dict "component" "oauth2proxy" "Values" .Values "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "oauth2proxy" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: oauth2proxy
@@ -34,7 +34,7 @@ spec:
         - name: OAUTH2_PROXY_CODE_CHALLENGE_METHOD
           value: "S256"
         - name: OAUTH2_PROXY_UPSTREAMS
-          value: "http://{{ include "aihub.fullname" (dict "component" "dagster-webserver" "Values" .Values "Release" .Release) }}:3000"
+          value: "http://{{ include "aihub.fullname" (dict "component" "dagster-webserver" "context" .) }}:3000"
         - name: OAUTH2_PROXY_ALLOWED_GROUPS
           value: "DagsterAdmin"
         - name: OAUTH2_PROXY_OIDC_GROUPS_CLAIM

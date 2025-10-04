@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.fullname" (dict "component" "redis" "Values" .Values "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "redis" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: redis
@@ -61,5 +61,5 @@ spec:
       volumes:
       - name: redis-data
         persistentVolumeClaim:
-          claimName: {{ include "aihub.fullname" (dict "component" "redis-data" "Values" .Values "Release" .Release) }}
+          claimName: {{ include "aihub.fullname" (dict "component" "redis-data" "context" .) }}
 {{- end }}

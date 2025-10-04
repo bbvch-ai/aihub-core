@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.fullname" (dict "component" "attu" "Values" .Values "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "attu" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: attu
@@ -29,7 +29,7 @@ spec:
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
         - name: MILVUS_URL
-          value: "{{ include "aihub.fullname" (dict "component" "milvus" "Values" .Values "Release" .Release) }}:19530"
+          value: "{{ include "aihub.fullname" (dict "component" "milvus" "context" .) }}:19530"
         resources:
           {{- toYaml .Values.attu.resources | nindent 10 }}
       volumes:

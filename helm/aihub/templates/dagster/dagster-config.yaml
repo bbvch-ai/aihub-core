@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "aihub.fullname" (dict "component" "dagster-config" "Values" .Values "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "dagster-config" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: dagster
@@ -14,7 +14,7 @@ data:
         postgres_db:
           username: "${POSTGRES_USER}"
           password: "${POSTGRES_PASSWORD}"
-          hostname: "{{ include "aihub.fullname" (dict "component" "postgres" "Values" .Values "Release" .Release) }}"
+          hostname: "{{ include "aihub.fullname" (dict "component" "postgres" "context" .) }}"
           db_name: "dagster"
           port: 5432
 {{- end }}

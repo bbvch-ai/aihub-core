@@ -5,9 +5,9 @@ Pattern: RELEASE_NAME-COMPONENT
 Component is always required.
 */}}
 {{- define "aihub.fullname" -}}
-{{- $name := .Release.Name | trunc 63 | trimSuffix "-" }}
-{{- if .Values.fullnameOverride }}
-{{- $name = .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- $name := .context.Release.Name | trunc 63 | trimSuffix "-" }}
+{{- if .context.Values.fullnameOverride }}
+{{- $name = .context.Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 {{- printf "%s-%s" $name .component }}
 {{- end }}

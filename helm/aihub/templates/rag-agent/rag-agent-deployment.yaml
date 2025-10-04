@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.fullname" (dict "component" "rag-agent" "Values" .Values "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "rag-agent" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: rag-agent
@@ -31,20 +31,20 @@ spec:
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
         - name: NATS_ENDPOINT
-          value: "nats://{{ include "aihub.fullname" (dict "component" "nats" "Values" .Values "Release" .Release) }}:4222"
+          value: "nats://{{ include "aihub.fullname" (dict "component" "nats" "context" .) }}:4222"
         - name: REDIS_URL
-          value: "redis://{{ include "aihub.fullname" (dict "component" "redis" "Values" .Values "Release" .Release) }}:6379"
+          value: "redis://{{ include "aihub.fullname" (dict "component" "redis" "context" .) }}:6379"
         - name: PHOENIX_ENDPOINT
-          value: "http://{{ include "aihub.fullname" (dict "component" "phoenix" "Values" .Values "Release" .Release) }}:6006"
+          value: "http://{{ include "aihub.fullname" (dict "component" "phoenix" "context" .) }}:6006"
         - name: LITE_LLM_PROXY_BASE_URL
-          value: "http://{{ include "aihub.fullname" (dict "component" "litellm" "Values" .Values "Release" .Release) }}:4000"
+          value: "http://{{ include "aihub.fullname" (dict "component" "litellm" "context" .) }}:4000"
         - name: LITE_LLM_PROXY_API_KEY
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: LITELLM_MASTER_KEY
         - name: MILVUS_URL
-          value: "http://{{ include "aihub.fullname" (dict "component" "milvus" "Values" .Values "Release" .Release) }}"
+          value: "http://{{ include "aihub.fullname" (dict "component" "milvus" "context" .) }}"
         - name: MILVUS_DIMENSION
           value: "3072"
         resources:

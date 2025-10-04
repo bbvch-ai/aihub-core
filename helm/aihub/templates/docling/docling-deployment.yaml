@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.fullname" (dict "component" "docling" "Values" .Values "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "docling" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: docling
@@ -61,9 +61,9 @@ spec:
       volumes:
       - name: docling-data
         persistentVolumeClaim:
-          claimName: {{ include "aihub.fullname" (dict "component" "docling-data" "Values" .Values "Release" .Release) }}
+          claimName: {{ include "aihub.fullname" (dict "component" "docling-data" "context" .) }}
       - name: docling-init
         configMap:
-          name: {{ include "aihub.fullname" .  }}-docling-init
+          name: {{ include "aihub.fullname" (dict "component" "docling-init" "context" .) }}
           defaultMode: 0755
 {{- end }}

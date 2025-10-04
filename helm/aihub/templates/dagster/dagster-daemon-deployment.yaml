@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.fullname" (dict "component" "dagster-daemon" "Values" .Values "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "dagster-daemon" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: dagster-daemon
@@ -40,12 +40,12 @@ spec:
         - name: POSTGRES_USER
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: POSTGRES_USER
         - name: POSTGRES_PASSWORD
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: POSTGRES_PASSWORD
         volumeMounts:
         {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
@@ -62,11 +62,11 @@ spec:
       volumes:
       - name: dagster-data
         persistentVolumeClaim:
-          claimName: {{ include "aihub.fullname" (dict "component" "dagster-data" "Values" .Values "Release" .Release) }}
+          claimName: {{ include "aihub.fullname" (dict "component" "dagster-data" "context" .) }}
       - name: dagster-config
         configMap:
-          name: {{ include "aihub.fullname" (dict "component" "dagster-config" "Values" .Values "Release" .Release) }}
+          name: {{ include "aihub.fullname" (dict "component" "dagster-config" "context" .) }}
       - name: dagster-workspace
         configMap:
-          name: {{ include "aihub.fullname" (dict "component" "dagster-workspace" "Values" .Values "Release" .Release) }}
+          name: {{ include "aihub.fullname" (dict "component" "dagster-workspace" "context" .) }}
 {{- end }}

@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aihub.fullname" (dict "component" "postgres" "Values" .Values "Release" .Release) }}
+  name: {{ include "aihub.fullname" (dict "component" "postgres" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: postgres
@@ -33,12 +33,12 @@ spec:
         - name: POSTGRES_USER
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: POSTGRES_USER
         - name: POSTGRES_PASSWORD
           valueFrom:
             configMapKeyRef:
-              name: {{ include "aihub.fullname" .  }}-env
+              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: POSTGRES_PASSWORD
         - name: POSTGRES_MULTIPLE_DATABASES
           value: "openwebui,phoenix,dagster,litellm"
@@ -72,9 +72,9 @@ spec:
       volumes:
       - name: postgres-data
         persistentVolumeClaim:
-          claimName: {{ include "aihub.fullname" (dict "component" "postgres-data" "Values" .Values "Release" .Release) }}
+          claimName: {{ include "aihub.fullname" (dict "component" "postgres-data" "context" .) }}
       - name: postgres-init
         configMap:
-          name: {{ include "aihub.fullname" .  }}-postgres-init
+          name: {{ include "aihub.fullname" (dict "component" "postgres-init" "context" .) }}
           defaultMode: 0755
 {{- end }}
