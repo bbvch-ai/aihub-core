@@ -1,0 +1,12 @@
+{{- if .Values.playwright.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" (dict "component" "playwright-env" "context" .) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: playwright
+data:
+  # Playwright configuration
+  NODE_ENV: "production"
+{{- end }}

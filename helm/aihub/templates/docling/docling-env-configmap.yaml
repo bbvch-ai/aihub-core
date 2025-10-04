@@ -1,0 +1,14 @@
+{{- if .Values.docling.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" (dict "component" "docling-env" "context" .) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: docling
+data:
+  # Docling configuration
+  DOCLING_SERVE_ARTIFACTS_PATH: "/models"
+  DOCLING_SERVE_MAX_SYNC_WAIT: "600"
+  DOCLING_MODELS: "layout tableformer code_formula easyocr"
+{{- end }}

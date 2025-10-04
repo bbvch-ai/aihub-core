@@ -1,0 +1,15 @@
+{{- if .Values.etcd.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" (dict "component" "etcd-env" "context" .) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: etcd
+data:
+  # Etcd configuration
+  ETCD_AUTO_COMPACTION_MODE: "revision"
+  ETCD_AUTO_COMPACTION_RETENTION: "1000"
+  ETCD_QUOTA_BACKEND_BYTES: "4294967296"
+  ETCD_SNAPSHOT_COUNT: "50000"
+{{- end }}

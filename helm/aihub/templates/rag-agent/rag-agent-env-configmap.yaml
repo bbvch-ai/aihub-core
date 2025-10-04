@@ -1,0 +1,17 @@
+{{- if .Values.ragAgent.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" (dict "component" "rag-agent-env" "context" .) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rag-agent
+data:
+  # Service endpoints
+  NATS_ENDPOINT: "nats://{{ include "aihub.fullname" (dict "component" "nats" "context" .) }}:4222"
+  REDIS_URL: "redis://{{ include "aihub.fullname" (dict "component" "redis" "context" .) }}:6379"
+  PHOENIX_ENDPOINT: "http://{{ include "aihub.fullname" (dict "component" "phoenix" "context" .) }}:6006"
+  LITE_LLM_PROXY_BASE_URL: "http://{{ include "aihub.fullname" (dict "component" "litellm" "context" .) }}:4000"
+  MILVUS_URL: "http://{{ include "aihub.fullname" (dict "component" "milvus" "context" .) }}"
+  MILVUS_DIMENSION: "3072"
+{{- end }}

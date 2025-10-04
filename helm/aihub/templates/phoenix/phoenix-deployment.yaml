@@ -28,22 +28,13 @@ spec:
           {{- include "aihub.securityContext" . | nindent 10 }}
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
-        - name: PHOENIX_SQL_DATABASE_URL
-          value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@{{ include "aihub.fullname" (dict "component" "postgres" "context" .) }}:5432/phoenix"
-        - name: POSTGRES_USER
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: POSTGRES_USER
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: POSTGRES_PASSWORD
-        - name: PHOENIX_ENABLE_AUTH
-          value: "False"
-        - name: VERSION
-          value: ""
+        envFrom:
+        # Non-sensitive environment variables from Phoenix ConfigMap
+        - configMapRef:
+            name: {{ include "aihub.fullname" (dict "component" "phoenix-env" "context" .) }}
+        # Sensitive environment variables from Phoenix Secret
+        - secretRef:
+            name: {{ include "aihub.fullname" (dict "component" "phoenix-secret" "context" .) }}
         ports:
         - containerPort: 6006
           name: phoenix

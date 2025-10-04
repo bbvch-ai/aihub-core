@@ -33,16 +33,10 @@ spec:
         - --quiet
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
-        - name: MONGO_INITDB_ROOT_USERNAME
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: MONGO_USERNAME
-        - name: MONGO_INITDB_ROOT_PASSWORD
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: MONGO_PASSWORD
+        envFrom:
+        # Sensitive environment variables from Mongo Secret
+        - secretRef:
+            name: {{ include "aihub.fullname" (dict "component" "mongo-secret" "context" .) }}
         ports:
         - containerPort: 27017
           name: mongo

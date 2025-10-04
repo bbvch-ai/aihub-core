@@ -1,0 +1,19 @@
+{{- if .Values.litellm.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" (dict "component" "litellm-env" "context" .) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: litellm
+data:
+  # Database connection
+  DATABASE_URL: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@{{ include "aihub.fullname" (dict "component" "postgres" "context" .) }}:5432/litellm"
+  
+  # Service endpoints
+  PRESIDIO_ANALYZER_API_BASE: "http://{{ include "aihub.fullname" (dict "component" "presidio-analyzer" "context" .) }}:3000"
+  PRESIDIO_ANONYMIZER_API_BASE: "http://{{ include "aihub.fullname" (dict "component" "presidio-anonymizer" "context" .) }}:3000"
+  
+  # Configuration
+  SET_VERBOSE: "false"
+{{- end }}

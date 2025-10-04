@@ -30,20 +30,13 @@ spec:
           {{- include "aihub.securityContext" . | nindent 10 }}
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
-        - name: OAUTH_CLIENT_ID
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: OAUTH_CLIENT_ID
-        - name: OAUTH_AUTHORITY_URL
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: OAUTH_AUTHORITY_URL
-        - name: WEBUI_URL
-          value: "https://openwebui.{{ .Values.global.domain }}"
-        - name: WS_ENDPOINT
-          value: "wss://{{ .Values.global.domain }}/api/v1/event/ws"
+        envFrom:
+        # Non-sensitive environment variables from Web ConfigMap
+        - configMapRef:
+            name: {{ include "aihub.fullname" (dict "component" "web-env" "context" .) }}
+        # Sensitive environment variables from Web Secret
+        - secretRef:
+            name: {{ include "aihub.fullname" (dict "component" "web-secret" "context" .) }}
         ports:
         - containerPort: 80
           name: web

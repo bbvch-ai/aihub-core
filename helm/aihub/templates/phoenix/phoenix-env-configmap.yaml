@@ -1,0 +1,14 @@
+{{- if .Values.phoenix.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" (dict "component" "phoenix-env" "context" .) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: phoenix
+data:
+  # Phoenix configuration
+  PHOENIX_SQL_DATABASE_URL: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@{{ include "aihub.fullname" (dict "component" "postgres" "context" .) }}:5432/phoenix"
+  PHOENIX_ENABLE_AUTH: "False"
+  VERSION: ""
+{{- end }}

@@ -27,40 +27,16 @@ spec:
         securityContext:
           {{- include "aihub.securityContext" . | nindent 10 }}
         env:
-        - name: OAUTH2_PROXY_HTTP_ADDRESS
-          value: "0.0.0.0:4180"
-        - name: OAUTH2_PROXY_COOKIE_SECURE
-          value: "false"
-        - name: OAUTH2_PROXY_CODE_CHALLENGE_METHOD
-          value: "S256"
-        - name: OAUTH2_PROXY_UPSTREAMS
-          value: "http://{{ include "aihub.fullname" (dict "component" "dagster-webserver" "context" .) }}:3000"
-        - name: OAUTH2_PROXY_ALLOWED_GROUPS
-          value: "DagsterAdmin"
-        - name: OAUTH2_PROXY_OIDC_GROUPS_CLAIM
-          value: "roles"
-        - name: OAUTH2_PROXY_CLIENT_ID
-          value: "{{ .Values.oauth2proxy.env.OAUTH_CLIENT_ID }}"
-        - name: OAUTH2_PROXY_PROVIDER
-          value: "oidc"
-        - name: OAUTH2_PROXY_PROVIDER_DISPLAY_NAME
-          value: "{{ .Values.oauth2proxy.env.OAUTH_PROVIDER_NAME }}"
+        {{- include "aihub.commonEnv" . | nindent 8 }}
+        envFrom:
+        # Non-sensitive environment variables from OAuth2Proxy ConfigMap
+        - configMapRef:
+            name: {{ include "aihub.fullname" (dict "component" "oauth2proxy-env" "context" .) }}
+        # Sensitive environment variables from OAuth2Proxy Secret
+        - secretRef:
+            name: {{ include "aihub.fullname" (dict "component" "oauth2proxy-secret" "context" .) }}
         - name: OAUTH2_PROXY_OIDC_ISSUER_URL
           value: "$(OAUTH_AUTHORITY_URL)/v2.0"
-        - name: OAUTH_AUTHORITY_URL
-          value: "{{ .Values.oauth2proxy.env.OAUTH_AUTHORITY_URL }}"
-        - name: OAUTH2_PROXY_COOKIE_SECRET
-          value: "{{ .Values.oauth2proxy.env.OAUTH_COOKIE_SECRET }}"
-        - name: OAUTH2_PROXY_CLIENT_SECRET
-          value: "{{ .Values.oauth2proxy.env.OAUTH_CLIENT_SECRET }}"
-        - name: OAUTH2_PROXY_EMAIL_DOMAINS
-          value: "*"
-        - name: OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO
-          value: "https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png"
-        - name: OAUTH2_PROXY_REVERSE_PROXY
-          value: "true"
-        - name: OAUTH2_PROXY_REDIRECT_URL
-          value: "https://dagster.{{ .Values.global.domain }}"
         ports:
         - containerPort: 4180
           name: oauth2proxy

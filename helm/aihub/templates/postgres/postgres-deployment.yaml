@@ -30,18 +30,13 @@ spec:
           {{- include "aihub.securityContext" . | nindent 10 }}
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
-        - name: POSTGRES_USER
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: POSTGRES_USER
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: POSTGRES_PASSWORD
-        - name: POSTGRES_MULTIPLE_DATABASES
-          value: "openwebui,phoenix,dagster,litellm"
+        envFrom:
+        # Non-sensitive environment variables from Postgres ConfigMap
+        - configMapRef:
+            name: {{ include "aihub.fullname" (dict "component" "postgres-env" "context" .) }}
+        # Sensitive environment variables from Postgres Secret
+        - secretRef:
+            name: {{ include "aihub.fullname" (dict "component" "postgres-secret" "context" .) }}
         ports:
         - containerPort: 5432
           name: postgres

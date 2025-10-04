@@ -1,0 +1,12 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" (dict "component" "postgres-env" "context" .) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+data:
+  # PostgreSQL configuration
+  POSTGRES_MULTIPLE_DATABASES: "openwebui,phoenix,dagster,litellm"
+{{- end }}

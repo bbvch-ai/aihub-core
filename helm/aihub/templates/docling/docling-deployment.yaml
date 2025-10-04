@@ -28,12 +28,10 @@ spec:
           {{- include "aihub.securityContext" . | nindent 10 }}
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
-        - name: DOCLING_SERVE_ARTIFACTS_PATH
-          value: "/models"
-        - name: DOCLING_SERVE_MAX_SYNC_WAIT
-          value: "600"
-        - name: DOCLING_MODELS
-          value: "layout tableformer code_formula easyocr"
+        envFrom:
+        # Environment variables from Docling ConfigMap
+        - configMapRef:
+            name: {{ include "aihub.fullname" (dict "component" "docling-env" "context" .) }}
         ports:
         - containerPort: 5001
           name: docling

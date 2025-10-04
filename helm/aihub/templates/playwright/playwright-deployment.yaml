@@ -36,8 +36,10 @@ spec:
         - "0.0.0.0"
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
-        - name: NODE_ENV
-          value: "production"
+        envFrom:
+        # Environment variables from Playwright ConfigMap
+        - configMapRef:
+            name: {{ include "aihub.fullname" (dict "component" "playwright-env" "context" .) }}
         ports:
         - containerPort: 3000
           name: playwright

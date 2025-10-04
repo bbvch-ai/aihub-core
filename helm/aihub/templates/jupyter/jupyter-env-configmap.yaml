@@ -1,0 +1,12 @@
+{{- if .Values.jupyter.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" (dict "component" "jupyter-env" "context" .) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: jupyter
+data:
+  # Jupyter configuration
+  JUPYTER_ENABLE_LAB: "yes"
+{{- end }}

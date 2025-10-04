@@ -1,0 +1,12 @@
+{{- if .Values.minio.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" (dict "component" "minio-env" "context" .) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: minio
+data:
+  # MinIO configuration
+  MINIO_DEFAULT_BUCKETS: "open-webui,milvus"
+{{- end }}

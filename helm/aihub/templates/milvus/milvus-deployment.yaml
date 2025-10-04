@@ -34,14 +34,13 @@ spec:
         - standalone
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
-        - name: ETCD_ENDPOINTS
-          value: "{{ include "aihub.fullname" (dict "component" "etcd" "context" .) }}:2379"
-        - name: MINIO_ADDRESS
-          value: "{{ include "aihub.fullname" (dict "component" "minio" "context" .) }}:9000"
-        - name: MINIO_ACCESS_KEY_ID
-          value: "{{ .Values.minio.env.MINIO_ROOT_USER }}"
-        - name: MINIO_SECRET_ACCESS_KEY
-          value: "{{ .Values.minio.env.MINIO_ROOT_PASSWORD }}"
+        envFrom:
+        # Non-sensitive environment variables from Milvus ConfigMap
+        - configMapRef:
+            name: {{ include "aihub.fullname" (dict "component" "milvus-env" "context" .) }}
+        # Sensitive environment variables from Milvus Secret
+        - secretRef:
+            name: {{ include "aihub.fullname" (dict "component" "milvus-secret" "context" .) }}
         ports:
         - containerPort: 19530
           name: milvus

@@ -28,13 +28,13 @@ spec:
           {{- include "aihub.securityContext" . | nindent 10 }}
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
-        - name: JUPYTER_ENABLE_LAB
-          value: "yes"
-        - name: JUPYTER_TOKEN
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: JUPYTER_TOKEN
+        envFrom:
+        # Non-sensitive environment variables from Jupyter ConfigMap
+        - configMapRef:
+            name: {{ include "aihub.fullname" (dict "component" "jupyter-env" "context" .) }}
+        # Sensitive environment variables from Jupyter Secret
+        - secretRef:
+            name: {{ include "aihub.fullname" (dict "component" "jupyter-secret" "context" .) }}
         ports:
         - containerPort: 8888
           name: jupyter

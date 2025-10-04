@@ -28,8 +28,10 @@ spec:
           {{- include "aihub.securityContext" . | nindent 10 }}
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
-        - name: MILVUS_URL
-          value: "{{ include "aihub.fullname" (dict "component" "milvus" "context" .) }}:19530"
+        envFrom:
+        # Environment variables from Attu ConfigMap
+        - configMapRef:
+            name: {{ include "aihub.fullname" (dict "component" "attu-env" "context" .) }}
         resources:
           {{- toYaml .Values.attu.resources | nindent 10 }}
       volumes:

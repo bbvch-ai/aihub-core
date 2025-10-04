@@ -1,0 +1,158 @@
+{{- if .Values.openWebui.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" (dict "component" "openwebui-env" "context" .) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: openwebui
+data:
+  # WebUI Configuration
+  WEBUI_NAME: "Swiss AI-Hub"
+  WEBUI_URL: "https://openwebui.{{ .Values.global.domain }}"
+  DEFAULT_LOCALE: "de"
+  ENABLE_BASE_MODELS_CACHE: "True"
+  ENV: "prod"
+  ENABLE_COMMUNITY_SHARING: "False"
+  ENABLE_USER_WEBHOOKS: "False"
+  ENABLE_LOGIN_FORM: "False"
+  ENABLE_FORWARD_USER_INFO_HEADERS: "True"
+  ENABLE_VERSION_UPDATE_CHECK: "False"
+  ENABLE_OTEL: "False"
+  WEBUI_AUTH: "True"
+  DEFAULT_USER_ROLE: "user"
+  OAUTH_MERGE_ACCOUNTS_BY_EMAIL: "True"
+  ENABLE_API_KEY: "False"
+  WEBUI_SESSION_COOKIE_SAME_SITE: "lax"
+  WEBUI_SESSION_COOKIE_SECURE: "False"
+  ENABLE_OAUTH_SIGNUP: "True"
+  
+  # OAuth Configuration
+  OPENID_PROVIDER_URL: "$(OAUTH_AUTHORITY_URL)/v2.0/.well-known/openid-configuration"
+  OPENID_REDIRECT_URI: "https://openwebui.{{ .Values.global.domain }}/oauth/oidc/callback"
+  OAUTH_ALLOWED_DOMAINS: "*"
+  OAUTH_SCOPES: "openid email profile"
+  OAUTH_TIMEOUT: "60"
+  OAUTH_CODE_CHALLENGE_METHOD: "S256"
+  OAUTH_USERNAME_CLAIM: "name"
+  OAUTH_PICTURE_CLAIM: "picture"
+  OAUTH_EMAIL_CLAIM: "email"
+  OAUTH_GROUP_CLAIM: "email"
+  
+  # Storage Configuration
+  STORAGE_PROVIDER: "s3"
+  S3_REGION_NAME: "us-east-1"
+  S3_BUCKET_NAME: "open-webui"
+  S3_ENDPOINT_URL: "http://{{ include "aihub.fullname" (dict "component" "minio" "context" .) }}:9000"
+  
+  # API Configuration
+  OPENAI_API_BASE_URL: ""
+  OPENAI_API_KEY: ""
+  RAG_OPENAI_API_BASE_URL: "http://{{ include "aihub.fullname" (dict "component" "api" "context" .) }}:8000/api/v1"
+  AUDIO_STT_OPENAI_API_BASE_URL: "http://{{ include "aihub.fullname" (dict "component" "api" "context" .) }}:8000/api/v1"
+  AUDIO_TTS_OPENAI_API_BASE_URL: "http://{{ include "aihub.fullname" (dict "component" "api" "context" .) }}:8000/api/v1"
+  ENABLE_IMAGE_GENERATION: "True"
+  IMAGES_OPENAI_API_BASE_URL: "http://{{ include "aihub.fullname" (dict "component" "api" "context" .) }}:8000/api/v1"
+  MODELS_CACHE_TTL: "60"
+  TASK_MODEL: "azure/gpt-4o-mini"
+  TASK_MODEL_EXTERNAL: "azure/gpt-4o-mini"
+  
+  # Database Configuration
+  DATABASE_TYPE: "postgres"
+  DATABASE_HOST: "{{ include "aihub.fullname" (dict "component" "postgres" "context" .) }}"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "openwebui"
+  
+  # Redis Configuration
+  REDIS_URL: "redis://{{ include "aihub.fullname" (dict "component" "redis" "context" .) }}:6379/1"
+  REDIS_KEY_PREFIX: "open-webui"
+  UVICORN_WORKERS: "1"
+  ENABLE_WEBSOCKET_SUPPORT: "True"
+  WEBSOCKET_MANAGER: "redis"
+  WEBSOCKET_REDIS_URL: "redis://{{ include "aihub.fullname" (dict "component" "redis" "context" .) }}:6379/1"
+  THREAD_POOL_SIZE: "32"
+  
+  # CORS and Admin Configuration
+  CORS_ALLOW_ORIGIN: "*"
+  ENABLE_ADMIN_EXPORT: "True"
+  ENABLE_ADMIN_CHAT_ACCESS: "True"
+  SHOW_ADMIN_DETAILS: "True"
+  ADMIN_EMAIL: "admin@ai-hub.bbv.ch"
+  
+  # Code Execution Configuration
+  CODE_EXECUTION_ENGINE: "jupyter"
+  CODE_EXECUTION_JUPYTER_URL: "http://{{ include "aihub.fullname" (dict "component" "jupyter" "context" .) }}:8888"
+  CODE_EXECUTION_JUPYTER_AUTH: "token"
+  CODE_INTERPRETER_ENGINE: "jupyter"
+  CODE_INTERPRETER_JUPYTER_URL: "http://{{ include "aihub.fullname" (dict "component" "jupyter" "context" .) }}:8888"
+  CODE_INTERPRETER_JUPYTER_AUTH: "token"
+  
+  # Vector Database Configuration
+  VECTOR_DB: "milvus"
+  MILVUS_DB: "default"
+  MILVUS_URI: "http://{{ include "aihub.fullname" (dict "component" "milvus" "context" .) }}:19530"
+  MILVUS_INDEX_TYPE: "HNSW"
+  MILVUS_METRIC_TYPE: "COSINE"
+  MILVUS_HNSW_M: "16"
+  MILVUS_HNSW_EFCONSTRUCTION: "256"
+  
+  # RAG Configuration
+  RAG_FULL_CONTEXT: "True"
+  RAG_EMBEDDING_BATCH_SIZE: "64"
+  PDF_EXTRACT_IMAGES: "True"
+  RAG_FILE_MAX_COUNT: "4"
+  CONTENT_EXTRACTION_ENGINE: "docling"
+  DOCLING_SERVER_URL: "http://{{ include "aihub.fullname" (dict "component" "docling" "context" .) }}:5001"
+  DOCLING_OCR_ENGINE: "easyocr"
+  DOCLING_OCR_LANG: "en,de,fr,it"
+  
+  # Web Search Configuration
+  ENABLE_WEB_SEARCH: "True"
+  WEB_SEARCH_ENGINE: "jina"
+  WEB_SEARCH_RESULT_COUNT: "6"
+  WEB_SEARCH_CONCURRENT_REQUESTS: "6"
+  BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: "True"
+  WEB_LOADER_ENGINE: "playwright"
+  PLAYWRIGHT_WS_URL: "ws://{{ include "aihub.fullname" (dict "component" "playwright" "context" .) }}:3000"
+  
+  # File and Image Configuration
+  FILE_IMAGE_COMPRESSION_WIDTH: "796"
+  FILE_IMAGE_COMPRESSION_HEIGHT: "796"
+  IMAGE_GENERATION_MODEL: "azure/dall-e-3"
+  IMAGE_SIZE: "1024x1024"
+  
+  # Audio Configuration
+  AUDIO_STT_ENGINE: "openai"
+  AUDIO_TTS_ENGINE: "openai"
+  AUDIO_STT_MODEL: "azure/gpt-4o-mini-transcribe"
+  AUDIO_TTS_MODEL: "azure/gpt-4o-mini-tts"
+  AUDIO_TTS_VOICE: "alloy"
+  
+  # User Permissions
+  USER_PERMISSIONS_WORKSPACE_MODELS_ACCESS: "False"
+  USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ACCESS: "False"
+  USER_PERMISSIONS_WORKSPACE_PROMPTS_ACCESS: "False"
+  USER_PERMISSIONS_WORKSPACE_TOOLS_ACCESS: "False"
+  USER_PERMISSIONS_WORKSPACE_MODELS_ALLOW_PUBLIC_SHARING: "False"
+  USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ALLOW_PUBLIC_SHARING: "False"
+  USER_PERMISSIONS_WORKSPACE_PROMPTS_ALLOW_PUBLIC_SHARING: "False"
+  USER_PERMISSIONS_WORKSPACE_TOOLS_ALLOW_PUBLIC_SHARING: "False"
+  USER_PERMISSIONS_CHAT_CONTROLS: "True"
+  USER_PERMISSIONS_CHAT_SYSTEM_PROMPT: "True"
+  USER_PERMISSIONS_CHAT_FILE_UPLOAD: "True"
+  USER_PERMISSIONS_CHAT_DELETE: "True"
+  USER_PERMISSIONS_CHAT_EDIT: "True"
+  USER_PERMISSIONS_CHAT_SHARE: "False"
+  USER_PERMISSIONS_CHAT_EXPORT: "False"
+  USER_PERMISSIONS_CHAT_STT: "True"
+  USER_PERMISSIONS_CHAT_TTS: "True"
+  USER_PERMISSIONS_CHAT_CALL: "True"
+  USER_PERMISSIONS_CHAT_MULTIPLE_MODELS: "True"
+  USER_PERMISSIONS_CHAT_TEMPORARY: "True"
+  USER_PERMISSIONS_CHAT_TEMPORARY_ENFORCED: "False"
+  USER_PERMISSIONS_FEATURES_DIRECT_TOOL_SERVERS: "False"
+  USER_PERMISSIONS_FEATURES_WEB_SEARCH: "True"
+  USER_PERMISSIONS_FEATURES_IMAGE_GENERATION: "True"
+  USER_PERMISSIONS_FEATURES_CODE_INTERPRETER: "True"
+  USER_PERMISSIONS_FEATURES_NOTES: "True"
+{{- end }}

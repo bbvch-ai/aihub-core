@@ -1,0 +1,12 @@
+{{- if .Values.attu.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" (dict "component" "attu-env" "context" .) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: attu
+data:
+  # Milvus connection
+  MILVUS_URL: "{{ include "aihub.fullname" (dict "component" "milvus" "context" .) }}:19530"
+{{- end }}

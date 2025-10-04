@@ -35,14 +35,10 @@ spec:
         - --data-dir=/etcd
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
-        - name: ETCD_AUTO_COMPACTION_MODE
-          value: "revision"
-        - name: ETCD_AUTO_COMPACTION_RETENTION
-          value: "1000"
-        - name: ETCD_QUOTA_BACKEND_BYTES
-          value: "4294967296"
-        - name: ETCD_SNAPSHOT_COUNT
-          value: "50000"
+        envFrom:
+        # Environment variables from Etcd ConfigMap
+        - configMapRef:
+            name: {{ include "aihub.fullname" (dict "component" "etcd-env" "context" .) }}
         ports:
         - containerPort: 2379
           name: etcd

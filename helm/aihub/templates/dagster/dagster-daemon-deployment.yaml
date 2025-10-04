@@ -33,20 +33,13 @@ spec:
         - run
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
-        - name: PYTHONUNBUFFERED
-          value: "1"
-        - name: DAGSTER_HOME
-          value: "/dagster_home"
-        - name: POSTGRES_USER
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: POSTGRES_USER
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: POSTGRES_PASSWORD
+        envFrom:
+        # Non-sensitive environment variables from Dagster ConfigMap
+        - configMapRef:
+            name: {{ include "aihub.fullname" (dict "component" "dagster-env" "context" .) }}
+        # Sensitive environment variables from Dagster Secret
+        - secretRef:
+            name: {{ include "aihub.fullname" (dict "component" "dagster-secret" "context" .) }}
         volumeMounts:
         {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
         - name: dagster-data
