@@ -76,13 +76,11 @@ resource "openstack_containerinfra_cluster_v1" "cluster" {
 
 # Create additional node group for user nodes (if needed)
 resource "openstack_containerinfra_nodegroup_v1" "user_nodes" {
-  count = var.user_max_count > 0 ? 1 : 0
+  count = var.user_node_count > 0 ? 1 : 0
   
-  cluster_id     = openstack_containerinfra_cluster_v1.cluster.id
-  name           = "user-nodes"
-  node_count     = var.user_min_count
-  flavor_id      = data.openstack_compute_flavor_v2.user_flavor.id
-  image_id       = local.selected_image_id
-  min_node_count = var.user_min_count
-  max_node_count = var.user_max_count
+  cluster_id = openstack_containerinfra_cluster_v1.cluster.id
+  name       = "user-nodes"
+  node_count = var.user_node_count
+  flavor_id  = data.openstack_compute_flavor_v2.user_flavor.id
+  image_id   = local.selected_image_id
 }

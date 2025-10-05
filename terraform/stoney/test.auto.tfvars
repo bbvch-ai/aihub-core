@@ -20,6 +20,5 @@ docker_volume_size = 25
 # Node configuration
 system_node_count = 1
 system_os_disk_size_gb = 64
-user_min_count = 0
-user_max_count = 3
+user_node_count = 3
 user_os_disk_size_gb = 128
