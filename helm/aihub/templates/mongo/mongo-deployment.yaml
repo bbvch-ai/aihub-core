@@ -41,7 +41,6 @@ spec:
         - containerPort: 27017
           name: mongo
         volumeMounts:
-        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
         - name: mongo-data
           mountPath: /data/db
         livenessProbe:

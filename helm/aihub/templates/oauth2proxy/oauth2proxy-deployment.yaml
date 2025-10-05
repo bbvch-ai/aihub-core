@@ -28,6 +28,8 @@ spec:
           {{- include "aihub.securityContext" . | nindent 10 }}
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
+        - name: OAUTH2_PROXY_OIDC_ISSUER_URL
+          value: "$(OAUTH_AUTHORITY_URL)/v2.0"
         envFrom:
         # Non-sensitive environment variables from OAuth2Proxy ConfigMap
         - configMapRef:
@@ -35,8 +37,6 @@ spec:
         # Sensitive environment variables from OAuth2Proxy Secret
         - secretRef:
             name: {{ include "aihub.fullname" (dict "component" "oauth2proxy-secret" "context" .) }}
-        - name: OAUTH2_PROXY_OIDC_ISSUER_URL
-          value: "$(OAUTH_AUTHORITY_URL)/v2.0"
         ports:
         - containerPort: 4180
           name: oauth2proxy

@@ -36,7 +36,6 @@ spec:
         - containerPort: 4222
           name: nats
         volumeMounts:
-        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
         - name: nats-config
           mountPath: /etc/nats
         - name: nats-data

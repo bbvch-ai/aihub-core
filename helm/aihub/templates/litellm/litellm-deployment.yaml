@@ -41,7 +41,6 @@ spec:
         - containerPort: 4000
           name: litellm
         volumeMounts:
-        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
         - name: litellm-config
           mountPath: /app/config.yaml
           subPath: config.yaml

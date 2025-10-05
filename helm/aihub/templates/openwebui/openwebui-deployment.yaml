@@ -41,7 +41,6 @@ spec:
         - containerPort: 8080
           name: webui
         volumeMounts:
-        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
         - name: openwebui-data
           mountPath: /app/backend/data
         resources:

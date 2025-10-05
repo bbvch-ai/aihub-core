@@ -89,7 +89,6 @@ spec:
               name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
               key: LITELLM_MASTER_KEY
         volumeMounts:
-        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
         - name: dagster-data
           mountPath: /dagster_home
         resources:

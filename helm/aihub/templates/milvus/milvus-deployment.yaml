@@ -45,7 +45,6 @@ spec:
         - containerPort: 19530
           name: milvus
         volumeMounts:
-        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
         - name: milvus-data
           mountPath: /var/lib/milvus
         - name: milvus-config

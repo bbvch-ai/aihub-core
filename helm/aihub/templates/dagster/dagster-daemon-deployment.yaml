@@ -41,7 +41,6 @@ spec:
         - secretRef:
             name: {{ include "aihub.fullname" (dict "component" "dagster-secret" "context" .) }}
         volumeMounts:
-        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
         - name: dagster-data
           mountPath: /dagster_home
         - name: dagster-config

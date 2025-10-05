@@ -39,7 +39,6 @@ spec:
         - containerPort: 8888
           name: jupyter
         volumeMounts:
-        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
         - name: jupyter-data
           mountPath: /home/jovyan/work
         resources:

@@ -41,7 +41,6 @@ spec:
         - containerPort: 5432
           name: postgres
         volumeMounts:
-        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
         - name: postgres-data
           mountPath: /var/lib/postgresql/data
         - name: postgres-init

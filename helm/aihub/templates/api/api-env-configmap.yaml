@@ -28,4 +28,5 @@ data:
   PHOENIX_ENDPOINT: "http://{{ include "aihub.fullname" (dict "component" "phoenix" "context" .) }}:6006"
   MILVUS_URL: "http://{{ include "aihub.fullname" (dict "component" "milvus" "context" .) }}"
   MILVUS_DIMENSION: "3072"
+  
 {{- end }}

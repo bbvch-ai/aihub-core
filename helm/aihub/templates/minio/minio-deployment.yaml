@@ -43,7 +43,6 @@ spec:
         - containerPort: 9001
           name: console
         volumeMounts:
-        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
         - name: minio-data
           mountPath: /minio-data
         - name: minio-entrypoint

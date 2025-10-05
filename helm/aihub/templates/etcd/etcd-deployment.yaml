@@ -43,7 +43,6 @@ spec:
         - containerPort: 2379
           name: etcd
         volumeMounts:
-        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
         - name: etcd-data
           mountPath: /etcd
         livenessProbe:

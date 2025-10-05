@@ -39,7 +39,6 @@ spec:
         - containerPort: 6379
           name: redis
         volumeMounts:
-        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
         - name: redis-data
           mountPath: /data
         livenessProbe:

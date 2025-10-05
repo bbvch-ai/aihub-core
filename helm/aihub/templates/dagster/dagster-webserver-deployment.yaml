@@ -49,7 +49,6 @@ spec:
         - containerPort: 3000
           name: dagster
         volumeMounts:
-        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
         - name: dagster-data
           mountPath: /dagster_home
         - name: dagster-config

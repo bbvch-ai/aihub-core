@@ -46,14 +46,6 @@ Common environment variables for all containers
 Simple image helpers - no more complex templating!
 */}}
 
-{{/*
-Common volume mounts for all containers
-*/}}
-{{- define "aihub.commonVolumeMounts" -}}
-- name: env-config
-  mountPath: /etc/env
-  readOnly: true
-{{- end }}
 
 
 {{/*

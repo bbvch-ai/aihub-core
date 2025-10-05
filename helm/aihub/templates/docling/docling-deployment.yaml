@@ -36,7 +36,6 @@ spec:
         - containerPort: 5001
           name: docling
         volumeMounts:
-        {{- include "aihub.commonVolumeMounts" . | nindent 8 }}
         - name: docling-data
           mountPath: /models
         - name: docling-init
