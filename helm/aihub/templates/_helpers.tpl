@@ -57,7 +57,6 @@ Common security context
 {{- else }}
 runAsNonRoot: true
 runAsUser: 1001
-fsGroup: 1001
 {{- end }}
 {{- end }}
 
