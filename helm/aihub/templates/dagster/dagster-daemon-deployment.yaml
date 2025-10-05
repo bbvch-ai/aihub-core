@@ -18,6 +18,7 @@ spec:
         {{- include "aihub.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: dagster-daemon
     spec:
+      {{- include "aihub.imagePullSecrets" . | nindent 6 }}
       securityContext:
         {{- include "aihub.podSecurityContext" . | nindent 8 }}
       tolerations:

@@ -83,3 +83,13 @@ Global tolerations for all services
 {{- toYaml .Values.global.tolerations }}
 {{- end }}
 {{- end }}
+
+{{/*
+Global image pull secrets for all services
+*/}}
+{{- define "aihub.imagePullSecrets" -}}
+{{- if .Values.github.username }}
+imagePullSecrets:
+  - name: ghcr-pull-secret
+{{- end }}
+{{- end }}
