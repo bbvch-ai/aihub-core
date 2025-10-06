@@ -5,47 +5,47 @@
 # Override image tags to use nightly versions
 minio:
   image:
-    tag: "nightly"
+    tag: "release.2025-05-24t17-08-30z"
 
 etcd:
   image:
-    tag: "nightly"
+    tag: "v3.5.16"
 
 milvus:
   image:
-    tag: "nightly"
+    tag: "v2.5.15"
 
 attu:
   image:
-    tag: "nightly"
+    tag: "v2.5.12"
 
 postgres:
   image:
-    tag: "nightly"
+    tag: "pg17"
 
 phoenix:
   image:
-    tag: "nightly"
+    tag: "version-10.0.4"
 
 nats:
   image:
-    tag: "nightly"
+    tag: "2.11.4"
 
 redis:
   image:
-    tag: "nightly"
+    tag: "8.0.1"
 
 mongo:
   image:
-    tag: "nightly"
+    tag: "8.0.9"
 
 presidioAnalyzer:
   image:
-    tag: "nightly"
+    tag: "2.2.359"
 
 presidioAnonymizer:
   image:
-    tag: "nightly"
+    tag: "2.2.359"
 
 litellm:
   image:
@@ -53,15 +53,15 @@ litellm:
 
 openWebui:
   image:
-    tag: "nightly"
+    tag: "v0.6.22"
 
 jupyter:
   image:
-    tag: "nightly"
+    tag: "notebook-7.0.6"
 
 playwright:
   image:
-    tag: "nightly"
+    tag: "v1.49.0-jammy"
 
 dagsterWebserver:
   image:
@@ -93,9 +93,9 @@ defaultRagPipeline:
 
 docling:
   image:
-    tag: "nightly"
+    tag: "v1.3.1"
 
 oauth2proxy:
   image:
-    tag: "nightly"
+    tag: "latest"
 

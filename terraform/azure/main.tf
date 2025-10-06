@@ -62,28 +62,22 @@ resource "azurerm_kubernetes_cluster" "aks" {
 
 # User node pool (Spot instances for cost optimization)
 resource "azurerm_kubernetes_cluster_node_pool" "user_pool" {
-  count                 = var.user_max_count > 0 ? 1 : 0
+  count                 = var.user_node_count > 0 ? 1 : 0
   name                  = "user"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
   vm_size               = var.user_vm_size
   mode                  = "User"
-  min_count             = var.user_min_count
-  max_count             = var.user_max_count
+  node_count            = var.user_node_count
   os_disk_size_gb       = var.user_os_disk_size_gb
 
-  # Spot configuration for cost savings
-  priority         = "Spot"
-  eviction_policy  = "Delete"
-  spot_max_price   = var.user_spot_max_price
+  # Use regular VMs to avoid LowPriorityCores quota
+  priority = "Regular"
 
   node_labels = {
-    "pool"                                      = "user"
-    "kubernetes.azure.com/scalesetpriority"     = "spot"
+    "pool" = "user"
   }
 
-  node_taints = [
-    "spot=true:NoSchedule"
-  ]
+  # No taints when not using Spot
 
   tags = {
     project     = var.tag_project

@@ -33,14 +33,10 @@ variable "system_os_disk_size_gb" {
   type        = number
 }
 
-variable "user_min_count" {
-  description = "Minimum number of user nodes"
+variable "user_node_count" {
+  description = "Number of user nodes (fixed, no autoscaling)"
   type        = number
-}
-
-variable "user_max_count" {
-  description = "Maximum number of user nodes"
-  type        = number
+  default     = 0
 }
 
 variable "user_os_disk_size_gb" {

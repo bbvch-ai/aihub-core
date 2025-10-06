@@ -127,12 +127,9 @@ variable "external_network" {
 
 # Optional: Use an existing Magnum cluster template instead of creating one
 variable "cluster_template_id" {
-  description = "Existing OpenStack Magnum cluster template ID to use"
+  description = "Optional: Existing Magnum cluster template ID. If empty, a template will be created."
   type        = string
-  validation {
-    condition     = length(var.cluster_template_id) > 0
-    error_message = "You must provide a non-empty cluster_template_id for Stoney deployments."
-  }
+  default     = ""
 }
 
 variable "docker_volume_size" {
