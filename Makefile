@@ -27,7 +27,7 @@ format-md:
 
 format-md-win:
 	@echo "Formatting markdown files..."
-	@poetry run mdformat --number $(shell git ls-files *.md)
+	@powershell -Command "git ls-files *.md | ForEach-Object { poetry run mdformat --number $$_ }"
 
 # Type-check with MyPy
 typecheck:
