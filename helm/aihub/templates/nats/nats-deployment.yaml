@@ -1,12 +1,13 @@
 {{- if .Values.nats.enabled }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "aihub.fullname" (dict "component" "nats" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: nats
 spec:
+  serviceName: {{ include "aihub.fullname" (dict "component" "nats-headless" "context" .) }}
   replicas: {{ .Values.nats.replicas }}
   selector:
     matchLabels:
@@ -36,10 +37,12 @@ spec:
         ports:
         - containerPort: 4222
           name: nats
+        - containerPort: 6222
+          name: cluster
         volumeMounts:
         - name: nats-config
           mountPath: /etc/nats
-        - name: nats-data
+        - name: data
           mountPath: /data
         resources:
           {{- toYaml .Values.nats.resources | nindent 10 }}
@@ -47,7 +50,16 @@ spec:
       - name: nats-config
         configMap:
           name: {{ include "aihub.fullname" (dict "component" "nats-config" "context" .) }}
-      - name: nats-data
-        persistentVolumeClaim:
-          claimName: {{ include "aihub.fullname" (dict "component" "nats-data" "context" .) }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - {{ .Values.persistence.accessMode }}
+      resources:
+        requests:
+          storage: {{ .Values.persistence.size }}
+      {{- if .Values.persistence.storageClass }}
+      storageClassName: {{ .Values.persistence.storageClass }}
+      {{- end }}
 {{- end }}

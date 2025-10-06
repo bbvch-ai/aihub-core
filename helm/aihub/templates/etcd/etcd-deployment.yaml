@@ -1,12 +1,13 @@
 {{- if .Values.etcd.enabled }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "aihub.fullname" (dict "component" "etcd" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: etcd
 spec:
+  serviceName: {{ include "aihub.fullname" (dict "component" "etcd" "context" .) }}
   replicas: {{ .Values.etcd.replicas }}
   selector:
     matchLabels:
@@ -64,8 +65,16 @@ spec:
           periodSeconds: 5
         resources:
           {{- toYaml .Values.etcd.resources | nindent 10 }}
-      volumes:
-      - name: etcd-data
-        persistentVolumeClaim:
-          claimName: {{ include "aihub.fullname" (dict "component" "etcd-data" "context" .) }}
+  volumeClaimTemplates:
+  - metadata:
+      name: etcd-data
+    spec:
+      accessModes:
+      - {{ .Values.persistence.accessMode }}
+      resources:
+        requests:
+          storage: {{ .Values.persistence.size }}
+      {{- if .Values.persistence.storageClass }}
+      storageClassName: {{ .Values.persistence.storageClass }}
+      {{- end }}
 {{- end }}

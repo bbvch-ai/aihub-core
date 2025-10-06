@@ -1,12 +1,13 @@
 {{- if .Values.postgres.enabled }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "aihub.fullname" (dict "component" "postgres" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: postgres
 spec:
+  serviceName: {{ include "aihub.fullname" (dict "component" "postgres" "context" .) }}
   replicas: {{ .Values.postgres.replicas }}
   selector:
     matchLabels:
@@ -65,11 +66,20 @@ spec:
         resources:
           {{- toYaml .Values.postgres.resources | nindent 10 }}
       volumes:
-      - name: postgres-data
-        persistentVolumeClaim:
-          claimName: {{ include "aihub.fullname" (dict "component" "postgres-data" "context" .) }}
       - name: postgres-init
         configMap:
           name: {{ include "aihub.fullname" (dict "component" "postgres-init" "context" .) }}
           defaultMode: 0755
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes:
+      - {{ .Values.persistence.accessMode }}
+      resources:
+        requests:
+          storage: {{ .Values.persistence.size }}
+      {{- if .Values.persistence.storageClass }}
+      storageClassName: {{ .Values.persistence.storageClass }}
+      {{- end }}
 {{- end }}

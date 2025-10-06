@@ -1,12 +1,13 @@
 {{- if .Values.mongo.enabled }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "aihub.fullname" (dict "component" "mongo" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: mongo
 spec:
+  serviceName: {{ include "aihub.fullname" (dict "component" "mongo" "context" .) }}
   replicas: {{ .Values.mongo.replicas }}
   selector:
     matchLabels:
@@ -66,8 +67,16 @@ spec:
           periodSeconds: 5
         resources:
           {{- toYaml .Values.mongo.resources | nindent 10 }}
-      volumes:
-      - name: mongo-data
-        persistentVolumeClaim:
-          claimName: {{ include "aihub.fullname" (dict "component" "mongo-data" "context" .) }}
+  volumeClaimTemplates:
+  - metadata:
+      name: mongo-data
+    spec:
+      accessModes:
+      - {{ .Values.persistence.accessMode }}
+      resources:
+        requests:
+          storage: {{ .Values.persistence.size }}
+      {{- if .Values.persistence.storageClass }}
+      storageClassName: {{ .Values.persistence.storageClass }}
+      {{- end }}
 {{- end }}

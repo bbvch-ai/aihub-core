@@ -13,15 +13,11 @@ data:
     http: 8222
     server_name: "aihub-nats"
     
-    # Clustering
-    cluster {
-      port: 6222
-      routes = []
-    }
+    # Clustering disabled for single-node setup (no routes)
     
     # JetStream
     jetstream {
-      store_dir: "/data"
+      store_dir: "/data/nats/js-store"
       max_memory_store: 1GB
       max_file_store: 10GB
     }
