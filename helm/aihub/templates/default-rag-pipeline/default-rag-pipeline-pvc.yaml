@@ -1,11 +1,11 @@
-{{- if and .Values.docling.enabled .Values.persistence.enabled }}
+{{- if and .Values.defaultRagPipeline.enabled .Values.persistence.enabled }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ include "aihub.fullname" (dict "component" "docling-data" "context" .) }}
+  name: {{ include "aihub.fullname" (dict "component" "default-rag-pipeline-data" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
-    app.kubernetes.io/component: docling
+    app.kubernetes.io/component: default-rag-pipeline
 spec:
   accessModes:
     - {{ .Values.persistence.accessMode }}

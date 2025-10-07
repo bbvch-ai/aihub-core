@@ -1,0 +1,21 @@
+{{- if .Values.defaultRagPipeline.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aihub.fullname" (dict "component" "default-rag-pipeline-env" "context" .) }}
+  labels:
+    {{- include "aihub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: default-rag-pipeline
+data:
+  PYTHONUNBUFFERED: "1"
+  DAGSTER_HOME: "/dagster_home"
+  AIHUB_API_VERSION: "v1"
+  AIHUB_FRONTEND_ORIGIN: "https://{{ .Values.global.domain }}"
+  S3_STORAGE_ENDPOINT: "http://{{ include "aihub.fullname" (dict "component" "minio" "context" .) }}:9000"
+  DOCLING_API_ENDPOINT: "http://{{ include "aihub.fullname" (dict "component" "docling" "context" .) }}:5001/v1alpha/convert/source"
+  DOCLING_API_TIMEOUT: "600"
+  MILVUS_URL: "http://{{ include "aihub.fullname" (dict "component" "milvus" "context" .) }}"
+  MILVUS_DIMENSION: "3072"
+  LITE_LLM_PROXY_BASE_URL: "http://{{ include "aihub.fullname" (dict "component" "litellm" "context" .) }}:4000"
+  MONGO_CONNECTION_STRING: "mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@{{ include "aihub.fullname" (dict "component" "mongo" "context" .) }}:27017"
+{{- end }}

@@ -1,12 +1,13 @@
 {{- if .Values.docling.enabled }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "aihub.fullname" (dict "component" "docling" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: docling
 spec:
+  serviceName: {{ include "aihub.fullname" (dict "component" "docling" "context" .) }}
   replicas: {{ .Values.docling.replicas }}
   selector:
     matchLabels:
@@ -21,6 +22,26 @@ spec:
       {{- include "aihub.imagePullSecrets" . | nindent 6 }}
       securityContext:
         {{- include "aihub.podSecurityContext" . | nindent 8 }}
+      initContainers:
+      - name: docling-model-download
+        image: {{ .Values.docling.image.repository }}:{{ .Values.docling.image.tag }}
+        imagePullPolicy: {{ .Values.docling.image.pullPolicy }}
+        securityContext:
+          {{- include "aihub.securityContext" . | nindent 10 }}
+        command:
+        - /docker-entrypoint.sh
+        env:
+        {{- include "aihub.commonEnv" . | nindent 8 }}
+        envFrom:
+        # Environment variables from Docling ConfigMap
+        - configMapRef:
+            name: {{ include "aihub.fullname" (dict "component" "docling-env" "context" .) }}
+        volumeMounts:
+        - name: docling-data
+          mountPath: /models
+        - name: docling-init
+          mountPath: /docker-entrypoint.sh
+          subPath: init-models.sh
       containers:
       - name: docling
         image: {{ .Values.docling.image.repository }}:{{ .Values.docling.image.tag }}
@@ -57,11 +78,20 @@ spec:
         resources:
           {{- toYaml .Values.docling.resources | nindent 10 }}
       volumes:
-      - name: docling-data
-        persistentVolumeClaim:
-          claimName: {{ include "aihub.fullname" (dict "component" "docling-data" "context" .) }}
       - name: docling-init
         configMap:
           name: {{ include "aihub.fullname" (dict "component" "docling-init" "context" .) }}
           defaultMode: 0755
+  volumeClaimTemplates:
+  - metadata:
+      name: docling-data
+    spec:
+      accessModes:
+        - {{ .Values.persistence.accessMode }}
+      resources:
+        requests:
+          storage: {{ .Values.persistence.size }}
+      {{- if .Values.persistence.storageClass }}
+      storageClassName: {{ .Values.persistence.storageClass }}
+      {{- end }}
 {{- end }}

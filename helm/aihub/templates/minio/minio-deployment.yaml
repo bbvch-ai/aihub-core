@@ -30,6 +30,8 @@ spec:
         imagePullPolicy: {{ .Values.minio.image.pullPolicy }}
         securityContext:
           {{- include "aihub.securityContext" . | nindent 10 }}
+        command:
+        - /usr/local/bin/minio-entrypoint.sh
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
         envFrom:

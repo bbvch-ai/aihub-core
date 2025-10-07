@@ -21,6 +21,8 @@ spec:
       {{- include "aihub.imagePullSecrets" . | nindent 6 }}
       securityContext:
         {{- include "aihub.podSecurityContext" . | nindent 8 }}
+      tolerations:
+        {{- include "aihub.globalTolerations" . | nindent 8 }}
       containers:
       - name: phoenix
         image: {{ .Values.phoenix.image.repository }}:{{ .Values.phoenix.image.tag }}
@@ -29,6 +31,8 @@ spec:
           {{- include "aihub.securityContext" . | nindent 10 }}
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
+        - name: PHOENIX_WORKING_DIR
+          value: "/phoenix-data"
         envFrom:
         # Non-sensitive environment variables from Phoenix ConfigMap
         - configMapRef:
@@ -39,7 +43,12 @@ spec:
         ports:
         - containerPort: 6006
           name: phoenix
+        volumeMounts:
+        - name: phoenix-data
+          mountPath: /phoenix-data
         resources:
           {{- toYaml .Values.phoenix.resources | nindent 10 }}
       volumes:
+      - name: phoenix-data
+        emptyDir: {}
 {{- end }}

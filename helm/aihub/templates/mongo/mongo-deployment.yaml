@@ -33,6 +33,7 @@ spec:
         command:
         - mongod
         - --quiet
+        - --bind_ip_all
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
         envFrom:
@@ -46,25 +47,19 @@ spec:
         - name: mongo-data
           mountPath: /data/db
         livenessProbe:
-          exec:
-            command:
-            - mongosh
-            - --eval
-            - "db.runCommand('ping').ok"
-            - localhost:27017/test
-            - --quiet
+          tcpSocket:
+            port: 27017
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 3
         readinessProbe:
-          exec:
-            command:
-            - mongosh
-            - --eval
-            - "db.runCommand('ping').ok"
-            - localhost:27017/test
-            - --quiet
-          initialDelaySeconds: 5
+          tcpSocket:
+            port: 27017
+          initialDelaySeconds: 10
           periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
         resources:
           {{- toYaml .Values.mongo.resources | nindent 10 }}
   volumeClaimTemplates:

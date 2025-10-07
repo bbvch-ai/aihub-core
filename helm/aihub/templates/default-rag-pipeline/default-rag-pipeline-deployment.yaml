@@ -31,71 +31,20 @@ spec:
           {{- include "aihub.securityContext" . | nindent 10 }}
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
-        - name: PYTHONUNBUFFERED
-          value: "1"
-        - name: DAGSTER_HOME
-          value: "/dagster_home"
-        - name: S3_STORAGE_ENDPOINT
-          value: "http://{{ include "aihub.fullname" (dict "component" "minio" "context" .) }}:9000"
-        - name: S3_STORAGE_ACCESS_KEY
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: MINIO_ROOT_USER
-        - name: S3_STORAGE_SECRET_KEY
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: MINIO_ROOT_PASSWORD
-        - name: S3_STORAGE_URL_SIGNING_SECRET
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: MINIO_URL_SIGNING_SECRET
-        - name: POSTGRES_USER
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: POSTGRES_USER
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: POSTGRES_PASSWORD
-        - name: MONGO_CONNECTION_STRING
-          value: "mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@{{ include "aihub.fullname" (dict "component" "mongo" "context" .) }}:27017"
-        - name: MONGO_USERNAME
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: MONGO_USERNAME
-        - name: MONGO_PASSWORD
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: MONGO_PASSWORD
-        - name: DOCLING_API_ENDPOINT
-          value: "http://{{ include "aihub.fullname" (dict "component" "docling" "context" .) }}:5001/v1alpha/convert/source"
-        - name: DOCLING_API_TIMEOUT
-          value: "600"
-        - name: MILVUS_URL
-          value: "http://{{ include "aihub.fullname" (dict "component" "milvus" "context" .) }}"
-        - name: MILVUS_DIMENSION
-          value: "3072"
-        - name: LITE_LLM_PROXY_BASE_URL
-          value: "http://{{ include "aihub.fullname" (dict "component" "litellm" "context" .) }}:4000"
-        - name: LITE_LLM_PROXY_API_KEY
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
-              key: LITELLM_MASTER_KEY
+        envFrom:
+        # Non-sensitive environment variables from Default RAG Pipeline ConfigMap
+        - configMapRef:
+            name: {{ include "aihub.fullname" (dict "component" "default-rag-pipeline-env" "context" .) }}
+        # Sensitive environment variables from Default RAG Pipeline Secret
+        - secretRef:
+            name: {{ include "aihub.fullname" (dict "component" "default-rag-pipeline-secret" "context" .) }}
         volumeMounts:
-        - name: dagster-data
+        - name: default-rag-pipeline-data
           mountPath: /dagster_home
         resources:
           {{- toYaml .Values.defaultRagPipeline.resources | nindent 10 }}
       volumes:
-      - name: dagster-data
+      - name: default-rag-pipeline-data
         persistentVolumeClaim:
-          claimName: {{ include "aihub.fullname" (dict "component" "dagster-data" "context" .) }}
+          claimName: {{ include "aihub.fullname" (dict "component" "default-rag-pipeline-data" "context" .) }}
 {{- end }}

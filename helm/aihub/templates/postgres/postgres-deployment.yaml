@@ -21,7 +21,9 @@ spec:
     spec:
       {{- include "aihub.imagePullSecrets" . | nindent 6 }}
       securityContext:
-        {{- include "aihub.podSecurityContext" . | nindent 8 }}
+        runAsNonRoot: true
+        runAsUser: 999
+        fsGroup: 999
       tolerations:
         {{- include "aihub.globalTolerations" . | nindent 8 }}
       containers:
@@ -29,9 +31,12 @@ spec:
         image: {{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}
         imagePullPolicy: {{ .Values.postgres.image.pullPolicy }}
         securityContext:
-          {{- include "aihub.securityContext" . | nindent 10 }}
+          runAsNonRoot: true
+          runAsUser: 999
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
         envFrom:
         # Non-sensitive environment variables from Postgres ConfigMap
         - configMapRef:
@@ -50,17 +55,17 @@ spec:
         livenessProbe:
           exec:
             command:
-            - pg_isready
-            - -U
-            - $(POSTGRES_USER)
+            - /bin/sh
+            - -c
+            - pg_isready -U "$POSTGRES_USER"
           initialDelaySeconds: 5
           periodSeconds: 10
         readinessProbe:
           exec:
             command:
-            - pg_isready
-            - -U
-            - $(POSTGRES_USER)
+            - /bin/sh
+            - -c
+            - pg_isready -U "$POSTGRES_USER"
           initialDelaySeconds: 5
           periodSeconds: 5
         resources:

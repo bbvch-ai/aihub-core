@@ -20,13 +20,24 @@ spec:
     spec:
       {{- include "aihub.imagePullSecrets" . | nindent 6 }}
       securityContext:
-        {{- include "aihub.podSecurityContext" . | nindent 8 }}
+        runAsUser: 1000
+        runAsNonRoot: true
+        fsGroup: 100
+        seccompProfile:
+          type: RuntimeDefault
+      tolerations:
+        {{- include "aihub.globalTolerations" . | nindent 8 }}
       containers:
       - name: jupyter
         image: {{ .Values.jupyter.image.repository }}:{{ .Values.jupyter.image.tag }}
         imagePullPolicy: {{ .Values.jupyter.image.pullPolicy }}
         securityContext:
-          {{- include "aihub.securityContext" . | nindent 10 }}
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
         envFrom:

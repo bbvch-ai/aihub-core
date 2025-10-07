@@ -10,10 +10,51 @@ data:
   init-models.sh: |
     #!/bin/bash
     set -e
-    
-    # Initialize Docling models
-    docling download --artifacts-path /models layout tableformer code_formula easyocr
-    
-    # Start Docling server
-    exec docling serve --artifacts-path /models --port 5001
+    set -u
+
+    MODEL_DIR="${DOCLING_SERVE_ARTIFACTS_PATH:-/models}"
+    REQUIRED_MODELS="layout tableformer code_formula easyocr"
+
+    function check_and_download_models() {
+      echo "Checking models in directory: $MODEL_DIR"
+      echo "Contents of $MODEL_DIR:"
+      ls -la "$MODEL_DIR" || echo "Directory does not exist or is not accessible"
+
+      # Force download for now to ensure we have fresh models
+      echo "Force downloading required models..."
+      echo "Models to download: $REQUIRED_MODELS"
+
+      # Try to create directory if it doesn't exist
+      if [ ! -d "$MODEL_DIR" ]; then
+        if ! mkdir -p "$MODEL_DIR" 2>/dev/null; then
+          echo "Warning: Cannot create $MODEL_DIR directory (permission denied). It should be created by Docker volume mount."
+        fi
+      fi
+
+      # Test if we can write to the directory
+      if ! touch "$MODEL_DIR/.write_test" 2>/dev/null; then
+        echo "Error: Cannot write to $MODEL_DIR. Please check volume permissions."
+        echo "The directory might need to be writable by the container user."
+        exit 1
+      fi
+      rm -f "$MODEL_DIR/.write_test"
+
+      # Download the required models
+      echo "Starting model download..."
+      docling-tools models download $REQUIRED_MODELS -o "$MODEL_DIR"
+
+      if [ $? -eq 0 ]; then
+        echo "Models downloaded successfully!"
+        echo "Final contents of $MODEL_DIR:"
+        ls -la "$MODEL_DIR"
+      else
+        echo "Error downloading models. Exiting..."
+        exit 1
+      fi
+    }
+
+    # Main execution
+    echo "Starting Docling model download..."
+    check_and_download_models
+    echo "Model download completed successfully!"
 {{- end }}

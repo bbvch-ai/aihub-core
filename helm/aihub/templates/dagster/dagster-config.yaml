@@ -12,8 +12,10 @@ data:
     storage:
       postgres:
         postgres_db:
-          username: "${POSTGRES_USER}"
-          password: "${POSTGRES_PASSWORD}"
+          username:
+            env: POSTGRES_USER
+          password:
+            env: POSTGRES_PASSWORD
           hostname: "{{ include "aihub.fullname" (dict "component" "postgres" "context" .) }}"
           db_name: "dagster"
           port: 5432

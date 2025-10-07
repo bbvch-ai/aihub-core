@@ -50,6 +50,10 @@ spec:
         - containerPort: 3000
           name: dagster
         volumeMounts:
+        - name: dagster-venv
+          mountPath: /app/.venv
+        - name: dagster-pipeline-venv
+          mountPath: /app/aihub_pipeline/.venv
         - name: dagster-data
           mountPath: /dagster_home
         - name: dagster-config
@@ -61,6 +65,10 @@ spec:
         resources:
           {{- toYaml .Values.dagsterWebserver.resources | nindent 10 }}
       volumes:
+      - name: dagster-venv
+        emptyDir: {}
+      - name: dagster-pipeline-venv
+        emptyDir: {}
       - name: dagster-data
         persistentVolumeClaim:
           claimName: {{ include "aihub.fullname" (dict "component" "dagster-data" "context" .) }}
