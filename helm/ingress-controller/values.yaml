@@ -6,10 +6,12 @@ controller:
   # Service configuration
   service:
     type: LoadBalancer
+    # Existing floating IP (pre-allocated in OpenStack, assigned to k8s.ai-agents.ch)
+    loadBalancerIP: "85.85.127.222"
     annotations:
-      # Azure-specific annotations
-      service.beta.kubernetes.io/azure-load-balancer-internal: "false"
-      service.beta.kubernetes.io/azure-dns-label-name: "aihub-ingress"
+      # Azure-specific annotations (not needed for OpenStack)
+      # service.beta.kubernetes.io/azure-load-balancer-internal: "false"
+      # service.beta.kubernetes.io/azure-dns-label-name: "aihub-ingress"
     
   # Controller configuration
   config:

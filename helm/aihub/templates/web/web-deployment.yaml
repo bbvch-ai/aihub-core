@@ -20,7 +20,9 @@ spec:
     spec:
       {{- include "aihub.imagePullSecrets" . | nindent 6 }}
       securityContext:
-        {{- include "aihub.podSecurityContext" . | nindent 8 }}
+        runAsNonRoot: false
+        runAsUser: 0
+        fsGroup: 0
       tolerations:
         {{- include "aihub.globalTolerations" . | nindent 8 }}
       containers:
@@ -28,7 +30,8 @@ spec:
         image: {{ .Values.web.image.repository }}:{{ .Values.web.image.tag }}
         imagePullPolicy: {{ .Values.web.image.pullPolicy }}
         securityContext:
-          {{- include "aihub.securityContext" . | nindent 10 }}
+          runAsUser: 0
+          allowPrivilegeEscalation: false
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
         envFrom:
@@ -41,26 +44,6 @@ spec:
         ports:
         - containerPort: 80
           name: web
-        volumeMounts:
-        - name: nginx-html
-          mountPath: /usr/share/nginx/html
         resources:
           {{- toYaml .Values.web.resources | nindent 10 }}
-      initContainers:
-      - name: copy-static-files
-        image: {{ .Values.web.image.repository }}:{{ .Values.web.image.tag }}
-        command:
-        - /bin/sh
-        - -c
-        - |
-          cp -r /usr/share/nginx/html/* /tmp/nginx-html/ || true
-          chown -R 1001:1001 /tmp/nginx-html
-        volumeMounts:
-        - name: nginx-html
-          mountPath: /tmp/nginx-html
-        securityContext:
-          runAsUser: 0
-      volumes:
-      - name: nginx-html
-        emptyDir: {}
 {{- end }}

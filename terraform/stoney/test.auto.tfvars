@@ -1,4 +1,7 @@
 # Stoney cloud-specific defaults
+cluster_name = "aihub-stoney-test"
+project_name = "aihub"
+environment = "test"
 region = "RegionOne"
 availability_zone = "nova"
 keypair_name = "aihub-keypair-test"  # Will be set by deploy script
@@ -20,5 +23,14 @@ docker_volume_size = 25
 # Node configuration
 system_node_count = 1
 system_os_disk_size_gb = 64
-user_node_count = 3
+user_node_count = 5
 user_os_disk_size_gb = 128
+
+# Existing floating IP for ingress controller (already allocated in OpenStack)
+ingress_loadbalancer_ip = "85.85.127.222"
+
+# Tags
+tag_project = "aihub"
+tag_environment = "test"
+tag_cloud = "stoney"
+tag_managed_by = "terraform"

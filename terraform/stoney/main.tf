@@ -2,7 +2,7 @@ terraform {
   required_providers {
     openstack = {
       source  = "terraform-provider-openstack/openstack"
-      version = "~> 1.48.0"
+      version = "~> 2.1.0"
     }
   }
 }
@@ -87,7 +87,7 @@ resource "openstack_containerinfra_cluster_v1" "cluster" {
   name                = var.cluster_name
   cluster_template_id = local.effective_cluster_template_id
   master_count        = 1  # Must be odd for etcd
-  node_count          = var.system_node_count + var.user_node_count
+  node_count          = var.user_node_count
   keypair             = var.keypair_name
   docker_volume_size  = var.docker_volume_size
 
@@ -95,6 +95,16 @@ resource "openstack_containerinfra_cluster_v1" "cluster" {
   depends_on = [
     openstack_networking_router_interface_v2.cluster_router_interface
   ]
+
+  # LIMITATION: Stoney Cloud's OpenStack Magnum doesn't support updating node_count
+  # after cluster creation. Error: "Updating a cluster in this way is not currently supported"
+  # To scale: use OpenStack Horizon UI (Container Infra → Clusters → Resize) or OpenStack CLI
+  lifecycle {
+    ignore_changes = [
+      node_count,
+      docker_volume_size  # Also typically not updatable
+    ]
+  }
 }
 
 // No additional node groups; total workers are controlled via node_count

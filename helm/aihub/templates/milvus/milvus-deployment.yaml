@@ -1,12 +1,13 @@
 {{- if .Values.milvus.enabled }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "aihub.fullname" (dict "component" "milvus" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: milvus
 spec:
+  serviceName: {{ include "aihub.fullname" (dict "component" "milvus" "context" .) }}
   replicas: {{ .Values.milvus.replicas }}
   selector:
     matchLabels:
@@ -73,10 +74,19 @@ spec:
         resources:
           {{- toYaml .Values.milvus.resources | nindent 10 }}
       volumes:
-      - name: milvus-data
-        persistentVolumeClaim:
-          claimName: {{ include "aihub.fullname" (dict "component" "milvus-data" "context" .) }}
       - name: milvus-config
         configMap:
           name: {{ include "aihub.fullname" (dict "component" "milvus-config" "context" .) }}
+  volumeClaimTemplates:
+  - metadata:
+      name: milvus-data
+    spec:
+      accessModes:
+      - {{ .Values.persistence.accessMode }}
+      resources:
+        requests:
+          storage: {{ .Values.persistence.size }}
+      {{- if .Values.persistence.storageClass }}
+      storageClassName: {{ .Values.persistence.storageClass }}
+      {{- end }}
 {{- end }}

@@ -17,5 +17,5 @@ data:
   MILVUS_URL: "http://{{ include "aihub.fullname" (dict "component" "milvus" "context" .) }}"
   MILVUS_DIMENSION: "3072"
   LITE_LLM_PROXY_BASE_URL: "http://{{ include "aihub.fullname" (dict "component" "litellm" "context" .) }}:4000"
-  MONGO_CONNECTION_STRING: "mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@{{ include "aihub.fullname" (dict "component" "mongo" "context" .) }}:27017"
+  MONGO_CONNECTION_STRING: "mongodb://{{ include "aihub.fullname" (dict "component" "mongo" "context" .) }}:27017"
 {{- end }}

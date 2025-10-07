@@ -1,12 +1,13 @@
 {{- if .Values.defaultRagPipeline.enabled }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "aihub.fullname" (dict "component" "default-rag-pipeline" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: default-rag-pipeline
 spec:
+  serviceName: {{ include "aihub.fullname" (dict "component" "default-rag-pipeline" "context" .) }}
   replicas: {{ .Values.defaultRagPipeline.replicas }}
   selector:
     matchLabels:
@@ -43,8 +44,18 @@ spec:
           mountPath: /dagster_home
         resources:
           {{- toYaml .Values.defaultRagPipeline.resources | nindent 10 }}
-      volumes:
-      - name: default-rag-pipeline-data
-        persistentVolumeClaim:
-          claimName: {{ include "aihub.fullname" (dict "component" "default-rag-pipeline-data" "context" .) }}
+  volumeClaimTemplates:
+  - metadata:
+      name: default-rag-pipeline-data
+      labels:
+        {{- include "aihub.labels" . | nindent 8 }}
+        app.kubernetes.io/component: default-rag-pipeline
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      {{- if .Values.defaultRagPipeline.storage.storageClassName }}
+      storageClassName: {{ .Values.defaultRagPipeline.storage.storageClassName }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.defaultRagPipeline.storage.size }}
 {{- end }}

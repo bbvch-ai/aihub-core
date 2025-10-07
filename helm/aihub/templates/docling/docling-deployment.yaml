@@ -21,33 +21,26 @@ spec:
     spec:
       {{- include "aihub.imagePullSecrets" . | nindent 6 }}
       securityContext:
-        {{- include "aihub.podSecurityContext" . | nindent 8 }}
-      initContainers:
-      - name: docling-model-download
-        image: {{ .Values.docling.image.repository }}:{{ .Values.docling.image.tag }}
-        imagePullPolicy: {{ .Values.docling.image.pullPolicy }}
-        securityContext:
-          {{- include "aihub.securityContext" . | nindent 10 }}
-        command:
-        - /docker-entrypoint.sh
-        env:
-        {{- include "aihub.commonEnv" . | nindent 8 }}
-        envFrom:
-        # Environment variables from Docling ConfigMap
-        - configMapRef:
-            name: {{ include "aihub.fullname" (dict "component" "docling-env" "context" .) }}
-        volumeMounts:
-        - name: docling-data
-          mountPath: /models
-        - name: docling-init
-          mountPath: /docker-entrypoint.sh
-          subPath: init-models.sh
+        runAsUser: 0
+        runAsNonRoot: false
+        fsGroup: 0
+        seccompProfile:
+          type: RuntimeDefault
+      tolerations:
+        {{- include "aihub.globalTolerations" . | nindent 8 }}
       containers:
       - name: docling
         image: {{ .Values.docling.image.repository }}:{{ .Values.docling.image.tag }}
         imagePullPolicy: {{ .Values.docling.image.pullPolicy }}
+        command:
+        - /docker-entrypoint.sh
         securityContext:
-          {{- include "aihub.securityContext" . | nindent 10 }}
+          runAsUser: 0
+          runAsNonRoot: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
         envFrom:
