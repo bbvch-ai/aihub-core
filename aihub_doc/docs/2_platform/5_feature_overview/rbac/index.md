@@ -18,7 +18,7 @@ If you're looking to understand how RBAC works from a business and operational p
 roles, manage permissions, and set up authentication:
 
 ::: tip **Platform Documentation**
-📖 **[Complete Platform RBAC Guide](../../2_architecture/4_security/1_rbac/index.md)**
+📖 **[Complete Platform RBAC Guide](../../../1_vision_and_positioning/3_solution/4_security/2_rbac/index.md)**
 
 Covers:
 
@@ -93,7 +93,7 @@ aihub.[user|admin].[resource_type].[resource_category].[resource_identifier]
 
 ## Choose Your Path
 
-- **Business Users & Admins**: Start with the [Platform RBAC Guide](../../2_architecture/4_security/1_rbac/index.md)
+- **Business Users & Admins**: Start with the [Platform RBAC Guide](../../../1_vision_and_positioning/3_solution/4_security/2_rbac/index.md)
 - **Developers & Integrators**: Begin with the
   [SDK Implementation Guide](../../../3_sdk/5_advanced_topics/5_rbac/index.md)
 
