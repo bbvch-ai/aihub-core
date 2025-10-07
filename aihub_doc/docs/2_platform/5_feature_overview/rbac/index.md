@@ -93,7 +93,8 @@ aihub.[user|admin].[resource_type].[resource_category].[resource_identifier]
 
 ## Choose Your Path
 
-- **Business Users & Admins**: Start with the [Platform RBAC Guide](../../../1_vision_and_positioning/3_solution/4_security/2_rbac/index.md)
+- **Business Users & Admins**: Start with the
+  [Platform RBAC Guide](../../../1_vision_and_positioning/3_solution/4_security/2_rbac/index.md)
 - **Developers & Integrators**: Begin with the
   [SDK Implementation Guide](../../../3_sdk/5_advanced_topics/5_rbac/index.md)
 
