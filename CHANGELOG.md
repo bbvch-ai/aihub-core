@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.245.9] - 2025-10-07 - Enhanced User Data Handling in Authentication
+
+### Changed
+
+- ⚡️ **Improved User Header Encoding**: Switched from Base64 to URL encoding for usernames in authentication headers and
+  signatures, enhancing compatibility and robustness when handling special characters.
+
+---
+
 ## [v0.245.8] - 2025-10-07 - Streamlined Data Lake Operations and Document Management
 
 ### Added
