@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.246.0] - 2025-10-07 - Modernizing Data Persistence: Introducing SeaweedFS, FerretDB, and Valkey
+
+### Added
+
+- ✨ **SeaweedFS for Scalable Object Storage:** Integrated SeaweedFS as the new S3-compatible distributed file system,
+  providing robust and scalable object storage across all deployment environments.
+- 💾 **FerretDB as MongoDB-compatible Database:** Introduced FerretDB, a high-performance, MongoDB-compatible database
+  that leverages PostgreSQL as its backend, enhancing data flexibility and open-source alignment.
+- ⚡️ **Valkey for High-Performance Caching:** Replaced Redis with Valkey, a Redis-compatible fork, for efficient
+  in-memory caching and faster data retrieval.
+- 🛡️ **Automatic S3 Bucket Configuration:** Enhanced the S3 data lake client to automatically ensure the existence of
+  necessary buckets and configure Cross-Origin Resource Sharing (CORS) for seamless web access.
+- 🚀 **Docker Compose Services for New Stack:** Added comprehensive Docker Compose services and initialization scripts to
+  manage the lifecycle of SeaweedFS (master, volume, filer, S3 gateway), FerretDB (and its PostgreSQL backend), and
+  Valkey.
+
+### Changed
+
+- 🔄 **Updated Core Data & Storage Stack:** Migrated the entire core infrastructure from MinIO, MongoDB, and Redis to
+  SeaweedFS, FerretDB, and Valkey respectively.
+- 📄 **Documentation and README Updates:** Revised `README.md` and quick start guides to reflect the new data persistence
+  and caching technologies, including updated environment variables, service descriptions, and console links.
+- 🔗 **Service Integration Updates:** Adjusted internal dependencies and connection strings for critical services like
+  Milvus, OpenWebUI, and AI-Hub pipelines to seamlessly integrate with the new storage and database components.
+- ✅ **Improved Licensing for Core Services:** Switched from AGPL/SSPL-licensed components (MinIO, MongoDB, Redis) to
+  more permissively licensed alternatives (Apache-2.0 for SeaweedFS/FerretDB, BSD-3-Clause for Valkey), enhancing
+  open-source compliance.
+
+### Removed
+
+- 🗑️ **MinIO S3 Storage Stack:** The entire MinIO setup, including its Docker Compose services, entrypoint scripts, and
+  related configurations, has been deprecated and removed.
+- ❌ **MongoDB Database:** The MongoDB service and all associated configurations have been entirely replaced and removed
+  from the core infrastructure.
+- 🚫 **Redis In-Memory Cache:** The Redis service has been replaced by Valkey and removed from all deployment
+  configurations.
+
+---
+
 ## [v0.245.9] - 2025-10-07 - Enhanced User Data Handling in Authentication
 
 ### Changed

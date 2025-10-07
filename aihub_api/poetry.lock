@@ -44,7 +44,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-lib"
-version = "v0.245.9"
+version = "v0.246.0"
 description = ""
 optional = false
 python-versions = ">=3.13, <3.14"
@@ -113,8 +113,8 @@ transformers = "^4.48.1"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.245.9"
-resolved_reference = "ee47dbb0d258def2323ef27217e7da5d9adc3a7c"
+reference = "v0.246.0"
+resolved_reference = "78156adac6cb88d5523660814c087071ec263e9e"
 subdirectory = "aihub_lib"
 
 [[package]]
@@ -7628,4 +7628,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13, <3.14"
-content-hash = "9809bcbdac8526712ec8d2f690f96f0c10233e22859d9705702a5d33e4e27f93"
+content-hash = "599cd5371d569ee18b84ea0bffd01e3960bfd201582d3847ca412bcddb8d90c6"

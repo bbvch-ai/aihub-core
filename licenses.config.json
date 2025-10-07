@@ -122,28 +122,23 @@
       "notes": "BSD-style permissive license"
     },
     {
-      "service": "redis",
-      "license": "AGPL-3.0",
-      "status": "⚠️",
-      "notes": "Copyleft - modifications must be open sourced if changed"
+      "service": "valkey",
+      "license": "BSD-3-Clause",
+      "status": "✅",
+      "notes": "Redis-compatible, standard BSD-3-Clause license"
     },
     {
-      "service": "mongo",
-      "license": "SSPL",
-      "status": "⚠️",
-      "notes": "Source-available; allowed for internal use, not for DB-as-a-service"
+      "service": "ferretdb",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
     },
     {
-      "service": "mongodb",
-      "license": "SSPL",
-      "status": "⚠️",
-      "notes": "Source-available; allowed for internal use, not for DB-as-a-service"
-    },
-    {
-      "service": "minio",
-      "license": "AGPL-3.0",
-      "status": "⚠️",
-      "notes": "Copyleft - modifications must be open sourced"
+      "service": "postgres-documentdb",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive licenses"
+
     },
     {
       "service": "etcd",
@@ -327,6 +322,18 @@
     },
     {
       "service": "opentelemetry-collector-contrib",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "seaweedfs",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "aws-cli-alpine",
       "license": "Apache-2.0",
       "status": "✅",
       "notes": "Permissive license"
