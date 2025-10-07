@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.245.8] - 2025-10-07 - Streamlined Data Lake Operations and Document Management
+
+### Added
+
+- ✨ **New `RefDoc.get_documents` method:** Introduced a more flexible way to fetch reference documents without requiring
+  a namespace filter, enhancing document retrieval capabilities.
+
+### Changed
+
+- 🔄 **Namespace-Agnostic Document Removal:** The document removal process in data lake pipelines now uses the new
+  `get_documents` method, making it more flexible and not bound to a specific namespace.
+- ⚡️ **Enhanced MongoDB Connection Management:** Implemented explicit `disconnect()` calls in `finally` blocks across
+  key utility functions and pipeline definitions, ensuring robust database connection cleanup after operations.
+- 🧹 **Refined Bucket and Namespace Utilities:** The `get_db_name_from_bucket_name` and
+  `get_or_create_namespace_for_directory` functions now include an `auto_sync` parameter, providing clearer
+  differentiation for autoloading versus manual data ingestion pipelines.
+- 🚀 **Simplified Pipeline Configurations:** Streamlined parameter passing for bucket and namespace information in
+  default RAG and playground pipelines, allowing for direct use of container names and reducing redundant configuration.
+
+### Refactor
+
+- 🛠️ **Centralized Bucket and Namespace Logic:** Extracted and consolidated core bucket and namespace creation/retrieval
+  logic into new internal helper functions within `bucket_utils`, improving code organization and reusability.
+- 💡 **Optimized Store Name Retrieval:** Removed an unnecessary wrapper function for retrieving the store name in the
+  default RAG pipeline, leading to more direct and efficient utilization of the `bucket_utils` functionality.
+
+---
+
 ## [v0.245.7] - 2025-10-02 - Agent Guard Message Consistency
 
 ### Fixed
