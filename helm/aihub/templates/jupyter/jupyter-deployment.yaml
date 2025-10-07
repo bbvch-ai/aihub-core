@@ -1,12 +1,13 @@
 {{- if .Values.jupyter.enabled }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "aihub.fullname" (dict "component" "jupyter" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: jupyter
 spec:
+  serviceName: {{ include "aihub.fullname" (dict "component" "jupyter" "context" .) }}
   replicas: {{ .Values.jupyter.replicas }}
   selector:
     matchLabels:
@@ -55,8 +56,16 @@ spec:
           mountPath: /home/jovyan/work
         resources:
           {{- toYaml .Values.jupyter.resources | nindent 10 }}
-      volumes:
-      - name: jupyter-data
-        persistentVolumeClaim:
-          claimName: {{ include "aihub.fullname" (dict "component" "jupyter-data" "context" .) }}
+  volumeClaimTemplates:
+  - metadata:
+      name: jupyter-data
+    spec:
+      accessModes:
+      - {{ .Values.persistence.accessMode }}
+      resources:
+        requests:
+          storage: {{ .Values.persistence.size }}
+      {{- if .Values.persistence.storageClass }}
+      storageClassName: {{ .Values.persistence.storageClass }}
+      {{- end }}
 {{- end }}

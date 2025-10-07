@@ -41,7 +41,26 @@ spec:
         ports:
         - containerPort: 80
           name: web
+        volumeMounts:
+        - name: nginx-html
+          mountPath: /usr/share/nginx/html
         resources:
           {{- toYaml .Values.web.resources | nindent 10 }}
-      # No shared env-config volumes; all env is provided via values
+      initContainers:
+      - name: copy-static-files
+        image: {{ .Values.web.image.repository }}:{{ .Values.web.image.tag }}
+        command:
+        - /bin/sh
+        - -c
+        - |
+          cp -r /usr/share/nginx/html/* /tmp/nginx-html/ || true
+          chown -R 1001:1001 /tmp/nginx-html
+        volumeMounts:
+        - name: nginx-html
+          mountPath: /tmp/nginx-html
+        securityContext:
+          runAsUser: 0
+      volumes:
+      - name: nginx-html
+        emptyDir: {}
 {{- end }}

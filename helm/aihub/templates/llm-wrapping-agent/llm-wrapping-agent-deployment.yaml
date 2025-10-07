@@ -41,8 +41,8 @@ spec:
           value: "http://{{ include "aihub.fullname" (dict "component" "litellm" "context" .) }}:4000"
         - name: LITE_LLM_PROXY_API_KEY
           valueFrom:
-            configMapKeyRef:
-              name: {{ include "aihub.fullname" (dict "component" "env" "context" .) }}
+            secretKeyRef:
+              name: {{ include "aihub.fullname" (dict "component" "litellm-secret" "context" .) }}
               key: LITELLM_MASTER_KEY
         resources:
           {{- toYaml .Values.llmWrappingAgent.resources | nindent 10 }}

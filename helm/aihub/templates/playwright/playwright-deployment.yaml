@@ -21,6 +21,8 @@ spec:
       {{- include "aihub.imagePullSecrets" . | nindent 6 }}
       securityContext:
         {{- include "aihub.podSecurityContext" . | nindent 8 }}
+      tolerations:
+        {{- include "aihub.globalTolerations" . | nindent 8 }}
       containers:
       - name: playwright
         image: {{ .Values.playwright.image.repository }}:{{ .Values.playwright.image.tag }}
@@ -37,6 +39,8 @@ spec:
         - "0.0.0.0"
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
+        - name: NPM_CONFIG_CACHE
+          value: "/npm-cache"
         envFrom:
         # Environment variables from Playwright ConfigMap
         - configMapRef:
@@ -44,6 +48,9 @@ spec:
         ports:
         - containerPort: 3000
           name: playwright
+        volumeMounts:
+        - name: npm-cache
+          mountPath: /npm-cache
         livenessProbe:
           httpGet:
             path: /health
@@ -63,4 +70,6 @@ spec:
         resources:
           {{- toYaml .Values.playwright.resources | nindent 10 }}
       volumes:
+      - name: npm-cache
+        emptyDir: {}
 {{- end }}

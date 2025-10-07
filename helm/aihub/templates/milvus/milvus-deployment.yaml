@@ -20,7 +20,11 @@ spec:
     spec:
       {{- include "aihub.imagePullSecrets" . | nindent 6 }}
       securityContext:
-        {{- include "aihub.podSecurityContext" . | nindent 8 }}
+        runAsNonRoot: false
+        runAsUser: 0
+        fsGroup: 0
+        seccompProfile:
+          type: Unconfined
       tolerations:
         {{- include "aihub.globalTolerations" . | nindent 8 }}
       containers:
@@ -28,7 +32,10 @@ spec:
         image: {{ .Values.milvus.image.repository }}:{{ .Values.milvus.image.tag }}
         imagePullPolicy: {{ .Values.milvus.image.pullPolicy }}
         securityContext:
-          {{- include "aihub.securityContext" . | nindent 10 }}
+          runAsNonRoot: false
+          runAsUser: 0
+          seccompProfile:
+            type: Unconfined
         command:
         - milvus
         - run

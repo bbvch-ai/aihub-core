@@ -20,7 +20,11 @@ spec:
     spec:
       {{- include "aihub.imagePullSecrets" . | nindent 6 }}
       securityContext:
-        {{- include "aihub.podSecurityContext" . | nindent 8 }}
+        runAsUser: 0
+        runAsNonRoot: false
+        fsGroup: 0
+        seccompProfile:
+          type: RuntimeDefault
       tolerations:
         {{- include "aihub.globalTolerations" . | nindent 8 }}
       containers:
@@ -28,7 +32,12 @@ spec:
         image: {{ .Values.presidioAnalyzer.image.repository }}:{{ .Values.presidioAnalyzer.image.tag }}
         imagePullPolicy: {{ .Values.presidioAnalyzer.image.pullPolicy }}
         securityContext:
-          {{- include "aihub.securityContext" . | nindent 10 }}
+          runAsUser: 0
+          runAsNonRoot: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
         ports:
         - containerPort: 3000
           name: analyzer

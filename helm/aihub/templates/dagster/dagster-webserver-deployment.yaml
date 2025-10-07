@@ -66,9 +66,11 @@ spec:
           {{- toYaml .Values.dagsterWebserver.resources | nindent 10 }}
       volumes:
       - name: dagster-venv
-        emptyDir: {}
+        emptyDir:
+          sizeLimit: 2Gi
       - name: dagster-pipeline-venv
-        emptyDir: {}
+        emptyDir:
+          sizeLimit: 5Gi
       - name: dagster-data
         persistentVolumeClaim:
           claimName: {{ include "aihub.fullname" (dict "component" "dagster-data" "context" .) }}

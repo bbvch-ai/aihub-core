@@ -18,6 +18,17 @@ data:
     etcd:
       endpoints:
         - "{{ include "aihub.fullname" (dict "component" "etcd" "context" .) }}:2379"
+      rootPath: by-dev
+    
+    localStorage:
+      path: /var/lib/milvus/data/
+    
+    # Message queue configuration - use RocksMQ for standalone mode
+    mq:
+      type: rocksmq
+    
+    rocksmq:
+      path: /var/lib/milvus/rdb_data
     
     minio:
       address: "{{ include "aihub.fullname" (dict "component" "minio" "context" .) }}"
@@ -25,5 +36,31 @@ data:
       accessKeyID: "${MINIO_ACCESS_KEY_ID}"
       secretAccessKey: "${MINIO_SECRET_ACCESS_KEY}"
       bucketName: "milvus"
-      rootPath: "milvus"
+      rootPath: "files"
+    
+    # Port configurations for standalone mode
+    rootCoord:
+      port: 53100
+    
+    proxy:
+      port: 19530
+      internalPort: 19529
+    
+    queryCoord:
+      port: 19531
+    
+    queryNode:
+      port: 21123
+    
+    dataCoord:
+      port: 13333
+    
+    dataNode:
+      port: 21124
+    
+    indexCoord:
+      port: 31000
+    
+    indexNode:
+      port: 21121
 {{- end }}

@@ -20,17 +20,32 @@ spec:
     spec:
       {{- include "aihub.imagePullSecrets" . | nindent 6 }}
       securityContext:
-        {{- include "aihub.podSecurityContext" . | nindent 8 }}
+        runAsUser: 0
+        runAsNonRoot: false
+        fsGroup: 0
+        seccompProfile:
+          type: RuntimeDefault
       tolerations:
         {{- include "aihub.globalTolerations" . | nindent 8 }}
       containers:
       - name: litellm
         image: {{ .Values.litellm.image.repository }}:{{ .Values.litellm.image.tag }}
         imagePullPolicy: {{ .Values.litellm.image.pullPolicy }}
+        args:
+        - --config
+        - /app/config.yaml
+        - --detailed_debug
         securityContext:
-          {{- include "aihub.securityContext" . | nindent 10 }}
+          runAsUser: 0
+          runAsNonRoot: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
+        - name: DATABASE_URL
+          value: "postgresql://{{ .Values.postgres.env.POSTGRES_USER }}:{{ .Values.postgres.env.POSTGRES_PASSWORD }}@{{ include "aihub.fullname" (dict "component" "postgres" "context" .) }}:5432/litellm"
         envFrom:
         # Non-sensitive environment variables from Litellm ConfigMap
         - configMapRef:
@@ -49,14 +64,16 @@ spec:
           httpGet:
             path: /health/liveliness
             port: 4000
-          initialDelaySeconds: 30
+          initialDelaySeconds: 120
           periodSeconds: 10
+          failureThreshold: 5
         readinessProbe:
           httpGet:
             path: /health/liveliness
             port: 4000
-          initialDelaySeconds: 5
-          periodSeconds: 5
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          failureThreshold: 5
         resources:
           {{- toYaml .Values.litellm.resources | nindent 10 }}
       volumes:

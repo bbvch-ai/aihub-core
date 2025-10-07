@@ -28,7 +28,7 @@ data:
   ENABLE_OAUTH_SIGNUP: "True"
   
   # OAuth Configuration
-  OPENID_PROVIDER_URL: "$(OAUTH_AUTHORITY_URL)/v2.0/.well-known/openid-configuration"
+  OPENID_PROVIDER_URL: "{{ .Values.oauth2proxy.env.OAUTH_AUTHORITY_URL }}/v2.0/.well-known/openid-configuration"
   OPENID_REDIRECT_URI: "https://openwebui.{{ .Values.global.domain }}/oauth/oidc/callback"
   OAUTH_ALLOWED_DOMAINS: "*"
   OAUTH_SCOPES: "openid email profile"
@@ -56,6 +56,7 @@ data:
   MODELS_CACHE_TTL: "60"
   TASK_MODEL: "azure/gpt-4o-mini"
   TASK_MODEL_EXTERNAL: "azure/gpt-4o-mini"
+  # Note: RAG_OPENAI_API_KEY, AUDIO_STT_OPENAI_API_KEY, AUDIO_TTS_OPENAI_API_KEY, IMAGES_OPENAI_API_KEY are in the secret
   
   # Database Configuration
   DATABASE_TYPE: "postgres"
