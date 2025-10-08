@@ -8,3 +8,4 @@ class DataLakeResource(ConfigurableResource):
 
     container_name: str
     figures_directory_name: str
+    directory_name: str | None = None
