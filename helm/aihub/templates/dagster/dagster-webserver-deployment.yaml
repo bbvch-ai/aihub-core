@@ -1,12 +1,13 @@
 {{- if .Values.dagsterWebserver.enabled }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "aihub.fullname" (dict "component" "dagster-webserver" "context" .) }}
   labels:
     {{- include "aihub.labels" . | nindent 4 }}
     app.kubernetes.io/component: dagster-webserver
 spec:
+  serviceName: {{ include "aihub.fullname" (dict "component" "dagster-webserver" "context" .) }}
   replicas: {{ .Values.dagsterWebserver.replicas }}
   selector:
     matchLabels:
@@ -50,10 +51,6 @@ spec:
         - containerPort: 3000
           name: dagster
         volumeMounts:
-        - name: dagster-venv
-          mountPath: /app/.venv
-        - name: dagster-pipeline-venv
-          mountPath: /app/aihub_pipeline/.venv
         - name: dagster-data
           mountPath: /dagster_home
         - name: dagster-config
@@ -65,12 +62,6 @@ spec:
         resources:
           {{- toYaml .Values.dagsterWebserver.resources | nindent 10 }}
       volumes:
-      - name: dagster-venv
-        emptyDir:
-          sizeLimit: 2Gi
-      - name: dagster-pipeline-venv
-        emptyDir:
-          sizeLimit: 5Gi
       - name: dagster-data
         persistentVolumeClaim:
           claimName: {{ include "aihub.fullname" (dict "component" "dagster-data" "context" .) }}

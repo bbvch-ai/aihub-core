@@ -48,7 +48,7 @@ data:
     # General settings
     general_settings:
       master_key: "${LITELLM_MASTER_KEY}"
-      database_url: "${DATABASE_URL}"
+      database_url: "postgresql://{{ .Values.postgres.env.POSTGRES_USER }}:{{ .Values.postgres.env.POSTGRES_PASSWORD }}@{{ include "aihub.fullname" (dict "component" "postgres" "context" .) }}:5432/litellm"
       ui_username: "${UI_USERNAME}"
       ui_password: "${UI_PASSWORD}"
       set_verbose: false

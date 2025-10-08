@@ -16,3 +16,5 @@ aihub_doc/aihub
 
 # Helm secret values files
 helm/aihub/values.secret.yaml
+
+.DS_Store

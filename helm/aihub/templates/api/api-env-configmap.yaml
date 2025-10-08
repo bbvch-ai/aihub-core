@@ -9,7 +9,7 @@ metadata:
 data:
   # Database connections
   NATS_ENDPOINT: "nats://{{ include "aihub.fullname" (dict "component" "nats" "context" .) }}:4222"
-  MONGO_CONNECTION_STRING: "mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@{{ include "aihub.fullname" (dict "component" "mongo" "context" .) }}:27017"
+  MONGO_CONNECTION_STRING: "mongodb://{{ include "aihub.fullname" (dict "component" "mongo" "context" .) }}:27017"
   
   # Application settings
   NUM_WORKERS: "1"
@@ -26,6 +26,7 @@ data:
   # Service endpoints
   LITE_LLM_PROXY_BASE_URL: "http://{{ include "aihub.fullname" (dict "component" "litellm" "context" .) }}:4000"
   PHOENIX_ENDPOINT: "http://{{ include "aihub.fullname" (dict "component" "phoenix" "context" .) }}:6006"
+  PHOENIX_WORKING_DIR: "/tmp/.phoenix"
   MILVUS_URL: "http://{{ include "aihub.fullname" (dict "component" "milvus" "context" .) }}"
   MILVUS_DIMENSION: "3072"
   

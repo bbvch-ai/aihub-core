@@ -18,7 +18,8 @@ external_network = "public"
 cluster_template_id = "4825d2b9-0e12-48ae-be71-d6a8642ec846"
 
 # Docker volume configuration
-docker_volume_size = 25
+# Increased from 25GB to 50GB to prevent disk pressure and pod evictions
+docker_volume_size = 50
 
 # Node configuration
 system_node_count = 1

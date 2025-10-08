@@ -44,8 +44,6 @@ spec:
             - ALL
         env:
         {{- include "aihub.commonEnv" . | nindent 8 }}
-        - name: DATABASE_URL
-          value: "postgresql://{{ .Values.postgres.env.POSTGRES_USER }}:{{ .Values.postgres.env.POSTGRES_PASSWORD }}@{{ include "aihub.fullname" (dict "component" "postgres" "context" .) }}:5432/litellm"
         envFrom:
         # Non-sensitive environment variables from Litellm ConfigMap
         - configMapRef:
