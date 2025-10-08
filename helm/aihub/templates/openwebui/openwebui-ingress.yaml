@@ -1,3 +1,4 @@
+{{- if .Values.openWebui.enabled }}
 {{- if .Values.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -83,4 +84,5 @@ spec:
                 name: {{ include "aihub.fullname" (dict "component" "openwebui" "context" .) }}
                 port:
                   number: 8080
+{{- end }}
 {{- end }}
