@@ -12,11 +12,19 @@ from aihub_lib.generative_ai.resources.models.llm.LiteLLMBase import LiteLLMBase
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
 
 
+class RerankingResult(BaseModel):
+    """Result of reranking."""
+
+    index: Annotated[int, Field(description="Index in the original list before reranking.")]
+    text: Annotated[str, Field(description="The text to compare to the query.")]
+    relevance_score: Annotated[float, Field(description="How relevant the text is to the query.")]
+
+
 class RerankingLLMParameter(BaseModel):
     """Parameters specific to reranking models."""
 
-    max_retries: int = Field(default=10, description="Maximum number of retries.", ge=0)
-    timeout: float = Field(default=60.0, description="Timeout for each request.", ge=0)
+    max_retries: Annotated[int, Field(description="Maximum number of retries.", ge=0)] = 10
+    timeout: Annotated[float, Field(description="Timeout for each request.", ge=0)] = 60.0
 
 
 class RerankingService(BaseModel):
@@ -28,32 +36,32 @@ class RerankingService(BaseModel):
     works for embeddings.
     """
 
-    model_name: str
-    api_base: str
-    api_key: str
-    max_retries: int
-    timeout: float
-    default_headers: dict[str, str]
-    tokenizer: Callable[[str], list[int]]
+    model_name: Annotated[str, Field(description="")]
+    api_base: Annotated[str, Field(description="")]
+    api_key: Annotated[str, Field(description="")]
+    max_retries: Annotated[int, Field(description="")]
+    timeout: Annotated[float, Field(description="")]
+    default_headers: Annotated[dict[str, str], Field(description="")]
+    tokenizer: Annotated[Callable[[str], list[int]], Field(description="")]
 
-    def _chunk_document(self, document: str, max_tokens: int) -> list[str]:
-        """Chunk a document into smaller pieces that fit within token limits."""
-        if not document.strip():
-            return [document]
+    def _chunk_node(self, node: str, max_tokens: int) -> list[str]:
+        """Chunk a node into smaller pieces that fit within token limits."""
+        if not node.strip():
+            return [node]
 
         token_counter = TokenCounter(self.tokenizer)
-        tokens = token_counter.get_string_tokens(document)
+        tokens = token_counter.get_string_tokens(node)
 
         if tokens <= max_tokens:
-            return [document]
+            return [node]
 
         word_count = int(max_tokens * 0.75)
-        words = document.split()
-        chunks = [document[i : i + word_count] for i in range(0, len(words), word_count)]
+        words = node.split()
+        chunks = [node[i : i + word_count] for i in range(0, len(words), word_count)]
 
         return chunks
 
-    async def rerank(self, query: str, documents: list[str], top_k: int, max_tokens: int) -> dict[str, Any]:
+    async def rerank(self, query: str, nodes: list[str], top_k: int, max_tokens: int) -> list[RerankingResult]:
         """Rerank documents using the configured reranking model."""
 
         all_results = []
@@ -61,8 +69,8 @@ class RerankingService(BaseModel):
         query_tokens = token_counter.get_string_tokens(query)
         max_chunk_tokens = max_tokens - query_tokens
 
-        for idx, document in enumerate(documents):
-            chunks = self._chunk_document(document, max_tokens=max_chunk_tokens)
+        for idx, node in enumerate(nodes):
+            chunks = self._chunk_node(node, max_tokens=max_chunk_tokens)
 
             async with httpx.AsyncClient(
                 timeout=self.timeout,
@@ -79,7 +87,6 @@ class RerankingService(BaseModel):
                         "model": self.model_name,
                         "query": query,
                         "documents": chunks,
-                        "top_n": top_k,
                     },
                 )
                 response.raise_for_status()
@@ -89,12 +96,13 @@ class RerankingService(BaseModel):
 
                 score = max([res.get("relevance_score", 0) for res in results])
 
-                all_results.append({"index": idx, "relevance_score": score})
+                all_results.append(RerankingResult(index=idx, text="", relevance_score=score))
 
-        all_results.sort(key=lambda x: x.get("relevance_score", 0), reverse=True)
+        all_results.sort(key=lambda x: x.relevance_score, reverse=True)
+
         final_results = all_results[:top_k]
 
-        return {"results": final_results}
+        return final_results
 
 
 class RerankingModelConfig(LiteLLMBase[RerankingService]):

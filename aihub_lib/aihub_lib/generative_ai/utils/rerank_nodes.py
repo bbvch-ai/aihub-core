@@ -21,15 +21,13 @@ async def rerank_nodes(
     reranking_service = reranking_model.get_reranking_service()
     rerank_result = await reranking_service.rerank(
         query=query,
-        documents=documents,
+        nodes=documents,
         top_k=top_k,
         max_tokens=max_tokens,
     )
 
-    results = rerank_result.get("results", [])
-    results = results[:top_k]
     reranked_nodes = []
-    for result in results:
-        reranked_nodes.append(nodes[result["index"]])
+    for result in rerank_result:
+        reranked_nodes.append(nodes[result.index])
 
     return reranked_nodes
