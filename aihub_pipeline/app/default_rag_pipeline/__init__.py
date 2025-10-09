@@ -1,7 +1,7 @@
 from aihub_pipeline.util.definitions_util import default_definitions
 
 defs = default_definitions(
-    datalake_container_name="playground",
+    datalake_container_name="defaultknowledge",
     embedding_model_name="local/qwen-embedding",
     llm_model_name="local/gemma-3-multimodal-small",
     figures_directory_name="__figures__",
