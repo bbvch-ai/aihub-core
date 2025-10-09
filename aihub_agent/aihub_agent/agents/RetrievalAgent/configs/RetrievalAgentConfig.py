@@ -11,6 +11,6 @@ class RetrievalAgentConfig(AgentConfig):
     retrieve_step_config: Annotated[
         RetrieveStepConfig, Field(..., description="The configuration for the retrieval step.")
     ]
-    context_prompt: Annotated[LocaleString | None, Field(description="The context prompt for the retrieval step.")] = (
-        None
-    )
+    context_prompt: Annotated[
+        LocaleString | None, Field(description="The context prompt for the combined and ordered nodes.")
+    ] = None
