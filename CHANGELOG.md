@@ -5,6 +5,130 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.246.0] - 2025-10-07 - Modernizing Data Persistence: Introducing SeaweedFS, FerretDB, and Valkey
+
+### Added
+
+- ✨ **SeaweedFS for Scalable Object Storage:** Integrated SeaweedFS as the new S3-compatible distributed file system,
+  providing robust and scalable object storage across all deployment environments.
+- 💾 **FerretDB as MongoDB-compatible Database:** Introduced FerretDB, a high-performance, MongoDB-compatible database
+  that leverages PostgreSQL as its backend, enhancing data flexibility and open-source alignment.
+- ⚡️ **Valkey for High-Performance Caching:** Replaced Redis with Valkey, a Redis-compatible fork, for efficient
+  in-memory caching and faster data retrieval.
+- 🛡️ **Automatic S3 Bucket Configuration:** Enhanced the S3 data lake client to automatically ensure the existence of
+  necessary buckets and configure Cross-Origin Resource Sharing (CORS) for seamless web access.
+- 🚀 **Docker Compose Services for New Stack:** Added comprehensive Docker Compose services and initialization scripts to
+  manage the lifecycle of SeaweedFS (master, volume, filer, S3 gateway), FerretDB (and its PostgreSQL backend), and
+  Valkey.
+
+### Changed
+
+- 🔄 **Updated Core Data & Storage Stack:** Migrated the entire core infrastructure from MinIO, MongoDB, and Redis to
+  SeaweedFS, FerretDB, and Valkey respectively.
+- 📄 **Documentation and README Updates:** Revised `README.md` and quick start guides to reflect the new data persistence
+  and caching technologies, including updated environment variables, service descriptions, and console links.
+- 🔗 **Service Integration Updates:** Adjusted internal dependencies and connection strings for critical services like
+  Milvus, OpenWebUI, and AI-Hub pipelines to seamlessly integrate with the new storage and database components.
+- ✅ **Improved Licensing for Core Services:** Switched from AGPL/SSPL-licensed components (MinIO, MongoDB, Redis) to
+  more permissively licensed alternatives (Apache-2.0 for SeaweedFS/FerretDB, BSD-3-Clause for Valkey), enhancing
+  open-source compliance.
+
+### Removed
+
+- 🗑️ **MinIO S3 Storage Stack:** The entire MinIO setup, including its Docker Compose services, entrypoint scripts, and
+  related configurations, has been deprecated and removed.
+- ❌ **MongoDB Database:** The MongoDB service and all associated configurations have been entirely replaced and removed
+  from the core infrastructure.
+- 🚫 **Redis In-Memory Cache:** The Redis service has been replaced by Valkey and removed from all deployment
+  configurations.
+
+---
+
+## [v0.245.9] - 2025-10-07 - Enhanced User Data Handling in Authentication
+
+### Changed
+
+- ⚡️ **Improved User Header Encoding**: Switched from Base64 to URL encoding for usernames in authentication headers and
+  signatures, enhancing compatibility and robustness when handling special characters.
+
+---
+
+## [v0.245.8] - 2025-10-07 - Streamlined Data Lake Operations and Document Management
+
+### Added
+
+- ✨ **New `RefDoc.get_documents` method:** Introduced a more flexible way to fetch reference documents without requiring
+  a namespace filter, enhancing document retrieval capabilities.
+
+### Changed
+
+- 🔄 **Namespace-Agnostic Document Removal:** The document removal process in data lake pipelines now uses the new
+  `get_documents` method, making it more flexible and not bound to a specific namespace.
+- ⚡️ **Enhanced MongoDB Connection Management:** Implemented explicit `disconnect()` calls in `finally` blocks across
+  key utility functions and pipeline definitions, ensuring robust database connection cleanup after operations.
+- 🧹 **Refined Bucket and Namespace Utilities:** The `get_db_name_from_bucket_name` and
+  `get_or_create_namespace_for_directory` functions now include an `auto_sync` parameter, providing clearer
+  differentiation for autoloading versus manual data ingestion pipelines.
+- 🚀 **Simplified Pipeline Configurations:** Streamlined parameter passing for bucket and namespace information in
+  default RAG and playground pipelines, allowing for direct use of container names and reducing redundant configuration.
+
+### Refactor
+
+- 🛠️ **Centralized Bucket and Namespace Logic:** Extracted and consolidated core bucket and namespace creation/retrieval
+  logic into new internal helper functions within `bucket_utils`, improving code organization and reusability.
+- 💡 **Optimized Store Name Retrieval:** Removed an unnecessary wrapper function for retrieving the store name in the
+  default RAG pipeline, leading to more direct and efficient utilization of the `bucket_utils` functionality.
+
+---
+
+## [v0.245.7] - 2025-10-02 - Agent Guard Message Consistency
+
+### Fixed
+
+- 🐛 **Corrected RAGAgent guard rejection messaging:** Ensured the **RAGAgent** accurately formats system messages for
+  guard rejections by using the correct reason property (`event.reason`), improving clarity and consistency in agent
+  responses.
+
+---
+
+## [v0.245.6] - 2025-10-01 - Containerization of Aihub Bot for Enhanced Deployment
+
+### Added
+
+- ✨ **Introduced Dockerfile for Aihub Bot:** Added a comprehensive Docker configuration to containerize the Aihub Bot,
+  enabling consistent and portable deployments across various environments.
+- 🚀 **Streamlined Build and Runtime Environments:** Implemented a multi-stage Docker build process to optimize image
+  size and efficiency, ensuring a lean runtime environment.
+- 🔒 **Enhanced Operational Security and Dependency Management:** Configured a non-root user for improved security and
+  integrated Poetry for robust Python dependency management within the container.
+
+---
+
+## [v0.245.5] - 2025-09-30 - Infrastructure and Developer Experience Enhancements
+
+### Added
+
+- ⚙️ **Introduced `set-latest` GitHub Action:** A new automated workflow for managing container image tags, ensuring the
+  `latest` tag is correctly applied to published images, improving deployment consistency.
+
+### Refactor
+
+- 🧹 **Refined Model Data Fetching:** Updated the web application's SDK to use clearer `getModels` API calls and
+  `ModelTypeGroupDtoReadable` types, enhancing code readability and maintainability.
+- ⚡️ **Optimized ESLint Configuration:** Streamlined the ESLint setup by expanding global ignore rules to skip
+  unnecessary files and simplifying plugin imports, leading to faster linting and a cleaner development environment.
+
+---
+
+## [v0.245.4] - 2025-09-30 - Internal Codebase Refinements
+
+### Refactor
+
+- 🧹 **Standardized Event Types:** Aligned internal naming conventions by updating the `ChunkEventReadable` type to
+  `ChunkEvent` within the event component resolution logic, enhancing code consistency.
+
+---
+
 ## [v0.245.3] - 2025-09-25 - LLM Event Metadata Refinement and Developer Experience Improvements
 
 ### Changed

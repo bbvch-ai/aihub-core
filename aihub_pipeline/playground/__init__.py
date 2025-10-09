@@ -25,6 +25,7 @@ from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
 from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
+from aihub_pipeline.util.bucket_utils import get_db_name_from_bucket_name
 
 # Configuration: Change this to switch between cloud providers
 DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
@@ -34,9 +35,6 @@ REMOVED_DOCUMENTS_KEY = AssetKey(["playground", "removed_documents"])
 SUMMARY_NODES_KEY = AssetKey(["playground", "summary_nodes"])
 
 DATALAKE_CONTAINER_NAME = "playground"
-DATALAKE_DIRECTORY_NAME = "test"
-NAMESPACE_NAME = DATALAKE_DIRECTORY_NAME
-STORE_NAME = DATALAKE_CONTAINER_NAME
 FIGURES_DIRECTORY_NAME = "__figures__"
 
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
@@ -54,11 +52,11 @@ assets = [
 
 job = observe_source_job(
     observable_asset=observable_asset,
-    source_location_name=NAMESPACE_NAME,
+    source_location_name=DATALAKE_CONTAINER_NAME,
 )
 
 remove_job = materialize_asset_job(
-    source_location_name=NAMESPACE_NAME,
+    source_location_name=DATALAKE_CONTAINER_NAME,
     job_name="remove_documents",
     asset_selection=AssetSelection.keys(REMOVED_DOCUMENTS_KEY),
 )
@@ -72,7 +70,7 @@ defs = Definitions(
         "summary_parser": RecursiveSummaryParserResource(),
         **local_mongo_milvus_storage_context_resource(
             vector_store_uri="http://localhost:19530",
-            store_name=STORE_NAME,
+            store_name=get_db_name_from_bucket_name(bucket_name=DATALAKE_CONTAINER_NAME, auto_sync=False),
         ),
         **s3_data_lake_resources(
             container_name=DATALAKE_CONTAINER_NAME,

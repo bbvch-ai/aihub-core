@@ -20,12 +20,12 @@ Architecture:
 - Authentication via Bearer token with user headers
 """
 
-import base64
 import hashlib
 import hmac
 import json
 import logging
 import os
+import urllib.parse
 from typing import Any, Annotated
 
 import httpx
@@ -67,12 +67,8 @@ class AuthenticationService:
         user_email: Annotated[str, "User's email address"],
     ) -> Annotated[dict[str, str], "HTTP headers with authentication"]:
         """Prepare authenticated request headers"""
-        signature = self.sign_user_headers(user_name, user_email)
-        clean_username = (
-            base64.b64encode(user_name.encode("utf-8")).decode("ascii")
-            if user_name
-            else ""
-        )
+        clean_username = urllib.parse.quote(user_name, safe="") if user_name else ""
+        signature = self.sign_user_headers(clean_username, user_email)
 
         return {
             "Authorization": f"Bearer {self._api_key}",

@@ -1,5 +1,6 @@
 from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
 from dagster import OpExecutionContext, op
+from mongoengine import disconnect
 
 from aihub_pipeline.resources.doc_store.DocStoreResource import DocStoreResource
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
@@ -16,11 +17,14 @@ def fetch_ref_docs_to_remove(
     ids = [data_lake_file.id_ for data_lake_file in data_lake_files]
 
     connect_to_mongo_db(doc_store_resource.document_store_name)
-    ref_docs = RefDoc.by_namespace(
-        db_alias="default",  # While in the pipeline, we only have a connection to the doc-store mongodb
-        namespace=doc_store_resource.namespace_name,
-        exclude_ids=ids,
-    )
+    try:
+        ref_docs = RefDoc.get_documents(
+            db_alias="default",
+            exclude_ids=ids,
+        )
+    finally:
+        disconnect()
+
     context.log.info(f"Found {len(ref_docs)} ref docs that need to be removed")
     return [
         RefDocDocument(

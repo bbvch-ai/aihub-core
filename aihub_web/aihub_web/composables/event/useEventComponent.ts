@@ -29,7 +29,7 @@ export const useEventComponent = () => {
   const resolveComponentForEvent = (event: AgentEventReadable) => {
     const mapping = {
       UserMessageEvent: EventDisplayUserMessageEvent,
-      ChunkEventReadable: EventDisplayChunkEvent,
+      ChunkEvent: EventDisplayChunkEvent,
       LLMEvent: EventDisplayLLMEvent,
       LLMCostEvent: EventDisplayLLMCostEvent,
       LimitChatHistoryEvent: EventDisplayLimitChatHistoryEvent,
