@@ -7,7 +7,7 @@ controller:
   service:
     type: LoadBalancer
     # Existing floating IP (pre-allocated in OpenStack, assigned to k8s.ai-agents.ch)
-    loadBalancerIP: "85.85.127.222"
+    loadBalancerIP: "185.85.126.232"
     annotations:
       # Azure-specific annotations (not needed for OpenStack)
       # service.beta.kubernetes.io/azure-load-balancer-internal: "false"

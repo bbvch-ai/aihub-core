@@ -94,7 +94,7 @@ cd "$CLOUD_DIR"
 # =============================================================================
 
 # Common configuration
-CLUSTER_NAME="aihub-${CLOUD_PROVIDER}-${ENVIRONMENT}"
+# Note: CLUSTER_NAME is now defined in .auto.tfvars files per environment
 PROJECT_NAME="aihub"
 
 
@@ -189,15 +189,20 @@ echo -e "${GREEN}✅ Prerequisites check passed${NC}"
 # TERRAFORM EXECUTION
 # =============================================================================
 
-# Initialize Terraform
-echo -e "${BLUE}🔧 Initializing Terraform...${NC}"
-terraform init
+# Initialize Terraform with backend config for environment-specific state
+echo -e "${BLUE}🔧 Initializing Terraform with $ENVIRONMENT backend configuration...${NC}"
+BACKEND_CONFIG_FILE="backend-${ENVIRONMENT}.hcl"
+if [ ! -f "$BACKEND_CONFIG_FILE" ]; then
+    echo -e "${RED}❌ Backend config file not found: $BACKEND_CONFIG_FILE${NC}"
+    exit 1
+fi
+terraform init -reconfigure -backend-config="$BACKEND_CONFIG_FILE"
 
 ## No TF_VARS construction; rely on static per-cloud terraform.tfvars
 
 # Set only dynamic values via environment variables
 echo -e "${BLUE}📝 Setting dynamic variables...${NC}"
-export TF_VAR_cluster_name="$CLUSTER_NAME"
+# Note: cluster_name comes from .auto.tfvars, not from deploy script
 export TF_VAR_project_name="$PROJECT_NAME"
 export TF_VAR_environment="$ENVIRONMENT"
 export TF_VAR_tag_project="$TAG_PROJECT"
@@ -216,13 +221,23 @@ fi
 # Execute Terraform command
 echo -e "${BLUE}🚀 Running Terraform $ACTION...${NC}"
 
+# Check if environment-specific tfvars file exists
+TFVARS_FILE="${ENVIRONMENT}.tfvars"
+if [ ! -f "$TFVARS_FILE" ]; then
+    echo -e "${RED}❌ Environment tfvars file not found: $TFVARS_FILE${NC}"
+    exit 1
+fi
+
 if [ "$ACTION" = "plan" ]; then
-    terraform plan
+    terraform plan -var-file="$TFVARS_FILE"
 elif [ "$ACTION" = "apply" ]; then
-    terraform plan -out=tfplan
+    terraform plan -var-file="$TFVARS_FILE" -out=tfplan
     terraform apply -auto-approve tfplan
     echo -e "${GREEN}✅ Deployment completed successfully!${NC}"
 
+    # Get cluster name from terraform output
+    CLUSTER_NAME=$(terraform output -raw cluster_name 2>/dev/null || echo "unknown")
+    
     echo ""
     echo -e "${BLUE}📊 Cluster Information:${NC}"
     echo "========================"
@@ -251,7 +266,7 @@ elif [ "$ACTION" = "apply" ]; then
         echo -e "${RED}❌ Failed to access cluster. Please check your configuration.${NC}"
     fi
 elif [ "$ACTION" = "destroy" ]; then
-    terraform destroy -auto-approve
+    terraform destroy -var-file="$TFVARS_FILE" -auto-approve
     echo -e "${GREEN}✅ Resources destroyed successfully!${NC}"
 fi
 

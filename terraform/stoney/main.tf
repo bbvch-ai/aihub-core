@@ -5,6 +5,12 @@ terraform {
       version = "~> 2.1.0"
     }
   }
+  
+  # Backend configuration for state file location
+  # Path will be configured via -backend-config during init
+  backend "local" {
+    # path will be set via backend config file
+  }
 }
 
 # Data sources for OpenStack resources
@@ -108,3 +114,28 @@ resource "openstack_containerinfra_cluster_v1" "cluster" {
 }
 
 // No additional node groups; total workers are controlled via node_count
+
+# =============================================================================
+# FLOATING IP FOR INGRESS CONTROLLER
+# =============================================================================
+
+# IMPORTANT: For production use, floating IPs should be allocated MANUALLY
+# outside of Terraform to ensure they persist across cluster destroy/recreate.
+#
+# To allocate manually:
+#   openstack floating ip create public --description "aihub-${environment}-ingress"
+#
+# Then set the IP in your .auto.tfvars file:
+#   ingress_loadbalancer_ip = "185.85.126.XXX"
+
+# Data source to look up existing floating IP
+# This is used to validate the IP exists and get its details
+data "openstack_networking_floatingip_v2" "ingress_ip" {
+  count   = var.ingress_loadbalancer_ip != "" ? 1 : 0
+  address = var.ingress_loadbalancer_ip
+}
+
+# Local value to use throughout the configuration
+locals {
+  ingress_ip = var.ingress_loadbalancer_ip != "" ? var.ingress_loadbalancer_ip : null
+}

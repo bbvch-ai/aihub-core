@@ -139,7 +139,7 @@ variable "docker_volume_size" {
 }
 
 variable "ingress_loadbalancer_ip" {
-  description = "Existing floating IP for ingress controller LoadBalancer"
+  description = "Floating IP for ingress controller LoadBalancer. Set to empty string to allocate a new IP."
   type        = string
-  default     = "85.85.127.222"
+  default     = ""
 }

@@ -10,6 +10,12 @@ terraform {
       version = ">= 3.5.1"
     }
   }
+  
+  # Backend configuration for state file location
+  # Path will be configured via -backend-config during init
+  backend "local" {
+    # path will be set via backend config file
+  }
 }
 
 provider "azurerm" {

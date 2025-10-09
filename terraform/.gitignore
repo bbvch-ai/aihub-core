@@ -1,7 +1,6 @@
 # Terraform state files
 *.tfstate
 *.tfstate.*
-*.tfvars
 *.tfvars.json
 !azure/test.auto.tfvars
 !stoney/test.auto.tfvars
