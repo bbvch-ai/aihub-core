@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.246.1] - 2025-10-09 - Retrieval Agent Context Customization
+
+### Added
+
+- ✨ **Configurable Context Prompt for Retrieval Agent:** Introduced a new `context_prompt` configuration option for the
+  `RetrievalAgent`, allowing users to define a custom prompt that dictates how combined and ordered retrieved nodes are
+  formatted.
+
+---
+
 ## [v0.246.0] - 2025-10-07 - Modernizing Data Persistence: Introducing SeaweedFS, FerretDB, and Valkey
 
 ### Added

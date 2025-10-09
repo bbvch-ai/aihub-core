@@ -9,6 +9,7 @@ from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
+from aihub_agent.agents.RetrievalAgent.configs.RetrievalAgentConfig import RetrievalAgentConfig
 from aihub_agent.agents.RetrievalAgent.events.QuestionStartEvent import QuestionStartEvent
 from aihub_agent.agents.RetrievalAgent.events.RetrievalResponseEvent import RetrievalResponseEvent
 from aihub_agent.workflow.decorators.step import step
@@ -69,6 +70,7 @@ class RetrievalAgent(Agent):
         event: RetrieverEvent,
         t: LocaleHandler,
         start_event: QuestionStartEvent,
+        agent_config: RetrievalAgentConfig,
     ) -> InOrderNodeCombinerEvent:
         """
         Orders the retrieved nodes based on their source documents.
@@ -76,6 +78,7 @@ class RetrievalAgent(Agent):
         ordered_nodes = combine_nodes_in_order(
             context_nodes=event.nodes,
             t=t.in_locale(start_event.locale),
+            context_prompt=agent_config.context_prompt,
         )
         return InOrderNodeCombinerEvent(context_message=ordered_nodes)
 
