@@ -80,10 +80,18 @@ class S3DataLakeClient(AbstractDataLakeClient):
 
     def create_data_lake_file_from_uri(self, document_uri: str) -> DataLakeFile:
         """Create a DataLakeFile from S3 URI by fetching object metadata."""
-        # Auto-correct URI if missing s3:// prefix
         if not document_uri.startswith("s3://"):
-            logger.warning(f"URI missing 's3://' prefix: {document_uri}. Auto-correcting.")
-            document_uri = "s3://" + document_uri
+            uri_without_leading_slash = document_uri.lstrip("/")
+
+            if uri_without_leading_slash.startswith(f"{self.container_name}/"):
+                logger.warning(f"URI missing 's3://' prefix: {document_uri}. Auto-correcting.")
+                document_uri = f"s3://{uri_without_leading_slash}"
+            else:
+                raise ValueError(
+                    f"Invalid S3 URI format or bucket mismatch: {document_uri}. "
+                    f"Expected format: 's3://{self.container_name}/path/to/file', "
+                    f"'{self.container_name}/path/to/file', or '/{self.container_name}/path/to/file'"
+                )
 
         # Extract key from s3://bucket/key format
         uri_parts = document_uri[5:].split("/", 1)  # Remove 's3://' and split
