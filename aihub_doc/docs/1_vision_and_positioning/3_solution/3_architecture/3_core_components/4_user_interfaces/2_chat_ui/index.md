@@ -20,9 +20,9 @@ capabilities—multi-model support, voice interactions, document handling, colla
 improvements from an active development community—without bearing the development costs or timeline required to build
 equivalent functionality.
 
-**Continuous Innovation**: As the Open WebUI project evolves with new capabilities, the Swiss AI Hub benefits from
-these enhancements through standard update cycles. Organizations' investment in the platform appreciates over time as
-the integrated chat interface gains features without requiring additional development investment from the AI Hub team.
+**Continuous Innovation**: As the Open WebUI project evolves with new capabilities, the Swiss AI Hub benefits from these
+enhancements through standard update cycles. Organizations' investment in the platform appreciates over time as the
+integrated chat interface gains features without requiring additional development investment from the AI Hub team.
 
 **Development Focus on Differentiation**: By adopting Open WebUI for standard chat functionality, the Swiss AI Hub
 development team concentrates on unique value-adding capabilities—enterprise integration, knowledge management, process
@@ -66,12 +66,12 @@ organizations avoid the substantial investment required to build, test, and main
 Development resources focus on enterprise-specific requirements rather than recreating commodity functionality.
 
 **Accelerated Deployment**: Organizations gain immediate access to a comprehensive chat interface without waiting for
-custom development cycles. Pilot projects and production deployments can proceed rapidly, accelerating time-to-value
-for AI investments.
+custom development cycles. Pilot projects and production deployments can proceed rapidly, accelerating time-to-value for
+AI investments.
 
-**Risk Mitigation**: Open WebUI's maturity, extensive production deployments, and active community reduce technical
-risk compared to custom chat interface development. Organizations deploy proven technology with established best
-practices rather than experimental implementations.
+**Risk Mitigation**: Open WebUI's maturity, extensive production deployments, and active community reduce technical risk
+compared to custom chat interface development. Organizations deploy proven technology with established best practices
+rather than experimental implementations.
 
 **Future-Proof Architecture**: The open-source foundation ensures platform viability independent of any single vendor's
 roadmap or business continuity. Organizations maintain flexibility to fork, modify, or transition the chat interface if
@@ -81,15 +81,16 @@ requirements evolve beyond the standard integration.
 
 This section explores the Swiss AI Hub's chat interface integration through the following perspectives:
 
-- **[Integration Architecture](1_integration_architecture/1_integration_architecture.md)**: How Open WebUI integrates into the suite, technical
-  approach, and communication mechanisms
-- **[Enhanced Source Attribution](2_source_attribution/2_source_attribution.md)**: Custom extensions providing transparent knowledge
-  retrieval visibility
-- **[Enhanced Observability](3_observability/3_observability.md)**: Execution tracing and workflow transparency capabilities
-- **[Feature Overview](4_feature_overview/4_feature_overview.md)**: Comprehensive catalog of chat interface capabilities inherited from
-  Open WebUI
-- **[Strategic Rationale](5_strategic_rationale/5_strategic_rationale.md)**: Detailed analysis of the open-source integration approach and
-  business advantages
+- **[Integration Architecture](1_integration_architecture/1_integration_architecture.md)**: How Open WebUI integrates
+  into the suite, technical approach, and communication mechanisms
+- **[Enhanced Source Attribution](2_source_attribution/2_source_attribution.md)**: Custom extensions providing
+  transparent knowledge retrieval visibility
+- **[Enhanced Observability](3_observability/3_observability.md)**: Execution tracing and workflow transparency
+  capabilities
+- **[Feature Overview](4_feature_overview/4_feature_overview.md)**: Comprehensive catalog of chat interface capabilities
+  inherited from Open WebUI
+- **[Strategic Rationale](5_strategic_rationale/5_strategic_rationale.md)**: Detailed analysis of the open-source
+  integration approach and business advantages
 
 ## Alignment with Platform Philosophy
 

@@ -13,13 +13,13 @@ while maintaining security and compliance requirements.
 
 Traditional application interfaces often present all features to all users, relying on authentication checks to block
 unauthorized access. This creates cluttered interfaces filled with disabled buttons and features users cannot use,
-leading to confusion and support burden. The Swiss AI Hub fundamentally reimagines this approach through dynamic
-service visibility.
+leading to confusion and support burden. The Swiss AI Hub fundamentally reimagines this approach through dynamic service
+visibility.
 
 **Permission-Filtered Service Catalog**: When the suite loads, it queries the backend for the user's authorized service
 catalog. The backend evaluates the user's permissions against each registered service's requirements, returning only
-services the user can access. The interface renders navigation elements exclusively for authorized services—users
-simply never see capabilities they cannot use.
+services the user can access. The interface renders navigation elements exclusively for authorized services—users simply
+never see capabilities they cannot use.
 
 **Clean, Focused Interface**: This approach creates dramatically simpler interfaces compared to traditional
 applications. A data scientist sees evaluation and experimentation services prominently featured. A business analyst
@@ -47,10 +47,10 @@ creating a hierarchical namespace that enables precise access control. For examp
 `aihub.user.agent.support_agent.instance_001` grants access to a specific agent instance, while `aihub.admin.knowledge`
 grants administrative access to the entire knowledge management service.
 
-**Wildcard Support**: The permission system supports sophisticated wildcards that enable flexible access control
-without requiring explicit enumeration of every resource. The `*` wildcard matches any single path segment, while the
-`>` wildcard matches any remaining path segments. This enables rules like `aihub.user.agent.>` to grant access to all
-agent resources at any depth.
+**Wildcard Support**: The permission system supports sophisticated wildcards that enable flexible access control without
+requiring explicit enumeration of every resource. The `*` wildcard matches any single path segment, while the `>`
+wildcard matches any remaining path segments. This enables rules like `aihub.user.agent.>` to grant access to all agent
+resources at any depth.
 
 **Implicit Permissions**: Users with the implicit permission pattern `aihub.user.?>` gain access to all user-level
 services without requiring explicit grants for each service. This simplifies permission management for standard users
@@ -87,9 +87,9 @@ creating secure, isolated workspaces within a shared platform deployment.
 The suite's permission-aware behavior results from sophisticated coordination between frontend queries and backend
 evaluation logic.
 
-**Backend Permission Evaluation**: All permission evaluation occurs on the backend, ensuring security enforcement
-cannot be bypassed through client-side manipulation. The suite endpoint queries the permission system, evaluates access
-rules against the user's roles and grants, and returns a pre-filtered service catalog. The frontend trusts this catalog
+**Backend Permission Evaluation**: All permission evaluation occurs on the backend, ensuring security enforcement cannot
+be bypassed through client-side manipulation. The suite endpoint queries the permission system, evaluates access rules
+against the user's roles and grants, and returns a pre-filtered service catalog. The frontend trusts this catalog
 without performing its own permission logic.
 
 **Access Checker Integration**: The backend employs an Access Checker component that encapsulates permission evaluation
@@ -111,8 +111,8 @@ reporting and security forensics.
 Different services implement different permission patterns based on their functional requirements, demonstrating the
 flexibility of the hierarchical permission system.
 
-**Agent Service**: Implements per-agent access control where users might have access to specific agent instances but
-not others. Permissions like `aihub.user.agent.customer_support.cs_001` grant access to a specific agent, while
+**Agent Service**: Implements per-agent access control where users might have access to specific agent instances but not
+others. Permissions like `aihub.user.agent.customer_support.cs_001` grant access to a specific agent, while
 `aihub.user.agent.customer_support.*` grants access to all instances of that agent class.
 
 **Thread Service**: Controls access to conversation threads based on ownership and sharing rules. Users generally have
@@ -120,12 +120,12 @@ access to threads they created or participated in, with administrators having br
 monitoring purposes.
 
 **Knowledge Service**: Implements namespace-based access control where permissions can be granted at the database level
-(`aihub.user.knowledge.hr_documents`) or namespace level (`aihub.user.knowledge.hr_documents.policies`), with hierarchical
-inheritance through the permission tree.
+(`aihub.user.knowledge.hr_documents`) or namespace level (`aihub.user.knowledge.hr_documents.policies`), with
+hierarchical inheritance through the permission tree.
 
-**Administrative Services**: Require explicit administrative permissions like `aihub.admin.users` or `aihub.admin.roles`.
-These services never appear for users without administrative grants, creating a clear separation between standard and
-administrative interfaces.
+**Administrative Services**: Require explicit administrative permissions like `aihub.admin.users` or
+`aihub.admin.roles`. These services never appear for users without administrative grants, creating a clear separation
+between standard and administrative interfaces.
 
 ## User Experience Benefits
 
@@ -155,17 +155,17 @@ The permission-aware architecture provides security and compliance benefits beyo
 creating multiple security layers. Even if an attacker manipulates the frontend, backend authorization enforcement
 prevents unauthorized operations.
 
-**Reduced Attack Surface**: By not exposing information about services users cannot access, the suite reveals less
-about the deployment's capabilities to potential attackers. Users cannot probe disabled features to gather information
-for attacks.
+**Reduced Attack Surface**: By not exposing information about services users cannot access, the suite reveals less about
+the deployment's capabilities to potential attackers. Users cannot probe disabled features to gather information for
+attacks.
 
 **Compliance Support**: The comprehensive audit logging of permission evaluations supports regulatory compliance
 requirements for access control, particularly in sectors with strict data protection requirements like healthcare,
 finance, and public administration.
 
 **Zero-Trust Architecture**: The suite implements zero-trust principles where every service access requires explicit
-permission evaluation. There are no implicit trust assumptions based on network location or previous authentication—every
-operation is independently authorized.
+permission evaluation. There are no implicit trust assumptions based on network location or previous
+authentication—every operation is independently authorized.
 
 ## Operational Advantages
 

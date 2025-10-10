@@ -300,8 +300,8 @@ def merge_documentation(source_dir, output_name="combined"):
 
 if __name__ == "__main__":
     # Configuration
-    SOURCE_DIRECTORY = "./docs"
-    OUTPUT_FILENAME = "documentation_combined"
+    SOURCE_DIRECTORY = "./docs/1_vision_and_positioning/3_solution"
+    OUTPUT_FILENAME = "solution_combined"
 
     # Run the merger
     merge_documentation(SOURCE_DIRECTORY, OUTPUT_FILENAME)

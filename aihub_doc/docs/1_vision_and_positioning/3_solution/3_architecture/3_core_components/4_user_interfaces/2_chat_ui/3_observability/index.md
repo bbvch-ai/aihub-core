@@ -12,9 +12,9 @@ compliance.
 
 ## The Observability Challenge in AI Systems
 
-Traditional AI systems provide users with results—chat responses, recommendations, decisions—without visibility into
-the reasoning processes that produced them. Users experience AI as mysterious oracles that somehow generate outputs
-from inputs, with no insight into intermediate steps, decision logic, or potential failure points.
+Traditional AI systems provide users with results—chat responses, recommendations, decisions—without visibility into the
+reasoning processes that produced them. Users experience AI as mysterious oracles that somehow generate outputs from
+inputs, with no insight into intermediate steps, decision logic, or potential failure points.
 
 **Enterprise Trust Barriers**: This opacity creates trust barriers for enterprise adoption. Decision-makers hesitate to
 rely on systems they cannot understand, troubleshoot, or validate. When AI produces unexpected results, users lack the
@@ -48,8 +48,8 @@ performance bottlenecks, understand where agents invest processing time, and ass
 complex reasoning or infrastructure delays.
 
 **Conditional Branch Visibility**: When agent workflows include conditional logic—taking different paths based on data
-or context—traces show which branches executed and why. This visibility helps users understand agent decision-making
-and validates that agents apply appropriate logic to specific scenarios.
+or context—traces show which branches executed and why. This visibility helps users understand agent decision-making and
+validates that agents apply appropriate logic to specific scenarios.
 
 ## Interactive Trace Exploration
 
@@ -63,9 +63,9 @@ steps that produced them without switching applications or losing their place in
 execution, granular event data. Users can drill into areas of interest without overwhelming themselves with excessive
 detail for straightforward operations.
 
-**Event Data Inspection**: At the most granular level, users can examine complete event data—the JSON structures
-flowing between workflow steps. This detail supports sophisticated debugging and validation, enabling technical users to
-verify data transformations and identify data quality issues.
+**Event Data Inspection**: At the most granular level, users can examine complete event data—the JSON structures flowing
+between workflow steps. This detail supports sophisticated debugging and validation, enabling technical users to verify
+data transformations and identify data quality issues.
 
 **Cross-Service Navigation**: From trace views, users can navigate to related platform capabilities—viewing knowledge
 documents accessed during retrieval steps, examining agent configurations that determined behavior, accessing system
@@ -112,9 +112,9 @@ improving performance and accuracy over time.
 systems reached conclusions. Compliance audits can review traces demonstrating appropriate data usage, correct workflow
 execution, and human oversight at required decision points.
 
-**User Confidence**: When users can examine agent execution details, confidence in AI systems increases. The ability
-to "look under the hood" transforms AI from mysterious technology into understandable tools, accelerating adoption
-among users who might otherwise hesitate to rely on opaque systems.
+**User Confidence**: When users can examine agent execution details, confidence in AI systems increases. The ability to
+"look under the hood" transforms AI from mysterious technology into understandable tools, accelerating adoption among
+users who might otherwise hesitate to rely on opaque systems.
 
 ## Observability in Agent Development
 
@@ -128,9 +128,9 @@ in real-time through trace interfaces, understanding behavior immediately.
 details beyond final outputs. Tests can verify that agents invoked appropriate tools, accessed correct knowledge
 sources, and followed expected workflow paths—validating behavior comprehensively.
 
-**Performance Profiling**: Trace timing data enables systematic performance profiling. Developers identify slow
-workflow steps, quantify performance impacts of different configurations, and validate that optimizations produce
-expected improvements.
+**Performance Profiling**: Trace timing data enables systematic performance profiling. Developers identify slow workflow
+steps, quantify performance impacts of different configurations, and validate that optimizations produce expected
+improvements.
 
 **Workflow Documentation**: Execution traces serve as living documentation of agent workflows. Rather than maintaining
 separate workflow diagrams that drift from implementation, developers reference actual execution traces showing how
@@ -162,17 +162,17 @@ traces for significant conversations while aging out routine interactions.
 The Swiss AI Hub's observability capabilities represent fundamental philosophical differentiation from many AI
 platforms.
 
-**Transparency by Design**: Rather than treating AI execution details as implementation specifics hidden from users,
-the platform embraces transparency as a core principle. This design philosophy recognizes that enterprise and public
-sector deployments require understanding and validation capabilities beyond consumer applications.
+**Transparency by Design**: Rather than treating AI execution details as implementation specifics hidden from users, the
+platform embraces transparency as a core principle. This design philosophy recognizes that enterprise and public sector
+deployments require understanding and validation capabilities beyond consumer applications.
 
 **Standards-Based Implementation**: By building on Phoenix and OpenInference standards rather than proprietary tracing
 systems, the platform provides observability that integrates with existing enterprise monitoring infrastructure and
 avoids vendor lock-in.
 
 **Complete Workflow Visibility**: The observability extends beyond individual model invocations to complete workflow
-execution—the step-based architecture that defines agents inherently supports tracing at workflow level, not just
-model level.
+execution—the step-based architecture that defines agents inherently supports tracing at workflow level, not just model
+level.
 
 This enhanced observability, combined with source attribution, demonstrates how the Swiss AI Hub extends open-source
 chat infrastructure with enterprise-grade capabilities. Organizations gain both the conversational ease of modern chat

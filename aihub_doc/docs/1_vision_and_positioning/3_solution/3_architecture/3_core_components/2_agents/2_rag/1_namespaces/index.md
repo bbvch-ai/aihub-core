@@ -66,8 +66,8 @@ users from gaining indirect access to restricted information through agent usage
 
 When enabled, the platform checks user permissions against the agent's configured namespaces before initiating workflow
 execution. If users lack access to any required namespace, the agent refuses to execute rather than filtering results.
-This all-or-nothing approach maintains consistency—users either receive full agent capabilities or clear denial,
-never partial results based on namespace permissions.
+This all-or-nothing approach maintains consistency—users either receive full agent capabilities or clear denial, never
+partial results based on namespace permissions.
 
 ## Flexible Knowledge Access Patterns
 

@@ -11,8 +11,8 @@ Metrics provide continuous quantitative measurements of platform health, perform
 enable trend analysis, capacity planning, and performance optimization by aggregating data over time.
 
 The Swiss AI-Hub collects metrics using **OpenTelemetry**, an industry-standard observability framework. This approach
-ensures flexibility and avoids vendor lock-in. For details on the OpenTelemetry infrastructure, see [OpenTelemetry
-Foundation](../0_opentelemetry/index.md).
+ensures flexibility and avoids vendor lock-in. For details on the OpenTelemetry infrastructure, see
+[OpenTelemetry Foundation](../0_opentelemetry/index.md).
 
 ---
 
@@ -63,8 +63,8 @@ Health status for all platform services is captured through two complementary ap
 **Synthetic Health Checks**: HTTP/gRPC probes for services without native health endpoints (Phoenix, NATS, Attu,
 Dagster, data pipelines)
 
-Health events are logged as structured NDJSON and ingested by the OpenTelemetry Collector. See [Health
-Checks](../../2_monitoring/1_health_checks/index.md) for complete health monitoring details.
+Health events are logged as structured NDJSON and ingested by the OpenTelemetry Collector. See
+[Health Checks](../../2_monitoring/1_health_checks/index.md) for complete health monitoring details.
 
 **Business Value**: Comprehensive health monitoring ensures visibility into every platform component, enabling rapid
 response before user-facing impact occurs.
@@ -160,7 +160,8 @@ investigation or scaling before service degradation.
 ### Data-Driven Capacity Planning
 
 Historical metrics inform infrastructure decisions. Growth trends provide lead time for capacity planning. Resource
-utilization patterns identify over-provisioned components for cost savings and under-provisioned ones requiring upgrades.
+utilization patterns identify over-provisioned components for cost savings and under-provisioned ones requiring
+upgrades.
 
 **Example**: 15% monthly growth in request rates indicates current infrastructure will reach capacity in six months,
 providing sufficient lead time for budgeting and procurement.
@@ -195,7 +196,7 @@ adherence to capacity and performance requirements.
 Metrics are visualized and analyzed through observability platforms. The Swiss AI-Hub currently uses **SigNoz** for
 metrics visualization, alerting, and analysis.
 
-For information on dashboards, visualization, and platform options, see [Dashboards](../../2_monitoring/2_dashboards/
+For information on dashboards, visualization, and platform options, see \[Dashboards\](../../2_monitoring/2_dashboards/
 index.md).
 
 ### Key Capabilities
@@ -281,7 +282,8 @@ from APIs, agents, and pipelines.
 **Business Metrics**: Higher-level metrics aligned with business outcomes - cost per document processed, accuracy
 trends, user satisfaction indicators.
 
-**Predictive Analytics**: Machine learning models analyzing trends to predict capacity needs and recommend optimizations.
+**Predictive Analytics**: Machine learning models analyzing trends to predict capacity needs and recommend
+optimizations.
 
 **Custom Dashboards**: Pre-built visualizations for different stakeholders (operations, executives, finance, compliance)
 with role-appropriate metrics.

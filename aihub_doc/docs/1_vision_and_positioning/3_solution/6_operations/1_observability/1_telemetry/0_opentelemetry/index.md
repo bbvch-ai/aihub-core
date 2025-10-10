@@ -20,14 +20,17 @@ preferences.
 
 ## Why OpenTelemetry?
 
-OpenTelemetry lets us instrument services once and keep tool choice flexible. It standardizes metrics, logs, and traces so signals correlate by default and switchable backends remain a config change, not a rewrite.
+OpenTelemetry lets us instrument services once and keep tool choice flexible. It standardizes metrics, logs, and traces
+so signals correlate by default and switchable backends remain a config change, not a rewrite.
 
 **Benefits**
-- **Vendor-neutral by design:** Use any OTLP-compatible backend (e.g., SigNoz, Datadog, Grafana, Prometheus, New Relic) without re-instrumentation.
-- **Unified signals:** Consistent models and shared context (trace/span IDs, resource attributes) link metrics, logs, and traces for faster troubleshooting.
+
+- **Vendor-neutral by design:** Use any OTLP-compatible backend (e.g., SigNoz, Datadog, Grafana, Prometheus, New Relic)
+  without re-instrumentation.
+- **Unified signals:** Consistent models and shared context (trace/span IDs, resource attributes) link metrics, logs,
+  and traces for faster troubleshooting.
 - **Proven standard:** A CNCF project with broad industry support and active development, reducing technology risk.
 - **Future-ready:** Evolve platforms and policies through the OTel Collector and configuration, not application code.
-
 
 ---
 
@@ -88,9 +91,12 @@ graph TB
 
 Receivers are intake points. They pull telemetry from apps and infrastructure into the platform.
 
-- **OTLP receiver:** Standard entry for app telemetry. Services send metrics, logs, and traces using the OpenTelemetry protocol. Concept: one wire format for everything.
-- **Container metrics receiver:** Collects resource usage from running containers. Concept: observe runtime health without touching app code.
-- **File log receivers:** Ingest structured event logs like container and synthetic health checks. Concept: capture operational signals even when apps lack native endpoints.
+- **OTLP receiver:** Standard entry for app telemetry. Services send metrics, logs, and traces using the OpenTelemetry
+  protocol. Concept: one wire format for everything.
+- **Container metrics receiver:** Collects resource usage from running containers. Concept: observe runtime health
+  without touching app code.
+- **File log receivers:** Ingest structured event logs like container and synthetic health checks. Concept: capture
+  operational signals even when apps lack native endpoints.
 
 Outcome: Broad coverage with minimal coupling to any single tool or runtime.
 
@@ -101,9 +107,12 @@ Outcome: Broad coverage with minimal coupling to any single tool or runtime.
 Processors shape telemetry in motion. They add context, reduce noise, and prepare data for analysis.
 
 - **Batching:** Groups data for efficient transport. Concept: lower overhead without losing fidelity.
-- **Resource detection:** Auto-enriches with environment details such as host, container, or system info. Concept: attach who/where to every signal.
-- **Attribute editing:** Normalizes tags like environment or source. Concept: consistent labels for reliable filtering and dashboards.
-- **Resource mapping:** Translates container facts into service identities (e.g., service name, version). Concept: align infra reality with service views.
+- **Resource detection:** Auto-enriches with environment details such as host, container, or system info. Concept:
+  attach who/where to every signal.
+- **Attribute editing:** Normalizes tags like environment or source. Concept: consistent labels for reliable filtering
+  and dashboards.
+- **Resource mapping:** Translates container facts into service identities (e.g., service name, version). Concept: align
+  infra reality with service views.
 - **Filtering:** Drops low-value noise such as routine health checks. Concept: improve signal-to-noise and control cost.
 
 Outcome: Clean, contextual, and analysis-ready telemetry.
@@ -114,7 +123,8 @@ Outcome: Clean, contextual, and analysis-ready telemetry.
 
 Exporters deliver telemetry to destinations.
 
-- **Primary backend exporter:** Sends data to the chosen OTLP-compatible platform. Concept: pick or change your analysis tool without re-instrumenting.
+- **Primary backend exporter:** Sends data to the chosen OTLP-compatible platform. Concept: pick or change your analysis
+  tool without re-instrumenting.
 - **Debug exporter:** Prints or previews data for validation. Concept: verify pipelines locally before scaling.
 
 Outcome: Pluggable outputs with safe development workflows.
@@ -203,7 +213,6 @@ New observability platforms require only collector configuration changes:
 
 No application code changes required.
 
-
 ## Security
 
 ### Secure Transmission
@@ -217,4 +226,5 @@ through defined interfaces without collector access.
 
 ### Secret Management
 
-Authentication keys managed via environment variables, separate from configuration files, enabling secure secret rotation.
+Authentication keys managed via environment variables, separate from configuration files, enabling secure secret
+rotation.

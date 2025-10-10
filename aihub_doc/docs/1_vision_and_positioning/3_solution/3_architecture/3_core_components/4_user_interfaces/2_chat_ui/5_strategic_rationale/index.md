@@ -5,9 +5,9 @@ index: 5
 
 # Strategic Rationale
 
-The Swiss AI Hub's decision to integrate Open WebUI rather than developing a custom chat interface reflects a
-deliberate strategic choice that balances technology pragmatism with business value delivery. This section articulates
-the reasoning behind this approach and the advantages it provides organizations evaluating the platform.
+The Swiss AI Hub's decision to integrate Open WebUI rather than developing a custom chat interface reflects a deliberate
+strategic choice that balances technology pragmatism with business value delivery. This section articulates the
+reasoning behind this approach and the advantages it provides organizations evaluating the platform.
 
 ## The Build vs. Integrate Decision
 
@@ -16,9 +16,9 @@ and which to adopt from existing solutions. The Swiss AI Hub's approach to this 
 strategy that prioritizes business value delivery over technological pride of authorship.
 
 **Commodity vs. Differentiation Analysis**: Chat interfaces for AI interactions have become commodity functionality.
-Dozens of open-source projects and commercial products provide sophisticated chat experiences with comprehensive
-feature sets. While user experience details vary, the core functionality—message exchange, conversation history,
-multi-model support—is well-understood and extensively implemented.
+Dozens of open-source projects and commercial products provide sophisticated chat experiences with comprehensive feature
+sets. While user experience details vary, the core functionality—message exchange, conversation history, multi-model
+support—is well-understood and extensively implemented.
 
 **Development Resource Optimization**: Building a production-grade chat interface from scratch requires substantial
 investment—user interface design, accessibility implementation, mobile responsiveness, keyboard navigation, rich text
@@ -55,19 +55,18 @@ supports trust and addresses concerns impossible to resolve with closed-source c
 requirements exceed standard capabilities. This flexibility provides strategic insurance—organizations aren't
 constrained by vendor feature roadmaps or commercial product limitations.
 
-**Cost Transparency**: Open-source adoption eliminates per-user licensing fees, API call charges, or usage-based
-pricing common with commercial chat products. Organizations pay infrastructure costs only, enabling transparent total
-cost of ownership calculation and budget predictability.
+**Cost Transparency**: Open-source adoption eliminates per-user licensing fees, API call charges, or usage-based pricing
+common with commercial chat products. Organizations pay infrastructure costs only, enabling transparent total cost of
+ownership calculation and budget predictability.
 
 ## Risk Management Through Proven Technology
 
 Integrating Open WebUI provides risk mitigation advantages compared to custom development or unproven commercial
 products.
 
-**Production-Tested Reliability**: Open WebUI has extensive production deployments across diverse organizations and
-use cases. Bugs, edge cases, and failure modes have been encountered, reported, and addressed through community
-maintenance. Organizations deploying the Swiss AI Hub benefit from this battle-testing without experiencing problems
-firsthand.
+**Production-Tested Reliability**: Open WebUI has extensive production deployments across diverse organizations and use
+cases. Bugs, edge cases, and failure modes have been encountered, reported, and addressed through community maintenance.
+Organizations deploying the Swiss AI Hub benefit from this battle-testing without experiencing problems firsthand.
 
 **Security Maturity**: The project's security posture reflects community scrutiny and vulnerability disclosure
 processes. Security researchers examine open-source code, report vulnerabilities, and verify fixes—providing security
@@ -132,8 +131,8 @@ advantages.
 **Immediate Feature Availability**: Organizations gain production-grade chat functionality from day one of deployment,
 without waiting for feature development roadmaps or paying for custom development.
 
-**Predictable Evolution**: As Open WebUI evolves, organizations benefit from new features, performance improvements,
-and bug fixes through standard platform update cycles. This predictable evolution enables long-term planning without
+**Predictable Evolution**: As Open WebUI evolves, organizations benefit from new features, performance improvements, and
+bug fixes through standard platform update cycles. This predictable evolution enables long-term planning without
 uncertainty about vendor feature roadmaps.
 
 **Resource Efficiency**: IT teams manage a single integrated platform rather than coordinating multiple chat products,
@@ -160,8 +159,8 @@ superior to platforms requiring separate chat product licensing, custom developm
 contracts for chat functionality.
 
 **Flexibility Demonstration**: The integration approach demonstrates architectural flexibility—the Swiss AI Hub isn't
-rigidly committed to proprietary components but can adopt best-of-breed solutions when they provide superior value.
-This flexibility extends to other platform components, enabling continuous optimization.
+rigidly committed to proprietary components but can adopt best-of-breed solutions when they provide superior value. This
+flexibility extends to other platform components, enabling continuous optimization.
 
 **Community Credibility**: Active participation in the open-source ecosystem through Open WebUI integration and
 potential contributions signals the Swiss AI Hub's commitment to open standards, community collaboration, and

@@ -47,9 +47,9 @@ information must be presented to humans and what response options are available.
 involvement explicit and reviewable during workflow design.
 
 **Context Preservation**: All workflow state and conversational context remain available when humans respond. Whether a
-human approves a decision immediately or returns days later, the agent continues execution **from exactly where it paused**
-with complete knowledge of the original request and workflow state. This is a crucial advantage over systems where
-human interaction triggers a complete restart of the agent's internal workflow—in the Swiss AI-Hub, especially in
+human approves a decision immediately or returns days later, the agent continues execution **from exactly where it
+paused** with complete knowledge of the original request and workflow state. This is a crucial advantage over systems
+where human interaction triggers a complete restart of the agent's internal workflow—in the Swiss AI-Hub, especially in
 complex multi-step workflows, the agent seamlessly resumes at the exact point where human input was needed, preserving
 all intermediate results, context, and progress.
 
