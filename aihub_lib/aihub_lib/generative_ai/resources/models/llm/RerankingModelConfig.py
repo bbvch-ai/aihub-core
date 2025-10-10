@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Annotated, Any
+from typing import Annotated
 
 import httpx
 from llama_index.core.callbacks import TokenCountingHandler
@@ -55,9 +55,9 @@ class RerankingService(BaseModel):
         if tokens <= max_tokens:
             return [node]
 
-        word_count = int(max_tokens * 0.75)
+        step_size = int(max_tokens * 0.75)
         words = node.split()
-        chunks = [node[i : i + word_count] for i in range(0, len(words), word_count)]
+        chunks = [node[i : i + step_size] for i in range(0, len(words), step_size)]
 
         return chunks
 

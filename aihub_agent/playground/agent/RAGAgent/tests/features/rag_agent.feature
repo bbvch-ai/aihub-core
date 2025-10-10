@@ -78,7 +78,7 @@ Feature: RAG Agent
   @self_hosted
   Scenario: Test RAGAgent with reranking enabled
     Given a RAGAgent runner with a valid self hosted configuration
-    * with reranking enabled
+    * with reranking enabled and top_k of "2"
     When the start event is sent with a user query "What is AI Hub?"
     Then a RerankerEvent is present with reranked nodes
     * the RerankerEvent model name should be "local/reranker"

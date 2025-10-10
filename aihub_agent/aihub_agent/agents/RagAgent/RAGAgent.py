@@ -120,9 +120,9 @@ class RAGAgent(Agent):
             )
 
         if not guard_result.success:
-            return FewShotRejectEvent(reason=guard_result.reason)
+            return FewShotRejectEvent(reason=guard_result.reasoning)
 
-        return FewShotAcceptEvent(reason=guard_result.reason)
+        return FewShotAcceptEvent(reason=guard_result.reasoning)
 
     @step(
         name=LocaleString(en="Retrieve Nodes"),
@@ -197,6 +197,7 @@ class RAGAgent(Agent):
                 rerank_model_name=agent_config.reranking_config.reranking_model.model_name,
                 top_k=agent_config.reranking_config.top_k,
                 max_tokens=agent_config.reranking_config.max_tokens,
+                reranked=False,
             )
 
         await displayer.display_thought(t("agent.thought.reranking_results"))
@@ -216,6 +217,7 @@ class RAGAgent(Agent):
             max_tokens=agent_config.reranking_config.max_tokens,
             input_nodes=event.nodes,
             output_nodes=reranked_nodes,
+            reranked=True,
         )
 
     @step(
@@ -278,17 +280,17 @@ class RAGAgent(Agent):
 
         if guard_result.success:
             await displayer.display_thought(t("agent.thought.context_sufficient"))
-            return ContextSufficientAcceptEvent(reason=guard_result.reason)
+            return ContextSufficientAcceptEvent(reason=guard_result.reasoning)
 
         if not more_hops_available:
-            return ContextInsufficientRejectEvent(reason=guard_result.reason)
+            return ContextInsufficientRejectEvent(reason=guard_result.reasoning)
 
         await run_context.set("hop_count", hop_count + 1)
         new_query = guard_result.new_query
         prev_queries.append(new_query)
         await run_context.set("prev_queries", prev_queries)
         await displayer.display_thought(t("agent.thought.trying_another_retrieval_hop"))
-        return ContextInsufficientWithQueryEvent(reason=guard_result.reason, new_query=new_query)
+        return ContextInsufficientWithQueryEvent(reason=guard_result.reasoning, new_query=new_query)
 
     @step(
         name=LocaleString(en="Limit Chat History with Context"),

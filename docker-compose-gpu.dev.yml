@@ -43,6 +43,8 @@ services:
       filer
       -master="seaweedfs-master:9333"
       -ip.bind=0.0.0.0
+    ports:
+      - "8889:8888"
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-filer:/data
     depends_on:
@@ -137,7 +139,7 @@ services:
       - "9091:9091"
     depends_on:
       - "etcd"
-      - "minio"
+      - "seaweedfs-s3"
 
   attu:
     image: ghcr.io/bbvch-ai/aihub-core/attu:v2.5.12
@@ -398,7 +400,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      minio:
+      seaweedfs-s3:
         condition: service_healthy
       litellm:
         condition: service_started

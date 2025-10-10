@@ -365,11 +365,11 @@ def _(agent_runner: AgentTestRunner, expected_prompt: str):
     assert actual_prompt == expected_prompt, f"Expected system prompt '{expected_prompt}', got '{actual_prompt}'"
 
 
-@given("with reranking enabled")
-def _(agent_runner: AgentTestRunner):
+@given(parsers.parse('with reranking enabled and top_k of "{top_k:d}"'))
+def _(agent_runner: AgentTestRunner, top_k: int):
     agent_runner.default_agent_config.reranking_config = RerankingConfig(
         enabled=True,
-        top_k=2,
+        top_k=top_k,
     )
     return agent_runner
 
