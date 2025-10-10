@@ -132,13 +132,13 @@ async def main():
             ),
             retrieve_step_config=RetrieveStepConfig(
                 embed_model=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
-                index_namespaces=["test"],
+                index_namespaces=["default"],
                 retrieve_k=10,
                 query_mode=VectorStoreQueryMode.DEFAULT,
                 node_types=["content"],
                 vector_store=MilvusVectorStoreConfig(
                     uri=MilvusSettings().URL,
-                    collection_name="playground",
+                    collection_name="defaultknowledge",
                 ),
                 retrieve_prev_next=RetrievePrevNextConfig(
                     num_nodes=10,

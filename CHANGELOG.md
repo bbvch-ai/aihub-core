@@ -5,6 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.246.2] - 2025-10-10 - Simplified Pipelines, Smarter SharePoint Sync
+
+### Added
+
+- ✨ **SharePoint Integration**: Introduced new `SharePointSettings` for externalizing SharePoint configuration and a new
+  factory (`default_sharepoint_to_datalake_definitions`) for easily setting up SharePoint-to-DataLake pipelines.
+- 🦾 **Standardized Data Lake Pipelines**: Added a `default_definitions` utility that provides a highly configurable and
+  centralized way to define DataLake-to-VectorStore pipelines, promoting reusability and reducing boilerplate.
+- ⚡️ **Flexible Data Lake Directory Management**: The `DataLakeResource` and related URI extraction logic now support an
+  optional directory name, improving flexibility for data organization within containers.
+- ⚙️ **Configurable Bucket Auto-Sync**: Enhanced bucket creation to allow explicit control over the `auto_sync` property
+  for `BucketEntity` instances.
+
+### Changed
+
+- 🔄 **RAG Agent Defaults**: Updated the default RAG agent configuration to use a `default` index namespace and
+  `defaultknowledge` collection name, streamlining out-of-the-box usage.
+- 🔑 **Externalized SharePoint Settings**: SharePoint authentication details are now securely loaded from environment
+  variables via `SharePointSettings` rather than being configured directly on the `SharePointResource`.
+- 📄 **SharePoint File Type Filtering**: Modified the default `SharePointResource` behavior to include all file types if
+  no specific patterns are provided, offering more permissive syncing by default.
+- 🧹 **Simplified Data Lake IO Manager Configuration**: Streamlined the prefix generation for Azure Data Lake IO
+  managers, making configuration more consistent with container names.
+
+### Refactor
+
+- 🏗️ **Centralized Pipeline Definitions**: Consolidated the definition logic for RAG pipelines into
+  `definitions_util.py`, replacing scattered, repetitive configurations in `default_rag_pipeline` and `playground`
+  applications.
+- ⚡️ **Streamlined Resource Factories**: Refactored data lake and LLM resource factories to support more flexible
+  configurations and direct instantiation, reducing complexity.
+
+### Removed
+
+- 🗑️ **Deprecated Data Lake Container Resource**: Eliminated the `DataLakeContainerResource` in favor of a more flexible
+  `DataLakeResource` and consolidated pipeline definitions.
+- 🗑️ **Redundant Pipeline Boilerplate**: Removed verbose, repetitive pipeline definitions from
+  `app/default_rag_pipeline/__init__.py` and `aihub_pipeline/playground/__init__.py` by leveraging the new centralized
+  definition utility.
+
+---
+
+## [v0.246.1] - 2025-10-09 - Retrieval Agent Context Customization
+
+### Added
+
+- ✨ **Configurable Context Prompt for Retrieval Agent:** Introduced a new `context_prompt` configuration option for the
+  `RetrievalAgent`, allowing users to define a custom prompt that dictates how combined and ordered retrieved nodes are
+  formatted.
+
+---
+
 ## [v0.246.0] - 2025-10-07 - Modernizing Data Persistence: Introducing SeaweedFS, FerretDB, and Valkey
 
 ### Added
