@@ -5,9 +5,9 @@ index: 4
 
 # Feature Overview
 
-Through Open WebUI integration, the Swiss AI Hub inherits a comprehensive feature set developed and refined by an
-active open-source community. This catalog documents key capabilities available through the chat interface,
-demonstrating the breadth of functionality organizations gain without custom development investment.
+Through Open WebUI integration, the Swiss AI Hub inherits a comprehensive feature set developed and refined by an active
+open-source community. This catalog documents key capabilities available through the chat interface, demonstrating the
+breadth of functionality organizations gain without custom development investment.
 
 ## Core Chat Capabilities
 
@@ -57,9 +57,9 @@ conversation flows.
 
 The interface provides comprehensive capabilities for managing AI model selection and configuration.
 
-**Multi-Model Support**: Users can interact with multiple AI models within the same interface, selecting models based
-on capability requirements, cost considerations, or performance characteristics. Model switching occurs seamlessly
-without application changes.
+**Multi-Model Support**: Users can interact with multiple AI models within the same interface, selecting models based on
+capability requirements, cost considerations, or performance characteristics. Model switching occurs seamlessly without
+application changes.
 
 **Model Parameter Control**: Advanced users can adjust model parameters—temperature for creativity control, token limits
 for response length, presence penalties for repetition reduction. These controls enable fine-tuning AI behavior for
@@ -84,9 +84,9 @@ configuration.
 knowledge bases, providing answers grounded in organizational knowledge rather than generic training data. This
 grounding dramatically improves response relevance and accuracy.
 
-**Source Indicators**: The native interface provides indicators when responses incorporate retrieved information,
-though the Swiss AI Hub's enhanced source attribution extends these capabilities significantly as documented in the
-dedicated attribution section.
+**Source Indicators**: The native interface provides indicators when responses incorporate retrieved information, though
+the Swiss AI Hub's enhanced source attribution extends these capabilities significantly as documented in the dedicated
+attribution section.
 
 **Knowledge Base Management**: Administrators can manage document collections, configure retrieval parameters, and
 monitor knowledge base usage through integrated management interfaces.
@@ -98,9 +98,8 @@ The interface supports collaborative use cases and knowledge sharing across user
 **Conversation Sharing**: Users can share conversations with colleagues, enabling collaborative AI interaction. Shared
 conversations maintain full context, allowing recipients to review interaction history and continue conversations.
 
-**Annotation and Feedback**: Users can annotate AI responses with feedback—marking responses as helpful or
-problematic, providing correction guidance, or adding contextual notes. This feedback supports continuous improvement
-of AI systems.
+**Annotation and Feedback**: Users can annotate AI responses with feedback—marking responses as helpful or problematic,
+providing correction guidance, or adding contextual notes. This feedback supports continuous improvement of AI systems.
 
 **Community Features**: For deployments enabling community interaction, users can participate in leaderboards
 recognizing productive AI usage, share particularly effective prompts or interaction patterns, and learn from
@@ -113,9 +112,9 @@ histories, shared knowledge bases, and collaborative AI interactions that suppor
 
 Comprehensive administrative capabilities support enterprise deployment and governance requirements.
 
-**Role-Based Access Control**: Administrators define user roles with granular permissions controlling access to
-specific models, features, or administrative functions. This role system enables appropriate delegation while
-maintaining security boundaries.
+**Role-Based Access Control**: Administrators define user roles with granular permissions controlling access to specific
+models, features, or administrative functions. This role system enables appropriate delegation while maintaining
+security boundaries.
 
 **User Management**: Administrative interfaces provide user provisioning, authentication configuration, and access
 revocation capabilities. Integration with enterprise authentication systems—OAuth, LDAP—enables centralized user
@@ -133,16 +132,16 @@ creating audit trails supporting compliance requirements and security monitoring
 Numerous refinements support productive, efficient user interactions.
 
 **Responsive Design**: The interface adapts to different screen sizes and devices—desktop, tablet, mobile—maintaining
-functionality and usability across form factors. Users can initiate conversations on desktop and continue them on
-mobile devices seamlessly.
+functionality and usability across form factors. Users can initiate conversations on desktop and continue them on mobile
+devices seamlessly.
 
 **Progressive Web App**: The interface can install as a progressive web app, providing native application-like
 experiences including offline capability, push notifications, and home screen presence without requiring app store
 distribution.
 
-**Keyboard Shortcuts**: Power users benefit from comprehensive keyboard navigation, enabling efficient operation
-without mouse interaction. Shortcuts accelerate common operations like sending messages, switching conversations, or
-accessing settings.
+**Keyboard Shortcuts**: Power users benefit from comprehensive keyboard navigation, enabling efficient operation without
+mouse interaction. Shortcuts accelerate common operations like sending messages, switching conversations, or accessing
+settings.
 
 **Emoji Support**: Full emoji support enables expressive communication, with emoji pickers and rendering supporting
 conversational tone and visual communication beyond text.

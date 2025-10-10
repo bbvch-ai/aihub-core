@@ -35,8 +35,8 @@ across different persistence layers.
 
 ## Context Storage
 
-The platform stores context data across multiple persistence layers optimized for different access patterns and lifecycle
-requirements:
+The platform stores context data across multiple persistence layers optimized for different access patterns and
+lifecycle requirements:
 
 **Run Context** provides short-lived storage for data specific to a single agent execution, serving as temporary working
 memory for intermediate calculations and step-by-step state tracking. The platform stores agent configuration as a

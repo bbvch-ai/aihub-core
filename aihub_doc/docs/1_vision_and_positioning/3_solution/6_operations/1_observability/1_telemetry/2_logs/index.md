@@ -12,8 +12,8 @@ that aggregate measurements over time, logs capture individual events with full 
 decisions, errors, and state changes.
 
 The Swiss AI-Hub implements structured logging through Python's standard logging framework combined with OpenTelemetry
-for centralized collection and export. For details on the OpenTelemetry infrastructure, see [OpenTelemetry
-Foundation](../0_opentelemetry/index.md).
+for centralized collection and export. For details on the OpenTelemetry infrastructure, see
+[OpenTelemetry Foundation](../0_opentelemetry/index.md).
 
 ---
 
@@ -64,7 +64,8 @@ For complete health monitoring details, see [Health Checks](../../2_monitoring/1
 
 ### HTTP Request Logs (Operational)
 
-HTTP requests and responses are logged through the Python logging framework, which is integrated with OpenTelemetry via LoggingInstrumentor.
+HTTP requests and responses are logged through the Python logging framework, which is integrated with OpenTelemetry via
+LoggingInstrumentor.
 
 **Captured Information**:
 
@@ -72,7 +73,8 @@ HTTP requests and responses are logged through the Python logging framework, whi
 - Response status codes
 - Error stack traces for failed requests
 
-**Implementation**: Application developers are responsible for logging HTTP requests and ensuring sensitive data is not included in log messages.
+**Implementation**: Application developers are responsible for logging HTTP requests and ensuring sensitive data is not
+included in log messages.
 
 ### AI Model Execution Logs (Operational)
 
@@ -273,7 +275,8 @@ policies based on compliance requirements, budget constraints, and analytical ne
 - Historical logs (30-90 days): Compliance and trend analysis
 - Archive logs (90+ days): Long-term compliance and audit requirements
 
-For detailed retention policies, see [Dashboards - Data Retention](../../2_monitoring/2_dashboards/index.md#data-retention-and-storage).
+For detailed retention policies, see
+[Dashboards - Data Retention](../../2_monitoring/2_dashboards/index.md#data-retention-and-storage).
 
 ---
 
@@ -281,7 +284,9 @@ For detailed retention policies, see [Dashboards - Data Retention](../../2_monit
 
 ### Sensitive Data Protection
 
-**Developer Responsibility**: Application code must never log passwords, API keys, authorization tokens, or other credentials. Developers are responsible for implementing appropriate sanitization and ensuring sensitive data is not included in log messages.
+**Developer Responsibility**: Application code must never log passwords, API keys, authorization tokens, or other
+credentials. Developers are responsible for implementing appropriate sanitization and ensuring sensitive data is not
+included in log messages.
 
 ### Transmission Security
 
@@ -344,8 +349,8 @@ through configuration changes only. No application code changes are required to 
 - **Datadog**: Unified observability including logs, metrics, and traces
 - **Custom Solutions**: Any platform supporting OTLP log ingestion
 
-For complete multi-platform details, see [OpenTelemetry Foundation](../0_opentelemetry/index.md) and [Dashboards -
-Multi-Platform Support](../../2_monitoring/2_dashboards/index.md#multi-platform-support).
+For complete multi-platform details, see [OpenTelemetry Foundation](../0_opentelemetry/index.md) and
+[Dashboards - Multi-Platform Support](../../2_monitoring/2_dashboards/index.md#multi-platform-support).
 
 ---
 

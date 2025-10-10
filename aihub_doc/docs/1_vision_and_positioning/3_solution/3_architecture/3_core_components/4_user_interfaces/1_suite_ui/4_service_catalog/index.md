@@ -27,13 +27,13 @@ authorized agents with descriptions, capability summaries, and access points.
 - **Workflow Visualization**: Examine agent workflows as interactive diagrams showing decision logic, tool invocations,
   and integration points
 - **Direct Interaction**: For conversational agents, initiate chat sessions directly from the agent management interface
-- **Thread Overview**: View all conversation threads associated with a specific agent, monitoring its usage and reviewing
-  interactions
+- **Thread Overview**: View all conversation threads associated with a specific agent, monitoring its usage and
+  reviewing interactions
 - **Status Monitoring**: Real-time status indicators show whether agents are running, stopped, or experiencing errors
 
-**Business Value**: The agent management service eliminates the "where do I find the right AI assistant" problem
-common in AI deployments. Users can discover agents relevant to their tasks through browsing or search, understand
-agent capabilities before engaging, and monitor agent performance without requiring technical expertise.
+**Business Value**: The agent management service eliminates the "where do I find the right AI assistant" problem common
+in AI deployments. Users can discover agents relevant to their tasks through browsing or search, understand agent
+capabilities before engaging, and monitor agent performance without requiring technical expertise.
 
 ## Thread Management Service
 
@@ -77,8 +77,8 @@ during interactions, ensuring users understand what information agents can acces
 - **Document Reconstruction**: View exactly how agents will see documents, enabling quality assurance and
   troubleshooting
 - **Node Inspection**: Examine individual document chunks (nodes) to understand segmentation and metadata extraction
-- **Processing Status**: Clear indicators distinguish uploaded-but-unprocessed documents from processed,
-  AI-ready content
+- **Processing Status**: Clear indicators distinguish uploaded-but-unprocessed documents from processed, AI-ready
+  content
 - **Multi-Language Support**: Interface elements and organizational labels available in German, English, French, and
   Italian
 
@@ -105,16 +105,16 @@ monitoring, intervention, and optimization of multi-step workflows.
 - **Performance Analytics**: Aggregated process performance metrics showing completion rates, timing, and bottlenecks
 
 **Business Value**: The process service enables organizations to implement sophisticated AI-powered automation while
-maintaining visibility, control, and intervention capability. Rather than black-box automation, users understand and
-can influence complex workflows even when AI agents perform most operations autonomously.
+maintaining visibility, control, and intervention capability. Rather than black-box automation, users understand and can
+influence complex workflows even when AI agents perform most operations autonomously.
 
 ## Evaluation Service
 
 The Evaluation Service supports systematic agent testing and quality assurance through dataset management, experiment
 configuration, and results analysis.
 
-**Purpose**: Enables data scientists, AI engineers, and quality assurance teams to validate agent performance,
-compare configurations, and ensure quality standards before deployment.
+**Purpose**: Enables data scientists, AI engineers, and quality assurance teams to validate agent performance, compare
+configurations, and ensure quality standards before deployment.
 
 **Key Capabilities**:
 
@@ -228,5 +228,5 @@ services (processes, evaluation) introduced as organizational AI maturity increa
 The suite's dynamic service discovery ensures the interface automatically adapts to available services, requiring no
 manual configuration as deployment scope evolves.
 
-This comprehensive service catalog ensures that the Swiss AI Hub suite addresses the complete lifecycle of AI work,
-from knowledge preparation and agent development through deployment, operation, monitoring, and continuous improvement.
+This comprehensive service catalog ensures that the Swiss AI Hub suite addresses the complete lifecycle of AI work, from
+knowledge preparation and agent development through deployment, operation, monitoring, and continuous improvement.

@@ -25,8 +25,8 @@ instructional text. Users working in their preferred language encounter no untra
 inconsistencies.
 
 **Dynamic Content Localization**: Beyond static interface text, dynamically generated content respects language
-preferences. Service descriptions, agent names, knowledge namespace labels—any content supporting localization adapts
-to user language selection, creating a fully localized experience.
+preferences. Service descriptions, agent names, knowledge namespace labels—any content supporting localization adapts to
+user language selection, creating a fully localized experience.
 
 **Right Language from Start**: Users select their preferred language during initial authentication or through profile
 settings. This selection persists across sessions, ensuring users consistently experience the interface in their chosen
@@ -41,8 +41,8 @@ default for all sessions, ensuring consistent language experience across devices
 repeated selection.
 
 **Session Override**: Users can temporarily override their profile language preference for a specific session through
-interface controls. This capability supports multilingual users who might prefer different languages for different
-tasks or contexts.
+interface controls. This capability supports multilingual users who might prefer different languages for different tasks
+or contexts.
 
 **Immediate Application**: Language changes apply immediately throughout the interface without requiring page reload or
 logout. Navigation elements, service descriptions, form labels, and all interface text update instantly to reflect the
@@ -65,9 +65,9 @@ expanded without code changes.
 service maintains its own translation files for the four supported languages, ensuring service-specific terminology
 remains consistent and enabling independent translation updates.
 
-**Hierarchical Key Structure**: Translation keys follow a hierarchical structure reflecting interface organization.
-Keys like `knowledge.namespace.create.label` organize translations logically, making them discoverable and preventing
-naming collisions across the large codebase.
+**Hierarchical Key Structure**: Translation keys follow a hierarchical structure reflecting interface organization. Keys
+like `knowledge.namespace.create.label` organize translations logically, making them discoverable and preventing naming
+collisions across the large codebase.
 
 **Fallback Mechanisms**: The translation system implements sophisticated fallback mechanisms. If a translation is
 missing in the user's selected language, the system falls back to German (the default language). If even the German
@@ -106,9 +106,9 @@ language.
 **Automatic Language Detection**: For document processing and knowledge management, the system can automatically detect
 document language, enabling language-specific processing, search optimization, and retrieval tuning.
 
-**Localized Formatting**: Numbers, dates, times, and currencies format according to locale conventions. German users
-see dates as "31.12.2024," while English users see "12/31/2024." Currency amounts, percentages, and large numbers
-respect locale formatting rules.
+**Localized Formatting**: Numbers, dates, times, and currencies format according to locale conventions. German users see
+dates as "31.12.2024," while English users see "12/31/2024." Currency amounts, percentages, and large numbers respect
+locale formatting rules.
 
 **Search Localization**: Search functionality respects language contexts. Searches in German use German-specific
 tokenization and stemming, while French searches apply French linguistic rules. This ensures search results remain
@@ -156,8 +156,8 @@ features to align with user expectations in their language community.
 
 Comprehensive internationalization delivers specific value for Swiss organizations and public institutions.
 
-**Public Sector Compliance**: Swiss public sector institutions often have regulatory requirements to provide services
-in multiple national languages. The suite's complete four-language support ensures compliance without requiring custom
+**Public Sector Compliance**: Swiss public sector institutions often have regulatory requirements to provide services in
+multiple national languages. The suite's complete four-language support ensures compliance without requiring custom
 development or integration complexity.
 
 **Multilingual Organization Support**: Organizations operating across Swiss language regions can deploy a single
@@ -183,9 +183,9 @@ From a technical perspective, the internationalization system implements several
 their selected language. This optimizes initial page load performance, particularly important for users on slower
 connections.
 
-**Parameter Substitution**: Translations support parameterized messages where variable values substitute into
-translated text. A translation like "Welcome, {name}!" correctly positions the name parameter according to the target
-language's grammar rules.
+**Parameter Substitution**: Translations support parameterized messages where variable values substitute into translated
+text. A translation like "Welcome, \{name}!" correctly positions the name parameter according to the target language's
+grammar rules.
 
 **Pluralization**: The translation system handles plural forms correctly across languages, recognizing that different
 languages have different pluralization rules. English's simple singular/plural distinction differs from more complex
@@ -205,8 +205,8 @@ processes ensuring all languages remain current with platform capabilities.
 **User Feedback Integration**: Users can report translation issues—incorrect terminology, awkward phrasing, missing
 translations—through feedback mechanisms. This input informs translation refinement cycles.
 
-**Professional Review Cycles**: Periodically, translations undergo professional review by native speakers with
-technical expertise, ensuring quality maintains professional standards as the platform evolves.
+**Professional Review Cycles**: Periodically, translations undergo professional review by native speakers with technical
+expertise, ensuring quality maintains professional standards as the platform evolves.
 
 **Machine Learning Potential**: As AI capabilities advance, the platform could leverage language models to suggest
 translation improvements, flag potential inconsistencies, or even generate draft translations for human review.

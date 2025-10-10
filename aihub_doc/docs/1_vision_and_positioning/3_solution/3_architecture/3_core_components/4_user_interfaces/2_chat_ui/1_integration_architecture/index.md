@@ -12,13 +12,13 @@ model.
 ## Embedded Integration Pattern
 
 Rather than directing users to a separate Open WebUI deployment through links or redirects, the Swiss AI Hub embeds the
-chat interface directly within the suite's unified workspace, creating a cohesive user experience indistinguishable
-from native platform components.
+chat interface directly within the suite's unified workspace, creating a cohesive user experience indistinguishable from
+native platform components.
 
 **Iframe Embedding**: The integration employs iframe embedding technology to render the complete Open WebUI interface
 within the suite's service area. This approach provides complete visual integration while maintaining clear boundaries
-between the open-source component and platform infrastructure. Users perceive a single, integrated application while
-the underlying architecture maintains separation of concerns.
+between the open-source component and platform infrastructure. Users perceive a single, integrated application while the
+underlying architecture maintains separation of concerns.
 
 **Full-Screen Service Integration**: When users navigate to the chat service within the suite, the Open WebUI interface
 occupies the full service area, providing the complete functionality and user experience of the standalone application.
@@ -69,8 +69,8 @@ boundaries for access to underlying AI models, knowledge bases, and agent capabi
 through the chat interface that they lack permissions to use through other platform services.
 
 **Session Synchronization**: Authentication sessions remain synchronized between the platform and embedded chat
-interface. When users log out from the suite, the chat interface session terminates simultaneously. Session timeouts
-and renewals coordinate across both components.
+interface. When users log out from the suite, the chat interface session terminates simultaneously. Session timeouts and
+renewals coordinate across both components.
 
 **Secure Communication Channels**: All communication between the platform and Open WebUI traverses secure channels with
 appropriate encryption and validation. The iframe integration includes appropriate security headers and content security
@@ -85,9 +85,9 @@ components.
 architecture. This containerization provides isolation while enabling coordinated lifecycle management—starting,
 stopping, updating the chat interface alongside other platform services.
 
-**Shared Infrastructure Access**: The chat container accesses platform infrastructure—databases, object storage,
-message queues—through standard integration patterns. This shared infrastructure approach ensures chat data persists
-alongside other platform data, supporting unified backup, disaster recovery, and data governance.
+**Shared Infrastructure Access**: The chat container accesses platform infrastructure—databases, object storage, message
+queues—through standard integration patterns. This shared infrastructure approach ensures chat data persists alongside
+other platform data, supporting unified backup, disaster recovery, and data governance.
 
 **Environment-Based Configuration**: Configuration parameters—authentication endpoints, model access URLs, feature
 toggles—propagate to the chat interface through environment variables and configuration files managed by the platform
@@ -124,12 +124,12 @@ system. This branding occurs through CSS customization rather than source code m
 The integration architecture enables comprehensive monitoring of chat interface health and performance.
 
 **Health Check Integration**: The platform monitors Open WebUI container health through standard health check endpoints,
-detecting service failures and enabling automatic recovery or administrator alerting when chat functionality
-experiences issues.
+detecting service failures and enabling automatic recovery or administrator alerting when chat functionality experiences
+issues.
 
 **Performance Metrics Collection**: Usage metrics—conversation counts, response times, error rates—flow from the chat
-interface to platform observability systems, enabling administrators to monitor chat service performance alongside
-other platform metrics.
+interface to platform observability systems, enabling administrators to monitor chat service performance alongside other
+platform metrics.
 
 **Log Aggregation**: Chat interface logs aggregate with platform logs in unified logging infrastructure, enabling
 comprehensive troubleshooting and audit trail construction that spans interactions across multiple platform components.
@@ -145,16 +145,16 @@ This integration architecture delivers several specific technical and operationa
 through standard update processes without requiring platform code changes. Similarly, platform enhancements don't
 necessitate chat interface modifications.
 
-**Clear Responsibility Boundaries**: The architecture maintains clear responsibility boundaries. Open WebUI handles
-chat interaction excellence. The platform provides authentication, authorization, knowledge management, and agent
+**Clear Responsibility Boundaries**: The architecture maintains clear responsibility boundaries. Open WebUI handles chat
+interaction excellence. The platform provides authentication, authorization, knowledge management, and agent
 orchestration. This separation of concerns simplifies testing, debugging, and maintenance.
 
 **Preservation of Open Source Benefits**: By embedding rather than forking, the platform preserves Open WebUI's open-
 source advantages—community contributions, security patches, feature enhancements—without maintaining a custom variant
 requiring ongoing merge and conflict resolution effort.
 
-**Deployment Flexibility**: Organizations can deploy the complete integration or, if requirements dictate, replace
-Open WebUI with alternative chat interfaces by implementing the same embedding and messaging patterns. The architecture
+**Deployment Flexibility**: Organizations can deploy the complete integration or, if requirements dictate, replace Open
+WebUI with alternative chat interfaces by implementing the same embedding and messaging patterns. The architecture
 doesn't create irrevocable technical debt or vendor lock-in to specific chat technology.
 
 This integration architecture demonstrates that adopting open-source components doesn't require compromising platform

@@ -45,7 +45,6 @@ testability of workflow components. Decoupling agent logic from infrastructure a
 multiple times, supporting high throughput and enabling automatic load balancing across instances for scalable
 operations.
 
-
 ## Data Retention Strategy
 
 The platform implements a carefully designed retention strategy that balances operational efficiency with compliance

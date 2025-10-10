@@ -16,9 +16,9 @@ infrastructure, enabling organizations to add capabilities without forking the c
 versions.
 
 **Plugin Architecture**: Services integrate with the suite through a well-defined controller pattern rather than direct
-code integration. Organizations implementing custom services follow the same patterns as native services, ensuring
-their extensions receive automatic integration with authentication, permissions, internationalization, and
-observability infrastructure.
+code integration. Organizations implementing custom services follow the same patterns as native services, ensuring their
+extensions receive automatic integration with authentication, permissions, internationalization, and observability
+infrastructure.
 
 **Standard Integration Contracts**: The controller pattern defines clear contracts for service integration. Custom
 services implement these contracts, declare their metadata (name, description, icon, permissions), and mount their API
@@ -27,8 +27,8 @@ modifications.
 
 **Separation of Core and Extension**: The platform explicitly separates core infrastructure (authentication,
 authorization, messaging, persistence) from service implementations. Extensions leverage core infrastructure without
-modifying it, ensuring platform updates don't break custom services and custom services don't compromise core
-platform stability.
+modifying it, ensuring platform updates don't break custom services and custom services don't compromise core platform
+stability.
 
 **Version Compatibility**: The controller integration contract maintains backward compatibility across platform
 versions. Services implemented against one platform version continue functioning when the platform updates, protecting
@@ -36,8 +36,8 @@ organizational investment in custom capabilities.
 
 ## Implementing Custom Services
 
-Organizations can implement custom services that appear as first-class citizens in the suite interface, indistinguishable
-from native capabilities.
+Organizations can implement custom services that appear as first-class citizens in the suite interface,
+indistinguishable from native capabilities.
 
 **Controller Implementation**: Custom services implement a controller class inheriting from the platform's base
 controller. This controller defines the service's API endpoints, permission requirements, and metadata. The
@@ -61,9 +61,9 @@ internationalization for multi-language support, and observability tooling for m
 
 Organizations implement various types of custom services to address specific business requirements.
 
-**Industry-Specific Agents**: A financial services organization might implement custom agents for regulatory
-compliance analysis, financial modeling, or risk assessment. These agents integrate into the suite's agent service,
-appearing alongside native agents with industry-specific workflows and knowledge integration.
+**Industry-Specific Agents**: A financial services organization might implement custom agents for regulatory compliance
+analysis, financial modeling, or risk assessment. These agents integrate into the suite's agent service, appearing
+alongside native agents with industry-specific workflows and knowledge integration.
 
 **Proprietary System Integration**: Organizations can implement services that bridge the AI Hub with proprietary
 enterprise systems—ERP systems, custom databases, legacy applications. These integration services might expose
@@ -76,7 +76,8 @@ metrics and visualizations.
 
 **Specialized Workflows**: Process-heavy organizations might implement custom process management interfaces tailored to
 specific workflow types—document approval workflows, compliance verification processes, multi-stage review procedures.
-These custom interfaces leverage the platform's process automation infrastructure while presenting domain-specific views.
+These custom interfaces leverage the platform's process automation infrastructure while presenting domain-specific
+views.
 
 **External AI Model Integration**: Organizations using proprietary or specialized AI models can implement custom model
 integration services that expose these models through the suite, enabling agents to leverage organization-specific AI
@@ -110,8 +111,8 @@ Custom services deploy alongside the native platform, becoming integral parts of
 deploy alongside native platform components, enabling independent scaling and version management.
 
 **Configuration Management**: Custom services use the platform's configuration management system, reading settings from
-environment variables and configuration files. This integration enables consistent configuration practices across
-native and custom services.
+environment variables and configuration files. This integration enables consistent configuration practices across native
+and custom services.
 
 **Deployment Orchestration**: Organizations extend platform deployment configurations (Docker Compose files, Kubernetes
 manifests) to include custom services. Deployment tooling treats custom services identically to native services,
@@ -130,9 +131,9 @@ integrate.
 which users access custom services through the same role and permission management interfaces used for native
 capabilities.
 
-**Quality Standards**: Organizations can establish quality gates for custom service deployment—code review
-requirements, testing standards, security audits, performance benchmarks. The platform's extensibility doesn't mandate
-lower standards for custom services.
+**Quality Standards**: Organizations can establish quality gates for custom service deployment—code review requirements,
+testing standards, security audits, performance benchmarks. The platform's extensibility doesn't mandate lower standards
+for custom services.
 
 **Service Registry**: Organizations maintain awareness of deployed custom services through the same monitoring and
 management interfaces used for native services. Custom services report health, expose metrics, and generate audit logs
@@ -163,9 +164,8 @@ reference architectures for common custom service types, accelerating the broade
 
 The suite's extensibility delivers significant strategic advantages for organizations investing in AI capabilities.
 
-**Future-Proof Investment**: As AI technology evolves and new capabilities emerge, organizations can integrate them
-into their AI Hub deployment through custom services. Today's platform investment remains relevant as technology
-advances.
+**Future-Proof Investment**: As AI technology evolves and new capabilities emerge, organizations can integrate them into
+their AI Hub deployment through custom services. Today's platform investment remains relevant as technology advances.
 
 **Avoid Vendor Lock-In**: Organizations can integrate proprietary AI capabilities, custom models, or third-party
 services alongside native capabilities. This flexibility prevents dependence on a single vendor's feature roadmap or
@@ -191,8 +191,8 @@ Vue.js skills for frontend development. Organizations should ensure access to de
 invest in training.
 
 **Maintenance Burden**: Custom services require ongoing maintenance—bug fixes, security updates, compatibility with
-platform evolution. Organizations should plan for long-term maintenance rather than treating custom services as
-one-time development projects.
+platform evolution. Organizations should plan for long-term maintenance rather than treating custom services as one-time
+development projects.
 
 **Testing Requirements**: Comprehensive testing is essential for custom services to ensure they don't compromise
 platform stability or security. Organizations should invest in testing infrastructure and practices appropriate for

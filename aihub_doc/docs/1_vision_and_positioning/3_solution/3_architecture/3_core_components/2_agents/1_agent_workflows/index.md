@@ -14,14 +14,14 @@ operations at scale.
 
 ### Workflow-Based vs. Free-Form Agent Architectures
 
-Modern AI agent systems follow two fundamentally different architectural paradigms. Free-form agents receive a high-level
-goal and a collection of available tools, then autonomously determine which tools to use and in what sequence to achieve
-the objective. While this approach offers maximum flexibility, it introduces significant operational challenges for
-enterprise environments.
+Modern AI agent systems follow two fundamentally different architectural paradigms. Free-form agents receive a
+high-level goal and a collection of available tools, then autonomously determine which tools to use and in what sequence
+to achieve the objective. While this approach offers maximum flexibility, it introduces significant operational
+challenges for enterprise environments.
 
-As the number of available tools increases, the possible execution paths grow exponentially, creating an enormous failure
-space that becomes difficult to predict, test, or control. An agent with twenty available tools faces millions of
-potential execution sequences, many leading to suboptimal outcomes or outright failures. This unpredictability proves
+As the number of available tools increases, the possible execution paths grow exponentially, creating an enormous
+failure space that becomes difficult to predict, test, or control. An agent with twenty available tools faces millions
+of potential execution sequences, many leading to suboptimal outcomes or outright failures. This unpredictability proves
 particularly problematic in regulated industries where every action requires justification and auditability.
 
 The Swiss AI-Hub adopts a workflow-based architecture that addresses these challenges through structured constraint. In

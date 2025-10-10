@@ -7,9 +7,13 @@ index: 1
 
 ## Overview
 
-Health checks are continuous automated tests that verify all components of your AI Hub platform are working correctly. Think of them as regular wellness checks that ensure every service is alive, responsive, and functioning properly - similar to how a medical professional performs routine examinations to catch potential issues before they become serious problems.
+Health checks are continuous automated tests that verify all components of your AI Hub platform are working correctly.
+Think of them as regular wellness checks that ensure every service is alive, responsive, and functioning properly -
+similar to how a medical professional performs routine examinations to catch potential issues before they become serious
+problems.
 
-Unlike metrics that measure "how much" or logs that record "what happened," health checks answer the fundamental question: "Is this working right now?"
+Unlike metrics that measure "how much" or logs that record "what happened," health checks answer the fundamental
+question: "Is this working right now?"
 
 ## What We Monitor
 
@@ -222,15 +226,19 @@ This automation reduces operational burden and improves reliability without huma
 
 The platform implements health checking at multiple levels:
 
-**Container Level**: Docker monitors service processes and basic responsiveness using native health check commands built into each service.
+**Container Level**: Docker monitors service processes and basic responsiveness using native health check commands built
+into each service.
 
-**Application Level**: Services expose dedicated health endpoints that verify not just that they're running, but that they can actually perform their functions.
+**Application Level**: Services expose dedicated health endpoints that verify not just that they're running, but that
+they can actually perform their functions.
 
-**Infrastructure Level**: External monitoring verifies that services are reachable and responsive from outside their containers.
+**Infrastructure Level**: External monitoring verifies that services are reachable and responsive from outside their
+containers.
 
 **Integration Level**: Health checks verify that services can communicate with their dependencies and external systems.
 
-This layered approach ensures comprehensive coverage - a service isn't considered healthy just because its process is running, but because it can actually perform its intended function.
+This layered approach ensures comprehensive coverage - a service isn't considered healthy just because its process is
+running, but because it can actually perform its intended function.
 
 ### Continuous Evaluation
 
@@ -238,7 +246,8 @@ Health checks run on regular intervals:
 
 - **Standard Services**: Checked every 10-30 seconds
 - **Critical Services**: More frequent checks for essential components
-- **Startup Grace Periods**: Initial delays allow services time to initialize (5-90 seconds depending on service complexity)
+- **Startup Grace Periods**: Initial delays allow services time to initialize (5-90 seconds depending on service
+  complexity)
 - **Failure Thresholds**: Multiple consecutive failures required before declaring unhealthy
 - **Recovery Confirmation**: Multiple successful checks required before declaring recovered
 
@@ -302,11 +311,14 @@ The system understands relationships between services:
 
 Health status is available through multiple interfaces:
 
-**Real-Time Dashboards**: Visual displays showing current platform health with color-coded status indicators that make it immediately obvious whether everything is working correctly.
+**Real-Time Dashboards**: Visual displays showing current platform health with color-coded status indicators that make
+it immediately obvious whether everything is working correctly.
 
-**Status Pages**: Public or internal pages that communicate platform availability to users and stakeholders without requiring access to detailed monitoring systems.
+**Status Pages**: Public or internal pages that communicate platform availability to users and stakeholders without
+requiring access to detailed monitoring systems.
 
-**Alert Notifications**: Automatic messages when health checks detect problems, sent via email, messaging systems, or incident management tools.
+**Alert Notifications**: Automatic messages when health checks detect problems, sent via email, messaging systems, or
+incident management tools.
 
 **Historical Reports**: Summaries of health over time for trend analysis, compliance reporting, or executive briefings.
 
@@ -314,29 +326,35 @@ Health status is available through multiple interfaces:
 
 ### Meaningful Checks
 
-Each health check verifies actual functionality, not just that a process is running. For example, database health checks attempt to execute a simple query rather than just checking if the database process exists.
+Each health check verifies actual functionality, not just that a process is running. For example, database health checks
+attempt to execute a simple query rather than just checking if the database process exists.
 
 ### Appropriate Intervals
 
-Check frequency balances rapid problem detection against system overhead. Critical user-facing services are checked more frequently than background processing services.
+Check frequency balances rapid problem detection against system overhead. Critical user-facing services are checked more
+frequently than background processing services.
 
 ### Startup Awareness
 
-Services receive adequate time to initialize before health checks begin. Complex services like document processors may need 60-90 seconds to load models and prepare for work.
+Services receive adequate time to initialize before health checks begin. Complex services like document processors may
+need 60-90 seconds to load models and prepare for work.
 
 ### Failure Tolerance
 
-Multiple consecutive failures are required before declaring a service unhealthy, preventing false alarms from momentary network issues or brief performance spikes.
+Multiple consecutive failures are required before declaring a service unhealthy, preventing false alarms from momentary
+network issues or brief performance spikes.
 
 ### Recovery Confirmation
 
-Services must demonstrate sustained health through multiple successful checks before being restored to service, ensuring stability rather than flapping between healthy and unhealthy states.
+Services must demonstrate sustained health through multiple successful checks before being restored to service, ensuring
+stability rather than flapping between healthy and unhealthy states.
 
 ## Integration with Platform Operations
 
 ### Automated Service Recovery
 
-When health checks detect failures, Docker automatically attempts to restart the affected service, often resolving transient issues without manual intervention.
+When health checks detect failures, Docker automatically attempts to restart the affected service, often resolving
+transient issues without manual intervention.
 
 ### Load Balancing
 
@@ -344,12 +362,15 @@ Traefik removes unhealthy services from its routing table, ensuring user request
 
 ### Dependency Management
 
-Services wait for their dependencies to become healthy before attempting to start, preventing cascading failures during system initialization.
+Services wait for their dependencies to become healthy before attempting to start, preventing cascading failures during
+system initialization.
 
 ### Deployment Safety
 
-During updates, new service versions must pass health checks before old versions are removed, ensuring zero-downtime deployments.
+During updates, new service versions must pass health checks before old versions are removed, ensuring zero-downtime
+deployments.
 
 ### Monitoring Integration
 
-Health check events are automatically exported to the observability platform, connecting service health with metrics, logs, and traces for comprehensive analysis.
+Health check events are automatically exported to the observability platform, connecting service health with metrics,
+logs, and traces for comprehensive analysis.
