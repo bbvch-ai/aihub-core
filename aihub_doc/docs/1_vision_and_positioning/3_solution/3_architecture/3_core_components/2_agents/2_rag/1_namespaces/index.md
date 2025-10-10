@@ -22,190 +22,82 @@ the vector store. This flat structure enables agents to search across multiple n
 navigating hierarchical paths, combining the organizational benefits of categorization with the performance advantages
 of direct metadata filtering.
 
-## Agent-Level Access Control Model
+## Agent-Level Access Control
 
-The platform implements agent-level namespace access control—a fundamental architectural decision ensuring consistent,
-predictable agent behavior across all users. When an agent is configured to access specific namespaces, **every user
-interacting with that agent receives responses based on the same knowledge set**, regardless of individual user
-permissions.
+The platform implements agent-level namespace access control: when an agent is configured to access specific namespaces,
+**every user interacting with that agent receives responses based on the same knowledge set**. This ensures consistent,
+predictable agent behavior and simplifies testing and validation.
 
-### Access Philosophy
+**Access Philosophy**: Agents are task-focused tools configured with knowledge required for their designated function.
+Access control operates at the agent level—if users should not access information within an agent's namespaces, they
+should not receive authorization to use that agent.
 
-This agent-centric access model reflects a core design principle: agents are task-focused tools configured with the
-knowledge required to perform their designated function. A product support agent configured to access technical
-documentation namespaces provides consistent support capabilities to all authorized users. This consistency ensures
-reliable agent behavior, simplifies testing and validation, and prevents unpredictable responses varying by user
-identity.
+**Agent Reusability**: The same agent workflow can be instantiated multiple times with different namespace
+configurations, creating distinct instances serving different audiences. For example, a support agent workflow might
+deploy as:
 
-**No Per-Document Filtering**: The platform does not filter individual documents based on user permissions during
-retrieval. When an agent accesses a namespace, it retrieves from all documents within that namespace. Organizations
-requiring document-level access control must implement it through namespace granularity and agent access restrictions
-rather than per-document filtering.
+- **Public Support Agent**: Public documentation only, available to all customers
+- **Partner Support Agent**: Public and partner-specific namespaces, for authorized partners
+- **Internal Support Agent**: Full access including internal technical documentation, employee-only
 
-**User-to-Agent Authorization**: Access control operates at the agent level, not the document level. If users should not
-access information within an agent's configured namespaces, those users should not receive authorization to use that
-agent. This approach drives organizations toward more granular agent design, where specialized agents serve specific
-user groups with appropriately scoped knowledge access.
+Each instance uses identical workflow logic but operates on different knowledge scopes, ensuring appropriate information
+access without complex per-user filtering.
 
-**Agent Reusability Across Data Sources**: The same logical agent workflow can be instantiated multiple times with
-different namespace configurations, creating distinct agent instances serving different audiences. For example, a
-general product support agent workflow might be deployed as:
+**Optional User Validation**: Organizations can optionally validate that users possess permissions for all namespaces an
+agent accesses. When enabled, the platform checks user permissions before workflow execution—users either receive full
+agent capabilities or clear denial, never partial results.
 
-- **Public Support Agent**: Accessing only public documentation namespaces, available to all customers
-- **Partner Support Agent**: Accessing public and partner-specific namespaces, available to authorized partners
-- **Internal Support Agent**: Accessing public, partner, and internal technical namespaces, available only to employees
+## Knowledge Access Patterns
 
-Each instance employs identical workflow logic but operates on different knowledge scopes, ensuring appropriate
-information access without complex per-user filtering logic.
-
-### Optional User-Namespace Validation
-
-Organizations can optionally implement user-namespace validation as an authorization check before allowing agent access.
-This validation verifies that users possess appropriate permissions for all namespaces the agent accesses, preventing
-users from gaining indirect access to restricted information through agent usage.
-
-When enabled, the platform checks user permissions against the agent's configured namespaces before initiating workflow
-execution. If users lack access to any required namespace, the agent refuses to execute rather than filtering results.
-This all-or-nothing approach maintains consistency—users either receive full agent capabilities or clear denial, never
-partial results based on namespace permissions.
-
-## Flexible Knowledge Access Patterns
-
-The agent-level access model enables several important patterns for knowledge organization and agent deployment:
-
-### Domain Specialization
-
-Specialized agents can focus on specific knowledge areas by restricting their namespace access. A regulatory compliance
-agent might access only legal and compliance namespaces, while a product support agent accesses technical documentation
-and troubleshooting guides. This specialization improves retrieval relevance by preventing contamination from unrelated
+**Domain Specialization**: Specialized agents focus on specific knowledge areas by restricting namespace access. A
+regulatory compliance agent might access only legal and compliance namespaces, while a product support agent accesses
+technical documentation. This specialization improves retrieval relevance by preventing contamination from unrelated
 information.
 
-Consider a financial services organization with separate namespaces for investment products, regulatory compliance, and
-internal operations. A customer-facing investment advisor agent configured to access only the investment products
-namespace ensures customers receive focused, relevant information without accidentally surfacing internal operational
-procedures or sensitive compliance details.
+**Multi-Domain Agents**: Agents requiring broader knowledge specify multiple namespaces in their retrieval
+configuration. The platform performs retrieval across all configured namespaces in parallel, merging results by
+relevance scores to present the most pertinent information regardless of namespace origin.
 
-### Multi-Domain Agents
-
-Agents requiring broader knowledge access can specify multiple namespaces in their retrieval configuration. A general
-business assistant might access multiple product namespaces, internal policies, and training materials simultaneously,
-providing comprehensive organizational knowledge access.
-
-The platform performs retrieval across all configured namespaces in parallel, merging results by relevance scores to
-present the most pertinent information regardless of namespace origin. This parallel retrieval ensures multi-domain
-agents maintain performance comparable to specialized single-namespace agents.
-
-### Dynamic Scope Adjustment
-
-Organizations can modify agent namespace access through configuration updates without code changes. Adding a new product
-line requires only updating agent configurations to include the new namespace, immediately making that knowledge
-available to appropriate agents.
-
-This dynamic reconfiguration proves particularly valuable during organizational changes. When acquiring another company,
-the organization can ingest the acquired company's documentation into new namespaces and selectively grant access to
-relevant agents, enabling controlled knowledge integration without disrupting existing operations.
+**Dynamic Scope Adjustment**: Organizations modify agent namespace access through configuration updates without code
+changes. Adding a new product line requires only updating agent configurations to include the new namespace, immediately
+making that knowledge available.
 
 ## Operational Advantages
 
-The namespace approach provides significant operational benefits that prove essential for enterprise-scale knowledge
-management:
+**Independent Updates**: Organizations update knowledge in one namespace without affecting others. Testing new ingestion
+pipelines can proceed in isolated namespaces without impacting production agents operating on established namespaces.
 
-### Independent Updates
+**Access Control Through Deployment**: Organizations deploy multiple agent instances with different namespace
+configurations and control which users access which agents. Employees with appropriate clearances access agents
+configured with confidential namespaces, while contractors access separate instances with publicly shareable namespaces
+only.
 
-Organizations can update knowledge in one namespace without affecting others. Adding new product documentation requires
-reingesting only the relevant namespace, leaving other knowledge domains untouched and ensuring stable operation of
-agents focused elsewhere.
+**Performance Optimization**: Restricting retrieval to relevant namespaces reduces search space, improving both speed
+and relevance. As knowledge bases grow, namespace-focused retrieval prevents performance degradation—agents maintain
+consistent performance regardless of total knowledge base size.
 
-This isolation significantly reduces operational risk during knowledge base updates. Testing new ingestion pipelines or
-document processing approaches can proceed in isolated namespaces without impacting production agents operating on
-established namespaces. When validation completes successfully, organizations can apply proven approaches to additional
-namespaces with confidence.
+**Lifecycle Management**: Different namespaces follow different retention policies and update cycles. Legal documents
+require long retention with infrequent updates, while product specifications update frequently but expire after
+discontinuation. Organizations can archive inactive namespaces without affecting current agents.
 
-### Access Control Through Agent Deployment
+## Design Considerations
 
-The agent-level access model integrates naturally with organizational role-based access control through strategic agent
-deployment. Rather than filtering namespace access per user, organizations deploy multiple agent instances with
-different namespace configurations and control which users can access which agents.
+Effective namespace design balances several factors:
 
-This deployment-based access control enables natural alignment between organizational security policies and agent
-availability. Employees with appropriate clearances receive access to agents configured with confidential namespaces,
-while contractors access separate agent instances configured only with publicly shareable namespaces. The same logical
-agent workflow serves both populations, but as distinct instances with different knowledge scopes.
+**Granularity**: Namespaces define the finest granularity of access control. Most organizations find optimal granularity
+at the business unit, product family, or functional area level—coarse enough to avoid excessive agent proliferation,
+fine enough to enable meaningful access differentiation.
 
-### Performance Optimization
+**Stability**: Namespace structures should remain relatively stable over time, as reorganizations require reingestion
+and agent reconfiguration. Design schemes that accommodate business growth without frequent restructuring.
 
-Restricting retrieval to relevant namespaces reduces the search space, improving both retrieval speed and relevance. An
-agent searching across three focused namespaces retrieves more relevant information faster than searching across an
-organization's entire knowledge base.
+**Discoverability**: Clear naming conventions and documentation help administrators understand which namespaces provide
+relevant knowledge for specific agent roles and which combinations enable appropriate access scopes.
 
-This performance benefit compounds with knowledge base growth. As organizations add new products, services, and
-information domains, namespace-focused retrieval prevents the performance degradation that would occur with global
-searches across continually expanding vector stores. Agents maintain consistent performance regardless of total
-knowledge base size, limited only by the size of their configured namespaces.
+**Cross-Cutting Concerns**: Information spanning multiple domains (security policies, brand guidelines) can be
+duplicated across namespaces or organized in dedicated cross-cutting namespaces that most agents access alongside
+domain-specific ones.
 
-### Knowledge Lifecycle Management
-
-Different namespaces can follow different retention policies and update cycles. Legal documents might require long
-retention with infrequent updates, while product specifications update frequently but expire after product
-discontinuation. Namespace separation enables appropriate lifecycle management for each knowledge type.
-
-Organizations can implement automated archival strategies that move inactive namespaces to lower-cost storage while
-maintaining instant access to active namespaces. Deprecated product documentation can be archived or deleted without
-affecting current product support agents, and regulatory documents can be retained according to legal requirements
-without cluttering active knowledge bases.
-
-## Namespace Design Considerations
-
-Effective namespace design requires balancing several considerations in the context of agent-level access control:
-
-**Granularity and Access Control**: Namespaces define the finest granularity of access control available. Organizations
-requiring different users to access different subsets of information must separate that information into distinct
-namespaces and deploy separate agent instances. Most organizations find optimal granularity at the business unit,
-product family, or functional area level—coarse enough to avoid excessive agent proliferation, fine enough to enable
-meaningful access differentiation.
-
-**Stability**: Namespace structures should remain relatively stable over time, as namespace reorganizations require
-reingestion and agent reconfiguration. Design namespace schemes that accommodate business growth and change without
-requiring frequent restructuring.
-
-**Discoverability**: Organizations need clear naming conventions and documentation describing each namespace's content
-and intended purpose. Administrators configuring agents must understand which namespaces provide relevant knowledge for
-specific agent roles and which combinations enable appropriate access scopes for different user populations.
-
-**Cross-Cutting Concerns**: Some information naturally spans multiple domains—security policies, brand guidelines, or
-corporate values. Organizations can either duplicate this information across multiple namespaces or create dedicated
-cross-cutting namespaces that most agents access alongside their domain-specific namespaces.
-
-**Agent Instance Planning**: When designing namespace structures, consider which combinations of namespaces will be
-deployed as agent instances. If certain user groups require access to specific knowledge subsets, those subsets should
-be organized as coherent namespace collections that can be assigned to dedicated agent instances.
-
----
-
-## Questions Requiring Clarification
-
-The following aspects require clarification to ensure documentation accuracy:
-
-1. **Namespace Hierarchy**: Can namespaces be organized hierarchically (e.g., `products.electronics.smartphones`)? Or
-   are they strictly flat? What are the implications of each approach?
-
-2. **Namespace Management Interface**: What tools or administrative interfaces enable namespace creation, configuration,
-   and management? How are namespace schemas defined and enforced?
-
-3. **Namespace Assignment**: How are namespace assignments determined during document ingestion? Can a single document
-   belong to multiple namespaces? How are conflicts resolved?
-
-4. **Namespace Limits**: Are there practical or technical limits on the number of namespaces an organization can create?
-   How many namespaces can a single agent access without performance degradation?
-
-5. **Namespace Security**: What authentication and authorization mechanisms prevent unauthorized namespace access? How
-   are namespace permissions managed and audited?
-
-6. **Namespace Metadata**: Beyond the namespace identifier, what additional metadata can be attached to namespaces
-   (descriptions, ownership, retention policies, etc.)?
-
-7. **Namespace Migration**: What tools or processes support moving documents between namespaces or reorganizing
-   namespace structures? How are dependent agent configurations updated?
-
-8. **Namespace Analytics**: What monitoring and analytics capabilities exist for understanding namespace usage,
-   retrieval patterns, and agent access patterns?
+**Agent Instance Planning**: Consider which namespace combinations will deploy as agent instances. If user groups
+require access to specific knowledge subsets, organize those subsets as coherent namespace collections assignable to
+dedicated agent instances.
