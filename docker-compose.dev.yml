@@ -303,6 +303,28 @@ services:
       retries: 3
       start_period: 60s
 
+  huggingface-reranking-inference:
+    image: ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cpu-ipex-sha-c8ff435
+    container_name: huggingface-reranking-inference
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/hf-reranking-data:/data
+      - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
+    ports:
+      - "8184:8184"
+    environment:
+      HF_HOME: /root/.cache/huggingface
+    command: >
+      --port 8184
+      --model-id BAAI/bge-reranker-base
+      --max-batch-tokens 4096
+    restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8184/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
+
   presidio-analyzer:
     image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359
     container_name: presidio-analyzer

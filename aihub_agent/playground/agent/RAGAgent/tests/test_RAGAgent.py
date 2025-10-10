@@ -150,7 +150,7 @@ def self_hosted_agent_config(test_collection):
     Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
     """
     llm_config = LLMConfig(model_name="local/qwen-2.5-multimodal-small")
-    reranking_config = RerankingModelConfig(model_name="local/reranker")
+    reranking_config = RerankingModelConfig(model_name="local/reranker-cpu")
     embedding_config = EmbeddingModelConfig(model_name="local/qwen-embedding")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
