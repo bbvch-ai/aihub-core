@@ -189,6 +189,12 @@
       "notes": "Permissive license"
     },
     {
+      "service": "vllm-openai",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
       "service": "phoenix",
       "license": "ELv2",
       "status": "⚠️",
