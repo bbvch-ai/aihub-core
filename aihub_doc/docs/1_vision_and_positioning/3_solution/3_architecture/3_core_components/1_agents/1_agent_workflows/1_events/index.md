@@ -30,11 +30,6 @@ The platform implements all agent communication through immutable events—struc
 within the system. This event-driven approach replaces traditional synchronous method calls with asynchronous message
 passing, enabling loose coupling, comprehensive audit trails, and horizontal scalability.
 
-**Control and Display Separation**: The architecture strictly separates events that drive workflow execution (Control
-Events) from events that provide observability (Display Events). Only Control Events can trigger workflow step
-execution, ensuring UI failures or monitoring issues cannot disrupt agent operations. This separation enables
-comprehensive observability without compromising system reliability.
-
 **Automatic Type Management and Extensibility**: Event types register automatically without manual configuration,
 enabling graceful system evolution and rapid integration of new capabilities. Organizations can introduce
 domain-specific event types that seamlessly integrate with existing infrastructure, allowing teams to extend workflows
@@ -50,32 +45,6 @@ testability of workflow components. Decoupling agent logic from infrastructure a
 multiple times, supporting high throughput and enabling automatic load balancing across instances for scalable
 operations.
 
-## Event Storage and Replay
-
-The platform implements a multi-tiered event storage architecture enabling both real-time processing and comprehensive
-historical analysis:
-
-**Workflow Event Streams (NATS JetStream)**: Control Events driving workflow execution are stored in persistent event
-streams with guaranteed ordering and delivery. Each event receives a unique sequence number enabling precise replay of
-workflow execution from any historical point. These workflow events are retained for 30 days or until reaching 10
-million message capacity (whichever occurs first), providing sufficient history for debugging active workflows,
-analyzing recent agent behavior patterns, and recovering from system failures.
-
-**Ephemeral Working Memory (Redis)**: Agent execution state and intermediate data are stored in high-performance
-in-memory storage. This includes temporary calculations, step-by-step state tracking, and agent configuration snapshots.
-Data expires automatically—execution-specific data after exactly 30 days, conversational memory after 30 days of
-inactivity (with sliding expiration). Organizations must capture critical debugging information within this window, as
-no mechanisms exist to selectively preserve ephemeral data beyond the 30-day period.
-
-**Permanent Event Archive (MongoDB)**: All events—both Control and Display—are additionally persisted to long-term
-database storage with no automatic expiration. This permanent archive enables complete conversation history
-reconstruction, long-term analytics, compliance reporting, and forensic investigation of incidents beyond the 30-day
-workflow retention window. Organizations must implement explicit data lifecycle policies to manage this permanent
-storage in accordance with regulatory requirements and data protection obligations.
-
-**Immutable Event Log**: Once stored, events cannot be modified or deleted (within retention windows), ensuring audit
-trail integrity. This immutability provides strong guarantees for compliance, security investigations, and forensic
-analysis of system behavior.
 
 ## Data Retention Strategy
 
