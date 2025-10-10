@@ -50,33 +50,3 @@ accumulated knowledge from previous runs.
 Both context types use high-performance in-memory storage (Redis) for sub-millisecond access times, ensuring optimal
 agent performance during execution. For detailed information about retention policies, storage durations, capacity
 limits, and lifecycle management, see the Event-Driven Communication documentation.
-
----
-
-## Questions Requiring Clarification
-
-The following aspects require clarification to ensure documentation accuracy:
-
-1. **Display Context Guidelines**: What are the organizational policies for when agents should create new display
-   contexts versus inheriting parent display contexts? Can users control display context visibility?
-
-2. **Thread Membership Management**: How are thread members added or removed? Can agents dynamically modify thread
-   membership? What happens to access rights when a user leaves an organization?
-
-3. **Context Size Limits**: Are there maximum size limits for data stored in Run Context or Thread Context? How should
-   large contextual state be handled?
-
-4. **Cross-Thread Context Sharing**: Can context be shared between threads? Are there mechanisms for agents to access
-   context from related threads?
-
-5. **Context Encryption**: Is context data encrypted at rest in Redis and MongoDB? Are there compliance certifications
-   for data protection?
-
-6. **Backup and Disaster Recovery**: What backup mechanisms exist for the different context types? Can thread context be
-   restored after expiration if backups exist?
-
-7. **Multi-Region Deployment**: How does context management work in multi-region deployments? Is context replicated
-   across regions?
-
-8. **Compliance and Data Residency**: Can organizations specify data residency requirements for context storage? Are
-   there mechanisms to ensure context data remains within specific geographic regions?

@@ -96,76 +96,28 @@ expertise to broader workflows. For detailed information, see the Agent Collabor
 These pause points integrate naturally into workflow definitions, maintaining full context when humans respond hours or
 days later. For detailed information, see the Human-in-the-Loop Integration documentation.
 
-## Participant Collaboration Principles
+## Collaboration Principles
 
-The participant model embodies several key architectural principles with significant operational consequences:
+The participant model embodies key architectural principles with significant operational advantages:
 
-**Decoupling Through Events**: Participants communicate exclusively through events, eliminating direct dependencies. The
-API Gateway doesn't invoke agents directly; it publishes events. Agents don't call other agents; they publish delegation
-events. This decoupling enables independent development, testing, and deployment of participants. Organizations can
-update individual agents without coordinating changes across the system, accelerating development cycles and reducing
-deployment risk.
+**Decoupling Through Events**: Participants communicate exclusively through events, eliminating direct dependencies.
+This enables independent development, testing, and deployment. Organizations can update individual agents without
+coordinating system-wide changes, accelerating development and reducing deployment risk.
 
 **Single Security Boundary**: The API Gateway enforces authentication and authorization once at the system boundary.
-Internal participants trust event authenticity, simplifying security logic throughout the system. This centralized
-security model reduces implementation complexity, minimizes potential vulnerabilities, and enables consistent security
-policy enforcement. Security audits and compliance verification focus on a single, well-defined boundary rather than
-distributed security logic.
+Internal participants trust event authenticity, simplifying security logic and enabling consistent policy enforcement.
 
-**Observable Interactions**: Every participant interaction generates events preserved in the event store. This provides
-complete audit trails of system behavior without requiring separate logging infrastructure. Organizations gain
-comprehensive visibility into system operations for debugging, compliance reporting, performance analysis, and security
-investigations. The built-in observability eliminates the need for custom logging frameworks and ensures consistent
-audit trail quality across all participants.
+**Observable Interactions**: Every participant interaction generates events preserved in the event store, providing
+complete audit trails without separate logging infrastructure. Organizations gain comprehensive visibility for
+debugging, compliance, performance analysis, and security investigations.
 
 **Scalable Distribution**: Multiple instances of any participant type can operate concurrently. The messaging
-infrastructure distributes events across available instances, enabling horizontal scalability without architectural
-changes. Organizations can scale capacity by deploying additional instances in response to demand, without code
-modifications or architectural redesign. This elasticity enables cost-effective resource utilization and supports
-variable workload patterns.
+infrastructure distributes events across instances, enabling horizontal scalability without architectural changes or
+code modifications.
 
 **Flexible Composition**: New participant types can be introduced without modifying existing participants. Process
-orchestrators, monitoring dashboards, and analytics services subscribe to relevant events without disrupting agent
-operations. This extensibility enables organizations to evolve their AI capabilities incrementally, adding new
-functionality without risking disruption to production systems. Innovation occurs at the edge—new participants integrate
-with existing event streams—rather than requiring changes to core components.
+orchestrators, monitoring dashboards, and analytics services subscribe to relevant events without disrupting operations,
+enabling incremental capability evolution.
 
-This participant model enables the platform to evolve from simple chatbot interactions to complex multi-agent business
-process automation while maintaining consistent communication patterns and security guarantees. Organizations can start
-with basic use cases and progressively expand capabilities as requirements and confidence grow.
-
----
-
-## Questions Requiring Clarification
-
-The following aspects require clarification to ensure documentation accuracy:
-
-01. **Participant Discovery**: How do participants discover each other? Is there a service registry? How do agents
-    locate the API Gateway? How does the gateway discover available agents for routing?
-
-02. **Participant Lifecycle**: What happens when a participant (agent, orchestrator) starts or stops? Are there health
-    check mechanisms? How does the system handle graceful shutdowns during active workflows?
-
-03. **Load Balancing Strategy**: When multiple instances of the same agent exist, how are events distributed? Is it
-    round-robin, least-loaded, or consistent hashing? Can specific instances be targeted?
-
-04. **Participant Authentication**: How do participants authenticate to the messaging infrastructure? Do agents use
-    service principals or shared secrets? How are credentials managed and rotated?
-
-05. **Event Subscription Management**: How do participants subscribe to relevant events? Are subscriptions dynamic or
-    configuration-driven? Can participants adjust subscriptions at runtime?
-
-06. **Participant Monitoring**: What monitoring capabilities exist for participant health and performance? Are there
-    dashboards showing participant activity, event processing rates, and error rates?
-
-07. **Error Handling Between Participants**: What happens when a participant fails to process an event? Are there retry
-    mechanisms? Dead letter queues? How are persistent failures escalated?
-
-08. **Gateway Scalability**: Can multiple API Gateway instances run concurrently? How is state managed across gateway
-    instances? What are the performance implications of gateway horizontal scaling?
-
-09. **Custom Participant Types**: Can organizations introduce custom participant types beyond agents, gateways,
-    frontends, and orchestrators? What extension points exist? Are there SDK requirements?
-
-10. **Inter-Participant Security**: Beyond the gateway security boundary, do participants authenticate each other? Are
-    there mechanisms to prevent rogue participants from injecting malicious events?
+This participant model enables platform evolution from simple chatbot interactions to complex multi-agent business
+process automation while maintaining consistent communication patterns and security guarantees.
