@@ -138,14 +138,15 @@ preserving investment in workflow development.
 
 The following sections detail each architectural component:
 
-- **Event-Driven Communication** describes the event system enabling all agent interactions, including event types,
-  routing mechanisms, persistence guarantees, and the orchestration of step-based workflow execution
 - **Context Management** explains the hierarchical scoping structure and multi-tier storage architecture managing agent
   state
 - **System Participants** defines the roles and interaction patterns of agents, gateways, frontends, and orchestrators
 - **Human-in-the-Loop Integration** details how workflows seamlessly incorporate human judgment and approval
 - **Agent Collaboration and Delegation** explains how agents compose specialized capabilities through structured
   delegation patterns
+
+For detailed information on the event-driven communication infrastructure that enables these workflows, see
+[Event System](../../0_event_system/index.md).
 
 Together, these components form a comprehensive platform for building, deploying, and operating autonomous AI agents in
 enterprise environments where transparency, reliability, and compliance are paramount.
