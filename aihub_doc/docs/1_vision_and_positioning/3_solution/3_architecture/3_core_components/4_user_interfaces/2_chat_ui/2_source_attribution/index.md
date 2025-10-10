@@ -50,8 +50,8 @@ and nature of knowledge supporting responses.
 
 **Passage-Level Granularity**: Beyond document identification, the system displays specific passages (nodes) retrieved
 and provided to the AI. Users see the exact text chunks, their context within source documents, and relevance scores
-indicating retrieval confidence. This granularity enables precise verification of how AI interpreted and applied
-source information.
+indicating retrieval confidence. This granularity enables precise verification of how AI interpreted and applied source
+information.
 
 ## Interactive Source Exploration
 
@@ -67,8 +67,8 @@ structure indicators—helping users understand where the passage sits within it
 introduction section carries different weight than one from detailed technical specifications.
 
 **Active vs. Unused Sources**: The display differentiates between sources actually used in response generation and
-sources retrieved but not selected. This distinction—often controlled through a toggle—helps users understand the
-AI's source selection process and identify potentially relevant information not incorporated in the response.
+sources retrieved but not selected. This distinction—often controlled through a toggle—helps users understand the AI's
+source selection process and identify potentially relevant information not incorporated in the response.
 
 **Knowledge Base Transparency**: Through source attribution, users develop familiarity with organizational knowledge
 bases. Repeated interactions reveal which documents address specific topics, where knowledge gaps exist, and how
@@ -85,29 +85,28 @@ documents in knowledge management systems. When users request source display, th
 construct the source view.
 
 **Cross-Service Data Integration**: Source display requires coordinating data from multiple services—thread management
-(for conversation context), event tracking (for retrieval records), and knowledge management (for document details).
-The integration architecture enables this cross-service coordination while maintaining service boundaries and
-performance.
+(for conversation context), event tracking (for retrieval records), and knowledge management (for document details). The
+integration architecture enables this cross-service coordination while maintaining service boundaries and performance.
 
 **Real-Time Retrieval**: Source data loads on-demand when users request visibility rather than preloading for every
 message. This optimization balances responsiveness (users get immediate source access when requested) with efficiency
 (the system doesn't load source data for conversations where users don't require verification).
 
-**Filtering and Relevance Ranking**: When retrieval operations access numerous sources, the display prioritizes the
-most relevant content. Users see sources directly contributing to responses first, with lower-relevance or unused
-sources available through expanded views or filter controls.
+**Filtering and Relevance Ranking**: When retrieval operations access numerous sources, the display prioritizes the most
+relevant content. Users see sources directly contributing to responses first, with lower-relevance or unused sources
+available through expanded views or filter controls.
 
 ## Business Value
 
 Enhanced source attribution delivers specific business advantages for enterprise AI deployments.
 
 **Trust Building**: When users can verify AI responses against authoritative sources, trust in AI systems increases.
-This verification capability accelerates adoption by addressing the "black box" concern that often impedes enterprise
-AI deployment.
+This verification capability accelerates adoption by addressing the "black box" concern that often impedes enterprise AI
+deployment.
 
 **Regulatory Compliance**: For organizations in regulated industries, source attribution provides evidence chains
-supporting AI-assisted decisions. Compliance audits can trace specific recommendations or conclusions to approved
-source materials, satisfying regulatory documentation requirements.
+supporting AI-assisted decisions. Compliance audits can trace specific recommendations or conclusions to approved source
+materials, satisfying regulatory documentation requirements.
 
 **Quality Assurance**: Knowledge managers use source attribution to validate retrieval quality. If users consistently
 find irrelevant sources or knowledge gaps, this feedback guides knowledge base improvement—adding missing documents,
@@ -131,8 +130,8 @@ inform retrieval system tuning. Patterns of source examination followed by revis
 issues requiring attention.
 
 **Knowledge Gap Identification**: When conversations reveal no appropriate sources for common queries, this signals
-knowledge base gaps. Organizations can prioritize document acquisition or creation based on source attribution
-revealing unmet information needs.
+knowledge base gaps. Organizations can prioritize document acquisition or creation based on source attribution revealing
+unmet information needs.
 
 **Document Usage Analytics**: Source attribution generates usage data showing which knowledge base documents AI systems
 reference most frequently. This analytics informs knowledge curation priorities—frequently accessed documents merit

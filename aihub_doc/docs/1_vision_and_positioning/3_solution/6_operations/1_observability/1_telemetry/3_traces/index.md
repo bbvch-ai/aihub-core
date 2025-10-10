@@ -7,9 +7,13 @@ index: 3
 
 ## Overview
 
-Traces follow individual requests through the AI Hub platform, showing the complete path from start to finish. Each operation automatically receives a unique trace identifier that connects all related activities across services, revealing exactly what happened, where time was spent, and how components collaborated.
+Traces follow individual requests through the AI Hub platform, showing the complete path from start to finish. Each
+operation automatically receives a unique trace identifier that connects all related activities across services,
+revealing exactly what happened, where time was spent, and how components collaborated.
 
-The Swiss AI-Hub uses OpenTelemetry for tracing with specialized support for AI operations through OpenInference semantic conventions. For details on the OpenTelemetry infrastructure, see [OpenTelemetry Foundation](../0_opentelemetry/index.md).
+The Swiss AI-Hub uses OpenTelemetry for tracing with specialized support for AI operations through OpenInference
+semantic conventions. For details on the OpenTelemetry infrastructure, see
+[OpenTelemetry Foundation](../0_opentelemetry/index.md).
 
 ---
 
@@ -26,12 +30,14 @@ Agent runs are traced with hierarchical span structures showing the complete wor
 **Step Spans**: Individual workflow steps showing inputs, outputs, processing time, and semantic events.
 
 **Trace Attributes**:
+
 - Session/thread identifiers for conversation context
 - Input and output values in JSON format
 - OpenInference span kinds (AGENT, CHAIN, TOOL, LLM, RETRIEVER)
 - Tags for filtering (thread_id, display_id, run_id)
 
-**Implementation**: The `AgentRunTracer` creates a two-span approach with an initial AGENT span as parent and a final CHAIN span capturing total duration.
+**Implementation**: The `AgentRunTracer` creates a two-span approach with an initial AGENT span as parent and a final
+CHAIN span capturing total duration.
 
 ### AI Model Operations (Operational)
 
@@ -43,7 +49,8 @@ LLM operations are automatically traced through LlamaIndex instrumentation:
 
 **Embeddings**: Text embedding generation for document indexing and similarity search.
 
-**Semantic Events**: AI-specific operations emit semantic events containing detailed metadata (token counts, model names, retrieved documents) that enrich traces with domain-specific information.
+**Semantic Events**: AI-specific operations emit semantic events containing detailed metadata (token counts, model
+names, retrieved documents) that enrich traces with domain-specific information.
 
 **Visibility**: All AI operations appear in Phoenix tracing UI with specialized views for LLM performance analysis.
 
@@ -57,7 +64,8 @@ Instrumented libraries automatically create spans for external service calls:
 
 **Vector Database**: Milvus similarity searches and indexing operations.
 
-**Filtering**: Health checks, metrics endpoints, and high-volume database queries are filtered from traces to reduce noise.
+**Filtering**: Health checks, metrics endpoints, and high-volume database queries are filtered from traces to reduce
+noise.
 
 ---
 
@@ -119,12 +127,14 @@ For complete OpenTelemetry architecture details, see [OpenTelemetry Foundation](
 Services automatically emit traces through OpenTelemetry instrumentation configured by `AihubInstrumentor`:
 
 **Automatic Instrumentation** (via `AihubInstrumentor`):
+
 - `AsyncioInstrumentor`: Async operations and task execution
 - `HTTPXClientInstrumentor` / `AioHttpClientInstrumentor`: HTTP requests
 - `PymongoInstrumentor` / `RedisInstrumentor` / `MilvusInstrumentor`: Database operations
 - `LlamaIndexInstrumentor`: LLM and RAG operations with OpenInference conventions
 
 **Custom Tracing** (via `AgentRunTracer`):
+
 - Agent workflow execution with step-level detail
 - Hierarchical span structures for complex workflows
 - Context propagation across distributed agent operations
@@ -137,19 +147,24 @@ Services automatically emit traces through OpenTelemetry instrumentation configu
 
 ### Performance Optimization
 
-Traces reveal exactly where time is spent in each operation. Bottleneck identification becomes precise rather than speculative. When document retrieval takes three seconds while AI processing takes 500ms, optimization priorities become clear.
+Traces reveal exactly where time is spent in each operation. Bottleneck identification becomes precise rather than
+speculative. When document retrieval takes three seconds while AI processing takes 500ms, optimization priorities become
+clear.
 
 ### Cost Management
 
-AI operations include token usage and cost attribution through semantic events. Tracking which operations, users, or departments consume the most AI resources enables data-driven decisions about model selection and feature pricing.
+AI operations include token usage and cost attribution through semantic events. Tracking which operations, users, or
+departments consume the most AI resources enables data-driven decisions about model selection and feature pricing.
 
 ### Root Cause Analysis
 
-Failed operations preserve complete context showing exactly where and why failures occurred. Error traces include stack traces, input data, and the sequence of events leading to failure, dramatically reducing problem resolution time.
+Failed operations preserve complete context showing exactly where and why failures occurred. Error traces include stack
+traces, input data, and the sequence of events leading to failure, dramatically reducing problem resolution time.
 
 ### AI Transparency
 
-Traces show what information the AI considered when generating answers. Retrieved documents, token usage, and model selection become visible, supporting regulatory compliance and building user trust.
+Traces show what information the AI considered when generating answers. Retrieved documents, token usage, and model
+selection become visible, supporting regulatory compliance and building user trust.
 
 ---
 
@@ -160,17 +175,20 @@ Traces show what information the AI considered when generating answers. Retrieve
 Phoenix provides specialized LLM observability at `http://localhost:6006`:
 
 **Features**:
+
 - Timeline views showing span duration and relationships
 - Token usage and cost tracking for LLM operations
 - Retrieved document inspection for RAG systems
 - Trace filtering by session, tags, or time range
 - Performance analysis and latency distributions
 
-**Focus**: AI-specific operations with OpenInference semantic conventions (LLM, CHAIN, AGENT, RETRIEVER, EMBEDDING spans).
+**Focus**: AI-specific operations with OpenInference semantic conventions (LLM, CHAIN, AGENT, RETRIEVER, EMBEDDING
+spans).
 
 ### Cloud Backend (Production)
 
-Traces are exported to cloud observability platforms for long-term storage and analysis. The platform supports any OTLP-compatible backend through configuration changes only.
+Traces are exported to cloud observability platforms for long-term storage and analysis. The platform supports any
+OTLP-compatible backend through configuration changes only.
 
 For information on cloud backends and visualization, see [Dashboards](../../2_monitoring/2_dashboards/index.md).
 
@@ -180,11 +198,13 @@ For information on cloud backends and visualization, see [Dashboards](../../2_mo
 
 ### Trace Content
 
-Traces capture operation metadata, timing information, and routing details. Developers are responsible for ensuring sensitive data is not included in trace attributes.
+Traces capture operation metadata, timing information, and routing details. Developers are responsible for ensuring
+sensitive data is not included in trace attributes.
 
 **Infrastructure**: OpenInference spans include session IDs, model names, token counts, and retrieved document metadata.
 
-**Application Responsibility**: Developers must avoid logging actual document content, user messages, or other sensitive information in custom trace attributes.
+**Application Responsibility**: Developers must avoid logging actual document content, user messages, or other sensitive
+information in custom trace attributes.
 
 ### Transmission Security
 
@@ -192,7 +212,8 @@ All traces are transmitted via encrypted channels (TLS/HTTPS) to prevent interce
 
 ### Access Control
 
-Trace access is restricted through observability platform role-based access control. Only authorized personnel can view detailed traces.
+Trace access is restricted through observability platform role-based access control. Only authorized personnel can view
+detailed traces.
 
 ---
 
@@ -218,15 +239,18 @@ LlamaIndex instrumentation automatically traces:
 
 ### HTTP Services
 
-FastAPI services automatically trace incoming requests when instrumented. Developers can add custom attributes to spans for application-specific context.
+FastAPI services automatically trace incoming requests when instrumented. Developers can add custom attributes to spans
+for application-specific context.
 
 ---
 
 ## Platform Flexibility
 
-While Phoenix provides LLM-specific observability during development, the OpenTelemetry foundation supports any OTLP-compatible backend:
+While Phoenix provides LLM-specific observability during development, the OpenTelemetry foundation supports any
+OTLP-compatible backend:
 
 **Supported Platforms**:
+
 - **Phoenix**: Open-source LLM observability (current local development)
 - **SigNoz**: Open-source observability platform
 - **Jaeger**: Distributed tracing focused on microservices
@@ -236,7 +260,8 @@ While Phoenix provides LLM-specific observability during development, the OpenTe
 
 Switching backends requires only collector configuration changes. No application code modifications are needed.
 
-For complete multi-platform details, see [OpenTelemetry Foundation](../0_opentelemetry/index.md) and [Dashboards - Multi-Platform Support](../../2_monitoring/2_dashboards/index.md#multi-platform-support).
+For complete multi-platform details, see [OpenTelemetry Foundation](../0_opentelemetry/index.md) and
+[Dashboards - Multi-Platform Support](../../2_monitoring/2_dashboards/index.md#multi-platform-support).
 
 ---
 
@@ -272,4 +297,5 @@ The platform's distributed tracing delivers:
 
 ✅ **Privacy Foundation**: Infrastructure captures metadata; developers responsible for data protection
 
-As tracing coverage expands, organizations gain increasingly detailed insights into platform performance, AI operations, and user experience.
+As tracing coverage expands, organizations gain increasingly detailed insights into platform performance, AI operations,
+and user experience.
