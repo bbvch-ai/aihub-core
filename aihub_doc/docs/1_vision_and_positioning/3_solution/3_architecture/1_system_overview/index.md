@@ -33,13 +33,19 @@ or a hybrid combination. Your documents, data, and conversation history remain e
 
 ![System Overview](../../../../../media/architecture/system_overview/system-overview.png)
 
-The Swiss AI Hub provides a complete, self-contained system that runs in your infrastructure without mandatory
-dependencies on external services. This gives you control over where your data resides and how AI is integrated into
-your operations.
+The Swiss AI Hub is not a single code component or framework, but rather an integrated platform assembled from various
+open-source components delivered as Docker images. The platform's role is to integrate these components and ensure they
+can communicate with each other seamlessly, while each component remains independently maintainable and replaceable.
 
-The architecture prioritizes **modularity** as a key design principle. Each component can be adapted, replaced, or
-upgraded independently as your needs evolve or new technologies emerge. This future-proofing approach ensures the
-platform remains relevant even as the AI landscape changes rapidly.
+This architecture makes the platform highly extensible—individual components can be replaced with alternatives or
+enhanced versions, and custom components can be added to address specific organizational needs. The platform provides a
+complete, self-contained system that runs in your infrastructure without mandatory dependencies on external services,
+giving you control over where your data resides and how AI is integrated into your operations.
+
+The architecture prioritizes **modularity** as a key design principle. Each component—such as the API Gateway, User
+Interface, Agent Service, and Data Pipelines—is independently deployable and can be adapted, replaced, or upgraded as
+your needs evolve or new technologies emerge. This future-proofing approach ensures the platform remains relevant even
+as the AI landscape changes rapidly.
 
 ### What is part of the platform?
 
