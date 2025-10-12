@@ -5,164 +5,112 @@ index: 3
 
 # WebSocket API
 
-## Overview
+## Concept and Purpose
 
-The WebSocket API provides a bidirectional, real-time communication channel for applications requiring immediate
-feedback and live updates during agent execution. Unlike traditional request-response HTTP patterns, the WebSocket API
-maintains persistent connections that enable the platform to push events to clients as they occur, supporting
-interactive user experiences and real-time monitoring applications.
+The WebSocket API, built on FastAPI, provides bidirectional, real-time communication channels for applications requiring
+immediate feedback during AI operations. Unlike traditional request-response HTTP patterns where clients must repeatedly
+poll for updates, WebSocket connections enable the platform to push events to clients instantly as they occur,
+supporting modern interactive user experiences.
 
-## Design Rationale
+This capability addresses a fundamental challenge in AI applications: users need to observe what autonomous agents are
+doing in real-time to build trust and maintain engagement. Without real-time visibility, long-running agent operations
+appear as black boxes, creating uncertainty and reducing user confidence in AI-powered systems.
 
-### Real-Time User Experience Requirements
+## Core Design Principles
 
-Modern AI applications demand responsive interfaces that provide immediate feedback during agent execution. Users expect
-to see:
+### Real-Time Transparency and Trust
 
-- Agent thinking and reasoning steps as they occur
-- Progressive streaming of response content
-- Real-time status updates (processing, waiting for input, completed)
-- Immediate notification of errors or issues
+Modern AI applications require responsive interfaces that provide continuous feedback during agent execution. Users
+expect to observe agent reasoning steps as they occur, receive progressive streaming of response content, monitor
+real-time status changes, and receive immediate notification of issues or completion. This transparency transforms
+opaque AI operations into observable, understandable processes.
 
-The WebSocket API fulfills these requirements by pushing events from the platform to connected clients with minimal
-latency, typically measured in milliseconds rather than the seconds required for HTTP polling.
+The business impact of real-time visibility extends beyond user experience: it builds trust in AI systems by
+demonstrating how agents reach conclusions, enables users to interrupt or redirect long-running operations before
+wasting time, reduces perceived latency through progressive disclosure of results, and provides immediate feedback when
+issues occur rather than silent failures.
 
-### Event-Driven Architecture Integration
+### Event-Driven Architecture Bridge
 
-The platform's core is built on NATS JetStream, an event-driven messaging system. The WebSocket API acts as a bridge,
-translating internal NATS events into WebSocket messages that clients can consume. This architecture ensures:
+The WebSocket API serves as a bridge between the platform's internal event-driven architecture and external client
+applications. All platform operations—agent execution, process orchestration, message handling—generate structured
+events that flow through the NATS messaging backbone. The WebSocket layer translates these internal events into
+client-consumable messages, maintaining a consistent view of platform state across all connected applications.
 
-- **Consistency**: All platform components observe the same event stream
-- **Scalability**: Multiple WebSocket connections can subscribe to the same underlying event stream
-- **Reliability**: Events are persisted in JetStream, enabling replay and recovery
-- **Decoupling**: WebSocket clients are isolated from internal implementation details
+This architecture ensures that multiple clients observing the same operations receive identical event streams,
+supporting collaborative scenarios where teams work together with shared AI assistants. The event-sourced foundation
+also enables reliable delivery: even if connections temporarily fail, clients can recover lost events through the event
+history APIs.
 
-### Connection Management Strategy
+### Security and Access Control
 
-WebSocket connections are stateful and long-lived, requiring careful management:
+Despite providing real-time access to platform operations, the WebSocket API maintains strict security boundaries.
+Connections are read-only from the client perspective—applications receive events but cannot publish through the
+WebSocket channel. This design ensures that all actions requiring authorization validation flow through REST APIs where
+proper security checks occur.
 
-- **Authentication on Connect**: The first message must contain a valid bearer token
-- **Automatic Disconnection**: Invalid authentication results in immediate connection termination
-- **Graceful Degradation**: Connection failures trigger automatic reconnection in client implementations
-- **Resource Limits**: Per-user connection limits prevent abuse
+Event filtering based on user permissions ensures clients only receive events for resources they can access:
+conversations they participate in, agents they can use, and processes they own or contribute to. This fine-grained
+access control supports multi-tenant deployments where different users share platform infrastructure while maintaining
+complete data isolation.
 
-## Core Capabilities
+## Supported Capabilities
 
-### 1. Event Streaming
+The API delivers real-time visibility across three primary operation types:
 
-**Endpoint**: `GET /events/ws`
+**Agent Execution Monitoring**: Applications receive continuous updates as agents execute tasks—reasoning steps, tool
+invocations, response generation, and completion status. Streaming response chunks enable progressive display of agent
+output, similar to typing indicators in messaging applications. This visibility helps users understand agent
+capabilities and limitations, building appropriate trust levels for different task types.
 
-**Connection Flow**:
+**Conversation Updates**: Real-time notification of conversation state changes ensures users stay synchronized with
+collaborative discussions. Applications learn immediately when new messages arrive, participants join or leave
+conversations, or conversation metadata changes. This supports both human-human and human-AI collaboration patterns
+where multiple parties contribute to problem-solving.
 
-1. **Client Initiates WebSocket Connection**: Standard WebSocket handshake to `/events/ws`
-2. **Authentication**: First message must be JSON: `{"token": "Bearer <access_token>"}`
-3. **Token Validation**: Server validates token and extracts user identity
-4. **Connection Accepted**: Server confirms authentication success
-5. **Event Subscription**: Server begins streaming relevant events to the client
-6. **Bidirectional Communication**: Client can send subscription updates; server pushes events
+**Process State Tracking**: Complex multi-step business processes generate events as they progress through workflow
+stages. Applications can display process status, highlight current steps, indicate completion progress, and notify users
+when their input is required. This visibility enables proactive engagement rather than reactive notification—users see
+processes advancing and can prepare responses before being explicitly prompted.
 
-**Important Security Constraint**: The WebSocket connection is **read-only for clients**. Clients can receive events but
-cannot publish events through the WebSocket. Event publishing must be done through the REST API endpoints, ensuring
-proper authorization and validation.
+## Business Value
 
-### 2. Event Types and Structure
+### Enhanced User Experience and Engagement
 
-Events streamed through the WebSocket API are structured, typed messages that represent state changes and activities
-within the platform:
+Real-time feedback transforms how users interact with AI systems. Rather than submitting requests and waiting with no
+indication of progress, users observe continuous activity that maintains engagement and builds confidence. This
+transparency is particularly valuable for complex agent operations that may take minutes or hours—users can monitor
+progress, understand what the agent is currently doing, and make informed decisions about whether to wait or pursue
+alternative approaches. Progressive response streaming in chat interfaces feels more natural and engaging than long pauses
+followed by complete responses, and process status visibility helps users understand where they are in multi-step
+workflows.
 
-**Agent Events**:
+### Operational Efficiency and Cost Management
 
-- `agent.started` - Agent execution initiated
-- `agent.thinking` - Agent performing reasoning or retrieval
-- `agent.tool_call` - Agent invoking a tool or function
-- `agent.response_chunk` - Incremental response content (streaming)
-- `agent.completed` - Agent execution finished
-- `agent.error` - Agent encountered an error
+Real-time monitoring enables users to identify and abort unproductive operations early, avoiding wasted compute
+resources and API costs. When agents pursue incorrect reasoning paths or encounter issues, immediate visibility allows
+intervention before significant resources are consumed. This capability becomes increasingly important as organizations
+scale AI deployments across multiple teams and use cases.
 
-**Thread Events**:
+Administrators benefit from real-time platform monitoring—observing agent utilization patterns, identifying performance
+bottlenecks, and receiving immediate notification of system issues. This operational visibility supports proactive
+management rather than reactive troubleshooting.
 
-- `thread.created` - New conversation thread created
-- `thread.updated` - Thread metadata changed
-- `thread.message_added` - New message added to thread
-- `thread.agent_added` - Agent joined the thread
-- `thread.user_added` - User joined the thread
+### Collaborative AI Workflows
 
-**Process Events**:
+The WebSocket API's multi-client support enables team collaboration scenarios where multiple users work together with
+shared AI assistants. All participants receive identical event streams, ensuring everyone observes the same agent
+behaviors and conversation developments. This capability supports use cases like group decision-making with AI
+assistance, training scenarios where experts guide AI interactions, and quality review processes where supervisors
+monitor agent performance.
 
-- `process.started` - Process execution initiated
-- `process.step_completed` - Process step finished
-- `process.waiting_for_input` - Process requires user input
-- `process.completed` - Process execution finished
-- `process.error` - Process encountered an error
+## Implementation Approach
 
-**Event Structure**:
-
-```json
-{
-  "event_type": "agent.response_chunk",
-  "thread_id": "507f1f77bcf86cd799439011",
-  "agent_class": "research_agent",
-  "agent_id": "default",
-  "timestamp": "2025-10-10T12:34:56.789Z",
-  "payload": {
-    "delta": "market analysis",
-    "run_id": "507f191e810c19729de860ea"
-  }
-}
-```
-
-### 3. Filtering and Subscription Management
-
-While the current implementation streams all events the user has access to, the architecture supports future
-enhancements for fine-grained filtering:
-
-**Potential Filtering Dimensions**:
-
-- Thread-specific events (only events for threads the user is participating in)
-- Agent-specific events (only events from specific agent classes or instances)
-- Process-specific events (only events for processes the user owns or participates in)
-- Event type filtering (only specific event types like completions or errors)
-
-**Access Control**: The WebSocket manager filters events based on user permissions before streaming. Users only receive
-events for resources they have permission to access:
-
-- Events from threads they are members of or own
-- Events from agents they have access to
-- Events from processes they own or are participants in
-
-## Authentication and Security
-
-Bearer token authentication is required in the first message after connection establishment. Token validation uses the
-same identity providers as REST endpoints. Hierarchical permission checks filter events before delivery, ensuring users
-only receive events for resources they have access to (threads, agents, processes). Failed authentication results in
-immediate connection termination with error code 4001.
-
-**Security Constraint**: WebSocket connections are read-only for clients. Event publishing must occur through REST API
-endpoints to ensure proper authorization and validation.
-
-## Integration Patterns and Usage
-
-The API supports three primary usage patterns:
-
-**Real-Time User Interfaces**: Frontend applications establish persistent connections to receive live agent execution
-updates, streaming responses, and status changes as they occur.
-
-**Streaming Chat Completions**: Applications combine REST API requests to initiate agent actions with WebSocket
-subscriptions to receive incremental response chunks for progressive display.
-
-**Monitoring and Observability**: Administrative tools maintain connections for real-time platform monitoring, event
-aggregation, and alert generation.
-
-## Connection Management
-
-Connections follow a standard lifecycle: client-initiated handshake, server-side authentication, active event streaming,
-and eventual termination. Clients implement exponential backoff reconnection strategies with connection pooling at the
-server side. The architecture scales horizontally across multiple API instances using sticky sessions and NATS-based
-event broadcasting.
-
-## Architecture Characteristics
-
-The WebSocket API integrates directly with the platform's NATS JetStream event backbone, translating internal events to
-client-consumable messages. Low-latency event delivery (10-50ms typical) supports real-time user experiences. The system
-handles thousands of concurrent connections per instance with minimal resource overhead. Comprehensive instrumentation
-captures connection metrics and authentication events through OpenTelemetry tracing.
+Built on FastAPI's WebSocket capabilities, the API integrates directly with the platform's NATS JetStream event
+backbone. Persistent connections handle thousands of concurrent clients per instance with minimal resource overhead.
+Authentication occurs via bearer tokens validated against organizational identity providers, with automatic connection
+termination for authentication failures. Event filtering applies hierarchical permission checks before delivery,
+ensuring users receive only events for authorized resources. The architecture scales horizontally across API instances
+using NATS-based event broadcasting, maintaining consistent event delivery regardless of which instance serves a
+particular client connection. Typical event delivery latency remains below 50 milliseconds, supporting truly real-time
+user experiences.

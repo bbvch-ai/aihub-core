@@ -5,157 +5,97 @@ index: 4
 
 # Model Context Protocol (MCP) Server
 
-## Overview
+## Concept and Purpose
 
-The Model Context Protocol (MCP) Server exposes Swiss AI-Hub API endpoints as resources and tools accessible to AI
-development assistants and automation tools. This specialized interface enables AI coding assistants like Claude Code,
-Gemini CLI, and other MCP-compatible tools to interact directly with the platform during development workflows,
-providing real-time access to platform state, agent configurations, and operational data.
+The Model Context Protocol (MCP) Server exposes Swiss AI-Hub capabilities to AI development assistants and automation
+tools through a standardized protocol. Built on FastAPI and integrated directly into the main API service, this
+interface enables AI assistants to interact with the platform.
 
-## Design Rationale
+## Core Design Principles
 
-### AI-Assisted Development Integration
+### Standards-Based Integration
 
-Modern software development increasingly leverages AI coding assistants for tasks like debugging, testing, code
-generation, and documentation. These assistants are most effective when they have direct access to the systems they're
-helping to develop. The MCP Server bridges this gap by:
+MCP is an emerging standard for exposing application functionality to AI assistants in structured, discoverable ways. By
+implementing MCP rather than proprietary interfaces, the Swiss AI-Hub ensures compatibility with any MCP-compatible
+tool, enables automatic integration as new AI development tools adopt the protocol, and provides type safety through
+schema-based interactions that prevent incorrect tool usage.
 
-- **Providing Real-Time Context**: AI assistants can query current platform state, agent configurations, and execution
-  histories
-- **Enabling Interactive Debugging**: Assistants can inspect running agents, trace event flows, and analyze errors
-- **Supporting Automated Testing**: Tools can discover agents, execute test scenarios, and validate behaviors
-- **Facilitating Documentation**: Assistants can extract API schemas, agent metadata, and usage patterns for
-  documentation generation
-
-### Model Context Protocol Standards
-
-MCP is an emerging standard for exposing application functionality to AI assistants in a structured, discoverable way.
-By implementing an MCP server, the Swiss AI-Hub:
-
-- **Ensures Compatibility**: Works with any MCP-compatible AI assistant or automation tool
-- **Enables Future Integration**: As MCP adoption grows, new tools automatically gain access
-- **Provides Type Safety**: MCP's schema-based approach ensures correct tool usage by AI assistants
-- **Supports Discovery**: AI assistants can automatically discover available resources and tools without hardcoded
-  knowledge
+The standards-based approach future-proofs the platform's development ecosystem: as new AI assistants and automation
+tools emerge, they gain immediate access to Swiss AI-Hub capabilities without requiring custom integration work.
 
 ### Automatic API Translation
 
-The MCP Server automatically translates the existing REST API into MCP resources and tools:
+The MCP Server automatically translates the existing FastAPI REST interface into MCP resources, eliminating duplicate
+implementation and maintenance burden. OpenAPI specifications generated from code annotations transform into MCP schemas
+automatically, ensuring consistency between human-facing REST APIs and AI-facing MCP resources. Changes to platform
+capabilities instantly reflect in both interfaces without separate documentation or translation steps.
 
-- **No Duplicate Implementation**: The same FastAPI endpoints serve both human developers and AI assistants
-- **Automatic Schema Generation**: OpenAPI specifications are converted to MCP schemas
-- **Consistent Behavior**: MCP tools invoke the same business logic as REST endpoints, ensuring consistency
-- **Reduced Maintenance**: Changes to the REST API automatically reflect in the MCP interface
+This architecture maintains a single source of truth: FastAPI route definitions, type annotations, and documentation
+strings serve both development communities simultaneously.
 
-## Core Capabilities
+## Supported Capabilities
 
-### 1. Resource Discovery and Access
+The MCP Server provides AI assistants with read-only access to platform information across four domains:
 
-MCP exposes HTTP GET endpoints as "resources" that AI assistants can read to gather information:
+**Agent Discovery and Inspection**: AI assistants can query available agents, retrieve detailed agent configurations and
+capabilities, examine agent execution patterns and performance characteristics, and understand which agents handle which
+task types. This enables assistants to recommend appropriate agents for specific problems and generate correct agent
+invocation code.
 
-**Resource Types**:
+**Conversation Analysis**: Access to conversation threads, message histories, and participant information helps AI
+assistants understand application context. Assistants can trace conversation flows, analyze multi-agent collaboration
+patterns, and provide debugging guidance based on actual conversation structures rather than assumptions.
 
-**Agent Resources**:
+**Observability and Diagnostics**: Complete access to event streams, execution logs, and time-series analytics enables
+AI-assisted debugging. Assistants can correlate events across components, identify performance bottlenecks, trace errors
+to root causes, and suggest optimizations based on actual operational data.
 
-- `aihub://agents/` - List of all agents
-- `aihub://agents/discover` - Currently online agents
-- `aihub://agents/{agent_class}/{agent_id}` - Specific agent details
-- `aihub://agents/{agent_class}/{agent_id}/threads` - Threads for a specific agent
+**Process Monitoring**: Visibility into business process definitions, execution states, and completion histories allows
+AI assistants to understand application workflows. This supports process optimization, error analysis, and guidance on
+implementing new process variants.
 
-**Thread Resources**:
+## Business Value
 
-- `aihub://threads/` - User's conversation threads
-- `aihub://threads/{thread_id}` - Specific thread details
-- `aihub://threads/{thread_id}/messages` - Message history for a thread
+### AI-Assisted Operations and Monitoring
 
-**Event Resources**:
+AI assistants can query live platform state for operational insights and troubleshooting. Operations teams receive
+immediate answers about process execution status, agent performance metrics, event histories, and system health without
+manually navigating interfaces or parsing logs. This reduces mean time to resolution for incidents and enables
+proactive issue identification through AI-powered anomaly detection across conversation patterns, agent behaviors, and
+business process execution.
 
-- `aihub://events/agents/threads/{thread_id}` - Events in a thread
-- `aihub://events/agents/timeseries/{time_range}` - Time-series event statistics
+### Intelligent Knowledge Management
 
-**Process Resources**:
+The MCP interface provides AI assistants with access to knowledge bases, document repositories, and RAG indices,
+enabling sophisticated knowledge discovery and analysis. Users can ask natural language questions that retrieve and
+synthesize information across distributed document collections, identify knowledge gaps, and receive recommendations
+for content improvements. This capability is valuable for compliance teams needing to locate specific regulatory
+references and researchers exploring large technical document collections.
 
-- `aihub://processes/` - Available processes
-- `aihub://processes/{process_class}/{process_id}` - Specific process details
+### Enhanced Development Productivity
 
-**Resource Templates**: Resources with path parameters (e.g., `{thread_id}`) are exposed as "resource templates" in MCP,
-enabling AI assistants to dynamically construct resource URIs based on context.
+Developers benefit from AI assistants with direct platform access for code generation and debugging. Code suggestions
+validate against current API schemas rather than generic patterns, debugging conversations include actual platform
+state, and test generation uses real agent configurations. Organizations report development productivity improvements
+of 30-50% when AI assistants have structured system access. New team members gain productivity faster through
+immediate, context-aware guidance that reduces onboarding time and eliminates dependency on documentation searches.
 
-### 2. Tool Generation (Future Capability)
+### Process Analysis and Optimization
 
-While the current implementation focuses on read-only resources (GET endpoints), the architecture supports future
-expansion to expose POST, PUT, PATCH, and DELETE endpoints as MCP "tools":
+AI assistants can analyze business process definitions, execution histories, and performance patterns to identify
+optimization opportunities. By querying process instances, agent interactions, and completion metrics, assistants
+provide actionable insights for workflow improvements, bottleneck identification, and resource allocation. This
+capability supports continuous process improvement initiatives and helps organizations maximize return on AI automation
+investments.
 
-**Potential Future Tools**:
+## Implementation Approach
 
-- `create_thread` - Create a new conversation thread
-- `send_message` - Send a message to an agent
-- `start_process` - Initiate a process execution
-- `add_agent_to_thread` - Add an agent to a conversation
-
-**Security Considerations for Tools**: Write operations through MCP require careful consideration:
-
-- **User Consent**: AI assistants must obtain explicit user approval for state-changing operations
-- **Access Control**: Tools must enforce the same permission checks as REST endpoints
-- **Audit Logging**: All tool invocations are logged with user context for compliance
-
-Currently, tools are **excluded** from the MCP server to maintain a read-only development interface, reducing security
-risks.
-
-### 3. Dynamic Schema Generation
-
-The MCP Server automatically generates schemas for all exposed resources:
-
-**OpenAPI to MCP Translation**: FastAPI's OpenAPI specification (generated from code annotations) is transformed into
-MCP resource and tool schemas. This ensures:
-
-- **Type Safety**: AI assistants understand expected response structures
-- **Validation**: Responses are validated against schemas before delivery
-- **Documentation**: AI assistants have access to human-readable descriptions from OpenAPI
-
-OpenAPI specifications are automatically transformed into MCP resource schemas, providing type safety, response
-validation, and human-readable descriptions to AI assistants.
-
-## Implementation Architecture
-
-The MCP server is generated from the existing FastAPI application using the FastMCP library. HTTP GET endpoints are
-categorized as MCP resources (static or templates based on path parameters), while write operations (POST, PUT, PATCH,
-DELETE) are excluded for security. The server is mounted at `/mcp` on the main API service, sharing the same lifecycle,
-authentication infrastructure, and connection resources.
-
-## Authentication and Security
-
-Bearer token authentication using the same OAuth2/SAML/LDAP identity providers as REST endpoints ensures consistent
-access control. Resources are filtered based on user permissions, preventing AI assistants from accessing unauthorized
-data (agents, threads, events, processes). AI coding assistants configure MCP connections via `.mcp.json` configuration
-files with automated token refresh flows.
-
-## Use Cases
-
-The MCP Server enables four primary development workflows:
-
-**AI-Assisted Debugging**: Developers query real-time platform state through conversational interfaces, eliminating
-manual API exploration.
-
-**Automated Testing**: AI assistants validate agent behavior by inspecting execution histories and analyzing event
-streams.
-
-**Documentation Generation**: Assistants extract live platform data and schemas to generate current, accurate
-documentation.
-
-**Interactive Development**: Developers receive AI-generated code validated against actual API schemas, accelerating
-application development.
-
-## Security and Access Model
-
-The implementation is **read-only by default**, exposing only GET endpoints to reduce risk and enable safe exploration.
-Write operations are excluded, eliminating needs for complex approval workflows. Hierarchical permission checks ensure
-AI assistants respect user access boundaries. All MCP resource access is instrumented for security monitoring and
-anomaly detection.
-
-## Architecture Characteristics
-
-The MCP server is embedded within the main API service, requiring no separate deployment. It shares authentication,
-database connections, and NATS clients with REST endpoints, scaling horizontally with API instances. Standard HTTP load
-balancing applies, with schemas cached to optimize performance. Typical latency matches underlying REST endpoints
-(100-500ms), with minimal CPU and memory overhead.
+Built using the FastMCP library, the MCP server generates resources automatically from FastAPI route definitions and
+OpenAPI specifications. The server mounts at `/mcp` on the main API service, sharing authentication infrastructure,
+database connections, and event system access with REST endpoints. Only read-only operations (GET endpoints) are
+exposed, maintaining a secure development interface that allows platform observation without state modification.
+Authentication uses the same OAuth2/SAML/LDAP identity providers as REST APIs, with hierarchical permission checks
+filtering resources based on user access rights. AI development tools configure MCP connections via `.mcp.json` files in
+project repositories, enabling automatic platform access during development sessions. The architecture scales
+horizontally with API instances, requires no separate deployment, and adds minimal resource overhead to the existing
+service.
