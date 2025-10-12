@@ -90,11 +90,11 @@ maintaining the benefits of event-driven architecture.
 
 **Agent Collaboration**: Agents delegate specialized tasks to other agents through structured request-response patterns.
 This enables hierarchical decomposition of complex objectives, allowing specialized agents to contribute domain
-expertise to broader workflows. For detailed information, see the Agent Collaboration and Delegation documentation.
+expertise to broader workflows. For detailed information, see the Agent Collaboration and Delegation (agent in the loop)
 
 **Human-in-the-Loop**: Workflows seamlessly pause awaiting human input for approvals, decisions, or data provision.
 These pause points integrate naturally into workflow definitions, maintaining full context when humans respond hours or
-days later. For detailed information, see the Human-in-the-Loop Integration documentation.
+days later. For detailed information, see the Human-in-the-Loop Integration.
 
 ## Collaboration Principles
 

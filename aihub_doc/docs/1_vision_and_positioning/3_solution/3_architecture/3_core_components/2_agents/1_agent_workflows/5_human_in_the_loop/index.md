@@ -19,9 +19,7 @@ context and create operational friction.
 The platform addresses this challenge by treating human involvement as a first-class workflow pattern. Agents can
 request human input at any point, workflows pause naturally while awaiting responses, and execution resumes seamlessly
 when humans provide decisions—whether minutes, hours, or days later. **Critically, the workflow continues from exactly
-where it paused**, rather than restarting the agent's entire reasoning process. This architectural choice becomes
-especially valuable in complex, multi-step workflows where restarting would lose intermediate results and waste
-computational resources.
+where it paused**, rather than restarting the agent's entire reasoning process.
 
 ## Human Approval Pattern
 

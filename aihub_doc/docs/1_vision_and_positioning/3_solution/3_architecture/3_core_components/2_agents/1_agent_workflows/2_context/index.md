@@ -47,6 +47,5 @@ immutable configuration throughout its execution.
 conversation thread, serving as the agent's long-term memory. This includes user preferences, session metadata, and
 accumulated knowledge from previous runs.
 
-Both context types use high-performance in-memory storage (Redis) for sub-millisecond access times, ensuring optimal
-agent performance during execution. For detailed information about retention policies, storage durations, capacity
-limits, and lifecycle management, see the Event-Driven Communication documentation.
+Both context types use high-performance in-memory storage for sub-millisecond access times, ensuring optimal
+agent performance during execution.
