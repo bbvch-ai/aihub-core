@@ -20,7 +20,6 @@ class LoaderType(Enum):
 
     DOCLING = "docling"
     DOCUMENT_INTELLIGENCE = "document_intelligence"
-    BOTH = "both"
 
 
 class DocumentParserResource(ConfigurableResource):
@@ -70,10 +69,9 @@ class DocumentParserResource(ConfigurableResource):
     loader_type: Annotated[
         LoaderType,
         Field(
-            default=LoaderType.BOTH,
             description="Specifies which document loader to use. Options: DOCLING, DOCUMENT_INTELLIGENCE, BOTH",
         ),
-    ]
+    ] = LoaderType.DOCLING
 
     include_images: Annotated[
         bool, Field(default=True, description="Specifies if images should be embedded into the documents and nodes.")
@@ -93,10 +91,10 @@ class DocumentParserResource(ConfigurableResource):
         """
         readers_map = self._base_readers.copy()
 
-        if self.loader_type == LoaderType.DOCLING or self.loader_type == LoaderType.BOTH:
+        if self.loader_type == LoaderType.DOCLING:
             readers_map[DoclingLoader] = DoclingSettings().EXTENSIONS
 
-        if self.loader_type == LoaderType.DOCUMENT_INTELLIGENCE or self.loader_type == LoaderType.BOTH:
+        if self.loader_type == LoaderType.DOCUMENT_INTELLIGENCE:
             readers_map[DocumentIntelligenceLoader] = AzureDocumentIntelligenceSettings().EXTENSIONS
 
         return readers_map
