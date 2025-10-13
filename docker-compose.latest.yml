@@ -128,10 +128,11 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.datalake.rule=Host(`datalake.${DOMAIN}`)"
+      - "traefik.http.routers.seaweedfs-filer-ui.priority=4000"
       - "traefik.http.routers.datalake.entrypoints=websecure"
       - "traefik.http.routers.datalake.tls.certresolver=letsencrypt"
       - "traefik.http.routers.datalake.middlewares=security-headers@file"
-      - "traefik.http.services.datalake.loadbalancer.server.port=9000"
+      - "traefik.http.services.datalake.loadbalancer.server.port=8888"
 
   seaweedfs-s3:
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
@@ -163,11 +164,11 @@ services:
     logging: *default-logging
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.minio-api.rule=Host(`datalake-api.${DOMAIN}`)"
-      - "traefik.http.routers.minio-api.entrypoints=websecure"
-      - "traefik.http.routers.minio-api.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.minio-api.service=minio-api"  # ← EXPLICITLY LINK
-      - "traefik.http.services.minio-api.loadbalancer.server.port=9000"
+      - "traefik.http.routers.seaweedfs-api.rule=Host(`datalake-api.${DOMAIN}`)"
+      - "traefik.http.routers.seaweedfs-api.entrypoints=websecure"
+      - "traefik.http.routers.seaweedfs-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.seaweedfs-api.service=seaweedfs-api"
+      - "traefik.http.services.seaweedfs-api.loadbalancer.server.port=9000"
 
   seaweedfs-init:
     image: ghcr.io/bbvch-ai/aihub-core/aws-cli-alpine:3.22.1

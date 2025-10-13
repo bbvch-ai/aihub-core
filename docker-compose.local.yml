@@ -166,7 +166,15 @@ services:
       retries: 5
       start_period: 20s
     logging: *default-logging
-
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seaweedfs-api.rule=Host(`datalake-api.${DOMAIN}`)"
+      - "traefik.http.routers.seaweedfs-api.entrypoints=websecure"
+      - "traefik.http.routers.seaweedfs-api.tls=true"
+      - "traefik.http.routers.seaweedfs-api.middlewares=security-headers@file"
+      - "traefik.http.routers.seaweedfs-api.service=seaweedfs-api"
+      - "traefik.http.services.seaweedfs-api.loadbalancer.server.port=9000"
+      -
   seaweedfs-init:
     image: ghcr.io/bbvch-ai/aihub-core/aws-cli-alpine:3.22.1
     container_name: seaweedfs-init
