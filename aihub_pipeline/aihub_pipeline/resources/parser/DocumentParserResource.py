@@ -33,9 +33,8 @@ class DocumentParserResource(ConfigurableResource):
     variables in their configs.
 
     You can specify which loader to use through the `loader_type` parameter:
-    - DOCLING: Use only DoclingLoader
+    - DOCLING: Use only DoclingLoader (default)
     - DOCUMENT_INTELLIGENCE: Use only DocumentIntelligenceLoader
-    - BOTH: Use both loaders (default)
 
     Example usage:
 
@@ -69,7 +68,7 @@ class DocumentParserResource(ConfigurableResource):
     loader_type: Annotated[
         LoaderType,
         Field(
-            description="Specifies which document loader to use. Options: DOCLING, DOCUMENT_INTELLIGENCE, BOTH",
+            description="Specifies which document loader to use. Options: DOCLING, DOCUMENT_INTELLIGENCE",
         ),
     ] = LoaderType.DOCLING
 
