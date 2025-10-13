@@ -61,7 +61,9 @@ class RerankingService(BaseModel):
 
         return chunks
 
-    async def rerank(self, query: str, nodes: list[str], top_k: int, max_tokens: int) -> list[RerankingResult]:
+    async def rerank(
+        self, query: str, nodes: list[str], top_k: int, max_tokens: int, batch_size: int
+    ) -> list[RerankingResult]:
         """Rerank documents using the configured reranking model."""
 
         all_results = []
@@ -71,28 +73,30 @@ class RerankingService(BaseModel):
 
         for idx, node in enumerate(nodes):
             chunks = self._chunk_node(node, max_tokens=max_chunk_tokens)
+            results = []
+            for i in range(0, len(chunks), batch_size):
+                chunks_iter = chunks[i : i + batch_size]
+                async with httpx.AsyncClient(
+                    timeout=self.timeout,
+                    headers=self.default_headers,
+                ) as client:
+                    response = await client.post(
+                        f"{self.api_base}/rerank",
+                        headers={
+                            "Authorization": f"Bearer {self.api_key}",
+                            "Content-Type": "application/json",
+                            **self.default_headers,
+                        },
+                        json={
+                            "model": self.model_name,
+                            "query": query,
+                            "documents": chunks_iter,
+                        },
+                    )
+                    response.raise_for_status()
+                    result = response.json()
 
-            async with httpx.AsyncClient(
-                timeout=self.timeout,
-                headers=self.default_headers,
-            ) as client:
-                response = await client.post(
-                    f"{self.api_base}/rerank",
-                    headers={
-                        "Authorization": f"Bearer {self.api_key}",
-                        "Content-Type": "application/json",
-                        **self.default_headers,
-                    },
-                    json={
-                        "model": self.model_name,
-                        "query": query,
-                        "documents": chunks,
-                    },
-                )
-                response.raise_for_status()
-                result = response.json()
-
-                results = result.get("results", [])
+                    results.extend(result.get("results", []))
 
                 score = max([res.get("relevance_score", 0) for res in results])
 

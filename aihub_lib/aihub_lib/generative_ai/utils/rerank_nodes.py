@@ -8,6 +8,7 @@ async def rerank_nodes(
     reranking_model: RerankingModelConfig,
     top_k: int,
     max_tokens: int,
+    batch_size: int = 32,
 ) -> list[IngestedNode]:
     """Rerank a list of nodes using a reranking service via LiteLLM."""
     if top_k <= 0:
@@ -20,10 +21,7 @@ async def rerank_nodes(
 
     reranking_service = reranking_model.get_reranking_service()
     rerank_result = await reranking_service.rerank(
-        query=query,
-        nodes=documents,
-        top_k=top_k,
-        max_tokens=max_tokens,
+        query=query, nodes=documents, top_k=top_k, max_tokens=max_tokens, batch_size=batch_size
     )
 
     reranked_nodes = []
