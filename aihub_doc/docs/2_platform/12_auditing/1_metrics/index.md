@@ -64,7 +64,7 @@ Health status for all platform services is captured through two complementary ap
 Dagster, data pipelines)
 
 Health events are logged as structured NDJSON and ingested by the OpenTelemetry Collector. See
-[Health Checks](../../2_monitoring/1_health_checks/index.md) for complete health monitoring details.
+[Health Checks](../1_health_checks/index.md) for complete health monitoring details.
 
 **Business Value**: Comprehensive health monitoring ensures visibility into every platform component, enabling rapid
 response before user-facing impact occurs.
