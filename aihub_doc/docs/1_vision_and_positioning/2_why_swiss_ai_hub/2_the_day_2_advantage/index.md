@@ -114,7 +114,7 @@ Standard patterns for error handling and retry logic.
 **Day 2 problem:** The prototype has no version control. Production needs to track which version of which agent produced
 which output. Updates must be tested before deployment. Rollback capability is essential.
 
-**Already solved:** Git-based version control for all components. Tagged container images for each version. 
+**Already solved:** Git-based version control for all components. Tagged container images for each version.
 Configuration as code for reproducible deployments.
 
 ## The compound advantage

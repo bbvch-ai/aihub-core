@@ -30,7 +30,6 @@ AI-Hub agents are **event-driven workflows** with three essential parts:
 - **Events**: Data objects flowing between steps
 - **Configuration**: Typed settings that control agent behavior
 
-
 ## Some Basic Concepts to start with!
 
 Let's look at the default agent created in the setup of the development environment:
@@ -65,13 +64,12 @@ When you start the UI and try to use the Agent in the OpenWebUI. You notice that
 
 ### Use Chunk Events to display live Chat Responses
 
-The reason you don't see a response in the chat interface is that only special events (`DisplayEvents`) are displayed in the UI.
-And for Chat interfaces especially the Response is composed from `ChunkEvent`'s.
-So let's enable our step to display such a `ChunkEvent`.
-For this we need to use use the `EventDisplayer` in the step-function
-and await the `display_chunk` methodm with a first argument of the content to display, and as a second argument we can pass the source of this chunk.
-Usually this is the model name or the Language model that produces this chunk. Since in our case we hard code the chunk for now
-let's just use the ClassName of the Agent as source.
+The reason you don't see a response in the chat interface is that only special events (`DisplayEvents`) are displayed in
+the UI. And for Chat interfaces especially the Response is composed from `ChunkEvent`'s. So let's enable our step to
+display such a `ChunkEvent`. For this we need to use use the `EventDisplayer` in the step-function and await the
+`display_chunk` methodm with a first argument of the content to display, and as a second argument we can pass the source
+of this chunk. Usually this is the model name or the Language model that produces this chunk. Since in our case we hard
+code the chunk for now let's just use the ClassName of the Agent as source.
 
 ```python
 import logging
@@ -106,8 +104,9 @@ How we see that the Agent responds with an actual message.
 
 ### See the power of streaming
 
-As you might know from other AI Tools, large language models produce their responses chunk by chunk. Instead of just displaying the response as a whole at the end we can build up the final response part by part which enables us to show the user some part of the response as quickly as possible.
-let's demonstrate:
+As you might know from other AI Tools, large language models produce their responses chunk by chunk. Instead of just
+displaying the response as a whole at the end we can build up the final response part by part which enables us to show
+the user some part of the response as quickly as possible. let's demonstrate:
 
 ```python
 import logging
@@ -140,13 +139,15 @@ class MyCustomAgent(Agent):
         return StopEvent(final_message=hello_world_message)
 ```
 
-We just added a second chunk that is displayed. When you run the agent again now you see that it will responde with `Hello World!` first and after 2 seconds answers with `You said: Hello!`  
+We just added a second chunk that is displayed. When you run the agent again now you see that it will responde with
+`Hello World!` first and after 2 seconds answers with `You said: Hello!`\
 <video controls="controls" src="../../../../media/sdk/your_first_agent/show_chunk_delay.mp4" type="video/mp4" />
 
 ### Add some thinking steps
 
-Especially when the agent need longer to finalize it's result it is good practice to inform the user about what is going on in the agent.
-To allow this you can display `ThoughtEvent`'s. Again we use the `EventDisplayer` but this time with the `display_thought` method.
+Especially when the agent need longer to finalize it's result it is good practice to inform the user about what is going
+on in the agent. To allow this you can display `ThoughtEvent`'s. Again we use the `EventDisplayer` but this time with
+the `display_thought` method.
 
 ```python
 import logging
@@ -179,7 +180,9 @@ class MyCustomAgent(Agent):
         await displayer.display_chunk(repeat_message, "MyCustomAgent")
         return StopEvent(final_message=hello_world_message)
 ```
-Now you see there is an additional section in the response called `Thinking...` if you expand it you can see our thought that has been created with the content `Drinking coffee...`
+
+Now you see there is an additional section in the response called `Thinking...` if you expand it you can see our thought
+that has been created with the content `Drinking coffee...`
 ![image](../../../../media/sdk/your_first_agent/show_thought.png)
 
 ## Create your first Multistep Agent
@@ -247,20 +250,21 @@ class MyCustomAgent(Agent):
         return StopEvent() # [!code ++]
 ```
 
-Now you have an first agent that acts in two steps. in the first step we do everything we have done in the past but also we count the number of words in the user message.
-This information is then passed to a second step where we also add to the response `The word count is X words` where X is the number of words we have counted in the first step.
-We have connected the two steps by defining out new Event `MyCustomAgentEvent` as the output of the first step and as input to the second step.
+Now you have an first agent that acts in two steps. in the first step we do everything we have done in the past but also
+we count the number of words in the user message. This information is then passed to a second step where we also add to
+the response `The word count is X words` where X is the number of words we have counted in the first step. We have
+connected the two steps by defining out new Event `MyCustomAgentEvent` as the output of the first step and as input to
+the second step.
 
-If you Navigate to the Agent Overview, select you agent there and then go to `Workflow`, then you can see the Workflow and the steps of your agent. You can see which steps are defined and which input and output events these steps have.
+If you Navigate to the Agent Overview, select you agent there and then go to `Workflow`, then you can see the Workflow
+and the steps of your agent. You can see which steps are defined and which input and output events these steps have.
 
 ![image](../../../../media/sdk/your_first_agent/simple_workflow.png)
 
-
 ### 3. Add some Agent Configuration (`MyCustomAgentConfig.py`):
 
-Often you want to have your agent configurable when you start it.
-For this you can use the Configuation Class. When you set up your agent using the CLI then a basic Configuration File has already been created for you looking like this:
-
+Often you want to have your agent configurable when you start it. For this you can use the Configuation Class. When you
+set up your agent using the CLI then a basic Configuration File has already been created for you looking like this:
 
 ```python
 from typing import Annotated
@@ -278,8 +282,9 @@ class MyCustomAgentConfig(AgentConfig):
     )]
 ```
 
-We can access this configuration in every step if we need to. For example can we read the content of the field `config_value`
-in the second step of our agent and post it's string value also as a chunk. However usually you use the config to configure some logic in your steps, either with system-prompts or configurations to some methods.
+We can access this configuration in every step if we need to. For example can we read the content of the field
+`config_value` in the second step of our agent and post it's string value also as a chunk. However usually you use the
+config to configure some logic in your steps, either with system-prompts or configurations to some methods.
 
 ```python
 import logging
@@ -330,7 +335,6 @@ class MyCustomAgent(Agent):
 
 You can set the configuration values in your `trigger.py` or when you build the agent the in the `main.py`
 
-
 ```python{10}
 async def main():
     servers_list = [NatsSettings().ENDPOINT]
@@ -354,20 +358,17 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-
-
 ### 4. Test Script (`trigger.py`):
-
-
 
 ## Run and debug your agent
 
 1. **Run the test script**:
 
-To quickly test your agent you can write a `trigger.py` script which starts the agent and posts it's StartEvent.
-This way you can test the agent without any UI.
+To quickly test your agent you can write a `trigger.py` script which starts the agent and posts it's StartEvent. This
+way you can test the agent without any UI.
 
 ::: code-group
+
 ```python [trigger.py]
 import asyncio
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -414,7 +415,6 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 ```
-
 
 ```bash
 python trigger.py

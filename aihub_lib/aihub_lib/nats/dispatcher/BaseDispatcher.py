@@ -69,6 +69,7 @@ class BaseDispatcher(abc.ABC):
         redis: Annotated[Redis, "Redis client for distributed storage."],
         topic_manager: Annotated[AbstractStreamTopicManager, "Manages event subjects."],
         topic: Annotated[type[Topic], "Topic under which these events were published"],
+        dispatch_entity_name: Annotated[str, "Name of the entity that this dispatcher is responsible for."],
     ):
         self.nc = nc
         self.js = js
@@ -77,8 +78,8 @@ class BaseDispatcher(abc.ABC):
         self.topic_manager = topic_manager
         self.topic = topic
 
-        self.nc_publisher = NCPublisher(self.nc)
-        self.js_publisher = JSPublisher(self.js)
+        self.nc_publisher = NCPublisher(self.__class__.__name__, self.nc)
+        self.js_publisher = JSPublisher(f"{dispatch_entity_name}Dispatcher", self.js)
 
         self.event_store = JetStreamEventStore(
             self.nc,

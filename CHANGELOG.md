@@ -5,6 +5,396 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.246.2] - 2025-10-10 - Simplified Pipelines, Smarter SharePoint Sync
+
+### Added
+
+- ✨ **SharePoint Integration**: Introduced new `SharePointSettings` for externalizing SharePoint configuration and a new
+  factory (`default_sharepoint_to_datalake_definitions`) for easily setting up SharePoint-to-DataLake pipelines.
+- 🦾 **Standardized Data Lake Pipelines**: Added a `default_definitions` utility that provides a highly configurable and
+  centralized way to define DataLake-to-VectorStore pipelines, promoting reusability and reducing boilerplate.
+- ⚡️ **Flexible Data Lake Directory Management**: The `DataLakeResource` and related URI extraction logic now support an
+  optional directory name, improving flexibility for data organization within containers.
+- ⚙️ **Configurable Bucket Auto-Sync**: Enhanced bucket creation to allow explicit control over the `auto_sync` property
+  for `BucketEntity` instances.
+
+### Changed
+
+- 🔄 **RAG Agent Defaults**: Updated the default RAG agent configuration to use a `default` index namespace and
+  `defaultknowledge` collection name, streamlining out-of-the-box usage.
+- 🔑 **Externalized SharePoint Settings**: SharePoint authentication details are now securely loaded from environment
+  variables via `SharePointSettings` rather than being configured directly on the `SharePointResource`.
+- 📄 **SharePoint File Type Filtering**: Modified the default `SharePointResource` behavior to include all file types if
+  no specific patterns are provided, offering more permissive syncing by default.
+- 🧹 **Simplified Data Lake IO Manager Configuration**: Streamlined the prefix generation for Azure Data Lake IO
+  managers, making configuration more consistent with container names.
+
+### Refactor
+
+- 🏗️ **Centralized Pipeline Definitions**: Consolidated the definition logic for RAG pipelines into
+  `definitions_util.py`, replacing scattered, repetitive configurations in `default_rag_pipeline` and `playground`
+  applications.
+- ⚡️ **Streamlined Resource Factories**: Refactored data lake and LLM resource factories to support more flexible
+  configurations and direct instantiation, reducing complexity.
+
+### Removed
+
+- 🗑️ **Deprecated Data Lake Container Resource**: Eliminated the `DataLakeContainerResource` in favor of a more flexible
+  `DataLakeResource` and consolidated pipeline definitions.
+- 🗑️ **Redundant Pipeline Boilerplate**: Removed verbose, repetitive pipeline definitions from
+  `app/default_rag_pipeline/__init__.py` and `aihub_pipeline/playground/__init__.py` by leveraging the new centralized
+  definition utility.
+
+---
+
+## [v0.246.1] - 2025-10-09 - Retrieval Agent Context Customization
+
+### Added
+
+- ✨ **Configurable Context Prompt for Retrieval Agent:** Introduced a new `context_prompt` configuration option for the
+  `RetrievalAgent`, allowing users to define a custom prompt that dictates how combined and ordered retrieved nodes are
+  formatted.
+
+---
+
+## [v0.246.0] - 2025-10-07 - Modernizing Data Persistence: Introducing SeaweedFS, FerretDB, and Valkey
+
+### Added
+
+- ✨ **SeaweedFS for Scalable Object Storage:** Integrated SeaweedFS as the new S3-compatible distributed file system,
+  providing robust and scalable object storage across all deployment environments.
+- 💾 **FerretDB as MongoDB-compatible Database:** Introduced FerretDB, a high-performance, MongoDB-compatible database
+  that leverages PostgreSQL as its backend, enhancing data flexibility and open-source alignment.
+- ⚡️ **Valkey for High-Performance Caching:** Replaced Redis with Valkey, a Redis-compatible fork, for efficient
+  in-memory caching and faster data retrieval.
+- 🛡️ **Automatic S3 Bucket Configuration:** Enhanced the S3 data lake client to automatically ensure the existence of
+  necessary buckets and configure Cross-Origin Resource Sharing (CORS) for seamless web access.
+- 🚀 **Docker Compose Services for New Stack:** Added comprehensive Docker Compose services and initialization scripts to
+  manage the lifecycle of SeaweedFS (master, volume, filer, S3 gateway), FerretDB (and its PostgreSQL backend), and
+  Valkey.
+
+### Changed
+
+- 🔄 **Updated Core Data & Storage Stack:** Migrated the entire core infrastructure from MinIO, MongoDB, and Redis to
+  SeaweedFS, FerretDB, and Valkey respectively.
+- 📄 **Documentation and README Updates:** Revised `README.md` and quick start guides to reflect the new data persistence
+  and caching technologies, including updated environment variables, service descriptions, and console links.
+- 🔗 **Service Integration Updates:** Adjusted internal dependencies and connection strings for critical services like
+  Milvus, OpenWebUI, and AI-Hub pipelines to seamlessly integrate with the new storage and database components.
+- ✅ **Improved Licensing for Core Services:** Switched from AGPL/SSPL-licensed components (MinIO, MongoDB, Redis) to
+  more permissively licensed alternatives (Apache-2.0 for SeaweedFS/FerretDB, BSD-3-Clause for Valkey), enhancing
+  open-source compliance.
+
+### Removed
+
+- 🗑️ **MinIO S3 Storage Stack:** The entire MinIO setup, including its Docker Compose services, entrypoint scripts, and
+  related configurations, has been deprecated and removed.
+- ❌ **MongoDB Database:** The MongoDB service and all associated configurations have been entirely replaced and removed
+  from the core infrastructure.
+- 🚫 **Redis In-Memory Cache:** The Redis service has been replaced by Valkey and removed from all deployment
+  configurations.
+
+---
+
+## [v0.245.9] - 2025-10-07 - Enhanced User Data Handling in Authentication
+
+### Changed
+
+- ⚡️ **Improved User Header Encoding**: Switched from Base64 to URL encoding for usernames in authentication headers and
+  signatures, enhancing compatibility and robustness when handling special characters.
+
+---
+
+## [v0.245.8] - 2025-10-07 - Streamlined Data Lake Operations and Document Management
+
+### Added
+
+- ✨ **New `RefDoc.get_documents` method:** Introduced a more flexible way to fetch reference documents without requiring
+  a namespace filter, enhancing document retrieval capabilities.
+
+### Changed
+
+- 🔄 **Namespace-Agnostic Document Removal:** The document removal process in data lake pipelines now uses the new
+  `get_documents` method, making it more flexible and not bound to a specific namespace.
+- ⚡️ **Enhanced MongoDB Connection Management:** Implemented explicit `disconnect()` calls in `finally` blocks across
+  key utility functions and pipeline definitions, ensuring robust database connection cleanup after operations.
+- 🧹 **Refined Bucket and Namespace Utilities:** The `get_db_name_from_bucket_name` and
+  `get_or_create_namespace_for_directory` functions now include an `auto_sync` parameter, providing clearer
+  differentiation for autoloading versus manual data ingestion pipelines.
+- 🚀 **Simplified Pipeline Configurations:** Streamlined parameter passing for bucket and namespace information in
+  default RAG and playground pipelines, allowing for direct use of container names and reducing redundant configuration.
+
+### Refactor
+
+- 🛠️ **Centralized Bucket and Namespace Logic:** Extracted and consolidated core bucket and namespace creation/retrieval
+  logic into new internal helper functions within `bucket_utils`, improving code organization and reusability.
+- 💡 **Optimized Store Name Retrieval:** Removed an unnecessary wrapper function for retrieving the store name in the
+  default RAG pipeline, leading to more direct and efficient utilization of the `bucket_utils` functionality.
+
+---
+
+## [v0.245.7] - 2025-10-02 - Agent Guard Message Consistency
+
+### Fixed
+
+- 🐛 **Corrected RAGAgent guard rejection messaging:** Ensured the **RAGAgent** accurately formats system messages for
+  guard rejections by using the correct reason property (`event.reason`), improving clarity and consistency in agent
+  responses.
+
+---
+
+## [v0.245.6] - 2025-10-01 - Containerization of Aihub Bot for Enhanced Deployment
+
+### Added
+
+- ✨ **Introduced Dockerfile for Aihub Bot:** Added a comprehensive Docker configuration to containerize the Aihub Bot,
+  enabling consistent and portable deployments across various environments.
+- 🚀 **Streamlined Build and Runtime Environments:** Implemented a multi-stage Docker build process to optimize image
+  size and efficiency, ensuring a lean runtime environment.
+- 🔒 **Enhanced Operational Security and Dependency Management:** Configured a non-root user for improved security and
+  integrated Poetry for robust Python dependency management within the container.
+
+---
+
+## [v0.245.5] - 2025-09-30 - Infrastructure and Developer Experience Enhancements
+
+### Added
+
+- ⚙️ **Introduced `set-latest` GitHub Action:** A new automated workflow for managing container image tags, ensuring the
+  `latest` tag is correctly applied to published images, improving deployment consistency.
+
+### Refactor
+
+- 🧹 **Refined Model Data Fetching:** Updated the web application's SDK to use clearer `getModels` API calls and
+  `ModelTypeGroupDtoReadable` types, enhancing code readability and maintainability.
+- ⚡️ **Optimized ESLint Configuration:** Streamlined the ESLint setup by expanding global ignore rules to skip
+  unnecessary files and simplifying plugin imports, leading to faster linting and a cleaner development environment.
+
+---
+
+## [v0.245.4] - 2025-09-30 - Internal Codebase Refinements
+
+### Refactor
+
+- 🧹 **Standardized Event Types:** Aligned internal naming conventions by updating the `ChunkEventReadable` type to
+  `ChunkEvent` within the event component resolution logic, enhancing code consistency.
+
+---
+
+## [v0.245.3] - 2025-09-25 - LLM Event Metadata Refinement and Developer Experience Improvements
+
+### Changed
+
+- 🔄 **Updated LLM Event Logging:** Adjusted the **`LLMEvent`** to correctly capture the chat model name using the
+  `model_name` property from the agent configuration, ensuring more accurate and consistent event metadata.
+
+### Refactor
+
+- 🧹 **Improved `.gitignore`:** Added a rule to ignore **GitHub Copilot** related files, streamlining the development
+  environment setup and reducing repository clutter.
+
+---
+
+## [v0.245.2] - 2025-09-24 - Introducing Advanced Guardrails & Granular Event Visibility
+
+### Added
+
+- 🔑 **Sensitive Information Guard:** Introduced a new guard mechanism to detect and redact sensitive or confidential
+  information from LLM responses, significantly enhancing data privacy and security.
+- 🦾 **Granular Guard Events:** Implemented a comprehensive suite of new guard events, including
+  `AgentSuitabilityAcceptEvent`, `AgentSuitabilityRejectEvent`, `ContextSufficientAcceptEvent`,
+  `ContextInsufficientRejectEvent`, `FewShotAcceptEvent`, `FewShotRejectEvent`, `SensitiveInfoAcceptEvent`, and
+  `SensitiveInfoRejectEvent`. These events provide detailed insights into guard decisions at various stages of agent
+  execution.
+- 📄 **Language Detection Event:** Introduced `LanguageEvent` to explicitly capture and signal the detected language of a
+  user request, enabling more robust internationalization within agent workflows.
+- 🖼️ **Raw Event Data Viewer:** Added the capability to view the raw JSON data for any event directly within the
+  frontend, improving debugging and transparency for developers.
+- 🧪 **Expanded Frontend Testing Agent:** The `FrontendTestingAgent` now includes new steps to demonstrate various guard
+  mechanisms and common workflow events, making it a powerful tool for UI development and testing.
+- 🚀 **New LLM Model Support:** Added support for the upcoming `gpt-5` series of models and `minimal` reasoning effort to
+  the API models.
+- ⚙️ **Enhanced Tool Calling Flexibility:** Introduced more flexible tool calling options, including custom tool
+  definitions and explicit allowed tool choices for richer agent-LLM interactions.
+- ⚡️ **LLM Stream Obfuscation Option:** Added an `include_obfuscation` option to LLM stream requests, allowing for more
+  control over sensitive information during streaming.
+- 🌐 **Comprehensive i18n for Guards and Events:** Extended internationalization support to cover all new guard events
+  and significantly improved descriptions for various common events in multiple languages.
+
+### Changed
+
+- 🔄 **Standardized Agent Guard Integration:** The `FewShotAgent` and `RAGAgent` have been updated to utilize the new
+  standardized `AgentSuitabilityAcceptEvent`, `AgentSuitabilityRejectEvent`, and other specific guard events, ensuring
+  consistent guardrail application across agents.
+- 🖼️ **Improved Source Node Display:** RAG agent's source node display in the frontend has been significantly improved,
+  providing clearer grouping by document, chunk counts, and an explicit message when no relevant chunks are found.
+- 💬 **Enhanced Chat History Event Display:** The `LimitChatHistoryEvent` now offers a more detailed and user-friendly
+  display on the frontend, showing the limited messages clearly.
+- ❓ **Refined Standalone Question Display:** The `StandaloneQuestionCondenserEvent` now has a dedicated and improved
+  display in the UI, making the condensed question more prominent.
+- 🔍 **Clearer Reranker Output:** The `RerankerEvent` display has been updated to explicitly highlight the `top_k`
+  relevant documents chosen by the reranker.
+
+### Fixed
+
+- 🐛 **API Endpoint Duplication:** Addressed a minor issue in the API configuration where a `NotificationController`
+  endpoint was inadvertently registered twice.
+
+### Refactor
+
+- 🧹 **Unified Guard Result Structure:** Introduced a base `GuardResult` model and refactored existing guards
+  (`agent_description_guard`, `context_sufficient_guard`, `few_shot_guard`) to inherit from it, standardizing the output
+  and improving maintainability.
+- ⚡️ **Decoupled Guard Rejection:** The `GuardRejectionEvent` now correctly inherits from `GuardEvent` instead of
+  `StopEvent`, providing a clearer separation of concerns between guard decisions and workflow control.
+- 🗑️ **Internal Event Cleanup:** Removed deprecated `RightAgentEvent` and consolidated internal agent-specific guard
+  event classes into the shared `aihub_lib`.
+- ⚙️ **Refined Async Test Utility:** The `async_test` decorator in the testing utilities now correctly returns the
+  result of the decorated asynchronous function, improving testing flexibility.
+
+---
+
+## [v0.245.1] - 2025-09-24 - LLM Preprocessing, Gemma 3 Support, and Core System Refinements
+
+### Added
+
+- ✨ **Anonymous File Access Storage Configuration:** Introduced a new environment variable,
+  `ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND`, to configure the storage backend for anonymous file access services.
+- 🦾 **LLM Message Preprocessing:** Implemented automatic preprocessing for LLM messages with a new
+  `PreprocessingOpenAILike` wrapper, enhancing model compatibility and performance by merging consecutive messages of
+  the same role.
+- 📄 **Summary Node Content Type Metadata:** Added `NODE_CONTENT_TYPE` metadata to summary nodes generated by the
+  `RecursiveSummaryParser`, providing richer context and improving document structure representation.
+- ✨ **Gemma 3 Multimodal Small Model Support:** Integrated comprehensive configuration for the
+  `local/gemma-3-multimodal-small` model within LiteLLM, enabling its usage across various agents and pipelines.
+- 🚀 **Llama-CPP Cache Volume:** Introduced a dedicated cache volume (`llamacpp-cache`) for the `llama-cpp` service to
+  optimize performance and improve stability of local LLM inference.
+- 🔑 **HuggingFace API Key for LiteLLM:** Added `HUGGINGFACE_API_KEY` to LiteLLM environment variables, facilitating
+  seamless integration with HuggingFace models.
+- 🛠️ **Docling Model Permission Helper:** Included a new `docling-model-permission` service to ensure correct file
+  permissions for Docling models, improving container startup reliability.
+
+### Changed
+
+- 🔄 **Default LLM Model Update:** Switched the default Large Language Model from `local/qwen3-small` to
+  `local/gemma-3-multimodal-small` across `LLMWrappingAgent`, `LlamaIndexAgent`, `RAGAgent`, WebUI, and the default RAG
+  pipeline to leverage improved capabilities.
+- ⚡️ **RAG Agent Retrieval Configuration:** Optimized retrieval parameters in the RAG Agent by setting
+  `check_context_sufficiency` to `False` and reducing `retrieve_k` and `retrieve_prev_next.num_nodes` from 20/10 to 5,
+  streamlining retrieval efficiency.
+- ⚙️ **Pipeline Configuration Simplification:** Streamlined S3 data lake and Milvus vector store configurations within
+  the playground pipeline by removing redundant `directory_name` and `namespace_name` parameters.
+- 🚀 **Updated Llama-CPP Service and Configuration:** Upgraded the `llama-cpp` Docker image and updated its command-line
+  arguments to officially support the `gemma-3-4b-it` model and enable Flash Attention (`--flash-attn on`) for enhanced
+  inference speed.
+- ⬇️ **Pinned LiteLLM Service Version:** Explicitly pinned the LiteLLM service to version `v1.50.0` for improved
+  stability and compatibility across the system.
+
+### Fixed
+
+- 🐛 **Robust NATS Event Serialization:** Improved the serialization logic for NATS `BaseEvent` to ensure proper handling
+  of nested `ChatMessage` and `BaseModel` instances, preventing potential serialization errors and enhancing data
+  integrity.
+
+### Refactor
+
+- 🧹 **RAG Agent Test Setup:** Refactored the RAG Agent testing fixtures by introducing a dedicated `test_collection`
+  setup and teardown, which improves test isolation and reliability for vector store operations.
+- 🔄 **Pipeline Job Parameter Renaming:** Updated pipeline job definitions to use `source_location_name` instead of
+  `namespace_name`, aligning with recent Dagster API changes for better clarity and consistency.
+
+---
+
+## [v0.245.0] - 2025-09-18 - Comprehensive Distributed Tracing with OpenTelemetry
+
+### Added
+
+- ✨ **Introduced Comprehensive Distributed Tracing:** Integrated OpenTelemetry across all AI-Hub services to provide
+  end-to-end visibility into complex AI workflows.
+- 🔭 **New OpenTelemetry Collector Service:** Added a dedicated OpenTelemetry Collector to the development environment,
+  simplifying observability data ingestion and routing to various backends like Phoenix.
+- ⚙️ **Centralized OpenTelemetry Configuration:** Implemented a new `OpenTelemetrySettings` module for unified
+  management of tracing and logging providers across all Python services.
+- 🏷️ **Explicit Function Tracing:** Introduced the `@trace_fn` decorator for explicit tracing of key service and
+  persistence methods, automatically capturing their inputs and outputs.
+- 🚫 **Selective Tracing Control:** Added the `@no_trace` decorator and `SmartTracer` to enable selective disabling of
+  OpenTelemetry instrumentation for specific functions or modules, optimizing trace data for relevance.
+- 📚 **Deep Observability Documentation:** Introduced new documentation for "Deep Observability with OpenTelemetry" and
+  an Architectural Decision Record (ADR) detailing the rationale and implementation of end-to-end tracing.
+- 📦 **Automated Library Instrumentation:** Implemented `AihubInstrumentor` for automatic instrumentation of critical
+  libraries like `pymongo`, `milvus`, `redis`, `requests`, `httpx`, `aiohttp`, `jinja2`, `botocore`, `llama_index`, and
+  `logging`, ensuring broad coverage without manual code changes.
+- 📊 **LLM Client Trace Propagation:** Enhanced LLM client configurations to automatically propagate OpenTelemetry trace
+  context to underlying model calls, enabling full traceability of generative AI interactions.
+
+### Changed
+
+- 🔄 **Updated NATS Client API for Observability:** Modified NATS `Publisher` and `Subscriber` constructors to require
+  explicit naming, which improves trace readability and component identification in observability tools.
+- 🚀 **Optimized NATS Development Configuration:** Adjusted NATS development server settings (e.g., `max_payload`,
+  `max_connections`) for better performance and resource utilization in local environments.
+- 🗺️ **Restructured Documentation Paths:** Updated documentation paths for feature overviews and internal command
+  documentation, enhancing overall clarity and consistency.
+- 📊 **Enabled OpenTelemetry for LiteLLM:** Configured LiteLLM to activate its native OpenTelemetry callback and
+  telemetry, extending distributed tracing to all LLM router interactions.
+- 🧩 **Enhanced FastAPI OpenTelemetry Integration:** Implemented FastAPI-specific OpenTelemetry instrumentation,
+  including automatic span enrichment with user, service, and request context for API endpoints.
+
+### Refactor
+
+- 🧹 **Overhauled Agent Tracing Architecture:** Replaced the legacy `RunTraceCoordinator` with a new `AgentRunTracer` for
+  more robust and flexible agent run and step tracing using a two-span approach.
+- 📂 **Consolidated OpenTelemetry Infrastructure:** Centralized OpenTelemetry-related utilities and base instrumentation
+  within `aihub_lib/infrastructure/opentelemetry` for improved modularity and maintainability.
+- 🔗 **Streamlined Context Initialization:** Refactored `RunContext` and `ThreadContext` initialization in agents to use
+  a new `for_topic` class method, simplifying context management from NATS topic information.
+
+### Removed
+
+- 🗑️ **Deprecated Legacy Tracing Modules:** Removed `RunTraceCoordinator` and the generic `tracing` decorator, which
+  have been superseded by the new OpenTelemetry instrumentation framework.
+
+---
+
+## [v0.244.2] - 2025-09-16 - Specialized Image Processing and Loader Refinements
+
+### Added
+
+- ✨ **Introduced `ImageLoader`:** A new dedicated document loader for image files, designed to wrap images in HTML
+  figure tags for pipeline ingestion, enabling specialized processing without performing OCR or detailed image analysis.
+- 🚀 **Integrated `ImageLoader` into Document Parsing:** The new `ImageLoader` is now utilized within the
+  `DocumentParserResource` to specifically handle a comprehensive range of image formats (`jpg`, `jpeg`, `png`, `gif`,
+  `bmp`, `tiff`, `webp`, `tif`, `heif`).
+
+### Removed
+
+- 🗑️ **Deprecated Asynchronous Loading in Document Intelligence Loader:** The `aload_data` asynchronous method has been
+  removed from the `DocumentIntelligenceLoader`, simplifying its API surface.
+- 🗑️ **Image Support from Document Intelligence Settings:** Direct support for image file types (`jpg`, `jpeg`, `png`,
+  `bmp`, `tiff`, `heif`) has been removed from `AzureDocumentIntelligenceSettings`, aligning the Document Intelligence
+  loader's focus solely on structured document processing.
+- 🗑️ **Image Support from Docling Settings:** Image-related file types (`image`, `jpg`, `jpeg`, `png`, `tif`, `tiff`,
+  `bmp`, `webp`) have been removed from `DoclingSettings`, specializing the Docling loader for textual and specific
+  document formats.
+
+### Refactor
+
+- 🔄 **Centralized Image File Handling:** The overall strategy for processing image files has been refactored, dedicating
+  the new `ImageLoader` to all image formats and removing redundant image handling capabilities from
+  `DocumentIntelligenceLoader` and `DoclingLoader`. This improves modularity and clarifies responsibility across
+  document loaders.
+
+---
+
+## [v0.244.1] - 2025-09-16 - Persistence Layer Refinement
+
+### Refactor
+
+- 🧹 **Namespace Entity field renamed:** Renamed the `last_updated` field to `updated_at` in the `NamespaceEntity` for
+  improved consistency and clarity in data lake persistence.
+
+---
+
 ## [v0.244.0] - 2025-09-15 - Knowledge Base Evolution: Streamlined Uploads, Localized Collections, and Improved Pipeline Harmony
 
 ### Added

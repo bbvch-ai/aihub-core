@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_api"
-version = "v0.244.0"
+version = "v0.246.2"
 description = "api core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -36,6 +36,7 @@ arize-phoenix = "^10.0.0"
 # since the standard library's audioop module was removed in Python 3.13.
 audioop-lts = "^0.2.1"
 fastmcp = "^2.11.2"
+opentelemetry-instrumentation-fastapi = "^0.58b0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
@@ -55,7 +56,7 @@ tag = "v0.4.0"
 
 [tool.poetry.dependencies.aihub_lib]
 git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.244.0"
+tag = "v0.246.2"
 subdirectory = "aihub_lib"
 
 [build-system]

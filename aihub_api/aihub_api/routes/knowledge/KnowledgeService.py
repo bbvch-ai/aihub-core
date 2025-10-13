@@ -9,6 +9,7 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
@@ -148,6 +149,7 @@ class KnowledgeService:
         KnowledgeService._get_unprocessed_files.invalidate()
 
     @staticmethod
+    @trace_fn
     def get_paginated_documents(
         db: str, namespace: str, page: int = 1, page_size: int = 20
     ) -> tuple[int, list[DocumentDTO]]:
@@ -184,6 +186,7 @@ class KnowledgeService:
         return total, processed[processed_skip : processed_skip + page_size]
 
     @staticmethod
+    @trace_fn
     def get_document_by_id(db: str, document_id: str) -> DocumentDTO:
         """
         Retrieves a single document by its ID.
@@ -193,6 +196,7 @@ class KnowledgeService:
         return DocumentDTO.from_ref_doc(ref_doc)
 
     @staticmethod
+    @trace_fn
     def get_databases(t: LocaleHandler) -> list[DatabaseDTO]:
         """
         Retrieves all databases (buckets) with their available namespaces with the number of documents in each.
@@ -226,6 +230,7 @@ class KnowledgeService:
         return database_dtos
 
     @staticmethod
+    @trace_fn
     def get_nodes(
         db: str,
         namespace: str,
@@ -247,6 +252,7 @@ class KnowledgeService:
         return nodes
 
     @staticmethod
+    @trace_fn
     def get_summary_nodes(
         db: str, namespace: str, document_id: str, vector_store_factory: VectorStoreFactory
     ) -> list[NodeSummaryDTO]:

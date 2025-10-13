@@ -50,9 +50,53 @@ thought_event:
   name: "Gedankengang"
   description: "Der Agent teilt seinen internen Gedankenprozess mit, der ihm hilft, die Aufgabe zu verstehen und zu lösen."
 
+guard_accept_event:
+  name: "Anfrage akzeptiert"
+  description: "Die Anfrage hat alle Sicherheitsprüfungen bestanden und darf fortgesetzt werden."
+
 guard_rejection_event:
   name: "Anfrage abgelehnt"
   description: "Die Anfrage wurde aus Sicherheitsgründen oder wegen Richtlinienverstössen abgelehnt."
+
+few_shot_guard_accept_event:
+  name: "Few-Shot-Prüfung bestanden"
+  description: "Die Anfrage entspricht den Mustern aus Few-Shot-Beispielen und darf fortgesetzt werden."
+
+few_shot_guard_reject_event:
+  name: "Few-Shot-Prüfung nicht bestanden"
+  description: "Die Anfrage entspricht nicht den Mustern aus Few-Shot-Beispielen und wird blockiert."
+
+right_agent_accept_event:
+  name: "Richtiger Agent gewählt"
+  description: "Der korrekte Agent wurde für diese spezifische Aufgabe identifiziert."
+
+wrong_agent_reject_event:
+  name: "Falscher Agent gewählt"
+  description: "Der gewählte Agent ist nicht geeignet für diese spezifische Aufgabe."
+
+agent_suitability_accept_event:
+  name: "Agent geeignet für Aufgabe"
+  description: "Die Fähigkeiten des Agenten entsprechen der Benutzeranfrage und können die Aufgabe bewältigen."
+
+agent_suitability_reject_event:
+  name: "Agent ungeeignet für Aufgabe"
+  description: "Die Fähigkeiten des Agenten entsprechen nicht der Benutzeranfrage und können die Aufgabe nicht bewältigen."
+
+context_sufficient_accept_event:
+  name: "Ausreichend Kontext verfügbar"
+  description: "Es ist genügend Kontext verfügbar, um die Benutzeranfrage ohne zusätzliche Suche zu beantworten."
+
+context_insufficient_reject_event:
+  name: "Unzureichender Kontext verfügbar"
+  description: "Mehr Kontext ist erforderlich, um die Benutzeranfrage ordnungsgemäss zu beantworten."
+
+sensitive_info_accept_event:
+  name: "Antwort sicher zu teilen"
+  description: "Die Antwort enthält keine sensiblen Informationen und kann sicher geteilt werden."
+
+sensitive_info_reject_event:
+  name: "Sensible Informationen erkannt"
+  description: "Die Antwort enthielt sensible Informationen, die entfernt oder geschwärzt wurden."
 
 hitl_request_event:
   name: "Rückfrage an Benutzer"
@@ -109,3 +153,7 @@ exception_event:
 user_message_event:
   name: "Benutzeranfrage"
   description: "Der Agent hat eine Nachricht vom Benutzer erhalten und verarbeitet diese unter Berücksichtigung des bisherigen Chatverlaufs."
+
+standalone_question_condenser_event:
+  name: "Kondensierte Einzelanfrage"
+  description: "Eine komplexe Anfrage wurde in eine klarere und prägnantere Einzelanfrage umgewandelt, um die Bearbeitung zu erleichtern."

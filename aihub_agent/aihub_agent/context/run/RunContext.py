@@ -1,6 +1,7 @@
 import logging
 
 from aihub_lib.context.BaseContext import BaseContext
+from aihub_lib.nats.topics.agents.AgentClassTopic import AgentClassTopic
 from redis.asyncio import Redis
 
 logger = logging.getLogger(__name__)
@@ -31,3 +32,7 @@ class RunContext(BaseContext):
         store_name = f"run_context_{thread_id}_{run_id}"
         logger.debug(f"Initializing RunContext with store name '{store_name}'")
         super().__init__(redis, store_name, default_ttl=60 * 60 * 24 * 30)  # 30 days in seconds
+
+    @classmethod
+    def for_topic(cls, redis: Redis, topic: AgentClassTopic):
+        return cls(redis, topic.thread_id, topic.run_id)

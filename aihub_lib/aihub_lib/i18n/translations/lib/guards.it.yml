@@ -112,3 +112,41 @@ context_sufficient_guard:
     <Questioni_precedenti>
     {prev_queries}
     <Questioni_precedenti>
+  reason_no_hops: |
+    Motivo che spiega perché il contesto è o non è sufficiente (nessun salto aggiuntivo disponibile).
+  success_no_hops: |
+    true se il contesto è sufficiente per rispondere alla domanda dell'utente, false se non lo è (nessun salto aggiuntivo disponibile).
+  docstring_no_hops: |
+    Risultato della valutazione se il contesto è sufficiente per rispondere alla domanda dell'utente (nessun salto aggiuntivo disponibile).
+sensitive_info_guard:
+  prompt: |
+    Sei una guardia di sicurezza responsabile della protezione delle informazioni sensibili dell'azienda. Il tuo compito è analizzare la seguente risposta e determinare se contiene informazioni sensibili che non dovrebbero essere condivise esternamente.
+
+    Cerca:
+    - Processi, procedure o politiche aziendali interne
+    - Strategie o piani aziendali confidenziali
+    - Nomi di dipendenti, indirizzi email o informazioni personali
+    - Dati finanziari, budget o informazioni sui prezzi
+    - Specifiche tecniche o metodi proprietari
+    - Dati dei clienti o informazioni riservate sui clienti
+    - Dettagli di sistemi interni, nomi di server o informazioni sull'infrastruttura
+    - Qualsiasi informazione contrassegnata come confidenziale o solo per uso interno
+
+    Se trovi informazioni sensibili, fornisci una versione pulita della risposta con le parti sensibili rimosse o generalizzate.
+
+    <Risposta da analizzare>
+    {answer}
+    </Risposta da analizzare>
+
+    Il tuo output deve essere un oggetto JSON con esattamente tre chiavi:
+    - "success": true se non sono state trovate informazioni sensibili, false se sono state rilevate informazioni sensibili
+    - "reasoning": spiegazione della tua decisione
+    - "cleaned_answer": se sono state trovate informazioni sensibili, fornisci una versione pulita; altrimenti null
+  reason: |
+    Spiegazione se sono state rilevate informazioni sensibili e quali azioni sono state intraprese.
+  success: |
+    true se non sono state trovate informazioni sensibili, false se sono state rilevate informazioni sensibili e ripulite.
+  cleaned_answer: |
+    La risposta rivista con informazioni sensibili rimosse o censurate, se applicabile.
+  docstring: |
+    Risultato dell'analisi di una risposta per informazioni sensibili che non dovrebbero essere condivise esternamente.

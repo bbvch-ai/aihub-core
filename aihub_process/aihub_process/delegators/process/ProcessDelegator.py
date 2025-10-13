@@ -57,6 +57,7 @@ class ProcessDelegator(AbstractEntityDelegator):
                         is_process_start=True,  # Being triggered from another process is only valid for a process start
                     ),
                     event=stop_event,
+                    subscriber_name=f"{self.process_class.__name__}ProcessDelegator",
                 )
                 await subscription.start()
                 self.subscriptions.append(subscription)

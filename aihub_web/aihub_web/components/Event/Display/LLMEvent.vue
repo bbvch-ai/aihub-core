@@ -41,14 +41,14 @@ import type {
   AudioContent,
   ChatMessageOutput,
   ImageContent,
-  LlmEvent,
+  LlmEventReadable,
   TextContent,
   ThreadDto,
   AgentEventReadable,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: AgentEventReadable & { event: LlmEvent }
+  event: AgentEventReadable & { event: LlmEventReadable }
   thread: ThreadDto
 }>()
 

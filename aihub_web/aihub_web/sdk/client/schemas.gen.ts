@@ -566,6 +566,139 @@ If an event subject is something like:
 then this AgentTopic can represent it, providing quick field-level access and serialization.`
 } as const;
 
+export const AgentSuitabilityAcceptEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason why the guard accepted the request.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['reason', '_event_name', '_parent_event_names'],
+    title: 'AgentSuitabilityAcceptEvent',
+    description: `Event indicating that the agent suitability guard accepted the request.
+
+This event is triggered when the agent suitability guard determines that
+the user query matches the agent's capabilities and description.
+It signifies that this agent is appropriate for handling the user's request.`
+} as const;
+
+export const AgentSuitabilityRejectEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason why the Guard rejected the request.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['reason', '_event_name', '_parent_event_names'],
+    title: 'AgentSuitabilityRejectEvent',
+    description: `Event indicating that the agent suitability guard rejected the request.
+
+This event is triggered when the agent suitability guard determines that
+the user query does not match the agent's capabilities and description.
+It signifies that this agent is not appropriate for handling the user's request
+and the request should be routed to a different agent.`
+} as const;
+
 export const AnnotationSchema = {
     properties: {
         type: {
@@ -998,6 +1131,43 @@ export const ChatCompletionSchema = {
     title: 'ChatCompletion'
 } as const;
 
+export const ChatCompletionAllowedToolChoiceParamSchema = {
+    properties: {
+        allowed_tools: {
+            '$ref': '#/components/schemas/ChatCompletionAllowedToolsParam'
+        },
+        type: {
+            type: 'string',
+            const: 'allowed_tools',
+            title: 'Type'
+        }
+    },
+    type: 'object',
+    required: ['allowed_tools', 'type'],
+    title: 'ChatCompletionAllowedToolChoiceParam'
+} as const;
+
+export const ChatCompletionAllowedToolsParamSchema = {
+    properties: {
+        mode: {
+            type: 'string',
+            enum: ['auto', 'required'],
+            title: 'Mode'
+        },
+        tools: {
+            items: {
+                additionalProperties: true,
+                type: 'object'
+            },
+            type: 'array',
+            title: 'Tools'
+        }
+    },
+    type: 'object',
+    required: ['mode', 'tools'],
+    title: 'ChatCompletionAllowedToolsParam'
+} as const;
+
 export const ChatCompletionAssistantMessageParamSchema = {
     properties: {
         role: {
@@ -1066,7 +1236,14 @@ export const ChatCompletionAssistantMessageParamSchema = {
         },
         tool_calls: {
             items: {
-                '$ref': '#/components/schemas/ChatCompletionMessageToolCallParam'
+                anyOf: [
+                    {
+                        '$ref': '#/components/schemas/ChatCompletionMessageFunctionToolCallParam'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ChatCompletionMessageCustomToolCallParam'
+                    }
+                ]
             },
             type: 'array',
             title: 'Tool Calls'
@@ -1264,6 +1441,22 @@ export const ChatCompletionFunctionMessageParamSchema = {
     title: 'ChatCompletionFunctionMessageParam'
 } as const;
 
+export const ChatCompletionFunctionToolParamSchema = {
+    properties: {
+        function: {
+            '$ref': '#/components/schemas/FunctionDefinition'
+        },
+        type: {
+            type: 'string',
+            const: 'function',
+            title: 'Type'
+        }
+    },
+    type: 'object',
+    required: ['function', 'type'],
+    title: 'ChatCompletionFunctionToolParam'
+} as const;
+
 export const ChatCompletionMessageSchema = {
     properties: {
         content: {
@@ -1331,7 +1524,14 @@ export const ChatCompletionMessageSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/ChatCompletionMessageToolCall'
+                        anyOf: [
+                            {
+                                '$ref': '#/components/schemas/ChatCompletionMessageFunctionToolCall'
+                            },
+                            {
+                                '$ref': '#/components/schemas/ChatCompletionMessageCustomToolCall'
+                            }
+                        ]
                     },
                     type: 'array'
                 },
@@ -1348,7 +1548,48 @@ export const ChatCompletionMessageSchema = {
     title: 'ChatCompletionMessage'
 } as const;
 
-export const ChatCompletionMessageToolCallSchema = {
+export const ChatCompletionMessageCustomToolCallSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        custom: {
+            '$ref': '#/components/schemas/Custom-Output'
+        },
+        type: {
+            type: 'string',
+            const: 'custom',
+            title: 'Type'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['id', 'custom', 'type'],
+    title: 'ChatCompletionMessageCustomToolCall'
+} as const;
+
+export const ChatCompletionMessageCustomToolCallParamSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        custom: {
+            '$ref': '#/components/schemas/openai__types__chat__chat_completion_message_custom_tool_call_param__Custom'
+        },
+        type: {
+            type: 'string',
+            const: 'custom',
+            title: 'Type'
+        }
+    },
+    type: 'object',
+    required: ['id', 'custom', 'type'],
+    title: 'ChatCompletionMessageCustomToolCallParam'
+} as const;
+
+export const ChatCompletionMessageFunctionToolCallSchema = {
     properties: {
         id: {
             type: 'string',
@@ -1366,17 +1607,17 @@ export const ChatCompletionMessageToolCallSchema = {
     additionalProperties: true,
     type: 'object',
     required: ['id', 'function', 'type'],
-    title: 'ChatCompletionMessageToolCall'
+    title: 'ChatCompletionMessageFunctionToolCall'
 } as const;
 
-export const ChatCompletionMessageToolCallParamSchema = {
+export const ChatCompletionMessageFunctionToolCallParamSchema = {
     properties: {
         id: {
             type: 'string',
             title: 'Id'
         },
         function: {
-            '$ref': '#/components/schemas/openai__types__chat__chat_completion_message_tool_call_param__Function'
+            '$ref': '#/components/schemas/openai__types__chat__chat_completion_message_function_tool_call_param__Function'
         },
         type: {
             type: 'string',
@@ -1386,7 +1627,23 @@ export const ChatCompletionMessageToolCallParamSchema = {
     },
     type: 'object',
     required: ['id', 'function', 'type'],
-    title: 'ChatCompletionMessageToolCallParam'
+    title: 'ChatCompletionMessageFunctionToolCallParam'
+} as const;
+
+export const ChatCompletionNamedToolChoiceCustomParamSchema = {
+    properties: {
+        custom: {
+            '$ref': '#/components/schemas/openai__types__chat__chat_completion_named_tool_choice_custom_param__Custom'
+        },
+        type: {
+            type: 'string',
+            const: 'custom',
+            title: 'Type'
+        }
+    },
+    type: 'object',
+    required: ['custom', 'type'],
+    title: 'ChatCompletionNamedToolChoiceCustomParam'
 } as const;
 
 export const ChatCompletionNamedToolChoiceParamSchema = {
@@ -1475,7 +1732,7 @@ export const ChatCompletionRequestSchema = {
                 },
                 {
                     type: 'string',
-                    enum: ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4.1-2025-04-14', 'gpt-4.1-mini-2025-04-14', 'gpt-4.1-nano-2025-04-14', 'o4-mini', 'o4-mini-2025-04-16', 'o3', 'o3-2025-04-16', 'o3-mini', 'o3-mini-2025-01-31', 'o1', 'o1-2024-12-17', 'o1-preview', 'o1-preview-2024-09-12', 'o1-mini', 'o1-mini-2024-09-12', 'gpt-4o', 'gpt-4o-2024-11-20', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-audio-preview', 'gpt-4o-audio-preview-2024-10-01', 'gpt-4o-audio-preview-2024-12-17', 'gpt-4o-audio-preview-2025-06-03', 'gpt-4o-mini-audio-preview', 'gpt-4o-mini-audio-preview-2024-12-17', 'gpt-4o-search-preview', 'gpt-4o-mini-search-preview', 'gpt-4o-search-preview-2025-03-11', 'gpt-4o-mini-search-preview-2025-03-11', 'chatgpt-4o-latest', 'codex-mini-latest', 'gpt-4o-mini', 'gpt-4o-mini-2024-07-18', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4-0125-preview', 'gpt-4-turbo-preview', 'gpt-4-1106-preview', 'gpt-4-vision-preview', 'gpt-4', 'gpt-4-0314', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-4-32k-0613', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0301', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0125', 'gpt-3.5-turbo-16k-0613']
+                    enum: ['gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'gpt-5-2025-08-07', 'gpt-5-mini-2025-08-07', 'gpt-5-nano-2025-08-07', 'gpt-5-chat-latest', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4.1-2025-04-14', 'gpt-4.1-mini-2025-04-14', 'gpt-4.1-nano-2025-04-14', 'o4-mini', 'o4-mini-2025-04-16', 'o3', 'o3-2025-04-16', 'o3-mini', 'o3-mini-2025-01-31', 'o1', 'o1-2024-12-17', 'o1-preview', 'o1-preview-2024-09-12', 'o1-mini', 'o1-mini-2024-09-12', 'gpt-4o', 'gpt-4o-2024-11-20', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-audio-preview', 'gpt-4o-audio-preview-2024-10-01', 'gpt-4o-audio-preview-2024-12-17', 'gpt-4o-audio-preview-2025-06-03', 'gpt-4o-mini-audio-preview', 'gpt-4o-mini-audio-preview-2024-12-17', 'gpt-4o-search-preview', 'gpt-4o-mini-search-preview', 'gpt-4o-search-preview-2025-03-11', 'gpt-4o-mini-search-preview-2025-03-11', 'chatgpt-4o-latest', 'codex-mini-latest', 'gpt-4o-mini', 'gpt-4o-mini-2024-07-18', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4-0125-preview', 'gpt-4-turbo-preview', 'gpt-4-1106-preview', 'gpt-4-vision-preview', 'gpt-4', 'gpt-4-0314', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-4-32k-0613', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0301', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0125', 'gpt-3.5-turbo-16k-0613']
                 }
             ],
             title: 'Model',
@@ -1667,7 +1924,7 @@ export const ChatCompletionRequestSchema = {
             anyOf: [
                 {
                     type: 'string',
-                    enum: ['low', 'medium', 'high']
+                    enum: ['minimal', 'low', 'medium', 'high']
                 },
                 {
                     type: 'null'
@@ -1771,7 +2028,13 @@ export const ChatCompletionRequestSchema = {
                     enum: ['none', 'auto', 'required']
                 },
                 {
+                    '$ref': '#/components/schemas/ChatCompletionAllowedToolChoiceParam'
+                },
+                {
                     '$ref': '#/components/schemas/ChatCompletionNamedToolChoiceParam'
+                },
+                {
+                    '$ref': '#/components/schemas/ChatCompletionNamedToolChoiceCustomParam'
                 },
                 {
                     type: 'null'
@@ -1783,7 +2046,7 @@ export const ChatCompletionRequestSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/ChatCompletionToolParam'
+                        '$ref': '#/components/schemas/ChatCompletionFunctionToolParam'
                     },
                     type: 'array'
                 },
@@ -1824,6 +2087,10 @@ export const ChatCompletionRequestSchema = {
 
 export const ChatCompletionStreamOptionsParamSchema = {
     properties: {
+        include_obfuscation: {
+            type: 'boolean',
+            title: 'Include Obfuscation'
+        },
         include_usage: {
             type: 'boolean',
             title: 'Include Usage'
@@ -1931,22 +2198,6 @@ export const ChatCompletionToolMessageParamSchema = {
     type: 'object',
     required: ['content', 'role', 'tool_call_id'],
     title: 'ChatCompletionToolMessageParam'
-} as const;
-
-export const ChatCompletionToolParamSchema = {
-    properties: {
-        function: {
-            '$ref': '#/components/schemas/FunctionDefinition'
-        },
-        type: {
-            type: 'string',
-            const: 'function',
-            title: 'Type'
-        }
-    },
-    type: 'object',
-    required: ['function', 'type'],
-    title: 'ChatCompletionToolParam'
 } as const;
 
 export const ChatCompletionUserMessageParamSchema = {
@@ -2382,6 +2633,139 @@ export const CompletionUsageSchema = {
     title: 'CompletionUsage'
 } as const;
 
+export const ContextInsufficientRejectEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason why the Guard rejected the request.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['reason', '_event_name', '_parent_event_names'],
+    title: 'ContextInsufficientRejectEvent',
+    description: `Event indicating that the context sufficiency guard rejected the request.
+
+This event is triggered when the context sufficiency guard determines that
+there is insufficient context available to answer the user's query and
+additional information retrieval or processing is required. The event includes
+a new query suggestion for additional context retrieval.`
+} as const;
+
+export const ContextSufficientAcceptEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason why the guard accepted the request.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['reason', '_event_name', '_parent_event_names'],
+    title: 'ContextSufficientAcceptEvent',
+    description: `Event indicating that the context sufficiency guard accepted the request.
+
+This event is triggered when the context sufficiency guard determines that
+there is sufficient context available to answer the user's query without
+requiring additional information retrieval or processing.`
+} as const;
+
 export const ContextualizedAgentEventSchema = {
     properties: {
         locale: {
@@ -2522,6 +2906,33 @@ export const ContextualizedAgentEventSchema = {
                 },
                 {
                     '$ref': '#/components/schemas/DisplayEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/GuardAcceptEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentSuitabilityAcceptEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentSuitabilityRejectEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/ContextSufficientAcceptEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/ContextInsufficientRejectEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/FewShotAcceptEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/FewShotRejectEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/SensitiveInfoAcceptEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/SensitiveInfoRejectEvent'
                 }
             ],
             title: 'Event',
@@ -2731,6 +3142,23 @@ export const CreateTokenResponseSchema = {
     type: 'object',
     required: ['id', 'name', 'expiry_date', 'token'],
     title: 'CreateTokenResponse'
+} as const;
+
+export const Custom_OutputSchema = {
+    properties: {
+        input: {
+            type: 'string',
+            title: 'Input'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['input', 'name'],
+    title: 'Custom'
 } as const;
 
 export const DashboardDTOSchema = {
@@ -4375,6 +4803,140 @@ export const ExperimentRunRecordSchema = {
     title: 'ExperimentRunRecord'
 } as const;
 
+export const FewShotAcceptEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason why the guard accepted the request.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['reason', '_event_name', '_parent_event_names'],
+    title: 'FewShotAcceptEvent',
+    description: `Event indicating that the few-shot guard accepted the request.
+
+This event is triggered when the few-shot guard determines that
+the user query is appropriate based on analysis of provided examples.
+It signifies that the request matches the patterns of acceptable queries
+demonstrated in the few-shot examples.`
+} as const;
+
+export const FewShotRejectEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason why the Guard rejected the request.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['reason', '_event_name', '_parent_event_names'],
+    title: 'FewShotRejectEvent',
+    description: `Event indicating that the few-shot guard rejected the request.
+
+This event is triggered when the few-shot guard determines that
+the user query is inappropriate based on analysis of provided examples.
+It signifies that the request does not match the patterns of acceptable queries
+demonstrated in the few-shot examples and should be blocked.`
+} as const;
+
 export const FileSchema = {
     properties: {
         file: {
@@ -4623,6 +5185,76 @@ export const FunctionDefinitionSchema = {
     title: 'FunctionDefinition'
 } as const;
 
+export const GuardAcceptEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason why the guard accepted the request.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['reason', '_event_name', '_parent_event_names'],
+    title: 'GuardAcceptEvent',
+    description: `Base class for all guard acceptance events.
+
+This event is triggered when a guard mechanism determines that a request
+meets all security, policy, and validation requirements and can proceed.
+Guard events are critical for maintaining system security and ensuring
+proper workflow control.
+
+All specific guard acceptance events should inherit from this base class
+to ensure consistent behavior and proper event handling throughout the system.`
+} as const;
+
 export const GuardEventSchema = {
     properties: {
         event_id: {
@@ -4738,13 +5370,20 @@ Used during deserialization to decide which subclass to instantiate.`,
     type: 'object',
     required: ['reason', '_event_name', '_parent_event_names'],
     title: 'GuardRejectionEvent',
-    description: `A class representing a guard rejection event.
-This event is used to communicate the reason for the rejection to the client.
+    description: `Base class for all guard rejection events.
 
+This event is triggered when a guard mechanism determines that a request
+does not meet security, policy, or validation requirements and must be blocked.
+Guard rejection events are critical for maintaining system security and ensuring
+only authorized and valid requests proceed through the workflow.
 
 ### Why GuardRejectionEvent?
 Safeguarding the system from invalid requests is a critical part of any system. This event
-is used to communicate the reason for the rejection to the client.`
+is used to communicate the reason for the rejection to the client and halt processing
+of potentially harmful or invalid requests.
+
+All specific guard rejection events should inherit from this base class
+to ensure consistent behavior and proper event handling throughout the system.`
 } as const;
 
 export const HTTPValidationErrorSchema = {
@@ -7038,7 +7677,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1757495777
+            default: 1758282791
         },
         owned_by: {
             type: 'string',
@@ -8992,6 +9631,143 @@ Since \`to_semantic_convention()\` is not implemented here, subclasses must prov
 to translate the event’s internal state into OpenInference semantic attributes.`
 } as const;
 
+export const SensitiveInfoAcceptEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason why the guard accepted the request.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['reason', '_event_name', '_parent_event_names'],
+    title: 'SensitiveInfoAcceptEvent',
+    description: `Event indicating that the sensitive information guard accepted the response.
+
+This event is triggered when the sensitive information guard determines that
+the response does not contain any sensitive or confidential information and
+can be safely presented to the user without modifications.`
+} as const;
+
+export const SensitiveInfoRejectEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: 'Reason why the Guard rejected the request.'
+        },
+        cleaned_answer: {
+            type: 'string',
+            title: 'Cleaned Answer',
+            description: 'The revised response with sensitive information removed.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['reason', 'cleaned_answer', '_event_name', '_parent_event_names'],
+    title: 'SensitiveInfoRejectEvent',
+    description: `Event indicating that the sensitive information guard rejected the response.
+
+This event is triggered when the sensitive information guard determines that
+the response contains sensitive or confidential information. The event includes
+a cleaned version of the response with the sensitive information removed.`
+} as const;
+
 export const ServiceDTOSchema = {
     properties: {
         name: {
@@ -10678,7 +11454,23 @@ export const openai__types__audio__transcription_verbose__UsageSchema = {
     title: 'Usage'
 } as const;
 
-export const openai__types__chat__chat_completion_message_tool_call_param__FunctionSchema = {
+export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {
+    properties: {
+        input: {
+            type: 'string',
+            title: 'Input'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        }
+    },
+    type: 'object',
+    required: ['input', 'name'],
+    title: 'Custom'
+} as const;
+
+export const openai__types__chat__chat_completion_message_function_tool_call_param__FunctionSchema = {
     properties: {
         arguments: {
             type: 'string',
@@ -10692,6 +11484,18 @@ export const openai__types__chat__chat_completion_message_tool_call_param__Funct
     type: 'object',
     required: ['arguments', 'name'],
     title: 'Function'
+} as const;
+
+export const openai__types__chat__chat_completion_named_tool_choice_custom_param__CustomSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name'
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'Custom'
 } as const;
 
 export const openai__types__chat__chat_completion_named_tool_choice_param__FunctionSchema = {

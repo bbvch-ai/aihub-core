@@ -14,6 +14,8 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_lib.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
+from aihub_lib.nats.events.guard.FewShotAcceptEvent import FewShotAcceptEvent
+from aihub_lib.nats.events.guard.FewShotRejectEvent import FewShotRejectEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreConfig import AzureAISearchVectorStoreConfig
@@ -28,8 +30,6 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.RagAgent.events.FewShotAcceptEvent import FewShotAcceptEvent
-from aihub_agent.agents.RagAgent.events.FewShotRejectEvent import FewShotRejectEvent
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
@@ -108,14 +108,12 @@ def azure_agent_config():
 
 
 @pytest.fixture(scope="session")
-def self_hosted_agent_config(event_loop):
+def test_collection(event_loop):
     """
-    Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
+    Set up and tear down the test collection for all tests.
     """
-    # Set the event loop for this function
     asyncio.set_event_loop(event_loop)
 
-    llm_config = LLMConfig(model_name="local/qwen3-small")
     embedding_config = EmbeddingModelConfig(model_name="local/qwen-embedding")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
@@ -130,14 +128,30 @@ def self_hosted_agent_config(event_loop):
         doc_store,
     )
 
-    yield build_rag_agent_config(
+    yield
+
+    drop_collection()
+
+
+@pytest.fixture(scope="session")
+def self_hosted_agent_config(test_collection):
+    """
+    Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
+    """
+    llm_config = LLMConfig(model_name="local/qwen3-small")
+    embedding_config = EmbeddingModelConfig(model_name="local/qwen-embedding")
+    vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
+        uri="http://localhost",
+        collection_name="development",
+        dimensions=1024,
+    )
+
+    return build_rag_agent_config(
         llm_config=llm_config,
         embedding_config=embedding_config,
         vector_store=vector_store,
         query_mode=VectorStoreQueryMode.DEFAULT,
     )
-
-    drop_collection()
 
 
 @pytest.mark.usefixtures("azure_agent_config")

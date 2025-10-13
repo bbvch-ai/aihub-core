@@ -41,14 +41,14 @@
 </template>
 
 <script setup lang="ts">
-import type { RouteOptions, RouterEvent, ThreadDto, AgentEventReadable } from '@core/sdk/client'
+import type { RouteOptionsReadable, RouterEventReadable, ThreadDto, AgentEventReadable } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: AgentEventReadable & { event: RouterEvent }
+  event: AgentEventReadable & { event: RouterEventReadable }
   thread: ThreadDto
 }>()
 
-const isSelectedRoute = (route: RouteOptions) => {
+const isSelectedRoute = (route: RouteOptionsReadable) => {
   return route.event_id == props.event.event.selected_option.event_id
 }
 </script>

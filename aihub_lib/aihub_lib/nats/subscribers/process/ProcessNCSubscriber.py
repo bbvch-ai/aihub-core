@@ -19,10 +19,12 @@ class ProcessNCSubscriber(NCSubscriber[BaseEvent]):
         topic_manager: ProcessInstanceTopicManager,
         handler: Callable[[InstanceDiscoveryRequestEvent, ProcessInstanceTopic], Awaitable[None]],
         call_id: str = "*",
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to discovery request events for all processes"""
         subject = topic_manager.get_process_instance_discovery_subject_request(call_id)
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             event_cls=InstanceDiscoveryRequestEvent,
@@ -36,10 +38,12 @@ class ProcessNCSubscriber(NCSubscriber[BaseEvent]):
         topic_manager: ProcessTopicManager,
         handler: Callable[[ClassDiscoveryRequestEvent, ProcessClassDiscoveryTopic], Awaitable[None]],
         call_id: str = "*",
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to discovery request events for all processes"""
         subject = topic_manager.get_process_class_discovery_subject_request(call_id)
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             event_cls=ClassDiscoveryRequestEvent,
@@ -53,10 +57,12 @@ class ProcessNCSubscriber(NCSubscriber[BaseEvent]):
         topic_manager: ProcessTopicManager,
         handler: Callable[[BaseEvent, ProcessInstanceTopic], Awaitable[None]],
         call_id: str = "*",
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to discovery response events for processes, optionally filtered by a specific call_id."""
         subject = topic_manager.get_process_instance_discovery_subject_response(call_id)
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             event_cls=BaseEvent,
@@ -70,10 +76,12 @@ class ProcessNCSubscriber(NCSubscriber[BaseEvent]):
         topic_manager: ProcessTopicManager,
         handler: Callable[[BaseEvent, ProcessClassDiscoveryTopic], Awaitable[None]],
         call_id: str = "*",
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to discovery response events for processes, optionally filtered by a specific call_id."""
         subject = topic_manager.get_process_class_discovery_subject_response(call_id)
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             event_cls=BaseEvent,
@@ -86,10 +94,12 @@ class ProcessNCSubscriber(NCSubscriber[BaseEvent]):
         nc: NATS,
         topic_manager: ProcessTopicManager,
         handler: Callable[[ProcessEvent, ProcessInstanceTopic], Awaitable[None]],
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to all events within a specific process"""
         subject = topic_manager.get_subject_for_all_events_in_process()
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             handler=handler,
@@ -103,6 +113,7 @@ class ProcessNCSubscriber(NCSubscriber[BaseEvent]):
         topic_manager: ProcessInstanceTopicManager,
         handler: Callable[[BaseEvent, ProcessInstanceTopic], Awaitable[None]],
         event: type[BaseEvent],
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to all events within a specific process instance"""
         subject = topic_manager.get_subject_for_specific_event_in_process_instance(
@@ -113,6 +124,7 @@ class ProcessNCSubscriber(NCSubscriber[BaseEvent]):
         )
 
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             event_cls=BaseEvent,

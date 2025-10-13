@@ -147,9 +147,12 @@ class AgentRunner:
         )
         await self.dispatcher.start()
 
-        self.nc_publisher = NCPublisher(self.nc)
+        self.nc_publisher = NCPublisher(f"{self.agent_class}RunnerDiscoveryResponse", self.nc)
         self.discovery_event_subscriber = AgentNCSubscriber.for_agent_class_discovery_request_events(
-            self.nc, AgentTopicManager(), self.discovery_handler
+            self.nc,
+            AgentTopicManager(),
+            self.discovery_handler,
+            subscriber_name=f"{self.agent_class}RunnerDiscoveryRequest",
         )
         await self.discovery_event_subscriber.start()
 
@@ -160,6 +163,7 @@ class AgentRunner:
             handler=self.dispatcher.handle_event,
             js=self.js,
             queue_group=f"agent_runner_{self.agent_class}",
+            subscriber_name=f"{self.agent_class}RunnerControlEvents",
         )
         await self.control_event_subscriber.start()
 

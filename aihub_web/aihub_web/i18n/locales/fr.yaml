@@ -153,6 +153,39 @@ event:
     successful: "Réussi"
     chat: "Chat"
     agents: "Agents:"
+  base:
+    view_raw_data: "Voir les données brutes de l'événement"
+    view_formatted: "Voir l'événement formaté"
+    event_data: "Données d'événement"
+  limitChatHistory:
+    summary: "Historique de chat limité à {count} messages"
+    assistant: "Assistant"
+    system: "Système"
+    user: "Utilisateur"
+    description: "L'historique de chat a été tronqué en fonction des limites de jetons pour rester dans les contraintes du modèle"
+  reranker:
+    topDocuments: "Top {count} documents les plus pertinents:"
+    query: "Requête de recherche"
+  retriever:
+    foundDocuments: "{count} documents pertinents trouvés"
+    query: "Requête de recherche"
+    chunksFound: "{count} fragments trouvés"
+    documentsSpanning: "Dans {count} documents"
+    avgScore: "Pertinence moy: {score}%"
+    chunksFromDoc: "{count} fragment | {count} fragments"
+    chunk: "Fragment"
+    position: "Pos: {pos}"
+    lines: "Lignes {start}-{end}"
+    chars: "{count} caractères"
+    sourceDocument: "{count} document source | {count} documents sources"
+    contentChunk: "{count} fragment de contenu | {count} fragments de contenu"
+    noChunksFound: "Aucun fragment trouvé"
+    noChunksFoundDescription: "La recherche de récupération n'a trouvé aucun fragment de contenu pertinent."
+  standaloneQuestionCondenser:
+    summary: "Question affinée et condensée"
+    condensedQuestion: "Question Condensée"
+    user: "Utilisateur"
+    description: "La question originale a été reformulée pour être plus spécifique et contextuelle afin d'améliorer les résultats de recherche"
   statistics:
     charts:
       agentInvocations: "Invocations d'agents"

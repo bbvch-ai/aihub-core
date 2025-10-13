@@ -3,6 +3,7 @@ from typing import Annotated, override
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_process_event_distributor import (
     use_external_process_event_distributor,
@@ -56,6 +57,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         self.nc_publisher: NCPublisher[ProcessInstanceDiscoveryResponseEvent] | None = None
         self.discovery_event_subscriber: NCSubscriber[InstanceDiscoveryRequestEvent] | None = None
 
+    @no_trace
     async def _discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: ProcessInstanceDiscoveryTopic):
         """
         Responds to discovery requests by publishing a ProcessDiscoveryResponseEvent that includes the basic
@@ -87,6 +89,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
             await self.nc_publisher.publish_event(process_discovery_response_event, subject)
 
     @override
+    @no_trace
     async def start(self):
         started = await super().start()
         if not started:
@@ -94,6 +97,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
             return
 
         self.discovery_event_subscriber = ProcessNCSubscriber.for_process_instance_discovery_request_events(
+            subscriber_name="ProcessEndpointDiscoveryService",
             nc=self.nc,
             topic_manager=ProcessTopicManager(),
             handler=self._discovery_handler,

@@ -10,3 +10,5 @@ class AgentConfigEntityEmbeddedDocument(AgentConfigEntity, EmbeddedDocument):
     within other documents, such as `AgentEntity`.
     This is commonly used to store default configurations defined in the AgentRunner constructor by the implementer.
     """
+
+    pass

@@ -50,9 +50,53 @@ thought_event:
   name: "Processus de Réflexion"
   description: "L'agent partage son processus de réflexion interne, ce qui l'aide à comprendre et à résoudre la tâche."
 
+guard_accept_event:
+  name: "Demande Acceptée"
+  description: "La demande a passé toutes les vérifications de sécurité et est autorisée à continuer."
+
 guard_rejection_event:
   name: "Demande Rejetée"
   description: "La demande a été rejetée pour des raisons de sécurité ou en raison de violations de politique."
+
+few_shot_guard_accept_event:
+  name: "Garde Few-Shot Accepté"
+  description: "La demande correspond aux modèles des exemples few-shot et est autorisée à continuer."
+
+few_shot_guard_reject_event:
+  name: "Garde Few-Shot Rejeté"
+  description: "La demande ne correspond pas aux modèles des exemples few-shot et est bloquée."
+
+right_agent_accept_event:
+  name: "Bon Agent Sélectionné"
+  description: "L'agent correct a été identifié pour gérer cette tâche spécifique."
+
+wrong_agent_reject_event:
+  name: "Mauvais Agent Sélectionné"
+  description: "L'agent sélectionné n'est pas approprié pour gérer cette tâche spécifique."
+
+agent_suitability_accept_event:
+  name: "Agent Adapté à la Tâche"
+  description: "Les capacités de l'agent correspondent à la demande de l'utilisateur et peuvent gérer la tâche."
+
+agent_suitability_reject_event:
+  name: "Agent Inadapté à la Tâche"
+  description: "Les capacités de l'agent ne correspondent pas à la demande de l'utilisateur et ne peuvent pas gérer la tâche."
+
+context_sufficient_accept_event:
+  name: "Contexte Suffisant Disponible"
+  description: "Il y a suffisamment de contexte disponible pour répondre à la requête de l'utilisateur sans récupération supplémentaire."
+
+context_insufficient_reject_event:
+  name: "Contexte Insuffisant Disponible"
+  description: "Plus de contexte est nécessaire pour répondre correctement à la requête de l'utilisateur."
+
+sensitive_info_accept_event:
+  name: "Réponse Sûre à Partager"
+  description: "La réponse ne contient pas d'informations sensibles et peut être partagée en toute sécurité."
+
+sensitive_info_reject_event:
+  name: "Informations Sensibles Détectées"
+  description: "La réponse contenait des informations sensibles qui ont été supprimées ou expurgées."
 
 hitl_request_event:
   name: "Demande à l'Utilisateur"
@@ -109,3 +153,7 @@ exception_event:
 user_message_event:
   name: "Demande de l'Utilisateur"
   description: "L'agent a reçu un message de l'utilisateur et le traite, en tenant compte de l'historique de chat précédent."
+
+standalone_question_condenser_event:
+  name: "Demande Indépendante Condensée"
+  description: "Une demande complexe a été transformée en une demande indépendante plus claire et concise pour faciliter le traitement."

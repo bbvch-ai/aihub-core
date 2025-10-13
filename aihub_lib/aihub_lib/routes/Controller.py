@@ -3,6 +3,7 @@ import logging
 from typing import TYPE_CHECKING, Annotated
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
+from opentelemetry import trace
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -115,9 +116,42 @@ class Controller(abc.ABC):
                     status_code=403,
                     detail=f"Forbidden: You do not have the required '{required_permission}' permission.",
                 )
+
+            self._enrich_span_with_context(user, request, required_permission)
+
             return user
 
         return check_access
+
+    def _enrich_span_with_context(self, user: UserIdentity, request: Request, required_permission: str) -> None:
+        """Enrich the current OpenTelemetry span with rich contextual information."""
+        span = trace.get_current_span()
+
+        if not span.is_recording():
+            return
+
+        span.set_attribute("user.id", user.id)
+        span.set_attribute("user.email", user.email)
+        span.set_attribute("user.display_name", user.name)
+        if user.roles:
+            span.set_attribute("user.roles", ",".join(user.roles))
+
+        # Service context
+        span.set_attribute("service.controller", self.service_name)
+        span.set_attribute("auth.required_permission", required_permission)
+
+        # Path parameters (business context)
+        if request.path_params:
+            for param_name, param_value in request.path_params.items():
+                if param_name in ["agent_class", "agent_id", "thread_id", "process_id", "process_class"]:
+                    span.set_attribute(f"{param_name.replace('_', '.')}", str(param_value))
+                else:
+                    span.set_attribute(f"resource.{param_name}", str(param_value))
+
+        # Request context
+        span.set_attribute("http.route", request.url.path)
+        if client_host := getattr(request.client, "host", None):
+            span.set_attribute("client.ip", client_host)
 
     @property
     def tags(self):

@@ -110,3 +110,41 @@ context_sufficient_guard:
     <Context>
     {context}
     </Context>
+  reason_no_hops: |
+    Reasoning explaining why the context is or is not sufficient (no additional hops available).
+  success_no_hops: |
+    true if the context is sufficient to answer the user query, false if it is not (no additional hops available).
+  docstring_no_hops: |
+    Result from evaluating whether the context is sufficient to answer the user query (no additional hops available).
+sensitive_info_guard:
+  prompt: |
+    You are a security guard responsible for protecting sensitive company information. Your task is to analyze the following response and determine if it contains sensitive information that should not be shared externally.
+
+    Look for:
+    - Internal company processes, procedures, or policies
+    - Confidential business strategies or plans
+    - Employee names, email addresses, or personal information
+    - Financial data, budgets, or pricing information
+    - Technical specifications or proprietary methods
+    - Customer data or confidential client information
+    - Internal system details, server names, or infrastructure information
+    - Any information marked as confidential or internal-only
+
+    If you find sensitive information, provide a cleaned version of the response with the sensitive parts removed or generalized.
+
+    <Response to Analyze>
+    {answer}
+    </Response to Analyze>
+
+    Your output must be a JSON object with exactly three keys:
+    - "success": true if no sensitive information was found, false if sensitive information was detected
+    - "reasoning": explanation of your decision
+    - "cleaned_answer": if sensitive information was found, provide a cleaned version; otherwise null
+  reason: |
+    Explanation of whether sensitive information was detected and what actions were taken.
+  success: |
+    true if no sensitive information was found, false if sensitive information was detected and cleaned.
+  cleaned_answer: |
+    The revised response with sensitive information removed or redacted, if applicable.
+  docstring: |
+    Result from analyzing a response for sensitive information that should not be shared externally.

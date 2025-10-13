@@ -15,6 +15,7 @@ from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
 from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceAccess import (
     DocumentIntelligenceAccess,
 )
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     NODE_CONTENT_TYPE_FIGURE,
     NODE_CONTENT_TYPE_TABLE,
@@ -30,6 +31,7 @@ class DocumentIntelligenceLoader(BaseReader):
 
         self.document_intelligence_client = DocumentIntelligenceAccess().get_client()
 
+    @trace_fn
     def load_data(
         self,
         file: str,
@@ -51,32 +53,6 @@ class DocumentIntelligenceLoader(BaseReader):
                 content_type="application/octet-stream",
                 output_content_format=DocumentContentFormat.MARKDOWN,
                 output=output_options,
-            )
-
-        result: AnalyzeResult = poller.result()
-        return self._process_document_intelligence_response(
-            result, poller, file, extra_info, fs, figures_directory_name, include_images
-        )
-
-    async def aload_data(
-        self,
-        file: str,
-        extra_info: dict | None = None,
-        fs: AbstractFileSystem | None = None,
-        figures_directory_name: str | None = None,
-        include_images: bool | None = None,
-    ) -> list[Document]:
-        """Load and process documents asynchronously using the Document Intelligence service."""
-        include_images = include_images if include_images is not None else True
-
-        fs = fs or get_default_fs()
-        with fs.open(file, "rb") as pdf_file:
-            poller = self.document_intelligence_client.begin_analyze_document(
-                "prebuilt-layout",
-                body=pdf_file,
-                content_type="application/octet-stream",
-                output_content_format=DocumentContentFormat.MARKDOWN,
-                output=[AnalyzeOutputOption.FIGURES],
             )
 
         result: AnalyzeResult = poller.result()

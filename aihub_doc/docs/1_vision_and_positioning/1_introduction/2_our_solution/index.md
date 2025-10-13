@@ -95,7 +95,6 @@ OpenAI-compatible API for tool compatibility. Event-driven architecture for cust
 external systems.
 :::
 
-
 ## Why open source changes everything
 
 The Apache 2.0 license means you're not adopting a platform—you're acquiring one:

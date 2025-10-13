@@ -154,6 +154,39 @@ event:
     successful: "Erfolgreich"
     chat: "Chat"
     agents: "Agenten:"
+  base:
+    view_raw_data: "Ereignis-Rohdaten anzeigen"
+    view_formatted: "Formatiertes Ereignis anzeigen"
+    event_data: "Ereignisdaten"
+  limitChatHistory:
+    summary: "Chat-Verlauf auf {count} Nachrichten begrenzt"
+    assistant: "Assistent"
+    system: "System"
+    user: "Benutzer/in"
+    description: "Chat-Verlauf wurde aufgrund von Token-Limits gekürzt, um innerhalb der Modellbeschränkungen zu bleiben"
+  reranker:
+    topDocuments: "Top {count} relevanteste Dokumente:"
+    query: "Suchanfrage"
+  retriever:
+    foundDocuments: "{count} relevante Dokumente gefunden"
+    query: "Suchanfrage"
+    chunksFound: "{count} Textabschnitte gefunden"
+    documentsSpanning: "Aus {count} Dokumenten"
+    avgScore: "Ø Relevanz: {score}%"
+    chunksFromDoc: "{count} Abschnitt | {count} Abschnitte"
+    chunk: "Abschnitt"
+    position: "Pos: {pos}"
+    lines: "Zeilen {start}-{end}"
+    chars: "{count} Zeichen"
+    sourceDocument: "{count} Quelldokument | {count} Quelldokumente"
+    contentChunk: "{count} Inhaltsabschnitt | {count} Inhaltsabschnitte"
+    noChunksFound: "Keine Abschnitte gefunden"
+    noChunksFoundDescription: "Die Abrufsuche hat keine relevanten Inhaltsabschnitte gefunden."
+  standaloneQuestionCondenser:
+    summary: "Frage verfeinert und verdichtet"
+    condensedQuestion: "Verdichtete Frage"
+    user: "Benutzer/in"
+    description: "Die ursprüngliche Frage wurde reformuliert, um spezifischer und kontextbewusster für bessere Suchergebnisse zu sein"
   statistics:
     charts:
       agentInvocations: "Agentenaufrufe"

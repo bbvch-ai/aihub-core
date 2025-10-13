@@ -9,6 +9,8 @@ def extract_uri_from_share_point_file(
     share_point_file: SharePointFile,
     data_lake_resource: DataLakeResource,
 ) -> str:
-    return (
-        f"{data_lake_resource.container_name}/{data_lake_resource.directory_name}/{share_point_file.path.lstrip('/')}"
-    )
+    parts = [data_lake_resource.container_name]
+    if data_lake_resource.directory_name is not None:
+        parts.append(data_lake_resource.directory_name)
+    parts.append(share_point_file.path.lstrip("/"))
+    return "/".join(parts)

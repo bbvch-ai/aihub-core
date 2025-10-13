@@ -28,6 +28,17 @@ from aihub_lib.nats.events import (
     ToolEvent,
     UserMessageEvent,
 )
+from aihub_lib.nats.events.guard import (
+    AgentSuitabilityAcceptEvent,
+    AgentSuitabilityRejectEvent,
+    ContextInsufficientRejectEvent,
+    ContextSufficientAcceptEvent,
+    FewShotAcceptEvent,
+    FewShotRejectEvent,
+    GuardAcceptEvent,
+    SensitiveInfoAcceptEvent,
+    SensitiveInfoRejectEvent,
+)
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
 from aihub_lib.nats.events.semantic import SemanticEvent
 from aihub_lib.nats.events.semantic.guard import GuardEvent
@@ -63,6 +74,15 @@ DisplayEvents = (
     | Annotated[ExceptionEvent, Tag("ExceptionEvent")]
     | Annotated[StopEvent, Tag("StopEvent")]
     | Annotated[DisplayEvent, Tag("DisplayEvent")]
+    | Annotated[GuardAcceptEvent, Tag("GuardAcceptEvent")]
+    | Annotated[AgentSuitabilityAcceptEvent, Tag("AgentSuitabilityAcceptEvent")]
+    | Annotated[AgentSuitabilityRejectEvent, Tag("AgentSuitabilityRejectEvent")]
+    | Annotated[ContextSufficientAcceptEvent, Tag("ContextSufficientAcceptEvent")]
+    | Annotated[ContextInsufficientRejectEvent, Tag("ContextInsufficientRejectEvent")]
+    | Annotated[FewShotAcceptEvent, Tag("FewShotAcceptEvent")]
+    | Annotated[FewShotRejectEvent, Tag("FewShotRejectEvent")]
+    | Annotated[SensitiveInfoAcceptEvent, Tag("SensitiveInfoAcceptEvent")]
+    | Annotated[SensitiveInfoRejectEvent, Tag("SensitiveInfoRejectEvent")]
 )
 
 

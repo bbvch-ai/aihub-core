@@ -48,7 +48,7 @@ class ProcessDispatcher(BaseDispatcher):
         topic_manager: Annotated[ProcessClassTopicManager, "Manages event subjects for this agent class."],
         locale_handler: Annotated[ProcessLocaleHandler, "Manages localization for the agent."],
     ):
-        super().__init__(nc, js, redis, topic_manager, ProcessClassTopic)
+        super().__init__(nc, js, redis, topic_manager, ProcessClassTopic, dispatch_entity_name=process.__name__)
         self.process = process
         self.default_process_config = default_process_config
         self.locale_handler = locale_handler

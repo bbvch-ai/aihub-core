@@ -1,3 +1,8 @@
+# ruff: noqa: E402
+from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
+
+AihubInstrumentor().instrument()
+
 import asyncio
 
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
@@ -35,7 +40,7 @@ async def main():
                 it="Questo è l'agente RAG predefinito",
             ),
             llm=LLMConfig(model_name="local/qwen3-small"),
-            check_context_sufficiency=True,
+            check_context_sufficiency=False,
             number_of_input_tokens=12000,
             system_prompt=LocaleString(
                 en="""
@@ -133,7 +138,7 @@ async def main():
             retrieve_step_config=RetrieveStepConfig(
                 embed_model=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
                 index_namespaces=["test"],
-                retrieve_k=20,
+                retrieve_k=5,
                 query_mode=VectorStoreQueryMode.DEFAULT,
                 node_types=["content", "summary"],
                 vector_store=MilvusVectorStoreConfig(
@@ -142,7 +147,7 @@ async def main():
                     collection_name="playground",
                 ),
                 retrieve_prev_next=RetrievePrevNextConfig(
-                    num_nodes=10,
+                    num_nodes=5,
                     mode="both",
                 ),
                 retrieve_summaries=RetrieveSummariesConfig(

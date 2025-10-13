@@ -17,7 +17,6 @@ from aihub_lib.nats.topics import Topic
 from aihub_lib.nats.topics.agents.AgentClassTopic import AgentClassTopic
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from bson import ObjectId
-from cachetools import TTLCache
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
@@ -26,7 +25,7 @@ from aihub_agent.agents.Agent import Agent
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.context.thread.ThreadContext import ThreadContext
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
-from aihub_agent.tracing.coordinators.RunTraceCoordinator import RunTraceCoordinator
+from aihub_agent.tracing.AgentRunTracer import AgentRunTracer
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +41,8 @@ class AgentDispatcher(BaseDispatcher):
         histories and step execution counts across distributed environments.
 
     2. **Tracing and Telemetry:**
-        Through `RunTraceCoordinator`, it logs start/end times of runs and steps, aiding observability.
+        Through `AgentRunTracer`, it logs start/end times of runs and steps, aiding observability.
     """
-
-    _telemetry_header_cache = TTLCache(maxsize=10_000, ttl=300)
 
     def __init__(
         self,
@@ -60,12 +57,14 @@ class AgentDispatcher(BaseDispatcher):
         topic_manager: Annotated[AgentClassTopicManager, "Manages event subjects for this agent instance."],
         locale_handler: Annotated[AgentLocaleHandler, "Manages localization for the agent."],
     ):
-        super().__init__(nc, js, redis, topic_manager, AgentClassTopic)
+        super().__init__(nc, js, redis, topic_manager, AgentClassTopic, dispatch_entity_name=agent.__name__)
         self.agent = agent
         self.default_agent_config = default_agent_config
         self.locale_handler = locale_handler
 
         self.agent_config_type: type[AgentConfig] = self.default_agent_config.__class__
+
+        self.agent_run_tracer = AgentRunTracer(redis=redis)
 
     @override
     async def handle_event(
@@ -76,17 +75,15 @@ class AgentDispatcher(BaseDispatcher):
         """
         Called whenever a new event arrives. This method:
         - Stores the event.
-        - Updates run/thread contexts if necessary.
-        - If the event is Start/Stop/Exception, handles run lifecycle changes.
-        - Checks for steps that can now execute due to the event.
-
-        If steps are ready, it triggers their execution asynchronously.
+        - Manages the run's open-telemetry trace.
+        - Handles run lifecycle changes (Start, Stop, Exception).
+        - Checks for and triggers ready steps asynchronously.
         """
         await super().handle_event(event, topic)
 
         # Retrieve contexts (run and thread)
-        run_context = RunContext(self.redis, topic.thread_id, topic.run_id)
-        thread_context = ThreadContext(self.redis, topic.thread_id)
+        run_context = RunContext.for_topic(self.redis, topic)
+        thread_context = ThreadContext.for_topic(self.redis, topic)
         agent_config_dict: dict[str, Any] | None = None
 
         if event.is_start_event:
@@ -108,19 +105,12 @@ class AgentDispatcher(BaseDispatcher):
             agent_class_topic=topic,
             agent_id=run_agent_config.agent_id,
         )
-        tracer = RunTraceCoordinator(
-            nc=self.nc,
-            project_name=self.locale_handler.extract_multi_locale(
-                locale_data=run_agent_config.name,
-                locale="en",
-            ),
-        )
 
         if event.is_start_event:
             event = cast(StartEvent, event)
             logger.debug(f"Handling StartEvent: {event.event_name}")
-            telemetry_headers = tracer.trace_run_start(topic, event)
-            await run_context.set("telemetry_headers", telemetry_headers)
+
+            await self.agent_run_tracer.trace_run_start(topic=topic, event=event)
 
             # Store any initial data from the StartEvent into run_context
             event_data = event.to_context_dict()
@@ -128,16 +118,20 @@ class AgentDispatcher(BaseDispatcher):
                 logger.debug(f"Setting key '{key}' in run_context to '{value}'")
                 await run_context.set(key, value)
 
-        if event.is_stop_event:
-            logger.debug(f"Handling StopEvent: {event.event_name}")
+        if event.is_stop_event or event.is_exception_event:
+            logger.debug(f"Handling final event: {event.event_name}")
+
+            await self.agent_run_tracer.trace_run_completion(
+                topic=topic,
+                final_event=event,
+            )
+
             await run_context.delete_all()
             await self.event_store.delete_all(topic.execution_context_id)
             await self.step_store.delete_all(topic.execution_context_id)
-            return
 
-        if event.is_exception_event:
-            logger.debug(f"Handling ExceptionEvent: {event.event_name}")
-            await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
+            if event.is_exception_event:
+                await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
             return
 
         steps = self.agent.get_steps_waiting_for_event(type(event))
@@ -153,9 +147,7 @@ class AgentDispatcher(BaseDispatcher):
             ):
                 logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.event_name}'")
                 task = asyncio.create_task(
-                    self.execute_step(
-                        event, step_method, events, run_context, thread_context, topic, run_agent_config, tracer
-                    )
+                    self.execute_step(event, step_method, events, run_context, thread_context, topic, run_agent_config)
                 )
                 self._background_tasks.add(task)
                 task.add_done_callback(self._background_tasks.discard)
@@ -221,7 +213,6 @@ class AgentDispatcher(BaseDispatcher):
         thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
         topic: Annotated[AgentInstanceTopic, "Topic info for the current run and thread."],
         agent_config: Annotated[AgentConfig, "The agent configuration for this run."],
-        tracer: Annotated[RunTraceCoordinator, "Tracing coordinator for this run."],
     ):
         """
         Executes a step method:
@@ -263,19 +254,12 @@ class AgentDispatcher(BaseDispatcher):
 
         # Instantiate the agent and run the step
         agent_instance = self.agent()
-        if topic.run_id not in self._telemetry_header_cache:
-            telemetry_headers = await run_context.get("telemetry_headers")
-            self._telemetry_header_cache[topic.run_id] = telemetry_headers
-        else:
-            telemetry_headers = self._telemetry_header_cache[topic.run_id]
 
-        async with tracer.trace_step_start(
-            telemetry_headers, topic, step_method, events_and_kwargs.kwargs
-        ) as step_span:
+        async with self.agent_run_tracer.trace_step_start(topic, step_method, events_and_kwargs.kwargs) as step_span:
             try:
                 result = await step_method(agent_instance, **events_and_kwargs.kwargs)
             except Exception as e:
-                await tracer.trace_step_error(step_span, e)
+                self.agent_run_tracer.trace_step_error(step_span, e)
                 if getattr(step_method, Agent.STOP_ON_ERROR_ANNOTATION, False):
                     event = ExceptionEvent(message=str(e))
                     await self.publish_event(event, topic)
@@ -288,7 +272,7 @@ class AgentDispatcher(BaseDispatcher):
                 if not isinstance(result, list):
                     result = [result]
 
-                await tracer.trace_step_stop(step_span, result)
+                self.agent_run_tracer.trace_step_stop(step_span, result)
 
                 for event in result:
                     if event.is_hitl_request_event:
@@ -465,6 +449,7 @@ class AgentDispatcher(BaseDispatcher):
             nc=self.nc,
             topic_manager=AgentThreadTopicManager.from_agent_topic(aitl_request_event.other_agent_topic),
             handler=convert_event_to_agent_in_the_loop_response,
+            subscriber_name=f"{self.agent.__name__}DispatcherAgentInTheLoop",
         )
         await event_subscriber.start()
 

@@ -5,10 +5,13 @@ from llama_index.core.llms import LLM
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     HEADING_LEVEL,
     INDEX,
     LANGUAGE,
+    NODE_CONTENT_TYPE,
+    NODE_CONTENT_TYPE_TEXT,
     NODE_LANGUAGE_ENGLISH,
     NODE_TYPE_SUMMARY,
     SECTION_START_LINE,
@@ -39,6 +42,7 @@ class RecursiveNodeSummarizer:
         self.min_summarization_length = min_summarization_length
         self.node_id_to_node = {}
 
+    @trace_fn
     def summarize_nodes(self, nodes: list[TextNode]) -> list[TextNode]:
         if not nodes:
             return []
@@ -215,6 +219,7 @@ class RecursiveNodeSummarizer:
         if index is not None:
             metadata[INDEX] = index
 
+        metadata[NODE_CONTENT_TYPE] = NODE_CONTENT_TYPE_TEXT
         summary_node = TextNode(
             text=summary_text,
             metadata=metadata,
