@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.246.4] - 2025-10-13 - S3 Writing Efficiency and Document Parsing Simplification
+
+### Changed
+
+- 🔄 **Default Document Parser Loader:** The default document parsing loader in `DocumentParserResource` has been updated
+  from a 'both' approach (combining Docling and Document Intelligence) to exclusively use **Docling**, providing a more
+  predictable out-of-the-box experience.
+
+### Removed
+
+- 🗑️ **'Both' Loader Option for Document Parser:** The `BOTH` loader type option has been removed from
+  `DocumentParserResource`, streamlining the configuration for document parsing to either `DOCLING` or
+  `DOCUMENT_INTELLIGENCE`.
+
+### Refactor
+
+- ⚡️ **Optimized S3 Object Writing:** The `S3DataLakeIOManager` now writes S3 objects using a single `put_object` call,
+  combining content, metadata, and content type settings for improved efficiency and atomic operations.
+
+---
+
+## [v0.246.3] - 2025-10-13 - Enhanced S3 URI Robustness
+
+### Changed
+
+- 🚀 **Improved S3 URI Parsing:** The `S3DataLakeClient` now intelligently handles S3 URIs, automatically prepending the
+  "s3://" prefix when a URI starts directly with the configured container name, reducing errors and making input more
+  flexible.
+
+---
+
 ## [v0.246.2] - 2025-10-10 - Simplified Pipelines, Smarter SharePoint Sync
 
 ### Added
