@@ -118,14 +118,18 @@ class S3DataLakeIOManager(ConfigurableIOManager):
 
             encoded_metadata = self._encode_metadata(data_lake_file.metadata)
 
+            put_params = {
+                "Bucket": bucket_name,
+                "Key": object_key,
+                "Body": data_lake_file.content,
+                "Metadata": encoded_metadata,
+            }
+
+            if data_lake_file.content_type:
+                put_params["ContentType"] = data_lake_file.content_type
+
             # Write the content to S3 with metadata using put_object
-            self.data_lake_client.raw_client.put_object(
-                Bucket=bucket_name,
-                Key=object_key,
-                Body=data_lake_file.content,
-                Metadata=encoded_metadata,
-                ContentType=data_lake_file.content_type,
-            )
+            self.data_lake_client.raw_client.put_object(**put_params)
 
             context.log.info(f"Successfully wrote file {data_lake_file.uri} to S3.")
 
