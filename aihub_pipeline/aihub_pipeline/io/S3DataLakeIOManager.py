@@ -175,7 +175,7 @@ class S3DataLakeIOManager(ConfigurableIOManager):
 
     @staticmethod
     def _encode_metadata(metadata: dict) -> dict:
-        return {quote(str(key), safe=""): quote(str(value), safe="") for key, value in metadata.items()}
+        return {quote(key, safe=""): quote(str(value), safe=":/?&=") for key, value in metadata.items()}
 
     @staticmethod
     def _decode_metadata(metadata: dict) -> dict:
