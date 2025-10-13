@@ -213,7 +213,7 @@ class RAGAgent(Agent):
         return RerankerEvent(
             query=condense_event.condensed_chat_message.content,
             rerank_model_name=agent_config.reranking_config.reranking_model.model_name,
-            top_k=len(reranked_nodes),
+            top_k=agent_config.reranking_config.top_k,
             max_tokens=agent_config.reranking_config.max_tokens,
             input_nodes=event.nodes,
             output_nodes=reranked_nodes,
