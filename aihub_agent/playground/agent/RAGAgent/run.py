@@ -45,7 +45,7 @@ async def main():
             ),
             llm=LLMConfig(model_name="local/qwen-2.5-multimodal-small"),
             check_context_sufficiency=False,
-            number_of_input_tokens=50000,
+            number_of_input_tokens=32768,
             system_prompt=LocaleString(
                 en="""
                 <persona>

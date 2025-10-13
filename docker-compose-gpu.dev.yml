@@ -258,7 +258,7 @@ services:
       --top-k 20 
       --top-p 0.95 
       --min-p 0 
-      -c 32000 
+      -c 32768 
       -n 8196
       -ngl 90
       --no-context-shift
