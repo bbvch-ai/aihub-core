@@ -190,7 +190,7 @@ spans).
 Traces are exported to cloud observability platforms for long-term storage and analysis. The platform supports any
 OTLP-compatible backend through configuration changes only.
 
-For information on cloud backends and visualization, see [Dashboards](../../2_monitoring/2_dashboards/index.md).
+For information on cloud backends and visualization, see [Dashboards](../2_dashboards/index.md).
 
 ---
 
@@ -261,7 +261,7 @@ OTLP-compatible backend:
 Switching backends requires only collector configuration changes. No application code modifications are needed.
 
 For complete multi-platform details, see [OpenTelemetry Foundation](../0_opentelemetry/index.md) and
-[Dashboards - Multi-Platform Support](../../2_monitoring/2_dashboards/index.md#multi-platform-support).
+[Dashboards - Multi-Platform Support](../2_dashboards/index.md#multi-platform-support).
 
 ---
 

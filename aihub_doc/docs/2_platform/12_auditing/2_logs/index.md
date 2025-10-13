@@ -60,7 +60,7 @@ Health status changes are captured as structured NDJSON log files and ingested b
 **Service Health Events**: Synthetic health check results for services without native health endpoints (HTTP/gRPC probe
 results for Phoenix, NATS, Attu, Dagster, data pipelines).
 
-For complete health monitoring details, see [Health Checks](../../2_monitoring/1_health_checks/index.md).
+For complete health monitoring details, see [Health Checks](../1_health_checks/index.md).
 
 ### HTTP Request Logs (Operational)
 
@@ -184,6 +184,44 @@ The AihubInstrumentor automatically configures logging instrumentation across al
 
 ---
 
+## Log Rotation
+
+The platform implements automated log rotation for container logs to manage storage efficiently. Log rotation is
+configured through Docker Compose definitions, ensuring consistent behavior across all containerized services.
+
+### Rotation Mechanism
+
+Log rotation operates on a size-based threshold mechanism. When a container's log file reaches a defined size limit,
+Docker automatically creates a new log file and continues writing to it. The system maintains a configured number of
+historical log files per container. When this limit is exceeded, the oldest log file is automatically deleted.
+
+### Configurable Parameters
+
+The log rotation mechanism supports configuration of three key parameters:
+
+**Rotation Intervals**: Defined by maximum file size thresholds that trigger rotation when exceeded.
+
+**Storage Limits**: Specified as the maximum size per log file, controlling when rotation occurs.
+
+**Retention Periods**: Determined by the number of historical log files retained per container, defining the local
+retention window.
+
+Total storage consumption per container equals the product of maximum file size and file count. Rotation occurs
+transparently without service interruption.
+
+### Multi-Tier Retention
+
+The platform employs a two-tier log retention strategy:
+
+**Local Container Logs**: Managed through Docker's rotation mechanism with size and count limits. Provides immediate
+access to recent logs for troubleshooting without centralized system dependencies.
+
+**Centralized Log Storage**: Logs exported to observability platforms through OpenTelemetry collectors provide long-term
+retention beyond local limits. Centralized storage supports extended retention periods, advanced search capabilities,
+and correlation with metrics and traces.
+
+---
+
 ## Business Benefits
 
 ### Comprehensive Audit Trail
@@ -223,7 +261,7 @@ initiatives based on empirical data rather than assumptions.
 Logs are visualized and analyzed through observability platforms. The Swiss AI-Hub currently uses **SigNoz** for log
 aggregation, search, and analysis.
 
-For information on dashboards and visualization, see [Dashboards](../../2_monitoring/2_dashboards/index.md).
+For information on dashboards and visualization, see [Dashboards](../2_dashboards/index.md).
 
 ### Key Capabilities
 
@@ -276,7 +314,7 @@ policies based on compliance requirements, budget constraints, and analytical ne
 - Archive logs (90+ days): Long-term compliance and audit requirements
 
 For detailed retention policies, see
-[Dashboards - Data Retention](../../2_monitoring/2_dashboards/index.md#data-retention-and-storage).
+[Dashboards - Data Retention](../2_dashboards/index.md#data-retention-and-storage).
 
 ---
 
@@ -350,7 +388,7 @@ through configuration changes only. No application code changes are required to 
 - **Custom Solutions**: Any platform supporting OTLP log ingestion
 
 For complete multi-platform details, see [OpenTelemetry Foundation](../0_opentelemetry/index.md) and
-[Dashboards - Multi-Platform Support](../../2_monitoring/2_dashboards/index.md#multi-platform-support).
+[Dashboards - Multi-Platform Support](../2_dashboards/index.md#multi-platform-support).
 
 ---
 
