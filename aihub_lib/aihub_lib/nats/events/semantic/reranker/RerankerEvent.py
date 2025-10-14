@@ -1,5 +1,6 @@
 from typing import Annotated, ClassVar
 
+from llama_index.core.schema import NodeWithScore
 from openinference.semconv.trace import OpenInferenceSpanKindValues, RerankerAttributes, SpanAttributes
 from pydantic import Field
 
@@ -22,14 +23,11 @@ class RerankerEvent(SemanticEvent):
     ] = None
     query: Annotated[str | None, Field(description="The query string used by the reranker.")] = None
     rerank_model_name: Annotated[str | None, Field(description="Name of the reranker model being used.")] = None
-    top_k: Annotated[
+    top_n: Annotated[
         int | None,
         Field(
-            description="The top K parameter, representing the number of results to be reranked.",
+            description="The top N parameter, representing the number of results to be reranked.",
         ),
-    ] = None
-    max_tokens: Annotated[
-        int | None, Field(description="Maximum number of tokens supported by the reranking model.")
     ] = None
     reranked: Annotated[bool | None, Field(description="Whether the nodes were reranked or not.")] = None
 
@@ -38,7 +36,7 @@ class RerankerEvent(SemanticEvent):
             SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.RERANKER.value,
             RerankerAttributes.RERANKER_QUERY: self.query,
             RerankerAttributes.RERANKER_MODEL_NAME: self.rerank_model_name,
-            RerankerAttributes.RERANKER_TOP_K: self.top_k,
+            RerankerAttributes.RERANKER_TOP_K: self.top_n,
         }
 
         # Flatten input documents
@@ -58,3 +56,8 @@ class RerankerEvent(SemanticEvent):
                 }
 
         return {k: v for k, v in attributes.items() if v is not None}
+
+    @classmethod
+    def from_nodes(cls, nodes: list[NodeWithScore]) -> "RerankerEvent":
+
+        return cls(output_nodes=nodes)

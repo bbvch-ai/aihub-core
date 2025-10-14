@@ -75,13 +75,13 @@ Feature: RAG Agent
     * an LLMEvent is present with a generated response
     * a StopEvent is present
 
-  @self_hosted
+  @slow
   Scenario: Test RAGAgent with reranking enabled
     Given a RAGAgent runner with a valid self hosted configuration
-    * with reranking enabled and top_k of "2"
+    * with reranking enabled and top_n of "2"
     When the start event is sent with a user query "What is AI Hub?"
     Then a RerankerEvent is present with reranked nodes
-    * the RerankerEvent model name should be "local/reranker-cpu"
+    * the RerankerEvent model name should be "local/reranker"
     * the RerankerEvent should limit results to "2" nodes
     * an LLMEvent is present with a generated response
     * a StopEvent is present

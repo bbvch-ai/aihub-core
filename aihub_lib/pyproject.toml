@@ -70,6 +70,7 @@ opentelemetry-instrumentation-botocore = "^0.58b0"
 opentelemetry-instrumentation-milvus = "^0.47.0"
 opentelemetry-instrumentation-logging = "^0.58b0"
 opentelemetry-instrumentation-aiohttp-client = "^0.58b0"
+llama-index-finetuning = "0.3.1"
 
 
 [tool.poetry.group.dev.dependencies]

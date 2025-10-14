@@ -173,6 +173,7 @@ class RAGAgent(Agent):
             )
         return RetrieverEvent.from_nodes(nodes)
 
+    # TODO add precondition
     @step(
         name=LocaleString(en="Rerank Retrieved Nodes"),
         description=LocaleString(
@@ -195,9 +196,8 @@ class RAGAgent(Agent):
                 output_nodes=event.nodes,
                 query=condense_event.condensed_chat_message.content,
                 rerank_model_name=agent_config.reranking_config.reranking_model.model_name,
-                top_k=agent_config.reranking_config.top_k,
-                max_tokens=agent_config.reranking_config.max_tokens,
-                reranked=False,
+                top_n=agent_config.reranking_config.reranking_model.top_n,
+                reranked=agent_config.reranking_config.enabled,
             )
 
         await displayer.display_thought(t("agent.thought.reranking_results"))
@@ -206,18 +206,15 @@ class RAGAgent(Agent):
             nodes=event.nodes,
             query=condense_event.condensed_chat_message.content,
             reranking_model=agent_config.reranking_config.reranking_model,
-            top_k=agent_config.reranking_config.top_k,
-            max_tokens=agent_config.reranking_config.max_tokens,
         )
 
         return RerankerEvent(
             query=condense_event.condensed_chat_message.content,
             rerank_model_name=agent_config.reranking_config.reranking_model.model_name,
-            top_k=agent_config.reranking_config.top_k,
-            max_tokens=agent_config.reranking_config.max_tokens,
+            top_n=agent_config.reranking_config.reranking_model.top_n,
             input_nodes=event.nodes,
             output_nodes=reranked_nodes,
-            reranked=True,
+            reranked=agent_config.reranking_config.enabled,
         )
 
     @step(

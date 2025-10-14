@@ -4,12 +4,16 @@ from typing import Annotated
 import httpx
 from llama_index.core.callbacks import TokenCountingHandler
 from llama_index.core.utilities.token_counting import TokenCounter
+from llama_index.postprocessor.cohere_rerank import CohereRerank
 from opentelemetry.propagate import inject
 from pydantic import BaseModel, Field
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
 from aihub_lib.generative_ai.resources.models.llm.LiteLLMBase import LiteLLMBase
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
+
+
+# TODO Split into seperate files
 
 
 class RerankingResult(BaseModel):
@@ -27,25 +31,15 @@ class RerankingLLMParameter(BaseModel):
     timeout: Annotated[float, Field(description="Timeout for each request.", ge=0)] = 60.0
 
 
+# TODO use CohereRerank, take inspiration from prev next implementation using llama index (VectorPrevNextPostProcessor)
 class RerankingService(BaseModel):
-    """
-    Service wrapper for reranking operations using LiteLLM proxy.
-
-    This service handles the actual HTTP communication with the LiteLLM proxy
-    and abstracts away the low-level details. Similar to how OpenAILikeEmbedding
-    works for embeddings.
-    """
+    """"""
 
     model_name: Annotated[str, Field(description="")]
-    api_base: Annotated[str, Field(description="")]
     api_key: Annotated[str, Field(description="")]
-    max_retries: Annotated[int, Field(description="")]
-    timeout: Annotated[float, Field(description="")]
-    default_headers: Annotated[dict[str, str], Field(description="")]
-    tokenizer: Annotated[Callable[[str], list[int]], Field(description="")]
+    top_p: Annotated[int, Field(description="")]
 
     def _chunk_node(self, node: str, max_tokens: int) -> list[str]:
-        """Chunk a node into smaller pieces that fit within token limits."""
         if not node.strip():
             return [node]
 
@@ -64,7 +58,6 @@ class RerankingService(BaseModel):
     async def rerank(
         self, query: str, nodes: list[str], top_k: int, max_tokens: int, batch_size: int
     ) -> list[RerankingResult]:
-        """Rerank documents using the configured reranking model."""
 
         all_results = []
         token_counter = TokenCounter(self.tokenizer)
@@ -109,18 +102,15 @@ class RerankingService(BaseModel):
         return final_results
 
 
-class RerankingModelConfig(LiteLLMBase[RerankingService]):
+class RerankingModelConfig(LiteLLMBase):
     """Configuration for a reranking model."""
 
-    model_name: Annotated[str, Field(description="Name of the reranking model.")]
-    default_parameter: Annotated[
-        RerankingLLMParameter,
-        Field(
-            description="Default parameters for the reranking model.",
-        ),
-    ] = RerankingLLMParameter()
+    top_n: Annotated[
+        int,
+        Field(description="Number of documents to return after reranking", ge=1, le=100),
+    ] = 5
 
-    def to_llama_index(self) -> tuple[RerankingService, LLMCostTracker]:
+    def to_llama_index(self) -> tuple[CohereRerank, LLMCostTracker]:
         config = LiteLLMProxySettings()
         model_info = self.get_model_info()
 
@@ -134,19 +124,8 @@ class RerankingModelConfig(LiteLLMBase[RerankingService]):
         default_headers = {}
         inject(default_headers)
 
-        reranking_service = RerankingService(
-            model_name=self.model_name,
-            api_base=config.BASE_URL,
-            api_key=config.API_KEY.get_secret_value(),
-            max_retries=self.default_parameter.max_retries,
-            timeout=self.default_parameter.timeout,
-            default_headers=default_headers,
-            tokenizer=self.token_counter,
+        reranking_service = CohereRerank(
+            model=self.model_name, api_key=config.API_KEY.get_secret_value(), base_url=config.BASE_URL, top_n=self.top_n
         )
 
         return reranking_service, cost_tracker
-
-    def get_reranking_service(self) -> RerankingService:
-        """Get a configured reranking service instance."""
-        reranking_service, _ = self.to_llama_index()
-        return reranking_service

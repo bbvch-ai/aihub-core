@@ -312,7 +312,7 @@ services:
       interval: 30s
       retries: 3
       start_period: 60s
-
+  # TODO use llama.cpp instead with qwen3
   vllm-reranker:
     image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:latest
     container_name: vllm-reranker
