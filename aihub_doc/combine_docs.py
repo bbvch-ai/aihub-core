@@ -2,6 +2,7 @@
 Markdown Documentation Merger
 Combines markdown files from a directory structure into a single document
 with proper heading hierarchy, then converts to DOCX.
+TODO: Fix ordering of index.md files versus subfolders
 """
 
 import os
