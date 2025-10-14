@@ -102,27 +102,18 @@ model_list:
         revision: main
         auth_token: os.environ/HUGGINGFACE_API_KEY
 
-  - model_name: local/reranker-gpu
+  - model_name: local/reranker
     litellm_params:
-      model: hosted_vllm/jina-reranker
-      api_base: http://vllm-reranker:8000
+      model: jina_ai/Qwen3-Reranker-0.6B
+      api_base: http://llama-cpp-reranker:8184/v1
       api_key: None
     model_info:
       mode: rerank
       input_cost_per_token: 0.000000001
       custom_tokenizer:
-        identifier: jinaai/jina-reranker-v2-base-multilingual
+        identifier: Qwen/Qwen3-Reranker-0.6B
         revision: main
         auth_token: os.environ/HUGGINGFACE_API_KEY
-
-  - model_name: local/reranker-cpu
-    litellm_params:
-      model: huggingface/BAAI/bge-reranker-base
-      api_base: http://huggingface-reranking-inference:8184
-      api_key: None
-    model_info:
-      mode: rerank
-      input_cost_per_token: 0.000000001
 
 
 guardrails:

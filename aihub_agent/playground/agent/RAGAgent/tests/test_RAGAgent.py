@@ -411,13 +411,13 @@ def _(agent_runner: AgentTestRunner):
     assert retriever_node_ids == reranker_node_ids, "Node IDs should match in pass-through mode"
 
 
-@then(parsers.parse('the RerankerEvent should limit results to "{top_k:d}" nodes'))
-def _(agent_runner: AgentTestRunner, top_k: int):
+@then(parsers.parse('the RerankerEvent should limit results to "{top_n:d}" nodes'))
+def _(agent_runner: AgentTestRunner, top_n: int):
     reranker_event = agent_runner.get_event_of_class(RerankerEvent)
     assert reranker_event, "RerankerEvent was not found"
     assert (
-        len(reranker_event.output_nodes) <= top_k
-    ), f"Expected at most {top_k} nodes, got {len(reranker_event.output_nodes)}"
+        len(reranker_event.output_nodes) <= top_n
+    ), f"Expected at most {top_n} nodes, got {len(reranker_event.output_nodes)}"
 
 
 @then(parsers.parse('the RerankerEvent model name should be "{model_name}"'))
