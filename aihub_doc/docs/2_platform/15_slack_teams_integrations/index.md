@@ -1,6 +1,6 @@
 ---
 title: Slack & Teams Integrations
-index: 17
+index: 15
 ---
 
 # Slack & Teams Integrations
