@@ -379,11 +379,33 @@ jobs:
           git commit --amend --no-edit || echo "No file changes to commit."
           git push origin HEAD:${{ github.event.pull_request.base.ref }} --force-with-lease
           
-          
+
           echo "Creating final tag ${VERSION} and pushing..."
           git tag -a -f "${VERSION}" -m "Release ${VERSION}"
           git push origin "refs/tags/${VERSION}" --force
-          
+
+          echo "Setting 'nightly' tag to same commit as ${VERSION}..."
+          # Get the commit SHA that VERSION tag points to
+          COMMIT_SHA=$(git rev-parse "${VERSION}")
+          echo "Commit SHA: $COMMIT_SHA"
+
+          # Force update 'nightly' tag to point to the same commit
+          git tag -f nightly "$COMMIT_SHA"
+          echo "✓ Updated local 'nightly' tag to point to $COMMIT_SHA"
+
+          # Force push 'nightly' tag (it might already exist)
+          git push origin refs/tags/nightly --force
+          echo "✓ Force pushed 'nightly' tag to remote"
+
+          # Verify the tag was updated
+          git fetch origin --tags
+          NIGHTLY_SHA=$(git rev-parse nightly)
+          if [ "$NIGHTLY_SHA" = "$COMMIT_SHA" ]; then
+            echo "✅ Successfully set 'nightly' tag to $COMMIT_SHA"
+          else
+            echo "⚠️  Warning: Failed to update 'nightly' tag (not critical)"
+          fi
+
 
       - name: Clean up SSH keys
         run: |
