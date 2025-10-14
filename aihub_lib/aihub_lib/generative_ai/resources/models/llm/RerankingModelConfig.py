@@ -1,12 +1,9 @@
-from collections.abc import Callable
 from typing import Annotated
 
-import httpx
 from llama_index.core.callbacks import TokenCountingHandler
-from llama_index.core.utilities.token_counting import TokenCounter
 from llama_index.postprocessor.cohere_rerank import CohereRerank
 from opentelemetry.propagate import inject
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
 from aihub_lib.generative_ai.resources.models.llm.LiteLLMBase import LiteLLMBase

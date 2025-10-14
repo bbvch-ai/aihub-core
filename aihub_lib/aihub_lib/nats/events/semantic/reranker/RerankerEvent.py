@@ -59,5 +59,4 @@ class RerankerEvent(SemanticEvent):
 
     @classmethod
     def from_nodes(cls, nodes: list[NodeWithScore]) -> "RerankerEvent":
-
         return cls(output_nodes=nodes)
