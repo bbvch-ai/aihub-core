@@ -380,14 +380,14 @@ jobs:
           git push origin HEAD:${{ github.event.pull_request.base.ref }} --force-with-lease
           
 
-          echo "Creating final tag ${VERSION} and pushing..."
+          echo "Creating final tag $VERSION and pushing..."
           git tag -a -f "${VERSION}" -m "Release ${VERSION}"
           git push origin "refs/tags/${VERSION}" --force
 
-          echo "Setting 'nightly' tag to same commit as ${VERSION}..."
+          echo "Setting 'nightly' tag to same commit as $VERSION..."
           git tag -f nightly "${VERSION}"
           git push origin refs/tags/nightly --force
-          echo "Set 'nightly' tag to same commit as ${VERSION}"
+          echo "Set 'nightly' tag to same commit as $VERSION"
 
 
       - name: Clean up SSH keys
