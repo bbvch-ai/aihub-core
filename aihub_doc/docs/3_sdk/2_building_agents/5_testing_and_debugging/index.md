@@ -200,55 +200,6 @@ Phoenix provides step-by-step visualization of agent execution at `http://localh
 4. Click through steps to inspect event flow
 5. Identify where things go wrong
 
-## Testing patterns
-
-### Testing human-in-the-loop
-
-```python
-async def test_human_approval():
-    runner = AgentTestRunner(agent_type=ApprovalAgent, agent_config=config)
-
-    async with runner.test_run() as topic:
-        await runner.send_event_from_topic(
-            topic=topic,
-            start_event=UserMessageEvent(...)
-        )
-
-        # Simulate human response
-        request_event = HumanInTheLoop.request(
-            question="Shall I continue?",
-            topic=PartialAgentTopic()
-        )
-        await runner.send_event_from_topic(
-            topic=topic,
-            start_event=HumanInTheLoop.response(
-                response="yes",
-                request_event=request_event
-            )
-        )
-
-    assert runner.has_stop_event
-```
-
-### Testing multi-agent systems
-
-```python
-async def test_agent_coordination():
-    orchestrator_runner = AgentTestRunner(
-        agent_type=OrchestratorAgent,
-        agent_config=orchestrator_config
-    )
-
-    async with orchestrator_runner.test_run() as topic:
-        await orchestrator_runner.send_event_from_topic(
-            topic=topic,
-            start_event=UserMessageEvent(...)
-        )
-
-    # Verify delegation occurred
-    delegation_events = orchestrator_runner.get_events_of_class(AgentInTheLoop.request)
-    assert len(delegation_events) == 1
-```
 
 ## Running tests
 
@@ -266,46 +217,3 @@ poetry run pytest -v tests/
 poetry run pytest --cov=aihub_agent tests/
 ```
 
-## Common debugging issues
-
-::: details Troubleshooting
-**Agent doesn't start**
-- Check agent configuration is valid
-- Verify all required dependencies are injected
-- Enable logging to see initialization errors
-
-**Steps don't execute**
-- Check event type matching between steps
-- Verify step decorators are properly configured
-- Use Phoenix to see which events are being produced
-
-**Infinite loops**
-- Check loop termination conditions
-- Verify `max_executions_per_run` settings
-- Monitor event flow in Phoenix
-
-**Context issues**
-- Verify RunContext/ThreadContext usage
-- Check context sharing configuration
-- Test context isolation between runs
-:::
-
-## Best practices
-
-> [!IMPORTANT]
-> Start with trigger.py scripts for focused debugging. Use Phoenix for visual debugging before code inspection.
-
-- Test edge cases, error conditions, timeouts, and edge inputs
-- Isolate components by testing individual steps separately when possible
-- Always use `enable_logging()` during development
-- Mock external dependencies using test doubles
-- Test end-to-end to verify complete workflows
-
-## Quality gates
-
-Before considering an agent production-ready:
-
-- [ ] All BDD scenarios pass
-- [ ] Edge cases and error conditions tested
-- [ ] Phoenix traces show clean execution
-- [ ] Error handling is graceful

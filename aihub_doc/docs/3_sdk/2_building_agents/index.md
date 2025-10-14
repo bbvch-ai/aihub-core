@@ -5,112 +5,48 @@ index: 2
 
 # Building agents with the AI-Hub SDK
 
-An agent in the Swiss AI-Hub is a workflow defined by a series of steps that process events. 
-Agents can interact with users, call external services, and coordinate with other agents.
+An agent in the Swiss AI-Hub is a workflow defined by a series of steps that process events. Agents can interact with users, call external services, and coordinate with other agents to perform complex tasks.
 
-> [!NOTE]
-> Complete the [development environment setup](../1_quick_start/1_dev_environment_setup/) and [your first agent](../1_quick_start/3_your_first_agent/) before starting.
+This documentation guides you through the architecture, patterns, and best practices for building robust and scalable agents.
 
-## What's covered
-
-1. [Agent fundamentals](./1_agent_fundamentals/) - Core architecture and concepts
-2. [Core patterns](./2_core_patterns/) - Essential workflow patterns
-3. [Human in the loop](./3_human_in_the_loop/) - Interactive workflows
-4. [Multi-agent systems](./4_multi_agent_systems/) - Agent coordination
-5. [Testing and debugging](./5_testing_and_debugging/) - Quality assurance
-6. [Production deployment](./6_production_deployment/) - Going live
-7. [Agent observation](./7_agent_observation/) - Monitoring and tracing
-
-## Core concepts
-
-### Agent class
-
-Agents inherit from the `Agent` base class and define their workflow through steps:
-
-```python
-from aihub_agent.agents.Agent import Agent
-from aihub_agent.workflow.decorators.step import step
-
-class MyAgent(Agent):
-    @step()
-    async def process_input(self, event: UserMessageEvent) -> ProcessedEvent:
-        return ProcessedEvent(result="processed")
-
-    @step()
-    async def generate_output(self, event: ProcessedEvent) -> StopEvent:
-        return StopEvent(final_message=event.result)
-```
-
-### Event-driven workflow
-
-Agents communicate through events:
-
-::: details Event types
-- **Control events** - Direct workflow execution (`StartEvent`, `StopEvent`)
-- **Semantic events** - Carry domain-specific data
-- **Display events** - Present information to users
+::: warning
+Before you begin, please complete the [Development Environment Setup](https://www.google.com/search?q=../1_quick_start/1_dev_environment_setup/) and build [Your First Agent](https://www.google.com/search?q=../1_quick_start/3_your_first_agent/).
 :::
 
-### @step decorator
+## What's Covered
 
-Steps are functions decorated with `@step()` that consume one input event and return one output event:
+This guide is structured to build your knowledge progressively:
 
-```python
-@step(
-    max_executions_per_run=3,
-    stop_on_error=True,
-    name=LocaleString(en="Process Data"),
-    description=LocaleString(en="Processes incoming data")
-)
-async def process_data(self, event: DataEvent) -> ProcessedEvent:
-    return ProcessedEvent(data=event.data.upper())
-```
+1.  [**Agent Fundamentals**](https://www.google.com/search?q=./1_agent_fundamentals/) - The core architecture, including events, steps, and configuration.
+2.  [**Core Patterns**](https://www.google.com/search?q=./2_core_patterns/) - Essential workflow patterns like conditional logic, loops, and state management.
+3.  [**Human in the Loop**](https://www.google.com/search?q=./3_human_in_the_loop/) - Building interactive workflows that require human approval or input.
+4.  [**Multi-Agent Systems**](https://www.google.com/search?q=./4_multi_agent_systems/) - Coordinating multiple agents to solve complex problems.
+5.  [**Testing and Debugging**](https://www.google.com/search?q=./5_testing_and_debugging/) - Best practices for ensuring your agent is reliable and correct.
+6.  [**Production Deployment**](https://www.google.com/search?q=./6_production_deployment/) - Guidelines for packaging and deploying your agent.
+7.  [**Agent Observation**](https://www.google.com/search?q=./7_agent_observation/) - Monitoring your agent's behavior and performance with integrated tracing.
 
-### Configuration system
+## Key Principles of the SDK
 
-Agents use strongly-typed configuration:
+The SDK is designed around a few core principles to make development intuitive and scalable:
 
-```python
-from aihub_lib.agents.AgentConfig import AgentConfig
+  * **Event-Driven by Nature**: Agents react to a stream of events. This asynchronous, message-based architecture makes workflows dynamic and resilient.
+  * **Declarative Workflows**: You define *what* each step does using the `@step` decorator. The SDK automatically handles the *how* of routing events and wiring your steps together.
+  * **Managed State**: Handle conversation memory and run-time data effortlessly with injectable `RunContext` and `ThreadContext` objects, backed by a distributed store.
+  * **Built for Production**: With strongly-typed configuration, a dedicated testing framework, and built-in observability.
 
-from pydantic import Field
-from typing import Annotated
+## The Development Workflow
 
-class MyAgentConfig(AgentConfig):
-    temperature: Annotated[float, Field(description="The LLM temperature")] = 0.7
-    max_tokens: Annotated[int, Field(description="Max tokens for LLM")] = 512
-    model_name: Annotated[str, Field(description="LLM model name")] = "gpt-4"
-```
+Building a high-quality agent typically follows these four stages:
 
-### Testing framework
+::: tip 
+A core design principle is that each agent should do one thing well. Complex problems are best solved by coordinating multiple specialized agents.
+:::
 
-Test agents with `AgentTestRunner`:
+1.  **Design Your Workflow**: Outline your agent's purpose, the events it will handle, and the sequence of steps it will take to achieve its goal.
+2.  **Implement the Core Logic**: Write your `Agent` class, define its strongly-typed `AgentConfig`, and implement the `@step` methods that transform events.
+3.  **Test and Debug**: Use the `AgentTestRunner` for unit testing and a tracing tool like Phoenix to visually debug the flow of events through your agent.
+4.  **Deploy and Monitor**: Package your agent and deploy it to the AI-Hub, where its performance and behavior can be monitored in real-time.
 
-```python
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-
-async def test_my_agent():
-    runner = AgentTestRunner(agent_type=MyAgent, agent_config=config)
-    async with runner.test_run() as topic:
-        await runner.send_event_from_topic(topic=topic, start_event=test_event)
-    assert runner.has_stop_event
-```
-
-## Development workflow
-
-The typical flow for building an agent:
-
-1. **Design** your agent's purpose and event flow
-2. **Configure** with strongly-typed configuration classes
-3. **Implement** steps that transform events
-4. **Test** using `AgentTestRunner` for isolated testing
-5. **Debug** with Phoenix tracing to monitor execution
-6. **Deploy** by packaging and integrating with the platform
-
-> [!TIP]
-> Each agent should do one thing well. Agents can work as assistants, process components, or services for other agents.
-
-## Next steps
-
+## Next Steps
 Start with [agent fundamentals](./1_agent_fundamentals/) to understand the core architecture, then explore the specific patterns and techniques in the following sections.
 

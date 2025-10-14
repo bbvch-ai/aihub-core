@@ -3,159 +3,155 @@ title: Agent fundamentals
 index: 1
 ---
 
-# Agent fundamentals
+# Agent Fundamentals
 
-An agent is a self-contained, event-driven workflow. It processes an input through a series of operations to produce a final output. Each agent should do one thing well.
+An agent is a self-contained, event-driven workflow. It processes an input through a series of operations to produce a final output. The best agents are focused, doing one thing well.
 
-## Agent design contexts
+This page covers the essential building blocks and the core mechanics that power every agent.
 
-Consider how your agent might be used:
+## How It Works: The Agent Dispatcher
 
-- **Assistant** - Responds directly to user input in conversations
-- **Process worker** - Automated component in larger, non-interactive workflows
-- **Sub-agent** - Specialized tool called by other agents
+Behind the scenes, a component called the **Agent Dispatcher** orchestrates your workflow. Understanding its three main jobs makes building agents much easier:
 
-Design flexibly so your agent can work across different contexts.
+1.  **Introspection**: When an agent starts, the dispatcher inspects all methods marked with the `@step` decorator. It analyzes their parameters and return types to build a map of your workflow before it runs.
+2.  **Event Routing**: The dispatcher acts as a central router. When one step **returns** an event, the dispatcher catches it and delivers it to the *next* step that is designed to **accept** that event type. This is how your steps are automatically chained together.
+3.  **Dependency Injection**: The dispatcher automatically provides—or "injects"—necessary objects like configuration and context directly into your step methods based on their type hints. You don't create these objects; you just ask for them.
 
-## Core architecture
+With the dispatcher handling the **how** you can focus on the **what**: defining your agent's logic.
 
-The framework uses three components: configuration, steps, and events. A workflow engine orchestrates their interaction.
 
-::: details Architecture components
-- **Agent** - Top-level class that encapsulates the workflow
-- **Configuration** - Static, injectable settings for the agent and steps
-- **Steps** - Individual methods that perform units of work
-- **Events** - Data objects that trigger steps and pass information between them
-:::
+## Events: The Data and Control Flow
 
-The engine routes events from one step to the next step designed to consume them.
+Events are the lifeblood of an agent. They are simple Pydantic models that carry data and direct the workflow.
 
-## Configuration
+### Control vs. Display Events
 
-Configuration controls agent behavior without changing code, letting you reuse the same logic for different purposes.
+There are two primary categories of events:
 
-### AgentConfig: global configuration
+  * **`ControlEvent`**: These direct the workflow's execution path. Steps **return** `ControlEvent`s to trigger the next part of the process. The workflow begins with a `StartEvent` and ends when a step returns a `StopEvent`.
+  * **`DisplayEvent`**: These provide information to a user interface, like showing the agent's "thoughts" or streaming back a response. They are **emitted** within a step and never affect the agent's logic.
 
-`AgentConfig` holds settings that apply to the entire agent:
-
-```python
-class MyAgentConfig(AgentConfig):
-    system_prompt: Annotated[str, Field(description="The system prompt for the LLM")] = "You are a helpful assistant."
-    temperature: Annotated[float, Field(description="The LLM temperature")] = 0.7
-```
-
-Any step can access the configuration via dependency injection:
+This separation ensures that UI concerns cannot break your core workflow.
 
 ```python
 @step()
-async def process_text(self, event: InputEvent, config: MyAgentConfig):
-    # Use config.system_prompt, config.temperature, etc.
-    pass
+async def example_step(self, event: InputEvent, displayer: EventDisplayer) -> OutputEvent:
+    # 1. Emit a DisplayEvent to the UI (does not affect workflow)
+    await displayer.display_thought("Processing the user's request...")
+
+    # 2. Return a ControlEvent to advance the workflow
+    return OutputEvent(result="done")
 ```
 
-### StepConfig: step-specific configuration
+### Defining Custom Events
 
-For complex agents, configure steps individually using `StepConfig`:
+You'll create custom `ControlEvent`s to pass data between your steps. Simply inherit from `ControlEvent` and add your Pydantic fields. The most common starting event for a conversational agent is the built-in `UserMessageEvent`.
+
+```python
+from aihub_agent.events.ControlEvent import ControlEvent
+
+# A custom event to carry data from one step to another
+class DocumentProcessedEvent(ControlEvent):
+    document_id: str
+    summary: str
+    confidence_score: float
+```
+
+
+## Steps: The Units of Work
+
+A step is an `async` method that performs a single, logical operation. The `@step` decorator registers it with the dispatcher and configures its behavior.
+
+```python
+from aihub_agent.workflow.decorators.step import step
+from aihub_lib.i18n.LocaleString import LocaleString
+
+@step(
+    name=LocaleString(en="Process Document"),
+    description=LocaleString(en="Extracts text and generates a summary."),
+    max_executions_per_run=1, # Prevents accidental loops
+    stop_on_error=True       # Halts the workflow if this step fails
+)
+async def process_document(self, event: DocumentUploadEvent) -> DocumentProcessedEvent:
+    # Step logic here...
+    return DocumentProcessedEvent(...)
+```
+
+
+## Configuration: Making Agents Reusable
+
+To keep your agent's logic separate from its settings, the SDK uses a strongly-typed configuration system. This allows you to change an agent's behavior (e.g., switching LLM models) without changing its code.
+
+### `AgentConfig`: Global Configuration
+
+Define a class that inherits from `AgentConfig` for settings that apply to the entire agent. This object can be injected into any step.
+
+```python
+from aihub_lib.agents.AgentConfig import AgentConfig
+from pydantic import Field
+from typing import Annotated
+
+class MyAgentConfig(AgentConfig):
+    model_name: Annotated[str, Field(description="LLM model name")] = "gpt-4o-mini"
+    temperature: Annotated[float, Field(description="The LLM temperature")] = 0.7
+```
+
+### `StepConfig`: Step-Specific Configuration
+
+For complex, reusable steps, you can create dedicated `StepConfig` classes. Nest them inside your main `AgentConfig`, and the dispatcher will automatically inject only the relevant config into the step that needs it.
 
 ::: code-group
 
 ```python [Step config definition]
 class SummarizeStepConfig(StepConfig):
     max_length: int = 500
-    model: str = "gpt-4-turbo"
 ```
 
 ```python [Embed in agent config]
-class MyReportAgentConfig(AgentConfig):
-    name: LocaleString = LocaleString(en="Report Agent")
-    summarize_text: SummarizeStepConfig = SummarizeStepConfig(max_length=250)
+class MyAgentConfig(AgentConfig):
+    summarize_step_settings: SummarizeStepConfig = SummarizeStepConfig()
 ```
 
 ```python [Use in step]
-class MyReportAgent(Agent):
-    @step()
-    async def summarize_text(self, event: TextEvent, config: SummarizeStepConfig):
-        # Engine injects only the SummarizeStepConfig
-        print(f"Max length: {config.max_length}")
-        pass
+@step()
+async def summarize_text(self, event: TextEvent, config: SummarizeStepConfig):
+    # The dispatcher injects only the SummarizeStepConfig object
+    print(f"Max summary length: {config.max_length}")
+    pass
 ```
 
 :::
 
-The engine automatically injects just the specific configuration each step needs.
 
-## Steps: units of work
+## Dependency Injection: Automatic Parameters
 
-A step is an `async` method representing a single operation. The `@step` decorator identifies and manages it.
+As you've seen, you don't need to manually pass objects like configs or contexts to your steps. The **Agent Dispatcher** provides them automatically based on the parameter's type hint.
 
-### @step decorator
+Here are the key objects you can have injected:
 
-The decorator enables dependency injection and attaches metadata:
+  * **`AgentConfig`**: Your agent's main configuration object.
+  * **`StepConfig`**: A specific configuration class for a single step.
+  * **`RunContext`**: A temporary key-value store for a *single* agent run.
+  * **`ThreadContext`**: A persistent key-value store for a conversation *thread*.
+  * **`EventDisplayer`**: A helper for emitting `DisplayEvent`s to the UI.
 
-```python
-@step(
-    name=LocaleString(en="Process Input"),
-    stop_on_error=True,
-    max_executions_per_run=1
-)
-async def process_step(self, event: InputEvent) -> OutputEvent:
-    # Step logic here
-    return OutputEvent(result="processed")
-```
-
-> [!TIP]
-> Steps must consume one `ControlEvent` to be triggered.
-
-### Connecting steps
-
-Steps chain together through events. When a step returns a `ControlEvent`, the engine finds the next step that consumes that event type. The workflow continues until a `StopEvent` is returned.
-
-```python
-class SimpleAgent(Agent):
-    @step()
-    async def first_step(self, event: UserMessageEvent) -> ProcessingEvent:
-        return ProcessingEvent(data=event.content)
-
-    @step()
-    async def second_step(self, event: ProcessingEvent) -> StopEvent:
-        return StopEvent(final_message=f"Processed: {event.data}")
-```
-
-## Events: data and control flow
-
-Events either control the workflow or display information. They inherit from `BaseEvent` for standardization and automatic registration.
-
-### Event types
-
-Two primary event branches:
-
-- **ControlEvent** - Directs workflow execution path (returned from steps)
-- **DisplayEvent** - Provides user interface information (emitted within steps)
-
-::: details Event hierarchy
-```
-BaseEvent
-├── ControlEvent
-│   ├── StartEvent (initiates agent run)
-│   └── StopEvent (terminates workflow, also DisplayEvent)
-└── DisplayEvent (UI information only)
-```
-:::
-
-### Key distinction
-
-- Steps **return** `ControlEvent`s to advance the workflow
-- Steps **emit** `DisplayEvent`s to communicate with users
+This powerful feature keeps your code clean and focused on business logic.
 
 ```python
 @step()
-async def example_step(self, event: InputEvent, displayer: EventDisplayer) -> OutputEvent:
-    # Emit display event (doesn't affect workflow)
-    await displayer.display_thought("Processing data...")
-
-    # Return control event (advances workflow)
-    return OutputEvent(result="done")
+async def complex_step(
+    self,
+    event: InputEvent,
+    config: MyAgentConfig,         # Injected
+    run_context: RunContext,       # Injected
+    displayer: EventDisplayer      # Injected
+) -> StopEvent:
+    # Use the injected objects to perform work
+    await displayer.display_thought(f"Using model: {config.model_name}")
+    await run_context.set("processed_items", 1)
+    return StopEvent(final_message="Done.")
 ```
 
-> [!IMPORTANT]
-> Display events never affect control flow. UI failures won't break your agent's logic.
+## Next Steps
+
+Now that you understand the fundamentals, explore the **[Core Patterns](./2_core_patterns/)** to see how these concepts are used to build agent workflows.

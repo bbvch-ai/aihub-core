@@ -1,216 +1,160 @@
 ---
-title: Multi-agent systems
+title: Multi-Agent Systems
 index: 4
 ---
 
-# Multi-agent systems
+# Multi-Agent Systems
 
-Agents can coordinate work by delegating tasks to specialized agents. This pattern lets you build complex workflows where different agents handle specific domains or capabilities.
+Complex problems are often best solved by breaking them into smaller, manageable parts. 
+The **Agent in the Loop (AITL)** pattern allows you to create multi-agent systems where a primary **Orchestrator** agent can delegate specific tasks to one or more specialized **Worker** agents.
 
-## Core pattern: agent-in-the-loop
+**When to use it**:
 
-One agent (orchestrator) invokes another agent (worker) and waits for its result:
+  * To create modular, reusable components (e.g., an agent that only summarizes documents).
+  * To separate concerns (e.g., one agent for data retrieval, another for analysis).
+  * To build complex chains or parallel workflows that combine the strengths of multiple agents.
 
-```python
+## How It Works
+
+The AITL pattern is managed by a trio of events that orchestrate the delegation, execution, and response between agents.
+
+1.  **Orchestrator sends a Request**: The Orchestrator agent returns an `AgentInTheLoop.request` event. This event acts as a package, containing the `start_event` for the Worker and the routing information for the response. This pauses the Orchestrator's workflow.
+2.  **Worker executes its task**: The dispatcher delivers the `start_event` to the specified Worker agent. The Worker runs its own self-contained workflow, completely unaware that it was called by another agent.
+3.  **Worker completes and responds**: When the Worker finishes, it returns a `StopEvent` (or an `ExceptionEvent` if it fails). The system automatically wraps this final event into either an `AgentInTheLoop.response` or `AgentInTheLoop.exception` event.
+4.  **Orchestrator resumes**: The dispatcher routes the response or exception event back to the Orchestrator, which resumes its workflow in a separate step designed to handle the result.
+
+The `AgentInTheLoop` helper class simplifies this process by providing a convenient `invoke` method to create the request event.
+
+-----
+
+## Core Pattern: Orchestrator and Worker
+
+This example shows an `OrchestratorAgent` that asks a `WorkerAgent` to perform a simple calculation. Notice that the `WorkerAgent` is just a standard, self-contained agent.
+
+**Reference**: `playground/minimal_workflow/agent_in_the_loop_workflow/`
+
+::: code-group
+
+```python [OrchestratorAgent.py]
 from aihub_lib.nats.events.agent_in_the_loop.AgentInTheLoop import AgentInTheLoop
 
 class OrchestratorAgent(Agent):
     @step()
     async def delegate_task(self, event: UserMessageEvent) -> AgentInTheLoop.request:
+        # 1. Delegate the task to the WorkerAgent
         return AgentInTheLoop.invoke(
             agent_id="worker_agent",
             agent_class="WorkerAgent",
-            start_event=event
+            start_event=event  # Pass the original event to the worker
         )
 
     @step()
     async def handle_result(self, response: AgentInTheLoop.response) -> StopEvent:
+        # 3a. This step runs if the worker succeeds
         result = response.stop_event.result
-        return StopEvent(final_message=f"Task completed with result: {result}")
+        return StopEvent(final_message=f"Worker succeeded with result: {result}")
 
     @step()
     async def handle_error(self, response: AgentInTheLoop.exception) -> StopEvent:
-        return StopEvent(final_message="Task failed, handled gracefully")
+        # 3b. This step runs if the worker fails
+        error_message = response.exception_event.message
+        return StopEvent(final_message=f"Worker failed: {error_message}")
 ```
 
-**Reference**: `playground/minimal_workflow/agent_in_the_loop_workflow/`
+```python [WorkerAgent.py]
+class WorkerAgent(Agent):
+    @step()
+    async def process_number(self, event: UserMessageEvent) -> ExtractNumberEvent:
+        # 2. The worker agent performs its logic...
+        number = int(event.messages[-1].content)
+        return ExtractNumberEvent(number=number)
 
-## Event flow
+    @step()
+    async def calculate_result(self, event: ExtractNumberEvent) -> WorkerStopEvent:
+        # ...and returns its own custom StopEvent with a result.
+        return WorkerStopEvent(result=event.number * 2)
+```
 
-::: details Steps
-1. **Request** - Orchestrator emits `AgentInTheLoop.request`
-2. **Delegation** - Worker agent receives and processes the task
-3. **Response** - Worker completes and returns `AgentInTheLoop.response`
-4. **Resume** - Orchestrator continues with the result
 :::
 
-## Context sharing
 
-Control what context gets shared between agents:
+## Context Sharing
+
+You can control which contexts are shared from the Orchestrator to the Worker. This is useful for maintaining a consistent conversation or UI experience.
+
+  * `share_thread_id=True` (Default): The Worker shares the same conversation memory (`ThreadContext`) as the Orchestrator.
+  * `share_display_id=True` (Default): The Worker's `DisplayEvent`s appear in the same UI stream as the Orchestrator's.
+  * `share_run_id=False` (Default): The Worker executes in its own independent run.
+
 
 ```python
 AgentInTheLoop.invoke(
     agent_id="specialized_agent",
     agent_class="SpecializedAgent",
     start_event=event,
-    share_thread_id=True,      # Conversation context (default: True)
-    share_display_id=True,     # UI context (default: True)
-    share_run_id=False         # Run context (default: False, rarely needed)
+    share_thread_id=True,      # Share conversation memory
+    share_display_id=True,     # Share UI context
+    share_run_id=False         # Recommended: Keep runs separate
 )
 ```
 
 > [!WARNING]
-> Rarely share run context between agents. It can cause unexpected behavior.
+> Sharing the `run_id` is an advanced feature and can lead to unexpected behavior, as both agents would be writing to the same ephemeral `RunContext`. It is almost always better to keep it `False`.
 
-## Common patterns
+## Common Multi-Agent Patterns
 
-### Specialized processing
+### Specialized Processing (Router)
 
-Delegate specific tasks to domain experts:
+An orchestrator acts as a router, delegating tasks to different worker agents based on the input.
 
 ```python
-class DocumentAgent(Agent):
+class DocumentRouterAgent(Agent):
     @step()
-    async def analyze_document(self, event: DocumentEvent) -> AgentInTheLoop.request:
+    async def route_document(self, event: DocumentEvent) -> AgentInTheLoop.request:
         if event.document_type == "financial":
-            return AgentInTheLoop.invoke(
-                agent_id="financial_analyzer",
-                agent_class="FinancialAnalyzerAgent",
-                start_event=event
-            )
+            # Delegate to the financial analysis agent
+            return AgentInTheLoop.invoke(agent_id="financial_analyzer", ...)
         elif event.document_type == "legal":
-            return AgentInTheLoop.invoke(
-                agent_id="legal_analyzer",
-                agent_class="LegalAnalyzerAgent",
-                start_event=event
-            )
+            # Delegate to the legal analysis agent
+            return AgentInTheLoop.invoke(agent_id="legal_analyzer", ...)
 ```
 
-### Sequential agent chain
+### Sequential Agent Chain
 
-Chain multiple agents for complex workflows:
+A workflow where the output of one worker agent becomes the input for the next, creating a processing pipeline.
 
-::: code-group
-
-```python [Chain processing]
+```python
 class ProcessingChainAgent(Agent):
     @step()
     async def extract_data(self, event: UserMessageEvent) -> AgentInTheLoop.request:
-        return AgentInTheLoop.invoke(
-            agent_id="data_extractor",
-            agent_class="DataExtractorAgent",
-            start_event=event
-        )
+        # First agent in the chain
+        return AgentInTheLoop.invoke(agent_id="data_extractor", ...)
 
     @step()
     async def validate_data(self, response: AgentInTheLoop.response) -> AgentInTheLoop.request:
-        return AgentInTheLoop.invoke(
-            agent_id="data_validator",
-            agent_class="DataValidatorAgent",
-            start_event=ProcessingEvent(data=response.stop_event.result)
-        )
-
-    @step()
-    async def finalize(self, response: AgentInTheLoop.response) -> StopEvent:
-        return StopEvent(final_message="Processing chain completed")
+        # The result from the first agent is used to start the second
+        extracted_data = response.stop_event.result
+        validation_event = ProcessingEvent(data=extracted_data)
+        return AgentInTheLoop.invoke(agent_id="data_validator", start_event=validation_event)
 ```
 
-:::
+### Parallel Agent Execution (Fan-Out)
 
-### Parallel agent execution
-
-Fan out to multiple agents for parallel processing:
+An orchestrator delegates the same task to multiple agents simultaneously and then aggregates their responses.
 
 ```python
 class ParallelProcessorAgent(Agent):
     @step()
     async def fan_out(self, event: UserMessageEvent) -> list[AgentInTheLoop.request]:
+        # Return a list of requests to trigger parallel execution
         return [
-            AgentInTheLoop.invoke(
-                agent_id="agent_a",
-                agent_class="ProcessorA",
-                start_event=event
-            ),
-            AgentInTheLoop.invoke(
-                agent_id="agent_b",
-                agent_class="ProcessorB",
-                start_event=event
-            )
+            AgentInTheLoop.invoke(agent_id="processor_a", ...),
+            AgentInTheLoop.invoke(agent_id="processor_b", ...)
         ]
 
     @step()
     async def combine_results(self, responses: list[AgentInTheLoop.response]) -> StopEvent:
+        # This step waits for all responses before running
         results = [r.stop_event.result for r in responses]
         return StopEvent(final_message=f"Combined results: {results}")
 ```
-
-### Error handling
-
-Handle agent failures gracefully:
-
-```python
-class ResilientOrchestratorAgent(Agent):
-    @step()
-    async def try_primary_agent(self, event: UserMessageEvent) -> AgentInTheLoop.request:
-        return AgentInTheLoop.invoke(
-            agent_id="primary_agent",
-            agent_class="PrimaryAgent",
-            start_event=event
-        )
-
-    @step()
-    async def handle_success(self, response: AgentInTheLoop.response) -> StopEvent:
-        return StopEvent(final_message=response.stop_event.result)
-
-    @step()
-    async def handle_failure(self, response: AgentInTheLoop.exception) -> AgentInTheLoop.request:
-        # Fallback to backup agent
-        return AgentInTheLoop.invoke(
-            agent_id="backup_agent",
-            agent_class="BackupAgent",
-            start_event=response.original_start_event
-        )
-```
-
-## Testing
-
-```python
-async def test_agent_coordination():
-    orchestrator_runner = AgentTestRunner(
-        agent_type=OrchestratorAgent,
-        agent_config=orchestrator_config
-    )
-
-    # Test the orchestrator delegates correctly
-    async with orchestrator_runner.test_run() as topic:
-        await orchestrator_runner.send_event_from_topic(
-            topic=topic,
-            start_event=UserMessageEvent(...)
-        )
-
-    assert orchestrator_runner.has_stop_event
-    result = orchestrator_runner.get_stop_event()
-    assert "completed" in result.final_message
-```
-
-## When to use
-
-::: details Use cases
-- **Domain specialization** - Different agents handle specific expertise areas
-- **Separation of concerns** - Break complex workflows into focused components
-- **Reusability** - Specialized agents can be reused across workflows
-- **Scalability** - Distribute processing across multiple agent instances
-- **Fault tolerance** - Fallback agents for resilient systems
-:::
-
-## Best practices
-
-> [!TIP]
-> Define clear input/output contracts between agents. Only share necessary context.
-
-- Always handle agent failures and exceptions
-- Test agent interactions both in isolation and integration
-- Use Phoenix tracing to observe multi-agent workflows
-- Keep individual agents focused on single responsibilities
-
-Multi-agent systems enable sophisticated workflows while maintaining simplicity and testability.
