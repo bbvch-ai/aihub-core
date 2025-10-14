@@ -16,15 +16,13 @@ Once you have started a conversation with any agent it is now possible to look a
 has generated in the process.
 
 For this we turn our eyes to the tracing service, which shows us all interactions between an agent and us. We can look
-into any of them and see exactly what the agent did and how the answer was generated. It is also possible to open this view
-directly from the frontend by selecting the tracing icon underneath the agents answer. This brings in a window from the
-right which gives you the same view as the service page, but without needing to leave the frontend. This makes it easier
-to analyze an interaction and once done continue the conversation without needing to leave the frontend.
+into any of them and see exactly what the agent did and how the answer was generated. It is also possible to open this
+view directly from the chat interface by selecting the tracing icon underneath the agents answer. This brings in a window from
+the right which gives you the same view as the service page, but without needing to leave the chat. This makes it
+easier to analyze an interaction and once done continue the conversation.
 
 ## Document Retrieval
 
-The same can be done for documents retrieved by the agent, if they have that capability. It is possible to view the
-document parts that were used to answer your question directly from the frontend. Making it effortless to fact-check the
-agents answer against the document contents.
-
-## Interconnection
+The same can be done for documents retrieved by a RAG agent. It is possible to view the document parts that were used to
+answer your question directly from the chat interface. Making it effortless to fact-check the agents answer against the
+document contents.

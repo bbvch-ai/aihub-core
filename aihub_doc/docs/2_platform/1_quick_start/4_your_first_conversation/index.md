@@ -9,16 +9,16 @@ index: 4
 
 There are two ways to begin your first conversation with an agent.
 
-One way is through the frontend located under OpenAI in the services selection menu in the top left, this is the main
-way of communicating with agents.
+The first way is through the chat interface located under OpenAI in the services selection menu in the top left, this is the
+main way of communicating with agents.
 
-Another way is through the agent itself, located under agents in the services selection menu.
+The second way is through the agent itself, located under agents in the services selection menu.
 
-Both ways are possible but the frontend is the main intended way for most users.
+Both ways are possible but the chat interface is the main intended way for most users.
 
-## Frontend
+## Chat Interface
 
-As a frontend we use [Open WebUI](https://github.com/open-webui/open-webui), an open source web interface. After logging
+As a chat interface we use [Open WebUI](https://github.com/open-webui/open-webui) an open source and feature rich interface. After logging
 in with Azure, begin your first conversation by typing your message and hitting enter. Switching the model or agent is
 as easy as selecting them in the top left of your chat. You can even set one as your default. Here it is also possible
 to set up a temporary chat by selecting the toggle at the bottom.
