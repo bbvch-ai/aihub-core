@@ -1,5 +1,5 @@
 ---
-title: Agent fundamentals
+title: Agent Fundamentals
 index: 1
 ---
 

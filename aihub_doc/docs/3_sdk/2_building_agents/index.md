@@ -3,7 +3,7 @@ title: Building agents
 index: 2
 ---
 
-# Building agents with the AI-Hub SDK
+# Building Agents with the AI-Hub SDK
 
 An agent in the Swiss AI-Hub is a workflow defined by a series of steps that process events. Agents can interact with users, call external services, and coordinate with other agents to perform complex tasks.
 

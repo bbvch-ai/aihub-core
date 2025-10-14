@@ -3,7 +3,7 @@ title: Building Pipelines
 index: 3
 ---
 
-# Building RAG Pipelines with the AI-Hub SDK
+# Building Pipelines with the AI-Hub SDK
 
 The AI-Hub Pipeline SDK provides a powerful, production-ready framework for building document processing pipelines. It's designed to ingest documents from various sources, parse them, and create searchable vector embeddings for Retrieval-Augmented Generation (RAG) systems.
 
@@ -92,9 +92,11 @@ This single function call provides:
   * Pre-configured **jobs**, **schedules**, and **sensors** for production-ready automation.
 
 
-## Where to Start
+## Next Steps
 
-1.  [**Core Concepts & Architecture**](./1_core_concepts/): Understand the key patterns that power the SDK.
-2.  [**Using the Default Pipelines**](./2_using_the_pipelines/): Learn how to configure and extend the pre-built pipelines.
-3.  [**Customizing and Extending Pipelines**](./3_customizing_pipelines/): Go beyond the defaults by creating your own processing steps and storage integrations.
-4.  [**Production Operations**](./4_production_operations/): Set up jobs, schedules, and monitoring for your pipelines.
+1. **[Pipeline Fundamentals](./1_pipeline_fundamentals/)** - Understand the architectural decisions and patterns for building
+   pipelines
+2. **[Core Patterns](./2_core_patterns/)** - Understand the core patterns for building pipelines with examples
+3. **[Data Ingestion Pipeline](./3_data_ingestion_pipeline/)** - Configure and extend the default pipeline
+4. **[Job Scheduling](./4_job_scheduling/)** - Schedule your pipelines for automatic runs
+5. **[Pipeline Observation](./5_pipeline_observation/)** Monitor your pipelines for performance and errors
