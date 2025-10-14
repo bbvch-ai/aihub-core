@@ -1,6 +1,6 @@
 ---
-title: LLM Guards
-index: 2
+title: "Input/Output Guards"
+index: 3
 ---
 
 # LLM Guards
