@@ -1,6 +1,6 @@
 ---
 title: Model Context Protocol (MCP)
-index: 15
+index: 17
 ---
 
 # Model Context Protocol (MCP) Server
