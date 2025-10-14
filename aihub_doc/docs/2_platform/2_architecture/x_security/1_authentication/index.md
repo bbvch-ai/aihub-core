@@ -46,7 +46,7 @@ using the same JWKS-based verification process.
 
 Authorization is implemented independently from authentication, enabling consistent access control regardless of how
 users authenticate. The platform evaluates permissions for every API request based on the user's assigned roles and the
-hierarchical permission model described in the [RBAC documentation](../2_rbac/index.md).
+hierarchical permission model described in the [RBAC documentation](../../../../1_vision_and_positioning/3_solution/4_security/2_rbac/index.md).
 
 ### Enterprise Identity Provider Integration
 
@@ -77,7 +77,7 @@ authentication, the platform determines what resources and operations the user c
 
 **API-Level Permission Enforcement:** Every API endpoint declares its required permissions. These permissions are
 automatically checked before the endpoint logic executes, ensuring no resource access bypasses authorization. The
-permission evaluation uses the hierarchical permission model described in the [RBAC documentation](../2_rbac/index.md).
+permission evaluation uses the hierarchical permission model described in the [RBAC documentation](../../../../1_vision_and_positioning/3_solution/4_security/2_rbac/index.md).
 
 **Dynamic Authorization:** For operations requiring runtime permission checks, the platform provides programmatic access
 to the permission evaluation system. This enables filtering result sets based on user permissions, implementing
