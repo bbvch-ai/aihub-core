@@ -23,6 +23,7 @@ from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
 from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
+from aihub_pipeline.util.bucket_utils import get_db_name_from_bucket_name
 
 # Pipeline configuration
 DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
@@ -30,9 +31,6 @@ DOCUMENT_KEY = AssetKey(["playground", "documents"])
 NODES_KEY = AssetKey(["playground", "nodes"])
 
 CONTAINER_NAME = "playground"
-DIRECTORY_NAME = "quick_start"
-NAMESPACE_NAME = DIRECTORY_NAME
-STORE_NAME = CONTAINER_NAME
 
 # Dynamic partitions for scalable document processing
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
@@ -51,7 +49,7 @@ assets = [
 # Define the job to observe the data lake and trigger processing
 observe_job = observe_source_job(
     observable_asset=observable_asset,
-    namespace_name=NAMESPACE_NAME,
+    source_location_name=CONTAINER_NAME,
 )
 
 # Define the complete pipeline
@@ -59,7 +57,7 @@ defs = Definitions(
     assets=assets,
     resources={
         # Data lake I/O managers for S3-compatible storage
-        **default_io_manager_s3_datalake_resources(container_name=CONTAINER_NAME, directory_name=DIRECTORY_NAME),
+        **default_io_manager_s3_datalake_resources(container_name=CONTAINER_NAME),
         # Document processing resources
         "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
         "node_parser": MarkdownStructuralNodeParserResource(),
@@ -67,13 +65,11 @@ defs = Definitions(
         # Vector store and document store (MongoDB + Milvus)
         **local_mongo_milvus_storage_context_resource(
             vector_store_uri="http://localhost:19530",
-            store_name=STORE_NAME,
-            namespace_name=NAMESPACE_NAME,
+            store_name=get_db_name_from_bucket_name(bucket_name=CONTAINER_NAME, auto_sync=False),
         ),
         # Data lake resources for file management
         **s3_data_lake_resources(
             container_name=CONTAINER_NAME,
-            directory_name=DIRECTORY_NAME,
             figures_directory_name="__figures__",
         ),
         # AI models for embeddings and summaries

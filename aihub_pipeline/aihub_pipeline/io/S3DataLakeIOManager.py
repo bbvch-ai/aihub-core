@@ -116,29 +116,20 @@ class S3DataLakeIOManager(ConfigurableIOManager):
 
             context.log.info(f"Writing file to S3: s3://{bucket_name}/{object_key}")
 
-            # Write the content to S3 using s3fs
-            with self.data_lake_file_system.open(data_lake_file.uri, mode="wb") as f:
-                f.write(data_lake_file.content)
-
-            # Encode metadata before setting it on the file
             encoded_metadata = self._encode_metadata(data_lake_file.metadata)
 
-            # Set metadata and content settings using boto3 client
-            self.data_lake_client.raw_client.put_object_tagging(
-                Bucket=bucket_name,
-                Key=object_key,
-                Tagging={"TagSet": [{"Key": k, "Value": v} for k, v in encoded_metadata.items()]},
-            )
+            put_params = {
+                "Bucket": bucket_name,
+                "Key": object_key,
+                "Body": data_lake_file.content,
+                "Metadata": encoded_metadata,
+            }
 
-            # Set content type if available
             if data_lake_file.content_type:
-                self.data_lake_client.raw_client.copy_object(
-                    Bucket=bucket_name,
-                    Key=object_key,
-                    CopySource={"Bucket": bucket_name, "Key": object_key},
-                    ContentType=data_lake_file.content_type,
-                    MetadataDirective="REPLACE",
-                )
+                put_params["ContentType"] = data_lake_file.content_type
+
+            # Write the content to S3 with metadata using put_object
+            self.data_lake_client.raw_client.put_object(**put_params)
 
             context.log.info(f"Successfully wrote file {data_lake_file.uri} to S3.")
 

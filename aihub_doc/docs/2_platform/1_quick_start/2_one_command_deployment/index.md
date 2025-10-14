@@ -133,24 +133,24 @@ LITE_LLM_PROXY_API_KEY="REPLACE_WITH_RANDOM_STRING_7"
 POSTGRES_USER="admin"
 POSTGRES_PASSWORD="REPLACE_WITH_RANDOM_STRING_8"
 
-# MongoDB  
+# FerretDB (MongoDB-compatible)
 MONGO_USERNAME="admin"
 MONGO_PASSWORD="REPLACE_WITH_RANDOM_STRING_9"
-MONGO_CONNECTION_STRING="mongodb://admin:REPLACE_WITH_SAME_MONGO_PASSWORD@mongo:27017/"
+MONGO_CONNECTION_STRING="mongodb://admin:REPLACE_WITH_SAME_MONGO_PASSWORD@ferretdb:27017/"
 
-# Redis (uses defaults)
+# Valkey (Redis-compatible)
 REDIS_URL="redis://localhost:6379"
 
 # =============================================================================
 # STORAGE CONFIGURATION
 # =============================================================================
 
-# MinIO S3 Storage
-MINIO_ROOT_USER="admin"
-MINIO_ROOT_PASSWORD="REPLACE_WITH_RANDOM_STRING_10"
-S3_STORAGE_ENDPOINT="http://minio:9000"
-S3_STORAGE_ACCESS_KEY="admin"                         # Must match MINIO_ROOT_USER
-S3_STORAGE_SECRET_KEY="REPLACE_WITH_SAME_MINIO_PASSWORD"
+# SeaweedFS S3 Storage
+SEAWEEDFS_ROOT_USER="admin"
+SEAWEEDFS_ROOT_PASSWORD="REPLACE_WITH_RANDOM_STRING_10"
+S3_STORAGE_ENDPOINT="http://seaweedfs:8333"
+S3_STORAGE_ACCESS_KEY="admin"                         # Must match SEAWEEDFS_ROOT_USER
+S3_STORAGE_SECRET_KEY="REPLACE_WITH_SAME_SEAWEEDFS_PASSWORD"
 
 # =============================================================================
 # SERVICE ENDPOINTS (Internal - Don't Change)
@@ -255,13 +255,13 @@ docker compose -f docker-compose.latest.yml ps
 - **Web Interface** (aihub-web)
 - **API** (aihub-api)
 - **Authentication** (auth services)
-- **Databases** (MongoDB, PostgreSQL, Redis)
+- **Databases** (FerretDB, PostgreSQL, Valkey)
 - **Vector Database** (Milvus)
 - **LLM Proxy** (LiteLLM)
 - **Document Processing** (Docling)
 - **Observability** (Phoenix)
 - **Message Queue** (NATS)
-- **Storage** (MinIO)
+- **Storage** (SeaweedFS)
 
 ### Wait for Service Initialization
 

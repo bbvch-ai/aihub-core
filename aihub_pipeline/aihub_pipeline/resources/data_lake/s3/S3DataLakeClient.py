@@ -31,6 +31,7 @@ class S3DataLakeClient(AbstractDataLakeClient):
             raise ValueError("Container name cannot be empty")
         super().__init__(container_name)
         self._client = s3_client
+        self._ensure_bucket_with_cors()
 
     def get_all_files(
         self,
@@ -79,9 +80,16 @@ class S3DataLakeClient(AbstractDataLakeClient):
 
     def create_data_lake_file_from_uri(self, document_uri: str) -> DataLakeFile:
         """Create a DataLakeFile from S3 URI by fetching object metadata."""
-        # Parse S3 URI to get key
         if not document_uri.startswith("s3://"):
-            raise ValueError(f"Invalid S3 URI format: {document_uri}")
+            if document_uri.startswith(f"{self.container_name}/"):
+                logger.warning(f"URI missing 's3://' prefix: {document_uri}. Auto-correcting.")
+                document_uri = f"s3://{document_uri}"
+            else:
+                raise ValueError(
+                    f"Invalid S3 URI format or bucket mismatch: {document_uri}. "
+                    f"Expected format: 's3://{self.container_name}/path/to/file' or "
+                    f"'{self.container_name}/path/to/file'"
+                )
 
         # Extract key from s3://bucket/key format
         uri_parts = document_uri[5:].split("/", 1)  # Remove 's3://' and split
@@ -225,6 +233,32 @@ class S3DataLakeClient(AbstractDataLakeClient):
             for i in range(0, len(objects_to_delete), 1000):
                 batch = objects_to_delete[i : i + 1000]
                 self._client.delete_objects(Bucket=self.container_name, Delete={"Objects": batch})
+
+    def _ensure_bucket_with_cors(self) -> None:
+        """Ensure bucket exists and configure CORS for web access."""
+        try:
+            self._client.head_bucket(Bucket=self.container_name)
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code")
+            if error_code in ("404", "NoSuchBucket"):
+                self._client.create_bucket(Bucket=self.container_name)
+            else:
+                raise
+
+        cors_config = {
+            "CORSRules": [
+                {
+                    "AllowedOrigins": ["*"],
+                    "AllowedHeaders": ["Content-Type", "x-amz-date", "authorization", "x-amz-security-token"],
+                    "AllowedMethods": ["PUT", "POST", "DELETE", "GET", "HEAD"],
+                    "MaxAgeSeconds": 3000,
+                    "ExposeHeaders": ["ETag"],
+                }
+            ]
+        }
+
+        self._client.put_bucket_cors(Bucket=self.container_name, CORSConfiguration=cors_config)
+        logger.info(f"CORS configured for bucket: {self.container_name}")
 
     @property
     def raw_client(self) -> boto3.client:

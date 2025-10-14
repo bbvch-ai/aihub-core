@@ -5,6 +5,175 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.246.4] - 2025-10-13 - S3 Writing Efficiency and Document Parsing Simplification
+
+### Changed
+
+- 🔄 **Default Document Parser Loader:** The default document parsing loader in `DocumentParserResource` has been updated
+  from a 'both' approach (combining Docling and Document Intelligence) to exclusively use **Docling**, providing a more
+  predictable out-of-the-box experience.
+
+### Removed
+
+- 🗑️ **'Both' Loader Option for Document Parser:** The `BOTH` loader type option has been removed from
+  `DocumentParserResource`, streamlining the configuration for document parsing to either `DOCLING` or
+  `DOCUMENT_INTELLIGENCE`.
+
+### Refactor
+
+- ⚡️ **Optimized S3 Object Writing:** The `S3DataLakeIOManager` now writes S3 objects using a single `put_object` call,
+  combining content, metadata, and content type settings for improved efficiency and atomic operations.
+
+---
+
+## [v0.246.3] - 2025-10-13 - Enhanced S3 URI Robustness
+
+### Changed
+
+- 🚀 **Improved S3 URI Parsing:** The `S3DataLakeClient` now intelligently handles S3 URIs, automatically prepending the
+  "s3://" prefix when a URI starts directly with the configured container name, reducing errors and making input more
+  flexible.
+
+---
+
+## [v0.246.2] - 2025-10-10 - Simplified Pipelines, Smarter SharePoint Sync
+
+### Added
+
+- ✨ **SharePoint Integration**: Introduced new `SharePointSettings` for externalizing SharePoint configuration and a new
+  factory (`default_sharepoint_to_datalake_definitions`) for easily setting up SharePoint-to-DataLake pipelines.
+- 🦾 **Standardized Data Lake Pipelines**: Added a `default_definitions` utility that provides a highly configurable and
+  centralized way to define DataLake-to-VectorStore pipelines, promoting reusability and reducing boilerplate.
+- ⚡️ **Flexible Data Lake Directory Management**: The `DataLakeResource` and related URI extraction logic now support an
+  optional directory name, improving flexibility for data organization within containers.
+- ⚙️ **Configurable Bucket Auto-Sync**: Enhanced bucket creation to allow explicit control over the `auto_sync` property
+  for `BucketEntity` instances.
+
+### Changed
+
+- 🔄 **RAG Agent Defaults**: Updated the default RAG agent configuration to use a `default` index namespace and
+  `defaultknowledge` collection name, streamlining out-of-the-box usage.
+- 🔑 **Externalized SharePoint Settings**: SharePoint authentication details are now securely loaded from environment
+  variables via `SharePointSettings` rather than being configured directly on the `SharePointResource`.
+- 📄 **SharePoint File Type Filtering**: Modified the default `SharePointResource` behavior to include all file types if
+  no specific patterns are provided, offering more permissive syncing by default.
+- 🧹 **Simplified Data Lake IO Manager Configuration**: Streamlined the prefix generation for Azure Data Lake IO
+  managers, making configuration more consistent with container names.
+
+### Refactor
+
+- 🏗️ **Centralized Pipeline Definitions**: Consolidated the definition logic for RAG pipelines into
+  `definitions_util.py`, replacing scattered, repetitive configurations in `default_rag_pipeline` and `playground`
+  applications.
+- ⚡️ **Streamlined Resource Factories**: Refactored data lake and LLM resource factories to support more flexible
+  configurations and direct instantiation, reducing complexity.
+
+### Removed
+
+- 🗑️ **Deprecated Data Lake Container Resource**: Eliminated the `DataLakeContainerResource` in favor of a more flexible
+  `DataLakeResource` and consolidated pipeline definitions.
+- 🗑️ **Redundant Pipeline Boilerplate**: Removed verbose, repetitive pipeline definitions from
+  `app/default_rag_pipeline/__init__.py` and `aihub_pipeline/playground/__init__.py` by leveraging the new centralized
+  definition utility.
+
+---
+
+## [v0.246.1] - 2025-10-09 - Retrieval Agent Context Customization
+
+### Added
+
+- ✨ **Configurable Context Prompt for Retrieval Agent:** Introduced a new `context_prompt` configuration option for the
+  `RetrievalAgent`, allowing users to define a custom prompt that dictates how combined and ordered retrieved nodes are
+  formatted.
+
+---
+
+## [v0.246.0] - 2025-10-07 - Modernizing Data Persistence: Introducing SeaweedFS, FerretDB, and Valkey
+
+### Added
+
+- ✨ **SeaweedFS for Scalable Object Storage:** Integrated SeaweedFS as the new S3-compatible distributed file system,
+  providing robust and scalable object storage across all deployment environments.
+- 💾 **FerretDB as MongoDB-compatible Database:** Introduced FerretDB, a high-performance, MongoDB-compatible database
+  that leverages PostgreSQL as its backend, enhancing data flexibility and open-source alignment.
+- ⚡️ **Valkey for High-Performance Caching:** Replaced Redis with Valkey, a Redis-compatible fork, for efficient
+  in-memory caching and faster data retrieval.
+- 🛡️ **Automatic S3 Bucket Configuration:** Enhanced the S3 data lake client to automatically ensure the existence of
+  necessary buckets and configure Cross-Origin Resource Sharing (CORS) for seamless web access.
+- 🚀 **Docker Compose Services for New Stack:** Added comprehensive Docker Compose services and initialization scripts to
+  manage the lifecycle of SeaweedFS (master, volume, filer, S3 gateway), FerretDB (and its PostgreSQL backend), and
+  Valkey.
+
+### Changed
+
+- 🔄 **Updated Core Data & Storage Stack:** Migrated the entire core infrastructure from MinIO, MongoDB, and Redis to
+  SeaweedFS, FerretDB, and Valkey respectively.
+- 📄 **Documentation and README Updates:** Revised `README.md` and quick start guides to reflect the new data persistence
+  and caching technologies, including updated environment variables, service descriptions, and console links.
+- 🔗 **Service Integration Updates:** Adjusted internal dependencies and connection strings for critical services like
+  Milvus, OpenWebUI, and AI-Hub pipelines to seamlessly integrate with the new storage and database components.
+- ✅ **Improved Licensing for Core Services:** Switched from AGPL/SSPL-licensed components (MinIO, MongoDB, Redis) to
+  more permissively licensed alternatives (Apache-2.0 for SeaweedFS/FerretDB, BSD-3-Clause for Valkey), enhancing
+  open-source compliance.
+
+### Removed
+
+- 🗑️ **MinIO S3 Storage Stack:** The entire MinIO setup, including its Docker Compose services, entrypoint scripts, and
+  related configurations, has been deprecated and removed.
+- ❌ **MongoDB Database:** The MongoDB service and all associated configurations have been entirely replaced and removed
+  from the core infrastructure.
+- 🚫 **Redis In-Memory Cache:** The Redis service has been replaced by Valkey and removed from all deployment
+  configurations.
+
+---
+
+## [v0.245.9] - 2025-10-07 - Enhanced User Data Handling in Authentication
+
+### Changed
+
+- ⚡️ **Improved User Header Encoding**: Switched from Base64 to URL encoding for usernames in authentication headers and
+  signatures, enhancing compatibility and robustness when handling special characters.
+
+---
+
+## [v0.245.8] - 2025-10-07 - Streamlined Data Lake Operations and Document Management
+
+### Added
+
+- ✨ **New `RefDoc.get_documents` method:** Introduced a more flexible way to fetch reference documents without requiring
+  a namespace filter, enhancing document retrieval capabilities.
+
+### Changed
+
+- 🔄 **Namespace-Agnostic Document Removal:** The document removal process in data lake pipelines now uses the new
+  `get_documents` method, making it more flexible and not bound to a specific namespace.
+- ⚡️ **Enhanced MongoDB Connection Management:** Implemented explicit `disconnect()` calls in `finally` blocks across
+  key utility functions and pipeline definitions, ensuring robust database connection cleanup after operations.
+- 🧹 **Refined Bucket and Namespace Utilities:** The `get_db_name_from_bucket_name` and
+  `get_or_create_namespace_for_directory` functions now include an `auto_sync` parameter, providing clearer
+  differentiation for autoloading versus manual data ingestion pipelines.
+- 🚀 **Simplified Pipeline Configurations:** Streamlined parameter passing for bucket and namespace information in
+  default RAG and playground pipelines, allowing for direct use of container names and reducing redundant configuration.
+
+### Refactor
+
+- 🛠️ **Centralized Bucket and Namespace Logic:** Extracted and consolidated core bucket and namespace creation/retrieval
+  logic into new internal helper functions within `bucket_utils`, improving code organization and reusability.
+- 💡 **Optimized Store Name Retrieval:** Removed an unnecessary wrapper function for retrieving the store name in the
+  default RAG pipeline, leading to more direct and efficient utilization of the `bucket_utils` functionality.
+
+---
+
+## [v0.245.7] - 2025-10-02 - Agent Guard Message Consistency
+
+### Fixed
+
+- 🐛 **Corrected RAGAgent guard rejection messaging:** Ensured the **RAGAgent** accurately formats system messages for
+  guard rejections by using the correct reason property (`event.reason`), improving clarity and consistency in agent
+  responses.
+
+---
+
 ## [v0.245.6] - 2025-10-01 - Containerization of Aihub Bot for Enhanced Deployment
 
 ### Added

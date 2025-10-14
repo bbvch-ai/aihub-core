@@ -68,31 +68,119 @@ x-common-cert-resolver: &common-cert-resolver "letsencrypt"
 
 
 services:
-  # === MinIO Stack ===
-  # <editor-fold desc="Minio Stack">
-  minio:
-    image: ghcr.io/bbvch-ai/aihub-core/minio:release.2025-05-24t17-08-30z
-    container_name: minio
+  # === SeaweedFS Stack ===
+  # <editor-fold desc="SeaweedFS Stack">
+  seaweedfs-master:
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    container_name: seaweedfs-master
     <<: *restart-policy
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_DEFAULT_BUCKETS: "open-webui,milvus"
+    command: >
+      master
+      -ip=seaweedfs-master
+      -ip.bind=0.0.0.0
+      -defaultReplication=000
+      -volumeSizeLimitMB=1024
+      -volumePreallocate=false
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/minio-data:/minio-data
-      - ./configs/minio/minio-entrypoint.sh:/usr/local/bin/minio-entrypoint.sh:ro
-    entrypoint: [ "/bin/sh", "/usr/local/bin/minio-entrypoint.sh" ]
+      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master:/data
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9333/dir/status" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    logging: *default-logging
+
+  seaweedfs-volume:
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    container_name: seaweedfs-volume
+    <<: *restart-policy
+    command: >
+      volume
+      -mserver="seaweedfs-master:9333"
+      -ip.bind=0.0.0.0
+      -port=8080
+      -max=100
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-volume:/data
+    depends_on:
+      seaweedfs-master:
+        condition: service_healthy
+    logging: *default-logging
+
+  seaweedfs-filer:
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    container_name: seaweedfs-filer
+    <<: *restart-policy
+    command: >
+      filer
+      -master="seaweedfs-master:9333"
+      -ip.bind=0.0.0.0
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-filer:/data
+    depends_on:
+      seaweedfs-master:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     logging: *default-logging
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.minio.rule=Host(`datalake.${DOMAIN}`)"
-      - "traefik.http.routers.minio.entrypoints=websecure"
-      - "traefik.http.routers.minio.tls=true"
-      - "traefik.http.routers.minio.middlewares=security-headers@file"
-      - "traefik.http.services.minio.loadbalancer.server.port=9001"
+      # Filer Web UI
+      - "traefik.http.routers.seaweedfs-filer-ui.rule=Host(`datalake.${DOMAIN}`)"
+      - "traefik.http.routers.seaweedfs-filer-ui.priority=4000"
+      - "traefik.http.routers.seaweedfs-filer-ui.entrypoints=websecure"
+      - "traefik.http.routers.seaweedfs-filer-ui.tls=true"
+      - "traefik.http.routers.seaweedfs-filer-ui.middlewares=security-headers@file"
+      - "traefik.http.services.seaweedfs-filer-ui.loadbalancer.server.port=8888"
 
+  seaweedfs-s3:
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    container_name: seaweedfs-s3
+    <<: *restart-policy
+    volumes:
+      - ./configs/seaweedfs/s3-entrypoint.sh:/usr/local/bin/s3-entrypoint.sh:ro
+    entrypoint: [ "/bin/sh", "/usr/local/bin/s3-entrypoint.sh" ]
+    environment:
+      # S3 Authentication
+      SEAWEEDFS_S3_USER: ${S3_STORAGE_ACCESS_KEY}
+      SEAWEEDFS_S3_PASSWORD: ${S3_STORAGE_SECRET_KEY}
+      # S3 Service Configuration
+      S3_PORT: "9000"
+      S3_FILER: "seaweedfs-filer:8888"
+      S3_BIND_IP: "0.0.0.0"
+      S3_ALLOW_EMPTY_FOLDER: true
+      S3_DOMAIN_NAME: ${S3_DOMAIN_NAME:-}
+      S3_DATACENTER: ${S3_DATACENTER:-}
+    depends_on:
+      seaweedfs-filer:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/status" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    logging: *default-logging
+
+  seaweedfs-init:
+    image: ghcr.io/bbvch-ai/aihub-core/aws-cli-alpine:3.22.1
+    container_name: seaweedfs-init
+    depends_on:
+      seaweedfs-s3:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
+    volumes:
+      - ./configs/seaweedfs/init-buckets.sh:/usr/local/bin/init-buckets.sh:ro
+    entrypoint: [ "/bin/sh", "/usr/local/bin/init-buckets.sh" ]
+    restart: "no"
+    logging: *default-logging
   # </editor-fold>
 
   # === Milvus Stack ===
@@ -122,9 +210,9 @@ services:
       - seccomp:unconfined
     environment:
       ETCD_ENDPOINTS: etcd:2379
-      MINIO_ADDRESS: minio:9000
-      MINIO_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
-      MINIO_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_ADDRESS: seaweedfs-s3:9000
+      MINIO_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
+      MINIO_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/milvus-data:/var/lib/milvus
       - ./configs/milvus/milvus.nightly.yaml:/milvus/configs/milvus.yaml
@@ -132,8 +220,10 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
       start_period: 90s
     depends_on:
-      - "etcd"
-      - "minio"
+      etcd:
+        condition: service_healthy
+      seaweedfs-s3:
+        condition: service_healthy
     logging: *default-logging
 
   attu:
@@ -193,34 +283,49 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/nats-data:/data
     logging: *default-logging
 
-  redis:
-    image: ghcr.io/bbvch-ai/aihub-core/redis:8.0.1
-    container_name: redis
+  valkey:
+    image: ghcr.io/bbvch-ai/aihub-core/valkey:8.0.5
+    container_name: valkey
     <<: *restart-policy
-    command: "redis-server --save 30 1 --loglevel warning"
+    command: "valkey-server --save 30 1 --loglevel warning"
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/redis-data:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/valkey-data:/data
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: [ "CMD", "valkey-cli", "ping" ]
       start_period: 5s
     logging: *default-logging
   # </editor-fold>
 
-  # === Mongo Stack ===
-  # <editor-fold desc="Mongo Stack">
-  mongo:
-    image: ghcr.io/bbvch-ai/aihub-core/mongo:8.0.9
-    container_name: mongo
+  # === FerretDB Stack ===
+  # <editor-fold desc="FerretDB Stack">
+  postgres-ferretdb:
+    image: ghcr.io/bbvch-ai/aihub-core/postgres-documentdb:17.0.106.0-ferretdb-2.5.0
+    container_name: postgres-ferretdb
     <<: *restart-policy
-    command: >
-      --quiet
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      POSTGRES_USER: ${MONGO_USERNAME}
+      POSTGRES_PASSWORD: ${MONGO_PASSWORD}
+      POSTGRES_DB: postgres
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/mongo-data:/data/db
+      - ${VOLUME_ROOT:-./.docker-volumes}/ferretdb-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging: *default-logging
+
+  ferretdb:
+    image: ghcr.io/bbvch-ai/aihub-core/ferretdb:2.5.0
+    container_name: ferretdb
+    <<: *restart-policy
+    ports:
+      - "27017:27017"
+    environment:
+      - FERRETDB_POSTGRESQL_URL=postgres://${MONGO_USERNAME}:${MONGO_PASSWORD}@postgres-ferretdb:5432/postgres
+    depends_on:
+      postgres-ferretdb:
+        condition: service_healthy
     logging: *default-logging
   # </editor-fold>
 
@@ -286,7 +391,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      minio:
+      seaweedfs-s3:
         condition: service_healthy
       litellm:
         condition: service_started
@@ -349,11 +454,11 @@ services:
 
       # Data storage
       STORAGE_PROVIDER: "s3"
-      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
-      S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
+      S3_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_REGION_NAME: "us-east-1"
       S3_BUCKET_NAME: "open-webui"
-      S3_ENDPOINT_URL: 'http://minio:9000'
+      S3_ENDPOINT_URL: 'http://seaweedfs-s3:9000'
 
       # Model config
       OPENAI_API_BASE_URL: ""
@@ -388,14 +493,14 @@ services:
       DATABASE_NAME: 'openwebui'
 
       # Redis
-      REDIS_URL: 'redis://redis:6379/1'
+      REDIS_URL: 'redis://valkey:6379/1'
       REDIS_KEY_PREFIX: "open-webui"
 
       # Web server
       UVICORN_WORKERS: 1
       ENABLE_WEBSOCKET_SUPPORT: True
       WEBSOCKET_MANAGER: "redis"
-      WEBSOCKET_REDIS_URL: 'redis://redis:6379/1'
+      WEBSOCKET_REDIS_URL: 'redis://valkey:6379/1'
       THREAD_POOL_SIZE: 32
       CORS_ALLOW_ORIGIN: "*"
 
@@ -678,12 +783,12 @@ services:
     container_name: api
     <<: *restart-policy
     depends_on:
-      - "mongo"
+      - "ferretdb"
       - "nats"
       - "traefik"
     environment:
       NATS_ENDPOINT: "nats://nats:4222"
-      MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
+      MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017"
       NUM_WORKERS: 1
       LOG_LEVEL: ${LOG_LEVEL}
       AUTH_ENABLE_API_ACCESS: True
@@ -807,7 +912,7 @@ services:
     restart: always
     environment:
       NATS_ENDPOINT: "nats://nats:4222"
-      REDIS_URL: "redis://redis:6379"
+      REDIS_URL: "redis://valkey:6379"
       PHOENIX_ENDPOINT: "http://phoenix:6006"
       LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -820,7 +925,7 @@ services:
     restart: always
     environment:
       NATS_ENDPOINT: "nats://nats:4222"
-      REDIS_URL: "redis://redis:6379"
+      REDIS_URL: "redis://valkey:6379"
       PHOENIX_ENDPOINT: "http://phoenix:6006"
       LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -837,13 +942,13 @@ services:
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
-      S3_STORAGE_ENDPOINT: http://minio:9000
-      S3_STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER}
-      S3_STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      S3_STORAGE_URL_SIGNING_SECRET: ${MINIO_URL_SIGNING_SECRET}
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017"
+      MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017"
       DOCLING_API_ENDPOINT: http://docling:5001/v1alpha/convert/source
       DOCLING_API_TIMEOUT: 600
       MILVUS_URL: "http://milvus-standalone"

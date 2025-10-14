@@ -6,6 +6,7 @@ from typing import Annotated
 
 import aiohttp
 import requests
+from aihub_lib.infrastructure.sharepoint.SharePointSettings import SharePointSettings
 from dagster import ConfigurableResource
 from pydantic import Field, PrivateAttr
 
@@ -13,10 +14,6 @@ from aihub_pipeline.types.SharePointFile import MinimalSharePointFile, SharePoin
 
 
 class SharePointResource(ConfigurableResource):
-    tenant_id: Annotated[str, Field(description="Azure AD tenant ID")]
-    client_id: Annotated[str, Field(description="Azure AD application client ID")]
-    client_secret: Annotated[str, Field(description="Azure AD application client secret")]
-    site_url: Annotated[str, Field(description="SharePoint site URL")]
     target_folders: Annotated[
         list[str] | None,
         Field(description="List of folder paths to fetch files from. If None, fetches from root."),
@@ -32,25 +29,10 @@ class SharePointResource(ConfigurableResource):
     supported_filetypes: Annotated[
         list[str] | None,
         Field(
-            default_factory=lambda: [
-                r"\.jpe?g$",
-                r"\.png$",
-                r"\.bmp$",
-                r"\.tiff?$",
-                r"\.heif$",
-                r"\.pdf$",
-                r"\.docx?$",
-                r"\.xlsx?$",
-                r"\.pptx?$",
-                r"\.html?$",
-                r"\.epub$",
-                r"\.ipynb$",
-                r"\.txt$",
-                r"\.md$",
-                r"\.rtf$",
-            ],
-            description="List of regular expressions."
-            "Any file whose name matches one of these patterns will be included.",
+            default=None,
+            description="Optional list of regex patterns to filter files by extension. "
+            "None (default) = allow ALL file types. "
+            "Provide a list to restrict to specific types, e.g., [r'\\.pdf$', r'\\.docx?$']",
         ),
     ]
     max_retries: Annotated[
@@ -79,30 +61,34 @@ class SharePointResource(ConfigurableResource):
     _drive_id: str | None = PrivateAttr(default=None)
     _compiled_exclude_patterns: list[re.Pattern] | None = PrivateAttr(default=None)
     _compiled_include_patterns: list[re.Pattern] | None = PrivateAttr(default=None)
+    _settings: SharePointSettings = PrivateAttr(default=None)
 
     def model_post_init(self, __context) -> None:
         super().model_post_init(__context)
+
+        self._settings = SharePointSettings()
+
         if self.exclude_folders:
             self._compiled_exclude_patterns = [re.compile(pattern, re.IGNORECASE) for pattern in self.exclude_folders]
         else:
             self._compiled_exclude_patterns = []
 
-        if self.supported_filetypes:
+        if self.supported_filetypes is None:
+            self._compiled_include_patterns = None
+        else:
             self._compiled_include_patterns = [
                 re.compile(pattern, re.IGNORECASE) for pattern in self.supported_filetypes
             ]
-        else:
-            self._compiled_include_patterns = []
 
     def _get_access_token(self) -> str:
         if self._access_token and self._token_expiry and datetime.now() < self._token_expiry:
             return self._access_token
 
-        token_url = f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/v2.0/token"
+        token_url = f"https://login.microsoftonline.com/{self._settings.TENANT_ID}/oauth2/v2.0/token"
         token_data = {
             "grant_type": "client_credentials",
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
+            "client_id": self._settings.CLIENT_ID,
+            "client_secret": self._settings.CLIENT_SECRET.get_secret_value(),
             "scope": "https://graph.microsoft.com/.default",
         }
 
@@ -123,7 +109,7 @@ class SharePointResource(ConfigurableResource):
         if self._site_id:
             return self._site_id
 
-        site_url_encoded = self.site_url.replace(":", "%3A")
+        site_url_encoded = self._settings.SITE_URL.replace(":", "%3A")
         graph_url = f"https://graph.microsoft.com/v1.0/sites/{site_url_encoded}"
 
         response = requests.get(graph_url, headers=self._get_headers())
@@ -150,7 +136,7 @@ class SharePointResource(ConfigurableResource):
 
     def _is_file_included(self, filename: str) -> bool:
         if not self._compiled_include_patterns:
-            return False
+            return True
 
         _, extension = os.path.splitext(filename)
         if not extension:
