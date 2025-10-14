@@ -92,7 +92,7 @@ class S3DataLakeClient(AbstractDataLakeClient):
                 )
 
         # Extract key from s3://bucket/key format
-        uri_parts = document_uri[5:].split("/", 1)  # Remove 's3://' and split
+        uri_parts = document_uri.removeprefix("s3://").split("/", 1)
         if len(uri_parts) != 2:
             raise ValueError(f"Invalid S3 URI format: {document_uri}")
 
