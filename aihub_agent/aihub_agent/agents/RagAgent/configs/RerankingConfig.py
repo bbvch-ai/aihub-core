@@ -1,7 +1,6 @@
 from typing import Annotated
 
 from aihub_lib.generative_ai.resources.models.llm.RerankingModelConfig import (
-    RerankingLLMParameter,
     RerankingModelConfig,
 )
 from pydantic import BaseModel, Field

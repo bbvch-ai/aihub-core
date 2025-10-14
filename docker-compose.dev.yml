@@ -302,21 +302,27 @@ services:
       interval: 30s
       retries: 3
       start_period: 60s
-  # TODO use llama.cpp instead with qwen3
-  huggingface-reranking-inference:
-    image: ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cpu-ipex-sha-c8ff435
-    container_name: huggingface-reranking-inference
+
+  llama-cpp-reranker:
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b6710
+    container_name: llama-cpp-reranker
+    platform: linux/amd64
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/hf-reranking-data:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-reranker-data:/data
       - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-reranker-cache:/root/.cache/llama.cpp
     ports:
       - "8184:8184"
     environment:
       HF_HOME: /root/.cache/huggingface
     command: >
+      -hf mradermacher/Qwen3-Reranker-0.6B-GGUF
+      --alias Qwen3-Reranker-0.6B
       --port 8184
-      --model-id BAAI/bge-reranker-base
-      --max-batch-tokens 4096
+      -c 32768
+      --reranking
+      -ngl 99
+      --no-context-shift
     restart: always
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8184/health" ]

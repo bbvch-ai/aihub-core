@@ -272,7 +272,7 @@ services:
               capabilities: [ gpu ]
     restart: always
     depends_on:
-      vllm-reranker:
+      llama-cpp-reranker:
         condition: service_healthy
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
@@ -304,7 +304,7 @@ services:
               capabilities: [ gpu ]
     restart: always
     depends_on:
-      vllm-reranker:
+      llama-cpp-reranker:
         condition: service_healthy
     healthcheck:
       test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8183/health" ]
@@ -312,26 +312,27 @@ services:
       interval: 30s
       retries: 3
       start_period: 60s
-  # TODO use llama.cpp instead with qwen3
-  vllm-reranker:
-    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:latest
-    container_name: vllm-reranker
+
+  llama-cpp-reranker:
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b6710
+    container_name: llama-cpp-reranker
+    platform: linux/amd64
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/vllm-reranker-data:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-reranker-data:/data
       - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-reranker-cache:/root/.cache/llama.cpp
     ports:
-      - "8184:8000"
+      - "8184:8184"
     environment:
       HF_HOME: /root/.cache/huggingface
-      CUDA_VISIBLE_DEVICES: "0"
     command: >
-      --model jinaai/jina-reranker-v2-base-multilingual
-      --port 8000
-      --host 0.0.0.0
-      --served-model-name jina-reranker
-      --max-model-len 1024
-      --gpu-memory-utilization 0.2
-      --trust-remote-code
+      -hf mradermacher/Qwen3-Reranker-0.6B-GGUF
+      --alias Qwen3-Reranker-0.6B
+      --port 8184
+      -c 32768
+      --reranking
+      -ngl 99
+      --no-context-shift
     deploy:
       resources:
         reservations:
@@ -341,11 +342,11 @@ services:
               capabilities: [ gpu ]
     restart: always
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/v1/models" ]
-      timeout: 30s
-      interval: 60s
-      retries: 5
-      start_period: 120s
+      test: [ "CMD", "curl", "-f", "http://localhost:8184/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
 
   presidio-analyzer:
     image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359
