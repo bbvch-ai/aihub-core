@@ -1,6 +1,6 @@
 ---
 title: Cost Control
-index: 16
+index: 14
 ---
 
 # Cost Control

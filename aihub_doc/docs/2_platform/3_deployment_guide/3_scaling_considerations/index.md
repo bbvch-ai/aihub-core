@@ -47,38 +47,6 @@ reduce latency for distributed user populations.
 new agent versions alongside existing versions, gradually shifting traffic to updated implementations while maintaining
 the ability to roll back if issues arise.
 
----
-
-## Questions Requiring Clarification
-
-The following aspects require clarification to ensure documentation accuracy:
-
-1. **Scaling Metrics**: What metrics should organizations monitor to determine when scaling is required? Are there
-   recommended thresholds for CPU utilization, memory usage, or event processing latency that indicate capacity needs?
-
-2. **Auto-Scaling Support**: Does the platform support automatic scaling based on load? Can container orchestration
-   systems like Kubernetes automatically adjust instance counts based on queue depth or processing metrics?
-
-3. **Resource Requirements**: What are typical resource requirements (CPU, memory, storage) per agent instance? How do
-   these requirements vary based on agent complexity or workload characteristics?
-
-4. **Scaling Limits**: Are there practical limits on scalability? What is the maximum number of concurrent agent
-   instances the platform has been tested with? Are there bottlenecks in shared infrastructure (message bus, databases)
-   that limit scaling?
-
-5. **Cost Optimization**: What strategies exist for optimizing costs in scaled deployments? Can organizations use mixed
-   instance types (compute-optimized vs. memory-optimized) for different agent types?
-
-6. **Performance Characteristics**: How does latency scale with instance count? Are there diminishing returns at certain
-   scaling levels? What is the relationship between throughput and instance count?
-
-7. **State Management at Scale**: How do the Redis and MongoDB backends scale to support large deployments? Are there
-   sharding or clustering strategies required for high-scale deployments?
-
-8. **Multi-Tenancy**: Can a single deployment serve multiple organizational tenants? How is isolation and resource
-   allocation managed in multi-tenant scenarios?
-
-
 ### Horizontal Scalability
 
 The event-driven architecture enables effortless scaling to meet fluctuating demand. When system load increases,

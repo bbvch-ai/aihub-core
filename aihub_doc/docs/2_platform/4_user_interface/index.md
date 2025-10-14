@@ -1,92 +1,92 @@
 ---
-title: Swiss AI Hub Suite Interface
-index: 1
+title: User Interface
+index: 4
 ---
 
-# Swiss AI Hub Suite Interface
+# The Platform interface
 
-The Swiss AI Hub provides an integrated suite interface that unifies access to multiple AI services through a single,
-cohesive user experience. This architectural approach mirrors the familiar productivity suite paradigm—similar to
-Microsoft Office or Google Workspace—where specialized applications coexist within a unified environment, sharing common
-navigation, authentication, and design principles.
+The Swiss AI Hub interface is designed as an integrated suite, not a collection of separate tools. This approach mirrors familiar productivity software like Microsoft Office or Google Workspace, where different applications for different tasks coexist within a single, unified environment.
 
-## The Suite Paradigm
+Users authenticate once to access a cohesive suite of AI services. A shared navigation framework and a consistent design language across all capabilities reduce the learning curve and eliminate the workflow disruption common in fragmented platforms. This design allows users to focus on their work, not on learning how to navigate different tools.
 
-Traditional AI platforms often present fragmented experiences, requiring users to navigate between disconnected tools,
-manage separate credentials, and learn disparate interfaces for each capability. The Swiss AI Hub fundamentally
-reimagines this approach by treating AI capabilities as an integrated suite rather than a collection of independent
-applications.
+## The service catalog
 
-**Single Point of Entry**: Users authenticate once and gain access to all authorized services through a unified
-interface. There is no need to switch between applications, manage multiple login sessions, or navigate disparate user
-experiences.
+The interface provides a set of specialized services that cover the entire lifecycle of enterprise AI, from knowledge management and agent development to process automation and evaluation.
 
-**Shared Navigation Framework**: A persistent sidebar provides immediate access to all available services—agents,
-conversations, knowledge bases, processes, evaluations, and administrative tools. Users move between capabilities with
-single clicks, maintaining context and workflow continuity.
+### Agent management
 
-**Consistent Design Language**: Despite serving different purposes, all services share common visual design, interaction
-patterns, and behavioral conventions. Buttons, forms, tables, and navigation elements behave predictably across
-services, dramatically reducing the learning curve for new capabilities.
+This is the central hub for discovering, interacting with, and monitoring all AI agents deployed in your organization. It provides a browsable catalog of available agents, allowing users to understand their capabilities before engaging with them.
 
-**Contextual Intelligence**: The suite understands relationships between services. When examining an AI agent, users can
-seamlessly navigate to its knowledge sources, review its conversation history, or inspect its workflow definition—all
-through contextually aware navigation that anticipates user needs.
+::: details Key capabilities
+- **Agent discovery**: Browse a visual catalog of all agents you are authorized to access, with descriptions and status indicators.
+- **Workflow visualization**: Examine agent workflows as interactive diagrams showing their decision logic and tool integrations.
+- **Direct interaction**: Initiate chat sessions directly from the agent's profile.
+- **Thread overview**: View all conversation threads associated with a specific agent to review its interaction history.
+- **Status monitoring**: See real-time indicators showing whether agents are running, stopped, or experiencing errors.
+:::
 
-## Why the Suite Approach Matters
+### Thread management
 
-For organizations evaluating AI platforms, the architectural choice between fragmented tools and an integrated suite has
-profound implications for adoption success, operational efficiency, and long-term value.
+This service provides a complete history of all conversations between users and AI agents. It allows you to resume past interactions, review an agent's reasoning, and maintain a full audit trail of AI-powered dialogues.
 
-**Reduced Training Investment**: Organizations deploying the Swiss AI Hub benefit from accelerated user onboarding.
-Training time focuses on AI concepts and business applications rather than navigating disconnected interfaces. Users who
-learn one service immediately understand how to use others, multiplying the value of training investments.
+::: details Key capabilities
+- **Thread catalog**: View, search, and filter all your past conversation threads.
+- **Conversation history**: Access the complete message history for any thread, with timestamps and participant details.
+- **Resume conversations**: Continue any past interaction from where you left off, with full context preserved.
+- **Display events**: See a rich visualization of an agent's internal operations during a conversation, including its thought process, tool use, and data retrieval steps.
+:::
 
-**Operational Simplification**: IT departments manage a single platform deployment rather than coordinating multiple
-independent systems. Security policies, access controls, authentication protocols, and compliance requirements apply
-uniformly across all capabilities, reducing configuration complexity and security risks.
+### Knowledge management
 
-**User Productivity**: The elimination of context switching enables users to maintain focus on their work rather than
-the mechanics of accessing AI tools. Moving from agent interaction to knowledge exploration to process monitoring occurs
-within seconds, not minutes, preserving cognitive flow and work momentum.
+This service gives you transparent control over the knowledge bases that your AI agents use for Retrieval-Augmented Generation (RAG). You can manage the documents and data that provide context for your agents' responses.
 
-**Comprehensive Governance**: The unified architecture creates complete audit trails spanning all user activities across
-the platform. Organizations gain visibility into how AI capabilities are used, by whom, and for what purposes,
-supporting compliance requirements and usage optimization.
+::: details Key capabilities
+- **Organize knowledge**: Structure information in databases and namespaces that mirror your organization's data structures.
+- **Document upload**: Manually upload documents with previews and validation.
+- **Processing transparency**: See exactly how documents are parsed, chunked, and prepared for AI retrieval.
+- **Document reconstruction**: View the final, processed version of a document to understand how an agent sees it.
+:::
 
-## Documentation Structure
+### Process management
 
-This documentation section explores the Swiss AI Hub Suite Interface through the following perspectives:
+This service is for visualizing and managing complex, multi-step workflows that involve AI agents, human decision points, and integrations with external systems. It provides operational visibility into sophisticated AI-powered automation.
 
-- **[Architecture and Integration](1_architecture/1_architecture.md)**: How services integrate into the suite, the
-  controller pattern, and technical foundation
-- **[Permission and Access Control](2_permission_system/2_permission_system.md)**: Dynamic service discovery and
-  role-based interface adaptation
-- **[Navigation and User Experience](3_navigation_ux/3_navigation_ux.md)**: How users navigate the suite and interaction
-  patterns
-- **[Service Catalog](4_service_catalog/4_service_catalog.md)**: Comprehensive overview of integrated services
-- **[Extensibility](5_extensibility/5_extensibility.md)**: How organizations can extend the suite with custom
-  capabilities
-- **[Internationalization](../../../../../../2_platform/x_compliance/6_internationalization/6_internationalization.md)**: Multi-language support for Swiss
-  linguistic diversity
+::: details Key capabilities
+- **Process visualization**: View interactive diagrams of your automated business processes.
+- **Execution monitoring**: Track the real-time progress of running processes, seeing which step is currently active.
+- **Human intervention**: Participate in workflows that require human approval or review at designated steps.
+- **Execution history**: Review a complete audit trail of every process run, with step-by-step logs and outcomes.
+:::
 
-## Business Value for Public Procurement
+### Evaluation service
 
-Organizations evaluating the Swiss AI Hub in the context of public tenders should recognize that the suite architecture
-delivers strategic advantages beyond individual AI capabilities:
+This service brings systematic testing and quality assurance to your AI agents. It allows you to validate agent performance against predefined datasets to ensure quality and accuracy before and after deployment.
 
-**Future-Proof Investment**: As AI technology evolves and new capabilities emerge, the suite architecture enables
-seamless integration of additional services without disrupting existing deployments or requiring user retraining.
-Today's investment grows in value as the platform expands.
+::: details Key capabilities
+- **Dataset management**: Upload and manage test datasets with question-answer pairs or other evaluation criteria.
+- **Experiment configuration**: Define and run automated experiments that test agents against your datasets.
+- **Results analysis**: View comprehensive results showing success rates, performance metrics, and failure analysis.
+- **Comparative analysis**: Compare the results of different experiments to measure the impact of configuration changes.
+:::
 
-**Vendor Independence**: The extensible architecture allows organizations to integrate proprietary or third-party AI
-services alongside native capabilities, avoiding vendor lock-in while maintaining a unified user experience.
+### Administrative services
 
-**Scalability**: The architecture supports growth from departmental pilot projects to enterprise-wide deployments
-serving thousands of users across diverse use cases, all through the same interface framework.
+A set of services enables administrators to manage users, roles, and permissions through an intuitive interface. This centralizes platform governance for security, compliance, and operational teams.
 
-**Compliance Readiness**: Unified authentication, authorization, and audit logging simplify compliance with data
-protection regulations, sector-specific requirements, and public sector governance standards.
+::: details Key capabilities
+- **User management**: Provision, modify, and deactivate user accounts.
+- **Role management**: Define roles with specific permission sets (e.g., "Agent Developer," "Knowledge Manager").
+- **Permission assignment**: Assign users to roles to grant them access to specific services and capabilities.
+- **Audit trails**: Review user activity logs and access patterns across the entire platform.
+:::
 
-The following sections provide detailed technical and business perspectives on each aspect of the suite interface,
-enabling informed evaluation of how this architectural approach supports organizational AI adoption goals.
+## A unified experience
+
+These services are not isolated applications. The suite is designed to create a seamless workflow where context flows between them.
+
+- **Persistent navigation**: A permanent sidebar provides one-click access to any authorized service from anywhere in the application. You never need to return to a "home" screen to switch tasks.
+- **Consistent design**: All services share the same visual design and interaction patterns. Forms, tables, and buttons behave predictably everywhere, so learning one service helps you understand them all.
+- **Cross-service context**: The interface understands the relationships between objects. When viewing an agent, you can navigate directly to its knowledge sources or its conversation threads. When reviewing a thread, you can see which agent participated.
+- **Intelligent interface**: The interface uses modern web patterns to feel fast and responsive. Skeleton screens show you what content is loading, and real-time updates are pushed via WebSockets for live agent execution and process monitoring.
+
+This integrated approach ensures that the platform is not just a collection of powerful features, but a productive and coherent environment for all users.
