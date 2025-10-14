@@ -10,20 +10,20 @@ An agent in the Swiss AI-Hub is a workflow defined by a series of steps that pro
 This documentation guides you through the architecture, patterns, and best practices for building robust and scalable agents.
 
 ::: warning
-Before you begin, please complete the [Development Environment Setup](https://www.google.com/search?q=../1_quick_start/1_dev_environment_setup/) and build [Your First Agent](https://www.google.com/search?q=../1_quick_start/3_your_first_agent/).
+Before you begin, please complete the [Development Environment Setup](../1_quick_start/1_dev_environment_setup/) and build [Your First Agent](../1_quick_start/3_your_first_agent/).
 :::
 
 ## What's Covered
 
 This guide is structured to build your knowledge progressively:
 
-1.  [**Agent Fundamentals**](https://www.google.com/search?q=./1_agent_fundamentals/) - The core architecture, including events, steps, and configuration.
-2.  [**Core Patterns**](https://www.google.com/search?q=./2_core_patterns/) - Essential workflow patterns like conditional logic, loops, and state management.
-3.  [**Human in the Loop**](https://www.google.com/search?q=./3_human_in_the_loop/) - Building interactive workflows that require human approval or input.
-4.  [**Multi-Agent Systems**](https://www.google.com/search?q=./4_multi_agent_systems/) - Coordinating multiple agents to solve complex problems.
-5.  [**Testing and Debugging**](https://www.google.com/search?q=./5_testing_and_debugging/) - Best practices for ensuring your agent is reliable and correct.
-6.  [**Production Deployment**](https://www.google.com/search?q=./6_production_deployment/) - Guidelines for packaging and deploying your agent.
-7.  [**Agent Observation**](https://www.google.com/search?q=./7_agent_observation/) - Monitoring your agent's behavior and performance with integrated tracing.
+1.  [**Agent Fundamentals**](./1_agent_fundamentals/) - The core architecture, including events, steps, and configuration.
+2.  [**Core Patterns**](./2_core_patterns/) - Essential workflow patterns like conditional logic, loops, and state management.
+3.  [**Human in the Loop**](./3_human_in_the_loop/) - Building interactive workflows that require human approval or input.
+4.  [**Multi-Agent Systems**](./4_multi_agent_systems/) - Coordinating multiple agents to solve complex problems.
+5.  [**Testing and Debugging**](./5_testing_and_debugging/) - Best practices for ensuring your agent is reliable and correct.
+6.  [**Production Deployment**](./6_production_deployment/) - Guidelines for packaging and deploying your agent.
+7.  [**Agent Observation**](./7_agent_observation/) - Monitoring your agent's behavior and performance with integrated tracing.
 
 ## Key Principles of the SDK
 
