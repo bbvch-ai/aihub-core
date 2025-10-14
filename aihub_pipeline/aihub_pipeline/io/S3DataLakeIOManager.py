@@ -99,17 +99,17 @@ class S3DataLakeIOManager(ConfigurableIOManager):
                 context.log.error(f"No content found for file {data_lake_file.uri}. Cannot write to S3.")
                 raise ValueError(f"No content to write for file {data_lake_file.uri}.")
 
-            # Parse S3 URI to get bucket and key
-            if not data_lake_file.uri.startswith("s3://"):
-                context.log.error(f"Invalid S3 URI: {data_lake_file.uri}")
-                raise ValueError(f"URI must start with 's3://': {data_lake_file.uri}")
+            uri = data_lake_file.uri
+            if uri.startswith("s3://"):
+                path = uri[5:]
+            else:
+                path = uri.lstrip("/")
 
-            # Remove s3:// prefix and split into bucket and key
-            s3_path = data_lake_file.uri[5:]  # Remove 's3://'
-            parts = s3_path.split("/", 1)
+            # Split into bucket and key
+            parts = path.split("/", 1)
             if len(parts) != 2:
-                context.log.error(f"Invalid S3 URI format: {data_lake_file.uri}")
-                raise ValueError(f"Invalid S3 URI format: {data_lake_file.uri}")
+                context.log.error(f"Invalid S3 URI format: {uri}")
+                raise ValueError(f"Invalid S3 URI format: {uri}")
 
             bucket_name = parts[0]
             object_key = parts[1]
@@ -131,7 +131,7 @@ class S3DataLakeIOManager(ConfigurableIOManager):
             # Write the content to S3 with metadata using put_object
             self.data_lake_client.raw_client.put_object(**put_params)
 
-            context.log.info(f"Successfully wrote file {data_lake_file.uri} to S3.")
+            context.log.info(f"Successfully wrote file s3://{bucket_name}/{object_key} to S3.")
 
     def load_input(self, context: InputContext) -> DataLakeFile | list[DataLakeFile]:
         if context.has_partition_key:
