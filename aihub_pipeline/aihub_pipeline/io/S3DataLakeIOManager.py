@@ -99,17 +99,13 @@ class S3DataLakeIOManager(ConfigurableIOManager):
                 context.log.error(f"No content found for file {data_lake_file.uri}. Cannot write to S3.")
                 raise ValueError(f"No content to write for file {data_lake_file.uri}.")
 
-            uri = data_lake_file.uri
-            if uri.startswith("s3://"):
-                path = uri[5:]
-            else:
-                path = uri.lstrip("/")
+            path = data_lake_file.uri.removeprefix("s3://").lstrip("/")
 
             # Split into bucket and key
             parts = path.split("/", 1)
             if len(parts) != 2:
-                context.log.error(f"Invalid S3 URI format: {uri}")
-                raise ValueError(f"Invalid S3 URI format: {uri}")
+                context.log.error(f"Invalid S3 URI format: {data_lake_file.uri}")
+                raise ValueError(f"Invalid S3 URI format: {data_lake_file.uri}")
 
             bucket_name = parts[0]
             object_key = parts[1]
