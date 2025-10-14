@@ -1,6 +1,6 @@
 ---
-title: LiteLLM Integration
-index: 3
+title: Proxy Server
+index: 1
 ---
 
 # LLM Proxy
