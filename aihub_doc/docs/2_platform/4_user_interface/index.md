@@ -67,7 +67,7 @@ This documentation section explores the Swiss AI Hub Suite Interface through the
 - **[Service Catalog](4_service_catalog/4_service_catalog.md)**: Comprehensive overview of integrated services
 - **[Extensibility](5_extensibility/5_extensibility.md)**: How organizations can extend the suite with custom
   capabilities
-- **[Internationalization](6_internationalization/6_internationalization.md)**: Multi-language support for Swiss
+- **[Internationalization](../../../../../../2_platform/x_compliance/6_internationalization/6_internationalization.md)**: Multi-language support for Swiss
   linguistic diversity
 
 ## Business Value for Public Procurement
