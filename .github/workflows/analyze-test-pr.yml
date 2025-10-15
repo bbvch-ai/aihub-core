@@ -44,7 +44,7 @@ jobs:
           - module: aihub_pipeline
             docker_compose_services: ""
           - module: aihub_agent
-            docker_compose_services: "postgres phoenix nats valkey postgres-ferretdb ferretdb llama-cpp huggingface-text-embedding-inference huggingface-reranking-inference litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init etcd milvus-standalone"
+            docker_compose_services: "postgres phoenix nats valkey postgres-ferretdb ferretdb llama-cpp llama-cpp-reranker huggingface-text-embedding-inference litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init etcd milvus-standalone"
           - module: aihub_bot
             docker_compose_services: "nats valkey postgres-ferretdb ferretdb"
           - module: aihub_process
