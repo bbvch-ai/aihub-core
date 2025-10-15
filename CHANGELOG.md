@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.246.5] - 2025-10-14 - Refined S3 URI Handling in Data Lake Components
+
+### Refactor
+
+- 🧹 **Standardized S3 URI Parsing:** Replaced manual string slicing with the more robust `str.removeprefix()` method for
+  parsing S3 URIs across `S3DataLakeIOManager` and `S3DataLakeClient`, enhancing reliability and code clarity.
+- ⚡️ **Improved S3 Path Normalization:** Added `lstrip("/")` during S3 URI processing to ensure more consistent and
+  robust path handling within the `S3DataLakeIOManager`.
+- 📄 **Enhanced S3 Write Logging:** Updated the logging message for successful S3 writes to display the fully
+  reconstructed S3 URI, improving clarity and debuggability.
+
+---
+
 ## [v0.246.4] - 2025-10-13 - S3 Writing Efficiency and Document Parsing Simplification
 
 ### Changed
