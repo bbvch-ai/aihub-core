@@ -387,7 +387,6 @@ jobs:
           echo "Setting 'nightly' tag to same commit as $VERSION..."
           git tag -f nightly "${VERSION}"
           git push origin refs/tags/nightly --force
-          echo "Set 'nightly' tag to same commit as $VERSION"
 
 
       - name: Clean up SSH keys
