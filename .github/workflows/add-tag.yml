@@ -379,11 +379,15 @@ jobs:
           git commit --amend --no-edit || echo "No file changes to commit."
           git push origin HEAD:${{ github.event.pull_request.base.ref }} --force-with-lease
           
-          
-          echo "Creating final tag ${VERSION} and pushing..."
+
+          echo "Creating final tag $VERSION and pushing..."
           git tag -a -f "${VERSION}" -m "Release ${VERSION}"
           git push origin "refs/tags/${VERSION}" --force
-          
+
+          echo "Setting 'nightly' tag to same commit as $VERSION..."
+          git tag -f nightly "${VERSION}"
+          git push origin refs/tags/nightly --force
+
 
       - name: Clean up SSH keys
         run: |

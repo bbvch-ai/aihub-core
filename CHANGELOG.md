@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.246.6] - 2025-10-15 - Improved CI/CD Tagging and Release Process
+
+### Added
+
+- 🚀 **Nightly Release Tagging:** Introduced automatic creation and pushing of a `nightly` git tag during the release
+  process, which points to the same commit as the versioned release, streamlining access to the very latest builds.
+- ⚡️ **Dedicated Docker Tagging Workflow:** Added a new `retag-docker` job to the `set-latest` workflow, allowing for
+  more specialized and separated management of Docker image `latest` tags.
+- 🛡️ **Source Tag Validation:** Implemented a robust check within the `set-latest` workflow to verify that the source
+  tag exists before attempting to move the `latest` git tag, preventing potential errors during automated tagging.
+
+### Refactor
+
+- 🔄 **CI/CD Tagging Workflow Modularity:** Refactored the `set-latest` workflow by renaming the primary job to
+  `retag-git` and introducing a new `retag-docker` job, significantly enhancing modularity and clarity in automated
+  tagging processes.
+- ⚙️ **Streamlined Git Tag Operations:** Updated the `retag-git` workflow with necessary `contents: write` permissions,
+  a dedicated `actions/checkout` step, and bot user configuration to ensure secure, reliable, and explicit git tag
+  manipulation.
+
+---
+
 ## [v0.246.5] - 2025-10-14 - Refined S3 URI Handling in Data Lake Components
 
 ### Refactor
