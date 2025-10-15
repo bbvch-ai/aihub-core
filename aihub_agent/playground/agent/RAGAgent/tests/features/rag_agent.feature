@@ -75,7 +75,7 @@ Feature: RAG Agent
     * an LLMEvent is present with a generated response
     * a StopEvent is present
 
-  @slow
+  @self_hosted
   Scenario: Test RAGAgent with reranking enabled
     Given a RAGAgent runner with a valid self hosted configuration
     * with reranking enabled and top_n of "2"
