@@ -1,74 +1,72 @@
 ---
 title: Datenpipelines
 index: 6
-source_sha: "2d3ad5721cffe57bab64d81214f455b1732bf7a8bb9a8b43c96de1076d8df243"
+source_sha: "bc4c04ad35b34e24d6404b2a4ebc339d205eae0f92ca828215e89393e4bacd90"
 ---
 
-# Datenpipelines: Das Wissen der KI schaffen
+# Datenpipelines: Das Wissen der KI erschaffen
 
-![Systemübersicht - Datenpipelines](./media/architecture/system_overview/system-overview-highlight-pipelines.png)
+Ein KI-Agent ist nur so intelligent wie die Informationen, auf die er zugreifen kann. Rohe Unternehmensdaten – verteilt auf PDFs, SharePoint-Sites und Netzlaufwerke – liegen nicht in einem Format vor, das eine KI ohne Weiteres nutzen kann. Die Schicht der **Datenpipelines** ist die leistungsstarke Engine, die diese Lücke schließt und Ihre verstreuten Dokumente und Datenquellen in eine strukturierte, durchsuchbare und KI-taugliche **Wissensbasis** umwandelt.
 
-Ein KI-Agent ist nur so intelligent wie die Informationen, auf die er zugreifen kann. Rohe Unternehmensdaten – verteilt über PDFs, SharePoint-Seiten und Netzlaufwerke – liegen nicht in einem Format vor, das eine KI direkt nutzen kann. Die Schicht der **Datenpipelines** ist die leistungsstarke Engine, die diese Lücke schließt und Ihre verstreuten Dokumente und Datenquellen in eine strukturierte, durchsuchbare und KI-bereite **Wissensbasis** umwandelt.
-
-Stellen Sie sich eine Datenpipeline als eine automatisierte Fabrik für Wissen vor. Sie nimmt Rohmaterialien (Ihre Dokumente) und führt sie durch eine hochentwickelte Montagelinie, um ein veredeltes Produkt (eine indizierte, durchsuchbare Wissensbasis) zu erzeugen, das Ihre Agenten nutzen können, um präzise, kontextbewusste Antworten zu liefern.
+Stellen Sie sich eine Datenpipeline als eine automatisierte Fabrik für Wissen vor. Sie nimmt Rohmaterialien (Ihre Dokumente) und führt sie durch eine ausgeklügelte Montagelinie, um ein veredeltes Produkt (eine indizierte, durchsuchbare Wissensbasis) zu erzeugen, das Ihre Agenten nutzen können, um präzise, kontextbezogene Antworten zu liefern.
 
 ## Von Dokumenten zu Intelligenz: Der Pipeline-Prozess
 
 Im Kern ist eine Datenpipeline ein automatisierter Workflow, der Ihre Informationen aufnimmt, verarbeitet und indiziert. Obwohl dieser Prozess stark angepasst werden kann, folgt jede Pipeline einer Reihe grundlegender Schritte, um sicherzustellen, dass Ihre Daten korrekt für die KI-Nutzung vorbereitet werden.
 
 ::: info Das Ziel einer Pipeline
-Der übergeordnete Zweck ist die Umwandlung unstrukturierter Dokumente in einen strukturierten **Vektorindex**. Dieser Index ermöglicht es einem KI-Agenten, Informationen basierend auf semantischer Bedeutung und nicht nur auf Schlüsselwörtern zu suchen, was die Grundlage eines effektiven RAG-Systems ist.
+Das durchgängige Ziel ist es, unstrukturierte Dokumente in einen strukturierten **Vektorindex** umzuwandeln. Dieser Index ermöglicht es einem KI-Agenten, Informationen basierend auf semantischer Bedeutung zu suchen, nicht nur nach Schlüsselwörtern, was die Grundlage eines effektiven RAG-Systems ist.
 :::
 
-Hier ist ein Überblick über die wichtigsten Phasen einer typischen Datenerfassungs-Pipeline:
+Hier ist ein Blick auf die Schlüsselphasen einer typischen Datenaufnahmepipeline:
 
-**1. Verbinden & Erfassen**
-Der erste Schritt besteht darin, sich mit Ihren Daten zu verbinden, wo immer diese sich befinden. Die Plattform bietet Konnektoren für eine Vielzahl von Unternehmenssystemen, die es Pipelines ermöglichen, Dokumente von Quellen wie Microsoft SharePoint, Netzlaufwerken oder Webseiten automatisch zu überwachen und abzurufen.
+**1. Verbinden & Aufnehmen**
+Der erste Schritt ist die Verbindung zu Ihren Daten, wo immer sie sich befinden. Die Plattform bietet Konnektoren für eine Vielzahl von Unternehmenssystemen, die es Pipelines ermöglichen, Dokumente von Quellen wie Microsoft SharePoint, Netzlaufwerken oder Webseiten automatisch zu überwachen und abzurufen.
 
 **2. Parsen & Verstehen**
-Sobald ein Dokument abgerufen wurde, muss die Pipeline dessen Inhalt und Struktur verstehen. Sie nutzt fortschrittliche Parsing-Techniken, um Text, Tabellen und Metadaten aus verschiedenen Formaten wie PDF, Word und Excel zu extrahieren. Entscheidend ist, dass sie die ursprüngliche semantische Struktur des Dokuments – Überschriften, Listen und Abschnitte – bewahrt, was für den Kontext unerlässlich ist.
+Sobald ein Dokument abgerufen wurde, muss die Pipeline dessen Inhalt und Struktur verstehen. Sie verwendet fortschrittliche Parsing-Techniken, um Text, Tabellen und Metadaten aus verschiedenen Formaten wie PDF, Word und Excel zu extrahieren. Entscheidend ist, dass sie die ursprüngliche semantische Struktur des Dokuments – Überschriften, Listen und Abschnitte – bewahrt, was für den Kontext unerlässlich ist.
 
-**3. Zerlegen & Segmentieren**
-LLMs haben ein begrenztes Kontextfenster, daher können sie nicht ganze große Dokumente auf einmal verarbeiten. Die Pipeline zerlegt die Dokumente intelligent in kleinere, semantisch bedeutungsvolle „Chunks“. Dies ist nicht nur eine zufällige Aufteilung; das System versucht, Chunks zu erstellen, die eine kohärente Idee oder ein Thema repräsentieren, um sicherzustellen, dass die Teilstücke für sich genommen Sinn ergeben.
+**3. Segmentieren & Aufteilen**
+LLMs haben ein begrenztes Kontextfenster, sodass sie nicht ganze große Dokumente auf einmal verarbeiten können. Die Pipeline zerlegt die Dokumente intelligent in kleinere, semantisch bedeutungsvolle „Chunks“ (Teilstücke). Dies ist nicht nur eine zufällige Aufteilung; das System versucht, Chunks zu erstellen, die eine kohärente Idee oder ein Thema repräsentieren, um sicherzustellen, dass die Teile für sich allein sinnvoll sind.
 
 **4. Einbetten & Vektorisieren**
-Hier geschieht die Magie für die KI-Suche. Die Pipeline übersetzt die Bedeutung jedes Text-Chunks in ein numerisches Format, das als **Vektor-Embedding** bezeichnet wird. Diese Vektoren erfassen die semantische Essenz des Textes und ermöglichen es der KI, Chunks mit ähnlichen Bedeutungen zu finden, selbst wenn sie nicht dieselben Schlüsselwörter enthalten.
+Hier geschieht die Magie für die KI-Suche. Die Pipeline übersetzt die Bedeutung jedes Text-Chunks in ein numerisches Format, das als **Vektoreinbettung** bezeichnet wird. Diese Vektoren erfassen die semantische Essenz des Textes, wodurch die KI Chunks mit ähnlichen Bedeutungen finden kann, selbst wenn sie nicht dieselben Schlüsselwörter teilen.
 
 **5. Indizieren & Speichern**
-Schließlich werden diese Vektor-Embeddings zusammen mit dem Originaltext und den Metadaten in einer spezialisierten **Vektordatenbank** gespeichert und indiziert. Dadurch entsteht die endgültige, durchsuchbare Wissensbasis, die Ihre RAG-Agenten verwenden werden, um Informationen zu finden.
+Schließlich werden diese Vektoreinbettungen zusammen mit dem Originaltext und den Metadaten in einer spezialisierten **Vektordatenbank** gespeichert und indiziert. Dies schafft die finale, durchsuchbare Wissensbasis, die Ihre RAG-Agenten nutzen werden, um Informationen zu finden.
 
 ## Die Kraft der Automatisierung: Lebendiges Wissen
 
-Ein zentrales Merkmal der Datenpipelines der Plattform ist, dass dies kein einmaliger, manueller Prozess ist. Pipelines sind so konzipiert, dass sie **automatisiert und kontinuierlich** ablaufen.
+Ein zentrales Merkmal der Datenpipelines der Plattform ist, dass dies kein einmaliger, manueller Prozess ist. Pipelines sind so konzipiert, dass sie **automatisiert und kontinuierlich** sind.
 
 Sie können eine Pipeline so konfigurieren, dass sie eine Datenquelle, wie einen SharePoint-Ordner, auf Änderungen überwacht. Wenn ein Dokument hinzugefügt, aktualisiert oder gelöscht wird, wird die Pipeline automatisch ausgelöst und synchronisiert die Änderungen mit der Wissensbasis.
 
 ::: tip Einrichten und vergessen
-Diese kontinuierliche Synchronisierung stellt sicher, dass das Wissen Ihrer KI immer aktuell ist. Wenn eine Richtlinie in SharePoint aktualisiert wird, stellt die Pipeline sicher, dass der Agent sofort Zugriff auf die neue Version hat, ohne dass manuelle Eingriffe erforderlich sind. Ihre Wissensbasis wird zu einer lebendigen Entität, die sich mit Ihrer Organisation weiterentwickelt.
+Diese kontinuierliche Synchronisation stellt sicher, dass das Wissen Ihrer KI immer aktuell ist. Wenn eine Richtlinie in SharePoint aktualisiert wird, stellt die Pipeline sicher, dass der Agent sofort Zugriff auf die neue Version hat, ohne dass ein manuelles Eingreifen erforderlich ist. Ihre Wissensbasis wird zu einer lebendigen Entität, die sich mit Ihrer Organisation weiterentwickelt.
 :::
 
-## Orchestrierung und Zuverlässigkeit: Basierend auf Dagster
+## Orchestrierung und Zuverlässigkeit: Auf Dagster aufgebaut
 
-Um diese komplexen, mehrstufigen Workflows zu verwalten, verwendet der Swiss AI Hub **Dagster**, einen industrietauglichen Daten-Orchestrator. Dagster fungiert als Dirigent für Ihre Datenpipelines und stellt sicher, dass jeder Prozess zuverlässig, effizient und transparent abläuft.
+Um diese komplexen, mehrstufigen Workflows zu verwalten, verwendet der Swiss AI Hub **Dagster**, einen datenorchestrator in Industriequalität. Dagster fungiert als Dirigent für Ihre Datenpipelines und stellt sicher, dass jeder Prozess zuverlässig, effizient und transparent abläuft.
 
 Dagster ist verantwortlich für:
--   **Planung und Auslösung**: Ausführung von Pipelines nach Zeitplan oder als Reaktion auf Ereignisse.
--   **Fehlerbehandlung**: Anmutige Verwaltung von Fehlern und Wiederholungsversuchen, um sicherzustellen, dass vorübergehende Probleme Ihre Daten nicht beschädigen.
--   **Beobachtbarkeit**: Bereitstellung eines vollständigen, auditierbaren Protokolls jeder Pipeline-Ausführung, damit Sie genau sehen können, wie ein Dokument verarbeitet wurde, und Probleme beheben können.
+-   **Planung und Auslösung**: Ausführung von Pipelines nach einem Zeitplan oder als Reaktion auf Ereignisse.
+-   **Fehlerbehandlung**: Anmutige Verwaltung von Fehlern und Wiederholungsversuchen, um sicherzustellen, dass temporäre Probleme Ihre Daten nicht beschädigen.
+-   **Beobachtbarkeit**: Bereitstellung eines vollständigen, auditierbaren Protokolls jedes Pipeline-Laufs, damit Sie genau nachvollziehen können, wie ein Dokument verarbeitet wurde, und Probleme beheben können.
 
-Diese robuste Grundlage bedeutet, dass Sie Ihren Datenpipelines vertrauen können, dass sie in einer Produktionsumgebung zuverlässig funktionieren, selbst in großem Maßstab.
+Diese robuste Grundlage bedeutet, dass Sie Ihren Datenpipelines vertrauen können, auch in einer Produktionsumgebung und bei massivem Umfang zuverlässig zu arbeiten.
 
 ## Der strategische Vorteil: Warum diese Architektur wichtig ist
 
 Die Datenpipeline-Architektur der Plattform bietet mehrere entscheidende Vorteile für jede Unternehmens-KI-Strategie:
 
 ::: details Eine entkoppelte Architektur
-Die Trennung der Datenaufnahme (Pipelines) vom KI-Betrieb (Agenten) ist eine bewusste Designentscheidung. Sie ermöglicht Ihren Teams, unabhängig zu arbeiten. Dateningenieure können sich auf den Aufbau robuster Pipelines und die Anbindung neuer Datenquellen konzentrieren, während KI-Entwickler sich auf die Entwicklung intelligenter Agentenlogik konzentrieren können. Die Agenten konsumieren einfach die hochwertigen Wissensbasen, die die Pipelines produzieren, ohne die Komplexität ihrer Entstehung kennen zu müssen.
+Die Trennung der Datenaufnahme (Pipelines) von der KI-Operation (Agenten) ist eine bewusste Designentscheidung. Sie ermöglicht es Ihren Teams, unabhängig voneinander zu arbeiten. Data Engineering kann sich auf den Aufbau robuster Pipelines und die Anbindung neuer Datenquellen konzentrieren, während KI-Entwickler sich auf die Erstellung intelligenter Agentenlogik konzentrieren können. Die Agenten konsumieren einfach die hochwertigen Wissensbasen, die die Pipelines produzieren, ohne die Komplexität ihrer Entstehung kennen zu müssen.
 :::
 
 ::: details Vollständige Beobachtbarkeit und Governance
-Im Gegensatz zu einem „Black-Box“-System wird jeder Schritt der Pipeline verfolgt und protokolliert. Wenn ein Agent eine ungewöhnliche Antwort liefert, können Sie diese über den Abrufprozess bis zum genauen Dokument-Chunk und sogar bis zur Pipeline-Ausführung zurückverfolgen, die ihn verarbeitet hat. Dieser „Glass-Box“-Ansatz ist unerlässlich für Debugging, Compliance und den Aufbau von organisatorischem Vertrauen.
+Im Gegensatz zu einem „Black Box“-System wird jeder Schritt der Pipeline verfolgt und protokolliert. Wenn ein Agent eine merkwürdige Antwort liefert, können Sie diese über den Abrufprozess bis zum genauen Dokumenten-Chunk und sogar bis zum Pipeline-Lauf, der ihn verarbeitet hat, zurückverfolgen. Dieser „Glass Box“-Ansatz ist für die Fehlersuche, Compliance und den Aufbau von organisationalem Vertrauen unerlässlich.
 :::
 
 ::: details Konsistenz und Qualitätskontrolle
-Indem Sie die Datenverarbeitung als Code innerhalb einer Pipeline definieren, stellen Sie sicher, dass jedes Dokument auf konsistente, wiederholbare Weise behandelt wird. Sie können Qualitätsprüfungen, Validierungsregeln und Sicherheitsüberprüfungen direkt in Ihre Pipelines einbetten und so garantieren, dass nur hochwertige, konforme Informationen in Ihre Wissensbasen gelangen.
+Indem Sie die Datenverarbeitung als Code innerhalb einer Pipeline definieren, stellen Sie sicher, dass jedes Dokument auf eine konsistente, wiederholbare Weise behandelt wird. Sie können Qualitätsprüfungen, Validierungsregeln und Sicherheits-Scans direkt in Ihre Pipelines einbetten und so garantieren, dass nur hochwertige, konforme Informationen in Ihre Wissensbasen gelangen.

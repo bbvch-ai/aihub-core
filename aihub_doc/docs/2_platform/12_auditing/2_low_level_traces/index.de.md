@@ -1,154 +1,155 @@
 ---
 title: "Low-Level-Traces"
 index: 2
-source_sha: "dd7ce0f327e2c305590e5ec1797e42369af5b5682134383ce27a0f8f95ac68f3"
+source_sha: "32cc3a167c7141605d2a2194a39a5ea170eeee474b1cbc0d4870396c24c8c1b9"
 ---
 
 # Tiefe Observability mit OpenTelemetry :telescope: :100:
 
-::: info **TL;DR - Was ist tiefe Observability?**
-Der AI-Hub bietet **End-to-End Distributed Tracing und tiefe Observability** unter Verwendung von OpenTelemetry-Standards, was Ihnen
-vollständige Transparenz über jeden Aspekt Ihrer KI-Workflows verschafft. Von einzelnen Agenten-Schritten bis hin zu komplexen Multi-Service-Prozessen
-können Sie jede Komponente Ihres KI-Ökosystems mit unternehmensgerechter Observability verfolgen, überwachen und optimieren,
-die sich nahtlos in branchenübliche Tools wie Phoenix, SigNoz oder DataDog integrieren lässt.
+::: info **TL;DR – Was ist tiefe Observability?**
+Der AI-Hub bietet **End-to-End Distributed Tracing und tiefe Observability** mittels OpenTelemetry-Standards, was Ihnen
+vollständige Transparenz über jeden Aspekt Ihrer KI-Workflows verschafft. Von einzelnen Agent-Schritten bis hin zu komplexen
+Multi-Service-Prozessen können Sie jede Komponente Ihres KI-Ökosystems mit unternehmensgerechter Observability verfolgen,
+überwachen und optimieren, die sich nahtlos in Industriestandard-Tools wie Phoenix, SigNoz oder DataDog integrieren lässt.
 :::
 
 ## Was ist tiefe Observability und wie implementiert der AI-Hub sie? :brain:
 
-**Tiefe Observability** geht weit über traditionelles Logging und Monitoring hinaus. Der AI-Hub implementiert eine umfassende
-Observability-Strategie, die **Distributed Tracing**, **semantische Konventionen** und **KI-spezifische
+**Tiefe Observability** geht weit über traditionelles Logging und Monitoring hinaus. Der AI-Hub implementiert eine
+umfassende Observability-Strategie, die **Distributed Tracing**, **semantische Konventionen** und **KI-spezifische
 Instrumentierung** kombiniert, um eine beispiellose Transparenz Ihrer KI-Systeme zu gewährleisten.
 
-Die Plattform nutzt **OpenTelemetry** als ihr grundlegendes Observability-Framework, ergänzt durch **OpenInference semantische
-Konventionen** für KI/ML-Workloads. Das bedeutet, dass jede Interaktion, von einer einfachen Benutzernachricht bis hin zu komplexen
-Multi-Agenten-Orchestrierungen, automatisch mit umfangreichen Kontextinformationen verfolgt wird, darunter:
+Die Plattform verwendet **OpenTelemetry** als grundlegendes Observability-Framework, ergänzt durch **OpenInference-Semantikkonventionen**
+für KI/ML-Workloads. Dies bedeutet, dass jede Interaktion, von einer einfachen Benutzernachricht bis hin zu komplexen
+Multi-Agenten-Orchestrierungen, automatisch mit reichhaltigen Kontextinformationen nachverfolgt wird, darunter:
 
-- **Komplette Anfrageabläufe**: Verfolgen Sie eine Benutzeranfrage, wie sie durch APIs, Agenten, Datenbanken und externe Dienste fließt
-- **KI-spezifische Semantik**: Erfassen Sie LLM-Aufrufe, Embeddings, Retrievals und Modellinteraktionen mit spezialisierten semantischen
-  Attributen
-- **Leistungsmetriken**: Verfolgen Sie Latenz, Token-Nutzung, Kostenattribution und Ressourcennutzung über alle Komponenten hinweg
-- **Fehlerkontext**: Erhalten Sie detaillierte Fehler-Traces mit vollständigem Kontext dessen, was zu Fehlern führte
-- **Dienstabhängigkeiten**: Erstellen Sie automatisch eine Echtzeit-Karte der Interaktion Ihrer Dienste, Agenten und Prozesse
+- **Vollständige Request-Flows**: Verfolgen Sie eine Benutzeranfrage, wie sie durch APIs, Agents, Datenbanken und externe Dienste fließt
+- **KI-spezifische Semantik**: Erfassen Sie LLM-Aufrufe, Embeddings, Retrievals und Modellinteraktionen mit spezialisierten
+  semantischen Attributen
+- **Performance-Metriken**: Verfolgen Sie Latenz, Token-Nutzung, Kostenattribution und Ressourcennutzung über alle Komponenten hinweg
+- **Fehlerkontext**: Erhalten Sie detaillierte Fehler-Traces mit dem vollständigen Kontext dessen, was zu Fehlern geführt hat
+- **Service-Abhängigkeiten**: Automatische Zuordnung, wie Ihre Dienste, Agents und Prozesse in Echtzeit interagieren
 
-Das System instrumentiert automatisch **jede Komponente**, einschließlich NATS Messaging, Datenbankoperationen, HTTP-Aufrufe, LLM-
-Interaktionen, Vektorsuchen und benutzerdefinierte Agenten-Workflows, ohne dass Codeänderungen erforderlich sind.
+Das System instrumentiert automatisch **jede Komponente**, einschließlich NATS-Messaging, Datenbankoperationen, HTTP-Aufrufe,
+LLM-Interaktionen, Vektorsuchen und benutzerdefinierte Agent-Workflows, ohne Codeänderungen zu erfordern.
 
 ## Warum dies entscheidend für den Erfolg von Enterprise AI ist :trophy:
 
-Tiefe Observability verändert die Art und Weise, wie Sie KI-Systeme in der Produktion erstellen, debuggen und skalieren:
+Tiefe Observability transformiert die Art und Weise, wie Sie KI-Systeme in Produktion entwickeln, debuggen und skalieren:
 
-**🔍 Vollständige Systemsichtbarkeit**: Sehen Sie genau, wie Ihre KI-Workflows in der Produktion ausgeführt werden, von der Benutzereingabe bis zur endgültigen
-Ausgabe, über alle Microservices und Agenten hinweg. Keine blinden Flecken mehr in komplexen verteilten KI-Systemen.
+**🔍 Vollständige Systemtransparenz**: Sehen Sie genau, wie Ihre KI-Workflows in Produktion ausgeführt werden, von der
+Benutzereingabe bis zur endgültigen Ausgabe, über alle Microservices und Agents hinweg. Keine blinden Flecken mehr in
+komplexen verteilten KI-Systemen.
 
-**🚀 Leistungsoptimierung**: Identifizieren Sie Engpässe in Ihren KI-Pipelines präzise. Wissen Sie genau, welche LLM-Aufrufe
-langsam sind, welche Retrievals ineffizient sind und wo Ihre Workflows für Geschwindigkeit und Kosten optimiert werden können.
+**🚀 Performance-Optimierung**: Identifizieren Sie Engpässe in Ihren KI-Pipelines mit Präzision. Wissen Sie genau, welche
+LLM-Aufrufe langsam sind, welche Retrievals ineffizient sind und wo Ihre Workflows für Geschwindigkeit und Kosten optimiert
+werden können.
 
-**🛡️ Proaktive Fehlererkennung**: Erkennen Sie Probleme, bevor sie Benutzer beeinträchtigen. Fortgeschrittenes Tracing offenbart Muster, die zu
-Fehlern führen, sodass Sie Probleme proaktiv beheben können, anstatt reaktiv.
+**🛡️ Proaktive Problemfindung**: Erkennen Sie Probleme, bevor sie Benutzer beeinträchtigen. Fortgeschrittenes Tracing
+zeigt Muster auf, die zu Fehlern führen, sodass Sie Probleme proaktiv statt reaktiv beheben können.
 
-**💰 Kostenattribution und -kontrolle**: Verfolgen Sie Token-Nutzung, API-Aufrufe und Rechenkosten bis hin zu einzelnen Benutzern, Agenten oder
-Workflows. Treffen Sie datengestützte Entscheidungen über Ressourcenzuweisung und Kostenoptimierung.
+**💰 Kostenattribution und -kontrolle**: Verfolgen Sie Token-Nutzung, API-Aufrufe und Rechenkosten bis auf einzelne Benutzer,
+Agents oder Workflows. Treffen Sie datengestützte Entscheidungen über Ressourcenallokation und Kostenoptimierung.
 
-**🌐 Anbieterunabhängige Flexibilität**: OpenTelemetry stellt sicher, dass Ihre Observability-Daten mit jedem OTLP-kompatiblen Backend funktionieren.
-Beginnen Sie mit Phoenix für KI-spezifische Analysen und migrieren Sie dann zu Unternehmens-Tools wie DataDog oder New Relic, ohne
-Daten zu verlieren oder die Instrumentierung zu ändern.
+**🌐 Herstellerunabhängige Flexibilität**: OpenTelemetry stellt sicher, dass Ihre Observability-Daten mit jedem
+OTLP-kompatiblen Backend funktionieren. Beginnen Sie mit Phoenix für KI-spezifische Analysen und migrieren Sie dann zu
+Enterprise-Tools wie DataDog oder New Relic, ohne Daten zu verlieren oder die Instrumentierung zu ändern.
 
 ::: details **Automatische Instrumentierungsabdeckung**
 Der AI-Hub instrumentiert diese Komponenten automatisch ohne Codeänderungen:
 
 ### Kerninfrastruktur
 
-- **NATS Messaging**: Vollständiges Message-Flow-Tracing über Microservices hinweg
-- **Datenbankoperationen**: MongoDB-, Redis- und Vektordatenbank-Abfragen
+- **NATS Messaging**: Vollständiges Nachrichtenfluss-Tracing über Microservices hinweg
+- **Datenbankoperationen**: MongoDB-, Redis- und Vektordatenbankabfragen
 - **HTTP Clients**: Alle externen API-Aufrufe und Webhooks
 - **Hintergrundaufgaben**: Asynchrone Operationen und geplante Jobs
 
-### KI-Spezifische Komponenten
+### KI-spezifische Komponenten
 
 - **LLM-Interaktionen**: Token-Nutzung, Modellaufrufe und Antwortzeiten
 - **Embeddings**: Vektorgenerierung und Ähnlichkeitssuchen
-- **Retrieval**: RAG-Operationen und Wissensdatenbank-Abfragen
-- **Agent Workflows**: Schrittweise Ausführungs-Traces mit semantischem Kontext
+- **Retrieval**: RAG-Operationen und Wissensdatenbankabfragen
+- **Agent-Workflows**: Schritt-für-Schritt-Ausführungs-Traces mit semantischem Kontext
 :::
 
 ## Erste Schritte
 
 Um tiefe Observability in Ihrer AI-Hub-Bereitstellung zu aktivieren:
 
-1. **Umgebungsvariablen konfigurieren**: Legen Sie die OTEL-Konfigurationsvariablen für Ihr Ziel-Observability-Backend fest
-2. **Mit aktiviertem Tracing deployen**: Starten Sie Ihre AI-Hub-Dienste neu, um die automatische Instrumentierung zu aktivieren
-3. **Auf Ihr Observability-Dashboard zugreifen**: Zeigen Sie Traces, Metriken und Analysen in Ihrer gewählten Observability-Plattform an
+1.  **Umgebungsvariablen konfigurieren**: Legen Sie die OTEL-Konfigurationsvariablen für Ihr Ziel-Observability-Backend fest
+2.  **Bereitstellung mit aktiviertem Tracing**: Starten Sie Ihre AI-Hub-Dienste neu, um die automatische Instrumentierung zu aktivieren
+3.  **Auf Ihr Observability Dashboard zugreifen**: Zeigen Sie Traces, Metriken und Analysen in Ihrer gewählten Observability-Plattform an
 
-Das System erfordert keine Codeänderungen – die gesamte Instrumentierung ist automatisch und folgt den OpenTelemetry-Standards für maximale
-Kompatibilität und minimale Leistungsauswirkungen.
+Das System erfordert keine Codeänderungen – die gesamte Instrumentierung erfolgt automatisch und folgt den OpenTelemetry-Standards
+für maximale Kompatibilität und minimale Performance-Auswirkungen.
 
 # Traces
 
 ## Übersicht
 
-Traces verfolgen einzelne Anfragen durch die AI-Hub-Plattform und zeigen den vollständigen Pfad von Anfang bis Ende. Jede
-Operation erhält automatisch eine eindeutige Trace-ID, die alle zugehörigen Aktivitäten über Dienste hinweg verbindet und
-genau aufzeigt, was passiert ist, wo Zeit verbracht wurde und wie Komponenten zusammengearbeitet haben.
+Traces verfolgen einzelne Anfragen durch die AI-Hub-Plattform und zeigen den vollständigen Pfad vom Start bis zum Ende. Jede
+Operation erhält automatisch einen eindeutigen Trace-Identifikator, der alle zugehörigen Aktivitäten über Dienste hinweg
+verbindet und genau aufzeigt, was passiert ist, wo Zeit verbracht wurde und wie Komponenten zusammengearbeitet haben.
 
-Der Swiss AI-Hub verwendet OpenTelemetry für das Tracing mit spezieller Unterstützung für KI-Operationen durch OpenInference
-semantische Konventionen. Details zur OpenTelemetry-Infrastruktur finden Sie unter
-[OpenTelemetry Foundation](../0_opentelemetry/index.md).
+Der Swiss AI-Hub verwendet OpenTelemetry für das Tracing mit spezialisierter Unterstützung für KI-Operationen durch
+OpenInference-Semantikkonventionen.
 
 ---
 
 ## Was wir erfassen
 
-### Agent Workflow-Ausführung (Operational)
+### Agent-Workflow-Ausführung (Operativ)
 
-Agentenläufe werden mit hierarchischen Span-Strukturen verfolgt, die den vollständigen Workflow zeigen:
+Agent-Läufe werden mit hierarchischen Span-Strukturen getraced, die den vollständigen Workflow zeigen:
 
-**Agent Spans**: Root-Span, der den Start einer Agenten-Ausführung mit Benutzereingabe und Agenten-Identifikation markiert.
+**Agent-Spans**: Root-Span, der den Start einer Agent-Ausführung mit Benutzereingabe und Agent-Identifikation markiert.
 
-**Chain Spans**: Langlebiger Span, der die gesamte Laufzeit vom Start bis zur endgültigen Ausgabe erfasst.
+**Chain-Spans**: Langlaufende Spans, die die gesamte Laufdauer vom Start bis zur endgültigen Ausgabe erfassen.
 
-**Step Spans**: Einzelne Workflow-Schritte, die Eingaben, Ausgaben, Verarbeitungszeit und semantische Ereignisse zeigen.
+**Step-Spans**: Einzelne Workflow-Schritte, die Eingaben, Ausgaben, Verarbeitungszeit und semantische Ereignisse zeigen.
 
 **Trace-Attribute**:
 
-- Sitzungs-/Thread-Identifikatoren für den Konversationskontext
+- Session-/Thread-Identifikatoren für den Konversationskontext
 - Eingabe- und Ausgabewerte im JSON-Format
 - OpenInference Span-Arten (AGENT, CHAIN, TOOL, LLM, RETRIEVER)
-- Tags zum Filtern (thread_id, display_id, run_id)
+- Tags für die Filterung (thread_id, display_id, run_id)
 
-**Implementierung**: Der `AgentRunTracer` verwendet einen Zwei-Span-Ansatz mit einem initialen AGENT-Span als übergeordnetem Element und einem finalen
-CHAIN-Span, der die Gesamtdauer erfasst.
+**Implementierung**: Der `AgentRunTracer` erstellt einen Zwei-Span-Ansatz mit einem initialen AGENT-Span als Parent und
+einem finalen CHAIN-Span, der die Gesamtdauer erfasst.
 
-### KI-Modelloperationen (Operational)
+### KI-Modelloperationen (Operativ)
 
-LLM-Operationen werden automatisch durch LlamaIndex-Instrumentierung verfolgt:
+LLM-Operationen werden automatisch durch die LlamaIndex-Instrumentierung getraced:
 
-**LLM-Aufrufe**: Modellauswahl, Prompt-Erstellung, Token-Nutzung und Antwortgenerierung.
+**LLM-Aufrufe**: Modellauswahl, Prompt-Konstruktion, Token-Nutzung und Antwortgenerierung.
 
-**Retrieval-Operationen**: Vektordatenbankabfragen, Dokumenten-Retrieval und Kontextzusammenstellung.
+**Retrieval-Operationen**: Vektordatenbankabfragen, Dokumentenabruf und Kontextzusammenstellung.
 
-**Embeddings**: Texterstellungs-Embeddings für Dokumentenindizierung und Ähnlichkeitssuche.
+**Embeddings**: Texterstellungsgenerierung für Dokumentenindizierung und Ähnlichkeitssuche.
 
-**Semantische Ereignisse**: KI-spezifische Operationen emittieren semantische Ereignisse, die detaillierte Metadaten (Token-Zählungen, Modell-
-Namen, abgerufene Dokumente) enthalten, die Traces mit domänenspezifischen Informationen anreichern.
+**Semantische Ereignisse**: KI-spezifische Operationen emittieren semantische Ereignisse, die detaillierte Metadaten
+(Token-Anzahlen, Modellnamen, abgerufene Dokumente) enthalten, die Traces mit domänenspezifischen Informationen anreichern.
 
-**Sichtbarkeit**: Alle KI-Operationen erscheinen in der Phoenix Tracing UI mit speziellen Ansichten für die LLM-Leistungsanalyse.
+**Sichtbarkeit**: Alle KI-Operationen erscheinen in der Phoenix-Tracing-UI mit spezialisierten Ansichten für die
+LLM-Performance-Analyse.
 
-### HTTP- und Datenbankoperationen (Operational)
+### HTTP- und Datenbankoperationen (Operativ)
 
 Instrumentierte Bibliotheken erstellen automatisch Spans für externe Dienstaufrufe:
 
-**HTTP Clients**: HTTPX- und aiohttp-Anfragen mit Methode, URL, Statuscode und Zeitmessung.
+**HTTP Clients**: HTTPX- und aiohttp-Anfragen mit Methode, URL, Statuscode und Timing.
 
 **Datenbanken**: MongoDB-, PostgreSQL- und Redis-Operationen mit Abfrageinformationen.
 
 **Vektordatenbank**: Milvus-Ähnlichkeitssuchen und Indizierungsoperationen.
 
-**Filterung**: Health Checks, Metrik-Endpunkte und hochvolumige Datenbankabfragen werden aus Traces gefiltert, um
-Rauschen zu reduzieren.
+**Filterung**: Health Checks, Metrik-Endpunkte und hochvolumige Datenbankabfragen werden aus Traces gefiltert, um Rauschen zu reduzieren.
 
 ---
 
-## Architektur der Trace-Erfassung
+## Trace Collection Architektur
 
 ```mermaid
 graph TB
@@ -183,27 +184,25 @@ graph TB
     style PhoenixPipeline fill:#fff4e1
 ```
 
-### Erfassungspipelines
+### Collection-Pipelines
 
 Der OpenTelemetry Collector verarbeitet Traces durch zwei spezialisierte Pipelines:
 
-**traces/cloud**: Sendet alle Traces an das Cloud-Backend
+**traces/cloud**: Sendet alle Traces an das Cloud Backend
 
-- Empfänger: `otlp` (gRPC Port 4317, HTTP Port 4318)
-- Prozessoren: `filter/noise` (entfernt Health Checks, Metrik-Endpunkte, routinemäßige DB-Abfragen), `batch`
+- Receiver: `otlp` (gRPC Port 4317, HTTP Port 4318)
+- Processor: `filter/noise` (entfernt Health Checks, Metrik-Endpunkte, routinemäßige DB-Abfragen), `batch`
 - Exporter: `otlp/cloud`
 
 **traces/phoenix**: Sendet KI-spezifische Traces an das lokale Phoenix
 
-- Empfänger: `otlp` (gRPC Port 4317, HTTP Port 4318)
-- Prozessoren: `filter/phoenix` (behält nur OpenInference Spans), `transform/phoenix` (fügt Projektmetadaten hinzu), `batch`
+- Receiver: `otlp` (gRPC Port 4317, HTTP Port 4318)
+- Processor: `filter/phoenix` (behält nur OpenInference-Spans), `transform/phoenix` (fügt Projektmetadaten hinzu), `batch`
 - Exporter: `otlp/phoenix` (Port 6007)
-
-Detaillierte Informationen zur OpenTelemetry-Architektur finden Sie unter [OpenTelemetry Foundation](../0_opentelemetry/index.md).
 
 ### Instrumentierung
 
-Dienste emittieren Traces automatisch durch OpenTelemetry-Instrumentierung, die von `AihubInstrumentor` konfiguriert wird:
+Dienste emittieren Traces automatisch durch die OpenTelemetry-Instrumentierung, die von `AihubInstrumentor` konfiguriert wird:
 
 **Automatische Instrumentierung** (via `AihubInstrumentor`):
 
@@ -214,35 +213,38 @@ Dienste emittieren Traces automatisch durch OpenTelemetry-Instrumentierung, die 
 
 **Benutzerdefiniertes Tracing** (via `AgentRunTracer`):
 
-- Agenten-Workflow-Ausführung mit Schritt-für-Schritt-Details
+- Agent-Workflow-Ausführung mit Schritt-für-Schritt-Details
 - Hierarchische Span-Strukturen für komplexe Workflows
-- Kontextpropagation über verteilte Agenten-Operationen
+- Kontext-Propagierung über verteilte Agent-Operationen
 
-**Smart Tracing**: Der `SmartTracer` respektiert den `suppress_instrumentation` Kontext und ermöglicht eine selektive Tracing-Kontrolle.
+**Smart Tracing**: Der `SmartTracer` respektiert den `suppress_instrumentation`-Kontext, was eine selektive Tracing-Steuerung ermöglicht.
 
 ---
 
-## Geschäftliche Vorteile
+## Geschäftlicher Nutzen
 
-### Leistungsoptimierung
+### Performance-Optimierung
 
-Traces zeigen genau, wo in jeder Operation Zeit verbracht wird. Die Engpasserkennung wird präzise statt spekulativ.
-Wenn der Dokumentenabruf drei Sekunden dauert, während die KI-Verarbeitung 500ms benötigt, werden die Optimierungsprioritäten klar.
+Traces zeigen genau, wo Zeit in jeder Operation verbracht wird. Engpassidentifikation wird präzise statt spekulativ. Wenn der
+Dokumentenabruf drei Sekunden dauert, während die KI-Verarbeitung 500 ms benötigt, werden die Optimierungsprioritäten klar.
 
 ### Kostenmanagement
 
-KI-Operationen umfassen Token-Nutzung und Kostenattribution durch semantische Ereignisse. Die Verfolgung, welche Operationen, Benutzer oder
-Abteilungen die meisten KI-Ressourcen verbrauchen, ermöglicht datengestützte Entscheidungen über Modellauswahl und Feature-Preise.
+KI-Operationen umfassen Token-Nutzung und Kostenattribution durch semantische Ereignisse. Die Verfolgung, welche Operationen,
+Benutzer oder Abteilungen die meisten KI-Ressourcen verbrauchen, ermöglicht datengestützte Entscheidungen über Modellauswahl
+und Feature-Preisgestaltung.
 
 ### Ursachenanalyse
 
-Fehlgeschlagene Operationen behalten den vollständigen Kontext bei und zeigen genau, wo und warum Fehler auftraten. Fehler-Traces umfassen Stack-Traces,
-Eingabedaten und die Abfolge der Ereignisse, die zum Fehler führten, was die Problemlösungszeit dramatisch reduziert.
+Fehlgeschlagene Operationen bewahren den vollständigen Kontext und zeigen genau, wo und warum Fehler aufgetreten sind.
+Fehler-Traces umfassen Stack-Traces, Eingabedaten und die Abfolge der Ereignisse, die zum Fehler führten, was die
+Problemlösungszeit drastisch reduziert.
 
 ### KI-Transparenz
 
-Traces zeigen, welche Informationen die KI bei der Generierung von Antworten berücksichtigt hat. Abgerufene Dokumente, Token-Nutzung und
-Modellauswahl werden sichtbar, was die Einhaltung gesetzlicher Vorschriften unterstützt und das Vertrauen der Benutzer stärkt.
+Traces zeigen, welche Informationen die KI bei der Generierung von Antworten berücksichtigt hat. Abgerufene Dokumente,
+Token-Nutzung und Modellauswahl werden sichtbar, was die Einhaltung gesetzlicher Vorschriften unterstützt und das
+Benutzervertrauen aufbaut.
 
 ---
 
@@ -254,20 +256,18 @@ Phoenix bietet spezialisierte LLM-Observability unter `http://localhost:6006`:
 
 **Funktionen**:
 
-- Zeitachsenansichten, die die Dauer und Beziehungen von Spans zeigen
+- Zeitlinienansichten, die Span-Dauer und -Beziehungen zeigen
 - Token-Nutzung und Kostenverfolgung für LLM-Operationen
 - Inspektion abgerufener Dokumente für RAG-Systeme
-- Trace-Filterung nach Sitzung, Tags oder Zeitbereich
-- Leistungsanalyse und Latenzverteilungen
+- Trace-Filterung nach Session, Tags oder Zeitbereich
+- Performance-Analyse und Latenzverteilungen
 
-**Fokus**: KI-spezifische Operationen mit OpenInference semantischen Konventionen (LLM, CHAIN, AGENT, RETRIEVER, EMBEDDING Spans).
+**Fokus**: KI-spezifische Operationen mit OpenInference-Semantikkonventionen (LLM-, CHAIN-, AGENT-, RETRIEVER-, EMBEDDING-Spans).
 
-### Cloud-Backend (Produktion)
+### Cloud Backend (Produktion)
 
-Traces werden zur langfristigen Speicherung und Analyse an Cloud-Observability-Plattformen exportiert. Die Plattform unterstützt jedes
-OTLP-kompatible Backend allein durch Konfigurationsänderungen.
-
-Informationen zu Cloud-Backends und Visualisierung finden Sie unter [Dashboards](../2_dashboards/index.md).
+Traces werden zur langfristigen Speicherung und Analyse an Cloud-Observability-Plattformen exportiert. Die Plattform
+unterstützt jedes OTLP-kompatible Backend nur durch Konfigurationsänderungen.
 
 ---
 
@@ -275,70 +275,67 @@ Informationen zu Cloud-Backends und Visualisierung finden Sie unter [Dashboards]
 
 ### Trace-Inhalt
 
-Traces erfassen Operationsmetadaten, Timing-Informationen und Routing-Details. Entwickler sind dafür verantwortlich,
-dass sensible Daten nicht in Trace-Attributen enthalten sind.
+Traces erfassen Operationsmetadaten, Timing-Informationen und Routing-Details. Entwickler sind dafür verantwortlich, dass
+sensible Daten nicht in Trace-Attributen enthalten sind.
 
-**Infrastruktur**: OpenInference Spans enthalten Sitzungs-IDs, Modellnamen, Token-Zählungen und Metadaten abgerufener Dokumente.
+**Infrastruktur**: OpenInference-Spans enthalten Session-IDs, Modellnamen, Token-Anzahlen und Metadaten zu abgerufenen Dokumenten.
 
-**Anwendungsverantwortung**: Entwickler müssen das Logging von tatsächlichem Dokumenteninhalt, Benutzernachrichten oder anderen sensiblen
-Informationen in benutzerdefinierten Trace-Attributen vermeiden.
+**Verantwortung der Anwendung**: Entwickler müssen das Logging von tatsächlichem Dokumentinhalt, Benutzernachrichten oder
+anderen sensiblen Informationen in benutzerdefinierten Trace-Attributen vermeiden.
 
 ### Übertragungssicherheit
 
-Alle Traces werden über verschlüsselte Kanäle (TLS/HTTPS) übertragen, um Abhören zu verhindern.
+Alle Traces werden über verschlüsselte Kanäle (TLS/HTTPS) übertragen, um Abfangen zu verhindern.
 
 ### Zugriffskontrolle
 
-Der Trace-Zugriff wird durch rollenbasierte Zugriffskontrolle der Observability-Plattform eingeschränkt. Nur autorisiertes Personal kann
-detaillierte Traces einsehen.
+Der Trace-Zugriff ist durch rollenbasierte Zugriffskontrolle der Observability-Plattform eingeschränkt. Nur autorisiertes
+Personal kann detaillierte Traces einsehen.
 
 ---
 
 ## Integration mit Plattformkomponenten
 
-### Agent Workflows
+### Agent-Workflows
 
-Der `AgentRunTracer` erstellt eine strukturierte Tracing-Hierarchie für Agenten-Ausführungen:
+Der `AgentRunTracer` erstellt eine strukturierte Tracing-Hierarchie für Agent-Ausführungen:
 
-1. Initialer AGENT-Span markiert den Workflow-Start
-2. Einzelne STEP-Spans zeigen jeden Workflow-Schritt mit Eingaben und Ausgaben
-3. Finaler CHAIN-Span erfasst die komplette Laufdauer
-4. Semantische Ereignisse aus KI-Operationen reichern Traces mit domänenspezifischen Metadaten an
+1.  Initialer AGENT-Span markiert den Workflow-Start
+2.  Einzelne STEP-Spans zeigen jeden Workflow-Schritt mit Eingaben und Ausgaben
+3.  Finaler CHAIN-Span erfasst die gesamte Laufdauer
+4.  Semantische Ereignisse von KI-Operationen reichern Traces mit domänenspezifischen Metadaten an
 
 ### LLM-Operationen
 
-Die LlamaIndex-Instrumentierung verfolgt automatisch:
+LlamaIndex-Instrumentierung verfolgt automatisch:
 
-- Sprachmodell-Aufrufe mit Token-Zählungen
-- RAG-Operationen, die den Dokumentenabruf und die Kontextzusammenstellung zeigen
-- Vektordatenbank-Suchen und Ähnlichkeitsoperationen
-- Embedding-Generierung für die Dokumentenverarbeitung
+-   Sprachmodellaufrufe mit Token-Anzahlen
+-   RAG-Operationen, die Dokumentenabruf und Kontextzusammenstellung zeigen
+-   Vektordatenbank-Suchen und Ähnlichkeitsoperationen
+-   Embedding-Generierung für die Dokumentenverarbeitung
 
 ### HTTP-Dienste
 
-FastAPI-Dienste verfolgen eingehende Anfragen automatisch, wenn sie instrumentiert sind. Entwickler können Spans
-benutzerdefinierte Attribute für anwendungsspezifischen Kontext hinzufügen.
+FastAPI-Dienste verfolgen eingehende Anfragen automatisch, wenn sie instrumentiert sind. Entwickler können benutzerdefinierte
+Attribute zu Spans hinzufügen, um anwendungsspezifischen Kontext bereitzustellen.
 
 ---
 
 ## Plattformflexibilität
 
-Während Phoenix während der Entwicklung LLM-spezifische Observability bietet, unterstützt die OpenTelemetry-Grundlage jedes
-OTLP-kompatible Backend:
+Während Phoenix während der Entwicklung LLM-spezifische Observability bietet, unterstützt die OpenTelemetry-Grundlage
+jedes OTLP-kompatible Backend:
 
 **Unterstützte Plattformen**:
 
-- **Phoenix**: Open-Source LLM-Observability (aktuelle lokale Entwicklung)
-- **SigNoz**: Open-Source Observability-Plattform
-- **Jaeger**: Distributed Tracing mit Fokus auf Microservices
-- **Tempo** (Grafana): Cloud-native Distributed Tracing
-- **Datadog APM**: Kommerzielles APM mit umfassendem Tracing
-- **New Relic**: Application Performance Monitoring mit KI-Einblicken
+-   **Phoenix**: Open-Source LLM-Observability (aktuelle lokale Entwicklung)
+-   **SigNoz**: Open-Source Observability-Plattform
+-   **Jaeger**: Distributed Tracing mit Fokus auf Microservices
+-   **Tempo** (Grafana): Cloud-native Distributed Tracing
+-   **Datadog APM**: Kommerzielles APM mit umfassendem Tracing
+-   **New Relic**: Application Performance Monitoring mit KI-Einblicken
 
-Der Wechsel des Backends erfordert lediglich Änderungen an der Collector-Konfiguration. Keine Anwendungs-Codeänderungen sind erforderlich.
-
-Vollständige Details zur Multi-Plattform-Unterstützung finden Sie unter [OpenTelemetry Foundation](../0_opentelemetry/index.md) und
-[Dashboards - Multi-Plattform-Support](../2_dashboards/index.md#multi-platform-support).
+Der Wechsel des Backends erfordert lediglich Änderungen an der Collector-Konfiguration. Keine Änderungen am Anwendungscode sind erforderlich.
 
 ---
 
@@ -346,13 +343,13 @@ Vollständige Details zur Multi-Plattform-Unterstützung finden Sie unter [OpenT
 
 ### Geplante Verbesserungen
 
-**Tail Sampling**: Intelligentes Sampling, das Fehler-Traces und interessante Operationen beibehält, während die Speicherkosten reduziert werden.
+**Tail Sampling**: Intelligentes Sampling, das Fehler-Traces und interessante Operationen beibehält, während Speicherkosten reduziert werden.
 
-**Benutzerdefinierte Geschäftsereignisse**: Höhere Traces für Geschäftsabläufe jenseits technischer Implementierungsdetails.
+**Benutzerdefinierte Geschäftsereignisse**: Höherstufige Traces für Geschäftsoperationen, die über technische Implementierungsdetails hinausgehen.
 
 **Kostenprognose**: Kostenschätzungen vor der Ausführung basierend auf historischen Trace-Daten und Abfragekomplexität.
 
-**Performance Budgets**: Automatische Alarme, wenn Operationen die erwartete Dauer basierend auf historischen Mustern überschreiten.
+**Performance-Budgets**: Automatische Warnungen, wenn Operationen die erwartete Dauer basierend auf historischen Mustern überschreiten.
 
 ---
 
@@ -362,54 +359,58 @@ Das Distributed Tracing der Plattform liefert:
 
 ✅ **Operationelles Agent Tracing**: Vollständige Workflow-Ausführung mit Schritt-für-Schritt-Details durch AgentRunTracer
 
-✅ **Sichtbarkeit von KI-Operationen**: LLM- und RAG-Operationen verfolgt mit OpenInference semantischen Konventionen
+✅ **Sichtbarkeit von KI-Operationen**: LLM- und RAG-Operationen getraced mit OpenInference-Semantikkonventionen
 
-✅ **Automatische Instrumentierung**: HTTP-, Datenbank- und asynchrone Operationen ohne manuellen Code verfolgt
+✅ **Automatische Instrumentierung**: HTTP-, Datenbank- und asynchrone Operationen getraced ohne manuellen Code
 
-✅ **Unterstützung für zwei Backends**: Phoenix für LLM-spezifische Entwicklungs-Observability, Cloud-Backend für die Produktion
+✅ **Dualer Backend-Support**: Phoenix für LLM-spezifische Entwicklungs-Observability, Cloud Backend für die Produktion
 
-✅ **Standardbasiert**: OpenTelemetry gewährleistet Anbieterflexibilität durch das OTLP-Protokoll
+✅ **Standardbasiert**: OpenTelemetry gewährleistet Herstellerflexibilität durch das OTLP-Protokoll
 
-✅ **Leistungsanalyse**: Detaillierte Zeitinformationen ermöglichen eine präzise Engpasserkennung
+✅ **Performance-Analyse**: Detaillierte Timing-Informationen ermöglichen eine präzise Engpassidentifikation
 
 ✅ **Datenschutzgrundlage**: Infrastruktur erfasst Metadaten; Entwickler sind für den Datenschutz verantwortlich
 
-Mit der Ausweitung der Tracing-Abdeckung erhalten Unternehmen zunehmend detaillierte Einblicke in die Plattformleistung, KI-Operationen und
-Benutzererfahrung.
+Mit der Erweiterung der Tracing-Abdeckung erhalten Organisationen zunehmend detailliertere Einblicke in die Plattform-Performance,
+KI-Operationen und Benutzererfahrung.
 
-# OpenTelemetry-Grundlagen
+# OpenTelemetry-Grundlage
 
 ## Übersicht
 
 **OpenTelemetry (OTel)** ist die technische Grundlage für die gesamte Observability im Swiss AI-Hub. Es bietet ein
-anbieterneutrales, branchenübliches Framework zum Sammeln, Verarbeiten und Exportieren von Telemetriedaten über Metriken,
+herstellerneutrales, industrieweites Framework zum Sammeln, Verarbeiten und Exportieren von Telemetriedaten über Metriken,
 Logs und Traces hinweg.
 
-Im Gegensatz zu proprietären Monitoring-Lösungen, die Sie an bestimmte Anbieter binden, stellt OpenTelemetry sicher, dass die Plattform
-mit jedem kompatiblen Observability-Backend integriert werden kann. Diese architektonische Entscheidung bietet Unternehmen maximale
-Flexibilität bei der Auswahl von Monitoring-Tools basierend auf ihrer Infrastruktur, Compliance-Anforderungen und operativen Präferenzen.
+Im Gegensatz zu proprietären Monitoring-Lösungen, die Sie an bestimmte Anbieter binden, stellt OpenTelemetry sicher, dass die
+Plattform mit jedem kompatiblen Observability-Backend integriert werden kann. Diese architektonische Entscheidung bietet
+Organisationen maximale Flexibilität bei der Wahl von Monitoring-Tools, basierend auf ihrer Infrastruktur,
+Compliance-Anforderungen und operativen Präferenzen.
 
 ---
 
 ## Warum OpenTelemetry?
 
-OpenTelemetry ermöglicht es uns, Dienste einmal zu instrumentieren und die Tool-Wahl flexibel zu halten. Es standardisiert Metriken, Logs und Traces,
-sodass Signale standardmäßig korrelieren und austauschbare Backends eine Konfigurationsänderung bleiben, keine Neuimplementierung.
+OpenTelemetry ermöglicht es uns, Dienste einmal zu instrumentieren und die Tool-Wahl flexibel zu halten. Es standardisiert
+Metriken, Logs und Traces, sodass Signale standardmäßig korrelieren und austauschbare Backends eine Konfigurationsänderung
+bleiben, keine Neuentwicklung.
 
 **Vorteile**
 
-- **Anbieterneutral im Design:** Verwenden Sie jedes OTLP-kompatible Backend (z.B. SigNoz, Datadog, Grafana, Prometheus, New Relic)
-  ohne Neu-Instrumentierung.
-- **Vereinheitlichte Signale:** Konsistente Modelle und gemeinsam genutzter Kontext (Trace-/Span-IDs, Ressourcenattribute) verknüpfen Metriken, Logs
-  und Traces für schnellere Fehlerbehebung.
-- **Bewährter Standard:** Ein CNCF-Projekt mit breiter Branchenunterstützung und aktiver Entwicklung, das Technologierisiken reduziert.
-- **Zukunftssicher:** Entwickeln Sie Plattformen und Richtlinien über den OTel Collector und die Konfiguration, nicht über den Anwendungscode.
+-   **Herstellerneutral im Design:** Verwenden Sie jedes OTLP-kompatible Backend (z.B. SigNoz, Datadog, Grafana, Prometheus,
+    New Relic) ohne erneute Instrumentierung.
+-   **Vereinheitlichte Signale:** Konsistente Modelle und gemeinsam genutzter Kontext (Trace-/Span-IDs, Ressourcenattribute)
+    verknüpfen Metriken, Logs und Traces für eine schnellere Fehlerbehebung.
+-   **Bewährter Standard:** Ein CNCF-Projekt mit breiter Branchenunterstützung und aktiver Entwicklung, wodurch das
+    Technologierisiko reduziert wird.
+-   **Zukunftssicher:** Entwickeln Sie Plattformen und Richtlinien über den OTel Collector und die Konfiguration weiter,
+    nicht über den Anwendungscode.
 
 ---
 
 ## OpenTelemetry Collector
 
-Der **OpenTelemetry Collector** ist der zentrale Telemetrie-Verarbeitungsknotenpunkt für den Swiss AI-Hub.
+Der **OpenTelemetry Collector** ist die zentrale Drehscheibe für die Telemetrieverarbeitung im Swiss AI-Hub.
 
 ### Architektur
 
@@ -450,44 +451,43 @@ graph TB
 
 ### Komponenten
 
-**Receivers**: Sammeln Telemetriedaten aus verschiedenen Quellen.
+**Receiver**: Sammeln Telemetriedaten aus verschiedenen Quellen.
 
-**Prozessoren**: Transformieren, anreichern, filtern und stapeln Telemetriedaten vor dem Export.
+**Processor**: Transformieren, anreichern, filtern und batchen Telemetriedaten vor dem Export.
 
 **Exporter**: Senden verarbeitete Telemetriedaten an Observability-Backends.
 
-**Erweiterungen**: Bieten Hilfsfunktionen wie Health Checks und Profiling.
+**Extensions**: Bieten zusätzliche Funktionen wie Health Checks und Profiling.
 
 ---
 
 ## Receiver
 
-Receiver sind Aufnahmepunkte. Sie ziehen Telemetriedaten von Anwendungen und Infrastruktur in die Plattform.
+Receiver sind Aufnahmepunkte. Sie ziehen Telemetriedaten aus Anwendungen und der Infrastruktur in die Plattform.
 
-- **OTLP-Receiver:** Standardeingang für Anwendungs-Telemetrie. Dienste senden Metriken, Logs und Traces mit dem OpenTelemetry-
-  Protokoll. Konzept: ein Drahtformat für alles.
-- **Container-Metrik-Receiver:** Sammelt Ressourcennutzung von laufenden Containern. Konzept: Überwachung der Laufzeitgesundheit,
-  ohne den Anwendungscode zu berühren.
-- **Datei-Log-Receiver:** Nimmt strukturierte Ereignis-Logs wie Container- und synthetische Health Checks auf. Konzept:
-  Erfassung operativer Signale, auch wenn Anwendungen keine nativen Endpunkte haben.
+-   **OTLP-Receiver:** Standard-Eingang für Anwendungs-Telemetrie. Dienste senden Metriken, Logs und Traces über das
+    OpenTelemetry-Protokoll. Konzept: ein Drahtformat für alles.
+-   **Container-Metrik-Receiver:** Sammelt Ressourcennutzung von laufenden Containern. Konzept: Überwachung des
+    Laufzeitstatus ohne Änderung des Anwendungscodes.
+-   **File-Log-Receiver:** Nimmt strukturierte Ereignisprotokolle wie Container- und synthetische Health Checks auf.
+    Konzept: Erfassung operativer Signale, auch wenn Anwendungen keine nativen Endpunkte haben.
 
 Ergebnis: Breite Abdeckung mit minimaler Kopplung an ein einzelnes Tool oder eine Laufzeitumgebung.
 
 ---
 
-## Prozessoren
+## Processor
 
-Prozessoren formen Telemetriedaten in Bewegung. Sie fügen Kontext hinzu, reduzieren Rauschen und bereiten Daten für die Analyse vor.
+Processor formen Telemetriedaten in Bewegung. Sie fügen Kontext hinzu, reduzieren Rauschen und bereiten Daten für die Analyse vor.
 
-- **Batching:** Gruppiert Daten für effizienten Transport. Konzept: geringerer Overhead ohne Verlust an Genauigkeit.
-- **Ressourcenerkennung:** Automatische Anreicherung mit Umgebungsdetails wie Host-, Container- oder Systeminformationen. Konzept:
-  Anfügen von "Wer/Wo" an jedes Signal.
-- **Attributbearbeitung:** Normalisiert Tags wie Umgebung oder Quelle. Konzept: konsistente Labels für zuverlässiges Filtern
-  und Dashboards.
-- **Ressourcenmapping:** Übersetzt Container-Fakten in Dienstidentitäten (z.B. Dienstname, Version). Konzept:
-  Infrastrukturrealität mit Dienstansichten in Einklang bringen.
-- **Filterung:** Entfernt rauschende Daten mit geringem Wert, wie z.B. routinemäßige Health Checks. Konzept:
-  Verbesserung des Signal-Rausch-Verhältnisses und Kostenkontrolle.
+-   **Batching:** Gruppiert Daten für einen effizienten Transport. Konzept: geringerer Overhead ohne Verlust an Genauigkeit.
+-   **Ressourcenerkennung:** Automatische Anreicherung mit Umgebungsdetails wie Host, Container oder Systeminformationen.
+    Konzept: Wer/Wo an jedes Signal anhängen.
+-   **Attributbearbeitung:** Normalisiert Tags wie Umgebung oder Quelle. Konzept: konsistente Labels für zuverlässige
+    Filterung und Dashboards.
+-   **Ressourcen-Mapping:** Übersetzt Container-Fakten in Dienst-Identitäten (z.B. Dienstname, Version). Konzept:
+    Abstimmung der Infrastrukturrealität mit Dienstansichten.
+-   **Filterung:** Entfernt geringwertiges Rauschen wie routinemäßige Health Checks. Konzept: Verbesserung des Signal-Rausch-Verhältnisses und Kostenkontrolle.
 
 Ergebnis: Saubere, kontextbezogene und analysebereite Telemetriedaten.
 
@@ -495,67 +495,67 @@ Ergebnis: Saubere, kontextbezogene und analysebereite Telemetriedaten.
 
 ## Exporter
 
-Exporter liefern Telemetriedaten an ihre Ziele.
+Exporter liefern Telemetriedaten an Ziele.
 
-- **Primärer Backend-Exporter:** Sendet Daten an die gewählte OTLP-kompatible Plattform. Konzept:
-  Wählen oder ändern Sie Ihr Analyse-Tool, ohne neu zu instrumentieren.
-- **Debug-Exporter:** Gibt Daten zur Validierung aus oder zeigt sie an. Konzept: Pipelines lokal überprüfen, bevor sie skaliert werden.
+-   **Primärer Backend-Exporter:** Sendet Daten an die gewählte OTLP-kompatible Plattform. Konzept: Wählen oder wechseln
+    Sie Ihr Analyse-Tool ohne erneute Instrumentierung.
+-   **Debug-Exporter:** Gibt Daten zur Validierung aus oder zeigt sie an. Konzept: Pipelines lokal vor der Skalierung überprüfen.
 
-Ergebnis: Steckbare Ausgaben mit sicheren Entwicklungsworkflows.
+Ergebnis: Steckbare Ausgaben mit sicheren Entwicklungs-Workflows.
 
 ---
 
 ## Telemetrie-Pipelines
 
-Pipelines sind End-to-End-Abläufe pro Signaltyp. Jede definiert, welche Receiver, Prozessoren und Exporter verwendet werden sollen.
+Pipelines sind End-to-End-Flows pro Signalart. Jede definiert, welche Receiver, Processor und Exporter zu verwenden sind.
 
-- **Metrik-Pipelines:** Optimierung auf Durchsatz und Trendanalyse. Anreicherung mit Dienstkontext.
-- **Log-Pipelines:** Struktur und Reihenfolge beibehalten. Attribute für Abfragen und Korrelation extrahieren.
-- **Trace-Pipelines:** Übergeordnete/untergeordnete Beziehungen intakt halten. Sorgfältiges Batching zur Wahrung der Trace-Integrität.
+-   **Metrik-Pipelines:** Optimieren für Durchsatz und Trendanalyse. Anreicherung mit Dienstkontext.
+-   **Log-Pipelines:** Bewahren Struktur und Reihenfolge. Extrahieren Attribute für Abfragen und Korrelation.
+-   **Trace-Pipelines:** Bewahren Parent-Child-Beziehungen. Sorgfältiges Batchen zur Aufrechterhaltung der Trace-Integrität.
 
-Konzept: zweckbestimmte Spuren, die Signale über den gesamten Stack hinweg konsistent und verknüpfbar halten.
+Konzept: Speziell gebaute Spuren, die Signale über den gesamten Stack hinweg konsistent und verknüpfbar halten.
 
 ---
 
-## Erweiterungen
+## Extensions
 
-Erweiterungen fügen operative Funktionen um den Collector selbst hinzu.
+Extensions fügen dem Collector selbst operative Fähigkeiten hinzu.
 
-- **Health Checks:** Zeigen den Collector-Status zur Überwachung an. Konzept: Observability als erstklassigen Dienst behandeln.
-- **Profiling (pprof):** Untersuchen der Leistung unter Last. Konzept: Diagnose von Pipeline-Engpässen.
-- **Diagnostik (zPages):** Interne Metriken und den Zustand anzeigen. Konzept: schnellere Fehlerbehebung ohne externe Tools.
+-   **Health Checks:** Zeigen den Collector-Status für die Überwachung an. Konzept: Observability als erstklassigen Dienst behandeln.
+-   **Profiling (pprof):** Untersucht die Performance unter Last. Konzept: Diagnose von Pipeline-Engpässen.
+-   **Diagnose (zPages):** Zeigt interne Metriken und den Zustand an. Konzept: Schnellere Fehlersuche ohne externe Tools.
 
-Ergebnis: Eine verwaltbare, überprüfbare Observability-Steuerungsebene.
+Ergebnis: Eine handhabbare, überprüfbare Observability-Kontrollebene.
 
 ---
 
 ## Integration mit Plattformdiensten
 
-### Anwendungs-Instrumentierung
+### Anwendungsinstrumentierung
 
-Dienste, die mit OpenTelemetry SDKs instrumentiert sind, emittieren automatisch Telemetriedaten:
+Dienste, die mit OpenTelemetry SDKs instrumentiert sind, emittieren Telemetriedaten automatisch:
 
 **Python-Dienste** (API, Agents, Pipelines):
 
-- `opentelemetry-instrumentation-*`-Bibliotheken für die automatische Framework-Instrumentierung
-- Benutzerdefinierte Instrumentierung für die Geschäftslogik
-- OpenInference für KI/ML-semantische Konventionen
+-   `opentelemetry-instrumentation-*`-Bibliotheken für automatische Framework-Instrumentierung
+-   Benutzerdefinierte Instrumentierung für Geschäftslogik
+-   OpenInference für KI/ML-Semantikkonventionen
 
 **Instrumentierte Komponenten**:
 
-- FastAPI HTTP-Anfragen und -Antworten
-- Datenbankoperationen (MongoDB, PostgreSQL, Redis, Milvus)
-- HTTP-Client-Anfragen (httpx, aiohttp, requests)
-- LlamaIndex LLM-Operationen
-- Python-Logging-Framework
+-   FastAPI HTTP-Anfragen und -Antworten
+-   Datenbankoperationen (MongoDB, PostgreSQL, Redis, Milvus)
+-   HTTP-Client-Anfragen (httpx, aiohttp, requests)
+-   LlamaIndex LLM-Operationen
+-   Python-Logging-Framework
 
-### Infrastruktur-Integration
+### Infrastrukturintegration
 
-Nicht-instrumentierte Dienste liefern Telemetriedaten durch Infrastruktur-Monitoring:
+Nicht instrumentierte Dienste liefern Telemetriedaten durch Infrastruktur-Monitoring:
 
-**Container-Metriken**: Docker-Statistiken-Receiver sammelt Ressourcenmetriken für alle Container unabhängig von der Instrumentierung.
+**Container-Metriken**: Docker Stats Receiver sammelt Ressourcenmetriken für alle Container, unabhängig von der Instrumentierung.
 
-**Gesundheitsüberwachung**: Datei-Log-Receiver erfassen den Gesundheitsstatus sowohl von Docker-Ereignissen als auch von synthetischen Prüfungen.
+**Gesundheitsüberwachung**: File Log Receiver erfassen den Gesundheitsstatus sowohl von Docker-Ereignissen als auch von synthetischen Checks.
 
 **Netzwerk-Observability**: Traefik-Proxy-Logs und -Metriken bieten Sichtbarkeit des Anfrage-Routings.
 
@@ -563,27 +563,27 @@ Nicht-instrumentierte Dienste liefern Telemetriedaten durch Infrastruktur-Monito
 
 ## Multi-Plattform-Unterstützung
 
-### Anbieterflexibilität
+### Herstellerflexibilität
 
-Die OpenTelemetry-Grundlage unterstützt den gleichzeitigen Export an mehrere Plattformen:
+Die OpenTelemetry-Grundlage unterstützt den gleichzeitigen Export auf mehrere Plattformen:
 
 **Unterstützte Plattformen**:
 
-- **SigNoz**: Open-Source, OpenTelemetry-native Plattform (aktuell primär)
-- **Datadog**: Kommerzielles APM mit umfassenden Funktionen
-- **Grafana Cloud**: Verwaltetes Prometheus, Loki und Tempo
-- **New Relic**: Application Performance Monitoring mit KI-Einblicken
-- **Prometheus**: Open-Source Zeitreihen-Datenbank
-- **Elasticsearch/ELK**: Log-Analyse- und Suchplattform
-- **Splunk**: Enterprise SIEM und Observability-Plattform
+-   **SigNoz**: Open-Source, OpenTelemetry-native Plattform (aktuell primär)
+-   **Datadog**: Kommerzielles APM mit umfassenden Funktionen
+-   **Grafana Cloud**: Managed Prometheus, Loki und Tempo
+-   **New Relic**: Application Performance Monitoring mit KI-Einblicken
+-   **Prometheus**: Open-Source Zeitreihen-Datenbank
+-   **Elasticsearch/ELK**: Log-Analyse- und Suchplattform
+-   **Splunk**: Enterprise SIEM und Observability-Plattform
 
-### Hinzufügen von Exportzielen
+### Exportziele hinzufügen
 
-Neue Observability-Plattformen erfordern lediglich Änderungen an der Collector-Konfiguration:
+Neue Observability-Plattformen erfordern nur Änderungen an der Collector-Konfiguration:
 
-1. Exporter in der Collector-Konfiguration definieren
-2. Exporter zu den relevanten Pipelines hinzufügen
-3. Authentifizierung über Umgebungsvariablen konfigurieren
+1.  Exporter in der Collector-Konfiguration definieren
+2.  Exporter zu den relevanten Pipelines hinzufügen
+3.  Authentifizierung über Umgebungsvariablen konfigurieren
 
 Keine Änderungen am Anwendungscode erforderlich.
 
@@ -595,10 +595,10 @@ Alle Telemetrie-Exporte verwenden TLS-Verschlüsselung, um Abfangen oder Manipul
 
 ### Zugriffskontrolle
 
-Collector-Konfiguration und -Zugriff sind auf Infrastrukturadministratoren beschränkt. Anwendungsdienste senden Telemetriedaten
-über definierte Schnittstellen ohne Collector-Zugriff.
+Collector-Konfiguration und -Zugriff sind auf Infrastrukturadministratoren beschränkt. Anwendungsdienste emittieren
+Telemetriedaten über definierte Schnittstellen ohne Collector-Zugriff.
 
 ### Geheimnisverwaltung
 
-Authentifizierungsschlüssel werden über Umgebungsvariablen verwaltet, getrennt von Konfigurationsdateien, was eine sichere
-Geheimnisrotation ermöglicht.
+Authentifizierungsschlüssel werden über Umgebungsvariablen verwaltet, getrennt von Konfigurationsdateien, was eine
+sichere Schlüsselrotation ermöglicht.

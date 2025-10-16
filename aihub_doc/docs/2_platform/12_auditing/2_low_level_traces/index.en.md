@@ -91,8 +91,7 @@ operation automatically receives a unique trace identifier that connects all rel
 revealing exactly what happened, where time was spent, and how components collaborated.
 
 The Swiss AI-Hub uses OpenTelemetry for tracing with specialized support for AI operations through OpenInference
-semantic conventions. For details on the OpenTelemetry infrastructure, see
-[OpenTelemetry Foundation](../0_opentelemetry/index.md).
+semantic conventions.
 
 ---
 
@@ -199,8 +198,6 @@ The OpenTelemetry Collector processes traces through two specialized pipelines:
 - Processors: `filter/phoenix` (keeps only OpenInference spans), `transform/phoenix` (adds project metadata), `batch`
 - Exporter: `otlp/phoenix` (port 6007)
 
-For complete OpenTelemetry architecture details, see [OpenTelemetry Foundation](../0_opentelemetry/index.md).
-
 ### Instrumentation
 
 Services automatically emit traces through OpenTelemetry instrumentation configured by `AihubInstrumentor`:
@@ -269,8 +266,6 @@ spans).
 Traces are exported to cloud observability platforms for long-term storage and analysis. The platform supports any
 OTLP-compatible backend through configuration changes only.
 
-For information on cloud backends and visualization, see [Dashboards](../2_dashboards/index.md).
-
 ---
 
 ## Security and Privacy
@@ -338,9 +333,6 @@ OTLP-compatible backend:
 - **New Relic**: Application performance monitoring with AI insights
 
 Switching backends requires only collector configuration changes. No application code modifications are needed.
-
-For complete multi-platform details, see [OpenTelemetry Foundation](../0_opentelemetry/index.md) and
-[Dashboards - Multi-Platform Support](../2_dashboards/index.md#multi-platform-support).
 
 ---
 

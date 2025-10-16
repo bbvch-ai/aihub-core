@@ -1,10 +1,3 @@
----
-title: Deployment
-index: 10
----
-
-# Deployment
-
 ## Setup Openstack
 
 See https://docs.infomaniak.cloud/getting_started/first_project/create_a_project/ for how to create a new project in

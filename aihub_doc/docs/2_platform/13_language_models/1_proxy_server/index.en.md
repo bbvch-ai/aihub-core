@@ -5,8 +5,6 @@ index: 1
 
 # LLM Proxy
 
-![System Overview - LLM Proxy](../../../../../../media/architecture/system_overview/system-overview-highlight-llm-proxy.png)
-
 The LLM Proxy serves as a centralized gateway to all language model providers, abstracting vendor-specific APIs behind a
 unified interface. This architectural component enables the platform to leverage multiple AI providers simultaneously
 while maintaining vendor independence and operational control.

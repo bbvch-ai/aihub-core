@@ -159,8 +159,8 @@ translated_files=0
 skipped_files=0
 failed_files=0
 
-# Find all index.en.md files (excluding node_modules and hidden directories)
-find docs -type f -name "index.en.md" -not -path "*/node_modules/*" -not -path "*/.*" -print0 | while IFS= read -r -d '' source_file; do
+# Find all index.en.md files (excluding node_modules, hidden directories, and code_deep_dive)
+find docs -type f -name "index.en.md" -not -path "*/node_modules/*" -not -path "*/.*" -not -path "docs/6_code_deep_dive/*" -print0 | while IFS= read -r -d '' source_file; do
     total_files=$((total_files + 1))
 
     # Determine target file path (same directory, but .de.md suffix)
