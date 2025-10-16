@@ -105,8 +105,6 @@ index: 1
 
 # APIs
 
-![System Overview - APIs](../../../../../../media/architecture/system_overview/system-overview-highlight-api.png)
-
 The API layer serves as the central gateway for all external interactions with the Swiss AI-Hub platform. It provides
 secure, standards-based interfaces for user applications, administrative tools, and integration endpoints.
 

@@ -200,31 +200,13 @@ appropriate documentation for your needs.
 
 ## Quick Navigation
 
-### For Platform Users and Administrators
-
-If you're looking to understand how RBAC works from a business and operational perspective, including how to configure
-roles, manage permissions, and set up authentication:
-
-::: tip **Platform Documentation**
-📖 **[Complete Platform RBAC Guide](../../../1_vision_and_positioning/3_solution/4_security/2_rbac/index.md)**
-
-Covers:
-
-- Role management concepts and business benefits
-- Permission system architecture and examples
-- User and admin privilege levels
-- Authentication and identity provider integration
-- Role configuration and best practices
-- Security, compliance, and monitoring
-- Deployment and getting started guide
-:::
 
 ### For Developers and SDK Users
 
 If you're implementing RBAC in your custom agents, APIs, or services, and need technical implementation details:
 
 ::: tip **SDK Documentation**
-🛠️ **[Complete SDK RBAC Implementation Guide](../../../3_sdk/5_advanced_topics/5_rbac/index.md)**
+🛠️ **[Complete SDK RBAC Implementation Guide](../../../3_sdk/5_advanced_topics/5_rbac/)**
 
 Covers:
 
@@ -281,9 +263,7 @@ aihub.[user|admin].[resource_type].[resource_category].[resource_identifier]
 
 ## Choose Your Path
 
-- **Business Users & Admins**: Start with the
-  [Platform RBAC Guide](../../../1_vision_and_positioning/3_solution/4_security/2_rbac/index.md)
 - **Developers & Integrators**: Begin with the
-  [SDK Implementation Guide](../../../3_sdk/5_advanced_topics/5_rbac/index.md)
+  [SDK Implementation Guide](../../../3_sdk/5_advanced_topics/5_rbac/)
 
 Both guides provide comprehensive coverage of the AI-Hub RBAC system tailored to your specific needs and use cases.
