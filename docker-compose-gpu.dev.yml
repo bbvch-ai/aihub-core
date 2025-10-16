@@ -258,7 +258,7 @@ services:
       --top-k 20 
       --top-p 0.95 
       --min-p 0 
-      -c 32768 
+      -c 16384 
       -n 8196
       -ngl 90
       --no-context-shift
@@ -271,9 +271,6 @@ services:
               device_ids: [ '0' ]
               capabilities: [ gpu ]
     restart: always
-    depends_on:
-      llama-cpp-reranker:
-        condition: service_healthy
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
       timeout: 10s
@@ -303,11 +300,8 @@ services:
               device_ids: [ '0' ]
               capabilities: [ gpu ]
     restart: always
-    depends_on:
-      llama-cpp-reranker:
-        condition: service_healthy
     healthcheck:
-      test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8183/health" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8183/health" ]
       timeout: 10s
       interval: 30s
       retries: 3
@@ -329,7 +323,9 @@ services:
       -hf mradermacher/Qwen3-Reranker-0.6B-GGUF
       --alias Qwen3-Reranker-0.6B
       --port 8184
-      -c 32768
+      -c 2048
+      -b 2048
+      -ub 2048
       --reranking
       -ngl 99
       --no-context-shift
@@ -341,6 +337,9 @@ services:
               device_ids: [ '0' ]
               capabilities: [ gpu ]
     restart: always
+    depends_on:
+      huggingface-text-embedding-inference:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8184/health" ]
       timeout: 10s

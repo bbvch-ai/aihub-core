@@ -197,7 +197,6 @@ class RAGAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> RerankerEvent | RetrieverEvent:
-        """Reranks retrieved nodes using a dedicated reranking model for improved relevance."""
         if not agent_config.reranking_config.enabled:
             return event
 

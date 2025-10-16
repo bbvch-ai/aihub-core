@@ -270,8 +270,8 @@ services:
       --top-k 20 
       --top-p 0.95 
       --min-p 0 
-      -c 8196 
-      -n 4096 
+      -c 16384 
+      -n 8196 
       -ngl 99
       --no-context-shift
     restart: always
@@ -304,7 +304,7 @@ services:
       start_period: 60s
 
   llama-cpp-reranker:
-    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b6710
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b6710
     container_name: llama-cpp-reranker
     platform: linux/amd64
     volumes:
@@ -319,7 +319,9 @@ services:
       -hf mradermacher/Qwen3-Reranker-0.6B-GGUF
       --alias Qwen3-Reranker-0.6B
       --port 8184
-      -c 32768
+      -c 2048
+      -b 2048
+      -ub 2048
       --reranking
       -ngl 99
       --no-context-shift

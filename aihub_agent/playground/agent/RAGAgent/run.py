@@ -45,7 +45,7 @@ async def main():
             ),
             llm=LLMConfig(model_name="local/qwen-2.5-multimodal-small"),
             check_context_sufficiency=False,
-            number_of_input_tokens=32768,
+            number_of_input_tokens=16384,
             system_prompt=LocaleString(
                 en="""
                 <persona>
@@ -141,7 +141,7 @@ async def main():
             ),
             retrieve_step_config=RetrieveStepConfig(
                 embed_model=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
-                index_namespaces=["test"],
+                index_namespaces=["simple"],
                 retrieve_k=20,
                 query_mode=VectorStoreQueryMode.DEFAULT,
                 node_types=["content", "summary"],
