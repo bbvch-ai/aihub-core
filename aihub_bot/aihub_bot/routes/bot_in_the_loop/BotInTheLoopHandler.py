@@ -80,6 +80,29 @@ class BotInTheLoopHandler:
         thread_id = event.topic.thread_id
         question = event.question
 
+        if event.slack_channel_id is not None:
+            await self._handle_bot_in_the_loop_request_in_slack(event, thread_id, question)
+
+        elif event.teams_channel_id is not None:
+            await self._handle_bot_in_the_loop_request_in_teams(event, thread_id, question)
+
+        else:
+            raise ValueError("Either Slack channel or Teams channel must be provided")
+
+    async def _handle_bot_in_the_loop_request_in_teams(
+        self,
+        event: BotInTheLoopRequestEvent,
+        thread_id: str,
+        question: str,
+    ):
+        raise NotImplementedError("BotInTheLoop in Teams is not yet implemented")
+
+    async def _handle_bot_in_the_loop_request_in_slack(
+        self,
+        event: BotInTheLoopRequestEvent,
+        thread_id: str,
+        question: str,
+    ):
         # Get the Slack IDs (bot_id and team_id)
         slack_ids = await self._get_slack_ids(self.path)
 
