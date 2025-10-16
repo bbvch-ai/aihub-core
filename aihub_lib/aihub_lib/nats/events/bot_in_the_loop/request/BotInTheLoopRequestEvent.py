@@ -36,7 +36,7 @@ class BotInTheLoopRequestEvent(ControlEvent):
     ] = None
     teams_channel_id: Annotated[
         str | None,
-        Field(description="The ID of the Teams channel where the request is sent to.", pattern=r"^[0-9A-Za-z]+$"),
+        Field(description="The ID of the Teams channel where the request is sent to.", pattern=r"^.+$"),
     ] = None
     topic: Annotated[
         PartialAgentTopic | AgentInstanceTopic,
