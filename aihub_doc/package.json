@@ -7,6 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "docs:dev": "vitepress dev",
     "docs:sync": "bash sync-docs.sh",
+    "docs:translate": "bash translate-docs.sh",
     "docs:build": "bash sync-docs.sh && vitepress build",
     "docs:preview": "vitepress preview"
   },
