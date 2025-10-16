@@ -94,8 +94,23 @@ class BotInTheLoopHandler:
         event: BotInTheLoopRequestEvent,
         thread_id: str,
         question: str,
+        teams_tenant_id: str = "37314c94-c755-48ab-85bb-acb83e492c42",
     ):
-        raise NotImplementedError("BotInTheLoop in Teams is not yet implemented")
+        conversation = ConversationReference(
+            channel_id="teams",
+            conversation=ConversationAccount(
+                id=event.teams_channel_id,
+                conversation_type="channel",
+            ),
+            service_url=f"https://smba.trafficmanager.net/emea/{teams_tenant_id}/",
+            bot=ChannelAccount(id=event.bot_id),
+        )
+        adapter = RoutesService.get_adapter(self.path)
+        await adapter.continue_conversation(
+            bot_app_id=RoutesService.get_credentials(self.path).APP_ID,
+            reference=conversation,
+            callback=self._bot_in_the_loop_callback(question, self.threads[thread_id]),
+        )
 
     async def _handle_bot_in_the_loop_request_in_slack(
         self,
