@@ -81,15 +81,15 @@ requirements evolve beyond the standard integration.
 
 This section explores the Swiss AI Hub's chat interface integration through the following perspectives:
 
-- **[Integration Architecture](1_integration_architecture/1_integration_architecture.md)**: How Open WebUI integrates
+- **[Integration Architecture](1_integration_architecture/)**: How Open WebUI integrates
   into the suite, technical approach, and communication mechanisms
-- **[Enhanced Source Attribution](2_source_attribution/2_source_attribution.md)**: Custom extensions providing
+- **[Enhanced Source Attribution](2_source_attribution/)**: Custom extensions providing
   transparent knowledge retrieval visibility
-- **[Enhanced Observability](3_observability/3_observability.md)**: Execution tracing and workflow transparency
+- **[Enhanced Observability](3_observability/)**: Execution tracing and workflow transparency
   capabilities
-- **[Feature Overview](4_feature_overview/4_feature_overview.md)**: Comprehensive catalog of chat interface capabilities
+- **[Feature Overview](4_feature_overview/)**: Comprehensive catalog of chat interface capabilities
   inherited from Open WebUI
-- **[Strategic Rationale](5_strategic_rationale/5_strategic_rationale.md)**: Detailed analysis of the open-source
+- **[Strategic Rationale](5_strategic_rationale/)**: Detailed analysis of the open-source
   integration approach and business advantages
 
 ## Alignment with Platform Philosophy

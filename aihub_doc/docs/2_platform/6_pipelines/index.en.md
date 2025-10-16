@@ -5,8 +5,6 @@ index: 6
 
 # Data Pipelines: Creating the AI's Knowledge
 
-![System Overview - Data Pipelines](./media/architecture/system_overview/system-overview-highlight-pipelines.png)
-
 An AI agent is only as intelligent as the information it can access. Raw organizational data—spread across PDFs, SharePoint sites, and network drives—is not in a format that an AI can readily use. The **Data Pipeline** layer is the powerful engine that bridges this gap, transforming your disparate documents and data sources into a structured, searchable, and AI-ready **Knowledge Base**.
 
 Think of a data pipeline as an automated factory for knowledge. It takes raw materials (your documents) and runs them through a sophisticated assembly line to produce a refined product (an indexed, searchable knowledge base) that your agents can use to provide accurate, context-aware answers.
