@@ -49,6 +49,7 @@ class BaseChatBot(ActivityHandler):
             turn_context.activity.channel_id == Channels.ms_teams
             and turn_context.activity.members_added is not None
             and turn_context.activity.recipient.id in [member.id for member in turn_context.activity.members_added]
+            and turn_context.activity.channel_data.get("team") is None
         ):
             conversation_id = turn_context.activity.conversation.id
             ConversationTracker.mark_explicitly_deleted(conversation_id)
