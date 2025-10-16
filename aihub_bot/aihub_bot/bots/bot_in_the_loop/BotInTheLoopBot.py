@@ -30,48 +30,53 @@ class BotInTheLoopBot(ActivityHandler):
     @override
     async def on_message_activity(self, turn_context: TurnContext):
         # Handle Slack-specific message formatting
-        if turn_context.activity.channel_id != Channels.slack:
-            raise NotImplementedError("BotInTheLoopBot only supports Slack channel")
+        if turn_context.activity.channel_id == Channels.slack:
+            if not self.is_slack_channel_thread_message(turn_context):
+                logger.debug("Not a Slack channel thread message")
+                return
 
-        if not self.is_slack_channel_thread_message(turn_context):
-            logger.debug("Not a Slack channel thread message")
-            return
+            conversation_id = turn_context.activity.conversation.id
 
-        conversation_id = turn_context.activity.conversation.id
+            # Parse the conversation ID to extract the full channel ID and thread ID
+            # Format is: {bot_id}:{team_id}:{channel_id}:{thread_ts}
+            parts = conversation_id.split(":")
+            if len(parts) < 4:
+                logger.debug(f"Invalid Slack conversation ID format: {conversation_id}")
+                return
 
-        # Parse the conversation ID to extract the full channel ID and thread ID
-        # Format is: {bot_id}:{team_id}:{channel_id}:{thread_ts}
-        parts = conversation_id.split(":")
-        if len(parts) < 4:
-            logger.debug(f"Invalid Slack conversation ID format: {conversation_id}")
-            return
+            # The full channel ID is the combination of bot_id:team_id:channel_id
+            full_channel_id = ":".join(parts[0:3])
+            slack_thread_ts = parts[3]
 
-        # The full channel ID is the combination of bot_id:team_id:channel_id
-        full_channel_id = ":".join(parts[0:3])
-        slack_thread_ts = parts[3]
+            # Find the corresponding thread in the handler's threads dictionary
+            matching_thread_id = None
+            for thread_id, thread in self.bot_in_the_loop_handler.threads.items():
+                if thread.conversation_id == full_channel_id and thread.slack_thread_ts == slack_thread_ts:
+                    matching_thread_id = thread_id
+                    break
 
-        # Find the corresponding thread in the handler's threads dictionary
-        matching_thread_id = None
-        for thread_id, thread in self.bot_in_the_loop_handler.threads.items():
-            if thread.conversation_id == full_channel_id and thread.slack_thread_ts == slack_thread_ts:
-                matching_thread_id = thread_id
-                break
+            if not matching_thread_id:
+                logger.debug(
+                    f"No matching thread found for Slack channel {full_channel_id} and thread {slack_thread_ts}"
+                )
+                return
 
-        if not matching_thread_id:
-            logger.debug(f"No matching thread found for Slack channel {full_channel_id} and thread {slack_thread_ts}")
-            return
+            # Get the original request event
+            bot_in_the_loop_request = self.bot_in_the_loop_handler.threads[matching_thread_id].last_request_event
 
-        # Get the original request event
-        bot_in_the_loop_request = self.bot_in_the_loop_handler.threads[matching_thread_id].last_request_event
-
-        # Extract user information from the activity
-        responder_info = None
-        if hasattr(turn_context.activity, "from_property") and turn_context.activity.from_property:
-            responder_info = SlackResponderInfo(
-                user_id=turn_context.activity.from_property.id,
-                user_name=getattr(turn_context.activity.from_property, "name", None),
-                additional_info=getattr(turn_context.activity, "channel_data", None),
-            )
+            # Extract user information from the activity
+            responder_info = None
+            if hasattr(turn_context.activity, "from_property") and turn_context.activity.from_property:
+                responder_info = SlackResponderInfo(
+                    user_id=turn_context.activity.from_property.id,
+                    user_name=getattr(turn_context.activity.from_property, "name", None),
+                    additional_info=getattr(turn_context.activity, "channel_data", None),
+                )
+        elif turn_context.activity.channel_id == Channels.ms_teams:
+            logger.debug(turn_context.activity)
+            pass
+        else:
+            raise NotImplementedError("Only Slack and Teams channels are supported")
 
         # Distribute the response event
         await self.external_agent_event_distributor.distribute_event(
