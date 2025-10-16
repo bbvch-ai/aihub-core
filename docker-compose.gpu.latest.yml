@@ -5,6 +5,60 @@
 #   - deployment/compose-config.yml (for changing values and versions)
 #   - deployment/docker-compose.yml.j2 (for changing structure and logic)
 
+# ===================================================================
+# TRAEFIK PRIORITY RULES
+# ===================================================================
+#
+# This file follows state-of-the-art Traefik routing priority best practices:
+#
+# RULE: Higher priority numbers = more specific routes (evaluated first)
+# RULE: Leave gaps of 100-500 between priority tiers for future expansion
+# RULE: Use consistent ranges for similar route types across services
+#
+# PRIORITY HIERARCHY (10000 → 1):
+#
+# 10000-9000: SYSTEM & INFRASTRUCTURE
+#   - 10000: Emergency overrides
+#   - 9500:  Health checks, monitoring endpoints
+#   - 9000:  ACME/Let's Encrypt challenges
+#
+# 8000-7000: SECURITY & AUTHENTICATION
+#   - 8000:  Rate limiting, IP blocking
+#   - 7500:  OAuth callbacks, OIDC endpoints
+#   - 7000:  Authentication APIs, login endpoints
+#
+# 6000-5000: APPLICATION APIs
+#   - 6000:  Specific API endpoints (e.g., /api/v1/auth)
+#   - 5500:  Versioned API routes (e.g., /api/v2)
+#   - 5000:  General API routes (e.g., /api)
+#
+# 4000-3000: APPLICATION FEATURES
+#   - 4000:  Admin interfaces, management UIs
+#   - 3500:  User-specific routes (e.g., /user/profile)
+#   - 3000:  Feature-specific paths (e.g., /reports, /dashboard)
+#
+# 2500-1500: STATIC CONTENT & ASSETS
+#   - 2500:  CDN, external assets
+#   - 2000:  Static files (JS, CSS, images)
+#   - 1500:  Application-specific assets, uploads
+#
+# 1000-500: GENERAL ROUTES
+#   - 1000:  Service-specific catch-all routes
+#   - 750:   Language/locale routing (e.g., /en, /de)
+#   - 500:   Subdomain routing (service.domain.com)
+#
+# 400-1: FALLBACK & DEFAULT
+#   - 400:   Domain catch-all with path restrictions
+#   - 100:   Default domain catch-all
+#   - 50:    Global fallback handlers
+#   - 10:    HTTP to HTTPS redirect (non-ACME)
+#
+# NAMING CONVENTIONS:
+#   - Router names: {service}-{type}-{variant}
+#   - Examples: openwebui-api-auth, web-static-assets, minio-admin-ui
+#   - Middleware chains: {service}-{purpose}-middleware
+#
+# ===================================================================
 
 services:
   # ===================================================================
@@ -17,15 +71,12 @@ services:
     container_name: seaweedfs-master
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
     restart: always
-    expose:
-      - "9333"   # Master HTTP port
-      - "19333"  # Master gRPC port
     command: >
       master
       -ip=seaweedfs-master
       -ip.bind=0.0.0.0
       -defaultReplication=000
-      -volumeSizeLimitMB=1024     # 1GB
+      -volumeSizeLimitMB=1048576  # TB
       -volumePreallocate=false
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master:/data
@@ -45,9 +96,6 @@ services:
     container_name: seaweedfs-volume
     image: "ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97"
     restart: always
-    expose:
-      - "8080"
-      - "18080"
     command: >
       volume
       -mserver="seaweedfs-master:9333"
@@ -70,9 +118,6 @@ services:
     container_name: seaweedfs-filer
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
     restart: always
-    ports:
-      - "8889:8888"
-      - "18888"
     command: >
       filer
       -master="seaweedfs-master:9333"
@@ -93,13 +138,20 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    labels:
+      - "traefik.enable=true"
+      # Filer Web UI
+      - "traefik.http.routers.seaweedfs-filer-ui.rule=Host(`datalake.${DOMAIN}`)"
+      - "traefik.http.routers.seaweedfs-filer-ui.priority=4000"
+      - "traefik.http.routers.seaweedfs-filer-ui.entrypoints=websecure"
+      - "traefik.http.routers.seaweedfs-filer-ui.tls=true"
+      - "traefik.http.routers.seaweedfs-filer-ui.middlewares=security-headers@file"
+      - "traefik.http.services.seaweedfs-filer-ui.loadbalancer.server.port=8888"
 
   seaweedfs-s3:
     container_name: seaweedfs-s3
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
     restart: always
-    ports:
-      - "9000:9000"
     volumes:
       - ./configs/seaweedfs/s3-entrypoint.sh:/usr/local/bin/s3-entrypoint.sh:ro
     entrypoint: ["/bin/sh", "/usr/local/bin/s3-entrypoint.sh"]
@@ -167,7 +219,7 @@ services:
       ETCD_SNAPSHOT_COUNT: 50000
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/etcd-data:/etcd
-    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     healthcheck:
       test: [ "CMD", "etcdctl", "endpoint", "health" ]
     logging:
@@ -190,13 +242,10 @@ services:
       MINIO_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/milvus-data:/var/lib/milvus
-      - ./configs/milvus/milvus.dev.yaml:/milvus/configs/milvus.yaml
+      - ./configs/milvus/milvus.latest.yaml:/milvus/configs/milvus.yaml
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
       start_period: 90s
-    ports:
-      - "19530:19530"
-      - "9091:9091"
     depends_on:
       etcd:
         condition: service_healthy
@@ -212,10 +261,8 @@ services:
     container_name: attu
     image: ghcr.io/bbvch-ai/aihub-core/attu:v2.5.12
     restart: always
-    ports:
-      - "3003:3000"
     environment:
-      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_URL: milvus-standalone:19530
 
   # ===================================================================
   # Postgres & FerretDB Stack (SQL and Document Databases)
@@ -235,8 +282,6 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/postgres-data:/var/lib/postgresql/data
       - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
-    ports:
-      - "5432:5432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
       start_period: 5s
@@ -250,8 +295,6 @@ services:
     container_name: ferretdb
     image: ghcr.io/bbvch-ai/aihub-core/ferretdb:2.5.0
     restart: always
-    ports:
-      - "27017:27017"
     environment:
       - FERRETDB_POSTGRESQL_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/ferretdb
     depends_on:
@@ -276,9 +319,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    ports:
-      - "6006:6006"
-      - "6007:6007"
     environment:
       PHOENIX_SQL_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix
       PHOENIX_ENABLE_AUTH: False
@@ -303,11 +343,8 @@ services:
     restart: always
     command: -c /etc/nats/nats.conf
     volumes:
-      - ./configs/nats/nats.dev.conf:/etc/nats/nats.conf
+      - ./configs/nats/nats.latest.conf:/etc/nats/nats.conf
       - ${VOLUME_ROOT:-./.docker-volumes}/nats-data:/data
-    ports:
-      - "4222:4222"
-      - "8222:8222"
     logging:
       driver: json-file
       options:
@@ -321,8 +358,6 @@ services:
     command: valkey-server --save 30 1 --loglevel warning
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/valkey-data:/data
-    ports:
-      - "6379:6379"
     healthcheck:
       test: [ "CMD", "valkey-cli", "ping" ]
       start_period: 5s
@@ -342,10 +377,8 @@ services:
   llama-cpp:
     container_name: llama-cpp
     platform: "linux/amd64"
-    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b5490
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b6445
     restart: always
-    ports:
-      - "8182:8182"
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
       - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
@@ -353,13 +386,14 @@ services:
     environment:
       HF_HOME: /root/.cache/huggingface
     command: >
-      --hf-repo google/gemma-3-4b-it-qat-q4_0-gguf
-      --hf-file gemma-3-4b-it-q4_0.gguf
+      --hf-repo google/gemma-3-12b-it-qat-q4_0-gguf
+      --hf-file gemma-3-12b-it-q4_0.gguf
       --hf-token ${HUGGINGFACE_API_KEY}
-      --alias gemma-3-4b
+      --alias gemma-3-12b
       --port 8182
       --host 0.0.0.0
       -c 8196
+      -ngl -1
 
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
@@ -372,15 +406,20 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
 
   
   llama-cpp-embedding:
     container_name: llama-cpp-embedding
     platform: "linux/amd64"
-    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b5490
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b6445
     restart: always
-    ports:
-      - "8183:8182"
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
       - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
@@ -391,12 +430,13 @@ services:
       --hf-repo Qwen/Qwen3-Embedding-0.6B-GGUF
       --hf-file Qwen3-Embedding-0.6B-Q8_0.gguf
       --hf-token ${HUGGINGFACE_API_KEY}
-      --alias qwen-3-embedding
+      --alias qwen-3-embedding \
       --port 8182
       --host 0.0.0.0
       --embedding
       --pooling last
       -ub 8192
+      -ngl -1
 
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
@@ -409,15 +449,20 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
 
   
   llama-cpp-reranking:
     container_name: llama-cpp-reranking
     platform: "linux/amd64"
-    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b5490
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b6445
     restart: always
-    ports:
-      - "8184:8182"
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
       - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
@@ -429,11 +474,12 @@ services:
       --hf-file qwen3-reranker-0.6b-q8_0.gguf
       --hf-token ${HUGGINGFACE_API_KEY}
       --alias qwen-3-reranking
-      --port 8182 \
-      --host 0.0.0.0 \
+      --port 8182
+      --host 0.0.0.0
       -c 8192
       --reranking
       --no-context-shift
+      -ngl 10
 
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
@@ -446,6 +492,13 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
 
   
   # ===================================================================
@@ -458,8 +511,6 @@ services:
     container_name: speaches
     image: ghcr.io/speaches-ai/speaches:latest-cuda-12.6.3
     restart: unless-stopped
-    ports:
-      - "8185:8000"
     volumes:
       - ./configs/speaches/speaches-download-models.sh:/etc/speaches/speaches-download-models.sh
       - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
@@ -475,6 +526,13 @@ services:
       start_period: 5s
     post_start:
       - command: [ "sh", "/etc/speaches/speaches-download-models.sh" ]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
 
 
   # ===================================================================
@@ -508,8 +566,6 @@ services:
     container_name: litellm
     image: ghcr.io/bbvch-ai/aihub-core/litellm:main-v1.74.8-nightly
     restart: always
-    ports:
-      - "4000:4000"
     environment:
       DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/litellm"
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
@@ -526,7 +582,7 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
     volumes:
-      - ./configs/litellm/config.dev.yaml:/app/config.yaml
+      - ./configs/litellm/config.latest.yaml:/app/config.yaml
     command: --config /app/config.yaml
     depends_on:
       postgres:
@@ -546,6 +602,13 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.litellm.rule=Host(`litellm.${DOMAIN}`)"
+      - "traefik.http.routers.litellm.entrypoints=websecure"
+      - "traefik.http.routers.litellm.middlewares=security-headers@file"
+      - "traefik.http.services.litellm.loadbalancer.server.port=4000"
+      - "traefik.http.routers.litellm.tls.certresolver=letsencrypt"
 
   # ===================================================================
   # Utility & Code Execution Services
@@ -558,8 +621,6 @@ services:
     container_name: jupyter-lab
     image: ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6
     restart: always
-    ports:
-      - "8888:8888"
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/jupyter-data:/home/jovyan/work
     environment:
@@ -573,10 +634,8 @@ services:
 
   playwright:
     container_name: playwright-server
-    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy
+    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy
     restart: always
-    ports:
-      - "3036:3000"
     command: npx playwright@v1.49.0 run-server --port 3000 --host 0.0.0.0
     environment:
       NODE_ENV: production
@@ -611,8 +670,6 @@ services:
     container_name: docling
     image: ghcr.io/bbvch-ai/aihub-core/{'cpu': 'docling-serve-cpu:v1.3.1', 'gpu': 'docling-serve-cu128:v1.3.1'}
     restart: always
-    ports:
-      - "5001:5001"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
     volumes:
@@ -623,7 +680,6 @@ services:
       DOCLING_SERVE_ARTIFACTS_PATH: "/models"
       DOCLING_SERVE_MAX_SYNC_WAIT: 600
       DOCLING_MODELS: layout tableformer code_formula easyocr
-      DOCLING_SERVE_ENABLE_UI: 1
     depends_on:
       docling-model-permission:
         condition: service_completed_successfully
@@ -632,6 +688,13 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
 
   # ===================================================================
   # Observability Stack
@@ -648,11 +711,6 @@ services:
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
     volumes:
       - ./configs/otel/otel-collector-config.dev.yaml:/etc/otel-collector-config.yaml
-    ports:
-      - "4317:4317"
-      - "4318:4318"
-      - "13133:13133"
-      - "55679:55679"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:13133/" ]
     logging:
@@ -671,9 +729,8 @@ services:
 
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.22
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.13
     restart: always
-    network_mode: "host"
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
     depends_on:
@@ -701,14 +758,14 @@ services:
       ENABLE_VERSION_UPDATE_CHECK: False
 
       # --- Stage-Specific URLs and Environment ---
-      WEBUI_URL: http://localhost:8080
-      ENV: ${ENV}
+      WEBUI_URL: https://openwebui.${DOMAIN}
+      ENV: prod
       GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
 
       # --- Telemetry ---
       ENABLE_OTEL: True
       ENABLE_OTEL_METRICS: True
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://localhost:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_INSECURE: True
       OTEL_SERVICE_NAME: open-webui
@@ -725,7 +782,7 @@ services:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
       OPENID_PROVIDER_URL: ${OAUTH_AUTHORITY_URL}/v2.0/.well-known/openid-configuration
-      OPENID_REDIRECT_URI: http://localhost:8080/oauth/oidc/callback
+      OPENID_REDIRECT_URI: http://openwebui.${DOMAIN}/oauth/oidc/callback
       OAUTH_ALLOWED_DOMAINS: '*'
       OAUTH_SCOPES: openid email profile
       OAUTH_TIMEOUT: 60
@@ -741,39 +798,39 @@ services:
       S3_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_REGION_NAME: us-east-1
       S3_BUCKET_NAME: open-webui
-      S3_ENDPOINT_URL: http://localhost:9000
+      S3_ENDPOINT_URL: http://seaweedfs-s3:9000
 
       # --- Model & AI-Hub Connection ---
       MODELS_CACHE_TTL: 60
-      OPENAI_API_BASE_URL: http://localhost:8000/api/v1
+      OPENAI_API_BASE_URL: http://api:8000/api/v1
       OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       TASK_MODEL: azure/gpt-4o-mini
       TASK_MODEL_EXTERNAL: azure/gpt-4o-mini
-      RAG_OPENAI_API_BASE_URL: http://localhost:8000/api/v1
+      RAG_OPENAI_API_BASE_URL: http://api:8000/api/v1
       RAG_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
       # --- Image Generation ---
       IMAGE_GENERATION_MODEL: azure/dall-e-3
-      IMAGES_OPENAI_API_BASE_URL: http://localhost:8000/api/v1
+      IMAGES_OPENAI_API_BASE_URL: http://api:8000/api/v1
       IMAGES_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       IMAGE_SIZE: 1024x1024
 
       # --- Audio STT ---
       AUDIO_STT_ENGINE: openai
       AUDIO_STT_MODEL: azure/gpt-4o-mini-transcribe
-      AUDIO_STT_OPENAI_API_BASE_URL: http://localhost:8000/api/v1
+      AUDIO_STT_OPENAI_API_BASE_URL: http://api:8000/api/v1
       AUDIO_STT_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
       # --- Audio TTS ---
       AUDIO_TTS_ENGINE: openai
       AUDIO_TTS_MODEL: azure/gpt-4o-mini-tts
-      AUDIO_TTS_OPENAI_API_BASE_URL: http://localhost:8000/api/v1
+      AUDIO_TTS_OPENAI_API_BASE_URL: http://api:8000/api/v1
       AUDIO_TTS_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       AUDIO_TTS_VOICE: alloy
 
 
       # --- AI-Hub Internal Connection ---
-      AIHUB_BASE_URL: http://localhost:8000
+      AIHUB_BASE_URL: http://api:8000
       AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
       OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
       AIHUB_PIPELINE_PREFIX: "aihub/"
@@ -783,18 +840,18 @@ services:
       DATABASE_TYPE: postgres
       DATABASE_USER: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      DATABASE_HOST: localhost
+      DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: openwebui
-      REDIS_URL: redis://localhost:6379/1
+      REDIS_URL: redis://valkey:6379/1
       REDIS_KEY_PREFIX: open-webui
 
       # --- Web Server ---
-      UVICORN_WORKERS: 1
+      UVICORN_WORKERS: 8
       ENABLE_WEBSOCKET_SUPPORT: True
       WEBSOCKET_MANAGER: redis
-      WEBSOCKET_REDIS_URL: redis://localhost:6379/1
-      THREAD_POOL_SIZE: 8
+      WEBSOCKET_REDIS_URL: redis://valkey:6379/1
+      THREAD_POOL_SIZE: 32
       CORS_ALLOW_ORIGIN: "*" # TODO: Make this more secure
 
       # --- Admin ---
@@ -805,18 +862,18 @@ services:
 
       # --- Code Execution ---
       CODE_EXECUTION_ENGINE: jupyter
-      CODE_EXECUTION_JUPYTER_URL: http://localhost:8888
+      CODE_EXECUTION_JUPYTER_URL: http://jupyter:8888
       CODE_EXECUTION_JUPYTER_AUTH: token
       CODE_EXECUTION_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
       CODE_INTERPRETER_ENGINE: jupyter
-      CODE_INTERPRETER_JUPYTER_URL: http://localhost:8888
+      CODE_INTERPRETER_JUPYTER_URL: http://jupyter:8888
       CODE_INTERPRETER_JUPYTER_AUTH: token
       CODE_INTERPRETER_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
 
       # --- Vector DB ---
       VECTOR_DB: milvus
       MILVUS_DB: default
-      MILVUS_URI: http://localhost:19530
+      MILVUS_URI: http://milvus-standalone:19530
       MILVUS_INDEX_TYPE: HNSW
       MILVUS_METRIC_TYPE: COSINE
       MILVUS_HNSW_M: 16
@@ -828,7 +885,7 @@ services:
       PDF_EXTRACT_IMAGES: True
       RAG_FILE_MAX_COUNT: 4
       CONTENT_EXTRACTION_ENGINE: docling
-      DOCLING_SERVER_URL: http://localhost:5001
+      DOCLING_SERVER_URL: http://docling:5001
       DOCLING_OCR_ENGINE: easyocr
       DOCLING_OCR_LANG: en,de,fr,it
 
@@ -876,14 +933,345 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    labels:
+      - "traefik.enable=true"
+      # --- Routers ---
+      - "traefik.http.routers.openwebui-api-auth.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/api/v1/auths`)"
+      - "traefik.http.routers.openwebui-api-auth.priority=7000"
+      - "traefik.http.routers.openwebui-api-auth.entrypoints=websecure"
+      - "traefik.http.routers.openwebui-api-auth.middlewares=openwebui-api-middleware"
+      - "traefik.http.routers.openwebui-api.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.openwebui-api.priority=6000"
+      - "traefik.http.routers.openwebui-api.entrypoints=websecure"
+      - "traefik.http.routers.openwebui-api.middlewares=openwebui-api-middleware"
+      - "traefik.http.routers.openwebui-static.rule=Host(`openwebui.${DOMAIN}`) && (PathPrefix(`/oauth`) || PathPrefix(`/assets`) || PathPrefix(`/_app`) || PathPrefix(`/static`))"
+      - "traefik.http.routers.openwebui-static.priority=2000"
+      - "traefik.http.routers.openwebui-static.entrypoints=websecure"
+      - "traefik.http.routers.openwebui-static.middlewares=openwebui-static-middleware"
+      - "traefik.http.routers.openwebui-path.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/openwebui`)"
+      - "traefik.http.routers.openwebui-path.priority=3000"
+      - "traefik.http.routers.openwebui-path.entrypoints=websecure"
+      - "traefik.http.routers.openwebui-path.middlewares=openwebui-strip-middleware"
+      - "traefik.http.routers.openwebui-default.rule=Host(`openwebui.${DOMAIN}`)"
+      - "traefik.http.routers.openwebui-default.priority=500"
+      - "traefik.http.routers.openwebui-default.entrypoints=websecure"
+      - "traefik.http.routers.openwebui-default.middlewares=openwebui-default-middleware"
+      # --- TLS Resolver Logic ---
+      - "traefik.http.routers.openwebui-api-auth.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openwebui-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openwebui-static.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openwebui-path.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openwebui-default.tls.certresolver=letsencrypt"
+      # --- Service ---
+      - "traefik.http.services.openwebui.loadbalancer.server.port=8080"
+      # --- Middlewares ---
+      - "traefik.http.middlewares.openwebui-api-middleware.chain.middlewares=security-headers@file,openwebui-iframe,openwebui-forwarded-headers"
+      - "traefik.http.middlewares.openwebui-static-middleware.chain.middlewares=security-headers@file,openwebui-iframe"
+      - "traefik.http.middlewares.openwebui-strip-middleware.chain.middlewares=openwebui-strip-prefix,security-headers@file,openwebui-iframe"
+      - "traefik.http.middlewares.openwebui-strip-prefix.stripprefix.prefixes=/openwebui"
+      - "traefik.http.middlewares.openwebui-default-middleware.chain.middlewares=security-headers@file,openwebui-iframe,openwebui-forwarded-headers"
+      - "traefik.http.middlewares.openwebui-iframe.headers.customResponseHeaders.Content-Security-Policy=frame-ancestors 'self' https://${DOMAIN}"
+      - "traefik.http.middlewares.openwebui-iframe.headers.customResponseHeaders.X-Frame-Options=SAMEORIGIN"
+      - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customrequestheaders.X-Forwarded-Host=openwebui.${DOMAIN}"
+      - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Forwarded-Port=443"
+      - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Real-IP=%{remote_addr}"
 
   
+  # ===================================================================
+  # Dagster Stack (Data Pipeline Orchestration)
+  # ===================================================================
+  # This stack runs the data pipelines, managed by the Dagster UI
+  # and backend daemon. It's only present in non-dev stages.
+  # ===================================================================
+  oauth2proxy:
+    container_name: oauth2proxy
+    image: ghcr.io/bbvch-ai/aihub-core/bbvchtly
+    restart: always
+    environment:
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
+      OAUTH2_PROXY_COOKIE_SECURE: False
+      OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
+      OAUTH2_PROXY_UPSTREAMS: http://dagster-webserver:3000
+      OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH2_PROXY_PROVIDER: oidc
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
+      OAUTH2_PROXY_OIDC_ISSUER_URL: ${OAUTH_AUTHORITY_URL}/v2.0
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET}
+      OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_REVERSE_PROXY: True
+      OAUTH2_PROXY_REDIRECT_URL: https://dagster.${DOMAIN}
+      OAUTH2_PROXY_ALLOWED_GROUPS: ${DAGSTER_OAUTH_ALLOWED_GROUPS}
+      OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dagster.rule=Host(`dagster.${DOMAIN}`)"
+      - "traefik.http.routers.dagster.entrypoints=websecure"
+      - "traefik.http.routers.dagster.middlewares=security-headers@file"
+      - "traefik.http.services.dagster.loadbalancer.server.port=4180"
+      - "traefik.http.routers.dagster.tls.certresolver=letsencrypt"
+
+  dagster-webserver:
+    container_name: dagster-webserver
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/dagster:latest
+    entrypoint:
+      - dagster-webserver
+      - -h
+      - 0.0.0.0
+      - -p
+      - '3000'
+      - -w
+      - /dagster_home/workspace.yaml
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
+      - dagster-venv:/app/.venv
+      - dagster-pipeline-venv:/app/aihub_pipeline/.venv
+      - ./configs/dagster/dagster.latest.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.yaml:/dagster_home/workspace.yaml:ro
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+
+  dagster-daemon:
+    container_name: dagster-daemon
+    restart: always
+    image: "ghcr.io/bbvch-ai/aihub-core/dagster:latest"
+    entrypoint:
+      - dagster-daemon
+      - run
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
+      - dagster-venv:/app/.venv
+      - dagster-pipeline-venv:/app/aihub_pipeline/.venv
+      - ./configs/dagster/dagster.latest.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.yaml:/dagster_home/workspace.yaml:ro
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
 
   
+  # ===================================================================
+  # Traefik (Reverse Proxy)
+  # ===================================================================
+  # Traefik manages incoming traffic, TLS, and routing to services.
+  # It is only enabled in non-dev stages.
+  # ===================================================================
+  traefik:
+    container_name: traefik
+    image: "ghcr.io/bbvch-ai/aihub-core/traefik:v3.4.4"
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    command:
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--providers.file.filename=/etc/traefik/middlewares.yml"
+      - "--providers.docker=true"
+      - "--providers.docker.watch=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/srv/app/traefik/acme.json"
+      - "--api=true"
+      - "--api.dashboard=true"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
+      - "./traefik/middlewares.yml:/etc/traefik/middlewares.yml:ro"
+      - "/srv/app/traefik/acme.json:/srv/app/traefik/acme.json"
+    labels:
+      - "traefik.enable=true"
+      # --- HTTP to HTTPS Redirect and ACME Challenge ---
+      - "traefik.http.routers.acme-challenge.rule=PathPrefix(`/.well-known/acme-challenge/`)"
+      - "traefik.http.routers.acme-challenge.entrypoints=web"
+      - "traefik.http.routers.acme-challenge.priority=9000"
+      - "traefik.http.routers.http-catch.rule=HostRegexp(`{host:.+}`) && !PathPrefix(`/.well-known/acme-challenge/`)"
+      - "traefik.http.routers.http-catch.entrypoints=web"
+      - "traefik.http.routers.http-catch.priority=10"
+      - "traefik.http.routers.http-catch.middlewares=https-redirect"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      # --- Dashboard ---
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:${ADMIN_PASSWORD_HASH}"
+      - "traefik.http.routers.traefik.middlewares=traefik-auth"
 
   
+  # ===================================================================
+  # API Stack (Backend Logic)
+  # ===================================================================
+  # This is the main backend API for the AI Hub. It is not present
+  # in the 'dev' stage.
+  # ===================================================================
+  api:
+    container_name: api
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/api:latest
+    volumes:
+      - api-venv:/app/.venv
+      - api-api-venv:/app/aihub_api/.venv
+    depends_on:
+      nats:
+        condition: service_healthy
+      traefik:
+        condition: service_healthy
+      ferretdb:
+        condition: service_healthy
+    environment:
+      # Log Level
+      LOG_LEVEL: ${LOG_LEVEL}
+      ENV: ${ENV}
+
+      # General Auth settings
+      AUTH_ENABLE_API_ACCESS: True
+      AUTH_OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
+      AUTH_IDENTITY_PROVIDER: ${AUTH_IDENTITY_PROVIDER}
+
+      # Oauth2 config
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
+
+      # Superuser
+      SUPERUSER_ENABLED: True
+      SUPERUSER_NAME: ${SUPERUSER_NAME}
+      SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
+      SUPERUSER_OID: ${SUPERUSER_OID}
+      SUPERUSER_ROLE: AIHubSuperuser
+      SUPERUSER_TOKEN: ${SUPERUSER_TOKEN}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: api:latest
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      AIHUB_CREATE_DEFAULT_ROLES: True
+
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${POSTGRES_USER}:${POSTGRES_PASSWORD}@ferretdb:27017
+
+      # MILVUS
+      MILVUS_URL: http://milvus-standalone
+      MILVUS_DIMENSION: 3072
+
+      # S3 Access connection
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # Phoenix
+      PHOENIX_ENDPOINT: http://phoenix:6006
+
+      # NATs
+      NATS_ENDPOINT: nats://nats:4222
+
+      # REDIS
+      REDIS_URL: redis://valkey:6379
+
+      # Jupyter (for open-webui code interpreter)
+      JUPYTER_URL: http://jupyter:8888
+      JUPYTER_TOKEN: ${JUPYTER_TOKEN}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_RESOURCE_SERVICE_NAME: api
+      OTEL_RESOURCE_SERVICE_VERSION: api:latest
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/v1`)"
+      - "traefik.http.routers.api.priority=6000"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.middlewares=security-headers@file"
+      - "traefik.http.services.api.loadbalancer.server.port=8000"
+      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
 
   
+  # ===================================================================
+  # Suite UI Stack (Frontend)
+  # ===================================================================
+  # This is the main SvelteKit frontend for the AI Hub. It is not
+  # present in the 'dev' stage.
+  # ===================================================================
+  web:
+    container_name: web
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/web:latest
+    environment:
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
+      WEBUI_URL: https://openwebui.${DOMAIN}
+      WS_ENDPOINT: wss://${DOMAIN}/api/v1/event/ws
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - "traefik.enable=true"
+      # --- Routers ---
+      - "traefik.http.routers.web-static.rule=Host(`${DOMAIN}`) && PathPrefix(`/_nuxt`)"
+      - "traefik.http.routers.web-static.priority=2000"
+      - "traefik.http.routers.web-static.entrypoints=websecure"
+      - "traefik.http.routers.web-static.middlewares=web-standard-middleware"
+      - "traefik.http.routers.web-auth.rule=Host(`${DOMAIN}`) && (PathPrefix(`/en/auth`) || PathPrefix(`/de/auth`) || PathPrefix(`/fr/auth`) || PathPrefix(`/it/auth`))"
+      - "traefik.http.routers.web-auth.priority=750"
+      - "traefik.http.routers.web-auth.entrypoints=websecure"
+      - "traefik.http.routers.web-auth.middlewares=web-standard-middleware"
+      - "traefik.http.routers.web-index.rule=Host(`${DOMAIN}`) && (Path(`/`) || Path(`/index.html`) || Path(`/config.json`))"
+      - "traefik.http.routers.web-index.priority=400"
+      - "traefik.http.routers.web-index.entrypoints=websecure"
+      - "traefik.http.routers.web-index.middlewares=web-standard-middleware"
+      - "traefik.http.routers.web-default.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.web-default.priority=100"
+      - "traefik.http.routers.web-default.entrypoints=websecure"
+      - "traefik.http.routers.web-default.middlewares=web-standard-middleware"
+      # --- TLS Resolver Logic ---
+      - "traefik.http.routers.web-static.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web-auth.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web-index.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web-default.tls.certresolver=letsencrypt"
+      # --- Service & Middleware ---
+      - "traefik.http.services.web.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.web-standard-middleware.chain.middlewares=security-headers@file"
 
 
   # ===================================================================
@@ -892,7 +1280,107 @@ services:
   # These are the background workers and data processing pipelines
   # that power the platform's AI capabilities.
   # ===================================================================
+  llm_wrapping_agent:
+    container_name: llm-wrapping-agent
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:latest
+    environment:
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # NATs
+      NATS_ENDPOINT: nats://nats:4222
+
+      # REDIS
+      REDIS_URL: redis://valkey:6379
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_RESOURCE_SERVICE_NAME: api
+      OTEL_RESOURCE_SERVICE_VERSION: api:latest
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
 
   
+  rag_agent:
+    container_name: rag-agent
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/rag_agent:latest
+    environment:
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${POSTGRES_USER}:${POSTGRES_PASSWORD}@ferretdb:27017
+
+      # MILVUS
+      MILVUS_URL: http://milvus-standalone
+      MILVUS_DIMENSION: 3072
+
+      # S3 Access connection
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # NATs
+      NATS_ENDPOINT: nats://nats:4222
+
+      # REDIS
+      REDIS_URL: redis://valkey:6379
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_RESOURCE_SERVICE_NAME: api
+      OTEL_RESOURCE_SERVICE_VERSION: api:latest
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
 
   
+  default_rag_pipeline:
+    container_name: default-rag-pipeline
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:latest
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
+    environment:
+      PYTHONUNBUFFERED: 1
+
+      # LiteLLM Proxy Server Settings
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Docling
+      DOCLING_API_ENDPOINT: http://docling:5001/v1alpha/convert/source
+      DOCLING_API_TIMEOUT: 600
+
+      # Postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # Mongo DB (mongodb://{POSTGRES_USER}:{POSTGRES_PASSWORD}@localhost:27017/)
+      MONGO_CONNECTION_STRING: mongodb://${POSTGRES_USER}:${POSTGRES_PASSWORD}@ferretdb:27017
+
+      # MILVUS
+      MILVUS_URL: http://milvus-standalone
+      MILVUS_DIMENSION: 3072
+
+      # DAGSTER
+      DAGSTER_HOME: /dagster_home
+
+      # S3 Access connection (access and secret key same as SeaweedFS)
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3

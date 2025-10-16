@@ -1,96 +1,83 @@
 model_list:
-  - model_name: azure/gpt-4o-mini
+  - model_name: text-generation/small
     litellm_params:
-      model: azure/gpt-4o-mini
-      api_base: https://aihub-dev-openai-che.openai.azure.com/
-      api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2024-12-01-preview"
+      model: openai/gemma-3-12b
+      api_base: http://llama-cpp:8182/
+      api_key: XXX
     model_info:
       mode: chat
 
-  - model_name: text-embedding-3-large
+  - model_name: embedding
     litellm_params:
-      model: azure/text-embedding-3-large
-      api_base: https://aihub-dev-openai-che.openai.azure.com/
-      api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2024-02-01"
+      model: openai/qwen-3-embedding
+      api_base: http://llama-cpp-embedding:8182/
+      api_key: XXX
     model_info:
       mode: embedding
 
-  - model_name: azure/dall-e-3
+  - model_name: reranking
     litellm_params:
-      model: azure/dall-e-3
-      api_base: https://joelb-mdotxdzc-australiaeast.cognitiveservices.azure.com/
-      api_key: os.environ/AZURE_OPENAI_KEY_IMAGE
-      api_version: "2024-02-01"
-    model_info:
-      mode: image_generation
-      base_model: azure/dall-e-3
-
-  - model_name: azure/gpt-4o-mini-transcribe
-    litellm_params:
-      model: azure/gpt-4o-mini-transcribe
-      api_base: https://joelb-mdpmzqib-eastus2.cognitiveservices.azure.com/
-      api_key: os.environ/AZURE_OPENAI_KEY_AUDIO
-      api_version: "2025-03-01-preview"
-    model_info:
-      mode: audio_transcription
-      base_model: azure/gpt-4o-mini-transcribe
-
-  - model_name: azure/gpt-4o-mini-tts
-    litellm_params:
-      model: azure/gpt-4o-mini-tts
-      api_base: https://joelb-mdpmzqib-eastus2.cognitiveservices.azure.com/
-      api_key: os.environ/AZURE_OPENAI_KEY_AUDIO
-      api_version: "2025-03-01-preview"
-    model_info:
-      mode: audio_speech
-      base_model: azure/gpt-4o-mini-tts
-
-  - model_name: google/gemini-2.5-flash
-    litellm_params:
-      model: gemini/gemini-2.5-flash
-      api_key: os.environ/GEMINI_API_KEY
+      model: jina/qwen-3-reranking
+      api_base: http://llama-cpp-reranking:8182/
+      api_key: XXX
     model_info:
       mode: chat
 
-guardrails:
-  - guardrail_name: "presidio-mask-guard"
+  - model_name: whisper
     litellm_params:
-      guardrail: presidio
-      default_on: true
-      mode: "pre_call"
-      presidio_language: "de"
-      presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
-      presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
-      output_parse_pii: true
-      pii_entities_config:
-        PERSON: "MASK"
-        EMAIL_ADDRESS: "MASK"
+      model: openai/whisper-small
+      api_base: http://speaches:8000/
+      api_key: XXX
+    model_info:
+      mode: audio_transcription
+      base_model: openai/gpt-4o-mini-transcribe
 
-  - guardrail_name: "presidio-block-guard"
+  - model_name: kokoro
+    litellm_params:
+      model: openai/kokoro-82m
+      api_base: http://speaches:8000/
+      api_key: XXX
+    model_info:
+      mode: audio_speech
+      base_model: openai/gpt-4o-mini-tts
+
+guardrails:
+  - guardrail_name: presidio-mask-guard
     litellm_params:
       guardrail: presidio
       default_on: true
-      mode: "pre_call"
-      presidio_language: "de"
+      mode: pre_call
+      presidio_language: de
       presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
       presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
       output_parse_pii: true
       pii_entities_config:
-        CREDIT_CARD: "BLOCK"
+        PERSON: MASK
+        EMAIL_ADDRESS: MASK
+
+  - guardrail_name: presidio-block-guard
+    litellm_params:
+      guardrail: presidio
+      default_on: true
+      mode: pre_call
+      presidio_language: de
+      presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
+      presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
+      output_parse_pii: true
+      pii_entities_config:
+        CREDIT_CARD: BLOCK
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
   database_url: os.environ/DATABASE_URL
   store_model_in_db: true
   store_prompts_in_spend_logs: true
-  maximum_spend_logs_retention_period: "365d"
-  maximum_spend_logs_retention_interval: "30d"
+  maximum_spend_logs_retention_period: 365d
+  maximum_spend_logs_retention_interval: 30d
 
 litellm_settings:
   callbacks: ["detect_prompt_injection", "otel"]
-  default_fallbacks: ["azure/gpt-4o-mini"]
+  default_fallbacks: ["text-generation/small"]
   telemetry: true
   json_logs: true
 

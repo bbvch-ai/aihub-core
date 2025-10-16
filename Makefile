@@ -81,11 +81,17 @@ changelog:
 	@echo "Generating changelog"
 	/bin/bash ./generate-changelog.sh
 	@poetry run mdformat --number $$(git ls-files '*.md')
+
 # Check licenses across all dependencies
 license-check:
 	@echo "Checking licenses..."
 	/bin/bash ./generate-license.sh
 	@poetry run mdformat --number $$(git ls-files '*.md')
+
+# Generate Docker Compose files from the template
+generate-compose:
+	@echo "Generating Docker Compose files..."
+	@poetry run python deployment/generate_compose.py
 
 local-cert:
 	@echo "Generating mkcert certificates for localhost and nip.io..."

@@ -1,0 +1,280 @@
+# ===================================================================
+# Single Source of Truth for Docker Compose Generation (v2)
+# ===================================================================
+# This lean configuration file contains ONLY the values that change
+# between stages. All static structure and rendering logic now lives
+# in the Jinja2 template.
+#
+# CONVENTIONS:
+# 1. A service is ONLY included if an image_tag is defined for the
+#    current stage/hardware. No tag = no service.
+# 2. To build a service from source, use the special tag 'localbuild'.
+# ===================================================================
+
+global:
+  registry_prefix: ghcr.io/bbvch-ai/aihub-core/
+  volume_root: ${VOLUME_ROOT:-./.docker-volumes}
+
+# -------------------------------------------------------------------
+# Centralized Image Tag Management
+# Defines which services exist in which stage and their versions.
+# -------------------------------------------------------------------
+image_tags:
+  # --- Core Infrastructure (mostly static) ---
+  seaweedfs: seaweedfs:3.97
+  aws_cli: aws-cli-alpine:3.22.1
+  etcd: etcd:v3.5.16
+  milvus: milvus:v2.5.15
+  attu: attu:v2.5.12
+  postgres: pgvector:pg17
+  phoenix: phoenix:version-10.0.4
+  nats: nats:2.11.4
+  valkey: valkey:8.0.5
+  ferretdb: ferretdb:2.5.0
+  presidio: presidio-analyzer:2.2.359 # Analyzer and Anonymizer use same tag
+  litellm: litellm:main-v1.74.8-nightly
+  jupyter: minimal-notebook:notebook-7.0.6
+  otel_collector: otel/opentelemetry-collector-contrib:latest
+  oauth2_proxy: bbvchtly
+
+  traefik: traefik:v3.4.4
+
+  # --- Stage-Dependent Core Services ---
+  open_webui:
+    dev: open-webui:v0.6.22
+    local: open-webui:v0.6.22
+    nightly: open-webui:v0.6.22
+    latest: open-webui:v0.6.13
+
+  playwright:
+    dev: playwright:v1.49.0-jammy
+    local: playwright:v1.49.0-jammy
+    nightly: playwright:v1.49.0-jammy
+    latest: playwright:v1.54.1-jammy
+
+  docling:
+    dev:
+      cpu: docling-serve-cpu:v1.3.1
+      gpu: docling-serve-cu128:v1.3.1
+    local:
+      cpu: docling-serve-cpu:v1.3.1
+      gpu: docling-serve-cu128:v1.3.1
+    nightly:
+      cpu: docling-serve-cpu:v1.3.1
+      gpu: docling-serve-cu128:v1.3.1
+    latest:
+      cpu: docling-serve-cpu:v1.3.1
+      gpu: docling-serve-cu128:v1.3.1
+
+  # --- GPU-Specific Services (only exist in 'dev' for now) ---
+  llama_cpp:
+    dev:
+      cpu: llama.cpp:server-b5490
+      gpu: llama.cpp:server-cuda-b6445
+
+    local:
+      cpu: llama.cpp:server-b5490
+      gpu: llama.cpp:server-cuda-b6445
+
+    nightly:
+      gpu: llama.cpp:server-cuda-b6445
+
+    latest:
+      gpu: llama.cpp:server-cuda-b6445
+
+  llama_cpp_embedding:
+    dev:
+      cpu: llama.cpp:server-b5490
+      gpu: llama.cpp:server-cuda-b6445
+
+    local:
+      cpu: llama.cpp:server-b5490
+      gpu: llama.cpp:server-cuda-b6445
+
+    nightly:
+      gpu: llama.cpp:server-cuda-b6445
+
+    latest:
+      gpu: llama.cpp:server-cuda-b6445
+
+  llama_cpp_reranking:
+    dev:
+      cpu: llama.cpp:server-b5490
+      gpu: llama.cpp:server-cuda-b6445
+
+    local:
+      cpu: llama.cpp:server-b5490
+      gpu: llama.cpp:server-cuda-b6445
+
+    nightly:
+      gpu: llama.cpp:server-cuda-b6445
+
+    latest:
+      gpu: llama.cpp:server-cuda-b6445
+
+  speaches:
+    dev:
+      cpu: speaches:latest-cpu-12.6.3
+      gpu: speaches:latest-cuda-12.6.3
+
+    local:
+      cpu: speaches:latest-cpu-12.6.3
+      gpu: speaches:latest-cuda-12.6.3
+
+    nightly:
+      gpu: speaches:latest-cuda-12.6.3
+
+    latest:
+      gpu: speaches:latest-cuda-12.6.3
+
+  # --- Custom Application Services ---
+  api:
+    local: localbuild
+    nightly: api:nightly
+    latest: api:latest
+
+  web:
+    local: localbuild
+    nightly: web:nightly
+    latest: web:latest
+
+  dagster:
+    local: localbuild
+    nightly: dagster:nightly
+    latest: dagster:latest
+
+  llm_wrapping_agent:
+    local: localbuild
+    nightly: llm_wrapping_agent:nightly
+    latest: llm_wrapping_agent:latest
+
+  rag_agent:
+    local: localbuild
+    nightly: rag_agent:nightly
+    latest: rag_agent:latest
+
+  default_rag_pipeline:
+    local: localbuild
+    nightly: default_rag_pipeline:nightly
+    latest: default_rag_pipeline:latest
+
+# -------------------------------------------------------------------
+# Service-Specific Configurations
+# -------------------------------------------------------------------
+service_configs:
+  llama_cpp:
+    dev:
+      cpu:
+        command: |
+          --hf-repo google/gemma-3-4b-it-qat-q4_0-gguf
+          --hf-file gemma-3-4b-it-q4_0.gguf
+          --hf-token ${HUGGINGFACE_API_KEY}
+          --alias gemma-3-4b
+          --port 8182
+          --host 0.0.0.0
+          -c 8196
+      gpu:
+        command: |
+          --hf-repo google/gemma-3-4b-it-qat-q4_0-gguf
+          --hf-file gemma-3-4b-it-q4_0.gguf
+          --hf-token ${HUGGINGFACE_API_KEY}
+          --alias gemma-3-4b
+          --port 8182
+          --host 0.0.0.0
+          -c 8196
+          -ngl -1
+
+    local:
+      cpu:
+        command: |
+          --hf-repo google/gemma-3-4b-it-qat-q4_0-gguf
+          --hf-file gemma-3-4b-it-q4_0.gguf
+          --hf-token ${HUGGINGFACE_API_KEY}
+          --alias gemma-3-4b
+          --port 8182
+          --host 0.0.0.0
+          -c 8196
+      gpu:
+        command: |
+          --hf-repo google/gemma-3-4b-it-qat-q4_0-gguf
+          --hf-file gemma-3-4b-it-q4_0.gguf
+          --hf-token ${HUGGINGFACE_API_KEY}
+          --alias gemma-3-4b
+          --port 8182
+          --host 0.0.0.0
+          -c 8196
+          -ngl -1
+
+    nightly:
+      gpu:
+        command: |
+          --hf-repo google/gemma-3-12b-it-qat-q4_0-gguf
+          --hf-file gemma-3-12b-it-q4_0.gguf
+          --hf-token ${HUGGINGFACE_API_KEY}
+          --alias gemma-3-12b
+          --port 8182
+          --host 0.0.0.0
+          -c 8196
+          -ngl -1
+
+    latest:
+      gpu:
+        command: |
+          --hf-repo google/gemma-3-12b-it-qat-q4_0-gguf
+          --hf-file gemma-3-12b-it-q4_0.gguf
+          --hf-token ${HUGGINGFACE_API_KEY}
+          --alias gemma-3-12b
+          --port 8182
+          --host 0.0.0.0
+          -c 8196
+          -ngl -1
+
+  llama_cpp_embedding:
+    cpu:
+      command: |
+        --hf-repo Qwen/Qwen3-Embedding-0.6B-GGUF
+        --hf-file Qwen3-Embedding-0.6B-Q8_0.gguf
+        --hf-token ${HUGGINGFACE_API_KEY}
+        --alias qwen-3-embedding
+        --port 8182
+        --host 0.0.0.0
+        --embedding
+        --pooling last
+        -ub 8192
+    gpu:
+      command: |
+        --hf-repo Qwen/Qwen3-Embedding-0.6B-GGUF
+        --hf-file Qwen3-Embedding-0.6B-Q8_0.gguf
+        --hf-token ${HUGGINGFACE_API_KEY}
+        --alias qwen-3-embedding \
+        --port 8182
+        --host 0.0.0.0
+        --embedding
+        --pooling last
+        -ub 8192
+        -ngl -1
+
+  llama_cpp_reranking:
+    cpu:
+      command: |
+        --hf-repo ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF
+        --hf-file qwen3-reranker-0.6b-q8_0.gguf
+        --hf-token ${HUGGINGFACE_API_KEY}
+        --alias qwen-3-reranking
+        --port 8182 \
+        --host 0.0.0.0 \
+        -c 8192
+        --reranking
+        --no-context-shift
+    gpu:
+      command: |
+        --hf-repo ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF
+        --hf-file qwen3-reranker-0.6b-q8_0.gguf
+        --hf-token ${HUGGINGFACE_API_KEY}
+        --alias qwen-3-reranking
+        --port 8182
+        --host 0.0.0.0
+        -c 8192
+        --reranking
+        --no-context-shift
+        -ngl 10

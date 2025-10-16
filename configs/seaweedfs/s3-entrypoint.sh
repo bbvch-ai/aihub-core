@@ -9,8 +9,6 @@ S3_PORT=${S3_PORT:-9000}
 S3_FILER=${S3_FILER:-seaweedfs-filer:8888}
 S3_BIND_IP=${S3_BIND_IP:-0.0.0.0}
 S3_ALLOW_EMPTY_FOLDER=${S3_ALLOW_EMPTY_FOLDER:-true}
-S3_DOMAIN_NAME=${S3_DOMAIN_NAME:-}
-S3_DATACENTER=${S3_DATACENTER:-}
 
 # Generate s3.json dynamically from environment variables
 cat > /tmp/s3.json <<EOF
@@ -55,8 +53,5 @@ S3_CMD="weed s3 \
   -ip.bind=${S3_BIND_IP} \
   -config=/tmp/s3.json \
   -allowEmptyFolder=${S3_ALLOW_EMPTY_FOLDER}"
-
-[ -n "${S3_DOMAIN_NAME}" ] && S3_CMD="${S3_CMD} -domainName=${S3_DOMAIN_NAME}"
-[ -n "${S3_DATACENTER}" ] && S3_CMD="${S3_CMD} -dataCenter=${S3_DATACENTER}"
 
 exec ${S3_CMD} "$@"

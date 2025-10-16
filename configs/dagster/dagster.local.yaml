@@ -3,7 +3,7 @@ run_storage:
   class: PostgresRunStorage
   config:
     postgres_db:
-      hostname: "postgres"
+      hostname: postgres
       username:
         env: POSTGRES_USER
       password:
@@ -16,7 +16,7 @@ event_log_storage:
   class: PostgresEventLogStorage
   config:
     postgres_db:
-      hostname: "postgres"
+      hostname: postgres
       username:
         env: POSTGRES_USER
       password:
@@ -29,7 +29,7 @@ schedule_storage:
   class: PostgresScheduleStorage
   config:
     postgres_db:
-      hostname: "postgres"
+      hostname: postgres
       username:
         env: POSTGRES_USER
       password:
@@ -49,7 +49,7 @@ run_coordinator:
   module: dagster.core.run_coordinator
   class: QueuedRunCoordinator
   config:
-    max_concurrent_runs: 10
+    max_concurrent_runs: 2
 
 telemetry:
   enabled: false

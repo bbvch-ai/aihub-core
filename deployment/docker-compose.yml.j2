@@ -4,7 +4,7 @@
 # To make changes, edit the following files and then run the generator script:
 #   - deployment/compose-config.yml (for changing values and versions)
 #   - deployment/docker-compose.yml.j2 (for changing structure and logic)
-
+{% if stage != 'dev' %}
 # ===================================================================
 # TRAEFIK PRIORITY RULES
 # ===================================================================
@@ -59,6 +59,7 @@
 #   - Middleware chains: {service}-{purpose}-middleware
 #
 # ===================================================================
+{%- endif %}
 
 services:
   # ===================================================================
@@ -69,17 +70,26 @@ services:
 
   seaweedfs-master:
     container_name: seaweedfs-master
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: {{ global.registry_prefix }}{{ image_tags.seaweedfs }}
     restart: always
+    {%- if stage == 'dev' %}
+    expose:
+      - "9333"   # Master HTTP port
+      - "19333"  # Master gRPC port
+    {%- endif %}
     command: >
       master
       -ip=seaweedfs-master
       -ip.bind=0.0.0.0
       -defaultReplication=000
+      {%- if stage in ['dev', 'local'] %}
+      -volumeSizeLimitMB=1024     # 1GB
+      {%- else %}
       -volumeSizeLimitMB=1048576  # TB
+      {%- endif %}
       -volumePreallocate=false
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master:/data
+      - {{ global.volume_root }}/seaweedfs-master:/data
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9333/dir/status"]
       interval: 30s
@@ -94,8 +104,13 @@ services:
 
   seaweedfs-volume:
     container_name: seaweedfs-volume
-    image: "ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97"
+    image: "{{ global.registry_prefix }}{{ image_tags.seaweedfs }}"
     restart: always
+    {%- if stage == 'dev' %}
+    expose:
+      - "8080"
+      - "18080"
+    {%- endif %}
     command: >
       volume
       -mserver="seaweedfs-master:9333"
@@ -104,7 +119,7 @@ services:
       -max=100
       -dataCenter=dc1
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-volume:/data
+      - {{ global.volume_root }}/seaweedfs-volume:/data
     depends_on:
       seaweedfs-master:
         condition: service_healthy
@@ -116,14 +131,19 @@ services:
 
   seaweedfs-filer:
     container_name: seaweedfs-filer
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: {{ global.registry_prefix }}{{ image_tags.seaweedfs }}
     restart: always
+    {%- if stage == 'dev' %}
+    ports:
+      - "8889:8888"
+      - "18888"
+    {%- endif %}
     command: >
       filer
       -master="seaweedfs-master:9333"
       -ip.bind=0.0.0.0
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-filer:/data
+      - {{ global.volume_root }}/seaweedfs-filer:/data
     depends_on:
       - seaweedfs-master
       - seaweedfs-volume
@@ -138,6 +158,7 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    {%- if stage != 'dev' %}
     labels:
       - "traefik.enable=true"
       # Filer Web UI
@@ -147,11 +168,16 @@ services:
       - "traefik.http.routers.seaweedfs-filer-ui.tls=true"
       - "traefik.http.routers.seaweedfs-filer-ui.middlewares=security-headers@file"
       - "traefik.http.services.seaweedfs-filer-ui.loadbalancer.server.port=8888"
+    {%- endif %}
 
   seaweedfs-s3:
     container_name: seaweedfs-s3
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: {{ global.registry_prefix }}{{ image_tags.seaweedfs }}
     restart: always
+    {%- if stage == 'dev' %}
+    ports:
+      - "9000:9000"
+    {%- endif %}
     volumes:
       - ./configs/seaweedfs/s3-entrypoint.sh:/usr/local/bin/s3-entrypoint.sh:ro
     entrypoint: ["/bin/sh", "/usr/local/bin/s3-entrypoint.sh"]
@@ -182,7 +208,7 @@ services:
 
   seaweedfs-init:
     container_name: seaweedfs-init
-    image: ghcr.io/bbvch-ai/aihub-core/aws-cli-alpine:3.22.1
+    image: {{ global.registry_prefix }}{{ image_tags.aws_cli }}
     restart: no
     depends_on:
       seaweedfs-s3:
@@ -210,7 +236,7 @@ services:
 
   etcd:
     container_name: etcd
-    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.16
+    image: {{ global.registry_prefix }}{{ image_tags.etcd }}
     restart: always
     environment:
       ETCD_AUTO_COMPACTION_MODE: revision
@@ -218,8 +244,12 @@ services:
       ETCD_QUOTA_BACKEND_BYTES: 4294967296
       ETCD_SNAPSHOT_COUNT: 50000
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/etcd-data:/etcd
+      - {{ global.volume_root }}/etcd-data:/etcd
+    {%- if stage == 'dev' %}
+    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    {%- else %}
     command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    {%- endif %}
     healthcheck:
       test: [ "CMD", "etcdctl", "endpoint", "health" ]
     logging:
@@ -230,7 +260,7 @@ services:
 
   milvus-standalone:
     container_name: milvus
-    image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.5.15
+    image: {{ global.registry_prefix }}{{ image_tags.milvus }}
     restart: always
     command: [ "milvus", "run", "standalone" ]
     security_opt:
@@ -241,11 +271,16 @@ services:
       MINIO_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       MINIO_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/milvus-data:/var/lib/milvus
-      - ./configs/milvus/milvus.nightly.yaml:/milvus/configs/milvus.yaml
+      - {{ global.volume_root }}/milvus-data:/var/lib/milvus
+      - ./configs/milvus/milvus.{{ stage }}.yaml:/milvus/configs/milvus.yaml
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
       start_period: 90s
+    {%- if stage == 'dev' %}
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    {%- endif %}
     depends_on:
       etcd:
         condition: service_healthy
@@ -259,10 +294,18 @@ services:
 
   attu:
     container_name: attu
-    image: ghcr.io/bbvch-ai/aihub-core/attu:v2.5.12
+    image: {{ global.registry_prefix }}{{ image_tags.attu }}
     restart: always
+    {%- if stage == 'dev' %}
+    ports:
+      - "3003:3000"
+    {%- endif %}
     environment:
+      {%- if stage == 'dev' %}
+      MILVUS_URL: http://milvus-standalone:19530
+      {%- else %}
       MILVUS_URL: milvus-standalone:19530
+      {%- endif %}
 
   # ===================================================================
   # Postgres & FerretDB Stack (SQL and Document Databases)
@@ -273,15 +316,19 @@ services:
 
   postgres:
     container_name: postgres
-    image: ghcr.io/bbvch-ai/aihub-core/pgvector:pg17
+    image: {{ global.registry_prefix }}{{ image_tags.postgres }}
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_MULTIPLE_DATABASES: openwebui,phoenix,dagster,litellm,ferretdb
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/postgres-data:/var/lib/postgresql/data
+      - {{ global.volume_root }}/postgres-data:/var/lib/postgresql/data
       - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
+    {%- if stage == 'dev' %}
+    ports:
+      - "5432:5432"
+    {%- endif %}
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
       start_period: 5s
@@ -293,8 +340,12 @@ services:
 
   ferretdb:
     container_name: ferretdb
-    image: ghcr.io/bbvch-ai/aihub-core/ferretdb:2.5.0
+    image: {{ global.registry_prefix }}{{ image_tags.ferretdb }}
     restart: always
+    {%- if stage == 'dev' %}
+    ports:
+      - "27017:27017"
+    {%- endif %}
     environment:
       - FERRETDB_POSTGRESQL_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/ferretdb
     depends_on:
@@ -314,11 +365,16 @@ services:
 
   phoenix:
     container_name: phoenix
-    image: ghcr.io/bbvch-ai/aihub-core/phoenix:version-10.0.4
+    image: {{ global.registry_prefix }}{{ image_tags.phoenix }}
     restart: always
     depends_on:
       postgres:
         condition: service_healthy
+    {%- if stage == 'dev' %}
+    ports:
+      - "6006:6006"
+      - "6007:6007"
+    {%- endif %}
     environment:
       PHOENIX_SQL_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix
       PHOENIX_ENABLE_AUTH: False
@@ -339,12 +395,17 @@ services:
 
   nats:
     container_name: nats
-    image: ghcr.io/bbvch-ai/aihub-core/nats:2.11.4
+    image: {{ global.registry_prefix }}{{ image_tags.nats }}
     restart: always
     command: -c /etc/nats/nats.conf
     volumes:
-      - ./configs/nats/nats.nightly.conf:/etc/nats/nats.conf
-      - ${VOLUME_ROOT:-./.docker-volumes}/nats-data:/data
+      - ./configs/nats/nats.{{ stage }}.conf:/etc/nats/nats.conf
+      - {{ global.volume_root }}/nats-data:/data
+    {%- if stage == 'dev' %}
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    {%- endif %}
     logging:
       driver: json-file
       options:
@@ -353,11 +414,15 @@ services:
 
   valkey:
     container_name: valkey
-    image: ghcr.io/bbvch-ai/aihub-core/valkey:8.0.5
+    image: {{ global.registry_prefix }}{{ image_tags.valkey }}
     restart: always
     command: valkey-server --save 30 1 --loglevel warning
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/valkey-data:/data
+      - {{ global.volume_root }}/valkey-data:/data
+    {%- if stage == 'dev' %}
+    ports:
+      - "6379:6379"
+    {%- endif %}
     healthcheck:
       test: [ "CMD", "valkey-cli", "ping" ]
       start_period: 5s
@@ -367,13 +432,176 @@ services:
         max-size: 10m
         max-file: 2
 
-  
+  {% set hardware = 'gpu' if gpu_enabled else 'cpu' %}
+  {%- if image_tags.llama_cpp[stage] and image_tags.llama_cpp[stage][hardware] %}
+  # ===================================================================
+  # AI Model Serving (Local Inference)
+  # ===================================================================
+  # These services are only rendered if an image tag is defined for
+  # the current stage and hardware target in compose-config.yml.
+  # ===================================================================
+  {%- endif %}
 
-  
+  {%- if image_tags.llama_cpp[stage] and image_tags.llama_cpp[stage][hardware] %}
+  llama-cpp:
+    container_name: llama-cpp
+    platform: "linux/amd64"
+    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp[stage][hardware] }}
+    restart: always
+    {%- if stage == 'dev' %}
+    ports:
+      - "8182:8182"
+    {%- endif %}
+    volumes:
+      - {{ global.volume_root }}/llamacpp-data:/data
+      - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
+      - {{ global.volume_root }}/llamacpp-cache:/root/.cache/llama.cpp
+    environment:
+      HF_HOME: /root/.cache/huggingface
+    command: >
+      {{ service_configs.llama_cpp[stage][hardware].command | indent(6) }}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    {%- if gpu_enabled %}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
+    {%- endif %}
+  {%- endif %}
 
-  
+  {% if image_tags.llama_cpp_embedding[stage] and image_tags.llama_cpp_embedding[stage][hardware] %}
+  llama-cpp-embedding:
+    container_name: llama-cpp-embedding
+    platform: "linux/amd64"
+    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_embedding[stage][hardware] }}
+    restart: always
+    {%- if stage == 'dev' %}
+    ports:
+      - "8183:8182"
+    {%- endif %}
+    volumes:
+      - {{ global.volume_root }}/llamacpp-data:/data
+      - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
+      - {{ global.volume_root }}/llamacpp-cache:/root/.cache/llama.cpp
+    environment:
+      HF_HOME: /root/.cache/huggingface
+    command: >
+      {{ service_configs.llama_cpp_embedding[hardware].command | indent(6) }}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    {%- if gpu_enabled %}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
+    {%- endif %}
+  {%- endif %}
 
-  
+  {% if image_tags.llama_cpp_reranking[stage] and image_tags.llama_cpp_reranking[stage][hardware] %}
+  llama-cpp-reranking:
+    container_name: llama-cpp-reranking
+    platform: "linux/amd64"
+    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_reranking[stage][hardware] }}
+    restart: always
+    {%- if stage == 'dev' %}
+    ports:
+      - "8184:8182"
+    {%- endif %}
+    volumes:
+      - {{ global.volume_root }}/llamacpp-data:/data
+      - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
+      - {{ global.volume_root }}/llamacpp-cache:/root/.cache/llama.cpp
+    environment:
+      HF_HOME: /root/.cache/huggingface
+    command: >
+      {{ service_configs.llama_cpp_reranking[hardware].command | indent(6) }}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    {%- if gpu_enabled %}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
+    {%- endif %}
+  {%- endif %}
+
+  {% if image_tags.speaches[stage] and image_tags.speaches[stage][hardware] %}
+  # ===================================================================
+  # Audio Model Serving (SST/TTS)
+  # ===================================================================
+  # We are using speaches to serve audio models in an openai
+  # compatible format.
+  # ===================================================================
+  speaches:
+    container_name: speaches
+    image: ghcr.io/speaches-ai/speaches:latest-cuda-12.6.3
+    restart: unless-stopped
+    {%- if stage == 'dev' %}
+    ports:
+      - "8185:8000"
+    {%- endif %}
+    volumes:
+      - ./configs/speaches/speaches-download-models.sh:/etc/speaches/speaches-download-models.sh
+      - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
+    environment:
+      HF_HOME: /root/.cache/huggingface
+      HF_TOKEN: ${HUGGINGFACE_API_KEY}
+      ENABLE_UI: False
+    healthcheck:
+      test: [ "CMD", "curl", "--fail", "http://0.0.0.0:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    post_start:
+      - command: [ "sh", "/etc/speaches/speaches-download-models.sh" ]
+    {%- if gpu_enabled %}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
+    {%- endif %}
+  {%- endif %}
 
 
   # ===================================================================
@@ -385,7 +613,7 @@ services:
 
   presidio-analyzer:
     container_name: presidio-analyzer
-    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359
+    image: {{ global.registry_prefix }}{{ image_tags.presidio }}
     restart: always
     logging:
       driver: json-file
@@ -395,7 +623,7 @@ services:
 
   presidio-anonymizer:
     container_name: presidio-anonymizer
-    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359
+    image: {{ global.registry_prefix }}{{ image_tags.presidio }}
     restart: always
     logging:
       driver: json-file
@@ -405,8 +633,12 @@ services:
 
   litellm:
     container_name: litellm
-    image: ghcr.io/bbvch-ai/aihub-core/litellm:main-v1.74.8-nightly
+    image: {{ global.registry_prefix }}{{ image_tags.litellm }}
     restart: always
+    {%- if stage == 'dev' %}
+    ports:
+      - "4000:4000"
+    {%- endif %}
     environment:
       DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/litellm"
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
@@ -423,7 +655,7 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
     volumes:
-      - ./configs/litellm/config.nightly.yaml:/app/config.yaml
+      - ./configs/litellm/config.{{ stage }}.yaml:/app/config.yaml
     command: --config /app/config.yaml
     depends_on:
       postgres:
@@ -443,13 +675,19 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    {%- if stage != 'dev' %}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.litellm.rule=Host(`litellm.${DOMAIN}`)"
       - "traefik.http.routers.litellm.entrypoints=websecure"
       - "traefik.http.routers.litellm.middlewares=security-headers@file"
       - "traefik.http.services.litellm.loadbalancer.server.port=4000"
+      {%- if stage != 'local' %}
       - "traefik.http.routers.litellm.tls.certresolver=letsencrypt"
+      {%- else %}
+      - "traefik.http.routers.litellm.tls=true"
+      {%- endif %}
+    {%- endif %}
 
   # ===================================================================
   # Utility & Code Execution Services
@@ -460,10 +698,14 @@ services:
 
   jupyter:
     container_name: jupyter-lab
-    image: ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6
+    image: {{ global.registry_prefix }}{{ image_tags.jupyter }}
     restart: always
+    {%- if stage == 'dev' %}
+    ports:
+      - "8888:8888"
+    {%- endif %}
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/jupyter-data:/home/jovyan/work
+      - {{ global.volume_root }}/jupyter-data:/home/jovyan/work
     environment:
       JUPYTER_ENABLE_LAB: yes
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
@@ -475,8 +717,12 @@ services:
 
   playwright:
     container_name: playwright-server
-    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy
+    image: {{ global.registry_prefix }}{{ image_tags.playwright[stage] }}
     restart: always
+    {%- if stage == 'dev' %}
+    ports:
+      - "3036:3000"
+    {%- endif %}
     command: npx playwright@v1.49.0 run-server --port 3000 --host 0.0.0.0
     environment:
       NODE_ENV: production
@@ -505,22 +751,29 @@ services:
     command: [ "sh", "-c", "chown -R 1001:1001 /models" ]
     restart: no
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
+      - {{ global.volume_root }}/docling-data:/models
 
   docling:
     container_name: docling
-    image: ghcr.io/bbvch-ai/aihub-core/{'cpu': 'docling-serve-cpu:v1.3.1', 'gpu': 'docling-serve-cu128:v1.3.1'}
+    image: {{ global.registry_prefix }}{{ image_tags.docling[stage] }}
     restart: always
+    {%- if stage == 'dev' %}
+    ports:
+      - "5001:5001"
+    {%- endif %}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
+      - {{ global.volume_root }}/docling-data:/models
       - ./configs/docling/init-models.sh:/docker-entrypoint.sh:ro
     entrypoint: [ "/docker-entrypoint.sh" ]
     environment:
       DOCLING_SERVE_ARTIFACTS_PATH: "/models"
       DOCLING_SERVE_MAX_SYNC_WAIT: 600
       DOCLING_MODELS: layout tableformer code_formula easyocr
+      {%- if stage == 'dev' %}
+      DOCLING_SERVE_ENABLE_UI: 1
+      {%- endif %}
     depends_on:
       docling-model-permission:
         condition: service_completed_successfully
@@ -529,6 +782,15 @@ services:
       options:
         max-size: 10m
         max-file: 2
+   {%- if gpu_enabled %}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
+   {%- endif %}
 
   # ===================================================================
   # Observability Stack
@@ -538,13 +800,20 @@ services:
   # ===================================================================
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
+    image: {{ image_tags.otel_collector }}
     command: [ "--config=/etc/otel-collector-config.yaml" ]
     environment:
       - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
     volumes:
       - ./configs/otel/otel-collector-config.dev.yaml:/etc/otel-collector-config.yaml
+    {%- if stage == 'dev' %}
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "13133:13133"
+      - "55679:55679"
+    {%- endif %}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:13133/" ]
     logging:
@@ -563,10 +832,13 @@ services:
 
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.22
+    image: {{ global.registry_prefix }}{{ image_tags.open_webui[stage] }}
     restart: always
+    {%- if stage == 'dev' %}
+    network_mode: "host"
+    {%- endif %}
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
+      - {{ global.volume_root }}/open-webui:/app/backend/data
     depends_on:
       postgres:
         condition: service_healthy
@@ -592,14 +864,20 @@ services:
       ENABLE_VERSION_UPDATE_CHECK: False
 
       # --- Stage-Specific URLs and Environment ---
+      {%- if stage == 'dev' %}
+      WEBUI_URL: http://localhost:8080
+      ENV: ${ENV}
+      GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
+      {%- else %}
       WEBUI_URL: https://openwebui.${DOMAIN}
       ENV: prod
       GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
+      {%- endif %}
 
       # --- Telemetry ---
       ENABLE_OTEL: True
       ENABLE_OTEL_METRICS: True
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://{{ 'localhost' if stage == 'dev' else 'otel-collector' }}:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_INSECURE: True
       OTEL_SERVICE_NAME: open-webui
@@ -616,7 +894,7 @@ services:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
       OPENID_PROVIDER_URL: ${OAUTH_AUTHORITY_URL}/v2.0/.well-known/openid-configuration
-      OPENID_REDIRECT_URI: http://openwebui.${DOMAIN}/oauth/oidc/callback
+      OPENID_REDIRECT_URI: http://{{ 'localhost:8080' if stage == 'dev' else 'openwebui.${DOMAIN}' }}/oauth/oidc/callback
       OAUTH_ALLOWED_DOMAINS: '*'
       OAUTH_SCOPES: openid email profile
       OAUTH_TIMEOUT: 60
@@ -632,39 +910,39 @@ services:
       S3_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_REGION_NAME: us-east-1
       S3_BUCKET_NAME: open-webui
-      S3_ENDPOINT_URL: http://seaweedfs-s3:9000
+      S3_ENDPOINT_URL: http://{{ 'localhost' if stage == 'dev' else 'seaweedfs-s3' }}:9000
 
       # --- Model & AI-Hub Connection ---
       MODELS_CACHE_TTL: 60
-      OPENAI_API_BASE_URL: http://api:8000/api/v1
+      OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1
       OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       TASK_MODEL: azure/gpt-4o-mini
       TASK_MODEL_EXTERNAL: azure/gpt-4o-mini
-      RAG_OPENAI_API_BASE_URL: http://api:8000/api/v1
+      RAG_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1
       RAG_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
       # --- Image Generation ---
       IMAGE_GENERATION_MODEL: azure/dall-e-3
-      IMAGES_OPENAI_API_BASE_URL: http://api:8000/api/v1
+      IMAGES_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1
       IMAGES_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       IMAGE_SIZE: 1024x1024
 
       # --- Audio STT ---
       AUDIO_STT_ENGINE: openai
       AUDIO_STT_MODEL: azure/gpt-4o-mini-transcribe
-      AUDIO_STT_OPENAI_API_BASE_URL: http://api:8000/api/v1
+      AUDIO_STT_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1
       AUDIO_STT_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
       # --- Audio TTS ---
       AUDIO_TTS_ENGINE: openai
       AUDIO_TTS_MODEL: azure/gpt-4o-mini-tts
-      AUDIO_TTS_OPENAI_API_BASE_URL: http://api:8000/api/v1
+      AUDIO_TTS_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1
       AUDIO_TTS_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       AUDIO_TTS_VOICE: alloy
 
 
       # --- AI-Hub Internal Connection ---
-      AIHUB_BASE_URL: http://api:8000
+      AIHUB_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000
       AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
       OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
       AIHUB_PIPELINE_PREFIX: "aihub/"
@@ -674,18 +952,18 @@ services:
       DATABASE_TYPE: postgres
       DATABASE_USER: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      DATABASE_HOST: postgres
+      DATABASE_HOST: {{ 'localhost' if stage == 'dev' else 'postgres' }}
       DATABASE_PORT: 5432
       DATABASE_NAME: openwebui
-      REDIS_URL: redis://valkey:6379/1
+      REDIS_URL: redis://{{ 'localhost' if stage == 'dev' else 'valkey' }}:6379/1
       REDIS_KEY_PREFIX: open-webui
 
       # --- Web Server ---
-      UVICORN_WORKERS: 8
+      UVICORN_WORKERS: {{ '1' if stage == 'dev' else '8' }}
       ENABLE_WEBSOCKET_SUPPORT: True
       WEBSOCKET_MANAGER: redis
-      WEBSOCKET_REDIS_URL: redis://valkey:6379/1
-      THREAD_POOL_SIZE: 32
+      WEBSOCKET_REDIS_URL: redis://{{ 'localhost' if stage == 'dev' else 'valkey' }}:6379/1
+      THREAD_POOL_SIZE: {{ '8' if stage == 'dev' else '32' }}
       CORS_ALLOW_ORIGIN: "*" # TODO: Make this more secure
 
       # --- Admin ---
@@ -696,18 +974,18 @@ services:
 
       # --- Code Execution ---
       CODE_EXECUTION_ENGINE: jupyter
-      CODE_EXECUTION_JUPYTER_URL: http://jupyter:8888
+      CODE_EXECUTION_JUPYTER_URL: http://{{ 'localhost' if stage == 'dev' else 'jupyter' }}:8888
       CODE_EXECUTION_JUPYTER_AUTH: token
       CODE_EXECUTION_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
       CODE_INTERPRETER_ENGINE: jupyter
-      CODE_INTERPRETER_JUPYTER_URL: http://jupyter:8888
+      CODE_INTERPRETER_JUPYTER_URL: http://{{ 'localhost' if stage == 'dev' else 'jupyter' }}:8888
       CODE_INTERPRETER_JUPYTER_AUTH: token
       CODE_INTERPRETER_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
 
       # --- Vector DB ---
       VECTOR_DB: milvus
       MILVUS_DB: default
-      MILVUS_URI: http://milvus-standalone:19530
+      MILVUS_URI: http://{{ 'localhost' if stage == 'dev' else 'milvus-standalone' }}:19530
       MILVUS_INDEX_TYPE: HNSW
       MILVUS_METRIC_TYPE: COSINE
       MILVUS_HNSW_M: 16
@@ -719,7 +997,7 @@ services:
       PDF_EXTRACT_IMAGES: True
       RAG_FILE_MAX_COUNT: 4
       CONTENT_EXTRACTION_ENGINE: docling
-      DOCLING_SERVER_URL: http://docling:5001
+      DOCLING_SERVER_URL: http://{{ 'localhost' if stage == 'dev' else 'docling' }}:5001
       DOCLING_OCR_ENGINE: easyocr
       DOCLING_OCR_LANG: en,de,fr,it
 
@@ -767,6 +1045,7 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    {%- if stage != 'dev' %}
     labels:
       - "traefik.enable=true"
       # --- Routers ---
@@ -791,11 +1070,19 @@ services:
       - "traefik.http.routers.openwebui-default.entrypoints=websecure"
       - "traefik.http.routers.openwebui-default.middlewares=openwebui-default-middleware"
       # --- TLS Resolver Logic ---
+      {%- if stage != 'local' %}
       - "traefik.http.routers.openwebui-api-auth.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui-static.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui-path.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui-default.tls.certresolver=letsencrypt"
+      {%- else %}
+      - "traefik.http.routers.openwebui-api-auth.tls=true"
+      - "traefik.http.routers.openwebui-api.tls=true"
+      - "traefik.http.routers.openwebui-static.tls=true"
+      - "traefik.http.routers.openwebui-path.tls=true"
+      - "traefik.http.routers.openwebui-default.tls=true"
+      {%- endif %}
       # --- Service ---
       - "traefik.http.services.openwebui.loadbalancer.server.port=8080"
       # --- Middlewares ---
@@ -810,8 +1097,9 @@ services:
       - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customrequestheaders.X-Forwarded-Host=openwebui.${DOMAIN}"
       - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Forwarded-Port=443"
       - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Real-IP=%{remote_addr}"
+    {%- endif %}
 
-  
+  {% if image_tags.dagster[stage] %}
   # ===================================================================
   # Dagster Stack (Data Pipeline Orchestration)
   # ===================================================================
@@ -820,7 +1108,7 @@ services:
   # ===================================================================
   oauth2proxy:
     container_name: oauth2proxy
-    image: ghcr.io/bbvch-ai/aihub-core/bbvchtly
+    image: {{ global.registry_prefix }}{{ image_tags.oauth2_proxy }}
     restart: always
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
@@ -850,12 +1138,22 @@ services:
       - "traefik.http.routers.dagster.entrypoints=websecure"
       - "traefik.http.routers.dagster.middlewares=security-headers@file"
       - "traefik.http.services.dagster.loadbalancer.server.port=4180"
+      {%- if stage != 'local' %}
       - "traefik.http.routers.dagster.tls.certresolver=letsencrypt"
+      {%- else %}
+      - "traefik.http.routers.dagster.tls=true"
+      {%- endif %}
 
   dagster-webserver:
     container_name: dagster-webserver
     restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/dagster:nightly
+    {%- if image_tags.dagster[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./aihub_pipeline/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.dagster[stage] }}
+    {%- endif %}
     entrypoint:
       - dagster-webserver
       - -h
@@ -865,11 +1163,11 @@ services:
       - -w
       - /dagster_home/workspace.yaml
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
+      - {{ global.volume_root }}/dagster-data:/dagster_home
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
-      - ./configs/dagster/dagster.nightly.yaml:/dagster_home/dagster.yaml:ro
-      - ./configs/dagster/workspace.yaml:/dagster_home/workspace.yaml:ro
+      - ./configs/dagster/dagster.{{ stage }}.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/{% if stage == 'local' %}workspace.local.yaml{% else %}workspace.yaml{% endif %}:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -884,16 +1182,22 @@ services:
   dagster-daemon:
     container_name: dagster-daemon
     restart: always
-    image: "ghcr.io/bbvch-ai/aihub-core/dagster:nightly"
+    {%- if image_tags.dagster[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./aihub_pipeline/Dockerfile
+    {%- else %}
+    image: "{{ global.registry_prefix }}{{ image_tags.dagster[stage] }}"
+    {%- endif %}
     entrypoint:
       - dagster-daemon
       - run
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
+      - {{ global.volume_root }}/dagster-data:/dagster_home
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
-      - ./configs/dagster/dagster.nightly.yaml:/dagster_home/dagster.yaml:ro
-      - ./configs/dagster/workspace.yaml:/dagster_home/workspace.yaml:ro
+      - ./configs/dagster/dagster.{{ stage }}.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/{% if stage == 'local' %}workspace.local.yaml{% else %}workspace.yaml{% endif %}:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -904,8 +1208,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+  {%- endif %}
 
-  
+  {% if stage != 'dev' %}
   # ===================================================================
   # Traefik (Reverse Proxy)
   # ===================================================================
@@ -914,11 +1219,31 @@ services:
   # ===================================================================
   traefik:
     container_name: traefik
-    image: "ghcr.io/bbvch-ai/aihub-core/traefik:v3.4.4"
+    image: "{{ global.registry_prefix }}{{ image_tags.traefik }}"
     restart: always
     ports:
       - "80:80"
       - "443:443"
+    {%- if stage == 'local' %}
+    command:
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.http.tls=true"
+      - "--providers.file.directory=/etc/traefik"
+      - "--providers.docker=true"
+      - "--providers.docker.watch=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--api=true"
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--log.level=DEBUG"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./configs/traefik/middlewares.local.yml:/etc/traefik/middlewares.yml:ro"
+      - "./configs/traefik/tls.local.yml:/etc/traefik/tls.yml:ro"
+      - "./configs/traefik/certs/dev-cert.pem:/certs/dev-cert.pem:ro"
+      - "./configs/traefik/certs/dev-key.pem:/certs/dev-key.pem:ro"
+    {%- else %}
     command:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
@@ -936,26 +1261,39 @@ services:
       - "./traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
       - "./traefik/middlewares.yml:/etc/traefik/middlewares.yml:ro"
       - "/srv/app/traefik/acme.json:/srv/app/traefik/acme.json"
+    {%- endif %}
     labels:
       - "traefik.enable=true"
       # --- HTTP to HTTPS Redirect and ACME Challenge ---
+      {%- if stage == 'local' %}
+      - ${ACME_EMAIL:+traefik.http.routers.acme-challenge.rule=PathPrefix(`/.well-known/acme-challenge/`)}
+      - ${ACME_EMAIL:+traefik.http.routers.acme-challenge.entrypoints=web}
+      - ${ACME_EMAIL:+traefik.http.routers.acme-challenge.priority=9000}
+      {%- else %}
       - "traefik.http.routers.acme-challenge.rule=PathPrefix(`/.well-known/acme-challenge/`)"
       - "traefik.http.routers.acme-challenge.entrypoints=web"
       - "traefik.http.routers.acme-challenge.priority=9000"
+      {%- endif %}
       - "traefik.http.routers.http-catch.rule=HostRegexp(`{host:.+}`) && !PathPrefix(`/.well-known/acme-challenge/`)"
       - "traefik.http.routers.http-catch.entrypoints=web"
       - "traefik.http.routers.http-catch.priority=10"
       - "traefik.http.routers.http-catch.middlewares=https-redirect"
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
       # --- Dashboard ---
+      {%- if stage == 'local' %}
+      - "traefik.http.routers.traefik.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.traefik.tls=true"
+      {%- else %}
       - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
       - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      {%- endif %}
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:${ADMIN_PASSWORD_HASH}"
       - "traefik.http.routers.traefik.middlewares=traefik-auth"
+  {%- endif %}
 
-  
+  {% if image_tags.api[stage] %}
   # ===================================================================
   # API Stack (Backend Logic)
   # ===================================================================
@@ -965,10 +1303,16 @@ services:
   api:
     container_name: api
     restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/api:nightly
+    {%- if image_tags.api[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./aihub_api/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.api[stage] }}
     volumes:
       - api-venv:/app/.venv
       - api-api-venv:/app/aihub_api/.venv
+    {%- endif %}
     depends_on:
       nats:
         condition: service_healthy
@@ -1000,7 +1344,7 @@ services:
       SUPERUSER_TOKEN: ${SUPERUSER_TOKEN}
 
       # AI-Hub Settings
-      AIHUB_API_VERSION: api:nightly
+      AIHUB_API_VERSION: {{ image_tags.api[stage] }}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
       AIHUB_CREATE_DEFAULT_ROLES: True
 
@@ -1040,7 +1384,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
       OTEL_RESOURCE_SERVICE_NAME: api
-      OTEL_RESOURCE_SERVICE_VERSION: api:nightly
+      OTEL_RESOURCE_SERVICE_VERSION: {{ image_tags.api[stage] }}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
@@ -1056,9 +1400,14 @@ services:
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.middlewares=security-headers@file"
       - "traefik.http.services.api.loadbalancer.server.port=8000"
+      {%- if stage != 'local' %}
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+      {%- else %}
+      - "traefik.http.routers.api.tls=true"
+      {%- endif %}
+  {%- endif %}
 
-  
+  {% if image_tags.web[stage] %}
   # ===================================================================
   # Suite UI Stack (Frontend)
   # ===================================================================
@@ -1068,7 +1417,13 @@ services:
   web:
     container_name: web
     restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/web:nightly
+    {%- if image_tags.web[stage] == 'localbuild' %}
+    build:
+      context: ./aihub_web/aihub_web
+      dockerfile: ./Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.web[stage] }}
+    {%- endif %}
     environment:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
@@ -1099,13 +1454,21 @@ services:
       - "traefik.http.routers.web-default.entrypoints=websecure"
       - "traefik.http.routers.web-default.middlewares=web-standard-middleware"
       # --- TLS Resolver Logic ---
+      {%- if stage != 'local' %}
       - "traefik.http.routers.web-static.tls.certresolver=letsencrypt"
       - "traefik.http.routers.web-auth.tls.certresolver=letsencrypt"
       - "traefik.http.routers.web-index.tls.certresolver=letsencrypt"
       - "traefik.http.routers.web-default.tls.certresolver=letsencrypt"
+      {%- else %}
+      - "traefik.http.routers.web-static.tls=true"
+      - "traefik.http.routers.web-auth.tls=true"
+      - "traefik.http.routers.web-index.tls=true"
+      - "traefik.http.routers.web-default.tls=true"
+      {%- endif %}
       # --- Service & Middleware ---
       - "traefik.http.services.web.loadbalancer.server.port=80"
       - "traefik.http.middlewares.web-standard-middleware.chain.middlewares=security-headers@file"
+  {%- endif %}
 
 
   # ===================================================================
@@ -1114,10 +1477,18 @@ services:
   # These are the background workers and data processing pipelines
   # that power the platform's AI capabilities.
   # ===================================================================
+
+  {%- if image_tags.llm_wrapping_agent[stage] %}
   llm_wrapping_agent:
     container_name: llm-wrapping-agent
     restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:nightly
+    {%- if image_tags.llm_wrapping_agent[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./aihub_agent/app/llm_wrapping_agent/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.llm_wrapping_agent[stage] }}
+    {%- endif %}
     environment:
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
@@ -1134,19 +1505,26 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
       OTEL_RESOURCE_SERVICE_NAME: api
-      OTEL_RESOURCE_SERVICE_VERSION: api:nightly
+      OTEL_RESOURCE_SERVICE_VERSION: {{ image_tags.api[stage] }}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: 2
+  {%- endif %}
 
-  
+  {% if image_tags.rag_agent[stage] %}
   rag_agent:
     container_name: rag-agent
     restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/rag_agent:nightly
+    {%- if image_tags.rag_agent[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./aihub_agent/app/rag_agent/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.rag_agent[stage] }}
+    {%- endif %}
     environment:
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
@@ -1177,16 +1555,23 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
       OTEL_RESOURCE_SERVICE_NAME: api
-      OTEL_RESOURCE_SERVICE_VERSION: api:nightly
+      OTEL_RESOURCE_SERVICE_VERSION: {{ image_tags.api[stage] }}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+  {%- endif %}
 
-  
+  {% if image_tags.default_rag_pipeline[stage] %}
   default_rag_pipeline:
     container_name: default-rag-pipeline
     restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:nightly
+    {%- if image_tags.default_rag_pipeline[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./aihub_pipeline/app/default_rag_pipeline/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.default_rag_pipeline[stage] }}
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
+      - {{ global.volume_root }}/dagster-data:/dagster_home
+    {%- endif %}
     environment:
       PYTHONUNBUFFERED: 1
 
@@ -1218,3 +1603,4 @@ services:
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+  {%- endif %}
