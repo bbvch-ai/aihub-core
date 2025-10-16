@@ -3,6 +3,8 @@ import { readdirSync, statSync, readFileSync } from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
 
+const DEFAULT_LOCALE = 'en';
+
 /**
  * Creates a user-friendly title from a directory name.
  */
@@ -14,10 +16,12 @@ function formatName(name: string): string {
 
 /**
  * Recursively generates sidebar items from a directory structure.
+ * Supports language-specific files with suffixes like index.de.md, index.en.md
  */
 function generateSidebarItems(
   dirPath: string,
   linkPath: string,
+  locale: string = 'en',
 ): any[] {
   try {
     const entries = readdirSync(dirPath, { withFileTypes: true });
@@ -31,9 +35,25 @@ function generateSidebarItems(
       const fullPath = path.join(dirPath, entry.name);
 
       if (entry.isDirectory()) {
-        const newLinkPath = `${linkPath}${entry.name}/`;
-        const indexPath = path.join(fullPath, 'index.md');
-        const subItems = generateSidebarItems(fullPath, newLinkPath);
+        const newLinkPath = locale !== 'en'
+          ? `/${locale}${linkPath}${entry.name}/`
+          : `${linkPath}${entry.name}/`;
+
+        // Try locale-specific index file first, then fall back to generic index.md
+        const localeIndexPath = path.join(fullPath, `index.${locale}.md`);
+        const defaultIndexPath = path.join(fullPath, `index.${DEFAULT_LOCALE}.md`);
+
+        let indexPath = defaultIndexPath;
+        let hasLocaleVersion = false;
+        try {
+          statSync(localeIndexPath);
+          indexPath = localeIndexPath;
+          hasLocaleVersion = true;
+        } catch (e) {
+          // Fall back to default index.md
+        }
+
+        const subItems = generateSidebarItems(fullPath, `${linkPath}${entry.name}/`, locale);
 
         try {
           statSync(indexPath);
@@ -79,31 +99,30 @@ function generateSidebarItems(
 }
 
 /**
- * Generates the complete sidebar configuration.
+ * Generates the complete sidebar configuration for a specific locale.
  */
-function generateSidebar() {
+function generateSidebar(locale: string = 'en') {
   const docsRoot = path.resolve(__dirname, '../');
   const allTopLevelGroups = [];
 
-  // --- Part 1: Handle 'aihub' as a single top-level group ---
+  // --- Part 1: Handle special sections (Changelog, Licenses) ---
+  // Note: Changelog and Licenses are always in English, no translations
   try {
-    const aihubBasePath = path.join(docsRoot, 'docs', '6_code_deep_dive');
-
     allTopLevelGroups.push({
-      text: 'Changelog',
+      text: locale === 'de' ? 'Changelog' : 'Changelog',
       link: '/changelog/',
       collapsible: true,
       index: 1000,
     });
 
     allTopLevelGroups.push({
-      text: 'Licenses',
+      text: locale === 'de' ? 'Licenses' : 'Licenses',
       link: '/licenses/',
       collapsible: true,
       index: 1001,
     });
   } catch (e) {
-    console.warn(`[VitePress] Could not process 'aihub' section. Is aihub/index.md missing?`);
+    console.warn(`[VitePress] Could not process special sections.`);
   }
 
   // --- Part 2: Handle each subdirectory in 'docs' as a separate top-level group ---
@@ -114,22 +133,39 @@ function generateSidebar() {
 
     for (const entry of docEntries) {
       const entryBasePath = path.join(docsBasePath, entry.name);
-      const entryRootIndexPath = path.join(entryBasePath, 'index.md');
+
+      // Try locale-specific index first
+      const localeIndexPath = path.join(entryBasePath, `index.${locale}.md`);
+      const defaultIndexPath = path.join(entryBasePath, `index.${DEFAULT_LOCALE}.md`);
+
+      let entryRootIndexPath = defaultIndexPath;
+      let hasLocaleVersion = false;
+      try {
+        statSync(localeIndexPath);
+        entryRootIndexPath = localeIndexPath;
+        hasLocaleVersion = true;
+      } catch (e) {
+        // Fall back to default
+      }
 
       try {
         const entryFileContent = readFileSync(entryRootIndexPath, 'utf-8');
         const { data: entryFrontmatter } = matter(entryFileContent);
 
+        const entryLink = locale !== 'en'
+          ? `/${locale}/docs/${entry.name}/`
+          : `/docs/${entry.name}/`;
+
         allTopLevelGroups.push({
           text: entryFrontmatter.title || formatName(entry.name),
-          link: `/docs/${entry.name}/`,
+          link: entryLink,
           collapsible: true,
-          items: generateSidebarItems(entryBasePath, `/docs/${entry.name}/`),
+          items: generateSidebarItems(entryBasePath, `/docs/${entry.name}/`, locale),
           index: entryFrontmatter.index,
         });
       } catch (e) {
         // This subdirectory might not have a root index.md, so we skip it.
-        console.warn(`[VitePress] Skipping '${entry.name}' in 'docs'. Is docs/${entry.name}/index.md missing?`);
+        console.warn(`[VitePress] Skipping '${entry.name}' in 'docs'. Is docs/${entry.name}/index.${DEFAULT_LOCALE}.md or index.${locale}.md missing?`);
       }
     }
   } catch (e) {
@@ -157,23 +193,71 @@ export default withMermaid({
   description: "Developer focused documentation of the Swiss AI-Hub Agentic Platform",
   lastUpdated: true,
   base: '/aihub-core/',
-  themeConfig: {
-    logo: './media/logo.png',
-    footer: {
-      message: 'Built with ❤️ in Switzerland 🇨🇭',
-      copyright: 'Copyright © 2025-bbv Software Services AG.'
+
+  // Rewrites to map locale-specific files to clean URLs
+  // English (.en.md) files map to root paths
+  // German (.de.md) files map to /de/ paths
+  rewrites: {
+    ':path(.*)/index.en.md': ':path/index.md',
+    'index.en.md': 'index.md',
+    ':path(.*).en.md': ':path.md',
+    ':path(.*)/index.de.md': 'de/:path/index.md',
+    'index.de.md': 'de/index.md',
+    ':path(.*).de.md': 'de/:path.md',
+  },
+
+  // Multi-language support
+  locales: {
+    root: {
+      label: 'English',
+      lang: 'en',
+      themeConfig: {
+        logo: './media/logo.png',
+        footer: {
+          message: 'Built with ❤️ in Switzerland 🇨🇭',
+          copyright: 'Copyright © 2025-bbv Software Services AG.'
+        },
+        search: {
+          provider: 'local'
+        },
+        nav: [
+          { text: 'Home', link: '/' },
+          { text: 'AI-Hub Website', link: 'https://ai-hub.bbv.ch/' },
+          { text: 'bbv Website', link: 'https://bbv.ch/' },
+        ],
+        sidebar: {
+          '/': generateSidebar('en')
+        },
+        socialLinks: [
+          { icon: 'github', link: 'https://github.com/bbvch-ai/aihub-core' }
+        ]
+      }
     },
-    search: {
-      provider: 'local'
-    },
-    nav: [
-      { text: 'Home', link: '/' },
-      { text: 'AI-Hub Website', link: 'https://ai-hub.bbv.ch/' },
-      { text: 'bbv Website', link: 'https://bbv.ch/' },
-    ],
-    sidebar: generateSidebar(),
-    socialLinks: [
-      { icon: 'github', link: 'https://github.com/bbvch-ai/aihub-core' }
-    ]
+    de: {
+      label: 'Deutsch',
+      lang: 'de',
+      link: '/de/',
+      themeConfig: {
+        logo: './media/logo.png',
+        footer: {
+          message: 'Gebaut mit ❤️ in der Schweiz 🇨🇭',
+          copyright: 'Copyright © 2025-bbv Software Services AG.'
+        },
+        search: {
+          provider: 'local'
+        },
+        nav: [
+          { text: 'Startseite', link: '/de/' },
+          { text: 'AI-Hub Website', link: 'https://ai-hub.bbv.ch/' },
+          { text: 'bbv Website', link: 'https://bbv.ch/' },
+        ],
+        sidebar: {
+          '/de/': generateSidebar('de')
+        },
+        socialLinks: [
+          { icon: 'github', link: 'https://github.com/bbvch-ai/aihub-core' }
+        ]
+      }
+    }
   }
 })
