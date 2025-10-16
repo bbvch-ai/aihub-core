@@ -15,9 +15,7 @@ class BotInTheLoopAgent(Agent):
         # IMPORTANT: Only provide the Slack channel ID (starts with C)
         # Do NOT include bot_id or team_id - they will be fetched automatically
         return BotInTheLoop.invoke(
-            user=user,
-            question="Are we there yet?",
-            slack_channel_id="C08MCK6LEBY",  # Only the channel ID is needed
+            user=user, question="Are we there yet?", teams_channel_id="19:e633e0fc55604e4f9d46f9ba46f50045@thread.tacv2"
         )
 
     @step()
@@ -49,5 +47,5 @@ class BotInTheLoopAgent(Agent):
             return BotInTheLoop.invoke(
                 user=event.request_event.user,
                 question="What about now?",
-                slack_channel_id=event.request_event.slack_channel_id,
+                teams_channel_id=event.request_event.teams_channel_id,
             )
