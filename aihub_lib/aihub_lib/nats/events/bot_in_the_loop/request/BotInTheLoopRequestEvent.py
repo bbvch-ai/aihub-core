@@ -31,8 +31,13 @@ class BotInTheLoopRequestEvent(ControlEvent):
     ]
     question: Annotated[str, Field(description="The query or prompt presented to the human operator.")]
     slack_channel_id: Annotated[
-        str, Field(description="The ID of the Slack channel where the request is sent to.", pattern=r"^C[0-9A-Z]+$")
-    ]
+        str | None,
+        Field(description="The ID of the Slack channel where the request is sent to.", pattern=r"^C[0-9A-Z]+$"),
+    ] = None
+    teams_channel_id: Annotated[
+        str | None,
+        Field(description="The ID of the Teams channel where the request is sent to.", pattern=r"^[0-9A-Za-z]+$"),
+    ] = None
     topic: Annotated[
         PartialAgentTopic | AgentInstanceTopic,
         Field(
