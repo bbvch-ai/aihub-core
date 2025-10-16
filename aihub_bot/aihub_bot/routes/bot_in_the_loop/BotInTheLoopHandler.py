@@ -1,6 +1,8 @@
 from collections.abc import Callable
 from typing import Annotated
 
+from botframework.connector import Channels
+
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
 from aihub_lib.nats.topics import AgentInstanceTopic
@@ -30,6 +32,13 @@ class BotInTheLoopThread(BaseModel):
             "for the Slack thread where the bot-in-the-loop request is sent to.",
         ),
     ] = None
+    teams_message_id: Annotated[
+        str | None,
+        Field(
+            description="The ID of the Teams message that acts as an identifier "
+            "for the Teams thread where the bot-in-the-loop request is sent to.",
+        ),
+    ] = None
     last_request_event: Annotated[
         BotInTheLoopRequestEvent, Field(description="The last bot-in-the-loop request event sent in this thread.")
     ]
@@ -44,7 +53,7 @@ class BotInTheLoopHandler:
 
     def __init__(self):
         self.threads: dict[str, BotInTheLoopThread] = {}
-        self.path: str = f"/bearer_token/v1{self.CONTROLLER_PATH}{self.ENDPOINT_PATH}"
+        self.path: str = f"/api/v1{self.CONTROLLER_PATH}{self.ENDPOINT_PATH}"
         # Use TTLCache with max size of 100 entries
         self.slack_ids_cache = TTLCache(maxsize=100, ttl=self.CACHE_TTL_SECONDS)
 
@@ -95,15 +104,29 @@ class BotInTheLoopHandler:
         thread_id: str,
         question: str,
         teams_tenant_id: str = "37314c94-c755-48ab-85bb-acb83e492c42",
+        teams_bot_id: str = "28:ac98b506-ec21-46b9-a31e-80d34c6eb71e",
     ):
+        conversation_id = event.teams_channel_id
+
+        if thread_id in self.threads:
+            # Handle the case where the thread already exists
+            # Update the existing thread with the new request event
+            self.threads[thread_id].last_request_event = event
+        else:
+            # Handle the case where the thread does not exist
+            # Create a new thread and add it to the threads dictionary
+            self.threads[thread_id] = BotInTheLoopThread(
+                thread_id=thread_id, conversation_id=conversation_id, last_request_event=event
+            )
+
         conversation = ConversationReference(
-            channel_id="teams",
+            channel_id=Channels.ms_teams.value,
             conversation=ConversationAccount(
-                id=event.teams_channel_id,
+                id=conversation_id,
                 conversation_type="channel",
             ),
             service_url=f"https://smba.trafficmanager.net/emea/{teams_tenant_id}/",
-            bot=ChannelAccount(id=event.bot_id),
+            bot=ChannelAccount(id=teams_bot_id),
         )
         adapter = RoutesService.get_adapter(self.path)
         await adapter.continue_conversation(
@@ -143,7 +166,7 @@ class BotInTheLoopHandler:
         bot_team_id = f"{slack_ids.bot_id}:{slack_ids.team_id}"
 
         conversation = ConversationReference(
-            channel_id="slack",
+            channel_id=Channels.slack.value,
             conversation=ConversationAccount(
                 id=conversation_id,
             ),
@@ -161,13 +184,18 @@ class BotInTheLoopHandler:
     def _bot_in_the_loop_callback(self, question: str, thread: BotInTheLoopThread) -> Callable:
         async def callback(turn_context: TurnContext):
             # Send the question to the user in the Slack channel
-            if turn_context.activity.channel_id == "slack":
+            if turn_context.activity.channel_id == Channels.slack:
                 response = await turn_context.send_activity(question)
                 # Update the slack_thread_id in the thread mapping
                 if response and hasattr(response, "id") and thread.slack_thread_ts is None:
                     thread.slack_thread_ts = response.id
+            elif turn_context.activity.channel_id == Channels.ms_teams:
+                response = await turn_context.send_activity(question)
+                # Update the teams_message_id in the thread mapping
+                if response and hasattr(response, "id") and thread.teams_message_id is None:
+                    thread.teams_message_id = response.id
             else:
-                raise NotImplementedError("Only Slack channel is supported")
+                raise NotImplementedError("Only Slack and Teams channels are supported")
 
         return callback
 
