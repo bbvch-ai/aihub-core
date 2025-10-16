@@ -3,6 +3,7 @@ import logging
 import re
 from asyncio import Event, Task
 from collections.abc import AsyncGenerator
+from typing import Any
 
 from botbuilder.schema.teams import TeamsChannelData
 
@@ -77,7 +78,8 @@ class CompletionHandler:
 
     @staticmethod
     def _is_teams_channel_message(turn_context: TurnContext) -> bool:
-        channel_data: TeamsChannelData = turn_context.activity.channel_data
+        channel_data_dict: dict[str, Any] = turn_context.activity.channel_data
+        channel_data: TeamsChannelData = TeamsChannelData(**channel_data_dict)
         return channel_data.channel is not None
 
     @staticmethod
