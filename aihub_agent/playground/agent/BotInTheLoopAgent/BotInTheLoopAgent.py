@@ -55,5 +55,5 @@ class BotInTheLoopAgent(Agent):
             return BotInTheLoop.invoke(
                 user=event.request_event.user,
                 question="What about now?",
-                teams_channel_id=event.request_event.teams_config,
+                teams_config=event.request_event.teams_config,
             )
