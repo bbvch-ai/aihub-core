@@ -120,17 +120,39 @@ class BotInTheLoopHandler:
             )
 
         conversation = ConversationReference(
-            channel_id=Channels.ms_teams.value,
-            conversation=ConversationAccount(
-                id=conversation_id,
-                conversation_type="channel",
-                additional_properties={"tenantId": teams_tenant_id},
-                is_group=True,
-            ),
-            service_url=f"https://smba.trafficmanager.net/emea/{teams_tenant_id}/",
+            activity_id=None,
+            additional_properties={},
             bot=ChannelAccount(
+                aad_object_id=None,
+                additional_properties={},
+                id="28:ac98b506-ec21-46b9-a31e-80d34c6eb71e",
                 name="Bitl Agent",
-                id=teams_bot_id,
+                properties=None,
+                role=None,
+            ),
+            channel_id="msteams",
+            conversation=ConversationAccount(
+                aad_object_id=None,
+                additional_properties={
+                    "tenantId": "37314c94-c755-48ab-85bb-acb83e492c42",
+                },
+                conversation_type="channel",
+                id="19:zAzZDk2wJBx_2WR949Eh25xG-UntOkk1BtykJ27Qcrk1@thread.tacv2",
+                is_group=True,
+                name=None,
+                properties=None,
+                role=None,
+                tenant_id=None,
+            ),
+            locale=None,
+            service_url="https://smba.trafficmanager.net/emea/37314c94-c755-48ab-85bb-acb83e492c42/",
+            user=ChannelAccount(
+                aad_object_id="9cad7bcb-a21b-4c1e-8de4-1e3720f0956c",
+                additional_properties={},
+                id="29:1ku3BcRZnxr1NFpNtcBh-wSK4BJXaZZoJLMn4wJj8G0nYQedhmv3LxPyE_Wr7H-s6i1ZrtAFQ9JpbL3ZXwZRKQA",
+                name=None,
+                properties=None,
+                role=None,
             ),
         )
         adapter = RoutesService.get_adapter(self.path)
