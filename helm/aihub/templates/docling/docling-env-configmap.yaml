@@ -11,4 +11,8 @@ data:
   DOCLING_SERVE_ARTIFACTS_PATH: "/models"
   DOCLING_SERVE_MAX_SYNC_WAIT: "600"
   DOCLING_MODELS: "layout tableformer code_formula easyocr"
+  # HuggingFace cache configuration - use writable /models directory
+  HF_HOME: "/models/.cache/huggingface"
+  TRANSFORMERS_CACHE: "/models/.cache/huggingface"
+  HF_HUB_CACHE: "/models/.cache/huggingface/hub"
 {{- end }}
