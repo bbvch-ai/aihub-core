@@ -135,7 +135,6 @@ def reformat_tables(document_text: str) -> str:
     table_tags = soup.find_all("table")
 
     for table in table_tags:
-        # TODO if table is very long split into smaller tables with copied headers
         markdown_table = pd.read_html(StringIO(str(table)))[0].fillna("").to_markdown()
         table.replace_with(f"<{NODE_CONTENT_TYPE_TABLE}>{markdown_table}</{NODE_CONTENT_TYPE_TABLE}>")
 

@@ -16,6 +16,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     INDEX,
     INSERTED_AT,
     NAMESPACE,
+    NODE_CONTENT_TYPE,
     SOURCE,
     UPDATED_AT,
 )
@@ -771,3 +772,71 @@ def test_figure_extraction(node_parser):
     outro_nodes = [n for n in nodes if "Some outro text." in n.text]
     assert intro_nodes
     assert outro_nodes
+
+
+def test_large_table_splitting():
+    """Test that large tables are split into multiple chunks with headers preserved."""
+    metadata = {
+        NAMESPACE: "test",
+        SOURCE: "test.md",
+        CREATED_AT: int(time()),
+        UPDATED_AT: int(time()),
+        INSERTED_AT: int(time()),
+    }
+    # Use a small chunk size to force splitting
+    node_parser = MarkdownStructuralNodeParser(metadata=metadata, chunk_size=100, chunk_overlap=0)
+
+    # Create a table with header and many rows to exceed chunk size
+    table_rows = ["| Column 1 | Column 2 | Column 3 |"]
+    table_rows.append("|----------|----------|----------|")
+    for i in range(20):
+        table_rows.append(f"| Data {i}A | Data {i}B | Data {i}C |")
+
+    table_text = "\n".join(table_rows)
+
+    text = f"""# Section with Table
+Some intro text.
+<table>{table_text}</table>
+Some outro text."""
+
+    document = Document(text=text)
+    nodes = node_parser.get_nodes_from_node(document)
+
+    # Find all table nodes
+    table_nodes = [n for n in nodes if n.metadata.get(NODE_CONTENT_TYPE) == "table"]
+
+    # Should have multiple table chunks
+    assert len(table_nodes) > 1, f"Expected multiple table chunks, got {len(table_nodes)}"
+
+    # Each chunk should contain the header
+    header = "| Column 1 | Column 2 | Column 3 |"
+    for table_node in table_nodes:
+        assert header in table_node.text, f"Header missing in chunk: {table_node.text}"
+
+    # All chunks should have the same metadata (except index)
+    first_table = table_nodes[0]
+    for table_node in table_nodes[1:]:
+        assert table_node.metadata[H1] == first_table.metadata[H1]
+        assert table_node.metadata[NODE_CONTENT_TYPE] == "table"
+
+
+def test_small_table_not_split(node_parser):
+    """Test that small tables are kept intact."""
+    table_text = """| Col1 | Col2 |
+|------|------|
+| A    | B    |
+| C    | D    |"""
+
+    text = f"""# Section
+<table>{table_text}</table>"""
+
+    document = Document(text=text)
+    nodes = node_parser.get_nodes_from_node(document)
+
+    # Find table nodes
+    table_nodes = [n for n in nodes if n.metadata.get(NODE_CONTENT_TYPE) == "table"]
+
+    # Should have only one table node since it's small
+    assert len(table_nodes) == 1
+    assert "Col1" in table_nodes[0].text
+    assert "Col2" in table_nodes[0].text

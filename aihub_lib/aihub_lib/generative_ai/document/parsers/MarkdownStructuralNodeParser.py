@@ -163,6 +163,54 @@ class NodeCreatorFromSplits:
         self.current_index = 0  # Initialize the index counter
         self.header_references = {}
 
+    def _split_table(self, table_text: str) -> list[TextChunk]:
+        """
+        Split a large Markdown table into smaller chunks, preserving the header in each chunk.
+        """
+        lines = table_text.split("\n")
+
+        rows = []
+        header_row = None
+
+        for line in lines:
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if stripped.replace("|", "").replace("-", "").replace(":", "").replace(" ", "") == "":
+                continue
+            if header_row is None:
+                header_row = line
+            else:
+                rows.append(line)
+
+        if header_row is None or not rows:
+            return [TextChunk(table_text, NODE_CONTENT_TYPE_TABLE)]
+
+        header_size = len(header_row) + 1
+        available_size = self.sentence_splitter.chunk_size - header_size
+
+        chunks: list[TextChunk] = []
+        current_chunk_rows: list[str] = []
+        current_size = 0
+
+        for row in rows:
+            row_size = len(row) + 1
+
+            if current_chunk_rows and current_size + row_size > available_size:
+                chunk_text = header_row + "\n" + "\n".join(current_chunk_rows)
+                chunks.append(TextChunk(chunk_text, NODE_CONTENT_TYPE_TABLE))
+                current_chunk_rows = []
+                current_size = 0
+
+            current_chunk_rows.append(row)
+            current_size += row_size
+
+        if current_chunk_rows:
+            chunk_text = header_row + "\n" + "\n".join(current_chunk_rows)
+            chunks.append(TextChunk(chunk_text, NODE_CONTENT_TYPE_TABLE))
+
+        return chunks if chunks else [TextChunk(table_text, NODE_CONTENT_TYPE_TABLE)]
+
     def create_nodes_from_splits(
         self,
         splits: list[Split],
@@ -199,7 +247,14 @@ class NodeCreatorFromSplits:
                             ]
                         )
                         buffer = ""
-                    text_chunks.append(TextChunk(child.text, child.name))
+                    if child.name == NODE_CONTENT_TYPE_TABLE:
+                        table_text = child.text
+                        if len(table_text) <= self.sentence_splitter.chunk_size:
+                            text_chunks.append(TextChunk(table_text, NODE_CONTENT_TYPE_TABLE))
+                        else:
+                            text_chunks.extend(self._split_table(table_text))
+                    else:
+                        text_chunks.append(TextChunk(child.text, child.name))
                 else:
                     buffer += str(child)
 
