@@ -120,7 +120,7 @@ class BotInTheLoopHandler:
             )
 
         conversation = ConversationReference(
-            activity_id="f:23fd0d2d-fdfb-d716-5edf-a0b0b624f4a1",
+            activity_id="1760689179574",
             additional_properties={},
             bot=ChannelAccount(
                 aad_object_id=None,
@@ -137,7 +137,7 @@ class BotInTheLoopHandler:
                     "tenantId": "37314c94-c755-48ab-85bb-acb83e492c42",
                 },
                 conversation_type="channel",
-                id="19:zAzZDk2wJBx_2WR949Eh25xG-UntOkk1BtykJ27Qcrk1@thread.tacv2",
+                id="19:zAzZDk2wJBx_2WR949Eh25xG-UntOkk1BtykJ27Qcrk1@thread.tacv2;messageid=1760689179574",
                 is_group=True,
                 name=None,
                 properties=None,
@@ -150,7 +150,7 @@ class BotInTheLoopHandler:
                 aad_object_id="9cad7bcb-a21b-4c1e-8de4-1e3720f0956c",
                 additional_properties={},
                 id="29:1ku3BcRZnxr1NFpNtcBh-wSK4BJXaZZoJLMn4wJj8G0nYQedhmv3LxPyE_Wr7H-s6i1ZrtAFQ9JpbL3ZXwZRKQA",
-                name=None,
+                name="Thomas Mannhart",
                 properties=None,
                 role=None,
             ),
