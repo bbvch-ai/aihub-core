@@ -7,7 +7,7 @@ from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent impo
 from aihub_lib.nats.events.control.ControlEvent import ControlEvent
 
 
-class SlackResponderInfo(BaseModel):
+class BotInTheLoopResponderInfo(BaseModel):
     """
     Information about a Slack user who responded to a BITL request.
     """
@@ -15,6 +15,7 @@ class SlackResponderInfo(BaseModel):
     user_id: Annotated[str, Field(description="The Slack user ID.")]
     user_name: Annotated[str | None, Field(description="The Slack user name.")] = None
     additional_info: Annotated[dict | None, Field(description="Additional Slack-specific user information.")] = None
+    aad_object_id: Annotated[str | None, Field(description="The Azure Active Directory object ID.")] = None
 
 
 class BotInTheLoopResponseEvent(ControlEvent):
@@ -40,9 +41,9 @@ class BotInTheLoopResponseEvent(ControlEvent):
         ),
     ]
     responder: Annotated[
-        SlackResponderInfo | None,
+        BotInTheLoopResponderInfo | None,
         Field(
-            description="Information about the Slack user who responded to the request, "
+            description="Information about the user who responded to the request, "
             "enabling tracking of who provided the input.",
         ),
     ] = None
