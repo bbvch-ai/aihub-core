@@ -124,9 +124,14 @@ class BotInTheLoopHandler:
             conversation=ConversationAccount(
                 id=conversation_id,
                 conversation_type="channel",
+                additional_properties={"tenantId": teams_tenant_id},
+                is_group=True,
             ),
             service_url=f"https://smba.trafficmanager.net/emea/{teams_tenant_id}/",
-            bot=ChannelAccount(id=teams_bot_id),
+            bot=ChannelAccount(
+                name="Bitl Agent",
+                id=teams_bot_id,
+            ),
         )
         adapter = RoutesService.get_adapter(self.path)
         await adapter.continue_conversation(
@@ -183,7 +188,6 @@ class BotInTheLoopHandler:
 
     def _bot_in_the_loop_callback(self, question: str, thread: BotInTheLoopThread) -> Callable:
         async def callback(turn_context: TurnContext):
-            # Send the question to the user in the Slack channel
             if turn_context.activity.channel_id == Channels.slack:
                 response = await turn_context.send_activity(question)
                 # Update the slack_thread_id in the thread mapping
