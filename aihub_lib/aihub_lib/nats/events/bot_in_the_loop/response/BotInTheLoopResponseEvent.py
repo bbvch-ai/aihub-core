@@ -9,7 +9,7 @@ from aihub_lib.nats.events.control.ControlEvent import ControlEvent
 
 class BotInTheLoopResponderInfo(BaseModel):
     """
-    Information about a Slack user who responded to a BITL request.
+    Information about a user who responded to a BITL request (Slack/Teams).
     """
 
     user_id: Annotated[str, Field(description="The Slack user ID.")]
