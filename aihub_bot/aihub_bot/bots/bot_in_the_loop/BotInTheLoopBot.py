@@ -5,7 +5,7 @@ from typing import override
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
-from aihub_lib.nats.events.bot_in_the_loop.response.BotInTheLoopResponseEvent import SlackResponderInfo
+from aihub_lib.nats.events.bot_in_the_loop.response.BotInTheLoopResponseEvent import BotInTheLoopResponderInfo
 from botbuilder.core import ActivityHandler, TurnContext
 from botframework.connector import Channels
 from nats.aio.client import Client as NATS
@@ -67,14 +67,45 @@ class BotInTheLoopBot(ActivityHandler):
             # Extract user information from the activity
             responder_info = None
             if hasattr(turn_context.activity, "from_property") and turn_context.activity.from_property:
-                responder_info = SlackResponderInfo(
+                responder_info = BotInTheLoopResponderInfo(
                     user_id=turn_context.activity.from_property.id,
                     user_name=getattr(turn_context.activity.from_property, "name", None),
                     additional_info=getattr(turn_context.activity, "channel_data", None),
                 )
         elif turn_context.activity.channel_id == Channels.ms_teams:
-            logger.debug(turn_context.activity)
-            return
+            conversation_id = turn_context.activity.conversation.id
+            parts = conversation_id.split(";")
+            if len(parts) != 2:
+                logger.debug(f"Invalid Teams conversation ID format: {conversation_id}")
+                return
+            channel_id = parts[0]
+            teams_message_id_part = parts[1]
+            if not teams_message_id_part.startswith("messageid="):
+                logger.debug(f"Invalid Teams message ID part format: {teams_message_id_part}")
+                return
+            teams_message_id = teams_message_id_part.split("=")[1]
+
+            matching_message_id = None
+            for thread_id, thread in self.bot_in_the_loop_handler.threads.items():
+                if thread.conversation_id == channel_id and thread.teams_message_id == teams_message_id:
+                    matching_message_id = thread_id
+                    break
+
+            if not matching_message_id:
+                logger.debug(f"No matching thread found for Teams channel {channel_id} and message {teams_message_id}")
+                return
+
+            bot_in_the_loop_request = self.bot_in_the_loop_handler.threads[matching_message_id].last_request_event
+
+            responder_info = None
+            if hasattr(turn_context.activity, "from_property") and turn_context.activity.from_property:
+                responder_info = BotInTheLoopResponderInfo(
+                    user_id=turn_context.activity.from_property.id,
+                    user_name=getattr(turn_context.activity.from_property, "name", None),
+                    additional_info=getattr(turn_context.activity, "channel_data", None),
+                    aad_object_id=getattr(turn_context.activity.from_property, "aad_object_id", None),
+                )
+
         else:
             raise NotImplementedError("Only Slack and Teams channels are supported")
 
