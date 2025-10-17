@@ -5,6 +5,7 @@ from botframework.connector import Channels
 
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
+from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import TeamsConfig
 from aihub_lib.nats.topics import AgentInstanceTopic
 from botbuilder.core import TurnContext
 from botbuilder.schema import ChannelAccount, ConversationAccount, ConversationReference
@@ -92,7 +93,7 @@ class BotInTheLoopHandler:
         if event.slack_channel_id is not None:
             await self._handle_bot_in_the_loop_request_in_slack(event, thread_id, question)
 
-        elif event.teams_channel_id is not None:
+        elif event.teams_config is not None:
             await self._handle_bot_in_the_loop_request_in_teams(event, thread_id, question)
 
         else:
@@ -103,10 +104,8 @@ class BotInTheLoopHandler:
         event: BotInTheLoopRequestEvent,
         thread_id: str,
         question: str,
-        teams_tenant_id: str = "37314c94-c755-48ab-85bb-acb83e492c42",
-        teams_bot_id: str = "28:ac98b506-ec21-46b9-a31e-80d34c6eb71e",
     ):
-        conversation_id = event.teams_channel_id
+        conversation_id = event.teams_config
 
         if thread_id in self.threads:
             # Handle the case where the thread already exists
@@ -119,14 +118,18 @@ class BotInTheLoopHandler:
                 thread_id=thread_id, conversation_id=conversation_id, last_request_event=event
             )
 
+        teams_config: TeamsConfig = event.teams_config
+
         conversation = ConversationReference(
             channel_id=Channels.ms_teams.value,
             conversation=ConversationAccount(
-                id="19:zAzZDk2wJBx_2WR949Eh25xG-UntOkk1BtykJ27Qcrk1@thread.tacv2",
+                id=teams_config.channel_id,
                 conversation_type="channel",
             ),
-            service_url=f"https://smba.trafficmanager.net/emea/37314c94-c755-48ab-85bb-acb83e492c42/",
-            bot=ChannelAccount(id="28:ac98b506-ec21-46b9-a31e-80d34c6eb71e"),
+            service_url=f"https://smba.trafficmanager.net/emea/{teams_config.tenant_id}/",
+            bot=ChannelAccount(
+                id=teams_config.bot_id,
+            ),
         )
         adapter = RoutesService.get_adapter(self.path)
         await adapter.continue_conversation(
