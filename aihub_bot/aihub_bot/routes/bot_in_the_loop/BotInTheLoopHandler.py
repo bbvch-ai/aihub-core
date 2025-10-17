@@ -114,10 +114,14 @@ class BotInTheLoopHandler:
                 thread_id=thread_id, conversation_id=teams_config.channel_id, last_request_event=event
             )
 
+        conversation_id = self.threads[thread_id].conversation_id
+        if self.threads[thread_id].teams_message_id:
+            conversation_id += f";messageid={self.threads[thread_id].teams_message_id}"
+
         conversation = ConversationReference(
             channel_id=Channels.ms_teams.value,
             conversation=ConversationAccount(
-                id=teams_config.channel_id,
+                id=conversation_id,
                 conversation_type="channel",
             ),
             service_url=f"https://smba.trafficmanager.net/emea/{teams_config.tenant_id}/",
