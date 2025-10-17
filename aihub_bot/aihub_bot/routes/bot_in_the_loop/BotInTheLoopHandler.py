@@ -122,11 +122,11 @@ class BotInTheLoopHandler:
         conversation = ConversationReference(
             channel_id=Channels.ms_teams.value,
             conversation=ConversationAccount(
-                id=conversation_id,
+                id="19:zAzZDk2wJBx_2WR949Eh25xG-UntOkk1BtykJ27Qcrk1@thread.tacv2",
                 conversation_type="channel",
             ),
-            service_url=f"https://smba.trafficmanager.net/emea/{teams_tenant_id}/",
-            bot=ChannelAccount(id=teams_bot_id),
+            service_url=f"https://smba.trafficmanager.net/emea/37314c94-c755-48ab-85bb-acb83e492c42/",
+            bot=ChannelAccount(id="28:ac98b506-ec21-46b9-a31e-80d34c6eb71e"),
         )
         adapter = RoutesService.get_adapter(self.path)
         await adapter.continue_conversation(
