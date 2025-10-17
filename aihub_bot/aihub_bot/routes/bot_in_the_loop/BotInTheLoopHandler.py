@@ -22,7 +22,7 @@ class BotInTheLoopThread(BaseModel):
     conversation_id: Annotated[
         str,
         Field(
-            description="The full Slack conversation ID (format: BotID:TeamID:ChannelID) where messages are sent to."
+            description="The conversation ID where messages are sent to. For Slack: BotID:TeamID:ChannelID. For Teams: the channel (thread) conversation ID (e.g., 19:...@thread.tacv2)."
         ),
     ]
     thread_identifier: Annotated[
