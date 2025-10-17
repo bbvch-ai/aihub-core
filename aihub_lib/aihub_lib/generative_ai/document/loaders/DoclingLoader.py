@@ -60,15 +60,7 @@ class DoclingLoader(BaseReader):
         include_images = include_images if include_images is not None else True
 
         fs = fs or get_default_fs()
-
-        loop = asyncio.get_event_loop()
-        encoded_string = await loop.run_in_executor(
-            None,
-            self._read_file_sync,
-            fs,
-            file,
-        )
-
+        encoded_string = await asyncio.to_thread(self._read_file_sync, fs, file)
         file_name = os.path.basename(file)
 
         answer = await self.convert_document_async(encoded_string, file_name, include_images)
