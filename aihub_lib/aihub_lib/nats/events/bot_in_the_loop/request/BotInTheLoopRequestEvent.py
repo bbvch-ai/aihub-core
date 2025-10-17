@@ -1,6 +1,6 @@
 from typing import Annotated, ClassVar
 
-from pydantic import Field, BaseModel
+from pydantic import BaseModel, Field
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
