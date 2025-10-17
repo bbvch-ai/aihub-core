@@ -107,7 +107,7 @@ services:
       AWS_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
       AWS_DEFAULT_REGION: us-east-1
       S3_ENDPOINT: "http://seaweedfs-s3:9000"
-      DEFAULT_BUCKETS: "open-webui milvus playground"
+      DEFAULT_BUCKETS: "open-webui milvus"
     volumes:
       - ./configs/seaweedfs/init-buckets.sh:/usr/local/bin/init-buckets.sh:ro
     entrypoint: [ "/bin/sh", "/usr/local/bin/init-buckets.sh" ]
