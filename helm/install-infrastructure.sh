@@ -12,19 +12,30 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}🚀 Installing infrastructure for AIHub...${NC}"
+# Parse environment parameter
+ENVIRONMENT="${1:-prod}"
+
+# Validate environment parameter
+if [[ "$ENVIRONMENT" != "test" && "$ENVIRONMENT" != "prod" ]]; then
+    echo -e "${RED}❌ Invalid environment: $ENVIRONMENT${NC}"
+    echo -e "${YELLOW}Usage: ./install-infrastructure.sh [test|prod]${NC}"
+    echo -e "${YELLOW}Default: prod${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}🚀 Installing infrastructure for AIHub (${ENVIRONMENT})...${NC}"
 
 # Check if we're in the right directory
 if [ ! -d "ingress-controller" ] || [ ! -d "cert-manager" ] || [ ! -d "secret-manager" ]; then
     echo -e "${RED}❌ Please run this script from the helm directory${NC}"
-    echo -e "${YELLOW}Usage: cd helm && ./install-infrastructure.sh${NC}"
+    echo -e "${YELLOW}Usage: cd helm && ./install-infrastructure.sh [test|prod]${NC}"
     exit 1
 fi
 
 # Install NGINX Ingress Controller first
-echo -e "${BLUE}🌐 Installing NGINX Ingress Controller...${NC}"
+echo -e "${BLUE}🌐 Installing NGINX Ingress Controller for ${ENVIRONMENT}...${NC}"
 cd ingress-controller
-./install.sh
+./install.sh "$ENVIRONMENT"
 cd ..
 
 # Install cert-manager

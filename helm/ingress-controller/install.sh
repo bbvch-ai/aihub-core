@@ -11,6 +11,26 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Parse environment parameter
+ENVIRONMENT="${1:-prod}"
+
+# Validate environment parameter
+if [[ "$ENVIRONMENT" != "test" && "$ENVIRONMENT" != "prod" ]]; then
+    echo -e "${RED}❌ Invalid environment: $ENVIRONMENT${NC}"
+    echo -e "${YELLOW}Usage: ./install.sh [test|prod]${NC}"
+    echo -e "${YELLOW}Default: prod${NC}"
+    exit 1
+fi
+
+# Set values file based on environment
+VALUES_FILE="values.${ENVIRONMENT}.yaml"
+
+# Check if environment-specific values file exists
+if [ ! -f "$VALUES_FILE" ]; then
+    echo -e "${RED}❌ Values file not found: $VALUES_FILE${NC}"
+    exit 1
+fi
+
 # Configuration
 NAMESPACE="ingress-nginx"
 RELEASE_NAME="ingress-nginx"
@@ -18,7 +38,8 @@ CHART_REPO="https://kubernetes.github.io/ingress-nginx"
 CHART_NAME="ingress-nginx/ingress-nginx"
 CHART_VERSION="4.13.2"  # Pinned for stability
 
-echo -e "${GREEN}🚀 Installing NGINX Ingress Controller...${NC}"
+echo -e "${GREEN}🚀 Installing NGINX Ingress Controller (${ENVIRONMENT})...${NC}"
+echo -e "${YELLOW}📄 Using values files: values.yaml, ${VALUES_FILE}${NC}"
 
 # Check if kubectl is available
 if ! command -v kubectl &> /dev/null; then
@@ -67,6 +88,7 @@ helm upgrade --install $RELEASE_NAME $CHART_NAME \
     --namespace $NAMESPACE \
     --create-namespace \
     --values values.yaml \
+    --values $VALUES_FILE \
     --wait \
     --timeout=5m
 

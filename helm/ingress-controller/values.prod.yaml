@@ -1,0 +1,8 @@
+# Production Environment Configuration
+# This file contains production-specific overrides for the NGINX Ingress Controller
+
+controller:
+  service:
+    # Existing floating IP (pre-allocated in OpenStack for production)
+    loadBalancerIP: "185.85.126.232"
+

@@ -1,0 +1,8 @@
+# Test Environment Configuration
+# This file contains test-specific overrides for the NGINX Ingress Controller
+
+controller:
+  service:
+    # Existing floating IP (pre-allocated in OpenStack for test)
+    loadBalancerIP: "185.85.126.222"
+
