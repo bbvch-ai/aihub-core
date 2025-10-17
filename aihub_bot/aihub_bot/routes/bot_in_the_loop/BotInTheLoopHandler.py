@@ -105,7 +105,7 @@ class BotInTheLoopHandler:
         thread_id: str,
         question: str,
     ):
-        conversation_id = event.teams_config
+        teams_config: TeamsConfig = event.teams_config
 
         if thread_id in self.threads:
             # Handle the case where the thread already exists
@@ -115,10 +115,8 @@ class BotInTheLoopHandler:
             # Handle the case where the thread does not exist
             # Create a new thread and add it to the threads dictionary
             self.threads[thread_id] = BotInTheLoopThread(
-                thread_id=thread_id, conversation_id=conversation_id, last_request_event=event
+                thread_id=thread_id, conversation_id=teams_config.channel_id, last_request_event=event
             )
-
-        teams_config: TeamsConfig = event.teams_config
 
         conversation = ConversationReference(
             channel_id=Channels.ms_teams.value,
