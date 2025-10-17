@@ -82,8 +82,6 @@ resource "openstack_containerinfra_clustertemplate_v1" "generated" {
   labels = {
     kube_tag                 = var.kubernetes_version
     auto_scaling_enabled     = "false"
-    min_node_count           = tostring(0)
-    max_node_count           = tostring(0)
     admission_control_list   = "PodSecurityPolicy:False,NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota"
   }
 }
