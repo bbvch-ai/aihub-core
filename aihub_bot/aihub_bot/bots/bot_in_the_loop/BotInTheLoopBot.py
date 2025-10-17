@@ -74,7 +74,7 @@ class BotInTheLoopBot(ActivityHandler):
                 )
         elif turn_context.activity.channel_id == Channels.ms_teams:
             logger.debug(turn_context.activity)
-            pass
+            return
         else:
             raise NotImplementedError("Only Slack and Teams channels are supported")
 
