@@ -147,7 +147,7 @@ defs = Definitions(
             figures_directory_name=FIGURES_DIRECTORY_NAME,
         ),
         "embedding_model": EmbeddingModelResource(
-            embedding_config=EmbeddingModelConfig(model_name="local/qwen-embedding"),
+            embedding_config=EmbeddingModelConfig(model_name="embedding/small"),
         ),
     },
     sensors=[default_automation_sensor(assets)],

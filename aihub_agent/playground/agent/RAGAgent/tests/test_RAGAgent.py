@@ -91,8 +91,8 @@ def azure_agent_config():
     """
     Return a RAGAgentConfig that uses Azure OpenAI for both the LLM and embeddings.
     """
-    llm_config = LLMConfig(model_name="azure/gpt-4o-mini")
-    embedding_config = EmbeddingModelConfig(model_name="azure/text-embedding-3-large")
+    llm_config = LLMConfig(model_name="text-generation/mini")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
     vector_store: AzureAISearchVectorStoreConfig = AzureAISearchVectorStoreConfig(
         # needed for embedding field
         vector_store_name="development",
@@ -114,7 +114,7 @@ def test_collection(event_loop):
     """
     asyncio.set_event_loop(event_loop)
 
-    embedding_config = EmbeddingModelConfig(model_name="local/qwen-embedding")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/small")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="development",
@@ -138,8 +138,8 @@ def self_hosted_agent_config(test_collection):
     """
     Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
     """
-    llm_config = LLMConfig(model_name="local/qwen3-small")
-    embedding_config = EmbeddingModelConfig(model_name="local/qwen-embedding")
+    llm_config = LLMConfig(model_name="text-generation/mini")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/small")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="development",

@@ -213,12 +213,12 @@ defs = Definitions(
         # AI model resources
         "embedding_model": EmbeddingModelResource(
             embedding_config=EmbeddingModelConfig(
-                model_name="azure/text-embedding-3-large"
+                model_name="embedding/large"
             )
         ),
         "language_model": LanguageModelResource(
             llm_config=LLMConfig(
-                model_name="azure/gpt-4o-mini"
+                model_name="text-generation/mini"
             )
         ),
         

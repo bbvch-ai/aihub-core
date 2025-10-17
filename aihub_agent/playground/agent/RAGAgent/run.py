@@ -39,7 +39,7 @@ async def main():
                 fr="Ceci est l'agent RAG par défaut",
                 it="Questo è l'agente RAG predefinito",
             ),
-            llm=LLMConfig(model_name="local/qwen3-small"),
+            llm=LLMConfig(model_name="text-generation/mini"),
             check_context_sufficiency=False,
             number_of_input_tokens=12000,
             system_prompt=LocaleString(
@@ -136,7 +136,7 @@ async def main():
                 """,
             ),
             retrieve_step_config=RetrieveStepConfig(
-                embed_model=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
+                embed_model=EmbeddingModelConfig(model_name="embedding/large"),
                 index_namespaces=["test"],
                 retrieve_k=5,
                 query_mode=VectorStoreQueryMode.DEFAULT,

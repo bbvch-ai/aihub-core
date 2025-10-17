@@ -77,7 +77,7 @@ def self_hosted_agent_config(event_loop):
     # Set the event loop for this function
     asyncio.set_event_loop(event_loop)
 
-    embedding_config = EmbeddingModelConfig(model_name="local/qwen-embedding")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/small")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="retrieval_agent_development",

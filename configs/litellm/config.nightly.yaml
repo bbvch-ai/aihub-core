@@ -1,23 +1,31 @@
 model_list:
-  - model_name: azure/gpt-4o-mini
+  - model_name: text-generation/nano
     litellm_params:
-      model: azure/gpt-4o-mini
+      model: azure/gpt-5-nano
+      api_base: https://aihub-dev-openai-swe-whisper.openai.azure.com/
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_version: "2025-01-01-preview"
+    model_info:
+      mode: chat
+  - model_name: text-generation/mini
+    litellm_params:
+      model: azure/gpt-5-mini
       api_base: https://aihub-dev-openai-che.openai.azure.com/
       api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2024-12-01-preview"
+      api_version: "2025-04-01-preview"
     model_info:
       mode: chat
 
-  - model_name: azure/gpt-4o
+  - model_name: text-generation/large
     litellm_params:
-      model: azure/gpt-4o
+      model: azure/gpt-5
       api_base: https://aihub-dev-openai-che.openai.azure.com/
       api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2024-12-01-preview"
+      api_version: "2025-01-01-preview"
     model_info:
       mode: chat
 
-  - model_name: azure/text-embedding-3-large
+  - model_name: embedding/large
     litellm_params:
       model: azure/text-embedding-3-large
       api_base: https://aihub-dev-openai-che.openai.azure.com/
@@ -26,7 +34,7 @@ model_list:
     model_info:
       mode: embedding
 
-  - model_name: azure/dall-e-3
+  - model_name: image-generation
     litellm_params:
       model: azure/dall-e-3
       api_base: https://joelb-mdotxdzc-australiaeast.cognitiveservices.azure.com/
@@ -36,7 +44,7 @@ model_list:
       mode: image_generation
       base_model: azure/dall-e-3
 
-  - model_name: azure/gpt-4o-mini-transcribe
+  - model_name: transcription
     litellm_params:
       model: azure/gpt-4o-mini-transcribe
       api_base: https://joelb-mdpmzqib-eastus2.cognitiveservices.azure.com/
@@ -46,7 +54,7 @@ model_list:
       mode: audio_transcription
       base_model: azure/gpt-4o-mini-transcribe
 
-  - model_name: azure/gpt-4o-mini-tts
+  - model_name: speech
     litellm_params:
       model: azure/gpt-4o-mini-tts
       api_base: https://joelb-mdpmzqib-eastus2.cognitiveservices.azure.com/
@@ -55,13 +63,6 @@ model_list:
     model_info:
       mode: audio_speech
       base_model: azure/gpt-4o-mini-tts
-
-  - model_name: google/gemini-2.5-flash
-    litellm_params:
-      model: gemini/gemini-2.5-flash
-      api_key: os.environ/GEMINI_API_KEY
-    model_info:
-      mode: chat
 
 guardrails:
   - guardrail_name: "presidio-mask-guard"
