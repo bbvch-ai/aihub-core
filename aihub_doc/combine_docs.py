@@ -1,13 +1,36 @@
 """
 Markdown Documentation Merger
-Combines markdown files from a directory structure into a single document
+Combines German markdown files (index.de.md) from a directory structure into a single document
 with proper heading hierarchy, then converts to DOCX.
-TODO: Fix ordering of index.md files versus subfolders
+
+The script processes directories in sorted order (by folder numbering) and always places
+the index.de.md of the current directory first, before processing subdirectories.
 """
 
 import os
 import re
 from pathlib import Path
+
+
+def extract_numeric_prefix(name):
+    """
+    Extract the numeric prefix from a folder/file name for sorting.
+
+    Examples:
+        '1_vision' -> 1
+        '10_chat_ui' -> 10
+        'readme.md' -> float('inf') (items without numbers sort last)
+
+    Args:
+        name: Folder or file name
+
+    Returns:
+        Numeric prefix as integer, or infinity if no prefix found
+    """
+    match = re.match(r"^(\d+)", name)
+    if match:
+        return int(match.group(1))
+    return float('inf')
 
 
 def clean_folder_name(folder_name):
@@ -155,6 +178,30 @@ def convert_custom_blocks(content):
     return re.sub(pattern, replace_block, content, flags=re.DOTALL)
 
 
+def strip_yaml_frontmatter(content):
+    """
+    Remove ALL YAML frontmatter blocks from markdown content.
+
+    YAML frontmatter is enclosed by --- markers:
+    ---
+    key: value
+    ---
+
+    This function removes all such blocks, whether at the start or middle of the file.
+
+    Args:
+        content: Markdown content that may contain YAML frontmatter
+
+    Returns:
+        Content with all YAML frontmatter removed
+    """
+    # Pattern to match YAML frontmatter anywhere in the file
+    # Matches: ---, any content, ---, with optional surrounding whitespace
+    # The (?:^|\n) ensures we match at line boundaries
+    pattern = r"(?:^|\n)---\s*\n.*?\n---\s*(?:\n|$)"
+    return re.sub(pattern, "\n\n", content, flags=re.DOTALL)
+
+
 def read_markdown_file(file_path, root_path):
     """
     Read markdown file and fix image paths.
@@ -166,6 +213,8 @@ def read_markdown_file(file_path, root_path):
     try:
         with open(file_path, "r", encoding="utf-8") as file:
             content = file.read()
+            # Strip YAML frontmatter
+            content = strip_yaml_frontmatter(content)
             # Fix image paths
             content = fix_image_paths(content, file_path, root_path)
             # Convert custom blocks to Word-compatible format
@@ -178,7 +227,7 @@ def read_markdown_file(file_path, root_path):
 
 def process_directory(root_path, current_path, output_dir, depth=0):
     """
-    Recursively process directory and combine all markdown files.
+    Recursively process directory and combine all German markdown files (index.de.md).
 
     Args:
         root_path: The starting directory path
@@ -191,28 +240,29 @@ def process_directory(root_path, current_path, output_dir, depth=0):
     """
     sections = []
 
-    # Get sorted list of items in current directory
+    # Get list of items in current directory with NUMERICAL sorting by folder prefix
     try:
-        items = sorted(os.listdir(current_path))
+        items = sorted(os.listdir(current_path), key=extract_numeric_prefix)
     except PermissionError:
         print(f"Warning: Cannot access {current_path}")
         return ""
 
+    # FIRST: Process index.de.md in the current directory (if it exists)
+    index_file = os.path.join(current_path, "index.de.md")
+    if os.path.isfile(index_file):
+        content = read_markdown_file(index_file, output_dir)
+        if content:
+            # Adjust heading levels based on folder depth
+            adjusted_content = adjust_markdown_headings(content, depth)
+            sections.append(adjusted_content)
+            sections.append("\n\n")  # Add spacing between files
+
+    # SECOND: Process subdirectories in numerically sorted order
     for item in items:
         item_path = os.path.join(current_path, item)
 
-        # Process markdown files
-        if os.path.isfile(item_path) and item.endswith(".md"):
-            content = read_markdown_file(item_path, output_dir)
-
-            if content:
-                # Adjust heading levels based on folder depth
-                adjusted_content = adjust_markdown_headings(content, depth)
-                sections.append(adjusted_content)
-                sections.append("\n\n")  # Add spacing between files
-
-        # Recursively process subdirectories
-        elif os.path.isdir(item_path):
+        # Only process subdirectories (ignore files - we already handled index.de.md)
+        if os.path.isdir(item_path):
             # Create heading for subdirectory
             folder_title = clean_folder_name(item)
             heading_level = "#" * (depth + 1)
@@ -301,8 +351,8 @@ def merge_documentation(source_dir, output_name="combined"):
 
 if __name__ == "__main__":
     # Configuration
-    SOURCE_DIRECTORY = "./docs/1_vision_and_positioning/3_solution"
-    OUTPUT_FILENAME = "solution_combined"
+    SOURCE_DIRECTORY = "./docs/2_platform"
+    OUTPUT_FILENAME = "platform_combined"
 
     # Run the merger
     merge_documentation(SOURCE_DIRECTORY, OUTPUT_FILENAME)
