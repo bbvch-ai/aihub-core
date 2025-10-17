@@ -12,8 +12,8 @@ common ingestion scenarios and implementation approaches.
 ## The core ingestion architecture {#ingestion-architecture}
 
 ::: warning
-AI-Hub follows a **universal data lake pattern** where all document sources feed into a centralized data
-lake, which then feeds the standardized **data lake to vector store** pipeline that powers RAG agents.
+AI-Hub follows a **universal data lake pattern** where all document sources feed into a centralized data lake, which
+then feeds the standardized **data lake to vector store** pipeline that powers RAG agents.
 :::
 
 ```mermaid
@@ -89,8 +89,8 @@ reliability, and observability.
 ## Complete document ingestion pipeline example {#complete-rag-pipeline}
 
 ::: tip
-End-to-End Implementation This section provides a complete, runnable example of building a production-ready RAG
-pipeline using the aihub_pipeline SDK. Follow along to understand how all the components work together.
+End-to-End Implementation This section provides a complete, runnable example of building a production-ready RAG pipeline
+using the aihub_pipeline SDK. Follow along to understand how all the components work together.
 :::
 
 ### Prerequisites and setup {#pipeline-setup}
@@ -239,8 +239,8 @@ defs = Definitions(
 ### Understanding the pipeline components (assets) {#pipeline-components}
 
 ::: info
-Asset Flow Explanation Each asset in the pipeline represents a concrete data transformation stage with
-automatic dependency management.
+Asset Flow Explanation Each asset in the pipeline represents a concrete data transformation stage with automatic
+dependency management.
 ::: 
 
 1. **Observable Data Lake Asset** (`observable_data_lake`)
@@ -287,8 +287,8 @@ them.
 ### Pipeline execution flow {#execution-flow}
 
 ::: warning
-Automatic Processing Chain When you add documents to the data lake, the pipeline automatically processes
-them through all stages.
+Automatic Processing Chain When you add documents to the data lake, the pipeline automatically processes them through
+all stages.
 :::
 
 ::: info Processing Sequence
