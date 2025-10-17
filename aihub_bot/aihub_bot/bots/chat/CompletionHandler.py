@@ -5,11 +5,10 @@ from asyncio import Event, Task
 from collections.abc import AsyncGenerator
 from typing import Any
 
-from botbuilder.schema.teams import TeamsChannelData
-
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from botbuilder.core import TurnContext
 from botbuilder.schema import Activity, ActivityTypes, Entity, ErrorResponseException
+from botbuilder.schema.teams import TeamsChannelData
 
 from aihub_bot.bots.chat.ContentExtractor import ContentExtractor
 from aihub_bot.persistence.entities.ConversationEntity import Content, ConversationEntity, Message

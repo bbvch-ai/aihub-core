@@ -167,7 +167,7 @@ class ContentExtractor:
     def _from_generic_attachment(attachment: Attachment) -> FileInfo:
         """Create FileInfo from a generic attachment."""
         if not attachment.name or not attachment.content_url:
-            raise ValueError(f"Invalid generic attachment: missing name or URL")
+            raise ValueError("Invalid generic attachment: missing name or URL")
 
         return FileInfo(
             name=attachment.name,
