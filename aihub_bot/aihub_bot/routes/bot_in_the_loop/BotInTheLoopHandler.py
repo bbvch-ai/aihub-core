@@ -120,7 +120,7 @@ class BotInTheLoopHandler:
             )
 
         conversation = ConversationReference(
-            activity_id=None,
+            activity_id="f:23fd0d2d-fdfb-d716-5edf-a0b0b624f4a1",
             additional_properties={},
             bot=ChannelAccount(
                 aad_object_id=None,
@@ -144,7 +144,7 @@ class BotInTheLoopHandler:
                 role=None,
                 tenant_id=None,
             ),
-            locale=None,
+            locale="en-US",
             service_url="https://smba.trafficmanager.net/emea/37314c94-c755-48ab-85bb-acb83e492c42/",
             user=ChannelAccount(
                 aad_object_id="9cad7bcb-a21b-4c1e-8de4-1e3720f0956c",
