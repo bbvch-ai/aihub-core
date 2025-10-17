@@ -13,8 +13,6 @@ class BotInTheLoopAgent(Agent):
         print("[BotInTheLoopAgent.start_step]")
         user = await run_context.get("user")
 
-        # IMPORTANT: Only provide the Slack channel ID (starts with C)
-        # Do NOT include bot_id or team_id - they will be fetched automatically
         teams_config = TeamsConfig(
             channel_id="19:zAzZDk2wJBx_2WR949Eh25xG-UntOkk1BtykJ27Qcrk1@thread.tacv2",
             tenant_id="37314c94-c755-48ab-85bb-acb83e492c42",
@@ -28,14 +26,12 @@ class BotInTheLoopAgent(Agent):
 
     @step()
     async def end_step(self, event: BotInTheLoop.response) -> BotInTheLoop.request | StopEvent:
-        # Print basic response information
         print(
             "[BotInTheLoopAgent.end_step]",
             f"Question: {event.request_event.question}",
             f"Response: {event.response}",
         )
 
-        # Print responder information if available
         if event.responder:
             print(
                 "[Responder Info]",
@@ -50,8 +46,6 @@ class BotInTheLoopAgent(Agent):
         if event.response == "yes":
             return StopEvent()
         else:
-            # For subsequent messages, we can use the same conversation_id from the request event
-            # This will be the original channel ID for convenience
             return BotInTheLoop.invoke(
                 user=event.request_event.user,
                 question="What about now?",
