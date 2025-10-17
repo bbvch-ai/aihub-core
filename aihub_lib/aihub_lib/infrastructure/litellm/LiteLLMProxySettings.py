@@ -15,6 +15,7 @@ class LiteLLMProxySettings(EnvironmentSettings):
         SecretStr | None,
         Field(description="API key for authentication. If not provided, other authentication methods will be used."),
     ] = None
+    TIMEOUT: Annotated[float, Field(description="HTTP request timeout in seconds.")] = 30.0
 
     USER_MAX_BUDGET: Annotated[float | None, Field(description="Budget available to a user in one period")] = None
     USER_SOFT_BUDGET: Annotated[
@@ -47,6 +48,7 @@ class LiteLLMProxySettings(EnvironmentSettings):
         return httpx.Client(
             headers={"Authorization": f"Bearer {self.API_KEY.get_secret_value()}"},
             base_url=self.BASE_URL,
+            timeout=self.TIMEOUT,
         )
 
     @property
@@ -54,6 +56,7 @@ class LiteLLMProxySettings(EnvironmentSettings):
         return httpx.AsyncClient(
             headers={"Authorization": f"Bearer {self.API_KEY.get_secret_value()}"},
             base_url=self.BASE_URL,
+            timeout=self.TIMEOUT,
         )
 
     @property
@@ -61,4 +64,5 @@ class LiteLLMProxySettings(EnvironmentSettings):
         return openai.AsyncClient(
             api_key=self.API_KEY.get_secret_value(),
             base_url=self.BASE_URL,
+            timeout=self.TIMEOUT,
         )
