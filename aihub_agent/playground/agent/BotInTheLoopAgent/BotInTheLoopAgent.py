@@ -4,6 +4,7 @@ from aihub_lib.nats.events.bot_in_the_loop.BotInTheLoop import BotInTheLoop
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.workflow.decorators.step import step
+from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import TeamsConfig
 
 
 class BotInTheLoopAgent(Agent):
@@ -14,10 +15,15 @@ class BotInTheLoopAgent(Agent):
 
         # IMPORTANT: Only provide the Slack channel ID (starts with C)
         # Do NOT include bot_id or team_id - they will be fetched automatically
+        teams_config = TeamsConfig(
+            channel_id="19:zAzZDk2wJBx_2WR949Eh25xG-UntOkk1BtykJ27Qcrk1@thread.tacv2",
+            tenant_id="37314c94-c755-48ab-85bb-acb83e492c42",
+            bot_id="28:ac98b506-ec21-46b9-a31e-80d34c6eb71e",
+        )
         return BotInTheLoop.invoke(
             user=user,
             question="Are we there yet?",
-            teams_channel_id="19:zAzZDk2wJBx_2WR949Eh25xG-UntOkk1BtykJ27Qcrk1@thread.tacv2",
+            teams_config=teams_config,
         )
 
     @step()
