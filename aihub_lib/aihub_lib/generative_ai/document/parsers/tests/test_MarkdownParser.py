@@ -748,7 +748,7 @@ def test_table_extraction(node_parser):
     # Should extract the table as a separate node
     table_nodes = [n for n in nodes if "Cell 1" in n.text and "Cell 2" in n.text]
     assert len(table_nodes) == 1
-    assert table_nodes[0].text.strip().startswith("Cell 1")
+    assert table_nodes[0].text.strip().startswith("| Cell 1")
     # The other nodes should contain the intro and outro text
     intro_nodes = [n for n in nodes if "Some intro text." in n.text]
     outro_nodes = [n for n in nodes if "Some outro text." in n.text]
@@ -784,19 +784,23 @@ def test_large_table_splitting():
         INSERTED_AT: int(time()),
     }
     # Use a small chunk size to force splitting
-    node_parser = MarkdownStructuralNodeParser(metadata=metadata, chunk_size=100, chunk_overlap=0)
+    node_parser = MarkdownStructuralNodeParser(metadata=metadata, chunk_size=50, chunk_overlap=0)
 
-    # Create a table with header and many rows to exceed chunk size
-    table_rows = ["| Column 1 | Column 2 | Column 3 |"]
-    table_rows.append("|----------|----------|----------|")
+    # Create an HTML table with header and many rows to exceed chunk size
+    table_rows = ["<table>"]
+    table_rows.append("<thead><tr><th>Column 1</th><th>Column 2</th><th>Column 3</th></tr><thead>")
+    table_rows.append("<tbody>")
     for i in range(20):
-        table_rows.append(f"| Data {i}A | Data {i}B | Data {i}C |")
+        table_rows.append(f"<tr><td>Data {i}A</td><td>Data {i}B</td><td>Data {i}C</td></tr>")
+
+    table_rows.append("</tbody>")
+    table_rows.append("</table>")
 
     table_text = "\n".join(table_rows)
 
     text = f"""# Section with Table
 Some intro text.
-<table>{table_text}</table>
+{table_text}
 Some outro text."""
 
     document = Document(text=text)
@@ -809,7 +813,7 @@ Some outro text."""
     assert len(table_nodes) > 1, f"Expected multiple table chunks, got {len(table_nodes)}"
 
     # Each chunk should contain the header
-    header = "| Column 1 | Column 2 | Column 3 |"
+    header = "| Column 1   | Column 2   | Column 3   |"
     for table_node in table_nodes:
         assert header in table_node.text, f"Header missing in chunk: {table_node.text}"
 

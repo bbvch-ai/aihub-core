@@ -19,7 +19,6 @@ from aihub_lib.infrastructure.docling.DoclingSettings import DoclingSettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     NODE_CONTENT_TYPE_FIGURE,
-    NODE_CONTENT_TYPE_TABLE,
     NUMBER_OF_PAGES,
 )
 
@@ -235,6 +234,6 @@ def convert_tables_to_html(markdown_text: str, tables: list[TableItem], document
     pattern = r"(\|[^\n]+\|\r?\n\|[:\-| ]+\|\r?(?:\n\|[^\n]+\|\r?)*)"
     md_tables = re.findall(pattern, markdown_text)
     for md_table, table in zip(md_tables, tables):
-        html_table = table.export_to_html(document)
+        html_table = table.export_to_dataframe().to_html(index=False)
         markdown_text = markdown_text.replace(md_table, html_table, 1)
     return markdown_text

@@ -1,5 +1,4 @@
 import html
-import logging
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from io import StringIO
@@ -209,6 +208,9 @@ Provide your analysis of how many header rows this table has."""
         """
         Count tokens in text using the configured LLM's tokenizer, or estimate based on characters.
         """
+        if not self.llm_config:
+            return len(text) // 4
+
         token_list = self.llm_config.token_counter(text)
         return len(token_list)
 
@@ -220,11 +222,7 @@ Provide your analysis of how many header rows this table has."""
         if not dfs or dfs[0].empty:
             return [TextChunk(table_html, NODE_CONTENT_TYPE_TABLE)]
 
-        # <thead> is not used in html, so the columns need to be set to the first one
         df = dfs[0]
-        df.columns = df.iloc[0]
-        df = df[1:]
-        df = df.reset_index(drop=True)
 
         if num_header_rows > 1 and num_header_rows <= len(df):
             header_rows = [df.iloc[i].tolist() for i in range(num_header_rows)]
@@ -236,7 +234,7 @@ Provide your analysis of how many header rows this table has."""
         header_markdown = header_df.to_markdown(index=False)
         header_token_count = self._count_tokens(header_markdown)
 
-        available_tokens = max(2048, self.sentence_splitter.chunk_size * 2) - header_token_count
+        available_tokens = min(2048, self.sentence_splitter.chunk_size * 2) - header_token_count
 
         def count_row_tokens(row: pd.Series) -> int:
             row_text = " | ".join(str(val) for val in row.values)
@@ -309,12 +307,23 @@ Provide your analysis of how many header rows this table has."""
                         )
                         buffer = ""
                     if child.name == NODE_CONTENT_TYPE_TABLE:
-                        table_text = child.text
+                        table_html = str(child)
 
-                        if len(table_text) <= self.sentence_splitter.chunk_size:
-                            text_chunks.append(TextChunk(table_text, NODE_CONTENT_TYPE_TABLE))
+                        dfs = pd.read_html(StringIO(table_html))
+                        if dfs and not dfs[0].empty:
+                            df = dfs[0]
+                            df.columns = df.iloc[0]
+                            df = df[1:].reset_index(drop=True)
+                            markdown_table = df.to_markdown(index=False)
+
+                            token_count = self._count_tokens(markdown_table)
+
+                            if token_count <= self.sentence_splitter.chunk_size:
+                                text_chunks.append(TextChunk(markdown_table, NODE_CONTENT_TYPE_TABLE))
+                            else:
+                                text_chunks.extend(self._split_table(table_html))
                         else:
-                            text_chunks.extend(self._split_table(str(child)))
+                            text_chunks.append(TextChunk(child.text, NODE_CONTENT_TYPE_TABLE))
                     else:
                         text_chunks.append(TextChunk(child.text, child.name))
                 else:
