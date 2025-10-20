@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.246.7] - 2025-10-20 - Performance Optimizations and SeaweedFS Development Enhancements
+
+### Added
+
+- 🚀 **Implemented LiteLLM model info caching:** Introduced an LRU cache for LiteLLM model information retrieval, which
+  significantly reduces redundant API calls and improves the performance of model lookups.
+- ⚙️ **Enhanced SeaweedFS S3 gateway environment configuration:** Added specific environment variables for `S3_PORT`,
+  `S3_FILER`, and `S3_BIND_IP`, providing more granular control over the S3 gateway service in the development
+  environment.
+- ➕ **Exposed SeaweedFS internal ports:** Explicitly exposed SeaweedFS master, volume, and filer gRPC and HTTP ports in
+  `docker-compose-gpu.dev.yml` for improved diagnostics and integration.
+
+### Changed
+
+- ⚡️ **Improved asynchronous document loading performance:** Refactored the `DoclingLoader` to offload synchronous file
+  reading and response processing to a dedicated thread, preventing event loop blocking and enhancing performance during
+  large document ingestions.
+- 🔄 **Centralized S3-compatible storage to SeaweedFS in development:** Updated `milvus` and `attu` services in
+  `docker-compose-gpu.dev.yml` to depend on the `seaweedfs-s3` gateway instead of a separate MinIO instance,
+  streamlining the local object storage setup.
+- 💾 **Optimized SeaweedFS volume configuration:** Adjusted `seaweedfs-master` settings to use a `volumeSizeLimitMB` of
+  512MB and disabled `volumePreallocate` for more efficient resource utilization in development.
+
+---
+
 ## [v0.246.6] - 2025-10-15 - Improved CI/CD Tagging and Release Process
 
 ### Added
