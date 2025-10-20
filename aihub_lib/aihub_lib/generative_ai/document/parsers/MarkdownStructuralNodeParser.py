@@ -1,20 +1,25 @@
 import html
+import logging
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from io import StringIO
 from typing import Annotated, Any
 
 import bs4
+import pandas as pd
+from llama_index.core import PromptTemplate
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.node_parser.interface import NodeParser
 from llama_index.core.node_parser.node_utils import build_nodes_from_splits
 from llama_index.core.schema import BaseNode, MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.utils import get_tqdm_iterable
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from aihub_lib.generative_ai.document.extractors import MetadataExtractor
 from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import PAGE_BREAK
 from aihub_lib.generative_ai.document.parsers.Split import Split
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     DEFAULT_METADATA,
@@ -29,6 +34,13 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     SECTION_START_LINE,
     NodeContentType,
 )
+
+
+class TableHeaderAnalysis(BaseModel):
+    """LLM response for table header structure analysis."""
+
+    num_header_rows: int = Field(description="Number of header rows in the table (0 if no header, 1-3 typical range)")
+    reasoning: str = Field(description="Brief explanation for the determined number of header rows")
 
 
 @dataclass
@@ -155,61 +167,110 @@ class NodeCreatorFromSplits:
     Creates nodes from splits. Nodes are linked together using PREV and NEXT relationships based on the header levels.
     """
 
-    def __init__(self, chunk_size: int = 512, chunk_overlap: int = 20):
+    def __init__(self, chunk_size: int = 512, chunk_overlap: int = 20, llm_config: LLMConfig | None = None):
         self.include_metadata = True
         self.metadata = {}
         self.sentence_splitter = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         self.id_func = None
         self.current_index = 0  # Initialize the index counter
         self.header_references = {}
+        self.llm_config = llm_config
 
-    def _split_table(self, table_text: str) -> list[TextChunk]:
+    def _determine_header_rows_with_llm(self, table_html: str) -> int:
         """
-        Split a large Markdown table into smaller chunks, preserving the header in each chunk.
+        Use LLM to determine the number of header rows in an HTML table.
         """
-        lines = table_text.split("\n")
+        if not self.llm_config:
+            return 1
 
-        rows = []
-        header_row = None
+        prompt_text = """Analyze the following HTML table and determine how many rows constitute the table header.
 
-        for line in lines:
-            stripped = line.strip()
-            if not stripped:
-                continue
-            if stripped.replace("|", "").replace("-", "").replace(":", "").replace(" ", "") == "":
-                continue
-            if header_row is None:
-                header_row = line
-            else:
-                rows.append(line)
+Table headers typically contain column names, categories, or descriptive labels. Common patterns:
+- Single header row: Most common, one row of column names
+- Multi-level headers: multiple rows for hierarchical categories, grouped columns, or complex header structure
+- No header: Data-only tables (rare)
 
-        if header_row is None or not rows:
-            return [TextChunk(table_text, NODE_CONTENT_TYPE_TABLE)]
+HTML Table:
+{table_html}
 
-        header_size = len(header_row) + 1
-        available_size = self.sentence_splitter.chunk_size - header_size
+Provide your analysis of how many header rows this table has."""
+
+        prompt = PromptTemplate(prompt_text)
+
+        try:
+            llm, _ = self.llm_config.to_llama_index()
+            result = llm.structured_predict(TableHeaderAnalysis, prompt, table_html=table_html)
+            analysis = TableHeaderAnalysis.model_validate(result)
+            return max(0, min(4, analysis.num_header_rows))
+        except Exception:
+            return 1
+
+    def _count_tokens(self, text: str) -> int:
+        """
+        Count tokens in text using the configured LLM's tokenizer, or estimate based on characters.
+        """
+        token_list = self.llm_config.token_counter(text)
+        return len(token_list)
+
+    def _split_table_with_dataframe(self, table_html: str, num_header_rows: int) -> list[TextChunk]:
+        """
+        Split an HTML table using pandas DataFrame, preserving multi-level headers.
+        """
+        dfs = pd.read_html(StringIO(table_html))
+        if not dfs or dfs[0].empty:
+            return [TextChunk(table_html, NODE_CONTENT_TYPE_TABLE)]
+
+        # <thead> is not used in html, so the columns need to be set to the first one
+        df = dfs[0]
+        df.columns = df.iloc[0]
+        df = df[1:]
+        df = df.reset_index(drop=True)
+
+        if num_header_rows > 1 and num_header_rows <= len(df):
+            header_rows = [df.iloc[i].tolist() for i in range(num_header_rows)]
+            df.columns = pd.MultiIndex.from_arrays(header_rows)
+            df = df.iloc[num_header_rows:]
+            df.reset_index(drop=True, inplace=True)
+
+        header_df = df.head(0)
+        header_markdown = header_df.to_markdown(index=False)
+        header_token_count = self._count_tokens(header_markdown)
+
+        available_tokens = max(2048, self.sentence_splitter.chunk_size * 2) - header_token_count
+
+        def count_row_tokens(row: pd.Series) -> int:
+            row_text = " | ".join(str(val) for val in row.values)
+            row_with_pipes = f"| {row_text} |"
+            return self._count_tokens(row_with_pipes)
+
+        df["__token_count__"] = df.apply(count_row_tokens, axis=1)
 
         chunks: list[TextChunk] = []
-        current_chunk_rows: list[str] = []
-        current_size = 0
+        chunk_start = 0
 
-        for row in rows:
-            row_size = len(row) + 1
+        while chunk_start < len(df):
+            cumsum = df["__token_count__"].iloc[chunk_start:].cumsum()
+            valid_rows = cumsum[cumsum <= available_tokens]
 
-            if current_chunk_rows and current_size + row_size > available_size:
-                chunk_text = header_row + "\n" + "\n".join(current_chunk_rows)
-                chunks.append(TextChunk(chunk_text, NODE_CONTENT_TYPE_TABLE))
-                current_chunk_rows = []
-                current_size = 0
+            if len(valid_rows) == 0:
+                chunk_end = chunk_start + 1
+            else:
+                chunk_end = chunk_start + len(valid_rows)
 
-            current_chunk_rows.append(row)
-            current_size += row_size
+            chunk_df = df.iloc[chunk_start:chunk_end].drop(columns=["__token_count__"])
+            markdown_table = chunk_df.to_markdown(index=False)
+            chunks.append(TextChunk(markdown_table, NODE_CONTENT_TYPE_TABLE))
 
-        if current_chunk_rows:
-            chunk_text = header_row + "\n" + "\n".join(current_chunk_rows)
-            chunks.append(TextChunk(chunk_text, NODE_CONTENT_TYPE_TABLE))
+            chunk_start = chunk_end
 
-        return chunks if chunks else [TextChunk(table_text, NODE_CONTENT_TYPE_TABLE)]
+        return chunks if chunks else [TextChunk(table_html, NODE_CONTENT_TYPE_TABLE)]
+
+    def _split_table(self, table_content: str) -> list[TextChunk]:
+        """
+        Split a large table into smaller chunks, preserving headers.
+        """
+        num_header_rows = self._determine_header_rows_with_llm(table_content)
+        return self._split_table_with_dataframe(table_content, num_header_rows)
 
     def create_nodes_from_splits(
         self,
@@ -249,10 +310,11 @@ class NodeCreatorFromSplits:
                         buffer = ""
                     if child.name == NODE_CONTENT_TYPE_TABLE:
                         table_text = child.text
+
                         if len(table_text) <= self.sentence_splitter.chunk_size:
                             text_chunks.append(TextChunk(table_text, NODE_CONTENT_TYPE_TABLE))
                         else:
-                            text_chunks.extend(self._split_table(table_text))
+                            text_chunks.extend(self._split_table(str(child)))
                     else:
                         text_chunks.append(TextChunk(child.text, child.name))
                 else:
@@ -366,6 +428,10 @@ class MarkdownStructuralNodeParser(NodeParser):
     chunk_overlap: Annotated[int, Field(description="Number of overlapping tokens between chunks.")] = 20
     include_prev_next_rel: Annotated[bool, Field(description="Include prev/next node relationships.")] = False
 
+    llm_config: Annotated[
+        LLMConfig | None, Field(description="LLM configuration for table header detection and tokenization.")
+    ] = None
+
     metadata_extractor: Annotated[
         MetadataExtractor | None, Field(description="MetadataExtractor used to extract metadata.")
     ] = None
@@ -393,6 +459,7 @@ class MarkdownStructuralNodeParser(NodeParser):
             values["node_builder_from_splits"] = NodeCreatorFromSplits(
                 chunk_size=values.get("chunk_size", 512),
                 chunk_overlap=values.get("chunk_overlap", 20),
+                llm_config=values.get("llm_config", None),
             )
         return values
 

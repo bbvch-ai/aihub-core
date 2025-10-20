@@ -8,7 +8,7 @@ from typing import Any
 import httpx
 from bs4 import BeautifulSoup
 from docling_core.types import DoclingDocument
-from docling_core.types.doc import ImageRefMode
+from docling_core.types.doc import ImageRefMode, TableItem
 from fsspec import AbstractFileSystem
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
@@ -82,9 +82,9 @@ class DoclingLoader(BaseReader):
 
         if len(doc.pictures) > 0:
             img_strs = [picture.export_to_markdown(doc) for picture in doc.pictures]
-            markdown_content = inject_table_tags(inject_figure_tags(markdown_content, img_strs))
+            markdown_content = convert_tables_to_html(inject_figure_tags(markdown_content, img_strs), doc.tables, doc)
         else:
-            markdown_content = inject_table_tags(markdown_content)
+            markdown_content = convert_tables_to_html(markdown_content, doc.tables, doc)
 
         metadata = {NUMBER_OF_PAGES: len(answer["document"]["json_content"]["pages"])}
 
@@ -230,9 +230,11 @@ def inject_figure_tags(markdown_text: str, img_strs: list[str]):
     return markdown_text
 
 
-def inject_table_tags(markdown_text: str):
-    """Inject html <table> tags around Markdown tables."""
+def convert_tables_to_html(markdown_text: str, tables: list[TableItem], document: DoclingDocument):
+    """Replace Markdown tables with HTML tables."""
     pattern = r"(\|[^\n]+\|\r?\n\|[:\-| ]+\|\r?(?:\n\|[^\n]+\|\r?)*)"
-    markdown_text = re.sub(pattern, f"<{NODE_CONTENT_TYPE_TABLE}>\\1</{NODE_CONTENT_TYPE_TABLE}>", markdown_text)
-
+    md_tables = re.findall(pattern, markdown_text)
+    for md_table, table in zip(md_tables, tables):
+        html_table = table.export_to_html(document)
+        markdown_text = markdown_text.replace(md_table, html_table, 1)
     return markdown_text
