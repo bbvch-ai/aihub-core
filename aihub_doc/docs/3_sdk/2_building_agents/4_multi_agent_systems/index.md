@@ -98,8 +98,9 @@ AgentInTheLoop.invoke(
 )
 ```
 
-> [!WARNING]
-> Sharing the `run_id` is an advanced feature and can lead to unexpected behavior, as both agents would be writing to the same ephemeral `RunContext`. It is almost always better to keep it `False`.
+::: warning
+Sharing the `run_id` is an advanced feature and can lead to unexpected behavior, as both agents would be writing to the same ephemeral `RunContext`. It is almost always better to keep it `False`.
+:::
 
 ## Common Multi-Agent Patterns
 

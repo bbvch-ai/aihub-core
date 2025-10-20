@@ -1,5 +1,5 @@
 ---
-title: Building agents
+title: Building Agents
 index: 2
 ---
 
