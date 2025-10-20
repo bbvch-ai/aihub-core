@@ -64,7 +64,9 @@ class DoclingLoader(BaseReader):
         file_name = os.path.basename(file)
 
         answer = await self.convert_document_async(encoded_string, file_name, include_images)
-        return self._process_docling_response(answer, file, extra_info, fs, figures_directory_name)
+        return await asyncio.to_thread(
+            self._process_docling_response, answer, file, extra_info, fs, figures_directory_name
+        )
 
     def _read_file_sync(self, fs: AbstractFileSystem, file: str) -> str:
         with fs.open(file, "rb") as pdf_file:
