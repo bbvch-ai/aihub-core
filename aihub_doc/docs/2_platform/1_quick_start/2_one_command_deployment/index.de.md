@@ -197,7 +197,7 @@ MILVUS_DIMENSION="3072"
 Verwenden Sie diesen Befehl, um sichere zufällige Zeichenfolgen zu generieren:
 
 ```bash
-openssl rand -base64 32
+openssl rand -hex 32
 ```
 
 Führen Sie ihn mehrmals aus, um unterschiedliche Werte für jeden Platzhalter zu erhalten.
