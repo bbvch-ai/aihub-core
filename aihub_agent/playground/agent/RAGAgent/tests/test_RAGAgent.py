@@ -91,7 +91,7 @@ def azure_agent_config():
     """
     Return a RAGAgentConfig that uses Azure OpenAI for both the LLM and embeddings.
     """
-    llm_config = LLMConfig(model_name="text-generation/mini")
+    llm_config = LLMConfig(model_name="text-generation/large")
     embedding_config = EmbeddingModelConfig(model_name="embedding/large")
     vector_store: AzureAISearchVectorStoreConfig = AzureAISearchVectorStoreConfig(
         # needed for embedding field

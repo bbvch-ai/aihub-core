@@ -94,3 +94,12 @@ local-cert:
 		"localhost" "*.localhost" \
 		"127.0.0.1.nip.io" "*.127.0.0.1.nip.io"
 	@echo "✅ Certificates written to configs/traefik/certs/dev-cert.pem and configs/certs/dev-key.pem"
+
+test:
+	@echo "Running tests..."
+	@(cd aihub_pipeline && make test)
+	@(cd aihub_lib && make test)
+	@(cd aihub_agent && make test)
+	@(cd aihub_process && make test)
+	@(cd aihub_api && make test)
+	@(cd aihub_bot && make test)

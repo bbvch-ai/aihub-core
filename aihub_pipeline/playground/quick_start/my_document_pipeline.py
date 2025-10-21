@@ -76,7 +76,7 @@ defs = Definitions(
         "embedding_model": EmbeddingModelResource(
             embedding_config=EmbeddingModelConfig(model_name="embedding/large"),
         ),
-        "language_model": LanguageModelResource(llm_config=LLMConfig(model_name="text-generation/mini")),
+        "language_model": LanguageModelResource(llm_config=LLMConfig(model_name="text-generation/nano")),
     },
     # Add jobs for pipeline operations
     jobs=[observe_job],
