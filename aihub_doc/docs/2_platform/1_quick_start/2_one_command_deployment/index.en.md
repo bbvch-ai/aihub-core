@@ -204,7 +204,7 @@ MILVUS_DIMENSION="3072"
 Use this command to generate secure random strings:
 
 ```bash
-openssl rand -base64 32
+openssl rand -hex 32
 ```
 
 Run it multiple times to get different values for each placeholder.
