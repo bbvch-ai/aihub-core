@@ -1,6 +1,7 @@
 import abc
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
+from functools import lru_cache
 from typing import TYPE_CHECKING, Annotated, Any, Generic, TypeVar
 
 from llama_index.core.utils import Tokenizer
@@ -14,6 +15,12 @@ if TYPE_CHECKING:
 
 
 OpenAILike = TypeVar("OpenAILike")
+
+
+@lru_cache(maxsize=1)
+def _fetch_all_model_info_cached() -> dict[str, Any]:
+    client = LiteLLMProxySettings().httpx_client
+    return client.get("/v1/model/info").json()
 
 
 class LiteLLMBase(BaseModel, Generic[OpenAILike], abc.ABC):
@@ -59,8 +66,7 @@ class LiteLLMBase(BaseModel, Generic[OpenAILike], abc.ABC):
         await displayer.display_llm_costs(self.model_name, cost_tracker)
 
     def get_model_info(self) -> dict[str, Any]:
-        client = LiteLLMProxySettings().httpx_client
-        model_info = client.get("/v1/model/info").json()
+        model_info = _fetch_all_model_info_cached()
 
         models = model_info["data"]
         model_info = next((model for model in models if model["model_name"] == self.model_name), None)

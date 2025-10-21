@@ -42,8 +42,7 @@ class DoclingLoader(BaseReader):
         include_images = include_images if include_images is not None else True
 
         fs = fs or get_default_fs()
-        with fs.open(file, "rb") as pdf_file:
-            encoded_string = base64.b64encode(pdf_file.read()).decode("utf-8")
+        encoded_string = self._read_file_sync(fs, file)
         file_name = os.path.basename(file)
 
         answer = self.convert_document(encoded_string, file_name, include_images)
@@ -61,12 +60,17 @@ class DoclingLoader(BaseReader):
         include_images = include_images if include_images is not None else True
 
         fs = fs or get_default_fs()
-        with fs.open(file, "rb") as pdf_file:
-            encoded_string = base64.b64encode(pdf_file.read()).decode("utf-8")
+        encoded_string = await asyncio.to_thread(self._read_file_sync, fs, file)
         file_name = os.path.basename(file)
 
         answer = await self.convert_document_async(encoded_string, file_name, include_images)
-        return self._process_docling_response(answer, file, extra_info, fs, figures_directory_name)
+        return await asyncio.to_thread(
+            self._process_docling_response, answer, file, extra_info, fs, figures_directory_name
+        )
+
+    def _read_file_sync(self, fs: AbstractFileSystem, file: str) -> str:
+        with fs.open(file, "rb") as pdf_file:
+            return base64.b64encode(pdf_file.read()).decode("utf-8")
 
     def _process_docling_response(
         self,
