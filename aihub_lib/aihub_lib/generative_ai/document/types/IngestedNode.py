@@ -127,13 +127,6 @@ class IngestedNode(IngestedBase):
         return node
 
     def to_llama_index_node_with_score(self) -> NodeWithScore:
-        """
-        Converts this IngestedNode to a LlamaIndex NodeWithScore.
-
-        Returns:
-            NodeWithScore: A LlamaIndex NodeWithScore object containing the node and its score.
-        """
-
         def from_iso(iso_string: str) -> int:
             """Convert ISO timestamp string to Unix timestamp integer."""
             dt = datetime.fromisoformat(iso_string.replace("Z", "+00:00"))

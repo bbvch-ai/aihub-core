@@ -42,6 +42,16 @@ async def reranking_enabled(event: RetrieverEvent, config: RAGAgentConfig) -> bo
     return isinstance(event, RetrieverEvent) and config.reranking_config.enabled
 
 
+@precondition()
+async def reranking_complete_or_disabled(event: RetrieverEvent | RerankerEvent, config: RAGAgentConfig) -> bool:
+    """Precondition to ensure we only order nodes after reranking is complete (or if reranking is disabled)."""
+    # If reranking is disabled, we can proceed with RetrieverEvent
+    if not config.reranking_config.enabled:
+        return isinstance(event, RetrieverEvent)
+    # If reranking is enabled, we must wait for RerankerEvent
+    return isinstance(event, RerankerEvent)
+
+
 class RAGAgent(Agent):
     """
     Implements a Retrieval-Augmented Generation (RAG) Agent.
@@ -180,7 +190,6 @@ class RAGAgent(Agent):
             )
         return RetrieverEvent.from_nodes(nodes)
 
-    # TODO add precondition
     @step(
         name=LocaleString(en="Rerank Retrieved Nodes"),
         description=LocaleString(
@@ -196,10 +205,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> RerankerEvent | RetrieverEvent:
-        if not agent_config.reranking_config.enabled:
-            return event
-
+    ) -> RerankerEvent:
         await displayer.display_thought(t("agent.thought.reranking_results"))
 
         reranked_nodes = await rerank_nodes(
@@ -220,6 +226,7 @@ class RAGAgent(Agent):
     @step(
         name=LocaleString(en="Order Nodes by Documents"),
         description=LocaleString(en="Orders the retrieved nodes by their source documents."),
+        precondition=reranking_complete_or_disabled,
     )
     async def order_nodes_by_documents_step(
         self,

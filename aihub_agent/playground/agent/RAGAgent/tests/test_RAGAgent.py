@@ -233,6 +233,13 @@ def _(agent_runner: AgentTestRunner):
     assert retriever_event.nodes, "RetrieverEvent did not produce nodes"
 
 
+@then(parsers.parse('a RetrieverEvent is present with more than "{node_count:d}" retrieved nodes'))
+def _(agent_runner: AgentTestRunner, node_count: int):
+    retriever_event = agent_runner.get_event_of_class(RetrieverEvent)
+    nodes = len(retriever_event.nodes)
+    assert nodes > node_count, f"Expected more than {node_count} nodes, got {nodes}"
+
+
 @then(parsers.parse('"{count:d}" RetrieverEvent are present'))
 def _(count: int, agent_runner: AgentTestRunner):
     retriever_events = len(agent_runner.get_events_of_class(RetrieverEvent, True))

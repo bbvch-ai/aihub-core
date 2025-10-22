@@ -2,7 +2,6 @@ from typing import Annotated
 
 from llama_index.core.callbacks import TokenCountingHandler
 from llama_index.postprocessor.cohere_rerank import CohereRerank
-from opentelemetry.propagate import inject
 from pydantic import Field
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
@@ -28,9 +27,6 @@ class RerankingModelConfig(LiteLLMBase):
             prompt_tokens_costs_per_thousand=model_info["model_info"]["input_cost_per_token"] * 1000,
             completion_tokens_costs_per_thousand=0,
         )
-
-        default_headers = {}
-        inject(default_headers)
 
         reranking_service = CohereRerank(
             model=self.model_name, api_key=config.API_KEY.get_secret_value(), base_url=config.BASE_URL, top_n=self.top_n
