@@ -38,8 +38,10 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 class TableHeaderAnalysis(BaseModel):
     """LLM response for table header structure analysis."""
 
-    num_header_rows: int = Field(description="Number of header rows in the table (0 if no header, 1-3 typical range)")
-    reasoning: str = Field(description="Brief explanation for the determined number of header rows")
+    num_header_rows: Annotated[
+        int, Field(description="Number of header rows in the table (0 if no header, 1-3 typical range)")
+    ]
+    reasoning: Annotated[str, Field(description="Brief explanation for the determined number of header rows")]
 
 
 @dataclass
