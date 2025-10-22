@@ -325,9 +325,6 @@ services:
       -ngl 99
       --no-context-shift
     restart: always
-    depends_on:
-      huggingface-text-embedding-inference:
-        condition: service_healthy
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8184/health" ]
       timeout: 10s

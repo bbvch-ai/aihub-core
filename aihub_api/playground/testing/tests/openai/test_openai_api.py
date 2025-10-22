@@ -1,5 +1,10 @@
 import pytest
 import pytest_asyncio
+from asgi_lifespan import LifespanManager
+from httpx import ASGITransport, AsyncClient
+
+from aihub_api.routes.openai.OpenaiController import OpenaiController
+from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
@@ -7,15 +12,10 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
     DangerousDevelopmentOnlyIdentityProvider,
 )
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
-from asgi_lifespan import LifespanManager
-from httpx import ASGITransport, AsyncClient
-
-from aihub_api.routes.openai.OpenaiController import OpenaiController
-from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
 MODELS_ENDPOINT = "/api/v1/openai/models"
-CHAT_MODEL = "local/qwen3-small"
+CHAT_MODEL = "local/qwen-2.5-multimodal-small"
 EMBEDDING_MODEL = "local/qwen-embedding"
 
 

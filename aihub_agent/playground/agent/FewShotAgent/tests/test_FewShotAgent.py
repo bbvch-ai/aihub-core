@@ -1,4 +1,15 @@
 import pytest
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from pytest_bdd import given, parsers, scenarios, then, when
+
+from aihub_agent.agents.FewShotAgent.FewShotAgent import FewShotAgent
+from aihub_agent.agents.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
+from aihub_agent.agents.FewShotAgent.events.FewShotEvent import FewShotEvent
+from aihub_agent.agents.FewShotAgent.events.FewShotStandaloneQuestionCondenserEvent import (
+    FewShotStandaloneQuestionCondenserEvent,
+)
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from aihub_agent.steps.prompting.few_shot_step.FewShotStepConfig import FewShotStepConfig
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
@@ -11,17 +22,6 @@ from aihub_lib.nats.events.guard.AgentSuitabilityAcceptEvent import AgentSuitabi
 from aihub_lib.nats.events.guard.GuardRejectionEvent import GuardRejectionEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.logging.logger import enable_logging
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from pytest_bdd import given, parsers, scenarios, then, when
-
-from aihub_agent.agents.FewShotAgent.events.FewShotEvent import FewShotEvent
-from aihub_agent.agents.FewShotAgent.events.FewShotStandaloneQuestionCondenserEvent import (
-    FewShotStandaloneQuestionCondenserEvent,
-)
-from aihub_agent.agents.FewShotAgent.FewShotAgent import FewShotAgent
-from aihub_agent.agents.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from aihub_agent.steps.prompting.few_shot_step.FewShotStepConfig import FewShotStepConfig
 
 scenarios("features/few_shot_agent.feature")
 
@@ -42,7 +42,7 @@ def self_hosted_llm_config():
     """
     Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
     """
-    return LLMConfig(model_name="local/qwen3-small")
+    return LLMConfig(model_name="local/qwen-2.5-multimodal-small")
 
 
 @pytest.fixture
