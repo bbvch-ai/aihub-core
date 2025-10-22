@@ -1,14 +1,14 @@
 import io
 
 import pytest
-from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
-    DangerousDevelopmentOnlyAuthSettings,
-)
 from fastapi import UploadFile
 from pydub import AudioSegment
 from pydub.generators import Sine
 
 from aihub_api.audio.AudioChunkingService import AudioChunkingService
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 
 
 @pytest.fixture
@@ -126,7 +126,7 @@ async def test_full_stt_with_chunking(create_test_audio, monkeypatch):
 
     # Mock the model names by type
     async def mock_model_names(*args, **kwargs):
-        return ["transcribe"]
+        return ["transcription"]
 
     # Test the service
     from aihub_api.routes.openai.OpenaiService import OpenaiService
@@ -138,7 +138,7 @@ async def test_full_stt_with_chunking(create_test_audio, monkeypatch):
             result = await OpenaiService.stt(
                 file=large_file,
                 user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
-                model_name="transcribe",
+                model_name="transcription",
                 language="en",
                 prompt=None,
                 response_format="json",

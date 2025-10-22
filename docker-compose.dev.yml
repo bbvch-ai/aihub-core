@@ -16,7 +16,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master:/data
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9333/dir/status"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9333/dir/status" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -59,7 +59,7 @@ services:
       - seaweedfs-master
       - seaweedfs-volume
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -73,7 +73,7 @@ services:
       - "9000:9000"
     volumes:
       - ./configs/seaweedfs/s3-entrypoint.sh:/usr/local/bin/s3-entrypoint.sh:ro
-    entrypoint: ["/bin/sh", "/usr/local/bin/s3-entrypoint.sh"]
+    entrypoint: [ "/bin/sh", "/usr/local/bin/s3-entrypoint.sh" ]
     environment:
       # S3 Authentication
       SEAWEEDFS_S3_USER: ${S3_STORAGE_ACCESS_KEY}
@@ -90,7 +90,7 @@ services:
       seaweedfs-filer:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/status"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/status" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -229,7 +229,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/ferretdb-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -523,7 +523,7 @@ services:
       # Audio
       AUDIO_STT_ENGINE: 'openai'
       AUDIO_TTS_ENGINE: 'openai'
-      AUDIO_STT_MODEL: 'transcribe'
+      AUDIO_STT_MODEL: 'transcription'
       AUDIO_TTS_MODEL: 'speech'
       AUDIO_TTS_VOICE: 'alloy'
 
