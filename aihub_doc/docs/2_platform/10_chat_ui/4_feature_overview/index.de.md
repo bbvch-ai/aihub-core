@@ -1,34 +1,34 @@
 ---
 title: Funktionsübersicht
 index: 4
-source_sha: "982576e819005e9f1d4e19edc63ae277d8f56c0f9c3a29d4a23b6127a1685dfb"
+source_sha: 982576e819005e9f1d4e19edc63ae277d8f56c0f9c3a29d4a23b6127a1685dfb
 ---
 
 # Funktionsübersicht
 
 Durch die Integration von Open WebUI erbt der Swiss AI Hub eine umfassende Funktionspalette, die von einer aktiven
-Open-Source-Community entwickelt und verfeinert wurde. Dieser Katalog dokumentiert die wichtigsten Funktionen, die über die
-Chat-Oberfläche verfügbar sind, und zeigt die Breite der Funktionalität, die Unternehmen ohne individuelle
+Open-Source-Community entwickelt und verfeinert wurde. Dieser Katalog dokumentiert die wichtigsten Funktionen, die über
+die Chat-Oberfläche verfügbar sind, und zeigt die Breite der Funktionalität, die Unternehmen ohne individuelle
 Entwicklungsinvestitionen erhalten.
 
 ## Kern-Chat-Funktionen
 
-Die Grundlage der Oberfläche bietet eine hochentwickelte konversationelle KI-Interaktion, die modernen Benutzererwartungen
-entspricht.
+Die Grundlage der Oberfläche bietet eine hochentwickelte konversationelle KI-Interaktion, die modernen
+Benutzererwartungen entspricht.
 
 **Asynchrones Streaming**: Nachrichten werden in Echtzeit gestreamt, während die KI Antworten generiert, was sofortiges
 Feedback liefert und es Benutzern ermöglicht, mit dem Lesen zu beginnen, bevor die Generierung abgeschlossen ist. Dieser
 Streaming-Ansatz schafft reaktionsschnelle, ansprechende Interaktionen, anstatt Benutzern während der Verarbeitung leere
 Bildschirme zu präsentieren.
 
-**Mehrstufige Konversationen**: Die Oberfläche behält den Konversationskontext über mehrere Stufen hinweg bei, was natürliche
-Dialogmuster ermöglicht. Benutzer können Folgefragen stellen, Klarstellungen anfordern oder auf früheren
+**Mehrstufige Konversationen**: Die Oberfläche behält den Konversationskontext über mehrere Stufen hinweg bei, was
+natürliche Dialogmuster ermöglicht. Benutzer können Folgefragen stellen, Klarstellungen anfordern oder auf früheren
 Austauschen aufbauen, ohne den Kontext für jede Nachricht neu herstellen zu müssen.
 
-**Nachrichtenverwaltung**: Benutzer können vorherige Nachrichten bearbeiten, um Anfragen zu verfeinern, Nachrichten löschen,
-um irrelevante Inhalte zu entfernen, oder Antworten neu generieren, um alternative KI-Ausgaben zu erkunden. Diese
-Flexibilität unterstützt die iterative Verfeinerung von Interaktionen, anstatt perfekte Anfragen im ersten Versuch zu
-erfordern.
+**Nachrichtenverwaltung**: Benutzer können vorherige Nachrichten bearbeiten, um Anfragen zu verfeinern, Nachrichten
+löschen, um irrelevante Inhalte zu entfernen, oder Antworten neu generieren, um alternative KI-Ausgaben zu erkunden.
+Diese Flexibilität unterstützt die iterative Verfeinerung von Interaktionen, anstatt perfekte Anfragen im ersten Versuch
+zu erfordern.
 
 **Konversationsorganisation**: Die Oberfläche bietet eine Konversationskategorisierung durch Tags, eine durchsuchbare
 Konversationshistorie und Archivierungsfunktionen. Benutzer können organisierte Bibliotheken von KI-Interaktionen
@@ -41,20 +41,20 @@ entscheidender Bedeutung ist.
 
 ## Multimodale Interaktion
 
-Über Text hinaus unterstützt die Oberfläche vielfältige Interaktionsmodalitäten, die unterschiedlichen Benutzerpräferenzen und
-Anwendungsfällen gerecht werden.
+Über Text hinaus unterstützt die Oberfläche vielfältige Interaktionsmodalitäten, die unterschiedlichen
+Benutzerpräferenzen und Anwendungsfällen gerecht werden.
 
 **Spracheingabe**: Benutzer können Nachrichten diktieren, anstatt zu tippen, was einen Freisprechbetrieb unterstützt und
 Benutzern entgegenkommt, die Sprachinteraktion bevorzugen. Die Spracheingabe integriert sich nahtlos in textbasierte
 Konversationen und ermöglicht einen Moduswechsel, wenn sich Kontexte ändern.
 
-**Text-to-Speech**: KI-Antworten können als Sprache ausgegeben werden, was Barrierefreiheitsanforderungen unterstützt und die
-audiobasierte Konsumation von KI-generierten Inhalten ermöglicht. Diese Funktion kommt sehbehinderten Nutzern und
-Szenarien zugute, in denen die Audiokonsumation dem Lesen vorzuziehen ist.
+**Text-to-Speech**: KI-Antworten können als Sprache ausgegeben werden, was Barrierefreiheitsanforderungen unterstützt
+und die audiobasierte Konsumation von KI-generierten Inhalten ermöglicht. Diese Funktion kommt sehbehinderten Nutzern
+und Szenarien zugute, in denen die Audiokonsumation dem Lesen vorzuziehen ist.
 
-**Dokumenteninteraktion**: Benutzer können Dokumente direkt in Konversationen hochladen, Fragen zum Dokumenteninhalt stellen
-oder eine Dokumentenanalyse anfordern. Die Oberfläche verarbeitet vielfältige Dokumentformate – PDFs, Office-Dokumente,
-Textdateien – und extrahiert Inhalte für die KI-Verarbeitung.
+**Dokumenteninteraktion**: Benutzer können Dokumente direkt in Konversationen hochladen, Fragen zum Dokumenteninhalt
+stellen oder eine Dokumentenanalyse anfordern. Die Oberfläche verarbeitet vielfältige Dokumentformate – PDFs,
+Office-Dokumente, Textdateien – und extrahiert Inhalte für die KI-Verarbeitung.
 
 **Bildverarbeitung**: Für KI-Modelle, die Bildverarbeitungsfähigkeiten unterstützen, können Benutzer Bilder in
 Konversationen einbinden und Bildanalyse, -beschreibung oder -verarbeitung anfordern. Die Oberfläche übernimmt den
@@ -72,9 +72,9 @@ erfolgt nahtlos ohne Anwendungsänderungen.
 Kreativitätskontrolle, Token-Limits für die Antwortlänge, Anwesenheitsstrafen zur Reduzierung von Wiederholungen. Diese
 Kontrollen ermöglichen die Feinabstimmung des KI-Verhaltens für spezifische Anwendungsfälle.
 
-**Modell-Presets**: Organisationen können Modell-Presets definieren, die optimale Konfigurationen für gängige Anwendungsfälle
-erfassen – kreatives Schreiben mit hoher Temperatur, technische Dokumentation mit niedriger Temperatur, Rapid
-Prototyping mit kürzeren Kontexten. Benutzer wählen Presets aus, anstatt Parameter manuell zu konfigurieren.
+**Modell-Presets**: Organisationen können Modell-Presets definieren, die optimale Konfigurationen für gängige
+Anwendungsfälle erfassen – kreatives Schreiben mit hoher Temperatur, technische Dokumentation mit niedriger Temperatur,
+Rapid Prototyping mit kürzeren Kontexten. Benutzer wählen Presets aus, anstatt Parameter manuell zu konfigurieren.
 
 **Modellinformationen**: Die Oberfläche zeigt Modellfähigkeiten, Kontextfenstergrößen und Leistungsmerkmale an, um
 Benutzern bei der Auswahl geeigneter Modelle für ihre Anforderungen zu helfen. Diese Transparenz unterstützt eine
@@ -104,12 +104,12 @@ Nutzung der Wissensbasis über integrierte Verwaltungsoberflächen überwachen.
 Die Oberfläche unterstützt kollaborative Anwendungsfälle und den Wissensaustausch in Benutzergemeinschaften.
 
 **Konversationsfreigabe**: Benutzer können Konversationen mit Kollegen teilen, was eine kollaborative KI-Interaktion
-ermöglicht. Geteilte Konversationen behalten den vollständigen Kontext bei, sodass Empfänger die
-Interaktionshistorie überprüfen und Konversationen fortsetzen können.
+ermöglicht. Geteilte Konversationen behalten den vollständigen Kontext bei, sodass Empfänger die Interaktionshistorie
+überprüfen und Konversationen fortsetzen können.
 
-**Annotation und Feedback**: Benutzer können KI-Antworten mit Feedback versehen – Antworten als hilfreich oder problematisch
-kennzeichnen, Korrekturhinweise geben oder kontextbezogene Notizen hinzufügen. Dieses Feedback unterstützt die
-kontinuierliche Verbesserung von KI-Systemen.
+**Annotation und Feedback**: Benutzer können KI-Antworten mit Feedback versehen – Antworten als hilfreich oder
+problematisch kennzeichnen, Korrekturhinweise geben oder kontextbezogene Notizen hinzufügen. Dieses Feedback unterstützt
+die kontinuierliche Verbesserung von KI-Systemen.
 
 **Community-Funktionen**: Für Bereitstellungen, die eine Community-Interaktion ermöglichen, können Benutzer an
 Bestenlisten teilnehmen, die produktive KI-Nutzung anerkennen, besonders effektive Prompts oder Interaktionsmuster
@@ -128,24 +128,25 @@ Zugriff auf bestimmte Modelle, Funktionen oder administrative Funktionen steuern
 angemessene Delegation bei gleichzeitiger Wahrung der Sicherheitsgrenzen.
 
 **Benutzerverwaltung**: Administrative Oberflächen bieten Funktionen zur Benutzerbereitstellung,
-Authentifizierungskonfiguration und Zugriffsaufhebung. Die Integration mit Unternehmensauthentifizierungssystemen – OAuth,
-LDAP – ermöglicht eine zentrale Benutzerverwaltung.
+Authentifizierungskonfiguration und Zugriffsaufhebung. Die Integration mit Unternehmensauthentifizierungssystemen –
+OAuth, LDAP – ermöglicht eine zentrale Benutzerverwaltung.
 
 **API-Schlüsselverwaltung**: Für den programmatischen Zugriff können Administratoren API-Schlüssel generieren und
-verwalten, die externen Systemen die Interaktion mit Chat-Funktionen ermöglichen. API-Schlüsselberechtigungen können
-auf bestimmte Modelle oder Operationen beschränkt werden, wodurch die Prinzipien des geringsten Privilegs implementiert
+verwalten, die externen Systemen die Interaktion mit Chat-Funktionen ermöglichen. API-Schlüsselberechtigungen können auf
+bestimmte Modelle oder Operationen beschränkt werden, wodurch die Prinzipien des geringsten Privilegs implementiert
 werden.
 
-**Audit-Protokollierung**: Umfassende Protokollierung erfasst Benutzeraktivitäten, Modellinteraktionen und administrative
-Operationen und erstellt Audit-Trails zur Unterstützung von Compliance-Anforderungen und Sicherheitsüberwachung.
+**Audit-Protokollierung**: Umfassende Protokollierung erfasst Benutzeraktivitäten, Modellinteraktionen und
+administrative Operationen und erstellt Audit-Trails zur Unterstützung von Compliance-Anforderungen und
+Sicherheitsüberwachung.
 
 ## Verbesserungen der Benutzererfahrung
 
 Zahlreiche Verfeinerungen unterstützen produktive, effiziente Benutzerinteraktionen.
 
 **Responsives Design**: Die Oberfläche passt sich an verschiedene Bildschirmgrößen und Geräte an – Desktop, Tablet,
-Mobilgerät – und behält Funktionalität und Benutzerfreundlichkeit über verschiedene Formfaktoren hinweg bei. Benutzer können
-Konversationen auf dem Desktop beginnen und nahtlos auf mobilen Geräten fortsetzen.
+Mobilgerät – und behält Funktionalität und Benutzerfreundlichkeit über verschiedene Formfaktoren hinweg bei. Benutzer
+können Konversationen auf dem Desktop beginnen und nahtlos auf mobilen Geräten fortsetzen.
 
 **Progressive Web App**: Die Oberfläche kann als Progressive Web App installiert werden und bietet native
 anwendungsähnliche Erfahrungen, einschließlich Offline-Fähigkeit, Push-Benachrichtigungen und Präsenz auf dem
@@ -175,24 +176,24 @@ Sequenzdiagramme, Zustandsautomaten –, die direkt in Konversationen gerendert 
 Systemdesign, Prozessdokumentation und visuelle Erklärung.
 
 **Pipeline-Framework**: Das Erweiterbarkeits-Framework ermöglicht die Integration von benutzerdefinierten
-Verarbeitungspipelines, Tools und Funktionen. Organisationen können die Chat-Funktionalität mit
-geschäftsspezifischen Operationen erweitern, ohne den Kern-Schnittstellencode zu ändern.
+Verarbeitungspipelines, Tools und Funktionen. Organisationen können die Chat-Funktionalität mit geschäftsspezifischen
+Operationen erweitern, ohne den Kern-Schnittstellencode zu ändern.
 
-**Web-Suchintegration**: Bei entsprechender Konfiguration können KI-Modelle auf Web-Suchfunktionen zugreifen, um aktuelle
-Informationen über die Trainingsdaten hinaus zu integrieren. Diese Funktion unterstützt Anfragen, die aktuelle
+**Web-Suchintegration**: Bei entsprechender Konfiguration können KI-Modelle auf Web-Suchfunktionen zugreifen, um
+aktuelle Informationen über die Trainingsdaten hinaus zu integrieren. Diese Funktion unterstützt Anfragen, die aktuelle
 Informationen oder eine Überprüfung anhand aktueller Quellen erfordern.
 
 ## Vorteile der Plattformintegration
 
 Organisationen, die den Swiss AI Hub implementieren, erhalten diese umfassenden Open WebUI-Funktionen sofort und ohne
 Entwicklungsaufwand. Darüber hinaus profitiert der Swiss AI Hub von standardmäßigen Update-Zyklen, wenn die Open
-WebUI-Community neue Funktionen hinzufügt – verbesserte Dokumentenverarbeitung, zusätzliche multimodale
-Funktionen, erweiterte Kollaborationstools.
+WebUI-Community neue Funktionen hinzufügt – verbesserte Dokumentenverarbeitung, zusätzliche multimodale Funktionen,
+erweiterte Kollaborationstools.
 
 Diese Merkmalsvererbung zeigt die Stärke der Open-Source-Integrationsstrategie: Organisationen erhalten ausgereifte,
 praxiserprobte Funktionalität, die von globalen Communities entwickelt wurde, erweitert um unternehmensspezifische
-Funktionen (Quellenattribution, Ausführungsverfolgung), die Geschäftsanforderungen über
-Consumer-Chat-Anwendungen hinaus erfüllen.
+Funktionen (Quellenattribution, Ausführungsverfolgung), die Geschäftsanforderungen über Consumer-Chat-Anwendungen hinaus
+erfüllen.
 
 Die umfassende Funktionspalette, kombiniert mit den Erweiterungen des Swiss AI Hub, stellt sicher, dass Benutzer
 erstklassige Chat-Schnittstellen erleben, die sowohl die Erwartungen an die Konversationsfreundlichkeit als auch die
