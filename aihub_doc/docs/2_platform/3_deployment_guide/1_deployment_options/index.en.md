@@ -7,7 +7,7 @@ index: 1
 
 ## Overview
 
-The AI-Hub platform is designed to meet the stringent data sovereignty, security, and compliance requirements of Swiss private and public sector organizations. Our deployment architecture balances **complete data isolation** with **operational efficiency** through a unique multi-instance model.
+The AI-Hub platform is designed to meet the stringent data sovereignty, security, and compliance requirements of Swiss private and public sector organizations. Our deployment architecture balances **complete data isolation** with **operational efficiency** through a multi-instance model.
 
 ## Core Deployment Philosophy: Fully Isolated Instances with Shared LLM Backend
 
@@ -24,12 +24,12 @@ Unlike traditional multi-tenant SaaS platforms where customers share the same ap
 
 ### Shared Infrastructure: LLM Backend Resources
 
-While each tenant operates a **fully isolated instance** (including their own LiteLLM proxy), certain **backend LLM resources are shared** across tenants to optimize costs and infrastructure:
+While each tenant operates a **fully isolated instance** (including their own LiteLLM proxy), certain **backend LLM resources can be shared** across tenants to optimize costs and infrastructure:
 
-**Shared LLM Resources**:
+**Optionally shared Resources**:
 - **API Credentials**: Shared Azure OpenAI subscriptions, Google Gemini API keys (accessed via tenant-specific LiteLLM proxies)
-- **Self-Hosted Models**: Centralized vLLM, llama.cpp, or Ollama deployments serving multiple tenants
-- **Authentication (Optional)**: Central Azure AD or Keycloak for organizations managing multiple tenant instances
+- **Self-Hosted Models**: Centralized vLLM, llama.cpp, or HF-TEI deployments serving multiple tenants
+- **Authentication**: Central Azure AD or Keycloak for organizations managing multiple tenant instances
 
 **Why This Hybrid Approach?**
 - **Cost Efficiency**: Share expensive LLM API subscriptions and GPU infrastructure across tenants
@@ -42,7 +42,7 @@ While each tenant operates a **fully isolated instance** (including their own Li
 
 ## Why This Architecture?
 
-This deployment model is specifically designed for Swiss public sector requirements:
+This deployment model is specifically designed for organizations with strict data sovereignty and compliance needs.
 
 ### 1. Complete Data Sovereignty
 
@@ -51,8 +51,7 @@ Each tenant's data never leaves their isolated instance. There is no shared data
 **Compliance Coverage**:
 - ✅ Swiss Data Protection Law (revDSG)
 - ✅ GDPR requirements for data isolation
-- ✅ Canton-specific data residency regulations
-- ✅ Public sector security standards
+- ✅ Swiss public sector security standards
 
 ### 2. Independent Configuration and Customization
 
@@ -85,7 +84,7 @@ Each instance can be configured independently:
 
 **Infrastructure Components per Tenant**:
 ```
-Tenant Instance (e.g., Stadt Zug)
+Tenant Instance
 ├── Application Layer
 │   ├── API Service (FastAPI + WebSocket gateway)
 │   ├── Web Interface (Nuxt.js frontend)
@@ -104,7 +103,7 @@ Tenant Instance (e.g., Stadt Zug)
 │   │   ├── Model routing configuration
 │   │   ├── Rate limiting
 │   │   └── Version control
-│   └── Presidio (PII anonymization - optional)
+│   └── Presidio (PII anonymization)
 │
 ├── Observability Layer
 │   ├── Phoenix (AI tracing and evaluation)
@@ -128,7 +127,7 @@ Shared LLM Backend Resources
 ├── Self-Hosted Model Infrastructure
 │   ├── vLLM deployment (GPU cluster)
 │   ├── llama.cpp servers
-│   └── Ollama instances
+│   └── HF-TEI instances
 │
 └── Optional Shared Services
     ├── Central Authentication (Azure AD, Keycloak)
