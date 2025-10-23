@@ -2,7 +2,7 @@
 
 **Date**: 2025-10-23 (Updated)
 **Analysis Scope**: KI-Plattform SSGI Anforderungskatalog vs. Current AI-Hub Documentation
-**Documentation Coverage**: ~72% complete
+**Documentation Coverage**: ~76% complete
 
 **Recent Updates**:
 - ✅ **Deployment Options** documentation completed (2025-10-23)
@@ -25,6 +25,10 @@
   - Comprehensive 385-line documentation covering VM snapshots and component-level backups
   - Swiss cloud and on-premise unified strategy
   - Full disaster recovery, PITR, and compliance procedures
+- ✅ **Updates and Maintenance** documentation completed (2025-10-23)
+  - Comprehensive 496-line documentation covering core and customer code updates
+  - Separate core platform and customer code versioning strategies
+  - Update procedures, rollback strategies, and coordination workflows
 
 ---
 
@@ -137,22 +141,21 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 | 2.1.10 | Penetrationstests | ❌ MISSING | Penetration testing procedures not documented | MEDIUM |
 | 2.1.11 | Explainable AI | ✅ COVERED | Transparency and tracing well documented | - |
 | 2.1.12 | Robustheit | ✅ COVERED | Error handling + systematic evaluation framework for quality testing documented | - |
-| 2.1.13 | Wartung | ❌ MISSING | Updates and maintenance procedures are STUB (3 lines) | HIGH |
+| 2.1.13 | Wartung | ✅ COVERED | Comprehensive updates and maintenance documentation (496 lines) covering core and customer code update procedures | - |
 | 2.1.14 | Skalierbarkeit | ✅ COVERED | Duplicate of 2.1.4 | - |
 | 2.1.15 | Monitoring | ✅ COVERED | Comprehensive monitoring documentation (SigNoz, OpenTelemetry) | - |
 | 2.1.16 | Microsoft Copilot | ❌ MISSING | Copilot license synergy not documented | LOW |
 | 2.1.17 | Modularität | ✅ COVERED | Modular architecture well documented | - |
 
 **Summary - 2.1.x (General Non-Functional)**:
-- ✅ Covered: 9/17 (53%)
+- ✅ Covered: 10/17 (59%)
 - ⚠️ Partial: 3/17 (18%)
-- ❌ Missing: 5/17 (29%)
+- ❌ Missing: 4/17 (24%)
 
 **Key Gaps**:
-1. **Updates and maintenance procedures** (2.1.13) - CRITICAL
-2. **Malware scanning during ingestion** (2.1.3) - HIGH
-3. **TLS/SSL implementation details** (2.1.2) - HIGH
-4. **Bias monitoring and model drift** (2.1.6) - MEDIUM
+1. **Malware scanning during ingestion** (2.1.3) - HIGH
+2. **TLS/SSL implementation details** (2.1.2) - HIGH
+3. **Bias monitoring and model drift** (2.1.6) - MEDIUM
 
 ---
 
@@ -193,7 +196,7 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 | 2.3.6 | Logging | ✅ COVERED | Comprehensive logging documentation | - |
 | 2.3.7 | GUI (Responsive/Mobile) | ⚠️ PARTIAL | Web UI documented, mobile optimization not explicit | LOW |
 | 2.3.8 | Services (99.5% Uptime) | ❌ MISSING | SLA and uptime guarantees not documented | MEDIUM |
-| 2.3.9 | Wartung | ❌ MISSING | Maintenance procedures are STUB (3 lines) | HIGH |
+| 2.3.9 | Wartung | ✅ COVERED | Comprehensive updates and maintenance documentation (496 lines) covering core and customer code update procedures | - |
 | 2.3.10 | Zugriffsrechte (AD/OIDC) | ✅ COVERED | OAuth 2.0, OIDC, SAML comprehensively documented | - |
 | 2.3.11 | LLM-Infrastruktur (Isolation) | ✅ COVERED | Per-tenant LiteLLM proxy architecture with full data isolation documented in deployment_options | - |
 | 2.3.12 | LLM-Infrastruktur (Kubernetes) | ✅ COVERED | Containerized deployment and Kubernetes documented | - |
@@ -208,21 +211,21 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 | 2.3.21 | Integration (eGov Portale) | ⚠️ PARTIAL | API integration documented, but specific eGov portal integration not covered | HIGH |
 
 **Summary - 2.3.x (Technology & Hosting)**:
-- ✅ Covered: 8/21 (38%) - **Improved from 24%**
+- ✅ Covered: 9/21 (43%) - **Improved from 24%**
 - ⚠️ Partial: 9/21 (43%)
-- ❌ Missing: 4/21 (19%)
+- ❌ Missing: 3/21 (14%)
 
 **Key Gaps** (Updated):
-1. **Production configuration and maintenance** (2.3.9) - HIGH
-2. **eGovernment portal integration** (2.3.21) - HIGH
-3. **WCAG compliance** (2.3.3) - MEDIUM
-4. **SLA documentation** (2.3.8) - MEDIUM
+1. **eGovernment portal integration** (2.3.21) - HIGH
+2. **WCAG compliance** (2.3.3) - MEDIUM
+3. **SLA documentation** (2.3.8) - MEDIUM
 
 **Recently Completed**:
 - ✅ Multi-tenant architecture (2.3.14) - Per-tenant instance model documented
 - ✅ Swiss cloud hosting (2.3.1) - Comprehensive coverage
 - ✅ On-premise hosting (2.3.2) - Full documentation
 - ✅ LLM infrastructure isolation (2.3.11) - Architecture clarified
+- ✅ Updates and maintenance (2.3.9) - Comprehensive procedures documented
 
 ---
 
@@ -253,62 +256,59 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 
 ### CRITICAL GAPS (Need Immediate Attention)
 
-**Updated 2025-10-23**:
+**✅ ALL CRITICAL GAPS RESOLVED** (2025-10-23):
 - ✅ Multi-tenant architecture requirement now RESOLVED
 - ✅ Disaster Recovery & Backup requirement now RESOLVED
+- ✅ Updates & Maintenance Procedures now RESOLVED
 
-1. **Updates & Maintenance Procedures** (2.1.13, 2.3.9) - **HIGHEST PRIORITY**
-   - Only STUB (3 lines) exists
-   - Critical for operations
-   - **Action**: Expand `deployment_guide/updates_and_maintenance/`
+**No remaining CRITICAL gaps.**
 
 ### HIGH PRIORITY GAPS
 
-4. **Security Details**
+1. **Security Details**
    - Malware scanning during ingestion (1.1.15, 2.1.3)
    - TLS/SSL implementation (2.1.2)
    - Prompt injection protection (1.1.13)
    - Anonymization details (1.1.14)
-   - LLM infrastructure isolation (2.3.11)
 
-5. **LLM Training & Management**
+2. **LLM Training & Management**
    - Automated retraining (1.1.8)
    - Feedback loop to training (1.1.9)
    - Model versioning and rollback (1.1.10, 2.3.13)
 
-6. **Compliance & Data Protection**
+3. **Compliance & Data Protection**
    - GDPR/DSG detailed procedures (2.2.1, 2.2.7)
    - User data deletion procedures (1.2.17, 2.2.7)
 
-7. **External System Integrations**
+4. **External System Integrations**
    - Log aggregation systems (ELK, Grafana, Splunk, Datadog) (1.1.5)
    - eGovernment portal integration (2.3.21)
 
 ### MEDIUM PRIORITY GAPS
 
-8. **Operational Features**
+5. **Operational Features**
    - Voice/audio input (1.2.5)
    - Swiss German transcription (1.2.20)
    - Confidence scores display (1.1.19)
    - Document analysis details (1.1.21)
    - A/B testing (2.3.18)
 
-9. **Certifications & Standards**
+6. **Certifications & Standards**
    - ISO certifications documentation (2.2.2-5)
    - WCAG 2.1 AA compliance (2.3.3)
    - SLA documentation (2.3.8)
 
-10. **Quality & Ethics**
+7. **Quality & Ethics**
     - Bias monitoring (2.1.6)
 
 ### LOW PRIORITY GAPS
 
-11. **User Experience Enhancements**
+8. **User Experience Enhancements**
     - Chat export/print (1.2.10)
     - Session deletion features (1.2.16)
     - White labeling details (1.2.21)
 
-12. **Documentation & Training**
+9. **Documentation & Training**
     - Reference projects (2.4.1, 2.4.5)
     - Training offerings (2.4.6)
     - Support model (2.4.2)
@@ -334,13 +334,16 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
    - ✅ Swiss compliance (revDSG) and 3-2-1 backup rule
    - Reference: 2.1.9
 
-**NOW PRIORITIZE**:
-
-3. **Document Updates & Maintenance** - **HIGHEST PRIORITY**
-   - Expand `platform/deployment/updates_maintenance.md`
+3. ~~**Document Updates & Maintenance**~~ - **DONE**
+   - ✅ Comprehensive updates and maintenance documentation (496 lines)
+   - ✅ Core platform update procedures (semantic versioning, release process)
+   - ✅ Customer code update procedures (independent versioning, core version pinning)
+   - ✅ Update coordination, compatibility testing, and rollback strategies
    - Reference: 2.1.13, 2.3.9
 
-3. **Document Security Implementation Details**
+**NOW PRIORITIZE**:
+
+4. **Document Security Implementation Details**
    - Create `platform/security/data_encryption.md`
    - Create `platform/security/malware_prevention.md`
    - Expand `platform/security/authentication_authorization.md` with TLS details
@@ -348,37 +351,37 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 
 ### Short-Term (1-2 Months)
 
-4. **Document LLM Training & Management**
+5. **Document LLM Training & Management**
    - Create `platform/language_models/retraining.md`
    - Create `platform/language_models/model_versioning.md`
    - Document feedback-to-training pipeline
    - Reference: 1.1.8, 1.1.9, 1.1.10
 
-5. **Document Compliance Procedures**
+6. **Document Compliance Procedures**
    - Expand `platform/compliance/gdpr.md`
    - Expand `platform/compliance/swiss_dsg.md`
    - Create `platform/compliance/data_subject_requests.md`
    - Reference: 2.2.1, 2.2.7
 
-6. **Document External Integrations**
+7. **Document External Integrations**
    - Create `platform/operations/log_aggregation.md`
    - Create `platform/integrations/egov_portals.md`
    - Reference: 1.1.5, 2.3.21
 
 ### Medium-Term (3-6 Months)
 
-7. **Implement & Document Audio/Voice Features**
+8. **Implement & Document Audio/Voice Features**
    - Document voice input capabilities
    - Document Swiss German transcription
    - Reference: 1.2.5, 1.2.20
 
-8. **Document Quality Assurance**
+9. **Document Quality Assurance**
    - Create `platform/quality/bias_monitoring.md`
    - Create `platform/quality/hallucination_management.md`
    - Create `platform/quality/confidence_scores.md`
    - Reference: 1.1.16, 1.1.19, 2.1.6
 
-9. **Document Certifications & Standards**
+10. **Document Certifications & Standards**
    - Create `ecosystem/certifications.md`
    - Document ISO certification status
    - Document WCAG compliance
@@ -386,7 +389,7 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 
 ### Long-Term (6+ Months)
 
-10. **Enhance Documentation with Case Studies**
+11. **Enhance Documentation with Case Studies**
     - Add reference projects
     - Document public sector experience
     - Create customer success stories
@@ -402,21 +405,21 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 |----------|------------|-----------------|--------------|-----------------|
 | 1.1.x Admin Functional | 23         | 7 (30%)         | 12 (52%)     | 4 (17%)         |
 | 1.2.x User Functional | 20         | 8 (40%)         | 9 (45%)      | 3 (15%)         |
-| 2.1.x General Non-Functional | 17         | 9 (53%)         | 3 (18%)      | 5 (29%)         |
+| 2.1.x General Non-Functional | 17         | **10 (59%)** ⬆️ | 3 (18%)      | **4 (24%)** ⬇️  |
 | 2.2.x Regulatory | 8          | 1 (13%)         | 3 (38%)      | 4 (50%)         |
-| 2.3.x Technology & Hosting | 21         | **8 (38%)** ⬆️  | **9 (43%)**  | **4 (19%)** ⬇️  |
+| 2.3.x Technology & Hosting | 21         | **9 (43%)** ⬆️  | 9 (43%)      | **3 (14%)** ⬇️  |
 | 2.4.x Service | 6          | 0 (0%)          | 5 (83%)      | 1 (17%)         |
-| **TOTAL** | **95**     | **33 (35%)** ⬆️ | **42 (44%)** | **20 (21%)** ⬇️ |
+| **TOTAL** | **95**     | **35 (37%)** ⬆️ | **41 (43%)** | **19 (20%)** ⬇️ |
 
 ### Priority Distribution of Gaps
 
 | Priority | Count | Percentage |
 |----------|-------|------------|
-| CRITICAL | 1 | 1% |
-| HIGH | 12 | 13% |
+| CRITICAL | 0 | 0% |
+| HIGH | 11 | 12% |
 | MEDIUM | 22 | 23% |
 | LOW | 12 | 13% |
-| Covered | 47 | 50% |
+| Covered | 50 | 53% |
 
 ---
 
@@ -431,19 +434,19 @@ The AI-Hub platform documentation is **comprehensive in core areas** (architectu
 - Comprehensive observability
 
 **Critical Weaknesses**:
-- ~~Incomplete operational procedures (backup, disaster recovery, maintenance)~~ ✅ **BACKUP/RECOVERY RESOLVED** (2025-10-23)
-- Incomplete maintenance procedures (only remaining critical gap)
+- ~~Incomplete operational procedures (backup, disaster recovery, maintenance)~~ ✅ **ALL RESOLVED** (2025-10-23)
 - ~~Missing multi-tenant architecture documentation~~ ✅ **RESOLVED** (2025-10-23)
 - Insufficient security implementation details (TLS, malware, data encryption)
 - Limited compliance procedure documentation
 - Missing external system integration guides
 
 **Progress Update (2025-10-23)**:
-- ✅ Multi-tenant architecture documented (+14% coverage improvement in Technology & Hosting category)
+- ✅ Multi-tenant architecture documented (+19% coverage improvement in Technology & Hosting category)
 - ✅ Deployment options (Swiss cloud, on-premise, hybrid) fully covered
 - ✅ LLM infrastructure isolation architecture clarified
 - ✅ Backup and recovery documented (+6% coverage improvement in General Non-Functional category)
-- Overall completion increased from ~70% to **~74%**
-- **Only 1 CRITICAL gap remaining** (down from 3)
+- ✅ Updates and maintenance documented (+6% coverage improvement in both General Non-Functional and Technology & Hosting categories)
+- Overall completion increased from ~70% to **~76%**
+- **NO CRITICAL gaps remaining** (down from 3) - all critical operational procedures now documented
 
-**Estimated Work to Close Remaining Gaps**: 2-4 months of focused documentation effort, prioritizing maintenance procedures first.
+**Estimated Work to Close Remaining Gaps**: 2-3 months of focused documentation effort, prioritizing security implementation details.
