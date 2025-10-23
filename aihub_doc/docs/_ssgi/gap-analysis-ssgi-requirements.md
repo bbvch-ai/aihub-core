@@ -9,6 +9,18 @@
   - Per-tenant deployment model with shared LLM backends documented
   - Swiss cloud and on-premise hosting options detailed
   - Architecture diagrams and security considerations added
+- ✅ **Cost Control** documentation completed (2025-10-23)
+  - Comprehensive cost tracking and visibility via LiteLLM
+  - Budget limits and rate limiting features documented
+  - Cost optimization strategies detailed
+- ✅ **Guards** documentation completed (2025-10-23)
+  - Real-time safety mechanisms for AI agents documented
+  - Four guard types detailed (Agent Description, Context Sufficient, Few-Shot, Sensitive Info)
+  - Implementation strategies and best practices covered
+- ✅ **Evaluations** documentation completed (2025-10-23)
+  - Systematic testing framework for agent quality documented
+  - Dataset creation and experiment workflow detailed
+  - Evaluation metrics and AI judges explained
 
 ---
 
@@ -41,10 +53,10 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 | 1.1.10 | Training Versionierung | ❌ MISSING | Model versioning and rollback documented (architecture), but training version tracking not detailed | MEDIUM |
 | 1.1.11 | Vordefinierte Antworten | ✅ COVERED | Agent workflow patterns support this | - |
 | 1.1.12 | Anpassungsfähigkeit | ⚠️ PARTIAL | Domain adaptation through custom agents/pipelines, but Swiss legal domain specifics not documented | MEDIUM |
-| 1.1.13 | Prompt Engineering (Security) | ⚠️ PARTIAL | Guards mentioned in `platform/language_models/` (STUB), needs expansion | HIGH |
+| 1.1.13 | Prompt Engineering (Security) | ⚠️ PARTIAL | Guards documented for output protection, but Presidio input anonymization still needed | MEDIUM |
 | 1.1.14 | Prompt Engineering (Anonymization) | ⚠️ PARTIAL | Anonymization features mentioned but not detailed | HIGH |
 | 1.1.15 | Verhinderung Malware | ❌ MISSING | No documentation on malware scanning during data ingestion | HIGH |
-| 1.1.16 | Halluzinationsmanagement | ⚠️ PARTIAL | Source attribution documented (chat_interface/), confidence scores not covered | MEDIUM |
+| 1.1.16 | Halluzinationsmanagement | ✅ COVERED | Source attribution + Context Sufficient Guard documented (prevents responses without sufficient knowledge) | - |
 | 1.1.17 | Analytics & Feedback | ✅ COVERED | Observability and feedback mechanisms documented | - |
 | 1.1.18 | Rechtssicherheit | ⚠️ PARTIAL | Source references covered, but legal compliance guarantees not addressed | MEDIUM |
 | 1.1.19 | Konfidenzwerte | ❌ MISSING | Confidence score display not documented | MEDIUM |
@@ -55,13 +67,13 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 
 **Summary - 1.1.x (Admin Perspective)**:
 - ✅ Covered: 7/23 (30%)
-- ⚠️ Partial: 13/23 (57%)
-- ❌ Missing: 3/23 (13%)
+- ⚠️ Partial: 12/23 (52%)
+- ❌ Missing: 4/23 (17%)
 
 **Key Gaps**:
 1. **LLM retraining automation and versioning** (1.1.8, 1.1.10)
 2. **Security: Malware prevention, prompt injection protection, anonymization** (1.1.13-15)
-3. **Confidence scores and hallucination management** (1.1.16, 1.1.19)
+3. **Confidence scores display** (1.1.19)
 4. **External log system integrations** (1.1.5)
 
 ---
@@ -120,7 +132,7 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 | 2.1.9 | Resilienz | ❌ MISSING | Disaster recovery procedures are STUB (6 lines) | HIGH |
 | 2.1.10 | Penetrationstests | ❌ MISSING | Penetration testing procedures not documented | MEDIUM |
 | 2.1.11 | Explainable AI | ✅ COVERED | Transparency and tracing well documented | - |
-| 2.1.12 | Robustheit | ⚠️ PARTIAL | Error handling documented, but robustness testing not detailed | LOW |
+| 2.1.12 | Robustheit | ✅ COVERED | Error handling + systematic evaluation framework for quality testing documented | - |
 | 2.1.13 | Wartung | ❌ MISSING | Updates and maintenance procedures are STUB (3 lines) | HIGH |
 | 2.1.14 | Skalierbarkeit | ✅ COVERED | Duplicate of 2.1.4 | - |
 | 2.1.15 | Monitoring | ✅ COVERED | Comprehensive monitoring documentation (SigNoz, OpenTelemetry) | - |
@@ -128,9 +140,9 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 | 2.1.17 | Modularität | ✅ COVERED | Modular architecture well documented | - |
 
 **Summary - 2.1.x (General Non-Functional)**:
-- ✅ Covered: 7/16 (44%)
-- ⚠️ Partial: 4/16 (25%)
-- ❌ Missing: 5/16 (31%)
+- ✅ Covered: 8/17 (47%)
+- ⚠️ Partial: 3/17 (18%)
+- ❌ Missing: 6/17 (35%)
 
 **Key Gaps**:
 1. **Disaster recovery and backup procedures** (2.1.9) - CRITICAL
@@ -288,7 +300,6 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 
 10. **Quality & Ethics**
     - Bias monitoring (2.1.6)
-    - Hallucination management (1.1.16)
 
 ### LOW PRIORITY GAPS
 
@@ -383,13 +394,13 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 
 | Category | Total Reqs | ✅ Covered | ⚠️ Partial | ❌ Missing |
 |----------|------------|-----------|-----------|-----------|
-| 1.1.x Admin Functional | 23 | 7 (30%) | 13 (57%) | 3 (13%) |
+| 1.1.x Admin Functional | 23 | 7 (30%) | 12 (52%) | 4 (17%) |
 | 1.2.x User Functional | 20 | 8 (40%) | 9 (45%) | 3 (15%) |
-| 2.1.x General Non-Functional | 16 | 7 (44%) | 4 (25%) | 5 (31%) |
+| 2.1.x General Non-Functional | 17 | 8 (47%) | 3 (18%) | 6 (35%) |
 | 2.2.x Regulatory | 8 | 1 (13%) | 3 (38%) | 4 (50%) |
 | 2.3.x Technology & Hosting | 21 | **8 (38%)** ⬆️ | **9 (43%)** | **4 (19%)** ⬇️ |
 | 2.4.x Service | 6 | 0 (0%) | 5 (83%) | 1 (17%) |
-| **TOTAL** | **94** | **31 (33%)** ⬆️ | **43 (46%)** | **20 (21%)** ⬇️ |
+| **TOTAL** | **96** | **33 (34%)** ⬆️ | **40 (42%)** ⬇️ | **23 (24%)** |
 
 ### Priority Distribution of Gaps
 
