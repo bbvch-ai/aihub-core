@@ -13,7 +13,7 @@ The Swiss AI-Hub implements comprehensive input validation to protect against co
 
 **Implementation**: `aihub_lib/generative_ai/document/types/FileTypeConfig.py`
 
-The platform restricts uploads to approximately 47 approved file extensions across multiple categories: document formats (PDF, Office, text, markdown), image formats (JPEG, PNG, TIFF, WebP), audio formats (WAV, MP3), and structured data (JSON, XML).
+The platform restricts uploads to approximately 40 approved file extensions across multiple categories: document formats (PDF, Office, text, markdown), image formats (JPEG, PNG, TIFF, WebP), audio formats (WAV, MP3), and structured data (JSON, XML).
 
 ### MIME Type Validation
 
