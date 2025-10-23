@@ -15,6 +15,7 @@ This guide describes backup and recovery procedures for AI-Hub deployments. The 
 
 - **RTO (Recovery Time Objective)**: Maximum acceptable time to restore services after a disaster
 - **RPO (Recovery Point Objective)**: Maximum acceptable data loss measured in time
+- **WAL (Write-Ahead Log)**: PostgreSQL transaction log that records all database changes before they are written to data files, enabling point-in-time recovery
 
 ### Target Metrics
 
@@ -29,20 +30,6 @@ This guide describes backup and recovery procedures for AI-Hub deployments. The 
 ### Per-Tenant Backup Isolation
 
 Each tenant instance maintains **independent backups** with no cross-tenant dependencies:
-
-```
-Tenant: Stadt Zug
-├── Backups stored in tenant-specific directory
-├── Independent backup schedule
-├── Separate retention policies
-└── Isolated recovery procedures
-
-Tenant: Kanton Bern
-├── Backups stored in tenant-specific directory
-├── Independent backup schedule
-├── Separate retention policies
-└── Isolated recovery procedures
-```
 
 **Benefits**:
 - Complete data isolation between tenants
