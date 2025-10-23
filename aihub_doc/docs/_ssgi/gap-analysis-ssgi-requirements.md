@@ -29,6 +29,10 @@
   - Comprehensive 496-line documentation covering core and customer code updates
   - Separate core platform and customer code versioning strategies
   - Update procedures, rollback strategies, and coordination workflows
+- ✅ **Security Documentation** expanded (2025-10-23)
+  - Input validation documented (file type whitelist, MIME validation, path traversal prevention)
+  - Container security documented (non-root execution, multi-stage builds, minimal base images)
+  - Malware prevention documented as implementation gap with recommendations
 
 ---
 
@@ -63,7 +67,7 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 | 1.1.12 | Anpassungsfähigkeit | ⚠️ PARTIAL | Domain adaptation through custom agents/pipelines, but Swiss legal domain specifics not documented | MEDIUM |
 | 1.1.13 | Prompt Engineering (Security) | ⚠️ PARTIAL | Guards documented for output protection, but Presidio input anonymization still needed | MEDIUM |
 | 1.1.14 | Prompt Engineering (Anonymization) | ⚠️ PARTIAL | Anonymization features mentioned but not detailed | HIGH |
-| 1.1.15 | Verhinderung Malware | ❌ MISSING | No documentation on malware scanning during data ingestion | HIGH |
+| 1.1.15 | Verhinderung Malware | ❌ MISSING | Malware scanning not implemented. Documented as gap with implementation recommendations in `security/2_malware_prevention/`. Input validation covered in `security/3_input_validation/` | HIGH |
 | 1.1.16 | Halluzinationsmanagement | ✅ COVERED | Source attribution + Context Sufficient Guard documented (prevents responses without sufficient knowledge) | - |
 | 1.1.17 | Analytics & Feedback | ✅ COVERED | Observability and feedback mechanisms documented | - |
 | 1.1.18 | Rechtssicherheit | ⚠️ PARTIAL | Source references covered, but legal compliance guarantees not addressed | MEDIUM |
@@ -131,7 +135,7 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 |--------|-------------|--------|-------------------|----------|
 | 2.1.1 | Performance | ⚠️ PARTIAL | Scaling documented, but performance benchmarks not provided | MEDIUM |
 | 2.1.2 | Sicherheit (SSL/TLS) | ⚠️ PARTIAL | Security mentioned, but TLS implementation details missing | HIGH |
-| 2.1.3 | Sicherheit (Malware Scan) | ❌ MISSING | Data ingestion security scanning not documented | HIGH |
+| 2.1.3 | Sicherheit (Malware Scan) | ❌ MISSING | Malware scanning not implemented. Input validation (file type whitelist, MIME validation, path traversal prevention) documented in `security/3_input_validation/`. Container isolation documented in `security/4_container_security/` | HIGH |
 | 2.1.4 | Skalierbarkeit | ✅ COVERED | Scaling considerations well documented (63+ lines) | - |
 | 2.1.5 | Zugriffsrechte | ✅ COVERED | RBAC comprehensively documented (622 lines in sdk/advanced/rbac.md) | - |
 | 2.1.6 | Ethik (Bias Monitoring) | ❌ MISSING | Bias monitoring and model drift detection not documented | MEDIUM |
@@ -343,10 +347,12 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 
 **NOW PRIORITIZE**:
 
-4. **Document Security Implementation Details**
-   - Create `platform/security/data_encryption.md`
-   - Create `platform/security/malware_prevention.md`
-   - Expand `platform/security/authentication_authorization.md` with TLS details
+4. **Document Security Implementation Details** - ⚠️ **IN PROGRESS**
+   - ✅ Created `platform/security/malware_prevention/` - Documented as gap with recommendations
+   - ✅ Created `platform/security/input_validation/` - File type whitelist, MIME validation, path traversal prevention
+   - ✅ Created `platform/security/container_security/` - Non-root execution, multi-stage builds, minimal images
+   - ⏳ **Still needed**: `platform/security/data_encryption.md` - TLS/SSL implementation details
+   - ⏳ **Still needed**: Expand anonymization documentation (1.1.14)
    - Reference: 1.1.15, 2.1.2, 2.1.3
 
 ### Short-Term (1-2 Months)
