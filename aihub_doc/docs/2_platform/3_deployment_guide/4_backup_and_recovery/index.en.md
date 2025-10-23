@@ -45,6 +45,176 @@ Each tenant instance maintains **independent backups** with no cross-tenant depe
 
 Production deployments require comprehensive backup across all data layers with automation, monitoring, and regular testing.
 
+### Backup Approaches
+
+There are two primary approaches to backing up production AI-Hub deployments:
+
+1. **VM Snapshots (Simple)**: Capture the entire virtual machine state
+2. **Component-Level Backups (Granular)**: Back up individual data stores separately
+
+**VM snapshots** provide the simplest backup strategy with instant recovery, while **component-level backups** offer more flexibility, smaller backup sizes, and selective recovery.
+
+---
+
+## Approach 1: VM Snapshot (Simple Full Backup)
+
+### Overview
+
+VM snapshots provide the **simplest backup method** by capturing the entire virtual machine state, including all data, configuration, and system files. This is ideal for smaller deployments or when simplicity is prioritized over granular control.
+
+### When to Use VM Snapshots
+
+**Advantages**:
+- ✅ Simple to implement and automate
+- ✅ Captures everything (OS, Docker, data, configuration)
+- ✅ Fastest disaster recovery (restore entire VM)
+- ✅ No complex backup scripts needed
+- ✅ Point-in-time consistency across all services
+
+**Disadvantages**:
+- ❌ Larger backup size (entire disk)
+- ❌ Longer backup time
+- ❌ Cannot selectively restore individual databases
+- ❌ Requires VM to be stopped or snapshot-capable hypervisor
+
+### Creating VM Snapshots
+
+#### Swiss Cloud Providers
+
+**Exoscale**:
+```bash
+# Create snapshot via CLI
+exo compute instance snapshot create <instance-name> \
+    --zone ch-gva-2
+
+# Schedule automated snapshots
+# (Configure via Exoscale console: Compute > Instances > Snapshots)
+```
+
+**Cloudscale.ch**:
+```bash
+# Create snapshot via API
+curl -X POST https://api.cloudscale.ch/v1/servers/<server-uuid>/snapshots \
+    -H "Authorization: Bearer <API_TOKEN>" \
+    -H "Content-Type: application/json" \
+    -d '{"name": "aihub-backup-2025-10-23"}'
+
+# Automate with cron
+0 2 * * * /usr/local/bin/cloudscale-snapshot.sh
+```
+
+**Azure VMs**:
+```bash
+# Create VM snapshot
+az snapshot create \
+    --resource-group aihub-prod \
+    --name aihub-snapshot-$(date +%Y%m%d) \
+    --source /subscriptions/<sub-id>/resourceGroups/aihub-prod/providers/Microsoft.Compute/disks/aihub-vm-disk
+
+# Or create managed image (includes all disks)
+az image create \
+    --resource-group aihub-prod \
+    --name aihub-image-$(date +%Y%m%d) \
+    --source aihub-vm
+```
+
+#### On-Premise Hypervisors
+
+**Proxmox VE**:
+```bash
+# Create snapshot
+qm snapshot <vmid> <snapshot-name>
+
+# Example: Daily automated snapshot
+0 2 * * * qm snapshot 100 daily-backup-$(date +%Y%m%d)
+
+# Cleanup old snapshots (keep 7 days)
+qm listsnapshot 100 | grep daily-backup | tail -n +8 | xargs -I {} qm delsnapshot 100 {}
+```
+
+**VMware vSphere/ESXi**:
+```bash
+# Create snapshot via govc CLI
+govc snapshot.create -vm aihub-prod "Backup $(date +%Y%m%d_%H%M%S)"
+
+# Automated via PowerCLI
+New-Snapshot -VM "aihub-prod" -Name "Backup-$(Get-Date -Format 'yyyyMMdd')" -Quiesce
+```
+
+**KVM/libvirt**:
+```bash
+# Create external snapshot (recommended for production)
+virsh snapshot-create-as aihub-prod \
+    snapshot-$(date +%Y%m%d) \
+    "Daily backup" \
+    --disk-only \
+    --atomic
+
+# Backup snapshot to separate storage
+rsync -avz /var/lib/libvirt/images/aihub-prod.snapshot \
+    /backups/vm-snapshots/
+```
+
+### Snapshot Retention Policy
+
+```bash
+# Example retention script for automated cleanup
+#!/bin/bash
+# File: /backups/scripts/cleanup-vm-snapshots.sh
+
+RETENTION_DAYS=35
+
+# Exoscale example
+exo compute instance snapshot list | grep aihub | \
+    awk -v date="$(date -d "-${RETENTION_DAYS} days" +%Y-%m-%d)" \
+    '$2 < date {print $1}' | \
+    xargs -I {} exo compute instance snapshot delete {}
+
+# Azure example
+az snapshot list --resource-group aihub-prod --query \
+    "[?timeCreated < '$(date -d "-${RETENTION_DAYS} days" -u +%Y-%m-%dT%H:%M:%SZ)'].id" \
+    -o tsv | xargs -I {} az snapshot delete --ids {}
+```
+
+### Recovery from VM Snapshot
+
+**Full VM Restore**:
+
+1. **Stop the current VM** (if it exists and is corrupted)
+2. **Restore from snapshot**:
+   - **Exoscale/Cloudscale**: Create new instance from snapshot via console
+   - **Azure**: Create new VM from snapshot or managed image
+   - **Proxmox**: `qm rollback <vmid> <snapshot-name>`
+   - **VMware**: Right-click VM → Snapshots → Revert to Snapshot
+   - **KVM**: `virsh snapshot-revert aihub-prod snapshot-name`
+3. **Start the restored VM**
+4. **Verify services**: `docker compose ps` and test endpoints
+
+**Recovery Time**: Typically 15-30 minutes depending on VM size and cloud provider.
+
+### Snapshot Best Practices
+
+**Consistency**:
+- Stop AI-Hub services before snapshot for consistency: `docker compose down`
+- Or use application-consistent snapshots (e.g., Azure with VM agent, VMware with quiesce)
+
+**Frequency**:
+- **Daily snapshots**: Suitable for most production deployments
+- **Pre-update snapshots**: Always snapshot before major updates
+- **Weekly/monthly archives**: Keep long-term snapshots for compliance
+
+**Testing**:
+- Monthly: Restore snapshot to test environment and verify functionality
+- Document actual RTO achieved during test restores
+
+---
+
+## Approach 2: Component-Level Backups (Granular)
+
+### Overview
+
+Component-level backups provide granular control by backing up individual data stores separately. This approach offers flexibility for selective recovery and smaller backup sizes.
+
 ### Data Stores to Back Up
 
 | Component | Criticality | Backup Method | Frequency | Retention |
@@ -60,7 +230,7 @@ Production deployments require comprehensive backup across all data layers with 
 
 ---
 
-## Backup Procedures
+## Backup Procedures (Component-Level)
 
 ### 1. PostgreSQL Database Backup
 
