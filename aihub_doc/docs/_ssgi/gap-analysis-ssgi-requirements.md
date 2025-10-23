@@ -68,7 +68,7 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 | 1.1.12 | Anpassungsfähigkeit | ⚠️ PARTIAL | Domain adaptation through custom agents/pipelines, but Swiss legal domain specifics not documented | MEDIUM |
 | 1.1.13 | Prompt Engineering (Security) | ⚠️ PARTIAL | Guards documented for output protection, but Presidio input anonymization still needed | MEDIUM |
 | 1.1.14 | Prompt Engineering (Anonymization) | ⚠️ PARTIAL | Anonymization features mentioned but not detailed | HIGH |
-| 1.1.15 | Verhinderung Malware | ❌ MISSING | Malware scanning not implemented. Documented as gap with implementation recommendations in `security/2_malware_prevention/`. Input validation covered in `security/3_input_validation/` | HIGH |
+| 1.1.15 | Verhinderung Malware | ⚠️ IMPLEMENTATION GAP | **Feature not implemented** (not a documentation gap). Documentation exists in `security/2_malware_prevention/` explaining the implementation gap and providing recommendations. Input validation controls documented in `security/3_input_validation/` | N/A |
 | 1.1.16 | Halluzinationsmanagement | ✅ COVERED | Source attribution + Context Sufficient Guard documented (prevents responses without sufficient knowledge) | - |
 | 1.1.17 | Analytics & Feedback | ✅ COVERED | Observability and feedback mechanisms documented | - |
 | 1.1.18 | Rechtssicherheit | ⚠️ PARTIAL | Source references covered, but legal compliance guarantees not addressed | MEDIUM |
@@ -85,7 +85,7 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 
 **Key Gaps**:
 1. **LLM retraining automation and versioning** (1.1.8, 1.1.10)
-2. **Security: Malware prevention, prompt injection protection, anonymization** (1.1.13-15)
+2. **Security: Prompt injection protection, anonymization** (1.1.13-14) - Note: Malware (1.1.15) is an implementation gap, not documentation
 3. **Confidence scores display** (1.1.19)
 4. **External log system integrations** (1.1.5)
 
@@ -136,7 +136,7 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 |--------|-------------|--------|-------------------|----------|
 | 2.1.1 | Performance | ⚠️ PARTIAL | Scaling documented, but performance benchmarks not provided | MEDIUM |
 | 2.1.2 | Sicherheit (SSL/TLS) | ✅ COVERED | Comprehensive TLS/SSL documentation in `security/x_data_encryption/` covering Traefik reverse proxy, TLS 1.2/1.3, Let's Encrypt, security headers, certificate management | - |
-| 2.1.3 | Sicherheit (Malware Scan) | ❌ MISSING | Malware scanning not implemented. Input validation (file type whitelist, MIME validation, path traversal prevention) documented in `security/3_input_validation/`. Container isolation documented in `security/4_container_security/` | HIGH |
+| 2.1.3 | Sicherheit (Malware Scan) | ⚠️ IMPLEMENTATION GAP | **Feature not implemented** (not a documentation gap). Documentation exists in `security/2_malware_prevention/` explaining the implementation gap and providing recommendations. Input validation controls documented in `security/3_input_validation/`. Container isolation documented in `security/4_container_security/` | N/A |
 | 2.1.4 | Skalierbarkeit | ✅ COVERED | Scaling considerations well documented (63+ lines) | - |
 | 2.1.5 | Zugriffsrechte | ✅ COVERED | RBAC comprehensively documented (622 lines in sdk/advanced/rbac.md) | - |
 | 2.1.6 | Ethik (Bias Monitoring) | ❌ MISSING | Bias monitoring and model drift detection not documented | MEDIUM |
@@ -158,9 +158,10 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 - ❌ Missing: 4/17 (24%)
 
 **Key Gaps**:
-1. **Malware scanning during ingestion** (2.1.3) - HIGH
-2. **Bias monitoring and model drift** (2.1.6) - MEDIUM
-3. **Penetration testing procedures** (2.1.10) - MEDIUM
+1. **Bias monitoring and model drift** (2.1.6) - MEDIUM
+2. **Penetration testing procedures** (2.1.10) - MEDIUM
+
+**Note**: Malware scanning (2.1.3) is an **implementation gap**, not a documentation gap. Documentation exists explaining the current state.
 
 ---
 
@@ -271,9 +272,9 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 ### HIGH PRIORITY GAPS
 
 1. **Security Details**
-   - Malware scanning during ingestion (1.1.15, 2.1.3)
    - Prompt injection protection (1.1.13)
    - Anonymization details (1.1.14)
+   - **Note**: Malware scanning (1.1.15, 2.1.3) is an **implementation gap**, not a documentation gap
 
 2. **LLM Training & Management**
    - Automated retraining (1.1.8)
@@ -347,13 +348,13 @@ The AI-Hub platform documentation provides **strong coverage** for core architec
 
 **NOW PRIORITIZE**:
 
-4. **Document Security Implementation Details** - ⚠️ **IN PROGRESS**
-   - ✅ Created `platform/security/malware_prevention/` - Documented as gap with recommendations
+4. **Security Documentation** - ✅ **COMPLETE** (for implementation gaps)
+   - ✅ Created `platform/security/malware_prevention/` - **Implementation gap documented** (feature not built)
    - ✅ Created `platform/security/input_validation/` - File type whitelist, MIME validation, path traversal prevention
    - ✅ Created `platform/security/container_security/` - Non-root execution, multi-stage builds, minimal images
    - ✅ TLS/SSL already documented in `platform/security/x_data_encryption/` - Traefik, certificates, security headers
    - ⏳ **Still needed**: Expand anonymization documentation from stub to comprehensive guide (1.1.14)
-   - Reference: 1.1.15, 2.1.2, 2.1.3
+   - Reference: 1.1.13-15, 2.1.2, 2.1.3
 
 ### Short-Term (1-2 Months)
 
@@ -443,7 +444,7 @@ The AI-Hub platform documentation is **comprehensive in core areas** (architectu
 - ~~Incomplete operational procedures (backup, disaster recovery, maintenance)~~ ✅ **ALL RESOLVED** (2025-10-23)
 - ~~Missing multi-tenant architecture documentation~~ ✅ **RESOLVED** (2025-10-23)
 - ~~TLS/SSL implementation details~~ ✅ **RESOLVED** (2025-10-23) - Comprehensive TLS documentation exists
-- Insufficient security implementation details (malware scanning, anonymization)
+- Insufficient anonymization documentation (malware scanning is an implementation gap, not documentation)
 - Limited compliance procedure documentation
 - Missing external system integration guides
 
@@ -454,7 +455,7 @@ The AI-Hub platform documentation is **comprehensive in core areas** (architectu
 - ✅ Backup and recovery documented (+6% coverage improvement in General Non-Functional category)
 - ✅ Updates and maintenance documented (+6% coverage improvement in both General Non-Functional and Technology & Hosting categories)
 - ✅ TLS/SSL documentation verified as comprehensive (Traefik, Let's Encrypt, security headers, certificate management)
-- ✅ Security documentation expanded with input validation, container security, and malware prevention gap analysis
+- ✅ Security documentation expanded with input validation, container security, and malware prevention **implementation gap** documented
 - Overall completion increased from ~70% to **~78%**
 - **NO CRITICAL gaps remaining** (down from 3) - all critical operational procedures now documented
 - **HIGH priority gaps reduced** from 11 to 10 items
