@@ -99,9 +99,17 @@ These score thresholds are **not absolute rules**, but rather **interpretive gui
 
 ### Viewing Results
 
+After an experiment completes, you can view detailed results showing both overall performance and individual question scores.
+
+![Experiment Results](../../../media/evaluation/experiment_result.png)
+*The results view displays overall metric scores and a detailed breakdown for each test question*
+
+The results page shows star ratings for the three evaluation metrics at the top, with a detailed table below. Each row in the table represents one test question, showing the question itself, the reference answer, your agent's actual response, and individual scores for correctness, completeness, and conciseness. Response latency is also tracked.
+
+You can expand individual questions to see the full text and analyze patterns. Low correctness scores typically indicate knowledge base gaps or retrieval issues. Low completeness scores suggest the agent isn't fully addressing multi-part questions. Low conciseness scores point to overly verbose responses.
+
+Based on your results, you can update your agent's knowledge base, refine system prompts, or adjust retrieval settings. Run the experiment again after making changes to verify improvements.
 
 ::: tip For Advanced Analysis
-Phoenix (the underlying evaluation platform) can optionally be accessed for deeper technical
-investigation, including full conversation traces and raw telemetry data. However, all essential evaluation information
-is available in the standard AI-Hub interface.
+Phoenix (the underlying evaluation platform) can optionally be accessed for deeper technical investigation, including full conversation traces and raw telemetry data. However, all essential evaluation information is available in the standard AI-Hub interface.
 :::
