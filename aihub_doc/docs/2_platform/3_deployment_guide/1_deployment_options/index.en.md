@@ -295,11 +295,12 @@ The AI-Hub supports flexible hosting to meet organizational requirements and con
 
 ## FAQ
 
-### Q: Can tenants share agents or pipelines?
+::: details Q: Can tenants share agents or pipelines?
 
 **A**: No. Each tenant instance has its own isolated set of agents and pipelines. However, the same agent *definitions* (code) can be deployed across multiple tenant instances. Customizations are tenant-specific.
+:::
 
-### Q: What data does the shared LLM backend see?
+::: details Q: What data does the shared LLM backend see?
 
 **A**: Each tenant has their own LiteLLM proxy, so prompts/responses stay within the tenant instance. The shared LLM backends (Azure OpenAI, Gemini, self-hosted models) see:
 - API requests from multiple tenant LiteLLM proxies (stateless, not persisted)
@@ -308,15 +309,17 @@ The AI-Hub supports flexible hosting to meet organizational requirements and con
 - Anonymous PII data (if enabled)
 
 **They do NOT see**: Which tenant made the request, conversational history, or any stored data. All context remains in the tenant's LiteLLM proxy and database.
+:::
 
-### Q: Can a tenant use self-hosted models exclusively?
+::: details Q: Can a tenant use self-hosted models exclusively?
 
 **A**: Yes. For air-gapped or fully on-premise deployments, you can:
 1. Deploy self-hosted LLMs (vLLM, llama.cpp, HF-TEI)
 2. Configure LiteLLM to route to local models
 3. No outbound internet connectivity required
+:::
 
-### Q: How are costs tracked per tenant?
+::: details Q: How are costs tracked per tenant?
 
 **A**: LiteLLM tracks API usage per tenant and user:
 - Token counts (input/output)
@@ -325,15 +328,18 @@ The AI-Hub supports flexible hosting to meet organizational requirements and con
 - Monthly budget enforcement
 
 Data is available in the LiteLLM admin UI and exportable for billing.
+:::
 
-### Q: Can tenants have different LLM access?
+::: details Q: Can tenants have different LLM access?
 
 **A**: Yes. LiteLLM configuration allows per-tenant model access:
 - Tenant A: Only GPT-4o (strict compliance)
 - Tenant B: GPT-4o + Gemini 2.0 (flexibility)
 - Tenant C: Self-hosted models only (air-gapped)
 
-### Q: What happens if the LLM proxy is unavailable?
+:::
+
+::: details Q: What happens if the LLM proxy is unavailable?
 
 **A**: Tenant instances will experience LLM-dependent feature degradation:
 - ❌ RAG agents cannot generate responses
@@ -342,8 +348,9 @@ Data is available in the LiteLLM admin UI and exportable for billing.
 - ✅ Non-LLM features (document upload, RBAC, observability) continue working
 
 **Mitigation**: Deploy LiteLLM with high availability (multiple replicas, load balancing).
+:::
 
-### Q: How do you manage updates across many tenant instances?
+::: details Q: How do you manage updates across many tenant instances?
 
 **A**: See [Updates and Maintenance](../6_updates_and_maintenance/) for detailed strategies:
 - Phased rollouts (pilot → production)
@@ -351,7 +358,7 @@ Data is available in the LiteLLM admin UI and exportable for billing.
 - Automated update orchestration (Ansible, Kubernetes operators)
 - Per-tenant update schedules
 
----
+:::
 
 ## Related Documentation
 
@@ -359,4 +366,3 @@ Data is available in the LiteLLM admin UI and exportable for billing.
 - **Security**: [Authentication & Authorization](../../11_access_management/1_authentication_setup/) - Configure tenant authentication
 - **Operations**: [Monitoring and Alerting](../5_monitoring_and_alerting/) - Observability for multi-instance deployments
 - **Compliance**: [Swiss Data Protection](../../19_compliance/3_dsg/) - revDSG compliance for public sector
-- 

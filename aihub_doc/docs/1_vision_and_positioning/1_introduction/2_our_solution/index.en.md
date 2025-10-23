@@ -31,8 +31,8 @@ When you deploy the Swiss AI Hub, you immediately have:
 - **Document processing** with Docling for PDFs, Office files, and more
 - **Data pipelines** using Dagster for ingestion and processing
 - **Message queuing** with NATS for event-driven architecture
-- **Object storage** via MinIO S3-compatible layer
-- **Multiple databases** (PostgreSQL, MongoDB, Redis) pre-configured
+- **Object storage** via SeaweedFS S3-compatible layer
+- **Multiple databases** (PostgreSQL, FerretDB, ValKey) pre-configured
 :::
 
 ::: details AI capabilities
