@@ -149,9 +149,7 @@ Milvus stores vector embeddings for RAG. Backups export collections to S3-compat
 
 ### 4. SeaweedFS (File Storage) Backup
 
-SeaweedFS stores user-uploaded documents, RAG knowledge base files, and chat attachments.
-
-**Alternative: rsync from volumes**:
+SeaweedFS stores user-uploaded documents, RAG knowledge base files, and chat attachments. Backups can be performed using S3-compatible sync tools or direct volume synchronization.
 
 ---
 
@@ -182,8 +180,13 @@ If using Docker volumes directly without application-level backups:
 
 ## Backup Automation
 
-- Cron Schedule: Create a centralized cron schedule for all backup tasks:
-- Backup Verification Script
+### Cron Schedule
+
+Create a centralized cron schedule for all backup tasks to automate daily, hourly, and weekly backup operations. Schedule backups during low-usage periods to minimize performance impact.
+
+### Backup Verification Script
+
+Implement automated verification scripts that run weekly to check backup integrity, age, and sizes. Alert administrators if backups are older than expected or missing.
 
 ---
 
@@ -235,12 +238,14 @@ For production deployments, implement the 3-2-1 rule:
 
 ### Backup Health Monitoring
 
-Monitor backup operations and alert on failures:
+Monitor backup operations and alert on failures. Implement checks for backup completion, age, and size to detect issues early.
 
 ### Integration with Monitoring Systems
 
-- **Prometheus Metrics**
-- **Alert Rules** (Prometheus AlertManager)
+Integrate backup monitoring with existing observability infrastructure:
+
+- **Prometheus Metrics**: Export backup age and size metrics for monitoring
+- **Alert Rules**: Configure AlertManager rules to notify on backup failures or old backups
 
 ---
 
@@ -262,11 +267,11 @@ All backups containing sensitive data must be encrypted:
 
 ### Access Control
 
-Restrict backup access to authorized personnel only
+Restrict backup access to authorized personnel only. Set restrictive permissions on backup directories, limit SSH key access, and secure encryption keys.
 
 ### Audit Logging
 
-Log all backup operations for compliance:
+Log all backup operations for compliance. Backup operations should be logged to syslog and shipped to centralized log aggregation systems for audit trails.
 
 ---
 
@@ -299,7 +304,7 @@ Log all backup operations for compliance:
 
 ### Regular Restore Testing
 
-**Monthly Restore Test**
+Perform monthly restore tests to a separate test environment to verify backup integrity and practice recovery procedures. Validate that restored data is accessible and services function correctly.
 
 ### Disaster Recovery Drills
 
@@ -317,13 +322,17 @@ Conduct full disaster recovery drills quarterly:
 
 ### Backup Failures
 
-- **PostgreSQL backup fails**
-- **SeaweedFS backup incomplete**
+Common backup issues and their resolutions:
+
+- **PostgreSQL backup fails**: Check PostgreSQL is running, verify disk space, check permissions, and review PostgreSQL logs
+- **SeaweedFS backup incomplete**: Verify S3 endpoint is reachable, check SeaweedFS logs, and manually test S3 sync
 
 ### Recovery Issues
 
-- **PostgreSQL restore fails**
-- **Milvus collection not found after restore**
+Common recovery problems and solutions:
+
+- **PostgreSQL restore fails**: Check backup file integrity, verify PostgreSQL version compatibility, and ensure WAL files are available
+- **Milvus collection not found after restore**: List available collections and re-index from source documents if needed
 
 ---
 
