@@ -1,9 +1,7 @@
 import html
 import os
-from io import StringIO
 from typing import Any
 
-import pandas as pd
 from azure.ai.documentintelligence.models import AnalyzeOutputOption, AnalyzeResult, DocumentContentFormat
 from bs4 import BeautifulSoup
 from fsspec import AbstractFileSystem
@@ -18,7 +16,6 @@ from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.Doc
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     NODE_CONTENT_TYPE_FIGURE,
-    NODE_CONTENT_TYPE_TABLE,
     NUMBER_OF_PAGES,
 )
 
@@ -73,7 +70,7 @@ class DocumentIntelligenceLoader(BaseReader):
         """Process the Document Intelligence API response into Document objects."""
         metadata = {NUMBER_OF_PAGES: len(result.pages)}
 
-        text = reformat_tables(result.content)
+        text = result.content
 
         if not include_images:
             text = remove_figure_tags_keep_content(text)
@@ -125,20 +122,6 @@ class DocumentIntelligenceLoader(BaseReader):
                 extra_info={**extra_info, **metadata} if extra_info else metadata,
             )
         ]
-
-
-def reformat_tables(document_text: str) -> str:
-    """Convert HTML tables in the document to Markdown tables."""
-
-    soup = BeautifulSoup(document_text, "html.parser")
-
-    table_tags = soup.find_all("table")
-
-    for table in table_tags:
-        markdown_table = pd.read_html(StringIO(str(table)))[0].fillna("").to_markdown()
-        table.replace_with(f"<{NODE_CONTENT_TYPE_TABLE}>{markdown_table}</{NODE_CONTENT_TYPE_TABLE}>")
-
-    return html.unescape(str(soup))
 
 
 def remove_figure_tags_keep_content(document_text: str) -> str:
