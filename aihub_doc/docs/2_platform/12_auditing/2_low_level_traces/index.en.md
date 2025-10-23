@@ -58,7 +58,7 @@ The AI-Hub automatically instruments these components without code changes:
 ### Core Infrastructure
 
 - **NATS Messaging**: Complete message flow tracing across microservices
-- **Database Operations**: MongoDB, Redis, and vector database queries
+- **Database Operations**: FeretDB, ValKey, and vector database queries
 - **HTTP Clients**: All external API calls and webhooks
 - **Background Tasks**: Async operations and scheduled jobs
 
@@ -138,7 +138,7 @@ Instrumented libraries automatically create spans for external service calls:
 
 **HTTP Clients**: HTTPX and aiohttp requests with method, URL, status code, and timing.
 
-**Databases**: MongoDB, PostgreSQL, and Redis operations with query information.
+**Databases**: FerretDB, PostgreSQL, and ValKey operations with query information.
 
 **Vector Database**: Milvus similarity searches and indexing operations.
 

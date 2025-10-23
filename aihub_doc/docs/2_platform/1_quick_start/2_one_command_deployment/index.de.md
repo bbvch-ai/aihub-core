@@ -143,11 +143,8 @@ REDIS_URL="redis://localhost:6379"
 # STORAGE CONFIGURATION
 # =============================================================================
 
-# MinIO S3 Storage
-MINIO_ROOT_USER="admin"
-MINIO_ROOT_PASSWORD="REPLACE_WITH_RANDOM_STRING_10"
 S3_STORAGE_ENDPOINT="http://minio:9000"
-S3_STORAGE_ACCESS_KEY="admin"                         # Must match MINIO_ROOT_USER
+S3_STORAGE_ACCESS_KEY="admin"                        
 S3_STORAGE_SECRET_KEY="REPLACE_WITH_SAME_MINIO_PASSWORD"
 
 # =============================================================================

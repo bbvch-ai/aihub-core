@@ -13,7 +13,7 @@ for your AI agents—you provide the questions and expected answers, and the sys
 
 ::: info Key Benefits
 - **Quality Assurance**: Verify agent performance before and after deployment.
-- **Objective Metrics**: Get measurable scores instead of subjective opinions.
+- **Objective Metrics**: Get measurable ratings instead of subjective opinions.
 - **Continuous Monitoring**: Track quality improvements or regressions as you update your agent's knowledge base and prompts.
 - **Compliance Documentation**: Maintain audit trails for regulatory requirements.
 :::
@@ -52,20 +52,20 @@ Start with 20-30 questions covering both simple and complex scenarios. You shoul
 
 ## Running Experiments
 
-Experiments test your agent against a dataset and produce quality scores.
+Experiments test your agent against a dataset and produce quality ratings.
 
 **How to Run an Experiment:**
 
 1.  **Select Agent**: Choose which agent to evaluate.
 2.  **Choose Dataset**: Pick an appropriate test dataset.
 3.  **Start Experiment**: The system automatically runs all tests.
-4.  **Review Results**: View scores and detailed analysis.
+4.  **Review Results**: View ratings and detailed analysis.
 
 ![Creating an Experiment](../../../media/evaluation/experiment_create.png)
 *To create an experiment, select the agent and the dataset you want to test it against.*
 
 ![Experiment Overview](../../../media/evaluation/experiment_overview.png)
-*The overview page lists all past experiments and their high-level average scores.*
+*The overview page lists all past experiments and their high-level average ratings.*
 
 ![Running an Experiment](../../../media/evaluation/experiment_running.png)
 *While an experiment is running, you can see its progress.*
@@ -76,37 +76,37 @@ You should **run experiments** before deploying a new agent to production, after
 
 **During an experiment**, each question from the dataset is sent to your agent. The agent's response is captured and then evaluated by **three independent AI judges**.
 
-These "judges" are themselves an advanced LLM, tasked with assessing your agent's response against the provided reference answer. Using three judges provides a more robust and nuanced score, reducing the bias of a single evaluation. The results are then averaged and displayed in the evaluation interface.
+These "judges" are themselves an advanced LLM, tasked with assessing your agent's response against the provided reference answer. Using three judges provides a more robust and nuanced evaluation, reducing the bias of a single assessment. The results are then averaged and displayed as star ratings in the evaluation interface.
 
 
 ### Evaluation Metrics
 
-The AI judges score each response against these three key dimensions. The descriptions below provide insight into what the judges are looking for.
+The AI judges evaluate each response against these three key dimensions. The descriptions below provide insight into what the judges are looking for. Results are displayed as star ratings (0-5 stars).
 
-| Metric | Description | Scoring Guide (0.0 - 1.0)                                                                                    |
+| Metric | Description | Rating Guide                                                                                                 |
 | :--- | :--- |:-------------------------------------------------------------------------------------------------------------|
-| **Correctness** | Is the agent's response factually accurate **when compared to the reference answer**? The response should be free of misinformation, hallucinations, or contradictions. | **1.0:** Perfect (matches reference)<br/>**0.5:** Partial (some errors)<br/>**0.0:** Wrong (misleading)      |
-| **Completeness** | Does the response fully address **all parts of the user's query**? This includes handling multi-part questions or implicit needs, not just the most obvious part. | **1.0:** Complete (all parts answered)<br/>**0.5:** Partial (some aspects missed)<br/>**0.0:** Incomplete    |
-| **Conciseness** | Is the response efficient and to the point? It should avoid **irrelevant tangents, redundancy, or excessive conversational filler** that doesn't directly help answer the user's question. | **1.0:** Perfect (to the point)<br/>**0.5:** Verbose (a bit wordy)<br/>**0.0:** Excessive (unnecessary info) |
+| **Correctness** | Is the agent's response factually accurate **when compared to the reference answer**? The response should be free of misinformation, hallucinations, or contradictions. | **5 stars:** Perfect (matches reference)<br/>**3 stars:** Partial (some errors)<br/>**0 stars:** Wrong (misleading)      |
+| **Completeness** | Does the response fully address **all parts of the user's query**? This includes handling multi-part questions or implicit needs, not just the most obvious part. | **5 stars:** Complete (all parts answered)<br/>**3 stars:** Partial (some aspects missed)<br/>**0 stars:** Incomplete    |
+| **Conciseness** | Is the response efficient and to the point? It should avoid **irrelevant tangents, redundancy, or excessive conversational filler** that doesn't directly help answer the user's question. | **5 stars:** Perfect (to the point)<br/>**3 stars:** Verbose (a bit wordy)<br/>**0 stars:** Excessive (unnecessary info) |
 
-**Interpreting Scores (General Guidelines)**
+**Interpreting Ratings (General Guidelines)**
 
-These score thresholds are **not absolute rules**, but rather **interpretive guidelines** to help you quickly assess performance. A score of 0.79 isn't necessarily a failure, and 0.81 isn't perfect. Use these ranges to orient your analysis:
+These rating thresholds are **not absolute rules**, but rather **interpretive guidelines** to help you quickly assess performance. Use these ranges to orient your analysis:
 
-- **Score > 0.8 (Excellent):** Indicates the agent is consistently reliable, accurate, and ready for production.
-- **Score 0.6 - 0.8 (Good):** Suggests the agent performs well, but may have minor issues with consistency, completeness, or verbosity. Review failing test cases for patterns.
-- **Score < 0.6 (Needs Attention):** Signals potential significant issues. You should review these responses closely to identify a root cause before deployment.
+- **4-5 stars (Excellent):** Indicates the agent is consistently reliable, accurate, and ready for production.
+- **3-4 stars (Good):** Suggests the agent performs well, but may have minor issues with consistency, completeness, or verbosity. Review failing test cases for patterns.
+- **Below 3 stars (Needs Attention):** Signals potential significant issues. You should review these responses closely to identify a root cause before deployment.
 
 ### Viewing Results
 
-After an experiment completes, you can view detailed results showing both overall performance and individual question scores.
+After an experiment completes, you can view detailed results showing both overall performance and individual question analysis.
 
 ![Experiment Results](../../../media/evaluation/experiment_result.png)
-*The results view displays overall metric scores and a detailed breakdown for each test question*
+*The results view displays overall metric ratings and a detailed breakdown for each test question*
 
-The results page shows star ratings for the three evaluation metrics at the top, with a detailed table below. Each row in the table represents one test question, showing the question itself, the reference answer, your agent's actual response, and individual scores for correctness, completeness, and conciseness. Response latency is also tracked.
+The results page shows star ratings (0-5 stars) for the three evaluation metrics at the top, with a detailed table below. Each row in the table represents one test question, showing the question itself, the reference answer, your agent's actual response, and star ratings for correctness, completeness, and conciseness. Response latency in seconds is also tracked.
 
-You can expand individual questions to see the full text and analyze patterns. Low correctness scores typically indicate knowledge base gaps or retrieval issues. Low completeness scores suggest the agent isn't fully addressing multi-part questions. Low conciseness scores point to overly verbose responses.
+You can expand individual questions to see the full text and analyze patterns. Low correctness ratings typically indicate knowledge base gaps or retrieval issues. Low completeness ratings suggest the agent isn't fully addressing multi-part questions. Low conciseness ratings point to overly verbose responses.
 
 Based on your results, you can update your agent's knowledge base, refine system prompts, or adjust retrieval settings. Run the experiment again after making changes to verify improvements.
 
