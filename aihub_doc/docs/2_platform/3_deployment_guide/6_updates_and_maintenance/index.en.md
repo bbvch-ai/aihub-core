@@ -408,44 +408,6 @@ Use built-in observability stack:
 
 ---
 
-## Maintenance Tasks
-
-### Core Maintenance (bbv Responsibility)
-
-**Weekly**:
-- [ ] Review core security advisories
-- [ ] Check for core dependency updates
-- [ ] Monitor core performance metrics
-
-**Monthly**:
-- [ ] Apply core patch updates
-- [ ] Review core capacity planning
-- [ ] Test core backup restoration
-
-**Quarterly**:
-- [ ] Evaluate core minor version updates
-- [ ] Core security audit
-- [ ] Core disaster recovery drill
-
-### Customer Code Maintenance (Customer or bbv)
-
-**Weekly**:
-- [ ] Review customer code logs
-- [ ] Monitor custom service performance
-- [ ] Verify customer backups
-
-**Monthly**:
-- [ ] Update customer code dependencies (non-core)
-- [ ] Review custom service resource usage
-- [ ] Test customer code in staging
-
-**Quarterly**:
-- [ ] Evaluate core version bump
-- [ ] Review custom code architecture
-- [ ] Customer-specific disaster recovery test
-
----
-
 ## Troubleshooting Update Issues
 
 ### Core Service Fails After Update
@@ -493,36 +455,6 @@ Use built-in observability stack:
 
 ---
 
-## Emergency Update Procedures
-
-### Critical Core Security Patch
-
-For urgent vulnerabilities in core platform:
-
-1. **Assess Impact**: Determine which customers/tenants affected
-2. **Notify Customers**: Emergency maintenance notice
-3. **Backup**: Quick snapshot across tenants
-4. **Apply Core Patch**: Update core images to a patched version
-5. **Verify**: Test core security fix
-6. **Monitor**: Close monitoring for 24 hours
-
-**RTO Target**: 2-4 hours
-
-### Critical Customer Code Patch
-
-For urgent vulnerabilities in customer-specific code:
-
-1. **Assess Scope**: Identify affected customer repositories
-2. **Notify Customer**: Emergency patch notification
-3. **Backup**: Snapshot affected tenants
-4. **Apply Patch**: Update customer images
-5. **Verify**: Test customer code fix
-6. **Monitor**: Close monitoring for 24 hours
-
-**RTO Target**: 2-4 hours
-
----
-
 ## Best Practices
 
 ### For Core Updates
@@ -561,4 +493,3 @@ For urgent vulnerabilities in customer-specific code:
 
 - **Deployment**: [Deployment Options](../1_deployment_options/) — Per-tenant architecture
 - **Architecture**: [Core Components](../../2_architecture/1_core_components/) — Core component dependencies
-- **Development**: [README.md](/README.md) — Repository structure and customer code patterns
