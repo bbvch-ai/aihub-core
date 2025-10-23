@@ -328,7 +328,7 @@ services:
     restart: unless-stopped
 
   litellm:
-    image: ghcr.io/bbvch-ai/aihub-core/litellm:main-v1.50.0
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.77.7-stable
     container_name: lite-llm
     ports:
       - "4000:4000"
@@ -340,6 +340,7 @@ services:
       AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY}
       AZURE_OPENAI_KEY_IMAGE: ${AZURE_OPENAI_KEY_IMAGE}
       AZURE_OPENAI_KEY_AUDIO: ${AZURE_OPENAI_KEY_AUDIO}
+      AZURE_OPENAI_KEY_NANO: ${AZURE_OPENAI_KEY_NANO}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY}
       PRESIDIO_ANALYZER_API_BASE: "http://presidio-analyzer:3000"

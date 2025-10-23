@@ -3,7 +3,7 @@ model_list:
     litellm_params:
       model: azure/gpt-5-nano
       api_base: https://aihub-dev-openai-swe-whisper.openai.azure.com/
-      api_key: os.environ/AZURE_OPENAI_KEY
+      api_key: os.environ/AZURE_OPENAI_KEY_NANO
       api_version: "2025-01-01-preview"
     model_info:
       mode: chat
@@ -70,7 +70,7 @@ guardrails:
       guardrail: presidio
       default_on: true
       mode: "pre_call"
-      presidio_language: ["en", "es", "fr", "de", "it"]
+      presidio_language: [ "en", "es", "fr", "de", "it" ]
       presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
       presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
       output_parse_pii: true
@@ -83,7 +83,7 @@ guardrails:
       guardrail: presidio
       default_on: true
       mode: "pre_call"
-      presidio_language: ["en", "es", "fr", "de", "it"]
+      presidio_language: [ "en", "es", "fr", "de", "it" ]
       presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
       presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
       output_parse_pii: true
@@ -99,8 +99,8 @@ general_settings:
   maximum_spend_logs_retention_interval: "30d"
 
 litellm_settings:
-  callbacks: ["detect_prompt_injection", "otel"]
-  default_fallbacks: ["azure/gpt-4o-mini"]
+  callbacks: [ "detect_prompt_injection", "otel" ]
+  default_fallbacks: [ "azure/gpt-4o-mini" ]
   telemetry: true
   json_logs: true
 

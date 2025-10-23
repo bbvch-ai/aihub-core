@@ -7,7 +7,7 @@ import asyncio
 
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
-from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig, LLMParameter
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
@@ -39,7 +39,8 @@ async def main():
                 fr="Ceci est l'agent RAG par défaut",
                 it="Questo è l'agente RAG predefinito",
             ),
-            llm=LLMConfig(model_name="text-generation/large"),
+            # when using nano temp needs to be 1.0 and nothing else
+            llm=LLMConfig(model_name="text-generation/nano", default_parameter=LLMParameter(temperature=1.0)),
             check_context_sufficiency=False,
             number_of_input_tokens=12000,
             system_prompt=LocaleString(
