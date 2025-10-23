@@ -7,13 +7,13 @@ index: 1
 
 ## Overview
 
-The AI-Hub platform is designed to meet the stringent data sovereignty, security, and compliance requirements of Swiss public sector organizations. Our deployment architecture balances **complete data isolation** with **operational efficiency** through a unique multi-instance model.
+The AI-Hub platform is designed to meet the stringent data sovereignty, security, and compliance requirements of Swiss private and public sector organizations. Our deployment architecture balances **complete data isolation** with **operational efficiency** through a unique multi-instance model.
 
 ## Core Deployment Philosophy: Isolated Instances with Shared Intelligence
 
 ### The Multi-Instance Model
 
-Unlike traditional multi-tenant SaaS platforms where customers share the same application and database infrastructure, the AI-Hub employs a **separate instance per tenant** approach. Each tenant (municipality, canton, department, or organization) receives a completely isolated AI-Hub deployment with dedicated:
+Unlike traditional multi-tenant SaaS platforms where customers share the same application and database infrastructure, the AI-Hub uses a **separate instance per tenant** approach. Each tenant (municipality, canton, department, or organization) receives a completely isolated AI-Hub deployment with dedicated:
 
 - **Application Services**: API, agents, pipelines, web interface, bot integrations
 - **Data Storage**: Databases (FerretDB/PostgreSQL), vector stores (Milvus/Azure AI Search)
