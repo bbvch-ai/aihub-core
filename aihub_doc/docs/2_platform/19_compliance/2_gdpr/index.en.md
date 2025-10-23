@@ -5,270 +5,151 @@ index: 4
 
 # GDPR Compliance
 
-The AI-Hub platform provides technical and organizational measures to support GDPR compliance. **Customers remain data controllers** and are ultimately responsible for their own compliance.
+The AI-Hub platform provides technical measures to support GDPR compliance. **Customers are data controllers** and responsible for their own compliance.
 
 :::warning Implementation Status
-This document describes both **implemented features** and **planned capabilities**. Features marked as "🚧 Not Implemented" require additional development.
+✅ = Implemented | 🚧 = Not Implemented
 :::
 
-## GDPR Principles & Platform Support
+## GDPR Principles
 
-### 1. Lawfulness, Fairness, and Transparency
+### Lawfulness, Transparency & Accountability
+**✅ Implemented:** Audit trails, source attribution, Phoenix tracing
+**Customer:** Document legal basis, provide privacy notices, maintain ROPA, conduct DPIAs
 
-**✅ Implemented:**
-- Complete audit trails ([Auditing](/platform/auditing))
-- Source attribution for AI responses ([Source Attribution](/platform/chat_ui/source_attribution))
-- Phoenix tracing for AI decision transparency
+### Purpose Limitation & Data Minimization
+**✅ Implemented:** Multi-tenant isolation, RBAC, namespace isolation, configurable retention
+**Customer:** Define processing purposes, configure retention, prune unused data
 
-**Customer Responsibilities:**
-- Document legal basis for processing
-- Provide privacy notices to end users
+### Accuracy & Storage Limitation
+**✅ Implemented:** Version control, 30-day auto-deletion (ephemeral), configurable retention (permanent)
+**Customer:** Maintain data accuracy, configure appropriate retention periods
 
-### 2. Purpose Limitation
-
-**✅ Implemented:**
-- Multi-tenant architecture with data isolation
-- Role-based access control (RBAC) ([Access Management](/platform/access_management))
-- Namespace isolation for knowledge bases ([Knowledge Namespaces](/platform/knowledges/namespaces))
-
-### 3. Data Minimization
-
-**✅ Implemented:**
-- Configurable retention policies ([Data Retention](/platform/compliance/data_retention))
-- Granular RBAC permissions
-
-**🚧 Not Implemented:**
-- Automated anonymization for prompts/responses (planned)
-
-### 4. Accuracy
-
-**✅ Implemented:**
-- Version control for knowledge base content
-- Update tracking for documents
-
-**Customer Responsibilities:**
-- Maintain knowledge base accuracy
-- Respond to correction requests
-
-### 5. Storage Limitation
-
-**✅ Implemented:**
-- Automatic expiration: 30-day default for ephemeral data (Redis, NATS)
-- Configurable retention for permanent storage (MongoDB)
-- Backup and archival ([Backup and Recovery](/platform/deployment_guide/backup_and_recovery))
-
-**Customer Responsibilities:**
-- Configure appropriate retention periods
-- Implement lifecycle policies for long-term data
-
-### 6. Integrity and Confidentiality (Security)
-
-**✅ Implemented:**
-- TLS/SSL encryption ([Data Encryption](/platform/security/data_encryption))
-- OAuth 2.0, OIDC, SAML authentication ([Authentication](/platform/security/authentication))
-- Container security ([Container Security](/platform/security/container_security))
-- Input validation ([Input Validation](/platform/security/input_validation))
-
-**Customer Responsibilities:**
-- Configure MFA and strong authentication
-- Monitor security logs
-- Review access permissions regularly
-
-### 7. Accountability
-
-**✅ Implemented:**
-- Comprehensive logging and auditing
-- Phoenix tracing for AI decisions
-
-**Customer Responsibilities:**
-- Maintain Records of Processing Activities (ROPA)
-- Conduct Data Protection Impact Assessments (DPIAs)
-- Designate Data Protection Officer (DPO) if required
+### Security & Integrity
+**✅ Implemented:** TLS/SSL, OAuth/OIDC/SAML, RBAC, container security, input validation
+**Customer:** Enable MFA, monitor logs, review permissions
 
 ## Data Subject Rights
 
-### Right of Access (Article 15)
+### Right of Access (Art. 15)
+**What's Required:** Copy of personal data, processing details, recipients, retention period, source (if collected from others)
 
 **✅ Implemented:**
-- User profile retrieval API (`GET /api/v1/users/me`)
-- Audit log access for administrators
+- User profile API (`GET /api/v1/users/me`)
+- Audit log access (admin)
 
-**🚧 Not Implemented:**
-- Comprehensive data export for all user data
-- Self-service DSAR portal
+**🚧 Missing:** Automated export of all user data across all entities
 
-**Current Procedure:**
-1. User requests access via support channel
-2. Admin uses API to retrieve user profile and audit logs
-3. Manual compilation of data from different sources
-4. Provide data to user in readable format
+**Workaround:** Admin manually compiles from UserEntity, ThreadEntity, audit logs
 
-### Right to Rectification (Article 16)
+### Right to Rectification (Art. 16)
+**What's Required:** Correct inaccurate data
 
-**✅ Implemented:**
-- Admin interfaces to update user profile data
-- Knowledge base update workflows
+**✅ Implemented:** Admin can update user profile via API
 
-**Procedure:**
-1. Verify requestor identity
-2. Locate data using admin API
-3. Update through admin interface
-4. Correction logged in audit trail
+**Note:** Thread messages and audit logs are immutable (audit trail requirement)
 
-### Right to Erasure (Article 17)
+### Right to Erasure (Art. 17)
+**What's Required:** Delete data when no longer necessary, consent withdrawn, or unlawfully processed
+
+**⚠️ Exceptions Apply:** Not required for legal obligations, archiving, research, or legal claims
 
 **✅ Implemented:**
-- Remove user from specific threads (`DELETE /api/v1/threads/{thread_id}/users/{user_id}`)
-- Automatic ephemeral data deletion (30-day TTL)
+- Remove user from threads (`DELETE /api/v1/threads/{thread_id}/users/{user_id}`)
+- 30-day auto-deletion (ephemeral data)
 
-**🚧 Not Implemented:**
-- User-level deletion API
-- Cascading deletion across all platform components
-- Exposed thread deletion API endpoint (service exists but not exposed)
+**🚧 Missing:** User-level deletion API with cascading delete
 
-**Current Limitation:**
-No automated way to delete all user data. Manual deletion required across:
-- UserEntity (MongoDB)
-- ThreadEntity where user is participant
-- PersistedAgentEventEntity / PersistedProcessEventEntity
-- Audit logs (consider retention requirements)
-- Backup systems
+**Workaround:** Admin manually deletes from UserEntity, ThreadEntity, PersistedEvents
 
-### Right to Restriction of Processing (Article 18)
+### Right to Data Portability (Art. 20)
+**What's Required:** Provide data "provided by the data subject" in machine-readable format
 
-**✅ Implemented:**
-- Account suspension via RBAC permission revocation
+**⚠️ Scope:** Only user-provided data (messages, uploads). **Does NOT include** AI responses, analytics, or derived data.
 
-**🚧 Not Implemented:**
-- "Processing restricted" flag in database
-- Automated restriction enforcement
+**⚠️ Conditions:** Only when processing based on consent/contract and automated
 
-**Current Procedure:**
-1. Verify identity and grounds for restriction
-2. Revoke user permissions via access management
-3. Document restriction in audit logs
+**🚧 Missing:** Automated export API
 
-### Right to Data Portability (Article 20)
+**Workaround:** Admin manually exports user messages and uploads as JSON/CSV
 
-**🚧 Not Implemented:**
-- Automated data export in machine-readable format
-- API for bulk data retrieval
+### Right to Restriction (Art. 18)
+**What's Required:** Suspend processing while verifying accuracy or assessing objection
 
-**Current Limitation:**
-Manual data compilation required using admin APIs.
+**✅ Implemented:** Account suspension via RBAC revocation
 
-### Right to Object (Article 21)
+**🚧 Missing:** "Processing restricted" database flag
 
-**✅ Implemented:**
-- Audit logging can be disabled per-user (configuration)
+### Right to Object (Art. 21)
+**What's Required:** Stop processing based on legitimate interests
 
-**🚧 Not Implemented:**
-- Granular opt-out mechanisms
-- Consent management system
+**✅ Implemented:** Permission revocation via RBAC
 
-### Rights Related to Automated Decision-Making (Article 22)
+## Technical Measures
 
-**✅ Implemented:**
-- Human-in-the-loop workflows ([Human-in-the-Loop](/platform/agents/agent_workflows/human_in_the_loop))
-- Explainability through source attribution and Phoenix tracing
-
-**Customer Responsibilities:**
-- Identify automated decisions with legal/significant effects
-- Configure human review for such decisions
-
-## Technical and Organizational Measures
-
-**✅ Privacy by Design:**
-- Minimal data collection by default
-- TLS/SSL encryption enabled by default
-- Default-deny RBAC permissions
+**Privacy by Design (Default Settings):**
+- TLS/SSL encryption mandatory
+- Default-deny RBAC
 - Automatic audit logging
-- 30-day ephemeral data retention by default
+- 30-day ephemeral data deletion
+- Minimal data collection
 
-**✅ Security Measures:**
-- See [Authentication](/platform/security/authentication), [Data Encryption](/platform/security/data_encryption), [Input Validation](/platform/security/input_validation), [Container Security](/platform/security/container_security)
+**Security:** See [Authentication](/platform/security/authentication), [Encryption](/platform/security/data_encryption), [Access Control](/platform/access_management)
 
-**Data Processing Agreements (DPA):**
-- Required for LLM providers and sub-processors
-- Customer responsibility to execute and maintain
+**Data Transfers:** Swiss hosting recommended (EU adequacy decision). Use SCCs for other countries. See [Deployment Options](/platform/deployment_guide/deployment_options).
 
-## International Data Transfers
+## Data Breach Notification
 
-**Swiss Hosting Advantage:**
-- Switzerland has EU adequacy decision
-- On-premise deployment avoids international transfers
-- Swiss cloud hosting recommended for GDPR compliance
+**Requirement:** Notify supervisory authority within **72 hours** if risk to data subjects' rights
 
-**For other jurisdictions:**
-- Use Standard Contractual Clauses (SCCs)
-- Conduct transfer impact assessments
-- See [Deployment Options](/platform/deployment_guide/deployment_options)
+**✅ Platform Tools:**
+- Audit logs for investigation
+- User access reports
+- Monitoring/alerting
+- Backup/recovery
 
-## Compliance Checklists
+**Customer Responsibility:** Assess risk, notify authority, notify individuals (if high risk), document breach
 
-**Initial Setup:**
-- [ ] Conduct DPIA for AI-Hub deployment
-- [ ] Document legal basis for processing
-- [ ] Configure authentication (OAuth/OIDC/SAML with MFA)
-- [ ] Set up RBAC with least privilege
-- [ ] Configure data retention policies
+## Compliance Checklist
+
+**Setup:**
+- [ ] DPIA for AI processing
+- [ ] Document legal basis
+- [ ] Configure authentication (MFA)
+- [ ] Configure RBAC (least privilege)
+- [ ] Set retention policies
 - [ ] Execute DPAs with LLM providers
-- [ ] Create user privacy notice
-- [ ] Designate DPO if required
+- [ ] Create privacy notice
+- [ ] Designate DPO (if required)
 
 **Ongoing:**
 - [ ] Review ROPA quarterly
-- [ ] Audit access permissions monthly
-- [ ] Review knowledge bases for outdated data
-- [ ] Test DSAR procedures (when implemented)
+- [ ] Audit permissions monthly
+- [ ] Prune knowledge bases
 - [ ] Monitor security logs
-- [ ] Annual GDPR compliance review
+- [ ] Annual compliance review
 
-## Data Breach Procedures
+## Known Gaps
 
-**Breach must be reported within 72 hours** to supervisory authority if high risk to individuals.
+**Required for Full Compliance:**
+- 🚧 User deletion API (cascading)
+- 🚧 Automated DSAR data export
+- 🚧 Data portability API
 
-**Response Steps:**
-1. **Detect and Contain** (immediate): Identify scope, contain breach, preserve evidence
-2. **Assess** (24 hours): Determine personal data involvement, assess risk
-3. **Notify Authority** (72 hours): Report to supervisory authority if required
-4. **Notify Individuals** (if high risk): Direct notification in plain language
-5. **Investigate** (ongoing): Root cause analysis, implement fixes
-6. **Document** (required): Record all breaches and remediation
-
-**Platform Tools:**
-- Audit logs for breach investigation
-- User access reports
-- Monitoring and alerting
-- Backup for recovery
-
-## Known Gaps & Roadmap
-
-**High Priority (Required for Full Compliance):**
-- 🚧 User-level deletion API with cascading delete
-- 🚧 Comprehensive DSAR data export functionality
-- 🚧 Data portability automation
-- 🚧 Exposed thread deletion API endpoint
-
-**Medium Priority:**
-- 🚧 Processing restriction flags and enforcement
-- 🚧 Granular consent management
-- 🚧 Self-service data access portal
-- 🚧 Automated anonymization
+**Optional Enhancements:**
+- 🚧 Processing restriction flags
+- 🚧 Consent management system
+- 🚧 Self-service DSAR portal
 
 ## Resources
 
-- **GDPR Full Text**: [https://gdpr-info.eu/](https://gdpr-info.eu/)
-- **EDPB Guidelines**: [https://edpb.europa.eu/](https://edpb.europa.eu/)
-- **Swiss FDPIC**: [https://www.edoeb.admin.ch/](https://www.edoeb.admin.ch/)
+- GDPR Full Text: [gdpr-info.eu](https://gdpr-info.eu/)
+- EDPB Guidelines: [edpb.europa.eu](https://edpb.europa.eu/)
 
-**Related Documentation:**
-- [Swiss DSG](/platform/compliance/dsg)
-- [Data Retention](/platform/compliance/data_retention)
-- [AI Act Compliance](/platform/compliance/ai_act)
+**Related:** [Swiss DSG](/platform/compliance/dsg) | [DSAR Procedures](/platform/compliance/data_subject_requests) | [Data Retention](/platform/compliance/data_retention)
 
 ---
 
 :::info Legal Disclaimer
-This documentation provides technical guidance but is not legal advice. Consult your Data Protection Officer or legal counsel for compliance questions.
+This is technical guidance, not legal advice. Consult your DPO or legal counsel.
 :::
