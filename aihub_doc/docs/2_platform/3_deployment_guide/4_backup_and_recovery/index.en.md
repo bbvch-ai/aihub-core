@@ -20,7 +20,6 @@ This guide describes backup and recovery procedures for AI-Hub deployments. The 
 
 | Deployment Type | RTO | RPO | Backup Frequency |
 |----------------|-----|-----|------------------|
-| Development (Local Docker) | 30 minutes | N/A | Manual/None |
 | Production (VM/On-Premise) | 8 hours | 15 minutes | Automated/Daily |
 
 ---
@@ -50,53 +49,6 @@ Tenant: Kanton Bern
 - Tenant-specific compliance requirements (retention periods)
 - Independent recovery without affecting other tenants
 - Granular cost tracking per tenant
-
----
-
-## Deployment Scenarios
-
-### Scenario 1: Development (Local Docker)
-
-**Purpose**: Developer workstations, testing, proof-of-concept
-
-**Backup Strategy**: Minimal (development data is disposable)
-
-**What to Back Up**:
-- ✅ Configuration files (version controlled)
-- ✅ Custom agent/pipeline code
-- ✅ `.env.example` (not `.env` with secrets)
-- ❌ Database data (regenerate from migrations)
-- ❌ Vector embeddings (re-index from source)
-- ❌ Test uploads
-
-**Recommended Approach**:
-```bash
-# Version control configuration
-git add configs/ aihub_*/
-git commit -m "Configuration snapshot"
-
-# Optional: Manual snapshot before major changes
-docker compose down
-tar -czf dev-snapshot-$(date +%Y%m%d).tar.gz \
-    .env.example configs/ docker-compose*.yml
-```
-
-**Recovery**: Re-deploy from git, run migrations, re-index test data
-
----
-
-### Scenario 2: Production (Self-Managed VMs)
-
-**Purpose**: Swiss Cloud VMs, on-premise production deployments
-
-**Applies to**:
-- Swiss cloud providers (Exoscale, Cloudscale, Azure VMs)
-- On-premise data centers
-- Kubernetes clusters with persistent volumes
-
-**Backup Strategy**: Comprehensive, automated, 3-2-1 rule
-
-This is the **primary focus** of this document.
 
 ---
 
