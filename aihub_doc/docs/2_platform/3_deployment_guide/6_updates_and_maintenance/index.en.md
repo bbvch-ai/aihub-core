@@ -14,20 +14,20 @@ This guide covers update and maintenance procedures for AI-Hub deployments. The 
 **Core Platform** (`aihub-core` - this repository):
 - Shared foundation components: API, Web, Dagster, Bot
 - Public repository visible to all
-- Semantic versioning (e.g., `v0.13.0`)
+- Semantic versioning (e.g., `v1.2.3`)
 - All customers' tenants use these core components
 
 **Customer Code** (`aihub-<customer>` - separate repositories):
 - Custom agents, pipelines, processes
-- Private customer repositories (under BBV or customer control)
-- Independent versioning pinned to specific core version
+- Private customer repositories (under bbv or customer control)
+- Independent versioning pinned to a specific core version
 - Customer controls update schedule
 
 ## Definitions
 
-- **Core Version**: Version of `aihub-core` platform components (e.g., `v0.13.0`)
+- **Core Version**: Version of `aihub-core` platform components (e.g., `v1.2.3`)
 - **Customer Version**: Version of customer-specific code (e.g., `v1.2.3`)
-- **Version Pinning**: Customer code explicitly depends on specific core version
+- **Version Pinning**: Customer code explicitly depends on a specific core version
 - **RTO (Recovery Time Objective)**: Maximum acceptable time to restore services after an update failure
 - **Rollback**: Reverting to the previous version after a failed update
 
@@ -45,15 +45,13 @@ The core platform uses **semantic versioning** (`major.minor.patch`):
 - **Minor** (0.X.0): New features, backward-compatible changes
 - **Patch** (0.0.X): Bug fixes, security patches
 
-**Current version**: `v0.13.0`
-
 ### Available Core Version Tags
 
 | Tag | Description | Stability | Use Case |
 |-----|-------------|-----------|----------|
 | `latest` | Latest stable production release | High | Production deployments |
 | `nightly` | Latest development build | Medium | Testing, staging environments |
-| `v0.13.0` | Specific version tag | Highest | Production with version pinning |
+| `v1.2.3` | Specific version tag | Highest | Production with version pinning |
 
 ### Core Release Process
 
@@ -65,44 +63,10 @@ The core platform uses **semantic versioning** (`major.minor.patch`):
 
 **Example Core Images**:
 ```
-ghcr.io/bbvch-ai/aihub-core/api:v0.13.0
-ghcr.io/bbvch-ai/aihub-core/dagster:v0.13.0
-ghcr.io/bbvch-ai/aihub-core/web:v0.13.0
+ghcr.io/bbvch-ai/aihub-core/api:v1.2.3
+ghcr.io/bbvch-ai/aihub-core/dagster:v1.2.3
+ghcr.io/bbvch-ai/aihub-core/web:v1.2.3
 ```
-
----
-
-## Core Update Types
-
-### 1. Core Patch Updates (Low Risk)
-
-**Scope**: Bug fixes, security patches in core components
-
-**Downtime**: Minimal (5-15 minutes)
-
-**Impact**: All tenants using this core version
-
-**Process**: Rolling restart of core services
-
-### 2. Core Minor Updates (Medium Risk)
-
-**Scope**: New core features, backward-compatible API changes
-
-**Downtime**: Short (15-30 minutes)
-
-**Impact**: Customer code remains compatible
-
-**Process**: Full service restart with health checks
-
-### 3. Core Major Updates (High Risk)
-
-**Scope**: Breaking changes in core APIs or architecture
-
-**Downtime**: Extended (30-120 minutes)
-
-**Impact**: **Requires customer code updates** for compatibility
-
-**Process**: Coordinated update with customer code testing
 
 ---
 
@@ -114,7 +78,7 @@ For backward-compatible core updates that don't affect customer code.
 
 #### Pre-Update Checklist
 
-- [ ] Review core changelog and release notes
+- [ ] Review the core changelog and release notes
 - [ ] Verify customer code compatibility (if breaking changes)
 - [ ] Backup all tenant data (per-tenant backups)
 - [ ] Create pre-update VM snapshot
@@ -144,23 +108,17 @@ For core updates that require customer code changes.
 
 #### Pre-Update Requirements
 
-- [ ] Review breaking changes in core changelog
+- [ ] Review breaking changes in the core changelog
 - [ ] Notify customers of required code updates
-- [ ] Test customer code against new core version in staging
-- [ ] Update customer code to support new core version
+- [ ] Test customer code against the new core version in staging
+- [ ] Update customer code to support the new core version
 - [ ] Plan coordinated update schedule
 
 #### Update Strategy
 
-**Option A: Update Core, Then Customer Code** (Recommended)
-1. Update core platform to new major version
-2. Verify core services healthy
-3. Update customer code separately (see Part 2)
-4. Test integration between new core and new customer code
-
-**Option B: Coordinated Update**
+**Coordinated Update**
 1. Prepare both core and customer code updates
-2. Schedule single maintenance window
+2. Schedule a maintenance window
 3. Update core and customer code together
 4. Verify complete system integration
 
@@ -172,10 +130,10 @@ For core updates that require customer code changes.
 
 Initiate a core rollback if:
 - Core services fail to start or remain unhealthy
-- Critical core APIs broken
+- Critical core APIs broke
 - Performance degradation in core components
 - Security vulnerabilities introduced in core
-- Unable to resolve core issues within RTO window
+- Unable to resolve core issues within the RTO window
 
 ### Core Rollback from VM Snapshot
 
@@ -214,9 +172,9 @@ Each customer has a separate private repository:
 
 ```
 aihub-<customer>/
-├── aihub_agents/          # Custom agent implementations
-├── aihub_pipeline/        # Custom data pipelines
-├── aihub_process/         # Custom business processes
+├── agents/          # Custom agent implementations
+├── pipeline/        # Custom data pipelines
+├── process/         # Custom business processes
 ├── pyproject.toml         # Dependencies + core version pinning
 ├── docker-compose.yml     # Deployment configuration
 └── .github/workflows/     # CI/CD pipelines
@@ -226,23 +184,23 @@ aihub-<customer>/
 
 Customer code uses **independent semantic versioning**:
 
-- **Version**: `v1.2.3` (separate from core version)
+- **Version**: `v1.2.3` (separate from the core version)
 - **Core Dependency**: Pinned in `pyproject.toml`
 
 **Example**:
 ```toml
 [tool.poetry.dependencies]
-aihub-core = { git = "https://github.com/bbvch-ai/aihub-core.git", tag = "v0.13.0" }
+aihub-core = { git = "https://github.com/bbvch-ai/aihub-core.git", tag = "v1.2.3" }
 ```
 
 ### Customer Image Publishing
 
-Customer code follows same CI/CD pattern as core:
+Customer code follows the same CI/CD pattern as core:
 
 ```
 ghcr.io/bbvch-ai/aihub-<customer>/agent:v1.2.3
 ghcr.io/bbvch-ai/aihub-<customer>/pipeline:v1.2.3
-ghcr.io/bbvch-ai/aihub-<customer>/process:v1.2.3
+ghcr.io/<customer>/aihub/process:v1.2.3
 ```
 
 ---
@@ -253,7 +211,7 @@ ghcr.io/bbvch-ai/aihub-<customer>/process:v1.2.3
 
 **Scope**: Bug fixes or features in customer agents/pipelines
 
-**Core Version**: Unchanged (still pinned to same core version)
+**Core Version**: Unchanged (still pinned to the same core version)
 
 **Downtime**: Minimal (5-15 minutes)
 
@@ -261,9 +219,9 @@ ghcr.io/bbvch-ai/aihub-<customer>/process:v1.2.3
 
 ### 2. Customer Code + Core Version Bump
 
-**Scope**: Customer code updated to use newer core version
+**Scope**: Customer code updated to use a newer core version
 
-**Core Version**: Updated (e.g., `v0.13.0` → `v0.14.0`)
+**Core Version**: Updated (e.g., `v1.2.3` → `v2.3.4`)
 
 **Downtime**: Medium (15-30 minutes)
 
@@ -281,13 +239,13 @@ For customer code changes without core version change.
 
 - [ ] Review customer code changelog
 - [ ] Verify core version compatibility (unchanged)
-- [ ] Test in staging environment
+- [ ] Test in a staging environment
 - [ ] Backup tenant data
 - [ ] Schedule maintenance window
 
 #### Update Steps
 
-1. **Backup Current State**: Create snapshot
+1. **Backup Current State**: Create a snapshot
 2. **Update Customer Image Tags**: Modify `docker-compose.yml` for customer services only
 3. **Pull New Customer Images**: Download updated customer containers
 4. **Restart Customer Services**: Stop and restart agents/pipelines/processes
@@ -308,7 +266,7 @@ For updating customer code to use a newer core version.
 
 #### Pre-Update Requirements
 
-- [ ] Test customer code against new core version in staging
+- [ ] Test customer code against the new core version in staging
 - [ ] Update core version pin in `pyproject.toml`
 - [ ] Rebuild and test customer images
 - [ ] Review core breaking changes affecting customer code
@@ -317,11 +275,11 @@ For updating customer code to use a newer core version.
 #### Update Steps
 
 1. **Backup Current State**: Complete system backup
-2. **Update Core Components First**: Follow core update procedure (Part 1)
-3. **Verify Core Health**: Ensure core services healthy
-4. **Update Customer Code Images**: Deploy customer code built against new core
+2. **Update Core Components First**: Follow the core update procedure (Part 1)
+3. **Verify Core Health**: Ensure core services are healthy
+4. **Update Customer Code Images**: Deploy customer code built against a new core
 5. **Restart Customer Services**: Start updated customer services
-6. **Verify Integration**: Test customer code with new core
+6. **Verify Integration**: Test customer code with the new core
 7. **Monitor**: Close monitoring for 24-48 hours
 
 ---
@@ -332,7 +290,7 @@ For updating customer code to use a newer core version.
 
 Rollback customer code if:
 - Custom agents/pipelines fail to start
-- Customer-specific functionality broken
+- Customer-specific functionality broke
 - Performance issues in customer services
 - Integration issues with core (after core update)
 
@@ -352,7 +310,7 @@ If customer code was updated alongside core:
 
 1. **Rollback Core First**: Follow core rollback procedure
 2. **Rollback Customer Code**: Revert customer image tags
-3. **Restart All Services**: Core + customer services
+3. **Restart All Services**: Core and customer services
 4. **Verify Complete System**: Test full stack
 
 **RTO**: 20-40 minutes
@@ -365,83 +323,27 @@ If customer code was updated alongside core:
 
 ### Version Pinning Strategy
 
-Customer code explicitly pins to specific core version:
+Customer code explicitly pins to a specific core version:
 
 ```toml
 # pyproject.toml in customer repo
 [tool.poetry.dependencies]
-aihub-core = { git = "https://github.com/bbvch-ai/aihub-core.git", tag = "v0.13.0" }
+aihub-core = { git = "https://github.com/bbvch-ai/aihub-core.git", tag = "v1.2.3" }
 ```
 
 **Benefits**:
 - Customer controls when to adopt new core versions
 - Core updates don't break customer code unexpectedly
-- Customer can test compatibility before updating
+- Customers can test compatibility before updating
 
 ### Compatibility Matrix Example
 
 | Customer Version | Core Version | Status | Notes |
 |-----------------|--------------|--------|-------|
-| v1.0.0 | v0.12.0 | Legacy | End of life |
-| v1.1.0 | v0.13.0 | Supported | Current production |
-| v1.2.0 | v0.13.0 | Supported | Latest features |
-| v2.0.0 | v0.14.0 | Testing | Next major release |
-
----
-
-## Update Strategies
-
-### Strategy 1: Update Core First (Recommended)
-
-For backward-compatible core updates.
-
-**Workflow**:
-1. Update core platform (v0.13.0 → v0.13.1)
-2. Verify customer code still works (no changes needed)
-3. Customer code continues using updated core
-4. Optional: Update customer code later for new core features
-
-**Advantages**:
-- Lower risk (customer code unchanged)
-- Faster update cycle
-- Can update core and customer independently
-
-### Strategy 2: Coordinated Update
-
-For breaking core changes requiring customer code updates.
-
-**Workflow**:
-1. Core releases new major version (v0.13.0 → v0.14.0)
-2. Customer tests their code against v0.14.0 in staging
-3. Customer updates code for compatibility
-4. Schedule coordinated update:
-   - Update core to v0.14.0
-   - Update customer code to v2.0.0 (built against v0.14.0)
-5. Deploy both together
-
-**Advantages**:
-- Single maintenance window
-- Guaranteed compatibility
-- Controlled migration
-
-### Strategy 3: Gradual Migration
-
-For large customer codebases with many custom components.
-
-**Workflow**:
-1. Update core to new version (backward-compatible mode)
-2. Migrate customer components incrementally:
-   - Update and deploy Agent A
-   - Test and verify
-   - Update and deploy Pipeline B
-   - Test and verify
-   - Continue until all components updated
-3. Disable backward-compatible mode in core
-
-**Advantages**:
-- Lowest risk
-- Incremental testing
-- Easier rollback of individual components
+| v1.0.0 | v0.1.2       | Legacy | End of life |
+| v1.1.0 | v1.2.3       | Supported | Current production |
+| v1.2.0 | v1.2.3       | Supported | Latest features |
+| v2.0.0 | v2.3.4       | Testing | Next major release |
 
 ---
 
@@ -479,76 +381,6 @@ Before updating production:
 
 ---
 
-## Multi-Tenant Update Strategy
-
-### Per-Tenant Deployment Model
-
-Each tenant operates isolated instance with:
-- Shared core components (same core version across tenants)
-- Tenant-specific customer code (can differ per tenant)
-
-### Phased Rollout Strategy
-
-**Phase 1: Pilot Tenant** (Week 1)
-- Select low-risk tenant
-- Update core and customer code
-- Monitor for 3-5 days
-- Collect feedback
-
-**Phase 2: Staged Rollout** (Week 2-3)
-- Update 25% of tenants
-- Monitor for issues
-- Update another 25%
-- Continue to 75%
-
-**Phase 3: Final Deployment** (Week 4)
-- Update remaining 25%
-- Monitor all tenants
-- Document lessons learned
-
-**Alternative: Customer-Controlled Updates**
-
-If customer controls their repository:
-- Customer decides update schedule
-- Customer tests in their staging
-- Customer deploys to their tenants
-- BBV provides core updates and support
-
----
-
-## Configuration Management
-
-### Core Configuration
-
-Version-controlled in `aihub-core` repository:
-- `configs/nats/nats.latest.conf`
-- `configs/litellm/config.latest.yaml`
-- `configs/milvus/milvus.latest.yaml`
-- `configs/dagster/dagster.latest.yaml`
-
-### Customer Configuration
-
-Version-controlled in customer repository:
-- `configs/custom-agent-config.yaml`
-- `configs/custom-pipeline-config.yaml`
-- `.env` (tenant-specific environment variables)
-
-### Configuration Updates
-
-**Core Configuration Changes**:
-1. Update configuration in `aihub-core`
-2. Test in staging
-3. Deploy with core update
-4. Customer code inherits new configuration
-
-**Customer Configuration Changes**:
-1. Update configuration in customer repo
-2. Test in staging
-3. Deploy with customer code update
-4. Core remains unchanged
-
----
-
 ## Monitoring During Updates
 
 ### Core Health Monitoring
@@ -578,7 +410,7 @@ Use built-in observability stack:
 
 ## Maintenance Tasks
 
-### Core Maintenance (BBV Responsibility)
+### Core Maintenance (bbv Responsibility)
 
 **Weekly**:
 - [ ] Review core security advisories
@@ -595,7 +427,7 @@ Use built-in observability stack:
 - [ ] Core security audit
 - [ ] Core disaster recovery drill
 
-### Customer Code Maintenance (Customer or BBV)
+### Customer Code Maintenance (Customer or bbv)
 
 **Weekly**:
 - [ ] Review customer code logs
@@ -626,9 +458,9 @@ Use built-in observability stack:
 - Confirm database migrations completed
 
 **Resolution**:
-- Review core changelog for breaking changes
-- Rollback core to previous version
-- Contact BBV support for core issues
+- Review the core changelog for breaking changes
+- Rollback core to a previous version
+- Contact bbv support for core issues
 
 ### Customer Service Fails After Update
 
@@ -636,14 +468,14 @@ Use built-in observability stack:
 
 **Diagnosis**:
 - Check customer service logs
-- Verify customer code compatibility with core version
+- Verify customer code compatibility with the core version
 - Test customer code in isolation
 
 **Resolution**:
 - Review customer code changes
 - Verify core API compatibility
 - Rollback customer code if needed
-- Update customer code for new core version
+- Update customer code for a new core version
 
 ### Integration Issues Between Core and Customer
 
@@ -651,7 +483,7 @@ Use built-in observability stack:
 
 **Diagnosis**:
 - Check API version compatibility
-- Review core API changes in changelog
+- Review core API changes in the changelog
 - Verify network connectivity between containers
 
 **Resolution**:
@@ -670,7 +502,7 @@ For urgent vulnerabilities in core platform:
 1. **Assess Impact**: Determine which customers/tenants affected
 2. **Notify Customers**: Emergency maintenance notice
 3. **Backup**: Quick snapshot across tenants
-4. **Apply Core Patch**: Update core images to patched version
+4. **Apply Core Patch**: Update core images to a patched version
 5. **Verify**: Test core security fix
 6. **Monitor**: Close monitoring for 24 hours
 
@@ -695,7 +527,7 @@ For urgent vulnerabilities in customer-specific code:
 
 ### For Core Updates
 
-- **Pin Versions in Production**: Use explicit core tags (v0.13.0), not `latest`
+- **Pin Versions in Production**: Use explicit core tags (v1.2.3), not `latest`
 - **Test Before Deploy**: Always test core updates in staging first
 - **Communicate Breaking Changes**: Notify customers well in advance of major core updates
 - **Maintain Backward Compatibility**: Strive for backward-compatible core APIs
@@ -713,45 +545,6 @@ For urgent vulnerabilities in customer-specific code:
 - **Test Compatibility**: Always test customer code against new core in staging
 - **Staged Rollouts**: Use pilot tenants before full deployment
 - **Document Dependencies**: Maintain clear compatibility matrix
-
----
-
-## Summary Checklist
-
-### Core Update Checklist
-
-- [ ] Review core changelog
-- [ ] Notify affected customers of core update
-- [ ] Test core update in staging
-- [ ] Backup all tenant data
-- [ ] Update core image tags
-- [ ] Deploy core update
-- [ ] Verify core services healthy
-- [ ] Test customer code compatibility
-- [ ] Monitor for 48 hours
-
-### Customer Code Update Checklist
-
-- [ ] Review customer code changes
-- [ ] Verify core version compatibility
-- [ ] Test customer code in staging
-- [ ] Backup tenant data
-- [ ] Update customer image tags
-- [ ] Deploy customer code update
-- [ ] Verify customer services healthy
-- [ ] Test integration with core
-- [ ] Monitor for 48 hours
-
-### Combined Update Checklist
-
-- [ ] Plan coordinated update schedule
-- [ ] Test both core and customer code together
-- [ ] Backup complete system
-- [ ] Update core first, verify health
-- [ ] Update customer code, verify health
-- [ ] Test end-to-end functionality
-- [ ] Monitor for 48 hours
-- [ ] Document update results
 
 ---
 
