@@ -15,7 +15,7 @@ The AI-Hub platform provides technical measures to support GDPR compliance. **Cu
 
 ### Lawfulness, Transparency & Accountability
 **✅ Implemented:** Audit trails, source attribution, Phoenix tracing
-**Customer:** Document legal basis, provide privacy notices, maintain ROPA, conduct DPIAs
+**Customer:** Document a legal basis, provide privacy notices, maintain ROPA, conduct DPIAs
 
 ### Purpose Limitation & Data Minimization
 **✅ Implemented:** Multi-tenant isolation, RBAC, namespace isolation, configurable retention
@@ -119,7 +119,7 @@ The AI-Hub platform provides technical measures to support GDPR compliance. **Cu
 - [ ] Configure RBAC (least privilege)
 - [ ] Set retention policies
 - [ ] Execute DPAs with LLM providers
-- [ ] Create privacy notice
+- [ ] Create a privacy notice
 - [ ] Designate DPO (if required)
 
 **Ongoing:**
