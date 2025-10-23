@@ -9,7 +9,7 @@ index: 1
 
 The AI-Hub platform is designed to meet the stringent data sovereignty, security, and compliance requirements of Swiss private and public sector organizations. Our deployment architecture balances **complete data isolation** with **operational efficiency** through a unique multi-instance model.
 
-## Core Deployment Philosophy: Isolated Instances with Shared Intelligence
+## Core Deployment Philosophy: Fully Isolated Instances with Shared LLM Backend
 
 ### The Multi-Instance Model
 
@@ -20,18 +20,25 @@ Unlike traditional multi-tenant SaaS platforms where customers share the same ap
 - **File Storage**: Document storage (SeaweedFS/Azure Data Lake)
 - **Observability Stack**: Monitoring, tracing, and logging infrastructure (SigNoz, Phoenix)
 - **Message Bus**: Event streaming and communication (NATS)
+- **LLM Proxy**: Each tenant has their own LiteLLM proxy instance for independent cost tracking and version control
 
-### Shared Infrastructure: The LLM Layer
+### Shared Infrastructure: LLM Backend Resources
 
-While each tenant operates an isolated instance, the **Large Language Model (LLM) infrastructure is centrally shared** across tenants through a dedicated LLM proxy layer (LiteLLM). This approach provides:
+While each tenant operates a **fully isolated instance** (including their own LiteLLM proxy), certain **backend LLM resources are shared** across tenants to optimize costs and infrastructure:
 
-- **Cost Efficiency**: Centralized model deployment reduces infrastructure costs
-- **Model Management**: Simplified version control, updates, and model lifecycle management
-- **Performance Optimization**: Shared caching and load balancing across all tenants
-- **Security**: API key management and rate limiting at the proxy layer
-- **Compliance**: Centralized audit logging and usage tracking
+**Shared LLM Resources**:
+- **API Credentials**: Shared Azure OpenAI subscriptions, Google Gemini API keys (accessed via tenant-specific LiteLLM proxies)
+- **Self-Hosted Models**: Centralized vLLM, llama.cpp, or Ollama deployments serving multiple tenants
+- **Authentication (Optional)**: Central Azure AD or Keycloak for organizations managing multiple tenant instances
 
-**Privacy Guarantee**: The LLM proxy is stateless and does not persist tenant prompts or responses. All conversational context and user data remain within the isolated tenant instance.
+**Why This Hybrid Approach?**
+- **Cost Efficiency**: Share expensive LLM API subscriptions and GPU infrastructure across tenants
+- **Per-Tenant Control**: Each tenant configures their own LiteLLM proxy (model selection, budgets, rate limits, versions)
+- **Independent Versioning**: Tenants can use different LiteLLM versions and model routing configurations
+- **Granular Cost Tracking**: Each tenant's LLM usage is tracked independently through their LiteLLM proxy
+- **Complete Data Isolation**: Prompts, responses, and user data never leave the tenant instance
+
+**Privacy Guarantee**: Shared LLM backends (Azure OpenAI, Google Gemini, self-hosted models) are stateless and do not persist tenant prompts or responses. All conversational context, history, and user data remain within the isolated tenant instance.
 
 ## Why This Architecture?
 
@@ -91,6 +98,14 @@ Tenant Instance (e.g., Stadt Zug)
 │   ├── Vector Store (Milvus or Azure AI Search)
 │   └── Document Store (SeaweedFS or Azure Data Lake)
 │
+├── LLM Layer (Per-Tenant)
+│   ├── LiteLLM Proxy (tenant-specific instance)
+│   │   ├── Cost tracking and budgets
+│   │   ├── Model routing configuration
+│   │   ├── Rate limiting
+│   │   └── Version control
+│   └── Presidio (PII anonymization - optional)
+│
 ├── Observability Layer
 │   ├── Phoenix (AI tracing and evaluation)
 │   ├── SigNoz (metrics, logs, traces)
@@ -104,23 +119,26 @@ Tenant Instance (e.g., Stadt Zug)
 
 **Shared Infrastructure (Across All Tenants)**:
 ```
-Centralized LLM Layer
-├── LiteLLM Proxy (OpenAI-compatible API)
-│   ├── Model routing and load balancing
-│   ├── API key management per tenant
-│   ├── Rate limiting and cost tracking
-│   └── Request/response logging
+Shared LLM Backend Resources
+├── LLM API Subscriptions
+│   ├── Azure OpenAI subscription (shared API keys)
+│   ├── Google Gemini API keys
+│   └── Other cloud provider credentials
 │
-└── LLM Deployments
-    ├── Azure OpenAI (GPT-4, GPT-4o, embeddings)
-    ├── Google Gemini (Gemini 1.5, Gemini 2.0)
-    ├── Self-hosted models (vLLM, llama.cpp)
-    └── Presidio (PII anonymization)
+├── Self-Hosted Model Infrastructure
+│   ├── vLLM deployment (GPU cluster)
+│   ├── llama.cpp servers
+│   └── Ollama instances
+│
+└── Optional Shared Services
+    ├── Central Authentication (Azure AD, Keycloak)
+    └── Central Monitoring Dashboard (optional)
 ```
 
 **Network Architecture**:
-- Tenant instances connect to LiteLLM via authenticated API calls
-- LiteLLM enforces per-tenant API keys and quotas
+- Each tenant has their own LiteLLM proxy instance
+- Tenant LiteLLM proxies connect to shared LLM backends (Azure OpenAI, Gemini, self-hosted models)
+- Shared LLM backends use common API credentials (configured per tenant's LiteLLM)
 - No direct communication between tenant instances
 - Optional: Shared authentication provider (Azure AD, Keycloak)
 
@@ -394,43 +412,54 @@ docker compose -f docker-compose-gpu.dev.yml up -d
 
 ## Architecture Diagrams
 
-### Multi-Instance Deployment with Shared LLM
+### Multi-Instance Deployment with Shared LLM Backend
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                       Centralized LLM Layer                         │
+│                   Shared LLM Backend Resources                      │
 │  ┌───────────────────────────────────────────────────────────────┐ │
-│  │  LiteLLM Proxy (OpenAI-compatible API)                        │ │
-│  │  • API key management per tenant                              │ │
-│  │  • Rate limiting and cost tracking                            │ │
-│  │  • Model routing (Azure, Google, self-hosted)                 │ │
-│  └─────────────────┬────────────────────────┬────────────────────┘ │
-│                    │                        │                      │
-│  ┌─────────────────┴─────────┐  ┌──────────┴──────────────┐      │
-│  │   Azure OpenAI            │  │  Google Gemini          │      │
-│  │   (GPT-4, Embeddings)     │  │  (Gemini 2.0)           │      │
-│  └───────────────────────────┘  └─────────────────────────┘      │
-└─────────────────────────────────────────────────────────────────────┘
-                             ▲                    ▲
-                     HTTPS API Calls      HTTPS API Calls
-                             │                    │
-        ┌────────────────────┴────────┬───────────┴──────────────┐
-        │                             │                           │
-┌───────▼───────────┐      ┌──────────▼─────────┐   ┌───────────▼────────┐
-│  Tenant: Zug      │      │  Tenant: Zürich    │   │  Tenant: Geneva    │
-│  (Isolated Stack) │      │  (Isolated Stack)  │   │  (Isolated Stack)  │
-├───────────────────┤      ├────────────────────┤   ├────────────────────┤
-│ • API Service     │      │ • API Service      │   │ • API Service      │
-│ • Web Interface   │      │ • Web Interface    │   │ • Web Interface    │
-│ • Agents          │      │ • Agents           │   │ • Agents           │
-│ • Pipelines       │      │ • Pipelines        │   │ • Pipelines        │
-│ • Database        │      │ • Database         │   │ • Database         │
-│ • Vector Store    │      │ • Vector Store     │   │ • Vector Store     │
-│ • File Storage    │      │ • File Storage     │   │ • File Storage     │
-│ • Observability   │      │ • Observability    │   │ • Observability    │
-└───────────────────┘      └────────────────────┘   └────────────────────┘
-     Zug Users                 Zürich Users              Geneva Users
+│  │  Cloud LLM APIs                    Self-Hosted Models         │ │
+│  │  ┌─────────────────┐              ┌─────────────────┐        │ │
+│  │  │ Azure OpenAI    │              │ vLLM (GPU)      │        │ │
+│  │  │ (Shared creds)  │              │ llama.cpp       │        │ │
+│  │  └─────────────────┘              │ Ollama          │        │ │
+│  │  ┌─────────────────┐              └─────────────────┘        │ │
+│  │  │ Google Gemini   │                                          │ │
+│  │  │ (Shared API key)│                                          │ │
+│  │  └─────────────────┘                                          │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+└────────────▲──────────────────▲──────────────────▲─────────────────┘
+             │                  │                  │
+     HTTPS API Calls    HTTPS API Calls    HTTPS API Calls
+             │                  │                  │
+┌────────────┴────────┐  ┌──────┴──────────┐  ┌───┴─────────────────┐
+│  Tenant: Zug        │  │  Tenant: Zürich │  │  Tenant: Geneva     │
+│  (Isolated Stack)   │  │  (Isolated Stack│  │  (Isolated Stack)   │
+├─────────────────────┤  ├─────────────────┤  ├─────────────────────┤
+│ ┌─────────────────┐ │  │ ┌─────────────┐ │  │ ┌─────────────────┐ │
+│ │ LiteLLM Proxy   │ │  │ │ LiteLLM     │ │  │ │ LiteLLM Proxy   │ │
+│ │ (Zug instance)  │ │  │ │ (ZH inst.)  │ │  │ │ (Geneva inst.)  │ │
+│ │ • Cost tracking │ │  │ │ • Budgets   │ │  │ │ • Cost tracking │ │
+│ │ • Rate limits   │ │  │ │ • Routing   │ │  │ │ • Rate limits   │ │
+│ └─────────────────┘ │  │ └─────────────┘ │  │ └─────────────────┘ │
+│                     │  │                 │  │                     │
+│ • API Service       │  │ • API Service   │  │ • API Service       │
+│ • Web Interface     │  │ • Web Interface │  │ • Web Interface     │
+│ • Agents            │  │ • Agents        │  │ • Agents            │
+│ • Pipelines         │  │ • Pipelines     │  │ • Pipelines         │
+│ • Database          │  │ • Database      │  │ • Database          │
+│ • Vector Store      │  │ • Vector Store  │  │ • Vector Store      │
+│ • File Storage      │  │ • File Storage  │  │ • File Storage      │
+│ • Observability     │  │ • Observability │  │ • Observability     │
+└─────────────────────┘  └─────────────────┘  └─────────────────────┘
+     Zug Users               Zürich Users            Geneva Users
 ```
+
+**Key Points**:
+- Each tenant has their **own LiteLLM proxy instance** (independent cost tracking, versioning, configuration)
+- All tenant LiteLLM proxies connect to **shared LLM backend resources** (Azure OpenAI subscriptions, self-hosted models)
+- **Complete data isolation**: Prompts, responses, and user data stay within tenant boundaries
+- **Cost efficiency**: Shared expensive LLM API subscriptions and GPU infrastructure
 
 ---
 
@@ -458,11 +487,13 @@ OAUTH_CLIENT_SECRET="..."
 OAUTH_AUTHORITY_URL="https://login.microsoftonline.com/{tenant-id}"
 ```
 
-**LLM Proxy Connection**:
+**LLM Configuration**:
 ```bash
-# Centralized LiteLLM proxy
-LITE_LLM_PROXY_BASE_URL="https://litellm.ai-hub-platform.ch/v1"
-LITE_LLM_PROXY_API_KEY="tenant-zug-api-key-xxxxx"
+# Tenant-specific LiteLLM proxy (part of tenant instance)
+# Connects to shared LLM backends (Azure OpenAI, Gemini, self-hosted)
+AZURE_OPENAI_KEY="<shared-azure-subscription-key>"
+GEMINI_API_KEY="<shared-gemini-api-key>"
+VLLM_ENDPOINT="https://vllm.shared-infrastructure.ch/v1"
 ```
 
 **Data Storage**:
@@ -477,37 +508,45 @@ POSTGRES_PASSWORD="..."
 AZURE_AI_SEARCH_ENDPOINT="https://search-zug.search.windows.net"
 ```
 
-### Shared LLM Configuration
+### Per-Tenant LiteLLM Configuration
 
-The LiteLLM proxy is configured centrally with per-tenant API keys and quotas:
+Each tenant configures their own LiteLLM proxy through `configs/litellm/config.yaml` within their instance:
 
-**`configs/litellm/config.yaml`**:
+**`configs/litellm/config.yaml` (Per-Tenant)**:
 ```yaml
 model_list:
+  # Azure OpenAI using shared subscription
   - model_name: gpt-4o
     litellm_params:
       model: azure/gpt-4o
-      api_key: os.environ/AZURE_OPENAI_KEY
+      api_key: os.environ/AZURE_OPENAI_KEY  # Shared Azure subscription
 
+  # Google Gemini using shared API key
   - model_name: gemini-2.0-flash
     litellm_params:
       model: gemini/gemini-2.0-flash-001
-      api_key: os.environ/GEMINI_API_KEY
+      api_key: os.environ/GEMINI_API_KEY  # Shared Gemini key
+
+  # Self-hosted vLLM (shared infrastructure)
+  - model_name: llama-3-70b
+    litellm_params:
+      model: openai/llama-3-70b-instruct
+      api_base: https://vllm.shared-infrastructure.ch/v1
 
 general_settings:
-  master_key: ${LITELLM_MASTER_KEY}
-  database_url: "postgresql://..."
+  master_key: ${LITELLM_MASTER_KEY}  # Tenant-specific master key
+  database_url: "postgresql://..."   # Tenant-specific database
 
-  # Per-tenant API keys
-  api_keys:
-    - key: tenant-zug-api-key-xxxxx
-      models: ["gpt-4o", "gemini-2.0-flash"]
-      max_budget: 1000.00  # USD per month
-
-    - key: tenant-zurich-api-key-yyyyy
-      models: ["gpt-4o"]
-      max_budget: 5000.00
+  # Tenant-specific budget controls
+  max_budget: 1000.00  # USD per month
+  budget_duration: "monthly"
 ```
+
+**Key Configuration Points**:
+- Each tenant's LiteLLM uses **shared LLM backend credentials** (Azure, Gemini, vLLM)
+- Each tenant sets their **own budget limits** and rate limiting
+- Each tenant tracks **their own costs** independently
+- Tenants can use **different LiteLLM versions** (updated independently)
 
 ---
 
@@ -545,22 +584,7 @@ general_settings:
    # or self-signed for testing
    ```
 
-### Step 3: Register Tenant in LiteLLM
-
-1. Add tenant API key to `configs/litellm/config.yaml`:
-   ```yaml
-   api_keys:
-     - key: tenant-zug-api-key-xxxxx
-       models: ["gpt-4o", "gemini-2.0-flash"]
-       max_budget: 1000.00
-   ```
-
-2. Deploy updated LiteLLM configuration:
-   ```bash
-   docker compose -f docker-compose-litellm.yml up -d
-   ```
-
-### Step 4: Deploy Tenant Instance
+### Step 3: Deploy Tenant Instance
 
 ```bash
 # Load tenant configuration
@@ -573,7 +597,7 @@ docker compose -f docker-compose.latest.yml up -d
 docker compose ps
 ```
 
-### Step 5: Configure Tenant Settings
+### Step 4: Configure Tenant Settings
 
 1. Access the admin interface: `https://{DOMAIN}/admin`
 2. Configure:
@@ -582,7 +606,7 @@ docker compose ps
    - RBAC roles
    - Data retention policies
 
-### Step 6: User Onboarding
+### Step 5: User Onboarding
 
 1. Configure OIDC/SAML integration with tenant's IdP
 2. Assign roles to users (admin, data steward, end user)
@@ -636,14 +660,14 @@ docker compose ps
 
 **A**: No. Each tenant instance has its own isolated set of agents and pipelines. However, the same agent *definitions* (code) can be deployed across multiple tenant instances. Customizations are tenant-specific.
 
-### Q: What data does the shared LLM layer see?
+### Q: What data does the shared LLM backend see?
 
-**A**: The LiteLLM proxy sees:
-- API requests (model name, parameters, metadata)
-- Prompts and completions (in transit, not persisted)
-- Tenant API key (for routing and billing)
+**A**: Each tenant has their own LiteLLM proxy, so prompts/responses stay within the tenant instance. The shared LLM backends (Azure OpenAI, Gemini, self-hosted models) see:
+- API requests from multiple tenant LiteLLM proxies (stateless, not persisted)
+- Model inference requests (prompts and completions in transit only)
+- No tenant identification or context
 
-**It does NOT persist**: Prompts, responses, or user data. All conversational context remains in the tenant instance.
+**They do NOT see**: Which tenant made the request, conversational history, or any stored data. All context remains in the tenant's LiteLLM proxy and database.
 
 ### Q: Can a tenant use self-hosted models exclusively?
 
