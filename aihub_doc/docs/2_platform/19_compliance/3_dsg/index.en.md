@@ -5,178 +5,100 @@ index: 3
 
 # Swiss Data Protection Act (revDSG)
 
-The revised Swiss Federal Act on Data Protection (revDSG) came into force on September 1, 2023. The AI-Hub platform is designed to support compliance with Swiss data protection requirements.
+The revised Swiss Federal Act on Data Protection (revDSG/FADP) came into force September 1, 2023. It's 80-90% aligned with GDPR.
 
 :::info
-The revDSG is largely aligned with GDPR but has Swiss-specific requirements. This document focuses on Swiss-specific aspects. For general data protection features, see [GDPR Compliance](/platform/compliance/gdpr).
+See [GDPR Compliance](/platform/compliance/gdpr) for shared requirements. This document covers Swiss-specific differences only.
 :::
 
 ## Key Differences from GDPR
 
-| Aspect | revDSG | GDPR | AI-Hub Support |
-|--------|---------|------|----------------|
-| **Territorial Scope** | Applies to data processing affecting Swiss residents | Applies to EU/EEA residents | ✅ Supported via Swiss hosting |
-| **Legal Basis** | Less restrictive than GDPR | Strict consent requirements | ✅ Supports both approaches |
-| **Data Breach Notification** | Only if "high risk" to affected persons | Within 72 hours if "risk to rights and freedoms" | ✅ Audit logs support both |
-| **DPO Requirement** | No mandatory DPO requirement | Mandatory DPO in many cases | N/A - Customer decision |
-| **Profiling** | Special provisions for "high-risk profiling" | Provisions for automated decision-making | ✅ Human-in-the-loop available |
-| **Data Transfers** | Adequacy assessment required | Adequacy decision or safeguards required | ✅ Swiss hosting recommended |
+| Aspect | revDSG | GDPR |
+|--------|---------|------|
+| **Fines** | Up to CHF 250K on **individuals** (not companies) | Up to €20M or 4% revenue on companies |
+| **DPO** | Not required | Often mandatory |
+| **Legal Basis** | No explicit legal basis required (different approach) | Explicit legal basis mandatory (Art. 6) |
+| **Breach Notification** | "As quickly as possible" if high risk (no deadline) | Within 72 hours if risk exists |
+| **Sensitive Data** | Includes administrative/criminal proceedings + social security data | 9 special categories |
+| **Scope** | Only natural persons (legal entities excluded since 2023) | Only natural persons |
 
 ## revDSG-Specific Requirements
 
-### 1. Privacy by Design and Default
+### 1. High-Risk Profiling
+**Definition:** Automated evaluation of personal aspects (risk assessment, behavioral prediction)
 
-**✅ Implemented:**
-- Default-deny RBAC permissions
-- Encryption by default (TLS/SSL)
-- Minimal data collection
-- 30-day automatic deletion for ephemeral data
+**✅ Implemented:** Human-in-the-loop, Phoenix tracing, source attribution
+
+**Customer:** Identify high-risk profiling, conduct DPIA, implement human oversight
 
 ### 2. Data Processing Register
+**Customer Responsibility:** Maintain register of processing activities (no AI-Hub feature needed)
 
-**Customer Responsibility:**
-- Maintain register of processing activities
-- Document data categories, purposes, and recipients
-- No specific technical implementation required in AI-Hub
+### 3. Data Subject Rights
+**Same as GDPR** with minor differences:
+- Response time: **30 days** (vs. GDPR's 1 month)
+- No "right to be forgotten" terminology (but erasure right exists)
+- Simpler portability requirements
 
-### 3. High-Risk Profiling
+**Implementation:** Same gaps as GDPR (see [GDPR doc](/platform/compliance/gdpr#data-subject-rights))
 
-**Definition:** Automated processing of personal data to evaluate personal aspects, particularly for risk assessment or behavioral prediction.
+### 4. Data Breach Notification
+**Requirement:** Notify FDPIC (Federal Data Protection and Information Commissioner) "as quickly as possible" **only if high risk**
 
-**✅ Implemented:**
-- Human-in-the-loop workflows ([Human-in-the-Loop](/platform/agents/agent_workflows/human_in_the_loop))
-- Phoenix tracing for transparency
-- Source attribution for explainability
+**No 72-hour deadline** unlike GDPR
 
-**Customer Responsibilities:**
-- Identify high-risk profiling activities
-- Conduct Data Protection Impact Assessment (DPIA) for high-risk processing
-- Implement human oversight for high-risk decisions
+**✅ Platform Tools:** Audit logs, monitoring, alerting
 
-### 4. Data Security
+### 5. Privacy by Design
+Now explicitly required (previously implicit)
 
-**✅ Implemented:**
-- Encryption in transit ([Data Encryption](/platform/security/data_encryption))
-- Authentication and authorization ([Authentication](/platform/security/authentication))
-- Access controls ([Access Management](/platform/access_management))
-- Audit logging for breach detection
+**✅ Implemented:** TLS/SSL default, default-deny RBAC, 30-day auto-deletion, audit logging
 
-**revDSG Requirement:** "Appropriate technical and organizational measures" - implementation level depends on data sensitivity and processing risk.
+## Swiss Hosting
 
-### 5. Data Subject Rights
+**Advantages:**
+- Data stays in Switzerland
+- No international transfer issues
+- Switzerland has EU adequacy decision (helps with mixed EU/CH compliance)
 
-**Similarities to GDPR:**
-- Right of access
-- Right to rectification
-- Right to deletion
-- Right to data portability (limited)
+**✅ Supported:** On-premise and Swiss cloud options (see [Deployment Options](/platform/deployment_guide/deployment_options))
 
-**Differences:**
-- Shorter response timeframe (30 days vs. GDPR's 1 month)
-- No explicit "right to be forgotten" terminology
-- Simpler data portability requirements
+## Data Transfers
+**Requirement:** Adequate protection in destination country OR appropriate safeguards (SCCs) OR explicit consent
 
-**Implementation Status:**
-- See [GDPR Compliance](/platform/compliance/gdpr#data-subject-rights) for current implementation status
-- Same limitations apply (🚧 user deletion, DSAR automation not fully implemented)
+**Recommendation:** Swiss hosting to avoid transfers, or use Swiss/EU LLM providers via LiteLLM
 
-### 6. Data Breach Notification
-
-**revDSG Requirements:**
-- Notify Federal Data Protection and Information Commissioner (FDPIC) "as quickly as possible"
-- Only required if "high risk" to affected persons
-- No specific 72-hour deadline (unlike GDPR)
-
-**✅ Implemented:**
-- Audit logs for breach investigation
-- User access reports
-- Monitoring and alerting
-
-**Customer Responsibilities:**
-- Assess breach risk level
-- Notify FDPIC if high risk
-- Document all breaches
-- Notify affected individuals if appropriate
-
-## Swiss Cloud Hosting
-
-**Advantages for revDSG Compliance:**
-- Data remains in Switzerland
-- Subject to Swiss data protection law
-- No international data transfer issues
-- Switzerland has EU adequacy decision (bonus for mixed compliance)
-
-**✅ Supported:**
-- On-premise deployment in Switzerland
-- Swiss cloud provider options (see [Deployment Options](/platform/deployment_guide/deployment_options))
-- No mandatory data transfer outside Switzerland
-
-## Data Transfer Outside Switzerland
-
-**revDSG Requirements:**
-When transferring data outside Switzerland:
-1. Adequate protection in destination country, OR
-2. Appropriate safeguards (e.g., SCCs), OR
-3. Explicit consent from data subjects
-
-**AI-Hub Recommendations:**
-- **Preferred**: Swiss hosting to avoid transfers
-- **Alternative**: Use Swiss-based or EU-based LLM providers via LiteLLM configuration
-- **If transfers necessary**: Execute Standard Contractual Clauses with providers
-
-## Compliance Checklist (revDSG-Specific)
-
-**Initial Setup:**
-- [ ] Conduct DPIA for high-risk processing (profiling, AI decision-making)
-- [ ] Maintain data processing register
-- [ ] Configure Swiss hosting or document data transfer safeguards
-- [ ] Document legal basis for processing (simpler than GDPR)
-- [ ] Establish breach notification procedure for FDPIC
-- [ ] Create privacy policy for Swiss users
-
-**Ongoing:**
-- [ ] Review data processing register annually
-- [ ] Monitor for high-risk profiling activities
-- [ ] Test breach notification procedures
-- [ ] Review data transfer arrangements
-- [ ] Audit Swiss hosting/data residency compliance
-
-## Known Gaps & Implementation Status
-
-**Same as GDPR:**
-- 🚧 User-level deletion API
-- 🚧 Comprehensive DSAR automation
-- 🚧 Data portability automation
-- 🚧 Processing restriction flags
+## Compliance Checklist
 
 **revDSG-Specific:**
-- ✅ High-risk profiling transparency (human-in-the-loop available)
-- ✅ Swiss hosting options available
-- ✅ Breach detection capabilities (audit logs)
-- 🚧 Automated FDPIC breach notification (manual process required)
+- [ ] DPIA for high-risk profiling
+- [ ] Data processing register
+- [ ] FDPIC breach notification procedure
+- [ ] Swiss hosting or SCCs documentation
 
-## Differences in Practice
+**Same as GDPR:** See [GDPR checklist](/platform/compliance/gdpr#compliance-checklist)
 
-| Requirement | GDPR | revDSG | Practical Impact for AI-Hub |
-|-------------|------|---------|----------------------------|
-| **Consent** | Must be explicit and documented | Can be implied in some cases | AI-Hub supports explicit consent mechanisms; customer decides approach |
-| **Breach Notification** | 72 hours to authority | "As quickly as possible" if high risk | AI-Hub audit logs support both; customer determines timing |
-| **DPO** | Often mandatory | Not mandatory | No AI-Hub-specific requirement |
-| **Fines** | Up to €20M or 4% revenue | Up to CHF 250,000 (individuals only, not companies) | Lower financial risk, but reputational risk remains |
+## Known Gaps
+
+**Same as GDPR:**
+- 🚧 User deletion API
+- 🚧 Automated DSAR export
+- 🚧 Data portability API
+
+**revDSG-Specific:**
+- ✅ High-risk profiling transparency available
+- ✅ Swiss hosting supported
+- 🚧 Automated FDPIC notification (manual process)
 
 ## Resources
 
-- **FDPIC Official Site**: [https://www.edoeb.admin.ch/](https://www.edoeb.admin.ch/)
-- **revDSG Full Text**: [https://www.admin.ch/opc/en/classified-compilation/19920153/index.html](https://www.admin.ch/opc/en/classified-compilation/19920153/index.html)
-- **FDPIC Guidelines**: [https://www.edoeb.admin.ch/edoeb/en/home.html](https://www.edoeb.admin.ch/edoeb/en/home.html)
+- **FDPIC**: [edoeb.admin.ch](https://www.edoeb.admin.ch/)
+- **revDSG Text**: [admin.ch classified compilation](https://www.admin.ch/opc/en/classified-compilation/19920153/)
 
-**Related Documentation:**
-- [GDPR Compliance](/platform/compliance/gdpr)
-- [Data Retention](/platform/compliance/data_retention)
-- [Deployment Options](/platform/deployment_guide/deployment_options)
+**Related:** [GDPR](/platform/compliance/gdpr) | [DSAR](/platform/compliance/data_subject_requests) | [Data Retention](/platform/compliance/data_retention)
 
 ---
 
 :::info Legal Disclaimer
-This documentation provides technical guidance but is not legal advice. Consult your legal counsel or the FDPIC for compliance questions specific to your use case.
+This is technical guidance, not legal advice. Consult legal counsel or FDPIC.
 :::
