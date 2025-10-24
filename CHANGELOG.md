@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.246.10] - 2025-10-24 - Enhanced Security and Access Control for Data Lake and Workflows
+
+### Added
+
+- 🔑 **New OAuth Configuration Options:** Introduced `OAUTH_TENANT_ID` and `OAUTH_COOKIE_SECRET` environment variables to
+  provide more comprehensive control over OAuth2 authentication setups.
+- 🔐 **Secure Access for SeaweedFS Filer:** Implemented a new `oauth2-proxy` service to enforce secure, authenticated
+  access to the SeaweedFS Filer UI, safeguarding data lake management.
+- 👥 **Group-Based Access for SeaweedFS:** Added `SEAWEEDFS_OAUTH_ALLOWED_GROUPS` environment variable, enabling specific
+  group-based access control for the SeaweedFS Filer UI.
+- 📄 **Expanded OAuth Scopes for Proxies:** Configured `openid`, `email`, and `profile` OAuth scopes for both Dagster and
+  SeaweedFS authentication proxies, enhancing user information retrieval during login.
+- ➡️ **Configured OAuth Redirect URLs:** Added explicit redirect URLs for both Dagster and SeaweedFS OAuth proxies,
+  ensuring correct post-authentication routing.
+- 🎨 **Customizable Sign-in Logo:** Enabled support for a custom sign-in logo (`OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO`) for
+  OAuth2 proxies in production and nightly environments, allowing for branded user experiences.
+
+### Changed
+
+- 🔄 **Centralized SeaweedFS Filer Access Routing:** All direct access to the SeaweedFS Filer UI is now routed through
+  the newly introduced `oauth2-proxy` service, ensuring a consistent and secure authentication layer.
+- 📝 **Renamed Dagster OAuth Proxy:** The generic `oauth2proxy` service dedicated to Dagster has been renamed to
+  `oauth2proxy-dagster` for clearer identification and separation of concerns.
+- 🛡️ **Standardized Default Access Groups:** Updated the default allowed group for Dagster's OAuth proxy to
+  `AIHubDeveloper`, standardizing access control with the `SEAWEEDFS_OAUTH_ALLOWED_GROUPS` variable and aligning with
+  common roles.
+
+### Refactor
+
+- 🧹 **Refined OAuth Proxy Architecture:** Streamlined the deployment architecture by separating OAuth2 proxy
+  configurations into distinct services for Dagster and SeaweedFS, improving modularity and maintainability.
+
+---
+
 ## [v0.246.9] - 2025-10-22 - Streamlined DoclingLoader File Handling
 
 ### Refactor
