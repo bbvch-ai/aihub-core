@@ -113,3 +113,19 @@ Based on your results, you can update your agent's knowledge base, refine system
 ::: tip For Advanced Analysis
 Phoenix (the underlying evaluation platform) can optionally be accessed for deeper technical investigation, including full conversation traces and raw telemetry data. However, all essential evaluation information is available in the standard AI-Hub interface.
 :::
+
+## Advanced Evaluation Topics
+
+Beyond basic agent quality assessment, the evaluation framework can be extended for specialized use cases:
+
+### Bias Monitoring & Model Drift Detection
+
+Learn how to leverage the evaluation framework for fairness assessment and quality monitoring:
+
+- **[Bias Monitoring & Model Drift Detection](2_bias_monitoring/)** - Extension strategies for fairness metrics and performance degradation detection
+
+### A/B Testing & Agent Variants
+
+Explore approaches for comparing agent configurations and conducting experiments:
+
+- **[A/B Testing & Agent Variants](3_ab_testing/)** - Systematic agent comparison workflows and best practices
