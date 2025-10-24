@@ -23,6 +23,8 @@ graph TB
     Collector -->|"OpenInference Spans"| Phoenix
     Collector -->|"Logs, Metrics, Traces"| SigNoz
     Collector -.->|"Optional"| External
+
+    classDef default font-size:16px,padding:20px
 ```
 
 The collector receives telemetry via the **OpenTelemetry Protocol (OTLP)**, processes it (filtering, batching, enriching), and exports it to one or more backends. This architecture provides several key benefits:
@@ -81,6 +83,8 @@ graph TB
     end
 
     OTel -->|"OTLP/gRPC<br/>Port 4317"| SigNozStack
+
+    classDef default font-size:16px,padding:20px
 ```
 
 SigNoz can be deployed using Docker Compose on a separate VM with appropriate resources (4+ CPU cores, 8+ GB RAM, 100+ GB storage). The AI-Hub's OTel Collector is then configured to point to the self-hosted endpoint instead of SigNoz Cloud.
