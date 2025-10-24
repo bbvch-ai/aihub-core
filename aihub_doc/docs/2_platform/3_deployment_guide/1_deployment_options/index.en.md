@@ -207,42 +207,17 @@ The AI-Hub supports flexible hosting to meet organizational requirements and con
 
 ### Multi-Instance Deployment with Shared LLM Backend
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                   Shared LLM Backend Resources                      │
-│  ┌───────────────────────────────────────────────────────────────┐  │
-│  │  Cloud LLM APIs                    Self-Hosted Models         │  │
-│  │  ┌─────────────────┐              ┌─────────────────┐         │  │
-│  │  │ Azure OpenAI    │              │ vLLM (GPU)      │         │  │
-│  │  │ (Shared creds)  │              │ llama.cpp       │         │  │
-│  │  └─────────────────┘              │ HF-TEI          │         │  │
-│  │  ┌─────────────────┐              └─────────────────┘         │  │
-│  │  │ Google Gemini   │                                          │  │
-│  │  │ (Shared API key)│                                          │  │
-│  │  └─────────────────┘                                          │  │
-│  └───────────────────────────────────────────────────────────────┘  │
-└────────────▲──────────────────▲──────────────────▲──────────────────┘
-             │                  │                  │
-     HTTPS API Calls    HTTPS API Calls     HTTPS API Calls
-             │                  │                  │
-┌────────────┴────────┐  ┌──────┴──────────┐  ┌────┴────────────────┐
-│  Tenant 1           │  │  Tenant 2       │  │  Tenant 3           │
-├─────────────────────┤  ├─────────────────┤  ├─────────────────────┤
-│ ┌─────────────────┐ │  │ ┌─────────────┐ │  │ ┌─────────────────┐ │
-│ │ LiteLLM Proxy   │ │  │ │ LiteLLM     │ │  │ │ LiteLLM Proxy   │ │
-│ │ • Cost tracking │ │  │ │ • Budgets   │ │  │ │ • Cost tracking │ │
-│ │ • Rate limits   │ │  │ │ • Routing   │ │  │ │ • Rate limits   │ │
-│ └─────────────────┘ │  │ └─────────────┘ │  │ └─────────────────┘ │
-│                     │  │                 │  │                     │
-│ • API Service       │  │ • API Service   │  │ • API Service       │
-│ • Web Interface     │  │ • Web Interface │  │ • Web Interface     │
-│ • Agents            │  │ • Agents        │  │ • Agents            │
-│ • Pipelines         │  │ • Pipelines     │  │ • Pipelines         │
-│ • Database          │  │ • Database      │  │ • Database          │
-│ • Vector Store      │  │ • Vector Store  │  │ • Vector Store      │
-│ • File Storage      │  │ • File Storage  │  │ • File Storage      │
-│ • Observability     │  │ • Observability │  │ • Observability     │
-└─────────────────────┘  └─────────────────┘  └─────────────────────┘
+```mermaid
+graph TB
+    Backend["Shared LLM Backend<br/>Azure OpenAI • Gemini • Self-Hosted"]
+
+    T1["Tenant 1<br/>━━━━━━━━━━━━━<br/>LiteLLM Proxy<br/>API • Web • Agents<br/>Database • Vector Store<br/>Observability"]
+    T2["Tenant 2<br/>━━━━━━━━━━━━━<br/>LiteLLM Proxy<br/>API • Web • Agents<br/>Database • Vector Store<br/>Observability"]
+    T3["Tenant 3<br/>━━━━━━━━━━━━━<br/>LiteLLM Proxy<br/>API • Web • Agents<br/>Database • Vector Store<br/>Observability"]
+
+    T1 -->|HTTPS| Backend
+    T2 -->|HTTPS| Backend
+    T3 -->|HTTPS| Backend
 ```
 
 **Key Points**:
