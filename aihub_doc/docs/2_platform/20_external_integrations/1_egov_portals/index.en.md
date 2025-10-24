@@ -5,111 +5,36 @@ index: 5
 
 # eGovernment Portal Integration
 
-::: warning Implementation Status
-eGovernment portal integration is **not currently implemented** in the Swiss AI-Hub core platform. This documentation describes how organizations can implement custom integrations using the platform's existing APIs.
+::: info No Special eGov Integration
+The Swiss AI-Hub does **not provide dedicated eGovernment portal connectors**. However, eGovernment portals can be integrated using the platform's standard integration mechanisms for external systems and APIs.
 :::
 
-## Current Capabilities
+## Integration Approach
 
-While dedicated eGovernment connectors are not provided, the platform offers multiple integration approaches:
+eGovernment portals are external systems that can be integrated into the AI-Hub using two primary approaches:
 
-### API-Based Integration
-- **[REST API](../../16_api/2_agent_interaction_api/)**: Programmatic access to all AI-Hub capabilities
-- **Custom Agents**: Develop agents that call eGov APIs directly
-- **Enterprise Authentication**: SSO via OAuth 2.0, SAML, Azure AD, Keycloak
-- **Event-Driven Architecture**: Webhook-based integrations with audit trails
+### 1. API-Based Integration (Real-Time)
 
-### Data Pipeline Integration
-- **[Continuous Synchronization](../../6_pipelines/)**: Automated data ingestion from external systems
-- **Custom Connectors**: Extend pipelines to pull data from eGov portals
-- **Scheduled/Event-Triggered**: Run pipelines on schedule or in response to portal events
-- **Built on Dagster**: Enterprise-grade orchestration for reliable data flows
+For real-time interactions where AI agents need to read from and write to eGov portals:
 
-Pipelines are ideal for **read-heavy** integrations where AI agents need access to eGov portal data (cases, documents, metadata) but don't need to write back frequently.
+- **See**: [Agent Interaction REST API](../../16_api/2_agent_interaction_api/) - Learn how to integrate external APIs with AI-Hub agents
+- **Use Cases**: Document classification, citizen inquiry response, case status updates
 
-## Integration Patterns
+### 2. Data Pipeline Integration (Batch/Scheduled)
 
-Organizations can choose between two primary integration patterns:
+For read-heavy scenarios where portal data needs to be synchronized and made available to AI agents:
 
-### Pattern 1: Real-Time API Integration (Read/Write)
+- **See**: [Data Pipelines](../../6_pipelines/) - Learn how to build data ingestion pipelines for external sources
+- **Use Cases**: Case summarization, knowledge search across portal archives, document indexing
 
-```mermaid
-graph LR
-    Portal["eGovernment Portal"]
-    Middleware["Integration Middleware"]
-    Agents["AI-Hub Agents"]
+## Additional Considerations
 
-    Portal -->|"Trigger Event"| Middleware
-    Middleware -->|"REST API"| Agents
-    Agents -->|"AI Response"| Middleware
-    Middleware -->|"Update Portal"| Portal
+When integrating eGovernment portals, consider the following platform capabilities:
 
-    classDef default padding:90px
-```
+- **Authentication**: Configure SSO and enterprise authentication - see [Authentication Setup](../../11_access_management/1_authentication_setup/)
+- **Data Protection**: Ensure compliance with Swiss regulations - see [Swiss Data Protection](../../19_compliance/3_dsg/)
+- **Security**: Follow security best practices for external system integration
 
-**Use When**: AI needs to read and write portal data in real-time (e.g., case updates, document classification)
+## Need Help?
 
-**Components**:
-- Integration middleware translates between portal and AI-Hub APIs
-- Custom agents call portal APIs directly or via middleware
-- Bidirectional data flow with webhook triggers
-
-### Pattern 2: Pipeline-Based Data Sync (Read-Heavy)
-
-```mermaid
-graph LR
-    Portal["eGovernment Portal"]
-    Pipeline["Data Pipeline<br/>(Dagster)"]
-    KB["Knowledge Base"]
-    Agents["AI-Hub Agents"]
-
-    Portal -->|"Pull Data"| Pipeline
-    Pipeline -->|"Index"| KB
-    KB -->|"RAG Query"| Agents
-    
-    classDef default padding:1px
-```
-
-**Use When**: AI primarily reads portal data for analysis (e.g., case summarization, search)
-
-**Components**:
-- Custom pipeline connector pulls data from portal APIs
-- Data indexed into knowledge base for RAG
-- Scheduled or event-triggered synchronization
-- Agents query knowledge base, not portal directly
-
-**Implementation Steps**:
-1. Identify use cases and determine appropriate pattern
-2. Assess portal API capabilities (read/write access, auth mechanisms, rate limits)
-3. Develop custom integration (middleware or pipeline connector)
-4. Configure Swiss deployment for data sovereignty
-5. Test and validate before production
-
-## Security Requirements
-
-- **Data Sovereignty**: Deploy AI-Hub in Switzerland
-- **Encryption**: TLS in transit, encryption at rest
-- **Access Control**: RBAC with least privilege
-- **Audit Logging**: Comprehensive event logs
-- **PII Handling**: Use Anonymization Guards (see language models documentation)
-
-## Example Use Cases
-
-### Using Real-Time API Integration
-- **Document Classification**: Portal triggers AI classification on document upload, result written back to portal metadata
-- **Citizen Inquiry Response**: Portal webhook triggers AI to draft response, caseworker reviews and approves in portal
-
-### Using Pipeline-Based Sync
-- **Case Summarization**: Pipeline syncs case files nightly, caseworkers query AI for summaries via chat interface
-- **Knowledge Search**: Pipeline indexes all portal documents, AI provides semantic search across entire portal archive
-
-## Roadmap
-
-Future development may include pre-built connectors for common Swiss systems, portal widgets, and compliance certifications. Organizations interested in these capabilities should contact the AI-Hub team.
-
-## Related Documentation
-
-- [Agent Interaction REST API](../../16_api/2_agent_interaction_api/) - Platform HTTP interface for real-time integration
-- [Data Pipelines](../../6_pipelines/) - Automated data synchronization from external systems
-- [Authentication Setup](../../11_access_management/1_authentication_setup/) - Configure SSO and authentication
-- [Swiss Data Protection](../../19_compliance/3_dsg/) - revDSG compliance for public sector
+If you plan to integrate an eGovernment portal and need guidance on the best approach for your use case, contact the AI-Hub team or refer to the documentation sections linked above.
