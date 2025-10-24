@@ -5,10 +5,9 @@
 **Documentation Coverage**: ~83% complete
 
 **Recent Updates**:
-- ✅ **Bias Monitoring & A/B Testing** documentation completed (2025-10-24) [@thomann]
-  - Comprehensive documentation in `evaluations/2_bias_monitoring/` and `evaluations/3_ab_testing/`
-  - Current capabilities, extension strategies, and practical workarounds documented
-  - Foundation exists (evaluation framework, OpenTelemetry), production features not implemented
+- ✅ **Bias Monitoring & A/B Testing** implementation status documented (2025-10-24) [@thomann]
+  - Implementation status clearly stated in `evaluations/` - features not currently implemented
+  - Foundation exists (evaluation framework, OpenTelemetry), production features missing
   - Reference: 2.1.6, 2.3.18
 - ✅ **External System Integration** documentation completed (2025-10-24)
   - Comprehensive documentation in `external_integrations/`
@@ -182,7 +181,7 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
 | 2.1.3 | Sicherheit (Malware Scan) | ⚠️ IMPLEMENTATION GAP | **Feature not implemented** (not a documentation gap). Documentation exists in `security/2_malware_prevention/` explaining the implementation gap and providing recommendations. Input validation controls documented in `security/3_input_validation/`. Container isolation documented in `security/4_container_security/` | N/A |
 | 2.1.4 | Skalierbarkeit | ✅ COVERED | Scaling considerations well documented (63+ lines) | - |
 | 2.1.5 | Zugriffsrechte | ✅ COVERED | RBAC comprehensively documented (622 lines in sdk/advanced/rbac.md) | - |
-| 2.1.6 | Ethik (Bias Monitoring) | ✅ COVERED | Bias monitoring and model drift detection documented in `evaluations/2_bias_monitoring/` - current capabilities, extension strategies, and practical workarounds documented | - |
+| 2.1.6 | Ethik (Bias Monitoring) | ✅ COVERED | Implementation status documented in `evaluations/` - not currently implemented, foundational capabilities exist | - |
 | 2.1.7 | Ethik (Human-in-Loop) | ✅ COVERED | Human-in-the-loop well documented | - |
 | 2.1.8 | Ethik (Leitlinien) | ⚠️ PARTIAL | Compliance framework covered, but specific ethical guidelines not detailed | MEDIUM |
 | 2.1.9 | Resilienz | ✅ COVERED | Comprehensive backup and recovery documentation (385 lines) covering VM snapshots and component-level backups | - |
@@ -255,7 +254,7 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
 | 2.3.15 | Datenintegration (OCR) | ⚠️ PARTIAL | OCR capabilities mentioned, but implementation not detailed | MEDIUM |
 | 2.3.16 | Datenintegration (Search) | ⚠️ PARTIAL | Vector search documented, but full-text search indexing not explicit | LOW |
 | 2.3.17 | Datenintegration (Metadata) | ⚠️ PARTIAL | Knowledge management documented, but metadata management not detailed | LOW |
-| 2.3.18 | Chatbot (A/B Testing) | ✅ COVERED | A/B testing capabilities documented in `evaluations/3_ab_testing/` - evaluation-based comparison, configuration variants, practical workflows, and limitations clearly documented | - |
+| 2.3.18 | Chatbot (A/B Testing) | ✅ COVERED | Implementation status documented in `evaluations/` - not currently implemented, pre-deployment comparison supported | - |
 | 2.3.19 | Chatbot (Eskalation) | ⚠️ PARTIAL | Human-in-the-loop exists, but escalation workflow not explicit | MEDIUM |
 | 2.3.20 | Offenheit | ✅ COVERED | Open standards and modular architecture well documented | - |
 | 2.3.21 | Integration (eGov Portale) | ✅ COVERED | External system integration documented in `external_integrations/` with three approaches (direct agent API calls, platform API integration, data pipelines). eGovernment portals treated as generic external systems without special connectors. Network requirements include external API connectivity guidance. | - |
@@ -438,8 +437,7 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
    - Reference: 1.2.20, 1.1.19
 
 ~~9b. **Document Quality & Ethics Features**~~ - ✅ **COMPLETED** (2025-10-24) [@thomann]
-   - ✅ Bias monitoring and model drift detection documented in `evaluations/2_bias_monitoring/`
-   - ✅ A/B testing capabilities documented in `evaluations/3_ab_testing/`
+   - ✅ Implementation status documented in `evaluations/` - features not currently implemented
    - Reference: 2.1.6, 2.3.18
 
 ### Medium-Term (3-6 Months)
@@ -516,11 +514,9 @@ The AI-Hub platform documentation is **comprehensive in core areas** (architectu
 - **Key lesson**: Architectural capability ≠ user-ready documentation
 
 **Previous Progress (2025-10-24)**:
-- ✅ **Bias monitoring and A/B testing documented** [@thomann] - Foundation and extension strategies (2.1.6, 2.3.18)
-  - Comprehensive documentation in `evaluations/2_bias_monitoring/` and `evaluations/3_ab_testing/`
-  - Current capabilities clearly documented (evaluation framework, OpenTelemetry)
-  - Practical workarounds and extension approaches provided
-  - Limitations transparently stated (no production traffic splitting, no automated drift detection)
+- ✅ **Bias monitoring and A/B testing implementation status documented** [@thomann] (2.1.6, 2.3.18)
+  - Implementation status clearly stated in `evaluations/` - features not currently implemented
+  - Foundation exists but production features missing
 - ✅ **External system integration documented** - Generic approach applicable to all external systems (2.3.21)
   - Three integration approaches: direct agent API calls, platform API integration, data pipelines
   - eGovernment portals treated as standard external systems (no special connectors)
