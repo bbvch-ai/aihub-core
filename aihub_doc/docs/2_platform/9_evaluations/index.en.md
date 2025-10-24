@@ -114,18 +114,10 @@ Based on your results, you can update your agent's knowledge base, refine system
 Phoenix (the underlying evaluation platform) can optionally be accessed for deeper technical investigation, including full conversation traces and raw telemetry data. However, all essential evaluation information is available in the standard AI-Hub interface.
 :::
 
-## Advanced Evaluation Topics
+## What's Not Implemented
 
-Beyond basic agent quality assessment, the evaluation framework can be extended for specialized use cases:
+The following features are **not currently implemented** in the evaluation system:
 
-### Bias Monitoring & Model Drift Detection
+- **Bias Monitoring & Model Drift Detection**: No automated bias detection, fairness metrics, or drift detection. The evaluation framework and OpenTelemetry tracing provide foundational capabilities that could be extended.
 
-Learn how to leverage the evaluation framework for fairness assessment and quality monitoring:
-
-- **[Bias Monitoring & Model Drift Detection](2_bias_monitoring/)** - Extension strategies for fairness metrics and performance degradation detection
-
-### A/B Testing & Agent Variants
-
-Explore approaches for comparing agent configurations and conducting experiments:
-
-- **[A/B Testing & Agent Variants](3_ab_testing/)** - Systematic agent comparison workflows and best practices
+- **Production A/B Testing**: No integrated traffic splitting or parallel testing of agent variants in production. Pre-deployment comparison via experiments is supported.
