@@ -5,14 +5,21 @@
 **Documentation Coverage**: ~82% complete
 
 **Recent Updates**:
+- ✅ **External Log Aggregation** documentation completed (2025-10-24)
+  - Comprehensive 174-line documentation in `monitoring_and_alerting/1_log_aggregation/`
+  - SigNoz as official backend (cloud and self-hosted)
+  - Architecture diagrams and configuration approach
+  - Alternative backends mentioned (not officially supported)
+  - Reference: 1.1.5
 - ⚠️ **Gap Analysis Corrected Assessment** (2025-10-24)
   - Comprehensive review distinguishing "covered" vs "mentioned"
   - **Reality check revealed**: Several items marked as "covered" were actually just "mentioned" or have stub pages
-  - Updated coverage metrics: **42% fully covered** (up from 41%), **39% partial** (same as before), 19% missing
-  - Admin functional: 35% covered (5% improvement), but 48% partial (many items just mentioned, not documented)
+  - Updated coverage metrics: **43% fully covered** (up from 42%), **38% partial** (down from 39%), 19% missing
+  - Admin functional: 39% covered (4% improvement from 35%), 43% partial (down from 48%)
   - User functional: 45% covered (5% improvement), 45% partial
   - Guards (1.1.13) confirmed as truly COVERED with substantial 86-line documentation
-  - Items like anonymization (8-line stub), Docling (just mentioned), audio (file types only), log systems (no config) corrected to PARTIAL
+  - Items like anonymization (8-line stub), Docling (just mentioned), audio (file types only) remain PARTIAL
+  - Log systems (1.1.5) now COVERED with comprehensive documentation
 - ✅ **Deployment Options** documentation completed (2025-10-23)
   - Per-tenant deployment model with shared LLM backends documented
   - Swiss cloud and on-premise hosting options detailed
@@ -55,8 +62,8 @@
 The AI-Hub platform documentation provides **strong coverage** for core architecture, agent workflows, RAG capabilities, authentication/authorization, security, and observability. Recent comprehensive review (2025-10-24) applied stricter criteria, distinguishing between "comprehensively documented" versus "mentioned" or "stub pages".
 
 **Overall Assessment** (Updated 2025-10-24):
-- ✅ **Well Covered**: **42% of requirements** (modest improvement from 41%)
-- ⚠️ **Partially Covered**: **39% of requirements** (same as before - many items have mentions but lack HOW-TO guides)
+- ✅ **Well Covered**: **43% of requirements** (improved from 42%)
+- ⚠️ **Partially Covered**: **38% of requirements** (reduced from 39%)
 - ❌ **Missing/Insufficient**: **19% of requirements**
 
 **Reality Check**:
@@ -78,7 +85,7 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
 | 1.1.2 | Benutzersteuerung (Disclaimers) | ⚠️ PARTIAL | Human-in-the-loop is documented, but session-specific disclaimer storage not explicitly covered | MEDIUM |
 | 1.1.3 | Crawling | ✅ COVERED | Custom pipelines documented in `platform/data_pipelines/` (620+ lines) | - |
 | 1.1.4 | Logging (Rotation) | ⚠️ PARTIAL | Observability documented (599+ lines), but log rotation configuration not detailed | MEDIUM |
-| 1.1.5 | Logging (Forms & Export) | ⚠️ PARTIAL | OpenTelemetry architecture supports Grafana, Datadog, Splunk (91-line doc), but lacks actual configuration examples for integrating these systems | HIGH |
+| 1.1.5 | Logging (Forms & Export) | ✅ COVERED | Comprehensive external log aggregation documentation in `monitoring_and_alerting/1_log_aggregation/` covering SigNoz (official backend), self-hosted deployment, and alternative backends | - |
 | 1.1.6 | RAG | ✅ COVERED | Comprehensive RAG documentation in multiple sections | - |
 | 1.1.7 | RAG-Modell erstellen | ✅ COVERED | RAG pipeline and agent creation well documented | - |
 | 1.1.8 | Re-/Training | ❌ MISSING | No documentation on automated LLM retraining processes | HIGH |
@@ -99,16 +106,15 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
 | 1.1.23 | Vorschlags-generierung | ⚠️ PARTIAL | Agent capabilities support this, but decision suggestion patterns not explicit | LOW |
 
 **Summary - 1.1.x (Admin Perspective)**:
-- ✅ Covered: **8/23 (35%)** ⬆️ (improved from 30%)
-- ⚠️ Partial: **11/23 (48%)** ⬇️ (reduced from 52%)
+- ✅ Covered: **9/23 (39%)** ⬆️ (improved from 35%)
+- ⚠️ Partial: **10/23 (43%)** ⬇️ (reduced from 48%)
 - ❌ Missing: 4/23 (17%)
 
 **Key Gaps**:
 1. **LLM retraining automation and versioning** (1.1.8, 1.1.10)
 2. **Confidence scores display** (1.1.19)
-3. **External log system configuration** (1.1.5) - Architecture supports it but no HOW-TO
-4. **Anonymization implementation** (1.1.14) - Stub page, Presidio not user-documented
-5. **Document analysis details** (1.1.21) - Mentioned but not comprehensively documented
+3. **Anonymization implementation** (1.1.14) - Stub page, Presidio not user-documented
+4. **Document analysis details** (1.1.21) - Mentioned but not comprehensively documented
 
 **Note on "Covered" vs "Mentioned"**:
 - Guards (1.1.13) truly COVERED with 86 lines of substantial documentation
@@ -306,7 +312,6 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
    - eGovernment portal integration (2.3.21)
 
 3. **Incomplete HOW-TO Documentation** (HIGH)
-   - External log system integration (1.1.5) - Architecture exists, needs configuration guides
    - Anonymization (1.1.14) - 8-line stub, needs comprehensive Presidio docs
 
 **Note**: Malware scanning (1.1.15, 2.1.3) is an **implementation gap**, not a documentation gap
@@ -434,13 +439,13 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
 
 | Category | Total Reqs | ✅ Covered       | ⚠️ Partial   | ❌ Missing       |
 |----------|------------|-----------------|--------------|-----------------|
-| 1.1.x Admin Functional | 23         | **8 (35%)** ⬆️ | **11 (48%)** ⬇️ | 4 (17%)         |
+| 1.1.x Admin Functional | 23         | **9 (39%)** ⬆️ | **10 (43%)** ⬇️ | 4 (17%)         |
 | 1.2.x User Functional | 20         | **9 (45%)** ⬆️  | **9 (45%)** ⬆️ | 2 (10%) ⬇️ |
 | 2.1.x General Non-Functional | 17         | 11 (65%) | 2 (12%)      | 4 (24%)  |
 | 2.2.x Regulatory | 8          | 3 (38%)  | 1 (13%) | 4 (50%)         |
 | 2.3.x Technology & Hosting | 21         | 9 (43%)  | 9 (43%)      | 3 (14%)  |
 | 2.4.x Service | 6          | 0 (0%)          | 5 (83%)      | 1 (17%)         |
-| **TOTAL** | **95**     | **40 (42%)** ⬆️ | **37 (39%)** | **18 (19%)** ⬇️ |
+| **TOTAL** | **95**     | **41 (43%)** ⬆️ | **36 (38%)** ⬇️ | **18 (19%)** |
 
 ### Priority Distribution of Gaps
 
