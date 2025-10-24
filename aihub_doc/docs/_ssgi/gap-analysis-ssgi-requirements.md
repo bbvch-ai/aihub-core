@@ -310,24 +310,23 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
 
 ### HIGH PRIORITY GAPS
 
-1. **LLM Training & Management**
+1. **LLM Training & Management** [@mfundn]
    - Automated retraining (1.1.8)
    - Feedback loop to training (1.1.9)
    - Model versioning and rollback (1.1.10, 2.3.13)
 
-2. **Incomplete HOW-TO Documentation** (HIGH)
+2. **Incomplete HOW-TO Documentation** (HIGH) [@mfundn]
    - Anonymization (1.1.14) - 8-line stub, needs comprehensive Presidio docs
 
 **Note**: Malware scanning (1.1.15, 2.1.3) is an **implementation gap**, not a documentation gap
 
 ### MEDIUM PRIORITY GAPS
 
-4. **Operational Features**
+4. **Operational Features** [@SkypeForBusiness @noahhermann]
    - Swiss German transcription (1.2.20)
    - Confidence scores display (1.1.19)
-   - A/B testing (2.3.18)
 
-5. **Incomplete Component Documentation** (MEDIUM)
+5. **Incomplete Component Documentation** (MEDIUM) [@SkypeForBusiness @noahhermann]
    - Document analysis (1.1.21) - Docling mentioned but not comprehensively documented
    - Audio file processing (1.2.5) - File types supported but no workflow docs
 
@@ -336,8 +335,9 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
    - WCAG 2.1 AA compliance (2.3.3)
    - SLA documentation (2.3.8)
 
-6. **Quality & Ethics**
+6. **Quality & Ethics** [@thomann]
     - Bias monitoring (2.1.6)
+    - A/B testing (2.3.18)
 
 ### LOW PRIORITY GAPS
 
@@ -405,22 +405,38 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
 
 ### Short-Term (1-2 Months)
 
-7. **Document LLM Training & Management**
+7. **Document LLM Training & Management** [@mfundn]
    - Create `platform/language_models/retraining.md`
    - Create `platform/language_models/model_versioning.md`
    - Document feedback-to-training pipeline
    - Reference: 1.1.8, 1.1.9, 1.1.10
+
+7a. **Document Anonymization** [@mfundn]
+   - Expand `platform/language_models/anonymization.md` (currently 8-line stub)
+   - Comprehensive Presidio configuration and usage documentation
+   - Reference: 1.1.14
 
 8. **Document Certifications & Standards**
    - Create `ecosystem/certifications.md` with ISO certification status
    - Document SLA and uptime guarantees in `platform/operations/service_level_agreements.md`
    - Reference: 2.2.2-5, 2.3.8
 
-9. **Document Data Integration Details**
+9. **Document Data Integration Details** [@SkypeForBusiness @noahhermann]
    - Document Docling integration for OCR and document analysis
+   - Document audio file processing workflow
    - Expand documentation on full-text search indexing
    - Document metadata management
-   - Reference: 1.1.21, 2.3.15, 2.3.16, 2.3.17
+   - Reference: 1.1.21, 1.2.5, 2.3.15, 2.3.16, 2.3.17
+
+9a. **Document Operational Features** [@SkypeForBusiness @noahhermann]
+   - Swiss German transcription (1.2.20)
+   - Confidence scores display (1.1.19)
+   - Reference: 1.2.20, 1.1.19
+
+9b. **Document Quality & Ethics Features** [@thomann]
+   - Bias monitoring and model drift detection (2.1.6)
+   - A/B testing capabilities (2.3.18)
+   - Reference: 2.1.6, 2.3.18
 
 ### Medium-Term (3-6 Months)
 
