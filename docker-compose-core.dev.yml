@@ -128,15 +128,6 @@ services:
       retries: 3
       start_period: 15s
     logging: *default-logging
-    labels:
-      - "traefik.enable=true"
-      # Filer Web UI
-      - "traefik.http.routers.seaweedfs-filer-ui.rule=Host(`datalake.${DOMAIN}`)"
-      - "traefik.http.routers.seaweedfs-filer-ui.priority=4000"
-      - "traefik.http.routers.seaweedfs-filer-ui.entrypoints=websecure"
-      - "traefik.http.routers.seaweedfs-filer-ui.tls=true"
-      - "traefik.http.routers.seaweedfs-filer-ui.middlewares=security-headers@file"
-      - "traefik.http.services.seaweedfs-filer-ui.loadbalancer.server.port=8888"
 
   seaweedfs-s3:
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
@@ -693,9 +684,9 @@ services:
 
   # === Dagster Stack ===
   # <editor-fold desc="Dagster Stack">
-  oauth2proxy:
+  oauth2proxy-dagster:
     image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
-    container_name: oauth2proxy
+    container_name: oauth2proxy-dagster
     <<: *restart-policy
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: "0.0.0.0:4180"
@@ -704,6 +695,7 @@ services:
       OAUTH2_PROXY_UPSTREAMS: http://dagster-webserver:3000
       OAUTH2_PROXY_ALLOWED_GROUPS: ${DAGSTER_OAUTH_ALLOWED_GROUPS}
       OAUTH2_PROXY_OIDC_GROUPS_CLAIM: "roles"
+      OAUTH2_PROXY_SCOPE: "openid email profile"
       OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH2_PROXY_PROVIDER: "oidc"
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
@@ -723,6 +715,42 @@ services:
       - "traefik.http.routers.dagster.tls=true"
       - "traefik.http.routers.dagster.middlewares=security-headers@file"
       - "traefik.http.services.dagster.loadbalancer.server.port=4180"
+
+  oauth2proxy-filer:
+    image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
+    container_name: oauth2proxy-filer
+    <<: *restart-policy
+    environment:
+      OAUTH2_PROXY_HTTP_ADDRESS: "0.0.0.0:4181"
+      OAUTH2_PROXY_COOKIE_SECURE: false
+      OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
+      OAUTH2_PROXY_UPSTREAMS: http://seaweedfs-filer:8888
+      OAUTH2_PROXY_ALLOWED_GROUPS: ${SEAWEEDFS_OAUTH_ALLOWED_GROUPS}
+      OAUTH2_PROXY_OIDC_GROUPS_CLAIM: "roles"
+      OAUTH2_PROXY_SCOPE: "openid email profile"
+      OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH2_PROXY_PROVIDER: "oidc"
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
+      OAUTH2_PROXY_OIDC_ISSUER_URL: "${OAUTH_AUTHORITY_URL}/v2.0"
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET}
+      OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_REVERSE_PROXY: true
+      OAUTH2_PROXY_REDIRECT_URL: "https://datalake.${DOMAIN}"
+    depends_on:
+      seaweedfs-filer:
+        condition: service_healthy
+    logging: *default-logging
+    labels:
+      - "traefik.enable=true"
+
+      # --- datalake Subdomain (priority 4000 - Admin interfaces) ---
+      - "traefik.http.routers.seaweedfs-filer.rule=Host(`datalake.${DOMAIN}`)"
+      - "traefik.http.routers.seaweedfs-filer.priority=4000"
+      - "traefik.http.routers.seaweedfs-filer.entrypoints=websecure"
+      - "traefik.http.routers.seaweedfs-filer.tls=true"
+      - "traefik.http.routers.seaweedfs-filer.middlewares=security-headers@file"
+      - "traefik.http.services.seaweedfs-filer.loadbalancer.server.port=4181"
 
   dagster-webserver:
     image: "ghcr.io/bbvch-ai/aihub-core/dagster:v0.243.1"
