@@ -5,6 +5,13 @@
 **Documentation Coverage**: ~82% complete
 
 **Recent Updates**:
+- ✅ **External System Integration** documentation completed (2025-10-24)
+  - Comprehensive documentation in `external_integrations/`
+  - Three integration approaches: direct agent API calls, platform API integration, data pipelines
+  - Generic approach applicable to all external systems (CRM, portals, ticketing systems, etc.)
+  - eGovernment portals treated as standard external systems (no special connectors)
+  - Network requirements updated to include external API connectivity patterns
+  - Reference: 2.3.21
 - ✅ **External Log Aggregation** documentation completed (2025-10-24)
   - Comprehensive 174-line documentation in `monitoring_and_alerting/1_log_aggregation/`
   - SigNoz as official backend (cloud and self-hosted)
@@ -14,12 +21,13 @@
 - ⚠️ **Gap Analysis Corrected Assessment** (2025-10-24)
   - Comprehensive review distinguishing "covered" vs "mentioned"
   - **Reality check revealed**: Several items marked as "covered" were actually just "mentioned" or have stub pages
-  - Updated coverage metrics: **43% fully covered** (up from 42%), **38% partial** (down from 39%), 19% missing
+  - Updated coverage metrics: **44% fully covered** (up from 42%), **37% partial** (down from 39%), 19% missing
   - Admin functional: 39% covered (4% improvement from 35%), 43% partial (down from 48%)
   - User functional: 45% covered (5% improvement), 45% partial
+  - Technology & Hosting: 48% covered (5% improvement from 43%), 38% partial (down from 43%)
   - Guards (1.1.13) confirmed as truly COVERED with substantial 86-line documentation
   - Items like anonymization (8-line stub), Docling (just mentioned), audio (file types only) remain PARTIAL
-  - Log systems (1.1.5) now COVERED with comprehensive documentation
+  - Log systems (1.1.5) and eGov portals (2.3.21) now COVERED with comprehensive documentation
 - ✅ **Deployment Options** documentation completed (2025-10-23)
   - Per-tenant deployment model with shared LLM backends documented
   - Swiss cloud and on-premise hosting options detailed
@@ -62,8 +70,8 @@
 The AI-Hub platform documentation provides **strong coverage** for core architecture, agent workflows, RAG capabilities, authentication/authorization, security, and observability. Recent comprehensive review (2025-10-24) applied stricter criteria, distinguishing between "comprehensively documented" versus "mentioned" or "stub pages".
 
 **Overall Assessment** (Updated 2025-10-24):
-- ✅ **Well Covered**: **43% of requirements** (improved from 42%)
-- ⚠️ **Partially Covered**: **38% of requirements** (reduced from 39%)
+- ✅ **Well Covered**: **44% of requirements** (improved from 43%)
+- ⚠️ **Partially Covered**: **37% of requirements** (reduced from 38%)
 - ❌ **Missing/Insufficient**: **19% of requirements**
 
 **Reality Check**:
@@ -246,17 +254,16 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
 | 2.3.18 | Chatbot (A/B Testing) | ❌ MISSING | A/B testing capabilities not documented | LOW |
 | 2.3.19 | Chatbot (Eskalation) | ⚠️ PARTIAL | Human-in-the-loop exists, but escalation workflow not explicit | MEDIUM |
 | 2.3.20 | Offenheit | ✅ COVERED | Open standards and modular architecture well documented | - |
-| 2.3.21 | Integration (eGov Portale) | ⚠️ PARTIAL | API integration documented, but specific eGov portal integration not covered | HIGH |
+| 2.3.21 | Integration (eGov Portale) | ✅ COVERED | External system integration documented in `external_integrations/` with three approaches (direct agent API calls, platform API integration, data pipelines). eGovernment portals treated as generic external systems without special connectors. Network requirements include external API connectivity guidance. | - |
 
 **Summary - 2.3.x (Technology & Hosting)**:
-- ✅ Covered: 9/21 (43%) - **Improved from 24%**
-- ⚠️ Partial: 9/21 (43%)
+- ✅ Covered: **10/21 (48%)** ⬆️ (improved from 43%)
+- ⚠️ Partial: **8/21 (38%)** ⬇️ (reduced from 43%)
 - ❌ Missing: 3/21 (14%)
 
 **Key Gaps** (Updated):
-1. **eGovernment portal integration** (2.3.21) - HIGH
-2. **WCAG compliance** (2.3.3) - MEDIUM
-3. **SLA documentation** (2.3.8) - MEDIUM
+1. **WCAG compliance** (2.3.3) - MEDIUM
+2. **SLA documentation** (2.3.8) - MEDIUM
 
 **Recently Completed**:
 - ✅ Multi-tenant architecture (2.3.14) - Per-tenant instance model documented
@@ -308,10 +315,7 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
    - Feedback loop to training (1.1.9)
    - Model versioning and rollback (1.1.10, 2.3.13)
 
-2. **External System Integrations**
-   - eGovernment portal integration (2.3.21)
-
-3. **Incomplete HOW-TO Documentation** (HIGH)
+2. **Incomplete HOW-TO Documentation** (HIGH)
    - Anonymization (1.1.14) - 8-line stub, needs comprehensive Presidio docs
 
 **Note**: Malware scanning (1.1.15, 2.1.3) is an **implementation gap**, not a documentation gap
@@ -390,11 +394,13 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
    - ✅ Clearly distinguished implementation gaps (user deletion API, DSAR automation) from documentation gaps
    - Reference: 2.2.1, 2.2.7, 1.2.17
 
-**NOW PRIORITIZE**:
+**✅ COMPLETED** (2025-10-24):
 
-6. **Document External Integrations**
-   - Create `platform/operations/log_aggregation.md` (ELK, Grafana, Splunk, Datadog)
-   - Create `platform/integrations/egov_portals.md` (CMI Axioma, RMS Gever)
+6. ~~**Document External Integrations**~~ - **DONE**
+   - ✅ External system integration documented in `external_integrations/` with three integration approaches
+   - ✅ Generic approach applicable to all external systems (eGov portals, CRM, ticketing, etc.)
+   - ✅ External log aggregation documented in `monitoring_and_alerting/1_log_aggregation/`
+   - ✅ Network requirements updated to include external API connectivity
    - Reference: 1.1.5, 2.3.21
 
 ### Short-Term (1-2 Months)
@@ -443,9 +449,9 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
 | 1.2.x User Functional | 20         | **9 (45%)** ⬆️  | **9 (45%)** ⬆️ | 2 (10%) ⬇️ |
 | 2.1.x General Non-Functional | 17         | 11 (65%) | 2 (12%)      | 4 (24%)  |
 | 2.2.x Regulatory | 8          | 3 (38%)  | 1 (13%) | 4 (50%)         |
-| 2.3.x Technology & Hosting | 21         | 9 (43%)  | 9 (43%)      | 3 (14%)  |
+| 2.3.x Technology & Hosting | 21         | **10 (48%)** ⬆️  | **8 (38%)** ⬇️      | 3 (14%)  |
 | 2.4.x Service | 6          | 0 (0%)          | 5 (83%)      | 1 (17%)         |
-| **TOTAL** | **95**     | **41 (43%)** ⬆️ | **36 (38%)** ⬇️ | **18 (19%)** |
+| **TOTAL** | **95**     | **42 (44%)** ⬆️ | **35 (37%)** ⬇️ | **18 (19%)** |
 
 ### Priority Distribution of Gaps
 
@@ -474,9 +480,9 @@ The AI-Hub platform documentation is **comprehensive in core areas** (architectu
 - ~~Missing multi-tenant architecture documentation~~ ✅ **RESOLVED** (2025-10-23)
 - ~~TLS/SSL implementation details~~ ✅ **RESOLVED** (2025-10-23) - Comprehensive TLS documentation exists
 - ~~Limited compliance procedure documentation~~ ✅ **RESOLVED** (2025-10-23) - GDPR, DSG, DSAR documented
-- Missing eGovernment portal integration guides
+- ~~Missing external system integration guides~~ ✅ **RESOLVED** (2025-10-24) - Generic integration approach documented
 - Missing LLM retraining automation documentation
-- **Documentation vs. Implementation**: Many features mentioned but lack comprehensive HOW-TO guides (anonymization, log system config, Docling, audio processing)
+- **Documentation vs. Implementation**: Many features mentioned but lack comprehensive HOW-TO guides (anonymization, Docling, audio processing)
 
 **Progress Update (2025-10-24) - Corrected Assessment**:
 - ⚠️ **Gap analysis comprehensive refresh with stricter criteria**
@@ -488,6 +494,13 @@ The AI-Hub platform documentation is **comprehensive in core areas** (architectu
 - ⚠️ **Audio file input (1.2.5)** - Downgraded to PARTIAL (file types, no workflow docs)
 - **Coverage**: **42% fully covered** (minimal improvement from 41%), 39% partial, 19% missing
 - **Key lesson**: Architectural capability ≠ user-ready documentation
+
+**Previous Progress (2025-10-24)**:
+- ✅ **External system integration documented** - Generic approach applicable to all external systems (2.3.21)
+  - Three integration approaches: direct agent API calls, platform API integration, data pipelines
+  - eGovernment portals treated as standard external systems (no special connectors)
+  - Network requirements updated to include external API connectivity patterns
+  - External log aggregation documented (SigNoz as official backend)
 
 **Previous Progress (2025-10-23)**:
 - ✅ Multi-tenant architecture documented (+19% coverage improvement in Technology & Hosting category)
@@ -502,4 +515,4 @@ The AI-Hub platform documentation is **comprehensive in core areas** (architectu
   - Clear distinction between implementation gaps (user deletion API, DSAR automation) and documentation gaps
   - Manual procedures documented for current workarounds
 
-**Estimated Work to Close Remaining Gaps**: 2 months of focused documentation effort, prioritizing external integrations (log aggregation, eGov portals) and certifications/standards.
+**Estimated Work to Close Remaining Gaps**: 2 months of focused documentation effort, prioritizing LLM training/management documentation and certifications/standards.
