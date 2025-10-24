@@ -397,7 +397,7 @@ Your pipeline now supports:
 ### 9. Monitor with AI-Hub observability tools:
 
 - **Dagster UI** (`http://localhost:3000`): Asset lineage, execution logs, and materialization history
-- **MinIO Console** (`http://localhost:9001`): Data lake file management
+- **SeaweedFS Filer** (`http://localhost:9001`): Data lake file management
 - **MongoDB Compass**: Document store inspection
 - **Milvus (Attu)**: Vector database monitoring
 
