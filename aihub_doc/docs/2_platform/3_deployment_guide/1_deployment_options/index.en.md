@@ -209,15 +209,31 @@ The AI-Hub supports flexible hosting to meet organizational requirements and con
 
 ```mermaid
 graph TB
-    Backend["Shared LLM Backend<br/>Azure OpenAI • Gemini • Self-Hosted"]
+    Backend["Shared LLM Backend<br/>(Azure OpenAI, Gemini, vLLM)"]
 
-    T1["Tenant 1<br/>━━━━━━━━━━━━━<br/>LiteLLM Proxy<br/>API • Web • Agents<br/>Database • Vector Store<br/>Observability"]
-    T2["Tenant 2<br/>━━━━━━━━━━━━━<br/>LiteLLM Proxy<br/>API • Web • Agents<br/>Database • Vector Store<br/>Observability"]
-    T3["Tenant 3<br/>━━━━━━━━━━━━━<br/>LiteLLM Proxy<br/>API • Web • Agents<br/>Database • Vector Store<br/>Observability"]
+    subgraph Tenant1["Tenant 1"]
+        T1Stack["Full Stack<br/>(API, Agents, DB, Vector Store)"]
+        T1Proxy["LiteLLM Proxy"]
+        T1Stack --- T1Proxy
+    end
 
-    T1 -->|HTTPS| Backend
-    T2 -->|HTTPS| Backend
-    T3 -->|HTTPS| Backend
+    subgraph Tenant2["Tenant 2"]
+        T2Stack["Full Stack<br/>(API, Agents, DB, Vector Store)"]
+        T2Proxy["LiteLLM Proxy"]
+        T2Stack --- T2Proxy
+    end
+
+    subgraph Tenant3["Tenant 3"]
+        T3Stack["Full Stack<br/>(API, Agents, DB, Vector Store)"]
+        T3Proxy["LiteLLM Proxy"]
+        T3Stack --- T3Proxy
+    end
+
+    T1Proxy -->|HTTPS| Backend
+    T2Proxy -->|HTTPS| Backend
+    T3Proxy -->|HTTPS| Backend
+
+    classDef default font-size:16px,padding:20px
 ```
 
 **Key Points**:
