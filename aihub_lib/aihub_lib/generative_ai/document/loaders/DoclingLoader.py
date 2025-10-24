@@ -85,9 +85,10 @@ class DoclingLoader(BaseReader):
 
         if len(doc.pictures) > 0:
             img_strs = [picture.export_to_markdown(doc) for picture in doc.pictures]
-            markdown_content = convert_tables_to_html(inject_figure_tags(markdown_content, img_strs), doc.tables, doc)
+            markdown_text = inject_figure_tags(markdown_text=markdown_content, img_strs=img_strs)
+            markdown_content = convert_tables_to_html(markdown_text=markdown_text, tables=doc.tables, document=doc)
         else:
-            markdown_content = convert_tables_to_html(markdown_content, doc.tables, doc)
+            markdown_content = convert_tables_to_html(markdown_text=markdown_content, tables=doc.tables, document=doc)
 
         metadata = {NUMBER_OF_PAGES: len(answer["document"]["json_content"]["pages"])}
 
