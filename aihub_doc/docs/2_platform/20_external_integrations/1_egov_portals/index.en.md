@@ -9,23 +9,34 @@ index: 5
 The Swiss AI-Hub does **not provide dedicated eGovernment portal connectors**. However, eGovernment portals can be integrated using the platform's standard integration mechanisms for external systems and APIs.
 :::
 
-## Integration Approach
+## Integration Approaches
 
-eGovernment portals are external systems that can be integrated into the AI-Hub using two primary approaches:
+eGovernment portals are external systems that can be integrated into the AI-Hub using three primary approaches:
 
-### 1. API-Based Integration (Real-Time)
+### 1. Direct Agent API Calls
 
-For real-time interactions where AI agents need to read from and write to eGov portals:
+Agents can directly call external APIs (including eGov portal APIs) from within their workflow steps using standard Python HTTP libraries:
 
-- **See**: [Agent Interaction REST API](../../16_api/2_agent_interaction_api/) - Learn how to integrate external APIs with AI-Hub agents
-- **Use Cases**: Document classification, citizen inquiry response, case status updates
+- **How**: Implement HTTP calls within agent `@step` methods using `httpx` or `aiohttp`
+- **Best For**: Simple, single-operation API calls that are part of the agent's workflow logic
+- **Use Cases**: Retrieving case status, submitting forms, querying portal data as part of an agent conversation
+- **Developer Guide**: See the [Agent Developer README](https://github.com/bbvch-ai/aihub-core/tree/main/aihub_agent) for implementation patterns
 
-### 2. Data Pipeline Integration (Batch/Scheduled)
+### 2. Real-Time API Integration via Platform API
+
+For external systems that need to trigger AI agents or integrate agent capabilities into eGov portals:
+
+- **See**: [Agent Interaction REST API](../../16_api/2_agent_interaction_api/) - Learn how external systems can interact with AI-Hub agents
+- **Best For**: Bidirectional integration where the portal triggers AI capabilities and receives results
+- **Use Cases**: Portal-initiated document classification, automated response generation, AI-assisted case processing
+
+### 3. Data Pipeline Integration (Batch/Scheduled)
 
 For read-heavy scenarios where portal data needs to be synchronized and made available to AI agents:
 
 - **See**: [Data Pipelines](../../6_pipelines/) - Learn how to build data ingestion pipelines for external sources
-- **Use Cases**: Case summarization, knowledge search across portal archives, document indexing
+- **Best For**: Large-scale data synchronization, knowledge base building, scheduled data refresh
+- **Use Cases**: Case summarization, knowledge search across portal archives, document indexing for RAG
 
 ## Additional Considerations
 
