@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.246.9] - 2025-10-22 - Streamlined DoclingLoader File Handling
+
+### Refactor
+
+- ⚡️ **Optimized `DoclingLoader` file content retrieval:** Improved the internal efficiency of `DoclingLoader` by
+  switching to `fs.cat_file` for more direct and potentially faster reading of file contents.
+
+---
+
+## [v0.246.8] - 2025-10-21 - Core Bot Service Setup and Infrastructure Expansion
+
+### Added
+
+- 🚀 **Introduced a dedicated Bot service** to the core infrastructure, laying the groundwork for new bot functionalities
+  and integrations.
+- 🌐 **Configured Traefik routing** for the new Bot service, making its API accessible via `bot.<DOMAIN>/api/v1`
+  endpoints across all deployment environments.
+- ✨ **Added essential environment variables** for the Bot service, including development-only fake authentication
+  settings, to streamline local and development deployments.
+- 🦾 **Integrated a development-only authentication handler** into the Bot API's core controllers (`HealthController` and
+  `OpenaiChatController`), simplifying local testing and development.
+- 📦 **Included Gunicorn** as the production web server for the Bot service, optimizing its runtime performance and
+  stability.
+
+### Refactor
+
+- 🧹 **Corrected module import paths** within the bot service's Makefile for improved consistency and robustness in
+  production builds.
+
+---
+
 ## [v0.246.7] - 2025-10-20 - Performance Optimizations and SeaweedFS Development Enhancements
 
 ### Added
