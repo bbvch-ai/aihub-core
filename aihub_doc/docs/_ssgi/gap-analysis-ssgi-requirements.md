@@ -2,9 +2,14 @@
 
 **Date**: 2025-10-24 (Updated)
 **Analysis Scope**: KI-Plattform SSGI Anforderungskatalog vs. Current AI-Hub Documentation
-**Documentation Coverage**: ~82% complete
+**Documentation Coverage**: ~83% complete
 
 **Recent Updates**:
+- ✅ **Bias Monitoring & A/B Testing** documentation completed (2025-10-24) [@thomann]
+  - Comprehensive documentation in `evaluations/2_bias_monitoring/` and `evaluations/3_ab_testing/`
+  - Current capabilities, extension strategies, and practical workarounds documented
+  - Foundation exists (evaluation framework, OpenTelemetry), production features not implemented
+  - Reference: 2.1.6, 2.3.18
 - ✅ **External System Integration** documentation completed (2025-10-24)
   - Comprehensive documentation in `external_integrations/`
   - Three integration approaches: direct agent API calls, platform API integration, data pipelines
@@ -70,9 +75,9 @@
 The AI-Hub platform documentation provides **strong coverage** for core architecture, agent workflows, RAG capabilities, authentication/authorization, security, and observability. Recent comprehensive review (2025-10-24) applied stricter criteria, distinguishing between "comprehensively documented" versus "mentioned" or "stub pages".
 
 **Overall Assessment** (Updated 2025-10-24):
-- ✅ **Well Covered**: **44% of requirements** (improved from 43%)
-- ⚠️ **Partially Covered**: **37% of requirements** (reduced from 38%)
-- ❌ **Missing/Insufficient**: **19% of requirements**
+- ✅ **Well Covered**: **46% of requirements** (improved from 44%)
+- ⚠️ **Partially Covered**: **37% of requirements**
+- ❌ **Missing/Insufficient**: **17% of requirements** (reduced from 19%)
 
 **Reality Check**:
 After strict verification, only 1 item (Guards) was confirmed as truly COVERED with substantial documentation. Four items (anonymization, log systems, Docling, audio) were incorrectly marked as COVERED when they're actually:
@@ -177,7 +182,7 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
 | 2.1.3 | Sicherheit (Malware Scan) | ⚠️ IMPLEMENTATION GAP | **Feature not implemented** (not a documentation gap). Documentation exists in `security/2_malware_prevention/` explaining the implementation gap and providing recommendations. Input validation controls documented in `security/3_input_validation/`. Container isolation documented in `security/4_container_security/` | N/A |
 | 2.1.4 | Skalierbarkeit | ✅ COVERED | Scaling considerations well documented (63+ lines) | - |
 | 2.1.5 | Zugriffsrechte | ✅ COVERED | RBAC comprehensively documented (622 lines in sdk/advanced/rbac.md) | - |
-| 2.1.6 | Ethik (Bias Monitoring) | ❌ MISSING | Bias monitoring and model drift detection not documented | MEDIUM |
+| 2.1.6 | Ethik (Bias Monitoring) | ✅ COVERED | Bias monitoring and model drift detection documented in `evaluations/2_bias_monitoring/` - current capabilities, extension strategies, and practical workarounds documented | - |
 | 2.1.7 | Ethik (Human-in-Loop) | ✅ COVERED | Human-in-the-loop well documented | - |
 | 2.1.8 | Ethik (Leitlinien) | ⚠️ PARTIAL | Compliance framework covered, but specific ethical guidelines not detailed | MEDIUM |
 | 2.1.9 | Resilienz | ✅ COVERED | Comprehensive backup and recovery documentation (385 lines) covering VM snapshots and component-level backups | - |
@@ -191,13 +196,12 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
 | 2.1.17 | Modularität | ✅ COVERED | Modular architecture well documented | - |
 
 **Summary - 2.1.x (General Non-Functional)**:
-- ✅ Covered: 11/17 (65%)
+- ✅ Covered: **12/17 (71%)** ⬆️ (improved from 65%)
 - ⚠️ Partial: 2/17 (12%)
-- ❌ Missing: 4/17 (24%)
+- ❌ Missing: **3/17 (18%)** ⬇️ (reduced from 24%)
 
 **Key Gaps**:
-1. **Bias monitoring and model drift** (2.1.6) - MEDIUM
-2. **Penetration testing procedures** (2.1.10) - MEDIUM
+1. **Penetration testing procedures** (2.1.10) - MEDIUM
 
 **Note**: Malware scanning (2.1.3) is an **implementation gap**, not a documentation gap. Documentation exists explaining the current state.
 
@@ -251,15 +255,15 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
 | 2.3.15 | Datenintegration (OCR) | ⚠️ PARTIAL | OCR capabilities mentioned, but implementation not detailed | MEDIUM |
 | 2.3.16 | Datenintegration (Search) | ⚠️ PARTIAL | Vector search documented, but full-text search indexing not explicit | LOW |
 | 2.3.17 | Datenintegration (Metadata) | ⚠️ PARTIAL | Knowledge management documented, but metadata management not detailed | LOW |
-| 2.3.18 | Chatbot (A/B Testing) | ❌ MISSING | A/B testing capabilities not documented | LOW |
+| 2.3.18 | Chatbot (A/B Testing) | ✅ COVERED | A/B testing capabilities documented in `evaluations/3_ab_testing/` - evaluation-based comparison, configuration variants, practical workflows, and limitations clearly documented | - |
 | 2.3.19 | Chatbot (Eskalation) | ⚠️ PARTIAL | Human-in-the-loop exists, but escalation workflow not explicit | MEDIUM |
 | 2.3.20 | Offenheit | ✅ COVERED | Open standards and modular architecture well documented | - |
 | 2.3.21 | Integration (eGov Portale) | ✅ COVERED | External system integration documented in `external_integrations/` with three approaches (direct agent API calls, platform API integration, data pipelines). eGovernment portals treated as generic external systems without special connectors. Network requirements include external API connectivity guidance. | - |
 
 **Summary - 2.3.x (Technology & Hosting)**:
-- ✅ Covered: **10/21 (48%)** ⬆️ (improved from 43%)
-- ⚠️ Partial: **8/21 (38%)** ⬇️ (reduced from 43%)
-- ❌ Missing: 3/21 (14%)
+- ✅ Covered: **11/21 (52%)** ⬆️ (improved from 48%)
+- ⚠️ Partial: **8/21 (38%)**
+- ❌ Missing: **2/21 (10%)** ⬇️ (reduced from 14%)
 
 **Key Gaps** (Updated):
 1. **WCAG compliance** (2.3.3) - MEDIUM
@@ -335,9 +339,9 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
    - WCAG 2.1 AA compliance (2.3.3)
    - SLA documentation (2.3.8)
 
-6. **Quality & Ethics** [@thomann]
-    - Bias monitoring (2.1.6)
-    - A/B testing (2.3.18)
+6. **Quality & Ethics**
+    - ~~Bias monitoring (2.1.6)~~ ✅ **COMPLETED** [@thomann] (2025-10-24)
+    - ~~A/B testing (2.3.18)~~ ✅ **COMPLETED** [@thomann] (2025-10-24)
 
 ### LOW PRIORITY GAPS
 
@@ -433,9 +437,9 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
    - Confidence scores display (1.1.19)
    - Reference: 1.2.20, 1.1.19
 
-9b. **Document Quality & Ethics Features** [@thomann]
-   - Bias monitoring and model drift detection (2.1.6)
-   - A/B testing capabilities (2.3.18)
+~~9b. **Document Quality & Ethics Features**~~ - ✅ **COMPLETED** (2025-10-24) [@thomann]
+   - ✅ Bias monitoring and model drift detection documented in `evaluations/2_bias_monitoring/`
+   - ✅ A/B testing capabilities documented in `evaluations/3_ab_testing/`
    - Reference: 2.1.6, 2.3.18
 
 ### Medium-Term (3-6 Months)
@@ -461,23 +465,23 @@ After strict verification, only 1 item (Guards) was confirmed as truly COVERED w
 
 | Category | Total Reqs | ✅ Covered       | ⚠️ Partial   | ❌ Missing       |
 |----------|------------|-----------------|--------------|-----------------|
-| 1.1.x Admin Functional | 23         | **9 (39%)** ⬆️ | **10 (43%)** ⬇️ | 4 (17%)         |
-| 1.2.x User Functional | 20         | **9 (45%)** ⬆️  | **9 (45%)** ⬆️ | 2 (10%) ⬇️ |
-| 2.1.x General Non-Functional | 17         | 11 (65%) | 2 (12%)      | 4 (24%)  |
+| 1.1.x Admin Functional | 23         | **9 (39%)** | **10 (43%)** | 4 (17%)         |
+| 1.2.x User Functional | 20         | **9 (45%)**  | **9 (45%)** | 2 (10%) |
+| 2.1.x General Non-Functional | 17         | **12 (71%)** ⬆️ | 2 (12%)      | **3 (18%)** ⬇️  |
 | 2.2.x Regulatory | 8          | 3 (38%)  | 1 (13%) | 4 (50%)         |
-| 2.3.x Technology & Hosting | 21         | **10 (48%)** ⬆️  | **8 (38%)** ⬇️      | 3 (14%)  |
+| 2.3.x Technology & Hosting | 21         | **11 (52%)** ⬆️  | 8 (38%)      | **2 (10%)** ⬇️  |
 | 2.4.x Service | 6          | 0 (0%)          | 5 (83%)      | 1 (17%)         |
-| **TOTAL** | **95**     | **42 (44%)** ⬆️ | **35 (37%)** ⬇️ | **18 (19%)** |
+| **TOTAL** | **95**     | **44 (46%)** ⬆️ | **35 (37%)** | **16 (17%)** ⬇️ |
 
 ### Priority Distribution of Gaps
 
 | Priority | Count | Percentage |
 |----------|-------|------------|
 | CRITICAL | 0 | 0% |
-| HIGH | **6** ⬇️ | **6%** ⬇️ (reduced from 11%) |
-| MEDIUM | **19** ⬇️ | **20%** ⬇️ (reduced from 23%) |
+| HIGH | **6** | **6%** |
+| MEDIUM | **17** ⬇️ | **18%** ⬇️ (reduced from 20%) |
 | LOW | 12 | 13% |
-| Covered/Partial | **77** ⬆️ | **81%** ⬆️ (improved from 80%) |
+| Covered/Partial | **79** ⬆️ | **83%** ⬆️ (improved from 81%) |
 
 ---
 
@@ -512,6 +516,11 @@ The AI-Hub platform documentation is **comprehensive in core areas** (architectu
 - **Key lesson**: Architectural capability ≠ user-ready documentation
 
 **Previous Progress (2025-10-24)**:
+- ✅ **Bias monitoring and A/B testing documented** [@thomann] - Foundation and extension strategies (2.1.6, 2.3.18)
+  - Comprehensive documentation in `evaluations/2_bias_monitoring/` and `evaluations/3_ab_testing/`
+  - Current capabilities clearly documented (evaluation framework, OpenTelemetry)
+  - Practical workarounds and extension approaches provided
+  - Limitations transparently stated (no production traffic splitting, no automated drift detection)
 - ✅ **External system integration documented** - Generic approach applicable to all external systems (2.3.21)
   - Three integration approaches: direct agent API calls, platform API integration, data pipelines
   - eGovernment portals treated as standard external systems (no special connectors)
