@@ -34,17 +34,17 @@ Organizations can choose between two primary integration patterns:
 ### Pattern 1: Real-Time API Integration (Read/Write)
 
 ```mermaid
-graph TB
-    Portal["eGov Portal"]
+graph LR
+    Portal["eGovernment Portal"]
     Middleware["Integration Middleware"]
     Agents["AI-Hub Agents"]
 
-    Portal -->|"1. Event"| Middleware
-    Middleware -->|"2. REST API"| Agents
-    Agents -->|"3. Response"| Middleware
-    Middleware -->|"4. Update"| Portal
+    Portal -->|"Trigger Event"| Middleware
+    Middleware -->|"REST API"| Agents
+    Agents -->|"AI Response"| Middleware
+    Middleware -->|"Update Portal"| Portal
 
-    classDef default font-size:16px,padding:20px
+    classDef default padding:90px
 ```
 
 **Use When**: AI needs to read and write portal data in real-time (e.g., case updates, document classification)
@@ -57,17 +57,17 @@ graph TB
 ### Pattern 2: Pipeline-Based Data Sync (Read-Heavy)
 
 ```mermaid
-graph TB
-    Portal["eGov Portal"]
-    Pipeline["Data Pipeline (Dagster)"]
+graph LR
+    Portal["eGovernment Portal"]
+    Pipeline["Data Pipeline<br/>(Dagster)"]
     KB["Knowledge Base"]
     Agents["AI-Hub Agents"]
 
-    Portal -->|"1. Pull Data"| Pipeline
-    Pipeline -->|"2. Index"| KB
-    KB -->|"3. RAG Query"| Agents
-
-    classDef default font-size:16px,padding:20px
+    Portal -->|"Pull Data"| Pipeline
+    Pipeline -->|"Index"| KB
+    KB -->|"RAG Query"| Agents
+    
+    classDef default padding:1px
 ```
 
 **Use When**: AI primarily reads portal data for analysis (e.g., case summarization, search)
