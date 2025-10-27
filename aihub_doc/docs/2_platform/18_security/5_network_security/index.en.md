@@ -1,15 +1,15 @@
 ---
-title: Network Security
+title: Network security
 index: 5
 ---
 
-# Network Security
+# Network security
 
-The AI-Hub implements a **defense-in-depth** network security architecture, using multiple independent layers of protection to secure the platform, its data, and its users.
+The AI-Hub uses defense-in-depth network security. Multiple independent layers protect the platform, its data, and its users.
 
-All internal application services (like the AI-Hub API, Web UI, LiteLLM Proxy, and databases) run in isolated Docker containers on private networks. The **Traefik reverse proxy** is the only component directly accessible from the internet, accepting public traffic only on ports 80 and 443.
+All internal services (AI-Hub API, Web UI, LiteLLM Proxy, databases) run in isolated Docker containers on private networks. The Traefik reverse proxy is the only component accessible from the internet, accepting public traffic on ports 80 and 443.
 
-This proxy is responsible for routing requests to the correct internal service. All backend services remain completely isolated and are never directly exposed to the public internet.
+Traefik routes requests to the correct internal service. Backend services remain isolated and never get exposed directly to the public internet.
 
 ```
 Internet
@@ -35,36 +35,35 @@ Internet
          └── Customer APIs (SharePoint, Confluence, Custom REST APIs)
 ```
 
-## Defense in Depth Layers
+## Security layers
 
-Security is applied at every stage of a request, from the network edge to the application logic.
+Security applies at every stage of a request, from network edge to application logic.
 
-### Layer 1: Network Firewall (NSG)
+### Network firewall (NSG)
 
-The first layer of defense is the Network Security Group (NSG) or firewall. It enforces a **default deny** policy, ensuring that only necessary ports (80 for HTTP and 443 for HTTPS) are accessible from the public internet. All other ports are blocked. Optionally, administrative access (like SSH) can be restricted to specific, trusted IP ranges.
+The Network Security Group (NSG) or firewall enforces a default deny policy. Only ports 80 (HTTP) and 443 (HTTPS) are accessible from the public internet. All other ports are blocked. You can restrict administrative access like SSH to specific trusted IP ranges.
 
-### Layer 2: Reverse Proxy (Traefik)
+### Reverse proxy (Traefik)
 
-As the single entry point, the Traefik reverse proxy secures all incoming connections. It **terminates TLS** (requiring HTTPS with TLS 1.2+), automatically provisions and renews certificates via Let's Encrypt, and injects critical **security headers** (like HSTS and X-Frame-Options). It also provides **rate limiting** to protect backend services from brute-force and simple Denial of Service (DoS) attacks.
+Traefik serves as the single entry point and secures all incoming connections. It terminates TLS (requiring HTTPS with TLS 1.2+), automatically provisions and renews certificates via Let's Encrypt, and injects security headers like HSTS and X-Frame-Options. Rate limiting protects backend services from brute-force and simple DoS attacks.
 
-### Layer 3: Authentication (IAM)
+### Authentication (IAM)
 
-Access to the hub is managed through robust Identity and Access Management (IAM). User authentication is handled via **Azure AD OAuth2**, integrating with corporate identity. This enables **Role-Based Access Control (RBAC)** for defining fine-grained permissions. Separate **API keys** are used to authenticate service-to-service communication, while secure session management with configurable timeouts protects user sessions.
+Azure AD OAuth2 handles user authentication, integrating with corporate identity. This enables Role-Based Access Control (RBAC) for fine-grained permissions. API keys authenticate service-to-service communication. Session management with configurable timeouts protects user sessions.
 
-### Layer 4: Container Isolation
+### Container isolation
 
-All application services run as non-root users in **isolated Docker containers** with minimal privileges. Container networking rules prevent direct communication between unrelated services, and resource limits mitigate resource exhaustion attacks. Images are regularly updated with the latest security patches to protect against known vulnerabilities.
+Application services run as non-root users in isolated Docker containers with minimal privileges. Container networking rules prevent direct communication between unrelated services. Resource limits mitigate resource exhaustion attacks. Images get updated regularly with security patches.
 
-### Layer 5: Data Protection
+### Data protection
 
-The final layer protects sensitive data. The hub integrates **Presidio** to automatically detect and anonymize Personally Identifiable Information (PII) in LLM requests. AI-powered **sensitive information guards** scan responses before they are delivered to the user. A comprehensive **audit trail** logs all data access and processing for accountability.
+Presidio automatically detects and anonymizes Personally Identifiable Information (PII) in LLM requests. AI-powered sensitive information guards scan responses before delivery to users. An audit trail logs all data access and processing.
 
+## Related documentation
 
-## Related Documentation
-
-- [Network Requirements](../../3_deployment_guide/7_network_requirements/) - Firewall rules and connectivity
-- [Deployment Options](../../3_deployment_guide/1_deployment_options/) - Architecture and hosting strategies
-- [Container Security](../4_container_security/) - Container isolation and hardening
+- [Network requirements](../../3_deployment_guide/7_network_requirements/) - Firewall rules and connectivity
+- [Deployment options](../../3_deployment_guide/1_deployment_options/) - Architecture and hosting strategies
+- [Container security](../4_container_security/) - Container isolation and hardening
 - [Authentication](../1_authentication/) - Authentication mechanisms
-- [Input Validation](../3_input_validation/) - Input sanitization and validation
-- [Infrastructure Layers](../../2_architecture/2_infrastructure_layers/) - Detailed infrastructure component overview
+- [Input validation](../3_input_validation/) - Input sanitization and validation
+- [Infrastructure layers](../../2_architecture/2_infrastructure_layers/) - Infrastructure component overview
