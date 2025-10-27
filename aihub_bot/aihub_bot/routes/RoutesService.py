@@ -1,8 +1,11 @@
 import logging
 
 from aihub_lib.routes.chat.ChatService import ChatService
-from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
 from fastapi import Request
+from microsoft_agents.authentication.msal import MsalConnectionManager
+from microsoft_agents.hosting.aiohttp import CloudAdapter
+from microsoft_agents.hosting.core import AgentAuthConfiguration
+from microsoft_agents.hosting.core.authorization import AuthTypes
 
 from aihub_bot.persistence.entities.PathEntity import Credentials, PathEntity
 
@@ -50,9 +53,39 @@ class RoutesService(ChatService):
         # Create new adapter and cache it
         logger.debug(f"Creating new CloudAdapter for path: {path}")
         credentials: Credentials = RoutesService.get_credentials(path)
-        adapter = CloudAdapter(ConfigurationBotFrameworkAuthentication(credentials))
+        auth_config = RoutesService._create_auth_configuration(credentials)
+
+        # Create connection manager with the auth configuration
+        connection_manager = MsalConnectionManager(connections_configurations={"SERVICE_CONNECTION": auth_config})
+
+        adapter = CloudAdapter(connection_manager=connection_manager)
         RoutesService._adapter_cache[path] = adapter
         return adapter
+
+    @staticmethod
+    def _create_auth_configuration(credentials: Credentials) -> AgentAuthConfiguration:
+        """
+        ### What
+        - Converts legacy credential dict format to AgentAuthConfiguration.
+
+        ### Why
+        - The new SDK uses AgentAuthConfiguration instead of simple dicts.
+        - This helper method provides backward compatibility with existing PathEntity credentials.
+        """
+        app_type = credentials.get("APP_TYPE", "MultiTenant")
+        auth_type = AuthTypes.MULTI_TENANT if app_type == "MultiTenant" else AuthTypes.SINGLE_TENANT
+
+        config_params = {
+            "auth_type": auth_type,
+            "client_id": credentials.get("APP_ID"),
+            "client_secret": credentials.get("APP_PASSWORD"),
+        }
+
+        # Single tenant requires tenant_id
+        if auth_type == AuthTypes.SINGLE_TENANT:
+            config_params["tenant_id"] = credentials.get("APP_TENANTID")
+
+        return AgentAuthConfiguration(**config_params)
 
     @staticmethod
     def get_credentials(path: str) -> Credentials:

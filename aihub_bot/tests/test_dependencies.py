@@ -19,9 +19,9 @@ def test_package_imports():
     4. No botbuilder packages are present
     """
     # Should succeed - new SDK imports
-    from microsoft_agents.hosting.core import ActivityHandler, TurnContext
-    from microsoft_agents.hosting.aiohttp import CloudAdapter
     from microsoft_agents.activity import Activity, ActivityTypes
+    from microsoft_agents.hosting.aiohttp import CloudAdapter
+    from microsoft_agents.hosting.core import ActivityHandler, TurnContext
 
     # Verify objects are importable
     assert ActivityHandler is not None

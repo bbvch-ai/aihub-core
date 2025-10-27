@@ -7,7 +7,6 @@ the necessary test data for migration testing.
 
 import pytest
 from microsoft_agents.activity import ActivityTypes
-from microsoft_agents.hosting.core import TurnContext
 
 
 def test_mock_activity_fixture(mock_activity):

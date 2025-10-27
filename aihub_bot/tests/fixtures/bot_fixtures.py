@@ -1,10 +1,11 @@
 """Shared fixtures for bot migration testing."""
 
-import pytest
-from typing import Any
+from datetime import UTC
 from unittest.mock import AsyncMock, MagicMock
-from microsoft_agents.hosting.core import TurnContext
+
+import pytest
 from microsoft_agents.activity import Activity, ActivityTypes, ChannelAccount, ConversationAccount
+from microsoft_agents.hosting.core import TurnContext
 
 
 @pytest.fixture
@@ -14,7 +15,7 @@ def mock_activity() -> Activity:
 
     Returns a basic message activity with all required fields populated.
     """
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     return Activity(
         type=ActivityTypes.message,
@@ -25,7 +26,7 @@ def mock_activity() -> Activity:
         conversation=ConversationAccount(id="conv-789", name="Test Conversation"),
         channel_id="msteams",
         locale="en-US",
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         service_url="https://test.botframework.com",
     )
 
