@@ -10,10 +10,7 @@ import openai
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
-from botbuilder.core import TurnContext
-from botbuilder.core.teams import TeamsInfo
-from botbuilder.schema.teams import TeamsChannelAccount
-from botframework.connector import Channels
+from microsoft_agents.hosting.core import TurnContext
 from openai import APIStatusError, AsyncStream
 from openai.types.chat import (
     ChatCompletion,
@@ -110,24 +107,26 @@ class OpenaiCompletionHandler(CompletionHandler):
             OpenaiCompletionHandler._message_to_chat_completion_message_param(message) for message in persisted_messages
         ]
 
-        if turn_context.activity.channel_id == Channels.ms_teams:
-            member: TeamsChannelAccount = await TeamsInfo.get_member(
-                turn_context,
-                turn_context.activity.from_property.id,
-            )
-            user: UserIdentity = UserIdentity(
-                id=member.aad_object_id,
-                name=member.name,
-                email=member.email,
-                roles=["TestOnlyFullAdminAccess"],
-            )
-        else:
-            user: UserIdentity = UserIdentity(
-                id=turn_context.activity.from_property.id or "UNKNOWN",
-                name=turn_context.activity.from_property.name or "UNKNOWN",
-                email="UNKNOWN",
-                roles=["TestOnlyFullAdminAccess"],
-            )
+        # Create user identity from activity information
+        # For Teams, aadObjectId may be available in channel_data
+        user_id = turn_context.activity.from_property.id or "UNKNOWN"
+        user_name = turn_context.activity.from_property.name or "UNKNOWN"
+        user_email = "UNKNOWN"
+
+        if turn_context.activity.channel_id == "msteams":
+            # Try to extract AAD Object ID and email from channel_data if available
+            channel_data = turn_context.activity.channel_data or {}
+            if isinstance(channel_data, dict):
+                # Teams may provide additional user info in channel_data
+                user_id = channel_data.get("aadObjectId") or user_id
+                user_email = channel_data.get("email") or user_email
+
+        user: UserIdentity = UserIdentity(
+            id=user_id,
+            name=user_name,
+            email=user_email,
+            roles=["TestOnlyFullAdminAccess"],
+        )
 
         logger.debug(f"Using user identity: {user}")
 
