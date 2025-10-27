@@ -234,7 +234,7 @@ Ensure your feature documentation integrates well:
 ls -la aihub_doc/docs/features/
 
 # Look at the structure of similar features
-head -50 aihub_doc/docs/features/*/index.md
+head -50 aihub_doc/docs/features/*/index.en.md
 ```
 
 **Integration Checklist:**
