@@ -1,86 +1,64 @@
 ---
-title: Input/Output Guards
+title: Input/output guards
 index: 3
 ---
 
-# LLM Guards
+# LLM guards
 
-Guards are real-time safety mechanisms that protect your AI agents from producing inappropriate, inaccurate, or harmful responses. Unlike evaluations (which test agents before deployment), guards actively monitor and intervene during live conversations with users.
+Guards check AI agent interactions in real time. They catch inappropriate questions before the agent sees them and screen responses before users receive them. Unlike evaluations that test agents before deployment, guards run during live conversations.
 
-## Input Guards vs Output Guards
+## How guards work
 
-Guards operate at two critical points in the conversation flow:
+Guards check conversations at two points:
 
-**Input Guards** analyze user questions before they reach the agent. They determine whether a question is appropriate, on-topic, and safe to process. Input guards can block off-topic requests, filter out policy violations, or request clarification before the agent begins processing.
+Input guards analyze user questions before the agent processes them. They filter out off-topic requests, block policy violations, or ask for clarification.
 
-**Output Guards** inspect the agent's generated response before it's sent to the user. They verify the response quality, detect sensitive information that should be redacted, and ensure the agent hasn't hallucinated or produced harmful content.
+Output guards examine agent responses before delivery. They verify quality, redact sensitive information, and catch hallucinations or harmful content.
 
-Both types operate automatically in the background. The entire guard evaluation process is fast (typically 100-500ms per guard), adding minimal delay to the conversation.
+## Available guards
 
-## Available Guard Types
+The AI-Hub includes several guards that address specific risks. Which guards you can enable depends on how your agent was built.
 
-The AI-Hub provides several guards, each addressing a specific risk. Whether and how these can be enabled depends on the agent's implementation.
+### Input guards
 
-### Input Guards
+**Agent description guard**
 
-Input guards analyze user questions before the agent processes them.
+Checks that questions match what the agent does. A financial compliance agent would block "What's the weather?" and explain it only handles financial questions.
 
-**Agent Description Guard**
+**Few-shot guard**
 
-Ensures user questions align with the agent's intended purpose. Prevents off-topic questions that would result in low-quality responses outside the agent's expertise.
+Enforces custom policies through examples. If your company prohibits using work assistants for entertainment, you'd provide examples like "Recommend a movie" (blocked) and "Recommend a project management tool" (allowed). The guard learns to recognize similar patterns.
 
-*Example:* A user asks a financial compliance agent, "What's the weather forecast?" The guard blocks this and informs the user that the agent only handles financial questions.
+### Output guards
 
-**Few-Shot Guard**
+**Context sufficient guard**
 
-Enforces custom company policies using specific examples. You provide examples of acceptable and unacceptable requests, and the guard learns to enforce these patterns.
+Checks whether the agent has enough information to answer accurately. Particularly useful for RAG agents that pull from knowledge bases. If a user asks a detailed technical question but the retrieved documents don't contain enough detail, the guard stops the response and tells the user the information isn't available.
 
-*Example:* Your policy prohibits using work assistants for personal entertainment. You configure the guard with examples like "Recommend a movie" (blocked) vs. "Recommend a project management tool" (allowed).
-
-### Output Guards
-
-Output guards inspect agent-generated responses before they reach the user.
-
-**Context Sufficient Guard**
-
-Verifies the agent has enough relevant information to answer accurately. Reduces hallucination by blocking responses when the agent lacks sufficient knowledge. Critical for RAG agents that retrieve information from knowledge bases.
-
-*Example:* A user asks a detailed technical question. The guard checks if the retrieved documents contain enough information to answer fully. If not, it informs the user that the information isn't available.
-
-::: tip Configuration Note
-Some agents (like the RAG Agent) can be configured to automatically use the Context Sufficient Guard to ensure high-quality, evidence-based responses.
+::: tip Configuration note
+Some agents (like the RAG Agent) can use the context sufficient guard automatically to prevent responses without adequate evidence.
 :::
 
-**Sensitive Info Guard**
+**Sensitive info guard**
 
-Detects and removes confidential or personally identifiable information (PII) from agent responses. Protects your organization from data leaks and helps maintain compliance with privacy regulations like GDPR.
+Finds and removes confidential or personally identifiable information from responses. If an agent retrieves a document containing an employee email, the guard redacts it before the user sees it, replacing it with `[REDACTED]`.
 
-*Example:* An agent retrieves a document containing an employee's email. Before sending the response, the guard detects and redacts the email, replacing it with `[REDACTED]`.
+## When to use guards
 
-## When to Use Guards
+Your agent's purpose, audience, and risk level determine which guards make sense.
 
-The decision to enable guards depends on your agent's purpose, audience, and risk profile.
-
-::: warning High-Risk Scenarios (Guards Recommended)
+Use guards for:
 - Customer-facing agents accessible to external users
 - Compliance-critical domains like healthcare, finance, or legal
 - Agents with access to sensitive data or internal databases
-- Multi-purpose agents where scope control is important
-:::
+- Multi-purpose agents where controlling scope matters
 
-::: tip Lower-Risk Scenarios (Fewer Guards Needed)
-- Internal tools for trusted employees in a controlled environment
-- Narrow-scope agents with a highly specialized, limited purpose
-- Development/testing environments where speed is prioritized
-:::
+You may need fewer guards for:
+- Internal tools for trusted employees in controlled environments
+- Narrow-scope agents with highly specialized purposes
+- Development or testing environments where speed matters more than safety
 
-## Configuration and Monitoring
+## Configuration
 
-Guards are built into agents during development. The level of control depends on how the agent was designed. Some agents come with guards that cannot be disabled, some allow you to enable or disable specific guards through the configuration interface, and some may not support guard customization at all.
-
-The AI-Hub tracks all guard activations, allowing you to monitor how often they trigger and analyze patterns in real-world usage.
-
-::: tip Best Practice
-For customer-facing or high-risk agents, prefer agents that include appropriate guards by default. If you have the option to disable guards, do so only after careful consideration of the risks and thorough testing in a development environment.
-:::
+Guards get built into agents during development. How much control you have depends on the agent's design. Some agents ship with mandatory guards you can't disable. Others let you toggle specific guards through the configuration interface. Some don't support customization at all.
 
