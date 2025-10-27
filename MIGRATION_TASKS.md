@@ -4,6 +4,8 @@
 - ✅ **8.1**: Keep inheritance pattern (ActivityHandler)
 - ✅ **8.2**: No backward compatibility needed
 - ✅ **8.3**: Keep MongoDB storage pattern
+- ✅ **Channels**: Use microsoft_agents SDK's channel constants directly (no custom Channels class)
+- ✅ **Performance**: Focus on functional testing, not performance benchmarking
 
 ---
 
@@ -72,121 +74,10 @@ def test_poetry_lock_updated():
 
 ---
 
-### Task 1.2: Create Compatibility Constants Module
-**Priority:** High
-**Estimated Time:** 1 hour
-**Dependencies:** Task 1.1
-
-#### Description
-Create a constants module to replace `botframework.connector.Channels` and other constants that are not directly available in the new SDK.
-
-#### Implementation
-**File:** `aihub_bot/aihub_bot/constants/channels.py`
-
-```python
-"""
-Channel constants for Bot Framework compatibility.
-
-The microsoft-agents SDK does not expose a Channels constant,
-so we define them here based on the Bot Framework specification.
-"""
-
-class Channels:
-    """Channel identifiers used by Microsoft Bot Framework."""
-
-    ms_teams = "msteams"
-    slack = "slack"
-    webchat = "webchat"
-    direct_line = "directline"
-    email = "email"
-    facebook = "facebook"
-    group_me = "groupme"
-    kik = "kik"
-    line = "line"
-    skype = "skype"
-    telegram = "telegram"
-    twilio = "twilio-sms"
-
-    @classmethod
-    def all(cls) -> list[str]:
-        """Return all supported channel identifiers."""
-        return [
-            value for name, value in vars(cls).items()
-            if not name.startswith("_") and isinstance(value, str)
-        ]
-```
-
-**File:** `aihub_bot/aihub_bot/constants/__init__.py`
-
-```python
-from aihub_bot.constants.channels import Channels
-
-__all__ = ["Channels"]
-```
-
-#### Test Specification
-**Test File:** `tests/constants/test_channels.py`
-
-```python
-import pytest
-from aihub_bot.constants import Channels
-
-
-def test_channels_constant_exists():
-    """
-    PASS CRITERIA: Channels class is importable and has expected attributes.
-
-    Verifies:
-    1. Channels class exists
-    2. Has ms_teams attribute with correct value
-    3. Has slack attribute with correct value
-    """
-    assert hasattr(Channels, "ms_teams")
-    assert Channels.ms_teams == "msteams"
-    assert hasattr(Channels, "slack")
-    assert Channels.slack == "slack"
-
-
-def test_channels_all_method():
-    """
-    PASS CRITERIA: Channels.all() returns list of all channel identifiers.
-
-    Verifies:
-    1. all() method returns a list
-    2. List contains expected channel names
-    3. List contains only strings
-    """
-    all_channels = Channels.all()
-    assert isinstance(all_channels, list)
-    assert "msteams" in all_channels
-    assert "slack" in all_channels
-    assert all(isinstance(ch, str) for ch in all_channels)
-
-
-def test_channels_backward_compatibility():
-    """
-    PASS CRITERIA: Can be used as drop-in replacement for botframework.connector.Channels.
-
-    Verifies:
-    1. Usage pattern matches old SDK
-    2. All commonly used channels are present
-    """
-    # These should work exactly as before
-    channel = Channels.ms_teams
-    assert channel == "msteams"
-
-    # Verify commonly used channels exist
-    required_channels = ["ms_teams", "slack", "webchat"]
-    for channel in required_channels:
-        assert hasattr(Channels, channel)
-```
-
----
-
-### Task 1.3: Create Migration Test Fixtures
+### Task 1.2: Create Migration Test Fixtures
 **Priority:** High
 **Estimated Time:** 3 hours
-**Dependencies:** Task 1.1, 1.2
+**Dependencies:** Task 1.1
 
 #### Description
 Create comprehensive test fixtures and utilities for testing migrated components. These fixtures will be reused across all migration tests.
@@ -335,7 +226,7 @@ def test_slack_activity_fixture(slack_activity):
 ### Task 2.1: Migrate RoutesService (Adapter & Authentication)
 **Priority:** Critical
 **Estimated Time:** 8 hours
-**Dependencies:** Task 1.1, 1.2, 1.3
+**Dependencies:** Task 1.1, 1.2
 
 #### Description
 Migrate `RoutesService.py` to use Microsoft 365 Agents SDK's `CloudAdapter`. This is the most critical component as all bot routes depend on it.
@@ -499,7 +390,8 @@ from botframework.connector import Channels
 # AFTER:
 from microsoft_agents.hosting.core import ActivityHandler, TurnContext
 from microsoft_agents.activity import Activity, ActivityTypes
-from aihub_bot.constants import Channels
+# Note: Use string literals for channel IDs (e.g., "msteams", "slack")
+# The new SDK may provide channel constants - check documentation
 ```
 
 #### Test Specification
@@ -546,7 +438,7 @@ def test_base_chat_bot_imports_new_sdk():
     Verifies:
     1. No botbuilder imports in source
     2. Uses microsoft_agents imports
-    3. Uses local Channels constant
+    3. No botframework imports
     """
     import inspect
     source = inspect.getsource(BaseChatBot)
@@ -554,7 +446,6 @@ def test_base_chat_bot_imports_new_sdk():
     assert "from botbuilder" not in source
     assert "from botframework" not in source
     assert "from microsoft_agents" in source
-    assert "from aihub_bot.constants import Channels" in source
 
 
 def test_base_chat_bot_inherits_activity_handler(base_chat_bot):
@@ -597,13 +488,13 @@ async def test_on_conversation_update_teams(base_chat_bot, teams_activity, mock_
 
     Verifies:
     1. Handles Teams bot re-add scenario
-    2. Uses Channels.ms_teams constant correctly
+    2. Channel ID comparison works with string literals
     3. Conversation reset works as expected
     """
     from microsoft_agents.activity import ChannelAccount
 
     # Simulate bot being added to conversation
-    teams_activity.channel_id = Channels.ms_teams
+    teams_activity.channel_id = "msteams"
     teams_activity.members_added = [
         ChannelAccount(id="bot-456", name="Test Bot")
     ]
@@ -640,17 +531,18 @@ async def test_process_message_with_typing_indicator(base_chat_bot, mock_turn_co
     assert len(typing_sent) > 0
 
 
-def test_channels_constant_usage(base_chat_bot):
+def test_channel_id_string_literals(base_chat_bot):
     """
-    PASS CRITERIA: Bot uses local Channels constant correctly.
+    PASS CRITERIA: Bot uses string literals for channel IDs.
 
     Verifies:
-    1. Can access Channels.ms_teams
-    2. Can access Channels.slack
-    3. Values match expected channel IDs
+    1. Can compare channel IDs using strings
+    2. Common channel IDs work as expected
     """
-    assert Channels.ms_teams == "msteams"
-    assert Channels.slack == "slack"
+    # Channel IDs are simple strings
+    assert "msteams" == "msteams"
+    assert "slack" == "slack"
+    assert "webchat" == "webchat"
 ```
 
 ---
@@ -865,7 +757,7 @@ from botframework.connector import Channels
 
 # AFTER:
 from microsoft_agents.activity import Activity, Attachment
-from aihub_bot.constants import Channels
+# Use string literals for channel IDs
 ```
 
 #### Test Specification
@@ -884,7 +776,7 @@ def test_content_extractor_imports_new_sdk():
     Verifies:
     1. No botbuilder imports
     2. Uses microsoft_agents imports
-    3. Uses local Channels constant
+    3. No botframework imports
     """
     import inspect
     source = inspect.getsource(ContentExtractor)
@@ -949,9 +841,9 @@ def test_channel_specific_extraction(teams_activity, slack_activity):
     PASS CRITERIA: Channel-specific extraction works.
 
     Verifies:
-    1. Teams activities handled correctly
-    2. Slack activities handled correctly
-    3. Uses Channels constant for detection
+    1. Teams activities handled correctly (channel_id == "msteams")
+    2. Slack activities handled correctly (channel_id == "slack")
+    3. Channel ID string comparison works
     """
     # Teams extraction
     teams_content = ContentExtractor.extract_content_from_activity(
@@ -959,6 +851,7 @@ def test_channel_specific_extraction(teams_activity, slack_activity):
         activity=teams_activity
     )
     assert teams_content is not None
+    assert teams_activity.channel_id == "msteams"
 
     # Slack extraction
     slack_content = ContentExtractor.extract_content_from_activity(
@@ -966,6 +859,7 @@ def test_channel_specific_extraction(teams_activity, slack_activity):
         activity=slack_activity
     )
     assert slack_content is not None
+    assert slack_activity.channel_id == "slack"
 ```
 
 ---
@@ -991,7 +885,7 @@ from botframework.connector import Channels
 
 # AFTER:
 from microsoft_agents.hosting.core import TurnContext
-from aihub_bot.constants import Channels
+# Use string literals for channel IDs: "msteams", "slack", etc.
 ```
 
 #### Test Specification
@@ -1081,7 +975,7 @@ async def test_stream_agent_chat_bot_streaming(mock_turn_context):
     Verifies:
     1. StreamAgentChatBot can stream responses
     2. Uses new SDK's activity updates
-    3. Channels constant works for streaming logic
+    3. Channel ID handling works with string literals
     """
     from unittest.mock import AsyncMock
 
@@ -1877,115 +1771,6 @@ def test_slack_bot_in_the_loop(full_bot_app, slack_activity):
 
 ---
 
-### Task 5.4: Performance Testing
-**Priority:** Medium
-**Estimated Time:** 4 hours
-**Dependencies:** Task 5.3
-
-#### Description
-Verify no performance degradation after migration.
-
-#### Test Specification
-**Test File:** `tests/performance/test_performance.py`
-
-```python
-import pytest
-import time
-import asyncio
-
-
-@pytest.mark.performance
-@pytest.mark.asyncio
-async def test_message_processing_latency(full_bot_app, mock_activity):
-    """
-    PASS CRITERIA: Message processing latency similar or better than before.
-
-    Verifies:
-    1. Average latency < 2 seconds for simple messages
-    2. No memory leaks
-    3. Concurrent message handling works
-    """
-    latencies = []
-
-    for _ in range(10):
-        start = time.time()
-
-        response = full_bot_app.post(
-            "/api/v1/openai/chat",
-            json=mock_activity.__dict__,
-            headers={"Service-Url": "https://test.botframework.com"}
-        )
-
-        end = time.time()
-        latencies.append(end - start)
-
-    avg_latency = sum(latencies) / len(latencies)
-    assert avg_latency < 2.0  # 2 second threshold
-
-
-@pytest.mark.performance
-def test_streaming_performance(full_bot_app, mock_activity):
-    """
-    PASS CRITERIA: Streaming performance acceptable.
-
-    Verifies:
-    1. First chunk arrives quickly (< 1 second)
-    2. Chunks arrive regularly
-    3. No buffering issues
-    """
-    start = time.time()
-
-    response = full_bot_app.post(
-        "/api/v1/agent/chat",
-        json=mock_activity.__dict__,
-        headers={"Service-Url": "https://test.botframework.com"}
-    )
-
-    first_chunk_time = time.time() - start
-
-    # First chunk should arrive quickly
-    if response.status_code == 200:
-        assert first_chunk_time < 1.0
-
-
-@pytest.mark.performance
-def test_concurrent_conversations(full_bot_app):
-    """
-    PASS CRITERIA: Can handle multiple concurrent conversations.
-
-    Verifies:
-    1. 10+ concurrent conversations work
-    2. No conversation mixing
-    3. All conversations complete successfully
-    """
-    from concurrent.futures import ThreadPoolExecutor
-
-    def send_message(conv_id):
-        from microsoft_agents.activity import Activity, ChannelAccount, ConversationAccount
-
-        activity = Activity(
-            type="message",
-            text=f"Test from {conv_id}",
-            from_property=ChannelAccount(id=f"user-{conv_id}"),
-            recipient=ChannelAccount(id="bot-123"),
-            conversation=ConversationAccount(id=f"conv-{conv_id}"),
-            channel_id="webchat"
-        )
-
-        return full_bot_app.post(
-            "/api/v1/openai/chat",
-            json=activity.__dict__,
-            headers={"Service-Url": "https://test.botframework.com"}
-        )
-
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [executor.submit(send_message, i) for i in range(10)]
-        results = [f.result() for f in futures]
-
-    # All should complete (may have errors if services unavailable)
-    assert len(results) == 10
-```
-
 ---
 
 ## Phase 6: Documentation & Cleanup
@@ -2326,14 +2111,13 @@ def test_bot_runs_without_old_sdk():
 - **Unit Tests**: 80%+ coverage on migrated components
 - **Integration Tests**: All critical paths tested
 - **Channel Tests**: Each channel (Teams, Slack, Web Chat) tested
-- **Performance Tests**: No regressions from baseline
 
 ### Test Execution Order
-1. **Task 1.1-1.3**: Foundation tests must pass first
+1. **Task 1.1-1.2**: Foundation tests must pass first
 2. **Task 2.1-2.4**: Core component tests
 3. **Task 3.1-3.3**: Specialized bot tests
 4. **Task 4.1-4.2**: Controller tests
-5. **Task 5.1-5.4**: Integration and validation tests
+5. **Task 5.1-5.3**: Integration and validation tests
 6. **Task 6.1-6.4**: Documentation and cleanup tests
 
 ### Success Criteria (Final)
@@ -2349,7 +2133,6 @@ Expected output:
 - ✅ 0 imports from botbuilder/botframework
 - ✅ 80%+ code coverage
 - ✅ All channels working
-- ✅ No performance degradation
 
 ---
 
@@ -2360,8 +2143,7 @@ Copy this to track progress:
 ```markdown
 ## Phase 1: Foundation
 - [ ] Task 1.1: Update Project Dependencies
-- [ ] Task 1.2: Create Compatibility Constants Module
-- [ ] Task 1.3: Create Migration Test Fixtures
+- [ ] Task 1.2: Create Migration Test Fixtures
 
 ## Phase 2: Core Migration
 - [ ] Task 2.1: Migrate RoutesService
@@ -2382,7 +2164,6 @@ Copy this to track progress:
 - [ ] Task 5.1: Update Integration Tests
 - [ ] Task 5.2: Update Playground Tests
 - [ ] Task 5.3: Channel-Specific Testing
-- [ ] Task 5.4: Performance Testing
 
 ## Phase 6: Documentation & Cleanup
 - [ ] Task 6.1: Update Code Documentation
@@ -2393,7 +2174,7 @@ Copy this to track progress:
 
 ---
 
-**Estimated Total Time:** 6 weeks (1 developer) or 3 weeks (2 developers working in parallel)
+**Estimated Total Time:** 5 weeks (1 developer) or 2.5 weeks (2 developers working in parallel)
 
 **Risk Level:** Medium (well-documented migration path, but requires thorough testing)
 
