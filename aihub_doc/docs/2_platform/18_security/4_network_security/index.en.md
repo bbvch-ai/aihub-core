@@ -1,6 +1,6 @@
 ---
 title: Network security
-index: 5
+index: 4
 ---
 
 # Network security
@@ -63,7 +63,7 @@ Presidio automatically detects and anonymizes Personally Identifiable Informatio
 
 - [Network requirements](../../3_deployment_guide/7_network_requirements/) - Firewall rules and connectivity
 - [Deployment options](../../3_deployment_guide/1_deployment_options/) - Architecture and hosting strategies
-- [Container security](../4_container_security/) - Container isolation and hardening
+- [Container security](../3_container_security/) - Container isolation and hardening
 - [Authentication](../1_authentication/) - Authentication mechanisms
-- [Input validation](../3_input_validation/) - Input sanitization and validation
+- [Input validation](../2_input_validation/) - Input sanitization and validation
 - [Infrastructure layers](../../2_architecture/2_infrastructure_layers/) - Infrastructure component overview

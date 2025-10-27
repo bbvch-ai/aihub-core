@@ -1,6 +1,6 @@
 ---
 title: Authentication and Authorization
-index: 2
+index: 1
 ---
 
 # TODO: @mhoegger verify

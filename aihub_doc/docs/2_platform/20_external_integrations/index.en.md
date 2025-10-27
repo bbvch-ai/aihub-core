@@ -52,7 +52,7 @@ The AI-Hub VM needs outbound HTTPS (port 443) access to external systems. Config
 
 External systems connect to AI-Hub using standard HTTPS (port 443). Authentication options include OAuth 2.0, API keys, or Azure AD integration. Traefik reverse proxy provides built-in rate limiting protection, and Let's Encrypt handles automatic certificate management for TLS termination.
 
-[Network Security](../18_security/5_network_security/) covers the security architecture.
+[Network Security](../18_security/4_network_security/) covers the security architecture.
 
 ## General integration principles
 
@@ -65,5 +65,5 @@ Match your integration approach to latency, volume, and direction requirements. 
 - Pipelines: [Data Pipelines](../6_pipelines/) - Automated data synchronization
 - MCP: [Model Context Protocol](../17_mcp/) - AI assistant integration
 - Network: [Network Requirements](../3_deployment_guide/7_network_requirements/) - Firewall and connectivity
-- Security: [Network Security](../18_security/5_network_security/) - Security architecture
+- Security: [Network Security](../18_security/4_network_security/) - Security architecture
 - Authentication: [Authentication Setup](../11_access_management/1_authentication_setup/) - Configure SSO

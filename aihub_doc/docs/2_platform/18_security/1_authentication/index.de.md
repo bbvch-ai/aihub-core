@@ -1,6 +1,6 @@
 ---
 title: Authentifizierung und Autorisierung
-index: 2
+index: 1
 source_sha: "5ba75e1432ee0dbf1afb5a273842adaf8bdbbb521d7b5af5ac032b881b21db73"
 ---
 
