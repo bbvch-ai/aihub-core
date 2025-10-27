@@ -6,9 +6,8 @@ from collections.abc import AsyncGenerator
 from typing import Any
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from botbuilder.core import TurnContext
-from botbuilder.schema import Activity, ActivityTypes, Entity, ErrorResponseException
-from botbuilder.schema.teams import TeamsChannelData
+from microsoft_agents.activity import Activity, ActivityTypes, Entity
+from microsoft_agents.hosting.core import TurnContext
 
 from aihub_bot.bots.chat.ContentExtractor import ContentExtractor
 from aihub_bot.persistence.entities.ConversationEntity import Content, ConversationEntity, Message
@@ -77,9 +76,9 @@ class CompletionHandler:
 
     @staticmethod
     def _is_teams_channel_message(turn_context: TurnContext) -> bool:
-        channel_data_dict: dict[str, Any] = turn_context.activity.channel_data
-        channel_data: TeamsChannelData = TeamsChannelData(**channel_data_dict)
-        return channel_data.channel is not None
+        channel_data: dict[str, Any] = turn_context.activity.channel_data
+        # Teams channel messages have a 'channel' property in channel_data
+        return channel_data is not None and channel_data.get("channel") is not None
 
     @staticmethod
     def handle_slack_message(turn_context: TurnContext) -> TurnContext | None:
@@ -253,7 +252,8 @@ class CompletionHandler:
             try:
                 await _turn_context.update_activity(_activity)
                 return _activity, ""
-            except ErrorResponseException as e:
+            except Exception as e:
+                # Handle message too long error (e.g., Slack's msg_too_long error)
                 if "msg_too_long" in str(e):
                     new_text = _buffer.replace(_sent_text, "", 1)
                     _response = await _turn_context.send_activity(new_text)
