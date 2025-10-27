@@ -5,212 +5,106 @@ index: 6
 
 # Internationalization
 
-The Swiss AI Hub suite interface provides comprehensive internationalization support that reflects Switzerland's
-linguistic diversity. This capability ensures equitable access for all Swiss language communities, supporting the
-platform's deployment across multilingual organizations and public sector institutions.
+The platform supports Switzerland's four national languages: German, English, French, and Italian. Users can work in their preferred language throughout the interface.
 
-## Multi-Language Foundation
+## Language support
 
-The suite implements internationalization as a core architectural principle rather than a post-deployment addition,
-ensuring all interface elements, messages, and content adapt to user language preferences.
+German serves as the default language, but all four languages work identically. The interface, error messages, help text, and navigation all include translations.
 
-**Supported Languages**: The suite provides full support for Switzerland's four national languages—German, English,
-French, and Italian. Every interface element, from navigation labels to error messages to help text, includes
-translations in all four languages. German serves as the default language, reflecting the primary development region,
-but all languages receive equal treatment in functionality and polish.
+All user-facing text has translations—form validation, dialogs, notifications, error messages, help documentation, and instructions. Users see no untranslated elements or mixed languages.
 
-**Complete Coverage**: Internationalization extends beyond basic labels to encompass all user-facing text—form
-validation messages, confirmation dialogs, success notifications, error explanations, help documentation, and
-instructional text. Users working in their preferred language encounter no untranslated elements or language
-inconsistencies.
+Dynamically generated content also respects language preferences. Service descriptions, agent names, and knowledge namespace labels adapt to the selected language.
 
-**Dynamic Content Localization**: Beyond static interface text, dynamically generated content respects language
-preferences. Service descriptions, agent names, knowledge namespace labels—any content supporting localization adapts to
-user language selection, creating a fully localized experience.
+Users select their language during authentication or in profile settings. The selection persists across sessions.
 
-**Right Language from Start**: Users select their preferred language during initial authentication or through profile
-settings. This selection persists across sessions, ensuring users consistently experience the interface in their chosen
-language without needing to select it repeatedly.
+## Language selection and switching
 
-## Language Selection and Switching
+Users configure their language in their profile. This becomes the default for all sessions across devices.
 
-The suite provides flexible language selection mechanisms that balance user control with operational efficiency.
+Users can temporarily switch languages for a specific session. This helps multilingual users who prefer different languages for different tasks.
 
-**Profile-Based Selection**: Users configure their language preference in their user profile. This setting becomes the
-default for all sessions, ensuring consistent language experience across devices and login sessions without requiring
-repeated selection.
+Language changes apply immediately without reloading the page. All text updates instantly.
 
-**Session Override**: Users can temporarily override their profile language preference for a specific session through
-interface controls. This capability supports multilingual users who might prefer different languages for different tasks
-or contexts.
+URLs don't include language codes. Shared links show content in the recipient's preferred language, not the sender's.
 
-**Immediate Application**: Language changes apply immediately throughout the interface without requiring page reload or
-logout. Navigation elements, service descriptions, form labels, and all interface text update instantly to reflect the
-selected language.
+## Translation architecture
 
-**URL Independence**: The suite maintains language selection independently from URL structure. Users can share links to
-resources without language codes embedded in URLs, ensuring recipients see content in their preferred language rather
-than the link sharer's language.
+All user-facing text uses translation keys instead of hardcoded strings. Developers reference keys like `agent.create.title` rather than literal text. Translations can be modified without code changes.
 
-## Translation Architecture
+Translations live in YAML files organized by service and language. Each service maintains its own translation files for all four languages.
 
-The suite implements a sophisticated translation architecture that ensures maintainability, extensibility, and
-consistent terminology across the platform.
+Translation keys follow a hierarchical structure: `knowledge.namespace.create.label`. This prevents naming collisions and makes translations discoverable.
 
-**Key-Based Translation**: All user-facing text is referenced through translation keys rather than hardcoded strings.
-Developers reference keys like `agent.create.title` rather than literal text, ensuring translations can be modified or
-expanded without code changes.
+If a translation is missing in the selected language, the system falls back to German. If German is also missing, it displays the translation key itself.
 
-**YAML-Based Translation Files**: Translations are maintained in YAML files organized by service and language. Each
-service maintains its own translation files for the four supported languages, ensuring service-specific terminology
-remains consistent and enabling independent translation updates.
+## Terminology consistency
 
-**Hierarchical Key Structure**: Translation keys follow a hierarchical structure reflecting interface organization. Keys
-like `knowledge.namespace.create.label` organize translations logically, making them discoverable and preventing naming
-collisions across the large codebase.
+Shared glossaries define standard translations for common terms like "agent," "thread," "namespace," and "process." Services reference these shared translations instead of creating their own variants.
 
-**Fallback Mechanisms**: The translation system implements sophisticated fallback mechanisms. If a translation is
-missing in the user's selected language, the system falls back to German (the default language). If even the German
-translation is missing, the system displays the translation key itself, making missing translations obvious during
-development and testing.
+Domain-specific glossaries handle specialized terminology—technical AI concepts, Swiss regulatory terms, and industry-specific language.
 
-## Terminology Consistency
+Translations should undergo professional review by native speakers familiar with the technical concepts. This produces natural phrasing and appropriate terminology.
 
-Maintaining consistent terminology across languages is critical for user comprehension and professional presentation.
+Translation updates deploy independently of code changes.
 
-**Shared Glossaries**: The platform maintains shared glossaries defining standard translations for common terms—
-"agent," "thread," "namespace," "process." Services reference these shared translations rather than creating
-service-specific variants, ensuring users encounter consistent terminology regardless of which service they're using.
+## Localized content handling
 
-**Domain-Specific Terms**: For specialized terminology (technical AI concepts, Swiss regulatory terms, industry-specific
-language), the translation system allows domain-specific glossaries that provide context-appropriate translations while
-maintaining overall consistency.
+User-created resources can include translations for all supported languages. Administrators can provide a knowledge namespace name and description in German, English, French, and Italian.
 
-**Professional Translation**: Rather than relying solely on machine translation, the platform's translations should
-undergo professional review by native speakers familiar with both the source language and technical concepts. This
-ensures translations sound natural and use appropriate professional terminology.
+The system can automatically detect document language for processing and knowledge management. This enables language-specific search optimization and retrieval.
 
-**Continuous Refinement**: As users provide feedback on translations, the platform supports iterative refinement.
-Translation updates deploy independently of code changes, enabling rapid response to feedback without full platform
-releases.
+Numbers, dates, times, and currencies format according to locale conventions. German users see dates as "31.12.2024," while English users see "12/31/2024."
 
-## Localized Content Handling
+Search functionality uses language-specific tokenization and stemming. German searches use German linguistic rules, French searches use French rules.
 
-Beyond interface translation, the suite handles user-generated and system-generated content in localized ways.
+## Administrative considerations
 
-**Multi-Language Metadata**: User-created resources (knowledge namespaces, agent descriptions, process names) can
-include translations for all supported languages. Administrators creating a knowledge namespace might provide its name
-and description in German, English, French, and Italian, ensuring all users see these resources described in their
-language.
+Administrators can review and modify translations through dedicated interfaces. They can update terminology or add custom translations without editing YAML files.
 
-**Automatic Language Detection**: For document processing and knowledge management, the system can automatically detect
-document language, enabling language-specific processing, search optimization, and retrieval tuning.
+Administrative dashboards show translation completeness across languages, identifying missing translations.
 
-**Localized Formatting**: Numbers, dates, times, and currencies format according to locale conventions. German users see
-dates as "31.12.2024," while English users see "12/31/2024." Currency amounts, percentages, and large numbers respect
-locale formatting rules.
+Organizations can extend the translation system with custom terms—internal product names, organization-specific roles, custom process types.
 
-**Search Localization**: Search functionality respects language contexts. Searches in German use German-specific
-tokenization and stemming, while French searches apply French linguistic rules. This ensures search results remain
-relevant across languages.
+The platform can track which languages users select.
 
-## Administrative Considerations
+## Accessibility and internationalization
 
-Platform administrators benefit from comprehensive internationalization management capabilities.
+Screen reader users in all languages get natural language descriptions instead of English-only alternatives.
 
-**Translation Management Interface**: Administrators with appropriate permissions can review and modify translations
-through dedicated management interfaces, updating terminology or adding custom translations for organization-specific
-terms without editing YAML files directly.
+Different languages use different text lengths. German translations are often longer than English. The interface accommodates this expansion without breaking layouts.
 
-**Translation Completeness Monitoring**: Administrative dashboards can show translation completeness across
-languages—identifying interface elements lacking translations in specific languages and enabling systematic completion
-of translation coverage.
+The translation architecture can extend to right-to-left languages if needed, though current supported languages all use left-to-right text.
 
-**Custom Terminology Support**: Organizations can extend the translation system with custom terms specific to their
-context—internal product names, organization-specific roles, custom process types. These custom translations integrate
-seamlessly with platform translations.
+Accessibility conventions vary by locale. The platform can adapt features to match user expectations in different language communities.
 
-**Language Usage Analytics**: The platform can track which languages users select, informing decisions about translation
-investment priorities and helping organizations understand the linguistic composition of their user base.
+## Swiss organizations
 
-## Accessibility and Internationalization Intersection
+Swiss public sector institutions often must provide services in multiple national languages. The platform's four-language support helps meet these requirements without custom development.
 
-Internationalization intersects with accessibility requirements in important ways.
+Organizations operating across Swiss language regions can deploy a single platform instance. Users in each region see the interface in their preferred language.
 
-**Screen Reader Support**: Translations ensure screen reader users in all languages experience appropriate, natural
-language descriptions of interface elements rather than English-only alternatives common in inadequately localized
-applications.
+Training materials and documentation can be provided in users' native languages.
 
-**Text Expansion Handling**: Different languages express the same concepts with varying text lengths. German
-translations might be significantly longer than English equivalents. The interface design accommodates this text
-expansion without breaking layouts or making content unreadable.
+All four languages work identically. No linguistic community gets a degraded experience.
 
-**Directional Text Support**: While the current supported languages all use left-to-right text, the translation
-architecture can extend to support right-to-left languages should deployment requirements expand beyond Switzerland's
-national languages.
+The translation architecture allows organizations to add languages if needed—regional dialects, languages of immigrant communities, or languages of international branches.
 
-**Locale-Specific Accessibility**: Accessibility conventions vary by locale. The platform can adapt accessibility
-features to align with user expectations in their language community.
+## Technical implementation
 
-## Business Value for Swiss Organizations
+Translation files load on-demand. Users only download translations for their selected language.
 
-Comprehensive internationalization delivers specific value for Swiss organizations and public institutions.
+Translations support parameterized messages. A translation like "Welcome, \{name}!" positions the parameter according to the target language's grammar rules.
 
-**Public Sector Compliance**: Swiss public sector institutions often have regulatory requirements to provide services in
-multiple national languages. The suite's complete four-language support ensures compliance without requiring custom
-development or integration complexity.
+The system handles plural forms correctly across languages. Different languages have different pluralization rules.
 
-**Multilingual Organization Support**: Organizations operating across Swiss language regions can deploy a single
-platform instance serving all regions, with users experiencing the interface in their preferred language. This
-simplifies deployment and administration compared to maintaining separate language-specific instances.
+Locale-aware formatting libraries apply correct formatting rules automatically based on user language selection.
 
-**Reduced Training Burden**: Training materials, documentation, and user support can be provided in users' native
-languages, accelerating adoption and reducing training costs compared to requiring users to work in non-native
-languages.
+## Maintenance
 
-**Equal Access**: By treating all four languages as first-class citizens rather than having one primary language with
-inferior translations in others, the suite ensures no linguistic community receives a degraded experience.
+As interface text changes or new features are added, translations update through coordinated processes.
 
-**Future Language Support**: The extensible translation architecture enables organizations to add additional languages
-(regional dialects, languages of immigrant communities, languages of international branches) should deployment
-requirements expand beyond Switzerland.
+Users can report translation issues—incorrect terminology, awkward phrasing, missing translations.
 
-## Technical Implementation Details
+Translations periodically undergo professional review by native speakers with technical expertise.
 
-From a technical perspective, the internationalization system implements several sophisticated capabilities.
-
-**Lazy Loading**: Translation files load on-demand rather than upfront, ensuring users only download translations for
-their selected language. This optimizes initial page load performance, particularly important for users on slower
-connections.
-
-**Parameter Substitution**: Translations support parameterized messages where variable values substitute into translated
-text. A translation like "Welcome, \{name}!" correctly positions the name parameter according to the target language's
-grammar rules.
-
-**Pluralization**: The translation system handles plural forms correctly across languages, recognizing that different
-languages have different pluralization rules. English's simple singular/plural distinction differs from more complex
-patterns in other languages.
-
-**Date and Number Formatting**: The system uses locale-aware formatting libraries that apply correct formatting rules
-automatically based on user language selection, eliminating the need for developers to implement locale-specific
-formatting logic.
-
-## Continuous Improvement
-
-Internationalization is not a one-time implementation but an ongoing commitment to maintaining quality across languages.
-
-**Translation Updates**: As interface text changes or new features are added, translations update through coordinated
-processes ensuring all languages remain current with platform capabilities.
-
-**User Feedback Integration**: Users can report translation issues—incorrect terminology, awkward phrasing, missing
-translations—through feedback mechanisms. This input informs translation refinement cycles.
-
-**Professional Review Cycles**: Periodically, translations undergo professional review by native speakers with technical
-expertise, ensuring quality maintains professional standards as the platform evolves.
-
-**Machine Learning Potential**: As AI capabilities advance, the platform could leverage language models to suggest
-translation improvements, flag potential inconsistencies, or even generate draft translations for human review.
-
-This comprehensive internationalization approach ensures the Swiss AI Hub suite provides truly equitable access across
-Switzerland's linguistic diversity, supporting the platform's mission to make AI capabilities accessible to all Swiss
-organizations and communities regardless of language preference.
+The platform could leverage language models to suggest translation improvements or flag potential inconsistencies.

@@ -5,36 +5,36 @@ index: 3
 
 # Swiss Data Protection Act (revDSG)
 
-The revised Swiss Federal Act on Data Protection (revDSG/FADP) came into force September 1, 2023. It's 80-90% aligned with GDPR.
+The revised Swiss Federal Act on Data Protection (revDSG/FADP) came into force on September 1, 2023. It's 80-90% aligned with GDPR.
 
 :::info
 See [GDPR Compliance](/platform/compliance/gdpr) for shared requirements. This document covers Swiss-specific differences only.
 :::
 
-## Key Differences from GDPR
+## Key differences from GDPR
 
 | Aspect | revDSG | GDPR |
 |--------|---------|------|
 | **Fines** | Up to CHF 250K on **individuals** (not companies) | Up to €20M or 4% revenue on companies |
 | **DPO** | Not required | Often mandatory |
-| **Legal Basis** | No explicit legal basis required (different approach) | Explicit legal basis mandatory (Art. 6) |
-| **Breach Notification** | "As quickly as possible" if high risk (no deadline) | Within 72 hours if risk exists |
-| **Sensitive Data** | Includes administrative/criminal proceedings + social security data | 9 special categories |
+| **Legal basis** | No explicit legal basis required (different approach) | Explicit legal basis mandatory (Art. 6) |
+| **Breach notification** | "As quickly as possible" if high risk (no deadline) | Within 72 hours if risk exists |
+| **Sensitive data** | Includes administrative/criminal proceedings + social security data | 9 special categories |
 | **Scope** | Only natural persons (legal entities excluded since 2023) | Only natural persons |
 
-## revDSG-Specific Requirements
+## revDSG-specific requirements
 
-### 1. High-Risk Profiling
+### 1. High-risk profiling
 **Definition:** Automated evaluation of personal aspects (risk assessment, behavioral prediction)
 
 **✅ Implemented:** Human-in-the-loop, Phoenix tracing, source attribution
 
 **Customer:** Identify high-risk profiling, conduct DPIA, implement human oversight
 
-### 2. Data Processing Register
-**Customer Responsibility:** Maintain register of processing activities (no AI-Hub feature needed)
+### 2. Data processing register
+**Customer responsibility:** Maintain register of processing activities (no platform feature needed)
 
-### 3. Data Subject Rights
+### 3. Data subject rights
 **Same as GDPR** with minor differences:
 - Response time: **30 days** (vs. GDPR's 1 month)
 - No "right to be forgotten" terminology (but erasure right exists)
@@ -42,19 +42,19 @@ See [GDPR Compliance](/platform/compliance/gdpr) for shared requirements. This d
 
 **Implementation:** Same gaps as GDPR (see [GDPR doc](/platform/compliance/gdpr#data-subject-rights))
 
-### 4. Data Breach Notification
+### 4. Data breach notification
 **Requirement:** Notify FDPIC (Federal Data Protection and Information Commissioner) "as quickly as possible" **only if high risk**
 
 **No 72-hour deadline** unlike GDPR
 
-**✅ Platform Tools:** Audit logs, monitoring, alerting
+**✅ Platform tools:** Audit logs, monitoring, alerting
 
-### 5. Privacy by Design
+### 5. Privacy by design
 Now explicitly required (previously implicit)
 
 **✅ Implemented:** TLS/SSL default, default-deny RBAC, 30-day auto-deletion, audit logging
 
-## Swiss Hosting
+## Swiss hosting
 
 **Advantages:**
 - Data stays in Switzerland
@@ -63,14 +63,14 @@ Now explicitly required (previously implicit)
 
 **✅ Supported:** On-premise and Swiss cloud options (see [Deployment Options](/platform/deployment_guide/deployment_options))
 
-## Data Transfers
+## Data transfers
 **Requirement:** Adequate protection in destination country OR appropriate safeguards (SCCs) OR explicit consent
 
 **Recommendation:** Swiss hosting to avoid transfers, or use Swiss/EU LLM providers via LiteLLM
 
-## Compliance Checklist
+## Compliance checklist
 
-**revDSG-Specific:**
+**revDSG-specific:**
 - [ ] DPIA for high-risk profiling
 - [ ] Data processing register
 - [ ] FDPIC breach notification procedure
@@ -78,14 +78,14 @@ Now explicitly required (previously implicit)
 
 **Same as GDPR:** See [GDPR checklist](/platform/compliance/gdpr#compliance-checklist)
 
-## Known Gaps
+## Known gaps
 
 **Same as GDPR:**
 - 🚧 User deletion API
 - 🚧 Automated DSAR export
 - 🚧 Data portability API
 
-**revDSG-Specific:**
+**revDSG-specific:**
 - ✅ High-risk profiling transparency available
 - ✅ Swiss hosting supported
 - 🚧 Automated FDPIC notification (manual process)

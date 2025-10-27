@@ -1,17 +1,17 @@
 ---
-title: Data Subject Access Requests (DSAR)
+title: Data subject access requests (DSAR)
 index: 6
 ---
 
-# Data Subject Access Requests (DSAR)
+# Data subject access requests (DSAR)
 
 Procedures for handling data subject rights requests under GDPR Article 15 and Swiss revDSG Article 25.
 
-:::warning Manual Procedures
+:::warning Manual procedures
 DSAR handling is **largely manual**. Automated APIs are not yet implemented. Admins compile data using APIs and database queries.
 :::
 
-## Request Types & Status
+## Request types and status
 
 | Right | GDPR | revDSG | Status | Response Time |
 |-------|------|--------|--------|---------------|
@@ -22,9 +22,9 @@ DSAR handling is **largely manual**. Automated APIs are not yet implemented. Adm
 | **Portability** | Art. 20 | Limited | 🔴 Manual | 1 month / 30 days |
 | **Objection** | Art. 21 | Art. 32 | 🟡 Via RBAC | Immediate |
 
-## 1. Access Request (Copy of Data)
+## 1. Access request (copy of data)
 
-**Required Data:**
+**Required data:**
 - Personal data being processed
 - Processing purposes, categories, recipients
 - Retention period
@@ -33,10 +33,10 @@ DSAR handling is **largely manual**. Automated APIs are not yet implemented. Adm
 
 **Process:**
 
-### Verify Identity
+### Verify identity
 Use secure channel (authenticated session, HR verification, email confirmation)
 
-### Collect Data
+### Collect data
 
 **UserEntity:**
 ```bash
@@ -57,19 +57,19 @@ db.persisted_agent_event_entity.find({"thread_id": {$in: thread_ids}})
 db.persisted_process_event_entity.find({"thread_id": {$in: thread_ids}})
 ```
 
-**Audit Logs:**
+**Audit logs:**
 ```python
 # Access observability system (SigNoz/OpenTelemetry)
 # Query by user_oid for login, API calls, resource access
 ```
 
-### Format & Deliver
+### Format and deliver
 - Compile as PDF or JSON
 - Explain data categories
 - Respond within deadline
 - Document request fulfillment
 
-## 2. Rectification (Correct Data)
+## 2. Rectification (correct data)
 
 **✅ Available:**
 ```bash
@@ -80,17 +80,17 @@ PUT /api/v1/users/{user_oid}
 }
 ```
 
-**Immutable Data:** Thread messages and audit logs cannot be changed (audit trail requirement)
+**Immutable data:** Thread messages and audit logs cannot be changed (audit trail requirement)
 
-## 3. Erasure (Delete Data)
+## 3. Erasure (delete data)
 
-**⚠️ Assess Exceptions First:**
+**⚠️ Assess exceptions first:**
 - Legal obligation to retain? → **Cannot delete**
 - Archiving/research purposes? → **Cannot delete**
 - Legal claims pending? → **Cannot delete**
 - Data no longer necessary? → **Must delete**
 
-**🔴 Manual Process Required:**
+**🔴 Manual process required:**
 
 ```bash
 # 1. Remove from threads (API available)
@@ -107,9 +107,9 @@ db.user_entity.deleteOne({"_id": ObjectId(user_oid)})
 
 **Verify:** Confirm user cannot authenticate, no data remains in queries
 
-## 4. Restriction (Suspend Processing)
+## 4. Restriction (suspend processing)
 
-**🟡 Via Permission Revocation:**
+**🟡 Via permission revocation:**
 ```bash
 # Revoke all permissions via admin interface
 # Effect: User cannot access resources, data preserved
@@ -117,7 +117,7 @@ db.user_entity.deleteOne({"_id": ObjectId(user_oid)})
 
 **🚧 Missing:** "Processing restricted" database flag
 
-## 5. Portability (Export Machine-Readable)
+## 5. Portability (export machine-readable)
 
 **⚠️ Scope:** Only data "provided by the data subject" (user messages, uploads)
 
@@ -125,26 +125,26 @@ db.user_entity.deleteOne({"_id": ObjectId(user_oid)})
 
 **⚠️ Conditions:** Only when processing based on consent/contract
 
-**🔴 Manual:** Use same data collection as Access Request (Section 1), export as JSON/CSV
+**🔴 Manual:** Use same data collection as access request (Section 1), export as JSON/CSV
 
-## 6. Objection (Stop Processing)
+## 6. Objection (stop processing)
 
-**🟡 Via Permission Revocation:** Same as Restriction (Section 4)
+**🟡 Via permission revocation:** Same as restriction (Section 4)
 
 **Customer:** Assess if overriding legitimate interests exist
 
-## Compliance Records
+## Compliance records
 
-**Required Documentation:**
+**Required documentation:**
 - Request date & type
 - Identity verification method
 - Data provided / actions taken
 - Completion date
 - User confirmation
 
-**Storage:** Maintain separate compliance log (not in AI-Hub), retain 6+ years
+**Storage:** Maintain separate compliance log (not in platform), retain 6+ years
 
-## Planned Automation
+## Planned automation
 
 **Phase 1:**
 - 🚧 Self-service DSAR portal

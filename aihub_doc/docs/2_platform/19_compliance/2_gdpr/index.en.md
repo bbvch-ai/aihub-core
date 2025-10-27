@@ -3,36 +3,36 @@ title: GDPR Compliance
 index: 4
 ---
 
-# GDPR Compliance
+# GDPR compliance
 
-The AI-Hub platform provides technical measures to support GDPR compliance. **Customers are data controllers** and responsible for their own compliance.
+The platform provides technical measures to support GDPR compliance. **Customers are data controllers** and responsible for their own compliance.
 
 :::warning Implementation Status
 ✅ = Implemented | 🚧 = Not Implemented
 :::
 
-## GDPR Principles
+## GDPR principles
 
-### Lawfulness, Transparency & Accountability
+### Lawfulness, transparency, and accountability
 **✅ Implemented:** Audit trails, source attribution, Phoenix tracing
 **Customer:** Document a legal basis, provide privacy notices, maintain ROPA, conduct DPIAs
 
-### Purpose Limitation & Data Minimization
+### Purpose limitation and data minimization
 **✅ Implemented:** Multi-tenant isolation, RBAC, namespace isolation, configurable retention
 **Customer:** Define processing purposes, configure retention, prune unused data
 
-### Accuracy & Storage Limitation
+### Accuracy and storage limitation
 **✅ Implemented:** Version control, 30-day auto-deletion (ephemeral), configurable retention (permanent)
 **Customer:** Maintain data accuracy, configure appropriate retention periods
 
-### Security & Integrity
+### Security and integrity
 **✅ Implemented:** TLS/SSL, OAuth/OIDC/SAML, RBAC, container security, input validation
 **Customer:** Enable MFA, monitor logs, review permissions
 
-## Data Subject Rights
+## Data subject rights
 
-### Right of Access (Art. 15)
-**What's Required:** Copy of personal data, processing details, recipients, retention period, source (if collected from others)
+### Right of access (Art. 15)
+**What's required:** Copy of personal data, processing details, recipients, retention period, source (if collected from others)
 
 **✅ Implemented:**
 - User profile API (`GET /api/v1/users/me`)
@@ -42,17 +42,17 @@ The AI-Hub platform provides technical measures to support GDPR compliance. **Cu
 
 **Workaround:** Admin manually compiles from UserEntity, ThreadEntity, audit logs
 
-### Right to Rectification (Art. 16)
-**What's Required:** Correct inaccurate data
+### Right to rectification (Art. 16)
+**What's required:** Correct inaccurate data
 
 **✅ Implemented:** Admin can update user profile via API
 
 **Note:** Thread messages and audit logs are immutable (audit trail requirement)
 
-### Right to Erasure (Art. 17)
-**What's Required:** Delete data when no longer necessary, consent withdrawn, or unlawfully processed
+### Right to erasure (Art. 17)
+**What's required:** Delete data when no longer necessary, consent withdrawn, or unlawfully processed
 
-**⚠️ Exceptions Apply:** Not required for legal obligations, archiving, research, or legal claims
+**⚠️ Exceptions apply:** Not required for legal obligations, archiving, research, or legal claims
 
 **✅ Implemented:**
 - Remove user from threads (`DELETE /api/v1/threads/{thread_id}/users/{user_id}`)
@@ -62,8 +62,8 @@ The AI-Hub platform provides technical measures to support GDPR compliance. **Cu
 
 **Workaround:** Admin manually deletes from UserEntity, ThreadEntity, PersistedEvents
 
-### Right to Data Portability (Art. 20)
-**What's Required:** Provide data "provided by the data subject" in machine-readable format
+### Right to data portability (Art. 20)
+**What's required:** Provide data "provided by the data subject" in machine-readable format
 
 **⚠️ Scope:** Only user-provided data (messages, uploads). **Does NOT include** AI responses, analytics, or derived data.
 
@@ -73,21 +73,21 @@ The AI-Hub platform provides technical measures to support GDPR compliance. **Cu
 
 **Workaround:** Admin manually exports user messages and uploads as JSON/CSV
 
-### Right to Restriction (Art. 18)
-**What's Required:** Suspend processing while verifying accuracy or assessing objection
+### Right to restriction (Art. 18)
+**What's required:** Suspend processing while verifying accuracy or assessing objection
 
 **✅ Implemented:** Account suspension via RBAC revocation
 
 **🚧 Missing:** "Processing restricted" database flag
 
-### Right to Object (Art. 21)
-**What's Required:** Stop processing based on legitimate interests
+### Right to object (Art. 21)
+**What's required:** Stop processing based on legitimate interests
 
 **✅ Implemented:** Permission revocation via RBAC
 
-## Technical Measures
+## Technical measures
 
-**Privacy by Design (Default Settings):**
+**Privacy by design (default settings):**
 - TLS/SSL encryption mandatory
 - Default-deny RBAC
 - Automatic audit logging
@@ -98,19 +98,19 @@ The AI-Hub platform provides technical measures to support GDPR compliance. **Cu
 
 **Data Transfers:** Swiss hosting recommended (EU adequacy decision). Use SCCs for other countries. See [Deployment Options](/platform/deployment_guide/deployment_options).
 
-## Data Breach Notification
+## Data breach notification
 
-**Requirement:** Notify supervisory authority within **72 hours** if risk to data subjects' rights
+**Requirement:** Notify supervisory authority within **72 hours** if risk to data subjects' rights exists
 
-**✅ Platform Tools:**
+**✅ Platform tools:**
 - Audit logs for investigation
 - User access reports
-- Monitoring/alerting
-- Backup/recovery
+- Monitoring and alerting
+- Backup and recovery
 
-**Customer Responsibility:** Assess risk, notify authority, notify individuals (if high risk), document breach
+**Customer responsibility:** Assess risk, notify authority, notify individuals (if high risk), document breach
 
-## Compliance Checklist
+## Compliance checklist
 
 **Setup:**
 - [ ] DPIA for AI processing
@@ -129,14 +129,14 @@ The AI-Hub platform provides technical measures to support GDPR compliance. **Cu
 - [ ] Monitor security logs
 - [ ] Annual compliance review
 
-## Known Gaps
+## Known gaps
 
-**Required for Full Compliance:**
+**Required for full compliance:**
 - 🚧 User deletion API (cascading)
 - 🚧 Automated DSAR data export
 - 🚧 Data portability API
 
-**Optional Enhancements:**
+**Optional enhancements:**
 - 🚧 Processing restriction flags
 - 🚧 Consent management system
 - 🚧 Self-service DSAR portal
