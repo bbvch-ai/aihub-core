@@ -13,25 +13,44 @@ AI-Hub in production environments.
 The AI-Hub VM may be able to communicate with several external services for full functionality. All external
 connections use HTTPS (port 443) for security.
 
-### LLM Providers
+### AI Service Providers
 
-The platform requires access to AI model providers for inference capabilities if not self-hosted.
+The platform connects to various AI service providers based on deployment configuration.
 
-::: details Example External LLM Providers
-| Service      | Endpoint             | Port | Purpose                      |
-| ------------ | -------------------- | ---- | ---------------------------- |
-| Azure OpenAI | `*.openai.azure.com` | 443  | LLM inference and embeddings |
+::: details AI Service Endpoints
+| Service | Endpoint | Port | Purpose |
+|---------|----------|------|---------|
+| Azure OpenAI | `*.openai.azure.com` | 443 | LLM inference, embeddings, vision, audio |
+| Google Gemini | `generativelanguage.googleapis.com` | 443 | LLM inference |
+| Jina AI | `api.jina.ai` | 443 | Web search and embeddings |
+| Hugging Face | `huggingface.co` | 443 | Model downloads for self-hosted inference |
 :::
 
-### External APIs
+### Azure Cognitive Services
 
-Organizations typically integrate the AI-Hub with existing enterprise systems and collaboration platforms.
+When deployed with Azure integration, the platform uses multiple cognitive services.
 
-::: details Example External APIs
-| Service    | Endpoint                  | Port | Protocol  | Authentication |
-| ---------- | ------------------------- | ---- | --------- | -------------- |
-| Confluence | `<company>.atlassian.net` | 443  | REST      | API Token      |
-| SharePoint | `<tenant>.sharepoint.com` | 443  | Graph API | Azure AD App   |
+::: details Azure Service Endpoints
+| Service | Endpoint | Port | Purpose |
+|---------|----------|------|---------|
+| Azure AI Search | `*.search.windows.net` | 443 | Vector search and retrieval (RAG) |
+| Azure Document Intelligence | `*.cognitiveservices.azure.com` | 443 | Document analysis and OCR |
+| Azure Speech Services | `*.cognitiveservices.azure.com` | 443 | Speech-to-text, text-to-speech |
+| Azure Data Lake Storage | `*.dfs.core.windows.net` | 443 | Scalable file storage |
+| Azure Blob Storage | `*.blob.core.windows.net` | 443 | Object storage |
+:::
+
+### Customer Integrations
+
+Organizations integrate the AI-Hub with existing enterprise systems via agent API calls or data pipelines.
+
+::: details Example Customer Integration Endpoints
+| Service | Endpoint | Port | Protocol | Authentication |
+|---------|----------|------|----------|----------------|
+| SharePoint | `<tenant>.sharepoint.com` | 443 | Graph API | OAuth2 (Azure AD App) |
+| Confluence | `<company>.atlassian.net` | 443 | REST | API Token |
+| Custom REST APIs | Customer-specific | 443 | REST | Various (API Key, OAuth2, mTLS) |
+| SOAP Services | Customer-specific | 443 | SOAP | WS-Security, Basic Auth |
 :::
 
 
