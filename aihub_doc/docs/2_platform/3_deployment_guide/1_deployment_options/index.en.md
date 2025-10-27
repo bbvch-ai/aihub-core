@@ -96,6 +96,7 @@ Tenant Instance
 ├── Application Layer
 │   ├── API Service (FastAPI + WebSocket gateway)
 │   ├── Web Interface (Nuxt.js frontend)
+│   ├── OpenWebUI (LLM chat interface)
 │   ├── Agent Services (RAG, specialized agents)
 │   ├── Pipeline Services (Dagster + custom pipelines)
 │   └── Bot Service (MS Teams, Slack integrations)
@@ -103,7 +104,8 @@ Tenant Instance
 ├── Data Layer
 │   ├── Database (FerretDB + PostgreSQL)
 │   ├── Vector Store (Milvus or Azure AI Search)
-│   └── Document Store (SeaweedFS or Azure Data Lake)
+│   ├── Document Store (SeaweedFS or Azure Data Lake)
+│   └── Cache (Valkey)
 │
 ├── LLM Layer
 │   ├── LiteLLM Proxy
@@ -115,8 +117,7 @@ Tenant Instance
 │
 ├── Observability Layer
 │   ├── Phoenix (AI tracing and evaluation)
-│   ├── SigNoz (metrics, logs, traces)
-│   └── OpenTelemetry Collector
+│   └── OpenTelemetry (distributed tracing)
 │
 └── Infrastructure Layer
     ├── NATS (message bus)
