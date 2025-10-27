@@ -1,6 +1,6 @@
 ---
 title: Internationalisierung
-index: 6
+index: 5
 source_sha: "aca3074ef22182cbf9932595c062d423f6b3cd8019606d8444f5f7c030d3b9ff"
 ---
 

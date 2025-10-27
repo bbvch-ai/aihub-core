@@ -1,6 +1,6 @@
 ---
 title: GDPR Compliance
-index: 4
+index: 2
 ---
 
 # GDPR compliance

@@ -1,6 +1,6 @@
 ---
 title: EU KI-Gesetz
-index: 1
+index: 4
 source_sha: "c95b30f5ea61f92f312ec3eb26dea636c1c08eff6dbcbff0a852c722b334c3ee"
 ---
 
