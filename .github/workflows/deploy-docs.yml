@@ -40,6 +40,11 @@ jobs:
         working-directory: ./aihub_doc
         run: pnpm install
 
+      - name: Setup LLM for translation
+        run: |
+          pip install llm llm-gemini
+          llm keys set gemini --key ${{ secrets.GEMINI_API_KEY }}
+
       - name: Sync documentation
         working-directory: ./aihub_doc
         run: pnpm run docs:sync
