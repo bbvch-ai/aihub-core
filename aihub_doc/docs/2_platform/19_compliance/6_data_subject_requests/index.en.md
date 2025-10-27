@@ -1,169 +1,48 @@
 ---
-title: Data subject access requests (DSAR)
+title: Data Subject Access Requests (DSAR)
 index: 6
 ---
 
-# Data subject access requests (DSAR)
+# Data subject access requests
 
-Procedures for handling data subject rights requests under GDPR Article 15 and Swiss revDSG Article 25.
+Data subjects have rights under GDPR Article 15 and Swiss revDSG Article 25 to access, correct, delete, and control their personal data. This section explains what the platform supports for these rights.
 
-:::warning Manual procedures
-DSAR handling is **largely manual**. Automated APIs are not yet implemented. Admins compile data using APIs and database queries.
-:::
+## Response times
 
-## Request types and status
+Organizations must respond to data subject requests within one month under GDPR or 30 days under Swiss revDSG. Some requests can be processed immediately, while others require manual data compilation.
 
-| Right | GDPR | revDSG | Status | Response Time |
-|-------|------|--------|--------|---------------|
-| **Access** | Art. 15 | Art. 25 | 🟡 Manual | 1 month / 30 days |
-| **Rectification** | Art. 16 | Art. 32 | ✅ API available | 1 month / 30 days |
-| **Erasure** | Art. 17 | Art. 32 | 🔴 Manual | 1 month / 30 days |
-| **Restriction** | Art. 18 | Art. 32 | 🟡 Via RBAC | Immediate |
-| **Portability** | Art. 20 | Limited | 🔴 Manual | 1 month / 30 days |
-| **Objection** | Art. 21 | Art. 32 | 🟡 Via RBAC | Immediate |
+## Access requests
 
-## 1. Access request (copy of data)
+Data subjects can request copies of their personal data, including processing purposes, categories, recipients, retention periods, and data sources. The platform stores this information in user profiles, conversation threads, and audit logs. Organizations verify the requester's identity before providing data.
 
-**Required data:**
-- Personal data being processed
-- Processing purposes, categories, recipients
-- Retention period
-- Rights information
-- Source (if not collected from data subject)
+## Rectification
 
-**Process:**
+Data subjects can request corrections to inaccurate data. Administrators can update user profiles through the platform's API. Thread messages and audit logs remain immutable to preserve audit trails.
 
-### Verify identity
-Use secure channel (authenticated session, HR verification, email confirmation)
+## Erasure
 
-### Collect data
+Data subjects can request deletion when data is no longer necessary, consent is withdrawn, or processing is unlawful. Exceptions apply for legal obligations, archiving, research, or legal claims. The platform supports removing users from threads. Ephemeral data deletes automatically after 30 days.
 
-**UserEntity:**
-```bash
-GET /api/v1/users/{user_oid}
-# Returns: user profile, email, dashboard settings, roles
-```
+## Restriction
 
-**ThreadEntity (conversations):**
-```python
-# NO API - Query MongoDB:
-db.thread_entity.find({"participants.user_ids": user_oid})
-```
+Data subjects can request suspension of processing while verifying data accuracy or assessing objections. Administrators can suspend accounts through the platform's access control system, preventing resource access while preserving data.
 
-**Messages (PersistedEvents):**
-```python
-# NO API - Query MongoDB:
-db.persisted_agent_event_entity.find({"thread_id": {$in: thread_ids}})
-db.persisted_process_event_entity.find({"thread_id": {$in: thread_ids}})
-```
+## Portability
 
-**Audit logs:**
-```python
-# Access observability system (SigNoz/OpenTelemetry)
-# Query by user_oid for login, API calls, resource access
-```
+Data subjects can request their data in machine-readable format. This applies only to data the subject provided directly, like messages and uploads, not AI-generated responses, analytics, or derived data. The right applies when processing is based on consent or contract.
 
-### Format and deliver
-- Compile as PDF or JSON
-- Explain data categories
-- Respond within deadline
-- Document request fulfillment
+## Objection
 
-## 2. Rectification (correct data)
+Data subjects can object to processing based on legitimate interests. Organizations revoke permissions through the platform's access control to stop processing. Organizations must assess whether overriding legitimate interests exist.
 
-**✅ Available:**
-```bash
-PUT /api/v1/users/{user_oid}
-{
-  "name": "Corrected Name",
-  "email": "corrected@email.com"
-}
-```
+## Related documentation
 
-**Immutable data:** Thread messages and audit logs cannot be changed (audit trail requirement)
-
-## 3. Erasure (delete data)
-
-**⚠️ Assess exceptions first:**
-- Legal obligation to retain? → **Cannot delete**
-- Archiving/research purposes? → **Cannot delete**
-- Legal claims pending? → **Cannot delete**
-- Data no longer necessary? → **Must delete**
-
-**🔴 Manual process required:**
-
-```bash
-# 1. Remove from threads (API available)
-DELETE /api/v1/threads/{thread_id}/users/{user_oid}
-
-# 2-4. Delete from MongoDB (NO API)
-db.persisted_agent_event_entity.deleteMany({"thread_id": {$in: user_thread_ids}})
-db.persisted_process_event_entity.deleteMany({"thread_id": {$in: user_thread_ids}})
-db.user_entity.deleteOne({"_id": ObjectId(user_oid)})
-
-# 5. Clean audit logs (consider retention requirements)
-# 6. Backups (wait for expiry or restore without user data)
-```
-
-**Verify:** Confirm user cannot authenticate, no data remains in queries
-
-## 4. Restriction (suspend processing)
-
-**🟡 Via permission revocation:**
-```bash
-# Revoke all permissions via admin interface
-# Effect: User cannot access resources, data preserved
-```
-
-**🚧 Missing:** "Processing restricted" database flag
-
-## 5. Portability (export machine-readable)
-
-**⚠️ Scope:** Only data "provided by the data subject" (user messages, uploads)
-
-**NOT included:** AI responses, analytics, derived/inferred data
-
-**⚠️ Conditions:** Only when processing based on consent/contract
-
-**🔴 Manual:** Use same data collection as access request (Section 1), export as JSON/CSV
-
-## 6. Objection (stop processing)
-
-**🟡 Via permission revocation:** Same as restriction (Section 4)
-
-**Customer:** Assess if overriding legitimate interests exist
-
-## Compliance records
-
-**Required documentation:**
-- Request date & type
-- Identity verification method
-- Data provided / actions taken
-- Completion date
-- User confirmation
-
-**Storage:** Maintain separate compliance log (not in platform), retain 6+ years
-
-## Planned automation
-
-**Phase 1:**
-- 🚧 Self-service DSAR portal
-- 🚧 Automated data export API
-
-**Phase 2:**
-- 🚧 User deletion API (cascading)
-- 🚧 Thread deletion API endpoint
-
-**Phase 3:**
-- 🚧 Processing restriction flags
-- 🚧 Consent management
-
-## Resources
-
-[GDPR Compliance](/platform/compliance/gdpr) | [Swiss DSG](/platform/compliance/dsg) | [Data Retention](/platform/compliance/data_retention)
+- [GDPR Compliance](/platform/compliance/gdpr)
+- [Swiss DSG](/platform/compliance/dsg)
+- [Data Retention](/platform/compliance/data_retention)
 
 ---
 
-:::info
-This describes technical procedures, not legal requirements. Consult your DPO or legal counsel.
+:::info Legal disclaimer
+This is technical documentation, not legal advice. Consult your data protection officer or legal counsel.
 :::

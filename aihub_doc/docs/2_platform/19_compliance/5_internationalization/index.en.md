@@ -27,25 +27,13 @@ Language changes apply immediately without reloading the page. All text updates 
 
 URLs don't include language codes. Shared links show content in the recipient's preferred language, not the sender's.
 
-## Translation architecture
+## Translation quality
 
-All user-facing text uses translation keys instead of hardcoded strings. Developers reference keys like `agent.create.title` rather than literal text. Translations can be modified without code changes.
+The platform maintains consistent terminology across all languages. Common terms like "agent," "thread," "namespace," and "process" use the same translations throughout the interface.
 
-Translations live in YAML files organized by service and language. Each service maintains its own translation files for all four languages.
+Specialized terminology for technical AI concepts and Swiss regulatory terms receives appropriate translations for each language.
 
-Translation keys follow a hierarchical structure: `knowledge.namespace.create.label`. This prevents naming collisions and makes translations discoverable.
-
-If a translation is missing in the selected language, the system falls back to German. If German is also missing, it displays the translation key itself.
-
-## Terminology consistency
-
-Shared glossaries define standard translations for common terms like "agent," "thread," "namespace," and "process." Services reference these shared translations instead of creating their own variants.
-
-Domain-specific glossaries handle specialized terminology—technical AI concepts, Swiss regulatory terms, and industry-specific language.
-
-Translations should undergo professional review by native speakers familiar with the technical concepts. This produces natural phrasing and appropriate terminology.
-
-Translation updates deploy independently of code changes.
+If a translation is missing in the selected language, the platform falls back to German.
 
 ## Localized content handling
 
@@ -57,15 +45,9 @@ Numbers, dates, times, and currencies format according to locale conventions. Ge
 
 Search functionality uses language-specific tokenization and stemming. German searches use German linguistic rules, French searches use French rules.
 
-## Administrative considerations
+## Custom translations
 
-Administrators can review and modify translations through dedicated interfaces. They can update terminology or add custom translations without editing YAML files.
-
-Administrative dashboards show translation completeness across languages, identifying missing translations.
-
-Organizations can extend the translation system with custom terms—internal product names, organization-specific roles, custom process types.
-
-The platform can track which languages users select.
+Organizations can add custom translations for organization-specific terms like internal product names, custom roles, or specialized process types. Administrators can modify translations through the platform's administrative interface.
 
 ## Accessibility and internationalization
 
@@ -88,23 +70,3 @@ Training materials and documentation can be provided in users' native languages.
 All four languages work identically. No linguistic community gets a degraded experience.
 
 The translation architecture allows organizations to add languages if needed—regional dialects, languages of immigrant communities, or languages of international branches.
-
-## Technical implementation
-
-Translation files load on-demand. Users only download translations for their selected language.
-
-Translations support parameterized messages. A translation like "Welcome, \{name}!" positions the parameter according to the target language's grammar rules.
-
-The system handles plural forms correctly across languages. Different languages have different pluralization rules.
-
-Locale-aware formatting libraries apply correct formatting rules automatically based on user language selection.
-
-## Maintenance
-
-As interface text changes or new features are added, translations update through coordinated processes.
-
-Users can report translation issues—incorrect terminology, awkward phrasing, missing translations.
-
-Translations periodically undergo professional review by native speakers with technical expertise.
-
-The platform could leverage language models to suggest translation improvements or flag potential inconsistencies.

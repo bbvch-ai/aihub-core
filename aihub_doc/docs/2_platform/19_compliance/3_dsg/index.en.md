@@ -24,81 +24,39 @@ See [GDPR Compliance](/platform/compliance/gdpr) for shared requirements. This d
 
 ## revDSG-specific requirements
 
-### 1. High-risk profiling
-**Definition:** Automated evaluation of personal aspects (risk assessment, behavioral prediction)
+### High-risk profiling
+The revDSG requires oversight for automated evaluation of personal aspects like risk assessment and behavioral prediction. The platform provides human-in-the-loop capabilities, Phoenix tracing, and source attribution to support this requirement. Organizations must identify high-risk profiling activities, conduct data protection impact assessments, and implement appropriate human oversight.
 
-**✅ Implemented:** Human-in-the-loop, Phoenix tracing, source attribution
+### Data processing register
+Organizations must maintain a register of processing activities. This is an organizational requirement that doesn't need platform features.
 
-**Customer:** Identify high-risk profiling, conduct DPIA, implement human oversight
+### Data subject rights
+Data subject rights work the same as GDPR with minor differences. Response time is 30 days rather than 1 month. The "right to be forgotten" terminology isn't used, but the erasure right exists. Portability requirements are simpler than GDPR. See [GDPR documentation](/platform/compliance/gdpr#data-subject-rights) for details on how the platform supports these rights.
 
-### 2. Data processing register
-**Customer responsibility:** Maintain register of processing activities (no platform feature needed)
+### Data breach notification
+The revDSG requires notifying the Federal Data Protection and Information Commissioner "as quickly as possible" when a breach presents high risk. Unlike GDPR, there's no 72-hour deadline. The platform provides audit logs, monitoring, and alerting to support breach investigation and notification.
 
-### 3. Data subject rights
-**Same as GDPR** with minor differences:
-- Response time: **30 days** (vs. GDPR's 1 month)
-- No "right to be forgotten" terminology (but erasure right exists)
-- Simpler portability requirements
-
-**Implementation:** Same gaps as GDPR (see [GDPR doc](/platform/compliance/gdpr#data-subject-rights))
-
-### 4. Data breach notification
-**Requirement:** Notify FDPIC (Federal Data Protection and Information Commissioner) "as quickly as possible" **only if high risk**
-
-**No 72-hour deadline** unlike GDPR
-
-**✅ Platform tools:** Audit logs, monitoring, alerting
-
-### 5. Privacy by design
-Now explicitly required (previously implicit)
-
-**✅ Implemented:** TLS/SSL default, default-deny RBAC, 30-day auto-deletion, audit logging
+### Privacy by design
+The revDSG now explicitly requires privacy by design. The platform implements this through mandatory TLS/SSL encryption, default-deny access control, 30-day automatic deletion of ephemeral data, and audit logging.
 
 ## Swiss hosting
 
-**Advantages:**
-- Data stays in Switzerland
-- No international transfer issues
-- Switzerland has EU adequacy decision (helps with mixed EU/CH compliance)
-
-**✅ Supported:** On-premise and Swiss cloud options (see [Deployment Options](/platform/deployment_guide/deployment_options))
+Swiss hosting keeps data in Switzerland, avoiding international transfer issues. Switzerland has an EU adequacy decision, which simplifies mixed EU and Swiss compliance. The platform supports on-premise and Swiss cloud deployment. See [Deployment Options](/platform/deployment_guide/deployment_options).
 
 ## Data transfers
-**Requirement:** Adequate protection in destination country OR appropriate safeguards (SCCs) OR explicit consent
 
-**Recommendation:** Swiss hosting to avoid transfers, or use Swiss/EU LLM providers via LiteLLM
+Data transfers require adequate protection in the destination country, appropriate safeguards like standard contractual clauses, or explicit consent. Swiss hosting avoids these requirements. Organizations can also use Swiss or EU LLM providers through LiteLLM.
 
-## Compliance checklist
+## Related documentation
 
-**revDSG-specific:**
-- [ ] DPIA for high-risk profiling
-- [ ] Data processing register
-- [ ] FDPIC breach notification procedure
-- [ ] Swiss hosting or SCCs documentation
-
-**Same as GDPR:** See [GDPR checklist](/platform/compliance/gdpr#compliance-checklist)
-
-## Known gaps
-
-**Same as GDPR:**
-- 🚧 User deletion API
-- 🚧 Automated DSAR export
-- 🚧 Data portability API
-
-**revDSG-specific:**
-- ✅ High-risk profiling transparency available
-- ✅ Swiss hosting supported
-- 🚧 Automated FDPIC notification (manual process)
-
-## Resources
-
-- **FDPIC**: [edoeb.admin.ch](https://www.edoeb.admin.ch/)
-- **revDSG Text**: [admin.ch classified compilation](https://www.admin.ch/opc/en/classified-compilation/19920153/)
-
-**Related:** [GDPR](/platform/compliance/gdpr) | [DSAR](/platform/compliance/data_subject_requests) | [Data Retention](/platform/compliance/data_retention)
+- [GDPR](/platform/compliance/gdpr)
+- [DSAR](/platform/compliance/data_subject_requests)
+- [Data Retention](/platform/compliance/data_retention)
+- [FDPIC](https://www.edoeb.admin.ch/)
+- [revDSG Text](https://www.admin.ch/opc/en/classified-compilation/19920153/)
 
 ---
 
-:::info Legal Disclaimer
-This is technical guidance, not legal advice. Consult legal counsel or FDPIC.
+:::info Legal disclaimer
+This is technical documentation, not legal advice. Consult legal counsel or the Federal Data Protection and Information Commissioner.
 :::
