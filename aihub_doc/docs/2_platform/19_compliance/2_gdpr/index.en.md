@@ -7,6 +7,27 @@ index: 2
 
 The platform provides technical measures to support GDPR compliance. Organizations using the platform act as data controllers and remain responsible for their own compliance.
 
+## Applicability to Swiss organizations
+
+GDPR applies to Swiss organizations when processing personal data of individuals in the EU if the processing relates to:
+- Offering goods or services to EU residents (regardless of payment)
+- Monitoring behavior of individuals in the EU
+
+Organizations must comply with GDPR requirements even without an EU establishment when these conditions are met.
+
+## Legal basis for processing
+
+Article 6 GDPR requires a legal basis for all personal data processing. At least one of the following must apply:
+
+- Consent: The data subject has given clear consent for specific purposes
+- Contract: Processing is necessary for contract performance or pre-contractual measures
+- Legal obligation: Processing is necessary to comply with legal requirements
+- Vital interests: Processing is necessary to protect life or physical integrity
+- Public task: Processing is necessary for tasks in the public interest or official authority
+- Legitimate interests: Processing is necessary for legitimate interests, except where overridden by data subject rights (not available for public authorities)
+
+Organizations must document their legal basis and inform data subjects accordingly.
+
 ## GDPR principles
 
 Article 5 GDPR establishes six core principles for processing personal data, plus an accountability requirement:
@@ -63,11 +84,27 @@ Users can object to processing based on legitimate interests. Permission revocat
 
 The platform implements privacy by design with mandatory TLS/SSL encryption, default-deny access control, automatic audit logging, 30-day ephemeral data deletion, and minimal data collection. See [Authentication](/platform/security/authentication), [Encryption](/platform/security/data_encryption), and [Access Control](/platform/access_management) for details.
 
-For data transfers, Swiss hosting is recommended (Switzerland has an EU adequacy decision). Other locations require standard contractual clauses. See [Deployment Options](/platform/deployment_guide/deployment_options).
+## International data transfers
+
+### EU adequacy decision for Switzerland
+
+Switzerland has an EU adequacy decision (confirmed January 2024), meaning the European Commission recognizes Swiss data protection law as providing an adequate level of protection. This allows personal data to flow freely from the EU to Switzerland without additional safeguards.
+
+For organizations hosting in Switzerland, this simplifies compliance with both GDPR and Swiss DSG requirements. See [Deployment Options](/platform/deployment_guide/deployment_options) for hosting configurations.
+
+### Transfers to other countries
+
+Transfers to countries without an adequacy decision require appropriate safeguards:
+- Standard contractual clauses (SCCs) approved by the European Commission
+- Binding corporate rules (BCRs)
+- Approved codes of conduct or certification mechanisms
+- Specific derogations (consent, contract necessity, vital interests, etc.)
 
 ## Data breach notification
 
-Article 33 GDPR requires notifying the supervisory authority without undue delay and, where feasible, not later than 72 hours after becoming aware of a breach, unless the breach is unlikely to result in a risk to the rights and freedoms of individuals. The notification must include the nature of the breach, affected data subjects, likely consequences, and remedial measures taken.
+Article 33 GDPR requires notifying the supervisory authority **without undue delay and, where feasible, not later than 72 hours** after becoming aware of a breach that is likely to result in a risk to individuals' rights and freedoms. If notification is not made within 72 hours, reasons for the delay must be provided. Notification is not required if the breach is unlikely to result in a risk.
+
+The notification must include the nature of the breach, affected data subjects, likely consequences, and remedial measures taken. Data subjects must be informed directly (Article 34) when the breach is likely to result in a high risk to their rights and freedoms.
 
 The platform provides audit logs, user access reports, monitoring, alerting, and backup capabilities to support breach investigation, documentation, and response.
 
