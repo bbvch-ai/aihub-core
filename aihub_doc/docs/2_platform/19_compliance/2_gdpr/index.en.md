@@ -33,7 +33,7 @@ Users can request corrections to inaccurate data. Administrators can update user
 Users can request deletion of data when it's no longer necessary, consent is withdrawn, or processing is unlawful. Exceptions apply for legal obligations, archiving, research, or legal claims. The platform supports removing users from threads, and ephemeral data deletes automatically after 30 days.
 
 ### Right to data portability (Art. 20)
-Users can request their data in machine-readable format. This applies to data the user provided directly (messages, uploads), not AI-generated responses, analytics, or derived data. The right applies only when processing is based on consent or contract.
+Users can request their data in machine-readable format. This applies to data the user provided directly (messages, uploads), not AI-generated responses, analytics, or derived data. The right applies only when processing is based on consent or contract and carried out by automated means.
 
 ### Right to restriction (Art. 18)
 Users can request suspension of processing while verifying data accuracy or assessing objections. Administrators can suspend accounts through role-based access control.

@@ -5,15 +5,16 @@ index: 4
 
 # EU AI Act
 
-The EU AI Act establishes requirements for AI systems based on their risk level. This section will cover compliance considerations once the regulation is fully in effect.
+The EU AI Act establishes requirements for AI systems based on their risk level. The Act was published in the Official Journal on July 12, 2024, and entered into force on August 1, 2024.
 
-## Current status
+## Implementation timeline
 
-The EU AI Act was adopted in 2024 with a phased implementation timeline:
+The Act has a phased implementation:
 
-- Prohibited practices: 6 months after entry into force
-- General-purpose AI models: 12 months
-- High-risk systems: 24-36 months
+- Prohibited practices: February 2, 2025
+- General-purpose AI models: August 2, 2025
+- High-risk systems: August 2, 2026
+- High-risk systems in regulated products: August 2, 2027
 
 Documentation on platform compliance measures will be added as implementation requirements become clear.
 

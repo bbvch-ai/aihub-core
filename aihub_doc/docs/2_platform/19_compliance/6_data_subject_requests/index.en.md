@@ -5,7 +5,7 @@ index: 6
 
 # Data subject access requests
 
-Data subjects have rights under GDPR Article 15 and Swiss revDSG Article 25 to access, correct, delete, and control their personal data. This section explains what the platform supports for these rights.
+Data subjects have rights under GDPR (Articles 15-21) and Swiss revDSG (Articles 25, 32) to access, correct, delete, and control their personal data. This section explains what the platform supports for these rights.
 
 ## Response times
 
@@ -29,7 +29,7 @@ Data subjects can request suspension of processing while verifying data accuracy
 
 ## Portability
 
-Data subjects can request their data in machine-readable format. This applies only to data the subject provided directly, like messages and uploads, not AI-generated responses, analytics, or derived data. The right applies when processing is based on consent or contract.
+Data subjects can request their data in machine-readable format. This applies only to data the subject provided directly, like messages and uploads, not AI-generated responses, analytics, or derived data. The right applies when processing is based on consent or contract and carried out by automated means.
 
 ## Objection
 
