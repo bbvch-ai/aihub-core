@@ -7,80 +7,51 @@ index: 1
 
 ## Overview
 
-The AI-Hub platform is designed to meet the stringent data sovereignty, security, and compliance requirements of Swiss private and public sector organizations. Our deployment architecture balances **complete data isolation** with **operational efficiency** through a multi-instance model.
+The AI-Hub uses a multi-instance deployment model where each tenant gets their own isolated infrastructure. This addresses the data sovereignty, security, and compliance needs typical of Swiss organizations.
 
 ## Core Deployment Philosophy: Fully Isolated Instances with Shared LLM Backend
 
-### The Multi-Instance Model
+### The multi-instance model
 
-Unlike traditional multi-tenant SaaS platforms where customers share the same application and database infrastructure, the AI-Hub uses a **separate instance per tenant** approach. Each tenant (municipality, canton, department, or organization) receives a completely isolated AI-Hub deployment with dedicated:
+Unlike multi-tenant SaaS platforms where customers share application and database infrastructure, the AI-Hub deploys a separate instance per tenant. Each tenant (municipality, canton, department, or organization) gets their own isolated deployment with dedicated components:
 
-- **Application Services**: API, agents, pipelines, web interface, bot integrations
-- **Data Storage**: Databases (FerretDB/PostgreSQL), vector stores (Milvus/Azure AI Search)
-- **File Storage**: Document storage (SeaweedFS/Azure Data Lake)
-- **Observability Stack**: Monitoring, tracing, and logging infrastructure (SigNoz, Phoenix)
-- **Message Bus**: Event streaming and communication (NATS)
-- **LLM Proxy**: Each tenant has their own LiteLLM proxy instance for independent cost tracking and version control
+Application services include the API, agents, pipelines, web interface, and bot integrations. Data storage covers databases (FerretDB/PostgreSQL) and vector stores (Milvus/Azure AI Search). File storage handles documents via SeaweedFS or Azure Data Lake. The observability stack provides monitoring, tracing, and logging through SigNoz and Phoenix. NATS handles event streaming and communication. Each tenant runs their own LiteLLM proxy instance for independent cost tracking and version control.
 
-### Shared Infrastructure: LLM Backend Resources
+### Shared infrastructure: LLM backend resources
 
-While each tenant operates a **fully isolated instance** (including their own LiteLLM proxy), certain **backend LLM resources can be shared** across tenants to optimize costs and infrastructure:
+While each tenant operates a fully isolated instance (including their own LiteLLM proxy), backend LLM resources can be shared across tenants to reduce costs:
 
-**Optionally shared Resources**:
-- **API Credentials**: Shared Azure OpenAI subscriptions, Google Gemini API keys (accessed via tenant-specific LiteLLM proxies)
-- **Self-Hosted Models**: Centralized vLLM, llama.cpp, or HF-TEI deployments serving multiple tenants
-- **Authentication**: Central Azure AD or Keycloak for organizations managing multiple tenant instances
+Resources that can be optionally shared include API credentials like Azure OpenAI subscriptions and Google Gemini API keys (accessed via tenant-specific LiteLLM proxies), self-hosted models like centralized vLLM, llama.cpp, or HF-TEI deployments serving multiple tenants, and authentication infrastructure such as a central Azure AD or Keycloak for organizations managing multiple tenant instances.
 
-**Why This Hybrid Approach?**
-- **Cost Efficiency**: Share expensive LLM API subscriptions and GPU infrastructure across tenants
-- **Per-Tenant Control**: Each tenant configures their own LiteLLM proxy (model selection, budgets, rate limits, versions)
-- **Independent Versioning**: Tenants can use different LiteLLM versions and model routing configurations
-- **Granular Cost Tracking**: Each tenant's LLM usage is tracked independently through their LiteLLM proxy
-- **Complete Data Isolation**: Prompts, responses, and user data never leave the tenant instance
+This hybrid approach reduces costs by sharing expensive LLM API subscriptions and GPU infrastructure. Each tenant still configures their own LiteLLM proxy with their own model selection, budgets, rate limits, and versions. Tenants can use different LiteLLM versions and routing configurations. Each tenant's LLM usage is tracked independently through their LiteLLM proxy. Prompts, responses, and user data never leave the tenant instance.
 
-**Privacy Guarantee**: Shared LLM backends (Azure OpenAI, Google Gemini, self-hosted models) are stateless and do not persist tenant prompts or responses. All conversational context, history, and user data remain within the isolated tenant instance.
+Shared LLM backends (Azure OpenAI, Google Gemini, self-hosted models) are stateless and do not persist tenant prompts or responses. All conversational context, history, and user data remain within the isolated tenant instance.
 
-## Why This Architecture?
+## Why this architecture?
 
-This deployment model is specifically designed for organizations with strict data sovereignty and compliance needs.
+This deployment model addresses the data sovereignty and compliance requirements common in Swiss organizations.
 
-### 1. Complete Data Sovereignty
+### Data sovereignty
 
-Each tenant's data never leaves their isolated instance. There is no shared database, no shared vector store, and no possibility of data leakage between organizations.
+Each tenant's data stays within their isolated instance. There's no shared database, no shared vector store, and no way for data to leak between organizations. This covers Swiss Data Protection Law (revDSG), GDPR requirements for data isolation, and Swiss public sector security standards.
 
-**Compliance Coverage**:
-- ✅ Swiss Data Protection Law (revDSG)
-- ✅ GDPR requirements for data isolation
-- ✅ Swiss public sector security standards
+### Independent configuration and customization
 
-### 2. Independent Configuration and Customization
+Each instance can be configured separately. You can deploy custom agents tailored to specific organizational needs, specialized pipelines for unique data sources and formats, organization-specific access control (RBAC, OIDC integration with local IdP), custom knowledge bases and RAG configurations, and dedicated authentication providers like Azure AD or Keycloak.
 
-Each instance can be configured independently:
-- **Custom agents** tailored to specific organizational needs
-- **Specialized pipelines** for unique data sources and formats
-- **Organization-specific access control** (RBAC, OIDC integration with local IdP)
-- **Custom knowledge bases** and RAG configurations
-- **Dedicated authentication** providers (Azure AD, Keycloak, etc.)
+### Independent scaling and updates
 
-### 3. Independent Scaling and Updates
+Resource allocation is isolated, so you can scale compute, memory, and storage based on each tenant's actual usage. Update schedules are flexible—each tenant can apply updates at their own pace. You can test new features in one instance without affecting others. SLAs can be adjusted per contract with different uptime guarantees and support levels.
 
-- **Isolated resource allocation**: Scale compute, memory, and storage per tenant's actual usage
-- **Flexible update schedules**: Each tenant can apply updates at their own pace
-- **Independent testing**: Test new features in one instance without affecting others
-- **Tenant-specific SLAs**: Adjust uptime guarantees and support levels per contract
+### Simplified compliance and auditing
 
-### 4. Simplified Compliance and Auditing
+Data boundaries are clear, so auditors can inspect a single tenant's infrastructure. All logs and traces remain within the tenant instance. Backup policies can be configured per organizational requirements for retention periods. Penetration testing can be scoped to individual instances.
 
-- **Clear data boundaries**: Auditors can inspect a single tenant's infrastructure
-- **Isolated audit trails**: All logs and traces remain within the tenant instance
-- **Tenant-specific backup policies**: Configure retention periods per organizational requirements
-- **Independent security scanning**: Penetration testing can be scoped to individual instances
+## Deployment model
 
-## Deployment Model
+Each tenant receives a complete, independent AI-Hub deployment.
 
-**Architecture**: Each tenant receives a complete, independent AI-Hub deployment.
-
-**Infrastructure Components per Tenant**:
+Infrastructure components per tenant:
 ```
 Tenant Instance
 ├── Application Layer
@@ -114,7 +85,7 @@ Tenant Instance
     └── Traefik (reverse proxy + SSL termination)
 ```
 
-**Shared Infrastructure (Across All Tenants)**:
+Shared infrastructure (across all tenants):
 ```
 Shared LLM Backend Resources
 ├── LLM API Subscriptions
@@ -132,80 +103,54 @@ Shared LLM Backend Resources
     └── Central Monitoring Dashboard (optional)
 ```
 
-**Network Architecture**:
+Network architecture:
 - Each tenant has their own LiteLLM proxy instance
 - Tenant LiteLLM proxies connect to shared LLM backends (Azure OpenAI, Gemini, self-hosted models)
 - Shared LLM backends use common API credentials (configured per tenant's LiteLLM)
 - No direct communication between tenant instances
 - Optional: Shared authentication provider (Azure AD, Keycloak)
 
-**Advantages**:
-- ✅ Maximum data isolation and sovereignty
-- ✅ Independent scaling and resource allocation
-- ✅ Custom configurations per tenant
-- ✅ Flexible update schedules
-- ✅ Clear compliance boundaries
+This provides maximum data isolation and sovereignty, independent scaling and resource allocation, custom configurations per tenant, flexible update schedules, and clear compliance boundaries.
 
 ---
 
-## Hosting Options
+## Hosting options
 
-The AI-Hub supports flexible hosting to meet organizational requirements and constraints.
+The AI-Hub can be hosted in different ways depending on organizational requirements and constraints.
 
-### Option 1: Swiss Cloud Hosting (Recommended)
+### Option 1: Swiss cloud hosting
 
-**Description**: Deploy each tenant instance to a Swiss-based cloud provider with full data residency guarantees.
+Deploy each tenant instance to a Swiss-based cloud provider with full data residency guarantees.
 
-**Benefits**:
-- ✅ Data remains in Switzerland
-- ✅ Swiss legal jurisdiction
-- ✅ Enterprise-grade security and compliance certifications
-- ✅ Simplified disaster recovery and high availability
+Data remains in Switzerland under Swiss legal jurisdiction. Providers typically offer enterprise security and compliance certifications. Disaster recovery and high availability are simpler to implement than on-premise.
 
-**Network Requirements**:
-- Internet connectivity for LLM proxy access (HTTPS)
-- Optional VPN for administrative access
-- Private networking between tenant services (internal DNS)
+Network requirements include internet connectivity for LLM proxy access (HTTPS), optional VPN for administrative access, and private networking between tenant services (internal DNS).
 
 ---
 
-### Option 2: On-Premise Hosting
+### Option 2: On-premise hosting
 
-**Description**: Deploy tenant instances entirely within the organization's own data center or server infrastructure.
+Deploy tenant instances entirely within the organization's own data center or server infrastructure.
 
-**Requirements**:
-- **Compute**: Modern x86_64 servers with sufficient CPU, RAM, storage
-- **Optional GPU**: NVIDIA GPUs for self-hosted LLM inference
-- **Network**: Outbound HTTPS for shared LLM access (or fully air-gapped with local models)
+Requirements include modern x86_64 servers with sufficient CPU, RAM, and storage. NVIDIA GPUs are optional for self-hosted LLM inference. Network access needs outbound HTTPS for shared LLM access, or the system can run fully air-gapped with local models.
 
-**Benefits**:
-- ✅ Complete infrastructure control
-- ✅ No cloud dependencies
-- ✅ Existing data center infrastructure reuse
-- ✅ Compatible with air-gapped environments (with self-hosted LLMs)
+This gives complete infrastructure control with no cloud dependencies. You can reuse existing data center infrastructure. It's compatible with air-gapped environments when using self-hosted LLMs.
 
 ---
 
-### Option 3: Hybrid Deployment
+### Option 3: Hybrid deployment
 
-**Description**: Tenant instance on-premise or Swiss cloud, with centralized LLM infrastructure in a separate cloud region.
+Tenant instance on-premise or in Swiss cloud, with centralized LLM infrastructure in a separate cloud region.
 
-**Example Scenarios**:
-- **Tenant instance**: Swiss cloud or on-premise
-- **Shared LLM**: Azure OpenAI in EU regions or other LLM providers
+Example scenarios: tenant instance in Swiss cloud or on-premise, shared LLM via Azure OpenAI in EU regions or other LLM providers.
 
-**Benefits**:
-- ✅ Flexibility in infrastructure placement
-- ✅ Cost optimization for LLM hosting
-- ✅ Greater model availability
-- ✅ All data stays in Switzerland (stateless LLM access)
-- ✅ Anonymization of PII data (Presidio)
+This gives flexibility in infrastructure placement and cost optimization for LLM hosting. You get access to more models. All data stays in Switzerland since LLM access is stateless. PII data can be anonymized via Presidio.
 
 ---
 
-## Architecture Diagrams
+## Architecture diagrams
 
-### Multi-Instance Deployment with Shared LLM Backend
+### Multi-instance deployment with shared LLM backend
 
 ```mermaid
 graph TB
@@ -236,49 +181,34 @@ graph TB
     classDef default font-size:16px,padding:20px
 ```
 
-**Key Points**:
-- Each tenant has their **own LiteLLM proxy instance** (independent cost tracking, versioning, configuration)
-- All tenant LiteLLM proxies connect to **shared LLM backend resources** (Azure OpenAI subscriptions, self-hosted models)
-- **Complete data isolation**: Prompts, responses, and user data stay within tenant boundaries
-- **Cost efficiency**: Shared expensive LLM API subscriptions and GPU infrastructure
+Each tenant has their own LiteLLM proxy instance (independent cost tracking, versioning, configuration). All tenant LiteLLM proxies connect to shared LLM backend resources (Azure OpenAI subscriptions, self-hosted models). Prompts, responses, and user data stay within tenant boundaries. Shared expensive LLM API subscriptions and GPU infrastructure reduce costs.
 
 ---
 
-## Security Considerations
+## Security considerations
 
-### Tenant Isolation
+### Tenant isolation
 
-- **Network Isolation**: Tenant instances do not communicate with each other
-- **Data Isolation**: Separate databases, vector stores, and file storage per tenant
-- **Authentication Isolation**: Each tenant connects to their own IdP (Azure AD, Keycloak)
-- **API Key Isolation**: LiteLLM enforces per-tenant API keys and quotas
+Tenant instances do not communicate with each other. Each tenant has separate databases, vector stores, and file storage. Each tenant connects to their own IdP (Azure AD, Keycloak). LiteLLM enforces per-tenant API keys and quotas.
 
-### LLM Proxy Security
+### LLM proxy security
 
-- **Stateless Operation**: LiteLLM does not persist prompts or responses
-- **API Key Management**: Secure key generation, rotation, and revocation
-- **Rate Limiting**: Per-tenant request limits to prevent abuse
-- **Audit Logging**: All LLM requests logged with tenant ID (without prompt content)
-- **PII Anonymization**: Optional Presidio integration for PII detection/redaction
+LiteLLM does not persist prompts or responses (stateless operation). API key management includes secure key generation, rotation, and revocation. Per-tenant request limits prevent abuse. All LLM requests are logged with tenant ID but without prompt content. Presidio integration is optional for PII detection and redaction.
 
-### Data in Transit
+### Data in transit
 
-- **TLS**: All communication encrypted (tenant ↔ LLM proxy)
-- **Certificate Management**: Let's Encrypt for production, mkcert for development
-- **API Authentication**: Bearer tokens (OAuth 2.0, JWT)
+All communication is encrypted with TLS (tenant to LLM proxy). Certificate management uses Let's Encrypt for production and mkcert for development. API authentication uses bearer tokens (OAuth 2.0, JWT).
 
-### Data at Rest
+### Data at rest
 
-- **Database Encryption**: PostgreSQL with transparent data encryption (TDE)
-- **Volume Encryption**: Encrypted persistent volumes (LUKS, Azure Disk Encryption)
-- **Secret Management**: Environment variables, Azure Key Vault, Docker secrets
+PostgreSQL uses transparent data encryption (TDE). Persistent volumes are encrypted (LUKS, Azure Disk Encryption). Secrets are managed via environment variables, Azure Key Vault, or Docker secrets.
 
 ---
 
-## Next Steps
+## Next steps
 
-- [Production Configuration](../2_production_configuration/) - Detailed configuration guide for production deployments
-- [Scaling Considerations](../3_scaling_considerations/) - How to scale tenant instances
+- [Production Configuration](../2_production_configuration/) - Configuration guide for production deployments
+- [Scaling Considerations](../3_scaling_considerations/) - Scaling tenant instances
 - [Backup and Recovery](../4_backup_and_recovery/) - Backup strategies for per-tenant architecture
 - [Updates and Maintenance](../6_updates_and_maintenance/) - Managing updates across multiple instances
 
@@ -286,74 +216,52 @@ graph TB
 
 ## FAQ
 
-::: details Q: Can tenants share agents or pipelines?
+::: details Can tenants share agents or pipelines?
 
-**A**: No. Each tenant instance has its own isolated set of agents and pipelines. However, the same agent *definitions* (code) can be deployed across multiple tenant instances. Customizations are tenant-specific.
+No. Each tenant instance has its own isolated set of agents and pipelines. However, the same agent definitions (code) can be deployed across multiple tenant instances. Customizations are tenant-specific.
 :::
 
-::: details Q: What data does the shared LLM backend see?
+::: details What data does the shared LLM backend see?
 
-**A**: Each tenant has their own LiteLLM proxy, so prompts/responses stay within the tenant instance. The shared LLM backends (Azure OpenAI, Gemini, self-hosted models) see:
-- API requests from multiple tenant LiteLLM proxies (stateless, not persisted)
-- Model inference requests (prompts and completions in transit only)
-- No tenant identification or context
-- Anonymous PII data (if enabled)
+Each tenant has their own LiteLLM proxy, so prompts and responses stay within the tenant instance. The shared LLM backends (Azure OpenAI, Gemini, self-hosted models) see API requests from multiple tenant LiteLLM proxies (stateless, not persisted), model inference requests (prompts and completions in transit only), no tenant identification or context, and anonymous PII data if enabled.
 
-**They do NOT see**: Which tenant made the request, conversational history, or any stored data. All context remains in the tenant's LiteLLM proxy and database.
+They do not see which tenant made the request, conversational history, or any stored data. All context remains in the tenant's LiteLLM proxy and database.
 :::
 
-::: details Q: Can a tenant use self-hosted models exclusively?
+::: details Can a tenant use self-hosted models exclusively?
 
-**A**: Yes. For air-gapped or fully on-premise deployments, you can:
-1. Deploy self-hosted LLMs (vLLM, llama.cpp, HF-TEI)
-2. Configure LiteLLM to route to local models
-3. No outbound internet connectivity required
+Yes. For air-gapped or fully on-premise deployments, you can deploy self-hosted LLMs (vLLM, llama.cpp, HF-TEI), configure LiteLLM to route to local models, and run with no outbound internet connectivity required.
 :::
 
-::: details Q: How are costs tracked per tenant?
+::: details How are costs tracked per tenant?
 
-**A**: LiteLLM tracks API usage per tenant and user:
-- Token counts (input/output)
-- Model usage (GPT-4, Gemini, etc.)
-- Cost calculations (based on model pricing)
-- Monthly budget enforcement
+LiteLLM tracks API usage per tenant and user: token counts (input/output), model usage (GPT-4, Gemini, etc.), cost calculations based on model pricing, and monthly budget enforcement.
 
 Data is available in the LiteLLM admin UI and exportable for billing.
 :::
 
-::: details Q: Can tenants have different LLM access?
+::: details Can tenants have different LLM access?
 
-**A**: Yes. LiteLLM configuration allows per-tenant model access:
-- Tenant A: Only GPT-4o (strict compliance)
-- Tenant B: GPT-4o + Gemini 2.0 (flexibility)
-- Tenant C: Self-hosted models only (air-gapped)
+Yes. LiteLLM configuration allows per-tenant model access. For example, Tenant A might only use GPT-4o for strict compliance, Tenant B might use GPT-4o plus Gemini 2.0 for more flexibility, and Tenant C might use self-hosted models only for air-gapped deployment.
 
 :::
 
-::: details Q: What happens if the LLM proxy is unavailable?
+::: details What happens if the LLM proxy is unavailable?
 
-**A**: Tenant instances will experience LLM-dependent feature degradation:
-- ❌ RAG agents cannot generate responses
-- ❌ Embeddings cannot be created for new documents
-- ✅ Existing data and UI remain accessible
-- ✅ Non-LLM features (document upload, RBAC, observability) continue working
+Tenant instances will experience LLM-dependent feature degradation. RAG agents cannot generate responses. Embeddings cannot be created for new documents. However, existing data and UI remain accessible, and non-LLM features (document upload, RBAC, observability) continue working.
 
-**Mitigation**: Deploy LiteLLM with high availability (multiple replicas, load balancing).
+Mitigation: Deploy LiteLLM with high availability (multiple replicas, load balancing).
 :::
 
-::: details Q: How do you manage updates across many tenant instances?
+::: details How do you manage updates across many tenant instances?
 
-**A**: See [Updates and Maintenance](../6_updates_and_maintenance/) for detailed strategies:
-- Phased rollouts (pilot → production)
-- Blue-green deployments
-- Automated update orchestration (Ansible, Kubernetes operators)
-- Per-tenant update schedules
+See [Updates and Maintenance](../6_updates_and_maintenance/) for strategies including phased rollouts (pilot to production), blue-green deployments, automated update orchestration (Ansible, Kubernetes operators), and per-tenant update schedules.
 
 :::
 
-## Related Documentation
+## Related documentation
 
-- **Architecture**: [Core Components](../../2_architecture/1_core_components/) - Understand the AI-Hub architecture
-- **Security**: [Authentication & Authorization](../../11_access_management/1_authentication_setup/) - Configure tenant authentication
-- **Operations**: [Monitoring and Alerting](../5_monitoring_and_alerting/) - Observability for multi-instance deployments
-- **Compliance**: [Swiss Data Protection](../../19_compliance/3_dsg/) - revDSG compliance for public sector
+- [Core Components](../../2_architecture/1_core_components/) - AI-Hub architecture
+- [Authentication & Authorization](../../11_access_management/1_authentication_setup/) - Tenant authentication configuration
+- [Monitoring and Alerting](../5_monitoring_and_alerting/) - Observability for multi-instance deployments
+- [Swiss Data Protection](../../19_compliance/3_dsg/) - revDSG compliance for public sector

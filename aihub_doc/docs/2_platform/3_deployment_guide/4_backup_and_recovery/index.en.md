@@ -25,82 +25,59 @@ This guide describes backup and recovery procedures for AI-Hub deployments. The 
 
 ---
 
-## Backup Architecture
+## Backup architecture
 
-### Per-Tenant Backup Isolation
+### Per-tenant backup isolation
 
-Each tenant instance maintains **independent backups** with no cross-tenant dependencies:
+Each tenant instance maintains independent backups with no cross-tenant dependencies.
 
-**Benefits**:
-- Complete data isolation between tenants
-- Tenant-specific compliance requirements (retention periods)
-- Independent recovery without affecting other tenants
-- Granular cost tracking per tenant
+This provides complete data isolation between tenants, tenant-specific compliance requirements (retention periods), independent recovery without affecting other tenants, and granular cost tracking per tenant.
 
 ---
 
-## Production Backup Strategy (VM/On-Premise)
+## Production backup strategy (VM/on-premise)
 
 ### Overview
 
 Production deployments require comprehensive backup across all data layers with automation, monitoring, and regular testing.
 
-### Backup Approaches
+### Backup approaches
 
-There are two primary approaches to backing up production AI-Hub deployments:
+There are two primary approaches to backing up production AI-Hub deployments: VM snapshots (simple) and component-level backups (granular).
 
-1. **VM Snapshots (Simple)**: Capture the entire virtual machine state
-2. **Component-Level Backups (Granular)**: Back up individual data stores separately
-
-**VM snapshots** provide the simplest backup strategy with instant recovery, while **component-level backups** offer more flexibility, smaller backup sizes, and selective recovery.
+VM snapshots provide the simplest backup strategy with instant recovery. Component-level backups offer more flexibility, smaller backup sizes, and selective recovery.
 
 ---
 
-## Approach 1: VM Snapshot (Simple Full Backup)
+## Approach 1: VM snapshot (simple full backup)
 
 ### Overview
 
-VM snapshots provide the **simplest backup method** by capturing the entire virtual machine state, including all data, configuration, and system files. This is ideal for smaller deployments or when simplicity is prioritized over granular control.
+VM snapshots capture the entire virtual machine state, including all data, configuration, and system files. This works well for smaller deployments or when simplicity is prioritized over granular control.
 
-### When to Use VM Snapshots
+### When to use VM snapshots
 
-**Advantages**:
-- ✅ Simple to implement and automate
-- ✅ Captures everything (OS, Docker, data, configuration)
-- ✅ Fastest disaster recovery (restore entire VM)
-- ✅ No complex backup scripts needed
-- ✅ Point-in-time consistency across all services
+VM snapshots are simple to implement and automate. They capture everything (OS, Docker, data, configuration) and provide the fastest disaster recovery by restoring the entire VM. No complex backup scripts are needed. They provide point-in-time consistency across all services.
 
-**Disadvantages**:
-- ❌ Larger backup size (entire disk)
-- ❌ Longer backup time
-- ❌ Cannot selectively restore individual databases
-- ❌ Requires VM to be stopped or snapshot-capable hypervisor
+However, they have larger backup sizes (entire disk), longer backup times, cannot selectively restore individual databases, and require the VM to be stopped or a snapshot-capable hypervisor.
 
-### Snapshot Best Practices
+### Snapshot best practices
 
-**Consistency**:
-- Stop AI-Hub services before snapshot for consistency: `docker compose down`
-- Or use application-consistent snapshots (e.g., Azure with VM agent, VMware with quiesce)
+For consistency, stop AI-Hub services before snapshot using `docker compose down`, or use application-consistent snapshots (e.g., Azure with VM agent, VMware with quiesce).
 
-**Frequency**:
-- **Daily snapshots**: Suitable for most production deployments
-- **Pre-update snapshots**: Always snapshot before major updates
-- **Weekly/monthly archives**: Keep long-term snapshots for compliance
+For frequency, daily snapshots are suitable for most production deployments. Always snapshot before major updates. Keep long-term weekly or monthly snapshots for compliance.
 
-**Testing**:
-- Monthly: Restore snapshot to test environment and verify functionality
-- Document actual RTO achieved during test restores
+For testing, restore snapshots to a test environment monthly and verify functionality. Document actual RTO achieved during test restores.
 
 ---
 
-## Approach 2: Component-Level Backups (Granular)
+## Approach 2: Component-level backups (granular)
 
 ### Overview
 
 Component-level backups provide granular control by backing up individual data stores separately. This approach offers flexibility for selective recovery and smaller backup sizes.
 
-### Data Stores to Back Up
+### Data stores to back up
 
 | Component | Criticality | Backup Method | Frequency | Retention |
 |-----------|-------------|---------------|-----------|-----------|
@@ -115,7 +92,7 @@ Component-level backups provide granular control by backing up individual data s
 
 ---
 
-## Backup Procedures (Component-Level)
+## Backup procedures (component-level)
 
 ### 1. PostgreSQL Database Backup
 
@@ -130,7 +107,7 @@ PostgreSQL stores multiple databases: OpenWebUI, Phoenix, Dagster, LiteLLM, and 
 
 FerretDB stores documents in PostgreSQL, so it's covered by PostgreSQL backups. However, for compliance and portability, also create MongoDB-format exports.
 
-**What's Backed Up**:
+What's backed up:
 - Agent configurations
 - Process definitions
 - Chat histories
@@ -143,7 +120,7 @@ FerretDB stores documents in PostgreSQL, so it's covered by PostgreSQL backups. 
 
 Milvus stores vector embeddings for RAG. Backups export collections to S3-compatible storage.
 
-**Important**: Vector embeddings can be **regenerated** from source documents. If backup storage is limited, prioritize PostgreSQL and SeaweedFS over Milvus.
+Vector embeddings can be regenerated from source documents. If backup storage is limited, prioritize PostgreSQL and SeaweedFS over Milvus.
 
 ---
 
@@ -163,10 +140,7 @@ etcd stores Milvus metadata and service discovery information.
 
 Configuration files, environment variables, and SSL certificates must be backed up securely.
 
-**Encryption Key Management**:
-- Store encryption key in a **secure, separate location**
-- Consider using hardware security modules (HSM) or key management services
-- Maintain key backups in multiple secure locations (safe, off-site)
+Encryption key management: Store encryption keys in a secure, separate location. Consider using hardware security modules (HSM) or key management services. Maintain key backups in multiple secure locations (safe, off-site).
 
 ---
 
@@ -174,25 +148,25 @@ Configuration files, environment variables, and SSL certificates must be backed 
 
 If using Docker volumes directly without application-level backups:
 
-**Note**: Application-level backups (PostgreSQL, Milvus, etc.) are **preferred** over volume backups for consistency and portability.
+Note: Application-level backups (PostgreSQL, Milvus, etc.) are preferred over volume backups for consistency and portability.
 
 ---
 
-## Backup Automation
+## Backup automation
 
-### Cron Schedule
+### Cron schedule
 
 Create a centralized cron schedule for all backup tasks to automate daily, hourly, and weekly backup operations. Schedule backups during low-usage periods to minimize performance impact.
 
-### Backup Verification Script
+### Backup verification script
 
 Implement automated verification scripts that run weekly to check backup integrity, age, and sizes. Alert administrators if backups are older than expected or missing.
 
 ---
 
-## Recovery Procedures
+## Recovery procedures
 
-### Full Disaster Recovery
+### Full disaster recovery
 
 Complete system restoration from backups after catastrophic failure.
 
@@ -205,13 +179,13 @@ Complete system restoration from backups after catastrophic failure.
 
 ---
 
-### Partial Recovery (Single Service)
+### Partial recovery (single service)
 
 Restore only a specific component without full system recovery.
 
 ---
 
-### Point-in-Time Recovery (PITR)
+### Point-in-time recovery (PITR)
 
 Restore PostgreSQL to a specific point in time using WAL archives.
 
@@ -222,74 +196,59 @@ Restore PostgreSQL to a specific point in time using WAL archives.
 
 ---
 
-## Off-Site Backup Strategy
+## Off-site backup strategy
 
-### 3-2-1 Backup Rule
+### 3-2-1 backup rule
 
 For production deployments, implement the 3-2-1 rule:
 
-- **3 copies** of data: 1 production + 2 backups
-- **2 different media types**: Local disk + remote storage/tape
-- **1 off-site copy**: Different physical location
+- 3 copies of data: 1 production + 2 backups
+- 2 different media types: Local disk + remote storage/tape
+- 1 off-site copy: Different physical location
 
 ---
 
-## Monitoring and Alerts
+## Monitoring and alerts
 
-### Backup Health Monitoring
+### Backup health monitoring
 
 Monitor backup operations and alert on failures. Implement checks for backup completion, age, and size to detect issues early.
 
-### Integration with Monitoring Systems
+### Integration with monitoring systems
 
-Integrate backup monitoring with existing observability infrastructure:
-
-- **Prometheus Metrics**: Export backup age and size metrics for monitoring
-- **Alert Rules**: Configure AlertManager rules to notify on backup failures or old backups
+Integrate backup monitoring with existing observability infrastructure. Export backup age and size metrics for Prometheus monitoring. Configure AlertManager rules to notify on backup failures or old backups.
 
 ---
 
-## Security Considerations
+## Security considerations
 
-### Backup Encryption
+### Backup encryption
 
-All backups containing sensitive data must be encrypted:
+All backups containing sensitive data must be encrypted.
 
-**At Rest**:
-- Configuration backups: Encrypted with AES-256
-- Database dumps: Optionally encrypted
-- File storage: Consider volume-level encryption (LUKS)
+At rest: Configuration backups are encrypted with AES-256. Database dumps are optionally encrypted. File storage can use volume-level encryption (LUKS).
 
-**In Transit**:
-- Use SSH/SCP for remote transfers
-- Use TLS for cloud storage uploads
-- Use VPN for DR site replication
+In transit: Use SSH/SCP for remote transfers, TLS for cloud storage uploads, and VPN for DR site replication.
 
-### Access Control
+### Access control
 
 Restrict backup access to authorized personnel only. Set restrictive permissions on backup directories, limit SSH key access, and secure encryption keys.
 
-### Audit Logging
+### Audit logging
 
 Log all backup operations for compliance. Backup operations should be logged to syslog and shipped to centralized log aggregation systems for audit trails.
 
 ---
 
-## Compliance and Retention
+## Compliance and retention
 
-### Swiss Data Protection (revDSG) Requirements
+### Swiss data protection (revDSG) requirements
 
-**Retention Periods**:
-- **Operational backups**: 30-35 days minimum
-- **Compliance archives**: 90 days to 10 years (depending on data type)
-- **Audit logs**: 1 year minimum
+Retention periods: Operational backups need 30-35 days minimum. Compliance archives range from 90 days to 10 years depending on data type. Audit logs need 1 year minimum.
 
-**Data Deletion**:
-- Implement secure deletion when backups exceed retention period
-- Use `shred` or `secure-delete` for sensitive data
-- Document deletion procedures for audits
+Data deletion: Implement secure deletion when backups exceed retention period. Use `shred` or `secure-delete` for sensitive data. Document deletion procedures for audits.
 
-### Backup Retention Policy
+### Backup retention policy
 
 | Backup Type | Retention | Storage Location | Compliance Reason |
 |-------------|-----------|------------------|-------------------|
@@ -300,66 +259,66 @@ Log all backup operations for compliance. Backup operations should be logged to 
 
 ---
 
-## Testing and Validation
+## Testing and validation
 
-### Regular Restore Testing
+### Regular restore testing
 
 Perform monthly restore tests to a separate test environment to verify backup integrity and practice recovery procedures. Validate that restored data is accessible and services function correctly.
 
-### Disaster Recovery Drills
+### Disaster recovery drills
 
 Conduct full disaster recovery drills quarterly:
 
-1. **Simulate failure**: Power down production system
-2. **Restore from backups**: Follow full recovery procedures
-3. **Validate functionality**: Test all agents, pipelines, and user access
-4. **Document findings**: Record RTO/RPO achieved, identify improvements
-5. **Update procedures**: Incorporate lessons learned
+1. Simulate failure: Power down production system
+2. Restore from backups: Follow full recovery procedures
+3. Validate functionality: Test all agents, pipelines, and user access
+4. Document findings: Record RTO/RPO achieved, identify improvements
+5. Update procedures: Incorporate lessons learned
 
 ---
 
 ## Troubleshooting
 
-### Backup Failures
+### Backup failures
 
 Common backup issues and their resolutions:
 
-- **PostgreSQL backup fails**: Check PostgreSQL is running, verify disk space, check permissions, and review PostgreSQL logs
-- **SeaweedFS backup incomplete**: Verify S3 endpoint is reachable, check SeaweedFS logs, and manually test S3 sync
+- PostgreSQL backup fails: Check PostgreSQL is running, verify disk space, check permissions, and review PostgreSQL logs
+- SeaweedFS backup incomplete: Verify S3 endpoint is reachable, check SeaweedFS logs, and manually test S3 sync
 
-### Recovery Issues
+### Recovery issues
 
 Common recovery problems and solutions:
 
-- **PostgreSQL restore fails**: Check backup file integrity, verify PostgreSQL version compatibility, and ensure WAL files are available
-- **Milvus collection not found after restore**: List available collections and re-index from source documents if needed
+- PostgreSQL restore fails: Check backup file integrity, verify PostgreSQL version compatibility, and ensure WAL files are available
+- Milvus collection not found after restore: List available collections and re-index from source documents if needed
 
 ---
 
-## Summary Checklist
+## Summary checklist
 
-### Daily Operations
+### Daily operations
 
 - [ ] Verify backup cron jobs executed successfully
 - [ ] Check backup log for errors
 - [ ] Monitor backup disk space usage
 - [ ] Confirm off-site sync completed
 
-### Weekly Operations
+### Weekly operations
 
 - [ ] Review backup sizes and retention
 - [ ] Test backup file integrity (random sampling)
 - [ ] Verify encryption keys are securely stored
 - [ ] Check backup monitoring alerts
 
-### Monthly Operations
+### Monthly operations
 
 - [ ] Perform restore test to staging environment
 - [ ] Review and update retention policies
 - [ ] Audit access logs for backup directories
 - [ ] Verify tape backups (if applicable)
 
-### Quarterly Operations
+### Quarterly operations
 
 - [ ] Conduct a full disaster recovery drill
 - [ ] Review and update backup procedures
@@ -368,17 +327,17 @@ Common recovery problems and solutions:
 
 ---
 
-## Next Steps
+## Next steps
 
-- [Production Configuration](../2_production_configuration/) — Configure production environment variables
-- [Scaling Considerations](../3_scaling_considerations/) — Plan for growth
-- [Monitoring and Alerting](../5_monitoring_and_alerting/) — Set up backup monitoring
-- [Updates and Maintenance](../6_updates_and_maintenance/) — Update procedures
+- [Production Configuration](../2_production_configuration/) - Configure production environment variables
+- [Scaling Considerations](../3_scaling_considerations/) - Plan for growth
+- [Monitoring and Alerting](../5_monitoring_and_alerting/) - Set up backup monitoring
+- [Updates and Maintenance](../6_updates_and_maintenance/) - Update procedures
 
 ---
 
-## Related Documentation
+## Related documentation
 
-- **Deployment**: [Deployment Options](../1_deployment_options/) — Understand per-tenant architecture
-- **Security**: [Authentication & Authorization](../../11_access_management/1_authentication_setup/) — Secure backup access
-- **Compliance**: [Swiss Data Protection](../../19_compliance/3_dsg/) — revDSG compliance for backups
+- [Deployment Options](../1_deployment_options/) - Per-tenant architecture
+- [Authentication & Authorization](../../11_access_management/1_authentication_setup/) - Secure backup access
+- [Swiss Data Protection](../../19_compliance/3_dsg/) - revDSG compliance for backups
