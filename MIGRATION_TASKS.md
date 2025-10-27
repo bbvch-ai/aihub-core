@@ -2160,9 +2160,11 @@ Copy this to track progress:
 
 **Current Total: 69 tests passing**
 
-## Phase 4: Controllers & Integration
-- [ ] Task 4.1: Migrate All Controllers
-- [ ] Task 4.2: Migrate Activity Models
+## Phase 4: Controllers & Integration ✅ COMPLETE
+- [x] Task 4.1: Migrate All Controllers (5 tests passing)
+- [x] Task 4.2: Migrate Activity Models (3 tests passing)
+
+**Current Total: 77 tests passing**
 
 ## Phase 5: Testing & Validation
 - [ ] Task 5.1: Update Integration Tests
