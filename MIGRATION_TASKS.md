@@ -2153,10 +2153,12 @@ Copy this to track progress:
 
 **Total: 40 tests passing**
 
-## Phase 3: Specialized Bots
-- [ ] Task 3.1: Migrate Agent-Based Bots
+## Phase 3: Specialized Bots (In Progress)
+- [x] Task 3.1: Migrate Agent-Based Bots (8 tests passing)
 - [ ] Task 3.2: Migrate OpenAI-Based Bots
 - [ ] Task 3.3: Migrate Bot-in-the-Loop
+
+**Current Total: 48 tests passing**
 
 ## Phase 4: Controllers & Integration
 - [ ] Task 4.1: Migrate All Controllers
