@@ -1,115 +1,99 @@
 ---
-title: Agent Evaluations
+title: Agent evaluations
 index: 9
 ---
 
-# Agent Evaluations
+# Agent evaluations
 
-Agent evaluations provide systematic testing and quality measurement for AI agents before and after deployment. This
-ensures your agents deliver accurate, complete, and professional responses to users.
+Agent evaluations test and measure AI agent quality before and after deployment. You get data on whether your agents deliver accurate, complete, and concise responses.
 
-Evaluations test your agents against predefined questions with known correct answers. Think of it as a standardized test
-for your AI agents—you provide the questions and expected answers, and the system measures how well your agent performs.
+Evaluations test agents against predefined questions with known correct answers. You provide the questions and expected answers, and the system measures how well your agent performs.
 
-::: info Key Benefits
-- **Quality Assurance**: Verify agent performance before and after deployment.
-- **Objective Metrics**: Get measurable ratings instead of subjective opinions.
-- **Continuous Monitoring**: Track quality improvements or regressions as you update your agent's knowledge base and prompts.
-- **Compliance Documentation**: Maintain audit trails for regulatory requirements.
-:::
+Benefits of evaluations:
+- Verify agent performance before and after deployment
+- Get measurable ratings instead of subjective opinions
+- Track quality changes as you update knowledge bases and prompts
+- Maintain audit trails for regulatory requirements
 
-## Understanding Datasets
+## Datasets
 
-Datasets are collections of test questions with reference answers. Each dataset represents a specific testing scenario
-for your agent.
+Datasets are collections of test questions with reference answers.
 
-A **good dataset** should cover representative questions your agent will actually receive and include clear, accurate reference answers. It's also important to add edge cases to test robustness. Aim for at least 10 question-answer pairs, though 20-50 is ideal for sufficient coverage.
+Cover representative questions your agent will receive. Include clear, accurate reference answers and edge cases. Start with 10 question-answer pairs minimum. 20-50 pairs work better.
 
-::: details **Example Dataset Structure**
+::: details Example dataset structure
 - Question: "How do I reset my password?"
-- Reference Answer: "Click 'Forgot Password' on the login page, enter your email, and follow the reset link sent to your
-inbox."
+- Reference Answer: "Click 'Forgot Password' on the login page, enter your email, and follow the reset link sent to your inbox."
 :::
 
-**Creating Datasets**
-
-You can create datasets through the AI-Hub web interface or API:
-
-1.  **Navigate to Evaluations**: Access the evaluation service from the main navigation (e.g., under `Services > Evaluations`).
-2.  **Create New Dataset**: Provide a name and description.
-3.  **Add Test Questions**: Enter questions and their expected answers.
-4.  **Save Dataset**: Your dataset is now ready for experiments.
+To create a dataset, navigate to the evaluation service (under `Services > Evaluations`), provide a name and description, add questions and expected answers, then save.
 
 ![Dataset Overview](../../../media/evaluation/dataset_overview.png)
-*The dataset overview page shows all your evaluation datasets with creation dates*
+*Dataset overview showing all evaluation datasets with creation dates*
 
 ![Creating a Dataset](../../../media/evaluation/dataset_create.png)
-*Add new test questions with expected answers directly in the web interface*
+*Adding test questions with expected answers*
 
-::: tip Best practice
-Start with 20-30 questions covering both simple and complex scenarios. You should update your datasets as your agent's capabilities evolve and organize them by topic or use case for easier management.
+::: tip
+Start with 20-30 questions covering simple and complex scenarios. Update datasets as your agent evolves. Organize by topic or use case.
 :::
 
-## Running Experiments
+## Running experiments
 
 Experiments test your agent against a dataset and produce quality ratings.
 
-**How to Run an Experiment:**
-
-1.  **Select Agent**: Choose which agent to evaluate.
-2.  **Choose Dataset**: Pick an appropriate test dataset.
-3.  **Start Experiment**: The system automatically runs all tests.
-4.  **Review Results**: View ratings and detailed analysis.
+To run an experiment, select an agent, pick a test dataset, start the experiment, then review the ratings and analysis.
 
 ![Creating an Experiment](../../../media/evaluation/experiment_create.png)
-*To create an experiment, select the agent and the dataset you want to test it against.*
+*Creating an experiment by selecting an agent and dataset*
 
 ![Experiment Overview](../../../media/evaluation/experiment_overview.png)
-*The overview page lists all past experiments and their high-level average ratings.*
+*Experiment overview listing past experiments - click for details*
 
 ![Running an Experiment](../../../media/evaluation/experiment_running.png)
-*While an experiment is running, you can see its progress.*
+*Experiment progress during execution*
 
-You should **run experiments** before deploying a new agent to production, after making significant changes to its configuration or knowledge base, and regularly (e.g., weekly or monthly) for continuous quality monitoring.
+Run experiments before deploying a new agent, after making significant changes to configuration or knowledge base, and regularly (weekly or monthly) for quality monitoring.
 
-### How it Works: AI Judges
+### How AI judges work
 
-**During an experiment**, each question from the dataset is sent to your agent. The agent's response is captured and then evaluated by **three independent AI judges**.
+Each question gets sent to your agent. Three AI judges (LLMs) evaluate the response against the reference answer. Results are averaged and displayed as star ratings.
 
-These "judges" are themselves an advanced LLM, tasked with assessing your agent's response against the provided reference answer. Using three judges provides a more robust and nuanced evaluation, reducing the bias of a single assessment. The results are then averaged and displayed as star ratings in the evaluation interface.
+### Evaluation metrics
 
+Three metrics, rated 0-5 stars:
 
-### Evaluation Metrics
+| Metric | Description | Rating Guide |
+|--------|-------------|--------------|
+| Correctness | Factual accuracy compared to the reference answer. Free of misinformation, hallucinations, or contradictions. | 5: Matches reference<br/>3: Some errors<br/>0: Wrong/misleading |
+| Completeness | Addresses all parts of the query, including multi-part questions and implicit needs. | 5: All parts answered<br/>3: Some aspects missed<br/>0: Incomplete |
+| Conciseness | Efficient and direct. Avoids irrelevant tangents, redundancy, or excessive filler. | 5: To the point<br/>3: Verbose<br/>0: Excessive |
 
-The AI judges evaluate each response against these three key dimensions. The descriptions below provide insight into what the judges are looking for. Results are displayed as star ratings (0-5 stars).
+Rating ranges:
 
-| Metric | Description | Rating Guide                                                                                                 |
-| :--- | :--- |:-------------------------------------------------------------------------------------------------------------|
-| **Correctness** | Is the agent's response factually accurate **when compared to the reference answer**? The response should be free of misinformation, hallucinations, or contradictions. | **5 stars:** Perfect (matches reference)<br/>**3 stars:** Partial (some errors)<br/>**0 stars:** Wrong (misleading)      |
-| **Completeness** | Does the response fully address **all parts of the user's query**? This includes handling multi-part questions or implicit needs, not just the most obvious part. | **5 stars:** Complete (all parts answered)<br/>**3 stars:** Partial (some aspects missed)<br/>**0 stars:** Incomplete    |
-| **Conciseness** | Is the response efficient and to the point? It should avoid **irrelevant tangents, redundancy, or excessive conversational filler** that doesn't directly help answer the user's question. | **5 stars:** Perfect (to the point)<br/>**3 stars:** Verbose (a bit wordy)<br/>**0 stars:** Excessive (unnecessary info) |
+- 4-5 stars: Ready for production.
+- 3-4 stars: Works well but may have minor issues. Review failing test cases.
+- Below 3 stars: Review closely before deployment.
 
-**Interpreting Ratings (General Guidelines)**
-
-These rating thresholds are **not absolute rules**, but rather **interpretive guidelines** to help you quickly assess performance. Use these ranges to orient your analysis:
-
-- **4-5 stars (Excellent):** Indicates the agent is consistently reliable, accurate, and ready for production.
-- **3-4 stars (Good):** Suggests the agent performs well, but may have minor issues with consistency, completeness, or verbosity. Review failing test cases for patterns.
-- **Below 3 stars (Needs Attention):** Signals potential significant issues. You should review these responses closely to identify a root cause before deployment.
-
-### Viewing Results
-
-After an experiment completes, you can view detailed results showing both overall performance and individual question analysis.
+### Viewing results
 
 ![Experiment Results](../../../media/evaluation/experiment_result.png)
-*The results view displays overall metric ratings and a detailed breakdown for each test question*
+*Experiment results showing overall metrics and detailed breakdown per question*
 
-The results page shows star ratings (0-5 stars) for the three evaluation metrics at the top, with a detailed table below. Each row in the table represents one test question, showing the question itself, the reference answer, your agent's actual response, and star ratings for correctness, completeness, and conciseness. Response latency in seconds is also tracked.
+The results page shows star ratings for the three metrics at the top. Below is a table with each test question, reference answer, agent's response, ratings, and response latency.
 
-You can expand individual questions to see the full text and analyze patterns. Low correctness ratings typically indicate knowledge base gaps or retrieval issues. Low completeness ratings suggest the agent isn't fully addressing multi-part questions. Low conciseness ratings point to overly verbose responses.
+Expand questions to see full text. Low correctness ratings usually mean knowledge base gaps or retrieval issues. Low completeness ratings suggest the agent misses parts of multi-part questions. Low conciseness ratings mean overly verbose responses.
 
-Based on your results, you can update your agent's knowledge base, refine system prompts, or adjust retrieval settings. Run the experiment again after making changes to verify improvements.
+Update your agent's knowledge base, system prompts, or retrieval settings based on results. Run the experiment again to verify improvements.
 
-::: tip For Advanced Analysis
-Phoenix (the underlying evaluation platform) can optionally be accessed for deeper technical investigation, including full conversation traces and raw telemetry data. However, all essential evaluation information is available in the standard AI-Hub interface.
+::: tip
+Phoenix can be accessed for deeper investigation, including conversation traces and raw telemetry data.
 :::
+
+## What's not implemented
+
+The following features are not currently implemented:
+
+- Bias monitoring and model drift detection: No automated bias detection, fairness metrics, or drift detection. The evaluation framework and OpenTelemetry tracing provide foundational capabilities that could be extended.
+
+- Production A/B testing: No integrated traffic splitting or parallel testing of agent variants in production. Pre-deployment comparison via experiments is supported.
