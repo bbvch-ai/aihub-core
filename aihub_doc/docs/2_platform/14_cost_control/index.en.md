@@ -12,11 +12,12 @@ forecast budgets accurately.
 
 AI interaction costs are primarily driven by **token usage**—small chunks of text (roughly 4 characters) that AI providers charge to process.
 
+**Cost Model Comparison**
 
-| Model | Type | Cost Structure                                                                                                                                         |
-|-------|------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **API (Pay-per-token)** | Variable OPEX | Pay providers (OpenAI, Google) for each token processed                                                                                                |
-| **Locally Hosted** | CAPEX + Fixed OPEX | Capital expense for hardware (GPUs, servers) plus ongoing costs for power and MLOps staff. Per-token cost is $0, but fixed infrastructure cost is high |
+| Model                     | Type               | Cost Structure                                                                                                                                         |
+|---------------------------|--------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **API (Pay-per-token)**   | Variable OPEX      | Pay providers (OpenAI, Google) for each token processed                                                                                                |
+| **Locally Hosted**        | CAPEX + Fixed OPEX | Capital expense for hardware (GPUs, servers) plus ongoing costs for power and MLOps staff. Per-token cost is $0, but fixed infrastructure cost is high |
 
 
 Each interaction consumes different types of tokens at different price points:
@@ -35,11 +36,11 @@ Document processing for search and retrieval. Typically cheaper than text genera
 
 ::: details Model Tiers
 
-| Tier | Examples | Use Case | Cost |
-|------|----------|----------|------|
-| **Flagship** | GPT-5 | Complex reasoning, high-accuracy tasks | Highest |
-| **Balanced** | GPT-5 mini, GPT-4o | Standard workflows, internal assistants | Medium |
-| **Efficient** | GPT-5 nano | High-volume simple tasks, classification | Lowest |
+| Tier          | Examples    | Use Case                                  | Cost     |
+|---------------|-------------|-------------------------------------------|----------|
+| **Flagship**  | GPT-5       | Complex reasoning, high-accuracy tasks    | Highest  |
+| **Balanced**  | GPT-5 mini  | Standard workflows, internal assistants   | Medium   |
+| **Efficient** | GPT-5 nano  | High-volume simple tasks, classification  | Lowest   |
 
 :::
 
@@ -51,12 +52,11 @@ Cost tracking works for all types of AI models, whether you're using cloud servi
 
 You can view cost information per conversation to understand which types of questions are most expensive. This helps you make informed decisions about agent design, model selection, and budget allocation.
 
-The platform provides a management interface where administrators can monitor costs.
 
 ## Budgets and Rate Limits
 
 ::: warning Not Currently Configured
-Budget and rate limiting capabilities exist in the platform but are **not enabled by default**. Contact your system administrator to configure these features if needed.
+Budget and rate limiting capabilities exist in the platform but are **not enabled by default**. This feature is not yet tested.
 :::
 
 The platform can enforce spending limits and usage restrictions through configuration. When enabled, administrators can set:
@@ -66,7 +66,7 @@ The platform can enforce spending limits and usage restrictions through configur
 - **Rate limits**: Control how many requests or tokens users can consume per minute
 - **Concurrent request limits**: Restrict simultaneous AI operations
 
-These controls require environment configuration and are typically set up during initial deployment based on your organization's needs. Once configured, users who exceed limits will receive clear error messages explaining what threshold was reached.
+These controls require environment configuration and are typically set up during initial deployment based on your organization's needs. O
 
 ## Cost Optimization Strategies
 
@@ -77,8 +77,3 @@ Match the model tier to your task requirements. Use flagship models (GPT-5) for 
 ### Locally Hosted Models
 
 Local hosting shifts spending from variable per-token fees to fixed infrastructure costs. The primary drivers are **data privacy** (HIPAA, GDPR), **compliance**, and **IP protection**—not immediate cost savings. This requires significant capital investment (GPUs, servers) and ongoing operational costs (power, MLOps staff).
-
-::: tip Best-fit scenarios
-Local hosting works best for high-volume, stable workloads with high hardware utilization, or small efficient models for specific high-frequency tasks.
-:::
-

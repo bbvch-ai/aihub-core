@@ -5,66 +5,11 @@ index: 5
 
 # Network Security
 
-The AI-Hub implements a defense-in-depth network security architecture through multiple independent layers of protection.
+The AI-Hub implements a **defense-in-depth** network security architecture, using multiple independent layers of protection to secure the platform, its data, and its users.
 
-## Single Public Endpoint Architecture
+All internal application services (like the AI-Hub API, Web UI, LiteLLM Proxy, and databases) run in isolated Docker containers on private networks. The **Traefik reverse proxy** is the only component directly accessible from the internet, accepting public traffic only on ports 80 and 443.
 
-The deployment minimizes attack surface through a single entry point:
-
-- **Public Exposure**: VM public IP on ports 80 and 443 only
-- **Internal Services**: All application services run in isolated Docker containers on internal networks
-- **Proxy Layer**: Traefik reverse proxy is the only component directly exposed to the internet
-
-This dramatically reduces attack surface compared to exposing multiple service ports. Only Traefik faces the public internet—all backend services remain isolated.
-
-## Defense in Depth
-
-The AI-Hub implements security through multiple independent layers:
-
-### Layer 1: Network Security
-
-**Network Security Group (NSG) / Firewall**
-
-- Only ports 80 and 443 accessible from public internet
-- Default deny policy for all other ports
-- Optional: Restrict SSH to specific IP ranges
-
-### Layer 2: Reverse Proxy
-
-**Traefik Configuration**
-
-- **TLS Termination**: All connections use HTTPS with TLS 1.2 or higher
-- **Security Headers**: Automatic injection of HSTS, X-Frame-Options, X-Content-Type-Options, etc.
-- **Let's Encrypt Integration**: Automatic certificate provisioning and renewal
-- **Rate Limiting**: Protection against brute force and DoS attempts
-
-### Layer 3: Authentication
-
-**Identity and Access Management**
-
-- **Azure AD OAuth2**: All users authenticate via corporate Active Directory
-- **RBAC**: Role-based access control for fine-grained permissions
-- **API Keys**: Separate authentication for service-to-service communication
-- **Session Management**: Secure session handling with configurable timeouts
-
-### Layer 4: Container Isolation
-
-**Docker Security**
-
-- All services run in isolated containers with minimal privileges
-- Container networking prevents direct access between unrelated services
-- Resource limits prevent resource exhaustion attacks
-- Regular image updates for security patches
-
-### Layer 5: Data Protection
-
-**PII and Sensitive Data Guards**
-
-- **Presidio Integration**: Automatic detection and anonymization of PII in LLM requests
-- **Sensitive Information Guards**: AI-powered scanning of responses before delivery
-- **Audit Logging**: Complete audit trail of all data access and processing
-
-## Network Architecture
+This proxy is responsible for routing requests to the correct internal service. All backend services remain completely isolated and are never directly exposed to the public internet.
 
 ```
 Internet
@@ -83,11 +28,37 @@ Internet
     └── Background Workers
          ↓
     (Outbound to External Services)
-         ├── Azure OpenAI
-         ├── Azure AD
-         ├── External APIs
-         └── Other Integrations
+         ├── LLM Providers (Azure OpenAI, Google Gemini, OpenAI)
+         ├── Azure Cognitive Services (AI Search, Document Intelligence, Speech)
+         ├── Authentication (Microsoft Entra ID, Azure AD)
+         ├── Jina AI (Web Search & Embeddings)
+         └── Customer APIs (SharePoint, Confluence, Custom REST APIs)
 ```
+
+## Defense in Depth Layers
+
+Security is applied at every stage of a request, from the network edge to the application logic.
+
+### Layer 1: Network Firewall (NSG)
+
+The first layer of defense is the Network Security Group (NSG) or firewall. It enforces a **default deny** policy, ensuring that only necessary ports (80 for HTTP and 443 for HTTPS) are accessible from the public internet. All other ports are blocked. Optionally, administrative access (like SSH) can be restricted to specific, trusted IP ranges.
+
+### Layer 2: Reverse Proxy (Traefik)
+
+As the single entry point, the Traefik reverse proxy secures all incoming connections. It **terminates TLS** (requiring HTTPS with TLS 1.2+), automatically provisions and renews certificates via Let's Encrypt, and injects critical **security headers** (like HSTS and X-Frame-Options). It also provides **rate limiting** to protect backend services from brute-force and simple Denial of Service (DoS) attacks.
+
+### Layer 3: Authentication (IAM)
+
+Access to the hub is managed through robust Identity and Access Management (IAM). User authentication is handled via **Azure AD OAuth2**, integrating with corporate identity. This enables **Role-Based Access Control (RBAC)** for defining fine-grained permissions. Separate **API keys** are used to authenticate service-to-service communication, while secure session management with configurable timeouts protects user sessions.
+
+### Layer 4: Container Isolation
+
+All application services run as non-root users in **isolated Docker containers** with minimal privileges. Container networking rules prevent direct communication between unrelated services, and resource limits mitigate resource exhaustion attacks. Images are regularly updated with the latest security patches to protect against known vulnerabilities.
+
+### Layer 5: Data Protection
+
+The final layer protects sensitive data. The hub integrates **Presidio** to automatically detect and anonymize Personally Identifiable Information (PII) in LLM requests. AI-powered **sensitive information guards** scan responses before they are delivered to the user. A comprehensive **audit trail** logs all data access and processing for accountability.
+
 
 ## Related Documentation
 
