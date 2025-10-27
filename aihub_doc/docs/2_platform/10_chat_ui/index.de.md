@@ -96,9 +96,9 @@ Dieser Abschnitt beleuchtet die Integration der Chat-Schnittstelle des Swiss AI 
 - **[Erweiterte Quellenattribution](2_source_attribution/)**: Benutzerdefinierte Erweiterungen für transparente
   Sichtbarkeit der Wissensabfrage
 - **[Erweiterte Beobachtbarkeit](3_observability/)**: Funktionen für Ausführungsrückverfolgung und Workflow-Transparenz
-- **[Funktionsübersicht](4_feature_overview/)**: Umfassender Katalog der von Open WebUI geerbten
+- **[Funktionsübersicht](6_feature_overview/)**: Umfassender Katalog der von Open WebUI geerbten
   Chat-Schnittstellenfunktionen
-- **[Strategische Begründung](5_strategic_rationale/)**: Detaillierte Analyse des Open-Source-Integrationsansatzes und
+- **[Strategische Begründung](7_strategic_rationale/)**: Detaillierte Analyse des Open-Source-Integrationsansatzes und
   der geschäftlichen Vorteile
 
 ## Abstimmung mit der Plattformphilosophie
