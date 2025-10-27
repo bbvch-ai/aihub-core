@@ -5,7 +5,6 @@ This test verifies that agent-based bots have been migrated to use the Microsoft
 by inspecting the source code for correct imports.
 """
 
-import pytest
 from pathlib import Path
 
 

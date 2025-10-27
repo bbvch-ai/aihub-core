@@ -5,7 +5,6 @@ This test verifies that OpenAI-based bots have been migrated to use the Microsof
 by inspecting the source code for correct imports.
 """
 
-import pytest
 from pathlib import Path
 
 

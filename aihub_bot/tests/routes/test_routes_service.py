@@ -5,7 +5,6 @@ This test verifies that RoutesService has been migrated to use the Microsoft 365
 and that adapter creation and authentication work correctly.
 """
 
-
 import pytest
 
 

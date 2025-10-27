@@ -6,8 +6,7 @@ from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEv
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
 from aihub_lib.nats.events.bot_in_the_loop.response.BotInTheLoopResponseEvent import BotInTheLoopResponderInfo
-from botbuilder.core import ActivityHandler, TurnContext
-from botframework.connector import Channels
+from microsoft_agents.hosting.core import ActivityHandler, TurnContext
 from nats.aio.client import Client as NATS
 
 from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHandler
@@ -28,10 +27,10 @@ class BotInTheLoopBot(ActivityHandler):
         self.bot_in_the_loop_handler = bot_in_the_loop_handler
 
     @staticmethod
-    def _parse_conversation_id(turn_context: TurnContext, channel: Channels) -> tuple[str, str] | None:
+    def _parse_conversation_id(turn_context: TurnContext, channel: str) -> tuple[str, str] | None:
         conversation_id = turn_context.activity.conversation.id
 
-        if channel == Channels.slack:
+        if channel == "slack":
             parts = conversation_id.split(":")
             if len(parts) < 4:
                 logger.debug(f"Invalid Slack conversation ID format: {conversation_id}")
@@ -40,7 +39,7 @@ class BotInTheLoopBot(ActivityHandler):
             thread_identifier = parts[3]
             return base_conversation_id, thread_identifier
 
-        elif channel == Channels.ms_teams:
+        elif channel == "msteams":
             parts = conversation_id.split(";")
             if len(parts) != 2:
                 logger.debug(f"Invalid Teams conversation ID format: {conversation_id}")
@@ -78,15 +77,15 @@ class BotInTheLoopBot(ActivityHandler):
     @override
     async def on_message_activity(self, turn_context: TurnContext):
         channel_id = turn_context.activity.channel_id
-        channel: Channels
+        channel: str
 
-        if channel_id == Channels.slack:
+        if channel_id == "slack":
             if not self.is_slack_channel_thread_message(turn_context):
                 logger.debug("Not a Slack channel thread message")
                 return
-            channel = Channels.slack
-        elif channel_id == Channels.ms_teams:
-            channel = Channels.ms_teams
+            channel = "slack"
+        elif channel_id == "msteams":
+            channel = "msteams"
         else:
             raise NotImplementedError("Only Slack and Teams channels are supported")
 
@@ -99,7 +98,7 @@ class BotInTheLoopBot(ActivityHandler):
         matching_thread_id = self._find_matching_thread(base_conversation_id, thread_identifier)
         if not matching_thread_id:
             logger.debug(
-                f"No matching thread found for {channel.value} channel {base_conversation_id} "
+                f"No matching thread found for {channel} channel {base_conversation_id} "
                 f"and thread {thread_identifier}"
             )
             return
