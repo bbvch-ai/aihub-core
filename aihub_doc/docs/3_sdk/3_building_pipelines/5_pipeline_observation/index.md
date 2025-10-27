@@ -104,10 +104,6 @@ def partitioned_processing(context: AssetExecutionContext) -> ProcessingResult:
     return process_partition_data(partition_key)
 ```
 
-## What you learned
-
-- **Comprehensive monitoring**: Use Dagster UI and custom metrics for full observability
-
 ## Next steps
 
 - Explore `aihub_pipeline/playground/` for complete observable pipeline examples

@@ -1,6 +1,7 @@
 ---
 title: Agent Observation
-index: 4
+index: 7
 ---
 
-@mhoegger @mfundn
+# Agent Observation
+

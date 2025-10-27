@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.246.11] - 2025-10-27 - AI-Hub SDK Documentation: Clarity and Depth for Agent and Pipeline Development
+
+### Added
+
+- ✨ **New Pipeline Documentation Structure:** Introduced dedicated sections for **Pipeline Fundamentals**, **Core
+  Pipeline Patterns**, and **Data Ingestion Pipeline**, providing a more structured learning path for building robust
+  data workflows. These new guides cover essential concepts like assets, I/O managers, resources, and the two-stage
+  ingestion architecture.
+
+### Changed
+
+- 📄 **Expanded Agent SDK Guides:** Significantly enhanced and reorganized documentation for **Quick Start**, **Agent
+  Fundamentals**, **Core Workflow Patterns**, **Human in the Loop**, **Multi-Agent Systems**, and **Testing and
+  Debugging**. These updates offer greater clarity, detailed explanations, new mermaid diagrams, and practical code
+  examples to guide agent development.
+- 🚀 **Improved Pipeline Automation Guide:** Rewrote the **Job Scheduling** documentation to clarify the hybrid
+  automation strategy, emphasizing observable-driven and change-triggered processing for efficient pipeline automation.
+- 🖼️ **Refined SDK Overviews:** Updated the main **Building Agents** and **Building Pipelines** overview pages to
+  introduce key principles, simplified quick-start examples, and a more intuitive learning progression for new and
+  experienced developers.
+- ⚡️ **Minor Documentation Enhancements:** Updated the **Production Deployment** and **Agent Observation** documentation
+  for title consistency and minor content additions.
+
+### Removed
+
+- 🗑️ **Deprecated Pipeline Documentation:** Removed outdated documentation pages for **Pipeline Patterns** and **Data
+  Ingestion Pipeline**, replacing them with the new, restructured guides for improved clarity and accuracy.
+
+---
+
 ## [v0.246.10] - 2025-10-24 - Enhanced Security and Access Control for Data Lake and Workflows
 
 ### Added
