@@ -5,6 +5,96 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.246.10] - 2025-10-24 - Enhanced Security and Access Control for Data Lake and Workflows
+
+### Added
+
+- 🔑 **New OAuth Configuration Options:** Introduced `OAUTH_TENANT_ID` and `OAUTH_COOKIE_SECRET` environment variables to
+  provide more comprehensive control over OAuth2 authentication setups.
+- 🔐 **Secure Access for SeaweedFS Filer:** Implemented a new `oauth2-proxy` service to enforce secure, authenticated
+  access to the SeaweedFS Filer UI, safeguarding data lake management.
+- 👥 **Group-Based Access for SeaweedFS:** Added `SEAWEEDFS_OAUTH_ALLOWED_GROUPS` environment variable, enabling specific
+  group-based access control for the SeaweedFS Filer UI.
+- 📄 **Expanded OAuth Scopes for Proxies:** Configured `openid`, `email`, and `profile` OAuth scopes for both Dagster and
+  SeaweedFS authentication proxies, enhancing user information retrieval during login.
+- ➡️ **Configured OAuth Redirect URLs:** Added explicit redirect URLs for both Dagster and SeaweedFS OAuth proxies,
+  ensuring correct post-authentication routing.
+- 🎨 **Customizable Sign-in Logo:** Enabled support for a custom sign-in logo (`OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO`) for
+  OAuth2 proxies in production and nightly environments, allowing for branded user experiences.
+
+### Changed
+
+- 🔄 **Centralized SeaweedFS Filer Access Routing:** All direct access to the SeaweedFS Filer UI is now routed through
+  the newly introduced `oauth2-proxy` service, ensuring a consistent and secure authentication layer.
+- 📝 **Renamed Dagster OAuth Proxy:** The generic `oauth2proxy` service dedicated to Dagster has been renamed to
+  `oauth2proxy-dagster` for clearer identification and separation of concerns.
+- 🛡️ **Standardized Default Access Groups:** Updated the default allowed group for Dagster's OAuth proxy to
+  `AIHubDeveloper`, standardizing access control with the `SEAWEEDFS_OAUTH_ALLOWED_GROUPS` variable and aligning with
+  common roles.
+
+### Refactor
+
+- 🧹 **Refined OAuth Proxy Architecture:** Streamlined the deployment architecture by separating OAuth2 proxy
+  configurations into distinct services for Dagster and SeaweedFS, improving modularity and maintainability.
+
+---
+
+## [v0.246.9] - 2025-10-22 - Streamlined DoclingLoader File Handling
+
+### Refactor
+
+- ⚡️ **Optimized `DoclingLoader` file content retrieval:** Improved the internal efficiency of `DoclingLoader` by
+  switching to `fs.cat_file` for more direct and potentially faster reading of file contents.
+
+---
+
+## [v0.246.8] - 2025-10-21 - Core Bot Service Setup and Infrastructure Expansion
+
+### Added
+
+- 🚀 **Introduced a dedicated Bot service** to the core infrastructure, laying the groundwork for new bot functionalities
+  and integrations.
+- 🌐 **Configured Traefik routing** for the new Bot service, making its API accessible via `bot.<DOMAIN>/api/v1`
+  endpoints across all deployment environments.
+- ✨ **Added essential environment variables** for the Bot service, including development-only fake authentication
+  settings, to streamline local and development deployments.
+- 🦾 **Integrated a development-only authentication handler** into the Bot API's core controllers (`HealthController` and
+  `OpenaiChatController`), simplifying local testing and development.
+- 📦 **Included Gunicorn** as the production web server for the Bot service, optimizing its runtime performance and
+  stability.
+
+### Refactor
+
+- 🧹 **Corrected module import paths** within the bot service's Makefile for improved consistency and robustness in
+  production builds.
+
+---
+
+## [v0.246.7] - 2025-10-20 - Performance Optimizations and SeaweedFS Development Enhancements
+
+### Added
+
+- 🚀 **Implemented LiteLLM model info caching:** Introduced an LRU cache for LiteLLM model information retrieval, which
+  significantly reduces redundant API calls and improves the performance of model lookups.
+- ⚙️ **Enhanced SeaweedFS S3 gateway environment configuration:** Added specific environment variables for `S3_PORT`,
+  `S3_FILER`, and `S3_BIND_IP`, providing more granular control over the S3 gateway service in the development
+  environment.
+- ➕ **Exposed SeaweedFS internal ports:** Explicitly exposed SeaweedFS master, volume, and filer gRPC and HTTP ports in
+  `docker-compose-gpu.dev.yml` for improved diagnostics and integration.
+
+### Changed
+
+- ⚡️ **Improved asynchronous document loading performance:** Refactored the `DoclingLoader` to offload synchronous file
+  reading and response processing to a dedicated thread, preventing event loop blocking and enhancing performance during
+  large document ingestions.
+- 🔄 **Centralized S3-compatible storage to SeaweedFS in development:** Updated `milvus` and `attu` services in
+  `docker-compose-gpu.dev.yml` to depend on the `seaweedfs-s3` gateway instead of a separate MinIO instance,
+  streamlining the local object storage setup.
+- 💾 **Optimized SeaweedFS volume configuration:** Adjusted `seaweedfs-master` settings to use a `volumeSizeLimitMB` of
+  512MB and disabled `volumePreallocate` for more efficient resource utilization in development.
+
+---
+
 ## [v0.246.6] - 2025-10-15 - Improved CI/CD Tagging and Release Process
 
 ### Added

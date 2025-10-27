@@ -208,9 +208,11 @@ Our AI capabilities are primarily powered by the LlamaIndex ecosystem and integr
 #### :floppy_disk: Data & Storage
 
 - **Databases**:
-  - **FerretDB**: Used as our primary MongoDB-compatible NoSQL database, accessed via **MongoEngine** and integrated into LlamaIndex for
-    document storage (`llama-index-storage-docstore-mongodb`). Provides MongoDB compatibility while using PostgreSQL as the backend.
-  - **Valkey**: For in-memory caching and fast data retrieval. A Redis-compatible fork providing high-performance key-value storage.
+  - **FerretDB**: Used as our primary MongoDB-compatible NoSQL database, accessed via **MongoEngine** and integrated
+    into LlamaIndex for document storage (`llama-index-storage-docstore-mongodb`). Provides MongoDB compatibility while
+    using PostgreSQL as the backend.
+  - **Valkey**: For in-memory caching and fast data retrieval. A Redis-compatible fork providing high-performance
+    key-value storage.
 - **Vector Stores**:
   - **Azure AI Search**: The primary vector store for our production environment (
     `llama-index-vector-stores-azureaisearch`).
