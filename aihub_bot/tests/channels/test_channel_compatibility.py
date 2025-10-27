@@ -5,8 +5,8 @@ This test suite verifies that bot functionality works correctly across different
 (Teams, Slack, WebChat) with the Microsoft 365 Agents SDK.
 """
 
-import pytest
 from pathlib import Path
+
 from microsoft_agents.activity import Activity, ActivityTypes, ChannelAccount, ConversationAccount
 
 
@@ -113,8 +113,9 @@ def test_channel_detection_in_bots():
         # Should use string literals, not Channels enum
         if "channel_id" in source:
             # If file does channel checks, verify it uses string literals
-            assert '"msteams"' in source or '"slack"' in source or '"webchat"' in source, \
-                f"{file_path.name} should use string literals for channels"
+            assert (
+                '"msteams"' in source or '"slack"' in source or '"webchat"' in source
+            ), f"{file_path.name} should use string literals for channels"
 
             # Should not use Channels enum
             assert "Channels.ms_teams" not in source, f"{file_path.name} uses Channels enum"
