@@ -1,6 +1,6 @@
 """
-This script generates multiple Docker Compose files based on a matrix of stages
-and hardware configurations (CPU/GPU) using a Jinja2 template.
+Generates Docker Compose and service configuration files from Jinja2 templates.
+Based on a matrix of stages (dev/local/nightly/latest) and hardware (CPU/GPU).
 """
 
 import sys
@@ -8,76 +8,111 @@ from pathlib import Path
 import yaml
 from jinja2 import Environment, FileSystemLoader
 
+# Paths
 ROOT_DIR = Path(__file__).parent.parent.resolve()
 DEPLOYMENT_DIR = Path(__file__).parent.resolve()
-TEMPLATE_FILE = "docker-compose.yml.j2"
-CONFIG_FILE = "compose-config.yml"
 
+# Stages and hardware variants
 STAGES = ["dev", "local", "latest", "nightly"]
 GPU_MODES = {False: "", True: "gpu."}
 
+# Configuration specs: (template_path, output_dir, output_name_pattern, gpu_dependent)
+CONFIG_SPECS = [
+    # Docker Compose - always required
+    ("templates/docker-compose.yml.j2", ROOT_DIR, "docker-compose.{prefix}{stage}.yml", True),
+    # Service configs - optional, skipped if template missing
+    ("templates/configs/litellm-config.yml.j2", "configs/litellm", "litellm-config.{prefix}{stage}.yml", True),
+    ("templates/configs/milvus-config.yml.j2", "configs/milvus", "milvus-config.{stage}.yml", False),
+    ("templates/configs/nats-config.conf.j2", "configs/nats", "nats-config.{stage}.conf", False),
+    ("templates/configs/dagster-config.yml.j2", "configs/dagster", "dagster-config.{stage}.yml", False),
+    ("templates/configs/workspace.yml.j2", "configs/dagster", "workspace.{stage}.yml", False),
+    ("templates/configs/otel-config.yml.j2", "configs/otel", "otel-config.{stage}.yml", False),
+]
 
-def generate_files():
-    """
-    Loads configuration and templates, then iterates through the matrix
-    to generate all required docker-compose files.
-    """
-    print("🚀 Starting Docker Compose file generation...")
 
-    # --- 1. Load Configuration Data ---
-    config_path = DEPLOYMENT_DIR / CONFIG_FILE
-    try:
-        with config_path.open("r", encoding="utf-8") as f:
-            config_data = yaml.safe_load(f)
-        print(f"✅ Successfully loaded config from: {config_path}")
-    except FileNotFoundError:
-        print(f"❌ FATAL: Config file not found at '{config_path}'. Please ensure it exists.", file=sys.stderr)
-        sys.exit(1)
-    except yaml.YAMLError as e:
-        print(f"❌ FATAL: Error parsing YAML config file '{config_path}': {e}", file=sys.stderr)
-        sys.exit(1)
+def load_config():
+    """Load compose-config.yml"""
+    config_path = DEPLOYMENT_DIR / "compose-config.yml"
+    with config_path.open("r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
 
-    # --- 2. Set up Jinja2 Environment ---
+
+def load_template(env, template_path):
+    """Load a Jinja2 template, return None if not found"""
+    return env.get_template(template_path)
+
+
+def generate_config(template, context, output_path):
+    """Render template and write to file"""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    rendered = template.render(context)
+    output_path.write_text(rendered, encoding="utf-8")
+
+
+def main():
+    print("🚀 Generating configuration files...\n")
+
+    # Load data and setup Jinja2
+    config_data = load_config()
     env = Environment(loader=FileSystemLoader(DEPLOYMENT_DIR))
-    try:
-        template = env.get_template(TEMPLATE_FILE)
-        print(f"✅ Successfully loaded Jinja2 template from: {DEPLOYMENT_DIR / TEMPLATE_FILE}")
-    except Exception as e:
-        print(f"❌ FATAL: Could not load Jinja2 template '{TEMPLATE_FILE}': {e}", file=sys.stderr)
-        sys.exit(1)
 
-    # --- 3. Generate Files for Each Combination ---
-    generated_count = 0
-    for gpu_enabled, prefix in GPU_MODES.items():
-        for stage in STAGES:
-            # Output files are placed in the root directory.
-            output_filename = f"docker-compose.{prefix}{stage}.yml"
-            output_path = ROOT_DIR / output_filename
+    # Track what we're generating
+    stats = {}
 
-            # The context dictionary provides data to the template.
-            context = {
-                "stage": stage,
-                "gpu_enabled": gpu_enabled,
-                **config_data,  # Unpack all loaded config data into the context
-            }
+    # Process each config spec
+    for template_path, output_dir, name_pattern, gpu_dependent in CONFIG_SPECS:
+        template = load_template(env, template_path)
 
-            try:
-                # Render the template with the specific context for this file.
-                rendered_content = template.render(context)
+        if not template:
+            print(f"⚠️  Skipping {template_path} (not found)")
+            continue
 
-                # Write the rendered content to the output file.
-                with output_path.open("w", encoding="utf-8") as f:
-                    f.write(rendered_content)
+        config_name = template_path.split("/")[-1].replace(".j2", "").replace("-config", "")
+        stats[config_name] = 0
 
-                print(f"  📄 Generated: {output_path.name}")
-                generated_count += 1
-            except Exception as e:
-                print(
-                    f"❌ ERROR: Failed to render or write for stage='{stage}', gpu={gpu_enabled}: {e}", file=sys.stderr
-                )
+        print(f"✅ Loaded template: {template_path}")
 
-    print(f"\n✨ Generation complete. {generated_count} files created successfully.")
+        # Determine output directory
+        out_dir = ROOT_DIR / output_dir if isinstance(output_dir, str) else output_dir
+
+        # Generate files
+        if gpu_dependent:
+            # Generate for each stage × hardware combination
+            for gpu_enabled, prefix in GPU_MODES.items():
+                for stage in STAGES:
+                    context = {"stage": stage, "gpu_enabled": gpu_enabled, **config_data}
+                    filename = name_pattern.format(prefix=prefix, stage=stage)
+                    output_path = out_dir / filename
+
+                    generate_config(template, context, output_path)
+                    stats[config_name] += 1
+        else:
+            # Generate once per stage (GPU-independent)
+            for stage in STAGES:
+                context = {"stage": stage, "gpu_enabled": False, **config_data}
+                filename = name_pattern.format(stage=stage, prefix="")
+                output_path = out_dir / filename
+
+                generate_config(template, context, output_path)
+                stats[config_name] += 1
+
+    # Print summary
+    print(f"\n✨ Generation complete!")
+    for name, count in stats.items():
+        icon = "📦" if "docker-compose" in name else "🔧"
+        print(f"   {icon} {count} {name} files")
+    print(f"\n📊 Total: {sum(stats.values())} files generated")
 
 
 if __name__ == "__main__":
-    generate_files()
+    try:
+        main()
+    except FileNotFoundError as e:
+        print(f"❌ ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+    except yaml.YAMLError as e:
+        print(f"❌ ERROR: Invalid YAML in config file: {e}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ ERROR: {e}", file=sys.stderr)
+        raise  # Show full traceback for debugging

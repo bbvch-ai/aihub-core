@@ -1,3 +1,11 @@
+# ===================================================================
+# Dagster Configuration - Stage: dev
+# ===================================================================
+# Generated from template. Do not edit directly.
+# This configuration is used for containerized Dagster deployments.
+# Dev stage runs Dagster locally and does not use this config.
+# ===================================================================
+
 run_storage:
   module: dagster_postgres.run_storage
   class: PostgresRunStorage
@@ -49,7 +57,7 @@ run_coordinator:
   module: dagster.core.run_coordinator
   class: QueuedRunCoordinator
   config:
-    max_concurrent_runs: 10
+    max_concurrent_runs: 2
 
 telemetry:
   enabled: false

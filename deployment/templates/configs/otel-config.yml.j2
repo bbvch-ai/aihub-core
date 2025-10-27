@@ -1,3 +1,10 @@
+# ===================================================================
+# OpenTelemetry Collector Configuration - Stage: {{ stage }}
+# ===================================================================
+# Generated from template. Do not edit directly.
+# Collects traces, metrics, and logs for observability.
+# ===================================================================
+
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
@@ -12,8 +19,16 @@ receivers:
 
 processors:
   batch:
+{%- if stage == "dev" or stage == "local" %}
+    send_batch_size: 500
+    timeout: 5s
+{%- elif stage == "nightly" %}
     send_batch_size: 1000
     timeout: 10s
+{%- elif stage == "latest" %}
+    send_batch_size: 2000
+    timeout: 15s
+{%- endif %}
 
   filter/noise:
     error_mode: ignore
@@ -26,6 +41,8 @@ processors:
         - 'attributes["db.system"] == "mongodb"'
         - 'resource.attributes["service.name"] == "litellm" and attributes["service"] == "postgres"'
         - 'resource.attributes["service.name"] == "litellm" and attributes["service"] == "auth"'
+
+{%- if stage in ["dev", "local", "nightly"] %}
 
   # Filter to identify ONLY OpenInference spans for Phoenix
   filter/phoenix:
@@ -49,22 +66,38 @@ processors:
         statements:
           # Add project name as a resource attribute
           - set(attributes["openinference.project.name"], attributes["service.name"])
+{%- endif %}
 
 exporters:
   # Generic cloud exporter with configurable headers
+  # Controlled via environment variables:
+  #   - OTEL_CLOUD_ENDPOINT: Target endpoint URL
+  #   - OTEL_CLOUD_HEADERS: Authentication headers (e.g., "api-key=xxx")
   otlp/cloud:
     endpoint: "${OTEL_CLOUD_ENDPOINT}"
     headers: "${OTEL_CLOUD_HEADERS}"
     tls:
       insecure: false
     compression: gzip
+{%- if stage == "dev" or stage == "local" %}
+    timeout: 10s
+{%- elif stage == "nightly" %}
     timeout: 30s
+{%- elif stage == "latest" %}
+    timeout: 60s
+{%- endif %}
     retry_on_failure:
       enabled: true
       initial_interval: 5s
+{%- if stage == "latest" %}
+      max_interval: 60s
+{%- else %}
       max_interval: 30s
+{%- endif %}
 
-  # Local Phoenix for development
+{%- if stage in ["dev", "local", "nightly"] %}
+
+  # Local Phoenix for development and debugging
   otlp/phoenix:
     endpoint: "phoenix:6007"
     tls:
@@ -74,21 +107,30 @@ exporters:
       enabled: true
       initial_interval: 5s
       max_interval: 30s
+{%- endif %}
 
 service:
   extensions: [ health_check ]
   pipelines:
-    # Send traces to cloud backend
+{%- if stage == "latest" %}
+    # Production: Send all traces to cloud only
+    traces:
+      receivers: [otlp]
+      processors: [filter/noise, batch]
+      exporters: [otlp/cloud]
+{%- else %}
+    # Send filtered traces to cloud backend
     traces/cloud:
       receivers: [otlp]
       processors: [filter/noise, batch]
       exporters: [otlp/cloud]
 
-    # Always send OpenInference traces to local Phoenix for development
+    # Send OpenInference traces to local Phoenix for development/debugging
     traces/phoenix:
       receivers: [otlp]
       processors: [filter/phoenix, transform/phoenix, batch]
       exporters: [otlp/phoenix]
+{%- endif %}
 
     # Send metrics to cloud backend
     metrics:

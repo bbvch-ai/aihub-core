@@ -3,7 +3,7 @@
 #
 # To make changes, edit the following files and then run the generator script:
 #   - deployment/compose-config.yml (for changing values and versions)
-#   - deployment/docker-compose.yml.j2 (for changing structure and logic)
+#   - deployment/templates/docker-compose.yml.j2 (for changing structure and logic)
 
 # ===================================================================
 # TRAEFIK PRIORITY RULES
@@ -242,7 +242,7 @@ services:
       MINIO_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/milvus-data:/var/lib/milvus
-      - ./configs/milvus/milvus.local.yaml:/milvus/configs/milvus.yaml
+      - ./configs/milvus/milvus-config.local.yml:/milvus/configs/milvus.yaml
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
       start_period: 90s
@@ -343,8 +343,8 @@ services:
     restart: always
     command: -c /etc/nats/nats.conf
     volumes:
-      - ./configs/nats/nats.local.conf:/etc/nats/nats.conf
-      - ${VOLUME_ROOT:-./.docker-volumes}/nats-data:/data
+      - ./configs/nats/nats-config.local.conf:/etc/nats/nats-server.conf
+      - ${VOLUME_ROOT:-./.docker-volumes}/nats:/data/nats
     logging:
       driver: json-file
       options:
@@ -582,8 +582,8 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
     volumes:
-      - ./configs/litellm/config.local.yaml:/app/config.yaml
-    command: --config /app/config.yaml
+      - ./configs/litellm/litellm-config.gpu.local.yml:/app/config.yml
+    command: --config /app/config.yml
     depends_on:
       postgres:
         condition: service_healthy
@@ -705,12 +705,12 @@ services:
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
-    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    command: [ "--config=/etc/otel-config.yml" ]
     environment:
       - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
     volumes:
-      - ./configs/otel/otel-collector-config.dev.yaml:/etc/otel-collector-config.yaml
+      - ./configs/otel/otel-config.local.yml:/etc/otel-config.yml
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:13133/" ]
     logging:
@@ -1031,13 +1031,13 @@ services:
       - -p
       - '3000'
       - -w
-      - /dagster_home/workspace.yaml
+      - /dagster_home/workspace.yml
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
-      - ./configs/dagster/dagster.local.yaml:/dagster_home/dagster.yaml:ro
-      - ./configs/dagster/workspace.local.yaml:/dagster_home/workspace.yaml:ro
+      - ./configs/dagster/dagster-config.local.yml:/dagster_home/dagster.yml:ro
+      - ./configs/dagster/workspace.local.yml:/dagster_home/dagster.yml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -1062,8 +1062,8 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
-      - ./configs/dagster/dagster.local.yaml:/dagster_home/dagster.yaml:ro
-      - ./configs/dagster/workspace.local.yaml:/dagster_home/workspace.yaml:ro
+      - ./configs/dagster/dagster-config.local.yml:/dagster_home/dagster.yml:ro
+      - ./configs/dagster/workspace.local.yml:/dagster_home/dagster.yml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home

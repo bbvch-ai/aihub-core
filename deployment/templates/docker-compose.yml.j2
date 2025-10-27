@@ -3,7 +3,7 @@
 #
 # To make changes, edit the following files and then run the generator script:
 #   - deployment/compose-config.yml (for changing values and versions)
-#   - deployment/docker-compose.yml.j2 (for changing structure and logic)
+#   - deployment/templates/docker-compose.yml.j2 (for changing structure and logic)
 {% if stage != 'dev' %}
 # ===================================================================
 # TRAEFIK PRIORITY RULES
@@ -272,7 +272,7 @@ services:
       MINIO_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
     volumes:
       - {{ global.volume_root }}/milvus-data:/var/lib/milvus
-      - ./configs/milvus/milvus.{{ stage }}.yaml:/milvus/configs/milvus.yaml
+      - ./configs/milvus/milvus-config.{{ stage }}.yml:/milvus/configs/milvus.yaml
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
       start_period: 90s
@@ -399,8 +399,8 @@ services:
     restart: always
     command: -c /etc/nats/nats.conf
     volumes:
-      - ./configs/nats/nats.{{ stage }}.conf:/etc/nats/nats.conf
-      - {{ global.volume_root }}/nats-data:/data
+      - ./configs/nats/nats-config.{{ stage }}.conf:/etc/nats/nats-server.conf
+      - {{ global.volume_root }}/nats:/data/nats
     {%- if stage == 'dev' %}
     ports:
       - "4222:4222"
@@ -655,8 +655,12 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
     volumes:
-      - ./configs/litellm/config.{{ stage }}.yaml:/app/config.yaml
-    command: --config /app/config.yaml
+      {%- if gpu_enabled %}
+      - ./configs/litellm/litellm-config.gpu.{{ stage }}.yml:/app/config.yml
+      {%- else %}
+      - ./configs/litellm/litellm-config.{{ stage }}.yml:/app/config.yml
+      {%- endif %}
+    command: --config /app/config.yml
     depends_on:
       postgres:
         condition: service_healthy
@@ -801,12 +805,12 @@ services:
 
   otel-collector:
     image: {{ image_tags.otel_collector }}
-    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    command: [ "--config=/etc/otel-config.yml" ]
     environment:
       - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
     volumes:
-      - ./configs/otel/otel-collector-config.dev.yaml:/etc/otel-collector-config.yaml
+      - ./configs/otel/otel-config.{{ stage }}.yml:/etc/otel-config.yml
     {%- if stage == 'dev' %}
     ports:
       - "4317:4317"
@@ -1161,13 +1165,13 @@ services:
       - -p
       - '3000'
       - -w
-      - /dagster_home/workspace.yaml
+      - /dagster_home/workspace.yml
     volumes:
       - {{ global.volume_root }}/dagster-data:/dagster_home
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
-      - ./configs/dagster/dagster.{{ stage }}.yaml:/dagster_home/dagster.yaml:ro
-      - ./configs/dagster/{% if stage == 'local' %}workspace.local.yaml{% else %}workspace.yaml{% endif %}:/dagster_home/workspace.yaml:ro
+      - ./configs/dagster/dagster-config.{{ stage }}.yml:/dagster_home/dagster.yml:ro
+      - ./configs/dagster/workspace.{{ stage }}.yml:/dagster_home/dagster.yml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -1196,8 +1200,8 @@ services:
       - {{ global.volume_root }}/dagster-data:/dagster_home
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
-      - ./configs/dagster/dagster.{{ stage }}.yaml:/dagster_home/dagster.yaml:ro
-      - ./configs/dagster/{% if stage == 'local' %}workspace.local.yaml{% else %}workspace.yaml{% endif %}:/dagster_home/workspace.yaml:ro
+      - ./configs/dagster/dagster-config.{{ stage }}.yml:/dagster_home/dagster.yml:ro
+      - ./configs/dagster/workspace.{{ stage }}.yml:/dagster_home/dagster.yml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
