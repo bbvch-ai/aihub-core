@@ -208,14 +208,17 @@ Our AI capabilities are primarily powered by the LlamaIndex ecosystem and integr
 #### :floppy_disk: Data & Storage
 
 - **Databases**:
-  - **MongoDB**: Used as our primary NoSQL database, accessed via **MongoEngine** and integrated into LlamaIndex for
-    document storage (`llama-index-storage-docstore-mongodb`).
-  - **Redis**: For in-memory caching and fast data retrieval.
+  - **FerretDB**: Used as our primary MongoDB-compatible NoSQL database, accessed via **MongoEngine** and integrated
+    into LlamaIndex for document storage (`llama-index-storage-docstore-mongodb`). Provides MongoDB compatibility while
+    using PostgreSQL as the backend.
+  - **Valkey**: For in-memory caching and fast data retrieval. A Redis-compatible fork providing high-performance
+    key-value storage.
 - **Vector Stores**:
   - **Azure AI Search**: The primary vector store for our production environment (
     `llama-index-vector-stores-azureaisearch`).
   - **Milvus**: An alternative or additional vector database option (`llama-index-vector-stores-milvus`).
 - **File Storage**:
+  - **SeaweedFS**: S3-compatible distributed file system for local and cloud storage, providing scalable object storage.
   - **Azure Data Lake Storage (ADLS)**: Managed through `azure-storage-file-datalake` and `adlfs` for large-scale data
     storage and access.
 
