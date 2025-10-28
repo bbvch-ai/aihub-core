@@ -759,7 +759,7 @@ services:
 
   docling:
     container_name: docling
-    image: {{ global.registry_prefix }}{{ image_tags.docling[stage] }}
+    image: {{ global.registry_prefix }}{{ image_tags.docling[stage][hardware] }}
     restart: always
     {%- if stage == 'dev' %}
     ports:

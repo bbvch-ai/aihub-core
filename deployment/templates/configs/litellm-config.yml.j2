@@ -12,18 +12,18 @@
 # Hardware: {{ 'GPU' if gpu_enabled else 'CPU' }}
 # ===================================================================
 
-{%- set hardware = 'gpu' if gpu_enabled else 'cpu' %}
+{%- set hardware = 'gpu' if gpu_enabled else 'cpu' -%}
 
 {# Check if we have local GPU services for this stage/hardware combo #}
-{%- set has_llama_cpp = image_tags.llama_cpp.get(stage, {}).get(hardware) %}
-{%- set has_llama_cpp_embedding = image_tags.llama_cpp_embedding.get(stage, {}).get(hardware) %}
-{%- set has_llama_cpp_reranking = image_tags.llama_cpp_reranking.get(stage, {}).get(hardware) %}
-{%- set has_speaches = image_tags.speaches.get(stage, {}).get(hardware) %}
+{%- set has_llama_cpp = image_tags.llama_cpp.get(stage, {}).get(hardware) -%}
+{%- set has_llama_cpp_embedding = image_tags.llama_cpp_embedding.get(stage, {}).get(hardware) -%}
+{%- set has_llama_cpp_reranking = image_tags.llama_cpp_reranking.get(stage, {}).get(hardware) -%}
+{%- set has_speaches = image_tags.speaches.get(stage, {}).get(hardware) -%}
 
 {# Extract model aliases from service configs #}
-{%- set llama_cpp_alias = 'gemma-3-4b' %}
-{%- if stage in ['nightly', 'latest'] %}
-{%- set llama_cpp_alias = 'gemma-3-12b' %}
+{%- set llama_cpp_alias = 'gemma-3-4b' -%}
+{%- if stage in ['nightly', 'latest'] -%}
+{%- set llama_cpp_alias = 'gemma-3-12b' -%}
 {%- endif %}
 
 model_list:

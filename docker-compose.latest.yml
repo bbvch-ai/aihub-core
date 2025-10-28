@@ -509,7 +509,7 @@ services:
 
   docling:
     container_name: docling
-    image: ghcr.io/bbvch-ai/aihub-core/{'cpu': 'docling-serve-cpu:v1.3.1', 'gpu': 'docling-serve-cu128:v1.3.1'}
+    image: ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.3.1
     restart: always
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
