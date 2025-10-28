@@ -27,7 +27,7 @@ format-md:
 
 format-md-win:
 	@echo "Formatting markdown files..."
-	@poetry run mdformat --number $(shell git ls-files *.md)
+	@powershell -Command "git ls-files *.md | ForEach-Object { poetry run mdformat --number $$_ }"
 
 # Type-check with MyPy
 typecheck:
@@ -65,7 +65,7 @@ use-local-core-without-install:
 	@echo "Switching to local cores without poetry install..."
 	poetry run python switch_dependencies.py local
 
-TAG ?= v0.246.11
+TAG ?= v0.246.12
 
 # Use remote cores (with poetry install)
 use-remote-core:

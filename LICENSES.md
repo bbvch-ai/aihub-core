@@ -1,6 +1,6 @@
 # License Report
 
-Generated on: 24.10.2025
+Generated on: 28.10.2025
 
 This document contains license information for all dependencies across the monorepo:
 

@@ -5,6 +5,77 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.246.12] - 2025-10-28 - Major Documentation Overhaul and Core Infrastructure Alignment
+
+### Added
+
+- ✨ **Introduced Multi-Language Documentation Support:** The documentation now fully supports English and German, with a
+  new automated translation pipeline ensuring content consistency (`.en.md` and `.de.md` files, and `translate-docs.sh`
+  script).
+- 📄 **Expanded Platform Documentation:** Significant new sections have been added across the platform, covering:
+  - **Chat Interface** functionality, observability, and strategic rationale.
+  - **Access Management** details, including comprehensive RBAC implementation guidance.
+  - **Auditing & Observability** with deep dives into OpenTelemetry and tracing.
+  - **Language Models** proxy, anonymization, and input/output guards.
+  - **Cost Control** mechanisms and optimization strategies.
+  - **Slack & Teams Integrations** concepts and setup.
+  - **API Interfaces**: OpenAI-compatible REST, Agent Interaction REST, WebSocket, and Model Context Protocol (MCP)
+    servers.
+  - **Security**: Detailed documentation on Authentication, Input Validation, Container Security, Network Security, and
+    Data Encryption.
+  - **Compliance**: Extensive coverage of Data Retention, GDPR, Swiss DSG, EU AI Act, Internationalization, and Data
+    Subject Access Requests (DSAR).
+  - **User Interface** overview with agent, thread, knowledge, process, and evaluation management.
+  - **Agent Fundamentals**, **RAG Agent** mechanics, and **Expert Asking Agent** collaboration patterns.
+  - **Pipeline Fundamentals** and the **RAG Ingestion Pipeline**.
+  - **Agentic Processes** concepts.
+  - **Knowledge Management** organization through namespaces.
+  - **Agent Evaluations** for testing and measuring AI agent quality.
+  - **External System Integrations** approaches.
+- 📚 **New Internal Command for Solution Documentation:** Added a Claude command (`document-solution.md`) to streamline
+  the creation and editing of high-level solution concepts.
+- ⚙️ **Added Documentation Merger Script:** A new `combine_docs.py` script facilitates merging German markdown files
+  from specific directories into a single DOCX document.
+- 🔑 **Ensured `pipx` Availability for LLM Tools:** The deployment workflow now explicitly installs `pipx` to manage
+  `llm` and `llm-gemini` for automated documentation translation.
+- 🚀 **Integrated Gemini for Automated Documentation Translation:** The CI/CD process now leverages the `llm` command
+  with the `llm-gemini` plugin for automated translation of documentation.
+- 💡 **Introduced `encodings.xml` for IntelliJ Project Settings:** Added a new `.idea/encodings.xml` file to specify
+  character encoding for certain project files.
+- ☁️ **New Documentation for Openstack Deployment:** Added a new section for setting up and deploying to Openstack
+  (`6_code_deep_dive/deployment/index.en.md`).
+
+### Changed
+
+- 🔄 **Updated Core Infrastructure Components:** Object storage was migrated from **MinIO to SeaweedFS**, the NoSQL
+  database from **MongoDB to FerretDB**, and the in-memory cache from **Redis to Valkey** across the platform and
+  relevant documentation.
+- 📖 **Reworked Documentation Structure for Multi-Language Support:** Implemented a new directory structure (renaming
+  `.md` files to `.en.md`) and updated VitePress configuration (`.vitepress/config.mts`) to support robust
+  multi-language documentation, including dynamic sidebar generation and content rewrites.
+- 🗺️ **Enhanced Sidebar Sorting Logic:** Improved documentation sidebar generation to sort entries numerically by prefix
+  and then alphabetically, ensuring a more intuitive navigation experience.
+- 🔒 **Updated `openssl` command for Key Generation:** Changed the quick start guide to use `openssl rand -hex 32` for
+  generating secure random strings, enhancing clarity.
+- ✅ **Refined CI/CD Documentation Build Process:** The `deploy-docs.yml` workflow now explicitly includes an automated
+  translation step before the main documentation build.
+- 📦 **Updated `packageManager` Version:** The `package.json` now specifies `pnpm@10.19.0` for package management.
+- 🤖 **Adjusted Claude Command Paths:** Updated the internal `document-feature.md` Claude command to reflect the new
+  documentation structure for SDK features (e.g., `3_sdk/1_feature_overview/` and `index.en.md`).
+
+### Removed
+
+- 🗑️ **Deprecated Legacy Feature Overview Sections:** Removed outdated or refactored feature overview documents and
+  their respective files (e.g., `2_platform/5_feature_overview/*` and
+  `3_sdk/6_feature_overview/expert-agents/index.md`), as content has been integrated into new, more granular sections.
+- 🗑️ **Removed Redundant Security Model Documentation:** The dedicated
+  `2_platform/2_architecture/4_security_model/index.md` file was removed, as its content is now covered by the expanded
+  security documentation.
+- 🗑️ **Retired Platform Customization Sections:** Several older customization documents (`2_platform/4_customization/*`)
+  were removed as part of the broader documentation overhaul and refactoring into more specific areas.
+
+---
+
 ## [v0.246.11] - 2025-10-27 - AI-Hub SDK Documentation: Clarity and Depth for Agent and Pipeline Development
 
 ### Added

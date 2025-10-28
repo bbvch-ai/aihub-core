@@ -1,0 +1,5 @@
+---
+title: Delegation Patterns
+---
+
+@joelbarmettlerUZH
