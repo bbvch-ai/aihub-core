@@ -48,9 +48,9 @@ Organizations deploy proven technology with established patterns.
 
 This section covers the chat interface integration from several angles:
 
-- [Integration architecture](1_integration_architecture/) explains how Open WebUI connects to the suite and handles
+- [Integration architecture](6_integration_architecture/) explains how Open WebUI connects to the suite and handles
   communication
-- [Source attribution](2_source_attribution/) describes the custom extensions for knowledge retrieval visibility
+- [Source attribution](3_chat_with_your_data/) describes the custom extensions for knowledge retrieval visibility
 - [Observability](3_observability/) covers execution tracing and workflow transparency
-- [Feature overview](6_feature_overview/) catalogs the capabilities inherited from Open WebUI
+- [Feature overview](1_feature_overview/) catalogs the capabilities inherited from Open WebUI
 - [Strategic rationale](7_strategic_rationale/) analyzes the decision to integrate an existing solution

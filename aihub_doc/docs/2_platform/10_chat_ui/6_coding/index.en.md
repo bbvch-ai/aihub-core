@@ -1,4 +1,9 @@
-## Coding
+---
+title: Coding / Software Development
+index: 6
+---
+
+# Coding / Software Development
 
 When it comes to coding with the help of a model, there are two main ways to do this.
 
@@ -11,26 +16,26 @@ When it comes to coding with the help of a model, there are two main ways to do 
 
 Enter a prompt mentioning the "Pydiode environment" in order to generate code.
 
-[![](./images/user/img_94f419405c.jpeg)](../public/images/user/img_94f419405c.jpeg)
+![Prompt Pydiode Environment](../../../../media/open_webui/prompt_pydiode_environment.jpeg)
 
 Using the "Run" button the code can be tested directly inside the chat.
 
-[![](./images/user/img_f836240606.jpeg)](../public/images/user/img_f836240606.jpeg)
+![Code with Run Button](../../../../media/open_webui/code_with_run_button.jpeg)
 
 After running the code snippet prints the result below the cell.
 
-[![](./images/user/img_9ed591ae67.jpeg)](../public/images/user/img_9ed591ae67.jpeg)
+![Code Execution Result](../../../../media/open_webui/code_execution_result.jpeg)
 
 ## Executing existing code
 
 Select "Code Interpreter".
 
-[![](./images/user/img_3a55a1f373.jpeg)](../public/images/user/img_3a55a1f373.jpeg)
+![Select Code Interpreter](../../../../media/open_webui/select_code_interpreter.jpeg)
 
 Encase the code in back-ticks to mark it as code for execution.
 
-[![](./images/user/img_0c63fdc248.jpeg)](../public/images/user/img_0c63fdc248.jpeg)
+![Code in Backticks](../../../../media/open_webui/code_in_backticks.jpeg)
 
 When the code has run through the result is printed out.
 
-[![](./images/user/img_df67f54c96.jpeg)](../public/images/user/img_df67f54c96.jpeg)
+![Code Execution Output](../../../../media/open_webui/code_execution_output.jpeg)

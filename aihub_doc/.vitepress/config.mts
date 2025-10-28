@@ -6,6 +6,18 @@ import matter from 'gray-matter'
 const DEFAULT_LOCALE = 'en';
 
 /**
+ * Extracts the numeric prefix from a folder/file name for sorting.
+ * Examples:
+ *   '1_vision' -> 1
+ *   '10_chat_ui' -> 10
+ *   'readme.md' -> Infinity (items without numbers sort last)
+ */
+function extractNumericPrefix(name: string): number {
+  const match = name.match(/^(\d+)/);
+  return match ? parseInt(match[1], 10) : Infinity;
+}
+
+/**
  * Creates a user-friendly title from a directory name.
  */
 function formatName(name: string): string {
@@ -63,7 +75,7 @@ function generateSidebarItems(
           const sidebarItem: any = {
             text: frontmatter.title || formatName(entry.name),
             link: newLinkPath,
-            index: frontmatter.index,
+            sortOrder: extractNumericPrefix(entry.name),
           };
 
           if (subItems.length > 0) {
@@ -82,16 +94,16 @@ function generateSidebarItems(
       }
     }
 
-    return items.sort((a, b) => {
-      const aHasIndex = a.index !== undefined;
-      const bHasIndex = b.index !== undefined;
-
-      if (aHasIndex && bHasIndex) {
-        return a.index !== b.index ? a.index - b.index : a.text.localeCompare(b.text);
-      } else if (aHasIndex) { return -1; }
-      else if (bHasIndex) { return 1; }
-      else { return a.text.localeCompare(b.text); }
+    // Sort items by numeric prefix first, then alphabetically by text
+    const sortedItems = items.sort((a, b) => {
+      if (a.sortOrder !== b.sortOrder) {
+        return a.sortOrder - b.sortOrder;
+      }
+      return a.text.localeCompare(b.text);
     });
+
+    // Remove sortOrder property before returning (not needed in VitePress config)
+    return sortedItems.map(({ sortOrder, ...rest }) => rest);
 
   } catch (e) {
     return [];
@@ -112,14 +124,14 @@ function generateSidebar(locale: string = 'en') {
       text: locale === 'de' ? 'Changelog' : 'Changelog',
       link: '/changelog/',
       collapsible: true,
-      index: 1000,
+      sortOrder: 1000,
     });
 
     allTopLevelGroups.push({
       text: locale === 'de' ? 'Licenses' : 'Licenses',
       link: '/licenses/',
       collapsible: true,
-      index: 1001,
+      sortOrder: 1001,
     });
   } catch (e) {
     console.warn(`[VitePress] Could not process special sections.`);
@@ -161,7 +173,7 @@ function generateSidebar(locale: string = 'en') {
           link: entryLink,
           collapsible: true,
           items: generateSidebarItems(entryBasePath, `/docs/${entry.name}/`, locale),
-          index: entryFrontmatter.index,
+          sortOrder: extractNumericPrefix(entry.name),
         });
       } catch (e) {
         // This subdirectory might not have a root index.md, so we skip it.
@@ -174,17 +186,15 @@ function generateSidebar(locale: string = 'en') {
 
   // --- Part 3: Sort all collected groups and finalize ---
   allTopLevelGroups.sort((a, b) => {
-    const aHasIndex = a.index !== undefined;
-    const bHasIndex = b.index !== undefined;
-
-    if (aHasIndex && bHasIndex) {
-      return a.index !== b.index ? a.index - b.index : a.text.localeCompare(b.text);
-    } else if (aHasIndex) { return -1; }
-    else if (bHasIndex) { return 1; }
-    else { return a.text.localeCompare(b.text); }
+    // Sort by numeric prefix first, then alphabetically by text
+    if (a.sortOrder !== b.sortOrder) {
+      return a.sortOrder - b.sortOrder;
+    }
+    return a.text.localeCompare(b.text);
   });
 
-  return allTopLevelGroups.map(({ index, ...rest }) => rest);
+  // Remove sortOrder property before returning (not needed in VitePress config)
+  return allTopLevelGroups.map(({ sortOrder, ...rest }) => rest);
 }
 
 // https://vitepress.dev/reference/site-config

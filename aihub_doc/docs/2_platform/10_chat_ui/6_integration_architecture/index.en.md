@@ -1,6 +1,6 @@
 ---
 title: Integration architecture
-index: 1
+index: 6
 ---
 
 # Integration architecture

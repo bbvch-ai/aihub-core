@@ -1,9 +1,9 @@
 ---
-title: Source attribution
-index: 2
+title: Chat with your company knowledge
+index: 3
 ---
 
-# Source attribution
+# Chat with your company knowledge
 
 The Swiss AI Hub shows users which knowledge documents and passages informed AI responses. This transparency helps users
 verify accuracy and understand the basis for AI conclusions.

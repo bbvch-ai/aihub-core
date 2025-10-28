@@ -1,12 +1,29 @@
 ---
 title: Web search capability
-index: 3
+index: 5
 ---
 
 # Web search capability
 
 Agents can access web information to answer questions requiring current data beyond their training or internal knowledge
 bases. Organizations control this through configuration.
+
+Select "Web Search".
+
+![Select Web Search](../../../../media/open_webui/select_web_search_button.jpeg)
+
+Enter something you want to search for.
+
+![Enter Search Query](../../../../media/open_webui/enter_search_query.jpeg)
+
+The model will take some time coming up with a search query and then executing that search. After which it will output
+what it found.
+
+![Search Results](../../../../media/open_webui/search_results_displayed.jpeg)
+
+The websites it retrieved the information from are listed as references.
+
+![Search References](../../../../media/open_webui/search_references_citations.jpeg)
 
 ## Search configuration
 
