@@ -1,6 +1,5 @@
 ---
 title: EU AI Act
-index: 4
 ---
 
 # EU AI Act

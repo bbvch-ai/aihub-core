@@ -1,6 +1,5 @@
 ---
 title: Multi-Agent Systems
-index: 4
 ---
 
 # Multi-Agent Systems

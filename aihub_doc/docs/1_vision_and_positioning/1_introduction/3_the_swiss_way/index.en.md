@@ -1,6 +1,5 @@
 ---
 title: The Swiss Way
-index: 3
 ---
 
 # The Swiss way: Privacy, sovereignty, and transparency

@@ -1,6 +1,5 @@
 ---
 title: Building Agents
-index: 2
 ---
 
 # Building Agents with the AI-Hub SDK

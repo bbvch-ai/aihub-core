@@ -1,6 +1,5 @@
 ---
 title: Extensibility and Customization
-index: 5
 ---
 
 # Extensibility and Customization

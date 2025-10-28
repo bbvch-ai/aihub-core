@@ -1,6 +1,5 @@
 ---
 title: Dynamic Agent and Process Endpoints
-index: 4
 ---
 
 # Dynamic Agent and Process Endpoints :rocket: :100:

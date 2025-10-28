@@ -1,6 +1,5 @@
 ---
 title: RBAC Implementation Guide
-index: 5
 ---
 
 # RBAC Implementation Guide :shield: :gear:

@@ -1,6 +1,5 @@
 ---
 title: Agent evaluations
-index: 9
 ---
 
 # Agent evaluations

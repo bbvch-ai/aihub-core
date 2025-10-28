@@ -1,6 +1,5 @@
 ---
 title: Core Components
-index: 1
 ---
 
 # Core components

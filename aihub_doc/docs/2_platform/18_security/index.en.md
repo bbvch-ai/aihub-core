@@ -1,6 +1,5 @@
 ---
 title: Security
-index: 18
 ---
 
 # Security

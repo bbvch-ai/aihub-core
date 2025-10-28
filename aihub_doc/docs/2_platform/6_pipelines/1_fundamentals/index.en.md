@@ -1,6 +1,5 @@
 ---
 title: Fundamentals
-index: 2
 ---
 
 # Pipeline Fundamentals

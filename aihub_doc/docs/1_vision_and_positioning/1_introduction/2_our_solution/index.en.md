@@ -1,6 +1,5 @@
 ---
 title: Our solution
-index: 2
 ---
 
 # Our solution: Enterprise AI infrastructure as a product

@@ -1,6 +1,5 @@
 ---
 title: Features
-index: 6
 ---
 
 # :sparkles: Features

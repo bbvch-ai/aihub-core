@@ -1,6 +1,5 @@
 ---
 title: Swiss AI Agent Protocol
-index: 3
 ---
 
 # Swiss AI Agent Protocol

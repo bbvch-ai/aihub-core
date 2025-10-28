@@ -1,6 +1,5 @@
 ---
 title: Chat Messages
-index: 2
 ---
 
 ## Chat Messages

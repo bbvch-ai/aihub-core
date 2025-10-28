@@ -1,6 +1,5 @@
 ---
 title: Core Workflow Patterns
-index: 2
 ---
 
 # Core Workflow Patterns

@@ -1,6 +1,5 @@
 ---
 title: Pipeline Observation
-index: 5
 ---
 
 # Pipeline Observation

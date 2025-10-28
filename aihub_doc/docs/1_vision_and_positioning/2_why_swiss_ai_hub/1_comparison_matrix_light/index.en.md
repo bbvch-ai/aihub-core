@@ -1,6 +1,5 @@
 ---
 title: Comparison Matrix
-index: 1
 ---
 
 # Comparison matrix: Where Swiss AI Hub fits

@@ -1,6 +1,5 @@
 ---
 title: Chat with your company knowledge
-index: 3
 ---
 
 # Chat with your company knowledge

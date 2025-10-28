@@ -1,6 +1,5 @@
 ---
 title: Data Ingestion Pipeline
-index: 3
 ---
 
 # Data Ingestion Pipeline

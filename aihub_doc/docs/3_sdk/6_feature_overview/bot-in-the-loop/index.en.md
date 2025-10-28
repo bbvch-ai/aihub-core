@@ -1,6 +1,5 @@
 ---
 title: Bot-in-the-Loop
-index: 4
 ---
 
 # Bot-in-the-Loop :left_right_arrow: :100:

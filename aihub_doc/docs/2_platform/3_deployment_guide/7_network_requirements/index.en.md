@@ -1,6 +1,5 @@
 ---
 title: Network requirements
-index: 7
 ---
 
 # Network requirements

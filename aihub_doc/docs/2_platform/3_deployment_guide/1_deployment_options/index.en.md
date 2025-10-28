@@ -1,6 +1,5 @@
 ---
 title: Deployment Options
-index: 1
 ---
 
 # Deployment Options

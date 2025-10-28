@@ -1,6 +1,5 @@
 ---
 title: Web search capability
-index: 5
 ---
 
 # Web search capability

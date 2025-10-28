@@ -1,6 +1,5 @@
 ---
 title: Chat Interface
-index: 10
 ---
 
 # Chat interface

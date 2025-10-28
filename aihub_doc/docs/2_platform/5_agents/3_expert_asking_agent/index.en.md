@@ -1,6 +1,5 @@
 ---
 title: Expert Asking Agent
-index: 3
 ---
 
 # The Expert Agents: Bridging AI and Human Knowledge

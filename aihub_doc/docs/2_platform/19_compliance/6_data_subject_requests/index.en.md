@@ -1,6 +1,5 @@
 ---
 title: Data Subject Access Requests (DSAR)
-index: 6
 ---
 
 # Data subject access requests

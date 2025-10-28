@@ -1,6 +1,5 @@
 ---
 title: User feedback
-index: 1
 ---
 
 # User feedback

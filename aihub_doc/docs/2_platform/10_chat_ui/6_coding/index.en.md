@@ -1,6 +1,5 @@
 ---
 title: Coding / Software Development
-index: 6
 ---
 
 # Coding / Software Development

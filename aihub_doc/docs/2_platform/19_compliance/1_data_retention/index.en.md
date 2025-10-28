@@ -1,6 +1,5 @@
 ---
 title: Data Retention Policies
-index: 1
 ---
 
 ## Data retention strategy

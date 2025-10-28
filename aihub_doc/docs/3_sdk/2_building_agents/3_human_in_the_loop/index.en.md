@@ -1,6 +1,5 @@
 ---
 title: Human in the loop
-index: 3
 ---
 
 # Human in the Loop

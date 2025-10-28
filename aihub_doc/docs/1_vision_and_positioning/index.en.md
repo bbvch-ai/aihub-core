@@ -1,6 +1,5 @@
 ---
 title: 'Part I: Vision & Positioning'
-index: 1
 ---
 
 # Part I: Vision & positioning

@@ -1,6 +1,5 @@
 ---
 title: The 'Day 2' Advantage
-index: 2
 ---
 
 # The "Day 2" advantage: Problems we've already solved

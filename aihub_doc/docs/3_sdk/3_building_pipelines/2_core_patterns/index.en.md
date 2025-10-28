@@ -1,6 +1,5 @@
 ---
 title: Core Patterns
-index: 2
 ---
 
 # Core Pipeline Patterns

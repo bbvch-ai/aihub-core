@@ -1,6 +1,5 @@
 ---
 title: 'Monitoring & Alerting'
-index: 5
 ---
 
 # Monitoring & Alerting

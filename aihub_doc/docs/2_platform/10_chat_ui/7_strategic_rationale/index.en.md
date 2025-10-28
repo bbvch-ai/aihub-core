@@ -1,6 +1,5 @@
 ---
 title: Strategic rationale
-index: 5
 ---
 
 # Strategic rationale

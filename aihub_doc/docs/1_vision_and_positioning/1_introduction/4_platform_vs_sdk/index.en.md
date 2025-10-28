@@ -1,6 +1,5 @@
 ---
 title: Platform vs SDK
-index: 4
 ---
 
 # Platform vs SDK: Understanding the dual architecture

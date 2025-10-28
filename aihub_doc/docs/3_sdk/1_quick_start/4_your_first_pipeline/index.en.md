@@ -1,6 +1,5 @@
 ---
 title: Your First Pipeline
-index: 4
 ---
 
 # Your First Pipeline

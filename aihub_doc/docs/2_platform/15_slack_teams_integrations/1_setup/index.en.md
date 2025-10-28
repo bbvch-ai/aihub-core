@@ -1,6 +1,5 @@
 ---
 title: Azure Bot Service Integration
-index: 3
 ---
 
 # Azure Bot Service Integration :speech_balloon: :100:

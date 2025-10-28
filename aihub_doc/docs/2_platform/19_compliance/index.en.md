@@ -1,6 +1,5 @@
 ---
 title: Compliance and regulations
-index: 19
 ---
 
 # Compliance and regulations

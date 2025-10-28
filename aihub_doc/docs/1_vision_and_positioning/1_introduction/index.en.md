@@ -1,6 +1,5 @@
 ---
 title: 'Introduction: The Swiss AI Hub Vision'
-index: 1
 ---
 
 # Introduction: The Swiss AI Hub vision

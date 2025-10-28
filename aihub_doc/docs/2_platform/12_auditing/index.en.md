@@ -1,6 +1,5 @@
 ---
 title: Auditing & Observability
-index: 12
 ---
 
 # Auditing & Observability

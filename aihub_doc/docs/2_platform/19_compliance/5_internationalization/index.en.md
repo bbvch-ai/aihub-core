@@ -1,6 +1,5 @@
 ---
 title: Internationalization
-index: 5
 ---
 
 # Internationalization

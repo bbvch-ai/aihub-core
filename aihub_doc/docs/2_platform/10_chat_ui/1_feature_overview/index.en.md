@@ -1,6 +1,5 @@
 ---
 title: Feature overview
-index: 1
 ---
 
 # Feature overview

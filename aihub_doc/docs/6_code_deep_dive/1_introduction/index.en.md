@@ -1,6 +1,5 @@
 ---
 title: Introduction
-index: 1
 ---
 
 # AI-Hub Developer Guide

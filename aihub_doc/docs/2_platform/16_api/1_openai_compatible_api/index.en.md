@@ -1,6 +1,5 @@
 ---
 title: OpenAI-Compatible REST API
-index: 1
 ---
 
 # OpenAI-Compatible REST API

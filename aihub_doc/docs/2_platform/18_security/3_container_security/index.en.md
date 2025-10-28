@@ -1,6 +1,5 @@
 ---
 title: Container Security
-index: 3
 ---
 
 # Container Security

@@ -1,6 +1,5 @@
 ---
 title: Voice Input
-index: 8
 ---
 
 Begin a voice recording.

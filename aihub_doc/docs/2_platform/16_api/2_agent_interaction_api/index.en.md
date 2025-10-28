@@ -1,6 +1,5 @@
 ---
 title: Agent Interaction REST API
-index: 2
 ---
 
 # Agent Interaction REST API

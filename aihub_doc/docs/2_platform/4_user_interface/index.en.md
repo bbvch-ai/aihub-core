@@ -1,6 +1,5 @@
 ---
 title: User Interface
-index: 4
 ---
 
 # The Platform interface

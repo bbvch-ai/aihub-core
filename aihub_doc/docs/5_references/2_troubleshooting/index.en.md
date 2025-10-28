@@ -1,6 +1,5 @@
 ---
 title: Troubleshooting
-index: 2
 ---
 
 # Troubleshooting

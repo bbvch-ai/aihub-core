@@ -1,6 +1,5 @@
 ---
 title: WebSocket API
-index: 3
 ---
 
 # WebSocket API

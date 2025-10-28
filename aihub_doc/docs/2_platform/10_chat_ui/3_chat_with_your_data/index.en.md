@@ -1,6 +1,5 @@
 ---
 title: Chat with your Data
-index: 3
 ---
 
 To upload files click the "More" button.

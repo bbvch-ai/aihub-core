@@ -1,6 +1,5 @@
 ---
 title: Document Reconstruction for Context
-index: 2
 ---
 
 # Deep Dive: The RAG Ingestion Pipeline

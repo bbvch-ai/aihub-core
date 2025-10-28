@@ -1,6 +1,5 @@
 ---
 title: Swiss Data Protection Act (DSG)
-index: 3
 ---
 
 # Swiss Data Protection Act (revDSG)

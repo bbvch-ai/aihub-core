@@ -1,6 +1,5 @@
 ---
 title: Quick Start
-index: 1
 ---
 
 # Quick Start Guide for the AI-Hub SDK

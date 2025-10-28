@@ -1,6 +1,5 @@
 ---
 title: Your First Agent
-index: 3
 ---
 
 # Your First Agent

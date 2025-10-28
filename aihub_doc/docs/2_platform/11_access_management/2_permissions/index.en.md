@@ -1,6 +1,5 @@
 ---
 title: Permission and Access Control
-index: 2
 ---
 
 # Permission and Access Control

@@ -1,6 +1,5 @@
 ---
 title: The Ecosystem Model
-index: 3
 ---
 
 # The ecosystem model: How everyone benefits

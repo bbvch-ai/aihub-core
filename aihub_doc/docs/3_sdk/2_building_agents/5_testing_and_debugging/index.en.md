@@ -1,6 +1,5 @@
 ---
 title: Testing and debugging
-index: 5
 ---
 
 # Testing and debugging

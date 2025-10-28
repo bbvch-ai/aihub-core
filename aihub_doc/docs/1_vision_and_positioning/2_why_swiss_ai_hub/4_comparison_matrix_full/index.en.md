@@ -1,6 +1,5 @@
 ---
 title: Full Competitor Analysis
-index: 4
 ---
 
 # Full Competitor Analysis

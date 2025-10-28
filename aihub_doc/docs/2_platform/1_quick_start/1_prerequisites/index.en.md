@@ -1,6 +1,5 @@
 ---
 title: Prerequisites Check
-index: 1
 ---
 
 # Prerequisites: Preparing for Platform Deployment

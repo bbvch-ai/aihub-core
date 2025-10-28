@@ -1,6 +1,5 @@
 ---
 title: One-Command Deployment
-index: 2
 ---
 
 # One-Command Deployment: Launch Your AI Platform

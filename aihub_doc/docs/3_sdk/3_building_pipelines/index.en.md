@@ -1,6 +1,5 @@
 ---
 title: Building Pipelines
-index: 3
 ---
 
 # Building Pipelines with the AI-Hub SDK

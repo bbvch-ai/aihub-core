@@ -1,6 +1,5 @@
 ---
 title: Agent Fundamentals
-index: 1
 ---
 
 # Agent Fundamentals

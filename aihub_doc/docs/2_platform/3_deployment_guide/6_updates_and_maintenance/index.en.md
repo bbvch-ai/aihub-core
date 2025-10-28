@@ -1,6 +1,5 @@
 ---
 title: 'Updates & Maintenance'
-index: 6
 ---
 
 # Updates and maintenance

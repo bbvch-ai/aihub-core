@@ -1,6 +1,5 @@
 ---
 title: Knowledge Management
-index: 8
 ---
 
 # Knowledge Management

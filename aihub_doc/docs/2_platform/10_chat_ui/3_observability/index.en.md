@@ -1,6 +1,5 @@
 ---
 title: Observability
-index: 3
 ---
 
 # Observability

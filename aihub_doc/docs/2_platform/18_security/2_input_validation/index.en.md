@@ -1,6 +1,5 @@
 ---
 title: Input Validation
-index: 2
 ---
 
 # Input Validation

@@ -1,6 +1,5 @@
 ---
 title: Knowledge Organization Through Namespaces
-index: 1
 ---
 
 # Knowledge Organization Through Namespaces

@@ -1,6 +1,5 @@
 ---
 title: The Problem We Solve
-index: 1
 ---
 
 # The problem we solve

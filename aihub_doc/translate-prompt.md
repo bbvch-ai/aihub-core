@@ -35,7 +35,6 @@ Your primary task is to translate English Markdown documentation to German. You 
 <example_input>
 ---
 title: Getting Started
-index: 1
 ---
 
 # Getting Started
@@ -64,7 +63,6 @@ This will start all services.
 <example_output>
 ---
 title: Erste Schritte
-index: 1
 source_sha: "%%SOURCE_SHA%%"
 ---
 

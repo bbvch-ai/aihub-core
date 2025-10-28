@@ -1,6 +1,5 @@
 ---
 title: 'External Log Aggregation'
-index: 1
 ---
 
 # External Log Aggregation

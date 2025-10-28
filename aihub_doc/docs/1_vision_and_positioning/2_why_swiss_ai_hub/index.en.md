@@ -1,6 +1,5 @@
 ---
 title: Why Swiss AI Hub
-index: 2
 ---
 
 # Why Swiss AI Hub?

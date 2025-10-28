@@ -1,6 +1,5 @@
 ---
 title: The Infrastructure Layers
-index: 2
 ---
 
 # The Infrastructure Layers

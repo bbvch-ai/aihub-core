@@ -1,6 +1,5 @@
 ---
 title: Network security
-index: 4
 ---
 
 # Network security

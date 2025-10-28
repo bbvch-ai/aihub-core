@@ -1,6 +1,5 @@
 ---
 title: "Low-Level Traces"
-index: 2
 ---
 
 # Deep Observability with OpenTelemetry :telescope: :100:

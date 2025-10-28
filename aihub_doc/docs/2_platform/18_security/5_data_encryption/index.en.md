@@ -1,6 +1,5 @@
 ---
 title: Data Encryption
-index: 5
 ---
 
 # Data Encryption at Rest

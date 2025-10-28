@@ -1,6 +1,5 @@
 ---
 title: Glossary
-index: 3
 ---
 
 # Glossary

@@ -1,6 +1,5 @@
 ---
 title: API
-index: 16
 ---
 
 # OpenAI-Compatible REST API
@@ -96,23 +95,6 @@ horizontal scaling. Authentication integrates with organizational identity provi
 permissions control access to both LLM models and AI assistants. Request routing logic transparently directs model
 requests to the LLM proxy layer while converting assistant interactions into platform events for agent processing,
 maintaining clean separation between external model access and internal agent orchestration.
-
-
----
-title: APIs
-index: 1
----
-
-# APIs
-
-The API layer serves as the central gateway for all external interactions with the Swiss AI-Hub platform. It provides
-secure, standards-based interfaces for user applications, administrative tools, and integration endpoints.
-
-## Purpose and Scope
-
-The API component encompasses all programmatic interfaces that allow external systems and users to interact with the
-platform. This includes REST APIs for synchronous operations, WebSocket connections for real-time communication, and
-specialized endpoints for authentication, authorization, and resource management.
 
 ## Key Responsibilities
 

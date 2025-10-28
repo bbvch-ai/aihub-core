@@ -1,6 +1,5 @@
 ---
 title: Screen Sharing
-index: 7
 ---
 
 # Screen Sharing

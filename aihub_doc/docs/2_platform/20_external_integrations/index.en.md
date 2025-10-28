@@ -1,6 +1,5 @@
 ---
 title: 'External system integrations'
-index: 20
 ---
 
 # External system integrations

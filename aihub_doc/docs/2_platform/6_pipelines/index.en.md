@@ -1,6 +1,5 @@
 ---
 title: Data Pipelines
-index: 6
 ---
 
 # Data Pipelines: Creating the AI's Knowledge
