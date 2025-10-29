@@ -68,8 +68,8 @@ class DoclingLoader(BaseReader):
         )
 
     def _read_file_sync(self, fs: AbstractFileSystem, file: str) -> str:
-        with fs.open(file, "rb") as pdf_file:
-            return base64.b64encode(pdf_file.read()).decode("utf-8")
+        file_content = fs.cat_file(file)
+        return base64.b64encode(file_content).decode("utf-8")
 
     def _process_docling_response(
         self,
