@@ -199,7 +199,6 @@ appropriate documentation for your needs.
 
 ## Quick Navigation
 
-
 ### For Developers and SDK Users
 
 If you're implementing RBAC in your custom agents, APIs, or services, and need technical implementation details:
@@ -262,7 +261,6 @@ aihub.[user|admin].[resource_type].[resource_category].[resource_identifier]
 
 ## Choose Your Path
 
-- **Developers & Integrators**: Begin with the
-  [SDK Implementation Guide](../../../3_sdk/5_advanced_topics/5_rbac/)
+- **Developers & Integrators**: Begin with the [SDK Implementation Guide](../../../3_sdk/5_advanced_topics/5_rbac/)
 
 Both guides provide comprehensive coverage of the AI-Hub RBAC system tailored to your specific needs and use cases.

@@ -59,25 +59,25 @@ implementing new process variants.
 
 AI assistants can query live platform state for operational insights and troubleshooting. Operations teams receive
 immediate answers about process execution status, agent performance metrics, event histories, and system health without
-manually navigating interfaces or parsing logs. This reduces mean time to resolution for incidents and enables
-proactive issue identification through AI-powered anomaly detection across conversation patterns, agent behaviors, and
-business process execution.
+manually navigating interfaces or parsing logs. This reduces mean time to resolution for incidents and enables proactive
+issue identification through AI-powered anomaly detection across conversation patterns, agent behaviors, and business
+process execution.
 
 ### Intelligent Knowledge Management
 
 The MCP interface provides AI assistants with access to knowledge bases, document repositories, and RAG indices,
 enabling sophisticated knowledge discovery and analysis. Users can ask natural language questions that retrieve and
-synthesize information across distributed document collections, identify knowledge gaps, and receive recommendations
-for content improvements. This capability is valuable for compliance teams needing to locate specific regulatory
-references and researchers exploring large technical document collections.
+synthesize information across distributed document collections, identify knowledge gaps, and receive recommendations for
+content improvements. This capability is valuable for compliance teams needing to locate specific regulatory references
+and researchers exploring large technical document collections.
 
 ### Enhanced Development Productivity
 
 Developers benefit from AI assistants with direct platform access for code generation and debugging. Code suggestions
 validate against current API schemas rather than generic patterns, debugging conversations include actual platform
-state, and test generation uses real agent configurations. Organizations report development productivity improvements
-of 30-50% when AI assistants have structured system access. New team members gain productivity faster through
-immediate, context-aware guidance that reduces onboarding time and eliminates dependency on documentation searches.
+state, and test generation uses real agent configurations. Organizations report development productivity improvements of
+30-50% when AI assistants have structured system access. New team members gain productivity faster through immediate,
+context-aware guidance that reduces onboarding time and eliminates dependency on documentation searches.
 
 ### Process Analysis and Optimization
 

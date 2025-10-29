@@ -1,7 +1,3 @@
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from pytest_bdd import given, parsers, scenarios, then, when
-
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
@@ -9,6 +5,10 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import ChunkEvent, LLMEvent, UserMessageEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from pytest_bdd import given, parsers, scenarios, then, when
+
+from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgent import LlamaIndexAgent
 from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgentConfig import LlamaIndexAgentConfig
 

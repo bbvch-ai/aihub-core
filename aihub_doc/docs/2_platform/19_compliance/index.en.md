@@ -4,7 +4,8 @@ title: Compliance and regulations
 
 # Compliance and regulations
 
-The platform provides technical measures to support regulatory compliance. Organizations using the platform act as data controllers and remain responsible for their own compliance.
+The platform provides technical measures to support regulatory compliance. Organizations using the platform act as data
+controllers and remain responsible for their own compliance.
 
 ## Coverage
 
@@ -19,4 +20,5 @@ This section documents the platform's compliance capabilities:
 
 ## Data controller responsibility
 
-The platform provides technical capabilities like audit logging, configurable retention, encryption, and access controls. Organizations must configure these features appropriately for their regulatory requirements and use cases.
+The platform provides technical capabilities like audit logging, configurable retention, encryption, and access
+controls. Organizations must configure these features appropriately for their regulatory requirements and use cases.

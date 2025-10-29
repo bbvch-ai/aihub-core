@@ -9,7 +9,7 @@ from aihub_lib.generative_ai.resources.models.llm.LiteLLMBase import LiteLLMBase
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
 
 
-class RerankingModelConfig(LiteLLMBase):
+class RerankingModelConfig(LiteLLMBase[CohereRerank]):
     """Configuration for a reranking model."""
 
     top_n: Annotated[
