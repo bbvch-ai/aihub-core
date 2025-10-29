@@ -153,4 +153,4 @@ async def complex_step(
 
 ## Next Steps
 
-Now that you understand the fundamentals, explore the **[Core Patterns](./2_core_patterns/)** to see how these concepts are used to build agent workflows.
+Now that you understand the fundamentals, explore the **[Core Patterns](../2_core_patterns/)** to see how these concepts are used to build agent workflows.
