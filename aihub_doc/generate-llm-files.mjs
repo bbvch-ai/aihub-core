@@ -1,217 +1,146 @@
 import { writeFileSync, mkdirSync, existsSync, rmSync, readFileSync } from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
-// Correct import path, as this script is in `scripts/`
 import { generateSidebar, DEFAULT_LOCALE, DOCS_ROOT, BASE_URL } from './.vitepress/sidebar-logic.mjs';
 
 const PUBLIC_DIR = path.resolve(DOCS_ROOT, 'public');
 
-/**
- * Converts hero frontmatter to markdown for LLMs.
- */
-function heroToMarkdown(frontmatter) {
-  const hero = frontmatter.hero;
+const TOC_INDENT = '  ';
+
+const convertHeroToMarkdown = (frontmatter) => {
+  const { hero, features } = frontmatter;
   if (!hero) return '';
 
-  let md = `\n# ${hero.name}\n\n`;
-  if (hero.text) md += `> ${hero.text}\n\n`;
-  if (hero.tagline) md += `${hero.tagline}\n\n`;
+  const sections = [
+    `\n# ${hero.name}\n`,
+    hero.text && `> ${hero.text}\n`,
+    hero.tagline && `${hero.tagline}\n`,
+    features && [
+      '## Features\n',
+      ...features.map(f => `### ${f.title}\n${f.details}\n`)
+    ].join('\n'),
+  ];
 
-  if (frontmatter.features) {
-    md += `## Features\n\n`;
-    for (const feature of frontmatter.features) {
-      md += `### ${feature.title}\n`;
-      md += `${feature.details}\n\n`;
-    }
-  }
-  return md;
-}
+  return sections.filter(Boolean).join('\n');
+};
 
-/**
- * Formats the final llms.txt file content.
- */
-function formatLlmsTxt(title, heroMd, toc) {
-  // Prepend the hero markdown content before the TOC
-  return `${heroMd}
-## Table of Contents
-${toc}
-`;
-}
+const sanitizeForYaml = (value) => JSON.stringify(value || '');
 
-/**
- * Recursively walks the rich sidebar tree to generate files.
- */
-function walkTreeAndGenerateFiles(items, locale) {
-  let fullContent = [];
-  let toc = [];
+const buildMarkdownUrl = (link, locale) => {
+  if (link === '/' && locale === DEFAULT_LOCALE) return '/index.md';
+  if (link === `/${locale}/` && locale !== DEFAULT_LOCALE) return `/${locale}/index.md`;
+  return link.replace(/\/$/, '.md');
+};
 
-  const localePrefix = locale === DEFAULT_LOCALE ? '' : `/${locale}`;
-  const tocDepth = 1;
+const createFrontmatterBlock = (url, title, description) =>
+  `---\nurl: ${url}\ntitle: ${sanitizeForYaml(title)}\ndescription: ${sanitizeForYaml(description)}\n---\n`;
 
-  for (const item of items) {
-    // Special handling for the root 'Home' item
-    if (item.sortOrder === 0) {
-      toc.push(`## ${item.text}\n`); // Use main heading for root
-    } else {
-      toc.push(`### ${item.text}\n`);
-    }
+const createTocEntry = (text, url, description, depth) => {
+  const indent = TOC_INDENT.repeat(depth - 1);
+  const desc = description ? `: ${description.replace(/[\n\r"]/g, ' ').trim()}` : '';
+  return `${indent}- [${text}](${url})${desc}`;
+};
 
-    // Process the group's root page
-    const groupResult = processItem(item, locale, tocDepth);
-    fullContent.push(groupResult.content);
-    toc.push(groupResult.tocEntry);
-
-    // Process children
-    if (item.items && item.items.length > 0) {
-      const subResult = walkSubItems(item.items, locale, tocDepth + 1);
-      fullContent.push(...subResult.fullContent);
-      toc.push(...subResult.toc);
-    }
-
-    toc.push(''); // Add a newline between groups
-  }
-
-  return {
-    fullContent: fullContent.join('\n\n---\n\n'),
-    toc: toc.join('\n')
-  };
-}
-
-/**
- * Recursive helper for sub-items.
- */
-function walkSubItems(items, locale, tocDepth) {
-  let fullContent = [];
-  let toc = [];
-
-  for (const item of items) {
-    const itemResult = processItem(item, locale, tocDepth);
-    fullContent.push(itemResult.content);
-    toc.push(itemResult.tocEntry);
-
-    if (item.items && item.items.length > 0) {
-      const subResult = walkSubItems(item.items, locale, tocDepth + 1);
-      fullContent.push(...subResult.fullContent);
-      toc.push(...subResult.toc);
-    }
-  }
-  return { fullContent, toc };
-}
-
-/**
- * Processes a single item: reads its file, generates content,
- * writes the file to /public, and returns its TOC entry.
- */
-function processItem(item, locale, tocDepth) {
+const processDocumentItem = (item, locale, tocDepth) => {
   const { text, link, sourceFile, frontmatter } = item;
-
-  // 1. Determine the final URL path for the .md file
-  let mdPath;
-  if (link === '/' && locale === DEFAULT_LOCALE) {
-    mdPath = '/index.md';
-  } else if (link === `/${locale}/` && locale !== DEFAULT_LOCALE) {
-    mdPath = `/${locale}/index.md`;
-  } else {
-    mdPath = link.replace(/\/$/, '.md');
-  }
+  const mdPath = buildMarkdownUrl(link, locale);
   const fullUrl = `${BASE_URL}${mdPath}`;
 
-  // 2. Create TOC entry
-  const tocTitle = frontmatter.hero?.name || text;
-  const description = frontmatter.hero?.text || frontmatter.description;
-  const tocDescription = description ? `: ${description.replace(/[\n\r"]/g, ' ').trim()}` : '';
-
-  const tocEntry = `${'  '.repeat(tocDepth - 1)}- [${tocTitle}](${fullUrl})${tocDescription}`;
-
-  // 3. Read and strip content
   const rawContent = readFileSync(sourceFile, 'utf-8');
-  let { content: strippedContent, data: rawFrontmatter } = matter(rawContent);
+  const { content: strippedContent } = matter(rawContent);
 
-  // 4. Create final content with metadata
-  // --- FIX for Bug 1: Quote title and description ---
-  const safeTitle = JSON.stringify(text); // Use JSON.stringify for proper escaping
-  const safeDescription = JSON.stringify(description || '');
+  const title = frontmatter.hero?.name || text;
+  const description = frontmatter.hero?.text || frontmatter.description;
 
-  let metadata = `---
-url: ${fullUrl}
-title: ${safeTitle}
-description: ${safeDescription}
----
-`;
+  const heroMarkdown = frontmatter.hero ? convertHeroToMarkdown(frontmatter) : '';
+  const frontmatterBlock = createFrontmatterBlock(fullUrl, text, description);
+  const finalContent = frontmatterBlock + heroMarkdown + strippedContent;
 
-  // --- FIX for Bug 2: Handle Hero ---
-  if (rawFrontmatter.hero) {
-    strippedContent = heroToMarkdown(rawFrontmatter) + strippedContent;
-  }
-
-  const finalContent = metadata + strippedContent;
-
-  // 5. Write the file to the public directory
   const outputPath = path.join(PUBLIC_DIR, mdPath);
   mkdirSync(path.dirname(outputPath), { recursive: true });
   writeFileSync(outputPath, finalContent);
 
-  return { content: finalContent, tocEntry };
-}
+  return {
+    content: finalContent,
+    tocEntry: createTocEntry(title, fullUrl, description, tocDepth),
+  };
+};
 
-/**
- * Main script execution
- */
-function main() {
+const processSidebarItems = (items, locale, tocDepth = 1) => {
+  const results = items.flatMap(item => {
+    const itemResult = processDocumentItem(item, locale, tocDepth);
+    const heading = item.sortOrder === 0 ? `## ${item.text}\n` : `### ${item.text}\n`;
+
+    const subResults = item.items?.length
+      ? processSidebarItems(item.items, locale, tocDepth + 1)
+      : { contents: [], tocEntries: [] };
+
+    return {
+      contents: [itemResult.content, ...subResults.contents],
+      tocEntries: [heading, itemResult.tocEntry, ...subResults.tocEntries, ''],
+    };
+  });
+
+  return {
+    contents: results.flatMap(r => r.contents),
+    tocEntries: results.flatMap(r => r.tocEntries),
+  };
+};
+
+const generateDocumentationSet = (locale) => {
+  const tree = generateSidebar(locale);
+  const rootItem = tree.find(item => item.sortOrder === 0);
+
+  const { contents, tocEntries } = processSidebarItems(tree, locale);
+
+  const title = rootItem?.frontmatter.hero?.name || rootItem?.text || 'Documentation';
+  const heroMarkdown = rootItem ? convertHeroToMarkdown(rootItem.frontmatter) : '';
+  const toc = `${heroMarkdown}\n## Table of Contents\n${tocEntries.join('\n')}`;
+  const fullContent = contents.join('\n\n---\n\n');
+
+  return { toc, fullContent, title };
+};
+
+const cleanPublicDirectory = () => {
+  const pathsToClean = [
+    path.join(PUBLIC_DIR, 'docs'),
+    path.join(PUBLIC_DIR, 'de'),
+    ...['index.md', 'llms.txt', 'llms-full.txt', 'changelog.md', 'licenses.md']
+      .map(file => path.join(PUBLIC_DIR, file)),
+  ];
+
+  pathsToClean.forEach(p => {
+    if (existsSync(p)) {
+      rmSync(p, { recursive: true, force: true });
+    }
+  });
+
+  mkdirSync(path.join(PUBLIC_DIR, 'docs'), { recursive: true });
+  mkdirSync(path.join(PUBLIC_DIR, 'de'), { recursive: true });
+};
+
+const writeDocumentationFiles = (locale, outputDir, docs) => {
+  const dir = locale === DEFAULT_LOCALE ? PUBLIC_DIR : path.join(PUBLIC_DIR, locale);
+
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(path.join(dir, 'llms.txt'), docs.toc);
+  writeFileSync(path.join(dir, 'llms-full.txt'), docs.fullContent);
+};
+
+const main = () => {
   console.log('🔄 Starting LLM documentation generation...');
 
-  // Clean relevant dirs in `public`
-  const enPublicDir = path.join(PUBLIC_DIR, 'docs');
-  const dePublicDir = path.join(PUBLIC_DIR, 'de');
-  if (existsSync(enPublicDir)) rmSync(enPublicDir, { recursive: true, force: true });
-  if (existsSync(dePublicDir)) rmSync(dePublicDir, { recursive: true, force: true });
+  cleanPublicDirectory();
 
-  const rootFiles = ['index.md', 'llms.txt', 'llms-full.txt', 'changelog.md', 'licenses.md'];
-  for (const file of rootFiles) {
-    const filePath = path.join(PUBLIC_DIR, file);
-    if (existsSync(filePath)) rmSync(filePath, { force: true });
-  }
-
-  mkdirSync(enPublicDir, { recursive: true });
-  mkdirSync(dePublicDir, { recursive: true });
-
-  // --- Generate English ---
   console.log('Generating English (en) files...');
-  const enTree = generateSidebar('en');
-  const enRootItem = enTree.find(item => item.sortOrder === 0);
-  const enRootTitle = enRootItem.frontmatter.hero?.name || enRootItem.text;
-  const enRootHeroMd = enRootItem ? heroToMarkdown(enRootItem.frontmatter) : '';
-  const enResult = walkTreeAndGenerateFiles(enTree, 'en');
+  const enDocs = generateDocumentationSet('en');
+  writeDocumentationFiles('en', PUBLIC_DIR, enDocs);
 
-  writeFileSync(
-    path.join(PUBLIC_DIR, 'llms.txt'),
-    formatLlmsTxt(enRootTitle, enRootHeroMd, enResult.toc)
-  );
-  writeFileSync(
-    path.join(PUBLIC_DIR, 'llms-full.txt'),
-    enResult.fullContent
-  );
-
-  // --- Generate German ---
   console.log('Generating German (de) files...');
-  const deTree = generateSidebar('de');
-  const deRootItem = deTree.find(item => item.sortOrder === 0);
-  const deRootTitle = deRootItem.frontmatter.hero?.name || deRootItem.text;
-  const deRootHeroMd = deRootItem ? heroToMarkdown(deRootItem.frontmatter) : '';
-  const deResult = walkTreeAndGenerateFiles(deTree, 'de');
-
-  const deOutDir = path.join(PUBLIC_DIR, 'de');
-  mkdirSync(deOutDir, { recursive: true });
-  writeFileSync(
-    path.join(deOutDir, 'llms.txt'),
-    formatLlmsTxt(deRootTitle, deRootHeroMd, deResult.toc)
-  );
-  writeFileSync(
-    path.join(deOutDir, 'llms-full.txt'),
-    deResult.fullContent
-  );
+  const deDocs = generateDocumentationSet('de');
+  writeDocumentationFiles('de', path.join(PUBLIC_DIR, 'de'), deDocs);
 
   console.log('🎉 LLM documentation generation complete.');
-}
+};
 
 main();

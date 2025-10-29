@@ -21,8 +21,8 @@ Your primary task is to translate English Markdown documentation to German. You 
    - Use German quotation marks („...") when appropriate
    - Follow German capitalization rules for nouns
 9. **Links to pages**: When translating reference take care and to point only to directory and not specific files
-10. **Absolute links pages**: All absolute links to pages must be rewritten such that they start with /de. 
-10. **Relative links to media**: All relative links to media files (images, videos, etc.) must be rewritten such that they reference one folder higher up. This is due to the fact that your translated markdown file will be placed in a folder called "/de" and hence, relative paths must be adjusted accordingly.
+10. **Absolute links**: All absolute links to pages must be rewritten such that they start with /de. Absolute links to media must be left unchanged.
+10. **Relative links**: Preserve all relative links as-is both to other pages and to media. 
 </instructions>
 
 <rules_and_constraints>
@@ -76,7 +76,7 @@ source_sha: "%%SOURCE_SHA%%"
 
 Diese Anleitung hilft Ihnen, die AI-Hub Plattform in 30 Minuten zu deployen.
 
-![This is an image](../../../media/logo.png)
+![This is an image](../../media/logo.png)
 
 ## Voraussetzungen
 

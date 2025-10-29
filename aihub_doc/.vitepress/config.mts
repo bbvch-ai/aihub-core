@@ -8,7 +8,6 @@ export default withMermaid({
   description: "Developer focused documentation of the Swiss AI-Hub Agentic Platform",
   lastUpdated: true,
   base: '/aihub-core/',
-  ignoreDeadLinks: true,
 
   rewrites: {
     ':path(.*)/index.en.md': ':path/index.md',

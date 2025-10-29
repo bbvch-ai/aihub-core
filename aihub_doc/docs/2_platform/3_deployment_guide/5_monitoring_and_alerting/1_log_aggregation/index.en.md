@@ -134,5 +134,5 @@ To use an alternative backend, update the environment variables to point to your
 
 - Explore the [SigNoz documentation](https://signoz.io/docs/) for query builders and alert configuration
 - Review the [OpenTelemetry Collector documentation](https://opentelemetry.io/docs/collector/) for advanced configuration
-- Configure [Phoenix LLM Observability](../../../10_chat_ui/3_observability/) for AI-specific debugging
+- Configure [Phoenix LLM Observability](../../../10_chat_ui/10_observability/) for AI-specific debugging
 - Set up [Cost Tracking](../../../14_cost_control/) for LLM usage monitoring
