@@ -76,7 +76,8 @@ authentication, the platform determines what resources and operations the user c
 
 **API-Level Permission Enforcement:** Every API endpoint declares its required permissions. These permissions are
 automatically checked before the endpoint logic executes, ensuring no resource access bypasses authorization. The
-permission evaluation uses the hierarchical permission model described in the [Permissions](../../11_access_management/2_permissions/).
+permission evaluation uses the hierarchical permission model described in the
+[Permissions](../../11_access_management/2_permissions/).
 
 **Dynamic Authorization:** For operations requiring runtime permission checks, the platform provides programmatic access
 to the permission evaluation system. This enables filtering result sets based on user permissions, implementing

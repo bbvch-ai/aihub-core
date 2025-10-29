@@ -4,17 +4,19 @@ title: Data Ingestion Pipeline
 
 # Data Ingestion Pipeline
 
-The AI-Hub Pipeline SDK provides pre-built, production-ready pipeline definitions that you can use with minimal configuration. 
-These **factories** encapsulate best practices for ingesting documents and preparing them for RAG applications.
+The AI-Hub Pipeline SDK provides pre-built, production-ready pipeline definitions that you can use with minimal
+configuration. These **factories** encapsulate best practices for ingesting documents and preparing them for RAG
+applications.
 
 ## The Two-Stage Ingestion Architecture
 
-Our ingestion process is split into two distinct stages, each handled by its own pipeline definition factory. This promotes modularity and reusability.
+Our ingestion process is split into two distinct stages, each handled by its own pipeline definition factory. This
+promotes modularity and reusability.
 
-1.  **Stage 1: Source to Data Lake** (Optional): This pipeline connects to an external source (like SharePoint) and syncs its files to a central S3 data lake.
-2.  **Stage 2: Data Lake to Vector Store**: This pipeline monitors the S3 data lake, processes the documents, and stores the resulting embeddings in a vector store.
-
-
+1. **Stage 1: Source to Data Lake** (Optional): This pipeline connects to an external source (like SharePoint) and syncs
+   its files to a central S3 data lake.
+2. **Stage 2: Data Lake to Vector Store**: This pipeline monitors the S3 data lake, processes the documents, and stores
+   the resulting embeddings in a vector store.
 
 ```mermaid
 graph TD
@@ -59,10 +61,12 @@ graph TD
 
 ## 1. The SharePoint to Data Lake Pipeline
 
-Use the `default_sharepoint_to_datalake_definitions` factory to sync documents from a SharePoint site to your S3 data lake.
+Use the `default_sharepoint_to_datalake_definitions` factory to sync documents from a SharePoint site to your S3 data
+lake.
 
-  * **What it does**: Observes a SharePoint location, downloads new or updated files, and cleans up files in the data lake that were deleted from SharePoint.
-  * **Key Assets**: `observable_sharepoint`, `data_lake_files`, `removed_data_lake_files`.
+- **What it does**: Observes a SharePoint location, downloads new or updated files, and cleans up files in the data lake
+  that were deleted from SharePoint.
+- **Key Assets**: `observable_sharepoint`, `data_lake_files`, `removed_data_lake_files`.
 
 ### Usage Example
 
@@ -79,10 +83,12 @@ defs = default_sharepoint_to_datalake_definitions(
 
 ## 2. The Data Lake to Vector Store Pipeline
 
-This is the core RAG pipeline. Use the `default_definitions` factory to process documents from your S3 data lake into a vector store.
+This is the core RAG pipeline. Use the `default_definitions` factory to process documents from your S3 data lake into a
+vector store.
 
-  * **What it does**: Observes an S3 bucket, parses documents, chunks them into nodes, optionally creates summary nodes, and stores the embeddings in Milvus. It also handles document deletions.
-  * **Key Assets**: `observable_data_lake`, `documents`, `nodes`, `summary_nodes`, `removed_documents`.
+- **What it does**: Observes an S3 bucket, parses documents, chunks them into nodes, optionally creates summary nodes,
+  and stores the embeddings in Milvus. It also handles document deletions.
+- **Key Assets**: `observable_data_lake`, `documents`, `nodes`, `summary_nodes`, `removed_documents`.
 
 ### Usage Example
 
@@ -99,26 +105,29 @@ defs = default_definitions(
 
 ## Default Data Mapping
 
-The SDK uses a consistent naming convention to map your data lake structure to the underlying storage backends (Document Store and Vector Store).
+The SDK uses a consistent naming convention to map your data lake structure to the underlying storage backends (Document
+Store and Vector Store).
 
 ### Container/Bucket → Database/Collection
 
-The top-level S3 bucket name is used as the primary identifier for your storage resources, providing strong data isolation.
+The top-level S3 bucket name is used as the primary identifier for your storage resources, providing strong data
+isolation.
 
 **Example:**
 
-  * **Data Lake Bucket**: `s3://hr-documents/`
-  * **Document Store DB**: `hr-documents`
-  * **Vector Store Collection**: `hr-documents`
+- **Data Lake Bucket**: `s3://hr-documents/`
+- **Document Store DB**: `hr-documents`
+- **Vector Store Collection**: `hr-documents`
 
 ### Directory → Namespace
 
-Within a bucket, you can use directories to create logical separations, which map to **namespaces** within the vector store. This allows for multi-tenancy or logical grouping within a single collection.
+Within a bucket, you can use directories to create logical separations, which map to **namespaces** within the vector
+store. This allows for multi-tenancy or logical grouping within a single collection.
 
 **Example:**
 
-  * **Data Lake Path**: `s3://hr-documents/onboarding/`
-  * **Vector Store Namespace**: `onboarding`
+- **Data Lake Path**: `s3://hr-documents/onboarding/`
+- **Vector Store Namespace**: `onboarding`
 
 ## Running and Combining Pipelines
 

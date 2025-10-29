@@ -4,13 +4,16 @@ title: Building Pipelines
 
 # Building Pipelines with the AI-Hub SDK
 
-The AI-Hub Pipeline SDK provides a powerful, production-ready framework for building document processing pipelines. It's designed to ingest documents from various sources, parse them, and create searchable vector embeddings for Retrieval-Augmented Generation (RAG) systems.
+The AI-Hub Pipeline SDK provides a powerful, production-ready framework for building document processing pipelines. It's
+designed to ingest documents from various sources, parse them, and create searchable vector embeddings for
+Retrieval-Augmented Generation (RAG) systems.
 
 This guide explains the SDK's architecture and shows you how to configure and deploy robust, automated data pipelines.
 
 ## The Default Data Lake to Vector Store Pipeline
 
-The SDK's core is a pre-built, configurable pipeline that handles the entire journey from raw files in a data lake to indexed embeddings in a vector store.
+The SDK's core is a pre-built, configurable pipeline that handles the entire journey from raw files in a data lake to
+indexed embeddings in a vector store.
 
 ```mermaid
 graph TD
@@ -55,15 +58,19 @@ graph TD
 
 Our SDK is built on a few key principles to ensure pipelines are efficient, scalable, and maintainable:
 
-  * **Asset Factories**: Instead of writing boilerplate, you use simple factory functions to generate entire sets of pre-configured assets and resources (e.g., `default_definitions`).
-  * **Change-Driven Automation**: Pipelines run automatically in response to data changes, not on fixed schedules. This is achieved using **observable assets** that monitor source systems.
-  * **Document-Level Isolation**: Each document is processed in its own **partition**, meaning a failure in one document won't halt the entire pipeline.
-  * **Pluggable I/O**: Custom **I/O Managers** abstract away storage logic, making it easy to integrate with different databases like MongoDB and Milvus without changing your core processing code.
-
+- **Asset Factories**: Instead of writing boilerplate, you use simple factory functions to generate entire sets of
+  pre-configured assets and resources (e.g., `default_definitions`).
+- **Change-Driven Automation**: Pipelines run automatically in response to data changes, not on fixed schedules. This is
+  achieved using **observable assets** that monitor source systems.
+- **Document-Level Isolation**: Each document is processed in its own **partition**, meaning a failure in one document
+  won't halt the entire pipeline.
+- **Pluggable I/O**: Custom **I/O Managers** abstract away storage logic, making it easy to integrate with different
+  databases like MongoDB and Milvus without changing your core processing code.
 
 ## Quick Start: A Complete Pipeline in Under 10 Lines
 
-The SDK's factories make it incredibly simple to stand up a complete pipeline. The `default_definitions` function bundles all the necessary assets, resources, jobs, and schedules.
+The SDK's factories make it incredibly simple to stand up a complete pipeline. The `default_definitions` function
+bundles all the necessary assets, resources, jobs, and schedules.
 
 Create a file named `my_pipeline.py`:
 
@@ -80,21 +87,19 @@ defs = default_definitions(
 )
 ```
 
-To run it, simply point the Dagster UI to your file:
-`dagster dev -f my_pipeline.py`
+To run it, simply point the Dagster UI to your file: `dagster dev -f my_pipeline.py`
 
 This single function call provides:
 
-  * An **observable data lake** that automatically detects new or changed documents.
-  * A multi-stage processing workflow including **parsing**, **chunking**, and **embedding**.
-  * Integration with MongoDB for a **document store** and Milvus for a **vector store**.
-  * Pre-configured **jobs**, **schedules**, and **sensors** for production-ready automation.
-
+- An **observable data lake** that automatically detects new or changed documents.
+- A multi-stage processing workflow including **parsing**, **chunking**, and **embedding**.
+- Integration with MongoDB for a **document store** and Milvus for a **vector store**.
+- Pre-configured **jobs**, **schedules**, and **sensors** for production-ready automation.
 
 ## Next Steps
 
-1. **[Pipeline Fundamentals](./1_pipeline_fundamentals/)** - Understand the architectural decisions and patterns for building
-   pipelines
+1. **[Pipeline Fundamentals](./1_pipeline_fundamentals/)** - Understand the architectural decisions and patterns for
+   building pipelines
 2. **[Core Patterns](./2_core_patterns/)** - Understand the core patterns for building pipelines with examples
 3. **[Data Ingestion Pipeline](./3_data_ingestion_pipeline/)** - Configure and extend the default pipeline
 4. **[Job Scheduling](./4_job_scheduling/)** - Schedule your pipelines for automatic runs

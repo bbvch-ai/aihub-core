@@ -300,5 +300,6 @@ To implement Bot-in-the-Loop in your AI-Hub deployment:
 3. **Integrate in Agent Workflows**: Use the simple `BotInTheLoop.invoke()` pattern at decision points where human input
    adds value to automated processes
 
-For detailed agent integration patterns, see the [Expert Agents documentation](../../../2_platform/5_agents/3_expert_asking_agent/) for real-world
-implementation examples, and the AI-Hub Agent Developer's Guide for comprehensive workflow integration instructions.
+For detailed agent integration patterns, see the
+[Expert Agents documentation](../../../2_platform/5_agents/3_expert_asking_agent/) for real-world implementation
+examples, and the AI-Hub Agent Developer's Guide for comprehensive workflow integration instructions.

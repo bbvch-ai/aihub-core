@@ -4,11 +4,15 @@ title: Network security
 
 # Network security
 
-The AI-Hub uses defense-in-depth network security. Multiple independent layers protect the platform, its data, and its users.
+The AI-Hub uses defense-in-depth network security. Multiple independent layers protect the platform, its data, and its
+users.
 
-All internal services (AI-Hub API, Web UI, LiteLLM Proxy, databases) run in isolated Docker containers on private networks. The Traefik reverse proxy is the only component accessible from the internet, accepting public traffic on ports 80 and 443.
+All internal services (AI-Hub API, Web UI, LiteLLM Proxy, databases) run in isolated Docker containers on private
+networks. The Traefik reverse proxy is the only component accessible from the internet, accepting public traffic on
+ports 80 and 443.
 
-Traefik routes requests to the correct internal service. Backend services remain isolated and never get exposed directly to the public internet.
+Traefik routes requests to the correct internal service. Backend services remain isolated and never get exposed directly
+to the public internet.
 
 ```
 Internet
@@ -40,23 +44,33 @@ Security applies at every stage of a request, from network edge to application l
 
 ### Network firewall (NSG)
 
-The Network Security Group (NSG) or firewall enforces a default deny policy. Only ports 80 (HTTP) and 443 (HTTPS) are accessible from the public internet. All other ports are blocked. You can restrict administrative access like SSH to specific trusted IP ranges.
+The Network Security Group (NSG) or firewall enforces a default deny policy. Only ports 80 (HTTP) and 443 (HTTPS) are
+accessible from the public internet. All other ports are blocked. You can restrict administrative access like SSH to
+specific trusted IP ranges.
 
 ### Reverse proxy (Traefik)
 
-Traefik serves as the single entry point and secures all incoming connections. It terminates TLS (requiring HTTPS with TLS 1.2+), automatically provisions and renews certificates via Let's Encrypt, and injects security headers like HSTS and X-Frame-Options. Rate limiting protects backend services from brute-force and simple DoS attacks.
+Traefik serves as the single entry point and secures all incoming connections. It terminates TLS (requiring HTTPS with
+TLS 1.2+), automatically provisions and renews certificates via Let's Encrypt, and injects security headers like HSTS
+and X-Frame-Options. Rate limiting protects backend services from brute-force and simple DoS attacks.
 
 ### Authentication (IAM)
 
-Azure AD OAuth2 handles user authentication, integrating with corporate identity. This enables Role-Based Access Control (RBAC) for fine-grained permissions. API keys authenticate service-to-service communication. Session management with configurable timeouts protects user sessions.
+Azure AD OAuth2 handles user authentication, integrating with corporate identity. This enables Role-Based Access Control
+(RBAC) for fine-grained permissions. API keys authenticate service-to-service communication. Session management with
+configurable timeouts protects user sessions.
 
 ### Container isolation
 
-Application services run as non-root users in isolated Docker containers with minimal privileges. Container networking rules prevent direct communication between unrelated services. Resource limits mitigate resource exhaustion attacks. Images get updated regularly with security patches.
+Application services run as non-root users in isolated Docker containers with minimal privileges. Container networking
+rules prevent direct communication between unrelated services. Resource limits mitigate resource exhaustion attacks.
+Images get updated regularly with security patches.
 
 ### Data protection
 
-Presidio automatically detects and anonymizes Personally Identifiable Information (PII) in LLM requests. AI-powered sensitive information guards scan responses before delivery to users. An audit trail logs all data access and processing.
+Presidio automatically detects and anonymizes Personally Identifiable Information (PII) in LLM requests. AI-powered
+sensitive information guards scan responses before delivery to users. An audit trail logs all data access and
+processing.
 
 ## Related documentation
 

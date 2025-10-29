@@ -1,3 +1,3 @@
 ---
-title: "High-Level Interactions"
+title: High-Level Interactions
 ---

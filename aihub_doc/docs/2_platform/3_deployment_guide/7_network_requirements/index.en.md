@@ -8,49 +8,48 @@ This page covers network connectivity, firewall rules, and security requirements
 
 ## External service connectivity
 
-The AI-Hub VM connects to external services depending on your configuration. All external connections use HTTPS (port 443).
+The AI-Hub VM connects to external services depending on your configuration. All external connections use HTTPS (port
+443).
 
 Which providers you need depends on your deployment configuration.
 
 ::: details AI service endpoints
-| Service | Endpoint | Port | Purpose |
-|---------|----------|------|---------|
-| Azure OpenAI  | `*.openai.azure.com` | 443 | LLM inference, embeddings, vision, audio |
-| Google Gemini | `generativelanguage.googleapis.com` | 443 | LLM inference |
-| Jina AI | `api.jina.ai` | 443 | Web search and embeddings |
-| Hugging Face | `huggingface.co` | 443 | Model downloads for self-hosted inference |
+| Service       | Endpoint                            | Port | Purpose                                   |
+| ------------- | ----------------------------------- | ---- | ----------------------------------------- |
+| Azure OpenAI  | `*.openai.azure.com`                | 443  | LLM inference, embeddings, vision, audio  |
+| Google Gemini | `generativelanguage.googleapis.com` | 443  | LLM inference                             |
+| Jina AI       | `api.jina.ai`                       | 443  | Web search and embeddings                 |
+| Hugging Face  | `huggingface.co`                    | 443  | Model downloads for self-hosted inference |
 :::
-
-
 
 Agents and pipelines can call your existing enterprise systems.
 
 ::: details Example customer integration endpoints
-| Service | Endpoint | Port | Protocol | Authentication |
-|---------|----------|------|----------|----------------|
-| SharePoint | `<tenant>.sharepoint.com` | 443 | Graph API | OAuth2 (Azure AD App) |
-| Confluence | `<company>.atlassian.net` | 443 | REST | API Token |
-| Custom REST APIs | Customer-specific | 443 | REST | Various (API Key, OAuth2, mTLS) |
-| SOAP Services | Customer-specific | 443 | SOAP | WS-Security, Basic Auth |
+| Service          | Endpoint                  | Port | Protocol  | Authentication                  |
+| ---------------- | ------------------------- | ---- | --------- | ------------------------------- |
+| SharePoint       | `<tenant>.sharepoint.com` | 443  | Graph API | OAuth2 (Azure AD App)           |
+| Confluence       | `<company>.atlassian.net` | 443  | REST      | API Token                       |
+| Custom REST APIs | Customer-specific         | 443  | REST      | Various (API Key, OAuth2, mTLS) |
+| SOAP Services    | Customer-specific         | 443  | SOAP      | WS-Security, Basic Auth         |
 :::
 
 ### Microsoft services
 
 User authentication and management use Microsoft Entra ID.
 
-| Service | Endpoint | Purpose |
-|---------|----------|---------|
-| Microsoft Entra ID | `login.microsoftonline.com` | OAuth2 user authentication |
-| Microsoft Graph | `graph.microsoft.com` | User profiles and group membership |
+| Service            | Endpoint                    | Purpose                            |
+| ------------------ | --------------------------- | ---------------------------------- |
+| Microsoft Entra ID | `login.microsoftonline.com` | OAuth2 user authentication         |
+| Microsoft Graph    | `graph.microsoft.com`       | User profiles and group membership |
 
 ### Inbound connections
 
 Users and administrators connect to the AI-Hub on these ports.
 
-| Source | Destination | Port | Purpose |
-|--------|-------------|------|---------|
-| User Browsers | VM Public IP | 443 | Web UI and chat interface |
-| Administrators | VM Public IP | 22 | SSH administrative access |
+| Source         | Destination  | Port | Purpose                   |
+| -------------- | ------------ | ---- | ------------------------- |
+| User Browsers  | VM Public IP | 443  | Web UI and chat interface |
+| Administrators | VM Public IP | 22   | SSH administrative access |
 
 ## Firewall configuration
 
@@ -60,12 +59,12 @@ Production deployments expose three inbound ports. This minimizes the attack sur
 
 Configure these rules in your network security group (NSG) or firewall:
 
-| Priority | Name | Port | Protocol | Purpose |
-|----------|------|------|----------|---------|
-| 100 | AllowHTTPS | 443 | TCP | Primary access to AI-Hub services |
-| 110 | AllowHTTP | 80 | TCP | ACME/Let's Encrypt validation + HTTP→HTTPS redirect |
-| 120 | AllowSSH | 22 | TCP | Administrative access (restrict source IPs) |
-| 65000 | DenyAllInbound | \* | \* | Default deny all other inbound traffic |
+| Priority | Name           | Port | Protocol | Purpose                                             |
+| -------- | -------------- | ---- | -------- | --------------------------------------------------- |
+| 100      | AllowHTTPS     | 443  | TCP      | Primary access to AI-Hub services                   |
+| 110      | AllowHTTP      | 80   | TCP      | ACME/Let's Encrypt validation + HTTP→HTTPS redirect |
+| 120      | AllowSSH       | 22   | TCP      | Administrative access (restrict source IPs)         |
+| 65000    | DenyAllInbound | \*   | \*       | Default deny all other inbound traffic              |
 
 ::: tip
 Restrict SSH access (port 22) to specific administrator IP addresses or VPN ranges instead of allowing from any source.
@@ -75,11 +74,11 @@ Restrict SSH access (port 22) to specific administrator IP addresses or VPN rang
 
 The AI-Hub needs outbound connectivity for external integrations and updates:
 
-| Priority | Name | Port | Protocol | Purpose |
-|----------|------|------|----------|---------|
-| 100 | AllowHTTPS | 443 | TCP | API calls to LLM providers, external services |
-| 110 | AllowHTTP | 80 | TCP | Let's Encrypt certificate validation |
-| 120 | AllowDNS | 53 | UDP | DNS resolution |
+| Priority | Name       | Port | Protocol | Purpose                                       |
+| -------- | ---------- | ---- | -------- | --------------------------------------------- |
+| 100      | AllowHTTPS | 443  | TCP      | API calls to LLM providers, external services |
+| 110      | AllowHTTP  | 80   | TCP      | Let's Encrypt certificate validation          |
+| 120      | AllowDNS   | 53   | UDP      | DNS resolution                                |
 
 The platform reaches various external APIs based on your integrations. No additional outbound restrictions are needed.
 

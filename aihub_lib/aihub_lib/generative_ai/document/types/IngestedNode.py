@@ -126,6 +126,49 @@ class IngestedNode(IngestedBase):
         node.score = node_with_score.score
         return node
 
+    def to_llama_index_node_with_score(self) -> NodeWithScore:
+        def from_iso(iso_string: str) -> int:
+            """Convert ISO timestamp string to Unix timestamp integer."""
+            dt = datetime.fromisoformat(iso_string.replace("Z", "+00:00"))
+            return int(dt.timestamp())
+
+        node = TextNode(
+            id_=self.id,
+            text=self.content,
+            metadata={
+                TYPE: self.type,
+                NODE_CONTENT_TYPE: self.content_type,
+                DOCUMENT_ID: self.document_id,
+                SOURCE: self.source,
+                NAMESPACE: self.namespace,
+                DOCUMENT_TITLE: self.document_title,
+                LANGUAGE: self.language,
+                VERSION: self.version,
+                INDEX: self.index,
+                SECTION_START_LINE: self.section_start_line,
+                SECTION_END_LINE: self.section_end_line,
+                H1: self.h1,
+                H2: self.h2,
+                H3: self.h3,
+                H4: self.h4,
+                H5: self.h5,
+                H6: self.h6,
+                HEADING_LEVEL: self.heading_level,
+                CREATED_AT: from_iso(self.created_at),
+                UPDATED_AT: from_iso(self.updated_at),
+                INSERTED_AT: from_iso(self.inserted_at),
+                **self.metadata,
+            },
+            ref_doc_id=self.document_id,
+        )
+
+        if self.start_char_idx is not None:
+            node.start_char_idx = self.start_char_idx
+        if self.end_char_idx is not None:
+            node.end_char_idx = self.end_char_idx
+
+        return NodeWithScore(node=node, score=self.score)
+
     def to_semantic_convention(self, key: str, i: int) -> dict[str, str]:
         return {
             f"{key}.{i}.{DocumentAttributes.DOCUMENT_ID}": self.id,

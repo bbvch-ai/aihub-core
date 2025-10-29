@@ -1,5 +1,5 @@
 ---
-title: "Low-Level Traces"
+title: Low-Level Traces
 ---
 
 # Deep Observability with OpenTelemetry :telescope: :100:
@@ -79,7 +79,6 @@ To enable deep observability in your AI-Hub deployment:
 
 The system requires no code changes - all instrumentation is automatic and follows OpenTelemetry standards for maximum
 compatibility and minimal performance impact.
-
 
 # Traces
 
@@ -369,7 +368,6 @@ The platform's distributed tracing delivers:
 
 As tracing coverage expands, organizations gain increasingly detailed insights into platform performance, AI operations,
 and user experience.
-
 
 # OpenTelemetry Foundation
 

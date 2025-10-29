@@ -6,6 +6,7 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
+from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 
 
@@ -51,3 +52,7 @@ class RAGAgentConfig(AgentConfig):
         LocaleString | None,
         Field(description="System prompt to guide the agent's behavior and responses."),
     ] = None
+    reranking_config: Annotated[
+        RerankingConfig,
+        Field(description="Configuration for reranking retrieved documents to improve relevance."),
+    ] = RerankingConfig()

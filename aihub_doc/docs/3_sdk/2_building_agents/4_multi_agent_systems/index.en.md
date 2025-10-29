@@ -4,36 +4,44 @@ title: Multi-Agent Systems
 
 # Multi-Agent Systems
 
-Complex problems are often best solved by breaking them into smaller, manageable parts. 
-The **Agent in the Loop (AITL)** pattern allows you to create multi-agent systems where a primary **Orchestrator** agent can delegate specific tasks to one or more specialized **Worker** agents.
+Complex problems are often best solved by breaking them into smaller, manageable parts. The **Agent in the Loop (AITL)**
+pattern allows you to create multi-agent systems where a primary **Orchestrator** agent can delegate specific tasks to
+one or more specialized **Worker** agents.
 
 **When to use it**:
 
-  * To create modular, reusable components (e.g., an agent that only summarizes documents).
-  * To separate concerns (e.g., one agent for data retrieval, another for analysis).
-  * To build complex chains or parallel workflows that combine the strengths of multiple agents.
+- To create modular, reusable components (e.g., an agent that only summarizes documents).
+- To separate concerns (e.g., one agent for data retrieval, another for analysis).
+- To build complex chains or parallel workflows that combine the strengths of multiple agents.
 
 ## How It Works
 
 The AITL pattern is managed by a trio of events that orchestrate the delegation, execution, and response between agents.
 
-1.  **Orchestrator sends a Request**: The Orchestrator agent returns an `AgentInTheLoop.request` event. This event acts as a package, containing the `start_event` for the Worker and the routing information for the response. This pauses the Orchestrator's workflow.
-2.  **Worker executes its task**: The dispatcher delivers the `start_event` to the specified Worker agent. The Worker runs its own self-contained workflow, completely unaware that it was called by another agent.
-3.  **Worker completes and responds**: When the Worker finishes, it returns a `StopEvent` (or an `ExceptionEvent` if it fails). The system automatically wraps this final event into either an `AgentInTheLoop.response` or `AgentInTheLoop.exception` event.
-4.  **Orchestrator resumes**: The dispatcher routes the response or exception event back to the Orchestrator, which resumes its workflow in a separate step designed to handle the result.
+1. **Orchestrator sends a Request**: The Orchestrator agent returns an `AgentInTheLoop.request` event. This event acts
+   as a package, containing the `start_event` for the Worker and the routing information for the response. This pauses
+   the Orchestrator's workflow.
+2. **Worker executes its task**: The dispatcher delivers the `start_event` to the specified Worker agent. The Worker
+   runs its own self-contained workflow, completely unaware that it was called by another agent.
+3. **Worker completes and responds**: When the Worker finishes, it returns a `StopEvent` (or an `ExceptionEvent` if it
+   fails). The system automatically wraps this final event into either an `AgentInTheLoop.response` or
+   `AgentInTheLoop.exception` event.
+4. **Orchestrator resumes**: The dispatcher routes the response or exception event back to the Orchestrator, which
+   resumes its workflow in a separate step designed to handle the result.
 
-The `AgentInTheLoop` helper class simplifies this process by providing a convenient `invoke` method to create the request event.
+The `AgentInTheLoop` helper class simplifies this process by providing a convenient `invoke` method to create the
+request event.
 
------
+---
 
 ## Core Pattern: Orchestrator and Worker
 
-This example shows an `OrchestratorAgent` that asks a `WorkerAgent` to perform a simple calculation. Notice that the `WorkerAgent` is just a standard, self-contained agent.
+This example shows an `OrchestratorAgent` that asks a `WorkerAgent` to perform a simple calculation. Notice that the
+`WorkerAgent` is just a standard, self-contained agent.
 
 **Reference**: `playground/minimal_workflow/agent_in_the_loop_workflow/`
 
 ::: code-group
-
 ```python [OrchestratorAgent.py]
 from aihub_lib.nats.events.agent_in_the_loop.AgentInTheLoop import AgentInTheLoop
 
@@ -73,18 +81,17 @@ class WorkerAgent(Agent):
         # ...and returns its own custom StopEvent with a result.
         return WorkerStopEvent(result=event.number * 2)
 ```
-
 :::
-
 
 ## Context Sharing
 
-You can control which contexts are shared from the Orchestrator to the Worker. This is useful for maintaining a consistent conversation or UI experience.
+You can control which contexts are shared from the Orchestrator to the Worker. This is useful for maintaining a
+consistent conversation or UI experience.
 
-  * `share_thread_id=True` (Default): The Worker shares the same conversation memory (`ThreadContext`) as the Orchestrator.
-  * `share_display_id=True` (Default): The Worker's `DisplayEvent`s appear in the same UI stream as the Orchestrator's.
-  * `share_run_id=False` (Default): The Worker executes in its own independent run.
-
+- `share_thread_id=True` (Default): The Worker shares the same conversation memory (`ThreadContext`) as the
+  Orchestrator.
+- `share_display_id=True` (Default): The Worker's `DisplayEvent`s appear in the same UI stream as the Orchestrator's.
+- `share_run_id=False` (Default): The Worker executes in its own independent run.
 
 ```python
 AgentInTheLoop.invoke(
@@ -98,7 +105,8 @@ AgentInTheLoop.invoke(
 ```
 
 ::: warning
-Sharing the `run_id` is an advanced feature and can lead to unexpected behavior, as both agents would be writing to the same ephemeral `RunContext`. It is almost always better to keep it `False`.
+Sharing the `run_id` is an advanced feature and can lead to unexpected behavior, as both agents would be writing to the
+same ephemeral `RunContext`. It is almost always better to keep it `False`.
 :::
 
 ## Common Multi-Agent Patterns

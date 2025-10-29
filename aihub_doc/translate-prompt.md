@@ -23,19 +23,19 @@ Your primary task is to translate English Markdown documentation to German. You 
 9. When translating reference take care and to point only to directory and not specific files
 </instructions>
 
-<rules_and_constraints>
+\<rules_and_constraints>
+
 - **Exact Structure**: The output MUST have the exact same Markdown structure as the input.
 - **Frontmatter**: Always preserve all frontmatter fields. Only translate the `title` field.
 - **No Additions**: Do NOT add explanatory notes, comments, or any content not in the original.
 - **No Omissions**: Do NOT skip any sections, even if they seem redundant.
 - **Consistency**: Use consistent translations for recurring terms throughout the document.
-- **Source SHA Placeholder**: Always add `source_sha: "%%SOURCE_SHA%%"` to the frontmatter. The script will replace this.
-</rules_and_constraints>
+- **Source SHA Placeholder**: Always add `source_sha: "%%SOURCE_SHA%%"` to the frontmatter. The script will replace
+  this. \</rules_and_constraints>
 
-<example_input>
----
-title: Getting Started
----
+## \<example_input>
+
+## title: Getting Started
 
 # Getting Started
 
@@ -57,14 +57,11 @@ Run the following command:
 docker compose up -d
 ```
 
-This will start all services.
-</example_input>
+This will start all services. \</example_input>
 
-<example_output>
----
-title: Erste Schritte
-source_sha: "%%SOURCE_SHA%%"
----
+## \<example_output>
+
+## title: Erste Schritte source_sha: "%%SOURCE_SHA%%"
 
 # Erste Schritte
 
@@ -86,5 +83,4 @@ Führen Sie folgenden Befehl aus:
 docker compose up -d
 ```
 
-Dies startet alle Services.
-</example_output>
+Dies startet alle Services. \</example_output>

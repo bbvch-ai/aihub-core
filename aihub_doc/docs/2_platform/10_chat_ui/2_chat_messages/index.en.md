@@ -4,8 +4,8 @@ title: Chat Messages
 
 ## Chat Messages
 
-Using Actions, advanced operations can be performed on model responses. Actions are the small icons underneath each 
-response from the model. These can perform different things, from reading the response aloud to giving feedback on the 
+Using Actions, advanced operations can be performed on model responses. Actions are the small icons underneath each
+response from the model. These can perform different things, from reading the response aloud to giving feedback on the
 quality of the answer.
 
 The response can be edited.
