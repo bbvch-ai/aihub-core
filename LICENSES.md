@@ -1,6 +1,6 @@
 # License Report
 
-Generated on: 20.10.2025
+Generated on: 28.10.2025
 
 This document contains license information for all dependencies across the monorepo:
 
@@ -536,5 +536,7 @@ The following are our own services and inherit the license we choose:
 - llm_wrapping_agent (`ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:latest`)
 - api (`ghcr.io/bbvch-ai/aihub-core/api:latest`)
 - default_rag_pipeline (`ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:latest`)
+- bot (`ghcr.io/bbvch-ai/aihub-core/bot:latest`)
 - web (`ghcr.io/bbvch-ai/aihub-core/web:v0.243.1`)
 - api (`ghcr.io/bbvch-ai/aihub-core/api:nightly`)
+- bot (`ghcr.io/bbvch-ai/aihub-core/bot:nightly`)
