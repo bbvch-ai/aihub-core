@@ -54,18 +54,40 @@ decisions, model selection, and budget planning.
 
 ## Budgets and rate limits
 
-::: warning Not currently configured
-Budget and rate limiting capabilities exist but are not enabled by default. This feature hasn't been tested yet.
+LiteLLM provides per-user budget and rate limiting capabilities through its user management system. These controls are
+configured through environment variables and enforced automatically by the proxy.
+
+Available controls:
+
+- Max budget: Hard limit on spending per user within a budget period. Blocks requests when exceeded.
+
+- Soft budget: Alert threshold that triggers notifications without blocking requests.
+
+- Budget duration: Time period for budget reset (e.g., "30d" for monthly budgets). Without this, budgets never reset.
+
+- TPM limit: Maximum tokens per minute a user can consume.
+
+- RPM limit: Maximum requests per minute a user can make.
+
+- Max parallel requests: Maximum concurrent requests a user can have in flight.
+
+::: details Configuration via environment variables
+```bash
+LITE_LLM_PROXY_USER_MAX_BUDGET=100.0           # $100 hard limit
+LITE_LLM_PROXY_USER_SOFT_BUDGET=80.0           # Alert at $80
+LITE_LLM_PROXY_USER_BUDGET_DURATION="30d"      # Reset monthly
+LITE_LLM_PROXY_USER_TPM_LIMIT=10000            # 10k tokens/minute
+LITE_LLM_PROXY_USER_RPM_LIMIT=60               # 60 requests/minute
+LITE_LLM_PROXY_USER_MAX_PARALLEL_REQUESTS=5    # 5 concurrent requests
+```
+
+These settings apply to new users created in the system. Existing users retain their configured limits.
 :::
 
-The platform can enforce spending limits and usage restrictions. When enabled, administrators can set:
-
-- Budget caps: Block requests when users exceed spending limits
-- Usage alerts: Notify when approaching budget thresholds
-- Rate limits: Control how many requests or tokens users can consume per minute
-- Concurrent request limits: Restrict simultaneous AI operations
-
-These controls require environment configuration during deployment.
+::: warning Not currently enabled
+While the infrastructure supports these limits, they are not enabled by default. Set the environment variables above to
+activate budget and rate limiting.
+:::
 
 ## Optimization strategies
 
