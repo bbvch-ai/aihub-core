@@ -119,8 +119,8 @@ stops processing.
 
 The platform implements privacy by design with mandatory TLS/SSL encryption, default-deny access control, automatic
 audit logging, 30-day ephemeral data deletion, and minimal data collection. See
-[Authentication](/platform/security/authentication), [Encryption](/platform/security/data_encryption), and
-[Access Control](/platform/access_management) for details.
+[Authentication](../../18_security/1_authentication/), [Encryption](../../18_security/5_data_encryption/), and
+[Access Control](../../11_access_management/) for details.
 
 ## International data transfers
 
@@ -131,7 +131,7 @@ protection law as providing an adequate level of protection. This allows persona
 Switzerland without additional safeguards.
 
 For organizations hosting in Switzerland, this simplifies compliance with both GDPR and Swiss DSG requirements. See
-[Deployment Options](/platform/deployment_guide/deployment_options) for hosting configurations.
+[Deployment Options](../../3_deployment_guide/1_deployment_options/) for hosting configurations.
 
 ### Transfers to other countries
 
@@ -158,9 +158,9 @@ investigation, documentation, and response.
 
 ## Related documentation
 
-- [Swiss DSG](/platform/compliance/dsg)
-- [DSAR Procedures](/platform/compliance/data_subject_requests)
-- [Data Retention](/platform/compliance/data_retention)
+- [Swiss DSG](../3_dsg/)
+- [DSAR Procedures](../6_data_subject_requests/)
+- [Data Retention](../1_data_retention/)
 - [GDPR Full Text](https://gdpr-info.eu/)
 - [EDPB Guidelines](https://edpb.europa.eu/)
 
