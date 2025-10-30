@@ -375,6 +375,8 @@ services:
 
   
 
+  
+
 
   # ===================================================================
   # LiteLLM Stack (Model Proxy and Guardrails)
@@ -499,14 +501,6 @@ services:
   # uploaded documents for the RAG pipeline.
   # ===================================================================
 
-  docling-model-permission:
-    container_name: docling-model-permission
-    image: alpine
-    command: [ "sh", "-c", "chown -R 1001:1001 /models" ]
-    restart: no
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
-
   docling:
     container_name: docling
     image: ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.3.1
@@ -515,15 +509,16 @@ services:
       test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
-      - ./configs/docling/init-models.sh:/docker-entrypoint.sh:ro
-    entrypoint: [ "/docker-entrypoint.sh" ]
     environment:
       DOCLING_SERVE_ARTIFACTS_PATH: "/models"
+      DOCLING_SERVE_LOAD_MODELS_AT_BOOT: 1
       DOCLING_SERVE_MAX_SYNC_WAIT: 600
-      DOCLING_MODELS: layout tableformer code_formula easyocr
+      DOCLING_SERVE_ENABLE_REMOTE_SERVICES: 1
     depends_on:
-      docling-model-permission:
-        condition: service_completed_successfully
+      llama-cpp-docling:
+        condition: service_healthy
+      litellm:
+        condition: service_healthy
     logging:
       driver: json-file
       options:
@@ -1197,6 +1192,8 @@ services:
       # Docling
       DOCLING_API_ENDPOINT: http://docling:5001/v1alpha/convert/source
       DOCLING_API_TIMEOUT: 600
+      DOCLING_HOSTED_VLM_API_ENDPOINT: http://litellm:4000
+      DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Postgres
       POSTGRES_USER: ${POSTGRES_USER}

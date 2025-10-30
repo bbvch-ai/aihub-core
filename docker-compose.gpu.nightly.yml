@@ -377,7 +377,7 @@ services:
   llama-cpp:
     container_name: llama-cpp
     platform: "linux/amd64"
-    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b6445
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b6830
     restart: always
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
@@ -386,8 +386,7 @@ services:
     environment:
       HF_HOME: /root/.cache/huggingface
     command: >
-      --hf-repo google/gemma-3-12b-it-qat-q4_0-gguf
-      --hf-file gemma-3-12b-it-q4_0.gguf
+      -hf google/gemma-3-12b-it-qat-q4_0-gguf
       --hf-token ${HUGGINGFACE_API_KEY}
       --alias gemma-3-12b
       --port 8182
@@ -418,7 +417,7 @@ services:
   llama-cpp-embedding:
     container_name: llama-cpp-embedding
     platform: "linux/amd64"
-    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b6445
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b6830
     restart: always
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
@@ -427,8 +426,7 @@ services:
     environment:
       HF_HOME: /root/.cache/huggingface
     command: >
-      --hf-repo Qwen/Qwen3-Embedding-0.6B-GGUF
-      --hf-file Qwen3-Embedding-0.6B-Q8_0.gguf
+      -hf Qwen/Qwen3-Embedding-0.6B-GGUF
       --hf-token ${HUGGINGFACE_API_KEY}
       --alias qwen-3-embedding \
       --port 8182
@@ -461,7 +459,7 @@ services:
   llama-cpp-reranking:
     container_name: llama-cpp-reranking
     platform: "linux/amd64"
-    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b6445
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b6830
     restart: always
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
@@ -470,8 +468,7 @@ services:
     environment:
       HF_HOME: /root/.cache/huggingface
     command: >
-      --hf-repo ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF
-      --hf-file qwen3-reranker-0.6b-q8_0.gguf
+      -hf ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF
       --hf-token ${HUGGINGFACE_API_KEY}
       --alias qwen-3-reranking
       --port 8182
@@ -480,6 +477,56 @@ services:
       --reranking
       --no-context-shift
       -ngl 10
+
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
+
+  
+  llama-cpp-docling:
+    container_name: llama-cpp-docling
+    platform: "linux/amd64"
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b6830
+    restart: always
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-cache:/root/.cache/llama.cpp
+    environment:
+      HF_HOME: /root/.cache/huggingface
+    command: >
+      -hf danchev/ibm-granite-docling-258M-GGUF
+      --hf-token ${HUGGINGFACE_API_KEY}
+      --alias granite-docling
+      --port 8182
+      --host 0.0.0.0
+      -c 8192
+       --special
+      --jinja
+      --repeat-penalty 1.0
+      --temp 0.0
+      --min-p 0
+      -ngl -1
+      --mlock
+      --seed -1
+      --swa-full
+      --no-escape
+      --no-mmap
 
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
@@ -658,43 +705,29 @@ services:
   # uploaded documents for the RAG pipeline.
   # ===================================================================
 
-  docling-model-permission:
-    container_name: docling-model-permission
-    image: alpine
-    command: [ "sh", "-c", "chown -R 1001:1001 /models" ]
-    restart: no
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
-
   docling:
     container_name: docling
-    image: ghcr.io/bbvch-ai/aihub-core/docling-serve-cu128:v1.3.1
+    image: ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.3.1
     restart: always
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
-      - ./configs/docling/init-models.sh:/docker-entrypoint.sh:ro
-    entrypoint: [ "/docker-entrypoint.sh" ]
     environment:
       DOCLING_SERVE_ARTIFACTS_PATH: "/models"
+      DOCLING_SERVE_LOAD_MODELS_AT_BOOT: 1
       DOCLING_SERVE_MAX_SYNC_WAIT: 600
-      DOCLING_MODELS: layout tableformer code_formula easyocr
+      DOCLING_SERVE_ENABLE_REMOTE_SERVICES: 1
     depends_on:
-      docling-model-permission:
-        condition: service_completed_successfully
+      llama-cpp-docling:
+        condition: service_healthy
+      litellm:
+        condition: service_healthy
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: 2
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: [ '0' ]
-              capabilities: [ gpu ]
 
   # ===================================================================
   # Observability Stack
@@ -1363,6 +1396,8 @@ services:
       # Docling
       DOCLING_API_ENDPOINT: http://docling:5001/v1alpha/convert/source
       DOCLING_API_TIMEOUT: 600
+      DOCLING_HOSTED_VLM_API_ENDPOINT: http://litellm:4000
+      DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Postgres
       POSTGRES_USER: ${POSTGRES_USER}

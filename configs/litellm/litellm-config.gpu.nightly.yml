@@ -33,6 +33,14 @@ model_list:
     model_info:
       mode: chat
 
+  - model_name: text-generation/ocr
+    litellm_params:
+      model: openai/granite-docling
+      api_base: http://llama-cpp-docling:8182/
+      api_key: XXX
+    model_info:
+      mode: chat
+
   # ===================================================================
   # Embedding Models
   # ===================================================================
@@ -51,7 +59,7 @@ model_list:
 
   - model_name: reranking
     litellm_params:
-      model: jina/qwen-3-reranking
+      model: jina_ai/qwen-3-reranking
       api_base: http://llama-cpp-reranking:8182/
       api_key: XXX
     model_info:
@@ -82,31 +90,31 @@ model_list:
 # ===================================================================
 # Guardrails Configuration
 # ===================================================================
-guardrails:
-  - guardrail_name: presidio-mask-guard
-    litellm_params:
-      guardrail: presidio
-      default_on: true
-      mode: pre_call
-      presidio_language: de
-      presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
-      presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
-      output_parse_pii: true
-      pii_entities_config:
-        PERSON: MASK
-        EMAIL_ADDRESS: MASK
 
-  - guardrail_name: presidio-block-guard
-    litellm_params:
-      guardrail: presidio
-      default_on: true
-      mode: pre_call
-      presidio_language: de
-      presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
-      presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
-      output_parse_pii: true
-      pii_entities_config:
-        CREDIT_CARD: BLOCK
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # ===================================================================
 # General Settings
