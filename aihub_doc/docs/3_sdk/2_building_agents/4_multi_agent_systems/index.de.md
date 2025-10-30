@@ -1,6 +1,6 @@
 ---
 title: Multi-Agenten-Systeme
-source_sha: 314267a1db5ceccaee1da9f166d94f78a6e1781df453c4e9a54cc91f55bed897
+source_sha: b004da2d1b1badd59e42adfdd29a883e3a25938dbe032218e008150679e8880d
 ---
 
 # Multi-Agenten-Systeme
@@ -11,36 +11,37 @@ in the Loop (AITL)**-Muster ermöglicht es Ihnen, Multi-Agenten-Systeme zu erste
 
 **Wann es eingesetzt werden sollte**:
 
-- Um modulare, wiederverwendbare Komponenten zu erstellen (z. B. einen Agenten, der nur Dokumente zusammenfasst).
-- Um Verantwortlichkeiten zu trennen (z. B. ein Agent für die Datenbeschaffung, ein anderer für die Analyse).
+- Um modulare, wiederverwendbare Komponenten zu erstellen (z.B. ein Agent, der nur Dokumente zusammenfasst).
+- Um Zuständigkeiten zu trennen (z.B. ein Agent für Datenabruf, ein anderer für Analyse).
 - Um komplexe Ketten oder parallele Workflows zu erstellen, die die Stärken mehrerer Agenten kombinieren.
 
 ## Funktionsweise
 
-Das AITL-Muster wird durch ein Trio von Events gesteuert, die die Delegation, Ausführung und Antwort zwischen Agenten
-orchestrieren.
+Das AITL-Muster wird durch ein Trio von Ereignissen verwaltet, die die Delegation, Ausführung und Antwort zwischen
+Agenten orchestrieren.
 
-1. **Orchestrator sendet eine Anfrage**: Der Orchestrator-Agent gibt ein `AgentInTheLoop.request`-Event zurück. Dieses
-   Event fungiert als Paket, das das `start_event` für den Worker und die Routing-Informationen für die Antwort enthält.
-   Dies pausiert den Workflow des Orchestrators.
+1. **Orchestrator sendet eine Anfrage**: Der Orchestrator-Agent gibt ein `AgentInTheLoop.request`-Ereignis zurück.
+   Dieses Ereignis fungiert als Paket, das das `start_event` für den Worker und die Routing-Informationen für die
+   Antwort enthält. Dies unterbricht den Workflow des Orchestrators.
 2. **Worker führt seine Aufgabe aus**: Der Dispatcher liefert das `start_event` an den angegebenen Worker-Agenten. Der
-   Worker führt seinen eigenen, in sich geschlossenen Workflow aus, ohne zu wissen, dass er von einem anderen Agenten
-   aufgerufen wurde.
-3. **Worker schließt ab und antwortet**: Wenn der Worker seine Aufgabe beendet, gibt er ein `StopEvent` zurück (oder ein
-   `ExceptionEvent`, falls er fehlschlägt). Das System verpackt dieses abschließende Event automatisch entweder in ein
-   `AgentInTheLoop.response`- oder ein `AgentInTheLoop.exception`-Event.
-4. **Orchestrator nimmt die Arbeit wieder auf**: Der Dispatcher leitet das Antwort- oder Ausnahme-Event zurück an den
-   Orchestrator, der seinen Workflow in einem separaten Schritt fortsetzt, der dazu dient, das Ergebnis zu verarbeiten.
+   Worker führt seinen eigenen, in sich geschlossenen Workflow aus, völlig unbemerkt davon, dass er von einem anderen
+   Agenten aufgerufen wurde.
+3. **Worker schließt ab und antwortet**: Wenn der Worker fertig ist, gibt er ein `StopEvent` (oder ein `ExceptionEvent`,
+   falls er fehlschlägt) zurück. Das System verpackt dieses abschließende Ereignis automatisch entweder in ein
+   `AgentInTheLoop.response`- oder `AgentInTheLoop.exception`-Ereignis.
+4. **Orchestrator nimmt die Arbeit wieder auf**: Der Dispatcher leitet das Antwort- oder Ausnahmeereignis zurück an den
+   Orchestrator, der seinen Workflow in einem separaten Schritt fortsetzt, der zur Verarbeitung des Ergebnisses
+   konzipiert ist.
 
-Die Helper-Klasse `AgentInTheLoop` vereinfacht diesen Prozess, indem sie eine bequeme `invoke`-Methode zur Verfügung
-stellt, um das Anfrage-Event zu erstellen.
+Die Helferklasse `AgentInTheLoop` vereinfacht diesen Prozess, indem sie eine praktische `invoke`-Methode zur Erstellung
+des Anfragenereignisses bereitstellt.
 
 ---
 
 ## Kernmuster: Orchestrator und Worker
 
 Dieses Beispiel zeigt einen `OrchestratorAgent`, der einen `WorkerAgent` bittet, eine einfache Berechnung durchzuführen.
-Beachten Sie, dass der `WorkerAgent` lediglich ein Standard-Agent ist, der in sich geschlossen arbeitet.
+Beachten Sie, dass der `WorkerAgent` ein ganz normaler, in sich geschlossener Agent ist.
 
 **Referenz**: `playground/minimal_workflow/agent_in_the_loop_workflow/`
 
@@ -89,13 +90,13 @@ class WorkerAgent(Agent):
 ## Kontextfreigabe
 
 Sie können steuern, welche Kontexte vom Orchestrator an den Worker weitergegeben werden. Dies ist nützlich, um eine
-konsistente Konversation oder UI-Erfahrung aufrechtzuerhalten.
+konsistente Konversation oder Benutzeroberfläche zu gewährleisten.
 
-- `share_thread_id=True` (Standard): Der Worker teilt dieselbe Konversationshistorie (`ThreadContext`) wie der
+- `share_thread_id=True` (Standard): Der Worker teilt sich denselben Konversationsspeicher (`ThreadContext`) wie der
   Orchestrator.
 - `share_display_id=True` (Standard): Die `DisplayEvent`s des Workers erscheinen im selben UI-Stream wie die des
   Orchestrators.
-- `share_run_id=False` (Standard): Der Worker wird in einem eigenen, unabhängigen Run ausgeführt.
+- `share_run_id=False` (Standard): Der Worker wird in einem eigenen, unabhängigen Lauf ausgeführt.
 
 ```python
 AgentInTheLoop.invoke(
@@ -109,15 +110,15 @@ AgentInTheLoop.invoke(
 ```
 
 ::: warning
-Das Teilen der `run_id` ist eine fortgeschrittene Funktion und kann zu unerwartetem Verhalten führen, da beide Agenten
-in dasselbe ephemere `RunContext` schreiben würden. Es ist fast immer besser, sie auf `False` zu setzen.
+Das Teilen der `run_id` ist eine erweiterte Funktion und kann zu unerwartetem Verhalten führen, da beide Agenten in
+denselben ephemeren `RunContext` schreiben würden. Es ist fast immer besser, diesen Wert auf `False` zu belassen.
 :::
 
 ## Gängige Multi-Agenten-Muster
 
 ### Spezialisierte Verarbeitung (Router)
 
-Ein Orchestrator fungiert als Router und delegiert Aufgaben basierend auf der Eingabe an verschiedene Worker-Agenten.
+Ein Orchestrator fungiert als Router, der Aufgaben basierend auf der Eingabe an verschiedene Worker-Agenten delegiert.
 
 ```python
 class DocumentRouterAgent(Agent):
@@ -131,7 +132,7 @@ class DocumentRouterAgent(Agent):
             return AgentInTheLoop.invoke(agent_id="legal_analyzer", ...)
 ```
 
-### Sequentielle Agenten-Kette
+### Sequentielle Agentenkette
 
 Ein Workflow, bei dem die Ausgabe eines Worker-Agenten zur Eingabe für den nächsten wird, wodurch eine
 Verarbeitungspipeline entsteht.
@@ -151,7 +152,7 @@ class ProcessingChainAgent(Agent):
         return AgentInTheLoop.invoke(agent_id="data_validator", start_event=validation_event)
 ```
 
-### Parallele Agenten-Ausführung (Fan-Out)
+### Parallele Agentenausführung (Fan-Out)
 
 Ein Orchestrator delegiert dieselbe Aufgabe gleichzeitig an mehrere Agenten und aggregiert dann deren Antworten.
 

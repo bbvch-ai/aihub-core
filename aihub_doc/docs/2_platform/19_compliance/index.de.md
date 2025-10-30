@@ -1,6 +1,6 @@
 ---
 title: Compliance und Vorschriften
-source_sha: 7ced87a3eb7227a5ed6846bf295a3221c93da7aba13724a294ba7c364c5dc216
+source_sha: 4e2c470b7caf951708765dd19e5b3af8e4e5895ac18bfb24cfa0437ee42d7457
 ---
 
 # Compliance und Vorschriften
@@ -10,17 +10,17 @@ die die Plattform nutzen, agieren als Datenverantwortliche und bleiben für ihre
 
 ## Abdeckung
 
-Dieser Abschnitt dokumentiert die Compliance-Fähigkeiten der Plattform:
+Dieser Abschnitt dokumentiert die Compliance-Funktionen der Plattform:
 
-- **Datenaufbewahrungsrichtlinien**: Wie die Plattform Daten speichert und löscht
-- **DSGVO-Konformität**: Unterstützung für EU-Datenschutzanforderungen
-- **Schweizer DSG**: Schweiz-spezifische Datenschutzfunktionen
-- **EU-KI-Verordnung**: KI-spezifische regulatorische Überlegungen
-- **Internationalisierung**: Mehrsprachige Unterstützung für Schweizer Organisationen
-- **Anfragen betroffener Personen (Datenauskunft)**: Umgang mit den Rechten betroffener Personen
+- **Data retention policies**: Wie die Plattform Daten speichert und löscht
+- **GDPR compliance**: Unterstützung für EU-Datenschutzanforderungen
+- **Swiss DSG**: Schweiz-spezifische Datenschutzfunktionen
+- **EU AI Act**: KI-spezifische regulatorische Überlegungen
+- **Internationalization**: Mehrsprachige Unterstützung für Schweizer Organisationen
+- **Data subject access requests**: Handhabung von Betroffenenrechten
 
 ## Verantwortung des Datenverantwortlichen
 
-Die Plattform bietet technische Funktionen wie Audit-Protokollierung, konfigurierbare Datenaufbewahrung, Verschlüsselung
-und Zugriffssteuerungen. Organisationen müssen diese Funktionen entsprechend ihren regulatorischen Anforderungen und
+Die Plattform bietet technische Funktionen wie Audit Logging, konfigurierbare Datenaufbewahrung, Verschlüsselung und
+Zugriffskontrollen. Organisationen müssen diese Funktionen entsprechend ihren regulatorischen Anforderungen und
 Anwendungsfällen konfigurieren.

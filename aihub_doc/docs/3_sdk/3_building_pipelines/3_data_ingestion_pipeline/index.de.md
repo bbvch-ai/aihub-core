@@ -1,23 +1,23 @@
 ---
 title: Datenaufnahme-Pipeline
-source_sha: 635ee9f769fb90bce7bde89bf6e8d84b925c264aa499d5439ae344a9d3918b1e
+source_sha: 64a6c3e202f73665c96754a7a24a73d2b027535986c61e72eaafe46955bb4d1a
 ---
 
 # Datenaufnahme-Pipeline
 
 Das AI-Hub Pipeline SDK bietet vorgefertigte, produktionsreife Pipeline-Definitionen, die Sie mit minimaler
-Konfiguration verwenden können. Diese **Fabriken** kapseln Best Practices für die Aufnahme von Dokumenten und deren
+Konfiguration verwenden können. Diese **Factories** kapseln Best Practices für die Aufnahme von Dokumenten und deren
 Vorbereitung für RAG-Anwendungen.
 
 ## Die zweistufige Aufnahme-Architektur
 
-Unser Aufnahmeprozess ist in zwei unterschiedliche Stufen unterteilt, die jeweils von einer eigenen
-Pipeline-Definitions-Fabrik gehandhabt werden. Dies fördert Modularität und Wiederverwendbarkeit.
+Unser Aufnahmeprozess ist in zwei separate Phasen unterteilt, von denen jede von ihrer eigenen
+Pipeline-Definitions-Factory gehandhabt wird. Dies fördert Modularität und Wiederverwendbarkeit.
 
-1. **Stufe 1: Quelle zum Data Lake** (Optional): Diese Pipeline verbindet sich mit einer externen Quelle (wie
+1. **Phase 1: Quelle zum Data Lake** (Optional): Diese Pipeline verbindet sich mit einer externen Quelle (wie
    SharePoint) und synchronisiert ihre Dateien mit einem zentralen S3 Data Lake.
-2. **Stufe 2: Data Lake zum Vektorspeicher**: Diese Pipeline überwacht den S3 Data Lake, verarbeitet die Dokumente und
-   speichert die resultierenden Embeddings in einem Vektorspeicher.
+2. **Phase 2: Data Lake zum Vektor-Store**: Diese Pipeline überwacht den S3 Data Lake, verarbeitet die Dokumente und
+   speichert die resultierenden Embeddings in einem Vektor-Store.
 
 ```mermaid
 graph TD
@@ -60,14 +60,14 @@ graph TD
     style K fill:#299764
 ```
 
-## 1. Die SharePoint zu Data Lake Pipeline
+## 1. Die SharePoint-zu-Data-Lake-Pipeline
 
-Verwenden Sie die Fabrik `default_sharepoint_to_datalake_definitions`, um Dokumente von einer SharePoint-Site mit Ihrem
+Verwenden Sie die `default_sharepoint_to_datalake_definitions` Factory, um Dokumente von einer SharePoint-Site mit Ihrem
 S3 Data Lake zu synchronisieren.
 
-- **Was sie tut**: Überwacht einen SharePoint-Speicherort, lädt neue oder aktualisierte Dateien herunter und bereinigt
+- **Was es tut**: Beobachtet einen SharePoint-Speicherort, lädt neue oder aktualisierte Dateien herunter und bereinigt
   Dateien im Data Lake, die aus SharePoint gelöscht wurden.
-- **Wichtige Assets**: `observable_sharepoint`, `data_lake_files`, `removed_data_lake_files`.
+- **Schlüssel-Assets**: `observable_sharepoint`, `data_lake_files`, `removed_data_lake_files`.
 
 ### Anwendungsbeispiel
 
@@ -82,14 +82,14 @@ defs = default_sharepoint_to_datalake_definitions(
 )
 ```
 
-## 2. Die Data Lake zu Vektorspeicher Pipeline
+## 2. Die Data-Lake-zu-Vektor-Store-Pipeline
 
-Dies ist die zentrale RAG-Pipeline. Verwenden Sie die Fabrik `default_definitions`, um Dokumente aus Ihrem S3 Data Lake
-in einen Vektorspeicher zu verarbeiten.
+Dies ist die Kern-RAG-Pipeline. Verwenden Sie die `default_definitions` Factory, um Dokumente aus Ihrem S3 Data Lake in
+einen Vektor-Store zu verarbeiten.
 
-- **Was sie tut**: Überwacht einen S3-Bucket, parst Dokumente, zerlegt sie in Nodes, erstellt optional
-  Zusammenfassungs-Nodes und speichert die Embeddings in Milvus. Sie handhabt auch Dokumentlöschungen.
-- **Wichtige Assets**: `observable_data_lake`, `documents`, `nodes`, `summary_nodes`, `removed_documents`.
+- **Was es tut**: Beobachtet einen S3-Bucket, parst Dokumente, zerlegt sie in Nodes, erstellt optional Summary Nodes und
+  speichert die Embeddings in Milvus. Es handhabt auch Dokumentlöschungen.
+- **Schlüssel-Assets**: `observable_data_lake`, `documents`, `nodes`, `summary_nodes`, `removed_documents`.
 
 ### Anwendungsbeispiel
 
@@ -104,15 +104,15 @@ defs = default_definitions(
 )
 ```
 
-## Standard-Datenzuordnung
+## Standard-Datenabbildung
 
-Das SDK verwendet eine konsistente Namenskonvention, um Ihre Data Lake-Struktur auf die zugrundeliegenden
-Speicher-Backends (Document Store und Vector Store) abzubilden.
+Das SDK verwendet eine konsistente Namenskonvention, um Ihre Data-Lake-Struktur auf die zugrunde liegenden
+Speicher-Backends (Dokumenten-Store und Vektor-Store) abzubilden.
 
 ### Container/Bucket → Datenbank/Collection
 
-Der Name des übergeordneten S3-Buckets wird als primärer Bezeichner für Ihre Speicherressourcen verwendet und bietet
-eine starke Datenisolation.
+Der Name des Top-Level S3-Buckets wird als primärer Bezeichner für Ihre Speicherressourcen verwendet und bietet eine
+starke Datenisolation.
 
 **Beispiel:**
 
@@ -122,9 +122,9 @@ eine starke Datenisolation.
 
 ### Verzeichnis → Namespace
 
-Innerhalb eines Buckets können Sie Verzeichnisse verwenden, um logische Trennungen zu schaffen, die Namespaces innerhalb
-des Vektorspeichers zugeordnet werden. Dies ermöglicht Multi-Tenancy oder logische Gruppierung innerhalb einer einzigen
-Collection.
+Innerhalb eines Buckets können Sie Verzeichnisse verwenden, um logische Trennungen zu erstellen, die auf **Namespaces**
+innerhalb des Vektor-Stores abgebildet werden. Dies ermöglicht Multi-Tenancy oder logische Gruppierungen innerhalb einer
+einzigen Collection.
 
 **Beispiel:**
 
@@ -148,11 +148,11 @@ from aihub_pipeline.util.definitions_util import (
     default_definitions,
 )
 
-# Definitions von beiden Fabriken abrufen
+# Get definitions from both factories
 sharepoint_defs = default_sharepoint_to_datalake_definitions(...)
 datalake_defs = default_definitions(...)
 
-# Alle Assets, Ressourcen, Jobs usw. zu einer einzigen Definition kombinieren
+# Combine all assets, resources, jobs, etc. into a single definition
 defs = Definitions(
     assets=[*sharepoint_defs.assets, *datalake_defs.assets],
     resources={**sharepoint_defs.resources, **datalake_defs.resources},

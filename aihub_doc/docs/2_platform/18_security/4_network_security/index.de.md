@@ -1,18 +1,18 @@
 ---
 title: Netzwerksicherheit
-source_sha: ca45c02712143d0f62b648cd7f3736f2602698b9b634831280f342279b7163dd
+source_sha: 9fe3e1f6d044766ebae9d338dc46aa2bae0d78d0c6328f427372389202c19854
 ---
 
 # Netzwerksicherheit
 
-Der AI-Hub verwendet ein mehrschichtiges Netzwerksicherheitskonzept (Defense-in-Depth). Mehrere unabhängige Schichten
-schützen die Plattform, ihre Daten und ihre Benutzer.
+Der AI-Hub verwendet eine mehrschichtige Netzwerksicherheit ("Defense-in-Depth"). Mehrere unabhängige Schichten schützen
+die Plattform, ihre Daten und ihre Benutzer.
 
-Alle internen Dienste (AI-Hub API, Web UI, LiteLLM Proxy, Datenbanken) laufen in isolierten Docker-Containern in
+Alle internen Services (AI-Hub API, Web UI, LiteLLM Proxy, Datenbanken) laufen in isolierten Docker-Containern in
 privaten Netzwerken. Der Traefik Reverse Proxy ist die einzige Komponente, die aus dem Internet zugänglich ist und
 öffentlichen Traffic auf den Ports 80 und 443 annimmt.
 
-Traefik leitet Anfragen an den korrekten internen Dienst weiter. Backend-Dienste bleiben isoliert und werden niemals
+Traefik leitet Anfragen an den korrekten internen Service weiter. Backend-Services bleiben isoliert und werden niemals
 direkt dem öffentlichen Internet ausgesetzt.
 
 ```
@@ -45,28 +45,27 @@ Sicherheit wird in jeder Phase einer Anfrage angewendet, vom Netzwerkrand bis zu
 
 ### Netzwerk-Firewall (NSG)
 
-Die Network Security Group (NSG) oder Firewall erzwingt eine „Default Deny“-Richtlinie. Nur die Ports 80 (HTTP) und 443
-(HTTPS) sind aus dem öffentlichen Internet zugänglich. Alle anderen Ports sind blockiert. Sie können administrativen
-Zugriff wie SSH auf bestimmte vertrauenswürdige IP-Bereiche beschränken.
+Die Netzwerksicherheitsgruppe (NSG) oder Firewall erzwingt eine standardmäßige Ablehnungsrichtlinie (Default Deny
+Policy). Nur die Ports 80 (HTTP) und 443 (HTTPS) sind aus dem öffentlichen Internet zugänglich. Alle anderen Ports sind
+blockiert. Sie können den administrativen Zugriff wie SSH auf bestimmte vertrauenswürdige IP-Bereiche beschränken.
 
 ### Reverse Proxy (Traefik)
 
-Traefik dient als einziger Zugangspunkt und sichert alle eingehenden Verbindungen. Es terminiert TLS (erfordert HTTPS
-mit TLS 1.2+), provisioniert und erneuert Zertifikate automatisch über Let's Encrypt und injiziert Sicherheits-Header
-wie HSTS und X-Frame-Options. Eine Ratenbegrenzung schützt Backend-Dienste vor Brute-Force- und einfachen DoS-Angriffen.
+Traefik dient als einziger Entry Point und sichert alle eingehenden Verbindungen. Es terminiert TLS (erfordert HTTPS mit
+TLS 1.2+), provisioniert und erneuert Zertifikate automatisch über Let's Encrypt und fügt Sicherheits-Header wie HSTS
+und X-Frame-Options ein. Rate Limiting schützt Backend-Services vor Brute-Force- und einfachen DoS-Angriffen.
 
 ### Authentifizierung (IAM)
 
 Azure AD OAuth2 übernimmt die Benutzerauthentifizierung und integriert sich in die Unternehmensidentität. Dies
-ermöglicht eine rollenbasierte Zugriffskontrolle (RBAC) für fein granulierte Berechtigungen. API-Schlüssel
-authentifizieren die Dienst-zu-Dienst-Kommunikation. Das Sitzungsmanagement mit konfigurierbaren Timeouts schützt
-Benutzersitzungen.
+ermöglicht eine rollenbasierte Zugriffskontrolle (RBAC) für detaillierte Berechtigungen. API-Keys authentifizieren die
+Service-zu-Service-Kommunikation. Die Session-Verwaltung mit konfigurierbaren Timeouts schützt Benutzersessions.
 
 ### Container-Isolation
 
 Anwendungsdienste laufen als Nicht-Root-Benutzer in isolierten Docker-Containern mit minimalen Rechten.
-Container-Netzwerkregeln verhindern die direkte Kommunikation zwischen nicht verwandten Diensten. Ressourcengrenzen
-mindern Angriffe durch Ressourcenerschöpfung. Images werden regelmäßig mit Sicherheitspatches aktualisiert.
+Container-Netzwerkregeln verhindern die direkte Kommunikation zwischen nicht verwandten Diensten. Ressourcenlimits
+mildern Angriffe durch Ressourcenerschöpfung. Images werden regelmäßig mit Sicherheitspatches aktualisiert.
 
 ### Datenschutz
 
@@ -76,9 +75,9 @@ Ein Audit-Trail protokolliert alle Datenzugriffe und -verarbeitungen.
 
 ## Verwandte Dokumentation
 
-- [Netzwerkanforderungen](../../3_deployment_guide/7_network_requirements/) - Firewall-Regeln und Konnektivität
-- [Bereitstellungsoptionen](../../3_deployment_guide/1_deployment_options/) - Architektur und Hosting-Strategien
-- [Container-Sicherheit](../3_container_security/) - Container-Isolation und -Härtung
-- [Authentifizierung](../1_authentication/) - Authentifizierungsmechanismen
-- [Eingabevalidierung](../2_input_validation/) - Eingabebereinigung und -validierung
-- [Infrastrukturschichten](../../2_architecture/2_infrastructure_layers/) - Übersicht der Infrastrukturkomponenten
+- [Netzwerkanforderungen](../../3_deployment_guide/7_network_requirements/) – Firewall-Regeln und Konnektivität
+- [Bereitstellungsoptionen](../../3_deployment_guide/1_deployment_options/) – Architektur und Hosting-Strategien
+- [Container-Sicherheit](../3_container_security/) – Container-Isolation und -Härtung
+- [Authentifizierung](../1_authentication/) – Authentifizierungsmechanismen
+- [Eingabevalidierung](../2_input_validation/) – Eingabebereinigung und -validierung
+- [Infrastrukturschichten](../../2_architecture/2_infrastructure_layers/) – Übersicht der Infrastrukturkomponenten

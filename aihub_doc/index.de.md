@@ -1,195 +1,193 @@
 ---
 # https://vitepress.dev/reference/default-theme-home-page
 layout: home
-source_sha: 0abcfeb4fc4dfc2b85435942f8d22b0a3a2542283ee4c191dc2dd58a0fa682ce
+source_sha: a33772a629de050f4d642ec80a9bf14d4f0e501653ecaad1b2e7b9cec6bdccb2
 
 hero:
   name: Swiss AI Hub
   text: Die offene KI-Plattform, die Sie besitzen und kontrollieren
-  tagline: Komplette Infrastruktur für produktive KI. Deployment in Ihrem Rechenzentrum. Vertrauensvoll entwickeln. Ihre Daten bleiben in der Schweiz.
+  tagline: Komplette Infrastruktur für Produktions-KI. Bereitstellung in Ihrem Rechenzentrum. Mit Vertrauen entwickeln. Ihre Daten bleiben in der Schweiz.
   actions:
     - theme: brand
       text: Schnellstart
       link: /de/docs/2_platform/1_quick_start/
     - theme: alt
-      text: Plattformübersicht
+      text: Plattform-Übersicht
       link: /de/docs/2_platform/2_architecture/1_core_components/
     - theme: alt
       text: Warum Swiss AI Hub
       link: /de/docs/1_vision_and_positioning/1_introduction
 
 features:
-  - title: KI in 30 Minuten deployen
-    details: Ein Befehl startet alles. LLM-Gateway, Vektordatenbanken, Chat-Oberfläche, Authentifizierung, Monitoring. Vorgefertigte Agenten funktionieren sofort. Keine Cloud-Konten, keine komplexe Einrichtung.
-  - title: Ihre Daten bleiben bei Ihnen
-    details: Betreiben Sie alles On-Premise oder in Schweizer Rechenzentren. Lokale LLMs bedeuten, dass sensible Daten Ihr Netzwerk niemals verlassen. Sie bestimmen, wo jedes Byte verarbeitet und gespeichert wird.
-  - title: Sehen Sie genau, was KI tut
-    details: Jede Entscheidung ist nachvollziehbar. Jeder Workflow-Schritt ist sichtbar. Jede Kosten werden verfolgt. Wenn KI eine Antwort gibt, können Sie sehen, warum. Vertrauen durch Transparenz, nicht durch Versprechen.
+  - title: KI in 30 Minuten bereitstellen
+    details: Ein einziger Befehl startet alles. LLM-Gateway, Vektordatenbanken, Chat-Oberfläche, Authentifizierung, Monitoring. Vorgefertigte Agenten funktionieren sofort. Keine Cloud-Konten, keine komplexe Einrichtung.
+  - title: Ihre Daten bleiben Ihre
+    details: Betreiben Sie alles On-Premise oder in Schweizer Rechenzentren. Lokale LLMs bedeuten, dass sensible Daten Ihr Netzwerk niemals verlassen. Sie kontrollieren, wo jedes Byte verarbeitet und gespeichert wird.
+  - title: Sehen Sie genau, was die KI tut
+    details: Jede Entscheidung ist nachvollziehbar. Jeder Workflow-Schritt ist sichtbar. Jede Kostenstelle wird verfolgt. Wenn die KI eine Antwort gibt, können Sie sehen, warum. Vertrauen durch Transparenz, nicht durch Versprechen.
   - title: Entwickeln Sie ohne Infrastruktur-Kopfschmerzen
-    details: Authentifizierung, Bereitstellung, Überwachung, Skalierung sind bereits gelöst. Schreiben Sie die Geschäftslogik Ihres Agenten, die Plattform kümmert sich um alles andere. Konzentrieren Sie sich auf das, was Sie einzigartig macht.
-  - title: Funktioniert mit dem, was Sie bereits haben
+    details: Authentifizierung, Bereitstellung, Überwachung, Skalierung sind bereits gelöst. Schreiben Sie die Geschäftslogik Ihres Agenten, die Plattform erledigt alles andere. Konzentrieren Sie sich auf das, was Sie einzigartig macht.
+  - title: Funktioniert mit dem, was Sie haben
     details: OpenAI-kompatible API verbindet bestehende Tools. Teams- und Slack-Bots erreichen Benutzer dort, wo sie arbeiten. Integration mit SharePoint, FTP und Ihren Systemen über Standardprotokolle.
   - title: Wachsen Sie mit dem Ökosystem
-    details: Jede Schweizer Organisation, die die Plattform nutzt, macht sie stärker. Teilen Sie gemeinsame Agenten, halten Sie strategische privat. Arbeiten Sie an der Infrastruktur zusammen, konkurrieren Sie bei Innovationen.
+    details: Jede Schweizer Organisation, die die Plattform nutzt, macht sie stärker. Teilen Sie gemeinsame Agenten, halten Sie strategische privat. Kollaborieren Sie bei der Infrastruktur, konkurrieren Sie bei der Innovation.
 ---
 
 <div style="height: 500px"></div>
 
 ## FAQ
 
-::: details Wie kann unsere Schweizer Organisation KI einsetzen und dabei alle Daten On-Premise behalten?
-Der Swiss AI Hub ist eine **Open-Source KI-Plattform**, die *Sie* bereitstellen und kontrollieren. Er wurde speziell für
-die **On-Premise-Installation** in Ihrem eigenen Schweizer Rechenzentrum entwickelt. Das bedeutet, Sie können die
+::: details Wie kann unsere Schweizer Organisation KI bereitstellen und dabei alle Daten On-Premise halten?
+Der Swiss AI Hub ist eine **Open-Source KI-Plattform**, die *Sie* bereitstellen und kontrollieren. Sie wurde speziell
+für die **On-Premise-Installation** in Ihrem eigenen Schweizer Rechenzentrum entwickelt. Dies bedeutet, dass Sie die
 gesamte KI-Infrastruktur – einschliesslich Sprachmodell-Gateways und Wissensdatenbanken – auf Ihren Servern betreiben
-und haben so die volle Kontrolle und Datenisolation. Mehr Details finden Sie in unseren
-[Deployment Options](/aihub-core/docs/2_platform/3_deployment_guide/1_deployment_options/).
+können, was vollständige Kontrolle und Datenisolation gewährleistet. Weitere Details finden Sie in unseren
+[Bereitstellungsoptionen](/de/docs/2_platform/3_deployment_guide/1_deployment_options/).
 :::
 
-::: details Wie stellen wir sicher, dass wir bei der Nutzung von KI die Schweizer Datenschutzgesetze (DSG/nDSG) einhalten?
+::: details Wie können wir KI nutzen und gleichzeitig die Schweizer Datenschutzgesetze wie das FADP (revDSG) einhalten?
 Die Gewährleistung der **Schweizer Datenhoheit** ist ein Kernprinzip der Swiss AI Hub Community. Da *Sie* die Plattform
-bereitstellen, entscheiden *Sie*, *wo* sie läuft – entweder auf Ihren eigenen Servern in der Schweiz oder in
-vertrauenswürdigen Schweizer Rechenzentren. Durch die Nutzung lokaler Large Language Models (LLMs) verbleibt die
-Verarbeitung sensibler Daten vollständig unter Ihrer Kontrolle, was Ihnen hilft, die **DSG/nDSG-Anforderungen** zu
-erfüllen. Lesen Sie mehr über unseren Ansatz unter
-[The Swiss Way: Privacy, Sovereignty, and Transparency](/aihub-core/docs/1_vision_and_positioning/1_introduction/3_the_swiss_way/).
+bereitstellen, wählen Sie, *wo* sie läuft – entweder auf Ihren eigenen Servern in der Schweiz oder in vertrauenswürdigen
+Schweizer Rechenzentren. Durch die Verwendung lokaler Large Language Models (LLMs) bleibt die Verarbeitung sensibler
+Daten vollständig unter Ihrer Kontrolle, was Ihnen hilft, die **FADP (revDSG) Anforderungen** zu erfüllen. Lesen Sie
+mehr über unser Engagement in
+[Der Schweizer Weg: Datenschutz, Souveränität und Transparenz](/de/docs/1_vision_and_positioning/1_introduction/3_the_swiss_way/).
 :::
 
-::: details Was ist eine vertrauenswürdige Open-Source KI-Plattform-Alternative zu grossen Cloud-Anbietern wie Azure AI oder Google Vertex AI?
-Der Swiss AI Hub bietet eine **Open-Source-Alternative**, die von einer auf Benutzerkontrolle fokussierten Community
-entwickelt wird. Die Kerninfrastruktur der Plattform ist unter der Apache 2.0 Lizenz lizenziert, was bedeutet, dass
-*Sie* Ihre Bereitstellung besitzen. Dies befreit Sie von **Vendor Lock-in** und gibt Ihnen Unabhängigkeit von
+::: details Was ist eine vertrauenswürdige, Open-Source KI-Plattform-Alternative zu grossen Cloud-Anbietern wie Azure AI oder Google Vertex AI?
+Der Swiss AI Hub bietet eine **Open-Source-Alternative**, die von einer Gemeinschaft entwickelt wurde, die sich auf die
+Benutzerkontrolle konzentriert. Die Kerninfrastruktur der Plattform ist unter Apache 2.0 lizenziert, was bedeutet, dass
+*Sie* Ihre Bereitstellung besitzen. Dies ermöglicht es Ihnen, **Vendor Lock-in** zu vermeiden und befreit Sie von
 spezifischen Ökosystemen und unvorhersehbaren Preisstrukturen, die bei grossen Cloud-Anbietern üblich sind. Sehen Sie,
-wie wir uns vergleichen, in der
-[Comparison Matrix](/aihub-core/docs/1_vision_and_positioning/2_why_swiss_ai_hub/1_comparison_matrix_light/).
+wie wir uns in der [Vergleichsmatrix](/de/docs/1_vision_and_positioning/2_why_swiss_ai_hub/1_comparison_matrix_light/)
+vergleichen.
 :::
 
 ::: details Wie können wir sicherstellen, dass KI-Entscheidungen in unserem Schweizer Unternehmen nachvollziehbar und auditierbar sind?
-Die Swiss AI Hub Community legt Wert auf **Transparenz für Vertrauen**. Unsere Plattform bietet umfassende
+Die Swiss AI Hub Community priorisiert **Transparenz für Vertrauen**. Unsere Plattform bietet umfassende
 Observability-Funktionen. Jeder Schritt, den ein KI-Agent unternimmt, ist sichtbar, Entscheidungen werden mit Kontext
-protokolliert und Kosten verfolgt. Werkzeuge wie Phoenix ermöglichen die Nachverfolgung jeder Interaktion, sodass Sie
-immer verstehen können, *warum* eine KI eine bestimmte Antwort gegeben hat, was für **Compliance und Auditierung**
-entscheidend ist. Entdecken Sie diese Funktionen unter
-[Auditing & Observability](/aihub-core/docs/2_platform/12_auditing/).
+protokolliert und Kosten werden verfolgt. Tools wie Phoenix ermöglichen die Nachverfolgung jeder Interaktion, sodass Sie
+immer verstehen können, *warum* eine KI eine bestimmte Antwort gegeben hat, was für **Compliance und Auditing**
+entscheidend ist. Entdecken Sie diese Funktionen unter [Auditing & Observability](/de/docs/2_platform/12_auditing/).
 :::
 
-::: details Gibt es einen fertigen KI-Infrastruktur-Stack (Authentifizierung, Monitoring, Vektor-DBs), den wir selbst bereitstellen können?
+::: details Gibt es einen vorgefertigten KI-Infrastruktur-Stack (Auth, Monitoring, Vektor-DBs), den wir selbst bereitstellen können?
 Ja, der Swiss AI Hub bietet einen **vollständigen, vorintegrierten KI-Infrastruktur-Stack**, den *Sie* bereitstellen. Er
 bündelt wesentliche Komponenten wie Authentifizierung, Monitoring, verschiedene Datenbanken (einschliesslich
-Vektordatenbanken für KI), Datenverarbeitungspipelines und Benutzeroberflächen direkt «out-of-the-box». Dies löst viele
-gängige **Herausforderungen bei der KI-Produktivsetzung** vom ersten Tag an. Erfahren Sie mehr darüber unter
-[The 'Day 2' Advantage](/aihub-core/docs/1_vision_and_positioning/2_why_swiss_ai_hub/2_the_day_2_advantage/).
+Vektordatenbanken für KI), Datenverarbeitungspipelines und Benutzeroberflächen direkt out-of-the-box. Dies löst viele
+gängige **Produktions-KI-Herausforderungen** vom ersten Tag an. Erfahren Sie mehr darüber in
+[Der "Day 2" Vorteil](/de/docs/1_vision_and_positioning/2_why_swiss_ai_hub/2_the_day_2_advantage/).
 :::
 
-::: details Was ist der schnellste Weg, eine sichere, produktionsbereite KI-Plattform in der Schweiz bereitzustellen?
+::: details Was ist der schnellste Weg, eine sichere, unternehmenstaugliche KI-Plattform in der Schweiz einzurichten?
 Sie können die gesamte Swiss AI Hub Plattform in etwa **30 Minuten mit einem einzigen Befehl** bereitstellen. Als
 Open-Source-Plattform, die Sie selbst installieren, enthält sie vorgefertigte Agenten und Schnittstellen, die sofort
-funktionieren und einen schnellen Mehrwert ohne komplexe Setups bieten. Beginnen Sie mit dem
-[Quick Start Guide](/aihub-core/docs/2_platform/1_quick_start/).
+einsatzbereit sind und eine schnelle Wertschöpfung ohne komplexe Cloud-Konfigurationen ermöglichen. Beginnen Sie mit dem
+[Schnellstart-Leitfaden](/de/docs/2_platform/1_quick_start/).
 :::
 
-::: details Wie können unsere Mitarbeitenden sicher auf unternehmensspezifische KI-Hilfe direkt in Microsoft Teams oder Slack zugreifen?
-Die Swiss AI Hub Plattform bietet **native Integrationen für Microsoft Teams und Slack**. Dies ermöglicht Ihren Teams,
-sicher mit KI-Agenten zu interagieren, die Zugriff auf relevantes Unternehmenswissen haben, direkt in den
-Kollaborationstools, die sie täglich nutzen, was den Arbeitsablauf verbessert. Details finden Sie unter
-[Slack & Teams Integrations](/aihub-core/docs/2_platform/15_slack_teams_integrations/).
+::: details Wie können unsere Mitarbeiter sicher auf unternehmensspezifische KI-Hilfe direkt in Microsoft Teams oder Slack zugreifen?
+Die Swiss AI Hub Plattform enthält **integrierte Integrationen für Microsoft Teams und Slack**. Dies ermöglicht Ihren
+Mitarbeitern, sicher mit KI-Agenten zu interagieren, die Zugriff auf relevantes Unternehmenswissen haben, direkt in den
+Kollaborationstools, die sie täglich nutzen, und verbessert so den Workflow. Details finden Sie unter
+[Slack & Teams Integrationen](/de/docs/2_platform/15_slack_teams_integrations/).
 :::
 
-::: details Wie kann unsere Organisation den Zugriff auf und die Nutzung verschiedener KI-Modelle (z.B. GPT-4, Gemini, lokale Modelle) zentral verwalten?
+::: details Wie kann unsere Organisation den Zugriff und die Nutzung verschiedener KI-Modelle (z.B. GPT-4, Gemini, lokale Modelle) zentral verwalten?
 Der Swiss AI Hub enthält einen **integrierten LLM Proxy (LiteLLM)**, der als einheitliches Gateway zu all Ihren
 konfigurierten KI-Modellen fungiert. Sie können den Modellzugriff zentral verwalten, Anfragen basierend auf Richtlinien
-intelligent weiterleiten, Kosten über verschiedene Anbieter hinweg verfolgen und sogar Failover-Mechanismen einrichten.
-Weitere Informationen finden Sie unter [Language Models](/aihub-core/docs/2_platform/13_language_models/).
+routen, Kosten über verschiedene Anbieter hinweg verfolgen und sogar Failover-Mechanismen einrichten. Weitere
+Informationen finden Sie unter [Sprachmodelle](/de/docs/2_platform/13_language_models/).
 :::
 
-::: details Wie können wir die Betriebskosten (OPEX) im Zusammenhang mit der Nutzung von KI-Modellen effektiv kontrollieren und vorhersagen?
-Unsere Community hat den Swiss AI Hub mit Blick auf **transparente Kostenkontrolle** entwickelt. Der integrierte LLM
-Proxy verfolgt den Token-Verbrauch für jede Interaktion, pro Benutzer oder Agent. Sie können die KI-Ausgaben in
+::: details Wie können wir die Betriebskosten, die mit der Nutzung von KI-Modellen verbunden sind, effektiv kontrollieren und vorhersagen?
+Unsere Community hat den Swiss AI Hub mit **transparenter Kostenkontrolle** im Sinn entwickelt. Der integrierte LLM
+Proxy verfolgt die Token-Nutzung für jede Interaktion, pro Benutzer oder Agent. Sie können die KI-Ausgaben in
 Echtzeit-Dashboards überwachen und Budgets konfigurieren, um unerwartete Kosten zu vermeiden. Erfahren Sie mehr über
-[Cost Control](/aihub-core/docs/2_platform/14_cost_control/).
+[Kostenkontrolle](/de/docs/2_platform/14_cost_control/).
 :::
 
-::: details Unser Schweizer Unternehmen kann aufgrund strenger Datenschutzbestimmungen keine öffentlichen KI-Cloud-Dienste nutzen. Welche sichere KI-Lösung können wir verwenden?
-Der Swiss AI Hub ist hierfür ideal. Als Open-Source-Plattform, die *Sie* bereitstellen, können Sie ihn **vollständig
+::: details Unser Schweizer Unternehmen hat strenge Datenschutzvorschriften, die die Nutzung öffentlicher KI-Clouds verhindern. Welche sichere KI-Lösung können wir nutzen?
+Der Swiss AI Hub ist dafür ideal. Als Open-Source-Plattform, die *Sie* bereitstellen, können Sie sie **vollständig
 On-Premise** installieren und **lokale, selbst gehostete LLMs** verwenden. Dies stellt sicher, dass absolut keine Daten
 (Prompts, Antworten, Dokumente) jemals Ihr sicheres Netzwerk verlassen. Überprüfen Sie unsere umfassenden
-[Security features](/aihub-core/docs/2_platform/18_security/).
+[Sicherheitsfunktionen](/de/docs/2_platform/18_security/).
 :::
 
-::: details Wir haben KI-Prototypen mit Frameworks wie LangChain entwickelt, finden aber die zuverlässige Bereitstellung in der Produktion schwierig. Wie kann der Swiss AI Hub helfen?
-Der Swiss AI Hub stellt die notwendige **produktionsreife Infrastruktur** bereit, die Entwicklungsframeworks oft fehlt.
-Während LangChain hilft, die KI-Logik zu bauen, liefert unsere Plattform die wesentlichen umgebenden Komponenten:
+::: details Wir haben KI-Prototypen, die Frameworks wie LangChain verwenden, finden aber die zuverlässige Bereitstellung in der Produktion schwierig. Wie kann der Swiss AI Hub helfen?
+Der Swiss AI Hub bietet die notwendige **produktionsreife Infrastruktur**, die Entwicklungs-Frameworks oft fehlt.
+Während LangChain hilft, die KI-Logik aufzubauen, liefert unsere Plattform die wesentlichen umgebenden Komponenten:
 robuste Bereitstellungsmechanismen, Unternehmensauthentifizierung, Skalierung, Monitoring und Benutzeroberflächen, die
 für einen **zuverlässigen Unternehmenseinsatz** benötigt werden. Siehe
-[Our Solution](/aihub-core/docs/1_vision_and_positioning/1_introduction/2_our_solution/).
+[Unsere Lösung](/de/docs/1_vision_and_positioning/1_introduction/2_our_solution/).
 :::
 
-::: details Wie können wir unsere internen Firmendokumente (wie PDFs oder Word-Dateien) sicher nutzen, damit KI-Agenten Fragen dazu beantworten können (RAG)?
+::: details Wie können wir KI-Agenten sicher Fragen basierend auf unseren internen Unternehmensdokumenten (wie PDFs oder Word-Dateien) beantworten lassen?
 Der Swiss AI Hub enthält ein sicheres **Retrieval-Augmented Generation (RAG) System**. Sie konfigurieren automatisierte
-[Data Pipelines](/aihub-core/docs/2_platform/6_pipelines/), um Dokumente aus Ihren Quellen (wie SharePoint) aufzunehmen.
-Diese Pipelines verarbeiten die Dokumente sicher und indexieren sie in einer Vektordatenbank, *die Sie besitzen und
-kontrollieren*, sodass Agenten sicher auf Unternehmenswissen zugreifen können.
+[Datenpipelines](/de/docs/2_platform/6_pipelines/), um Dokumente aus Ihren Quellen (wie SharePoint) aufzunehmen. Diese
+Pipelines verarbeiten die Dokumente sicher und indizieren sie in einer Vektordatenbank, *die Sie besitzen und
+kontrollieren*, wodurch Agenten sicher auf Unternehmenswissen zugreifen können.
 :::
 
-::: details Verschiedene Teams in unserer Organisation nutzen unterschiedliche KI-Tools, was zu Silos führt. Wie können wir einen einheitlichen, gesteuerten KI-Ansatz schaffen?
+::: details Verschiedene Teams in unserer Organisation verwenden unterschiedliche KI-Tools, wodurch Silos entstehen. Wie können wir einen einheitlichen, gesteuerten KI-Ansatz schaffen?
 Der Swiss AI Hub kann als Ihre **zentrale, einheitliche KI-Plattform** dienen. Er bietet eine gemeinsame Infrastruktur,
 auf der alle Teams aufbauen können, gewährleistet konsistente Governance- und Sicherheitsrichtlinien, bietet
-einheitliches Monitoring und enthält eine
-[OpenAI-Compatible API](/aihub-core/docs/2_platform/16_api/1_openai_compatible_api/), die die Integration vieler
-bestehender Tools ermöglicht und so hilft, die **Fragmentierung zu reduzieren**.
+einheitliches Monitoring und umfasst eine [OpenAI-kompatible API](/de/docs/2_platform/16_api/1_openai_compatible_api/),
+die die Integration mit vielen bestehenden Tools ermöglicht und so zur **Reduzierung der Fragmentierung** beiträgt.
 :::
 
-::: details Was ist ein effizienter und skalierbarer Weg, um die Aufnahme und Vektor-Einbettung von Tausenden von Firmendokumenten für KI zu handhaben?
-Der Swiss AI Hub nutzt **Data Pipelines**, die auf dem robusten Orchestrator Dagster basieren. Diese Pipelines
+::: details Was ist ein effizienter und skalierbarer Weg, die Aufnahme und Vektor-Einbettung Tausender Unternehmensdokumente für KI zu handhaben?
+Der Swiss AI Hub nutzt **Datenpipelines**, die mit dem robusten Orchestrator Dagster erstellt wurden. Diese Pipelines
 automatisieren den gesamten Workflow: Verbindung zu Ihren Datenquellen, intelligentes Parsen verschiedener Dateiformate,
-Erstellung semantischer Chunks, Generierung von Vektor-Einbettungen und Indexierung in Ihrer Vektordatenbank (wie
-Milvus). Details finden Sie im Abschnitt [Pipelines](/aihub-core/docs/2_platform/6_pipelines/).
+Erstellung semantischer Chunks, Generierung von Vektoreinbettungen und Indizierung dieser in Ihrem Vektorspeicher (wie
+Milvus). Details finden Sie im [Pipelines-Abschnitt](/de/docs/2_platform/6_pipelines/).
 :::
 
-::: details Können wir eine komplette KI-Plattform vollständig offline in einem Air-Gapped-Netzwerk innerhalb der Schweiz bereitstellen und betreiben?
-Ja. Wenn Sie den Swiss AI Hub **On-Premise** bereitstellen und ihn so konfigurieren, dass nur **selbst gehostete Large
-Language Models (LLMs)** verwendet werden, kann die gesamte Plattform ohne externe Internetverbindung betrieben werden.
-Dies macht sie geeignet für **Air-Gapped-Umgebungen** mit höchsten Sicherheitsanforderungen. Siehe
-[Deployment Options](/aihub-core/docs/2_platform/3_deployment_guide/1_deployment_options/).
+::: details Können wir eine komplette KI-Plattform vollständig offline in einem Air-Gapped-Netzwerk in der Schweiz bereitstellen und betreiben?
+Ja. Wenn Sie den Swiss AI Hub **On-Premise** bereitstellen und ihn so konfigurieren, dass er nur **selbst gehostete
+Large Language Models** (LLMs) verwendet, kann die gesamte Plattform ohne externe Internetverbindung betrieben werden.
+Dies macht sie für **Air-Gapped-Umgebungen** mit höchsten Sicherheitsanforderungen geeignet. Siehe
+[Bereitstellungsoptionen](/de/docs/2_platform/3_deployment_guide/1_deployment_options/).
 :::
 
-::: details Wie stellen wir sicher, dass die KI-Agenten vertrauenswürdige Antworten liefern und nicht nur "halluzinieren" oder Dinge erfinden?
-Vertrauen ist entscheidend. Swiss AI Hub **Agents** sind darauf ausgelegt, expliziten, definierten Workflows zu folgen.
-Sie verwenden primär **Retrieval-Augmented Generation (RAG)**, was bedeutet, dass ihre Antworten auf Informationen
-basieren, die aus *Ihren* verifizierten Firmendokumenten abgerufen wurden. Agenten **zitieren auch ihre Quellen**, und
-eingebaute "Guardrails" prüfen, ob die abgerufenen Informationen ausreichen, um **zuverlässige, faktenbasierte
-Antworten** zu gewährleisten. Erfahren Sie mehr über [Agents](/aihub-core/docs/2_platform/5_agents/).
+::: details Wie stellen wir sicher, dass die KI-Agenten vertrauenswürdige Antworten liefern und nicht einfach "halluzinieren" oder Dinge erfinden?
+Vertrauen ist von größter Bedeutung. Swiss AI Hub **Agenten** sind darauf ausgelegt, explizite, definierte Workflows zu
+befolgen. Sie verwenden hauptsächlich **Retrieval-Augmented Generation (RAG)**, was bedeutet, dass ihre Antworten auf
+Informationen basieren, die aus *Ihren* verifizierten Unternehmensdokumenten stammen. Agenten **zitieren auch ihre
+Quellen**, und integrierte "Guardrails" prüfen, ob die abgerufenen Informationen ausreichen, um **zuverlässige,
+faktenbasierte Antworten** zu gewährleisten. Erfahren Sie mehr über [Agenten](/de/docs/2_platform/5_agents/).
 :::
 
-::: details Ist es möglich, dass KI-Agenten auf dieser Plattform bei komplexen Aufgaben Hilfe oder Genehmigungen von menschlichen Experten anfordern?
+::: details Ist es für KI-Agenten auf dieser Plattform möglich, bei komplexen Aufgaben menschliche Experten um Hilfe oder Genehmigung zu bitten?
 Ja, unsere Plattform unterstützt **Human-in-the-Loop (HITL)** und **Bot-in-the-Loop (BITL)** Workflows. Ein KI-Agent
-kann so konzipiert werden, dass er seinen Prozess an einem bestimmten Schritt anhält, eine Anfrage für Input oder
-Genehmigung an einen benannten menschlichen Experten sendet (zum Beispiel über eine Slack-Nachricht) und dann seine
-Arbeit nahtlos wieder aufnimmt, sobald der Mensch geantwortet hat. Entdecken Sie
-[Agent Fundamentals](/aihub-core/docs/3_sdk/2_building_agents/1_agent_fundamentals/), die diese Muster ermöglichen.
+kann so konzipiert werden, dass er seinen Prozess an einem bestimmten Schritt pausiert, eine Anfrage für Eingabe oder
+Genehmigung an einen bestimmten menschlichen Experten sendet (zum Beispiel über eine Slack-Nachricht) und dann seine
+Arbeit nahtlos fortsetzt, sobald der Mensch antwortet. Entdecken Sie
+[Agenten-Grundlagen](/de/docs/3_sdk/2_building_agents/1_agent_fundamentals/), die diese Muster ermöglichen.
 :::
 
-::: details Wie verbindet und integriert sich der Swiss AI Hub mit unseren bestehenden Unternehmenssystemen wie SharePoint oder internen Datenbanken?
+::: details Wie verbindet und integriert sich der Swiss AI Hub mit unserer bestehenden Unternehmenssoftware wie SharePoint oder internen Datenbanken?
 Die Plattform bietet **flexible Integrationsoptionen**. KI-Agenten können direkte API-Aufrufe an externe Systeme
 tätigen; externe Systeme können Agenten über die
-[Agent Interaction API](/aihub-core/docs/2_platform/16_api/2_agent_interaction_api/) der Plattform auslösen;
-automatisierte Data Pipelines können Wissen aus Quellen wie SharePoint synchronisieren; und Standardprotokolle werden
-für benutzerdefinierte Verbindungen unterstützt. Siehe
-[External Integrations](/aihub-core/docs/2_platform/20_external_integrations/).
+[Agent Interaction API](/de/docs/2_platform/16_api/2_agent_interaction_api/) der Plattform auslösen; automatisierte
+Datenpipelines können Wissen aus Quellen wie SharePoint synchronisieren; und Standardprotokolle werden für
+benutzerdefinierte Verbindungen unterstützt. Siehe
+[Externe Integrationen](/de/docs/2_platform/20_external_integrations/).
 :::
 
-::: details Wie profitiert das breitere Schweizer KI-Ökosystem von der Nutzung einer Open-Source-Plattform wie dem Swiss AI Hub?
-Unser **Ökosystem-Modell** basiert auf Kollaboration. Die Kernplattform ist Open-Source, was es Schweizer Organisationen
-ermöglicht, ihre Anstrengungen beim Aufbau und der Verbesserung der grundlegenden KI-Infrastruktur zu bündeln. Jeder
-profitiert von gemeinsamen Fortschritten, sodass einzelne Organisationen ihre Ressourcen auf die Erstellung
-einzigartiger KI-Anwendungen konzentrieren können, die auf ihre spezifischen Bedürfnisse zugeschnitten sind, was die
-gesamte KI-Landschaft der Schweiz stärkt. Lesen Sie über
-[The Ecosystem Model](/aihub-core/docs/1_vision_and_positioning/2_why_swiss_ai_hub/3_the_ecosystem_model/).
+::: details Welchen Nutzen hat die Verwendung einer Open-Source-Plattform wie dem Swiss AI Hub für die breitere Schweizer KI-Community?
+Unser **Ökosystemmodell** basiert auf Zusammenarbeit. Die Kernplattform ist Open-Source, was es Schweizer Organisationen
+ermöglicht, Anstrengungen beim Aufbau und der Verbesserung der fundamentalen KI-Infrastruktur zu bündeln. Alle
+profitieren von gemeinsamen Fortschritten, wodurch sich einzelne Organisationen darauf konzentrieren können,
+einzigartige KI-Anwendungen für ihre spezifischen Bedürfnisse zu erstellen und so die gesamten KI-Fähigkeiten der
+Schweiz zu stärken. Lesen Sie mehr über
+[Das Ökosystemmodell](/de/docs/1_vision_and_positioning/2_why_swiss_ai_hub/3_the_ecosystem_model/).
 :::
 
-::: details Wir sind besorgt über die Komplexität der Einrichtung und Verwaltung einer selbst gehosteten KI-Plattform wie dieser. Ist der Swiss AI Hub schwierig zu betreiben?
-Die Swiss AI Hub Community hat die Plattform für eine **vereinfachte Bereitstellung und Verwaltung** konzipiert. Die
-Installation erfolgt über einen einzigen Befehl, und kritische Infrastrukturherausforderungen wie Authentifizierung,
-Monitoring und Skalierungskonfiguration sind "out-of-the-box" gelöst. Dies reduziert die betriebliche Komplexität
-erheblich im Vergleich zum Aufbau einer KI-Infrastruktur von Grund auf oder zur Verwaltung komplexer
-Cloud-Anbieterdienste. Sehen Sie sich den [Quick Start](/aihub-core/docs/2_platform/1_quick_start/) an.
+::: details Wir sind besorgt über die Komplexität der Einrichtung und Verwaltung einer selbst gehosteten KI-Plattform. Ist der Swiss AI Hub schwierig zu bedienen?
+Die Swiss AI Hub Community hat die Plattform für **vereinfachte Bereitstellung und Verwaltung** konzipiert. Die
+Installation erfolgt mit einem einzigen Befehl, und kritische Infrastrukturherausforderungen wie Authentifizierung,
+Monitoring und Skalierungskonfiguration sind out-of-the-box gelöst. Dies reduziert die betriebliche Komplexität
+erheblich im Vergleich zum Aufbau einer KI-Infrastruktur von Grund auf oder der Verwaltung komplizierter
+Cloud-Anbieterdienste. Überprüfen Sie den [Schnellstart](/de/docs/2_platform/1_quick_start/).
 :::

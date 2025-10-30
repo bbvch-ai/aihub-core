@@ -1,107 +1,107 @@
 ---
-title: Agenten-Evaluierungen
-source_sha: 941d34318d931bd3bccaad6381ba4e39fec0953ca7b2d04b23ed884596d48626
+title: Agentenbewertungen
+source_sha: a2ecab1bd7e05d8ecd7109123deee1043c4fcc049df7067db244e7eff9aa6ee4
 ---
 
-# Agenten-Evaluierungen
+# Agentenbewertungen
 
-Agenten-Evaluierungen testen und messen die Qualität von KI-Agenten vor und nach der Bereitstellung. Sie erhalten Daten
+Agentenbewertungen testen und messen die Qualität von KI-Agenten vor und nach dem Deployment. Sie erhalten Daten
 darüber, ob Ihre Agenten genaue, vollständige und prägnante Antworten liefern.
 
-Evaluierungen testen Agenten anhand vordefinierter Fragen mit bekannten korrekten Antworten. Sie stellen die Fragen und
+Bewertungen testen Agenten anhand vordefinierter Fragen mit bekannten richtigen Antworten. Sie stellen die Fragen und
 erwarteten Antworten bereit, und das System misst, wie gut Ihr Agent abschneidet.
 
-Vorteile von Evaluierungen:
+Vorteile von Bewertungen:
 
-- Überprüfung der Agentenleistung vor und nach der Bereitstellung
-- Erhalten Sie messbare Bewertungen anstelle subjektiver Meinungen
-- Verfolgen Sie Qualitätsänderungen, während Sie Wissensdatenbanken und Prompts aktualisieren
-- Pflegen Sie Audit-Trails für regulatorische Anforderungen
+- Überprüfung der Agenten-Performance vor und nach dem Deployment
+- Messbare Bewertungen anstelle subjektiver Meinungen
+- Verfolgung von Qualitätsänderungen bei der Aktualisierung von Wissensdatenbanken und Prompts
+- Führen von Audit-Trails für regulatorische Anforderungen
 
-## Datensätze
+## Datasets
 
-Datensätze sind Sammlungen von Testfragen mit Referenzantworten.
+Datasets sind Sammlungen von Testfragen mit Referenzantworten.
 
-Behandeln Sie repräsentative Fragen, die Ihr Agent erhalten wird. Fügen Sie klare, genaue Referenzantworten und
-Grenzfälle hinzu. Beginnen Sie mit mindestens 10 Frage-Antwort-Paaren. 20-50 Paare funktionieren besser.
+Decken Sie repräsentative Fragen ab, die Ihr Agent erhalten wird. Fügen Sie klare, genaue Referenzantworten und Edge
+Cases hinzu. Beginnen Sie mit mindestens 10 Frage-Antwort-Paaren. 20-50 Paare funktionieren besser.
 
-::: details Beispielstruktur eines Datensatzes
-- Frage: „Wie setze ich mein Passwort zurück?"
+::: details Beispiel-Dataset-Struktur
+- Frage: „Wie setze ich mein Passwort zurück?“
 - Referenzantwort: „Klicken Sie auf der Anmeldeseite auf ‚Passwort vergessen‘, geben Sie Ihre E-Mail-Adresse ein und
-  folgen Sie dem an Ihren Posteingang gesendeten Link zum Zurücksetzen."
+  folgen Sie dem Link zum Zurücksetzen, der an Ihren Posteingang gesendet wird.“
 :::
 
-Um einen Datensatz zu erstellen, navigieren Sie zum Evaluierungsdienst (unter `Services > Evaluations`), geben Sie einen
-Namen und eine Beschreibung ein, fügen Sie Fragen und erwartete Antworten hinzu und speichern Sie dann.
+Um ein Dataset zu erstellen, navigieren Sie zum Bewertungsdienst (unter `Services > Evaluations`), geben Sie einen Namen
+und eine Beschreibung an, fügen Sie Fragen und erwartete Antworten hinzu und speichern Sie.
 
-![Datensatz-Übersicht](../../../media/evaluation/dataset_overview.png) *Übersicht der Datensätze, die alle
-Evaluierungs-Datensätze mit Erstellungsdaten zeigt*
+![Übersicht der Datasets](../../../media/evaluation/dataset_overview.png) *Übersicht der Datasets, die alle
+Bewertungs-Datasets mit Erstellungsdaten zeigt*
 
-![Erstellen eines Datensatzes](../../../media/evaluation/dataset_create.png) *Hinzufügen von Testfragen mit erwarteten
+![Erstellen eines Datasets](../../../media/evaluation/dataset_create.png) *Hinzufügen von Testfragen mit erwarteten
 Antworten*
 
 ::: tip
-Beginnen Sie mit 20-30 Fragen, die einfache und komplexe Szenarien abdecken. Aktualisieren Sie Datensätze, wenn sich Ihr
+Beginnen Sie mit 20-30 Fragen, die einfache und komplexe Szenarien abdecken. Aktualisieren Sie Datasets, wenn sich Ihr
 Agent weiterentwickelt. Organisieren Sie sie nach Thema oder Anwendungsfall.
 :::
 
-## Experimente durchführen
+## Ausführen von Experimenten
 
-Experimente testen Ihren Agenten anhand eines Datensatzes und erstellen Qualitätsbewertungen.
+Experimente testen Ihren Agenten anhand eines Datasets und liefern Qualitätsbewertungen.
 
-Um ein Experiment durchzuführen, wählen Sie einen Agenten aus, wählen Sie einen Testdatensatz, starten Sie das
-Experiment und überprüfen Sie dann die Bewertungen und die Analyse.
+Um ein Experiment auszuführen, wählen Sie einen Agenten aus, wählen Sie ein Test-Dataset, starten Sie das Experiment und
+überprüfen Sie dann die Bewertungen und die Analyse.
 
 ![Erstellen eines Experiments](../../../media/evaluation/experiment_create.png) *Erstellen eines Experiments durch
-Auswahl eines Agenten und Datensatzes*
+Auswahl eines Agenten und Datasets*
 
-![Experiment-Übersicht](../../../media/evaluation/experiment_overview.png) *Übersicht der Experimente, die vergangene
-Experimente auflistet – klicken Sie für Details*
+![Übersicht der Experimente](../../../media/evaluation/experiment_overview.png) *Übersicht der Experimente mit Liste
+vergangener Experimente – klicken Sie für Details*
 
-![Durchführen eines Experiments](../../../media/evaluation/experiment_running.png) *Fortschritt des Experiments während
+![Ausführen eines Experiments](../../../media/evaluation/experiment_running.png) *Fortschritt des Experiments während
 der Ausführung*
 
-Führen Sie Experimente durch, bevor Sie einen neuen Agenten bereitstellen, nach signifikanten Änderungen an der
-Konfiguration oder Wissensdatenbank und regelmäßig (wöchentlich oder monatlich) zur Qualitätsüberwachung.
+Führen Sie Experimente vor dem Deployment eines neuen Agenten aus, nach wesentlichen Änderungen an der Konfiguration
+oder Wissensdatenbank und regelmäßig (wöchentlich oder monatlich) zur Qualitätsüberwachung.
 
-### Wie KI-Juroren funktionieren
+### Wie KI-Richter arbeiten
 
-Jede Frage wird an Ihren Agenten gesendet. Drei KI-Juroren (LLMs) bewerten die Antwort anhand der Referenzantwort. Die
-Ergebnisse werden gemittelt und als Sternebewertungen angezeigt.
+Jede Frage wird an Ihren Agenten gesendet. Drei KI-Richter (LLMs) bewerten die Antwort anhand der Referenzantwort. Die
+Ergebnisse werden gemittelt und als Sternenbewertungen angezeigt.
 
-### Evaluierungsmetriken
+### Bewertungsmetriken
 
 Drei Metriken, bewertet von 0-5 Sternen:
 
-| Metrik          | Beschreibung                                                                                                            | Bewertungsrichtlinie                                                           |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Korrektheit     | Faktische Genauigkeit im Vergleich zur Referenzantwort. Frei von Fehlinformationen, Halluzinationen oder Widersprüchen. | 5: Entspricht der Referenz<br/>3: Einige Fehler<br/>0: Falsch/Irreführend      |
-| Vollständigkeit | Behandelt alle Teile der Anfrage, einschließlich mehrteiliger Fragen und impliziter Bedürfnisse.                        | 5: Alle Teile beantwortet<br/>3: Einige Aspekte übersehen<br/>0: Unvollständig |
-| Prägnanz        | Effizient und direkt. Vermeidet irrelevante Abschweifungen, Redundanz oder übermäßiges Füllmaterial.                    | 5: Auf den Punkt<br/>3: Ausführlich<br/>0: Exzessiv                            |
+| Metrik          | Beschreibung                                                                                                            | Bewertungsleitfaden                                                         |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Korrektheit     | Faktische Genauigkeit im Vergleich zur Referenzantwort. Frei von Fehlinformationen, Halluzinationen oder Widersprüchen. | 5: Entspricht Referenz<br/>3: Einige Fehler<br/>0: Falsch/irreführend       |
+| Vollständigkeit | Behandelt alle Teile der Anfrage, einschließlich mehrteiliger Fragen und impliziter Bedürfnisse.                        | 5: Alle Teile beantwortet<br/>3: Einige Aspekte fehlen<br/>0: Unvollständig |
+| Prägnanz        | Effizient und direkt. Vermeidet irrelevante Abschweifungen, Redundanzen oder übermäßiges Füllmaterial.                  | 5: Auf den Punkt<br/>3: Weitschweifig<br/>0: Übermäßig                      |
 
 Bewertungsbereiche:
 
 - 4-5 Sterne: Produktionsreif.
-- 3-4 Sterne: Funktioniert gut, kann aber kleinere Probleme aufweisen. Überprüfen Sie fehlschlagende Testfälle.
-- Unter 3 Sternen: Vor der Bereitstellung genau überprüfen.
+- 3-4 Sterne: Funktioniert gut, kann aber kleinere Probleme haben. Überprüfen Sie fehlerhafte Testfälle.
+- Unter 3 Sternen: Vor dem Deployment genau überprüfen.
 
 ### Ergebnisse anzeigen
 
-![Experimentergebnisse](../../../media/evaluation/experiment_result.png) *Experimentergebnisse, die die Gesamtmetriken
-und eine detaillierte Aufschlüsselung pro Frage zeigen*
+![Experimentergebnisse](../../../media/evaluation/experiment_result.png) *Experimentergebnisse, die Gesamtmetriken und
+detaillierte Aufschlüsselung pro Frage zeigen*
 
-Die Ergebnisseite zeigt oben Sternebewertungen für die drei Metriken. Darunter befindet sich eine Tabelle mit jeder
-Testfrage, Referenzantwort, der Antwort des Agenten, den Bewertungen und der Antwortlatenz.
+Die Ergebnisseite zeigt oben Sternenbewertungen für die drei Metriken. Darunter befindet sich eine Tabelle mit jeder
+Testfrage, der Referenzantwort, der Antwort des Agenten, den Bewertungen und der Antwortlatenz.
 
 Erweitern Sie Fragen, um den vollständigen Text anzuzeigen. Niedrige Korrektheitsbewertungen bedeuten in der Regel
-Lücken in der Wissensdatenbank oder Probleme beim Abruf. Niedrige Vollständigkeitsbewertungen deuten darauf hin, dass
-der Agent Teile mehrteiliger Fragen übersieht. Niedrige Prägnanzbewertungen bedeuten übermäßig ausführliche Antworten.
+Lücken in der Wissensdatenbank oder Abrufprobleme. Niedrige Vollständigkeitsbewertungen deuten darauf hin, dass der
+Agent Teile von mehrteiligen Fragen übersieht. Niedrige Prägnanzbewertungen bedeuten übermäßig weitschweifige Antworten.
 
 Aktualisieren Sie die Wissensdatenbank, System-Prompts oder Abrufeinstellungen Ihres Agenten basierend auf den
-Ergebnissen. Führen Sie das Experiment erneut durch, um Verbesserungen zu überprüfen.
+Ergebnissen. Führen Sie das Experiment erneut aus, um Verbesserungen zu überprüfen.
 
 ::: tip
-Phoenix kann für tiefere Untersuchungen, einschließlich Konversations-Traces und roher Telemetriedaten, aufgerufen
+Phoenix kann für tiefere Untersuchungen, einschließlich Konversationsverläufen und Roh-Telemetriedaten, aufgerufen
 werden.
 :::
 
@@ -109,9 +109,9 @@ werden.
 
 Die folgenden Funktionen sind derzeit nicht implementiert:
 
-- Überwachung von Verzerrungen und Erkennung von Modell-Drift: Keine automatisierte Verzerrungserkennung,
-  Fairness-Metriken oder Drift-Erkennung. Das Evaluierungs-Framework und das OpenTelemetry-Tracing bieten grundlegende
-  Funktionen, die erweitert werden könnten.
+- Bias-Überwachung und Modell-Drift-Erkennung: Keine automatisierte Bias-Erkennung, Fairness-Metriken oder
+  Drift-Erkennung. Das Bewertungs-Framework und OpenTelemetry-Tracing bieten grundlegende Funktionen, die erweitert
+  werden könnten.
 
 - Produktions-A/B-Tests: Keine integrierte Traffic-Aufteilung oder parallele Tests von Agentenvarianten in der
-  Produktion. Der Vergleich vor der Bereitstellung mittels Experimenten wird unterstützt.
+  Produktion. Der Vergleich vor dem Deployment durch Experimente wird unterstützt.

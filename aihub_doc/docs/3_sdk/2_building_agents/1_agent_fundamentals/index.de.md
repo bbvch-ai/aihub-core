@@ -1,50 +1,50 @@
 ---
 title: Agenten-Grundlagen
-source_sha: 996e2901c22a47dabe475bfa2179e82ff8168f4686f119ae7c7b4f70202815ef
+source_sha: 7a29777932d6ca0235ff1c62636934b6abfa6a8a032f07a1e7bd9b8abc0daa2b
 ---
 
 # Agenten-Grundlagen
 
 Ein Agent ist ein eigenständiger, ereignisgesteuerter Workflow. Er verarbeitet eine Eingabe durch eine Reihe von
-Operationen, um eine endgültige Ausgabe zu erzeugen. Die besten Agenten sind fokussiert und erledigen eine Aufgabe gut.
+Operationen, um eine endgültige Ausgabe zu erzeugen. Die besten Agenten sind fokussiert und erledigen eine Sache gut.
 
 Diese Seite behandelt die wesentlichen Bausteine und die Kernmechanismen, die jeden Agenten antreiben.
 
 ## Funktionsweise: Der Agent Dispatcher
 
 Hinter den Kulissen orchestriert eine Komponente namens **Agent Dispatcher** Ihren Workflow. Das Verständnis seiner drei
-Hauptaufgaben vereinfacht das Erstellen von Agenten erheblich:
+Hauptaufgaben erleichtert das Erstellen von Agenten erheblich:
 
-1. **Introspektion**: Wenn ein Agent startet, überprüft der Dispatcher alle mit dem `@step`-Decorator markierten
-   Methoden. Er analysiert deren Parameter und Rückgabetypen, um einen Plan Ihres Workflows zu erstellen, bevor dieser
-   ausgeführt wird.
-2. **Ereignis-Routing**: Der Dispatcher fungiert als zentraler Router. Wenn ein Schritt ein Ereignis **zurückgibt**,
-   fängt der Dispatcher es ab und leitet es an den *nächsten* Schritt weiter, der darauf ausgelegt ist, diesen
-   Ereignistyp zu **akzeptieren**. So werden Ihre Schritte automatisch miteinander verkettet.
-3. **Dependency Injection**: Der Dispatcher stellt – oder „injiziert“ – notwendige Objekte wie Konfiguration und Kontext
-   basierend auf deren Typ-Hints automatisch direkt in Ihre Schrittmethoden bereit. Sie erstellen diese Objekte nicht;
-   Sie fordern sie lediglich an.
+1. **Introspektion**: Wenn ein Agent startet, inspiziert der Dispatcher alle Methoden, die mit dem `@step`-Decorator
+   markiert sind. Er analysiert deren Parameter und Rückgabetypen, um vor der Ausführung eine Karte Ihres Workflows zu
+   erstellen.
+2. **Event-Routing**: Der Dispatcher fungiert als zentraler Router. Wenn ein Schritt ein Ereignis **zurückgibt**, fängt
+   der Dispatcher es ab und liefert es an den *nächsten* Schritt, der für die **Annahme** dieses Ereignistyps konzipiert
+   ist. So werden Ihre Schritte automatisch miteinander verkettet.
+3. **Dependency Injection**: Der Dispatcher stellt — oder „injiziert“ — automatisch notwendige Objekte wie Konfiguration
+   und Kontext direkt in Ihre Schrittmethoden bereit, basierend auf deren Typ-Hints. Sie erstellen diese Objekte nicht;
+   Sie fordern sie einfach an.
 
-Da der Dispatcher das **Wie** handhabt, können Sie sich auf das **Was** konzentrieren: die Definition der Logik Ihres
+Da der Dispatcher das **Wie** übernimmt, können Sie sich auf das **Was** konzentrieren: die Definition der Logik Ihres
 Agenten.
 
-## Ereignisse: Der Daten- und Kontrollfluss
+## Events: Der Daten- und Kontrollfluss
 
-Ereignisse sind das Herzstück eines Agenten. Es sind einfache Pydantic-Modelle, die Daten transportieren und den
-Workflow steuern.
+Events sind das Lebenselixier eines Agenten. Es sind einfache Pydantic-Modelle, die Daten tragen und den Workflow
+steuern.
 
-### Kontroll- vs. Anzeigeereignisse
+### Control- vs. Display-Events
 
-Es gibt zwei primäre Kategorien von Ereignissen:
+Es gibt zwei primäre Kategorien von Events:
 
 - **`ControlEvent`**: Diese steuern den Ausführungspfad des Workflows. Schritte **geben** `ControlEvent`s **zurück**, um
   den nächsten Teil des Prozesses auszulösen. Der Workflow beginnt mit einem `StartEvent` und endet, wenn ein Schritt
   ein `StopEvent` zurückgibt.
-- **`DisplayEvent`**: Diese liefern Informationen an eine Benutzeroberfläche, wie z.B. die „Gedanken“ des Agenten
-  anzuzeigen oder eine Antwort zurückzustreamen. Sie werden innerhalb eines Schritts **ausgegeben** und beeinflussen
-  niemals die Logik des Agenten.
+- **`DisplayEvent`**: Diese liefern Informationen an eine Benutzeroberfläche, z. B. indem sie die „Gedanken“ des Agenten
+  anzeigen oder eine Antwort streamen. Sie werden innerhalb eines Schritts **emittiert** und beeinflussen niemals die
+  Logik des Agenten.
 
-Diese Trennung stellt sicher, dass UI-Belange Ihren Kern-Workflow nicht beeinträchtigen können.
+Diese Trennung stellt sicher, dass UI-Belange Ihren Kern-Workflow nicht stören können.
 
 ```python
 @step()
@@ -56,11 +56,11 @@ async def example_step(self, event: InputEvent, displayer: EventDisplayer) -> Ou
     return OutputEvent(result="done")
 ```
 
-### Definieren benutzerdefinierter Ereignisse
+### Benutzerdefinierte Events definieren
 
-Sie erstellen benutzerdefinierte `ControlEvent`s, um Daten zwischen Ihren Schritten zu übergeben. Erben Sie einfach von
-`ControlEvent` und fügen Sie Ihre Pydantic-Felder hinzu. Das häufigste Start-Ereignis für einen Konversationsagenten ist
-das eingebaute `UserMessageEvent`.
+Sie werden benutzerdefinierte `ControlEvent`s erstellen, um Daten zwischen Ihren Schritten zu übergeben. Erben Sie
+einfach von `ControlEvent` und fügen Sie Ihre Pydantic-Felder hinzu. Das häufigste Start-Event für einen
+konversationellen Agenten ist das integrierte `UserMessageEvent`.
 
 ```python
 from aihub_agent.events.ControlEvent import ControlEvent
@@ -94,9 +94,9 @@ async def process_document(self, event: DocumentUploadEvent) -> DocumentProcesse
 
 ## Konfiguration: Agenten wiederverwendbar machen
 
-Um die Logik Ihres Agenten von seinen Einstellungen zu trennen, verwendet das SDK ein stark typisiertes
-Konfigurationssystem. Dadurch können Sie das Verhalten eines Agenten ändern (z.B. LLM-Modelle wechseln, ohne seinen Code
-zu ändern).
+Um die Logik Ihres Agenten von seinen Einstellungen zu trennen, verwendet das SDK ein streng typisiertes
+Konfigurationssystem. Dies ermöglicht es Ihnen, das Verhalten eines Agenten (z. B. den Wechsel von LLM-Modellen) zu
+ändern, ohne dessen Code zu modifizieren.
 
 ### `AgentConfig`: Globale Konfiguration
 
@@ -115,22 +115,22 @@ class MyAgentConfig(AgentConfig):
 
 ### `StepConfig`: Schrittspezifische Konfiguration
 
-Für komplexe, wiederverwendbare Schritte können Sie spezielle `StepConfig`-Klassen erstellen. Verschachteln Sie sie in
-Ihrer Haupt-`AgentConfig`, und der Dispatcher injiziert automatisch nur die relevante Konfiguration in den Schritt, der
-sie benötigt.
+Für komplexe, wiederverwendbare Schritte können Sie dedizierte `StepConfig`-Klassen erstellen. Verschachteln Sie diese
+in Ihrer Haupt-`AgentConfig`, und der Dispatcher injiziert automatisch nur die relevante Konfiguration in den Schritt,
+der sie benötigt.
 
 ::: code-group
-```python [Schrittkonfigurationsdefinition]
+```python [Definition der Schrittkonfiguration]
 class SummarizeStepConfig(StepConfig):
     max_length: int = 500
 ```
 
-```python [In Agentenkonfiguration einbetten]
+```python [Einbetten in die Agentenkonfiguration]
 class MyAgentConfig(AgentConfig):
     summarize_step_settings: SummarizeStepConfig = SummarizeStepConfig()
 ```
 
-```python [Im Schritt verwenden]
+```python [Verwendung im Schritt]
 @step()
 async def summarize_text(self, event: TextEvent, config: SummarizeStepConfig):
     # The dispatcher injects only the SummarizeStepConfig object
@@ -144,13 +144,13 @@ async def summarize_text(self, event: TextEvent, config: SummarizeStepConfig):
 Wie Sie gesehen haben, müssen Sie Objekte wie Konfigurationen oder Kontexte nicht manuell an Ihre Schritte übergeben.
 Der **Agent Dispatcher** stellt sie automatisch basierend auf dem Typ-Hint des Parameters bereit.
 
-Hier sind die wichtigsten Objekte, die Sie injizieren lassen können:
+Hier sind die Schlüsselobjekte, die Sie injizieren lassen können:
 
 - **`AgentConfig`**: Das Hauptkonfigurationsobjekt Ihres Agenten.
 - **`StepConfig`**: Eine spezifische Konfigurationsklasse für einen einzelnen Schritt.
-- **`RunContext`**: Ein temporärer Schlüssel-Wert-Speicher für einen *einzelnen* Agentenlauf.
-- **`ThreadContext`**: Ein persistenter Schlüssel-Wert-Speicher für einen Konversations-*Thread*.
-- **`EventDisplayer`**: Eine Hilfsklasse zum Ausgeben von `DisplayEvent`s an die Benutzeroberfläche.
+- **`RunContext`**: Ein temporärer Key-Value-Store für einen *einzelnen* Agentenlauf.
+- **`ThreadContext`**: Ein persistenter Key-Value-Store für einen Konversations-*Thread*.
+- **`EventDisplayer`**: Ein Helfer zum Emittieren von `DisplayEvent`s an die Benutzeroberfläche.
 
 Diese leistungsstarke Funktion hält Ihren Code sauber und auf die Geschäftslogik fokussiert.
 
@@ -171,5 +171,5 @@ async def complex_step(
 
 ## Nächste Schritte
 
-Nachdem Sie nun die Grundlagen verstanden haben, erkunden Sie die **[Kernmuster](../2_core_patterns/)**, um zu sehen,
-wie diese Konzepte zum Aufbau von Agenten-Workflows verwendet werden.
+Nachdem Sie die Grundlagen verstanden haben, erkunden Sie die **[Kernmuster](../2_core_patterns/)**, um zu sehen, wie
+diese Konzepte zum Aufbau von Agenten-Workflows verwendet werden.

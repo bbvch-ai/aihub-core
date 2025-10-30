@@ -1,14 +1,14 @@
 ---
-title: Mit Ihren Daten chatten
-source_sha: efb0b8baf038fd6443ac62d4ca2d0adac162ff548f5708b447432f49e648fa07
+title: Chatten mit Ihren Daten
+source_sha: 19540ad4b8ad3989ef6ce4619a75899810f8b4dd3ae04b923c200e5faa5b5512
 ---
 
-Um Dateien hochzuladen, klicken Sie auf den Button „Mehr“.
+Um Dateien hochzuladen, klicken Sie auf den „Mehr“-Button.
 
 ![Click More Button](../../../../media/open_webui/click_more_button.jpeg)
 
-Wählen Sie dann „Dateien hochladen“ aus. Navigieren Sie im Pop-up-Fenster zu den gewünschten Dateien und laden Sie diese
-hoch.
+Wählen Sie dann „Dateien hochladen“. Navigieren Sie im Pop-up-Fenster zu den Dateien, die Sie verwenden möchten, und
+laden Sie diese hoch.
 
 ![Select Upload Files](../../../../media/open_webui/select_upload_files.jpeg)
 
@@ -24,6 +24,6 @@ Klicken Sie auf eine Referenz, um zu sehen, welche Teile zur Beantwortung der Fr
 
 ![Click Reference Citation](../../../../media/open_webui/click_reference_citation.jpeg)
 
-Die Zitation gibt einen klaren Überblick über die verschiedenen Teile, die zur Generierung der Antwort verwendet wurden.
+Die Zitation bietet eine klare Übersicht über die verschiedenen Teile, die zur Generierung der Antwort verwendet wurden.
 
 ![Citation Details](../../../../media/open_webui/citation_details_displayed.jpeg)

@@ -1,6 +1,6 @@
 ---
-title: Agentenbeobachtung
-source_sha: f7da62c8cd328f2a8f10f89730e398cf88ad105515a4e0b2a97671cf238ff767
+title: Agenten-Beobachtung
+source_sha: 787ae55bb1b9da0406217f62647ecdc15c5753b1c13087867cc44a55591525e1
 ---
 
-# Agentenbeobachtung
+# Agenten-Beobachtung
