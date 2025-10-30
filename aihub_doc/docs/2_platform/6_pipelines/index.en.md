@@ -7,21 +7,29 @@ index: 6
 
 ## What are pipelines
 
-Pipelines are automated workflows that prepare your documents for AI agents. Without pipelines, agents cannot access your company's documents, policies, or technical documentation. Pipelines bridge the gap between where your information lives (SharePoint, file uploads) and what agents can actually search and understand.
+Pipelines are automated workflows that prepare your documents for AI agents. Without pipelines, agents cannot access
+your company's documents, policies, or technical documentation. Pipelines bridge the gap between where your information
+lives (SharePoint, file uploads) and what agents can actually search and understand.
 
-Think of pipelines as a document preparation factory. Raw documents enter one end, and searchable, agent-ready knowledge comes out the other end. This process runs automatically whenever documents are added or changed.
+Think of pipelines as a document preparation factory. Raw documents enter one end, and searchable, agent-ready knowledge
+comes out the other end. This process runs automatically whenever documents are added or changed.
 
 ## Why pipelines matter
 
 AI agents cannot simply read a PDF or Word document the way humans do. Documents need preparation:
 
-**Format conversion** - PDFs and Word files must be converted to plain text while preserving their structure (headings, tables, lists).
+**Format conversion** - PDFs and Word files must be converted to plain text while preserving their structure (headings,
+tables, lists).
 
-**Size management** - A 200-page manual is too large for an agent to process at once. Pipelines break documents into smaller, searchable pieces.
+**Size management** - A 200-page manual is too large for an agent to process at once. Pipelines break documents into
+smaller, searchable pieces.
 
-**Semantic indexing** - Agents need to find information by meaning, not just keywords. Pipelines convert text into mathematical representations that capture meaning, enabling agents to find relevant content even when exact words differ.
+**Semantic indexing** - Agents need to find information by meaning, not just keywords. Pipelines convert text into
+mathematical representations that capture meaning, enabling agents to find relevant content even when exact words
+differ.
 
-Without pipelines, you would need to manually prepare every document, update them whenever content changes, and maintain the searchable indexes yourself. Pipelines automate this entire process.
+Without pipelines, you would need to manually prepare every document, update them whenever content changes, and maintain
+the searchable indexes yourself. Pipelines automate this entire process.
 
 ```mermaid
 flowchart LR
@@ -43,26 +51,35 @@ flowchart LR
 
 Documents flow through five processing stages:
 
-**Connect and ingest** - Pipelines pull documents from SharePoint automatically or accept manual uploads through the web interface. The SharePoint connector monitors for new or changed files.
+**Connect and ingest** - Pipelines pull documents from SharePoint automatically or accept manual uploads through the web
+interface. The SharePoint connector monitors for new or changed files.
 
-**Parse and understand** - Text, tables, and structure are extracted from PDFs, Word documents, and other formats. The parser identifies headings, lists, and sections to preserve document organization.
+**Parse and understand** - Text, tables, and structure are extracted from PDFs, Word documents, and other formats. The
+parser identifies headings, lists, and sections to preserve document organization.
 
-**Chunk and segment** - Large documents split into smaller pieces. Each chunk contains a coherent thought or section, making it easier for agents to find specific information without reading entire documents.
+**Chunk and segment** - Large documents split into smaller pieces. Each chunk contains a coherent thought or section,
+making it easier for agents to find specific information without reading entire documents.
 
-**Embed and vectorize** - Text chunks convert to numerical vectors that capture meaning. This allows semantic search where agents find relevant content based on concepts rather than exact word matches.
+**Embed and vectorize** - Text chunks convert to numerical vectors that capture meaning. This allows semantic search
+where agents find relevant content based on concepts rather than exact word matches.
 
-**Index and store** - Vectors, original text, and metadata go into the vector database. Agents query this database to retrieve relevant information when answering questions.
+**Index and store** - Vectors, original text, and metadata go into the vector database. Agents query this database to
+retrieve relevant information when answering questions.
 
 ## Automatic synchronization
 
-Pipelines watch data sources for changes. When documents are added, updated, or deleted, the pipeline detects the change and updates the knowledge base automatically. Agent responses stay current without manual intervention.
+Pipelines watch data sources for changes. When documents are added, updated, or deleted, the pipeline detects the change
+and updates the knowledge base automatically. Agent responses stay current without manual intervention.
 
 ## Orchestration and monitoring
 
-Dagster orchestrates pipeline execution. It handles scheduling, retries failed operations, and logs every run. Each processing step is tracked, letting you trace how any document was processed and troubleshoot issues.
+Dagster orchestrates pipeline execution. It handles scheduling, retries failed operations, and logs every run. Each
+processing step is tracked, letting you trace how any document was processed and troubleshoot issues.
 
 ## Operational characteristics
 
-Pipelines operate independently from agents. Teams can build and modify pipelines without changing agent code. Agents simply query the knowledge base without knowing how documents were processed.
+Pipelines operate independently from agents. Teams can build and modify pipelines without changing agent code. Agents
+simply query the knowledge base without knowing how documents were processed.
 
-All pipeline operations are logged. When reviewing agent responses, you can trace back to the exact document chunk and the specific pipeline run that processed it, providing full audit trails.
+All pipeline operations are logged. When reviewing agent responses, you can trace back to the exact document chunk and
+the specific pipeline run that processed it, providing full audit trails.

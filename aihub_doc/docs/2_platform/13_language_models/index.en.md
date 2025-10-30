@@ -5,17 +5,22 @@ index: 13
 
 # Language models
 
-The AI-Hub integrates with multiple language model providers through a centralized architecture. This section covers how the platform manages LLM access, protects sensitive data, and ensures response quality.
+The AI-Hub integrates with multiple language model providers through a centralized architecture. This section covers how
+the platform manages LLM access, protects sensitive data, and ensures response quality.
 
 ## Architecture overview
 
 The platform uses three layers for language model interactions:
 
-**LLM proxy layer**: LiteLLM provides a unified gateway to all model providers (OpenAI, Google, Anthropic, Azure OpenAI, self-hosted models). The proxy handles routing, cost tracking, retry logic, and platform-level PII protection via Presidio.
+**LLM proxy layer**: LiteLLM provides a unified gateway to all model providers (OpenAI, Google, Anthropic, Azure OpenAI,
+self-hosted models). The proxy handles routing, cost tracking, retry logic, and platform-level PII protection via
+Presidio.
 
-**Agent layer**: Individual agents implement their workflows using LLMs through the proxy. Agents can enable input and output guards to validate questions and responses specific to their purpose.
+**Agent layer**: Individual agents implement their workflows using LLMs through the proxy. Agents can enable input and
+output guards to validate questions and responses specific to their purpose.
 
-**User layer**: Users interact with agents through chat interfaces. The system tracks costs per conversation and applies security controls transparently.
+**User layer**: Users interact with agents through chat interfaces. The system tracks costs per conversation and applies
+security controls transparently.
 
 ## How the layers work together
 
@@ -29,7 +34,8 @@ When a user asks a question:
 6. Agent output guards (optional) check response quality and redact PII from retrieved documents
 7. The response reaches the user
 
-This layered approach provides defense-in-depth for both functionality (guards ensure quality) and security (Presidio protects user input, output guards protect retrieved data).
+This layered approach provides defense-in-depth for both functionality (guards ensure quality) and security (Presidio
+protects user input, output guards protect retrieved data).
 
 ## Components
 
