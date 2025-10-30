@@ -341,7 +341,7 @@ services:
     container_name: nats
     image: ghcr.io/bbvch-ai/aihub-core/nats:2.11.4
     restart: always
-    command: -c /etc/nats/nats.conf
+    command: -c /etc/nats/nats-server.conf
     volumes:
       - ./configs/nats/nats-config.local.conf:/etc/nats/nats-server.conf
       - ${VOLUME_ROOT:-./.docker-volumes}/nats:/data/nats
@@ -458,8 +458,8 @@ services:
       --hf-file qwen3-reranker-0.6b-q8_0.gguf
       --hf-token ${HUGGINGFACE_API_KEY}
       --alias qwen-3-reranking
-      --port 8182 \
-      --host 0.0.0.0 \
+      --port 8182
+      --host 0.0.0.0
       -c 8192
       --reranking
       --no-context-shift
@@ -485,7 +485,7 @@ services:
   # ===================================================================
   speaches:
     container_name: speaches
-    image: ghcr.io/speaches-ai/speaches:latest-cuda-12.6.3
+    image: ghcr.io/bbvch-ai/aihub-core/speaches:0.8.3-cpu
     restart: unless-stopped
     volumes:
       - ./configs/speaches/speaches-download-models.sh:/etc/speaches/speaches-download-models.sh

@@ -397,7 +397,7 @@ services:
     container_name: nats
     image: {{ global.registry_prefix }}{{ image_tags.nats }}
     restart: always
-    command: -c /etc/nats/nats.conf
+    command: -c /etc/nats/nats-server.conf
     volumes:
       - ./configs/nats/nats-config.{{ stage }}.conf:/etc/nats/nats-server.conf
       - {{ global.volume_root }}/nats:/data/nats
@@ -571,7 +571,7 @@ services:
   # ===================================================================
   speaches:
     container_name: speaches
-    image: ghcr.io/speaches-ai/speaches:latest-cuda-12.6.3
+    image: {{ global.registry_prefix }}{{ image_tags.speaches[stage][hardware] }}
     restart: unless-stopped
     {%- if stage == 'dev' %}
     ports:

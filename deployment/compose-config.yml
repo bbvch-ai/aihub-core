@@ -114,18 +114,18 @@ image_tags:
 
   speaches:
     dev:
-      cpu: speaches:latest-cpu-12.6.3
-      gpu: speaches:latest-cuda-12.6.3
+      cpu: speaches:0.8.3-cpu
+      gpu: speaches:0.8.3-cuda-12.6.3
 
     local:
-      cpu: speaches:latest-cpu-12.6.3
-      gpu: speaches:latest-cuda-12.6.3
+      cpu: speaches:0.8.3-cpu
+      gpu: speaches:0.8.3-cuda-12.6.3
 
     nightly:
-      gpu: speaches:latest-cuda-12.6.3
+      gpu: speaches:0.8.3-cuda-12.6.3
 
     latest:
-      gpu: speaches:latest-cuda-12.6.3
+      gpu: speaches:0.8.3-cuda-12.6.3
 
   # --- Custom Application Services ---
   api:
@@ -261,8 +261,8 @@ service_configs:
         --hf-file qwen3-reranker-0.6b-q8_0.gguf
         --hf-token ${HUGGINGFACE_API_KEY}
         --alias qwen-3-reranking
-        --port 8182 \
-        --host 0.0.0.0 \
+        --port 8182
+        --host 0.0.0.0
         -c 8192
         --reranking
         --no-context-shift

@@ -341,7 +341,7 @@ services:
     container_name: nats
     image: ghcr.io/bbvch-ai/aihub-core/nats:2.11.4
     restart: always
-    command: -c /etc/nats/nats.conf
+    command: -c /etc/nats/nats-server.conf
     volumes:
       - ./configs/nats/nats-config.latest.conf:/etc/nats/nats-server.conf
       - ${VOLUME_ROOT:-./.docker-volumes}/nats:/data/nats

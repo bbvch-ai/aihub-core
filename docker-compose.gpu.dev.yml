@@ -301,7 +301,7 @@ services:
     container_name: nats
     image: ghcr.io/bbvch-ai/aihub-core/nats:2.11.4
     restart: always
-    command: -c /etc/nats/nats.conf
+    command: -c /etc/nats/nats-server.conf
     volumes:
       - ./configs/nats/nats-config.dev.conf:/etc/nats/nats-server.conf
       - ${VOLUME_ROOT:-./.docker-volumes}/nats:/data/nats
@@ -480,7 +480,7 @@ services:
   # ===================================================================
   speaches:
     container_name: speaches
-    image: ghcr.io/speaches-ai/speaches:latest-cuda-12.6.3
+    image: ghcr.io/bbvch-ai/aihub-core/speaches:0.8.3-cuda-12.6.3
     restart: unless-stopped
     ports:
       - "8185:8000"
