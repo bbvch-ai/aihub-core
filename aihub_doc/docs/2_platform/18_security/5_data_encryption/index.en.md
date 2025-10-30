@@ -41,7 +41,6 @@ The encryption does **not** protect against threats while the system is running 
 memory-based attacks or compromised application credentials. These threats are addressed through complementary controls
 in access management, network segmentation, and runtime security monitoring.
 
-
 # Data Encryption in Transit
 
 All data transmitted between the platform and external clients, as well as connections to external services, is

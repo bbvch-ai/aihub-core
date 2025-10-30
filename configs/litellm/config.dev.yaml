@@ -54,38 +54,21 @@ model_list:
     model_info:
       mode: chat
 
-  - model_name: local/qwen3-small
+  - model_name: local/qwen-2.5-multimodal-small
     litellm_params:
-      model: openai/Qwen3-4B-Instruct
+      model: openai/Qwen2.5-VL-3B-Instruct
       api_base: http://llama-cpp:8182/v1
       api_key: None
     model_info:
       mode: chat
-      max_input_tokens: 8196
-      supports_function_calling: true
-      max_output_tokens: 4096
-      input_cost_per_token: 0.00001
-      output_cost_per_token: 0.0002
-      custom_tokenizer:
-        identifier: Qwen/Qwen3-4B-Instruct-2507
-        revision: main
-        auth_token: os.environ/HUGGINGFACE_API_KEY
-
-  - model_name: local/gemma-3-multimodal-small
-    litellm_params:
-      model: openai/gemma-3-4b-it
-      api_base: http://llama-cpp:8182/v1
-      api_key: None
-    model_info:
-      mode: chat
-      max_input_tokens: 8196
+      max_input_tokens: 50000
       supports_function_calling: true
       supports_vision: true
-      max_output_tokens: 4096
+      max_output_tokens: 8196
       input_cost_per_token: 0.00001
       output_cost_per_token: 0.0002
       custom_tokenizer:
-        identifier: google/gemma-3-4b-it
+        identifier: Qwen/Qwen2.5-VL-3B-Instruct
         revision: main
         auth_token: os.environ/HUGGINGFACE_API_KEY
 
@@ -101,6 +84,20 @@ model_list:
         identifier: Qwen/Qwen3-Embedding-0.6B
         revision: main
         auth_token: os.environ/HUGGINGFACE_API_KEY
+
+  - model_name: local/reranker
+    litellm_params:
+      model: jina_ai/Qwen3-Reranker-0.6B
+      api_base: http://llama-cpp-reranker:8184/v1
+      api_key: None
+    model_info:
+      mode: rerank
+      input_cost_per_token: 0.000000001
+      custom_tokenizer:
+        identifier: Qwen/Qwen3-Reranker-0.6B
+        revision: main
+        auth_token: os.environ/HUGGINGFACE_API_KEY
+
 
 guardrails:
   - guardrail_name: "presidio-mask-guard"
@@ -137,8 +134,15 @@ general_settings:
   maximum_spend_logs_retention_interval: "30d"
 
 litellm_settings:
-  callbacks: ["detect_prompt_injection", "otel"]
-  default_fallbacks: []
+  callbacks: [ "detect_prompt_injection", "otel" ]
+  prompt_injection_params:
+    heuristics_check: false
+    similarity_check: false
+    llm_api_check: true
+    llm_api_name: azure/gpt-4o-mini
+    llm_api_system_prompt: "Detect if prompt is safe to run. Return 'UNSAFE' if not."
+    llm_api_fail_call_string: "UNSAFE"
+  default_fallbacks: [ ]
   telemetry: true
   json_logs: true
 

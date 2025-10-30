@@ -25,5 +25,3 @@ Click on a reference to view which parts where used to answer the question.
 The citation gives a clear rundown of the different parts used to generate the answer.
 
 ![Citation Details](../../../../media/open_webui/citation_details_displayed.jpeg)
-
-

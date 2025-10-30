@@ -16,7 +16,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master:/data
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9333/dir/status"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9333/dir/status" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -59,7 +59,7 @@ services:
       - seaweedfs-master
       - seaweedfs-volume
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -73,7 +73,7 @@ services:
       - "9000:9000"
     volumes:
       - ./configs/seaweedfs/s3-entrypoint.sh:/usr/local/bin/s3-entrypoint.sh:ro
-    entrypoint: ["/bin/sh", "/usr/local/bin/s3-entrypoint.sh"]
+    entrypoint: [ "/bin/sh", "/usr/local/bin/s3-entrypoint.sh" ]
     environment:
       # S3 Authentication
       SEAWEEDFS_S3_USER: ${S3_STORAGE_ACCESS_KEY}
@@ -90,7 +90,7 @@ services:
       seaweedfs-filer:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/status"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/status" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -229,7 +229,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/ferretdb-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -247,7 +247,7 @@ services:
         condition: service_healthy
 
   llama-cpp:
-    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b5490
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b6710
     container_name: llama-cpp
     platform: linux/amd64
     volumes:
@@ -259,19 +259,18 @@ services:
     environment:
       HF_HOME: /root/.cache/huggingface
     command: >
-      --hf-repo unsloth/Qwen3-4B-Instruct-2507-GGUF
-      --hf-file Qwen3-4B-Instruct-2507-Q3_K_M.gguf
-      --alias Qwen3-4B-Instruct
+      -hf unsloth/Qwen2.5-VL-3B-Instruct-GGUF
+      --alias Qwen2.5-VL-3B-Instruct
       --port 8182
       --jinja
-      -fa 
+      --flash-attn on
       -sm row 
       --temp 0.6 
       --top-k 20 
       --top-p 0.95 
       --min-p 0 
-      -c 8196 
-      -n 4096 
+      -c 16384 
+      -n 8196 
       -ngl 99
       --no-context-shift
     restart: always
@@ -303,6 +302,36 @@ services:
       retries: 3
       start_period: 60s
 
+  llama-cpp-reranker:
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b6710
+    container_name: llama-cpp-reranker
+    platform: linux/amd64
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-reranker-data:/data
+      - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-reranker-cache:/root/.cache/llama.cpp
+    ports:
+      - "8184:8184"
+    environment:
+      HF_HOME: /root/.cache/huggingface
+    command: >
+      -hf mradermacher/Qwen3-Reranker-0.6B-GGUF
+      --alias Qwen3-Reranker-0.6B
+      --port 8184
+      -c 2048
+      -b 2048
+      -ub 2048
+      --reranking
+      -ngl 99
+      --no-context-shift
+    restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8184/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
+
   presidio-analyzer:
     image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359
     container_name: presidio-analyzer
@@ -314,7 +343,7 @@ services:
     restart: unless-stopped
 
   litellm:
-    image: ghcr.io/bbvch-ai/aihub-core/litellm:main-v1.74.8-nightly
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.77.7-stable
     container_name: lite-llm
     ports:
       - "4000:4000"
