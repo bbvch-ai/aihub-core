@@ -42,7 +42,7 @@ async def main():
             # when using nano temp needs to be 1.0 and nothing else
             llm=LLMConfig(model_name="text-generation/nano", default_parameter=LLMParameter(temperature=1.0)),
             check_context_sufficiency=False,
-            number_of_input_tokens=12000,
+            number_of_input_tokens=16384,
             system_prompt=LocaleString(
                 en="""
                 <persona>
@@ -138,7 +138,7 @@ async def main():
             ),
             retrieve_step_config=RetrieveStepConfig(
                 embed_model=EmbeddingModelConfig(model_name="embedding/large"),
-                index_namespaces=["test"],
+                index_namespaces=["simple"],
                 retrieve_k=5,
                 query_mode=VectorStoreQueryMode.DEFAULT,
                 node_types=["content", "summary"],
@@ -154,6 +154,10 @@ async def main():
                 retrieve_summaries=RetrieveSummariesConfig(
                     max_parent_levels=2,
                 ),
+            ),
+            reranking_config=RerankingConfig(
+                enabled=True,
+                reranking_model=RerankingModelConfig(model_name="reranker", top_n=5),
             ),
         ),
         redis_url=RedisSettings().URL,

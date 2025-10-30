@@ -5,6 +5,7 @@ from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_i
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
+from aihub_lib.generative_ai.utils.rerank_nodes import rerank_nodes
 from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
 from aihub_lib.generative_ai.utils.retrieve_parent_summary_nodes import retrieve_parent_summary_nodes
 from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev_next_nodes
@@ -18,6 +19,7 @@ from aihub_lib.nats.events.guard import (
     FewShotRejectEvent,
 )
 from aihub_lib.nats.events.semantic.llm import LLMStopEvent
+from aihub_lib.nats.events.semantic.reranker import RerankerEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
 from llama_index.core import PromptTemplate
@@ -30,7 +32,24 @@ from aihub_agent.agents.RagAgent.events.ContextInsufficientWithQueryEvent import
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.context.run.RunContext import RunContext
+from aihub_agent.workflow.decorators.precondition import precondition
 from aihub_agent.workflow.decorators.step import step
+
+
+@precondition()
+async def reranking_enabled(event: RetrieverEvent, config: RAGAgentConfig) -> bool:
+    """Precondition to check if reranking is enabled or not."""
+    return isinstance(event, RetrieverEvent) and config.reranking_config.enabled
+
+
+@precondition()
+async def reranking_complete_or_disabled(event: RetrieverEvent | RerankerEvent, config: RAGAgentConfig) -> bool:
+    """Precondition to ensure we only order nodes after reranking is complete (or if reranking is disabled)."""
+    # If reranking is disabled, we can proceed with RetrieverEvent
+    if not config.reranking_config.enabled:
+        return isinstance(event, RetrieverEvent)
+    # If reranking is enabled, we must wait for RerankerEvent
+    return isinstance(event, RerankerEvent)
 
 
 class RAGAgent(Agent):
@@ -172,12 +191,46 @@ class RAGAgent(Agent):
         return RetrieverEvent.from_nodes(nodes)
 
     @step(
+        name=LocaleString(en="Rerank Retrieved Nodes"),
+        description=LocaleString(
+            en="Reranks retrieved documents using a dedicated reranking model for improved relevance"
+        ),
+        icon="iconoir:sort-desc",
+        precondition=reranking_enabled,
+    )
+    async def rerank_nodes_step(
+        self,
+        event: RetrieverEvent,
+        condense_event: StandaloneQuestionCondenserEvent,
+        agent_config: RAGAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> RerankerEvent:
+        await displayer.display_thought(t("agent.thought.reranking_results"))
+
+        reranked_nodes = await rerank_nodes(
+            nodes=event.nodes,
+            query=condense_event.condensed_chat_message.content,
+            reranking_model=agent_config.reranking_config.reranking_model,
+        )
+
+        return RerankerEvent(
+            query=condense_event.condensed_chat_message.content,
+            rerank_model_name=agent_config.reranking_config.reranking_model.model_name,
+            top_n=agent_config.reranking_config.reranking_model.top_n,
+            input_nodes=event.nodes,
+            output_nodes=reranked_nodes,
+            reranked=agent_config.reranking_config.enabled,
+        )
+
+    @step(
         name=LocaleString(en="Order Nodes by Documents"),
         description=LocaleString(en="Orders the retrieved nodes by their source documents."),
+        precondition=reranking_complete_or_disabled,
     )
     async def order_nodes_by_documents_step(
         self,
-        event: RetrieverEvent,
+        event: RetrieverEvent | RerankerEvent,
         t: LocaleHandler,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
@@ -187,8 +240,9 @@ class RAGAgent(Agent):
         """
 
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
+        nodes = event.output_nodes if isinstance(event, RerankerEvent) else event.nodes
         ordered_nodes = combine_nodes_in_order(
-            context_nodes=event.nodes,
+            context_nodes=nodes,
             t=t,
             context_prompt=agent_config.context_prompt,
         )

@@ -53,6 +53,8 @@ services:
       filer 
       -master="seaweedfs-master:9333" 
       -ip.bind=0.0.0.0
+    ports:
+      - "8889:8888"
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-filer:/data
     depends_on:
@@ -247,7 +249,7 @@ services:
         condition: service_healthy
 
   llama-cpp:
-    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b6445
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b6710
     container_name: llama-cpp
     platform: linux/amd64
     volumes:
@@ -259,20 +261,21 @@ services:
     environment:
       HF_HOME: /root/.cache/huggingface
     command: >
-      -hf unsloth/gemma-3-4b-it-GGUF
-      --alias gemma-3-4b-it
+      -hf unsloth/Qwen2.5-VL-3B-Instruct-GGUF
+      --alias Qwen2.5-VL-3B-Instruct
       --port 8182
       --jinja
-      --flash-attn on 
-      -sm row 
-      --temp 0.6 
+      --flash-attn on
+      -sm row
+      --temp 0.6
       --top-k 20 
       --top-p 0.95 
       --min-p 0 
-      -c 8196 
-      -n 4096 
-      -ngl 99
+      -c 16384 
+      -n 8196
+      -ngl 90
       --no-context-shift
+      --split-mode row
     deploy:
       resources:
         reservations:
@@ -311,7 +314,47 @@ services:
               capabilities: [ gpu ]
     restart: always
     healthcheck:
-      test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8183/health" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8183/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
+
+  llama-cpp-reranker:
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b6710
+    container_name: llama-cpp-reranker
+    platform: linux/amd64
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-reranker-data:/data
+      - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-reranker-cache:/root/.cache/llama.cpp
+    ports:
+      - "8184:8184"
+    environment:
+      HF_HOME: /root/.cache/huggingface
+    command: >
+      -hf mradermacher/Qwen3-Reranker-0.6B-GGUF
+      --alias Qwen3-Reranker-0.6B
+      --port 8184
+      -c 2048
+      -b 2048
+      -ub 2048
+      --reranking
+      -ngl 99
+      --no-context-shift
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
+    restart: always
+    depends_on:
+      huggingface-text-embedding-inference:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8184/health" ]
       timeout: 10s
       interval: 30s
       retries: 3
@@ -363,6 +406,7 @@ services:
       interval: 30s
       retries: 3
       start_period: 60s
+
   open-webui:
     image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.22
     network_mode: "host"

@@ -5,6 +5,184 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.247.0] - 2025-10-29 - RAG Reranking and AI Model Updates
+
+### Added
+
+- ✨ **RAG Document Reranking**: Introduced a new, configurable step in the RAG agent workflow to re-rank retrieved
+  documents using a dedicated reranking model (`local/reranker`). This significantly enhances the relevance of
+  information provided to the LLM, leading to more accurate answers.
+- 🦾 **Reranking Infrastructure**: Added `llama-cpp-reranker` as a new Docker Compose service to support on-premise
+  reranking model inference, enabling efficient and localized document re-scoring.
+- ⚙️ **Reranking Configuration**: Implemented a new `RerankingConfig` to allow users to easily enable/disable reranking
+  and specify the reranking model and `top_n` results.
+- 📄 **Reranking Documentation**: Updated the RAG Agent documentation to explain the new "Re-ranking for Relevance" step
+  in the RAG Agent's workflow.
+- 🧪 **Reranking Test Scenarios**: Added new test scenarios and BDD steps to validate the reranking functionality,
+  ensuring its correctness and reliability.
+- 🌐 **Reranking Localization**: Included new localization keys (`reranking_results`) across all supported languages for
+  enhanced user experience during the reranking step.
+- 🔄 **LlamaIndex Node Conversion**: Added a utility to seamlessly convert internal `IngestedNode` objects to LlamaIndex
+  `NodeWithScore` objects, facilitating integration with LlamaIndex-based reranking.
+
+### Changed
+
+- ⚡️ **Updated Default AI Models**: Replaced `local/qwen3-small` and `local/gemma-3-multimodal-small` with
+  `local/qwen-2.5-multimodal-small` as the default chat model in playground examples and infrastructure configurations,
+  improving multimodal capabilities.
+- ⚙️ **RAG Agent Workflow**: Modified the `order_nodes_by_documents_step` in the RAG Agent to process nodes after
+  potential reranking, ensuring optimal context ordering.
+- ⬆️ **LiteLLM Version**: Upgraded the LiteLLM proxy to version `v1.77.7-stable`, bringing the latest features and
+  stability improvements.
+- 📈 **Increased Token Context Window**: Adjusted the `llama-cpp` service configuration to support a larger context
+  window (from 8196 to 16384 tokens) and increased max output tokens (from 4096 to 8196), enabling the processing of
+  longer inputs and generation of more comprehensive responses.
+- ⚙️ **LiteLLM Guardrail Settings**: Modified LiteLLM configurations to disable heuristic and similarity checks for
+  prompt injection by default, while keeping LLM API-based checks enabled for robust security.
+- 📊 **RAG Agent Retrieval Settings**: Updated RAG Agent playground configuration to use `index_namespaces=["simple"]`
+  and increased `retrieve_k` from 5 to 20 to fetch more diverse initial results for reranking.
+- 🩺 **Healthcheck Commands**: Switched `wget` to `curl` in several Docker Compose healthcheck commands for improved
+  compatibility and robustness.
+- 📄 **Documentation Refinements**: Applied minor formatting and content adjustments across various platform
+  documentation pages to improve readability and consistency.
+
+---
+
+## [v0.246.12] - 2025-10-28 - Major Documentation Overhaul and Core Infrastructure Alignment
+
+### Added
+
+- ✨ **Introduced Multi-Language Documentation Support:** The documentation now fully supports English and German, with a
+  new automated translation pipeline ensuring content consistency (`.en.md` and `.de.md` files, and `translate-docs.sh`
+  script).
+- 📄 **Expanded Platform Documentation:** Significant new sections have been added across the platform, covering:
+  - **Chat Interface** functionality, observability, and strategic rationale.
+  - **Access Management** details, including comprehensive RBAC implementation guidance.
+  - **Auditing & Observability** with deep dives into OpenTelemetry and tracing.
+  - **Language Models** proxy, anonymization, and input/output guards.
+  - **Cost Control** mechanisms and optimization strategies.
+  - **Slack & Teams Integrations** concepts and setup.
+  - **API Interfaces**: OpenAI-compatible REST, Agent Interaction REST, WebSocket, and Model Context Protocol (MCP)
+    servers.
+  - **Security**: Detailed documentation on Authentication, Input Validation, Container Security, Network Security, and
+    Data Encryption.
+  - **Compliance**: Extensive coverage of Data Retention, GDPR, Swiss DSG, EU AI Act, Internationalization, and Data
+    Subject Access Requests (DSAR).
+  - **User Interface** overview with agent, thread, knowledge, process, and evaluation management.
+  - **Agent Fundamentals**, **RAG Agent** mechanics, and **Expert Asking Agent** collaboration patterns.
+  - **Pipeline Fundamentals** and the **RAG Ingestion Pipeline**.
+  - **Agentic Processes** concepts.
+  - **Knowledge Management** organization through namespaces.
+  - **Agent Evaluations** for testing and measuring AI agent quality.
+  - **External System Integrations** approaches.
+- 📚 **New Internal Command for Solution Documentation:** Added a Claude command (`document-solution.md`) to streamline
+  the creation and editing of high-level solution concepts.
+- ⚙️ **Added Documentation Merger Script:** A new `combine_docs.py` script facilitates merging German markdown files
+  from specific directories into a single DOCX document.
+- 🔑 **Ensured `pipx` Availability for LLM Tools:** The deployment workflow now explicitly installs `pipx` to manage
+  `llm` and `llm-gemini` for automated documentation translation.
+- 🚀 **Integrated Gemini for Automated Documentation Translation:** The CI/CD process now leverages the `llm` command
+  with the `llm-gemini` plugin for automated translation of documentation.
+- 💡 **Introduced `encodings.xml` for IntelliJ Project Settings:** Added a new `.idea/encodings.xml` file to specify
+  character encoding for certain project files.
+- ☁️ **New Documentation for Openstack Deployment:** Added a new section for setting up and deploying to Openstack
+  (`6_code_deep_dive/deployment/index.en.md`).
+
+### Changed
+
+- 🔄 **Updated Core Infrastructure Components:** Object storage was migrated from **MinIO to SeaweedFS**, the NoSQL
+  database from **MongoDB to FerretDB**, and the in-memory cache from **Redis to Valkey** across the platform and
+  relevant documentation.
+- 📖 **Reworked Documentation Structure for Multi-Language Support:** Implemented a new directory structure (renaming
+  `.md` files to `.en.md`) and updated VitePress configuration (`.vitepress/config.mts`) to support robust
+  multi-language documentation, including dynamic sidebar generation and content rewrites.
+- 🗺️ **Enhanced Sidebar Sorting Logic:** Improved documentation sidebar generation to sort entries numerically by prefix
+  and then alphabetically, ensuring a more intuitive navigation experience.
+- 🔒 **Updated `openssl` command for Key Generation:** Changed the quick start guide to use `openssl rand -hex 32` for
+  generating secure random strings, enhancing clarity.
+- ✅ **Refined CI/CD Documentation Build Process:** The `deploy-docs.yml` workflow now explicitly includes an automated
+  translation step before the main documentation build.
+- 📦 **Updated `packageManager` Version:** The `package.json` now specifies `pnpm@10.19.0` for package management.
+- 🤖 **Adjusted Claude Command Paths:** Updated the internal `document-feature.md` Claude command to reflect the new
+  documentation structure for SDK features (e.g., `3_sdk/1_feature_overview/` and `index.en.md`).
+
+### Removed
+
+- 🗑️ **Deprecated Legacy Feature Overview Sections:** Removed outdated or refactored feature overview documents and
+  their respective files (e.g., `2_platform/5_feature_overview/*` and
+  `3_sdk/6_feature_overview/expert-agents/index.md`), as content has been integrated into new, more granular sections.
+- 🗑️ **Removed Redundant Security Model Documentation:** The dedicated
+  `2_platform/2_architecture/4_security_model/index.md` file was removed, as its content is now covered by the expanded
+  security documentation.
+- 🗑️ **Retired Platform Customization Sections:** Several older customization documents (`2_platform/4_customization/*`)
+  were removed as part of the broader documentation overhaul and refactoring into more specific areas.
+
+---
+
+## [v0.246.11] - 2025-10-27 - AI-Hub SDK Documentation: Clarity and Depth for Agent and Pipeline Development
+
+### Added
+
+- ✨ **New Pipeline Documentation Structure:** Introduced dedicated sections for **Pipeline Fundamentals**, **Core
+  Pipeline Patterns**, and **Data Ingestion Pipeline**, providing a more structured learning path for building robust
+  data workflows. These new guides cover essential concepts like assets, I/O managers, resources, and the two-stage
+  ingestion architecture.
+
+### Changed
+
+- 📄 **Expanded Agent SDK Guides:** Significantly enhanced and reorganized documentation for **Quick Start**, **Agent
+  Fundamentals**, **Core Workflow Patterns**, **Human in the Loop**, **Multi-Agent Systems**, and **Testing and
+  Debugging**. These updates offer greater clarity, detailed explanations, new mermaid diagrams, and practical code
+  examples to guide agent development.
+- 🚀 **Improved Pipeline Automation Guide:** Rewrote the **Job Scheduling** documentation to clarify the hybrid
+  automation strategy, emphasizing observable-driven and change-triggered processing for efficient pipeline automation.
+- 🖼️ **Refined SDK Overviews:** Updated the main **Building Agents** and **Building Pipelines** overview pages to
+  introduce key principles, simplified quick-start examples, and a more intuitive learning progression for new and
+  experienced developers.
+- ⚡️ **Minor Documentation Enhancements:** Updated the **Production Deployment** and **Agent Observation** documentation
+  for title consistency and minor content additions.
+
+### Removed
+
+- 🗑️ **Deprecated Pipeline Documentation:** Removed outdated documentation pages for **Pipeline Patterns** and **Data
+  Ingestion Pipeline**, replacing them with the new, restructured guides for improved clarity and accuracy.
+
+---
+
+## [v0.246.10] - 2025-10-24 - Enhanced Security and Access Control for Data Lake and Workflows
+
+### Added
+
+- 🔑 **New OAuth Configuration Options:** Introduced `OAUTH_TENANT_ID` and `OAUTH_COOKIE_SECRET` environment variables to
+  provide more comprehensive control over OAuth2 authentication setups.
+- 🔐 **Secure Access for SeaweedFS Filer:** Implemented a new `oauth2-proxy` service to enforce secure, authenticated
+  access to the SeaweedFS Filer UI, safeguarding data lake management.
+- 👥 **Group-Based Access for SeaweedFS:** Added `SEAWEEDFS_OAUTH_ALLOWED_GROUPS` environment variable, enabling specific
+  group-based access control for the SeaweedFS Filer UI.
+- 📄 **Expanded OAuth Scopes for Proxies:** Configured `openid`, `email`, and `profile` OAuth scopes for both Dagster and
+  SeaweedFS authentication proxies, enhancing user information retrieval during login.
+- ➡️ **Configured OAuth Redirect URLs:** Added explicit redirect URLs for both Dagster and SeaweedFS OAuth proxies,
+  ensuring correct post-authentication routing.
+- 🎨 **Customizable Sign-in Logo:** Enabled support for a custom sign-in logo (`OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO`) for
+  OAuth2 proxies in production and nightly environments, allowing for branded user experiences.
+
+### Changed
+
+- 🔄 **Centralized SeaweedFS Filer Access Routing:** All direct access to the SeaweedFS Filer UI is now routed through
+  the newly introduced `oauth2-proxy` service, ensuring a consistent and secure authentication layer.
+- 📝 **Renamed Dagster OAuth Proxy:** The generic `oauth2proxy` service dedicated to Dagster has been renamed to
+  `oauth2proxy-dagster` for clearer identification and separation of concerns.
+- 🛡️ **Standardized Default Access Groups:** Updated the default allowed group for Dagster's OAuth proxy to
+  `AIHubDeveloper`, standardizing access control with the `SEAWEEDFS_OAUTH_ALLOWED_GROUPS` variable and aligning with
+  common roles.
+
+### Refactor
+
+- 🧹 **Refined OAuth Proxy Architecture:** Streamlined the deployment architecture by separating OAuth2 proxy
+  configurations into distinct services for Dagster and SeaweedFS, improving modularity and maintainability.
+
+---
+
 ## [v0.246.9] - 2025-10-22 - Streamlined DoclingLoader File Handling
 
 ### Refactor
