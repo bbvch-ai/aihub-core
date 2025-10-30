@@ -1,24 +1,30 @@
 ---
 title: Kern-Workflow-Muster
-source_sha: "f6a8214f91c0efa26df5e436deebcca98bfe1e3f55e5642a2b45513ce0bb6492"
+source_sha: f6a8214f91c0efa26df5e436deebcca98bfe1e3f55e5642a2b45513ce0bb6492
 ---
 
 # Kern-Workflow-Muster
 
-Diese Seite behandelt die grundlegenden, wiederverwendbaren Muster zum Erstellen von Agenten-Workflows. Durch die Kombination dieser Bausteine können Sie anspruchsvolle und robuste Agenten erstellen. Jedes Muster enthält ein prägnantes Codebeispiel und eine Erläuterung seines Zwecks.
+Diese Seite behandelt die grundlegenden, wiederverwendbaren Muster zum Erstellen von Agenten-Workflows. Durch die
+Kombination dieser Bausteine können Sie anspruchsvolle und robuste Agenten erstellen. Jedes Muster enthält ein
+prägnantes Codebeispiel und eine Erläuterung seines Zwecks.
 
 Vollständige, lauffähige Beispiele finden Sie im Verzeichnis `playground/minimal_workflow/`.
 
 ## Workflow-Steuerungsmuster
 
-Diese Muster definieren den fundamentalen Ausführungsfluss in einem Agenten, von einfachen Sequenzen bis hin zu komplexer Verzweigung und paralleler Verarbeitung.
+Diese Muster definieren den fundamentalen Ausführungsfluss in einem Agenten, von einfachen Sequenzen bis hin zu
+komplexer Verzweigung und paralleler Verarbeitung.
 
 ### Einfacher linearer Workflow
 
-Ein **linearer Workflow** ist das grundlegendste Muster, bei dem Schritte in einer direkten Reihenfolge von einem Startereignis zu einem Stoppereignis ausgeführt werden.
+Ein **linearer Workflow** ist das grundlegendste Muster, bei dem Schritte in einer direkten Reihenfolge von einem
+Startereignis zu einem Stoppereignis ausgeführt werden.
 
-  * **Wann verwenden**: Ideal für einfache, sequentielle Aufgaben wie die Verarbeitung einer einzelnen Eingabe zur Erzeugung einer einzelnen Ausgabe.
-  * **Wie es funktioniert**: Ein Schritt gibt ein `ControlEvent` zurück, das vom nächsten Schritt konsumiert wird und eine direkte Kette bildet.
+- **Wann verwenden**: Ideal für einfache, sequentielle Aufgaben wie die Verarbeitung einer einzelnen Eingabe zur
+  Erzeugung einer einzelnen Ausgabe.
+- **Wie es funktioniert**: Ein Schritt gibt ein `ControlEvent` zurück, das vom nächsten Schritt konsumiert wird und eine
+  direkte Kette bildet.
 
 ```mermaid
 graph LR
@@ -41,10 +47,14 @@ class SimpleAgent(Agent):
 
 ### Bedingter Workflow (Verzweigung)
 
-Ein **bedingter Workflow** erstellt Entscheidungspunkte, die es dem Agenten ermöglichen, basierend auf Laufzeitbedingungen verschiedene Pfade zu verfolgen.
+Ein **bedingter Workflow** erstellt Entscheidungspunkte, die es dem Agenten ermöglichen, basierend auf
+Laufzeitbedingungen verschiedene Pfade zu verfolgen.
 
-  * **Wann verwenden**: Für Routing-Logik, die Behandlung unterschiedlicher Benutzerabsichten oder die Klassifizierung von Daten.
-  * **Wie es funktioniert**: Der Rückgabetyp-Hinweis eines Schritts umfasst mehrere Ereignistypen (z. B. `EventA | EventB`). Der Dispatcher leitet den Workflow zum Schritt, der den spezifischen zurückgegebenen Ereignistyp verarbeitet.
+- **Wann verwenden**: Für Routing-Logik, die Behandlung unterschiedlicher Benutzerabsichten oder die Klassifizierung von
+  Daten.
+- **Wie es funktioniert**: Der Rückgabetyp-Hinweis eines Schritts umfasst mehrere Ereignistypen (z. B.
+  `EventA | EventB`). Der Dispatcher leitet den Workflow zum Schritt, der den spezifischen zurückgegebenen Ereignistyp
+  verarbeitet.
 
 ```mermaid
 graph TD
@@ -72,10 +82,14 @@ class ConditionalAgent(Agent):
 
 ### Begrenzte Schleifen (Iteration)
 
-Ein **Schleifen-Workflow** führt einen Schritt oder eine Reihe von Schritten mehrfach aus. Es ist entscheidend sicherzustellen, dass Schleifen eine klare Abbruchbedingung haben.
+Ein **Schleifen-Workflow** führt einen Schritt oder eine Reihe von Schritten mehrfach aus. Es ist entscheidend
+sicherzustellen, dass Schleifen eine klare Abbruchbedingung haben.
 
-  * **Wann verwenden**: Ideal für Wiederholungslogik, iterative Verfeinerung oder die Verarbeitung einer Reihe von Elementen.
-  * **Wie es funktioniert**: Ein Schritt gibt ein Ereignis zurück, das den Fluss zurück zu einem früheren Schritt leitet, wobei `RunContext` zur Zustandsverfolgung verwendet wird. Verwenden Sie den Parameter `@step(max_executions_per_run=N)` als Schutzmaßnahme gegen Endlosschleifen.
+- **Wann verwenden**: Ideal für Wiederholungslogik, iterative Verfeinerung oder die Verarbeitung einer Reihe von
+  Elementen.
+- **Wie es funktioniert**: Ein Schritt gibt ein Ereignis zurück, das den Fluss zurück zu einem früheren Schritt leitet,
+  wobei `RunContext` zur Zustandsverfolgung verwendet wird. Verwenden Sie den Parameter
+  `@step(max_executions_per_run=N)` als Schutzmaßnahme gegen Endlosschleifen.
 
 ```mermaid
 graph TD
@@ -124,12 +138,16 @@ class BoundedLoopAgent(Agent):
 
 ### Fan-Out / Fan-In (Parallele Verarbeitung)
 
-Dieses leistungsstarke Muster ermöglicht es einem Agenten, eine Aufgabe in mehrere parallele Zweige (**Fan-Out**) aufzuteilen und die Ergebnisse anschließend zu aggregieren (**Fan-In**).
+Dieses leistungsstarke Muster ermöglicht es einem Agenten, eine Aufgabe in mehrere parallele Zweige (**Fan-Out**)
+aufzuteilen und die Ergebnisse anschließend zu aggregieren (**Fan-In**).
 
-  * **Wann verwenden**: Zum Verarbeiten mehrerer Dokumente, für parallele API-Aufrufe oder jede Aufgabe, die in unabhängige Unteraufgaben zerlegt werden kann.
-  * **Wie es funktioniert**:
-      * **Fan-Out**: Ein Schritt gibt eine `list` von Ereignissen zurück. Der Dispatcher löst dann den nächsten Schritt *einmal für jedes Ereignis in der Liste* aus und erzeugt so parallele Ausführungszweige.
-      * **Fan-In**: Ein späterer Schritt verwendet eine **Vorbedingung**, um zu warten, bis alle parallelen Zweige ihre Ergebnisereignisse erzeugt haben, bevor er ausgeführt wird.
+- **Wann verwenden**: Zum Verarbeiten mehrerer Dokumente, für parallele API-Aufrufe oder jede Aufgabe, die in
+  unabhängige Unteraufgaben zerlegt werden kann.
+- **Wie es funktioniert**:
+  - **Fan-Out**: Ein Schritt gibt eine `list` von Ereignissen zurück. Der Dispatcher löst dann den nächsten Schritt
+    *einmal für jedes Ereignis in der Liste* aus und erzeugt so parallele Ausführungszweige.
+  - **Fan-In**: Ein späterer Schritt verwendet eine **Vorbedingung**, um zu warten, bis alle parallelen Zweige ihre
+    Ergebnisereignisse erzeugt haben, bevor er ausgeführt wird.
 
 #### Feste Anzahl von Ereignissen
 
@@ -229,10 +247,13 @@ Diese Muster konzentrieren sich auf die dynamische Verwaltung des Speichers und 
 
 Das SDK bietet injizierbare **Kontextobjekte**, um Informationen während und zwischen Ausführungen zu speichern.
 
-  * **Wann verwenden**: Zur Verfolgung des Fortschritts, zum Speichern von Benutzereinstellungen oder zum Übergeben von Daten zwischen nicht-sequenziellen Schritten.
-  * **Wie es funktioniert**:
-      * **`RunContext`**: Ephemerer Speicher für eine *einzelne* Workflow-Ausführung. Er wird bei einem `StartEvent` erstellt und bei einem `StopEvent` zerstört.
-      * **`ThreadContext`**: Persistenter Speicher für einen Konversations-*Thread*. Er überdauert mehrere Agenten-Ausführungen.
+- **Wann verwenden**: Zur Verfolgung des Fortschritts, zum Speichern von Benutzereinstellungen oder zum Übergeben von
+  Daten zwischen nicht-sequenziellen Schritten.
+- **Wie es funktioniert**:
+  - **`RunContext`**: Ephemerer Speicher für eine *einzelne* Workflow-Ausführung. Er wird bei einem `StartEvent`
+    erstellt und bei einem `StopEvent` zerstört.
+  - **`ThreadContext`**: Persistenter Speicher für einen Konversations-*Thread*. Er überdauert mehrere
+    Agenten-Ausführungen.
 
 ```mermaid
 graph TD
@@ -265,8 +286,10 @@ class ContextAgent(Agent):
 
 Trennen Sie die Logik Ihres Agenten von seinen Einstellungen mithilfe von `AgentConfig`- und `StepConfig`-Klassen.
 
-  * **Wann verwenden**: Zum Erstellen wiederverwendbarer Agenten, zur Verwaltung von Einstellungen für verschiedene Umgebungen.
-  * **Wie es funktioniert**: Der Dispatcher injiziert die gesamte `AgentConfig` oder eine spezifische `StepConfig` in Ihren Schritt, basierend auf deren Typ-Hinweis.
+- **Wann verwenden**: Zum Erstellen wiederverwendbarer Agenten, zur Verwaltung von Einstellungen für verschiedene
+  Umgebungen.
+- **Wie es funktioniert**: Der Dispatcher injiziert die gesamte `AgentConfig` oder eine spezifische `StepConfig` in
+  Ihren Schritt, basierend auf deren Typ-Hinweis.
 
 ```mermaid
 graph TD
@@ -300,8 +323,11 @@ Dieses Muster ist unerlässlich für die Erstellung transparenter und benutzerfr
 
 Agenten können dem Benutzer Echtzeit-Feedback geben, ohne die Logik des Workflows zu unterbrechen.
 
-  * **Wann verwenden**: Um „Thought-Chain“-Begründungen anzuzeigen, Statusaktualisierungen für langlaufende Aufgaben bereitzustellen oder Teilergebnisse zurückzustreamen.
-  * **Wie es funktioniert**: Injizieren Sie den `EventDisplayer` in einen Schritt. Verwenden Sie dessen Methoden (`display_thought`, `display_chunk`), um `DisplayEvent`s an die Benutzeroberfläche zu senden. Diese Ereignisse beeinflussen den Kontrollfluss nicht.
+- **Wann verwenden**: Um „Thought-Chain“-Begründungen anzuzeigen, Statusaktualisierungen für langlaufende Aufgaben
+  bereitzustellen oder Teilergebnisse zurückzustreamen.
+- **Wie es funktioniert**: Injizieren Sie den `EventDisplayer` in einen Schritt. Verwenden Sie dessen Methoden
+  (`display_thought`, `display_chunk`), um `DisplayEvent`s an die Benutzeroberfläche zu senden. Diese Ereignisse
+  beeinflussen den Kontrollfluss nicht.
 
 ```mermaid
 graph TD
@@ -323,14 +349,17 @@ class DisplayingAgent(Agent):
 
 ## LLM-Integrationsmuster
 
-Diese Muster zeigen, wie Large Language Models (LLMs) in Ihre Agenten-Workflows integriert werden können, einschließlich Streaming-Antworten und Kostenverfolgung.
+Diese Muster zeigen, wie Large Language Models (LLMs) in Ihre Agenten-Workflows integriert werden können, einschließlich
+Streaming-Antworten und Kostenverfolgung.
 
 ### Streaming von LLM-Antworten an Benutzer
 
 LLM-Antworten inkrementell an Benutzer streamen und dabei Token-Nutzung und Kosten automatisch verfolgen.
 
-  * **Wann verwenden**: Für jeden Agenten, der LLM-generierte Antworten mit Echtzeit-Feedback bereitstellen muss.
-  * **Wie es funktioniert**: Die Methode `EventDisplayer.display_llm_stream()` streamt die LLM-Antwort als Chunks an die Benutzeroberfläche, während Puffer für Inhalt und Denkprozess verwaltet werden. Sie kann entweder `LLMEvent` oder `LLMStopEvent` zurückgeben (was LLM-Daten mit StopEvent kombiniert).
+- **Wann verwenden**: Für jeden Agenten, der LLM-generierte Antworten mit Echtzeit-Feedback bereitstellen muss.
+- **Wie es funktioniert**: Die Methode `EventDisplayer.display_llm_stream()` streamt die LLM-Antwort als Chunks an die
+  Benutzeroberfläche, während Puffer für Inhalt und Denkprozess verwaltet werden. Sie kann entweder `LLMEvent` oder
+  `LLMStopEvent` zurückgeben (was LLM-Daten mit StopEvent kombiniert).
 
 ```mermaid
 graph TD
@@ -388,21 +417,26 @@ class LLMWrappingAgent(Agent):
             )
 ```
 
-Der `cost_reporting_llm()` Kontextmanager umschließt das LLM, um die Token-Nutzung automatisch zu verfolgen und Kostenereignisse zu veröffentlichen, wenn der Kontext beendet wird.
+Der `cost_reporting_llm()` Kontextmanager umschließt das LLM, um die Token-Nutzung automatisch zu verfolgen und
+Kostenereignisse zu veröffentlichen, wenn der Kontext beendet wird.
 
 ## Entscheidungsfindung & Routing-Muster
 
-Diese Muster ermöglichen es Agenten, intelligente Routing-Entscheidungen zu treffen, indem sie verschiedene Ereignistypen aus einem Schritt basierend auf LLM-Analyse oder anderer Logik zurückgeben.
+Diese Muster ermöglichen es Agenten, intelligente Routing-Entscheidungen zu treffen, indem sie verschiedene
+Ereignistypen aus einem Schritt basierend auf LLM-Analyse oder anderer Logik zurückgeben.
 
 ### Wie bedingtes Routing funktioniert
 
-Ein Schritt kann verschiedene Ereignistypen basierend auf Laufzeitentscheidungen zurückgeben. Der Workflow-Dispatcher leitet automatisch zum korrekten nächsten Schritt, basierend auf dem zurückgegebenen Ereignistyp.
+Ein Schritt kann verschiedene Ereignistypen basierend auf Laufzeitentscheidungen zurückgeben. Der Workflow-Dispatcher
+leitet automatisch zum korrekten nächsten Schritt, basierend auf dem zurückgegebenen Ereignistyp.
 
-**Schlüsselkonzept**: Verwenden Sie Typ-Hinweise wie `EventA | EventB`, um mehrere mögliche Rückgabetypen zu deklarieren. Der Dispatcher leitet automatisch zu Schritten weiter, die jeden Ereignistyp verarbeiten.
+**Schlüsselkonzept**: Verwenden Sie Typ-Hinweise wie `EventA | EventB`, um mehrere mögliche Rückgabetypen zu
+deklarieren. Der Dispatcher leitet automatisch zu Schritten weiter, die jeden Ereignistyp verarbeiten.
 
 ### Beispiel: LLM-Guard-Check
 
-**Anwendungsfall**: Überprüfen, ob eine Benutzerfrage für den Agenten geeignet ist, basierend auf beispielbasierter Klassifizierung.
+**Anwendungsfall**: Überprüfen, ob eine Benutzerfrage für den Agenten geeignet ist, basierend auf beispielbasierter
+Klassifizierung.
 
 **Von**: `RAGAgent.few_shot_guard_step` – überprüft Fragen anhand von Few-Shot-Beispielen
 

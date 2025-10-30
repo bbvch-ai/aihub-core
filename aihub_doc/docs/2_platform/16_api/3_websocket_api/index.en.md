@@ -80,8 +80,8 @@ Real-time feedback transforms how users interact with AI systems. Rather than su
 indication of progress, users observe continuous activity that maintains engagement and builds confidence. This
 transparency is particularly valuable for complex agent operations that may take minutes or hours—users can monitor
 progress, understand what the agent is currently doing, and make informed decisions about whether to wait or pursue
-alternative approaches. Progressive response streaming in chat interfaces feels more natural and engaging than long pauses
-followed by complete responses, and process status visibility helps users understand where they are in multi-step
+alternative approaches. Progressive response streaming in chat interfaces feels more natural and engaging than long
+pauses followed by complete responses, and process status visibility helps users understand where they are in multi-step
 workflows.
 
 ### Operational Efficiency and Cost Management

@@ -4,20 +4,26 @@ title: Agent Fundamentals
 
 # Agent Fundamentals
 
-An agent is a self-contained, event-driven workflow. It processes an input through a series of operations to produce a final output. The best agents are focused, doing one thing well.
+An agent is a self-contained, event-driven workflow. It processes an input through a series of operations to produce a
+final output. The best agents are focused, doing one thing well.
 
 This page covers the essential building blocks and the core mechanics that power every agent.
 
 ## How It Works: The Agent Dispatcher
 
-Behind the scenes, a component called the **Agent Dispatcher** orchestrates your workflow. Understanding its three main jobs makes building agents much easier:
+Behind the scenes, a component called the **Agent Dispatcher** orchestrates your workflow. Understanding its three main
+jobs makes building agents much easier:
 
-1.  **Introspection**: When an agent starts, the dispatcher inspects all methods marked with the `@step` decorator. It analyzes their parameters and return types to build a map of your workflow before it runs.
-2.  **Event Routing**: The dispatcher acts as a central router. When one step **returns** an event, the dispatcher catches it and delivers it to the *next* step that is designed to **accept** that event type. This is how your steps are automatically chained together.
-3.  **Dependency Injection**: The dispatcher automatically provides—or "injects"—necessary objects like configuration and context directly into your step methods based on their type hints. You don't create these objects; you just ask for them.
+1. **Introspection**: When an agent starts, the dispatcher inspects all methods marked with the `@step` decorator. It
+   analyzes their parameters and return types to build a map of your workflow before it runs.
+2. **Event Routing**: The dispatcher acts as a central router. When one step **returns** an event, the dispatcher
+   catches it and delivers it to the *next* step that is designed to **accept** that event type. This is how your steps
+   are automatically chained together.
+3. **Dependency Injection**: The dispatcher automatically provides—or "injects"—necessary objects like configuration and
+   context directly into your step methods based on their type hints. You don't create these objects; you just ask for
+   them.
 
 With the dispatcher handling the **how** you can focus on the **what**: defining your agent's logic.
-
 
 ## Events: The Data and Control Flow
 
@@ -27,8 +33,10 @@ Events are the lifeblood of an agent. They are simple Pydantic models that carry
 
 There are two primary categories of events:
 
-  * **`ControlEvent`**: These direct the workflow's execution path. Steps **return** `ControlEvent`s to trigger the next part of the process. The workflow begins with a `StartEvent` and ends when a step returns a `StopEvent`.
-  * **`DisplayEvent`**: These provide information to a user interface, like showing the agent's "thoughts" or streaming back a response. They are **emitted** within a step and never affect the agent's logic.
+- **`ControlEvent`**: These direct the workflow's execution path. Steps **return** `ControlEvent`s to trigger the next
+  part of the process. The workflow begins with a `StartEvent` and ends when a step returns a `StopEvent`.
+- **`DisplayEvent`**: These provide information to a user interface, like showing the agent's "thoughts" or streaming
+  back a response. They are **emitted** within a step and never affect the agent's logic.
 
 This separation ensures that UI concerns cannot break your core workflow.
 
@@ -44,7 +52,8 @@ async def example_step(self, event: InputEvent, displayer: EventDisplayer) -> Ou
 
 ### Defining Custom Events
 
-You'll create custom `ControlEvent`s to pass data between your steps. Simply inherit from `ControlEvent` and add your Pydantic fields. The most common starting event for a conversational agent is the built-in `UserMessageEvent`.
+You'll create custom `ControlEvent`s to pass data between your steps. Simply inherit from `ControlEvent` and add your
+Pydantic fields. The most common starting event for a conversational agent is the built-in `UserMessageEvent`.
 
 ```python
 from aihub_agent.events.ControlEvent import ControlEvent
@@ -56,10 +65,10 @@ class DocumentProcessedEvent(ControlEvent):
     confidence_score: float
 ```
 
-
 ## Steps: The Units of Work
 
-A step is an `async` method that performs a single, logical operation. The `@step` decorator registers it with the dispatcher and configures its behavior.
+A step is an `async` method that performs a single, logical operation. The `@step` decorator registers it with the
+dispatcher and configures its behavior.
 
 ```python
 from aihub_agent.workflow.decorators.step import step
@@ -76,14 +85,15 @@ async def process_document(self, event: DocumentUploadEvent) -> DocumentProcesse
     return DocumentProcessedEvent(...)
 ```
 
-
 ## Configuration: Making Agents Reusable
 
-To keep your agent's logic separate from its settings, the SDK uses a strongly-typed configuration system. This allows you to change an agent's behavior (e.g., switching LLM models) without changing its code.
+To keep your agent's logic separate from its settings, the SDK uses a strongly-typed configuration system. This allows
+you to change an agent's behavior (e.g., switching LLM models) without changing its code.
 
 ### `AgentConfig`: Global Configuration
 
-Define a class that inherits from `AgentConfig` for settings that apply to the entire agent. This object can be injected into any step.
+Define a class that inherits from `AgentConfig` for settings that apply to the entire agent. This object can be injected
+into any step.
 
 ```python
 from aihub_lib.agents.AgentConfig import AgentConfig
@@ -97,10 +107,10 @@ class MyAgentConfig(AgentConfig):
 
 ### `StepConfig`: Step-Specific Configuration
 
-For complex, reusable steps, you can create dedicated `StepConfig` classes. Nest them inside your main `AgentConfig`, and the dispatcher will automatically inject only the relevant config into the step that needs it.
+For complex, reusable steps, you can create dedicated `StepConfig` classes. Nest them inside your main `AgentConfig`,
+and the dispatcher will automatically inject only the relevant config into the step that needs it.
 
 ::: code-group
-
 ```python [Step config definition]
 class SummarizeStepConfig(StepConfig):
     max_length: int = 500
@@ -118,21 +128,20 @@ async def summarize_text(self, event: TextEvent, config: SummarizeStepConfig):
     print(f"Max summary length: {config.max_length}")
     pass
 ```
-
 :::
-
 
 ## Dependency Injection: Automatic Parameters
 
-As you've seen, you don't need to manually pass objects like configs or contexts to your steps. The **Agent Dispatcher** provides them automatically based on the parameter's type hint.
+As you've seen, you don't need to manually pass objects like configs or contexts to your steps. The **Agent Dispatcher**
+provides them automatically based on the parameter's type hint.
 
 Here are the key objects you can have injected:
 
-  * **`AgentConfig`**: Your agent's main configuration object.
-  * **`StepConfig`**: A specific configuration class for a single step.
-  * **`RunContext`**: A temporary key-value store for a *single* agent run.
-  * **`ThreadContext`**: A persistent key-value store for a conversation *thread*.
-  * **`EventDisplayer`**: A helper for emitting `DisplayEvent`s to the UI.
+- **`AgentConfig`**: Your agent's main configuration object.
+- **`StepConfig`**: A specific configuration class for a single step.
+- **`RunContext`**: A temporary key-value store for a *single* agent run.
+- **`ThreadContext`**: A persistent key-value store for a conversation *thread*.
+- **`EventDisplayer`**: A helper for emitting `DisplayEvent`s to the UI.
 
 This powerful feature keeps your code clean and focused on business logic.
 
@@ -153,4 +162,5 @@ async def complex_step(
 
 ## Next Steps
 
-Now that you understand the fundamentals, explore the **[Core Patterns](../2_core_patterns/)** to see how these concepts are used to build agent workflows.
+Now that you understand the fundamentals, explore the **[Core Patterns](../2_core_patterns/)** to see how these concepts
+are used to build agent workflows.

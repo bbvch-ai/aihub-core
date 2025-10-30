@@ -4,18 +4,21 @@ title: Human in the loop
 
 # Human in the Loop
 
-The **Human in the Loop (HITL)** pattern allows an agent to pause its execution at a critical point and request input, approval, or guidance from a human user before continuing.
-
+The **Human in the Loop (HITL)** pattern allows an agent to pause its execution at a critical point and request input,
+approval, or guidance from a human user before continuing.
 
 ## How It Works
 
 The HITL pattern is orchestrated by a pair of events that manage the pause and resume logic:
 
-1.  **Request**: A step in your agent returns a `HumanInTheLoop.request` event. This is a special `ControlEvent` that also acts as a `DisplayEvent`, pausing the workflow and presenting a question to the user in the UI.
-2.  **Response**: The user's answer is sent back to the system as a `HumanInTheLoop.response` event.
-3.  **Resume**: Another step in your agent is configured to accept this response event. When the event arrives, the dispatcher routes it to the correct step, and the workflow resumes its execution.
+1. **Request**: A step in your agent returns a `HumanInTheLoop.request` event. This is a special `ControlEvent` that
+   also acts as a `DisplayEvent`, pausing the workflow and presenting a question to the user in the UI.
+2. **Response**: The user's answer is sent back to the system as a `HumanInTheLoop.response` event.
+3. **Resume**: Another step in your agent is configured to accept this response event. When the event arrives, the
+   dispatcher routes it to the correct step, and the workflow resumes its execution.
 
-The `HumanInTheLoop` helper class simplifies this process by providing a convenient `invoke` method to create the request event with the correct routing information.
+The `HumanInTheLoop` helper class simplifies this process by providing a convenient `invoke` method to create the
+request event with the correct routing information.
 
 ## Core Pattern: Single Approval
 
@@ -39,7 +42,6 @@ class ApprovalAgent(Agent):
             return StopEvent(final_message="Action approved and executed.")
         return StopEvent(final_message="Action cancelled by user.")
 ```
-
 
 ## Advanced Pattern: Multi-Step Approval
 

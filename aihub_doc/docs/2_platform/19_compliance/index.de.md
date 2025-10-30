@@ -1,11 +1,12 @@
 ---
 title: Compliance und Vorschriften
-source_sha: "7ced87a3eb7227a5ed6846bf295a3221c93da7aba13724a294ba7c364c5dc216"
+source_sha: 7ced87a3eb7227a5ed6846bf295a3221c93da7aba13724a294ba7c364c5dc216
 ---
 
 # Compliance und Vorschriften
 
-Die Plattform bietet technische Maßnahmen zur Unterstützung der Einhaltung gesetzlicher Vorschriften. Organisationen, die die Plattform nutzen, agieren als Datenverantwortliche und bleiben für ihre eigene Compliance verantwortlich.
+Die Plattform bietet technische Maßnahmen zur Unterstützung der Einhaltung gesetzlicher Vorschriften. Organisationen,
+die die Plattform nutzen, agieren als Datenverantwortliche und bleiben für ihre eigene Compliance verantwortlich.
 
 ## Abdeckung
 
@@ -20,4 +21,6 @@ Dieser Abschnitt dokumentiert die Compliance-Fähigkeiten der Plattform:
 
 ## Verantwortung des Datenverantwortlichen
 
-Die Plattform bietet technische Funktionen wie Audit-Protokollierung, konfigurierbare Datenaufbewahrung, Verschlüsselung und Zugriffssteuerungen. Organisationen müssen diese Funktionen entsprechend ihren regulatorischen Anforderungen und Anwendungsfällen konfigurieren.
+Die Plattform bietet technische Funktionen wie Audit-Protokollierung, konfigurierbare Datenaufbewahrung, Verschlüsselung
+und Zugriffssteuerungen. Organisationen müssen diese Funktionen entsprechend ihren regulatorischen Anforderungen und
+Anwendungsfällen konfigurieren.

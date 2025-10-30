@@ -4,7 +4,8 @@ title: Testing and debugging
 
 # Testing and debugging
 
-Testing and debugging agents needs a different approach than traditional applications because of their event-driven, asynchronous nature.
+Testing and debugging agents needs a different approach than traditional applications because of their event-driven,
+asynchronous nature.
 
 ## Testing framework: pytest-bdd + AgentTestRunner
 
@@ -30,7 +31,6 @@ Feature: Iterative Processing Agent
 2. **Test implementation** - Connect Gherkin to code
 
 ::: code-group
-
 ```python [Test setup]
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from pytest_bdd import given, parsers, scenarios, then, when
@@ -67,7 +67,6 @@ def _(agent_runner: AgentTestRunner):
     iteration_events = agent_runner.get_events_of_class(BeginEvent)
     assert len(iteration_events) == 3, f"Expected 3 iterations, got {len(iteration_events)}"
 ```
-
 :::
 
 ## AgentTestRunner: core testing tool
@@ -120,8 +119,8 @@ event_count = len(runner.get_events_of_class(ProcessingEvent))
 
 Traditional debugging with breakpoints doesn't work well for event-driven agents. Use trace-driven debugging instead.
 
-> [!TIP]
-> Your debugging toolkit: Phoenix tracing (primary), comprehensive logging, trigger scripts, event flow inspection.
+> [!TIP] Your debugging toolkit: Phoenix tracing (primary), comprehensive logging, trigger scripts, event flow
+> inspection.
 
 ### Essential tool: trigger.py scripts
 
@@ -187,18 +186,19 @@ if __name__ == "__main__":
 Phoenix provides step-by-step visualization of agent execution at `http://localhost:6006`.
 
 **Key features:**
+
 - **Trace view** - See complete workflow execution
 - **Step details** - Click steps to inspect inputs/outputs
 - **Timing analysis** - Identify performance bottlenecks
 - **Error tracking** - Pinpoint where failures occur
 
 **Debugging workflow:**
+
 1. Run your `trigger.py` script
 2. Open Phoenix UI at `localhost:6006`
 3. Find your agent's execution trace
 4. Click through steps to inspect event flow
 5. Identify where things go wrong
-
 
 ## Running tests
 
@@ -215,4 +215,3 @@ poetry run pytest -v tests/
 # Run with coverage
 poetry run pytest --cov=aihub_agent tests/
 ```
-

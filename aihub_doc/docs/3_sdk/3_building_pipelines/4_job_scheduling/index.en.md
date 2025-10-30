@@ -6,25 +6,30 @@ title: ' Job Scheduling'
 
 Once your pipeline is defined, the next step is to automate its execution.
 
-
 ## The Hybrid Automation Strategy
 
 Instead of running the entire heavy pipeline on a fixed schedule, we separate the "checking" from the "processing."
 
 ### 1. Scheduled Observation
 
-A lightweight **job** runs on a fixed schedule (e.g., daily at 2 AM). Its only purpose is to execute the **observable source asset** (e.g., `observable_data_lake`). This job doesn't process any documents; it simply checks the source system (like S3 or SharePoint) for new or modified files and records their versions. This is the "pulse" of your pipeline.
+A lightweight **job** runs on a fixed schedule (e.g., daily at 2 AM). Its only purpose is to execute the **observable
+source asset** (e.g., `observable_data_lake`). This job doesn't process any documents; it simply checks the source
+system (like S3 or SharePoint) for new or modified files and records their versions. This is the "pulse" of your
+pipeline.
 
 ### 2. Change-Driven Processing
 
-A **sensor** (`default_automation_sensor`) or an `AutomationCondition` on an asset constantly monitors the state of your pipeline. When it detects that the observable asset has produced a new data version (because the scheduled job found a change), it automatically triggers the downstream processing assets (like `documents` and `nodes`).
+A **sensor** (`default_automation_sensor`) or an `AutomationCondition` on an asset constantly monitors the state of your
+pipeline. When it detects that the observable asset has produced a new data version (because the scheduled job found a
+change), it automatically triggers the downstream processing assets (like `documents` and `nodes`).
 
-This approach is highly efficient because the resource-intensive document processing work only runs when there are actual data changes.
-
+This approach is highly efficient because the resource-intensive document processing work only runs when there are
+actual data changes.
 
 ## Implementation with SDK Factories
 
-The `default_definitions` and `default_sharepoint_to_datalake_definitions` factories automatically configure this entire automation setup for you. They create the necessary jobs, schedules, and sensors to implement the hybrid strategy.
+The `default_definitions` and `default_sharepoint_to_datalake_definitions` factories automatically configure this entire
+automation setup for you. They create the necessary jobs, schedules, and sensors to implement the hybrid strategy.
 
 Here is how the components are assembled within a `Definitions` object:
 
@@ -63,7 +68,8 @@ defs = Definitions(
 )
 ```
 
-The downstream assets themselves use `AutomationCondition.eager()` to ensure they run as soon as an upstream change is detected by the sensor.
+The downstream assets themselves use `AutomationCondition.eager()` to ensure they run as soon as an upstream change is
+detected by the sensor.
 
 ```python
 @graph_asset(
@@ -79,4 +85,5 @@ def production_documents(data_lake_file: DataLakeFile) -> RefDocDocument:
 
 ## Next Steps
 
-  - [Pipeline Observation](../5_pipeline_observation/) for monitoring the health and performance of your automated pipelines.
+- [Pipeline Observation](../5_pipeline_observation/) for monitoring the health and performance of your automated
+  pipelines.

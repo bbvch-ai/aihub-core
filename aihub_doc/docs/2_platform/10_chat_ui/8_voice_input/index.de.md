@@ -1,6 +1,6 @@
 ---
 title: Spracheingabe
-source_sha: "0f87eb8475c8776f23a2879a7f7d64dc3d4f3181194c426a008382bc576f958b"
+source_sha: 0f87eb8475c8776f23a2879a7f7d64dc3d4f3181194c426a008382bc576f958b
 ---
 
 Starten Sie eine Sprachaufnahme.

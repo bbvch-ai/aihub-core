@@ -1,6 +1,6 @@
 ---
 title: Bildschirmfreigabe
-source_sha: "14e89c5f36c4188aee60acc0bd6d0aeeb7b59ec93e829911685f37004ac1b1c9"
+source_sha: 14e89c5f36c4188aee60acc0bd6d0aeeb7b59ec93e829911685f37004ac1b1c9
 ---
 
 # Bildschirmfreigabe

@@ -1,13 +1,15 @@
 ---
 title: Was ist gerade passiert?
-source_sha: "75cd585f0450f02fed97ef04383552ad8fd0fc8f487d4de5632c25eb1f0e1753"
+source_sha: 75cd585f0450f02fed97ef04383552ad8fd0fc8f487d4de5632c25eb1f0e1753
 ---
 
 @SkypeForBusiness [WIP]
 
 # Was ist gerade passiert?
 
-Wenn diese kurze Einführung zu schnell war, gehen Sie bitte zurück und sehen Sie sich die Teile noch einmal an, die noch unklar sind. Wenn nicht, dann willkommen zur Swiss AI-Hub Plattform. Es gibt noch so viel mehr zu entdecken, was wir in den nächsten Kapiteln tun werden.
+Wenn diese kurze Einführung zu schnell war, gehen Sie bitte zurück und sehen Sie sich die Teile noch einmal an, die noch
+unklar sind. Wenn nicht, dann willkommen zur Swiss AI-Hub Plattform. Es gibt noch so viel mehr zu entdecken, was wir in
+den nächsten Kapiteln tun werden.
 
 ## Wohin als Nächstes?
 

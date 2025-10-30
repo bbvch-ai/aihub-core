@@ -1,17 +1,21 @@
 ---
 title: Pipelines erstellen
-source_sha: "9f1d2961a5ca67e521da84134b356e2c3faabb13889a3e66ff3543fdfd7533de"
+source_sha: 9f1d2961a5ca67e521da84134b356e2c3faabb13889a3e66ff3543fdfd7533de
 ---
 
 # Pipelines mit dem AI-Hub SDK erstellen
 
-Das AI-Hub Pipeline SDK bietet ein leistungsstarkes, produktionsreifes Framework zum Erstellen von Dokumentenverarbeitungspipelines. Es wurde entwickelt, um Dokumente aus verschiedenen Quellen aufzunehmen, zu parsen und durchsuchbare Vektor-Embeddings für Retrieval-Augmented Generation (RAG)-Systeme zu erstellen.
+Das AI-Hub Pipeline SDK bietet ein leistungsstarkes, produktionsreifes Framework zum Erstellen von
+Dokumentenverarbeitungspipelines. Es wurde entwickelt, um Dokumente aus verschiedenen Quellen aufzunehmen, zu parsen und
+durchsuchbare Vektor-Embeddings für Retrieval-Augmented Generation (RAG)-Systeme zu erstellen.
 
-Dieser Leitfaden erklärt die Architektur des SDKs und zeigt Ihnen, wie Sie robuste, automatisierte Datenpipelines konfigurieren und bereitstellen können.
+Dieser Leitfaden erklärt die Architektur des SDKs und zeigt Ihnen, wie Sie robuste, automatisierte Datenpipelines
+konfigurieren und bereitstellen können.
 
 ## Die Standard-Datenlake-zu-Vektor-Speicher-Pipeline
 
-Der Kern des SDKs ist eine vorgefertigte, konfigurierbare Pipeline, die den gesamten Weg von Rohdateien in einem Data Lake bis zu indizierten Embeddings in einem Vektorspeicher abwickelt.
+Der Kern des SDKs ist eine vorgefertigte, konfigurierbare Pipeline, die den gesamten Weg von Rohdateien in einem Data
+Lake bis zu indizierten Embeddings in einem Vektorspeicher abwickelt.
 
 ```mermaid
 graph TD
@@ -54,17 +58,22 @@ graph TD
 
 ## Schlüsselprinzipien
 
-Unser SDK basiert auf einigen Schlüsselprinzipien, um sicherzustellen, dass Pipelines effizient, skalierbar und wartbar sind:
+Unser SDK basiert auf einigen Schlüsselprinzipien, um sicherzustellen, dass Pipelines effizient, skalierbar und wartbar
+sind:
 
-  * **Asset-Fabriken**: Anstatt Boilerplate-Code zu schreiben, verwenden Sie einfache Factory-Funktionen, um ganze Sätze vorkonfigurierter Assets und Ressourcen (z.B. `default_definitions`) zu generieren.
-  * **Änderungsgesteuerte Automatisierung**: Pipelines werden automatisch als Reaktion auf Datenänderungen ausgeführt, nicht nach festen Zeitplänen. Dies wird durch **beobachtbare Assets** erreicht, die Quellsysteme überwachen.
-  * **Dokumentenbasierte Isolation**: Jedes Dokument wird in seiner eigenen **Partition** verarbeitet, was bedeutet, dass ein Fehler in einem Dokument nicht die gesamte Pipeline stoppt.
-  * **Pluggable I/O**: Benutzerdefinierte **I/O Manager** abstrahieren die Speicherlogik und erleichtern die Integration mit verschiedenen Datenbanken wie MongoDB und Milvus, ohne Ihren Kernverarbeitungscode ändern zu müssen.
-
+- **Asset-Fabriken**: Anstatt Boilerplate-Code zu schreiben, verwenden Sie einfache Factory-Funktionen, um ganze Sätze
+  vorkonfigurierter Assets und Ressourcen (z.B. `default_definitions`) zu generieren.
+- **Änderungsgesteuerte Automatisierung**: Pipelines werden automatisch als Reaktion auf Datenänderungen ausgeführt,
+  nicht nach festen Zeitplänen. Dies wird durch **beobachtbare Assets** erreicht, die Quellsysteme überwachen.
+- **Dokumentenbasierte Isolation**: Jedes Dokument wird in seiner eigenen **Partition** verarbeitet, was bedeutet, dass
+  ein Fehler in einem Dokument nicht die gesamte Pipeline stoppt.
+- **Pluggable I/O**: Benutzerdefinierte **I/O Manager** abstrahieren die Speicherlogik und erleichtern die Integration
+  mit verschiedenen Datenbanken wie MongoDB und Milvus, ohne Ihren Kernverarbeitungscode ändern zu müssen.
 
 ## Schnellstart: Eine vollständige Pipeline in weniger als 10 Zeilen
 
-Die Factories des SDKs machen es unglaublich einfach, eine komplette Pipeline aufzubauen. Die Funktion `default_definitions` bündelt alle notwendigen Assets, Ressourcen, Jobs und Zeitpläne.
+Die Factories des SDKs machen es unglaublich einfach, eine komplette Pipeline aufzubauen. Die Funktion
+`default_definitions` bündelt alle notwendigen Assets, Ressourcen, Jobs und Zeitpläne.
 
 Erstellen Sie eine Datei namens `my_pipeline.py`:
 
@@ -81,21 +90,21 @@ defs = default_definitions(
 )
 ```
 
-Um sie auszuführen, verweisen Sie einfach die Dagster UI auf Ihre Datei:
-`dagster dev -f my_pipeline.py`
+Um sie auszuführen, verweisen Sie einfach die Dagster UI auf Ihre Datei: `dagster dev -f my_pipeline.py`
 
 Dieser einzelne Funktionsaufruf bietet:
 
-  * Einen **beobachtbaren Data Lake**, der neue oder geänderte Dokumente automatisch erkennt.
-  * Einen mehrstufigen Verarbeitungs-Workflow, einschließlich **Parsing**, **Chunking** und **Embedding**.
-  * Integration mit MongoDB für einen **Dokumentenspeicher** und Milvus für einen **Vektorspeicher**.
-  * Vorkonfigurierte **Jobs**, **Zeitpläne** und **Sensoren** für produktionsreife Automatisierung.
-
+- Einen **beobachtbaren Data Lake**, der neue oder geänderte Dokumente automatisch erkennt.
+- Einen mehrstufigen Verarbeitungs-Workflow, einschließlich **Parsing**, **Chunking** und **Embedding**.
+- Integration mit MongoDB für einen **Dokumentenspeicher** und Milvus für einen **Vektorspeicher**.
+- Vorkonfigurierte **Jobs**, **Zeitpläne** und **Sensoren** für produktionsreife Automatisierung.
 
 ## Nächste Schritte
 
-1. **[Pipeline-Grundlagen](./1_pipeline_fundamentals/)** - Verstehen Sie die architektonischen Entscheidungen und Muster für den Aufbau von Pipelines
-2. **[Kernmuster](./2_core_patterns/)** - Verstehen Sie die Kernmuster für den Aufbau von Pipelines anhand von Beispielen
+1. **[Pipeline-Grundlagen](./1_pipeline_fundamentals/)** - Verstehen Sie die architektonischen Entscheidungen und Muster
+   für den Aufbau von Pipelines
+2. **[Kernmuster](./2_core_patterns/)** - Verstehen Sie die Kernmuster für den Aufbau von Pipelines anhand von
+   Beispielen
 3. **[Datenaufnahme-Pipeline](./3_data_ingestion_pipeline/)** - Konfigurieren und erweitern Sie die Standard-Pipeline
 4. **[Job-Planung](./4_job_scheduling/)** - Planen Sie Ihre Pipelines für automatische Ausführungen
 5. **[Pipeline-Überwachung](./5_pipeline_observation/)** - Überwachen Sie Ihre Pipelines auf Leistung und Fehler

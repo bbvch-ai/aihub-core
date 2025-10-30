@@ -1,12 +1,13 @@
 ---
 title: Voraussetzungen-Check
-source_sha: "d101c3600327ac035af09f3c472868fcb856d7a74594ad033bc87ec7e30f9fd5"
+source_sha: d101c3600327ac035af09f3c472868fcb856d7a74594ad033bc87ec7e30f9fd5
 ---
 
 # Voraussetzungen: Vorbereitung für die Plattformbereitstellung
 
-Bevor Sie die Swiss AI Hub Plattform bereitstellen, stellen Sie sicher, dass Ihre Infrastruktur die Mindestanforderungen erfüllt und dass Sie die
-notwendige Authentifizierung eingerichtet haben. Diese Checkliste gewährleistet eine reibungslose Bereitstellung.
+Bevor Sie die Swiss AI Hub Plattform bereitstellen, stellen Sie sicher, dass Ihre Infrastruktur die Mindestanforderungen
+erfüllt und dass Sie die notwendige Authentifizierung eingerichtet haben. Diese Checkliste gewährleistet eine
+reibungslose Bereitstellung.
 
 ## Hardware-Anforderungen
 
@@ -27,8 +28,9 @@ Die Swiss AI Hub Plattform benötigt erhebliche Ressourcen, um alle Komponenten 
 - **Netzwerk**: Hochbandbreitenverbindung für schnellere Erstinstallation
 
 ::: warning Ressourcenauswirkungen
-Die Plattform betreibt mehrere Dienste gleichzeitig: Datenbanken (MongoDB, Redis), Vektordatenbanken (Milvus), LLM-Proxyserver,
-Weboberflächen und Verarbeitungs-Engines. Unzureichende Ressourcen führen zu Dienstausfällen oder schlechter Leistung.
+Die Plattform betreibt mehrere Dienste gleichzeitig: Datenbanken (MongoDB, Redis), Vektordatenbanken (Milvus),
+LLM-Proxyserver, Weboberflächen und Verarbeitungs-Engines. Unzureichende Ressourcen führen zu Dienstausfällen oder
+schlechter Leistung.
 :::
 
 ## Betriebssystem und Software
@@ -64,8 +66,9 @@ Alle Befehle sollten erfolgreich abgeschlossen werden.
 
 ## Einrichtung des Authentifizierungsanbieters
 
-Die Swiss AI Hub Plattform benötigt einen OAuth2/OpenID Connect Identitätsanbieter. Diese Anleitung behandelt die Einrichtung von Azure Entra ID,
-aber andere Anbieter wie Google, Okta oder Auth0 können mit ähnlichen Konfigurationsmustern verwendet werden.
+Die Swiss AI Hub Plattform benötigt einen OAuth2/OpenID Connect Identitätsanbieter. Diese Anleitung behandelt die
+Einrichtung von Azure Entra ID, aber andere Anbieter wie Google, Okta oder Auth0 können mit ähnlichen
+Konfigurationsmustern verwendet werden.
 
 ### Azure Entra ID Konfiguration
 
@@ -82,7 +85,8 @@ Befolgen Sie diese Schritte, um die Azure-Authentifizierung einzurichten:
      ```
      https://your-domain.com/oauth/oidc/callback
      ```
-     (Ersetzen Sie `your-domain.com` durch Ihre tatsächliche Domain oder verwenden Sie `127.0.0.1.nip.io` für lokale Tests)
+     (Ersetzen Sie `your-domain.com` durch Ihre tatsächliche Domain oder verwenden Sie `127.0.0.1.nip.io` für lokale
+     Tests)
 4. Klicken Sie auf „Registrieren“
 
 **Schritt 2: API-Berechtigungen konfigurieren**

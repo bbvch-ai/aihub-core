@@ -1,6 +1,6 @@
 ---
 title: ' Job-Planung'
-source_sha: "d628dbfa502f3674ca4d7f75ab0cfc175982529419bd323a831f4bf8117b5eb8"
+source_sha: d628dbfa502f3674ca4d7f75ab0cfc175982529419bd323a831f4bf8117b5eb8
 ---
 
 # Job-Planung
@@ -9,21 +9,31 @@ Sobald Ihre Pipeline definiert ist, besteht der nächste Schritt darin, ihre Aus
 
 ## Die hybride Automatisierungsstrategie
 
-Anstatt die gesamte ressourcenintensive Pipeline nach einem festen Zeitplan auszuführen, trennen wir das „Prüfen“ vom „Verarbeiten“.
+Anstatt die gesamte ressourcenintensive Pipeline nach einem festen Zeitplan auszuführen, trennen wir das „Prüfen“ vom
+„Verarbeiten“.
 
 ### 1. Geplante Überwachung
 
-Ein schlanker **Job** wird nach einem festen Zeitplan ausgeführt (z.B. täglich um 2 Uhr morgens). Sein einziger Zweck ist es, das **beobachtbare Quell-Asset** (z.B. `observable_data_lake`) auszuführen. Dieser Job verarbeitet keine Dokumente; er prüft lediglich das Quellsystem (wie S3 oder SharePoint) auf neue oder geänderte Dateien und erfasst deren Versionen. Dies ist der „Puls“ Ihrer Pipeline.
+Ein schlanker **Job** wird nach einem festen Zeitplan ausgeführt (z.B. täglich um 2 Uhr morgens). Sein einziger Zweck
+ist es, das **beobachtbare Quell-Asset** (z.B. `observable_data_lake`) auszuführen. Dieser Job verarbeitet keine
+Dokumente; er prüft lediglich das Quellsystem (wie S3 oder SharePoint) auf neue oder geänderte Dateien und erfasst deren
+Versionen. Dies ist der „Puls“ Ihrer Pipeline.
 
 ### 2. Änderungsgesteuerte Verarbeitung
 
-Ein **Sensor** (`default_automation_sensor`) oder eine `AutomationCondition` auf einem Asset überwacht ständig den Zustand Ihrer Pipeline. Wenn er erkennt, dass das beobachtbare Asset eine neue Datenversion produziert hat (weil der geplante Job eine Änderung gefunden hat), löst er automatisch die nachgelagerten Verarbeitungs-Assets (wie `documents` und `nodes`) aus.
+Ein **Sensor** (`default_automation_sensor`) oder eine `AutomationCondition` auf einem Asset überwacht ständig den
+Zustand Ihrer Pipeline. Wenn er erkennt, dass das beobachtbare Asset eine neue Datenversion produziert hat (weil der
+geplante Job eine Änderung gefunden hat), löst er automatisch die nachgelagerten Verarbeitungs-Assets (wie `documents`
+und `nodes`) aus.
 
-Dieser Ansatz ist hocheffizient, da die ressourcenintensive Dokumentenverarbeitung nur dann ausgeführt wird, wenn tatsächliche Datenänderungen vorliegen.
+Dieser Ansatz ist hocheffizient, da die ressourcenintensive Dokumentenverarbeitung nur dann ausgeführt wird, wenn
+tatsächliche Datenänderungen vorliegen.
 
 ## Implementierung mit SDK-Factories
 
-Die Factories `default_definitions` und `default_sharepoint_to_datalake_definitions` konfigurieren dieses gesamte Automatisierungs-Setup automatisch für Sie. Sie erstellen die notwendigen Jobs, Zeitpläne und Sensoren, um die hybride Strategie zu implementieren.
+Die Factories `default_definitions` und `default_sharepoint_to_datalake_definitions` konfigurieren dieses gesamte
+Automatisierungs-Setup automatisch für Sie. Sie erstellen die notwendigen Jobs, Zeitpläne und Sensoren, um die hybride
+Strategie zu implementieren.
 
 Hier wird gezeigt, wie die Komponenten innerhalb eines `Definitions`-Objekts zusammengebaut werden:
 
@@ -62,7 +72,8 @@ defs = Definitions(
 )
 ```
 
-Die nachgelagerten Assets selbst verwenden `AutomationCondition.eager()`, um sicherzustellen, dass sie ausgeführt werden, sobald eine vorgelagerte Änderung vom Sensor erkannt wird.
+Die nachgelagerten Assets selbst verwenden `AutomationCondition.eager()`, um sicherzustellen, dass sie ausgeführt
+werden, sobald eine vorgelagerte Änderung vom Sensor erkannt wird.
 
 ```python
 @graph_asset(
@@ -78,4 +89,5 @@ def production_documents(data_lake_file: DataLakeFile) -> RefDocDocument:
 
 ## Nächste Schritte
 
-  - [Pipeline-Überwachung](../5_pipeline_observation/) zur Überwachung der Integrität und Leistung Ihrer automatisierten Pipelines.
+- [Pipeline-Überwachung](../5_pipeline_observation/) zur Überwachung der Integrität und Leistung Ihrer automatisierten
+  Pipelines.

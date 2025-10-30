@@ -1,6 +1,6 @@
 ---
 title: Azure Bot Service Integration
-source_sha: "01d72a7d10ab49c0c4a59f8ba13b445243187870aa957a5ed632f70b94fe9e08"
+source_sha: 01d72a7d10ab49c0c4a59f8ba13b445243187870aa957a5ed632f70b94fe9e08
 ---
 
 # Azure Bot Service Integration :speech_balloon: :100:
@@ -84,55 +84,55 @@ Konversationskontext zu verlieren.
 
 ### Einrichtung der Azure Infrastruktur
 
-1.  **Erstellung der Azure Bot Ressource**: Verwenden Sie das automatisierte Setup-Skript
+1. **Erstellung der Azure Bot Ressource**: Verwenden Sie das automatisierte Setup-Skript
 
-    ```bash
-    python aihub_bot/setup_azure_bot.py \
-      --resource-group "your-resource-group" \
-      --bot-name "your-ai-hub-bot" \
-      --token-url "https://your-aihub-domain.com" \
-      --token-path "/api/v1/messages" \
-      --mongo-connection-string "mongodb://localhost:27017"
-    ```
+   ```bash
+   python aihub_bot/setup_azure_bot.py \
+     --resource-group "your-resource-group" \
+     --bot-name "your-ai-hub-bot" \
+     --token-url "https://your-aihub-domain.com" \
+     --token-path "/api/v1/messages" \
+     --mongo-connection-string "mongodb://localhost:27017"
+   ```
 
-2.  **Azure AD App-Registrierung**: Automatisch durch das Setup-Skript gehandhabt
+2. **Azure AD App-Registrierung**: Automatisch durch das Setup-Skript gehandhabt
 
-    -   Erstellt eine Azure AD-Anwendung mit Bot Framework-Berechtigungen
-    -   Generiert sichere App-Zugangsdaten (App ID und Passwort)
-    -   Konfiguriert Single-Tenant- oder Multi-Tenant-Authentifizierung
+   - Erstellt eine Azure AD-Anwendung mit Bot Framework-Berechtigungen
+   - Generiert sichere App-Zugangsdaten (App ID und Passwort)
+   - Konfiguriert Single-Tenant- oder Multi-Tenant-Authentifizierung
 
-3.  **Kanal-Konfiguration**: Manuell im Azure Portal nach dem Setup konfigurieren
+3. **Kanal-Konfiguration**: Manuell im Azure Portal nach dem Setup konfigurieren
 
-    -   **Microsoft Teams**: Teams-Kanal im Azure Bot Service hinzufügen
-    -   **Slack**: Slack-App erstellen und mit dem Azure Bot Service verknüpfen
-    -   **Web Chat**: Automatisch für Tests konfiguriert
+   - **Microsoft Teams**: Teams-Kanal im Azure Bot Service hinzufügen
+   - **Slack**: Slack-App erstellen und mit dem Azure Bot Service verknüpfen
+   - **Web Chat**: Automatisch für Tests konfiguriert
 
 ### Lokales Entwicklungs-Setup
 
-1.  **Entwicklungstunnel**: Lokalen AI-Hub für Azure Bot Service freilegen
+1. **Entwicklungstunnel**: Lokalen AI-Hub für Azure Bot Service freilegen
 
-    ```bash
-    # Install and configure Azure DevTunnel
-    devtunnel create --allow-anonymous
-    devtunnel port create -p 8000
-    devtunnel host
-    # Use tunnel URL in bot configuration
-    ```
+   ```bash
+   # Install and configure Azure DevTunnel
+   devtunnel create --allow-anonymous
+   devtunnel port create -p 8000
+   devtunnel host
+   # Use tunnel URL in bot configuration
+   ```
 
-2.  **Datenbankkonfiguration**: Zugangsdaten in MongoDB gespeichert
+2. **Datenbankkonfiguration**: Zugangsdaten in MongoDB gespeichert
 
-    ```json
-    {
-      "path": "/api/v1/messages",
-      "credentials": {
-        "APP_TYPE": "MultiTenant",
-        "APP_ID": "your-app-id",
-        "APP_PASSWORD": "your-app-password"
-      },
-      "system_message": "Custom bot instructions",
-      "slack_token": "slack-oauth-token"
-    }
-    ```
+   ```json
+   {
+     "path": "/api/v1/messages",
+     "credentials": {
+       "APP_TYPE": "MultiTenant",
+       "APP_ID": "your-app-id",
+       "APP_PASSWORD": "your-app-password"
+     },
+     "system_message": "Custom bot instructions",
+     "slack_token": "slack-oauth-token"
+   }
+   ```
 
 ## Anwendungsbeispiele
 
@@ -140,16 +140,16 @@ Konversationskontext zu verlieren.
 
 **Grundlegende Chat-Interaktion:**
 
-1.  **Bot zu Teams hinzufügen**: AI-Hub Bot in Ihrem Teams-Workspace installieren
-2.  **Konversation starten**: Senden Sie dem Bot direkt eine Nachricht oder erwähnen Sie ihn in Kanälen
-3.  **Streaming-Antworten**: Sehen Sie Echtzeit-Tippindikatoren und inkrementelle Antworten
-4.  **Konversationspersistenz**: Kontext wird über mehrere Interaktionen hinweg beibehalten
+1. **Bot zu Teams hinzufügen**: AI-Hub Bot in Ihrem Teams-Workspace installieren
+2. **Konversation starten**: Senden Sie dem Bot direkt eine Nachricht oder erwähnen Sie ihn in Kanälen
+3. **Streaming-Antworten**: Sehen Sie Echtzeit-Tippindikatoren und inkrementelle Antworten
+4. **Konversationspersistenz**: Kontext wird über mehrere Interaktionen hinweg beibehalten
 
 **Erweiterte Funktionen:**
 
--   **Rich Responses**: Unterstützung für Karten, Schaltflächen und interaktive Elemente
--   **Dateiuploads**: Dokumente und Bilder direkt in Teams verarbeiten
--   **Thread-Unterstützung**: Konversationskontext in Thread-Diskussionen beibehalten
+- **Rich Responses**: Unterstützung für Karten, Schaltflächen und interaktive Elemente
+- **Dateiuploads**: Dokumente und Bilder direkt in Teams verarbeiten
+- **Thread-Unterstützung**: Konversationskontext in Thread-Diskussionen beibehalten
 
 ### Slack Bot-in-the-Loop Workflows
 
@@ -185,63 +185,63 @@ OpenaiChatBot(
 
 **Bot Framework Integration:**
 
--   **Multi-Kanal-Bereitstellung**: Eine einzige Codebasis bedient Teams, Slack, Web Chat und andere Kanäle
--   **Aktivitätsverarbeitung**: Verarbeitet Nachrichten, Tippereignisse, Konversationsaktualisierungen und Dateiuploads
--   **Unterstützung für Rich Messages**: Karten, Schaltflächen, Anhänge und interaktive Elemente
--   **Konversationsmanagement**: Persistenter Zustand mit konfigurierbarer TTL (Standard 30 Tage)
+- **Multi-Kanal-Bereitstellung**: Eine einzige Codebasis bedient Teams, Slack, Web Chat und andere Kanäle
+- **Aktivitätsverarbeitung**: Verarbeitet Nachrichten, Tippereignisse, Konversationsaktualisierungen und Dateiuploads
+- **Unterstützung für Rich Messages**: Karten, Schaltflächen, Anhänge und interaktive Elemente
+- **Konversationsmanagement**: Persistenter Zustand mit konfigurierbarer TTL (Standard 30 Tage)
 
 **[Bot-in-the-Loop Infrastruktur](../../../3_sdk/6_feature_overview/bot-in-the-loop/):**
 
--   **Slack-Kanalintegration**: Direktes Posten in Expertenkanälen mit Thread-Unterstützung
--   **Antwortenerfassung**: Automatische Erkennung und Verarbeitung menschlicher Antworten
--   **Konversations-Threading**: Kontext über mehrstufige Expertenkonsultationen hinweg beibehalten
--   **Wissenspersistenz**: Expertenantworten werden für organisationales Lernen gespeichert
+- **Slack-Kanalintegration**: Direktes Posten in Expertenkanälen mit Thread-Unterstützung
+- **Antwortenerfassung**: Automatische Erkennung und Verarbeitung menschlicher Antworten
+- **Konversations-Threading**: Kontext über mehrstufige Expertenkonsultationen hinweg beibehalten
+- **Wissenspersistenz**: Expertenantworten werden für organisationales Lernen gespeichert
 
 **Chatbot-Implementierungen:**
 
--   **Streaming-Antworten**: Echtzeit-Nachrichtenaktualisierungen mit Tippindikatoren
--   **Agenten-Integration**: Direkte Verbindung zu AI-Hub Agenten-Workflows über NATS
--   **OpenAI-Integration**: Standalone LLM-Interaktionen für einfache Anwendungsfälle
--   **Fehlerbehandlung**: Anmutiger Abbau mit benutzerfreundlichen Fehlermeldungen
+- **Streaming-Antworten**: Echtzeit-Nachrichtenaktualisierungen mit Tippindikatoren
+- **Agenten-Integration**: Direkte Verbindung zu AI-Hub Agenten-Workflows über NATS
+- **OpenAI-Integration**: Standalone LLM-Interaktionen für einfache Anwendungsfälle
+- **Fehlerbehandlung**: Anmutiger Abbau mit benutzerfreundlichen Fehlermeldungen
 
 ## Sicherheit und Best Practices
 
 **Sicherheitsaspekte:**
 
--   **Azure AD-Authentifizierung**: Enterprise-Grade-Authentifizierung mit rollenbasiertem Zugriff
--   **Sichere Speicherung von Zugangsdaten**: Bot-Zugangsdaten verschlüsselt und in MongoDB/Cosmos DB gespeichert
--   **Audit-Trails**: Kompletter Konversationsverlauf mit Benutzerzuordnung und Zeitstempeln
--   **Netzwerksicherheit**: Unterstützung für private Endpunkte und VNet-Integration
+- **Azure AD-Authentifizierung**: Enterprise-Grade-Authentifizierung mit rollenbasiertem Zugriff
+- **Sichere Speicherung von Zugangsdaten**: Bot-Zugangsdaten verschlüsselt und in MongoDB/Cosmos DB gespeichert
+- **Audit-Trails**: Kompletter Konversationsverlauf mit Benutzerzuordnung und Zeitstempeln
+- **Netzwerksicherheit**: Unterstützung für private Endpunkte und VNet-Integration
 
 **Best Practices:**
 
--   **Kanalorganisation**: Spezifische Slack-Kanäle für verschiedene Expertendomänen dedizieren
--   **Konversations-TTL**: Geeignete Aufbewahrungsrichtlinien für Compliance-Anforderungen konfigurieren
--   **Bot-Benennung**: Klare, beschreibende Namen für mehrere Bot-Bereitstellungen verwenden
--   **Monitoring**: Umfassendes Logging und Alerting für die Bot-Gesundheit implementieren
--   **Kapazitätsplanung**: Konversationsvolumen und Antwortzeiten überwachen
+- **Kanalorganisation**: Spezifische Slack-Kanäle für verschiedene Expertendomänen dedizieren
+- **Konversations-TTL**: Geeignete Aufbewahrungsrichtlinien für Compliance-Anforderungen konfigurieren
+- **Bot-Benennung**: Klare, beschreibende Namen für mehrere Bot-Bereitstellungen verwenden
+- **Monitoring**: Umfassendes Logging und Alerting für die Bot-Gesundheit implementieren
+- **Kapazitätsplanung**: Konversationsvolumen und Antwortzeiten überwachen
 
 **Performance-Optimierung:**
 
--   **Streaming-Konfiguration**: Aktualisierungsfrequenz für optimale Benutzererfahrung anpassen
--   **Konversationsbereinigung**: Automatische Bereinigung abgelaufener Konversationen implementieren
--   **Datenbankindizierung**: MongoDB-Abfragen für den Konversationsabruf optimieren
--   **Caching-Strategie**: Häufig aufgerufene Konfigurationen und Zugangsdaten cachen
+- **Streaming-Konfiguration**: Aktualisierungsfrequenz für optimale Benutzererfahrung anpassen
+- **Konversationsbereinigung**: Automatische Bereinigung abgelaufener Konversationen implementieren
+- **Datenbankindizierung**: MongoDB-Abfragen für den Konversationsabruf optimieren
+- **Caching-Strategie**: Häufig aufgerufene Konfigurationen und Zugangsdaten cachen
 :::
 
 ## Erste Schritte
 
 Um die Azure Bot Service Integration in Ihrer AI-Hub-Bereitstellung zu implementieren:
 
-1.  **Azure Setup-Skript ausführen**: Verwenden Sie die bereitgestellte Automatisierung, um Azure Bot-Ressourcen zu
-    erstellen und die Authentifizierung mit Ihrem bevorzugten Datenbank-Backend zu konfigurieren
-2.  **Kanäle konfigurieren**: Richten Sie Microsoft Teams- und/oder Slack-Integrationen über die Azure Portal
-    Kanal-Konfiguration ein
-3.  **Bot-Implementierungen bereitstellen**: Wählen Sie zwischen agenten-basierten Bots für komplexe Workflows oder
-    OpenAI-basierten Bots für einfachere Interaktionen, mit Streaming-Unterstützung für eine verbesserte
-    Benutzererfahrung
+1. **Azure Setup-Skript ausführen**: Verwenden Sie die bereitgestellte Automatisierung, um Azure Bot-Ressourcen zu
+   erstellen und die Authentifizierung mit Ihrem bevorzugten Datenbank-Backend zu konfigurieren
+2. **Kanäle konfigurieren**: Richten Sie Microsoft Teams- und/oder Slack-Integrationen über die Azure Portal
+   Kanal-Konfiguration ein
+3. **Bot-Implementierungen bereitstellen**: Wählen Sie zwischen agenten-basierten Bots für komplexe Workflows oder
+   OpenAI-basierten Bots für einfachere Interaktionen, mit Streaming-Unterstützung für eine verbesserte
+   Benutzererfahrung
 
 Für detaillierte Setup-Anweisungen, Fehlerbehebungsleitfäden und erweiterte Konfigurationsoptionen verweisen wir auf die
 [Bot-in-the-Loop Dokumentation](../../../3_sdk/6_feature_overview/bot-in-the-loop/) für
-Mensch-KI-Kollaborations-Workflows, die [Expert Agents Dokumentation](../../5_agents/3_expert_asking_agent/) für
-Muster der Wissenskonsultation und den AI-Hub Bot Developer's Guide für Implementierungsdetails.
+Mensch-KI-Kollaborations-Workflows, die [Expert Agents Dokumentation](../../5_agents/3_expert_asking_agent/) für Muster
+der Wissenskonsultation und den AI-Hub Bot Developer's Guide für Implementierungsdetails.

@@ -1,6 +1,6 @@
 ---
 title: Ihre erste Pipeline
-source_sha: "1d35df0826908c02328e4ac71aea06cdf82425733dd2e42a4ad7c411e1e617e2"
+source_sha: 1d35df0826908c02328e4ac71aea06cdf82425733dd2e42a4ad7c411e1e617e2
 ---
 
 # Ihre erste Pipeline
@@ -12,24 +12,25 @@ Daten-Transformationspipeline mit mehreren verbundenen Assets.
 
 Dieser Quickstart behandelt die wesentlichen Bausteine:
 
--   **Asset-Struktur**: Wie Pipelines Daten durch verbundene Assets verarbeiten
--   **Datenfluss**: Wie Daten automatisch zwischen Assets fließen
--   **Konfiguration**: Einstellungen und Ressourcen, die das Pipeline-Verhalten steuern
--   **Testen**: Ausführen Ihrer Pipeline lokal und in der Dagster UI
--   **Observability**: Überwachung der Pipeline-Ausführung mit integrierten Tools
+- **Asset-Struktur**: Wie Pipelines Daten durch verbundene Assets verarbeiten
+- **Datenfluss**: Wie Daten automatisch zwischen Assets fließen
+- **Konfiguration**: Einstellungen und Ressourcen, die das Pipeline-Verhalten steuern
+- **Testen**: Ausführen Ihrer Pipeline lokal und in der Dagster UI
+- **Observability**: Überwachung der Pipeline-Ausführung mit integrierten Tools
 
 ## Voraussetzungen
 
-Sie benötigen eine laufende AI-Hub Entwicklungsumgebung. Bevor Sie beginnen, stellen Sie sicher, dass Sie die Schritte zur
-[Einrichtung der Entwicklungsumgebung](../1_dev_environment_setup/) abgeschlossen haben.
+Sie benötigen eine laufende AI-Hub Entwicklungsumgebung. Bevor Sie beginnen, stellen Sie sicher, dass Sie die Schritte
+zur [Einrichtung der Entwicklungsumgebung](../1_dev_environment_setup/) abgeschlossen haben.
 
 ## Wie Pipelines funktionieren
 
-AI-Hub Pipelines sind **Datenverarbeitungs-Workflows**, die auf Dagster basieren und aus drei wesentlichen Teilen bestehen:
+AI-Hub Pipelines sind **Datenverarbeitungs-Workflows**, die auf Dagster basieren und aus drei wesentlichen Teilen
+bestehen:
 
--   **Assets**: Funktionen, die Daten erstellen, transformieren oder konsumieren
--   **Abhängigkeiten**: Automatischer Datenfluss zwischen Assets basierend auf Funktionsparametern
--   **Ressourcen**: Gemeinsame Konfiguration und Dienste für externe Systeme
+- **Assets**: Funktionen, die Daten erstellen, transformieren oder konsumieren
+- **Abhängigkeiten**: Automatischer Datenfluss zwischen Assets basierend auf Funktionsparametern
+- **Ressourcen**: Gemeinsame Konfiguration und Dienste für externe Systeme
 
 ## Erstellen Sie Ihre erste Pipeline
 
@@ -98,24 +99,24 @@ poetry run dagster dev -f simple_pipeline.py
 
 Öffnen Sie `http://localhost:3000` und Sie werden sehen:
 
--   **Asset lineage graph**: raw_feedback_data → cleaned_feedback
--   **Materialize buttons** zum Ausführen von Assets
--   **Asset details** mit Eingaben, Ausgaben und Ausführungsprotokollen
+- **Asset lineage graph**: raw_feedback_data → cleaned_feedback
+- **Materialize buttons** zum Ausführen von Assets
+- **Asset details** mit Eingaben, Ausgaben und Ausführungsprotokollen
 
 Klicken Sie auf **„Materialize all“**, um die Pipeline auszuführen und den Datenfluss zu sehen!
 
 ## Erstellen Sie eine echte AI-Hub Pipeline
 
-Lassen Sie uns nun eine realistische Pipeline mit dem `aihub_pipeline` SDK erstellen, die Muster der Dokumentenverarbeitung demonstriert.
-Wir werden dies Schritt für Schritt aufschlüsseln, um jede Komponente zu verstehen.
+Lassen Sie uns nun eine realistische Pipeline mit dem `aihub_pipeline` SDK erstellen, die Muster der
+Dokumentenverarbeitung demonstriert. Wir werden dies Schritt für Schritt aufschlüsseln, um jede Komponente zu verstehen.
 
 ### 1. Die AI-Hub Pipeline-Struktur verstehen
 
 AI-Hub Pipelines folgen diesen Schlüsselmustern:
 
--   **Asset Factories**: Wiederverwendbare Funktionen, die konfigurierte Assets erstellen
--   **Ressourcen**: Konfigurierte Dienste wie Parser, Speicher und Embedding-Modelle
--   **Dynamische Partitionen**: Jedes Dokument wird zu einer separaten Partition für die Parallelverarbeitung
+- **Asset Factories**: Wiederverwendbare Funktionen, die konfigurierte Assets erstellen
+- **Ressourcen**: Konfigurierte Dienste wie Parser, Speicher und Embedding-Modelle
+- **Dynamische Partitionen**: Jedes Dokument wird zu einer separaten Partition für die Parallelverarbeitung
 
 ### 2. Richten Sie Ihre Pipeline-Konfiguration ein
 
@@ -190,9 +191,9 @@ assets = [observable_asset, documents_asset, nodes_asset]
 
 **Die Asset-Factories verstehen:**
 
--   `observable_data_lake_factory`: Erstellt ein Asset, das Dateiänderungen überwacht
--   `documents_factory`: Erstellt ein Asset, das Dateien in `RefDoc`-Objekte mit Metadaten parst
--   `nodes_factory`: Erstellt ein Asset, das Dokumente in Chunks aufteilt und Vektor-Embeddings generiert
+- `observable_data_lake_factory`: Erstellt ein Asset, das Dateiänderungen überwacht
+- `documents_factory`: Erstellt ein Asset, das Dateien in `RefDoc`-Objekte mit Metadaten parst
+- `nodes_factory`: Erstellt ein Asset, das Dokumente in Chunks aufteilt und Vektor-Embeddings generiert
 
 ### 4. Konfigurieren Sie Ihre Pipeline-Ressourcen
 
@@ -341,9 +342,9 @@ data_lake (observable) → documents → nodes
 
 ### 7. Den Datenfluss verstehen:
 
-1.  **Observable Data Lake**: Überwacht neue PDF-, Word-, Markdown- usw. Dateien
-2.  **Documents**: Parst Dateien mithilfe KI-gestützter Dokumentenintelligenz (Docling)
-3.  **Nodes**: Teilt Dokumente mithilfe struktureller Analyse in Chunks auf und generiert Embeddings
+1. **Observable Data Lake**: Überwacht neue PDF-, Word-, Markdown- usw. Dateien
+2. **Documents**: Parst Dateien mithilfe KI-gestützter Dokumentenintelligenz (Docling)
+3. **Nodes**: Teilt Dokumente mithilfe struktureller Analyse in Chunks auf und generiert Embeddings
 
 ### 8. Fügen Sie Jobs und Scheduling zu Ihrer Pipeline hinzu
 
@@ -381,41 +382,41 @@ defs = Definitions(
 
 **Jobs und Scheduling verstehen:**
 
--   **observe_job**: Manuelle Auslösung der Beobachtung des Data Lake
--   **daily_schedule_at**: Planen der automatischen Data Lake Beobachtung
--   **default_automation_sensor**: Automatische Auslösung der Asset-Verarbeitung, wenn sich Abhängigkeiten ändern
+- **observe_job**: Manuelle Auslösung der Beobachtung des Data Lake
+- **daily_schedule_at**: Planen der automatischen Data Lake Beobachtung
+- **default_automation_sensor**: Automatische Auslösung der Asset-Verarbeitung, wenn sich Abhängigkeiten ändern
 
 Ihre Pipeline unterstützt nun:
 
--   **Manuelle Ausführung**: Materialisieren einzelner Assets in der Dagster UI
--   **Geplante Beobachtung**: Tägliche Überprüfung auf neue Dokumente
--   **Automatische Verarbeitung**: Assets werden automatisch verarbeitet, wenn Upstream-Änderungen erkannt werden
+- **Manuelle Ausführung**: Materialisieren einzelner Assets in der Dagster UI
+- **Geplante Beobachtung**: Tägliche Überprüfung auf neue Dokumente
+- **Automatische Verarbeitung**: Assets werden automatisch verarbeitet, wenn Upstream-Änderungen erkannt werden
 
 ### 9. Überwachen mit AI-Hub Observability-Tools:
 
--   **Dagster UI** (`http://localhost:3000`): Asset-Lineage, Ausführungsprotokolle und Materialisierungsverlauf
--   **SeaweedFS Filer** (`http://localhost:9001`): Dateiverwaltung des Data Lake
--   **MongoDB Compass**: Inspektion des Dokumentenspeichers
--   **Milvus (Attu)**: Überwachung der Vektordatenbank
+- **Dagster UI** (`http://localhost:3000`): Asset-Lineage, Ausführungsprotokolle und Materialisierungsverlauf
+- **SeaweedFS Filer** (`http://localhost:9001`): Dateiverwaltung des Data Lake
+- **MongoDB Compass**: Inspektion des Dokumentenspeichers
+- **Milvus (Attu)**: Überwachung der Vektordatenbank
 
 ### 10. AI-Hub Pipeline-Muster verstehen
 
 Ihre AI-Hub Pipeline demonstriert Schlüsselmuster:
 
-1.  **Observable Assets**: Neue Dokumente werden ohne manuelles Eingreifen automatisch erkannt
-2.  **Dynamic Partitions**: Jedes Dokument wird unabhängig verarbeitet
-3.  **Resource Management**: Konfigurierbare Parser, Modelle und Speicher-Backends
-4.  **Automation Policies**: Eager Processing, wenn sich Upstream-Assets ändern
+1. **Observable Assets**: Neue Dokumente werden ohne manuelles Eingreifen automatisch erkannt
+2. **Dynamic Partitions**: Jedes Dokument wird unabhängig verarbeitet
+3. **Resource Management**: Konfigurierbare Parser, Modelle und Speicher-Backends
+4. **Automation Policies**: Eager Processing, wenn sich Upstream-Assets ändern
 
 ## Was Sie gelernt haben
 
--   **AI-Hub SDK-Nutzung**: Verwendung von Factories, Ressourcen und typisierten Datenobjekten aus `aihub_pipeline`
--   **Dokumentenverarbeitungspipeline**: Vollständiger Fluss von Rohdateien zu durchsuchbaren Embeddings
--   **Asset Factory-Nutzung**: Verwendung bestehender Factories wie `documents_factory` und `nodes_factory`
--   **Ressourcenkonfiguration**: Einrichtung von Parsern, LLMs und Speichersystemen
--   **Observability**: Überwachung von KI-gestützten Pipelines mit Dagster
--   **Produktionsreife**: Skalierbare, automatisierte und wartbare Pipeline-Architektur
+- **AI-Hub SDK-Nutzung**: Verwendung von Factories, Ressourcen und typisierten Datenobjekten aus `aihub_pipeline`
+- **Dokumentenverarbeitungspipeline**: Vollständiger Fluss von Rohdateien zu durchsuchbaren Embeddings
+- **Asset Factory-Nutzung**: Verwendung bestehender Factories wie `documents_factory` und `nodes_factory`
+- **Ressourcenkonfiguration**: Einrichtung von Parsern, LLMs und Speichersystemen
+- **Observability**: Überwachung von KI-gestützten Pipelines mit Dagster
+- **Produktionsreife**: Skalierbare, automatisierte und wartbare Pipeline-Architektur
 
 ## Nächste Schritte
 
--   [Pipelines erstellen](../../3_building_pipelines/) – Lernen Sie fortgeschrittene AI-Hub Pipeline-Muster
+- [Pipelines erstellen](../../3_building_pipelines/) – Lernen Sie fortgeschrittene AI-Hub Pipeline-Muster

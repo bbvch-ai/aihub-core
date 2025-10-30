@@ -1,19 +1,21 @@
 ---
 title: Pipeline-Beobachtung
-source_sha: "905cb549c7c5063aea1541398f6d957099f34988cac49f33cfd568b4e92b5b5b"
+source_sha: 905cb549c7c5063aea1541398f6d957099f34988cac49f33cfd568b4e92b5b5b
 ---
 
 # Pipeline-Beobachtung
 
-Effektives Monitoring und Debugging sind unerlässlich für die Aufrechterhaltung zuverlässiger Datenverarbeitungspipelines. AI-Hub bietet umfassende Beobachtbarkeitstools, um die Pipeline-Ausführung zu verfolgen, Probleme zu diagnostizieren und die Leistung zu optimieren.
+Effektives Monitoring und Debugging sind unerlässlich für die Aufrechterhaltung zuverlässiger
+Datenverarbeitungspipelines. AI-Hub bietet umfassende Beobachtbarkeitstools, um die Pipeline-Ausführung zu verfolgen,
+Probleme zu diagnostizieren und die Leistung zu optimieren.
 
 ## Was Sie lernen werden
 
 Dieser Leitfaden behandelt die Pipeline-Beobachtung:
 
--   **Monitoring**: Verfolgung der Pipeline-Ausführung und Leistungskennzahlen
--   **Debugging**: Diagnose und Behebung von Pipeline-Fehlern
--   **Tracing**: Verständnis der Datenherkunft und des Verarbeitungsverlaufs
+- **Monitoring**: Verfolgung der Pipeline-Ausführung und Leistungskennzahlen
+- **Debugging**: Diagnose und Behebung von Pipeline-Fehlern
+- **Tracing**: Verständnis der Datenherkunft und des Verarbeitungsverlaufs
 
 ## Dagster UI Monitoring
 
@@ -105,4 +107,4 @@ def partitioned_processing(context: AssetExecutionContext) -> ProcessingResult:
 
 ## Nächste Schritte
 
--   Erkunden Sie `aihub_pipeline/playground/` für vollständige Beispiele beobachtbarer Pipelines.
+- Erkunden Sie `aihub_pipeline/playground/` für vollständige Beispiele beobachtbarer Pipelines.

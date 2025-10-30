@@ -1,11 +1,13 @@
 ---
 title: Chat-Nachrichten
-source_sha: "435f4b3685fc676647d78d68f1e1e5be0849343291f50c70c0cd5b54d0f12b58"
+source_sha: 435f4b3685fc676647d78d68f1e1e5be0849343291f50c70c0cd5b54d0f12b58
 ---
 
 ## Chat-Nachrichten
 
-Mithilfe von Aktionen können erweiterte Operationen an Modellantworten durchgeführt werden. Aktionen sind die kleinen Symbole unter jeder Antwort des Modells. Diese können verschiedene Dinge ausführen, vom Vorlesen der Antwort bis zur Abgabe von Feedback zur Qualität der Antwort.
+Mithilfe von Aktionen können erweiterte Operationen an Modellantworten durchgeführt werden. Aktionen sind die kleinen
+Symbole unter jeder Antwort des Modells. Diese können verschiedene Dinge ausführen, vom Vorlesen der Antwort bis zur
+Abgabe von Feedback zur Qualität der Antwort.
 
 Die Antwort kann bearbeitet werden.
 
@@ -27,7 +29,8 @@ Positives Feedback kann gegeben werden.
 
 ![Positive Feedback](../../../../media/open_webui/action_positive_feedback.jpeg)
 
-Hier kann die Antwort bewertet und mit Details angereichert werden, um besser beurteilen zu können, wie gut die Modelle funktionieren.
+Hier kann die Antwort bewertet und mit Details angereichert werden, um besser beurteilen zu können, wie gut die Modelle
+funktionieren.
 
 ![Feedback Rating Details](../../../../media/open_webui/feedback_rating_details.jpeg)
 

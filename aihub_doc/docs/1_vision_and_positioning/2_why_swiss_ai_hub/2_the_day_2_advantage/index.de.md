@@ -1,6 +1,6 @@
 ---
 title: Der 'Day 2'-Vorteil
-source_sha: "1eb9535c15d57c04249fb08a40c2ce8b779d72cfe4a4ed679e5fe3b77fde79f2"
+source_sha: 1eb9535c15d57c04249fb08a40c2ce8b779d72cfe4a4ed679e5fe3b77fde79f2
 ---
 
 # Der „Day 2“-Vorteil: Probleme, die wir bereits gelöst haben
@@ -44,8 +44,8 @@ Rate Limits wird zu einem Albtraum.
 
 **Bereits gelöst:** Das LiteLLM-Gateway bietet eine einzige Schnittstelle zu allen Modellen. Konfigurieren Sie Anbieter
 einmal, und referenzieren Sie Modelle dann mit einfachen Namen. Automatischer Fallback, wenn primäre Modelle nicht
-verfügbar sind. Konsistentes Anfrage-/Antwortformat unabhängig vom Anbieter. Rate Limiting und Wiederholungslogik
-werden automatisch gehandhabt.
+verfügbar sind. Konsistentes Anfrage-/Antwortformat unabhängig vom Anbieter. Rate Limiting und Wiederholungslogik werden
+automatisch gehandhabt.
 
 ## Datenaufnahme-Pipeline
 
@@ -60,13 +60,12 @@ eine automatische Neuverarbeitung aus.
 
 ## Beobachtbarkeit und Fehlersuche
 
-**Das Day-2-Problem:** Die KI gibt eine falsche Antwort. Was ist passiert? Welche Dokumente wurden referenziert? Was
-war der tatsächlich an das Modell gesendete Prompt? Wie debuggen Sie ein System, bei dem jeder Lauf anders ist?
+**Das Day-2-Problem:** Die KI gibt eine falsche Antwort. Was ist passiert? Welche Dokumente wurden referenziert? Was war
+der tatsächlich an das Modell gesendete Prompt? Wie debuggen Sie ein System, bei dem jeder Lauf anders ist?
 
 **Bereits gelöst:** Mehrere Ebenen der Beobachtbarkeit sind integriert. Phoenix Tracing zeigt jeden LLM-Aufruf mit
-Eingaben und Ausgaben. Workflow-Events machen jeden Schritt sichtbar. Dagster bietet eine vollständige Pipeline-
-Linie. OpenTelemetry verfolgt Systemmetriken. Wenn etwas schiefgeht, können Sie den gesamten Ausführungspfad
-nachverfolgen.
+Eingaben und Ausgaben. Workflow-Events machen jeden Schritt sichtbar. Dagster bietet eine vollständige Pipeline- Linie.
+OpenTelemetry verfolgt Systemmetriken. Wenn etwas schiefgeht, können Sie den gesamten Ausführungspfad nachverfolgen.
 
 ## Benutzeroberfläche und Zugang
 
@@ -76,14 +75,13 @@ Entwickler ein? Erstellen Sie separate Schnittstellen für verschiedene Benutzer
 
 **Bereits gelöst:** Die Plattform umfasst eine produktionsreife Chat-Oberfläche mit Sprache, Bildern und Dokumenten. Ein
 Prozess-Cockpit für die Workflow-Teilnahme. Ein Admin-Dashboard für die Systemverwaltung. Teams- und Slack-Bots für
-Benutzer, die diese Kanäle bevorzugen. WebSocket-Streaming für Echtzeit-Updates. Alles mit demselben Backend
-verbunden.
+Benutzer, die diese Kanäle bevorzugen. WebSocket-Streaming für Echtzeit-Updates. Alles mit demselben Backend verbunden.
 
 ## Bereitstellung und Skalierung
 
-**Das Day-2-Problem:** Der Prototyp läuft auf dem Laptop eines Entwicklers. Die Produktion erfordert hohe
-Verfügbarkeit, horizontale Skalierung und Updates ohne Ausfallzeiten. Wie containerisieren Sie alles? Wie handhaben Sie
-die Service Discovery? Wie verwalten Sie Konfigurationen über verschiedene Umgebungen hinweg?
+**Das Day-2-Problem:** Der Prototyp läuft auf dem Laptop eines Entwicklers. Die Produktion erfordert hohe Verfügbarkeit,
+horizontale Skalierung und Updates ohne Ausfallzeiten. Wie containerisieren Sie alles? Wie handhaben Sie die Service
+Discovery? Wie verwalten Sie Konfigurationen über verschiedene Umgebungen hinweg?
 
 **Bereits gelöst:** Alles läuft in Containern mit Docker Compose für die einfache Bereitstellung oder Kubernetes für die
 Skalierung. NATS-Messaging ermöglicht die automatische Service Discovery. Skalieren Sie durch das Ausführen mehrerer
@@ -117,14 +115,14 @@ benutzerdefinierten Datenbanken integriert werden. Jede Integration erfordert un
 Authentifizierungsmethoden, Datenformate und Fehlerbehandlung.
 
 **Bereits gelöst:** OpenAI-kompatible API für Tool-Kompatibilität. Webhook-Endpunkte für externe Systemtrigger. NATS-
-Events für benutzerdefinierte Integrationen. SharePoint-Konnektor enthalten. Erweiterbares Ressourcensystem zum Hinzufügen
-neuer Integrationen. Standardmuster für Fehlerbehandlung und Wiederholungslogik.
+Events für benutzerdefinierte Integrationen. SharePoint-Konnektor enthalten. Erweiterbares Ressourcensystem zum
+Hinzufügen neuer Integrationen. Standardmuster für Fehlerbehandlung und Wiederholungslogik.
 
 ## Versionsverwaltung und Updates
 
 **Das Day-2-Problem:** Der Prototyp hat keine Versionskontrolle. Die Produktion muss verfolgen, welche Version welchen
-Agenten welche Ausgabe produziert hat. Updates müssen vor der Bereitstellung getestet werden. Die Rollback-Fähigkeit
-ist unerlässlich.
+Agenten welche Ausgabe produziert hat. Updates müssen vor der Bereitstellung getestet werden. Die Rollback-Fähigkeit ist
+unerlässlich.
 
 **Bereits gelöst:** Git-basierte Versionskontrolle für alle Komponenten. Getaggte Container-Images für jede Version.
 Konfiguration als Code für reproduzierbare Bereitstellungen.
@@ -135,7 +133,7 @@ Jedes gelöste Day-2-Problem spart Wochen oder Monate an Entwicklungszeit. Zusam
 abgeschlossener Engineering-Arbeit. Hier geht es nicht um Funktionen, die Sie vielleicht irgendwann benötigen werden.
 Dies sind Probleme, denen Sie definitiv begegnen werden, wenn Sie vom Prototyp zur Produktion übergehen.
 
-Der Swiss AI Hub existiert, weil wir den „Day 2“ oft genug erlebt haben, um zu wissen, was kommt. Anstatt diese
-Probleme einzeln zu entdecken und hektisch nach Lösungen zu suchen, starten Sie mit einer Plattform, auf der sie
-bereits behandelt werden. Ihr Team kann sich darauf konzentrieren, KI-Funktionen zu entwickeln, die für Ihr
-Unternehmen wichtig sind, anstatt Infrastruktur neu aufzubauen, die bereits vorhanden sein sollte.
+Der Swiss AI Hub existiert, weil wir den „Day 2“ oft genug erlebt haben, um zu wissen, was kommt. Anstatt diese Probleme
+einzeln zu entdecken und hektisch nach Lösungen zu suchen, starten Sie mit einer Plattform, auf der sie bereits
+behandelt werden. Ihr Team kann sich darauf konzentrieren, KI-Funktionen zu entwickeln, die für Ihr Unternehmen wichtig
+sind, anstatt Infrastruktur neu aufzubauen, die bereits vorhanden sein sollte.

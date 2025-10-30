@@ -1,14 +1,16 @@
 ---
 title: Programmierung / Softwareentwicklung
-source_sha: "7d2350bab17cc800c6d66787e8f18d9c8eb4eacc587f787c84730f4c68ee9d92"
+source_sha: 7d2350bab17cc800c6d66787e8f18d9c8eb4eacc587f787c84730f4c68ee9d92
 ---
 
 # Programmierung / Softwareentwicklung
 
 Wenn es darum geht, mit Hilfe eines Modells zu programmieren, gibt es zwei Hauptwege, dies zu tun.
 
-1.  Entweder schreibt das Modell den Code, was durch die Erwähnung der "Pydiode environment", die zur Ausführung des Codes verwendet wird, angedeutet werden kann. Dies gibt dem Modell den Hinweis, dass der Benutzer mit Code arbeiten möchte und wird versuchen, die Anfrage durch das Schreiben von Code zu beantworten.
-2.  Alternativ kann der Chat auch verwendet werden, um bestehenden Code auszuführen und weiterzuentwickeln.
+1. Entweder schreibt das Modell den Code, was durch die Erwähnung der "Pydiode environment", die zur Ausführung des
+   Codes verwendet wird, angedeutet werden kann. Dies gibt dem Modell den Hinweis, dass der Benutzer mit Code arbeiten
+   möchte und wird versuchen, die Anfrage durch das Schreiben von Code zu beantworten.
+2. Alternativ kann der Chat auch verwendet werden, um bestehenden Code auszuführen und weiterzuentwickeln.
 
 ## Programmierung mit dem LLM
 

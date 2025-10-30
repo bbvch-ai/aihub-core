@@ -4,13 +4,15 @@ title: Core Patterns
 
 # Core Pipeline Patterns
 
-This page provides practical code examples for the concepts introduced in [Pipeline Fundamentals](../1_pipeline_fundamentals/). 
-These are the patterns you will use to build, customize, and extend document processing pipelines with the `aihub_pipeline` SDK.
-
+This page provides practical code examples for the concepts introduced in
+[Pipeline Fundamentals](../1_pipeline_fundamentals/). These are the patterns you will use to build, customize, and
+extend document processing pipelines with the `aihub_pipeline` SDK.
 
 ## Change Detection with Observable Assets
 
-This pattern is the trigger for our automated pipelines. An `observable_source_asset` monitors an external data source and yields a new data version for each file, typically by combining its timestamp and content hash. Dagster only materializes downstream assets if this version has changed.
+This pattern is the trigger for our automated pipelines. An `observable_source_asset` monitors an external data source
+and yields a new data version for each file, typically by combining its timestamp and content hash. Dagster only
+materializes downstream assets if this version has changed.
 
 ```python
 # From observable_data_lake_factory.py
@@ -32,11 +34,12 @@ def observable_data_lake(context: OpExecutionContext) -> DataVersionsByPartition
 
 ## Per-Document Processing with Dynamic Partitions
 
-Each document discovered by the observable asset is assigned its own partition, allowing for isolated and parallel processing.
+Each document discovered by the observable asset is assigned its own partition, allowing for isolated and parallel
+processing.
 
-  * **`DynamicPartitionsDefinition`**: Defines a set of partitions that can grow over time.
-  * **`automation_condition=AutomationCondition.eager()`**: This tells Dagster to automatically run this asset for a partition as soon as its upstream dependency (the observable asset) has a new version for that partition.
-
+- **`DynamicPartitionsDefinition`**: Defines a set of partitions that can grow over time.
+- **`automation_condition=AutomationCondition.eager()`**: This tells Dagster to automatically run this asset for a
+  partition as soon as its upstream dependency (the observable asset) has a new version for that partition.
 
 ```python
 # Define a set of partitions that will be populated with document URIs
@@ -85,7 +88,8 @@ defs = Definitions(
 
 ## Composing Logic with Graph Assets
 
-A `graph_asset` is an asset composed of multiple smaller functions called **ops** (`@op`). This allows you to build complex transformations while keeping each piece of logic simple and reusable.
+A `graph_asset` is an asset composed of multiple smaller functions called **ops** (`@op`). This allows you to build
+complex transformations while keeping each piece of logic simple and reusable.
 
 ```python
 # From documents_factory.py
@@ -105,12 +109,14 @@ def document(data_lake_file: DataLakeFile) -> Output[RefDocDocument]:
 
 ## Building Reusable Pipelines with Factories
 
-Factories are the highest level of abstraction in the SDK. They are functions that generate fully configured assets and resources, allowing you to define an entire pipeline in just a few lines of code.
+Factories are the highest level of abstraction in the SDK. They are functions that generate fully configured assets and
+resources, allowing you to define an entire pipeline in just a few lines of code.
 
-  * **Asset Factories (`*_factory.py`)**: Functions that create individual, configured assets (like `documents_factory`).
-  * **Resource Factories (`definitions_util.py`)**: Functions that assemble a complete set of resources needed for a pipeline (like `local_mongo_milvus_storage_context_resource`).
-  * **Definitions Factories (`definitions_util.py`)**: The top-level factory (`default_definitions`) that uses all other factories to create a complete, runnable `Definitions` object.
-
+- **Asset Factories (`*_factory.py`)**: Functions that create individual, configured assets (like `documents_factory`).
+- **Resource Factories (`definitions_util.py`)**: Functions that assemble a complete set of resources needed for a
+  pipeline (like `local_mongo_milvus_storage_context_resource`).
+- **Definitions Factories (`definitions_util.py`)**: The top-level factory (`default_definitions`) that uses all other
+  factories to create a complete, runnable `Definitions` object.
 
 ```python
 # From definitions_util.py

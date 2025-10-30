@@ -1,6 +1,6 @@
 ---
 title: Einrichtung der Entwicklungsumgebung
-source_sha: "268d57ac1d8a47b023394bb28f7e7d53bf34eaeffdc378f8ebc246a60ed0c940"
+source_sha: 268d57ac1d8a47b023394bb28f7e7d53bf34eaeffdc378f8ebc246a60ed0c940
 ---
 
 [@mhoegger](https://github.com/mhoegger)
@@ -77,8 +77,9 @@ Generieren Sie die Umgebungskonfiguration:
 poetry run aihub generate-env
 ```
 
-Dies erstellt die Datei `.env.core` mit sinnvollen Standardeinstellungen. Sie sehen Platzhalterwerte für die OAuth2-Konfiguration
-– wir werden vorerst den Entwicklungsmodus verwenden, sodass Sie diese für erste Tests unverändert lassen können.
+Dies erstellt die Datei `.env.core` mit sinnvollen Standardeinstellungen. Sie sehen Platzhalterwerte für die
+OAuth2-Konfiguration – wir werden vorerst den Entwicklungsmodus verwenden, sodass Sie diese für erste Tests unverändert
+lassen können.
 
 ## Starten der Plattform: 5 Minuten
 
@@ -88,7 +89,8 @@ Starten Sie die komplette AI-Hub Plattform:
 docker compose -f docker-compose-platform.dev.yml --env-file .env.core up -d
 ```
 
-Warten Sie, bis alle Services gestartet sind (beobachten Sie die Logs mit `docker compose logs -f`, wenn Sie den Startvorgang sehen möchten).
+Warten Sie, bis alle Services gestartet sind (beobachten Sie die Logs mit `docker compose logs -f`, wenn Sie den
+Startvorgang sehen möchten).
 
 **Überprüfen Sie, ob die Plattform läuft:**
 
@@ -96,7 +98,8 @@ Warten Sie, bis alle Services gestartet sind (beobachten Sie die Logs mit `docke
 - Sie werden feststellen, dass noch keine Agenten verfügbar sind – das ist normal!
 
 ::: warning Häufiges Startproblem
-Sollten Services nicht starten, überprüfen Sie, ob die Ports 8080, 27017, 6379 und 4222 nicht bereits auf Ihrem System verwendet werden.
+Sollten Services nicht starten, überprüfen Sie, ob die Ports 8080, 27017, 6379 und 4222 nicht bereits auf Ihrem System
+verwendet werden.
 :::
 
 ## Erstellen Sie Ihren ersten Agenten: 5 Minuten
@@ -145,7 +148,8 @@ Generieren Sie eine Docker-Compose-Datei, die Ihren Agenten enthält:
 poetry run aihub generate-agent-compose --with-agent my_custom_agent
 ```
 
-Dies erstellt die Datei `docker-compose-agents.dev.yml` mit Ihrem Agenten, der für die Entwicklung konfiguriert ist (Hot Reload inklusive).
+Dies erstellt die Datei `docker-compose-agents.dev.yml` mit Ihrem Agenten, der für die Entwicklung konfiguriert ist (Hot
+Reload inklusive).
 
 Erstellen Sie eine einfache `.env`-Datei für die Agentenkonfiguration:
 
@@ -164,24 +168,25 @@ docker compose \
 
 ### Schritt 1: Überprüfen Sie die Agentenregistrierung
 
-Überprüfen Sie die Weboberfläche unter `http://localhost:8080`. Sie sollten nun Ihren Agenten `my_custom_agent` in den Agentenlisten
-sehen, und er sollte als `online` angezeigt werden.
+Überprüfen Sie die Weboberfläche unter `http://localhost:8080`. Sie sollten nun Ihren Agenten `my_custom_agent` in den
+Agentenlisten sehen, und er sollte als `online` angezeigt werden.
 
 ### Schritt 2: Testen Sie die Agenteninteraktion
 
-Klicken Sie auf Ihren Agenten und senden Sie eine Testnachricht. Sie sollten eine Antwort erhalten, die zeigt, dass Ihr Agent die Anfrage verarbeitet hat.
+Klicken Sie auf Ihren Agenten und senden Sie eine Testnachricht. Sie sollten eine Antwort erhalten, die zeigt, dass Ihr
+Agent die Anfrage verarbeitet hat.
 
 ### Schritt 3: Beobachten Sie das Agentenverhalten
 
-Besuchen Sie `http://localhost:6006`, um das Phoenix-Tracing zu sehen. Sie werden detaillierte Traces der Ausführung Ihres Agenten sehen,
-die jeden Schritt sowie dessen Ein- und Ausgaben zeigen.
+Besuchen Sie `http://localhost:6006`, um das Phoenix-Tracing zu sehen. Sie werden detaillierte Traces der Ausführung
+Ihres Agenten sehen, die jeden Schritt sowie dessen Ein- und Ausgaben zeigen.
 
 ## Was ist gerade passiert?
 
 In 15 Minuten haben Sie etwas Bemerkenswertes erreicht:
 
-**Vollständige KI-Plattform:** Sie betreiben eine vollständige Enterprise-KI-Plattform mit Authentifizierung, Monitoring, Kostenverfolgung
-und Observability.
+**Vollständige KI-Plattform:** Sie betreiben eine vollständige Enterprise-KI-Plattform mit Authentifizierung,
+Monitoring, Kostenverfolgung und Observability.
 
 **Integration benutzerdefinierter Agenten:** Ihr benutzerdefinierter Agent erbt automatisch alle Plattformfunktionen –
 er erscheint in der Web-UI, verarbeitet Anfragen und verfolgt seine Ausführung ohne zusätzliche Konfiguration.

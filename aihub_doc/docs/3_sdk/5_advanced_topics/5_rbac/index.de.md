@@ -1,6 +1,6 @@
 ---
 title: RBAC Implementierungsleitfaden
-source_sha: "86ffbd74c7c31234973e846cdd125f23eecd978c2aeaaf001cc1118b7950c29a"
+source_sha: 86ffbd74c7c31234973e846cdd125f23eecd978c2aeaaf001cc1118b7950c29a
 ---
 
 # RBAC Implementierungsleitfaden :shield: :gear:
@@ -8,8 +8,8 @@ source_sha: "86ffbd74c7c31234973e846cdd125f23eecd978c2aeaaf001cc1118b7950c29a"
 ::: info **SDK Developer Übersicht**
 Dieser Leitfaden behandelt die Implementierung von Role-Based Access Control (RBAC) in Ihren AI-Hub-Anwendungen,
 einschließlich des Schutzes von API-Endpunkten, Agenten-Zugriffskontrollen und benutzerdefinierten
-Berechtigungsprüfungen. Erfahren Sie, wie Sie das hochentwickelte Berechtigungssystem des AI-Hubs nutzen, um
-Ihre benutzerdefinierten Agenten, Prozesse und Services zu sichern.
+Berechtigungsprüfungen. Erfahren Sie, wie Sie das hochentwickelte Berechtigungssystem des AI-Hubs nutzen, um Ihre
+benutzerdefinierten Agenten, Prozesse und Services zu sichern.
 :::
 
 ## Zugriffsschutz auf Controller-Ebene
@@ -43,8 +43,8 @@ class MyController(Controller):
 
 ### Dynamische Berechtigungsauflösung
 
-Der AI-Hub unterstützt dynamische Berechtigungsprüfungen, bei denen Pfadparameter automatisch in
-Berechtigungsvorlagen substituiert werden:
+Der AI-Hub unterstützt dynamische Berechtigungsprüfungen, bei denen Pfadparameter automatisch in Berechtigungsvorlagen
+substituiert werden:
 
 **Pfadparameter-Integration:**
 
@@ -68,8 +68,8 @@ def agent_specific_endpoint(self, route: str = "/{agent_class}/{agent_id}") -> "
 
 ### Mehrstufige Berechtigungsprüfung
 
-Das Controller-Framework implementiert eine dreistufige Autorisierung, die an Ihre spezifischen Anforderungen
-angepasst werden kann:
+Das Controller-Framework implementiert eine dreistufige Autorisierung, die an Ihre spezifischen Anforderungen angepasst
+werden kann:
 
 **Zugriffskontrolle auf Service-Ebene:**
 
@@ -102,8 +102,8 @@ class SecureController(Controller):
 
 ### Benutzerdefinierte Service-Integration
 
-Beim Erstellen benutzerdefinierter Services, die in den AI-Hub integriert werden, implementieren Sie eine
-ordnungsgemäße Zugriffskontrolle durch die etablierten Muster:
+Beim Erstellen benutzerdefinierter Services, die in den AI-Hub integriert werden, implementieren Sie eine ordnungsgemäße
+Zugriffskontrolle durch die etablierten Muster:
 
 **Service-Klassen-Implementierung:**
 
@@ -196,8 +196,8 @@ class DynamicAccessService:
 
 ### Agenten-spezifische Berechtigungsprüfung
 
-Beim Erstellen benutzerdefinierter Agenten implementieren Sie die richtigen Zugriffskontrollen, um sicherzustellen,
-dass nur autorisierte Benutzer mit Ihren Agenten interagieren können:
+Beim Erstellen benutzerdefinierter Agenten implementieren Sie die richtigen Zugriffskontrollen, um sicherzustellen, dass
+nur autorisierte Benutzer mit Ihren Agenten interagieren können:
 
 **Agenten-Zugriffs-Integration:**
 
@@ -596,8 +596,8 @@ class TestRBACAPIIntegration:
 
 ### Sicherheitsaspekte
 
-**Fail-Safe Defaults**: Standardmäßig sollte der Zugriff immer verweigert werden, wenn Berechtigungsprüfungen
-unklar sind oder fehlschlagen.
+**Fail-Safe Defaults**: Standardmäßig sollte der Zugriff immer verweigert werden, wenn Berechtigungsprüfungen unklar
+sind oder fehlschlagen.
 
 **Umfassende Protokollierung**: Protokollieren Sie alle Berechtigungsprüfungen und Zugriffsentscheidungen zur
 Auditierung und Sicherheitsüberwachung.
@@ -605,31 +605,30 @@ Auditierung und Sicherheitsüberwachung.
 **Konsistente Fehlerbehandlung**: Verwenden Sie konsistente HTTP-Statuscodes und Fehlermeldungen für
 Zugriffsverweigerungen.
 
-**Berechtigungsvalidierung**: Validieren Sie Berechtigungsvorlagen und Zugriffsregeln, um
-Sicherheitslücken zu verhindern.
+**Berechtigungsvalidierung**: Validieren Sie Berechtigungsvorlagen und Zugriffsregeln, um Sicherheitslücken zu
+verhindern.
 
 ### Leistungsoptimierung
 
-**Caching-Strategien**: Implementieren Sie geeignete Caching-Strategien für Berechtigungsprüfungen, um die
-Leistung zu optimieren.
+**Caching-Strategien**: Implementieren Sie geeignete Caching-Strategien für Berechtigungsprüfungen, um die Leistung zu
+optimieren.
 
 **Batch-Berechtigungsprüfung**: Verwenden Sie, wenn möglich, Batch-Operationen, wenn mehrere Berechtigungen geprüft
 werden.
 
-**Lazy Evaluation**: Führen Sie Berechtigungsprüfungen nur dann durch, wenn sie notwendig sind, um
-Leistungseinbußen zu minimieren.
+**Lazy Evaluation**: Führen Sie Berechtigungsprüfungen nur dann durch, wenn sie notwendig sind, um Leistungseinbußen zu
+minimieren.
 
 ### Entwicklungsrichtlinien
 
-**Klare Berechtigungsbenennung**: Verwenden Sie beschreibende und konsistente
-Berechtigungsbenennungskonventionen.
+**Klare Berechtigungsbenennung**: Verwenden Sie beschreibende und konsistente Berechtigungsbenennungskonventionen.
 
 **Dokumentation**: Dokumentieren Sie die Berechtigungsanforderungen für alle Endpunkte und Services.
 
 **Testabdeckung**: Stellen Sie eine umfassende Testabdeckung für alle Berechtigungsszenarien sicher.
 
-**Regelmäßige Überprüfungen**: Führen Sie regelmäßige Überprüfungen der Berechtigungsstrukturen und
-Zugriffsmuster durch.
+**Regelmäßige Überprüfungen**: Führen Sie regelmäßige Überprüfungen der Berechtigungsstrukturen und Zugriffsmuster
+durch.
 
-Dieser Implementierungsleitfaden bildet die Grundlage für die Integration von RBAC in Ihre AI-Hub-Anwendungen,
-wobei Sicherheit, Leistung und Wartbarkeit gewährleistet bleiben.
+Dieser Implementierungsleitfaden bildet die Grundlage für die Integration von RBAC in Ihre AI-Hub-Anwendungen, wobei
+Sicherheit, Leistung und Wartbarkeit gewährleistet bleiben.

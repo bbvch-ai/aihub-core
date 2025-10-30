@@ -4,21 +4,24 @@ title: Core Workflow Patterns
 
 # Core Workflow Patterns
 
-This page covers the fundamental, reusable patterns for building agent workflows. By combining these building blocks, you can create sophisticated and robust agents. Each pattern includes a concise code example and an explanation of its purpose.
+This page covers the fundamental, reusable patterns for building agent workflows. By combining these building blocks,
+you can create sophisticated and robust agents. Each pattern includes a concise code example and an explanation of its
+purpose.
 
 For complete, runnable examples, see the `playground/minimal_workflow/` directory.
 
-
 ## Workflow Control Patterns
 
-These patterns define the fundamental flow of execution in an agent, from simple sequences to complex branching and parallel processing.
+These patterns define the fundamental flow of execution in an agent, from simple sequences to complex branching and
+parallel processing.
 
 ### Simple Linear Workflow
 
-A **linear workflow** is the most basic pattern, where steps execute in a direct sequence from a start event to a stop event.
+A **linear workflow** is the most basic pattern, where steps execute in a direct sequence from a start event to a stop
+event.
 
-  * **When to use it**: Ideal for simple, sequential tasks like processing a single input to produce a single output.
-  * **How it works**: One step returns a `ControlEvent` that is consumed by the next step, forming a direct chain.
+- **When to use it**: Ideal for simple, sequential tasks like processing a single input to produce a single output.
+- **How it works**: One step returns a `ControlEvent` that is consumed by the next step, forming a direct chain.
 
 ```mermaid
 graph LR
@@ -41,10 +44,12 @@ class SimpleAgent(Agent):
 
 ### Conditional Workflow (Branching)
 
-A **conditional workflow** creates decision points, allowing the agent to follow different paths based on runtime conditions.
+A **conditional workflow** creates decision points, allowing the agent to follow different paths based on runtime
+conditions.
 
-  * **When to use it**: For routing logic, handling different user intents, or classifying data.
-  * **How it works**: A step's return type hint includes multiple event types (e.g., `EventA | EventB`). The dispatcher routes the workflow to the step that handles the specific event type that was returned.
+- **When to use it**: For routing logic, handling different user intents, or classifying data.
+- **How it works**: A step's return type hint includes multiple event types (e.g., `EventA | EventB`). The dispatcher
+  routes the workflow to the step that handles the specific event type that was returned.
 
 ```mermaid
 graph TD
@@ -72,10 +77,12 @@ class ConditionalAgent(Agent):
 
 ### Bounded Loops (Iteration)
 
-A **looping workflow** executes a step or a series of steps multiple times. It's crucial to ensure loops have a clear exit condition.
+A **looping workflow** executes a step or a series of steps multiple times. It's crucial to ensure loops have a clear
+exit condition.
 
-  * **When to use it**: Ideal for retry logic, iterative refinement, or processing a batch of items.
-  * **How it works**: A step returns an event that routes the flow back to an earlier step, using `RunContext` to track state. Use the `@step(max_executions_per_run=N)` parameter as a safety guard against infinite loops.
+- **When to use it**: Ideal for retry logic, iterative refinement, or processing a batch of items.
+- **How it works**: A step returns an event that routes the flow back to an earlier step, using `RunContext` to track
+  state. Use the `@step(max_executions_per_run=N)` parameter as a safety guard against infinite loops.
 
 ```mermaid
 graph TD
@@ -124,12 +131,16 @@ class BoundedLoopAgent(Agent):
 
 ### Fan-Out / Fan-In (Parallel Processing)
 
-This powerful pattern allows an agent to split a task into multiple parallel branches (**fan-out**) and then aggregate the results (**fan-in**).
+This powerful pattern allows an agent to split a task into multiple parallel branches (**fan-out**) and then aggregate
+the results (**fan-in**).
 
-  * **When to use it**: For processing multiple documents, making parallel API calls, or any task that can be broken down into independent sub-tasks.
-  * **How it works**:
-      * **Fan-Out**: A step returns a `list` of events. The dispatcher then triggers the next step *once for each event in the list*, creating parallel execution branches.
-      * **Fan-In**: A later step uses a **precondition** to wait until all parallel branches have produced their result events before it runs.
+- **When to use it**: For processing multiple documents, making parallel API calls, or any task that can be broken down
+  into independent sub-tasks.
+- **How it works**:
+  - **Fan-Out**: A step returns a `list` of events. The dispatcher then triggers the next step *once for each event in
+    the list*, creating parallel execution branches.
+  - **Fan-In**: A later step uses a **precondition** to wait until all parallel branches have produced their result
+    events before it runs.
 
 #### Fixed Number of Events
 
@@ -229,10 +240,11 @@ These patterns focus on managing an agent's memory and behavior dynamically.
 
 The SDK provides injectable **context objects** to store information during and between runs.
 
-  * **When to use it**: For tracking progress, remembering user preferences, or passing data between non-sequential steps.
-  * **How it works**:
-      * **`RunContext`**: Ephemeral memory for a *single* workflow run. It's created on a `StartEvent` and destroyed on a `StopEvent`.
-      * **`ThreadContext`**: Persistent memory for a conversation *thread*. It survives across multiple agent runs.
+- **When to use it**: For tracking progress, remembering user preferences, or passing data between non-sequential steps.
+- **How it works**:
+  - **`RunContext`**: Ephemeral memory for a *single* workflow run. It's created on a `StartEvent` and destroyed on a
+    `StopEvent`.
+  - **`ThreadContext`**: Persistent memory for a conversation *thread*. It survives across multiple agent runs.
 
 ```mermaid
 graph TD
@@ -265,8 +277,9 @@ class ContextAgent(Agent):
 
 Separate your agent's logic from its settings using `AgentConfig` and `StepConfig` classes.
 
-  * **When to use it**: To create reusable agents, manage settings for different environments.
-  * **How it works**: The dispatcher injects the entire `AgentConfig` or a specific `StepConfig` into your step based on its type hint.
+- **When to use it**: To create reusable agents, manage settings for different environments.
+- **How it works**: The dispatcher injects the entire `AgentConfig` or a specific `StepConfig` into your step based on
+  its type hint.
 
 ```mermaid
 graph TD
@@ -292,7 +305,6 @@ class ConfiguredAgent(Agent):
         return EventConfiguredB(payload=config.some_agent_value)
 ```
 
-
 ## User Interaction and Feedback
 
 This pattern is essential for creating transparent and user-friendly agents.
@@ -301,8 +313,10 @@ This pattern is essential for creating transparent and user-friendly agents.
 
 Agents can provide real-time feedback to the user without interrupting the workflow's logic.
 
-  * **When to use it**: To show "chain-of-thought" reasoning, provide status updates for long-running tasks, or stream back partial results.
-  * **How it works**: Inject the `EventDisplayer` into a step. Use its methods (`display_thought`, `display_chunk`) to send `DisplayEvent`s to the user interface. These events do not affect the control flow.
+- **When to use it**: To show "chain-of-thought" reasoning, provide status updates for long-running tasks, or stream
+  back partial results.
+- **How it works**: Inject the `EventDisplayer` into a step. Use its methods (`display_thought`, `display_chunk`) to
+  send `DisplayEvent`s to the user interface. These events do not affect the control flow.
 
 ```mermaid
 graph TD
@@ -322,17 +336,19 @@ class DisplayingAgent(Agent):
         return StopEvent()
 ```
 
-
 ## LLM Integration Patterns
 
-These patterns show how to integrate Large Language Models (LLMs) into your agent workflows, including streaming responses and cost tracking.
+These patterns show how to integrate Large Language Models (LLMs) into your agent workflows, including streaming
+responses and cost tracking.
 
 ### Streaming LLM Responses to Users
 
 Stream LLM responses incrementally to users while automatically tracking token usage and costs.
 
-  * **When to use it**: For any agent that needs to provide LLM-generated responses with real-time feedback.
-  * **How it works**: The `EventDisplayer.display_llm_stream()` method streams the LLM response as chunks to the user interface while maintaining buffers for content and thinking. It can return either `LLMEvent` or `LLMStopEvent` (which combines LLM data with StopEvent).
+- **When to use it**: For any agent that needs to provide LLM-generated responses with real-time feedback.
+- **How it works**: The `EventDisplayer.display_llm_stream()` method streams the LLM response as chunks to the user
+  interface while maintaining buffers for content and thinking. It can return either `LLMEvent` or `LLMStopEvent` (which
+  combines LLM data with StopEvent).
 
 ```mermaid
 graph TD
@@ -390,18 +406,21 @@ class LLMWrappingAgent(Agent):
             )
 ```
 
-The `cost_reporting_llm()` context manager wraps the LLM to automatically track token usage and publish cost events when the context exits.
-
+The `cost_reporting_llm()` context manager wraps the LLM to automatically track token usage and publish cost events when
+the context exits.
 
 ## Decision Making & Routing Patterns
 
-These patterns enable agents to make intelligent routing decisions by returning different event types from a step based on LLM analysis or other logic.
+These patterns enable agents to make intelligent routing decisions by returning different event types from a step based
+on LLM analysis or other logic.
 
 ### How Conditional Routing Works
 
-A step can return different event types based on runtime decisions. The workflow dispatcher automatically routes to the correct next step based on the event type returned.
+A step can return different event types based on runtime decisions. The workflow dispatcher automatically routes to the
+correct next step based on the event type returned.
 
-**Key Concept**: Use type hints like `EventA | EventB` to declare multiple possible return types. The dispatcher automatically routes to steps that handle each event type.
+**Key Concept**: Use type hints like `EventA | EventB` to declare multiple possible return types. The dispatcher
+automatically routes to steps that handle each event type.
 
 ### Example: LLM Guard Check
 

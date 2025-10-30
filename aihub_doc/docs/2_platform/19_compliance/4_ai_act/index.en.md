@@ -4,7 +4,8 @@ title: EU AI Act
 
 # EU AI Act
 
-The EU AI Act establishes requirements for AI systems based on their risk level. The Act was published in the Official Journal on July 12, 2024, and entered into force on August 1, 2024.
+The EU AI Act establishes requirements for AI systems based on their risk level. The Act was published in the Official
+Journal on July 12, 2024, and entered into force on August 1, 2024.
 
 ## Implementation timeline
 

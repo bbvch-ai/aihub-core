@@ -1,13 +1,14 @@
 ---
 title: Mit Ihren Daten chatten
-source_sha: "efb0b8baf038fd6443ac62d4ca2d0adac162ff548f5708b447432f49e648fa07"
+source_sha: efb0b8baf038fd6443ac62d4ca2d0adac162ff548f5708b447432f49e648fa07
 ---
 
 Um Dateien hochzuladen, klicken Sie auf den Button „Mehr“.
 
 ![Click More Button](../../../../media/open_webui/click_more_button.jpeg)
 
-Wählen Sie dann „Dateien hochladen“ aus. Navigieren Sie im Pop-up-Fenster zu den gewünschten Dateien und laden Sie diese hoch.
+Wählen Sie dann „Dateien hochladen“ aus. Navigieren Sie im Pop-up-Fenster zu den gewünschten Dateien und laden Sie diese
+hoch.
 
 ![Select Upload Files](../../../../media/open_webui/select_upload_files.jpeg)
 

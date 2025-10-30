@@ -1,18 +1,23 @@
 ---
 title: Datenaufnahme-Pipeline
-source_sha: "635ee9f769fb90bce7bde89bf6e8d84b925c264aa499d5439ae344a9d3918b1e"
+source_sha: 635ee9f769fb90bce7bde89bf6e8d84b925c264aa499d5439ae344a9d3918b1e
 ---
 
 # Datenaufnahme-Pipeline
 
-Das AI-Hub Pipeline SDK bietet vorgefertigte, produktionsreife Pipeline-Definitionen, die Sie mit minimaler Konfiguration verwenden können. Diese **Fabriken** kapseln Best Practices für die Aufnahme von Dokumenten und deren Vorbereitung für RAG-Anwendungen.
+Das AI-Hub Pipeline SDK bietet vorgefertigte, produktionsreife Pipeline-Definitionen, die Sie mit minimaler
+Konfiguration verwenden können. Diese **Fabriken** kapseln Best Practices für die Aufnahme von Dokumenten und deren
+Vorbereitung für RAG-Anwendungen.
 
 ## Die zweistufige Aufnahme-Architektur
 
-Unser Aufnahmeprozess ist in zwei unterschiedliche Stufen unterteilt, die jeweils von einer eigenen Pipeline-Definitions-Fabrik gehandhabt werden. Dies fördert Modularität und Wiederverwendbarkeit.
+Unser Aufnahmeprozess ist in zwei unterschiedliche Stufen unterteilt, die jeweils von einer eigenen
+Pipeline-Definitions-Fabrik gehandhabt werden. Dies fördert Modularität und Wiederverwendbarkeit.
 
-1.  **Stufe 1: Quelle zum Data Lake** (Optional): Diese Pipeline verbindet sich mit einer externen Quelle (wie SharePoint) und synchronisiert ihre Dateien mit einem zentralen S3 Data Lake.
-2.  **Stufe 2: Data Lake zum Vektorspeicher**: Diese Pipeline überwacht den S3 Data Lake, verarbeitet die Dokumente und speichert die resultierenden Embeddings in einem Vektorspeicher.
+1. **Stufe 1: Quelle zum Data Lake** (Optional): Diese Pipeline verbindet sich mit einer externen Quelle (wie
+   SharePoint) und synchronisiert ihre Dateien mit einem zentralen S3 Data Lake.
+2. **Stufe 2: Data Lake zum Vektorspeicher**: Diese Pipeline überwacht den S3 Data Lake, verarbeitet die Dokumente und
+   speichert die resultierenden Embeddings in einem Vektorspeicher.
 
 ```mermaid
 graph TD
@@ -57,10 +62,12 @@ graph TD
 
 ## 1. Die SharePoint zu Data Lake Pipeline
 
-Verwenden Sie die Fabrik `default_sharepoint_to_datalake_definitions`, um Dokumente von einer SharePoint-Site mit Ihrem S3 Data Lake zu synchronisieren.
+Verwenden Sie die Fabrik `default_sharepoint_to_datalake_definitions`, um Dokumente von einer SharePoint-Site mit Ihrem
+S3 Data Lake zu synchronisieren.
 
-  * **Was sie tut**: Überwacht einen SharePoint-Speicherort, lädt neue oder aktualisierte Dateien herunter und bereinigt Dateien im Data Lake, die aus SharePoint gelöscht wurden.
-  * **Wichtige Assets**: `observable_sharepoint`, `data_lake_files`, `removed_data_lake_files`.
+- **Was sie tut**: Überwacht einen SharePoint-Speicherort, lädt neue oder aktualisierte Dateien herunter und bereinigt
+  Dateien im Data Lake, die aus SharePoint gelöscht wurden.
+- **Wichtige Assets**: `observable_sharepoint`, `data_lake_files`, `removed_data_lake_files`.
 
 ### Anwendungsbeispiel
 
@@ -77,10 +84,12 @@ defs = default_sharepoint_to_datalake_definitions(
 
 ## 2. Die Data Lake zu Vektorspeicher Pipeline
 
-Dies ist die zentrale RAG-Pipeline. Verwenden Sie die Fabrik `default_definitions`, um Dokumente aus Ihrem S3 Data Lake in einen Vektorspeicher zu verarbeiten.
+Dies ist die zentrale RAG-Pipeline. Verwenden Sie die Fabrik `default_definitions`, um Dokumente aus Ihrem S3 Data Lake
+in einen Vektorspeicher zu verarbeiten.
 
-  * **Was sie tut**: Überwacht einen S3-Bucket, parst Dokumente, zerlegt sie in Nodes, erstellt optional Zusammenfassungs-Nodes und speichert die Embeddings in Milvus. Sie handhabt auch Dokumentlöschungen.
-  * **Wichtige Assets**: `observable_data_lake`, `documents`, `nodes`, `summary_nodes`, `removed_documents`.
+- **Was sie tut**: Überwacht einen S3-Bucket, parst Dokumente, zerlegt sie in Nodes, erstellt optional
+  Zusammenfassungs-Nodes und speichert die Embeddings in Milvus. Sie handhabt auch Dokumentlöschungen.
+- **Wichtige Assets**: `observable_data_lake`, `documents`, `nodes`, `summary_nodes`, `removed_documents`.
 
 ### Anwendungsbeispiel
 
@@ -97,30 +106,35 @@ defs = default_definitions(
 
 ## Standard-Datenzuordnung
 
-Das SDK verwendet eine konsistente Namenskonvention, um Ihre Data Lake-Struktur auf die zugrundeliegenden Speicher-Backends (Document Store und Vector Store) abzubilden.
+Das SDK verwendet eine konsistente Namenskonvention, um Ihre Data Lake-Struktur auf die zugrundeliegenden
+Speicher-Backends (Document Store und Vector Store) abzubilden.
 
 ### Container/Bucket → Datenbank/Collection
 
-Der Name des übergeordneten S3-Buckets wird als primärer Bezeichner für Ihre Speicherressourcen verwendet und bietet eine starke Datenisolation.
+Der Name des übergeordneten S3-Buckets wird als primärer Bezeichner für Ihre Speicherressourcen verwendet und bietet
+eine starke Datenisolation.
 
 **Beispiel:**
 
-  * **Data Lake Bucket**: `s3://hr-documents/`
-  * **Document Store DB**: `hr-documents`
-  * **Vector Store Collection**: `hr-documents`
+- **Data Lake Bucket**: `s3://hr-documents/`
+- **Document Store DB**: `hr-documents`
+- **Vector Store Collection**: `hr-documents`
 
 ### Verzeichnis → Namespace
 
-Innerhalb eines Buckets können Sie Verzeichnisse verwenden, um logische Trennungen zu schaffen, die Namespaces innerhalb des Vektorspeichers zugeordnet werden. Dies ermöglicht Multi-Tenancy oder logische Gruppierung innerhalb einer einzigen Collection.
+Innerhalb eines Buckets können Sie Verzeichnisse verwenden, um logische Trennungen zu schaffen, die Namespaces innerhalb
+des Vektorspeichers zugeordnet werden. Dies ermöglicht Multi-Tenancy oder logische Gruppierung innerhalb einer einzigen
+Collection.
 
 **Beispiel:**
 
-  * **Data Lake Path**: `s3://hr-documents/onboarding/`
-  * **Vector Store Namespace**: `onboarding`
+- **Data Lake Path**: `s3://hr-documents/onboarding/`
+- **Vector Store Namespace**: `onboarding`
 
 ## Ausführen und Kombinieren von Pipelines
 
-Um eine Pipeline auszuführen, speichern Sie Ihren Definitions-Code (z.B. `my_pipeline.py`) und verwenden Sie die Dagster CLI.
+Um eine Pipeline auszuführen, speichern Sie Ihren Definitions-Code (z.B. `my_pipeline.py`) und verwenden Sie die Dagster
+CLI.
 
 ```bash
 # Start the Dagster UI and development server

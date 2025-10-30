@@ -1,21 +1,23 @@
 ---
 title: Ein-Befehl-Bereitstellung
-source_sha: "0bfb670b7ba98c7a6969c92457c7b4279a6f2322af7ebd7ad0f1e6abc19bf1fe"
+source_sha: 0bfb670b7ba98c7a6969c92457c7b4279a6f2322af7ebd7ad0f1e6abc19bf1fe
 ---
 
 # Ein-Befehl-Bereitstellung: Starten Sie Ihre KI-Plattform
 
-Die Swiss AI Hub Plattform wird mit einem einzigen Docker Compose Befehl bereitgestellt. Dieser optimierte Prozess bringt Ihre vollständige KI-Infrastruktur in Minuten, nicht Stunden, zum Laufen.
+Die Swiss AI Hub Plattform wird mit einem einzigen Docker Compose Befehl bereitgestellt. Dieser optimierte Prozess
+bringt Ihre vollständige KI-Infrastruktur in Minuten, nicht Stunden, zum Laufen.
 
 ## Bereitstellungsübersicht
 
 Die Bereitstellung besteht aus drei einfachen Schritten:
 
-1.  **Herunterladen** der Bereitstellungskonfiguration
-2.  **Konfigurieren** der Umgebungsvariablen mit Ihren Einstellungen
-3.  **Bereitstellen** mit einem Befehl
+1. **Herunterladen** der Bereitstellungskonfiguration
+2. **Konfigurieren** der Umgebungsvariablen mit Ihren Einstellungen
+3. **Bereitstellen** mit einem Befehl
 
-Die gesamte Plattform läuft als containerisierte Services, die Service Discovery, Netzwerkkonfiguration und Start-Orchestrierung automatisch verwalten.
+Die gesamte Plattform läuft als containerisierte Services, die Service Discovery, Netzwerkkonfiguration und
+Start-Orchestrierung automatisch verwalten.
 
 ## Schritt 1: Bereitstellungsdateien herunterladen
 
@@ -176,27 +178,27 @@ MILVUS_DIMENSION="3072"
 
 **Kritische Werte, die ersetzt werden müssen:**
 
-1.  **Authentifizierungswerte** (aus den Voraussetzungen):
+1. **Authentifizierungswerte** (aus den Voraussetzungen):
 
-    -   `REPLACE_WITH_YOUR_CLIENT_ID` → Ihre Azure App Registration Client ID
-    -   `REPLACE_WITH_YOUR_CLIENT_SECRET` → Ihr Azure App Registration Client Secret
-    -   `REPLACE_WITH_YOUR_TENANT_ID` → Ihre Azure Tenant ID (erscheint zweimal)
+   - `REPLACE_WITH_YOUR_CLIENT_ID` → Ihre Azure App Registration Client ID
+   - `REPLACE_WITH_YOUR_CLIENT_SECRET` → Ihr Azure App Registration Client Secret
+   - `REPLACE_WITH_YOUR_TENANT_ID` → Ihre Azure Tenant ID (erscheint zweimal)
 
-2.  **KI-Modellzugriff** (mindestens einen konfigurieren):
+2. **KI-Modellzugriff** (mindestens einen konfigurieren):
 
-    -   `REPLACE_WITH_AZURE_OPENAI_KEY` → Ihr Azure OpenAI API-Schlüssel
-    -   `REPLACE_WITH_GEMINI_KEY` → Ihr Google Gemini API-Schlüssel
+   - `REPLACE_WITH_AZURE_OPENAI_KEY` → Ihr Azure OpenAI API-Schlüssel
+   - `REPLACE_WITH_GEMINI_KEY` → Ihr Google Gemini API-Schlüssel
 
-3.  **Zufällige Zeichenketten** (eindeutige Werte generieren):
+3. **Zufällige Zeichenketten** (eindeutige Werte generieren):
 
-    -   Ersetzen Sie alle `REPLACE_WITH_RANDOM_STRING_X` durch eindeutige, zufällige Zeichenketten
-    -   Verwenden Sie unterschiedliche Werte für jeden Platzhalter
-    -   Mindestens 32 Zeichen werden für die Sicherheit empfohlen
+   - Ersetzen Sie alle `REPLACE_WITH_RANDOM_STRING_X` durch eindeutige, zufällige Zeichenketten
+   - Verwenden Sie unterschiedliche Werte für jeden Platzhalter
+   - Mindestens 32 Zeichen werden für die Sicherheit empfohlen
 
 **Domain-Konfiguration:**
 
--   Für lokale Tests: Behalten Sie `AIHUB_FRONTEND_ORIGIN="https://127.0.0.1.nip.io"` bei
--   Für die Produktion: Ändern Sie dies auf Ihre tatsächliche Domain (z.B. `https://ai-hub.your-company.com`)
+- Für lokale Tests: Behalten Sie `AIHUB_FRONTEND_ORIGIN="https://127.0.0.1.nip.io"` bei
+- Für die Produktion: Ändern Sie dies auf Ihre tatsächliche Domain (z.B. `https://ai-hub.your-company.com`)
 
 ::: tip Zufällige Zeichenketten generieren
 Verwenden Sie diesen Befehl, um sichere zufällige Zeichenketten zu generieren:
@@ -231,10 +233,10 @@ docker compose -f docker-compose.latest.yml up -d
 
 Dieser Befehl wird:
 
--   Alle notwendigen Docker-Images herunterladen
--   Erforderliche Netzwerke und Volumes erstellen
--   Alle Plattformdienste in der richtigen Reihenfolge starten
--   Service Discovery und Kommunikation konfigurieren
+- Alle notwendigen Docker-Images herunterladen
+- Erforderliche Netzwerke und Volumes erstellen
+- Alle Plattformdienste in der richtigen Reihenfolge starten
+- Service Discovery und Kommunikation konfigurieren
 
 ### Bereitstellungsfortschritt überwachen
 
@@ -250,20 +252,21 @@ docker compose -f docker-compose.latest.yml ps
 
 **Erwartete Dienste:** Die Plattform umfasst diese Kerndienste:
 
--   **Web-Oberfläche** (aihub-web)
--   **API** (aihub-api)
--   **Authentifizierung** (auth services)
--   **Datenbanken** (FerretDB, PostgreSQL, Valkey)
--   **Vektordatenbank** (Milvus)
--   **LLM Proxy** (LiteLLM)
--   **Dokumentenverarbeitung** (Docling)
--   **Beobachtbarkeit** (Phoenix)
--   **Nachrichtenwarteschlange** (NATS)
--   **Speicher** (SeaweedFS)
+- **Web-Oberfläche** (aihub-web)
+- **API** (aihub-api)
+- **Authentifizierung** (auth services)
+- **Datenbanken** (FerretDB, PostgreSQL, Valkey)
+- **Vektordatenbank** (Milvus)
+- **LLM Proxy** (LiteLLM)
+- **Dokumentenverarbeitung** (Docling)
+- **Beobachtbarkeit** (Phoenix)
+- **Nachrichtenwarteschlange** (NATS)
+- **Speicher** (SeaweedFS)
 
 ### Warten auf Service-Initialisierung
 
-Der erstmalige Start dauert 3-5 Minuten, während sich die Dienste initialisieren. Alle Dienste sollten den Status „healthy“ (fehlerfrei) anzeigen:
+Der erstmalige Start dauert 3-5 Minuten, während sich die Dienste initialisieren. Alle Dienste sollten den Status
+„healthy“ (fehlerfrei) anzeigen:
 
 ```bash
 # Wait for healthy status
@@ -274,15 +277,16 @@ docker compose -f docker-compose.latest.yml ps --format "table {{.Name}}\t{{.Sta
 
 ### Auf die Plattform zugreifen
 
-1.  **Stellen Sie sicher, dass Ihr Testbenutzer die Rolle „AIHubAdmin“ in der Azure Enterprise Application zugewiesen bekommen hat.**
+1. **Stellen Sie sicher, dass Ihr Testbenutzer die Rolle „AIHubAdmin“ in der Azure Enterprise Application zugewiesen
+   bekommen hat.**
 
-2.  **Web-Oberfläche:**
+2. **Web-Oberfläche:**
 
-    -   Lokal: `https://127.0.0.1.nip.io`
-    -   Produktion: `https://your-domain.com`
+   - Lokal: `https://127.0.0.1.nip.io`
+   - Produktion: `https://your-domain.com`
 
-3.  **Erwarteter Anmeldeablauf:**
+3. **Erwarteter Anmeldeablauf:**
 
-    -   Weiterleitung zur Azure-Authentifizierung
-    -   Nach der Anmeldung Rückkehr zur AI-Hub-Oberfläche
-    -   Sie sollten das Haupt-Dashboard sehen
+   - Weiterleitung zur Azure-Authentifizierung
+   - Nach der Anmeldung Rückkehr zur AI-Hub-Oberfläche
+   - Sie sollten das Haupt-Dashboard sehen

@@ -66,7 +66,6 @@ agents for specific domains and orchestrate them through this interface. This mo
 complexity, enables independent agent improvement cycles, and supports reuse of agents across different business
 processes.
 
-
 ## Implementation Approach
 
 Built on FastAPI, the API operates as part of the main platform service with stateless design enabling horizontal
