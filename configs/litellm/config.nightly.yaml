@@ -100,7 +100,7 @@ general_settings:
 
 litellm_settings:
   callbacks: [ "detect_prompt_injection", "otel" ]
-  default_fallbacks: [ "azure/gpt-4o-mini" ]
+  default_fallbacks: [ "text-generation/nano" ]
   telemetry: true
   json_logs: true
   drop_params: true

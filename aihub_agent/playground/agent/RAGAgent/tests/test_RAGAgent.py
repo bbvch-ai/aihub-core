@@ -375,7 +375,7 @@ def _(agent_runner: AgentTestRunner, expected_prompt: str):
 @given(parsers.parse('with reranking enabled and top_n of "{top_n:d}"'))
 def _(agent_runner: AgentTestRunner, top_n: int):
     agent_runner.default_agent_config.reranking_config = RerankingConfig(
-        enabled=True, reranking_model=RerankingModelConfig(model_name="local/reranker", top_n=top_n)
+        enabled=True, reranking_model=RerankingModelConfig(model_name="reranker", top_n=top_n)
     )
     return agent_runner
 

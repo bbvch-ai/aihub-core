@@ -1,14 +1,14 @@
 import io
 
 import pytest
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from fastapi import UploadFile
 from pydub import AudioSegment
 from pydub.generators import Sine
 
 from aihub_api.audio.AudioChunkingService import AudioChunkingService
-from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
-    DangerousDevelopmentOnlyAuthSettings,
-)
 
 
 @pytest.fixture

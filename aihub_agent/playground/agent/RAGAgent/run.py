@@ -1,4 +1,8 @@
 # ruff: noqa: E402
+from aihub_lib.generative_ai.resources.models.llm.RerankingModelConfig import RerankingModelConfig
+
+from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
+
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
