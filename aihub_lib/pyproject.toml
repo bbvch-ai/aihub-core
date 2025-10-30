@@ -71,6 +71,7 @@ opentelemetry-instrumentation-milvus = "^0.47.0"
 opentelemetry-instrumentation-logging = "^0.58b0"
 opentelemetry-instrumentation-aiohttp-client = "^0.58b0"
 llama-index-postprocessor-cohere-rerank = "0.3.0"
+lxml = "^6.0.2"
 
 
 [tool.poetry.group.dev.dependencies]
