@@ -1,93 +1,52 @@
 ---
 title: Fundamentals
+index: 1
 ---
 
-# Pipeline Fundamentals
+# Pipeline fundamentals
 
-Data pipelines are the backbone of your AI's knowledge, responsible for the automated and continuous synchronization of
-information between your source systems and the AI's knowledge base. They are the robust, reliable workflows that ensure
-your AI agents operate with information that is always current, accurate, and secure.
+Data pipelines synchronize information between source systems and knowledge bases. They monitor SharePoint sites, detect changes (additions, modifications, deletions), and process those changes to maintain current knowledge bases. Users can also upload documents manually to the data lake for processing.
 
-This section explores the core principles behind the platform's data pipeline architecture, explaining how they are
-built, what they can do, and why they are essential for enterprise-grade AI.
+Pipelines convert documents into vector databases where text is parsed, chunked, and embedded. This structure enables semantic search based on meaning rather than keyword matching.
 
-## The Purpose of a Pipeline: Continuous Synchronization
+## Implementation with Dagster
 
-In a dynamic business environment, information is constantly changing. A new policy is published, a technical manual is
-updated, a project status report is revised. A static knowledge base, updated only periodically, quickly becomes a
-liability, leading to AI-driven decisions based on outdated information.
+Pipelines are built on Dagster and defined as Python code. This enables:
 
-Data pipelines solve this problem through **continuous synchronization**. They are persistent, automated processes that
-monitor your designated data sources, such as a SharePoint site or a network drive. When a document is added, modified,
-or deleted, the pipeline automatically detects the change and propagates it through the entire processing chain,
-ensuring the AI's knowledge base perfectly mirrors the state of your source systems.
+- Custom processing logic for specific content types, business rules, or quality standards
+- Conditional workflows where processing paths vary based on document content, source, or classification
+- Error handling for network issues, data anomalies, or system failures
 
-::: info What is an "AI-Ready" Knowledge Base?
-An AI-ready knowledge base isn't just a collection of files. It's a highly structured vector database where documents
-have been parsed, broken into meaningful chunks, and converted into numerical representations (embeddings). This allows
-AI agents to perform semantic searches based on meaning, not just keywords. The entire process of creating and
-maintaining this specialized database is managed by data pipelines.
-:::
+Pipeline code is reusable across different data sources and agents.
 
-## Built on a Foundation of Code and Control
+## Document lifecycle management
 
-The Swiss AI Hub's pipelines are built on **Dagster**, a modern, enterprise-grade orchestration framework. This is a
-deliberate choice that provides immense flexibility and control. Because pipelines are defined as code (Python), they
-are not simple "connect-the-dots" workflows but powerful, programmable assets.
+Pipelines handle the full document lifecycle:
 
-This code-based approach enables sophisticated capabilities that are out of reach for many visual-only platforms:
+When a document is added, the pipeline processes it and stores embeddings in the knowledge base.
 
-- **Custom Processing Logic**: You can implement specialized steps tailored to your unique content types, business
-  rules, or quality standards.
-- **Conditional Workflows**: The pipeline's path can change based on a document's content, source, or classification.
-  For example, a contract might go through an extra PII-redaction step that a public manual would skip.
-- **Robust Error Handling**: You can define precise logic for handling network issues, data anomalies, or temporary
-  system failures, ensuring pipelines are resilient and don't require manual intervention for common problems.
+When a document is modified, the pipeline removes embeddings from the old version before processing and storing the new version.
 
-This makes your pipelines reusable assets that encode your organization's specific knowledge about how to handle its
-data.
+When a document is deleted, the pipeline removes all associated embeddings from the knowledge base.
 
-## Lifecycle Management: More Than Just Adding Data
+This prevents agents from retrieving information from outdated or deleted documents.
 
-A truly synchronized system must handle the full lifecycle of information. Our pipelines maintain complete fidelity with
-your source systems.
+## Data sources
 
-- **When a document is added**, the pipeline processes it and adds the corresponding embeddings to the knowledge base.
-- **When a document is modified**, the pipeline intelligently removes all outdated embeddings associated with the old
-  version before adding the new ones.
-- **When a document is deleted**, the pipeline purges all of its associated embeddings from the knowledge base.
+The platform includes a pre-built SharePoint connector for automated synchronization with SharePoint sites and document libraries.
 
-This rigorous lifecycle management is critical. It prevents AI agents from retrieving information from old versions of
-documents or, worse, from documents that have been officially retired.
+For other data sources, you can manually upload documents to the data lake via the UI. The pipeline processes uploaded files through the same parsing, chunking, and embedding stages as SharePoint documents.
 
-## Enterprise Connectivity and Extensibility
+Custom connectors for additional sources can be implemented using the [pipeline SDK](../../../3_sdk/3_building_pipelines/). This requires developing I/O managers and operations specific to your data source.
 
-The platform provides a rich set of pre-built connectors for the systems where your organization's knowledge already
-lives. This allows for seamless integration without requiring complex data migration projects.
+## Quality and security controls
 
-::: details Supported Data Source Categories
-- **Enterprise Collaboration Platforms**: Natively connect to sources like Microsoft SharePoint, OneDrive, Confluence,
-  and Jira.
-- **File Systems**: Ingest data from network drives, local storage, or cloud storage like Azure Blob and S3.
-- **Web Sources**: Scrape and process content from public websites, technical documentation portals, or industry news
-  feeds.
-:::
+Pipelines can include validation and security steps:
 
-Crucially, the architecture is extensible. If you have a proprietary internal system or a specialized database, you can
-develop a custom connector, allowing the platform to integrate any information source relevant to your AI workflows.
+Content validation inspects incoming data for quality and completeness. Documents failing validation can be quarantined for review.
 
-## Governance and Quality Assurance: A Security-First Approach
+Security scanning checks for malicious content or policy violations before ingestion.
 
-Data pipelines are more than just data movers; they are the first line of defense for the quality and security of your
-AI's knowledge. They incorporate sophisticated governance and quality assurance mechanisms directly into the workflow.
+Data sanitization applies transformation rules to redact sensitive information or enforce classification policies.
 
-- **Content Validation**: Pipelines can inspect incoming data for quality and completeness. A document that is missing a
-  critical section might be quarantined for human review instead of being automatically ingested.
-- **Security Scanning**: You can integrate automated checks for malicious content or policy violations, preventing
-  harmful information from entering the knowledge base.
-- **Data Sanitization**: Pipelines can automatically apply transformation rules to redact sensitive information (like
-  names or social security numbers) or enforce data classification policies before content becomes accessible to agents.
-
-Every action taken by a pipeline—from the initial retrieval to the final quality check—is logged, creating a
-comprehensive audit trail that supports compliance reporting and forensic analysis. This ensures you always have a clear
-record of how your AI's knowledge was built.
+All pipeline actions are logged, creating an audit trail from initial retrieval through processing to storage.

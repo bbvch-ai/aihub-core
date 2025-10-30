@@ -1,48 +1,42 @@
 ---
-title: Proxy Server
+title: Proxy server
+index: 1
 ---
 
-# LLM Proxy
+# LLM proxy
 
-The LLM Proxy serves as a centralized gateway to all language model providers, abstracting vendor-specific APIs behind a
-unified interface. This architectural component enables the platform to leverage multiple AI providers simultaneously
-while maintaining vendor independence and operational control.
+The LLM proxy (LiteLLM) provides a centralized gateway to language model providers. It abstracts vendor-specific APIs behind an OpenAI-compatible interface, allowing the platform to work with multiple AI providers without changing code.
 
-## Purpose and Scope
+## What the proxy does
 
-The proxy layer decouples the platform from specific language model providers, enabling organizations to change models
-through configuration rather than code modifications. This separation proves critical for managing the rapidly evolving
-AI landscape, where new models and providers emerge continuously.
+The proxy layer lets you change models through configuration files instead of modifying code. When you need to switch from one provider to another, update the configuration and restart the service.
 
-## Key Responsibilities
+## Core functions
 
-**Unified Interface**: LiteLLM provides an OpenAI-compatible API that abstracts differences between providers (OpenAI,
-Google, Anthropic, Azure OpenAI, self-hosted models). Platform code interacts with a consistent interface regardless of
-the underlying model.
+**Unified interface**
 
-**Intelligent Routing**: The proxy routes requests to appropriate models based on configuration, cost optimization, or
-load balancing requirements. Organizations can use cost-effective models for routine operations while reserving premium
-models for critical tasks.
+LiteLLM provides an OpenAI-compatible API that works with OpenAI, Google, Anthropic, Azure OpenAI, and self-hosted models. Platform code uses the same interface regardless of which model handles the request.
 
-**Cost Management**: Comprehensive usage tracking captures per-user, per-department, and per-operation costs. Budget
-controls prevent runaway expenses, while detailed analytics inform optimization decisions.
+**Request routing**
 
-**Guardrails and Compliance**: Built-in PII detection and anonymization protect sensitive information before it reaches
-external providers. Organizations configure data handling policies once rather than implementing controls in every
-consuming service.
+The proxy routes requests to models based on configured strategy. Current configuration uses "usage-based-routing-v2" which distributes load across available models.
 
-**Reliability Features**: Automatic fallback to backup models ensures continuity when primary providers experience
-outages. Rate limiting prevents overwhelming providers or triggering quota restrictions.
+**Cost tracking**
 
-## Strategic Value
+Usage tracking captures token consumption per request. Cost per token gets configured for each model, allowing the platform to calculate and display costs per conversation.
 
-The proxy architecture fundamentally changes the economics of AI adoption. Organizations avoid vendor lock-in by
-maintaining the flexibility to switch providers based on cost, performance, or data sovereignty requirements. This
-negotiating position pressures providers to maintain competitive pricing and service quality.
+**PII protection**
 
-Centralized cost visibility enables informed decision-making about model usage. Finance teams track AI spending like any
-other utility, while technical teams optimize based on actual usage patterns rather than vendor marketing claims.
+Presidio integration (when enabled) scans requests for personally identifiable information before sending them to external providers. See [Data Anonymization](../2_anonymization/) for details.
 
-The proxy also serves as a compliance enforcement point. Data handling policies, usage restrictions, and audit logging
-apply uniformly across all platform operations, dramatically reducing the compliance burden compared to distributed
-controls.
+**Reliability**
+
+Retry policies handle temporary failures. The configuration specifies retry counts for timeout errors, rate limit errors, and internal server errors.
+
+## Benefits
+
+Organizations can switch providers without rewriting code. This avoids vendor lock-in and enables choosing models based on cost, performance, or data residency requirements.
+
+Centralized cost tracking shows AI spending across the platform. You can see which conversations or agents consume the most tokens.
+
+The proxy applies data handling policies uniformly. PII protection, rate limiting, and audit logging work the same way for all platform operations.

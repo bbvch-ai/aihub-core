@@ -1,102 +1,118 @@
 ---
-title: Knowledge Organization Through Namespaces
+title: Organizing knowledge with collections
 ---
 
-# Knowledge Organization Through Namespaces
+# Organizing knowledge with collections
 
-The Swiss AI-Hub organizes enterprise knowledge using a namespace-based architecture that provides logical separation,
-flexible access control, and independent lifecycle management for different knowledge domains. This approach enables
-organizations to structure their knowledge bases in ways that mirror business reality while optimizing retrieval
-performance and operational management.
+Collections (technically called "namespaces") organize documents within a knowledge database. Each namespace is a logical container for related documents - think of them as folders, but optimized for vector search instead of hierarchical navigation.
 
-## The Namespace Concept
+## How collections work
 
-Namespaces function as logical containers for related documents and information, similar to folders in a filesystem but
-optimized for vector similarity search. Each namespace represents a distinct knowledge domain—a product line, business
-unit, regulatory framework, or any other logical grouping meaningful to the organization. Documents ingested into the
-vector store receive namespace assignments as metadata, enabling precise targeting during retrieval operations.
+When documents are ingested, they receive a collection label as metadata. This label travels with every chunk of the document in the vector store. When an agent searches for information, it can filter by collection to retrieve only relevant documents.
 
-Unlike traditional folder hierarchies, namespaces exist as flat metadata attributes attached to every document chunk in
-the vector store. This flat structure enables agents to search across multiple namespaces simultaneously without
-navigating hierarchical paths, combining the organizational benefits of categorization with the performance advantages
-of direct metadata filtering.
+![Creating a new collection](../../../../media/knowledge/create_new_collection.png)
 
-## Agent-Level Access Control
+Unlike file system folders, collections don't nest. They're flat metadata attributes. This means agents can search across multiple collections simultaneously without navigating a hierarchy - you get the organizational benefits of categorization with the performance benefits of direct metadata filtering.
 
-The platform implements agent-level namespace access control: when an agent is configured to access specific namespaces,
-**every user interacting with that agent receives responses based on the same knowledge set**. This ensures consistent,
-predictable agent behavior and simplifies testing and validation.
+## Access control model
 
-**Access Philosophy**: Agents are task-focused tools configured with knowledge required for their designated function.
-Access control operates at the agent level—if users should not access information within an agent's namespaces, they
-should not receive authorization to use that agent.
+The AI-Hub implements collection access control at the agent level, not the user level. When you configure an agent to access specific collections, every user interacting with that agent sees responses based on the same knowledge set.
 
-**Agent Reusability**: The same agent workflow can be instantiated multiple times with different namespace
-configurations, creating distinct instances serving different audiences. For example, a support agent workflow might
-deploy as:
+This has important implications:
 
-- **Public Support Agent**: Public documentation only, available to all customers
-- **Partner Support Agent**: Public and partner-specific namespaces, for authorized partners
-- **Internal Support Agent**: Full access including internal technical documentation, employee-only
+**Consistent behavior** - All users get the same agent responses, making testing and validation straightforward. You don't need to test every possible user permission combination.
 
-Each instance uses identical workflow logic but operates on different knowledge scopes, ensuring appropriate information
-access without complex per-user filtering.
+**Simple security model** - If users shouldn't access information in an agent's collections, don't give them access to that agent. Access control happens at the "should this person use this tool" level, not during query execution.
 
-**Optional User Validation**: Organizations can optionally validate that users possess permissions for all namespaces an
-agent accesses. When enabled, the platform checks user permissions before workflow execution—users either receive full
-agent capabilities or clear denial, never partial results.
+**Agent reusability** - The same agent workflow can be deployed multiple times with different collection configurations, creating distinct instances for different audiences.
 
-## Knowledge Access Patterns
+For example, a support agent workflow might deploy as:
 
-**Domain Specialization**: Specialized agents focus on specific knowledge areas by restricting namespace access. A
-regulatory compliance agent might access only legal and compliance namespaces, while a product support agent accesses
-technical documentation. This specialization improves retrieval relevance by preventing contamination from unrelated
-information.
+```
+Public Support Agent
+├─ Collections: public
+└─ Available to: all customers
 
-**Multi-Domain Agents**: Agents requiring broader knowledge specify multiple namespaces in their retrieval
-configuration. The platform performs retrieval across all configured namespaces in parallel, merging results by
-relevance scores to present the most pertinent information regardless of namespace origin.
+Partner Support Agent
+├─ Collections: public, partner
+└─ Available to: authorized partners
 
-**Dynamic Scope Adjustment**: Organizations modify agent namespace access through configuration updates without code
-changes. Adding a new product line requires only updating agent configurations to include the new namespace, immediately
-making that knowledge available.
+Internal Support Agent
+├─ Collections: public, partner, internal
+└─ Available to: employees only
+```
 
-## Operational Advantages
+Each instance uses identical workflow logic but operates on different knowledge scopes.
 
-**Independent Updates**: Organizations update knowledge in one namespace without affecting others. Testing new ingestion
-pipelines can proceed in isolated namespaces without impacting production agents operating on established namespaces.
+## Knowledge access patterns
 
-**Access Control Through Deployment**: Organizations deploy multiple agent instances with different namespace
-configurations and control which users access which agents. Employees with appropriate clearances access agents
-configured with confidential namespaces, while contractors access separate instances with publicly shareable namespaces
-only.
+**Domain specialization** - Configure agents with narrow collection access to focus on specific knowledge areas. A regulatory compliance agent might access only legal and compliance collections, improving retrieval relevance by preventing contamination from unrelated information.
 
-**Performance Optimization**: Restricting retrieval to relevant namespaces reduces search space, improving both speed
-and relevance. As knowledge bases grow, namespace-focused retrieval prevents performance degradation—agents maintain
-consistent performance regardless of total knowledge base size.
+**Multi-domain agents** - Agents requiring broader knowledge specify multiple collections in their retrieval configuration. The platform searches all configured collections in parallel and merges results by relevance scores.
 
-**Lifecycle Management**: Different namespaces follow different retention policies and update cycles. Legal documents
-require long retention with infrequent updates, while product specifications update frequently but expire after
-discontinuation. Organizations can archive inactive namespaces without affecting current agents.
+**Dynamic scope adjustment** - Update agent collection access through configuration without code changes. Adding a new product line means updating agent configurations to include the new collection.
 
-## Design Considerations
+## Operational benefits
 
-Effective namespace design balances several factors:
+**Independent updates** - Update knowledge in one collection without affecting others. Test new ingestion pipelines in isolated collections without impacting production agents.
 
-**Granularity**: Namespaces define the finest granularity of access control. Most organizations find optimal granularity
-at the business unit, product family, or functional area level—coarse enough to avoid excessive agent proliferation,
-fine enough to enable meaningful access differentiation.
+**Performance optimization** - Restricting retrieval to relevant collections reduces search space, improving both speed and relevance. As knowledge bases grow, collection-focused retrieval prevents performance degradation.
 
-**Stability**: Namespace structures should remain relatively stable over time, as reorganizations require reingestion
-and agent reconfiguration. Design schemes that accommodate business growth without frequent restructuring.
+**Lifecycle management** - Different collections can follow different retention policies and update cycles. Legal documents need long retention with infrequent updates, while product specifications update frequently but expire after discontinuation. Archive inactive collections without affecting current agents.
 
-**Discoverability**: Clear naming conventions and documentation help administrators understand which namespaces provide
-relevant knowledge for specific agent roles and which combinations enable appropriate access scopes.
+## Design considerations
 
-**Cross-Cutting Concerns**: Information spanning multiple domains (security policies, brand guidelines) can be
-duplicated across namespaces or organized in dedicated cross-cutting namespaces that most agents access alongside
-domain-specific ones.
+When designing collection structure, balance these factors:
 
-**Agent Instance Planning**: Consider which namespace combinations will deploy as agent instances. If user groups
-require access to specific knowledge subsets, organize those subsets as coherent namespace collections assignable to
-dedicated agent instances.
+**Granularity** - Collections define the finest granularity of access control. Most organizations find the sweet spot at the business unit, product family, or functional area level - coarse enough to avoid excessive agent proliferation, fine enough to enable meaningful access differentiation.
+
+**Stability** - Collection structures should remain relatively stable. Reorganizations require reingestion and agent reconfiguration. Design schemes that accommodate business growth without frequent restructuring.
+
+**Naming conventions** - Collection names must not contain hyphens or underscores. Use simple, lowercase names like "hr," "sales," or "compliance." Clear naming helps administrators understand which collections provide relevant knowledge for specific agent roles and which combinations enable appropriate access scopes.
+
+**Cross-cutting concerns** - Information spanning multiple domains (security policies, brand guidelines) can be duplicated across collections or organized in dedicated collections that most agents access alongside domain-specific ones.
+
+**Agent instance planning** - Think about which collection combinations will deploy as agent instances. If user groups need access to specific knowledge subsets, organize those subsets as coherent groups you can assign to dedicated agent instances.
+
+## Example collection schemes
+
+::: details By department
+```
+hr
+engineering
+sales
+finance
+```
+:::
+
+::: details By product
+```
+alphatechnical
+alphamarketing
+betatechnical
+betamarketing
+```
+:::
+
+::: details By information type
+```
+policies
+technical
+training
+compliance
+```
+:::
+
+::: details By security classification
+```
+public
+internal
+confidential
+```
+:::
+
+Choose a scheme that matches how your organization already thinks about information access and agent deployment.
+
+::: info Technical note
+While the UI calls these "collections," they're technically implemented as "namespaces" in the codebase and appear as namespace metadata on document chunks in the vector store.
+:::

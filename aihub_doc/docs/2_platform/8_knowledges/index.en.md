@@ -1,173 +1,123 @@
 ---
-title: Knowledge Management
+title: Knowledge management
 ---
 
-# Knowledge Management
+# Knowledge management
 
-The Swiss AI-Hub provides comprehensive knowledge management capabilities that enable organizations to structure,
-govern, and leverage their enterprise information assets for AI-powered workflows. The platform treats knowledge as a
-strategic resource, providing sophisticated tools for organizing, processing, and controlling access to documents across
-the organization.
+AI agents need access to relevant information to answer questions accurately. The knowledge management system processes your documents and makes them searchable through semantic retrieval.
 
-## Organizational Structure
+## Structure
 
-The platform organizes enterprise knowledge using a hierarchical structure designed for governance, scalability, and
-clear ownership boundaries.
+Knowledge organizes into three levels:
 
-**Knowledge Databases**: At the highest level, organizations can create multiple isolated knowledge databases (also
-called "buckets"), each representing a distinct knowledge domain, department, project, or security boundary. Each
-database maintains complete separation of data, permissions, and processing pipelines.
+**Knowledge databases** are isolated containers at the top level. Each database has its own data, permissions, and processing pipeline. Organizations typically create databases per department, project, or security classification.
 
-**Namespaces (Folders)**: Within each database, knowledge is organized into namespaces—logical containers that group
-related documents by topic, project, or business function. Namespaces provide the organizational flexibility to match
-the company's existing information architecture while maintaining clear boundaries for access control and lifecycle
-management.
+**Namespaces** (called "collections" in the UI) group related documents within a database. They function like folders organized by topic or purpose. A product database might contain "technical," "guides," and "troubleshooting" collections.
 
-**Multi-Language Support**: All organizational elements (database names, namespace labels, folder descriptions) support
-internationalization across German, English, French, and Italian. The platform automatically translates administrative
-labels to ensure consistent user experience across language preferences.
+**Documents** are the actual files - PDFs, Word documents, PowerPoint presentations. The system processes them automatically after upload.
 
-## Document Lifecycle Management
+::: info Multilingual support
+Database names, namespace labels, and folder descriptions support German, English, French, and Italian. The interface displays labels according to user language preference.
+:::
 
-The platform manages the complete lifecycle of enterprise documents from ingestion through retrieval, ensuring
-transparency and control at every stage.
+## Managing content
 
-### Document Ingestion
+### Manual management
 
-Organizations can introduce documents into the knowledge base through two primary modes:
+By default, databases allow manual control:
 
-**Manual Upload**: Authorized users can upload documents through the web interface, providing granular control over what
-information enters the system. This approach supports review workflows, quality assurance, and compliance validation
-before documents become available to AI agents.
+1. Create collections through the web interface
+2. Upload documents to specific collections
+3. Wait for the next scheduled pipeline run (typically daily)
 
-**Automated Synchronization**: For designated databases, the platform supports automatic synchronization with data lakes
-(Azure Blob Storage or S3-compatible storage). Documents placed in configured storage locations are automatically
-discovered, processed, and made available to agents without manual intervention. This "auto-sync" capability enables
-seamless integration with existing document management systems and business processes.
+![Empty knowledge database](../../../media/knowledge/empty_knowledge_base.png)
 
-### Processing and Enrichment
+You control what gets uploaded and where it lives. The pipeline runs on a schedule (commonly configured for nightly processing) to handle document processing and indexing.
 
-Once documents are uploaded, the platform initiates a sophisticated processing pipeline:
+### Auto-sync from external sources
 
-**Document Parsing**: Advanced document intelligence extracts text, structure, and metadata from diverse file formats
-including PDFs, Office documents, and other enterprise content types.
+Mark a database as auto-sync to connect it to external content sources like SharePoint. The system then:
 
-**Intelligent Chunking**: Documents are segmented into semantically meaningful chunks that preserve context while
-optimizing retrieval performance. The system maintains document structure, heading hierarchies, and relationships
-between sections.
+- Syncs files from the external source on a schedule (typically nightly)
+- Creates collections automatically from folder structure
+- Processes new content during the scheduled pipeline run
+- Disables manual uploads through the UI
 
-**Metadata Extraction**: The platform automatically captures comprehensive metadata including creation dates, update
-timestamps, source information, language detection, and structural elements. This metadata enables precise filtering,
-tracing, and compliance documentation.
+The external system becomes the source of truth. Your team continues working in SharePoint, and the sync pipeline brings changes into the AI-Hub on the configured schedule.
 
-**Vector Embedding**: Processed content is transformed into high-dimensional vector representations, enabling semantic
-search capabilities that go beyond keyword matching to understand meaning and context.
+## Document processing
 
-## Transparency and Inspection
+The system processes each uploaded document through several stages:
 
-A distinguishing feature of the Swiss AI-Hub's knowledge management is complete transparency into how documents are
-processed and stored.
+**Parsing** - Docling extracts text, tables, figures, and structure from PDFs and Office documents. It handles complex layouts, multi-column pages, and embedded content while preserving logical structure.
 
-**Document Reconstruction**: The platform provides full document reconstruction capabilities, allowing users to view
-exactly how documents were parsed, chunked, and stored. This addresses a critical trust gap in AI systems—users can
-verify that source material is correctly represented and understood by the system.
+**Chunking** - Large documents split into smaller pieces that maintain context. A 50-page manual becomes hundreds of chunks, each preserving its relationship to surrounding content.
 
-**Node-Level Inspection**: Users can examine individual "nodes" (processed chunks) to understand how documents were
-segmented, what metadata was extracted, and how content is represented for retrieval. This granular visibility supports
-quality assurance, debugging, and compliance validation.
+**Metadata extraction** - The system captures creation dates, authors, source information, and detected language. Agents can filter results using this metadata.
 
-**Processing Status Visibility**: The platform clearly distinguishes between documents that are uploaded but not yet
-processed, currently being processed, and fully available for agent use. This status transparency enables proactive
-management and troubleshooting.
+**Vector embedding** - Text chunks convert to vector representations that capture semantic meaning. Agents find relevant content based on concepts, not just keyword matching. A query about "vehicle speed limits" matches content about "maximum velocity constraints."
 
-## Access Control and Governance
+## Inspection and debugging
 
-Knowledge management integrates seamlessly with the platform's comprehensive security architecture.
+The system provides visibility into document processing:
 
-**Permission-Based Access**: All knowledge operations—viewing databases, accessing namespaces, uploading documents, or
-inspecting processing results—are governed by the platform's hierarchical permission system. Organizations can define
-precise access rules that align with data classification and organizational roles.
+**Document reconstruction** shows how the parser interpreted your document. Check whether it correctly identified tables, sidebars, and other structural elements.
 
-**Audit Trail**: Every knowledge management operation is logged, creating comprehensive audit trails that document who
-accessed what information, when, and for what purpose. This supports compliance requirements and forensic analysis.
+**Chunk inspection** displays how the system segmented content, what metadata it extracted, and how it represents chunks for retrieval. Useful when agents aren't finding expected content.
 
-**Isolated Tenancy**: Knowledge databases provide natural boundaries for multi-tenant deployments, ensuring complete
-data isolation between organizational units, projects, or customer environments.
+**Processing status** indicates whether documents are uploading, processing, or ready. Failed processing shows error details.
 
-## Integration with AI Agents
+## Access control
 
-The knowledge management system is designed for seamless integration with AI agents, providing them with contextual,
-relevant information while maintaining governance and control.
+The permission system controls all knowledge operations:
 
-**Namespace-Scoped Retrieval**: Agents can be configured to access specific namespaces, ensuring they retrieve only
-information relevant to their purpose and authorized for their users. This scoped retrieval supports the principle of
-least privilege while enabling focused, high-quality responses.
+- Viewing databases requires appropriate permissions
+- Accessing namespaces checks user authorization
+- Uploading documents validates user rights
+- Inspecting processing details requires permission
 
-**Real-Time Updates**: As documents are added or updated, changes become available to agents in near real-time, ensuring
-AI-powered workflows always operate on current information.
+Knowledge databases provide natural isolation boundaries. Organizations can create separate databases per department or project, then use permissions to control who accesses each database.
 
-**Source Attribution**: When agents retrieve knowledge, the platform maintains complete traceability to source
-documents, enabling transparent citation and verification of AI-generated responses.
+## Agent integration
 
-## Business Value and Use Cases
+Agents connect to specific collections rather than entire databases. When configuring an agent, you specify which collections it can search. A customer support agent might access "products" and "faq" but not "engineering."
 
-The knowledge management capability enables critical enterprise scenarios:
+Collection-scoped retrieval keeps agents focused on relevant content, improving both speed and accuracy.
 
-**Departmental Knowledge Bases**: Different departments can maintain independent knowledge bases with appropriate access
-controls, enabling specialized AI assistants that understand domain-specific context without exposing information across
-organizational boundaries.
+Documents become available to agents after the pipeline processes them. The system tracks which source documents agents used, enabling citation and verification of responses.
 
-**Project-Specific Intelligence**: Projects can establish dedicated knowledge databases that evolve with project
-lifecycle, automatically incorporating new documents as they're created while maintaining project-specific access
-controls.
+## Common patterns
 
-**Regulatory Compliance Libraries**: Compliance teams can curate authoritative collections of regulations, policies, and
-procedures that AI agents reference to ensure compliant recommendations and decision support.
+**Department knowledge** - HR maintains policies, engineering keeps technical documentation, sales stores product materials. Each department has its own database with appropriate access controls.
 
-**Technical Documentation Systems**: Engineering teams can build comprehensive technical knowledge bases where AI agents
-help developers find relevant documentation, code examples, and best practices from vast technical libraries.
+**Project databases** - Create a database when a project starts, add documents as work progresses, archive when complete. Only project team members get access.
 
-**Multi-Language Operations**: Organizations operating across language boundaries can maintain unified knowledge bases
-where the same content serves users in German, English, French, or Italian, with the platform automatically handling
-language preferences.
+**Compliance libraries** - Legal teams curate authoritative collections of regulations, policies, and standards. Agents reference these for compliant recommendations.
 
-## Operational Advantages
+**Technical documentation** - Engineering teams build searchable collections from wikis, API docs, and code comments. Developers query agents instead of manually searching documentation.
 
-The platform's knowledge management architecture provides significant operational benefits:
+**Multi-language operations** - Swiss companies with offices across language regions maintain unified knowledge bases serving German, French, and Italian speakers.
 
-**Simplified Administration**: The hierarchical structure (databases → namespaces → documents) provides intuitive
-organization that aligns with how organizations naturally structure information.
+## Technical implementation
 
-**Scalability**: The architecture supports growth from small pilot deployments to enterprise-scale knowledge bases with
-millions of documents across hundreds of namespaces.
+The architecture uses:
 
-**Flexibility**: Organizations can choose manual curation for sensitive knowledge or automated synchronization for
-operational efficiency, adjusting strategies per database based on content sensitivity and business requirements.
+- **FerretDB** for document metadata and processing status
+- **Milvus** for vector storage and semantic search
+- **Docling** for document parsing and structure extraction
+- **SeaweedFS** for S3-compatible file storage
+- **LlamaIndex** for chunking and embedding orchestration
 
-**Quality Assurance**: Complete visibility into processing results enables quality validation, ensuring that AI agents
-operate on accurately represented information.
+Processing metadata lives in FerretDB, vector embeddings in Milvus, raw files in SeaweedFS. This separation optimizes each component for its specific task.
 
-**Cost Transparency**: The platform tracks processing costs and storage utilization, enabling organizations to optimize
-knowledge management investments and attribute costs to specific business units or projects.
+::: tip Cost tracking
+The platform monitors processing costs and storage usage per database. Track exactly what each department or project costs.
+:::
 
-## Competitive Differentiation
+## Limitations
 
-The Swiss AI-Hub's knowledge management capabilities stand apart through:
+**No mixed modes** - A database is either manually managed or auto-synced, not both. This prevents ambiguity about content sources.
 
-1. **Complete Transparency**: Unlike black-box systems, every aspect of document processing is visible and auditable,
-   building trust and enabling quality assurance
+**No manual chunk editing** - The system generates chunks automatically from source documents. To fix incorrect chunks, update the source document and reprocess.
 
-2. **Governance-First Design**: Access control, audit trails, and data isolation are built-in from the foundation, not
-   added as afterthoughts
-
-3. **Flexible Deployment**: Support for both manual curation and automated synchronization allows organizations to
-   balance control with operational efficiency
-
-4. **Multi-Language Excellence**: Native support for Switzerland's language diversity ensures equitable access
-   regardless of language preference
-
-5. **Agent-Ready Architecture**: The knowledge structure is purpose-built for AI agent consumption, optimizing retrieval
-   quality while maintaining governance
-
-This approach ensures that organizations can confidently leverage their knowledge assets for AI-powered workflows while
-maintaining the transparency, control, and compliance expected in enterprise and public sector deployments.
+**No database merging** - Databases remain isolated by design. Reorganization requires creating new structures and migrating documents.
