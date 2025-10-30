@@ -85,5 +85,5 @@ def production_documents(data_lake_file: DataLakeFile) -> RefDocDocument:
 
 ## Next Steps
 
-- [Pipeline Observation](../5_pipeline_observation/) for monitoring the health and performance of your automated
+- [Pipeline Observation](./5_pipeline_observation/) for monitoring the health and performance of your automated
   pipelines.

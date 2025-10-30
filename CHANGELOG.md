@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.247.0] - 2025-10-29 - RAG Reranking and AI Model Updates
+
+### Added
+
+- ✨ **RAG Document Reranking**: Introduced a new, configurable step in the RAG agent workflow to re-rank retrieved
+  documents using a dedicated reranking model (`local/reranker`). This significantly enhances the relevance of
+  information provided to the LLM, leading to more accurate answers.
+- 🦾 **Reranking Infrastructure**: Added `llama-cpp-reranker` as a new Docker Compose service to support on-premise
+  reranking model inference, enabling efficient and localized document re-scoring.
+- ⚙️ **Reranking Configuration**: Implemented a new `RerankingConfig` to allow users to easily enable/disable reranking
+  and specify the reranking model and `top_n` results.
+- 📄 **Reranking Documentation**: Updated the RAG Agent documentation to explain the new "Re-ranking for Relevance" step
+  in the RAG Agent's workflow.
+- 🧪 **Reranking Test Scenarios**: Added new test scenarios and BDD steps to validate the reranking functionality,
+  ensuring its correctness and reliability.
+- 🌐 **Reranking Localization**: Included new localization keys (`reranking_results`) across all supported languages for
+  enhanced user experience during the reranking step.
+- 🔄 **LlamaIndex Node Conversion**: Added a utility to seamlessly convert internal `IngestedNode` objects to LlamaIndex
+  `NodeWithScore` objects, facilitating integration with LlamaIndex-based reranking.
+
+### Changed
+
+- ⚡️ **Updated Default AI Models**: Replaced `local/qwen3-small` and `local/gemma-3-multimodal-small` with
+  `local/qwen-2.5-multimodal-small` as the default chat model in playground examples and infrastructure configurations,
+  improving multimodal capabilities.
+- ⚙️ **RAG Agent Workflow**: Modified the `order_nodes_by_documents_step` in the RAG Agent to process nodes after
+  potential reranking, ensuring optimal context ordering.
+- ⬆️ **LiteLLM Version**: Upgraded the LiteLLM proxy to version `v1.77.7-stable`, bringing the latest features and
+  stability improvements.
+- 📈 **Increased Token Context Window**: Adjusted the `llama-cpp` service configuration to support a larger context
+  window (from 8196 to 16384 tokens) and increased max output tokens (from 4096 to 8196), enabling the processing of
+  longer inputs and generation of more comprehensive responses.
+- ⚙️ **LiteLLM Guardrail Settings**: Modified LiteLLM configurations to disable heuristic and similarity checks for
+  prompt injection by default, while keeping LLM API-based checks enabled for robust security.
+- 📊 **RAG Agent Retrieval Settings**: Updated RAG Agent playground configuration to use `index_namespaces=["simple"]`
+  and increased `retrieve_k` from 5 to 20 to fetch more diverse initial results for reranking.
+- 🩺 **Healthcheck Commands**: Switched `wget` to `curl` in several Docker Compose healthcheck commands for improved
+  compatibility and robustness.
+- 📄 **Documentation Refinements**: Applied minor formatting and content adjustments across various platform
+  documentation pages to improve readability and consistency.
+
+---
+
 ## [v0.246.12] - 2025-10-28 - Major Documentation Overhaul and Core Infrastructure Alignment
 
 ### Added
