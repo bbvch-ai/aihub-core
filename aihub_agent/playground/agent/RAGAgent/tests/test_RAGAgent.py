@@ -187,7 +187,7 @@ def _(self_hosted_agent_config):
 @when(parsers.parse('the start event is sent with a user query "{query}"'))
 @async_test
 async def _(agent_runner: AgentTestRunner, query: str):
-    async with agent_runner.test_run(delay_before_stop=180) as topic:
+    async with agent_runner.test_run(delay_before_stop=120) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
@@ -273,7 +273,7 @@ def _(agent_runner: AgentTestRunner, datatable):
 @when(parsers.parse('the start event is sent with a user query "{query}" and locale {locale}'))
 @async_test
 async def _(agent_runner: AgentTestRunner, query: str, locale: str):
-    async with agent_runner.test_run(delay_before_stop=180) as topic:
+    async with agent_runner.test_run(delay_before_stop=120) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(

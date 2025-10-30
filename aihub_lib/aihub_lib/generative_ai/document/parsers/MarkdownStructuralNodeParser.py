@@ -6,6 +6,7 @@ from typing import Annotated, Any
 
 import bs4
 import pandas as pd
+from bs4.element import PageElement
 from llama_index.core import PromptTemplate
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser import SentenceSplitter
@@ -272,6 +273,30 @@ Provide your analysis of how many header rows this table has."""
         num_header_rows = self._determine_header_rows_with_llm(table_content)
         return self._split_table_with_dataframe(table_content, num_header_rows)
 
+    def _chunk_table(self, child: PageElement, text_chunks: list[TextChunk]) -> list[TextChunk]:
+        """
+        Detects if a table needs to be chunked and splits it into separate chunks.
+        """
+        table_html = str(child)
+
+        dfs = pd.read_html(StringIO(table_html))
+        if dfs and not dfs[0].empty:
+            df = dfs[0]
+            df.columns = df.iloc[0]
+            df = df[1:].reset_index(drop=True)
+            markdown_table = df.to_markdown(index=False)
+
+            token_count = self._count_tokens(markdown_table)
+
+            if token_count <= self.sentence_splitter.chunk_size:
+                text_chunks.append(TextChunk(markdown_table, NODE_CONTENT_TYPE_TABLE))
+            else:
+                text_chunks.extend(self._split_table(table_html))
+        else:
+            text_chunks.append(TextChunk(child.text, NODE_CONTENT_TYPE_TABLE))
+
+        return text_chunks
+
     def create_nodes_from_splits(
         self,
         splits: list[Split],
@@ -309,23 +334,7 @@ Provide your analysis of how many header rows this table has."""
                         )
                         buffer = ""
                     if child.name == NODE_CONTENT_TYPE_TABLE:
-                        table_html = str(child)
-
-                        dfs = pd.read_html(StringIO(table_html))
-                        if dfs and not dfs[0].empty:
-                            df = dfs[0]
-                            df.columns = df.iloc[0]
-                            df = df[1:].reset_index(drop=True)
-                            markdown_table = df.to_markdown(index=False)
-
-                            token_count = self._count_tokens(markdown_table)
-
-                            if token_count <= self.sentence_splitter.chunk_size:
-                                text_chunks.append(TextChunk(markdown_table, NODE_CONTENT_TYPE_TABLE))
-                            else:
-                                text_chunks.extend(self._split_table(table_html))
-                        else:
-                            text_chunks.append(TextChunk(child.text, NODE_CONTENT_TYPE_TABLE))
+                        text_chunks = self._chunk_table(child, text_chunks)
                     else:
                         text_chunks.append(TextChunk(child.text, child.name))
                 else:
