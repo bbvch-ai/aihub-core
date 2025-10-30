@@ -62,4 +62,4 @@ This security policy is **not** for:
 
 ## Bug Bounties
 
-We do not currently offer a paid bug bounty program
+We do not currently offer a paid bug bounty program.
