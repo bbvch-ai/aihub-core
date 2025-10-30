@@ -23,8 +23,7 @@ RAG addresses these limitations by retrieving information from your documents be
 ::: tip About "Training" Agents
 The AI-Hub does not offer model training or fine-tuning. Instead, the RAG Agent accesses current information by
 retrieving it from your knowledge base at query time. This means the agent automatically "knows" about new or updated
-documents without any retraining process. See the main [Agents](/2_platform/5_agents/) page for more details on this
-approach.
+documents without any retraining process.
 :::
 
 ## How RAG works

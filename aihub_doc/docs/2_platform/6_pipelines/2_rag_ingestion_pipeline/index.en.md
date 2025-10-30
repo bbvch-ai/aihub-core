@@ -5,57 +5,66 @@ index: 2
 
 # RAG ingestion pipeline
 
-The RAG (Retrieval-Augmented Generation) pipeline is how documents become searchable knowledge bases that agents can
-query. This is the pipeline you use for all agent document ingestion.
+The RAG (Retrieval-Augmented Generation) pipeline is the default pipeline for document ingestion. It transforms
+documents from file storage into searchable knowledge bases that agents can query. All documents you want agents to
+access must go through this pipeline.
 
-The pipeline does more than extract text. It preserves document structure and creates relationships between chunks,
-enabling agents to understand context and navigate complex documents.
+## Processing stages
 
-## What makes RAG pipelines different
+The pipeline processes documents through five stages:
 
-Consider a policy document where Section 5 refers to "the approval process described in Section 3." A simple text search
-might find Section 5 but miss the critical details in Section 3.
+1. Document parsing extracts text content and structure from PDFs, Word documents, PowerPoint presentations, and other
+   formats. The parser identifies headings, paragraphs, lists, and tables while preserving the document's organization.
 
-The RAG pipeline creates a knowledge graph where every chunk knows its position in the document and its relationship to
-other chunks. Agents can follow these connections to find referenced content and reconstruct complete context.
+2. Chunking splits large documents into smaller text chunks. The pipeline uses a structural parser that breaks text at
+   heading boundaries and paragraph breaks rather than at arbitrary character counts, ensuring each chunk contains
+   coherent information.
 
-## How the pipeline builds structure
+3. Embedding generation converts each text chunk into a vector embedding using an AI model. These embeddings capture
+   semantic meaning, enabling agents to find relevant information based on concepts rather than keyword matching.
 
-The RAG pipeline processes documents through parsing, chunking, and embedding. What sets it apart is relationship
-mapping:
+4. Structural linking creates two types of connections between chunks:
 
-**Sequential links** connect consecutive chunks bidirectionally. Each chunk references its predecessor and successor.
-When an agent finds a relevant chunk, it can follow these links forward or backward to reconstruct complete passages.
+   - Sequential links connect each chunk to the chunks before and after it in document order. When an agent finds a
+     relevant chunk, it can retrieve surrounding chunks for complete context.
+   - Hierarchical links connect chunks to section summaries based on heading levels. If a chunk comes from subsection
+     3.2.4 (heading level 4), it links to a summary of section 3.2 (heading level 3), which links to a summary of
+     section 3 (heading level 2).
 
-**Hierarchical links** capture document sections and subsections. The pipeline generates summaries at each level of the
-document hierarchy. A chunk from subsection 3.2.4 links to its parent summary (3.2), which links to the top-level
-section summary (Section 3).
+5. Summary generation creates hierarchical summaries for document sections. These summaries help agents understand
+   broader context when they retrieve specific details from nested sections.
 
-The vector database stores these relationship links alongside the embedded chunks, creating a searchable knowledge graph
-rather than a simple text index.
+## Storage and retrieval
 
-## Agent capabilities enabled
+After processing, the pipeline stores:
 
-This structure enables agents to:
+- Vector embeddings in the vector database for semantic search
+- Original text chunks with metadata
+- Sequential and hierarchical links between chunks
+- Section summaries at each heading level
 
-**Resolve cross-references** - References like "see above" or "described in Section 3" become actionable. The agent
-follows links to find the referenced content.
+This creates a knowledge graph rather than disconnected text fragments. When an agent searches for information, it
+retrieves relevant chunks and can navigate through sequential and hierarchical links to build complete context.
 
-**Provide context** - When returning a specific detail, agents can traverse parent links to explain where that detail
-fits in the broader document structure.
+## Document lifecycle
 
-**Reconstruct passages** - Sequential links let agents fetch surrounding chunks to provide complete context, even when
-the initial search returns only a fragment.
+The pipeline handles the complete document lifecycle:
 
-## Document types that benefit most
+When a document is added, the pipeline processes it through all five stages and stores the results in the knowledge
+base.
 
-While the RAG pipeline handles all document types, its structural features are particularly valuable for:
+When a document is modified, the pipeline removes all data from the old version before reprocessing the new version.
 
-- Technical documentation with numbered sections and internal references
-- Legal contracts with defined terms and clause references
-- Policy handbooks that reference other sections for procedures
-- Standards documents with hierarchical requirement structures
-- Long reports where understanding context requires knowing section relationships
+When a document is deleted, the pipeline removes all associated chunks, embeddings, links, and summaries from the
+knowledge base.
 
-Even simple documents like announcements or blog posts benefit from the pipeline's semantic search capabilities, though
-they may not use all the structural features.
+This ensures agents never retrieve information from outdated or deleted documents.
+
+## Document organization benefits
+
+Structural linking provides the most value for documents with clear organization: technical manuals with sections and
+subsections, legal documents with numbered articles, policy documents with hierarchical procedures, and long reports
+where context spans multiple sections.
+
+Documents without complex structure (announcements, emails, short articles) still benefit from semantic search and
+sequential linking.

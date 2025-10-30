@@ -25,12 +25,12 @@ requests to language models.
 
 Two anonymization modes:
 
-**Mask mode** replaces detected PII with placeholders like `[PERSON]` or `[EMAIL_ADDRESS]`. The question "Can you review
+Mask mode replaces detected PII with placeholders like `[PERSON]` or `[EMAIL_ADDRESS]`. The question "Can you review
 this contract for John Smith?" becomes "Can you review this contract for [PERSON]?" before reaching the LLM. The model
 can still understand context and generate a useful response.
 
-**Block mode** rejects the entire request when certain PII types appear. Use this for highly sensitive data like credit
-card numbers. The user receives an error message instead of a response.
+Block mode rejects the entire request when certain PII types appear. Use this for highly sensitive data like credit card
+numbers. The user receives an error message instead of a response.
 
 ## Supported PII types
 
@@ -80,14 +80,6 @@ the guardrail for all requests.
 | User-generated content                        | Enable if users might accidentally include PII                       |
 | Pre-sanitized data                            | Skip Presidio to avoid unnecessary overhead                          |
 | Regulatory requirements (GDPR, HIPAA)         | Enable to demonstrate PII protection controls                        |
-| High-throughput scenarios                     | Consider the latency impact before enabling                          |
-
-## Performance impact
-
-::: warning Latency consideration
-PII detection adds latency to each LLM request. Analysis happens synchronously before the LLM call, so the impact
-depends on text length and complexity.
-:::
 
 Presidio applies to all requests when enabled. Use block mode sparingly - only for highly sensitive PII types like
 credit cards where you need hard rejection rather than masking.

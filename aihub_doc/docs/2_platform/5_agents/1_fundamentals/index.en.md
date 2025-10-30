@@ -5,8 +5,8 @@ index: 1
 
 # Agent fundamentals
 
-Agents use an event-driven architecture. Users interact through chat interfaces while workflows, context management, and
-event handling operate in the background.
+Agents use an event-driven architecture. Users can interact through chat interfaces or agents can run autonomously.
+Workflows, context management, and event handling operate in the background.
 
 ## Structured workflows
 
@@ -19,23 +19,25 @@ Workflows provide:
 - Testability: Each step can be developed and tested independently
 - Control: The agent cannot access unauthorized data or perform actions outside its workflow
 
-Within each step, the agent uses LLMs to reason and analyze data. The workflow controls the overall execution path.
+Steps can use language models when needed for reasoning and natural language tasks, but many steps perform deterministic
+operations like data validation, formatting, or conditional routing without any LLM involvement. The workflow controls
+the overall execution path.
 
 ## Context management
 
-Agents use three levels of context to manage conversation state:
+Agents use three levels of context to manage state:
 
-**Thread context** stores the complete conversation history across multiple interactions. When you return to a
-conversation started yesterday, thread context lets the agent remember previous exchanges. Access control operates at
-this level.
+**Thread context** stores persistent state across multiple agent runs within the same thread. A thread represents a
+continuous interaction session - for chat agents, this is a conversation; for autonomous agents, it's a series of
+related executions. When you return to a conversation started yesterday, thread context lets the agent remember previous
+exchanges. This context has a 30-day expiration. Access control operates at this level.
 
 **Display context** manages what appears in the user interface. It groups actions to present them as a single
 interaction. When agents collaborate, the primary agent controls whether sub-agent work appears to the user or stays
 hidden.
 
-**Run context** holds temporary data for a single task (your question to the agent's answer). It contains intermediate
-calculations and configuration for that specific execution. This context is ephemeral and gets discarded after the task
-completes.
+**Run context** holds temporary data for a single agent run. It contains intermediate calculations and cached data for
+that specific execution. This context expires after 30 days but is isolated between different runs.
 
 ## Event-driven architecture
 

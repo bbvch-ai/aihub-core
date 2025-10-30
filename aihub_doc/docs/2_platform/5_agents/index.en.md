@@ -5,11 +5,12 @@ index: 5
 
 # Agents
 
-Agents are specialized AI assistants that perform specific tasks through structured workflows. You interact with them
-through the chat interface. Unlike open-ended chatbots, agents follow predefined steps to analyze documents, answer
-questions, or complete business processes.
+Agents are specialized AI assistants that perform specific tasks through structured workflows. Unlike open-ended
+chatbots, agents follow predefined steps to analyze documents, answer questions, or complete business processes.
 
-The structured approach makes agents predictable, transparent, and auditable.
+Agents can be interactive (responding to user questions via chat) or autonomous (executing tasks automatically on a
+schedule or triggered by events). The structured workflow approach makes agents predictable, transparent, and auditable
+regardless of how they operate.
 
 ## What is an agent?
 
@@ -17,9 +18,10 @@ An agent is an AI-powered assistant configured to handle specific tasks using a 
 
 Examples:
 
-- An HR Policy Agent answers questions about company leave policies by consulting the employee handbook.
-- A Financial Analyst Agent queries last quarter's sales data from reports.
-- A Project Support Agent summarizes status updates from project documents.
+- An HR Policy Agent answers employee questions about leave policies by consulting the employee handbook (interactive,
+  chat-based).
+- A Compliance Monitoring Agent reviews documents on a schedule, flagging potential policy violations (autonomous,
+  scheduled).
 
 Agents combine large language models (LLMs) for understanding natural language with structured processes for reliable
 operation.
@@ -35,20 +37,21 @@ your knowledge base when answering questions, rather than having that informatio
 
 Advantages of this approach:
 
-- Information stays current. Update your documents and agents immediately have access to new information.
-- No expensive retraining process. Traditional model training requires significant compute resources and time.
-- Transparency. You can see which documents the agent used to answer each question.
-- Lower risk. Your proprietary data doesn't get embedded into model weights.
+- Information stays current. Update your documents and agents immediately use the new information without any
+  reprocessing.
+- Transparency. You can see exactly which documents the agent referenced to answer each question.
+- Flexibility. Different agents can access different subsets of your knowledge base by configuring which collections
+  they can search.
 
 Agents "learn" by accessing an up-to-date knowledge base maintained through data pipelines. Add new documents or update
 existing ones and agents automatically incorporate that information.
 
 ## How agents work
 
-An agent's behavior follows a workflow, a predefined sequence of steps. This differs from general-purpose AI like
-ChatGPT.
+An agent's behavior follows a workflow, a predefined sequence of steps. This differs from general-purpose conversational
+AI.
 
-A typical workflow:
+Example workflow for a question-answering agent:
 
 1. Understand the request: The agent uses an LLM to interpret your question.
 2. Retrieve information: The agent searches a designated knowledge base (e.g., a SharePoint folder) for relevant
@@ -62,20 +65,6 @@ Workflow benefits:
 - Reliability: Constraining the agent to a workflow and knowledge base reduces hallucinations and incorrect answers.
 - Control: Administrators define what an agent can access and do. Agents can't access unauthorized data or perform
   actions outside their workflow.
-
-## Example
-
-You ask an IT Support Agent: "How do I set up the new VPN on my laptop?"
-
-The agent executes its workflow:
-
-1. Identifies keywords "VPN" and "setup."
-2. Searches the internal IT Knowledge Base for matching documents.
-3. Finds the guide "VPN_Setup_Guide_v3.pdf."
-4. Reads relevant sections.
-5. Provides a summary based on that document with a link to the PDF.
-
-The result is a verifiable answer from your company's actual documentation.
 
 ## Human-in-the-loop
 

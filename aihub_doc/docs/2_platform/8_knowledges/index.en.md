@@ -11,15 +11,15 @@ your documents and makes them searchable through semantic retrieval.
 
 Knowledge organizes into three levels:
 
-**Knowledge databases** are isolated containers at the top level. Each database has its own data, permissions, and
+Knowledge databases are isolated containers at the top level. Each database has its own data, permissions, and
 processing pipeline. Organizations typically create databases per department, project, or security classification.
 
-**Namespaces** (called "collections" in the UI) group related documents within a database. They function like folders
+Namespaces (called "collections" in the UI) group related documents within a database. They function like folders
 organized by topic or purpose. A product database might contain "technical," "guides," and "troubleshooting"
 collections.
 
-**Documents** are the actual files - PDFs, Word documents, PowerPoint presentations. The system processes them
-automatically after upload.
+Documents are the actual files - PDFs, Word documents, PowerPoint presentations. The system processes them automatically
+after upload.
 
 ::: info Multilingual support
 Database names, namespace labels, and folder descriptions support German, English, French, and Italian. The interface
@@ -34,7 +34,7 @@ By default, databases allow manual control:
 
 1. Create collections through the web interface
 2. Upload documents to specific collections
-3. Wait for the next scheduled pipeline run (typically daily)
+3. Wait for the next scheduled pipeline run
 
 ![Empty knowledge database](../../../media/knowledge/empty_knowledge_base.png)
 
@@ -57,16 +57,16 @@ changes into the AI-Hub on the configured schedule.
 
 The system processes each uploaded document through several stages:
 
-**Parsing** - Docling extracts text, tables, figures, and structure from PDFs and Office documents. It handles complex
+Parsing: Docling extracts text, tables, figures, and structure from PDFs and Office documents. It handles complex
 layouts, multi-column pages, and embedded content while preserving logical structure.
 
-**Chunking** - Large documents split into smaller pieces that maintain context. A 50-page manual becomes hundreds of
-chunks, each preserving its relationship to surrounding content.
+Chunking: Large documents split into smaller pieces that maintain context. A 50-page manual becomes hundreds of chunks,
+each preserving its relationship to surrounding content.
 
-**Metadata extraction** - The system captures creation dates, authors, source information, and detected language. Agents
-can filter results using this metadata.
+Metadata extraction: The system captures creation dates, authors, source information, and detected language. Agents can
+filter results using this metadata.
 
-**Vector embedding** - Text chunks convert to vector representations that capture semantic meaning. Agents find relevant
+Vector embedding: Text chunks convert to vector representations that capture semantic meaning. Agents find relevant
 content based on concepts, not just keyword matching. A query about "vehicle speed limits" matches content about
 "maximum velocity constraints."
 
@@ -74,14 +74,13 @@ content based on concepts, not just keyword matching. A query about "vehicle spe
 
 The system provides visibility into document processing:
 
-**Document reconstruction** shows how the parser interpreted your document. Check whether it correctly identified
-tables, sidebars, and other structural elements.
+Document reconstruction shows how the parser interpreted your document. Check whether it correctly identified tables,
+sidebars, and other structural elements.
 
-**Chunk inspection** displays how the system segmented content, what metadata it extracted, and how it represents chunks
-for retrieval. Useful when agents aren't finding expected content.
+Chunk inspection displays how the system segmented content, what metadata it extracted, and how it represents chunks for
+retrieval. Useful when agents aren't finding expected content.
 
-**Processing status** indicates whether documents are uploading, processing, or ready. Failed processing shows error
-details.
+Processing status indicates whether documents are uploading, processing, or ready.
 
 ## Access control
 
@@ -105,48 +104,26 @@ Collection-scoped retrieval keeps agents focused on relevant content, improving 
 Documents become available to agents after the pipeline processes them. The system tracks which source documents agents
 used, enabling citation and verification of responses.
 
-## Common patterns
-
-**Department knowledge** - HR maintains policies, engineering keeps technical documentation, sales stores product
-materials. Each department has its own database with appropriate access controls.
-
-**Project databases** - Create a database when a project starts, add documents as work progresses, archive when
-complete. Only project team members get access.
-
-**Compliance libraries** - Legal teams curate authoritative collections of regulations, policies, and standards. Agents
-reference these for compliant recommendations.
-
-**Technical documentation** - Engineering teams build searchable collections from wikis, API docs, and code comments.
-Developers query agents instead of manually searching documentation.
-
-**Multi-language operations** - Swiss companies with offices across language regions maintain unified knowledge bases
-serving German, French, and Italian speakers.
-
 ## Technical implementation
 
 The architecture uses:
 
-- **FerretDB** for document metadata and processing status
-- **Milvus** for vector storage and semantic search
-- **Docling** for document parsing and structure extraction
-- **SeaweedFS** for S3-compatible file storage
-- **LlamaIndex** for chunking and embedding orchestration
+- FerretDB for document metadata and processing status
+- Milvus for vector storage and semantic search
+- Docling for document parsing and structure extraction
+- SeaweedFS for S3-compatible file storage
+- LlamaIndex for chunking and embedding orchestration
 
 Processing metadata lives in FerretDB, vector embeddings in Milvus, raw files in SeaweedFS. This separation optimizes
 each component for its specific task.
 
-::: tip Cost tracking
-The platform monitors processing costs and storage usage per database. Track exactly what each department or project
-costs.
-:::
-
 ## Limitations
 
-**No mixed modes** - A database is either manually managed or auto-synced, not both. This prevents ambiguity about
-content sources.
+No mixed modes: A database is either manually managed or auto-synced, not both. This prevents ambiguity about content
+sources.
 
-**No manual chunk editing** - The system generates chunks automatically from source documents. To fix incorrect chunks,
+No manual chunk editing: The system generates chunks automatically from source documents. To fix incorrect chunks,
 update the source document and reprocess.
 
-**No database merging** - Databases remain isolated by design. Reorganization requires creating new structures and
-migrating documents.
+No database merging: Databases remain isolated by design. Reorganization requires creating new structures and migrating
+documents.

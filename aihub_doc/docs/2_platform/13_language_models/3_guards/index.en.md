@@ -13,10 +13,10 @@ live conversations.
 
 Guards check conversations at two points:
 
-**Input guards** analyze user questions before the agent processes them. They filter out off-topic requests, block
-policy violations, or ask for clarification.
+Input guards analyze user questions before the agent processes them. They filter out off-topic requests, block policy
+violations, or ask for clarification.
 
-**Output guards** examine agent responses before delivery. They verify quality, redact sensitive information, and catch
+Output guards examine agent responses before delivery. They verify quality, redact sensitive information, and catch
 hallucinations or harmful content.
 
 ::: tip Complete PII protection
@@ -32,35 +32,27 @@ was built.
 
 ### Input guards
 
-**Agent description guard**
+Agent description guard: Checks that questions match what the agent does. A financial compliance agent would block
+"What's the weather?" and explain it only handles financial questions.
 
-Checks that questions match what the agent does. A financial compliance agent would block "What's the weather?" and
-explain it only handles financial questions.
-
-**Few-shot guard**
-
-Enforces custom policies through examples. If your company prohibits using work assistants for entertainment, you'd
-provide examples like "Recommend a movie" (blocked) and "Recommend a project management tool" (allowed). The guard
-learns to recognize similar patterns.
+Few-shot guard: Enforces custom policies through examples. If your company prohibits using work assistants for
+entertainment, you'd provide examples like "Recommend a movie" (blocked) and "Recommend a project management tool"
+(allowed). The guard learns to recognize similar patterns.
 
 ### Output guards
 
-**Context sufficient guard**
-
-Checks whether the agent has enough information to answer accurately. Particularly useful for RAG agents that pull from
-knowledge bases. If a user asks a detailed technical question but the retrieved documents don't contain enough detail,
-the guard stops the response and tells the user the information isn't available.
+Context sufficient guard: Checks whether the agent has enough information to answer accurately. Particularly useful for
+RAG agents that pull from knowledge bases. If a user asks a detailed technical question but the retrieved documents
+don't contain enough detail, the guard stops the response and tells the user the information isn't available.
 
 ::: tip Configuration note
 Some agents (like the RAG Agent) can use the context sufficient guard automatically to prevent responses without
 adequate evidence.
 :::
 
-**Sensitive info guard**
-
-Detects and redacts confidential or personally identifiable information in agent responses. This catches PII that
-appears in retrieved documents. For example, if an agent pulls a document containing an employee email address, the
-guard redacts it before the user sees it, replacing it with `[REDACTED]`.
+Sensitive info guard: Detects and redacts confidential or personally identifiable information in agent responses. This
+catches PII that appears in retrieved documents. For example, if an agent pulls a document containing an employee email
+address, the guard redacts it before the user sees it, replacing it with `[REDACTED]`.
 
 ## When to use guards
 
