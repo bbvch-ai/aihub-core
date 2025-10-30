@@ -74,7 +74,7 @@ Available controls:
 ::: details Configuration via environment variables
 ```bash
 LITE_LLM_PROXY_USER_MAX_BUDGET=100.0           # $100 hard limit
-LITE_LLM_PROXY_USER_SOFT_BUDGET=80.0          # Alert at $80
+LITE_LLM_PROXY_USER_SOFT_BUDGET=80.0           # Alert at $80
 LITE_LLM_PROXY_USER_BUDGET_DURATION="30d"      # Reset monthly
 LITE_LLM_PROXY_USER_TPM_LIMIT=10000            # 10k tokens/minute
 LITE_LLM_PROXY_USER_RPM_LIMIT=60               # 60 requests/minute
