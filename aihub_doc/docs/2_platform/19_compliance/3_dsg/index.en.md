@@ -8,13 +8,12 @@ The revised Swiss Federal Act on Data Protection (revDSG/FADP) came into force o
 designed to align with EU data protection standards while maintaining Swiss-specific approaches to certain requirements.
 
 :::info
-See [GDPR Compliance](/platform/compliance/gdpr) for shared requirements. This document covers Swiss-specific
-differences only.
+See [GDPR Compliance](../2_gdpr/) for shared requirements. This document covers Swiss-specific differences only.
 :::
 
 :::warning When GDPR also applies
 Swiss organizations must comply with both revDSG and GDPR when offering goods/services to EU residents or monitoring EU
-individuals' behavior. See [GDPR Applicability](/platform/compliance/gdpr#applicability-to-swiss-organizations).
+individuals' behavior. See [GDPR Applicability](../2_gdpr/#applicability-to-swiss-organizations).
 :::
 
 ## Key differences from GDPR
@@ -46,8 +45,7 @@ platform features.
 
 Data subject rights work the same as GDPR with minor differences. Response time is 30 days rather than 1 month. The
 "right to be forgotten" terminology isn't used, but the erasure right exists. Portability requirements are simpler than
-GDPR. See [GDPR documentation](/platform/compliance/gdpr#data-subject-rights) for details on how the platform supports
-these rights.
+GDPR. See [GDPR documentation](../2_gdpr/#data-subject-rights) for details on how the platform supports these rights.
 
 ### Data breach notification
 
@@ -70,8 +68,8 @@ to both GDPR and revDSG requirements.
 
 For pure Swiss operations, hosting data in Switzerland also avoids international transfer requirements under the revDSG.
 The platform supports on-premise and Swiss cloud deployment. See
-[Deployment Options](/platform/deployment_guide/deployment_options) and
-[GDPR International Transfers](/platform/compliance/gdpr#international-data-transfers).
+[Deployment Options](../../3_deployment_guide/1_deployment_options/) and
+[GDPR International Transfers](../2_gdpr/#international-data-transfers).
 
 ## Data transfers
 
@@ -81,9 +79,9 @@ providers through LiteLLM.
 
 ## Related documentation
 
-- [GDPR](/platform/compliance/gdpr)
-- [DSAR](/platform/compliance/data_subject_requests)
-- [Data Retention](/platform/compliance/data_retention)
+- [GDPR](../2_gdpr/)
+- [DSAR](../6_data_subject_requests/)
+- [Data Retention](../1_data_retention/)
 - [FDPIC](https://www.edoeb.admin.ch/)
 - [revDSG Text](https://www.admin.ch/opc/en/classified-compilation/19920153/)
 

@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -17,22 +18,10 @@ from aihub_bot.bots.chat.agent.StreamAgentChatBot import StreamAgentChatBot
 from aihub_bot.routes.activity_model import ActivityModel
 from aihub_bot.routes.RoutesService import RoutesService
 
+logger = logging.getLogger(__name__)
+
 
 class AgentChatController(Controller):
-    """
-    Exposes API endpoints for handling Azure Bot Service interactions with AI agents.
-
-    ### Purpose
-    - Acts as an intermediary between the Azure Bot Service and the AI agents.
-
-    ### Key Endpoints
-    - **JSON (`/completions/{agent_class}/{agent_id}/json`)**:
-      - Returns a complete response only after the full conversation is processed.
-      - Ensures structured interactions, useful for logging or non-streaming clients.
-
-    ### Authentication & Access Control
-    """
-
     name = LocaleString(en="Agent Chat")
     description = LocaleString(en="Chat with agents")
     icon = "mage:we-chat"
@@ -42,20 +31,38 @@ class AgentChatController(Controller):
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
+    @staticmethod
+    async def _process_agent_chat_request(
+        request: Request,
+        nc: NATS,
+        external_agent_event_distributor: ExternalAgentEventDistributor,
+        agent_class: str,
+        agent_id: str,
+        bot_class: type[AgentChatBot] | type[StreamAgentChatBot],
+        typing_timeout_seconds: int,
+    ) -> Response:
+        logger.info(f"Starting agent chat completion for {agent_class}/{agent_id}")
+
+        path: str = RoutesService.get_path(request)
+        chat_bot = bot_class(
+            nc,
+            external_agent_event_distributor,
+            agent_class,
+            agent_id,
+            path,
+            typing_timeout_seconds=typing_timeout_seconds,
+        )
+        adapter: CloudAdapter = RoutesService.get_adapter(path)
+
+        result = await adapter.process(request, chat_bot)
+        logger.info("Agent chat completion successful")
+        return result
+
     def completions_json(
         self,
         route: str = "/completions/{agent_class}/{agent_id}/json",
         typing_timeout_seconds: int = 60,
     ) -> "AgentChatController":
-        """
-        Registers an endpoint for JSON-based chat completions.
-
-        ### Functionality
-        - Handles Azure Bot Service interactions directed at an AI agent.
-        - Waits for the full response.
-        - Sends a message Activity with the response to the Azure Bot Service.
-        """
-
         @self.router.post(
             route,
             summary="Synchronous chat completions",
@@ -84,17 +91,15 @@ class AgentChatController(Controller):
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
         ) -> Response:
-            path: str = RoutesService.get_path(request)
-            chat_bot: AgentChatBot = AgentChatBot(
-                nc,
-                external_agent_event_distributor,
-                agent_class,
-                agent_id,
-                path,
+            return await self._process_agent_chat_request(
+                request=request,
+                nc=nc,
+                external_agent_event_distributor=external_agent_event_distributor,
+                agent_class=agent_class,
+                agent_id=agent_id,
+                bot_class=AgentChatBot,
                 typing_timeout_seconds=typing_timeout_seconds,
             )
-            adapter: CloudAdapter = RoutesService.get_adapter(path)
-            return await adapter.process(request, chat_bot)
 
         return self
 
@@ -103,14 +108,6 @@ class AgentChatController(Controller):
         route: str = "/completions/{agent_class}/{agent_id}/stream",
         typing_timeout_seconds: int = 60,
     ) -> "AgentChatController":
-        """
-        Registers an endpoint for streaming chat completions.
-
-        ### Functionality
-        - Handles Azure Bot Service interactions directed at an AI agent.
-        - Streams responses as they are produced by updating the response Activity.
-        """
-
         @self.router.post(
             route,
             summary="Asynchronous chat completions",
@@ -139,16 +136,14 @@ class AgentChatController(Controller):
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
         ) -> Response:
-            path: str = RoutesService.get_path(request)
-            chat_bot: StreamAgentChatBot = StreamAgentChatBot(
-                nc,
-                external_agent_event_distributor,
-                agent_class,
-                agent_id,
-                path,
+            return await self._process_agent_chat_request(
+                request=request,
+                nc=nc,
+                external_agent_event_distributor=external_agent_event_distributor,
+                agent_class=agent_class,
+                agent_id=agent_id,
+                bot_class=StreamAgentChatBot,
                 typing_timeout_seconds=typing_timeout_seconds,
             )
-            adapter: CloudAdapter = RoutesService.get_adapter(path)
-            return await adapter.process(request, chat_bot)
 
         return self

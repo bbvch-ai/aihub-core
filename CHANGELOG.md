@@ -5,6 +5,129 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.247.3] - 2025-10-31 - Empowering Bots with Teams Integration and Enhanced Core Functionality
+
+### Added
+
+- ✨ **Microsoft Teams Support for Bot-in-the-Loop**: Expanded the Bot-in-the-Loop pattern to support Microsoft Teams,
+  enabling agents to request human input directly within Teams channels.
+- 🚀 **New Makefile Targets**: Introduced `up-dev` for easy development environment startup and `generate-api-token` for
+  simplified API token generation. Also added an `agents-playground` target for starting Agents Playground with Azure
+  OpenAI configuration.
+- ⚙️ **CloudAdapter Caching**: Implemented caching for `CloudAdapter` instances to improve performance and reduce
+  repeated authentication overhead in bot routes.
+- 📄 **Bot-in-the-Loop Architectural Documentation**: Added a comprehensive explanation to the `README.md` detailing the
+  "Handler vs Bot" separation of concerns for the Bot-in-the-Loop pattern.
+- 👤 **TeamsConfig Model**: Introduced a `TeamsConfig` Pydantic model in `aihub_lib` to standardize configuration for
+  Microsoft Teams interactions within Bot-in-the-Loop requests.
+- 🔑 **Dynamic OpenAI Client Acquisition**: Integrated `LiteLLMService` to dynamically acquire the OpenAI client based on
+  user identity, enhancing security and flexibility for chat completions.
+
+### Changed
+
+- 🔄 **Bot-in-the-Loop Agent Example**: Updated the `BotInTheLoopAgent` playground example to demonstrate the new
+  `TeamsConfig` for multi-channel communication.
+- 💬 **Enhanced Content Extraction for Teams**: Improved the `ContentExtractor` to correctly handle HTML content and
+  emojis from Microsoft Teams messages, providing richer context to AI models.
+- ⚙️ **Centralized Chat Completion Logic**: Refactored the `AgentChatController` and `OpenaiChatController` to
+  centralize common request processing logic, improving code maintainability and consistency.
+- 📄 **Generalization of Responder Information**: Renamed `SlackResponderInfo` to `BotInTheLoopResponderInfo` and added
+  `aad_object_id` to support generic user information across multiple channels like Slack and Teams.
+- 🚀 **Bot-in-the-Loop Thread Identification**: Generalized thread identification in `BotInTheLoopHandler` to use
+  `thread_identifier` instead of `slack_thread_ts`, accommodating multi-channel requirements.
+
+### Fixed
+
+- 🐛 **Robust Tracing Output**: Ensured `AgentRunTracer` correctly serializes all output events by adding `default=str`
+  to `json.dumps`, preventing serialization errors during tracing.
+- 🐛 **Teams Conversation Deletion Logic**: Corrected the logic for deleting Teams conversations to prevent unintended
+  deletions when a bot is added to a new team or channel.
+- 🐛 **Content Extractor Attachment Handling**: Improved the `ContentExtractor` to intelligently skip non-file HTML
+  content and emoji image attachments in Teams, preventing processing errors and focusing on relevant files.
+- 🐛 **Bot-in-the-Loop Handler Path**: Corrected the base path for `BotInTheLoopHandler` to align with the `/api/v1`
+  endpoint structure.
+
+### Refactor
+
+- 🧹 **Conversation Entity Management**: Renamed `delete_conversation` to `delete_conversation_if_exists` in
+  `ConversationEntity` and added existence checks for more robust management.
+- 🧹 **Internal Method Naming Consistency**: Standardized the naming convention of internal Slack-specific and
+  conversation management methods to private (e.g., `_is_slack_channel_message`, `_add_messages_to_conversation`) for
+  better encapsulation.
+
+### Removed
+
+- 🗑️ **Deprecated OpenAI Client Parameter**: Eliminated the direct `client` parameter from `OpenaiChatBot` and its
+  completion methods, as client acquisition is now handled internally by `OpenaiCompletionHandler` using the new
+  `LiteLLMService` integration.
+
+---
+
+## [v0.247.2] - 2025-10-31 - Optimized CI Documentation Builds
+
+### Changed
+
+- 🚀 **Streamlined CI documentation deployment:** Updated the GitHub Actions workflow for documentation deployment to
+  utilize a new, optimized build script, enhancing efficiency and reducing build times in continuous integration
+  environments.
+- ⚙️ **Introduced dedicated `docs:build:ci` script:** Added a specialized `docs:build:ci` command to `package.json`,
+  which supports the faster documentation building process for CI by omitting the translation step.
+
+---
+
+## [v0.247.1] - 2025-10-30 - Enhanced Documentation System and LLM Control
+
+### Added
+
+- ⚙️ **Automated Documentation Sync and Translation**: Implemented a new GitHub Actions workflow (`sync-docs`) to
+  automatically synchronize and translate documentation during the release process, ensuring documentation is always
+  up-to-date and available in multiple languages.
+- 🤖 **LLM-Digestible Documentation Generation**: Introduced a new build step that generates consolidated, LLM-optimized
+  Markdown files (`llms.txt`, `llms-full.txt`) for each language, enhancing the ability of internal AI tools and coding
+  assistants to leverage platform documentation.
+- 🇩🇪 **Expanded German Documentation Coverage**: Significantly increased the amount of available documentation in German
+  across various platform features, security, and compliance topics.
+- 🧰 **Markdown Copy/Download Buttons**: Integrated `vitepress-plugin-llms` to add convenient copy and download buttons
+  to Markdown code blocks within the documentation, improving usability for developers.
+
+### Changed
+
+- 🔄 **Documentation Build System Overhaul**: Refactored the core documentation build process, externalizing sidebar
+  generation logic to a dedicated module and integrating new plugins for improved maintainability and functionality.
+- 🚀 **Documentation Deployment Trigger**: Modified the documentation deployment workflow to be triggered by a
+  `release-ready` event from the main release pipeline, ensuring docs are deployed in sync with new software versions.
+- 💰 **LLM Proxy Cost Control Configuration**: Activated and documented per-user budget, rate limiting (TPM, RPM), and
+  parallel request limits for the LLM proxy, allowing administrators to configure and enforce spending controls via
+  environment variables.
+- 🌐 **Improved German Translation Guidelines**: Updated translation instructions for LLM models to better handle
+  technical terms, avoid over-translation, and correctly manage absolute and relative links, leading to higher quality
+  German documentation.
+- 📝 **Streamlined RAG Agent Documentation**: Simplified and made more concise the explanation of the RAG Agent's
+  principles and functionality in the English documentation.
+
+### Fixed
+
+- 🔗 **Documentation Internal Link Resolution**: Corrected relative and absolute internal links within various compliance
+  and platform documentation pages to ensure accurate navigation across the multi-language site.
+- 🧹 **Documentation Sync Script Exclusions**: Enhanced the documentation synchronization script to exclude additional
+  irrelevant files (e.g., `__pycache__`, `.mypy_cache`) and prevent the creation of orphaned directories from deeply
+  nested `README.md` files.
+
+### Refactor
+
+- 📦 **Modularized Sidebar Logic**: Moved the complex sidebar generation logic from `config.mts` to a new, dedicated ES
+  module (`sidebar-logic.mjs`), improving modularity and maintainability of the documentation configuration.
+
+### Removed
+
+- 🗑️ **Outdated Deployment Documentation**: Removed redundant and outdated documentation related to OpenStack deployment
+  and general code deep dive sections that no longer reflected current practices.
+- 🗑️ **Deprecated RAG Pipeline Explanation**: Eliminated a specific RAG pipeline explanation
+  (`docs/2_platform/6_pipelines/rag/index.en.md`) as its content has been integrated or superseded by other
+  documentation.
+
+---
+
 ## [v0.247.0] - 2025-10-29 - RAG Reranking and AI Model Updates
 
 ### Added

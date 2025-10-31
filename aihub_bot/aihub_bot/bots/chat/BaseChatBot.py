@@ -49,6 +49,7 @@ class BaseChatBot(ActivityHandler):
             turn_context.activity.channel_id == Channels.ms_teams
             and turn_context.activity.members_added is not None
             and turn_context.activity.recipient.id in [member.id for member in turn_context.activity.members_added]
+            and turn_context.activity.channel_data.get("team") is None
         ):
             conversation_id = turn_context.activity.conversation.id
             ConversationTracker.mark_explicitly_deleted(conversation_id)
@@ -96,13 +97,17 @@ class BaseChatBot(ActivityHandler):
         )
 
         # Handle Slack-specific message formatting
-        if turn_context.activity.channel_id == "slack":
+        if turn_context.activity.channel_id == Channels.slack:
             turn_context = self.completion_handler.handle_slack_message(turn_context)
             if turn_context is None:
                 return
 
-        # Typing must be sent after the Slack message is processed such that no typing indicator is sent
-        # when the bot should not respond to the message.
+        # Handle Teams-specific message formatting
+        if turn_context.activity.channel_id == Channels.ms_teams:
+            turn_context = self.completion_handler.handle_teams_message(turn_context)
+            if turn_context is None:
+                return
+
         typing_stop_signal = Event()
         typing_task: Task = asyncio.create_task(
             self.completion_handler.send_typing_activity(

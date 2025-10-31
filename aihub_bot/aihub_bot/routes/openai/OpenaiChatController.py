@@ -8,7 +8,6 @@ from aihub_lib.routes.Controller import Controller
 from botbuilder.integration.aiohttp import CloudAdapter
 from fastapi import Body, Query, Request, Response
 from llama_index.llms.openai import OpenAI
-from openai import AsyncAzureOpenAI, AsyncOpenAI
 
 from aihub_bot.bots.chat.openai.OpenaiChatBot import OpenaiChatBot
 from aihub_bot.bots.chat.openai.StreamOpenaiChatBot import StreamOpenaiChatBot
@@ -38,6 +37,23 @@ class OpenaiChatController(Controller):
             if not isinstance(model, OpenAI):
                 raise ValueError(f"Chat model {chat_model.name} is not an OpenAI compatible model.")
 
+    @staticmethod
+    async def _process_chat_request(
+        request: Request,
+        model_name: str,
+        bot_class: type[OpenaiChatBot],
+        typing_timeout_seconds: int,
+    ) -> Response:
+        logger.info(f"Starting chat completion for model {model_name}")
+
+        path = RoutesService.get_path(request)
+        chat_bot = bot_class(model_name=model_name, path=path, typing_timeout_seconds=typing_timeout_seconds)
+        adapter: CloudAdapter = RoutesService.get_adapter(path)
+
+        result = await adapter.process(request, chat_bot)
+        logger.info("Chat completion successful")
+        return result
+
     def json_chat_completion(
         self,
         route: str = "/completions/json",
@@ -46,18 +62,15 @@ class OpenaiChatController(Controller):
         @self.router.post(route, tags=self.tags)
         async def json_chat_completion(
             request: Request,
-            _: Annotated[ActivityModel, Body],
+            body: Annotated[ActivityModel, Body],
             model_name: Annotated[str, Query(title="Model Name")],
         ) -> Response:
-            client = self.get_client(self.chat_models, model_name)
-            path = RoutesService.get_path(request)
-
-            chat_bot = OpenaiChatBot(
-                model_name=model_name, client=client, path=path, typing_timeout_seconds=typing_timeout_seconds
+            return await self._process_chat_request(
+                request=request,
+                model_name=model_name,
+                bot_class=OpenaiChatBot,
+                typing_timeout_seconds=typing_timeout_seconds,
             )
-
-            adapter: CloudAdapter = RoutesService.get_adapter(path)
-            return await adapter.process(request, chat_bot)
 
         return self
 
@@ -72,33 +85,11 @@ class OpenaiChatController(Controller):
             _: Annotated[ActivityModel, Body],
             model_name: Annotated[str, Query(title="Model Name")],
         ) -> Response:
-            client = self.get_client(self.chat_models, model_name)
-            path = RoutesService.get_path(request)
-
-            chat_bot = StreamOpenaiChatBot(
-                model_name=model_name, client=client, path=path, typing_timeout_seconds=typing_timeout_seconds
+            return await self._process_chat_request(
+                request=request,
+                model_name=model_name,
+                bot_class=StreamOpenaiChatBot,
+                typing_timeout_seconds=typing_timeout_seconds,
             )
 
-            adapter: CloudAdapter = RoutesService.get_adapter(path)
-            return await adapter.process(request, chat_bot)
-
         return self
-
-    @staticmethod
-    def get_client(
-        models: list[LLMConfig],
-        model_name: str,
-    ) -> AsyncOpenAI | AsyncAzureOpenAI:
-        """
-        ### What
-        - Get the asynchronous `OpenAI` client for the specified model.
-
-        ### Why
-        - The client is needed to fetch completions from the OpenAI API.
-        """
-        matches = [model for model in models if model.name == model_name]
-        if len(matches) == 0:
-            raise ValueError(f"Model {model_name} not found.")
-        model_config = matches[0]
-        llm, _ = model_config.to_llama_index()
-        return llm._get_aclient()
