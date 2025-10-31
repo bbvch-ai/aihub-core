@@ -1,5 +1,4 @@
 import logging
-from typing import Any
 
 from aihub_lib.routes.chat.ChatService import ChatService
 from fastapi import Request
