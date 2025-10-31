@@ -1,6 +1,7 @@
 # Migration Tasks: Bot Framework SDK → Microsoft 365 Agents SDK
 
 ## Architecture Decisions (Confirmed)
+
 - ✅ **8.1**: Keep inheritance pattern (ActivityHandler)
 - ✅ **8.2**: No backward compatibility needed
 - ✅ **8.3**: Keep MongoDB storage pattern
@@ -12,14 +13,16 @@
 ## Phase 1: Foundation & Setup
 
 ### Task 1.1: Update Project Dependencies
-**Priority:** Critical
-**Estimated Time:** 2 hours
-**Dependencies:** None
+
+**Priority:** Critical **Estimated Time:** 2 hours **Dependencies:** None
 
 #### Description
-Update `aihub_bot/pyproject.toml` to replace deprecated Bot Framework SDK packages with Microsoft 365 Agents SDK packages.
+
+Update `aihub_bot/pyproject.toml` to replace deprecated Bot Framework SDK packages with Microsoft 365 Agents SDK
+packages.
 
 #### Changes Required
+
 ```toml
 # Remove:
 botbuilder-integration-aiohttp = "^4.16.2"
@@ -32,6 +35,7 @@ microsoft-agents-authentication-msal = "^0.5.0"
 ```
 
 #### Test Specification
+
 **Test File:** `tests/test_dependencies.py`
 
 ```python
@@ -75,14 +79,16 @@ def test_poetry_lock_updated():
 ---
 
 ### Task 1.2: Create Migration Test Fixtures
-**Priority:** High
-**Estimated Time:** 3 hours
-**Dependencies:** Task 1.1
+
+**Priority:** High **Estimated Time:** 3 hours **Dependencies:** Task 1.1
 
 #### Description
-Create comprehensive test fixtures and utilities for testing migrated components. These fixtures will be reused across all migration tests.
+
+Create comprehensive test fixtures and utilities for testing migrated components. These fixtures will be reused across
+all migration tests.
 
 #### Implementation
+
 **File:** `tests/fixtures/bot_fixtures.py`
 
 ```python
@@ -143,6 +149,7 @@ def slack_activity(mock_activity):
 ```
 
 #### Test Specification
+
 **Test File:** `tests/fixtures/test_bot_fixtures.py`
 
 ```python
@@ -224,14 +231,16 @@ def test_slack_activity_fixture(slack_activity):
 ## Phase 2: Core Migration
 
 ### Task 2.1: Migrate RoutesService (Adapter & Authentication)
-**Priority:** Critical
-**Estimated Time:** 8 hours
-**Dependencies:** Task 1.1, 1.2
+
+**Priority:** Critical **Estimated Time:** 8 hours **Dependencies:** Task 1.1, 1.2
 
 #### Description
-Migrate `RoutesService.py` to use Microsoft 365 Agents SDK's `CloudAdapter`. This is the most critical component as all bot routes depend on it.
+
+Migrate `RoutesService.py` to use Microsoft 365 Agents SDK's `CloudAdapter`. This is the most critical component as all
+bot routes depend on it.
 
 #### Changes Required
+
 **File:** `aihub_bot/aihub_bot/routes/RoutesService.py`
 
 ```python
@@ -255,6 +264,7 @@ def get_adapter(path: str) -> CloudAdapter:
 ```
 
 #### Test Specification
+
 **Test File:** `tests/routes/test_routes_service.py`
 
 ```python
@@ -371,14 +381,16 @@ def test_adapter_authentication_configuration(monkeypatch, mock_credentials):
 ---
 
 ### Task 2.2: Migrate BaseChatBot
-**Priority:** Critical
-**Estimated Time:** 6 hours
-**Dependencies:** Task 2.1
+
+**Priority:** Critical **Estimated Time:** 6 hours **Dependencies:** Task 2.1
 
 #### Description
-Migrate `BaseChatBot.py` to use new SDK imports while maintaining the inheritance pattern. This is the base class for all chat bots.
+
+Migrate `BaseChatBot.py` to use new SDK imports while maintaining the inheritance pattern. This is the base class for
+all chat bots.
 
 #### Changes Required
+
 **File:** `aihub_bot/aihub_bot/bots/chat/BaseChatBot.py`
 
 ```python
@@ -395,6 +407,7 @@ from microsoft_agents.activity import Activity, ActivityTypes
 ```
 
 #### Test Specification
+
 **Test File:** `tests/bots/chat/test_base_chat_bot.py`
 
 ```python
@@ -548,14 +561,16 @@ def test_channel_id_string_literals(base_chat_bot):
 ---
 
 ### Task 2.3: Migrate CompletionHandler
-**Priority:** Critical
-**Estimated Time:** 6 hours
-**Dependencies:** Task 2.2
+
+**Priority:** Critical **Estimated Time:** 6 hours **Dependencies:** Task 2.2
 
 #### Description
-Migrate `CompletionHandler.py` to use new SDK. This handles all completion logic including streaming responses and error handling.
+
+Migrate `CompletionHandler.py` to use new SDK. This handles all completion logic including streaming responses and error
+handling.
 
 #### Changes Required
+
 **File:** `aihub_bot/aihub_bot/bots/chat/CompletionHandler.py`
 
 ```python
@@ -570,6 +585,7 @@ from microsoft_agents.activity import Activity, ActivityTypes, Entity
 ```
 
 #### Test Specification
+
 **Test File:** `tests/bots/chat/test_completion_handler.py`
 
 ```python
@@ -740,14 +756,15 @@ def test_system_message_creation(mock_turn_context):
 ---
 
 ### Task 2.4: Migrate ContentExtractor
-**Priority:** High
-**Estimated Time:** 3 hours
-**Dependencies:** Task 2.3
+
+**Priority:** High **Estimated Time:** 3 hours **Dependencies:** Task 2.3
 
 #### Description
+
 Migrate `ContentExtractor.py` to use new SDK for activity content extraction.
 
 #### Changes Required
+
 **File:** `aihub_bot/aihub_bot/bots/chat/ContentExtractor.py`
 
 ```python
@@ -761,6 +778,7 @@ from microsoft_agents.activity import Activity, Attachment
 ```
 
 #### Test Specification
+
 **Test File:** `tests/bots/chat/test_content_extractor.py`
 
 ```python
@@ -867,17 +885,19 @@ def test_channel_specific_extraction(teams_activity, slack_activity):
 ## Phase 3: Specialized Bots Migration
 
 ### Task 3.1: Migrate Agent-Based Bots
-**Priority:** High
-**Estimated Time:** 6 hours
-**Dependencies:** Task 2.2, 2.3, 2.4
+
+**Priority:** High **Estimated Time:** 6 hours **Dependencies:** Task 2.2, 2.3, 2.4
 
 #### Description
+
 Migrate all agent-based bot implementations:
+
 - `AgentChatBot.py`
 - `StreamAgentChatBot.py`
 - `AgentCompletionHandler.py`
 
 #### Changes Required
+
 ```python
 # BEFORE:
 from botbuilder.core import TurnContext
@@ -889,6 +909,7 @@ from microsoft_agents.hosting.core import TurnContext
 ```
 
 #### Test Specification
+
 **Test File:** `tests/bots/chat/agent/test_agent_chat_bot.py`
 
 ```python
@@ -1004,17 +1025,19 @@ async def test_stream_agent_chat_bot_streaming(mock_turn_context):
 ---
 
 ### Task 3.2: Migrate OpenAI-Based Bots
-**Priority:** High
-**Estimated Time:** 6 hours
-**Dependencies:** Task 2.2, 2.3, 2.4
+
+**Priority:** High **Estimated Time:** 6 hours **Dependencies:** Task 2.2, 2.3, 2.4
 
 #### Description
+
 Migrate all OpenAI-based bot implementations:
+
 - `OpenaiChatBot.py`
 - `StreamOpenaiChatBot.py`
 - `OpenaiCompletionHandler.py`
 
 #### Test Specification
+
 **Test File:** `tests/bots/chat/openai/test_openai_chat_bot.py`
 
 ```python
@@ -1116,16 +1139,18 @@ async def test_stream_openai_chat_bot(mock_turn_context):
 ---
 
 ### Task 3.3: Migrate Bot-in-the-Loop
-**Priority:** High
-**Estimated Time:** 6 hours
-**Dependencies:** Task 2.2, 2.3, 2.4
+
+**Priority:** High **Estimated Time:** 6 hours **Dependencies:** Task 2.2, 2.3, 2.4
 
 #### Description
+
 Migrate Bot-in-the-Loop implementation:
+
 - `BotInTheLoopBot.py`
 - `BotInTheLoopHandler.py`
 
 #### Test Specification
+
 **Test File:** `tests/bots/bot_in_the_loop/test_bot_in_the_loop.py`
 
 ```python
@@ -1232,17 +1257,19 @@ async def test_bot_in_the_loop_response_handling(mock_turn_context):
 ## Phase 4: Controllers & Integration
 
 ### Task 4.1: Migrate All Controllers
-**Priority:** Medium
-**Estimated Time:** 4 hours
-**Dependencies:** Task 3.1, 3.2, 3.3
+
+**Priority:** Medium **Estimated Time:** 4 hours **Dependencies:** Task 3.1, 3.2, 3.3
 
 #### Description
+
 Migrate all controller files:
+
 - `routes/agent/AgentChatController.py`
 - `routes/openai/OpenaiChatController.py`
 - `routes/bot_in_the_loop/BotInTheLoopController.py`
 
 #### Test Specification
+
 **Test File:** `tests/routes/test_controllers.py`
 
 ```python
@@ -1340,14 +1367,15 @@ async def test_openai_controller_endpoint(mock_activity):
 ---
 
 ### Task 4.2: Migrate Activity Models
-**Priority:** Low
-**Estimated Time:** 2 hours
-**Dependencies:** Task 4.1
+
+**Priority:** Low **Estimated Time:** 2 hours **Dependencies:** Task 4.1
 
 #### Description
+
 Migrate `routes/activity_model.py` to use new SDK schema types.
 
 #### Test Specification
+
 **Test File:** `tests/routes/test_activity_model.py`
 
 ```python
@@ -1392,14 +1420,15 @@ def test_activity_model_types_compatible():
 ## Phase 5: Testing & Validation
 
 ### Task 5.1: Update Integration Tests
-**Priority:** High
-**Estimated Time:** 8 hours
-**Dependencies:** All Phase 4 tasks
+
+**Priority:** High **Estimated Time:** 8 hours **Dependencies:** All Phase 4 tasks
 
 #### Description
+
 Update all existing integration tests to work with the new SDK and verify no regressions.
 
 #### Test Specification
+
 **Test File:** `tests/integration/test_full_bot_flow.py`
 
 ```python
@@ -1549,14 +1578,15 @@ def test_error_handling_integration(full_bot_app, mock_activity):
 ---
 
 ### Task 5.2: Update Playground Tests
-**Priority:** Medium
-**Estimated Time:** 4 hours
-**Dependencies:** Task 5.1
+
+**Priority:** Medium **Estimated Time:** 4 hours **Dependencies:** Task 5.1
 
 #### Description
+
 Update and verify playground tests work with new SDK.
 
 #### Test Specification
+
 **Test File:** `playground/testing/tests/test_playground_bots.py`
 
 ```python
@@ -1610,14 +1640,15 @@ def test_playground_frontend_compatibility():
 ---
 
 ### Task 5.3: Channel-Specific Testing
-**Priority:** High
-**Estimated Time:** 6 hours
-**Dependencies:** Task 5.1
+
+**Priority:** High **Estimated Time:** 6 hours **Dependencies:** Task 5.1
 
 #### Description
+
 Comprehensive testing of each channel (Teams, Slack, Web Chat) with the new SDK.
 
 #### Test Specification
+
 **Test File:** `tests/channels/test_teams_integration.py`
 
 ```python
@@ -1776,14 +1807,15 @@ def test_slack_bot_in_the_loop(full_bot_app, slack_activity):
 ## Phase 6: Documentation & Cleanup
 
 ### Task 6.1: Update Code Documentation
-**Priority:** Medium
-**Estimated Time:** 4 hours
-**Dependencies:** All Phase 5 tasks
+
+**Priority:** Medium **Estimated Time:** 4 hours **Dependencies:** All Phase 5 tasks
 
 #### Description
+
 Update all code comments, docstrings, and inline documentation to reference new SDK.
 
 #### Test Specification
+
 **Test File:** `tests/documentation/test_documentation.py`
 
 ```python
@@ -1843,14 +1875,15 @@ def test_imports_documented():
 ---
 
 ### Task 6.2: Update README.md
-**Priority:** High
-**Estimated Time:** 3 hours
-**Dependencies:** Task 6.1
+
+**Priority:** High **Estimated Time:** 3 hours **Dependencies:** Task 6.1
 
 #### Description
+
 Update `aihub_bot/README.md` to reflect new SDK, update examples, and migration notes.
 
 #### Changes Required
+
 1. Update "Bot Framework Integration" section to "Microsoft 365 Agents SDK Integration"
 2. Update all code examples to use new imports
 3. Add migration note at top of README
@@ -1858,9 +1891,10 @@ Update `aihub_bot/README.md` to reflect new SDK, update examples, and migration 
 5. Update Azure Bot setup documentation
 
 #### Test Specification
+
 **Test File:** `tests/documentation/test_readme.py`
 
-```python
+````python
 import pytest
 from pathlib import Path
 
@@ -1920,19 +1954,20 @@ def test_readme_examples_executable():
             ast.parse(block)
         except SyntaxError as e:
             pytest.fail(f"Invalid Python in README: {e}\nBlock:\n{block}")
-```
+````
 
 ---
 
 ### Task 6.3: Update Setup Script
-**Priority:** Medium
-**Estimated Time:** 2 hours
-**Dependencies:** Task 6.2
+
+**Priority:** Medium **Estimated Time:** 2 hours **Dependencies:** Task 6.2
 
 #### Description
+
 Update `setup_azure_bot.py` if needed to work with new SDK authentication.
 
 #### Test Specification
+
 **Test File:** `tests/setup/test_azure_bot_setup.py`
 
 ```python
@@ -1985,14 +2020,15 @@ def test_setup_creates_compatible_credentials(mock_bot_service):
 ---
 
 ### Task 6.4: Clean Up Old Imports
-**Priority:** High
-**Estimated Time:** 2 hours
-**Dependencies:** All above tasks complete
+
+**Priority:** High **Estimated Time:** 2 hours **Dependencies:** All above tasks complete
 
 #### Description
+
 Final cleanup pass to ensure absolutely no old SDK references remain.
 
 #### Test Specification
+
 **Test File:** `tests/cleanup/test_no_old_sdk_references.py`
 
 ```python
@@ -2108,11 +2144,13 @@ def test_bot_runs_without_old_sdk():
 ## Summary of Test Requirements
 
 ### Test Coverage Goals
+
 - **Unit Tests**: 80%+ coverage on migrated components
 - **Integration Tests**: All critical paths tested
 - **Channel Tests**: Each channel (Teams, Slack, Web Chat) tested
 
 ### Test Execution Order
+
 1. **Task 1.1-1.2**: Foundation tests must pass first
 2. **Task 2.1-2.4**: Core component tests
 3. **Task 3.1-3.3**: Specialized bot tests
@@ -2121,7 +2159,9 @@ def test_bot_runs_without_old_sdk():
 6. **Task 6.1-6.4**: Documentation and cleanup tests
 
 ### Success Criteria (Final)
+
 All tests from all tasks must pass:
+
 ```bash
 cd aihub_bot
 poetry shell
@@ -2129,6 +2169,7 @@ pytest tests/ -v --cov=aihub_bot --cov-report=term-missing
 ```
 
 Expected output:
+
 - ✅ 0 failures
 - ✅ 0 imports from botbuilder/botframework
 - ✅ 80%+ code coverage
