@@ -5,11 +5,10 @@ from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
 from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import TeamsConfig
 from aihub_lib.nats.topics import AgentInstanceTopic
-from botbuilder.core import TurnContext
-from botbuilder.schema import ChannelAccount, ConversationAccount, ConversationReference
-from botframework.connector import Channels
 from cachetools import TTLCache
 from fastapi import Request
+from microsoft_agents.activity import ChannelAccount, ConversationAccount, ConversationReference
+from microsoft_agents.hosting.core import TurnContext
 from pydantic import BaseModel, Field
 
 from aihub_bot.persistence.entities.PathEntity import PathEntity
@@ -22,7 +21,10 @@ class BotInTheLoopThread(BaseModel):
     conversation_id: Annotated[
         str,
         Field(
-            description="The conversation ID where messages are sent to. For Slack: BotID:TeamID:ChannelID. For Teams: the channel (thread) conversation ID (e.g., 19:...@thread.tacv2)."
+            description=(
+                "The conversation ID where messages are sent to. For Slack: BotID:TeamID:ChannelID. "
+                "For Teams: the channel (thread) conversation ID (e.g., 19:...@thread.tacv2)."
+            )
         ),
     ]
     thread_identifier: Annotated[
@@ -102,12 +104,12 @@ class BotInTheLoopHandler:
         return self.threads[thread_id]
 
     @staticmethod
-    def _build_conversation_id_with_thread_identifier(thread: BotInTheLoopThread, channel: Channels) -> str:
+    def _build_conversation_id_with_thread_identifier(thread: BotInTheLoopThread, channel: str) -> str:
         conversation_id = thread.conversation_id
         if thread.thread_identifier:
-            if channel == Channels.slack:
+            if channel == "slack":
                 conversation_id += f":{thread.thread_identifier}"
-            elif channel == Channels.ms_teams:
+            elif channel == "msteams":
                 conversation_id += f";messageid={thread.thread_identifier}"
 
         return conversation_id
@@ -135,10 +137,10 @@ class BotInTheLoopHandler:
 
         thread = self._update_or_create_thread(thread_id, teams_config.channel_id, event)
 
-        conversation_id = self._build_conversation_id_with_thread_identifier(thread, Channels.ms_teams)
+        conversation_id = self._build_conversation_id_with_thread_identifier(thread, "msteams")
 
         conversation = ConversationReference(
-            channel_id=Channels.ms_teams.value,
+            channel_id="msteams",
             conversation=ConversationAccount(
                 id=conversation_id,
                 conversation_type="channel",
@@ -162,12 +164,12 @@ class BotInTheLoopHandler:
 
         thread = self._update_or_create_thread(thread_id, base_conversation_id, event)
 
-        conversation_id = self._build_conversation_id_with_thread_identifier(thread, Channels.slack)
+        conversation_id = self._build_conversation_id_with_thread_identifier(thread, "slack")
 
         bot_team_id = f"{slack_ids.bot_id}:{slack_ids.team_id}"
 
         conversation = ConversationReference(
-            channel_id=Channels.slack.value,
+            channel_id="slack",
             conversation=ConversationAccount(
                 id=conversation_id,
             ),

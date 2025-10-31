@@ -9,8 +9,8 @@ from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributo
 )
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.Controller import Controller
-from botbuilder.integration.aiohttp import CloudAdapter
 from fastapi import Body, Depends, Path, Request, Response
+from microsoft_agents.hosting.aiohttp import CloudAdapter
 from nats.aio.client import Client as NATS
 
 from aihub_bot.bots.chat.agent.AgentChatBot import AgentChatBot

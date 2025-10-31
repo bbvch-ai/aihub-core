@@ -4,8 +4,7 @@ from enum import Enum
 from typing import Annotated
 
 import httpx
-from botbuilder.schema import Activity, Attachment
-from botframework.connector import Channels
+from microsoft_agents.activity import Activity, Attachment
 from pydantic import BaseModel, Field
 
 from aihub_bot.persistence.entities.ConversationEntity import Content
@@ -15,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class FileSource(Enum):
-    SLACK = Channels.slack
-    TEAMS = Channels.ms_teams
+    SLACK = "slack"
+    TEAMS = "msteams"
     GENERIC = "generic"
 
 
@@ -59,7 +58,7 @@ class ContentExtractor:
         text = activity.text or ""
 
         # For Teams, use HTML content if available (contains emojis in correct positions)
-        if activity.channel_id == Channels.ms_teams and activity.attachments:
+        if activity.channel_id == "msteams" and activity.attachments:
             for attachment in activity.attachments:
                 if attachment.content_type == "text/html" and attachment.content:
                     # Use the HTML directly - LLMs can parse it and extract emojis from alt attributes
@@ -108,7 +107,7 @@ class ContentExtractor:
         for attachment in activity.attachments:
             # Skip Teams HTML content that's not a real file (already extracted from activity.text)
             if (
-                activity.channel_id == Channels.ms_teams
+                activity.channel_id == "msteams"
                 and attachment.content_url is None
                 and attachment.content_type == "text/html"
             ):
