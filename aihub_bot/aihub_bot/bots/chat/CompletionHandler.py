@@ -182,7 +182,9 @@ class CompletionHandler:
         """
         bot_message = Message(
             user_id=turn_context.activity.recipient.id,
-            content=ContentExtractor.extract_content_from_activity(path=path, activity=Activity(text=message)),
+            content=ContentExtractor.extract_content_from_activity(
+                path=path, activity=Activity(text=message, type=ActivityTypes.message)
+            ),
             role=turn_context.activity.recipient.role or "bot",
             name=turn_context.activity.recipient.name,
         )
