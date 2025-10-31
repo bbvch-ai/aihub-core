@@ -115,6 +115,7 @@ class OpenaiCompletionHandler(CompletionHandler):
         user_id = turn_context.activity.from_property.id or "UNKNOWN"
         user_name = turn_context.activity.from_property.name or "UNKNOWN"
         user_email = "UNKNOWN"
+        user_roles = []
 
         connector_client = turn_context.turn_state.get("ConnectorClient")
 
@@ -122,7 +123,11 @@ class OpenaiCompletionHandler(CompletionHandler):
             teams_account: TeamsChannelAccount = await connector_client.get_conversation_member(
                 turn_context.activity.conversation.id, user_id
             )
-            user_email = teams_account.email
+            # Only use Teams account data if not None
+            if teams_account.email is not None:
+                user_email = teams_account.email
+            if teams_account.user_role is not None:
+                user_roles = [teams_account.user_role]
 
         if turn_context.activity.channel_id == Channels.ms_teams:
             user_id = turn_context.activity.from_property.aad_object_id or user_id
@@ -131,7 +136,7 @@ class OpenaiCompletionHandler(CompletionHandler):
             id=user_id,
             name=user_name,
             email=user_email,
-            roles=["TestOnlyFullAdminAccess"],
+            roles=user_roles,
         )
 
         logger.debug(f"Using user identity: {user}")
