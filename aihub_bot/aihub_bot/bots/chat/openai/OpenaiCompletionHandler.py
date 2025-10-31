@@ -6,9 +6,15 @@ from asyncio import Event, Task
 from collections.abc import AsyncGenerator
 from typing import override
 
+import openai
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
 from botbuilder.core import TurnContext
-from openai import APIStatusError, AsyncAzureOpenAI, AsyncOpenAI, AsyncStream
+from botbuilder.core.teams import TeamsInfo
+from botbuilder.schema.teams import TeamsChannelAccount
+from botframework.connector import Channels
+from openai import APIStatusError, AsyncStream
 from openai.types.chat import (
     ChatCompletion,
     ChatCompletionAssistantMessageParam,
@@ -37,14 +43,12 @@ class OpenaiCompletionHandler(CompletionHandler):
         turn_context: TurnContext,
         path: str,
         model_name: str,
-        client: AsyncOpenAI | AsyncAzureOpenAI,
         **kwargs,
     ) -> str:
         chat_completion: ChatCompletion = await OpenaiCompletionHandler.chat_completion(
             turn_context=turn_context,
             path=path,
             model_name=model_name,
-            client=client,
             stream=False,
         )
         return chat_completion.choices[0].message.content
@@ -54,7 +58,6 @@ class OpenaiCompletionHandler(CompletionHandler):
         turn_context: TurnContext,
         path: str,
         model_name: str,
-        client: AsyncOpenAI | AsyncAzureOpenAI,
         **kwargs,
     ) -> AsyncGenerator[str]:
         """Get a streaming OpenAI completion."""
@@ -62,7 +65,6 @@ class OpenaiCompletionHandler(CompletionHandler):
             turn_context=turn_context,
             path=path,
             model_name=model_name,
-            client=client,
             stream=True,
         )
 
@@ -83,7 +85,6 @@ class OpenaiCompletionHandler(CompletionHandler):
         turn_context: TurnContext,
         path: str,
         model_name: str,
-        client: AsyncOpenAI | AsyncAzureOpenAI,
         stream: bool,
     ) -> ChatCompletion | AsyncStream[ChatCompletionChunk]:
         """
@@ -108,6 +109,30 @@ class OpenaiCompletionHandler(CompletionHandler):
         chat_messages: list[ChatCompletionMessageParam] = [
             OpenaiCompletionHandler._message_to_chat_completion_message_param(message) for message in persisted_messages
         ]
+
+        if turn_context.activity.channel_id == Channels.ms_teams:
+            member: TeamsChannelAccount = await TeamsInfo.get_member(
+                turn_context,
+                turn_context.activity.from_property.id,
+            )
+            user: UserIdentity = UserIdentity(
+                id=member.aad_object_id,
+                name=member.name,
+                email=member.email,
+                roles=["TestOnlyFullAdminAccess"],
+            )
+        else:
+            user: UserIdentity = UserIdentity(
+                id=turn_context.activity.from_property.id or "UNKNOWN",
+                name=turn_context.activity.from_property.name or "UNKNOWN",
+                email="UNKNOWN",
+                roles=["TestOnlyFullAdminAccess"],
+            )
+
+        logger.debug(f"Using user identity: {user}")
+
+        client: openai.AsyncClient = await LiteLLMService.openai_aclient_for_user(user=user)
+
         return await client.chat.completions.create(
             model=model_name,
             messages=chat_messages,
@@ -190,7 +215,7 @@ class OpenaiCompletionHandler(CompletionHandler):
                 response = exception.message
             return response
         else:
-            return await super().handle_exception(
+            return await CompletionHandler.handle_exception(
                 turn_context=turn_context,
                 exception=exception,
                 typing_task=typing_task,
