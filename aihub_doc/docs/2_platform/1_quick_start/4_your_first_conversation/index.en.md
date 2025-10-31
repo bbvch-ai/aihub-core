@@ -23,7 +23,7 @@ As a chat interface we use [Open WebUI](https://github.com/open-webui/open-webui
 interface. After logging
 in with Azure, begin your first conversation by typing your message and hitting enter. Switching the model or agent is
 as easy as selecting them in the top left of your chat. You can even set one as your default. Here it is also possible
-to set up a temporary chat by selecting the toggle at the bottom.
+to set up a temporary chat by selecting the toggle at the bottom of the models list.
 
 Here is a quick video showing you how to get to the chat:
 
