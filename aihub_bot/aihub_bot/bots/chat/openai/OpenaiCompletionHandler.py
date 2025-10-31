@@ -7,10 +7,13 @@ from collections.abc import AsyncGenerator
 from typing import override
 
 import openai
+from microsoft_agents.activity import Channels
+from microsoft_agents.activity.teams import TeamsChannelData, TeamsChannelAccount
+
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
-from microsoft_agents.hosting.core import TurnContext
+from microsoft_agents.hosting.core import TurnContext, TeamsConnectorClient, ConnectorClient
 from openai import APIStatusError, AsyncStream
 from openai.types.chat import (
     ChatCompletion,
@@ -113,13 +116,16 @@ class OpenaiCompletionHandler(CompletionHandler):
         user_name = turn_context.activity.from_property.name or "UNKNOWN"
         user_email = "UNKNOWN"
 
-        if turn_context.activity.channel_id == "msteams":
-            # Try to extract AAD Object ID and email from channel_data if available
-            channel_data = turn_context.activity.channel_data or {}
-            if isinstance(channel_data, dict):
-                # Teams may provide additional user info in channel_data
-                user_id = channel_data.get("aadObjectId") or user_id
-                user_email = channel_data.get("email") or user_email
+        connector_client = turn_context.turn_state.get("ConnectorClient")
+
+        if isinstance(connector_client, TeamsConnectorClient):
+            teams_account: TeamsChannelAccount = await connector_client.get_conversation_member(
+                turn_context.activity.conversation.id, user_id
+            )
+            user_email = teams_account.email
+
+        if turn_context.activity.channel_id == Channels.ms_teams:
+            user_id = turn_context.activity.from_property.aad_object_id or user_id
 
         user: UserIdentity = UserIdentity(
             id=user_id,
