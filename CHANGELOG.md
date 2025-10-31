@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.247.2] - 2025-10-31 - Optimized CI Documentation Builds
+
+### Changed
+
+- 🚀 **Streamlined CI documentation deployment:** Updated the GitHub Actions workflow for documentation deployment to
+  utilize a new, optimized build script, enhancing efficiency and reducing build times in continuous integration
+  environments.
+- ⚙️ **Introduced dedicated `docs:build:ci` script:** Added a specialized `docs:build:ci` command to `package.json`,
+  which supports the faster documentation building process for CI by omitting the translation step.
+
+---
+
 ## [v0.247.1] - 2025-10-30 - Enhanced Documentation System and LLM Control
 
 ### Added
