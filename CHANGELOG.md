@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.247.6] - 2025-10-31 - Empowering Contributors with New Guidelines
+
+### Added
+
+- ✨ **Added a comprehensive `CONTRIBUTING.md` guide:** This new document provides clear instructions and best practices
+  for anyone looking to contribute to the Swiss AI-Hub project, covering everything from code contributions to
+  documentation, community engagement, and advocacy, fostering a more collaborative environment.
+
+---
+
+## [v0.247.5] - 2025-10-31 - Enhanced Security Measures
+
+### Security
+
+- 🔑 **Established comprehensive security policy:** Introduced a new `SECURITY.md` file, providing clear guidelines on
+  how to report security vulnerabilities, outlining supported versions, and detailing the coordinated disclosure
+  process.
+
+---
+
 ## [v0.247.4] - 2025-10-31 - Community Guidelines Established
 
 ### Added
