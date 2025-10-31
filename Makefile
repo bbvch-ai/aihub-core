@@ -65,7 +65,7 @@ use-local-core-without-install:
 	@echo "Switching to local cores without poetry install..."
 	poetry run python switch_dependencies.py local
 
-TAG ?= v0.247.2
+TAG ?= v0.247.3
 
 # Use remote cores (with poetry install)
 use-remote-core:
@@ -94,3 +94,11 @@ local-cert:
 		"localhost" "*.localhost" \
 		"127.0.0.1.nip.io" "*.127.0.0.1.nip.io"
 	@echo "✅ Certificates written to configs/traefik/certs/dev-cert.pem and configs/certs/dev-key.pem"
+
+up-dev:
+	@echo "Starting development environment with Docker Compose..."
+	docker compose -f docker-compose.dev.yml --env-file .env up -d --build
+
+generate-api-token:
+	@echo "Generating API token..."
+	cd aihub_api && poetry run python generate_api_token.py
