@@ -83,7 +83,7 @@ class BotInTheLoopHandler:
         thread_id = event.topic.thread_id
         question = event.question
 
-        if event.slack_channel_id is not None:
+        if event.slack_config is not None:
             await self._handle_bot_in_the_loop_request_in_slack(event, thread_id, question)
 
         elif event.teams_config is not None:
@@ -154,7 +154,7 @@ class BotInTheLoopHandler:
             ),
             service_url=f"https://smba.trafficmanager.net/emea/{teams_config.tenant_id}/",
             bot=ChannelAccount(
-                id=teams_config.bot_id,
+                id=teams_config.bot_framework_id,
             ),
             user=ChannelAccount(
                 id="bot-in-the-loop",  # Placeholder user for bot-initiated proactive messages
@@ -170,7 +170,7 @@ class BotInTheLoopHandler:
         question: str,
     ):
         slack_ids = await self._get_slack_ids(self.path)
-        base_conversation_id = f"{slack_ids.bot_id}:{slack_ids.team_id}:{event.slack_channel_id}"
+        base_conversation_id = f"{slack_ids.bot_id}:{slack_ids.team_id}:{event.slack_config.channel_id}"
 
         thread = self._update_or_create_thread(thread_id, base_conversation_id, event)
 
