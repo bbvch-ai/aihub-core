@@ -5,6 +5,71 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.247.2] - 2025-10-31 - Optimized CI Documentation Builds
+
+### Changed
+
+- 🚀 **Streamlined CI documentation deployment:** Updated the GitHub Actions workflow for documentation deployment to
+  utilize a new, optimized build script, enhancing efficiency and reducing build times in continuous integration
+  environments.
+- ⚙️ **Introduced dedicated `docs:build:ci` script:** Added a specialized `docs:build:ci` command to `package.json`,
+  which supports the faster documentation building process for CI by omitting the translation step.
+
+---
+
+## [v0.247.1] - 2025-10-30 - Enhanced Documentation System and LLM Control
+
+### Added
+
+- ⚙️ **Automated Documentation Sync and Translation**: Implemented a new GitHub Actions workflow (`sync-docs`) to
+  automatically synchronize and translate documentation during the release process, ensuring documentation is always
+  up-to-date and available in multiple languages.
+- 🤖 **LLM-Digestible Documentation Generation**: Introduced a new build step that generates consolidated, LLM-optimized
+  Markdown files (`llms.txt`, `llms-full.txt`) for each language, enhancing the ability of internal AI tools and coding
+  assistants to leverage platform documentation.
+- 🇩🇪 **Expanded German Documentation Coverage**: Significantly increased the amount of available documentation in German
+  across various platform features, security, and compliance topics.
+- 🧰 **Markdown Copy/Download Buttons**: Integrated `vitepress-plugin-llms` to add convenient copy and download buttons
+  to Markdown code blocks within the documentation, improving usability for developers.
+
+### Changed
+
+- 🔄 **Documentation Build System Overhaul**: Refactored the core documentation build process, externalizing sidebar
+  generation logic to a dedicated module and integrating new plugins for improved maintainability and functionality.
+- 🚀 **Documentation Deployment Trigger**: Modified the documentation deployment workflow to be triggered by a
+  `release-ready` event from the main release pipeline, ensuring docs are deployed in sync with new software versions.
+- 💰 **LLM Proxy Cost Control Configuration**: Activated and documented per-user budget, rate limiting (TPM, RPM), and
+  parallel request limits for the LLM proxy, allowing administrators to configure and enforce spending controls via
+  environment variables.
+- 🌐 **Improved German Translation Guidelines**: Updated translation instructions for LLM models to better handle
+  technical terms, avoid over-translation, and correctly manage absolute and relative links, leading to higher quality
+  German documentation.
+- 📝 **Streamlined RAG Agent Documentation**: Simplified and made more concise the explanation of the RAG Agent's
+  principles and functionality in the English documentation.
+
+### Fixed
+
+- 🔗 **Documentation Internal Link Resolution**: Corrected relative and absolute internal links within various compliance
+  and platform documentation pages to ensure accurate navigation across the multi-language site.
+- 🧹 **Documentation Sync Script Exclusions**: Enhanced the documentation synchronization script to exclude additional
+  irrelevant files (e.g., `__pycache__`, `.mypy_cache`) and prevent the creation of orphaned directories from deeply
+  nested `README.md` files.
+
+### Refactor
+
+- 📦 **Modularized Sidebar Logic**: Moved the complex sidebar generation logic from `config.mts` to a new, dedicated ES
+  module (`sidebar-logic.mjs`), improving modularity and maintainability of the documentation configuration.
+
+### Removed
+
+- 🗑️ **Outdated Deployment Documentation**: Removed redundant and outdated documentation related to OpenStack deployment
+  and general code deep dive sections that no longer reflected current practices.
+- 🗑️ **Deprecated RAG Pipeline Explanation**: Eliminated a specific RAG pipeline explanation
+  (`docs/2_platform/6_pipelines/rag/index.en.md`) as its content has been integrated or superseded by other
+  documentation.
+
+---
+
 ## [v0.247.0] - 2025-10-29 - RAG Reranking and AI Model Updates
 
 ### Added
