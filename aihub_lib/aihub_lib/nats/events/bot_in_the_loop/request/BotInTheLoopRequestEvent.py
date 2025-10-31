@@ -43,6 +43,14 @@ class SlackConfig(BaseModel):
     channel_id: Annotated[
         str, Field(description="The ID of the Slack channel where the request is sent to.", pattern=r"^C[0-9A-Z]+$")
     ]
+    service_url: Annotated[
+        str,
+        Field(
+            description="The Bot Framework service URL for Slack (OAuth & Permissions Redirect URL). "
+            "Common values: 'https://slack.botframework.com' (global) or 'https://europe.slack.botframework.com' (EU).",
+            default="https://slack.botframework.com",
+        ),
+    ] = "https://slack.botframework.com"
 
 
 class BotInTheLoopRequestEvent(ControlEvent):

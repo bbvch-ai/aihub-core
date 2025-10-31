@@ -183,7 +183,7 @@ class BotInTheLoopHandler:
             conversation=ConversationAccount(
                 id=conversation_id,
             ),
-            service_url="https://europe.slack.botframework.com",
+            service_url=event.slack_config.service_url,
             bot=ChannelAccount(id=bot_team_id),
             user=ChannelAccount(
                 id="bot-in-the-loop",  # Placeholder user for bot-initiated proactive messages
