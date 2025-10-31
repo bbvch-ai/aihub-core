@@ -1,7 +1,3 @@
-from dotenv import load_dotenv
-
-load_dotenv()
-
 from aihub_pipeline.util.definitions_util import default_definitions
 
 defs = default_definitions(
