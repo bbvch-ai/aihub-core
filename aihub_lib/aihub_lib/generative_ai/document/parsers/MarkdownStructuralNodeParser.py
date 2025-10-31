@@ -449,8 +449,8 @@ class MarkdownStructuralNodeParser(NodeParser):
     include_prev_next_rel: Annotated[bool, Field(description="Include prev/next node relationships.")] = False
 
     llm_config: Annotated[
-        LLMConfig | None, Field(description="LLM configuration for table header detection and tokenization.")
-    ] = None
+        LLMConfig, Field(description="LLM configuration for table header detection and tokenization.")
+    ]
 
     metadata_extractor: Annotated[
         MetadataExtractor | None, Field(description="MetadataExtractor used to extract metadata.")
