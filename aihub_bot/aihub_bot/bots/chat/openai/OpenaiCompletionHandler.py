@@ -114,7 +114,7 @@ class OpenaiCompletionHandler(CompletionHandler):
         # For Teams, aadObjectId may be available in channel_data
         user_id = turn_context.activity.from_property.id or "UNKNOWN"
         user_name = turn_context.activity.from_property.name or "UNKNOWN"
-        user_email = "UNKNOWN"
+        user_email = f"{user_id}@unknown.bot"
         user_roles = []
 
         connector_client = turn_context.turn_state.get("ConnectorClient")
