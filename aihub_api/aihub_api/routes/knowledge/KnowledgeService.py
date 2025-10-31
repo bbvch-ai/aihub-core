@@ -80,6 +80,9 @@ class KnowledgeService:
 
         This method supports both S3/MinIO and Azure Blob Storage based on the
         ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND environment variable.
+
+        Files in the __figures__ directory are excluded as they are generated artifacts
+        from document processing and should not be displayed in the knowledge interface.
         """
         file_access_config = AnonymousFileAccessSettings()
 
@@ -88,6 +91,10 @@ class KnowledgeService:
         all_files = []
         for file_info in files_info:
             key = file_info["key"]
+
+            if "/__figures__/" in key:
+                continue
+
             filename = key.split("/")[-1]
             file_namespace = key.split("/")[0]
 
