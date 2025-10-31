@@ -44,7 +44,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-lib"
-version = "v0.247.2"
+version = "v0.247.3"
 description = ""
 optional = false
 python-versions = ">=3.13, <3.14"
@@ -2966,14 +2966,14 @@ files = [
 
 [[package]]
 name = "microsoft-agents-activity"
-version = "0.5.0"
+version = "0.5.2"
 description = "A protocol library for Microsoft Agents"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "microsoft_agents_activity-0.5.0-py3-none-any.whl", hash = "sha256:4786d954b22d9f6c96deb4107e082c75297b1953a3541bcd4af0f3e362fe835a"},
-    {file = "microsoft_agents_activity-0.5.0.tar.gz", hash = "sha256:0805b531e3da5ebe1678cd33fdc5d404aad424708cc69f0149298ee553b88f36"},
+    {file = "microsoft_agents_activity-0.5.2-py3-none-any.whl", hash = "sha256:a127b3c036b68fabcb360a6b25952d320a456330ea483a4d31d23cc7dbcc04b2"},
+    {file = "microsoft_agents_activity-0.5.2.tar.gz", hash = "sha256:7cd28ce2f29ff7de51218afbbb9b6c2446075cc1a8efcdc5234cf62937fb9dda"},
 ]
 
 [package.dependencies]
@@ -2981,54 +2981,54 @@ pydantic = ">=2.10.4"
 
 [[package]]
 name = "microsoft-agents-authentication-msal"
-version = "0.5.0"
+version = "0.5.2"
 description = "A msal-based authentication library for Microsoft Agents"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "microsoft_agents_authentication_msal-0.5.0-py3-none-any.whl", hash = "sha256:683691761848864588ef44d89aba6fc8a5121e8c250fb4e7fdffd9e9b50dd7e4"},
-    {file = "microsoft_agents_authentication_msal-0.5.0.tar.gz", hash = "sha256:25e44982007303c8e168e3f7ad54e6f5e81440ae091565fa92e5cd94ff581f21"},
+    {file = "microsoft_agents_authentication_msal-0.5.2-py3-none-any.whl", hash = "sha256:cd52e51701c664bfe108fc21cc5476d6c69d29692286b242103ce0641424eb6c"},
+    {file = "microsoft_agents_authentication_msal-0.5.2.tar.gz", hash = "sha256:e5d7d3a670fe9003816f85cf5d7b98acdce78260e40c68c56563d6c4af218481"},
 ]
 
 [package.dependencies]
 cryptography = ">=44.0.0"
-microsoft-agents-hosting-core = "0.5.0"
+microsoft-agents-hosting-core = "0.5.2"
 msal = ">=1.31.1"
 requests = ">=2.32.3"
 
 [[package]]
 name = "microsoft-agents-hosting-aiohttp"
-version = "0.5.0"
+version = "0.5.2"
 description = "Integration library for Microsoft Agents with aiohttp"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "microsoft_agents_hosting_aiohttp-0.5.0-py3-none-any.whl", hash = "sha256:610004941c978d853a06d210b514e9cab04746c7671e9419a1c45de329c39c7a"},
-    {file = "microsoft_agents_hosting_aiohttp-0.5.0.tar.gz", hash = "sha256:4f61d3bd7b86b25dba60fefb283dc6eba259c4a51f6a5447c37741cc63cf73a3"},
+    {file = "microsoft_agents_hosting_aiohttp-0.5.2-py3-none-any.whl", hash = "sha256:b50fd69267f6495dec9964f6c68884b548de01a7d379aacb55d49e7ff8d88780"},
+    {file = "microsoft_agents_hosting_aiohttp-0.5.2.tar.gz", hash = "sha256:febc0baeba1b0609737e249f8f88cc5aa5c8b014b9dd480d5220f183ebcb57e4"},
 ]
 
 [package.dependencies]
 aiohttp = ">=3.11.11"
-microsoft-agents-hosting-core = "0.5.0"
+microsoft-agents-hosting-core = "0.5.2"
 
 [[package]]
 name = "microsoft-agents-hosting-core"
-version = "0.5.0"
+version = "0.5.2"
 description = "Core library for Microsoft Agents"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "microsoft_agents_hosting_core-0.5.0-py3-none-any.whl", hash = "sha256:455f5fe0c815fc466471d440e74d3a50d69deb2cb6ef02af964d87daa012afc0"},
-    {file = "microsoft_agents_hosting_core-0.5.0.tar.gz", hash = "sha256:0b881e60da8fbffd25d1a922e9518b2d06504b4e0508861b06a77193cc671dd7"},
+    {file = "microsoft_agents_hosting_core-0.5.2-py3-none-any.whl", hash = "sha256:29422e718d2e31613b01706ebb9bc7276131ac0a9e360c221594a337cc18fd99"},
+    {file = "microsoft_agents_hosting_core-0.5.2.tar.gz", hash = "sha256:45187fe15c34ec3efab525cc8f15bd86060c28451a91adedcd847b962a92c78b"},
 ]
 
 [package.dependencies]
 azure-core = ">=1.30.0"
 isodate = ">=0.6.1"
-microsoft-agents-activity = "0.5.0"
+microsoft-agents-activity = "0.5.2"
 pyjwt = ">=2.10.1"
 python-dotenv = ">=1.1.1"
 
