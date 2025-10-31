@@ -1,6 +1,9 @@
+from aihub_bot.routes.agent.AgentChatController import AgentChatController
+from aihub_bot.routes.bot_in_the_loop.BotInTheLoopController import BotInTheLoopController
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
+from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
@@ -23,6 +26,8 @@ auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmen
 runner.mount(
     HealthController(auth=auth).get_health(),
     OpenaiChatController(auth=auth).json_chat_completion().stream_chat_completion(),
+    AgentChatController(auth=auth).completions_json().completions_stream(),
+    BotInTheLoopController(auth=auth).bot_in_the_loop_response(),
 )
 
 app = runner.create_app()
