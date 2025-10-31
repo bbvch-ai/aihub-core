@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.247.4] - 2025-10-31 - Community Guidelines Established
+
+### Added
+
+- 📄 **Introduced Code of Conduct**: Adopted the Contributor Covenant 3.0 to foster a welcoming, safe, and equitable
+  community by outlining expected behaviors, restricted actions, and a clear process for reporting and addressing
+  issues.
+
+---
+
 ## [v0.247.3] - 2025-10-31 - Empowering Bots with Teams Integration and Enhanced Core Functionality
 
 ### Added
