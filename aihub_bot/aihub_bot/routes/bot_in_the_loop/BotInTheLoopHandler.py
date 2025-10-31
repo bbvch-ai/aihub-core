@@ -121,9 +121,16 @@ class BotInTheLoopHandler:
         thread: BotInTheLoopThread,
     ):
         adapter = RoutesService.get_adapter(self.path)
+        credentials = RoutesService.get_credentials(self.path)
+        if credentials is None:
+            raise ValueError(f"No credentials found for path: {self.path}")
+
+        # Convert ConversationReference to Activity for the new SDK
+        continuation_activity = conversation_reference.get_continuation_activity()
+
         await adapter.continue_conversation(
-            bot_app_id=RoutesService.get_credentials(self.path).APP_ID,
-            reference=conversation_reference,
+            agent_app_id=credentials.APP_ID,
+            continuation_activity=continuation_activity,
             callback=self._bot_in_the_loop_callback(question, thread),
         )
 
@@ -148,6 +155,9 @@ class BotInTheLoopHandler:
             service_url=f"https://smba.trafficmanager.net/emea/{teams_config.tenant_id}/",
             bot=ChannelAccount(
                 id=teams_config.bot_id,
+            ),
+            user=ChannelAccount(
+                id="bot-in-the-loop",  # Placeholder user for bot-initiated proactive messages
             ),
         )
 
@@ -175,6 +185,9 @@ class BotInTheLoopHandler:
             ),
             service_url="https://europe.slack.botframework.com",
             bot=ChannelAccount(id=bot_team_id),
+            user=ChannelAccount(
+                id="bot-in-the-loop",  # Placeholder user for bot-initiated proactive messages
+            ),
         )
 
         await self._send_bot_in_the_loop_message(conversation, question, thread)

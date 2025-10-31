@@ -1,15 +1,44 @@
 import logging
+from typing import Any
 
 from aihub_lib.routes.chat.ChatService import ChatService
 from fastapi import Request
-from microsoft_agents.authentication.msal import MsalConnectionManager
+from microsoft_agents.authentication.msal import MsalAuth, MsalConnectionManager
 from microsoft_agents.hosting.aiohttp import CloudAdapter
-from microsoft_agents.hosting.core import AgentAuthConfiguration
 from microsoft_agents.hosting.core.authorization import AuthTypes
 
 from aihub_bot.persistence.entities.PathEntity import Credentials, PathEntity
 
 logger = logging.getLogger(__name__)
+
+
+# Monkey-patch MsalAuth to work around SDK bug with app:// audience validation
+# The SDK tries to get a token for app://client_id which Azure doesn't support
+_original_get_access_token = MsalAuth.get_access_token
+
+
+async def _patched_get_access_token(self: MsalAuth, resource: str, scopes: list[str] | None = None) -> str:
+    """
+    Workaround for Microsoft Agents SDK bug where it requests tokens for app://client_id audience.
+    Azure doesn't allow app:// scheme in identifier URIs, only api://.
+    For proactive messaging, we reuse the Bot Framework API token instead.
+    """
+    # If requesting token for app://client_id, use Bot Framework API token instead
+    if resource.startswith("app://"):
+        logger.warning(
+            f"SDK requested token for unsupported audience '{resource}', "
+            f"using Bot Framework API token instead"
+        )
+        # Use Bot Framework scopes instead of the invalid app:// scopes
+        bot_framework_scopes = ["https://api.botframework.com/.default"]
+        return await _original_get_access_token(self, "https://api.botframework.com", bot_framework_scopes)
+
+    # For all other resources, use original implementation
+    return await _original_get_access_token(self, resource, scopes)
+
+
+# Apply the monkey patch
+MsalAuth.get_access_token = _patched_get_access_token  # type: ignore[method-assign]
 
 
 class RoutesService(ChatService):
@@ -52,41 +81,45 @@ class RoutesService(ChatService):
 
         # Create new adapter and cache it
         logger.debug(f"Creating new CloudAdapter for path: {path}")
-        credentials: Credentials = RoutesService.get_credentials(path)
-        auth_config = RoutesService._create_auth_configuration(credentials)
+        credentials = RoutesService.get_credentials(path)
+        if credentials is None:
+            raise ValueError(f"No credentials found for path: {path}")
+        auth_config_dict = RoutesService._create_auth_configuration_dict(credentials)
 
         # Create connection manager with the auth configuration
-        connection_manager = MsalConnectionManager(connections_configurations={"SERVICE_CONNECTION": auth_config})
+        # MsalConnectionManager expects a dict that it will use to create AgentAuthConfiguration
+        connection_manager = MsalConnectionManager(connections_configurations={"SERVICE_CONNECTION": auth_config_dict})
 
         adapter = CloudAdapter(connection_manager=connection_manager)
         RoutesService._adapter_cache[path] = adapter
         return adapter
 
     @staticmethod
-    def _create_auth_configuration(credentials: Credentials) -> AgentAuthConfiguration:
+    def _create_auth_configuration_dict(credentials: Credentials) -> dict[str, str | AuthTypes | list[str]]:
         """
         ### What
-        - Converts legacy credential dict format to AgentAuthConfiguration.
+        - Converts Credentials object to a dictionary for AgentAuthConfiguration.
 
         ### Why
-        - The new SDK uses AgentAuthConfiguration instead of simple dicts.
-        - This helper method provides backward compatibility with existing PathEntity credentials.
+        - MsalConnectionManager expects a dict that it will use to create AgentAuthConfiguration.
+        - This helper method converts PathEntity credentials to the required dict format.
         """
-        app_type = credentials.get("APP_TYPE", "MultiTenant")
-        auth_type = AuthTypes.MULTI_TENANT if app_type == "MultiTenant" else AuthTypes.SINGLE_TENANT
-
-        config_params = {
-            "auth_type": auth_type,
-            "client_id": credentials.get("APP_ID"),
-            "client_secret": credentials.get("APP_PASSWORD"),
+        # Force multi-tenant mode to avoid app:// audience validation issues
+        # Single-tenant bots require app://client_id as identifier URI, but Azure doesn't allow app:// scheme
+        # Using multi-tenant mode with explicit tenant_id works around this limitation
+        config_params: dict[str, str | AuthTypes | list[str]] = {
+            "auth_type": AuthTypes.client_secret,
+            "client_id": credentials.APP_ID,
+            "client_secret": credentials.APP_PASSWORD,
+            "scopes": ["https://api.botframework.com/.default"],
         }
 
-        # Single tenant requires tenant_id
-        if auth_type == AuthTypes.SINGLE_TENANT:
-            config_params["tenant_id"] = credentials.get("APP_TENANTID")
+        # Always include tenant_id for proper authentication, even in multi-tenant mode
+        if credentials.APP_TENANTID:
+            config_params["tenant_id"] = credentials.APP_TENANTID
 
-        return AgentAuthConfiguration(**config_params)
+        return config_params
 
     @staticmethod
-    def get_credentials(path: str) -> Credentials:
+    def get_credentials(path: str) -> Credentials | None:
         return PathEntity.get_credentials_by_path(path)
