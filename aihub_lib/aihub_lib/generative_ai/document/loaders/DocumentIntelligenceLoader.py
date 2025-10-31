@@ -103,7 +103,7 @@ class DocumentIntelligenceLoader(BaseReader):
                 f"and number of <figure> tags in the document ({len(figure_tags)})."
             )
 
-        figures_dir = create_figures_folder_name(file, figures_directory_name)
+        figures_dir = create_figures_folder_name(file)
         for idx, (figure, figure_tag) in enumerate(zip(result.figures, figure_tags)):
             response = self.document_intelligence_client.get_analyze_result_figure(
                 model_id="prebuilt-layout",

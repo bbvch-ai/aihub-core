@@ -6,6 +6,7 @@ import mongoengine
 from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings import AnonymousFileAccessSettings
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.generative_ai.utils.path_utils import FIGURES_DIRECTORY_NAME
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
@@ -92,7 +93,7 @@ class KnowledgeService:
         for file_info in files_info:
             key = file_info["key"]
 
-            if "/__figures__/" in key:
+            if f"/{FIGURES_DIRECTORY_NAME}/" in key:
                 continue
 
             filename = key.split("/")[-1]
