@@ -141,7 +141,7 @@ async def main():
                 embed_model=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
                 index_namespaces=["simple"],
                 retrieve_k=20,
-                query_mode=VectorStoreQueryMode.DEFAULT,
+                query_mode=VectorStoreQueryMode.HYBRID,
                 node_types=["content", "summary"],
                 vector_store=MilvusVectorStoreConfig(
                     uri=MilvusSettings().URL,
