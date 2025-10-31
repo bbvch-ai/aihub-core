@@ -47,9 +47,9 @@ platform's access control to stop processing. Organizations must assess whether 
 
 ## Related documentation
 
-- [GDPR Compliance](/platform/compliance/gdpr)
-- [Swiss DSG](/platform/compliance/dsg)
-- [Data Retention](/platform/compliance/data_retention)
+- [GDPR Compliance](../2_gdpr/)
+- [Swiss DSG](../3_dsg/)
+- [Data Retention](../1_data_retention/)
 
 ---
 

@@ -117,6 +117,25 @@ total_files=0
 translated_files=0
 skipped_files=0
 failed_files=0
+
+# --- MODIFIED: Handle root index.en.md first ---
+if [ -f "index.en.md" ]; then
+    total_files=$((total_files + 1))
+    if needs_translation "index.en.md" "index.de.md"; then
+        echo -e "${YELLOW}🔄 Translation needed for: index.en.md (root)${NC}"
+        if translate_file "index.en.md" "index.de.md"; then
+            translated_files=$((translated_files + 1))
+        else
+            failed_files=$((failed_files + 1))
+        fi
+        echo ""
+    else
+        echo -e "${GREEN}⏭️  Skipping (up-to-date): index.en.md (root)${NC}"
+        skipped_files=$((skipped_files + 1))
+    fi
+fi
+# --- End of modification ---
+
 find docs -type f -name "index.en.md" -not -path "*/node_modules/*" -not -path "*/.*" -not -path "docs/6_code_deep_dive/*" -print0 | while IFS= read -r -d '' source_file; do
     total_files=$((total_files + 1))
     dir=$(dirname "$source_file")
@@ -136,21 +155,6 @@ find docs -type f -name "index.en.md" -not -path "*/node_modules/*" -not -path "
     fi
 done
 
-if [ -f "index.en.md" ]; then
-    total_files=$((total_files + 1))
-    if needs_translation "index.en.md" "index.de.md"; then
-        echo -e "${YELLOW}🔄 Translation needed for: index.en.md (root)${NC}"
-        if translate_file "index.en.md" "index.de.md"; then
-            translated_files=$((translated_files + 1))
-        else
-            failed_files=$((failed_files + 1))
-        fi
-        echo ""
-    else
-        echo -e "${GREEN}⏭️  Skipping (up-to-date): index.en.md (root)${NC}"
-        skipped_files=$((skipped_files + 1))
-    fi
-fi
 echo ""
 echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
 echo -e "${BLUE}📊 Translation Summary${NC}"

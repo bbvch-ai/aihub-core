@@ -6,3 +6,8 @@ aihub_*
 changelog/index.md
 licenses/index.md
 _ssgi
+public/llms-full.txt
+public/llms.txt
+public/de
+public/docs
+public/index.md

@@ -54,5 +54,5 @@ A **Resource** manages the connection to an external system, such as a database,
 
 ## Next Steps
 
-Now that you understand the fundamental components, explore the **[Core Pipeline Patterns](./2_core_patterns/)** to see
+Now that you understand the fundamental components, explore the **[Core Pipeline Patterns](../2_core_patterns/)** to see
 how these concepts are implemented in code to build powerful workflows.
