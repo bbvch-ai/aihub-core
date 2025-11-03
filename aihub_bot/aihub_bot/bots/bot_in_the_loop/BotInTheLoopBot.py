@@ -55,15 +55,10 @@ class BotInTheLoopBot(ActivityHandler):
         return None
 
     def _find_matching_thread(self, base_conversation_id: str, thread_identifier: str) -> str | None:
-        channel_thread = None
         for thread_id, thread in self.bot_in_the_loop_handler.threads.items():
-            if thread.conversation_id == base_conversation_id:
-                if thread.thread_identifier is None:
-                    channel_thread = thread
-                    continue
-                if thread.thread_identifier == thread_identifier:
-                    return thread_id
-        return channel_thread.thread_id if channel_thread else None
+            if thread.conversation_id == base_conversation_id and thread.thread_identifier == thread_identifier:
+                return thread_id
+        return None
 
     @staticmethod
     def _extract_responder_info(turn_context: TurnContext) -> BotInTheLoopResponderInfo | None:
