@@ -33,19 +33,21 @@ class Message(EmbeddedDocument):
 
 def _clean_conversation_id(conversation_id: str, bot_id: str) -> str:
     """
-    Clean the conversation ID by removing the bot ID prefix from Slack conversation IDs.
+    Clean the conversation ID by removing the bot and team ID prefix from Slack conversation IDs.
 
     Slack conversation IDs have the format: B[bot_id]:T[team_id]:C[channel_id] or
     B[bot_id]:T[team_id]:C[channel_id]:timestamp for threaded messages.
+
+    The bot_id from turn_context.activity.recipient.id has the format: B[bot_id]:T[team_id]
     """
-    slack_thread_re = re.compile(r"^(B[0-9A-Z]+):(T[0-9A-Z]+:C[0-9A-Z]+(?::\d+[.]\d+)?)$")
+    slack_thread_re = re.compile(r"^(B[0-9A-Z]+:T[0-9A-Z]+):(C[0-9A-Z]+(?::\d+[.]\d+)?)$")
     match = slack_thread_re.match(conversation_id)
     if match:
-        extracted_bot_id = match.group(1)
-        if extracted_bot_id != bot_id:
-            logger.warning(f"Bot ID mismatch in conversation_id: extracted '{extracted_bot_id}' != expected '{bot_id}'")
+        extracted_bot_team_id = match.group(1)
+        if extracted_bot_team_id != bot_id:
+            logger.warning(f"Bot:Team ID mismatch: extracted '{extracted_bot_team_id}' != expected '{bot_id}'")
             raise ValueError(
-                f"Bot ID mismatch in conversation_id: extracted '{extracted_bot_id}' does not match expected '{bot_id}'"
+                f"Bot:Team ID mismatch: extracted '{extracted_bot_team_id}' " f"does not match expected '{bot_id}'"
             )
         return match.group(2)
     return conversation_id
