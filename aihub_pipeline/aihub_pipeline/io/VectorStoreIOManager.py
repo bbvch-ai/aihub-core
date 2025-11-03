@@ -2,7 +2,8 @@ import time
 from collections.abc import Sequence
 from datetime import datetime, timedelta
 
-from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID
+from aihub_lib.persistence.rag.vectors.milvus_partition_utils import namespace_to_partition_key
+from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID, NAMESPACE
 from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import BasePydanticVectorStore, MetadataFilter, MetadataFilters
@@ -95,15 +96,53 @@ class VectorStoreIOManager(ConfigurableIOManager):
             context.log.warning("No nodes to add to vector store")
             return
 
-        # In milvus, IDs are not unique. Adding nodes with the same ID will NOT overwrite the existing node
-        # but rather create a duplicate. To avoid this, we first delete the existing nodes with the same ID
-        # Meanwhile, Azure does not support filtering for document IDs, hence we need to treat these two
-        # vector stores differently. Sucks, but that's how it is.
+        # Milvus-specific handling for partitioning and deduplication
         if isinstance(self.vector_store, MilvusVectorStore):
-            self.vector_store.delete_nodes([node.id_ for node in nodes])
+            self._add_nodes_to_milvus(context, nodes)
+        else:
+            self.vector_store.add(nodes)
+            context.log.info("Successfully added nodes to vector store")
 
-        self.vector_store.add(nodes)
-        context.log.info("Successfully added nodes to vector store")
+    def _add_nodes_to_milvus(self, context: OutputContext, nodes: list[TextNode]) -> None:
+        """
+        Add nodes to Milvus with namespace-based partitioning.
+
+        Milvus requires special handling:
+        1. IDs are not unique - must delete duplicates manually
+        2. Nodes are partitioned by namespace for efficient querying
+        """
+        namespace_groups: dict[str, list[TextNode]] = {}
+        for node in nodes:
+            namespace = node.metadata.get(NAMESPACE, "")
+            if namespace not in namespace_groups:
+                namespace_groups[namespace] = []
+            namespace_groups[namespace].append(node)
+
+        context.log.info(f"Adding {len(nodes)} nodes across {len(namespace_groups)} namespace partitions")
+
+        for namespace, namespace_nodes in namespace_groups.items():
+            partition_name = namespace_to_partition_key(namespace)
+
+            if not self.vector_store._milvusclient.has_partition(
+                collection_name=self.vector_store.collection_name, partition_name=partition_name
+            ):
+                self.vector_store._milvusclient.create_partition(
+                    collection_name=self.vector_store.collection_name, partition_name=partition_name
+                )
+                context.log.info(f"Created partition: {partition_name}")
+
+            node_ids = [node.id_ for node in namespace_nodes]
+            delete_expr = f"{DOCUMENT_ID} in {node_ids}"
+            self.vector_store._milvusclient.delete(
+                collection_name=self.vector_store.collection_name, partition_name=partition_name, filter=delete_expr
+            )
+
+            original_partitions = self.vector_store._partition_names
+            self.vector_store._partition_names = [partition_name]
+            self.vector_store.add(namespace_nodes)
+            self.vector_store._partition_names = original_partitions
+
+            context.log.info(f"Added {len(namespace_nodes)} nodes to partition: {partition_name}")
 
     def load_input(self, context: InputContext) -> list[TextNode] | list[list[TextNode]]:
         # Check if a partition key is available
