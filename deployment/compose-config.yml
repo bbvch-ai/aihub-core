@@ -33,10 +33,10 @@ image_tags:
   ferretdb: ferretdb:2.5.0
   presidio: presidio-analyzer:2.2.359 # Analyzer and Anonymizer use same tag
   litellm: litellm:main-v1.74.8-nightly
-  docling: docling-serve-cpu:v1.3.1
+  docling: docling-serve-cpu:v1.7.2
   jupyter: minimal-notebook:notebook-7.0.6
-  otel_collector: otel/opentelemetry-collector-contrib:latest
-  oauth2_proxy: bbvchtly
+  otel_collector: opentelemetry-collector-contrib:latest
+  oauth2_proxy: oauth2-proxy:latest
 
   traefik: traefik:v3.4.4
 
@@ -57,63 +57,63 @@ image_tags:
   # --- GPU-Specific Services (only exist in 'dev' for now) ---
   llama_cpp:
     dev:
-      cpu: llama.cpp:server-b6881
-      gpu: llama.cpp:server-cuda-b6830
+      cpu: llama.cpp:server-b6894
+      gpu: llama.cpp:server-cuda-b6894
 
     local:
-      cpu: llama.cpp:server-b6881
-      gpu: llama.cpp:server-cuda-b6830
+      cpu: llama.cpp:server-b6894
+      gpu: llama.cpp:server-cuda-b6894
 
     nightly:
-      gpu: llama.cpp:server-cuda-b6830
+      gpu: llama.cpp:server-cuda-b6894
 
     latest:
-      gpu: llama.cpp:server-cuda-b6830
+      gpu: llama.cpp:server-cuda-b6894
 
   llama_cpp_embedding:
     dev:
-      cpu: llama.cpp:server-b6881
-      gpu: llama.cpp:server-cuda-b6830
+      cpu: llama.cpp:server-b6894
+      gpu: llama.cpp:server-cuda-b6894
 
     local:
-      cpu: llama.cpp:server-b6881
-      gpu: llama.cpp:server-cuda-b6830
+      cpu: llama.cpp:server-b6894
+      gpu: llama.cpp:server-cuda-b6894
 
     nightly:
-      gpu: llama.cpp:server-cuda-b6830
+      gpu: llama.cpp:server-cuda-b6894
 
     latest:
-      gpu: llama.cpp:server-cuda-b6830
+      gpu: llama.cpp:server-cuda-b6894
 
   llama_cpp_reranking:
     dev:
-      cpu: llama.cpp:server-b6881
-      gpu: llama.cpp:server-cuda-b6830
+      cpu: llama.cpp:server-b6894
+      gpu: llama.cpp:server-cuda-b6894
 
     local:
-      cpu: llama.cpp:server-b6881
-      gpu: llama.cpp:server-cuda-b6830
+      cpu: llama.cpp:server-b6894
+      gpu: llama.cpp:server-cuda-b6894
 
     nightly:
-      gpu: llama.cpp:server-cuda-b6830
+      gpu: llama.cpp:server-cuda-b6894
 
     latest:
-      gpu: llama.cpp:server-cuda-b6830
+      gpu: llama.cpp:server-cuda-b6894
 
   llama_cpp_docling:
     dev:
-      cpu: llama.cpp:server-b6881
-      gpu: llama.cpp:server-cuda-b6830
+      cpu: llama.cpp:server-b6894
+      gpu: llama.cpp:server-cuda-b6894
 
     local:
-      cpu: llama.cpp:server-b6881
-      gpu: llama.cpp:server-cuda-b6830
+      cpu: llama.cpp:server-b6894
+      gpu: llama.cpp:server-cuda-b6894
 
     nightly:
-      gpu: llama.cpp:server-cuda-b6830
+      gpu: llama.cpp:server-cuda-b6894
 
     latest:
-      gpu: llama.cpp:server-cuda-b6830
+      gpu: llama.cpp:server-cuda-b6894
 
   speaches:
     dev:
@@ -210,7 +210,7 @@ service_configs:
           -hf google/gemma-3-12b-it-qat-q4_0-gguf
           --hf-token ${HUGGINGFACE_API_KEY}
           --alias gemma-3-12b
-          --port 8182
+          --port 128000
           --host 0.0.0.0
           -c 8196
           -ngl -1
@@ -221,7 +221,7 @@ service_configs:
           -hf google/gemma-3-12b-it-qat-q4_0-gguf
           --hf-token ${HUGGINGFACE_API_KEY}
           --alias gemma-3-12b
-          --port 8182
+          --port 128000
           --host 0.0.0.0
           -c 8196
           -ngl -1
@@ -275,7 +275,7 @@ service_configs:
   llama_cpp_docling:
     cpu:
       command: |
-        -hf danchev/ibm-granite-docling-258M-GGUF
+        -hf ggml-org/granite-docling-258M-GGUF
         --hf-token ${HUGGINGFACE_API_KEY}
         --alias granite-docling
         --port 8182
@@ -293,7 +293,7 @@ service_configs:
         --no-mmap
     gpu:
       command: |
-        -hf danchev/ibm-granite-docling-258M-GGUF
+        -hf ggml-org/granite-docling-258M-GGUF
         --hf-token ${HUGGINGFACE_API_KEY}
         --alias granite-docling
         --port 8182

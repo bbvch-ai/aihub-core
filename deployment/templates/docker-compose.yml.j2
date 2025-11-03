@@ -803,7 +803,7 @@ services:
       - {{ global.volume_root }}/docling-data:/models
     environment:
       DOCLING_SERVE_ARTIFACTS_PATH: "/models"
-      DOCLING_SERVE_LOAD_MODELS_AT_BOOT: 1
+      DOCLING_SERVE_LOAD_MODELS_AT_BOOT: 0
       DOCLING_SERVE_MAX_SYNC_WAIT: 600
       DOCLING_SERVE_ENABLE_REMOTE_SERVICES: 1
       {%- if stage == 'dev' %}

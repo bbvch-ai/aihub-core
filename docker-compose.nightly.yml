@@ -503,7 +503,7 @@ services:
 
   docling:
     container_name: docling
-    image: ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.3.1
+    image: ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.7.2
     restart: always
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
@@ -511,7 +511,7 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
     environment:
       DOCLING_SERVE_ARTIFACTS_PATH: "/models"
-      DOCLING_SERVE_LOAD_MODELS_AT_BOOT: 1
+      DOCLING_SERVE_LOAD_MODELS_AT_BOOT: 0
       DOCLING_SERVE_MAX_SYNC_WAIT: 600
       DOCLING_SERVE_ENABLE_REMOTE_SERVICES: 1
     depends_on:
@@ -533,7 +533,7 @@ services:
   # ===================================================================
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
+    image: opentelemetry-collector-contrib:latest
     command: [ "--config=/etc/otel-config.yml" ]
     environment:
       - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
@@ -815,7 +815,7 @@ services:
   # ===================================================================
   oauth2proxy:
     container_name: oauth2proxy
-    image: ghcr.io/bbvch-ai/aihub-core/bbvchtly
+    image: ghcr.io/bbvch-ai/aihub-core/oauth2-proxy:latest
     restart: always
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
