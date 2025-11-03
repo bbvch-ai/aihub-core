@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 
 import boto3
+from aihub_lib.generative_ai.utils.path_utils import FIGURES_DIRECTORY_NAME
 from botocore.exceptions import BotoCoreError, ClientError, NoCredentialsError
 
 from aihub_pipeline.resources.data_lake.base.AbstractDataLakeClient import AbstractDataLakeClient
@@ -33,10 +34,7 @@ class S3DataLakeClient(AbstractDataLakeClient):
         self._client = s3_client
         self._ensure_bucket_with_cors()
 
-    def get_all_files(
-        self,
-        figures_directory_name: str,
-    ) -> list[DataLakeFile]:
+    def get_all_files(self) -> list[DataLakeFile]:
         """
         Retrieve all files from the specified directory, excluding figures.
         """
@@ -61,7 +59,7 @@ class S3DataLakeClient(AbstractDataLakeClient):
                 path_parts = key.split("/")
 
                 is_root_folder = len(path_parts) == 1
-                is_figure_folder = figures_directory_name in path_parts
+                is_figure_folder = FIGURES_DIRECTORY_NAME in path_parts
                 is_dagster_folder = any(part.startswith(".") and part.endswith("dagster") for part in path_parts)
                 if is_root_folder or is_figure_folder or is_dagster_folder:
                     continue

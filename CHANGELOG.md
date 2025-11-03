@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.248.1] - 2025-11-03 - Enhanced Document Processing and Data Lake Organization
+
+### Changed
+
+- 🖼️ **Knowledge Interface Clarity**: The knowledge interface now automatically **excludes generated figure files**
+  (artifacts from document processing) from display, providing a cleaner and more focused view of core documents.
+
+### Refactor
+
+- 🧹 **Centralized Figure Directory Management**: The **`__figures__` directory name** used for storing document figures
+  has been centralized as a global constant, significantly improving consistency and maintainability across the system.
+- 🔄 **Simplified Data Lake Operations**: Streamlined data lake client methods and operations by **removing the explicit
+  `figures_directory_name` parameter**, as the directory name is now consistently managed internally.
+- ⚙️ **Optimized Document Loaders**: Updated `DoclingLoader` and `DocumentIntelligenceLoader` to utilize the
+  **centralized figure directory constant**, simplifying their API and ensuring consistent figure path generation.
+- 🛠️ **Refined Resource and Pipeline Definitions**: Cleaned up various resource and pipeline definitions, including
+  `DataLakeResource` and associated factories, by **removing redundant `figures_directory_name` parameters**.
+
+### Removed
+
+- 🗑️ **SonarLint Configuration**: Deleted an obsolete SonarLint project configuration file from the codebase.
+
+---
+
 ## [v0.248.0] - 2025-11-03 - Smarter Document Understanding: Advanced Table Processing
 
 ### Added
