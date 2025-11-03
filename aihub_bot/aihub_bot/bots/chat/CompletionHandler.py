@@ -64,15 +64,7 @@ class CompletionHandler:
     @staticmethod
     def handle_teams_message(turn_context: TurnContext) -> TurnContext | None:
         is_direct_message: bool = CompletionHandler._is_teams_direct_message(turn_context)
-        is_mentioned: bool = CompletionHandler._is_bot_mentioned(turn_context)
-        is_bot_thread: bool = CompletionHandler._is_mentioned_in_conversation(turn_context)
-
-        if not is_direct_message and is_mentioned:
-            CompletionHandler._mark_conversation_as_mentioned(turn_context)
-        if not is_direct_message and not is_mentioned and not is_bot_thread:
-            return None
-
-        return turn_context
+        return CompletionHandler._handle_message(turn_context, is_direct_message)
 
     @staticmethod
     def _is_teams_direct_message(turn_context: TurnContext) -> bool:
@@ -88,15 +80,7 @@ class CompletionHandler:
             turn_context = CompletionHandler._update_slack_turn_context(turn_context)
 
         is_direct_message = CompletionHandler._is_slack_direct_message(turn_context)
-        is_mentioned = CompletionHandler._is_bot_mentioned(turn_context)
-        is_bot_thread = CompletionHandler._is_mentioned_in_conversation(turn_context)
-
-        if not is_direct_message and is_mentioned:
-            CompletionHandler._mark_conversation_as_mentioned(turn_context)
-        if not is_direct_message and not is_mentioned and not is_bot_thread:
-            return None
-
-        return turn_context
+        return CompletionHandler._handle_message(turn_context, is_direct_message)
 
     @staticmethod
     def _is_slack_channel_message(turn_context: TurnContext) -> bool:
@@ -109,6 +93,16 @@ class CompletionHandler:
         conversation_id: str = turn_context.activity.conversation.id
         dm_id_regex = re.compile(r"^B[0-9A-Z]+:T[0-9A-Z]+:D[0-9A-Z]+:\d+[.]\d+$")
         return dm_id_regex.match(conversation_id) is not None
+
+    @staticmethod
+    def _handle_message(turn_context: TurnContext, is_direct_message: bool) -> TurnContext | None:
+        is_mentioned: bool = CompletionHandler._is_bot_mentioned(turn_context)
+        is_bot_thread: bool = CompletionHandler._is_mentioned_in_conversation(turn_context)
+        if not is_direct_message and is_mentioned:
+            CompletionHandler._mark_conversation_as_mentioned(turn_context)
+        if not is_direct_message and not is_mentioned and not is_bot_thread:
+            return None
+        return turn_context
 
     @staticmethod
     def _is_bot_mentioned(turn_context: TurnContext) -> bool:

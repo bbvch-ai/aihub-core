@@ -110,8 +110,6 @@ class OpenaiCompletionHandler(CompletionHandler):
             OpenaiCompletionHandler._message_to_chat_completion_message_param(message) for message in persisted_messages
         ]
 
-        # Create user identity from activity information
-        # For Teams, aadObjectId may be available in channel_data
         user_id = turn_context.activity.from_property.id or "UNKNOWN"
         user_name = turn_context.activity.from_property.name or "UNKNOWN"
         user_email = f"{user_id}@unknown.bot"
@@ -123,7 +121,6 @@ class OpenaiCompletionHandler(CompletionHandler):
             teams_account: TeamsChannelAccount = await connector_client.get_conversation_member(
                 turn_context.activity.conversation.id, user_id
             )
-            # Only use Teams account data if not None
             if teams_account.email is not None:
                 user_email = teams_account.email
             if teams_account.user_role is not None:
