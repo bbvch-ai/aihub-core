@@ -28,7 +28,7 @@ class BotInTheLoopBot(ActivityHandler):
         self.bot_in_the_loop_handler = bot_in_the_loop_handler
 
     @staticmethod
-    def _parse_conversation_id(turn_context: TurnContext, channel: str) -> tuple[str, str] | None:
+    def _parse_conversation_id(turn_context: TurnContext, channel: Channels) -> tuple[str, str] | None:
         conversation_id = turn_context.activity.conversation.id
 
         if channel == Channels.slack:
@@ -78,7 +78,7 @@ class BotInTheLoopBot(ActivityHandler):
     @override
     async def on_message_activity(self, turn_context: TurnContext):
         channel_id = turn_context.activity.channel_id
-        channel: str
+        channel: Channels
 
         if channel_id == Channels.slack:
             if not self.is_slack_channel_thread_message(turn_context):
@@ -99,7 +99,7 @@ class BotInTheLoopBot(ActivityHandler):
         matching_thread_id = self._find_matching_thread(base_conversation_id, thread_identifier)
         if not matching_thread_id:
             logger.debug(
-                f"No matching thread found for {channel} channel {base_conversation_id} "
+                f"No matching thread found for {channel.value} channel {base_conversation_id} "
                 f"and thread {thread_identifier}"
             )
             return
