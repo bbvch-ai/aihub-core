@@ -63,36 +63,38 @@ class CompletionHandler:
 
     @staticmethod
     def handle_teams_message(turn_context: TurnContext) -> TurnContext | None:
-        is_channel_message: bool = CompletionHandler._is_teams_channel_message(turn_context)
+        is_direct_message: bool = CompletionHandler._is_teams_direct_message(turn_context)
         is_mentioned: bool = CompletionHandler._is_bot_mentioned(turn_context)
         bot_id: str = turn_context.activity.recipient.id
         is_bot_thread: bool = CompletionHandler._is_mentioned_in_conversation(turn_context, bot_id)
 
-        if is_channel_message and is_mentioned:
+        if not is_direct_message and is_mentioned:
             CompletionHandler._mark_conversation_as_mentioned(turn_context, bot_id)
-        if is_channel_message and not is_mentioned and not is_bot_thread:
+        if not is_direct_message and not is_mentioned and not is_bot_thread:
             return None
 
         return turn_context
 
     @staticmethod
-    def _is_teams_channel_message(turn_context: TurnContext) -> bool:
+    def _is_teams_direct_message(turn_context: TurnContext) -> bool:
         channel_data: dict[str, Any] = turn_context.activity.channel_data
         # Teams channel messages have a 'channel' property in channel_data
-        return channel_data is not None and channel_data.get("channel") is not None
+        return channel_data is None or channel_data.get("channel") is None
 
     @staticmethod
     def handle_slack_message(turn_context: TurnContext) -> TurnContext | None:
-        is_direct_message = CompletionHandler._is_slack_direct_message(turn_context)
         is_channel_message = CompletionHandler._is_slack_channel_message(turn_context)
+
+        if is_channel_message:
+            turn_context = CompletionHandler._update_slack_turn_context(turn_context)
+
+        is_direct_message = CompletionHandler._is_slack_direct_message(turn_context)
         is_mentioned = CompletionHandler._is_bot_mentioned(turn_context)
         bot_id: str = turn_context.activity.recipient.id
         is_bot_thread = CompletionHandler._is_mentioned_in_conversation(turn_context, bot_id)
 
-        if is_channel_message:
-            turn_context = CompletionHandler._update_slack_turn_context(turn_context)
-            if is_mentioned:
-                CompletionHandler._mark_conversation_as_mentioned(turn_context, bot_id)
+        if not is_direct_message and is_mentioned:
+            CompletionHandler._mark_conversation_as_mentioned(turn_context, bot_id)
         if not is_direct_message and not is_mentioned and not is_bot_thread:
             return None
 
