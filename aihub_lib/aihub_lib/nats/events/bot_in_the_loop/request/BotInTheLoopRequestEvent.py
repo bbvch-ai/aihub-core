@@ -47,7 +47,6 @@ class SlackConfig(BaseModel):
         Field(
             description="The Bot Framework service URL for Slack (OAuth & Permissions Redirect URL). "
             "Common values: 'https://slack.botframework.com' (global) or 'https://europe.slack.botframework.com' (EU).",
-            default="https://slack.botframework.com",
         ),
     ] = "https://slack.botframework.com"
 
