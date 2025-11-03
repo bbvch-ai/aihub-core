@@ -65,10 +65,11 @@ class CompletionHandler:
     def handle_teams_message(turn_context: TurnContext) -> TurnContext | None:
         is_channel_message: bool = CompletionHandler._is_teams_channel_message(turn_context)
         is_mentioned: bool = CompletionHandler._is_bot_mentioned(turn_context)
-        is_bot_thread: bool = CompletionHandler._is_mentioned_in_conversation(turn_context)
+        bot_id: str = turn_context.activity.recipient.id
+        is_bot_thread: bool = CompletionHandler._is_mentioned_in_conversation(turn_context, bot_id)
 
         if is_channel_message and is_mentioned:
-            CompletionHandler._mark_conversation_as_mentioned(turn_context)
+            CompletionHandler._mark_conversation_as_mentioned(turn_context, bot_id)
         if is_channel_message and not is_mentioned and not is_bot_thread:
             return None
 
@@ -85,12 +86,13 @@ class CompletionHandler:
         is_direct_message = CompletionHandler._is_slack_direct_message(turn_context)
         is_channel_message = CompletionHandler._is_slack_channel_message(turn_context)
         is_mentioned = CompletionHandler._is_bot_mentioned(turn_context)
-        is_bot_thread = CompletionHandler._is_mentioned_in_conversation(turn_context)
+        bot_id: str = turn_context.activity.recipient.id
+        is_bot_thread = CompletionHandler._is_mentioned_in_conversation(turn_context, bot_id)
 
         if is_channel_message:
             turn_context = CompletionHandler._update_slack_turn_context(turn_context)
             if is_mentioned:
-                CompletionHandler._mark_conversation_as_mentioned(turn_context)
+                CompletionHandler._mark_conversation_as_mentioned(turn_context, bot_id)
         if not is_direct_message and not is_mentioned and not is_bot_thread:
             return None
 
@@ -136,14 +138,16 @@ class CompletionHandler:
         return turn_context
 
     @staticmethod
-    def _mark_conversation_as_mentioned(turn_context: TurnContext):
+    def _mark_conversation_as_mentioned(turn_context: TurnContext, bot_id: str):
+        """Mark that this specific bot was mentioned in the conversation."""
         conversation_id: str = turn_context.activity.conversation.id
-        ConversationEntity.set_conversation_is_mentioned(conversation_id=conversation_id, is_mentioned=True)
+        ConversationEntity.add_bot_to_mentioned(conversation_id=conversation_id, bot_id=bot_id)
 
     @staticmethod
-    def _is_mentioned_in_conversation(turn_context: TurnContext) -> bool:
+    def _is_mentioned_in_conversation(turn_context: TurnContext, bot_id: str) -> bool:
+        """Check if this specific bot was mentioned in the conversation."""
         conversation_id: str = turn_context.activity.conversation.id
-        return ConversationEntity.get_conversation_is_mentioned(conversation_id)
+        return ConversationEntity.is_bot_mentioned_in_conversation(conversation_id, bot_id)
 
     @staticmethod
     def delete_conversation_if_exists(turn_context: TurnContext):
