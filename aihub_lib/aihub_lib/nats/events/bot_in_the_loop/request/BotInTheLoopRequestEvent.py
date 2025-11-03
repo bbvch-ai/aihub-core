@@ -1,5 +1,4 @@
 from typing import Annotated, ClassVar
-from uuid import UUID
 
 from pydantic import BaseModel, Field
 

@@ -1,6 +1,5 @@
-from aihub_lib.nats.events import StopEvent, UserMessageEvent
+from aihub_lib.nats.events import StopEvent
 from aihub_lib.nats.events.bot_in_the_loop.BotInTheLoop import BotInTheLoop
-from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import TeamsConfig
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.context.run.RunContext import RunContext

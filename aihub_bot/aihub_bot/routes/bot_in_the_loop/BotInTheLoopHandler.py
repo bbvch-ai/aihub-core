@@ -1,16 +1,15 @@
 from collections.abc import Callable
 from typing import Annotated, cast
 
-from microsoft_agents.hosting.core.connector.client.connector_client import ConversationsOperations
-
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
 from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import TeamsConfig
 from aihub_lib.nats.topics import AgentInstanceTopic
 from cachetools import TTLCache
 from fastapi import Request
-from microsoft_agents.activity import ChannelAccount, ConversationAccount, ConversationReference, Channels
-from microsoft_agents.hosting.core import TurnContext, TeamsConnectorClient
+from microsoft_agents.activity import ChannelAccount, Channels, ConversationAccount, ConversationReference
+from microsoft_agents.hosting.core import TeamsConnectorClient, TurnContext
+from microsoft_agents.hosting.core.connector.client.connector_client import ConversationsOperations
 from pydantic import BaseModel, Field
 
 from aihub_bot.persistence.entities.PathEntity import PathEntity

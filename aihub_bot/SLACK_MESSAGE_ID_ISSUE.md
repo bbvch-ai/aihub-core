@@ -31,13 +31,17 @@ This code worked with the old `botbuilder-integration-aiohttp` SDK but now retur
 ### The Response Chain
 
 1. **`TurnContext.send_activity()`** → calls `send_activities()`
+
    - Location: `microsoft_agents/hosting/core/turn_context.py:210`
 
 2. **`TurnContext.send_activities()`** → calls `adapter.send_activities()`
+
    - Location: `microsoft_agents/hosting/core/turn_context.py:258`
 
 3. **`ChannelServiceAdapter.send_activities()`** → calls Azure Bot Service API
+
    - Location: `microsoft_agents/hosting/core/channel_service_adapter.py:103-114`
+
    ```python
    response = await connector_client.conversations.send_to_conversation(
        activity.conversation.id,
@@ -46,6 +50,7 @@ This code worked with the old `botbuilder-integration-aiohttp` SDK but now retur
    ```
 
 4. **Critical Fallback** (line 115):
+
    ```python
    response = response or ResourceResponse(id=activity.id or "")
    ```
@@ -53,6 +58,7 @@ This code worked with the old `botbuilder-integration-aiohttp` SDK but now retur
 ### The Problem
 
 The Azure Bot Service API endpoint (`v3/conversations/{conversation_id}/activities`) is returning a response where:
+
 - The `id` field is either missing, `null`, or empty
 - This occurs specifically for Slack proactive messages sent via `continue_conversation`
 
@@ -65,11 +71,13 @@ The Azure Bot Service API endpoint (`v3/conversations/{conversation_id}/activiti
 3. **Historical Working Code**: The original Bot-in-the-Loop implementation (commit `3c3d2161`, 2024) used identical logic to capture `response.id`, indicating the old SDK received proper IDs from Azure Bot Service.
 
 4. **ResourceResponse Structure**: Inspection of the new SDK shows:
+
    ```python
    ResourceResponse.model_fields = {
        'id': FieldInfo(annotation=str, required=False, default=None, ...)
    }
    ```
+
    The field exists but is not being populated.
 
 ## Possible Causes
@@ -124,11 +132,13 @@ async def _bot_in_the_loop_callback(question: str, thread: BotInTheLoopThread) -
 ```
 
 **Pros**:
+
 - Most reliable, doesn't depend on Azure Bot Service
 - Direct control over Slack API
 - Guaranteed to get the message timestamp
 
 **Cons**:
+
 - Sends message twice (once through Bot Framework, once directly)
 - Requires additional API call
 - Need to handle Slack API errors
@@ -226,6 +236,7 @@ def _bot_in_the_loop_callback(question: str, thread: BotInTheLoopThread) -> Call
 ```
 
 This solution:
+
 - ✅ Bypasses `TurnContext.apply_conversation_reference()` which sets `reply_to_id`
 - ✅ Uses `send_to_conversation` which correctly reads the JSON response
 - ✅ Captures the Slack message timestamp (`ts`) in `response.id`
