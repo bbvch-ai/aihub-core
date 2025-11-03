@@ -62,8 +62,14 @@ class ConversationTracker(Document):
     expired due to inactivity, not when they were deliberately reset in Teams.
     """
 
-    meta = {"collection": "conversation_trackers", "strict": True}
-    conversation_id = StringField(required=True, unique=True)
+    meta = {
+        "collection": "bot_conversation_trackers",
+        "strict": True,
+        "indexes": [
+            {"fields": ["conversation_id"], "unique": True},
+        ],
+    }
+    conversation_id = StringField(required=True)
     created_at = DateTimeField(default=lambda: datetime.now(UTC))
     explicitly_deleted = BooleanField(default=False)
 
@@ -117,7 +123,7 @@ class ConversationEntity(Document):
     conversation_id = StringField(required=True)
     mentioned_bots = ListField(StringField(), default=list)
     messages = ListField(EmbeddedDocumentField(Message), required=False)
-    last_activity = DateTimeField(default=datetime.utcnow)
+    last_activity = DateTimeField(default=lambda: datetime.now(UTC))
 
     @classmethod
     def update_ttl_index(cls, conversation_ttl_days: float):
