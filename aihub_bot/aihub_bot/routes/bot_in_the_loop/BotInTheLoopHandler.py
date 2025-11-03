@@ -1,6 +1,8 @@
 from collections.abc import Callable
 from typing import Annotated
 
+from microsoft_agents.hosting.core.connector.client.connector_client import ConversationsOperations
+
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
 from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import TeamsConfig
@@ -8,7 +10,7 @@ from aihub_lib.nats.topics import AgentInstanceTopic
 from cachetools import TTLCache
 from fastapi import Request
 from microsoft_agents.activity import ChannelAccount, ConversationAccount, ConversationReference
-from microsoft_agents.hosting.core import TurnContext
+from microsoft_agents.hosting.core import TurnContext, ConnectorClient, TeamsConnectorClient
 from pydantic import BaseModel, Field
 
 from aihub_bot.persistence.entities.PathEntity import PathEntity
@@ -195,9 +197,39 @@ class BotInTheLoopHandler:
     @staticmethod
     def _bot_in_the_loop_callback(question: str, thread: BotInTheLoopThread) -> Callable:
         async def callback(turn_context: TurnContext):
-            response = await turn_context.send_activity(question)
-            if response and hasattr(response, "id") and thread.thread_identifier is None:
-                thread.thread_identifier = response.id
+            from typing import cast
+
+            from microsoft_agents.activity import Activity, ActivityTypes
+
+            connector_client = cast(
+                TeamsConnectorClient,  # for unknown reasons, this is always a TeamsConnectorClient
+                turn_context.turn_state.get("ConnectorClient"),
+            )
+
+            if not connector_client:
+                raise ValueError("Unable to extract ConnectorClient from turn context")
+
+            bot: ChannelAccount = turn_context.activity.recipient
+
+            activity = Activity(
+                type=ActivityTypes.message,
+                text=question,
+                conversation=turn_context.activity.conversation,
+                from_property=bot,
+            )
+
+            conv: ConversationsOperations = cast(ConversationsOperations, connector_client.conversations)
+
+            response = await conv.send_to_conversation(
+                conversation_id=activity.conversation.id,
+                body=activity,
+            )
+
+            if thread.thread_identifier is None:
+                if response and hasattr(response, "id"):
+                    thread.thread_identifier = response.id
+                else:
+                    raise ValueError("Unable to get thread identifier from response")
 
         return callback
 

@@ -6,9 +6,10 @@ After migrating from `botbuilder-integration-aiohttp 4.16.2` to `microsoft-agent
 
 This prevents capturing the Slack message timestamp (`ts`), which is required for threading responses back to the correct message.
 
-**Status**: Open issue with microsoft-agents SDK
+**Status**: ✅ Resolved - Workaround implemented
 **Date Discovered**: 2025-10-31
-**Affected Code**: `aihub_bot/routes/bot_in_the_loop/BotInTheLoopHandler.py:196-202`
+**Date Resolved**: 2025-11-03
+**Affected Code**: `aihub_bot/routes/bot_in_the_loop/BotInTheLoopHandler.py:195-230`
 
 ## Background
 
@@ -171,29 +172,73 @@ This appears to be a regression in the microsoft-agents SDK or Azure Bot Service
 - **Title**: "ResourceResponse.id is None for Slack proactive messages in microsoft-agents SDK 0.5.0"
 - **Details**: Include this analysis and comparison to botbuilder-integration-aiohttp 4.16.2 behavior
 
-## Temporary Workaround
+## Solution Implemented
 
-Currently implemented in `BotInTheLoopHandler.py:199-200`:
+**Root Cause:** The issue was caused by `TurnContext.apply_conversation_reference()` automatically setting `reply_to_id` when sending activities:
 
 ```python
-if response and hasattr(response, "id") and thread.thread_identifier is None:
-    thread.thread_identifier = response.id
+# In TurnContext.apply_conversation_reference()
+if reference.activity_id:
+    activity.reply_to_id = reference.activity_id  # Forces reply_to_activity path
 ```
 
-This code is safe but non-functional. The `thread.thread_identifier` will remain `None`, which means:
-- First message creates a new channel conversation
-- Subsequent messages in the same logical thread may create new conversations instead of threading properly
-- User responses may not be matched to the correct waiting agent
+When using `continue_conversation`, the continuation activity has an ID, which gets copied to `reply_to_id`, forcing the code path through `reply_to_activity` instead of `send_to_conversation`. The `reply_to_activity` method has a bug where it doesn't read the response body when `content_length` is `None`:
+
+```python
+# Bug in reply_to_activity
+result = await response.json() if response.content_length else {}
+# Returns {} instead of reading the 33 bytes of JSON
+```
+
+**Fix:** Bypass `TurnContext.send_activity()` and call the connector client directly. Implemented in `BotInTheLoopHandler.py:195-230`:
+
+```python
+@staticmethod
+def _bot_in_the_loop_callback(question: str, thread: BotInTheLoopThread) -> Callable:
+    async def callback(turn_context: TurnContext):
+        from typing import cast
+        from microsoft_agents.activity import Activity, ActivityTypes
+        from microsoft_agents.hosting.core.connector.connector_client_base import ConnectorClientBase
+
+        # Get connector client directly to bypass TurnContext's apply_conversation_reference
+        connector_client = cast(
+            ConnectorClientBase,
+            turn_context.turn_state.get("ConnectorClient"),
+        )
+
+        # Create activity without reply_to_id
+        activity = Activity(
+            type=ActivityTypes.message,
+            text=question,
+            conversation=turn_context.activity.conversation,
+            from_property=turn_context.activity.recipient,
+        )
+
+        # Call send_to_conversation directly (not reply_to_activity)
+        response = await connector_client.conversations.send_to_conversation(
+            conversation_id=activity.conversation.id,
+            body=activity,
+        )
+
+        # Capture the Slack message timestamp
+        if response and hasattr(response, "id") and thread.thread_identifier is None:
+            thread.thread_identifier = response.id
+```
+
+This solution:
+- ✅ Bypasses `TurnContext.apply_conversation_reference()` which sets `reply_to_id`
+- ✅ Uses `send_to_conversation` which correctly reads the JSON response
+- ✅ Captures the Slack message timestamp (`ts`) in `response.id`
+- ✅ Enables proper threading for subsequent messages
 
 ## Investigation Checklist
 
-- [ ] Test with Microsoft Teams to determine if issue is Slack-specific
-- [ ] Add enhanced logging to capture actual API responses
-- [ ] Check Azure Bot Service logs/telemetry for the API call
-- [ ] Test with direct user reply (non-proactive) to see if IDs are returned then
-- [ ] Compare network traffic between old SDK and new SDK
-- [ ] File issue with Microsoft if confirmed as SDK regression
-- [ ] Implement Option 1 (direct Slack API) as permanent workaround if needed
+- [x] Identified root cause: `TurnContext.apply_conversation_reference()` sets `reply_to_id`
+- [x] Confirmed `reply_to_activity` bug: doesn't read response when `content_length` is `None`
+- [x] Implemented fix: Bypass `TurnContext.send_activity()` and call connector client directly
+- [ ] Test with Microsoft Teams to verify fix works across channels
+- [ ] Test in production Slack environment
+- [ ] Consider filing issue with Microsoft about `reply_to_activity` bug
 
 ## Migration History
 
