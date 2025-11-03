@@ -1,6 +1,7 @@
 from functools import cache
 
 from llama_index.vector_stores.milvus import MilvusVectorStore
+from llama_index.vector_stores.milvus.utils import BM25BuiltInFunction
 
 from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID
 
@@ -14,4 +15,6 @@ def create_milvus_vector_store(uri: str, collection_name: str, embedding_vector_
         dim=embedding_vector_dimension,
         overwrite=False,
         doc_id_field=DOCUMENT_ID,
+        enable_sparse=True,
+        sparse_embedding_function=BM25BuiltInFunction(),
     )
