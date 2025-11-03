@@ -788,7 +788,7 @@ def test_large_table_splitting():
 
     # Create an HTML table with header and many rows to exceed chunk size
     table_rows = ["<table>"]
-    table_rows.append("<thead><tr><th>Column 1</th><th>Column 2</th><th>Column 3</th></tr><thead>")
+    table_rows.append("<thead><tr><th>Column 1</th><th>Column 2</th><th>Column 3</th></tr></thead>")
     table_rows.append("<tbody>")
     for i in range(20):
         table_rows.append(f"<tr><td>Data {i}A</td><td>Data {i}B</td><td>Data {i}C</td></tr>")

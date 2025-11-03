@@ -86,9 +86,9 @@ class DoclingLoader(BaseReader):
         if len(doc.pictures) > 0:
             img_strs = [picture.export_to_markdown(doc) for picture in doc.pictures]
             markdown_text = inject_figure_tags(markdown_text=markdown_content, img_strs=img_strs)
-            markdown_content = convert_tables_to_html(markdown_text=markdown_text, tables=doc.tables, document=doc)
+            markdown_content = convert_tables_to_html(markdown_text=markdown_text, tables=doc.tables)
         else:
-            markdown_content = convert_tables_to_html(markdown_text=markdown_content, tables=doc.tables, document=doc)
+            markdown_content = convert_tables_to_html(markdown_text=markdown_content, tables=doc.tables)
 
         metadata = {NUMBER_OF_PAGES: len(answer["document"]["json_content"]["pages"])}
 
@@ -234,7 +234,7 @@ def inject_figure_tags(markdown_text: str, img_strs: list[str]):
     return markdown_text
 
 
-def convert_tables_to_html(markdown_text: str, tables: list[TableItem], document: DoclingDocument):
+def convert_tables_to_html(markdown_text: str, tables: list[TableItem]):
     """Replace Markdown tables with HTML tables."""
     pattern = r"(\|[^\n]+\|\r?\n\|[:\-| ]+\|\r?(?:\n\|[^\n]+\|\r?)*)"
     md_tables = re.findall(pattern, markdown_text)

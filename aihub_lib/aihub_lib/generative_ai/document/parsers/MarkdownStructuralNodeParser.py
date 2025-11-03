@@ -35,6 +35,8 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     NodeContentType,
 )
 
+TC = "__token_count__"
+
 
 class TableHeaderAnalysis(BaseModel):
     """LLM response for table header structure analysis."""
@@ -199,13 +201,10 @@ Provide your analysis of how many header rows this table has."""
 
         prompt = PromptTemplate(prompt_text)
 
-        try:
-            llm, _ = self.llm_config.to_llama_index()
-            result = llm.structured_predict(TableHeaderAnalysis, prompt, table_html=table_html)
-            analysis = TableHeaderAnalysis.model_validate(result)
-            return max(0, min(4, analysis.num_header_rows))
-        except Exception:
-            return 1
+        llm, _ = self.llm_config.to_llama_index()
+        result = llm.structured_predict(TableHeaderAnalysis, prompt, table_html=table_html)
+        analysis = TableHeaderAnalysis.model_validate(result)
+        return max(0, min(4, analysis.num_header_rows))
 
     def _count_tokens(self, text: str) -> int:
         """
@@ -237,6 +236,7 @@ Provide your analysis of how many header rows this table has."""
         header_markdown = header_df.to_markdown(index=False)
         header_token_count = self._count_tokens(header_markdown)
 
+        # maximum reranking context is 4096, therefore half is a good maximum chunk size, to fit query into reranking
         available_tokens = min(2048, self.sentence_splitter.chunk_size * 2) - header_token_count
 
         def count_row_tokens(row: pd.Series) -> int:
@@ -244,13 +244,13 @@ Provide your analysis of how many header rows this table has."""
             row_with_pipes = f"| {row_text} |"
             return self._count_tokens(row_with_pipes)
 
-        df["__token_count__"] = df.apply(count_row_tokens, axis=1)
+        df[TC] = df.apply(count_row_tokens, axis=1)
 
         chunks: list[TextChunk] = []
         chunk_start = 0
 
         while chunk_start < len(df):
-            cumsum = df["__token_count__"].iloc[chunk_start:].cumsum()
+            cumsum = df[TC].iloc[chunk_start:].cumsum()
             valid_rows = cumsum[cumsum <= available_tokens]
 
             if len(valid_rows) == 0:
@@ -258,13 +258,13 @@ Provide your analysis of how many header rows this table has."""
             else:
                 chunk_end = chunk_start + len(valid_rows)
 
-            chunk_df = df.iloc[chunk_start:chunk_end].drop(columns=["__token_count__"])
+            chunk_df = df.iloc[chunk_start:chunk_end].drop(columns=[TC])
             markdown_table = chunk_df.to_markdown(index=False)
             chunks.append(TextChunk(markdown_table, NODE_CONTENT_TYPE_TABLE))
 
             chunk_start = chunk_end
 
-        return chunks if chunks else [TextChunk(table_html, NODE_CONTENT_TYPE_TABLE)]
+        return chunks
 
     def _split_table(self, table_content: str) -> list[TextChunk]:
         """
@@ -449,8 +449,8 @@ class MarkdownStructuralNodeParser(NodeParser):
     include_prev_next_rel: Annotated[bool, Field(description="Include prev/next node relationships.")] = False
 
     llm_config: Annotated[
-        LLMConfig, Field(description="LLM configuration for table header detection and tokenization.")
-    ]
+        LLMConfig | None, Field(description="LLM configuration for table header detection and tokenization.")
+    ] = None
 
     metadata_extractor: Annotated[
         MetadataExtractor | None, Field(description="MetadataExtractor used to extract metadata.")
