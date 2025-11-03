@@ -3,7 +3,6 @@ from pathlib import Path
 
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.generative_ai.utils.path_utils import FIGURES_DIRECTORY_NAME
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from dagster import (
     AnchorBasedFilePathMapping,
