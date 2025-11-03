@@ -35,7 +35,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     NodeContentType,
 )
 
-TC = "__token_count__"
+TOKEN_COUNT_FIELD_NAME = "__token_count__"
 
 
 class TableHeaderAnalysis(BaseModel):
@@ -184,8 +184,6 @@ class NodeCreatorFromSplits:
         """
         Use LLM to determine the number of header rows in an HTML table.
         """
-        if not self.llm_config:
-            return 1
 
         prompt_text = """Analyze the following HTML table and determine how many rows constitute the table header.
 
@@ -211,6 +209,7 @@ Provide your analysis of how many header rows this table has."""
         Count tokens in text using the configured LLM's tokenizer, or estimate based on characters.
         """
         if not self.llm_config:
+            # according to OpenAI 1 token is around 4 characters
             return len(text) // 4
 
         token_list = self.llm_config.token_counter(text)
@@ -244,13 +243,13 @@ Provide your analysis of how many header rows this table has."""
             row_with_pipes = f"| {row_text} |"
             return self._count_tokens(row_with_pipes)
 
-        df[TC] = df.apply(count_row_tokens, axis=1)
+        df[TOKEN_COUNT_FIELD_NAME] = df.apply(count_row_tokens, axis=1)
 
         chunks: list[TextChunk] = []
         chunk_start = 0
 
         while chunk_start < len(df):
-            cumsum = df[TC].iloc[chunk_start:].cumsum()
+            cumsum = df[TOKEN_COUNT_FIELD_NAME].iloc[chunk_start:].cumsum()
             valid_rows = cumsum[cumsum <= available_tokens]
 
             if len(valid_rows) == 0:
@@ -258,7 +257,7 @@ Provide your analysis of how many header rows this table has."""
             else:
                 chunk_end = chunk_start + len(valid_rows)
 
-            chunk_df = df.iloc[chunk_start:chunk_end].drop(columns=[TC])
+            chunk_df = df.iloc[chunk_start:chunk_end].drop(columns=[TOKEN_COUNT_FIELD_NAME])
             markdown_table = chunk_df.to_markdown(index=False)
             chunks.append(TextChunk(markdown_table, NODE_CONTENT_TYPE_TABLE))
 
@@ -270,6 +269,9 @@ Provide your analysis of how many header rows this table has."""
         """
         Split a large table into smaller chunks, preserving headers.
         """
+        if not self.llm_config:
+            return self._split_table_with_dataframe(table_content, 1)
+
         num_header_rows = self._determine_header_rows_with_llm(table_content)
         return self._split_table_with_dataframe(table_content, num_header_rows)
 
