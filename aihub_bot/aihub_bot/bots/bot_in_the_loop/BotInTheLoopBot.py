@@ -6,6 +6,7 @@ from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEv
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
 from aihub_lib.nats.events.bot_in_the_loop.response.BotInTheLoopResponseEvent import BotInTheLoopResponderInfo
+from microsoft_agents.activity import Channels
 from microsoft_agents.hosting.core import ActivityHandler, TurnContext
 from nats.aio.client import Client as NATS
 
@@ -30,7 +31,7 @@ class BotInTheLoopBot(ActivityHandler):
     def _parse_conversation_id(turn_context: TurnContext, channel: str) -> tuple[str, str] | None:
         conversation_id = turn_context.activity.conversation.id
 
-        if channel == "slack":
+        if channel == Channels.slack:
             parts = conversation_id.split(":")
             if len(parts) < 4:
                 logger.debug(f"Invalid Slack conversation ID format: {conversation_id}")
@@ -39,7 +40,7 @@ class BotInTheLoopBot(ActivityHandler):
             thread_identifier = parts[3]
             return base_conversation_id, thread_identifier
 
-        elif channel == "msteams":
+        elif channel == Channels.ms_teams:
             parts = conversation_id.split(";")
             if len(parts) != 2:
                 logger.debug(f"Invalid Teams conversation ID format: {conversation_id}")
@@ -79,13 +80,13 @@ class BotInTheLoopBot(ActivityHandler):
         channel_id = turn_context.activity.channel_id
         channel: str
 
-        if channel_id == "slack":
+        if channel_id == Channels.slack:
             if not self.is_slack_channel_thread_message(turn_context):
                 logger.debug("Not a Slack channel thread message")
                 return
-            channel = "slack"
-        elif channel_id == "msteams":
-            channel = "msteams"
+            channel = Channels.slack
+        elif channel_id == Channels.ms_teams:
+            channel = Channels.ms_teams
         else:
             raise NotImplementedError("Only Slack and Teams channels are supported")
 

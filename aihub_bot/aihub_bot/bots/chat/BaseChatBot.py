@@ -4,7 +4,7 @@ from typing import Any, override
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.utils import str_to_object_id
-from microsoft_agents.activity import Activity, ActivityTypes
+from microsoft_agents.activity import Activity, ActivityTypes, Channels
 from microsoft_agents.hosting.core import ActivityHandler, TurnContext
 
 from aihub_bot.bots.chat.CompletionHandler import CompletionHandler
@@ -45,7 +45,7 @@ class BaseChatBot(ActivityHandler):
         is when the bot is added to the conversation again.
         """
         if (
-            turn_context.activity.channel_id == "msteams"
+            turn_context.activity.channel_id == Channels.ms_teams
             and turn_context.activity.members_added is not None
             and turn_context.activity.recipient.id in [member.id for member in turn_context.activity.members_added]
             and turn_context.activity.channel_data.get("team") is None
@@ -96,13 +96,13 @@ class BaseChatBot(ActivityHandler):
         )
 
         # Handle Slack-specific message formatting
-        if turn_context.activity.channel_id == "slack":
+        if turn_context.activity.channel_id == Channels.slack:
             turn_context = self.completion_handler.handle_slack_message(turn_context)
             if turn_context is None:
                 return
 
         # Handle Teams-specific message formatting
-        if turn_context.activity.channel_id == "msteams":
+        if turn_context.activity.channel_id == Channels.ms_teams:
             turn_context = self.completion_handler.handle_teams_message(turn_context)
             if turn_context is None:
                 return

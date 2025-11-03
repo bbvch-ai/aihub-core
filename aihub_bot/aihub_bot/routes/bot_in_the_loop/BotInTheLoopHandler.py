@@ -109,9 +109,9 @@ class BotInTheLoopHandler:
     def _build_conversation_id_with_thread_identifier(thread: BotInTheLoopThread, channel: str) -> str:
         conversation_id = thread.conversation_id
         if thread.thread_identifier:
-            if channel == "slack":
+            if channel == Channels.slack:
                 conversation_id += f":{thread.thread_identifier}"
-            elif channel == "msteams":
+            elif channel == Channels.ms_teams:
                 conversation_id += f";messageid={thread.thread_identifier}"
 
         return conversation_id
@@ -146,7 +146,7 @@ class BotInTheLoopHandler:
 
         thread = self._update_or_create_thread(thread_id, teams_config.channel_id, event)
 
-        conversation_id = self._build_conversation_id_with_thread_identifier(thread, "msteams")
+        conversation_id = self._build_conversation_id_with_thread_identifier(thread, Channels.ms_teams)
 
         conversation = ConversationReference(
             channel_id=Channels.ms_teams,  # type: ignore
@@ -176,7 +176,7 @@ class BotInTheLoopHandler:
 
         thread = self._update_or_create_thread(thread_id, base_conversation_id, event)
 
-        conversation_id = self._build_conversation_id_with_thread_identifier(thread, "slack")
+        conversation_id = self._build_conversation_id_with_thread_identifier(thread, Channels.slack)
 
         bot_team_id = f"{slack_ids.bot_id}:{slack_ids.team_id}"
 
