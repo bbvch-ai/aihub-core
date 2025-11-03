@@ -70,7 +70,6 @@ def default_definitions(
     datalake_container_name: str,
     embedding_model_name: str = "local/qwen-embedding",
     llm_model_name: str = "local/gemma-3-multimodal-small",
-    figures_directory_name: str = "__figures__",
     with_summary_nodes: bool = True,
     observe_job_hour: int = 2,
     observe_job_minute: int = 0,
@@ -133,7 +132,6 @@ def default_definitions(
             ),
             **s3_data_lake_resources(
                 container_name=datalake_container_name,
-                figures_directory_name=figures_directory_name,
             ),
             "embedding_model": EmbeddingModelResource(
                 embedding_config=EmbeddingModelConfig(model_name=embedding_model_name),
@@ -156,7 +154,6 @@ def default_sharepoint_to_datalake_definitions(
     target_folders: list[str] | None = None,
     exclude_folders: list[str] | None = None,
     supported_filetypes: list[str] | None = None,
-    figures_directory_name: str = "__figures__",
     observe_job_hour: int = 0,
     observe_job_minute: int = 0,
     remove_job_hour: int = 1,
@@ -221,7 +218,6 @@ def default_sharepoint_to_datalake_definitions(
             "sharepoint_io_manager": sharepoint_io_manager,
             **s3_data_lake_resources(
                 container_name=datalake_container_name,
-                figures_directory_name=figures_directory_name,
                 directory_name=datalake_directory_name,
             ),
         },

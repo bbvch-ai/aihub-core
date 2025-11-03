@@ -41,10 +41,7 @@ class AbstractDataLakeClient(ABC):
         self.container_name = container_name
 
     @abstractmethod
-    def get_all_files(
-        self,
-        figures_directory_name: str,
-    ) -> list[DataLakeFile]:
+    def get_all_files(self) -> list[DataLakeFile]:
         """
         Retrieve all files from a directory, excluding figures subdirectory.
 

@@ -95,7 +95,7 @@ class DoclingLoader(BaseReader):
         soup = BeautifulSoup(markdown_content, "html.parser")
         figure_tags = soup.find_all("figure")
 
-        figures_dir = create_figures_folder_name(file, figures_directory_name)
+        figures_dir = create_figures_folder_name(file)
         for idx, figure_tag in enumerate(figure_tags):
             encoded_figure = figure_tag.text.split("](")[1][:-1]
             encoded_figure = encoded_figure.replace("data:image/png;base64,", "")
