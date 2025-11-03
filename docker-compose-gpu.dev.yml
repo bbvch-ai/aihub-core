@@ -48,13 +48,11 @@ services:
     restart: always
     ports:
       - "8889:8888"   # Filer HTTP port
-      - "18888" # Filer gRPC port
+      - "18888"       # Filer gRPC port
     command: >
       filer 
       -master="seaweedfs-master:9333" 
       -ip.bind=0.0.0.0
-    ports:
-      - "8889:8888"
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-filer:/data
     depends_on:
