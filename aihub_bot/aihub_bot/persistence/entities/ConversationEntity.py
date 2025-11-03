@@ -1,4 +1,5 @@
 import logging
+import re
 from datetime import UTC, datetime
 
 from mongoengine import (
@@ -28,6 +29,13 @@ class Message(EmbeddedDocument):
     content = ListField(EmbeddedDocumentField(Content), required=True)
     role = StringField(required=True)
     name = StringField(required=True)
+
+
+def _clean_conversation_id(conversation_id: str) -> str:
+    slack_thread_re = re.compile(r"^B[0-9A-Z]+:(T[0-9A-Z]+:C[0-9A-Z]+(?::\d+[.]\d+)?)$")
+    if slack_thread_re.match(conversation_id):
+        return slack_thread_re.sub(r"\1", conversation_id)
+    return conversation_id
 
 
 class ConversationTracker(Document):
@@ -61,6 +69,7 @@ class ConversationTracker(Document):
 
     @classmethod
     def track_conversation(cls, conversation_id: str):
+        conversation_id = _clean_conversation_id(conversation_id)
         cls.objects(conversation_id=conversation_id).update_one(
             upsert=True,
             set__conversation_id=conversation_id,
@@ -70,12 +79,14 @@ class ConversationTracker(Document):
 
     @classmethod
     def mark_explicitly_deleted(cls, conversation_id: str):
+        conversation_id = _clean_conversation_id(conversation_id)
         cls.objects(conversation_id=conversation_id).update_one(
             upsert=True, set__conversation_id=conversation_id, set__explicitly_deleted=True
         )
 
     @classmethod
     def should_show_expiration_message(cls, conversation_id: str) -> bool:
+        conversation_id = _clean_conversation_id(conversation_id)
         tracker = cls.objects(conversation_id=conversation_id).first()
         exists_now = ConversationEntity.get_conversation_by_conversation_id(conversation_id) is not None
 
@@ -131,11 +142,13 @@ class ConversationEntity(Document):
         conversation_id: str,
         messages: list[Message],
     ) -> "ConversationEntity":
+        conversation_id = _clean_conversation_id(conversation_id)
         conversation = cls(conversation_id=conversation_id, messages=messages, last_activity=datetime.utcnow())
         return conversation.save()
 
     @classmethod
     def delete_conversation_if_exists(cls, conversation_id: str) -> None:
+        conversation_id = _clean_conversation_id(conversation_id)
         conversation = cls.get_conversation_by_conversation_id(conversation_id)
         if conversation is None:
             logger.debug(f"Conversation {conversation_id} does not exist.")
@@ -148,6 +161,7 @@ class ConversationEntity(Document):
         conversation_id: str,
         messages: list[Message],
     ) -> "ConversationEntity":
+        conversation_id = _clean_conversation_id(conversation_id)
         conversation = cls.get_conversation_by_conversation_id(conversation_id)
         if conversation is None:
             conversation = cls.create_conversation(conversation_id, [])
@@ -157,20 +171,24 @@ class ConversationEntity(Document):
 
     @classmethod
     def get_conversation_by_conversation_id(cls, conversation_id: str) -> "ConversationEntity":
+        conversation_id = _clean_conversation_id(conversation_id)
         return cls.objects().filter(conversation_id=conversation_id).first()
 
     @classmethod
     def get_messages_by_conversation_id(cls, conversation_id: str) -> ListField:
+        conversation_id = _clean_conversation_id(conversation_id)
         conversation = cls.get_conversation_by_conversation_id(conversation_id)
         return conversation.messages
 
     @classmethod
     def is_bot_mentioned_in_conversation(cls, conversation_id: str, bot_id: str) -> bool:
+        conversation_id = _clean_conversation_id(conversation_id)
         conversation = cls.get_conversation_by_conversation_id(conversation_id)
         return bot_id in conversation.mentioned_bots
 
     @classmethod
     def add_bot_to_mentioned(cls, conversation_id: str, bot_id: str) -> "ConversationEntity":
+        conversation_id = _clean_conversation_id(conversation_id)
         conversation = cls.get_conversation_by_conversation_id(conversation_id)
         if bot_id not in conversation.mentioned_bots:
             conversation.mentioned_bots.append(bot_id)
@@ -178,4 +196,5 @@ class ConversationEntity(Document):
 
     @classmethod
     def is_new_conversation(cls, conversation_id: str) -> bool:
+        conversation_id = _clean_conversation_id(conversation_id)
         return cls.get_conversation_by_conversation_id(conversation_id) is None
