@@ -94,7 +94,7 @@ def self_hosted_agent_config(event_loop):
     yield build_retrieval_agent_config(
         embedding_config=embedding_config,
         vector_store=vector_store,
-        query_mode=VectorStoreQueryMode.DEFAULT,
+        query_mode=VectorStoreQueryMode.HYBRID,
     )
 
     drop_collection(collection_name="retrieval_agent_development")

@@ -163,7 +163,7 @@ def self_hosted_agent_config(test_collection):
         reranking_config=reranking_config,
         embedding_config=embedding_config,
         vector_store=vector_store,
-        query_mode=VectorStoreQueryMode.DEFAULT,
+        query_mode=VectorStoreQueryMode.HYBRID,
     )
 
 
