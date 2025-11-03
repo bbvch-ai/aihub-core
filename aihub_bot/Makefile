@@ -41,7 +41,7 @@ run-prod:
 		--timeout=300 \
 		-b 0.0.0.0:8001 \
 		--forwarded-allow-ips=* \
-		app/main:app
+		app.main:app
 
 agents-playground:
 	@echo "Starting Agents Playground with Azure OpenAI configuration (using secret)..."
