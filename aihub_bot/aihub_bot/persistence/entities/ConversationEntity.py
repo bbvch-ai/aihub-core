@@ -120,8 +120,8 @@ class ConversationEntity(Document):
             {"fields": ["conversation_id"], "unique": True},
         ],
     }
+    is_mentioned = BooleanField(default=False)
     conversation_id = StringField(required=True)
-    mentioned_bots = ListField(StringField(), default=list)
     messages = ListField(EmbeddedDocumentField(Message), required=False)
     last_activity = DateTimeField(default=lambda: datetime.now(UTC))
 
@@ -187,17 +187,16 @@ class ConversationEntity(Document):
         return conversation.messages
 
     @classmethod
-    def is_bot_mentioned_in_conversation(cls, conversation_id: str, bot_id: str) -> bool:
+    def get_conversation_is_mentioned(cls, conversation_id: str) -> bool:
         conversation_id = _clean_conversation_id(conversation_id)
         conversation = cls.get_conversation_by_conversation_id(conversation_id)
-        return bot_id in conversation.mentioned_bots
+        return conversation.is_mentioned
 
     @classmethod
-    def add_bot_to_mentioned(cls, conversation_id: str, bot_id: str) -> "ConversationEntity":
+    def set_conversation_is_mentioned(cls, conversation_id: str, is_mentioned: bool) -> "ConversationEntity":
         conversation_id = _clean_conversation_id(conversation_id)
         conversation = cls.get_conversation_by_conversation_id(conversation_id)
-        if bot_id not in conversation.mentioned_bots:
-            conversation.mentioned_bots.append(bot_id)
+        conversation.is_mentioned = is_mentioned
         return conversation.save()
 
     @classmethod
