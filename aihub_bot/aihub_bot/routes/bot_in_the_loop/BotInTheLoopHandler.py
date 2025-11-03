@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Annotated
+from typing import Annotated, cast
 
 from microsoft_agents.hosting.core.connector.client.connector_client import ConversationsOperations
 
@@ -9,8 +9,8 @@ from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent impo
 from aihub_lib.nats.topics import AgentInstanceTopic
 from cachetools import TTLCache
 from fastapi import Request
-from microsoft_agents.activity import ChannelAccount, ConversationAccount, ConversationReference
-from microsoft_agents.hosting.core import TurnContext, ConnectorClient, TeamsConnectorClient
+from microsoft_agents.activity import ChannelAccount, ConversationAccount, ConversationReference, Channels
+from microsoft_agents.hosting.core import TurnContext, TeamsConnectorClient
 from pydantic import BaseModel, Field
 
 from aihub_bot.persistence.entities.PathEntity import PathEntity
@@ -55,6 +55,7 @@ class BotInTheLoopHandler:
 
     async def handle_event(self, event: BaseEvent, _: AgentInstanceTopic):
         if event.is_bitl_request_event:
+            event = cast(BotInTheLoopRequestEvent, event)
             await self._handle_bot_in_the_loop_request(event)
         else:
             return
@@ -149,7 +150,7 @@ class BotInTheLoopHandler:
         conversation_id = self._build_conversation_id_with_thread_identifier(thread, "msteams")
 
         conversation = ConversationReference(
-            channel_id="msteams",
+            channel_id=Channels.ms_teams,  # type: ignore
             conversation=ConversationAccount(
                 id=conversation_id,
                 conversation_type="channel",
@@ -181,7 +182,7 @@ class BotInTheLoopHandler:
         bot_team_id = f"{slack_ids.bot_id}:{slack_ids.team_id}"
 
         conversation = ConversationReference(
-            channel_id="slack",
+            channel_id=Channels.slack,  # type: ignore
             conversation=ConversationAccount(
                 id=conversation_id,
             ),
@@ -215,8 +216,8 @@ class BotInTheLoopHandler:
                 type=ActivityTypes.message,
                 text=question,
                 conversation=turn_context.activity.conversation,
-                from_property=bot,
-            )
+                from_property=bot,  # type: ignore (alias: "from")
+            )  # type: ignore (alias: "from")
 
             conv: ConversationsOperations = cast(ConversationsOperations, connector_client.conversations)
 
