@@ -1,6 +1,8 @@
 import logging
 from typing import Annotated
 
+from microsoft_agents.activity import Activity
+
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
@@ -15,7 +17,6 @@ from nats.aio.client import Client as NATS
 
 from aihub_bot.bots.chat.agent.AgentChatBot import AgentChatBot
 from aihub_bot.bots.chat.agent.StreamAgentChatBot import StreamAgentChatBot
-from aihub_bot.routes.activity_model import ActivityModel
 from aihub_bot.routes.RoutesService import RoutesService
 
 logger = logging.getLogger(__name__)
@@ -83,7 +84,7 @@ class AgentChatController(Controller):
         )
         async def json_chat(
             request: Request,
-            _: Annotated[ActivityModel, Body],  # openapi request body
+            _: Annotated[Activity, Body],  # openapi request body
             agent_class: Annotated[str, Path(title="Agent class")],
             agent_id: Annotated[str, Path(title="Agent ID")],
             nc: Annotated[NATS, Depends(use_nats)],
@@ -128,7 +129,7 @@ class AgentChatController(Controller):
         )
         async def stream_chat(
             request: Request,
-            _: Annotated[ActivityModel, Body],  # openapi request body
+            _: Annotated[Activity, Body],  # openapi request body
             agent_class: Annotated[str, Path(title="Agent class")],
             agent_id: Annotated[str, Path(title="Agent ID")],
             nc: Annotated[NATS, Depends(use_nats)],

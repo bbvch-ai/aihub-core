@@ -1,5 +1,7 @@
 from typing import Annotated
 
+from microsoft_agents.activity import Activity
+
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
@@ -13,7 +15,6 @@ from microsoft_agents.hosting.aiohttp import CloudAdapter
 from nats.aio.client import Client as NATS
 
 from aihub_bot.bots.bot_in_the_loop.BotInTheLoopBot import BotInTheLoopBot
-from aihub_bot.routes.activity_model import ActivityModel
 from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHandler
 from aihub_bot.routes.RoutesService import RoutesService
 
@@ -35,7 +36,7 @@ class BotInTheLoopController(Controller):
         @self.router.post(route, tags=self.tags)
         async def bot_in_the_loop_chat(
             request: Request,
-            _: Annotated[ActivityModel, Body],  # openapi request body
+            _: Annotated[Activity, Body],  # openapi request body
             nc: Annotated[NATS, Depends(use_nats)],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
