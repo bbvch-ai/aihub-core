@@ -130,27 +130,35 @@ class CompletionHandler:
         2. The Bot should have all channel messages to understand the conversation context.
         """
         channel_conversation_id: str = turn_context.activity.conversation.id
+        bot_id: str = turn_context.activity.recipient.id
         channel_data = turn_context.activity.channel_data
         ts: str = channel_data["SlackMessage"]["event"]["ts"]
         turn_context.activity.conversation.id = channel_conversation_id + f":{ts}"
-        parent_messages: list[Message] = CompletionHandler.get_messages_by_conversation_id(channel_conversation_id)
+        parent_messages: list[Message] = CompletionHandler.get_messages_by_conversation_id(
+            channel_conversation_id, bot_id
+        )
         CompletionHandler._add_messages_to_conversation(turn_context, parent_messages)
         return turn_context
 
     @staticmethod
     def _mark_conversation_as_mentioned(turn_context: TurnContext):
         conversation_id: str = turn_context.activity.conversation.id
-        ConversationEntity.set_conversation_is_mentioned(conversation_id=conversation_id, is_mentioned=True)
+        bot_id: str = turn_context.activity.recipient.id
+        ConversationEntity.set_conversation_is_mentioned(
+            conversation_id=conversation_id, bot_id=bot_id, is_mentioned=True
+        )
 
     @staticmethod
     def _is_mentioned_in_conversation(turn_context: TurnContext) -> bool:
         conversation_id: str = turn_context.activity.conversation.id
-        return ConversationEntity.get_conversation_is_mentioned(conversation_id)
+        bot_id: str = turn_context.activity.recipient.id
+        return ConversationEntity.get_conversation_is_mentioned(conversation_id, bot_id)
 
     @staticmethod
     def delete_conversation_if_exists(turn_context: TurnContext):
         conversation_id: str = turn_context.activity.conversation.id
-        ConversationEntity.delete_conversation_if_exists(conversation_id)
+        bot_id: str = turn_context.activity.recipient.id
+        ConversationEntity.delete_conversation_if_exists(conversation_id, bot_id)
 
     @staticmethod
     def add_user_message_to_conversation(path: str, turn_context: TurnContext) -> ConversationEntity:
@@ -206,15 +214,18 @@ class CompletionHandler:
         using from the Bot Framework.
         """
         conversation_id = turn_context.activity.conversation.id
+        bot_id = turn_context.activity.recipient.id
         messages = messages if isinstance(messages, list) else [messages]
         return ConversationEntity.add_messages_to_conversation(
             conversation_id=conversation_id,
+            bot_id=bot_id,
             messages=messages,
         )
 
     @staticmethod
     def get_messages_by_conversation_id(
         conversation_id: str,
+        bot_id: str,
     ) -> list[Message]:
         """
         ### What
@@ -223,7 +234,7 @@ class CompletionHandler:
         ### Why
         - To add the messages to the context of the conversation.
         """
-        return list(ConversationEntity.get_messages_by_conversation_id(conversation_id) or [])
+        return list(ConversationEntity.get_messages_by_conversation_id(conversation_id, bot_id) or [])
 
     @staticmethod
     async def send_response_stream(

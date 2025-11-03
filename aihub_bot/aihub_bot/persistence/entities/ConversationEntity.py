@@ -66,35 +66,61 @@ class ConversationTracker(Document):
         "collection": "bot_conversation_trackers",
         "strict": True,
         "indexes": [
-            {"fields": ["conversation_id"], "unique": True},
+            {"fields": ["conversation_id", "bot_id"], "unique": True},
         ],
     }
     conversation_id = StringField(required=True)
+    bot_id = StringField(required=True)
     created_at = DateTimeField(default=lambda: datetime.now(UTC))
     explicitly_deleted = BooleanField(default=False)
 
     @classmethod
-    def track_conversation(cls, conversation_id: str):
+    def track_conversation(
+        cls,
+        conversation_id: str,
+        bot_id: str,
+    ):
         conversation_id = _clean_conversation_id(conversation_id)
-        cls.objects(conversation_id=conversation_id).update_one(
+        cls.objects(
+            conversation_id=conversation_id,
+            bot_id=bot_id,
+        ).update_one(
             upsert=True,
             set__conversation_id=conversation_id,
+            set__bot_id=bot_id,
             set__explicitly_deleted=False,
             set_on_insert__created_at=datetime.now(UTC),
         )
 
     @classmethod
-    def mark_explicitly_deleted(cls, conversation_id: str):
+    def mark_explicitly_deleted(
+        cls,
+        conversation_id: str,
+        bot_id: str,
+    ):
         conversation_id = _clean_conversation_id(conversation_id)
-        cls.objects(conversation_id=conversation_id).update_one(
-            upsert=True, set__conversation_id=conversation_id, set__explicitly_deleted=True
+        cls.objects(
+            conversation_id=conversation_id,
+            bot_id=bot_id,
+        ).update_one(
+            upsert=True,
+            set__conversation_id=conversation_id,
+            set__bot_id=bot_id,
+            set__explicitly_deleted=True,
         )
 
     @classmethod
-    def should_show_expiration_message(cls, conversation_id: str) -> bool:
+    def should_show_expiration_message(
+        cls,
+        conversation_id: str,
+        bot_id: str,
+    ) -> bool:
         conversation_id = _clean_conversation_id(conversation_id)
-        tracker = cls.objects(conversation_id=conversation_id).first()
-        exists_now = ConversationEntity.get_conversation_by_conversation_id(conversation_id) is not None
+        tracker = cls.objects(
+            conversation_id=conversation_id,
+            bot_id=bot_id,
+        ).first()
+        exists_now = ConversationEntity.get_conversation_by_conversation_id(conversation_id, bot_id) is not None
 
         return tracker is not None and not tracker.explicitly_deleted and not exists_now
 
@@ -117,11 +143,12 @@ class ConversationEntity(Document):
         "collection": "bot_conversations",
         "strict": True,
         "indexes": [
-            {"fields": ["conversation_id"], "unique": True},
+            {"fields": ["conversation_id", "bot_id"], "unique": True},
         ],
     }
     is_mentioned = BooleanField(default=False)
     conversation_id = StringField(required=True)
+    bot_id = StringField(required=True)
     messages = ListField(EmbeddedDocumentField(Message), required=False)
     last_activity = DateTimeField(default=lambda: datetime.now(UTC))
 
@@ -146,18 +173,21 @@ class ConversationEntity(Document):
     def create_conversation(
         cls,
         conversation_id: str,
+        bot_id: str,
         messages: list[Message],
     ) -> "ConversationEntity":
         conversation_id = _clean_conversation_id(conversation_id)
-        conversation = cls(conversation_id=conversation_id, messages=messages, last_activity=datetime.utcnow())
+        conversation = cls(
+            conversation_id=conversation_id, bot_id=bot_id, messages=messages, last_activity=datetime.utcnow()
+        )
         return conversation.save()
 
     @classmethod
-    def delete_conversation_if_exists(cls, conversation_id: str) -> None:
+    def delete_conversation_if_exists(cls, conversation_id: str, bot_id: str) -> None:
         conversation_id = _clean_conversation_id(conversation_id)
-        conversation = cls.get_conversation_by_conversation_id(conversation_id)
+        conversation = cls.get_conversation_by_conversation_id(conversation_id, bot_id)
         if conversation is None:
-            logger.debug(f"Conversation {conversation_id} does not exist.")
+            logger.debug(f"Conversation {conversation_id} for bot {bot_id} does not exist.")
             return
         conversation.delete()
 
@@ -165,41 +195,44 @@ class ConversationEntity(Document):
     def add_messages_to_conversation(
         cls,
         conversation_id: str,
+        bot_id: str,
         messages: list[Message],
     ) -> "ConversationEntity":
         conversation_id = _clean_conversation_id(conversation_id)
-        conversation = cls.get_conversation_by_conversation_id(conversation_id)
+        conversation = cls.get_conversation_by_conversation_id(conversation_id, bot_id)
         if conversation is None:
-            conversation = cls.create_conversation(conversation_id, [])
+            conversation = cls.create_conversation(conversation_id, bot_id, [])
         conversation.messages.extend(messages)
         conversation.last_activity = datetime.utcnow()
         return conversation.save()
 
     @classmethod
-    def get_conversation_by_conversation_id(cls, conversation_id: str) -> "ConversationEntity":
+    def get_conversation_by_conversation_id(cls, conversation_id: str, bot_id: str) -> "ConversationEntity":
         conversation_id = _clean_conversation_id(conversation_id)
-        return cls.objects().filter(conversation_id=conversation_id).first()
+        return cls.objects().filter(conversation_id=conversation_id, bot_id=bot_id).first()
 
     @classmethod
-    def get_messages_by_conversation_id(cls, conversation_id: str) -> ListField:
+    def get_messages_by_conversation_id(cls, conversation_id: str, bot_id: str) -> ListField:
         conversation_id = _clean_conversation_id(conversation_id)
-        conversation = cls.get_conversation_by_conversation_id(conversation_id)
+        conversation = cls.get_conversation_by_conversation_id(conversation_id, bot_id)
         return conversation.messages
 
     @classmethod
-    def get_conversation_is_mentioned(cls, conversation_id: str) -> bool:
+    def get_conversation_is_mentioned(cls, conversation_id: str, bot_id: str) -> bool:
         conversation_id = _clean_conversation_id(conversation_id)
-        conversation = cls.get_conversation_by_conversation_id(conversation_id)
+        conversation = cls.get_conversation_by_conversation_id(conversation_id, bot_id)
         return conversation.is_mentioned
 
     @classmethod
-    def set_conversation_is_mentioned(cls, conversation_id: str, is_mentioned: bool) -> "ConversationEntity":
+    def set_conversation_is_mentioned(
+        cls, conversation_id: str, bot_id: str, is_mentioned: bool
+    ) -> "ConversationEntity":
         conversation_id = _clean_conversation_id(conversation_id)
-        conversation = cls.get_conversation_by_conversation_id(conversation_id)
+        conversation = cls.get_conversation_by_conversation_id(conversation_id, bot_id)
         conversation.is_mentioned = is_mentioned
         return conversation.save()
 
     @classmethod
-    def is_new_conversation(cls, conversation_id: str) -> bool:
+    def is_new_conversation(cls, conversation_id: str, bot_id: str) -> bool:
         conversation_id = _clean_conversation_id(conversation_id)
-        return cls.get_conversation_by_conversation_id(conversation_id) is None
+        return cls.get_conversation_by_conversation_id(conversation_id, bot_id) is None
