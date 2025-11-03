@@ -8,12 +8,12 @@ from typing import override
 
 import openai
 from microsoft_agents.activity import Channels
-from microsoft_agents.activity.teams import TeamsChannelData, TeamsChannelAccount
+from microsoft_agents.activity.teams import TeamsChannelAccount
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
-from microsoft_agents.hosting.core import TurnContext, TeamsConnectorClient, ConnectorClient
+from microsoft_agents.hosting.core import TurnContext, TeamsConnectorClient
 from openai import APIStatusError, AsyncStream
 from openai.types.chat import (
     ChatCompletion,
