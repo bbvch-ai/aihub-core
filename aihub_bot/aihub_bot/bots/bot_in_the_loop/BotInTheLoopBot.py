@@ -63,12 +63,7 @@ class BotInTheLoopBot(ActivityHandler):
                     continue
                 if thread.thread_identifier == thread_identifier:
                     return thread_id
-
-        if channel_thread is not None:
-            channel_thread.thread_identifier = thread_identifier
-            return channel_thread.thread_id
-
-        return None
+        return channel_thread.thread_id if channel_thread else None
 
     @staticmethod
     def _extract_responder_info(turn_context: TurnContext) -> BotInTheLoopResponderInfo | None:
