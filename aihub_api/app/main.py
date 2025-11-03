@@ -85,16 +85,11 @@ runner.mount(
     .get_documents_for_namespace()
     .get_document_by_id()
     .get_nodes_for_document()
-    .get_summary_nodes_for_document(),
-    FileController(auth=auth)
-    .get_file_url()
-    .get_file_redirect()
-    .get_anonymous_file_url()
-    .get_anonymous_file_redirect()
-    .get_supported_file_types()
-    .initiate_file_upload()
-    .validate_file_upload()
+    .get_summary_nodes_for_document()
+    .initiate_document_upload()
+    .validate_document_upload()
     .get_supported_file_types(),
+    FileController(auth=auth).get_file_url().get_file_redirect().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
 )
 

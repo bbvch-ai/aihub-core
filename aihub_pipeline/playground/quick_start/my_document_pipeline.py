@@ -83,5 +83,7 @@ defs = Definitions(
     # Add scheduling - observe daily at midnight
     schedules=[daily_schedule_at(observe_job, hour=0, minute=0)],
     # Add sensors for automation
-    sensors=[default_automation_sensor(assets)],
+    sensors=[
+        default_automation_sensor(assets),
+    ],
 )

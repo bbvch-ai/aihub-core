@@ -3,7 +3,7 @@ from typing import Annotated
 from pydantic import BaseModel, Field
 
 
-class FileUploadResponse(BaseModel):
+class DocumentUploadResponse(BaseModel):
     """
     Response payload for file upload initialization.
 

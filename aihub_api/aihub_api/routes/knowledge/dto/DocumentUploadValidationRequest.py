@@ -3,7 +3,7 @@ from typing import Annotated
 from pydantic import BaseModel, Field
 
 
-class FileUploadValidationRequest(BaseModel):
+class DocumentUploadValidationRequest(BaseModel):
     """
     Request for validating whether a file was successfully uploaded to cloud storage.
 
@@ -11,5 +11,4 @@ class FileUploadValidationRequest(BaseModel):
     successfully in the globally configured datalake (S3, MinIO, or Azure Blob Storage).
     """
 
-    container: Annotated[str, Field(description="Name of the container/bucket where the file was uploaded")]
     file_path: Annotated[str, Field(description="Path/key of the uploaded file within the container")]

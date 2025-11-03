@@ -98,13 +98,15 @@ const handleSave = async () => {
   error.value = ''
 
   const namespaceId = props.namespace.id
+  const databaseId = props.namespace.database_id
   const updatePayload: UpdateNamespaceRequest = {
     display_name: displayName.value || props.namespace.name,
     description: description.value || null,
   }
 
   await updateNamespace({
-    id: namespaceId,
+    namespace: namespaceId,
+    database: databaseId,
     payload: ref(updatePayload),
   })
 
