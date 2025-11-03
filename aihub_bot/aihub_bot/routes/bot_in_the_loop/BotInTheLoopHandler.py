@@ -106,7 +106,7 @@ class BotInTheLoopHandler:
         return self.threads[thread_id]
 
     @staticmethod
-    def _build_conversation_id_with_thread_identifier(thread: BotInTheLoopThread, channel: str) -> str:
+    def _build_conversation_id_with_thread_identifier(thread: BotInTheLoopThread, channel: Channels) -> str:
         conversation_id = thread.conversation_id
         if thread.thread_identifier:
             if channel == Channels.slack:
