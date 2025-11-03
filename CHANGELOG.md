@@ -5,6 +5,85 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.248.0] - 2025-11-03 - Smarter Document Understanding: Advanced Table Processing
+
+### Added
+
+- ✨ **Intelligent Table Splitting**: Introduced the capability to automatically split large tables into smaller,
+  manageable chunks, ensuring better retrieval and processing of tabular data while respecting token limits.
+- 🦾 **LLM-Powered Table Header Detection**: Implemented LLM-driven analysis to accurately identify multi-row table
+  headers, improving the precision of table parsing and preserving hierarchical structures during splitting.
+- 🧱 **New Dependency `lxml`**: Added `lxml` to enhance HTML parsing and manipulation capabilities, foundational for
+  advanced table processing.
+
+### Changed
+
+- 🔄 **Advanced Table Conversion in DoclingLoader**: Modified `DoclingLoader` to now convert Markdown tables into
+  structured HTML tables, improving their representation and downstream processing.
+- ⚡️ **Optimized Document Intelligence Table Handling**: Streamlined table processing in `DocumentIntelligenceLoader` by
+  removing redundant table reformatting, leveraging the new unified table parsing logic.
+- 📄 **Improved Markdown Table Parsing**: Enhanced `MarkdownStructuralNodeParser` to intelligently process and chunk
+  tables, ensuring headers are preserved and content fits within token limits for improved Retrieval-Augmented
+  Generation (RAG) performance.
+- 🚀 **Increased Agent Test Timeout**: Extended the `delay_before_stop` parameter in Retrieval Agent tests to provide
+  more time for operations to complete, improving test stability.
+
+### Removed
+
+- 🗑️ **Deprecated `NODE_CONTENT_TYPE_TABLE`**: Removed the `NODE_CONTENT_TYPE_TABLE` metadata tag, as table content is
+  now directly represented within HTML structures, simplifying content type management.
+- 🧹 **Eliminated Redundant Table Reformatting**: The dedicated `reformat_tables` function in
+  `DocumentIntelligenceLoader` has been removed, as its functionality is now integrated and optimized within the core
+  parsing mechanisms.
+
+---
+
+## [v0.247.7] - 2025-11-03 - Enhanced RAG with Hybrid Search and Model Updates
+
+### Added
+
+- 🚀 **Introduced Hybrid Search Capability:** Enabled **Milvus vector stores** to perform hybrid search queries by
+  integrating sparse embeddings and BM25 functionality, improving retrieval relevance.
+
+### Changed
+
+- 🔄 **Default Query Mode to Hybrid:** Updated the default query mode for **RAG and Retrieval agents** to `HYBRID`,
+  leveraging the newly added hybrid search capabilities in Milvus for more comprehensive retrieval.
+- ⬆️ **Updated Default LLM Model:** Switched the default Large Language Model in **RAG pipelines** from
+  `gemma-3-multimodal-small` to `qwen-2.5-multimodal-small`, enhancing model performance and capabilities.
+
+---
+
+## [v0.247.6] - 2025-10-31 - Empowering Contributors with New Guidelines
+
+### Added
+
+- ✨ **Added a comprehensive `CONTRIBUTING.md` guide:** This new document provides clear instructions and best practices
+  for anyone looking to contribute to the Swiss AI-Hub project, covering everything from code contributions to
+  documentation, community engagement, and advocacy, fostering a more collaborative environment.
+
+---
+
+## [v0.247.5] - 2025-10-31 - Enhanced Security Measures
+
+### Security
+
+- 🔑 **Established comprehensive security policy:** Introduced a new `SECURITY.md` file, providing clear guidelines on
+  how to report security vulnerabilities, outlining supported versions, and detailing the coordinated disclosure
+  process.
+
+---
+
+## [v0.247.4] - 2025-10-31 - Community Guidelines Established
+
+### Added
+
+- 📄 **Introduced Code of Conduct**: Adopted the Contributor Covenant 3.0 to foster a welcoming, safe, and equitable
+  community by outlining expected behaviors, restricted actions, and a clear process for reporting and addressing
+  issues.
+
+---
+
 ## [v0.247.3] - 2025-10-31 - Empowering Bots with Teams Integration and Enhanced Core Functionality
 
 ### Added

@@ -119,12 +119,12 @@ def default_definitions(
     )
 
     store_name = get_db_name_from_bucket_name(bucket_name=datalake_container_name, auto_sync=False)
-
+    llm_config = LLMConfig(model_name=llm_model_name)
     return Definitions(
         assets=assets,
         resources={
             "document_parser": DocumentParserResource(),
-            "node_parser": MarkdownStructuralNodeParserResource(),
+            "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config),
             "summary_parser": RecursiveSummaryParserResource(),
             **default_io_manager_s3_datalake_resources(container_name=datalake_container_name),
             **local_mongo_milvus_storage_context_resource(
@@ -138,7 +138,7 @@ def default_definitions(
             "embedding_model": EmbeddingModelResource(
                 embedding_config=EmbeddingModelConfig(model_name=embedding_model_name),
             ),
-            "language_model": LanguageModelResource(llm_config=LLMConfig(model_name=llm_model_name)),
+            "language_model": LanguageModelResource(llm_config=llm_config),
         },
         sensors=[default_automation_sensor(assets)],
         executor=default_process_executor(),

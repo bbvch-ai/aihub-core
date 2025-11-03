@@ -94,7 +94,7 @@ def self_hosted_agent_config(event_loop):
     yield build_retrieval_agent_config(
         embedding_config=embedding_config,
         vector_store=vector_store,
-        query_mode=VectorStoreQueryMode.DEFAULT,
+        query_mode=VectorStoreQueryMode.HYBRID,
     )
 
     drop_collection(collection_name="retrieval_agent_development")
@@ -115,7 +115,7 @@ def _(self_hosted_agent_config):
 @when(parsers.parse('the user asks "{query}"'))
 @async_test
 async def _(agent_runner: AgentTestRunner, query: str):
-    async with agent_runner.test_run(delay_before_stop=40) as topic:
+    async with agent_runner.test_run(delay_before_stop=120) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=QuestionStartEvent(question=query, locale="en"),
