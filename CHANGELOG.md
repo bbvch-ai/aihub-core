@@ -5,6 +5,94 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.247.6] - 2025-10-31 - Empowering Contributors with New Guidelines
+
+### Added
+
+- ✨ **Added a comprehensive `CONTRIBUTING.md` guide:** This new document provides clear instructions and best practices
+  for anyone looking to contribute to the Swiss AI-Hub project, covering everything from code contributions to
+  documentation, community engagement, and advocacy, fostering a more collaborative environment.
+
+---
+
+## [v0.247.5] - 2025-10-31 - Enhanced Security Measures
+
+### Security
+
+- 🔑 **Established comprehensive security policy:** Introduced a new `SECURITY.md` file, providing clear guidelines on
+  how to report security vulnerabilities, outlining supported versions, and detailing the coordinated disclosure
+  process.
+
+---
+
+## [v0.247.4] - 2025-10-31 - Community Guidelines Established
+
+### Added
+
+- 📄 **Introduced Code of Conduct**: Adopted the Contributor Covenant 3.0 to foster a welcoming, safe, and equitable
+  community by outlining expected behaviors, restricted actions, and a clear process for reporting and addressing
+  issues.
+
+---
+
+## [v0.247.3] - 2025-10-31 - Empowering Bots with Teams Integration and Enhanced Core Functionality
+
+### Added
+
+- ✨ **Microsoft Teams Support for Bot-in-the-Loop**: Expanded the Bot-in-the-Loop pattern to support Microsoft Teams,
+  enabling agents to request human input directly within Teams channels.
+- 🚀 **New Makefile Targets**: Introduced `up-dev` for easy development environment startup and `generate-api-token` for
+  simplified API token generation. Also added an `agents-playground` target for starting Agents Playground with Azure
+  OpenAI configuration.
+- ⚙️ **CloudAdapter Caching**: Implemented caching for `CloudAdapter` instances to improve performance and reduce
+  repeated authentication overhead in bot routes.
+- 📄 **Bot-in-the-Loop Architectural Documentation**: Added a comprehensive explanation to the `README.md` detailing the
+  "Handler vs Bot" separation of concerns for the Bot-in-the-Loop pattern.
+- 👤 **TeamsConfig Model**: Introduced a `TeamsConfig` Pydantic model in `aihub_lib` to standardize configuration for
+  Microsoft Teams interactions within Bot-in-the-Loop requests.
+- 🔑 **Dynamic OpenAI Client Acquisition**: Integrated `LiteLLMService` to dynamically acquire the OpenAI client based on
+  user identity, enhancing security and flexibility for chat completions.
+
+### Changed
+
+- 🔄 **Bot-in-the-Loop Agent Example**: Updated the `BotInTheLoopAgent` playground example to demonstrate the new
+  `TeamsConfig` for multi-channel communication.
+- 💬 **Enhanced Content Extraction for Teams**: Improved the `ContentExtractor` to correctly handle HTML content and
+  emojis from Microsoft Teams messages, providing richer context to AI models.
+- ⚙️ **Centralized Chat Completion Logic**: Refactored the `AgentChatController` and `OpenaiChatController` to
+  centralize common request processing logic, improving code maintainability and consistency.
+- 📄 **Generalization of Responder Information**: Renamed `SlackResponderInfo` to `BotInTheLoopResponderInfo` and added
+  `aad_object_id` to support generic user information across multiple channels like Slack and Teams.
+- 🚀 **Bot-in-the-Loop Thread Identification**: Generalized thread identification in `BotInTheLoopHandler` to use
+  `thread_identifier` instead of `slack_thread_ts`, accommodating multi-channel requirements.
+
+### Fixed
+
+- 🐛 **Robust Tracing Output**: Ensured `AgentRunTracer` correctly serializes all output events by adding `default=str`
+  to `json.dumps`, preventing serialization errors during tracing.
+- 🐛 **Teams Conversation Deletion Logic**: Corrected the logic for deleting Teams conversations to prevent unintended
+  deletions when a bot is added to a new team or channel.
+- 🐛 **Content Extractor Attachment Handling**: Improved the `ContentExtractor` to intelligently skip non-file HTML
+  content and emoji image attachments in Teams, preventing processing errors and focusing on relevant files.
+- 🐛 **Bot-in-the-Loop Handler Path**: Corrected the base path for `BotInTheLoopHandler` to align with the `/api/v1`
+  endpoint structure.
+
+### Refactor
+
+- 🧹 **Conversation Entity Management**: Renamed `delete_conversation` to `delete_conversation_if_exists` in
+  `ConversationEntity` and added existence checks for more robust management.
+- 🧹 **Internal Method Naming Consistency**: Standardized the naming convention of internal Slack-specific and
+  conversation management methods to private (e.g., `_is_slack_channel_message`, `_add_messages_to_conversation`) for
+  better encapsulation.
+
+### Removed
+
+- 🗑️ **Deprecated OpenAI Client Parameter**: Eliminated the direct `client` parameter from `OpenaiChatBot` and its
+  completion methods, as client acquisition is now handled internally by `OpenaiCompletionHandler` using the new
+  `LiteLLMService` integration.
+
+---
+
 ## [v0.247.2] - 2025-10-31 - Optimized CI Documentation Builds
 
 ### Changed
