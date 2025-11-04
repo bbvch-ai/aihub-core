@@ -8,6 +8,7 @@ from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings impor
 from aihub_lib.generative_ai.document.types.FileTypeConfig import FileTypeConfig
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.generative_ai.utils.path_utils import FIGURES_DIRECTORY_NAME
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
@@ -86,6 +87,9 @@ class KnowledgeService:
 
         This method supports both S3/MinIO and Azure Blob Storage based on the
         ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND environment variable.
+
+        Files in the __figures__ directory are excluded as they are generated artifacts
+        from document processing and should not be displayed in the knowledge interface.
         """
         file_access_config = AnonymousFileAccessSettings()
 
@@ -94,6 +98,10 @@ class KnowledgeService:
         all_files = []
         for file_info in files_info:
             key = file_info["key"]
+
+            if f"/{FIGURES_DIRECTORY_NAME}/" in key:
+                continue
+
             filename = key.split("/")[-1]
             file_namespace = key.split("/")[0]
 

@@ -4,7 +4,7 @@ Generated on: 03.11.2025
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (Poetry): **255 packages**
+- Python packages (Poetry): **256 packages**
 - Node.js packages (pnpm): **197 packages**
 - External Docker images: **33 images**
 
@@ -103,6 +103,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | isodate                                      | 0.7.2           | BSD License                                       |                                                    |
 | ✅     | joblib                                       | 1.5.1           | BSD License                                       |                                                    |
 | ✅     | kiwisolver                                   | 1.4.9           | BSD License                                       |                                                    |
+| ✅     | lxml                                         | 5.4.0           | BSD License                                       |                                                    |
 | ✅     | matplotlib-inline                            | 0.1.7           | BSD License                                       |                                                    |
 | ✅     | nest-asyncio                                 | 1.6.0           | BSD License                                       |                                                    |
 | ✅     | networkx                                     | 3.5             | BSD License                                       |                                                    |
