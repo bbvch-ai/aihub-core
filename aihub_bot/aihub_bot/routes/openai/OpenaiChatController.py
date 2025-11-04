@@ -63,7 +63,7 @@ class OpenaiChatController(Controller):
         @self.router.post(route, tags=self.tags)
         async def json_chat_completion(
             request: Request,
-            body: Annotated[Activity, Body],
+            _: Annotated[Activity, Body],
             model_name: Annotated[str, Query(title="Model Name")],
         ) -> Response:
             return await self._process_chat_request(
