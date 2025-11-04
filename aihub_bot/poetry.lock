@@ -959,88 +959,6 @@ jupyter = ["ipython (>=7.8.0)", "tokenize-rt (>=3.2.0)"]
 uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
-name = "botbuilder-core"
-version = "4.17.0"
-description = "Microsoft Bot Framework Bot Builder"
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "botbuilder_core-4.17.0-py3-none-any.whl", hash = "sha256:56828b11d9af663a200fba0fae4e0b9ad6f815a679c3e90e9b6425b9cbe16d53"},
-]
-
-[package.dependencies]
-botbuilder-schema = "4.17.0"
-botframework-connector = "4.17.0"
-botframework-streaming = "4.17.0"
-jsonpickle = ">=1.2,<1.5"
-
-[[package]]
-name = "botbuilder-integration-aiohttp"
-version = "4.17.0"
-description = "Microsoft Bot Framework Bot Builder"
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "botbuilder_integration_aiohttp-4.17.0-py3-none-any.whl", hash = "sha256:30cd8de3eeec132463bf1834fbd6cfbc6c4a9a361bf478627b6b2f0e7ee211b6"},
-]
-
-[package.dependencies]
-aiohttp = ">=3.10,<4.0"
-botbuilder-core = "4.17.0"
-botbuilder-schema = "4.17.0"
-botframework-connector = "4.17.0"
-yarl = ">=1.8.1"
-
-[[package]]
-name = "botbuilder-schema"
-version = "4.17.0"
-description = "BotBuilder Schema"
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "botbuilder_schema-4.17.0-py2.py3-none-any.whl", hash = "sha256:97219f8361a91bfa1529ba1231100b527adbe7c4c249d6b23fe1bffaf012b31b"},
-]
-
-[package.dependencies]
-msrest = "==0.7.*"
-urllib3 = "*"
-
-[[package]]
-name = "botframework-connector"
-version = "4.17.0"
-description = "Microsoft Bot Framework Bot Builder SDK for Python."
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "botframework_connector-4.17.0-py2.py3-none-any.whl", hash = "sha256:51b8702cc348c63efbdb571f6a4da868d1660efb80ed77d6e04f081720105a87"},
-]
-
-[package.dependencies]
-botbuilder-schema = "4.17.0"
-msal = ">=1.31.1"
-msrest = "==0.7.*"
-PyJWT = ">=2.4.0"
-
-[[package]]
-name = "botframework-streaming"
-version = "4.17.0"
-description = "Microsoft Bot Framework Bot Builder"
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "botframework_streaming-4.17.0-py3-none-any.whl", hash = "sha256:ed64fd2a9f56a3d32dd252bf378d0ce145a9bbc9c9a9a0e770889c7d140df435"},
-]
-
-[package.dependencies]
-botbuilder-schema = "4.17.0"
-botframework-connector = "4.17.0"
-
-[[package]]
 name = "boto3"
 version = "1.40.55"
 description = "The AWS SDK for Python"
@@ -2212,28 +2130,6 @@ typing-extensions = ">=4.12,<5.0"
 protobuf = ["grpcio-tools (>=1.75.1)"]
 
 [[package]]
-name = "gunicorn"
-version = "23.0.0"
-description = "WSGI HTTP Server for UNIX"
-optional = false
-python-versions = ">=3.7"
-groups = ["main"]
-files = [
-    {file = "gunicorn-23.0.0-py3-none-any.whl", hash = "sha256:ec400d38950de4dfd418cff8328b2c8faed0edb0d517d3394e457c317908ca4d"},
-    {file = "gunicorn-23.0.0.tar.gz", hash = "sha256:f014447a0101dc57e294f6c18ca6b40227a4c90e9bdb586042628030cba004ec"},
-]
-
-[package.dependencies]
-packaging = "*"
-
-[package.extras]
-eventlet = ["eventlet (>=0.24.1,!=0.36.0)"]
-gevent = ["gevent (>=1.4.0)"]
-setproctitle = ["setproctitle"]
-testing = ["coverage", "eventlet", "gevent", "pytest", "pytest-cov"]
-tornado = ["tornado (>=0.2)"]
-
-[[package]]
 name = "h11"
 version = "0.16.0"
 description = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
@@ -2664,23 +2560,6 @@ files = [
 
 [package.dependencies]
 ply = "*"
-
-[[package]]
-name = "jsonpickle"
-version = "1.4.2"
-description = "Python library for serializing any arbitrary object graph into JSON"
-optional = false
-python-versions = ">=2.7"
-groups = ["main"]
-files = [
-    {file = "jsonpickle-1.4.2-py2.py3-none-any.whl", hash = "sha256:2ac5863099864c63d7f0c367af5e512c94f3384977dd367f2eae5f2303f7b92c"},
-    {file = "jsonpickle-1.4.2.tar.gz", hash = "sha256:c9b99b28a9e6a3043ec993552db79f4389da11afcb1d0246d93c79f4b5e64062"},
-]
-
-[package.extras]
-docs = ["jaraco.packaging (>=3.2)", "rst.linker (>=1.9)", "sphinx"]
-testing = ["coverage (<5)", "ecdsa", "enum34 ; python_version == \"2.7\"", "feedparser", "jsonlib ; python_version == \"2.7\"", "numpy", "pandas", "pymongo", "pytest (>=3.5,!=3.7.3)", "pytest-black-multipy", "pytest-checkdocs (>=1.2.3)", "pytest-cov", "pytest-flake8", "sqlalchemy"]
-testing-libs = ["demjson", "simplejson", "ujson", "yajl"]
 
 [[package]]
 name = "jsonref"
@@ -3298,6 +3177,74 @@ files = [
     {file = "mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"},
     {file = "mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba"},
 ]
+
+[[package]]
+name = "microsoft-agents-activity"
+version = "0.5.3"
+description = "A protocol library for Microsoft Agents"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "microsoft_agents_activity-0.5.3-py3-none-any.whl", hash = "sha256:5ae2447ac47c32f03c614694f520817cd225c9c502ec08b90d448311fb5bf3b4"},
+    {file = "microsoft_agents_activity-0.5.3.tar.gz", hash = "sha256:d80b055591df561df8cebda9e1712012352581a396b36459133a951982b3a760"},
+]
+
+[package.dependencies]
+pydantic = ">=2.10.4"
+
+[[package]]
+name = "microsoft-agents-authentication-msal"
+version = "0.5.3"
+description = "A msal-based authentication library for Microsoft Agents"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "microsoft_agents_authentication_msal-0.5.3-py3-none-any.whl", hash = "sha256:92f08ff655f025a9f62ed662b70a192920ff9d7b4284554d33bcef79a2a6c4bd"},
+    {file = "microsoft_agents_authentication_msal-0.5.3.tar.gz", hash = "sha256:a882d4002840f658cb9fc3b35590fed704900ee49afb1d034e4c01361990e38a"},
+]
+
+[package.dependencies]
+cryptography = ">=44.0.0"
+microsoft-agents-hosting-core = "0.5.3"
+msal = ">=1.31.1"
+requests = ">=2.32.3"
+
+[[package]]
+name = "microsoft-agents-hosting-aiohttp"
+version = "0.5.3"
+description = "Integration library for Microsoft Agents with aiohttp"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "microsoft_agents_hosting_aiohttp-0.5.3-py3-none-any.whl", hash = "sha256:e931cec1f0e08849cfb7c768002f1b39bb062312ec2d747938403756a028f5a0"},
+    {file = "microsoft_agents_hosting_aiohttp-0.5.3.tar.gz", hash = "sha256:98c07c383be1e9a4741f78b93fbd55a055660f059449107e0e4bb5fea32d64f2"},
+]
+
+[package.dependencies]
+aiohttp = ">=3.11.11"
+microsoft-agents-hosting-core = "0.5.3"
+
+[[package]]
+name = "microsoft-agents-hosting-core"
+version = "0.5.3"
+description = "Core library for Microsoft Agents"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "microsoft_agents_hosting_core-0.5.3-py3-none-any.whl", hash = "sha256:8c228a8814dcf1a86dd60e4c7574a2e86078962695fabd693a118097e703e982"},
+    {file = "microsoft_agents_hosting_core-0.5.3.tar.gz", hash = "sha256:b113d4ea5c9e555bbf61037bb2a1a7a3ce7e5e4a7a0f681a3bd4719ba72ff821"},
+]
+
+[package.dependencies]
+azure-core = ">=1.30.0"
+isodate = ">=0.6.1"
+microsoft-agents-activity = "0.5.3"
+pyjwt = ">=2.10.1"
+python-dotenv = ">=1.1.1"
 
 [[package]]
 name = "mongoengine"
@@ -7296,4 +7243,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13, <3.14"
-content-hash = "56355781d3c5d87754a5e9f2cd944c5dde904125c31df3bcd5f775d46bd1f0fa"
+content-hash = "ae7f214998db12bf9f614eb3ddfcb47aba28b4f5dbb24ce8452b3ad1bd2fca80"
