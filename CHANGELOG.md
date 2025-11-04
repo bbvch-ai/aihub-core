@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.249.0] - 2025-11-04 - Streamlined Knowledge Management and Enhanced Security
+
+### Added
+
+- ✨ **Introduced Document Upload Endpoints:** Dedicated API endpoints are now available for initiating and validating
+  document uploads directly within specific knowledge base databases and namespaces.
+- 📄 **New Endpoint for Supported File Types:** A new API endpoint has been added to retrieve a list of supported file
+  types for client-side validation of knowledge base document uploads.
+- 🔑 **Granular Permissions for Knowledge Base:** Implemented fine-grained access control for knowledge base resources,
+  allowing permissions to be defined per database and namespace for enhanced security.
+- 🆔 **Added `database_id` to Namespace DTO:** The Namespace Data Transfer Object now includes a `database_id` to provide
+  clearer data relationships and context.
+
+### Changed
+
+- 🔄 **Updated Knowledge Base API Routes:** Namespace creation and update endpoints, along with document retrieval, now
+  utilize database and namespace names directly as path parameters for improved clarity and consistency.
+- 🛠️ **Refined Database Listing for Users:** The `/databases` endpoint now dynamically filters displayed databases and
+  namespaces based on the requesting user's granular access permissions, ensuring only accessible resources are shown.
+- ⚙️ **Configured CORS for SeaweedFS:** The SeaweedFS S3 gateway now automatically configures Cross-Origin Resource
+  Sharing (CORS) rules during initialization, improving compatibility for direct client-side file uploads.
+- 🌐 **Web Client Adaptation:** The web application's document management components have been updated to seamlessly
+  integrate with the new knowledge base API structure, including the revised document upload and namespace management
+  flows.
+
+### Removed
+
+- 🗑️ **Deprecated Generic File Upload Endpoints:** Removed the standalone, generic file upload and validation endpoints
+  from the `/files` API, centralizing all document-related uploads under the Knowledge Base domain for better
+  organization.
+
+### Refactor
+
+- 🧹 **Centralized Document Upload Logic:** Consolidated all document upload and validation business logic and associated
+  Data Transfer Objects (DTOs) from the generic `FileService` to the specialized `KnowledgeService`, enhancing
+  modularity and maintainability.
+- ♻️ **Renamed File Upload DTOs:** Data Transfer Objects related to file uploads (e.g., `FileUploadRequest` to
+  `DocumentUploadRequest`) were renamed to better reflect their new purpose and scope within the Knowledge Base context.
+
+---
+
 ## [v0.248.1] - 2025-11-03 - Enhanced Document Processing and Data Lake Organization
 
 ### Changed

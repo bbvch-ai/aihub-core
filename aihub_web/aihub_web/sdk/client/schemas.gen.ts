@@ -2996,16 +2996,6 @@ serialization, ensuring that control signals are as easy to produce and consume 
 
 export const CreateNamespaceRequestSchema = {
     properties: {
-        database_name: {
-            type: 'string',
-            title: 'Database Name',
-            description: 'The name of the database to which the namespace belongs.'
-        },
-        namespace_name: {
-            type: 'string',
-            title: 'Namespace Name',
-            description: 'The name of the namespace to create.'
-        },
         folder_name: {
             type: 'string',
             title: 'Folder Name',
@@ -3023,7 +3013,7 @@ export const CreateNamespaceRequestSchema = {
         }
     },
     type: 'object',
-    required: ['database_name', 'namespace_name', 'folder_name'],
+    required: ['folder_name'],
     title: 'CreateNamespaceRequest'
 } as const;
 
@@ -3855,6 +3845,122 @@ export const DocumentDTOSchema = {
     type: 'object',
     required: ['id', 'source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'is_ingested'],
     title: 'DocumentDTO'
+} as const;
+
+export const DocumentUploadRequestSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Filename',
+            description: 'Original filename of the file'
+        },
+        content_type: {
+            type: 'string',
+            title: 'Content Type',
+            description: 'MIME type of the file'
+        },
+        content_length: {
+            type: 'integer',
+            exclusiveMinimum: 0,
+            title: 'Content Length',
+            description: 'Size of the file in bytes'
+        }
+    },
+    type: 'object',
+    required: ['filename', 'content_type', 'content_length'],
+    title: 'DocumentUploadRequest',
+    description: `Request payload for initiating file upload to knowledge base.
+
+This request is used to get presigned URLs for direct S3/MinIO upload
+of files that will be processed and indexed in the knowledge base.`
+} as const;
+
+export const DocumentUploadResponseSchema = {
+    properties: {
+        upload_url: {
+            type: 'string',
+            title: 'Upload Url',
+            description: 'Presigned URL for uploading the file to a datalake'
+        },
+        upload_id: {
+            type: 'string',
+            title: 'Upload Id',
+            description: 'Unique identifier for this upload session'
+        },
+        container: {
+            type: 'string',
+            title: 'Container',
+            description: 'The bucket/container name where file will be stored'
+        },
+        folder: {
+            type: 'string',
+            title: 'Folder',
+            description: 'The folder name within the bucket/container'
+        },
+        object_key: {
+            type: 'string',
+            title: 'Object Key',
+            description: 'The object key/path for the uploaded file'
+        },
+        expires_in: {
+            type: 'integer',
+            title: 'Expires In',
+            description: 'Upload URL expiration time in seconds'
+        }
+    },
+    type: 'object',
+    required: ['upload_url', 'upload_id', 'container', 'folder', 'object_key', 'expires_in'],
+    title: 'DocumentUploadResponse',
+    description: `Response payload for file upload initialization.
+
+Contains the presigned URL for direct datalake upload and metadata
+needed to complete the upload process.`
+} as const;
+
+export const DocumentUploadValidationRequestSchema = {
+    properties: {
+        file_path: {
+            type: 'string',
+            title: 'File Path',
+            description: 'Path/key of the uploaded file within the container'
+        }
+    },
+    type: 'object',
+    required: ['file_path'],
+    title: 'DocumentUploadValidationRequest',
+    description: `Request for validating whether a file was successfully uploaded to cloud storage.
+
+This request contains the information needed to verify that a file upload completed
+successfully in the globally configured datalake (S3, MinIO, or Azure Blob Storage).`
+} as const;
+
+export const DocumentUploadValidationResponseSchema = {
+    properties: {
+        exists: {
+            type: 'boolean',
+            title: 'Exists',
+            description: 'Whether the file exists in the datalake'
+        },
+        file_path: {
+            type: 'string',
+            title: 'File Path',
+            description: 'Path/key of the file that was validated'
+        },
+        container: {
+            type: 'string',
+            title: 'Container',
+            description: 'Name of the container/bucket'
+        }
+    },
+    type: 'object',
+    required: ['exists', 'file_path', 'container'],
+    title: 'DocumentUploadValidationResponse',
+    description: `Response containing the validation result of a file upload.
+
+This response indicates whether the uploaded file exists in the globally
+configured datalake and provides information about the validation process.`
 } as const;
 
 export const EdgeDataSchema = {
@@ -4970,137 +5076,6 @@ export const FileFileSchema = {
     },
     type: 'object',
     title: 'FileFile'
-} as const;
-
-export const FileUploadRequestSchema = {
-    properties: {
-        filename: {
-            type: 'string',
-            maxLength: 255,
-            minLength: 1,
-            title: 'Filename',
-            description: 'Original filename of the file'
-        },
-        content_type: {
-            type: 'string',
-            title: 'Content Type',
-            description: 'MIME type of the file'
-        },
-        content_length: {
-            type: 'integer',
-            exclusiveMinimum: 0,
-            title: 'Content Length',
-            description: 'Size of the file in bytes'
-        },
-        namespace_name: {
-            type: 'string',
-            title: 'Namespace Name',
-            description: 'Target namespace name'
-        },
-        database_name: {
-            type: 'string',
-            title: 'Database Name',
-            description: 'Target database name'
-        }
-    },
-    type: 'object',
-    required: ['filename', 'content_type', 'content_length', 'namespace_name', 'database_name'],
-    title: 'FileUploadRequest',
-    description: `Request payload for initiating file upload to knowledge base.
-
-This request is used to get presigned URLs for direct S3/MinIO upload
-of files that will be processed and indexed in the knowledge base.`
-} as const;
-
-export const FileUploadResponseSchema = {
-    properties: {
-        upload_url: {
-            type: 'string',
-            title: 'Upload Url',
-            description: 'Presigned URL for uploading the file to a datalake'
-        },
-        upload_id: {
-            type: 'string',
-            title: 'Upload Id',
-            description: 'Unique identifier for this upload session'
-        },
-        container: {
-            type: 'string',
-            title: 'Container',
-            description: 'The bucket/container name where file will be stored'
-        },
-        folder: {
-            type: 'string',
-            title: 'Folder',
-            description: 'The folder name within the bucket/container'
-        },
-        object_key: {
-            type: 'string',
-            title: 'Object Key',
-            description: 'The object key/path for the uploaded file'
-        },
-        expires_in: {
-            type: 'integer',
-            title: 'Expires In',
-            description: 'Upload URL expiration time in seconds'
-        }
-    },
-    type: 'object',
-    required: ['upload_url', 'upload_id', 'container', 'folder', 'object_key', 'expires_in'],
-    title: 'FileUploadResponse',
-    description: `Response payload for file upload initialization.
-
-Contains the presigned URL for direct datalake upload and metadata
-needed to complete the upload process.`
-} as const;
-
-export const FileUploadValidationRequestSchema = {
-    properties: {
-        container: {
-            type: 'string',
-            title: 'Container',
-            description: 'Name of the container/bucket where the file was uploaded'
-        },
-        file_path: {
-            type: 'string',
-            title: 'File Path',
-            description: 'Path/key of the uploaded file within the container'
-        }
-    },
-    type: 'object',
-    required: ['container', 'file_path'],
-    title: 'FileUploadValidationRequest',
-    description: `Request for validating whether a file was successfully uploaded to cloud storage.
-
-This request contains the information needed to verify that a file upload completed
-successfully in the globally configured datalake (S3, MinIO, or Azure Blob Storage).`
-} as const;
-
-export const FileUploadValidationResponseSchema = {
-    properties: {
-        exists: {
-            type: 'boolean',
-            title: 'Exists',
-            description: 'Whether the file exists in the datalake'
-        },
-        file_path: {
-            type: 'string',
-            title: 'File Path',
-            description: 'Path/key of the file that was validated'
-        },
-        container: {
-            type: 'string',
-            title: 'Container',
-            description: 'Name of the container/bucket'
-        }
-    },
-    type: 'object',
-    required: ['exists', 'file_path', 'container'],
-    title: 'FileUploadValidationResponse',
-    description: `Response containing the validation result of a file upload.
-
-This response indicates whether the uploaded file exists in the globally
-configured datalake and provides information about the validation process.`
 } as const;
 
 export const Function_OutputSchema = {
@@ -7677,7 +7652,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1758282791
+            default: 1762188469
         },
         owned_by: {
             type: 'string',
@@ -8230,6 +8205,11 @@ export const NamespaceDTOSchema = {
             title: 'Name',
             description: 'Name of namespace'
         },
+        database_id: {
+            type: 'string',
+            title: 'Database Id',
+            description: 'ID of the database containing the namespace'
+        },
         display_name: {
             anyOf: [
                 {
@@ -8276,7 +8256,7 @@ export const NamespaceDTOSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'name', 'number_of_documents', 'updated_at', 'inserted_at', 'created_at'],
+    required: ['id', 'name', 'database_id', 'number_of_documents', 'updated_at', 'inserted_at', 'created_at'],
     title: 'NamespaceDTO'
 } as const;
 
@@ -9092,7 +9072,7 @@ export const RerankerEventSchema = {
             title: 'Rerank Model Name',
             description: 'Name of the reranker model being used.'
         },
-        top_k: {
+        top_n: {
             anyOf: [
                 {
                     type: 'integer'
@@ -9101,8 +9081,20 @@ export const RerankerEventSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Top K',
-            description: 'The top K parameter, representing the number of results to be reranked.'
+            title: 'Top N',
+            description: 'The top N parameter, representing the number of results to be reranked.'
+        },
+        reranked: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Reranked',
+            description: 'Whether the nodes were reranked or not.'
         },
         _event_name: {
             type: 'string',
