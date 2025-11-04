@@ -440,9 +440,6 @@ class KnowledgeService:
         """
         try:
             bucket_entity = BucketEntity.get_bucket_by_db_name(database)
-            namespace_entity = NamespaceEntity.get_namespace_by_bucket_and_name(
-                bucket_id=str(bucket_entity.id), namespace_name=namespace
-            )
         except Exception as e:
             raise HTTPException(
                 status_code=404,
