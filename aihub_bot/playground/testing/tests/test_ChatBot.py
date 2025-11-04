@@ -17,6 +17,7 @@ from aihub_lib.testing.route_adapter.ASGIAdapter import ASGIAdapter
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 
+from aihub_bot.persistence.entities.PathEntity import Credentials, PathEntity
 from aihub_bot.routes.agent.AgentChatController import AgentChatController
 from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
 
@@ -68,8 +69,40 @@ async def test_runner():
 async def client(test_runner: SimulatedAgentBotTestRunner):
     app = test_runner.create_app()
     async with LifespanManager(app) as lifespan:
+        # Set up test credentials after MongoDB connection is established
+        test_credentials = Credentials(
+            APP_TYPE="MultiTenant",
+            APP_ID="test-app-id",
+            APP_PASSWORD="test-app-password",
+        )
+
+        # Clean up any existing test path entities
+        PathEntity.objects(path__in=[
+            "/api/v1/agent/chat/completions/my_agent_class/my_agent_id/json",
+            "/api/v1/agent/chat/completions/my_agent_class/my_agent_id/stream"
+        ]).delete()
+
+        # Create path entities for both endpoints
+        PathEntity(
+            path="/api/v1/agent/chat/completions/my_agent_class/my_agent_id/json",
+            credentials=test_credentials,
+            system_message="Test bot"
+        ).save()
+
+        PathEntity(
+            path="/api/v1/agent/chat/completions/my_agent_class/my_agent_id/stream",
+            credentials=test_credentials,
+            system_message="Test bot"
+        ).save()
+
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client
+
+        # Cleanup after tests
+        PathEntity.objects(path__in=[
+            "/api/v1/agent/chat/completions/my_agent_class/my_agent_id/json",
+            "/api/v1/agent/chat/completions/my_agent_class/my_agent_id/stream"
+        ]).delete()
 
 
 @pytest.mark.asyncio(loop_scope="module")
