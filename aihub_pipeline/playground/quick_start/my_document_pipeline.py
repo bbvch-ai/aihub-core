@@ -68,10 +68,7 @@ defs = Definitions(
             store_name=get_db_name_from_bucket_name(bucket_name=CONTAINER_NAME, auto_sync=False),
         ),
         # Data lake resources for file management
-        **s3_data_lake_resources(
-            container_name=CONTAINER_NAME,
-            figures_directory_name="__figures__",
-        ),
+        **s3_data_lake_resources(container_name=CONTAINER_NAME),
         # AI models for embeddings and summaries
         "embedding_model": EmbeddingModelResource(
             embedding_config=EmbeddingModelConfig(model_name="embedding/large"),

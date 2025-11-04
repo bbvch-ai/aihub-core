@@ -1,3 +1,4 @@
+import logging
 from datetime import UTC, datetime
 
 from mongoengine import (
@@ -9,6 +10,8 @@ from mongoengine import (
     ListField,
     StringField,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class User(EmbeddedDocument):
@@ -132,8 +135,11 @@ class ConversationEntity(Document):
         return conversation.save()
 
     @classmethod
-    def delete_conversation(cls, conversation_id: str) -> None:
+    def delete_conversation_if_exists(cls, conversation_id: str) -> None:
         conversation = cls.get_conversation_by_conversation_id(conversation_id)
+        if conversation is None:
+            logger.debug(f"Conversation {conversation_id} does not exist.")
+            return
         conversation.delete()
 
     @classmethod

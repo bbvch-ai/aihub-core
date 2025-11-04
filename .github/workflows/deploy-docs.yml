@@ -1,13 +1,8 @@
 name: Deploy Documentation to GitHub Pages
 
 on:
-  push:
-    branches:
-      - main
-      - 'feat/aihub-claude-code'
-    paths:
-      - 'aihub_doc/**'
-      - '.github/workflows/deploy-docs.yml'
+  repository_dispatch:
+    types: [release-ready]
   workflow_dispatch:
 
 permissions:
@@ -22,6 +17,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.client_payload.release_version || 'main' }}
           fetch-depth: 0
 
       - name: Setup pnpm
@@ -40,29 +36,9 @@ jobs:
         working-directory: ./aihub_doc
         run: pnpm install
 
-      - name: Ensure pipx is available
-        run: |
-          python3 -m pip install --user pipx
-          python3 -m pipx ensurepath
-
-      - name: Setup LLM for translation
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          echo "Installing llm and llm-gemini plugin..."
-          pipx install llm
-          pipx inject llm llm-gemini
-          
-          echo "Setting Gemini API key..."
-          llm keys set gemini --value "$GEMINI_API_KEY"
-
-      - name: Sync documentation
-        working-directory: ./aihub_doc
-        run: pnpm run docs:sync
-
       - name: Build documentation
         working-directory: ./aihub_doc
-        run: pnpm run docs:build
+        run: pnpm run docs:build:ci
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

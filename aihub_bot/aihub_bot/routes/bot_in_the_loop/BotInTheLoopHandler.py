@@ -3,9 +3,11 @@ from typing import Annotated
 
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
+from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import TeamsConfig
 from aihub_lib.nats.topics import AgentInstanceTopic
 from botbuilder.core import TurnContext
 from botbuilder.schema import ChannelAccount, ConversationAccount, ConversationReference
+from botframework.connector import Channels
 from cachetools import TTLCache
 from fastapi import Request
 from pydantic import BaseModel, Field
@@ -20,14 +22,13 @@ class BotInTheLoopThread(BaseModel):
     conversation_id: Annotated[
         str,
         Field(
-            description="The full Slack conversation ID (format: BotID:TeamID:ChannelID) where messages are sent to."
+            description="The conversation ID where messages are sent to. For Slack: BotID:TeamID:ChannelID. For Teams: the channel (thread) conversation ID (e.g., 19:...@thread.tacv2)."
         ),
     ]
-    slack_thread_ts: Annotated[
+    thread_identifier: Annotated[
         str | None,
         Field(
-            description="The timestamp of the Slack thread that acts as an identifier "
-            "for the Slack thread where the bot-in-the-loop request is sent to.",
+            description="The Slack thread timestamp or the Teams message ID used to identify the specific thread.",
         ),
     ] = None
     last_request_event: Annotated[
@@ -44,7 +45,7 @@ class BotInTheLoopHandler:
 
     def __init__(self):
         self.threads: dict[str, BotInTheLoopThread] = {}
-        self.path: str = f"/bearer_token/v1{self.CONTROLLER_PATH}{self.ENDPOINT_PATH}"
+        self.path: str = f"/api/v1{self.CONTROLLER_PATH}{self.ENDPOINT_PATH}"
         # Use TTLCache with max size of 100 entries
         self.slack_ids_cache = TTLCache(maxsize=100, ttl=self.CACHE_TTL_SECONDS)
 
@@ -80,32 +81,93 @@ class BotInTheLoopHandler:
         thread_id = event.topic.thread_id
         question = event.question
 
-        # Get the Slack IDs (bot_id and team_id)
-        slack_ids = await self._get_slack_ids(self.path)
+        if event.slack_channel_id is not None:
+            await self._handle_bot_in_the_loop_request_in_slack(event, thread_id, question)
 
-        # Create the full channel ID format with just the channel ID provided
-        conversation_id = f"{slack_ids.bot_id}:{slack_ids.team_id}:{event.slack_channel_id}"
+        elif event.teams_config is not None:
+            await self._handle_bot_in_the_loop_request_in_teams(event, thread_id, question)
 
+        else:
+            raise ValueError("Either Slack channel or Teams channel must be provided")
+
+    def _update_or_create_thread(
+        self, thread_id: str, conversation_id: str, event: BotInTheLoopRequestEvent
+    ) -> BotInTheLoopThread:
         if thread_id in self.threads:
-            # Handle the case where the thread already exists
-            # Update the existing thread with the new request event
             self.threads[thread_id].last_request_event = event
         else:
-            # Handle the case where the thread does not exist
-            # Create a new thread and add it to the threads dictionary
             self.threads[thread_id] = BotInTheLoopThread(
                 thread_id=thread_id, conversation_id=conversation_id, last_request_event=event
             )
+        return self.threads[thread_id]
 
-        # Create conversation reference for the adapter
-        conversation_id = self.threads[thread_id].conversation_id
-        if self.threads[thread_id].slack_thread_ts:
-            conversation_id += f":{self.threads[thread_id].slack_thread_ts}"
+    @staticmethod
+    def _build_conversation_id_with_thread_identifier(thread: BotInTheLoopThread, channel: Channels) -> str:
+        conversation_id = thread.conversation_id
+        if thread.thread_identifier:
+            if channel == Channels.slack:
+                conversation_id += f":{thread.thread_identifier}"
+            elif channel == Channels.ms_teams:
+                conversation_id += f";messageid={thread.thread_identifier}"
+
+        return conversation_id
+
+    async def _send_bot_in_the_loop_message(
+        self,
+        conversation_reference: ConversationReference,
+        question: str,
+        thread: BotInTheLoopThread,
+    ):
+        adapter = RoutesService.get_adapter(self.path)
+        await adapter.continue_conversation(
+            bot_app_id=RoutesService.get_credentials(self.path).APP_ID,
+            reference=conversation_reference,
+            callback=self._bot_in_the_loop_callback(question, thread),
+        )
+
+    async def _handle_bot_in_the_loop_request_in_teams(
+        self,
+        event: BotInTheLoopRequestEvent,
+        thread_id: str,
+        question: str,
+    ):
+        teams_config: TeamsConfig = event.teams_config
+
+        thread = self._update_or_create_thread(thread_id, teams_config.channel_id, event)
+
+        conversation_id = self._build_conversation_id_with_thread_identifier(thread, Channels.ms_teams)
+
+        conversation = ConversationReference(
+            channel_id=Channels.ms_teams.value,
+            conversation=ConversationAccount(
+                id=conversation_id,
+                conversation_type="channel",
+            ),
+            service_url=f"https://smba.trafficmanager.net/emea/{teams_config.tenant_id}/",
+            bot=ChannelAccount(
+                id=teams_config.bot_id,
+            ),
+        )
+
+        await self._send_bot_in_the_loop_message(conversation, question, thread)
+
+    async def _handle_bot_in_the_loop_request_in_slack(
+        self,
+        event: BotInTheLoopRequestEvent,
+        thread_id: str,
+        question: str,
+    ):
+        slack_ids = await self._get_slack_ids(self.path)
+        base_conversation_id = f"{slack_ids.bot_id}:{slack_ids.team_id}:{event.slack_channel_id}"
+
+        thread = self._update_or_create_thread(thread_id, base_conversation_id, event)
+
+        conversation_id = self._build_conversation_id_with_thread_identifier(thread, Channels.slack)
 
         bot_team_id = f"{slack_ids.bot_id}:{slack_ids.team_id}"
 
         conversation = ConversationReference(
-            channel_id="slack",
+            channel_id=Channels.slack.value,
             conversation=ConversationAccount(
                 id=conversation_id,
             ),
@@ -113,23 +175,14 @@ class BotInTheLoopHandler:
             bot=ChannelAccount(id=bot_team_id),
         )
 
-        adapter = RoutesService.get_adapter(self.path)
-        await adapter.continue_conversation(
-            bot_app_id=RoutesService.get_credentials(self.path).APP_ID,
-            reference=conversation,
-            callback=self._bot_in_the_loop_callback(question, self.threads[thread_id]),
-        )
+        await self._send_bot_in_the_loop_message(conversation, question, thread)
 
-    def _bot_in_the_loop_callback(self, question: str, thread: BotInTheLoopThread) -> Callable:
+    @staticmethod
+    def _bot_in_the_loop_callback(question: str, thread: BotInTheLoopThread) -> Callable:
         async def callback(turn_context: TurnContext):
-            # Send the question to the user in the Slack channel
-            if turn_context.activity.channel_id == "slack":
-                response = await turn_context.send_activity(question)
-                # Update the slack_thread_id in the thread mapping
-                if response and hasattr(response, "id") and thread.slack_thread_ts is None:
-                    thread.slack_thread_ts = response.id
-            else:
-                raise NotImplementedError("Only Slack channel is supported")
+            response = await turn_context.send_activity(question)
+            if response and hasattr(response, "id") and thread.thread_identifier is None:
+                thread.thread_identifier = response.id
 
         return callback
 

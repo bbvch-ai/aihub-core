@@ -24,7 +24,6 @@ def fetch_data_lake_files_to_remove(
     data_lake_files = fetch_data_lake_files_without_excluded_uris(
         data_lake_client=data_lake_client,
         excluded_uris=uris_to_exclude,
-        figures_directory=data_lake_resource.figures_directory_name,
     )
     context.log.info(f"Found {len(data_lake_files)} data lake files that need to be removed")
     return data_lake_files
@@ -32,15 +31,14 @@ def fetch_data_lake_files_to_remove(
 
 def fetch_data_lake_files_without_excluded_uris(
     data_lake_client: ResourceParam[AbstractDataLakeClient],
-    excluded_uris: list[str] = None,
-    figures_directory: str = "__figures__",
+    excluded_uris: list[str] | None = None,
 ) -> list[DataLakeFile]:
     if excluded_uris is None:
         excluded_uris = []
 
     excluded_uris_set = set(excluded_uris)
 
-    all_files = data_lake_client.get_all_files(figures_directory_name=figures_directory)
+    all_files = data_lake_client.get_all_files()
 
     data_lake_files: list[DataLakeFile] = []
     for data_lake_file in all_files:

@@ -245,9 +245,62 @@ jobs:
           name: licenses
           path: LICENSES.md
 
+  sync-docs:
+    name: Sync Documentation Translations
+    needs: [ compute-and-initial-tag ]
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: 'aihub_doc/pnpm-lock.yaml'
+
+      - name: Install dependencies
+        working-directory: ./aihub_doc
+        run: pnpm install
+
+      - name: Ensure pipx is available
+        run: |
+          python3 -m pip install --user pipx
+          python3 -m pipx ensurepath
+
+      - name: Setup LLM for translation
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          echo "Installing llm and llm-gemini plugin..."
+          pipx install llm
+          pipx inject llm llm-gemini
+
+          echo "Setting Gemini API key..."
+          llm keys set gemini --value "$GEMINI_API_KEY"
+
+      - name: Sync documentation
+        working-directory: ./aihub_doc
+        run: pnpm run docs:sync
+
+      - name: Upload docs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs
+          path: aihub_doc/
+
   finalize-release:
     name: Commit Artifacts & Finalize Tag
-    needs: [compute-and-initial-tag, changelog, license-report]
+    needs: [compute-and-initial-tag, changelog, license-report, sync-docs]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
@@ -267,6 +320,13 @@ jobs:
         with:
           name: licenses
           path: .
+        continue-on-error: true
+
+      - name: Download docs (if any)
+        uses: actions/download-artifact@v4
+        with:
+          name: docs
+          path: aihub_doc/
         continue-on-error: true
 
       - name: Define directories
@@ -372,6 +432,11 @@ jobs:
               changed=true
               echo "License report updated."
             fi
+          fi
+          if [ -n "$(git status --porcelain aihub_doc/)" ]; then
+            git add aihub_doc/
+            changed=true
+            echo "Documentation translations updated."
           fi
           
           git add -A

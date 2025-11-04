@@ -1,12 +1,18 @@
 from typing import Annotated, ClassVar
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import ControlEvent
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
+
+
+class TeamsConfig(BaseModel):
+    channel_id: Annotated[str, Field(description="The ID of the Teams channel where the request is sent to.")]
+    tenant_id: Annotated[str, Field(description="The ID of the Teams tenant where the channel resides.")]
+    bot_id: Annotated[str, Field(description="The ID of the Teams bot that sends the request.")]
 
 
 class BotInTheLoopRequestEvent(ControlEvent):
@@ -31,8 +37,13 @@ class BotInTheLoopRequestEvent(ControlEvent):
     ]
     question: Annotated[str, Field(description="The query or prompt presented to the human operator.")]
     slack_channel_id: Annotated[
-        str, Field(description="The ID of the Slack channel where the request is sent to.", pattern=r"^C[0-9A-Z]+$")
-    ]
+        str | None,
+        Field(description="The ID of the Slack channel where the request is sent to.", pattern=r"^C[0-9A-Z]+$"),
+    ] = None
+    teams_config: Annotated[
+        TeamsConfig | None,
+        Field(description="Configuration details for sending the request via Microsoft Teams."),
+    ] = None
     topic: Annotated[
         PartialAgentTopic | AgentInstanceTopic,
         Field(
