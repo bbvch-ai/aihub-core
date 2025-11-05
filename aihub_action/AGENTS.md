@@ -2,7 +2,7 @@
 
 **Purpose**: Modular GitHub Actions for CI/CD workflows. Standardize build, lint, test, coverage, review across customer repos.
 
-**Tech Stack & Paradigms**: GitHub Actions composite actions. YAML workflow definitions. Reusable workflows pattern. Poetry for Python dependency management. Black formatter with reviewdog for PR comments. Docker buildx for multi-platform images. pytest with coverage reporting. SonarCloud integration for code quality. Stateless, parameterized, version-tagged actions.
+**Tech Stack & Paradigms**: **GitHub Actions composite actions** (YAML workflows). **actions/checkout@v4** for repo cloning. **actions/setup-python@v5** (Python 3.13 default). **actions/setup-node@v4** for Node.js. **snok/install-poetry@v1** (Poetry 2.1.1). **docker/setup-buildx-action@v3** + **docker/build-push-action@v6** for multi-platform images. **docker/login-action@v2** for GHCR auth. **reviewdog/action-black@v3** for Black formatter PR comments. **pytest** with **pytest-cov** for coverage. **EnricoMi/publish-unit-test-result-action@v2** for test summaries. **actions/upload-artifact@v4** for artifacts. **actions/cache@v4** for Poetry/HuggingFace model caching. Docker Compose for test services. Stateless, parameterized, version-tagged reusable actions.
 
 ## Scope Responsibility
 

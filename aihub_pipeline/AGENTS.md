@@ -2,7 +2,7 @@
 
 **Purpose**: Dagster-based pipelines for document ingestion, parsing, embedding generation, and vector storage. Prepares data for RAG agents.
 
-**Tech Stack & Paradigms**: Dagster asset-based orchestration. Observable assets with materialization tracking. I/O managers for asset storage (local filesystem, cloud storage). Dynamic partitioning for time-series data. Sensors for event-driven triggers. Schedules for recurring jobs. Multi-asset definitions for batch processing. Resource management (LLMs, databases, APIs). Dagster UI for monitoring and debugging (localhost:3002). SeaweedFS for artifact storage. Milvus vector database integration for embeddings. Structured metadata for lineage tracking.
+**Tech Stack & Paradigms**: **Dagster 1.11.2** asset-based orchestration with **dagster-webserver** UI (localhost:3002). **dagster-postgres** for storage backend. **dagster-azure** for Azure cloud integration (ADLS). **dagster-aws** for AWS S3 integration. **LlamaIndex readers** for file ingestion. **adlfs** for Azure Data Lake. **s3fs + boto3** for S3 access. **matplotlib** for visualizations. **lxml** for XML/HTML parsing. Observable assets with materialization tracking. I/O managers for storage. Dynamic partitioning. Sensors for event-driven triggers. Schedules for recurring jobs. Multi-asset definitions. Resource management. Structured metadata for lineage tracking. pytest for testing.
 
 ## Scope Responsibility
 

@@ -2,7 +2,7 @@
 
 **Purpose**: Nuxt 3 web application. User interface for AI-Hub (agents, processes, threads, admin).
 
-**Tech Stack & Paradigms**: Nuxt 3 framework with Vue 3 Composition API. TypeScript for type safety. Pinia-Colada for reactive data fetching with query invalidation. PrimeVue component library. Tailwind CSS for styling. Auto-generated SDK from OpenAPI spec (openapi-typescript-codegen). i18n with vue-i18n. OAuth2 authentication flow. WebSocket (Socket.IO) for real-time updates. File uploads with multipart/form-data. Pagination with reusable composables. ESLint + Prettier for code quality. Vite for fast HMR. SSR (server-side rendering) disabled for client-only app.
+**Tech Stack & Paradigms**: Nuxt 3 (v3.17.5) with Vue 3 (v3.5.17) Composition API. TypeScript strict mode. **PrimeVue 4.3.6** as primary UI component library (@primevue/nuxt-module, @primevue/forms, @primeuix/themes). **FormKit** for form management (@formkit/nuxt, @sfxcode/formkit-primevue-nuxt). **Pinia + Pinia-Colada** for state management and reactive data fetching. **VueFlow** for node-based workflows (@vue-flow/core, background, controls, minimap). **Radix Vue** for unstyled primitives. Tailwind CSS + tailwindcss-primeui. **OIDC** authentication (oidc-client-ts). **Socket.IO client** for WebSocket real-time updates. **ApexCharts** for data visualization (vue3-apexcharts). **Quill** rich text editor. **GridStack** dashboard layouts. **Lucide icons** (lucide-vue-next). **VueUse** utilities (@vueuse/nuxt, router, integrations, math). **@hey-api** for OpenAPI SDK generation. i18n (@nuxtjs/i18n). Dagre for graph layouts. ESLint + TypeScript ESLint. Vite for HMR. Client-side only (no SSR).
 
 ## Scope Responsibility
 

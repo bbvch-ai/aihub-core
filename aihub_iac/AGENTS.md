@@ -2,7 +2,7 @@
 
 **Purpose**: Pulumi-based Azure infrastructure definitions. Deploy AI-Hub to Azure cloud with Terraform-like approach.
 
-**Tech Stack & Paradigms**: Pulumi for infrastructure as code (IaC). Python-based resource definitions. Azure cloud provider. Component-based design with reusable modules. Settings-driven configuration with Pydantic models. Resource grouping by functional domain. Naming convention: {component}-{environment}-{region}. Supports dev, staging, production environments. Azure Container Registry, App Services, PostgreSQL Flexible Server, Azure OpenAI, Application Insights, Key Vault integration. pulumi up/destroy for deployment lifecycle.
+**Tech Stack & Paradigms**: **Pulumi Azure Native 3.5.0** for infrastructure as code (IaC). **pulumi-command** for CLI integrations. **Pydantic 2.10.3** + **pydantic-settings 2.9.1** for configuration. Python-based resource definitions. Azure cloud provider. Component-based design with reusable modules. Settings-driven configuration. Resource grouping by functional domain. Naming convention: {component}-{environment}-{region}. Supports dev, staging, production environments. Azure Container Registry, App Services, PostgreSQL Flexible Server, Azure OpenAI, Application Insights, Key Vault integration. `pulumi up/destroy` for deployment lifecycle. pytest for testing.
 
 ## Scope Responsibility
 
