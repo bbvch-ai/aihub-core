@@ -1,8 +1,7 @@
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
-
 from aihub_lib.nats.topics.pipeline.PipelineTopic import PipelineTopic
+from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
 
 # Import AI-Hub pipeline factories
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory

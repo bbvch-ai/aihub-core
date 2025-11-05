@@ -31,7 +31,7 @@ class AgentInstanceTopicManager(AgentClassTopicManager):
       or receive responses only from a known agent instance.
     """
 
-    agent_class: Annotated[str, Field(description="Unique agent instance ID")]
+    agent_id: Annotated[str, Field(description="Unique agent instance ID")]
 
     def get_agent_instance_discovery_subject_request(
         self,

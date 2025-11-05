@@ -4,6 +4,7 @@ from pathlib import Path
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
+from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 from dagster import (
     AnchorBasedFilePathMapping,
     AssetKey,
@@ -15,7 +16,6 @@ from dagster import (
     with_source_code_references,
 )
 
-from aihub_lib.nats.topics.pipeline.PipelineTopic import PipelineTopic
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
@@ -145,7 +145,7 @@ def default_definitions(
             default_automation_sensor(assets),
             nats_document_uploaded_sensor(
                 job=job,
-                pipeline_topic=PipelineTopic(
+                topic_manager=PipelineInstanceTopicManager(
                     source_type=INTERNAL_DATALAKE,
                     source_id=datalake_container_name,
                     target_type=INTERNAL_KNOWLEDGE_DB,

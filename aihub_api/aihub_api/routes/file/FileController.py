@@ -4,8 +4,10 @@ from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings import AnonymousFileAccessSettings
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
-from fastapi import Query, Security
+from fastapi import Depends, Query, Security
+from nats.aio.client import Client as NATS
 
 from aihub_api.routes.file.dto.FileUploadRequest import FileUploadRequest
 from aihub_api.routes.file.dto.FileUploadResponse import FileUploadResponse
@@ -114,6 +116,7 @@ class FileController(Controller):
         @self.router.post(route, tags=self.tags)
         async def validate_file_upload(
             request: FileUploadValidationRequest,
+            nc: Annotated[NATS, Depends(use_nats)],
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
         ) -> FileUploadValidationResponse:
             """
@@ -122,7 +125,7 @@ class FileController(Controller):
             This endpoint checks if a file exists in the configured datalake storage
             (S3/MinIO or Azure Blob Storage) after a presigned URL upload.
             """
-            return await FileService.validate_file_upload(request)
+            return await FileService.validate_file_upload(nc, request)
 
         return self
 

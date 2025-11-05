@@ -2,10 +2,11 @@ from typing import Annotated, override
 
 from pydantic import Field
 
+from aihub_lib.nats.topic_managers.AbstractStreamTopicManager import AbstractStreamTopicManager
 from aihub_lib.nats.topic_managers.pipeline.PipelineTopicManager import PipelineTopicManager
 
 
-class PipelineInstanceTopicManager(PipelineTopicManager):
+class PipelineInstanceTopicManager(PipelineTopicManager, AbstractStreamTopicManager):
     source_type: Annotated[str, Field(description="The pipeline source type, such as 'datalake'")]
     source_id: Annotated[str, Field(description="The pipeline source identifier")]
     target_type: Annotated[str, Field(description="The pipeline target type, such as 'datalake'")]
@@ -58,4 +59,35 @@ class PipelineInstanceTopicManager(PipelineTopicManager):
             run_key=run_key,
             event_name=event_name,
             event_id=event_id,
+        )
+
+    @override
+    def get_stream(self) -> tuple[str, str]:
+        return self._get_stream_name_for_all_events(), self._get_subject_for_all_events_in_pipeline_instance()
+
+    def _get_stream_name_for_all_events(self) -> str:
+        """Returns the stream name used for all agent events."""
+        return (
+            f"{self.PIPELINE_TOPIC}_"
+            f"{self.source_type}_"
+            f"{self.source_id}_"
+            f"{self.target_type}_"
+            f"{self.target_id}_"
+            f"stream"
+        )
+
+    def _get_subject_for_all_events_in_pipeline_instance(self) -> str:
+        """Returns the subject for all events in this agent class."""
+        return self.get_subject_for_specific_event_in_pipeline_instance(
+            run_key="*",
+            event_name="*",
+            event_id="*",
+        )
+
+    @override
+    def get_subject_for_all_control_events(self) -> str:
+        return self.get_subject_for_specific_event_in_pipeline_instance(
+            run_key="*",
+            event_name="*",
+            event_id="*",
         )
