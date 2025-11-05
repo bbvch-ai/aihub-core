@@ -25,7 +25,6 @@ from aihub_lib.nats.events.guard.FewShotRejectEvent import FewShotRejectEvent
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
-from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreConfig import AzureAISearchVectorStoreConfig
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.logging.logger import enable_logging
@@ -98,15 +97,14 @@ def build_rag_agent_config(
 @pytest.fixture
 def azure_agent_config():
     """
-    Return a RAGAgentConfig that uses Azure OpenAI for both the LLM and embeddings.
+    Return a RAGAgentConfig that uses LiteLLM for both the LLM and embeddings with Milvus vector store.
     """
     llm_config = LLMConfig(model_name="text-generation/large")
     reranking_config = RerankingModelConfig(model_name="")
     embedding_config = EmbeddingModelConfig(model_name="embedding/large")
-    vector_store: AzureAISearchVectorStoreConfig = AzureAISearchVectorStoreConfig(
-        # needed for embedding field
-        vector_store_name="development",
-        semantic_configuration_name="mySemanticConfig",
+    vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
+        collection_name="test_rag_agent",
+        dim=1536,
     )
 
     return build_rag_agent_config(
@@ -114,7 +112,7 @@ def azure_agent_config():
         reranking_config=reranking_config,
         embedding_config=embedding_config,
         vector_store=vector_store,
-        query_mode=VectorStoreQueryMode.HYBRID,
+        query_mode=VectorStoreQueryMode.DEFAULT,
     )
 
 

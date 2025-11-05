@@ -70,6 +70,6 @@ def _(call_args, locale_handler, user_query, examples, docstring):
     normalized_prompt = normalize(prompt)
     normalized_docstring = normalize(docstring)
 
-    assert normalized_prompt == normalized_docstring, (
-        f"\nExpected:\n{repr(normalized_docstring)}\n\nGot:\n{repr(normalized_prompt)}"
-    )
+    assert (
+        normalized_prompt == normalized_docstring
+    ), f"\nExpected:\n{repr(normalized_docstring)}\n\nGot:\n{repr(normalized_prompt)}"

@@ -69,9 +69,9 @@ def _(guard_result):
 
 @then(parsers.parse('the reasoning should be "{expected_reasoning}"'))
 def _(guard_result, expected_reasoning):
-    assert guard_result.reasoning == expected_reasoning, (
-        f"Expected reasoning: {expected_reasoning}, got: {guard_result.reasoning}"
-    )
+    assert (
+        guard_result.reasoning == expected_reasoning
+    ), f"Expected reasoning: {expected_reasoning}, got: {guard_result.reasoning}"
 
 
 @then("no cleaned answer should be provided")
@@ -81,6 +81,6 @@ def _(guard_result):
 
 @then(parsers.parse('a cleaned answer "{expected_answer}" should be provided'))
 def _(guard_result, expected_answer):
-    assert guard_result.cleaned_answer == expected_answer, (
-        f"Expected cleaned answer: {expected_answer}, got: {guard_result.cleaned_answer}"
-    )
+    assert (
+        guard_result.cleaned_answer == expected_answer
+    ), f"Expected cleaned answer: {expected_answer}, got: {guard_result.cleaned_answer}"
