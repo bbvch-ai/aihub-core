@@ -5,7 +5,7 @@ from aihub_lib.generative_ai.document.types.FileTypeConfig import FileTypeConfig
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
-class FileUploadRequest(BaseModel):
+class DocumentUploadRequest(BaseModel):
     """
     Request payload for initiating file upload to knowledge base.
 
@@ -16,8 +16,6 @@ class FileUploadRequest(BaseModel):
     filename: Annotated[str, Field(description="Original filename of the file", min_length=1, max_length=255)]
     content_type: Annotated[str, Field(description="MIME type of the file")]
     content_length: Annotated[int, Field(description="Size of the file in bytes", gt=0)]
-    namespace_name: Annotated[str, Field(description="Target namespace name")]
-    database_name: Annotated[str, Field(description="Target database name")]
 
     @classmethod
     @field_validator("filename")
@@ -35,18 +33,8 @@ class FileUploadRequest(BaseModel):
             raise ValueError("File extension is too long.")
         return v
 
-    @classmethod
-    @field_validator("namespace_name", "database_name")
-    def validate_names(cls, v: str) -> str:
-        name_pattern = r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$"
-        if not re.match(name_pattern, v):
-            raise ValueError("Invalid name format.")
-        if any(pattern in v for pattern in ["..", "/", "\\", "\x00"]):
-            raise ValueError("Name contains forbidden characters.")
-        return v
-
     @model_validator(mode="after")
-    def validate_file_type_and_consistency(self) -> "FileUploadRequest":
+    def validate_file_type_and_consistency(self) -> "DocumentUploadRequest":
         """
         Performs file type validation using our extension-based allowlist and mimetypes.
         """

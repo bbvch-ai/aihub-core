@@ -4,10 +4,18 @@ export const useCreateNamespace = defineMutation(() => {
   const queryCache = useQueryCache()
 
   return useMutation({
-    mutation: (request: Ref<CreateNamespaceRequest>) =>
+    mutation: (request: CreateNamespaceRequest & { database: string, namespace: string }) =>
       createNamespace({
         composable: '$fetch',
-        body: request,
+        body: {
+          folder_name: request.folder_name,
+          display_name: request.display_name,
+          description: request.description,
+        },
+        path: {
+          database: request.database,
+          namespace: request.namespace,
+        },
       }),
     onSuccess: () => {
       queryCache.invalidateQueries({ key: ['knowledge'] })
