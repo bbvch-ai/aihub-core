@@ -29,7 +29,7 @@ def mock_msal_auth(monkeypatch):
     - Applied automatically to all tests via autouse=True
     """
 
-    def fake_get_access_token(self, resource_url: str, scopes: list[str], force_refresh: bool = False) -> str:
+    async def fake_get_access_token(self, resource_url: str, scopes: list[str], force_refresh: bool = False) -> str:
         """
         Fake token acquisition that returns a test token without external HTTP calls.
 
