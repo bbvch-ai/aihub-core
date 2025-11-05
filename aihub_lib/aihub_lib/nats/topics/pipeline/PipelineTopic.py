@@ -20,7 +20,7 @@ class PipelineTopic(Topic):
         return self.run_key
 
     def __str__(self) -> str:
-        """Returns the full subject string for this agent topic."""
+        """Returns the full subject string for this pipeline topic."""
         return (
             f"{PipelineTopicManager.PIPELINE_TOPIC}."
             f"{self.source_type}."

@@ -15,7 +15,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.nats.events.pipeline.SourceUpdatedEvent import SourceUpdatedEvent
-from aihub_lib.nats.publishers.JSPublisher import JSPublisher
+from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
@@ -456,7 +456,6 @@ class KnowledgeService:
         This event triggers downstream pipeline processing via Dagster sensors that
         listen for file upload events on the pipeline stream.
         """
-        # Create topic manager for pipeline: datalake (source) -> knowledge (target)
         topic_manager = PipelineInstanceTopicManager(
             source_type="datalake",
             source_id=container,
@@ -464,25 +463,14 @@ class KnowledgeService:
             target_id=database,
         )
 
-        # Create the event with file metadata
-        event = SourceUpdatedEvent(
-            path=file_path,
-        )
-
-        # Get JetStream context and stream/subject information
-        js = nc.jetstream()
-        stream_name, stream_subject = topic_manager.get_stream()
+        event = SourceUpdatedEvent(path=file_path)
         subject = topic_manager.get_subject_for_specific_event_in_pipeline_instance(
             run_key=event.event_id,
             event_name=event.event_name,
             event_id=event.event_id,
         )
 
-        # Create publisher and ensure stream exists
-        publisher = JSPublisher(name="KnowledgeService", js=js)
-        await publisher.ensure_stream_exists(stream_name, stream_subject)
-
-        # Publish the event
+        publisher = NCPublisher(name="KnowledgeService")
         await publisher.publish_event(event, subject)
 
         logger.info(f"Published SourceUpdatedEvent for file {file_path} to subject {subject}")
@@ -512,7 +500,6 @@ class KnowledgeService:
         exists = file_access_config.service.verify_file_exists(container=container, file_path=object_key)
 
         if exists:
-            # Get file metadata and publish event to trigger pipeline processing
             try:
                 await KnowledgeService._publish_source_updated_event(
                     nc=nc,

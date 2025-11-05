@@ -31,9 +31,7 @@ class ProcessTopicManager(TopicManager):
         process_class: Annotated[str, "Process class filter or '*'"] = "*",
     ) -> str:
         """Returns a subject for requesting process discovery information for a specific process class."""
-        return (
-            f"{self.CLASS_DISCOVERY_TOPIC}." f"{self.PROCESS_TOPIC}." f"{process_class}." f"*." f"request." f"{call_id}"
-        )
+        return f"{self.CLASS_DISCOVERY_TOPIC}.{self.PROCESS_TOPIC}.{process_class}.*.request.{call_id}"
 
     def get_process_instance_discovery_subject_response(
         self,

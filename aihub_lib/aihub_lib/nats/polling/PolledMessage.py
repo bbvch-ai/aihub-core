@@ -39,7 +39,7 @@ class PolledMessage:
         await self._msg.nak()
 
     def __iter__(self):
-        """Support backwards-compatible unpacking: event, ack, nak = polled_message"""
+        """Support unpacking: event, ack, nak = polled_message"""
 
         async def ack():
             await self._msg.ack()

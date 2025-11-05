@@ -50,7 +50,6 @@ class PipelineInstanceTopicManager(PipelineTopicManager, AbstractStreamTopicMana
         event_name: Annotated[str, "Specific event name"],
         event_id: Annotated[str, "Event instance ID"],
     ) -> str:
-        """Returns a subject for a specific event from this agent instance, narrowed by thread, display, and run."""
         return self.get_subject_for_specific_event_in_pipeline(
             source_type=self.source_type,
             source_id=self.source_id,
@@ -66,7 +65,6 @@ class PipelineInstanceTopicManager(PipelineTopicManager, AbstractStreamTopicMana
         return self._get_stream_name_for_all_events(), self._get_subject_for_all_events_in_pipeline_instance()
 
     def _get_stream_name_for_all_events(self) -> str:
-        """Returns the stream name used for all agent events."""
         return (
             f"{self.PIPELINE_TOPIC}_"
             f"{self.source_type}_"
@@ -77,7 +75,6 @@ class PipelineInstanceTopicManager(PipelineTopicManager, AbstractStreamTopicMana
         )
 
     def _get_subject_for_all_events_in_pipeline_instance(self) -> str:
-        """Returns the subject for all events in this agent class."""
         return self.get_subject_for_specific_event_in_pipeline_instance(
             run_key="*",
             event_name="*",
