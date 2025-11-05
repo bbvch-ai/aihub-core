@@ -82,6 +82,51 @@ The AI-Hub needs outbound connectivity for external integrations and updates:
 
 The platform reaches various external APIs based on your integrations. No additional outbound restrictions are needed.
 
+## DNS configuration
+
+Production deployments require proper DNS configuration for both external access and internal service communication.
+
+### External DNS records
+
+Create DNS records for all six subdomains pointing to your VM's public IP:
+
+```bash
+# A records (or CNAMEs to your VM's hostname)
+aihub.example.com           → 203.0.113.10
+openwebui.aihub.example.com → 203.0.113.10
+dagster.aihub.example.com   → 203.0.113.10
+datalake.aihub.example.com  → 203.0.113.10
+datalake-api.aihub.example.com → 203.0.113.10
+traefik.aihub.example.com   → 203.0.113.10
+```
+
+### Internal DNS resolution
+
+The VM must be able to resolve its own domain names. This is critical for OAuth callbacks and internal service communication.
+
+**Common issue**: DNS records configured externally but not resolvable from the VM itself. This causes authentication timeouts and OAuth failures.
+
+If external DNS works but internal resolution fails, the VM's nameserver configuration may be blocking requests.
+
+### Nameserver configuration
+
+Check `/etc/resolv.conf` on your VM:
+
+```bash
+cat /etc/resolv.conf
+```
+
+**Common issue**: Nameservers not in your subnet may block DNS requests, causing authentication timeouts. If you experience OAuth timeout errors, verify your nameserver can resolve your domain.
+
+### DNS propagation
+
+After creating DNS records, allow time for propagation:
+
+- Internal corporate DNS: 5-15 minutes
+- Public DNS: 1-48 hours (depends on TTL)
+
+Let's Encrypt certificate provisioning requires globally accessible DNS records on ports 80 and 443.
+
 ## Related documentation
 
 - [Deployment options](../1_deployment_options/) - Architecture and hosting strategies
