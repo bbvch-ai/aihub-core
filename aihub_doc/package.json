@@ -7,13 +7,15 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "docs:dev": "vitepress dev",
     "docs:sync": "bash sync-docs.sh",
-    "docs:build": "bash sync-docs.sh && vitepress build",
+    "docs:translate": "bash translate-docs.sh",
+    "docs:build": "bash sync-docs.sh && node generate-llm-files.mjs && bash translate-docs.sh && vitepress build",
+    "docs:build:ci": "bash sync-docs.sh && node generate-llm-files.mjs && vitepress build",
     "docs:preview": "vitepress preview"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.13.1",
+  "packageManager": "pnpm@10.19.0",
   "devDependencies": {
     "@braintree/sanitize-url": "^7.1.1",
     "@types/glob": "^9.0.0",
@@ -24,7 +26,9 @@
     "glob": "^11.0.3",
     "gray-matter": "^4.0.3",
     "mermaid": "^11.9.0",
-    "vitepress": "2.0.0-alpha.8",
-    "vitepress-plugin-mermaid": "^2.0.17"
+    "vitepress": "2.0.0-alpha.12",
+    "vitepress-plugin-llms": "^1.8.1",
+    "vitepress-plugin-mermaid": "^2.0.17",
+    "vue": "^3.5.22"
   }
 }

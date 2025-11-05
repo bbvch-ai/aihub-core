@@ -78,7 +78,7 @@ Time to write! Create your feature documentation file:
 cd aihub_doc/docs/2_platform/5_feature_overview/ 
 # OR
 # SDK features, primarily important for extending or maintaining the platform
-cd aihub_doc/docs/3_sdk/6_feature_overview/ 
+cd aihub_doc/docs/3_sdk/1_feature_overview/ 
 ```
 
 - Create a new directory for your feature
@@ -234,7 +234,7 @@ Ensure your feature documentation integrates well:
 ls -la aihub_doc/docs/features/
 
 # Look at the structure of similar features
-head -50 aihub_doc/docs/features/*/index.md
+head -50 aihub_doc/docs/features/*/index.en.md
 ```
 
 **Integration Checklist:**

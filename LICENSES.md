@@ -1,12 +1,12 @@
 # License Report
 
-Generated on: 13.10.2025
+Generated on: 04.11.2025
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (Poetry): **250 packages**
+- Python packages (Poetry): **256 packages**
 - Node.js packages (pnpm): **197 packages**
-- External Docker images: **33 images**
+- External Docker images: **32 images**
 
 ### License Compatibility
 
@@ -103,6 +103,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | isodate                                      | 0.7.2           | BSD License                                       |                                                    |
 | ✅     | joblib                                       | 1.5.1           | BSD License                                       |                                                    |
 | ✅     | kiwisolver                                   | 1.4.9           | BSD License                                       |                                                    |
+| ✅     | lxml                                         | 5.4.0           | BSD License                                       |                                                    |
 | ✅     | matplotlib-inline                            | 0.1.7           | BSD License                                       |                                                    |
 | ✅     | nest-asyncio                                 | 1.6.0           | BSD License                                       |                                                    |
 | ✅     | networkx                                     | 3.5             | BSD License                                       |                                                    |
@@ -163,6 +164,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | black                                        | 24.10.0         | MIT License                                       |                                                    |
 | ✅     | cachetools                                   | 5.5.2           | MIT License                                       |                                                    |
 | ✅     | cffi                                         | 1.17.1          | MIT License                                       |                                                    |
+| ✅     | cohere                                       | 5.18.0          | MIT License                                       |                                                    |
 | ✅     | colorlog                                     | 6.9.0           | MIT License                                       |                                                    |
 | ✅     | dataclasses-json                             | 0.6.7           | MIT License                                       |                                                    |
 | ✅     | executing                                    | 2.2.0           | MIT License                                       |                                                    |
@@ -177,6 +179,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | jmespath                                     | 1.0.1           | MIT License                                       |                                                    |
 | ✅     | latex2mathml                                 | 3.78.0          | MIT License                                       |                                                    |
 | ✅     | llama-index-embeddings-openai                | 0.3.1           | MIT License                                       |                                                    |
+| ✅     | llama-index-postprocessor-cohere-rerank      | 0.3.0           | MIT License                                       |                                                    |
 | ✅     | llama-index-storage-docstore-mongodb         | 0.3.0           | MIT License                                       |                                                    |
 | ✅     | llama-index-storage-kvstore-mongodb          | 0.3.0           | MIT License                                       |                                                    |
 | ✅     | markdown-it-py                               | 4.0.0           | MIT License                                       |                                                    |
@@ -219,8 +222,10 @@ This document contains license information for all dependencies across the monor
 | ✅     | tiktoken                                     | 0.11.0          | MIT (override)                                    |                                                    |
 | ✅     | SQLAlchemy                                   | 2.0.43          | MIT                                               |                                                    |
 | ✅     | charset-normalizer                           | 3.4.3           | MIT                                               |                                                    |
+| ✅     | fastavro                                     | 1.12.1          | MIT                                               |                                                    |
 | ✅     | fonttools                                    | 4.59.1          | MIT                                               |                                                    |
 | ✅     | gherkin-official                             | 29.0.0          | MIT                                               |                                                    |
+| ✅     | httpx-sse                                    | 0.4.0           | MIT                                               |                                                    |
 | ✅     | jsonref                                      | 1.1.0           | MIT                                               |                                                    |
 | ✅     | pytest-cov                                   | 6.2.1           | MIT                                               |                                                    |
 | ✅     | tokenize_rt                                  | 6.2.0           | MIT                                               |                                                    |
@@ -270,6 +275,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | scikit-learn                                 | 1.7.1           | BSD-3-Clause (override)                           |                                                    |
 | ✅     | types-PyYAML                                 | 6.0.12.20250809 | Apache-2.0 (override)                             |                                                    |
 | ✅     | types-networkx                               | 3.5.0.20250812  | Apache-2.0 (override)                             |                                                    |
+| ✅     | types-requests                               | 2.32.4.20250913 | Apache-2.0 (override)                             |                                                    |
 | ✅     | typing-inspection                            | 0.4.1           | MIT (override)                                    |                                                    |
 | ✅     | typing_extensions                            | 4.14.1          | PSF-2.0 (override)                                |                                                    |
 | ✅     | urllib3                                      | 2.5.0           | MIT (override)                                    |                                                    |
@@ -489,32 +495,31 @@ This document contains license information for all dependencies across the monor
 | ✅     | oauth2-proxy                    | `ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest`                              | MIT                              | Permissive license                                                |
 | ✅     | milvus                          | `ghcr.io/bbvch-ai/aihub-core/milvus:v2.5.15`                                 | Apache-2.0                       | Permissive license                                                |
 | ✅     | minimal-notebook                | `ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6`                | BSD-3-Clause                     | Jupyter base image                                                |
-| ✅     | litellm                         | `ghcr.io/bbvch-ai/aihub-core/litellm:main-v1.50.0`                           | MIT                              | Permissive license                                                |
 | ✅     | litellm                         | `ghcr.io/bbvch-ai/aihub-core/litellm:main-v1.74.8-nightly`                   | MIT                              | Permissive license                                                |
 | ✅     | pgvector                        | `ghcr.io/bbvch-ai/aihub-core/pgvector:pg17`                                  | PostgreSQL License               | BSD-style permissive license                                      |
 | ✅     | traefik                         | `ghcr.io/bbvch-ai/aihub-core/traefik:v3.4.4`                                 | Apache-2.0                       | Permissive license                                                |
 | ✅     | presidio-analyzer               | `ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359`                      | MIT                              | Permissive license                                                |
 | ✅     | playwright                      | `ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy`                       | Apache-2.0                       | Permissive license                                                |
 | ⚠️     | open-webui                      | `ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.22`                             | BSD-3-Clause                     | Permissive with required branding retention                       |
+| ✅     | litellm                         | `ghcr.io/bbvch-ai/aihub-core/litellm:v1.77.7-stable`                         | MIT                              | Permissive license                                                |
 | ✅     | docling-serve                   | `ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.3.1`                           | MIT                              | Permissive license                                                |
 | ✅     | nats                            | `ghcr.io/bbvch-ai/aihub-core/nats:2.11.4`                                    | Apache-2.0                       | Permissive license                                                |
 | ✅     | docling-serve                   | `ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.1.0`                           | MIT                              | Permissive license                                                |
 | ✅     | playwright                      | `ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy`                       | Apache-2.0                       | Permissive license                                                |
 | ✅     | postgres-documentdb             | `ghcr.io/bbvch-ai/aihub-core/postgres-documentdb:17.0.106.0-ferretdb-2.5.0`  | Apache-2.0                       | Permissive licenses                                               |
+| ✅     | llama.cpp                       | `ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b6710`                    | MIT                              | Permissive license                                                |
 | ✅     | valkey                          | `ghcr.io/bbvch-ai/aihub-core/valkey:8.0.5`                                   | BSD-3-Clause                     | Redis-compatible, standard BSD-3-Clause license                   |
-| ✅     | dagster                         | `ghcr.io/bbvch-ai/aihub-core/dagster:v0.243.1`                               | Apache-2.0                       | Permissive license                                                |
 | ✅     | dagster                         | `ghcr.io/bbvch-ai/aihub-core/dagster:latest`                                 | Apache-2.0                       | Permissive license                                                |
 | ✅     | text-embeddings-inference       | `ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cpu-ipex-sha-c8ff435` | Apache-2.0                       | Permissive license                                                |
+| ✅     | llama.cpp                       | `ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b6710`                         | MIT                              | Permissive license                                                |
 | ✅     | attu                            | `ghcr.io/bbvch-ai/aihub-core/attu:v2.5.12`                                   | Apache-2.0                       | Permissive license                                                |
 | ✅     | presidio-anonymizer             | `ghcr.io/bbvch-ai/aihub-core/presidio-anonymizer:2.2.359`                    | MIT                              | Permissive license                                                |
 | ✅     | etcd                            | `ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.16`                                   | Apache-2.0                       | Permissive license                                                |
-| ✅     | llama.cpp                       | `ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b5490`                         | MIT                              | Permissive license                                                |
 | ✅     | ferretdb                        | `ghcr.io/bbvch-ai/aihub-core/ferretdb:2.5.0`                                 | Apache-2.0                       | Permissive license                                                |
 | ✅     | seaweedfs                       | `ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97`                                 | Apache-2.0                       | Permissive license                                                |
 | ✅     | aws-cli-alpine                  | `ghcr.io/bbvch-ai/aihub-core/aws-cli-alpine:3.22.1`                          | Apache-2.0                       | Permissive license                                                |
 | ⚠️     | open-webui                      | `ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.13`                             | BSD-3-Clause                     | Permissive with required branding retention                       |
 | ⚠️     | phoenix                         | `ghcr.io/bbvch-ai/aihub-core/phoenix:version-10.0.4`                         | ELv2                             | Source-available; cannot offer as a service, internal use allowed |
-| ✅     | llama.cpp                       | `ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b6445`                    | MIT                              | Permissive license                                                |
 | ✅     | dagster                         | `ghcr.io/bbvch-ai/aihub-core/dagster:nightly`                                | Apache-2.0                       | Permissive license                                                |
 | ✅     | opentelemetry-collector-contrib | `otel/opentelemetry-collector-contrib:latest`                                | Apache-2.0                       | Permissive license                                                |
 | ✅     | text-embeddings-inference       | `ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:89-1.8`               | Apache-2.0                       | Permissive license                                                |
@@ -525,16 +530,13 @@ This document contains license information for all dependencies across the monor
 The following are our own services and inherit the license we choose:
 
 - rag_agent (`ghcr.io/bbvch-ai/aihub-core/rag_agent:nightly`)
-- default_rag_pipeline (`ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:v0.243.1`)
 - web (`ghcr.io/bbvch-ai/aihub-core/web:latest`)
-- llm_wrapping_agent (`ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:v0.243.1`)
 - web (`ghcr.io/bbvch-ai/aihub-core/web:nightly`)
 - llm_wrapping_agent (`ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:nightly`)
 - default_rag_pipeline (`ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:nightly`)
-- api (`ghcr.io/bbvch-ai/aihub-core/api:v0.243.1`)
-- rag_agent (`ghcr.io/bbvch-ai/aihub-core/rag_agent:v0.243.1`)
 - llm_wrapping_agent (`ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:latest`)
 - api (`ghcr.io/bbvch-ai/aihub-core/api:latest`)
 - default_rag_pipeline (`ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:latest`)
-- web (`ghcr.io/bbvch-ai/aihub-core/web:v0.243.1`)
+- bot (`ghcr.io/bbvch-ai/aihub-core/bot:latest`)
 - api (`ghcr.io/bbvch-ai/aihub-core/api:nightly`)
+- bot (`ghcr.io/bbvch-ai/aihub-core/bot:nightly`)

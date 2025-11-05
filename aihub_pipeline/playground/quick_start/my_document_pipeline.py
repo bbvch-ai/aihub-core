@@ -68,20 +68,19 @@ defs = Definitions(
             store_name=get_db_name_from_bucket_name(bucket_name=CONTAINER_NAME, auto_sync=False),
         ),
         # Data lake resources for file management
-        **s3_data_lake_resources(
-            container_name=CONTAINER_NAME,
-            figures_directory_name="__figures__",
-        ),
+        **s3_data_lake_resources(container_name=CONTAINER_NAME),
         # AI models for embeddings and summaries
         "embedding_model": EmbeddingModelResource(
-            embedding_config=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
+            embedding_config=EmbeddingModelConfig(model_name="embedding/large"),
         ),
-        "language_model": LanguageModelResource(llm_config=LLMConfig(model_name="azure/gpt-4o-mini")),
+        "language_model": LanguageModelResource(llm_config=LLMConfig(model_name="text-generation/nano")),
     },
     # Add jobs for pipeline operations
     jobs=[observe_job],
     # Add scheduling - observe daily at midnight
     schedules=[daily_schedule_at(observe_job, hour=0, minute=0)],
     # Add sensors for automation
-    sensors=[default_automation_sensor(assets)],
+    sensors=[
+        default_automation_sensor(assets),
+    ],
 )

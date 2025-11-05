@@ -8,8 +8,38 @@ on:
         required: true
 
 jobs:
-  retag:
+  retag-git:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Move latest git tag
+        env:
+          SOURCE_TAG: ${{ inputs.source_tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Verify source tag exists
+          if ! git rev-parse "$SOURCE_TAG" >/dev/null 2>&1; then
+            echo "❌ Error: Source tag '$SOURCE_TAG' does not exist"
+            exit 1
+          fi
+
+          echo "Moving 'latest' tag to same commit as '$SOURCE_TAG'..."
+          git tag -f latest "$SOURCE_TAG"
+          git push origin refs/tags/latest --force
+          echo "Moved 'latest' tag to same commit as $SOURCE_TAG"
+
+  retag-docker:
+    runs-on: ubuntu-latest
+    needs: retag-git
     permissions:
       packages: write
       contents: read

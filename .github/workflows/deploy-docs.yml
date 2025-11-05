@@ -1,13 +1,8 @@
 name: Deploy Documentation to GitHub Pages
 
 on:
-  push:
-    branches:
-      - main
-      - 'feat/aihub-claude-code'
-    paths:
-      - 'aihub_doc/**'
-      - '.github/workflows/deploy-docs.yml'
+  repository_dispatch:
+    types: [release-ready]
   workflow_dispatch:
 
 permissions:
@@ -22,6 +17,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.client_payload.release_version || 'main' }}
           fetch-depth: 0
 
       - name: Setup pnpm
@@ -40,13 +36,9 @@ jobs:
         working-directory: ./aihub_doc
         run: pnpm install
 
-      - name: Sync documentation
-        working-directory: ./aihub_doc
-        run: pnpm run docs:sync
-
       - name: Build documentation
         working-directory: ./aihub_doc
-        run: pnpm run docs:build
+        run: pnpm run docs:build:ci
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
