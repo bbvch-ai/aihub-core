@@ -76,7 +76,7 @@ async def main():
         .tts(),
         EvaluationController(
             auth=auth,
-            judge=LLMConfig(model_name="azure/gpt-4o"),
+            judge=LLMConfig(model_name="text-generation/large"),
         )
         .create_dataset()
         .get_datasets()
@@ -90,7 +90,7 @@ async def main():
             vector_store_factory=lambda collection: create_milvus_vector_store(
                 MilvusSettings().URL, collection, MilvusSettings().DIMENSION
             ),
-            translation_llm_config=LLMConfig(model_name="azure/gpt-4o-mini"),
+            translation_llm_config=LLMConfig(model_name="text-generation/mini"),
         )
         .create_namespace()
         .update_namespace()
