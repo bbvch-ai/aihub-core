@@ -1,5 +1,5 @@
 import inspect
-from typing import Annotated, Generic, TypeVar, cast
+from typing import Annotated, TypeVar, cast
 
 from pydantic import Field
 
@@ -9,7 +9,7 @@ from aihub_lib.nats.events.utils import get_base_type
 TEvent = TypeVar("TEvent", bound=ProcessStopEvent)
 
 
-class ProcessWorkEvent(ProcessStartEvent, Generic[TEvent]):
+class ProcessWorkEvent[TEvent: ProcessStopEvent](ProcessStartEvent):
     """
     Signals a piece of work completed by another process.
     As this work event is generated automatically by the process delegator, you can't really add attributes to this
@@ -31,7 +31,7 @@ class ProcessWorkEvent(ProcessStartEvent, Generic[TEvent]):
         """
         if cls is ProcessWorkEvent:
             raise TypeError(
-                "Cannot get stop event type from the non-specialized " "generic base class 'ProcessWorkEvent'."
+                "Cannot get stop event type from the non-specialized generic base class 'ProcessWorkEvent'."
             )
 
         field_info = cls.model_fields.get("process_stop_event")
@@ -49,6 +49,6 @@ class ProcessWorkEvent(ProcessStartEvent, Generic[TEvent]):
 
         for t in base_types:
             if not inspect.isclass(t):
-                raise TypeError(f"Extracted type '{t}' is not a class. " f"Full annotation was '{field_annotation}'.")
+                raise TypeError(f"Extracted type '{t}' is not a class. Full annotation was '{field_annotation}'.")
 
         return cast(tuple[type[ProcessStopEvent], ...], base_types)

@@ -1,17 +1,15 @@
 import abc
 import asyncio
 from collections.abc import Awaitable, Callable
-from typing import Annotated, Generic, Literal, TypeVar
+from typing import Annotated, Literal
 
 from nats.aio.client import Client as NATS
 
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.topics import Topic
 
-TEvent = TypeVar("TEvent", bound=BaseEvent)
 
-
-class AbstractSubscriber(Generic[TEvent], abc.ABC):
+class AbstractSubscriber[TEvent: BaseEvent](abc.ABC):
     def __init__(
         self,
         name: Annotated[str, "Name of the subscriber shown in otel"],

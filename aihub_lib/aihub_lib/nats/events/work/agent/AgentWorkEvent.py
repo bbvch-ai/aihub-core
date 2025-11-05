@@ -1,5 +1,5 @@
 import inspect
-from typing import Annotated, Generic, TypeVar, cast
+from typing import Annotated, TypeVar, cast
 
 from pydantic import Field
 
@@ -10,7 +10,7 @@ from aihub_lib.nats.events.work.WorkEvent import WorkEvent
 TEvent = TypeVar("TEvent", bound=StopEvent)
 
 
-class AgentWorkEvent(WorkEvent, Generic[TEvent]):
+class AgentWorkEvent[TEvent: StopEvent](WorkEvent):
     """
     Signals a piece of work completed by another agent.
     As this work event is generated automatically by the agent delegator, you can't really add attributes to this
@@ -29,9 +29,7 @@ class AgentWorkEvent(WorkEvent, Generic[TEvent]):
         before unwrapping complex type hints.
         """
         if cls is AgentWorkEvent:
-            raise TypeError(
-                "Cannot get stop event type from the non-specialized " "generic base class 'AgentWorkEvent'."
-            )
+            raise TypeError("Cannot get stop event type from the non-specialized generic base class 'AgentWorkEvent'.")
 
         field_info = cls.model_fields.get("agent_stop_event")
 
@@ -48,6 +46,6 @@ class AgentWorkEvent(WorkEvent, Generic[TEvent]):
 
         for t in base_types:
             if not inspect.isclass(t):
-                raise TypeError(f"Extracted type '{t}' is not a class. " f"Full annotation was '{field_annotation}'.")
+                raise TypeError(f"Extracted type '{t}' is not a class. Full annotation was '{field_annotation}'.")
 
         return cast(tuple[type[StopEvent], ...], base_types)
