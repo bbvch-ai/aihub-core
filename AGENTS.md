@@ -57,8 +57,8 @@
 - **Admin UI**: Nuxt.js-based management interface
 
 **AI/LLM**:
-- **LlamaIndex**: Core framework for RAG and agent workflows
-- **Providers**: OpenAI, Azure OpenAI, Google GenAI, Hugging Face, vLLM (local models)
+- **LlamaIndex**: Core framework for RAG
+- **Providers**: OpenAI, Azure OpenAI, Google GenAI, Hugging Face, vLLM & llama.cpp (local models)
 
 **Data/Storage**:
 - **FerretDB**: MongoDB-compatible NoSQL (PostgreSQL backend), accessed via MongoEngine
@@ -129,15 +129,6 @@ Before marking task complete:
 ## Architectural Decisions (ADRs)
 
 **CRITICAL**: Consult existing ADRs before significant changes. Located: `/home/user/aihub-core/aihub_doc/arc42/decisions/`
-
-**Recent Key Decisions**:
-- Dual OpenWebUI pipeline architecture (event-based via SSE + OpenAI-compatible)
-- SSE (Server-Side Events) for OpenWebUI integration (native event streaming)
-- MCP protocol for AI assistant development integration
-- OpenTelemetry for end-to-end distributed tracing
-- Containerized multi-environment deployment (Docker Compose only)
-- Global superuser authentication for Docker deployments
-- Component-specific CI/CD build pipelines
 
 **Create ADR if**:
 - Adding major dependencies
