@@ -470,7 +470,7 @@ class KnowledgeService:
             event_id=event.event_id,
         )
 
-        publisher = NCPublisher(name="KnowledgeService")
+        publisher = NCPublisher(name="KnowledgeService", nc=nc)
         await publisher.publish_event(event, subject)
 
         logger.info(f"Published SourceUpdatedEvent for file {file_path} to subject {subject}")
