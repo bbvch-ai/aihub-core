@@ -131,7 +131,6 @@ This layer provides a full-stack experience for interacting with the core logic.
 We provide tools to ensure your solutions are robust, maintainable, and easy to deploy.
 
 - **`aihub_action`**: Contains reusable GitHub Actions to standardize CI/CD pipelines and avoid duplication.
-- **`aihub_iac`**: (Infrastructure-as-Code) Defines reusable cloud infrastructure resources for deployment.
 - **`aihub_doc`**: Holds all project documentation, including arc42 and Architectural Decision Records (ADRs).
 :::
 
