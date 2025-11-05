@@ -25,7 +25,7 @@ async def main():
             agent_class=FewShotAgent.__name__,
             name=LocaleString(en="RAG Agent"),
             description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
-            llm=LLMConfig(model_name="azure/gpt-4o-mini"),
+            llm=LLMConfig(model_name="text-generation/mini"),
             number_of_input_tokens=100000,
             condense_question_prompt=LocaleString(
                 en="""

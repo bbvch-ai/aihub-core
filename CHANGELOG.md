@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.249.2] - 2025-11-05 - Enhanced Model Agnosticism and New Azure GPT-5 Series Integration
+
+### Added
+
+- ✨ **New Azure OpenAI GPT-5 Nano Integration**: Introduced direct support for Azure OpenAI GPT-5 Nano via the
+  `text-generation/nano` alias, including a dedicated environment variable (`AZURE_OPENAI_KEY_NANO`) and specific
+  default temperature settings for optimal performance.
+- 🚀 **New Azure OpenAI GPT-5 Series Integration**: Expanded LLM capabilities with support for Azure OpenAI GPT-5 via the
+  `text-generation/large` alias, providing access to more powerful generative models.
+
+### Changed
+
+- ⚙️ **Updated LiteLLM Proxy**: The internal LiteLLM dependency has been updated to `v1.77.7-stable`, bringing general
+  improvements and stability fixes to the model proxy layer.
+- 🤖 **Adjusted Default Fallback and Safety LLM Configuration**: The system's default fallback LLM and the prompt
+  injection detection LLM now leverage the newly introduced `text-generation/nano` model alias.
+
+### Refactor
+
+- 🧹 **Standardized Model Aliases Across the Platform**: Implemented a consistent, provider-agnostic model naming scheme,
+  replacing previous explicit model names (e.g., `azure/gpt-4o-mini`, `local/qwen-embedding`, `local/reranker`) with
+  simplified aliases like `text-generation/mini`, `embedding/small`, `reranker`, `transcription`, `speech`, and
+  `image-generation`. This refactoring significantly simplifies model configuration and enhances platform flexibility.
+- 🔄 **Unified Model Configuration**: All agent definitions, API endpoints, infrastructure-as-code (IaC), and data
+  pipeline configurations have been updated to utilize the new standardized model aliases, ensuring consistency and ease
+  of maintenance.
+- 📈 **Enhanced LLM Parameter Configuration**: Introduced capabilities for defining default parameters within
+  `LLMConfig`, allowing for fine-grained control over model behavior for specific aliases, such as setting a default
+  temperature for `text-generation/nano`.
+
+---
+
 ## [v0.249.1] - 2025-11-04 - Enhanced Authentication Service Robustness
 
 ### Fixed

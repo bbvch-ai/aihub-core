@@ -229,7 +229,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/ferretdb-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -381,6 +381,7 @@ services:
       AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY}
       AZURE_OPENAI_KEY_IMAGE: ${AZURE_OPENAI_KEY_IMAGE}
       AZURE_OPENAI_KEY_AUDIO: ${AZURE_OPENAI_KEY_AUDIO}
+      AZURE_OPENAI_KEY_NANO: ${AZURE_OPENAI_KEY_NANO}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY}
       PRESIDIO_ANALYZER_API_BASE: "http://presidio-analyzer:3000"
@@ -496,8 +497,8 @@ services:
 
       OPENAI_API_BASE_URL: "http://localhost:4000/v1"
       MODELS_CACHE_TTL: 60
-      TASK_MODEL: 'azure/gpt-4o-mini'
-      TASK_MODEL_EXTERNAL: 'azure/gpt-4o-mini'
+      TASK_MODEL: 'text-generation/mini'
+      TASK_MODEL_EXTERNAL: 'text-generation/mini'
 
       # Database
       DATABASE_TYPE: 'postgres'
@@ -577,8 +578,8 @@ services:
       # Audio
       AUDIO_STT_ENGINE: 'openai'
       AUDIO_TTS_ENGINE: 'openai'
-      AUDIO_STT_MODEL: 'azure/gpt-4o-mini-transcribe'
-      AUDIO_TTS_MODEL: 'azure/gpt-4o-mini-tts'
+      AUDIO_STT_MODEL: 'transcription'
+      AUDIO_TTS_MODEL: 'speech'
       AUDIO_TTS_VOICE: 'alloy'
 
       # User Permissions
@@ -673,4 +674,4 @@ services:
       - "13133:13133"
       - "55679:55679"
     healthcheck:
-      test: ["CMD", "/otelcol-contrib", "--version"]
+      test: [ "CMD", "/otelcol-contrib", "--version" ]

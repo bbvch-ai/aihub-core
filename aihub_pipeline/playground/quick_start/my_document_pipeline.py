@@ -71,9 +71,9 @@ defs = Definitions(
         **s3_data_lake_resources(container_name=CONTAINER_NAME),
         # AI models for embeddings and summaries
         "embedding_model": EmbeddingModelResource(
-            embedding_config=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
+            embedding_config=EmbeddingModelConfig(model_name="embedding/large"),
         ),
-        "language_model": LanguageModelResource(llm_config=LLMConfig(model_name="azure/gpt-4o-mini")),
+        "language_model": LanguageModelResource(llm_config=LLMConfig(model_name="text-generation/nano")),
     },
     # Add jobs for pipeline operations
     jobs=[observe_job],
