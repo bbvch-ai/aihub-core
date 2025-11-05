@@ -62,7 +62,7 @@
 
 **Data/Storage**:
 - **FerretDB**: MongoDB-compatible NoSQL (PostgreSQL backend), accessed via MongoEngine
-- **Redis**: In-memory state storage for agents (RunContext, ThreadContext)
+- **Valkey**: Redis-compatible in-memory state storage for agents (RunContext, ThreadContext)
 - **Milvus**: Primary vector store for semantic search
 - **SeaweedFS**: S3-compatible object storage (files, artifacts)
 - **PostgreSQL**: Relational database backend
@@ -228,4 +228,6 @@ Each package has its own `AGENTS.md` with scope-specific architecture, folder st
 - `/home/user/aihub-core/aihub_pipeline/AGENTS.md`
 - `/home/user/aihub-core/aihub_process/AGENTS.md`
 - `/home/user/aihub-core/aihub_web/AGENTS.md`
+- `/home/user/aihub-core/aihub_action/AGENTS.md`
+- `/home/user/aihub-core/aihub_iac/AGENTS.md`
 - `/home/user/aihub-core/aihub_doc/AGENTS.md`

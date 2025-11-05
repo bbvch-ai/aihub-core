@@ -12,7 +12,7 @@ Reusable CI/CD automation. NOT repository-specific workflows (those consume thes
 aihub_action/
 ├── build_image/               # Docker image build + push
 │   └── action.yml
-├── lint_backend/              # Backend linting (Ruff + MyPy)
+├── lint_backend/              # Backend linting (Black formatter)
 │   └── action.yml
 ├── lint_frontend/             # Frontend linting (ESLint)
 │   └── action.yml
@@ -32,13 +32,20 @@ aihub_action/
 
 **Example** (`lint_backend/action.yml`):
 ```yaml
-name: Lint Backend
-description: Lints backend Python code using Ruff and MyPy.
+name: Lint Backend Code
+description: Run linter on python backend
 
 inputs:
-  working_directory:
-    description: Path to the backend code directory.
+  github_token:
+    description: 'GitHub token for authentication'
     required: true
+  working_directory:
+    description: 'Working directory for the linter'
+    required: true
+  python_version:
+    description: 'Python version to install'
+    required: false
+    default: '3.13'
 
 runs:
   using: "composite"
@@ -46,29 +53,21 @@ runs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Set up Python 3.13
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.13"
+        python-version: ${{ inputs.python_version }}
 
-    - name: Install Dependencies
+    - name: Configure Git to Use GITHUB_TOKEN
       shell: bash
-      run: |
-        cd ${{ inputs.working_directory }}
-        pip install poetry
-        poetry install
+      run: git config --global url."https://${{ inputs.github_token }}@github.com/".insteadOf "https://github.com/"
 
-    - name: Run Ruff
-      shell: bash
-      run: |
-        cd ${{ inputs.working_directory }}
-        poetry run ruff check
-
-    - name: Run MyPy
-      shell: bash
-      run: |
-        cd ${{ inputs.working_directory }}
-        poetry run mypy --strict .
+    - name: Lint
+      uses: reviewdog/action-black@v3
+      with:
+        github_token: ${{ inputs.github_token }}
+        reporter: github-pr-review
+        workdir: ${{ inputs.working_directory }}
 ```
 
 ## Usage in Customer Repos
@@ -96,7 +95,7 @@ jobs:
 ## Available Actions
 
 **build_image**: Builds Docker images, tags, pushes to registry.
-**lint_backend**: Ruff + MyPy (Python strict mode).
+**lint_backend**: Black formatter with PR review comments.
 **lint_frontend**: ESLint (frontend code quality).
 **pytest_coverage_comment**: Posts test coverage % to PR as comment.
 **review_pr**: AI-powered PR review with suggestions.
