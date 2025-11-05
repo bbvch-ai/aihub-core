@@ -259,6 +259,8 @@ services:
       - "milvus-standalone"
     environment:
       MILVUS_URL: milvus-standalone:19530
+    healthcheck:
+      test: [ "NONE" ]
     logging: *default-logging
   # </editor-fold>
 
@@ -293,6 +295,8 @@ services:
       PHOENIX_SQL_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix"
       PHOENIX_ENABLE_AUTH: "False"
       VERSION: ""
+    healthcheck:
+      test: [ "NONE" ]
     logging: *default-logging
   # </editor-fold>
 
@@ -306,6 +310,8 @@ services:
     volumes:
       - ./configs/nats/nats.nightly.conf:/etc/nats/nats.conf
       - ${VOLUME_ROOT:-./.docker-volumes}/nats-data:/data
+    healthcheck:
+      test: [ "NONE" ]
     logging: *default-logging
 
   valkey:
@@ -787,6 +793,12 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "grep -q dagster-daemon /proc/1/cmdline || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     logging: *default-logging
   # </editor-fold>
 

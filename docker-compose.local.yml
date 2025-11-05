@@ -261,6 +261,8 @@ services:
       - "milvus-standalone"
     environment:
       MILVUS_URL: milvus-standalone:19530
+    healthcheck:
+      test: [ "NONE" ]
     logging: *default-logging
   # </editor-fold>
 
@@ -295,6 +297,8 @@ services:
       PHOENIX_SQL_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix"
       PHOENIX_ENABLE_AUTH: "False"
       VERSION: ""
+    healthcheck:
+      test: [ "NONE" ]
     logging: *default-logging
   # </editor-fold>
 
@@ -308,6 +312,8 @@ services:
     volumes:
       - ./configs/nats/nats.nightly.conf:/etc/nats/nats.conf
       - ${VOLUME_ROOT:-./.docker-volumes}/nats-data:/data
+    healthcheck:
+      test: [ "NONE" ]
     logging: *default-logging
 
   valkey:
@@ -800,6 +806,12 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "grep -q dagster-daemon /proc/1/cmdline || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     logging: *default-logging
   # </editor-fold>
 
@@ -898,16 +910,28 @@ services:
 
   # === Docling ===
   # <editor-fold desc="Docling Stack">
+  docling-model-permission:
+    container_name: docling-model-permission
+    image: alpine
+    command: [ "sh", "-c", "chown -R 1001:1001 /models" ]
+    restart: "no"
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
+
   docling:
     image: ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.3.1
     container_name: docling
     <<: *restart-policy
+    depends_on:
+      docling-model-permission:
+        condition: service_completed_successfully
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models:rw
+      - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
       - ./configs/docling/init-models.sh:/docker-entrypoint.sh:ro
     entrypoint: [ "/docker-entrypoint.sh" ]
     environment:
       DOCLING_SERVE_ARTIFACTS_PATH: "/models"
+      DOCLING_SERVE_ENABLE_UI: false
       DOCLING_SERVE_MAX_SYNC_WAIT: 600
       DOCLING_MODELS: "layout tableformer code_formula easyocr"
     healthcheck:
