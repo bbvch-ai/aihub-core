@@ -2,7 +2,7 @@
 
 **Purpose**: High-level business process orchestration. Collaborative workflows between agents, humans, and programs.
 
-**Tech Stack & Paradigms**: **Pydantic 2.10.3** for process configs and validation. **NATS** pub-sub for event consumption (StopEvent from agents) and production (StartEvent to next). **FastAPI 0.115.6** + **uvicorn** for REST endpoints. **MongoEngine** for persistence. **httpx** HTTP client. **cachetools** for caching. Delegation pattern for agent/human orchestration. Form-based human interaction via HumanInTheLoopEvent. ProcessRunner for local execution. Multi-participant coordination (agents → humans → agents). Observable process flows with explicit state transitions. Minimal process logic (delegates to specialized agents). **pytest-bdd** for Gherkin BDD tests. asgi-lifespan for testing. Development: aihub_agent as dev dependency for local testing.
+Tech Stack & Paradigms: Pydantic v2 for process configs and validation. NATS pub-sub for event consumption (StopEvent from agents) and production (StartEvent to next). FastAPI + uvicorn for REST endpoints. MongoEngine for persistence. httpx HTTP client. cachetools for caching. Delegation pattern for agent/human orchestration. Form-based human interaction via HumanInTheLoopEvent. ProcessRunner for local execution. Multi-participant coordination (agents → humans → agents). Observable process flows with explicit state transitions. Minimal process logic (delegates to specialized agents). pytest-bdd for Gherkin BDD tests. asgi-lifespan for testing. Development: aihub_agent as dev dependency for local testing.
 
 ## Scope Responsibility
 

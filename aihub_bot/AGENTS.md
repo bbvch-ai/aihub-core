@@ -2,7 +2,7 @@
 
 **Purpose**: Chatbot logic for MS Teams, Slack, web chat. Connects users to AI-Hub agents via conversational interfaces.
 
-**Tech Stack & Paradigms**: **Azure Bot Framework** (botbuilder-integration-aiohttp 4.16.2) for MS Teams/Slack. **FastAPI 0.115.6** + **uvicorn + gunicorn** for webhooks. **Azure Identity** + Azure mgmt SDKs (Cosmos, resources). **MongoEngine** with 30-day TTL for ConversationEntity. **NATS** pub-sub for agent communication. **httpx** HTTP client. **cryptography + PyJWT** for auth. **cachetools** for caching. Bot-in-the-loop pattern for human input. Streaming responses with incremental updates. BaseChatBot with AgentChatBot and OpenaiChatBot specializations. CompletionHandler abstraction. Channel-specific formatting (Markdown for Teams, Slack syntax). Azure DevTunnel for local development. BotRunner and BotTestRunner. **pytest-bdd** + asgi-lifespan for testing.
+Tech Stack & Paradigms: Azure Bot Framework (botbuilder-integration-aiohttp) for MS Teams/Slack. FastAPI + uvicorn + gunicorn for webhooks. Azure Identity + Azure mgmt SDKs (Cosmos, resources). MongoEngine with 30-day TTL for ConversationEntity. NATS pub-sub for agent communication. httpx HTTP client. cryptography + PyJWT for auth. cachetools for caching. Bot-in-the-loop pattern for human input. Streaming responses with incremental updates. BaseChatBot with AgentChatBot and OpenaiChatBot specializations. CompletionHandler abstraction. Channel-specific formatting (Markdown for Teams, Slack syntax). Azure DevTunnel for local development. BotRunner and BotTestRunner. pytest-bdd + asgi-lifespan for testing.
 
 ## Scope Responsibility
 
