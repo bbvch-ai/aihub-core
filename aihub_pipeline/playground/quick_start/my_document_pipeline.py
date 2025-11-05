@@ -1,6 +1,6 @@
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.nats.topics.pipeline.PipelineTopic import PipelineTopic
+from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
 
 # Import AI-Hub pipeline factories
@@ -89,7 +89,7 @@ defs = Definitions(
         default_automation_sensor(assets),
         nats_document_uploaded_sensor(
             job=observe_job,
-            pipeline_topic=PipelineTopic(
+            topic_manager=PipelineInstanceTopicManager(
                 source_type=INTERNAL_DATALAKE,
                 source_id=CONTAINER_NAME,
                 target_type=INTERNAL_KNOWLEDGE_DB,

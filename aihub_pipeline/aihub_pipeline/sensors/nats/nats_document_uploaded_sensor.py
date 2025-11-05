@@ -26,17 +26,18 @@ def nats_document_uploaded_sensor(
 
     @sensor(
         job=job,
-        minimum_interval_seconds=5,
+        minimum_interval_seconds=60,
         default_status=DefaultSensorStatus.RUNNING,
+        name=f"NATSDocumentUploadedSensorFor_{job.name}",
+        description="Polls NATS JetStream for SourceUpdatedEvent messages and triggers pipeline runs.",
     )
     def _nats_document_uploaded_sensor(context: SensorEvaluationContext):
         """Poll NATS JetStream for SourceUpdatedEvent messages and trigger pipeline runs."""
 
         async def check_for_events():
-            nc = None
+            nc = NATS()
             try:
-                nats_settings = NatsSettings()
-                nc = await NATS().connect(nats_settings.CONNECTION_STRING)
+                await nc.connect(servers=[NatsSettings().ENDPOINT])
                 js = nc.jetstream()
 
                 stream_name, stream_subject = topic_manager.get_stream()
@@ -59,19 +60,7 @@ def nats_document_uploaded_sensor(
                     try:
                         logger.info(f"Processing SourceUpdatedEvent for {event.path}")
                         run_key = event.path.replace("/", "_").replace(".", "_")
-                        run_requests.append(
-                            RunRequest(
-                                run_key=run_key,
-                                run_config={
-                                    "ops": {
-                                        "file_path": event.path,
-                                        "filename": event.filename,
-                                        "content_type": event.content_type,
-                                        "content_length": event.content_length,
-                                    }
-                                },
-                            )
-                        )
+                        run_requests.append(RunRequest(run_key=run_key))
                         await ack()
                     except Exception as e:
                         logger.exception(f"Failed to process event: {e}")

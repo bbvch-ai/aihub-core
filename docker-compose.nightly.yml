@@ -996,6 +996,7 @@ services:
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
+      NATS_ENDPOINT: "nats://nats:4222"
       S3_STORAGE_ENDPOINT: http://minio:9000
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
