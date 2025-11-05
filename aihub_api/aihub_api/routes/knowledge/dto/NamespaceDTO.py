@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 class NamespaceDTO(BaseModel):
     id: Annotated[str, Field(..., description="Unique identifier of the namespace")]
     name: Annotated[str, Field(..., description="Name of namespace")]
+    database_id: Annotated[str, Field(..., description="ID of the database containing the namespace")]
     display_name: Annotated[str | None, Field(None, description="Display name of namespace, can be localized")]
     description: Annotated[str | None, Field(None, description="Description of namespace, can be localized")]
     number_of_documents: Annotated[int, Field(..., description="Number of documents in namespace")]
@@ -39,6 +40,7 @@ class NamespaceDTO(BaseModel):
         return cls(
             id=str(entity.id),
             name=entity.namespace_name,
+            database_id=entity.bucket_id,
             display_name=cls._safe_extract_locale_from_entity(entity.display_name, t),
             description=cls._safe_extract_locale_from_entity(entity.description, t),
             updated_at=entity.updated_at,

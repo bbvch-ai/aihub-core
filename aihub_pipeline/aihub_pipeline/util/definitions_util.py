@@ -68,8 +68,8 @@ def asset_definition_with_code_link(
 
 def default_definitions(
     datalake_container_name: str,
-    embedding_model_name: str = "local/qwen-embedding",
-    llm_model_name: str = "local/gemma-3-multimodal-small",
+    embedding_model_name: str = "embedding/small",
+    llm_model_name: str = "text-generation/mini",
     figures_directory_name: str = "__figures__",
     with_summary_nodes: bool = True,
     observe_job_hour: int = 2,
@@ -119,12 +119,12 @@ def default_definitions(
     )
 
     store_name = get_db_name_from_bucket_name(bucket_name=datalake_container_name, auto_sync=False)
-
+    llm_config = LLMConfig(model_name=llm_model_name)
     return Definitions(
         assets=assets,
         resources={
             "document_parser": DocumentParserResource(),
-            "node_parser": MarkdownStructuralNodeParserResource(),
+            "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config),
             "summary_parser": RecursiveSummaryParserResource(),
             **default_io_manager_s3_datalake_resources(container_name=datalake_container_name),
             **local_mongo_milvus_storage_context_resource(
@@ -133,12 +133,11 @@ def default_definitions(
             ),
             **s3_data_lake_resources(
                 container_name=datalake_container_name,
-                figures_directory_name=figures_directory_name,
             ),
             "embedding_model": EmbeddingModelResource(
                 embedding_config=EmbeddingModelConfig(model_name=embedding_model_name),
             ),
-            "language_model": LanguageModelResource(llm_config=LLMConfig(model_name=llm_model_name)),
+            "language_model": LanguageModelResource(llm_config=llm_config),
         },
         sensors=[default_automation_sensor(assets)],
         executor=default_process_executor(),
@@ -156,7 +155,6 @@ def default_sharepoint_to_datalake_definitions(
     target_folders: list[str] | None = None,
     exclude_folders: list[str] | None = None,
     supported_filetypes: list[str] | None = None,
-    figures_directory_name: str = "__figures__",
     observe_job_hour: int = 0,
     observe_job_minute: int = 0,
     remove_job_hour: int = 1,
@@ -221,7 +219,6 @@ def default_sharepoint_to_datalake_definitions(
             "sharepoint_io_manager": sharepoint_io_manager,
             **s3_data_lake_resources(
                 container_name=datalake_container_name,
-                figures_directory_name=figures_directory_name,
                 directory_name=datalake_directory_name,
             ),
         },

@@ -1,12 +1,12 @@
 # License Report
 
-Generated on: 31.10.2025
+Generated on: 05.11.2025
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (Poetry): **255 packages**
+- Python packages (Poetry): **256 packages**
 - Node.js packages (pnpm): **197 packages**
-- External Docker images: **33 images**
+- External Docker images: **31 images**
 
 ### License Compatibility
 
@@ -103,6 +103,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | isodate                                      | 0.7.2           | BSD License                                       |                                                    |
 | ✅     | joblib                                       | 1.5.1           | BSD License                                       |                                                    |
 | ✅     | kiwisolver                                   | 1.4.9           | BSD License                                       |                                                    |
+| ✅     | lxml                                         | 5.4.0           | BSD License                                       |                                                    |
 | ✅     | matplotlib-inline                            | 0.1.7           | BSD License                                       |                                                    |
 | ✅     | nest-asyncio                                 | 1.6.0           | BSD License                                       |                                                    |
 | ✅     | networkx                                     | 3.5             | BSD License                                       |                                                    |
@@ -494,7 +495,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | oauth2-proxy                    | `ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest`                              | MIT                              | Permissive license                                                |
 | ✅     | milvus                          | `ghcr.io/bbvch-ai/aihub-core/milvus:v2.5.15`                                 | Apache-2.0                       | Permissive license                                                |
 | ✅     | minimal-notebook                | `ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6`                | BSD-3-Clause                     | Jupyter base image                                                |
-| ✅     | litellm                         | `ghcr.io/bbvch-ai/aihub-core/litellm:main-v1.74.8-nightly`                   | MIT                              | Permissive license                                                |
 | ✅     | pgvector                        | `ghcr.io/bbvch-ai/aihub-core/pgvector:pg17`                                  | PostgreSQL License               | BSD-style permissive license                                      |
 | ✅     | traefik                         | `ghcr.io/bbvch-ai/aihub-core/traefik:v3.4.4`                                 | Apache-2.0                       | Permissive license                                                |
 | ✅     | presidio-analyzer               | `ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359`                      | MIT                              | Permissive license                                                |
@@ -508,7 +508,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | postgres-documentdb             | `ghcr.io/bbvch-ai/aihub-core/postgres-documentdb:17.0.106.0-ferretdb-2.5.0`  | Apache-2.0                       | Permissive licenses                                               |
 | ✅     | llama.cpp                       | `ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b6710`                    | MIT                              | Permissive license                                                |
 | ✅     | valkey                          | `ghcr.io/bbvch-ai/aihub-core/valkey:8.0.5`                                   | BSD-3-Clause                     | Redis-compatible, standard BSD-3-Clause license                   |
-| ✅     | dagster                         | `ghcr.io/bbvch-ai/aihub-core/dagster:v0.243.1`                               | Apache-2.0                       | Permissive license                                                |
 | ✅     | dagster                         | `ghcr.io/bbvch-ai/aihub-core/dagster:latest`                                 | Apache-2.0                       | Permissive license                                                |
 | ✅     | text-embeddings-inference       | `ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cpu-ipex-sha-c8ff435` | Apache-2.0                       | Permissive license                                                |
 | ✅     | llama.cpp                       | `ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b6710`                         | MIT                              | Permissive license                                                |
@@ -530,18 +529,13 @@ This document contains license information for all dependencies across the monor
 The following are our own services and inherit the license we choose:
 
 - rag_agent (`ghcr.io/bbvch-ai/aihub-core/rag_agent:nightly`)
-- default_rag_pipeline (`ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:v0.243.1`)
 - web (`ghcr.io/bbvch-ai/aihub-core/web:latest`)
-- llm_wrapping_agent (`ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:v0.243.1`)
 - web (`ghcr.io/bbvch-ai/aihub-core/web:nightly`)
 - llm_wrapping_agent (`ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:nightly`)
 - default_rag_pipeline (`ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:nightly`)
-- api (`ghcr.io/bbvch-ai/aihub-core/api:v0.243.1`)
-- rag_agent (`ghcr.io/bbvch-ai/aihub-core/rag_agent:v0.243.1`)
 - llm_wrapping_agent (`ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:latest`)
 - api (`ghcr.io/bbvch-ai/aihub-core/api:latest`)
 - default_rag_pipeline (`ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:latest`)
 - bot (`ghcr.io/bbvch-ai/aihub-core/bot:latest`)
-- web (`ghcr.io/bbvch-ai/aihub-core/web:v0.243.1`)
 - api (`ghcr.io/bbvch-ai/aihub-core/api:nightly`)
 - bot (`ghcr.io/bbvch-ai/aihub-core/bot:nightly`)

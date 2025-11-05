@@ -5,6 +5,161 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.249.2] - 2025-11-05 - Enhanced Model Agnosticism and New Azure GPT-5 Series Integration
+
+### Added
+
+- ✨ **New Azure OpenAI GPT-5 Nano Integration**: Introduced direct support for Azure OpenAI GPT-5 Nano via the
+  `text-generation/nano` alias, including a dedicated environment variable (`AZURE_OPENAI_KEY_NANO`) and specific
+  default temperature settings for optimal performance.
+- 🚀 **New Azure OpenAI GPT-5 Series Integration**: Expanded LLM capabilities with support for Azure OpenAI GPT-5 via the
+  `text-generation/large` alias, providing access to more powerful generative models.
+
+### Changed
+
+- ⚙️ **Updated LiteLLM Proxy**: The internal LiteLLM dependency has been updated to `v1.77.7-stable`, bringing general
+  improvements and stability fixes to the model proxy layer.
+- 🤖 **Adjusted Default Fallback and Safety LLM Configuration**: The system's default fallback LLM and the prompt
+  injection detection LLM now leverage the newly introduced `text-generation/nano` model alias.
+
+### Refactor
+
+- 🧹 **Standardized Model Aliases Across the Platform**: Implemented a consistent, provider-agnostic model naming scheme,
+  replacing previous explicit model names (e.g., `azure/gpt-4o-mini`, `local/qwen-embedding`, `local/reranker`) with
+  simplified aliases like `text-generation/mini`, `embedding/small`, `reranker`, `transcription`, `speech`, and
+  `image-generation`. This refactoring significantly simplifies model configuration and enhances platform flexibility.
+- 🔄 **Unified Model Configuration**: All agent definitions, API endpoints, infrastructure-as-code (IaC), and data
+  pipeline configurations have been updated to utilize the new standardized model aliases, ensuring consistency and ease
+  of maintenance.
+- 📈 **Enhanced LLM Parameter Configuration**: Introduced capabilities for defining default parameters within
+  `LLMConfig`, allowing for fine-grained control over model behavior for specific aliases, such as setting a default
+  temperature for `text-generation/nano`.
+
+---
+
+## [v0.249.1] - 2025-11-04 - Enhanced Authentication Service Robustness
+
+### Fixed
+
+- 🐛 **Resolved intermittent connectivity issues** with external authentication and identity services (JWKS and Azure
+  Graph API) by extending connection timeouts to better accommodate IPv6 fallback mechanisms.
+
+---
+
+## [v0.249.0] - 2025-11-04 - Streamlined Knowledge Management and Enhanced Security
+
+### Added
+
+- ✨ **Introduced Document Upload Endpoints:** Dedicated API endpoints are now available for initiating and validating
+  document uploads directly within specific knowledge base databases and namespaces.
+- 📄 **New Endpoint for Supported File Types:** A new API endpoint has been added to retrieve a list of supported file
+  types for client-side validation of knowledge base document uploads.
+- 🔑 **Granular Permissions for Knowledge Base:** Implemented fine-grained access control for knowledge base resources,
+  allowing permissions to be defined per database and namespace for enhanced security.
+- 🆔 **Added `database_id` to Namespace DTO:** The Namespace Data Transfer Object now includes a `database_id` to provide
+  clearer data relationships and context.
+
+### Changed
+
+- 🔄 **Updated Knowledge Base API Routes:** Namespace creation and update endpoints, along with document retrieval, now
+  utilize database and namespace names directly as path parameters for improved clarity and consistency.
+- 🛠️ **Refined Database Listing for Users:** The `/databases` endpoint now dynamically filters displayed databases and
+  namespaces based on the requesting user's granular access permissions, ensuring only accessible resources are shown.
+- ⚙️ **Configured CORS for SeaweedFS:** The SeaweedFS S3 gateway now automatically configures Cross-Origin Resource
+  Sharing (CORS) rules during initialization, improving compatibility for direct client-side file uploads.
+- 🌐 **Web Client Adaptation:** The web application's document management components have been updated to seamlessly
+  integrate with the new knowledge base API structure, including the revised document upload and namespace management
+  flows.
+
+### Removed
+
+- 🗑️ **Deprecated Generic File Upload Endpoints:** Removed the standalone, generic file upload and validation endpoints
+  from the `/files` API, centralizing all document-related uploads under the Knowledge Base domain for better
+  organization.
+
+### Refactor
+
+- 🧹 **Centralized Document Upload Logic:** Consolidated all document upload and validation business logic and associated
+  Data Transfer Objects (DTOs) from the generic `FileService` to the specialized `KnowledgeService`, enhancing
+  modularity and maintainability.
+- ♻️ **Renamed File Upload DTOs:** Data Transfer Objects related to file uploads (e.g., `FileUploadRequest` to
+  `DocumentUploadRequest`) were renamed to better reflect their new purpose and scope within the Knowledge Base context.
+
+---
+
+## [v0.248.1] - 2025-11-03 - Enhanced Document Processing and Data Lake Organization
+
+### Changed
+
+- 🖼️ **Knowledge Interface Clarity**: The knowledge interface now automatically **excludes generated figure files**
+  (artifacts from document processing) from display, providing a cleaner and more focused view of core documents.
+
+### Refactor
+
+- 🧹 **Centralized Figure Directory Management**: The **`__figures__` directory name** used for storing document figures
+  has been centralized as a global constant, significantly improving consistency and maintainability across the system.
+- 🔄 **Simplified Data Lake Operations**: Streamlined data lake client methods and operations by **removing the explicit
+  `figures_directory_name` parameter**, as the directory name is now consistently managed internally.
+- ⚙️ **Optimized Document Loaders**: Updated `DoclingLoader` and `DocumentIntelligenceLoader` to utilize the
+  **centralized figure directory constant**, simplifying their API and ensuring consistent figure path generation.
+- 🛠️ **Refined Resource and Pipeline Definitions**: Cleaned up various resource and pipeline definitions, including
+  `DataLakeResource` and associated factories, by **removing redundant `figures_directory_name` parameters**.
+
+### Removed
+
+- 🗑️ **SonarLint Configuration**: Deleted an obsolete SonarLint project configuration file from the codebase.
+
+---
+
+## [v0.248.0] - 2025-11-03 - Smarter Document Understanding: Advanced Table Processing
+
+### Added
+
+- ✨ **Intelligent Table Splitting**: Introduced the capability to automatically split large tables into smaller,
+  manageable chunks, ensuring better retrieval and processing of tabular data while respecting token limits.
+- 🦾 **LLM-Powered Table Header Detection**: Implemented LLM-driven analysis to accurately identify multi-row table
+  headers, improving the precision of table parsing and preserving hierarchical structures during splitting.
+- 🧱 **New Dependency `lxml`**: Added `lxml` to enhance HTML parsing and manipulation capabilities, foundational for
+  advanced table processing.
+
+### Changed
+
+- 🔄 **Advanced Table Conversion in DoclingLoader**: Modified `DoclingLoader` to now convert Markdown tables into
+  structured HTML tables, improving their representation and downstream processing.
+- ⚡️ **Optimized Document Intelligence Table Handling**: Streamlined table processing in `DocumentIntelligenceLoader` by
+  removing redundant table reformatting, leveraging the new unified table parsing logic.
+- 📄 **Improved Markdown Table Parsing**: Enhanced `MarkdownStructuralNodeParser` to intelligently process and chunk
+  tables, ensuring headers are preserved and content fits within token limits for improved Retrieval-Augmented
+  Generation (RAG) performance.
+- 🚀 **Increased Agent Test Timeout**: Extended the `delay_before_stop` parameter in Retrieval Agent tests to provide
+  more time for operations to complete, improving test stability.
+
+### Removed
+
+- 🗑️ **Deprecated `NODE_CONTENT_TYPE_TABLE`**: Removed the `NODE_CONTENT_TYPE_TABLE` metadata tag, as table content is
+  now directly represented within HTML structures, simplifying content type management.
+- 🧹 **Eliminated Redundant Table Reformatting**: The dedicated `reformat_tables` function in
+  `DocumentIntelligenceLoader` has been removed, as its functionality is now integrated and optimized within the core
+  parsing mechanisms.
+
+---
+
+## [v0.247.7] - 2025-11-03 - Enhanced RAG with Hybrid Search and Model Updates
+
+### Added
+
+- 🚀 **Introduced Hybrid Search Capability:** Enabled **Milvus vector stores** to perform hybrid search queries by
+  integrating sparse embeddings and BM25 functionality, improving retrieval relevance.
+
+### Changed
+
+- 🔄 **Default Query Mode to Hybrid:** Updated the default query mode for **RAG and Retrieval agents** to `HYBRID`,
+  leveraging the newly added hybrid search capabilities in Milvus for more comprehensive retrieval.
+- ⬆️ **Updated Default LLM Model:** Switched the default Large Language Model in **RAG pipelines** from
+  `gemma-3-multimodal-small` to `qwen-2.5-multimodal-small`, enhancing model performance and capabilities.
+
+---
+
 ## [v0.247.6] - 2025-10-31 - Empowering Contributors with New Guidelines
 
 ### Added
