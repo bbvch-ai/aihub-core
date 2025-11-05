@@ -53,7 +53,7 @@ def milvus_vector_store(nodes_with_relationships, event_loop):
     # Use event_loop fixture to ensure there's an active event loop
     asyncio.set_event_loop(event_loop)
 
-    embedding_config = EmbeddingModelConfig(model_name="local/qwen-embedding")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/small")
 
     vector_store = MilvusVectorStoreConfig(
         uri="http://localhost",

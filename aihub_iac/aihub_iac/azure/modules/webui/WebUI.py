@@ -268,7 +268,7 @@ class WebUI(pulumi.ComponentResource):
             "IMAGE_SIZE": "1792x1024",
             "IMAGE_GENERATION_MODEL": "dall-e-3",
             # Task / Model settings
-            "TASK_MODEL_EXTERNAL": "local/qwen-2.5-multimodal-small",
+            "TASK_MODEL_EXTERNAL": "text-generation/mini",
             # Autocomplete Generation
             "ENABLE_AUTOCOMPLETE_GENERATION": "true",
             "AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH": "60",

@@ -24,7 +24,7 @@ async def main():
             agent_class=ExpertGroundedAgent.__name__,
             name=LocaleString(en="Grounded Agent"),
             description=LocaleString(en="This is an agent that can be used to develop the frontend"),
-            llm=LLMConfig(model_name="azure/gpt-4o-mini"),
+            llm=LLMConfig(model_name="text-generation/mini"),
         ),
     )
 

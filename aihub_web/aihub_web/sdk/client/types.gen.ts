@@ -2203,16 +2203,6 @@ export type ControlEventWritable = {
  */
 export type CreateNamespaceRequest = {
     /**
-     * Database Name
-     * The name of the database to which the namespace belongs.
-     */
-    database_name: string;
-    /**
-     * Namespace Name
-     * The name of the namespace to create.
-     */
-    namespace_name: string;
-    /**
      * Folder Name
      * The name of the folder to which the namespace belongs.
      */
@@ -2795,6 +2785,111 @@ export type DocumentDto = {
      * Document title.
      */
     document_title?: string | null;
+};
+
+/**
+ * DocumentUploadRequest
+ * Request payload for initiating file upload to knowledge base.
+ *
+ * This request is used to get presigned URLs for direct S3/MinIO upload
+ * of files that will be processed and indexed in the knowledge base.
+ */
+export type DocumentUploadRequest = {
+    /**
+     * Filename
+     * Original filename of the file
+     */
+    filename: string;
+    /**
+     * Content Type
+     * MIME type of the file
+     */
+    content_type: string;
+    /**
+     * Content Length
+     * Size of the file in bytes
+     */
+    content_length: number;
+};
+
+/**
+ * DocumentUploadResponse
+ * Response payload for file upload initialization.
+ *
+ * Contains the presigned URL for direct datalake upload and metadata
+ * needed to complete the upload process.
+ */
+export type DocumentUploadResponse = {
+    /**
+     * Upload Url
+     * Presigned URL for uploading the file to a datalake
+     */
+    upload_url: string;
+    /**
+     * Upload Id
+     * Unique identifier for this upload session
+     */
+    upload_id: string;
+    /**
+     * Container
+     * The bucket/container name where file will be stored
+     */
+    container: string;
+    /**
+     * Folder
+     * The folder name within the bucket/container
+     */
+    folder: string;
+    /**
+     * Object Key
+     * The object key/path for the uploaded file
+     */
+    object_key: string;
+    /**
+     * Expires In
+     * Upload URL expiration time in seconds
+     */
+    expires_in: number;
+};
+
+/**
+ * DocumentUploadValidationRequest
+ * Request for validating whether a file was successfully uploaded to cloud storage.
+ *
+ * This request contains the information needed to verify that a file upload completed
+ * successfully in the globally configured datalake (S3, MinIO, or Azure Blob Storage).
+ */
+export type DocumentUploadValidationRequest = {
+    /**
+     * File Path
+     * Path/key of the uploaded file within the container
+     */
+    file_path: string;
+};
+
+/**
+ * DocumentUploadValidationResponse
+ * Response containing the validation result of a file upload.
+ *
+ * This response indicates whether the uploaded file exists in the globally
+ * configured datalake and provides information about the validation process.
+ */
+export type DocumentUploadValidationResponse = {
+    /**
+     * Exists
+     * Whether the file exists in the datalake
+     */
+    exists: boolean;
+    /**
+     * File Path
+     * Path/key of the file that was validated
+     */
+    file_path: string;
+    /**
+     * Container
+     * Name of the container/bucket
+     */
+    container: string;
 };
 
 /**
@@ -3683,126 +3778,6 @@ export type FileFile = {
      * Filename
      */
     filename?: string;
-};
-
-/**
- * FileUploadRequest
- * Request payload for initiating file upload to knowledge base.
- *
- * This request is used to get presigned URLs for direct S3/MinIO upload
- * of files that will be processed and indexed in the knowledge base.
- */
-export type FileUploadRequest = {
-    /**
-     * Filename
-     * Original filename of the file
-     */
-    filename: string;
-    /**
-     * Content Type
-     * MIME type of the file
-     */
-    content_type: string;
-    /**
-     * Content Length
-     * Size of the file in bytes
-     */
-    content_length: number;
-    /**
-     * Namespace Name
-     * Target namespace name
-     */
-    namespace_name: string;
-    /**
-     * Database Name
-     * Target database name
-     */
-    database_name: string;
-};
-
-/**
- * FileUploadResponse
- * Response payload for file upload initialization.
- *
- * Contains the presigned URL for direct datalake upload and metadata
- * needed to complete the upload process.
- */
-export type FileUploadResponse = {
-    /**
-     * Upload Url
-     * Presigned URL for uploading the file to a datalake
-     */
-    upload_url: string;
-    /**
-     * Upload Id
-     * Unique identifier for this upload session
-     */
-    upload_id: string;
-    /**
-     * Container
-     * The bucket/container name where file will be stored
-     */
-    container: string;
-    /**
-     * Folder
-     * The folder name within the bucket/container
-     */
-    folder: string;
-    /**
-     * Object Key
-     * The object key/path for the uploaded file
-     */
-    object_key: string;
-    /**
-     * Expires In
-     * Upload URL expiration time in seconds
-     */
-    expires_in: number;
-};
-
-/**
- * FileUploadValidationRequest
- * Request for validating whether a file was successfully uploaded to cloud storage.
- *
- * This request contains the information needed to verify that a file upload completed
- * successfully in the globally configured datalake (S3, MinIO, or Azure Blob Storage).
- */
-export type FileUploadValidationRequest = {
-    /**
-     * Container
-     * Name of the container/bucket where the file was uploaded
-     */
-    container: string;
-    /**
-     * File Path
-     * Path/key of the uploaded file within the container
-     */
-    file_path: string;
-};
-
-/**
- * FileUploadValidationResponse
- * Response containing the validation result of a file upload.
- *
- * This response indicates whether the uploaded file exists in the globally
- * configured datalake and provides information about the validation process.
- */
-export type FileUploadValidationResponse = {
-    /**
-     * Exists
-     * Whether the file exists in the datalake
-     */
-    exists: boolean;
-    /**
-     * File Path
-     * Path/key of the file that was validated
-     */
-    file_path: string;
-    /**
-     * Container
-     * Name of the container/bucket
-     */
-    container: string;
 };
 
 /**
@@ -6147,6 +6122,11 @@ export type NamespaceDto = {
      */
     name: string;
     /**
+     * Database Id
+     * ID of the database containing the namespace
+     */
+    database_id: string;
+    /**
      * Display Name
      * Display name of namespace, can be localized
      */
@@ -6733,10 +6713,15 @@ export type RerankerEventReadable = {
      */
     rerank_model_name?: string | null;
     /**
-     * Top K
-     * The top K parameter, representing the number of results to be reranked.
+     * Top N
+     * The top N parameter, representing the number of results to be reranked.
      */
-    top_k?: number | null;
+    top_n?: number | null;
+    /**
+     * Reranked
+     * Whether the nodes were reranked or not.
+     */
+    reranked?: boolean | null;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -6748,7 +6733,7 @@ export type RerankerEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<IngestedNode> | null) | (Array<IngestedNode> | null) | (string | null) | (string | null) | (number | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<IngestedNode> | null) | (Array<IngestedNode> | null) | (string | null) | (string | null) | (number | null) | (boolean | null) | Array<string> | undefined;
 };
 
 /**
@@ -6793,11 +6778,16 @@ export type RerankerEventWritable = {
      */
     rerank_model_name?: string | null;
     /**
-     * Top K
-     * The top K parameter, representing the number of results to be reranked.
+     * Top N
+     * The top N parameter, representing the number of results to be reranked.
      */
-    top_k?: number | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<IngestedNode> | null) | (Array<IngestedNode> | null) | (string | null) | (string | null) | (number | null) | undefined;
+    top_n?: number | null;
+    /**
+     * Reranked
+     * Whether the nodes were reranked or not.
+     */
+    reranked?: boolean | null;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<IngestedNode> | null) | (Array<IngestedNode> | null) | (string | null) | (string | null) | (number | null) | (boolean | null) | undefined;
 };
 
 /**
@@ -10437,9 +10427,18 @@ export type RunExperimentResponse = RunExperimentResponses[keyof RunExperimentRe
 
 export type CreateNamespaceData = {
     body: CreateNamespaceRequest;
-    path?: never;
+    path: {
+        /**
+         * Database name
+         */
+        database: string;
+        /**
+         * Namespace
+         */
+        namespace: string;
+    };
     query?: never;
-    url: '/knowledge/namespaces';
+    url: '/knowledge/databases/{database}/namespaces/{namespace}';
 };
 
 export type CreateNamespaceErrors = {
@@ -10464,12 +10463,16 @@ export type UpdateNamespaceData = {
     body: UpdateNamespaceRequest;
     path: {
         /**
-         * Namespace ID
+         * Database name
          */
-        namespace_id: string;
+        database: string;
+        /**
+         * Namespace
+         */
+        namespace: string;
     };
     query?: never;
-    url: '/knowledge/namespaces/{namespace_id}';
+    url: '/knowledge/databases/{database}/namespaces/{namespace}';
 };
 
 export type UpdateNamespaceErrors = {
@@ -10559,6 +10562,10 @@ export type GetDocumentByIdData = {
          * Database name
          */
         database: string;
+        /**
+         * Namespace
+         */
+        namespace: string;
         /**
          * Document ID
          */
@@ -10663,6 +10670,91 @@ export type GetSummaryNodesForDocumentResponses = {
 };
 
 export type GetSummaryNodesForDocumentResponse = GetSummaryNodesForDocumentResponses[keyof GetSummaryNodesForDocumentResponses];
+
+export type InitiateDocumentUploadData = {
+    body: DocumentUploadRequest;
+    path: {
+        /**
+         * Database name
+         */
+        database: string;
+        /**
+         * Namespace
+         */
+        namespace: string;
+    };
+    query?: never;
+    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/upload/initiate';
+};
+
+export type InitiateDocumentUploadErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type InitiateDocumentUploadError = InitiateDocumentUploadErrors[keyof InitiateDocumentUploadErrors];
+
+export type InitiateDocumentUploadResponses = {
+    /**
+     * Successful Response
+     */
+    200: DocumentUploadResponse;
+};
+
+export type InitiateDocumentUploadResponse = InitiateDocumentUploadResponses[keyof InitiateDocumentUploadResponses];
+
+export type ValidateDocumentUploadData = {
+    body: DocumentUploadValidationRequest;
+    path: {
+        /**
+         * Database name
+         */
+        database: string;
+        /**
+         * Namespace
+         */
+        namespace: string;
+    };
+    query?: never;
+    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/upload/validate';
+};
+
+export type ValidateDocumentUploadErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ValidateDocumentUploadError = ValidateDocumentUploadErrors[keyof ValidateDocumentUploadErrors];
+
+export type ValidateDocumentUploadResponses = {
+    /**
+     * Successful Response
+     */
+    200: DocumentUploadValidationResponse;
+};
+
+export type ValidateDocumentUploadResponse = ValidateDocumentUploadResponses[keyof ValidateDocumentUploadResponses];
+
+export type GetSupportedFileTypesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/knowledge/supported-types';
+};
+
+export type GetSupportedFileTypesResponses = {
+    /**
+     * Response Get Supported File Types Knowledge Supported Types Get
+     * Successful Response
+     */
+    200: Array<string>;
+};
+
+export type GetSupportedFileTypesResponse = GetSupportedFileTypesResponses[keyof GetSupportedFileTypesResponses];
 
 export type GetFileUrlData = {
     body?: never;
@@ -10815,73 +10907,6 @@ export type GetAnonymousFileRedirectResponses = {
      */
     200: unknown;
 };
-
-export type InitiateFileUploadData = {
-    body: FileUploadRequest;
-    path?: never;
-    query?: never;
-    url: '/files/upload/initiate';
-};
-
-export type InitiateFileUploadErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type InitiateFileUploadError = InitiateFileUploadErrors[keyof InitiateFileUploadErrors];
-
-export type InitiateFileUploadResponses = {
-    /**
-     * Successful Response
-     */
-    200: FileUploadResponse;
-};
-
-export type InitiateFileUploadResponse = InitiateFileUploadResponses[keyof InitiateFileUploadResponses];
-
-export type ValidateFileUploadData = {
-    body: FileUploadValidationRequest;
-    path?: never;
-    query?: never;
-    url: '/files/upload/validate';
-};
-
-export type ValidateFileUploadErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type ValidateFileUploadError = ValidateFileUploadErrors[keyof ValidateFileUploadErrors];
-
-export type ValidateFileUploadResponses = {
-    /**
-     * Successful Response
-     */
-    200: FileUploadValidationResponse;
-};
-
-export type ValidateFileUploadResponse = ValidateFileUploadResponses[keyof ValidateFileUploadResponses];
-
-export type GetSupportedFileTypesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/files/upload/supported-types';
-};
-
-export type GetSupportedFileTypesResponses = {
-    /**
-     * Response Get Supported File Types Files Upload Supported Types Get
-     * Successful Response
-     */
-    200: Array<string>;
-};
-
-export type GetSupportedFileTypesResponse = GetSupportedFileTypesResponses[keyof GetSupportedFileTypesResponses];
 
 export type GetNotificationsData = {
     body?: never;

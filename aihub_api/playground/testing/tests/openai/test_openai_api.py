@@ -15,8 +15,8 @@ from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
 MODELS_ENDPOINT = "/api/v1/openai/models"
-CHAT_MODEL = "local/qwen-2.5-multimodal-small"
-EMBEDDING_MODEL = "local/qwen-embedding"
+CHAT_MODEL = "text-generation/mini"
+EMBEDDING_MODEL = "embedding/small"
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")

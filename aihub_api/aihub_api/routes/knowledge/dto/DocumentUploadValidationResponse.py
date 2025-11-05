@@ -3,7 +3,7 @@ from typing import Annotated
 from pydantic import BaseModel, Field
 
 
-class FileUploadValidationResponse(BaseModel):
+class DocumentUploadValidationResponse(BaseModel):
     """
     Response containing the validation result of a file upload.
 

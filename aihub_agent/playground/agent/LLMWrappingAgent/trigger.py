@@ -26,7 +26,7 @@ async def main():
             agent_class=LLMWrappingAgent.__name__,
             name=LocaleString(en="Dev Agent"),
             description=LocaleString(en="This is an agent that can be used to develop the frontend"),
-            llm=LLMConfig(model_name="azure/gpt-4o-mini"),
+            llm=LLMConfig(model_name="text-generation/mini"),
         ),
     )
 

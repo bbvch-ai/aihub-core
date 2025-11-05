@@ -26,7 +26,7 @@ async def main():
             description=LocaleString(en="This is an agent that can be used to develop the frontend"),
             expert_asking_agent_class="ExpertAskingAgent",
             expert_asking_agent_id="expert_agent",
-            llm=LLMConfig(model_name="azure/gpt-4o-mini"),
+            llm=LLMConfig(model_name="text-generation/mini"),
         ),
     )
 

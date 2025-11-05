@@ -13,7 +13,7 @@ config = LLMWrappingAgentConfig(
     agent_id="dev_agent",
     name=LocaleString(en="Dev Agent Override"),
     description=LocaleString(en="This Agent config should override the default config"),
-    llm=LLMConfig(model_name="azure/gpt-4o-mini"),
+    llm=LLMConfig(model_name="text-generation/mini"),
 )
 
 connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING.get_secret_value())
