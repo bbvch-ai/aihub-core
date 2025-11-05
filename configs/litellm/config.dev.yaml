@@ -5,6 +5,7 @@ model_list:
       api_base: https://aihub-dev-openai-swe-whisper.openai.azure.com/
       api_key: os.environ/AZURE_OPENAI_KEY_NANO
       api_version: "2025-01-01-preview"
+      drop_params: true
     model_info:
       mode: chat
 
@@ -14,6 +15,7 @@ model_list:
       api_base: https://aihub-dev-openai-che.openai.azure.com/
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-01-01-preview"
+      drop_params: true
     model_info:
       mode: chat
 

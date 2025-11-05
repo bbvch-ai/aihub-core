@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.249.3] - 2025-11-05 - Streamlined LiteLLM API Parameter Handling
+
+### Changed
+
+- 🔄 **Improved LiteLLM Model Parameter Handling:** Configured various LiteLLM models (e.g., `text-generation/mini`,
+  `text-generation/small`, `text-generation/large`) across all environments (`dev`, `latest`, `local`, `nightly`) to
+  automatically **drop extraneous parameters** from API requests, enhancing compatibility and robustness with underlying
+  services.
+
+---
+
 ## [v0.249.2] - 2025-11-05 - Enhanced Model Agnosticism and New Azure GPT-5 Series Integration
 
 ### Added
