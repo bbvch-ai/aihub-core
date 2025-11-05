@@ -44,20 +44,9 @@ Add configuration (replace placeholder values):
 
 LOG_LEVEL="WARNING"                    # Options: CRITICAL, ERROR, WARNING, INFO, DEBUG
 ENV="prod"                            # Options: dev, test, prod
-AIHUB_API_VERSION="dev"
 
 # =============================================================================
-# Domain and DNS configuration
-# =============================================================================
-
-# Main domain (without protocol)
-DOMAIN="127.0.0.1.nip.io"                # Local: 127.0.0.1.nip.io, Production: aihub.example.com
-
-# SSL/TLS certificate
-ACME_EMAIL="admin@example.com"
-
-# =============================================================================
-# AUTHENTICATION CONFIGURATION  
+# AUTHENTICATION CONFIGURATION
 # =============================================================================
 
 # General Authentication Settings
@@ -85,22 +74,13 @@ SUPERUSER_OID="REPLACE_WITH_RANDOM_STRING_3"
 SUPERUSER_ROLE="AIHubSuperuser"
 SUPERUSER_TOKEN="REPLACE_WITH_RANDOM_STRING_4"
 
-# Role management
+# Platform Settings
+AIHUB_API_VERSION="dev"
 AIHUB_CREATE_DEFAULT_ROLES="True"
+DOMAIN="127.0.0.1.nip.io"                # Local: 127.0.0.1.nip.io, Production: aihub.example.com
+ACME_EMAIL="admin@example.com"
 
-# =============================================================================
-# Service access control
-# =============================================================================
-
-# Dagster and data lake access (defaults to AIHubDeveloper)
-DAGSTER_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"
-SEAWEEDFS_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"
-
-# =============================================================================
-# Traefik admin
-# =============================================================================
-
-# Dashboard access (generate with: htpasswd -nbB admin your-password)
+TRAEFIK_ADMIN_PASSWORD="REPLACE_WITH_RANDOM_STRING_5"
 TRAEFIK_ADMIN_PASSWORD_HASH="REPLACE_WITH_HTPASSWD_HASH"
 
 # =============================================================================
@@ -122,10 +102,10 @@ GEMINI_API_KEY="REPLACE_WITH_GEMINI_KEY"
 # =============================================================================
 
 LITELLM_UI_USERNAME="admin"
-LITELLM_UI_PASSWORD="REPLACE_WITH_RANDOM_STRING_5"
-LITELLM_MASTER_KEY="REPLACE_WITH_RANDOM_STRING_6"
+LITELLM_UI_PASSWORD="REPLACE_WITH_RANDOM_STRING_6"
+LITELLM_MASTER_KEY="REPLACE_WITH_RANDOM_STRING_7"
 LITE_LLM_PROXY_BASE_URL="http://litellm:4000"
-LITE_LLM_PROXY_API_KEY="REPLACE_WITH_RANDOM_STRING_7"
+LITE_LLM_PROXY_API_KEY="REPLACE_WITH_RANDOM_STRING_8"
 
 # =============================================================================
 # DATABASE CONFIGURATION
@@ -133,11 +113,11 @@ LITE_LLM_PROXY_API_KEY="REPLACE_WITH_RANDOM_STRING_7"
 
 # PostgreSQL
 POSTGRES_USER="admin"
-POSTGRES_PASSWORD="REPLACE_WITH_RANDOM_STRING_8"
+POSTGRES_PASSWORD="REPLACE_WITH_RANDOM_STRING_9"
 
 # FerretDB (MongoDB-compatible)
 MONGO_USERNAME="admin"
-MONGO_PASSWORD="REPLACE_WITH_RANDOM_STRING_9"
+MONGO_PASSWORD="REPLACE_WITH_RANDOM_STRING_10"
 MONGO_CONNECTION_STRING="mongodb://admin:REPLACE_WITH_SAME_MONGO_PASSWORD@ferretdb:27017/"
 
 # Valkey (Redis-compatible)
@@ -149,24 +129,23 @@ REDIS_URL="redis://localhost:6379"
 
 # SeaweedFS S3 Storage
 SEAWEEDFS_ROOT_USER="admin"
-SEAWEEDFS_ROOT_PASSWORD="REPLACE_WITH_RANDOM_STRING_10"
+SEAWEEDFS_ROOT_PASSWORD="REPLACE_WITH_RANDOM_STRING_11"
 S3_STORAGE_ENDPOINT="http://seaweedfs:8333"
 S3_STORAGE_ACCESS_KEY="admin"                         # Must match SEAWEEDFS_ROOT_USER
-S3_STORAGE_SECRET_KEY="REPLACE_WITH_RANDOM_STRING_11"
+S3_STORAGE_SECRET_KEY="REPLACE_WITH_RANDOM_STRING_12"
 # S3_STORAGE_URL_SIGNING_SECRET must be same as S3_STORAGE_SECRET_KEY for now
 S3_STORAGE_URL_SIGNING_SECRET="REPLACE_WITH_SAME_AS_S3_STORAGE_SECRET_KEY"
-
 # =============================================================================
 # SERVICE ENDPOINTS (Internal - Don't Change)
 # =============================================================================
 
 DOCLING_API_ENDPOINT="http://docling:5001"
 DOCLING_API_TIMEOUT="600"
-PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING_12"
+PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING_13"
 PHOENIX_ENDPOINT="http://phoenix:6006"
 NATS_ENDPOINT="nats://localhost:4222"
 DAGSTER_HOME="~/.dagster_home"
-JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING_13"
+JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING_14"
 MILVUS_URL="http://localhost"
 MILVUS_DIMENSION="3072"
 
@@ -176,6 +155,12 @@ MILVUS_DIMENSION="3072"
 
 # Jina AI Search (Optional)
 # JINA_API_KEY="your_jina_api_key"
+
+MINIO_ROOT_USER=""
+MINIO_URL_SIGNING_SECRET=""
+MINIO_ROOT_PASSWORD=""
+SIGNOZ_INGESTION_CLOUD_ENDPOINT=""
+SIGNOZ_INGESTION_KEY=""
 ```
 
 Replace these values:
@@ -189,10 +174,11 @@ Replace these values:
    - `REPLACE_WITH_AZURE_OPENAI_KEY` → Azure OpenAI API key
    - `REPLACE_WITH_GEMINI_KEY` → Google Gemini API key
 
-3. Random strings:
-   - Replace all `REPLACE_WITH_RANDOM_STRING_X` with unique values
+3. Random strings and passwords:
+   - Replace all `REPLACE_WITH_RANDOM_STRING_X` with unique values (14 total)
+   - Replace `REPLACE_WITH_HTPASSWD_HASH` with htpasswd hash for Traefik dashboard
    - Use different values for each placeholder
-   - Minimum 32 characters
+   - Minimum 32 characters for random strings
 
 Domain configuration:
 - Local testing: Keep `DOMAIN=127.0.0.1.nip.io` (automatic DNS to localhost)
@@ -215,6 +201,14 @@ openssl rand -hex 32
 ```
 
 Run multiple times for different values.
+
+Generate Traefik admin password hash:
+
+```bash
+htpasswd -nbB admin your-password
+```
+
+Copy the entire output including the `admin:` prefix for `TRAEFIK_ADMIN_PASSWORD_HASH`.
 
 Validate configuration:
 
