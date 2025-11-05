@@ -2,10 +2,56 @@
 Shared pytest configuration and fixtures for bot tests.
 
 This module provides common test fixtures that prevent external service dependencies,
-particularly Microsoft authentication services.
+particularly Microsoft authentication services and HTTP calls.
 """
 
 import pytest
+
+
+@pytest.fixture(autouse=True)
+def mock_aiohttp_requests(monkeypatch):
+    """
+    Mock aiohttp HTTP requests to prevent real network calls.
+
+    ### What
+    - Patches aiohttp ClientSession methods to return mock responses
+    - Prevents the bot from making real HTTP calls when sending activities
+
+    ### Why
+    - The microsoft-agents SDK uses aiohttp to send bot responses
+    - Tests use fake serviceUrl endpoints that don't exist
+    - We want to test bot logic without network dependencies
+
+    ### How
+    - Mocks ClientSession._request to return a successful mock response
+    - Applied automatically to all tests via autouse=True
+    """
+    try:
+        import aiohttp
+        from unittest.mock import AsyncMock
+
+        async def fake_request(self, method, url, **kwargs):
+            """Mock aiohttp request that returns a successful response."""
+            # Create a mock response
+            mock_response = AsyncMock()
+            mock_response.status = 200
+            mock_response.reason = "OK"
+            mock_response.headers = {}
+            mock_response.text = AsyncMock(return_value="{}")
+            mock_response.json = AsyncMock(return_value={})
+            mock_response.read = AsyncMock(return_value=b"{}")
+
+            # Mock the context manager behavior
+            mock_response.__aenter__ = AsyncMock(return_value=mock_response)
+            mock_response.__aexit__ = AsyncMock(return_value=None)
+
+            return mock_response
+
+        # Patch the _request method which all HTTP methods use internally
+        monkeypatch.setattr(aiohttp.ClientSession, "_request", fake_request)
+    except ImportError:
+        # If aiohttp isn't installed, skip this fixture
+        pass
 
 
 @pytest.fixture(autouse=True)
