@@ -70,6 +70,8 @@ async def client(test_runner: SimulatedAgentBotTestRunner):
     app = test_runner.create_app()
     async with LifespanManager(app) as lifespan:
         # Set up test credentials after MongoDB connection is established
+        # Note: These are fake credentials, but RoutesService.get_adapter() requires them
+        # MSAL authentication is mocked in conftest.py to prevent real auth attempts
         test_credentials = Credentials(
             APP_TYPE="MultiTenant",
             APP_ID="test-app-id",
@@ -77,32 +79,36 @@ async def client(test_runner: SimulatedAgentBotTestRunner):
         )
 
         # Clean up any existing test path entities
-        PathEntity.objects(path__in=[
-            "/api/v1/agent/chat/completions/my_agent_class/my_agent_id/json",
-            "/api/v1/agent/chat/completions/my_agent_class/my_agent_id/stream"
-        ]).delete()
+        PathEntity.objects(
+            path__in=[
+                "/api/v1/agent/chat/completions/my_agent_class/my_agent_id/json",
+                "/api/v1/agent/chat/completions/my_agent_class/my_agent_id/stream",
+            ]
+        ).delete()
 
         # Create path entities for both endpoints
         PathEntity(
             path="/api/v1/agent/chat/completions/my_agent_class/my_agent_id/json",
             credentials=test_credentials,
-            system_message="Test bot"
+            system_message="Test bot",
         ).save()
 
         PathEntity(
             path="/api/v1/agent/chat/completions/my_agent_class/my_agent_id/stream",
             credentials=test_credentials,
-            system_message="Test bot"
+            system_message="Test bot",
         ).save()
 
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client
 
         # Cleanup after tests
-        PathEntity.objects(path__in=[
-            "/api/v1/agent/chat/completions/my_agent_class/my_agent_id/json",
-            "/api/v1/agent/chat/completions/my_agent_class/my_agent_id/stream"
-        ]).delete()
+        PathEntity.objects(
+            path__in=[
+                "/api/v1/agent/chat/completions/my_agent_class/my_agent_id/json",
+                "/api/v1/agent/chat/completions/my_agent_class/my_agent_id/stream",
+            ]
+        ).delete()
 
 
 @pytest.mark.asyncio(loop_scope="module")
