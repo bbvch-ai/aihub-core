@@ -1,4 +1,5 @@
 {
+  "channelId": "emulator",
   "channelData": {
     "clientActivityID": "client_activity_id"
   },

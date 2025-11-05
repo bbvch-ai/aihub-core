@@ -80,6 +80,8 @@ async def client(test_runner: SimulatedAgentBotTestRunner):
     app = test_runner.create_app()
     async with LifespanManager(app) as lifespan:
         # Set up test credentials after MongoDB connection is established
+        # Note: These are fake credentials, but RoutesService.get_adapter() requires them
+        # MSAL authentication is mocked in conftest.py to prevent real auth attempts
         test_credentials = Credentials(
             APP_TYPE="MultiTenant",
             APP_ID="test-app-id",
@@ -93,7 +95,7 @@ async def client(test_runner: SimulatedAgentBotTestRunner):
         PathEntity(
             path="/api/v1/agent/chat/completions/my_agent_class/my_agent_id/json",
             credentials=test_credentials,
-            system_message="Test bot"
+            system_message="Test bot",
         ).save()
 
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
@@ -121,9 +123,9 @@ async def test_ttl_index_setup(mongodb_direct_connection):
             assert "expireAfterSeconds" in index_info, "TTL index missing expireAfterSeconds"
             # Convert our TTL_DAYS to seconds for comparison
             expected_ttl_seconds = int(TTL_DAYS * 24 * 60 * 60)
-            assert (
-                index_info["expireAfterSeconds"] == expected_ttl_seconds
-            ), "TTL index has wrong expireAfterSeconds value"
+            assert index_info["expireAfterSeconds"] == expected_ttl_seconds, (
+                "TTL index has wrong expireAfterSeconds value"
+            )
 
     assert ttl_index_found, "TTL index not found on last_activity field"
 
@@ -158,9 +160,9 @@ async def test_conversation_tracker_expired_detection(mongodb_direct_connection)
 
     # 6. Verify should_show_expiration_message returns False (explicitly deleted)
     should_show = ConversationTracker.should_show_expiration_message(conversation_id, bot_id)
-    assert (
-        should_show is False
-    ), "should_show_expiration_message should return False for explicitly deleted conversation"
+    assert should_show is False, (
+        "should_show_expiration_message should return False for explicitly deleted conversation"
+    )
 
     # Clean up
     ConversationTracker.objects(conversation_id=conversation_id).delete()
@@ -194,9 +196,9 @@ async def test_conversation_tracker_explicitly_deleted_vs_expired(mongodb_direct
     should_show_deleted = ConversationTracker.should_show_expiration_message(deleted_id, bot_id)
 
     assert should_show_expired is True, "should_show_expiration_message should return True for expired conversation"
-    assert (
-        should_show_deleted is False
-    ), "should_show_expiration_message should return False for explicitly deleted conversation"
+    assert should_show_deleted is False, (
+        "should_show_expiration_message should return False for explicitly deleted conversation"
+    )
 
     # Clean up
     ConversationTracker.objects(conversation_id=expired_id).delete()
