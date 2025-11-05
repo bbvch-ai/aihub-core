@@ -12,6 +12,8 @@
 - **Tier 2**: AI agents with organizational knowledge (RAG, vector search)
 - **Tier 3**: Process orchestration (agents + humans + external systems)
 
+**Swiss AI Agent Protocol**: Internal event-driven protocol governing all communication between platform components. Publish-subscribe model over NATS with strict Control Event (workflow) vs Display Event (observability) separation. Hierarchical scoping (Thread → Display → Run) for security and tracing.
+
 ## Repository Structure
 
 **Monorepo**: Single `aihub-core` repository containing all platform code. Open-source and reusable.
@@ -32,12 +34,11 @@
 
 **Integration**:
 - **`aihub_api`**: REST API + WebSocket gateway (FastAPI).
-- **`aihub_web`**: Frontend UI (Nuxt.js, Vue 3, TypeScript).
+- **`aihub_web`**: Frontend UI (Nuxt.js, Vue 3).
 - **`aihub_bot`**: Collaboration platform integrations (MS Teams, Slack, etc.).
 
 **Operations**:
 - **`aihub_action`**: Reusable GitHub Actions for CI/CD.
-- **`aihub_iac`**: Infrastructure-as-Code (Pulumi, Azure resources).
 - **`aihub_doc`**: arc42 documentation + ADRs.
 
 ## Key Terminology
@@ -46,12 +47,13 @@
 - **AI Agent**: Autonomous process partner that proactively executes tasks. Workflow-based, transparent, traceable.
 - **Pipeline**: Dagster-based data ingestion/processing workflow.
 - **Process**: Orchestrated collaboration between agents, humans, and programs.
+- **Swiss AI Agent Protocol**: Internal event-driven communication protocol. NATS publish-subscribe with Control/Display event separation.
 
 ## Tech Stack
 
 **Core Platform**:
-- **OpenWebUI**: Primary chat interface with dual pipeline architecture (event-based for agents, OpenAI-compatible for models)
-- **LiteLLM**: Universal LLM gateway (unified interface for OpenAI, Anthropic, Google, local models)
+- **OpenWebUI**: Primary chat interface with dual pipeline architecture (event-based for agents via SSE, OpenAI-compatible for direct model access)
+- **LiteLLM**: Universal LLM gateway (unified interface for OpenAI, Anthropic, Google, local models). Cost tracking, request routing, retry policies.
 - **Admin UI**: Nuxt.js-based management interface
 
 **AI/LLM**:
@@ -60,7 +62,7 @@
 
 **Data/Storage**:
 - **FerretDB**: MongoDB-compatible NoSQL (PostgreSQL backend), accessed via MongoEngine
-- **Redis**: In-memory state storage for agents
+- **Redis**: In-memory state storage for agents (RunContext, ThreadContext)
 - **Milvus**: Primary vector store for semantic search
 - **SeaweedFS**: S3-compatible object storage (files, artifacts)
 - **PostgreSQL**: Relational database backend
@@ -74,15 +76,15 @@
 **Observability**:
 - **OpenTelemetry**: End-to-end distributed tracing
 - **OpenInference**: LLM-specific instrumentation
-- **Arize Phoenix**: AI observability and trace visualization
+- **Arize Phoenix**: AI observability and trace visualization (http://localhost:6006)
 
 **Messaging**:
-- **NATS**: Event-driven async communication backbone
+- **NATS**: Event-driven async communication backbone (Swiss AI Agent Protocol message bus)
 
 **Deployment**:
-- **Docker Compose**: Multi-environment support (dev, local, nightly, latest, GPU variants)
+- **Docker Compose**: Multi-environment support (dev, local, nightly, latest, GPU variants). 100% Docker Compose—no separate IaC tooling.
 - **Traefik**: Reverse proxy and API gateway
-- **OAuth2**: Enterprise authentication
+- **OAuth2**: Enterprise authentication (Azure AD with superuser fallback for Docker deployments)
 
 ## Coding Conventions
 
@@ -129,15 +131,18 @@ Before marking task complete:
 **CRITICAL**: Consult existing ADRs before significant changes. Located: `/home/user/aihub-core/aihub_doc/arc42/decisions/`
 
 **Recent Key Decisions**:
-- Dual OpenWebUI pipeline architecture (event-based + OpenAI-compatible)
+- Dual OpenWebUI pipeline architecture (event-based via SSE + OpenAI-compatible)
+- SSE (Server-Side Events) for OpenWebUI integration (native event streaming)
 - MCP protocol for AI assistant development integration
 - OpenTelemetry for end-to-end distributed tracing
-- Containerized multi-environment deployment
+- Containerized multi-environment deployment (Docker Compose only)
+- Global superuser authentication for Docker deployments
+- Component-specific CI/CD build pipelines
 
 **Create ADR if**:
 - Adding major dependencies
 - Introducing new tools/frameworks
-- Altering fundamental patterns (e.g., Service/Controller/Repository abstraction)
+- Altering fundamental patterns (e.g., Service/Controller/Repository abstraction, Swiss AI Agent Protocol)
 
 **ADR Format**: `YYYY_MM_DD_short-decision-summary.md` (Context → Decision Drivers → Decision → Consequences)
 
@@ -194,6 +199,7 @@ Before marking task complete:
 - Makefile (per scope): `/home/user/aihub-core/<scope>/Makefile`
 - ADRs: `/home/user/aihub-core/aihub_doc/arc42/decisions/`
 - Architecture docs: `/home/user/aihub-core/aihub_doc/docs/2_platform/2_architecture/`
+- Swiss AI Agent Protocol: `/home/user/aihub-core/aihub_doc/docs/2_platform/2_architecture/3_swiss_ai_agent_protocol/index.en.md`
 
 **Common Commands** (within scope dir, Poetry shell activated):
 - `poetry install`: Install dependencies
@@ -222,5 +228,4 @@ Each package has its own `AGENTS.md` with scope-specific architecture, folder st
 - `/home/user/aihub-core/aihub_pipeline/AGENTS.md`
 - `/home/user/aihub-core/aihub_process/AGENTS.md`
 - `/home/user/aihub-core/aihub_web/AGENTS.md`
-- `/home/user/aihub-core/aihub_iac/AGENTS.md`
 - `/home/user/aihub-core/aihub_doc/AGENTS.md`
