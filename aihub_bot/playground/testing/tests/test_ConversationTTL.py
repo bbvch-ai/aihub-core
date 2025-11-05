@@ -50,6 +50,82 @@ def patch_requests_adapter(monkeypatch, test_runner):
     yield
 
 
+@pytest.fixture
+def patch_aiohttp_routing(monkeypatch, test_runner):
+    """
+    Patch aiohttp to route requests to the test app instead of making real network calls.
+
+    ### What
+    - Intercepts aiohttp requests and routes them to the FastAPI test app
+    - Captures bot responses in test_runner.responses for assertion
+
+    ### Why
+    - The microsoft-agents SDK uses aiohttp (not requests) to send bot responses
+    - Bot responses go to serviceUrl endpoints that need to reach BotTestRunner's /service handler
+    - Without routing, responses don't get captured in test_runner.responses
+
+    ### How
+    - Patches aiohttp.ClientSession._request to use httpx.AsyncClient with ASGITransport
+    - Routes requests to http://test/... and http://localhost:8001/... to the test app
+    - Returns generic mocks for other URLs to prevent real network calls
+    """
+    try:
+        import aiohttp
+        from unittest.mock import AsyncMock
+        from httpx import ASGITransport, AsyncClient
+
+        app = test_runner.create_app()
+
+        async def routing_request(self, method, url, **kwargs):
+            """Route requests to test app or return mock response."""
+            str_url = str(url)
+
+            # Check if this is a request to our test domain
+            if str_url.startswith("http://test/") or str_url.startswith("http://localhost:8001/"):
+                # Route to the test app using httpx
+                async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+                    # Extract JSON data if present
+                    json_data = kwargs.get("json")
+                    data = kwargs.get("data")
+
+                    # Make the request to the ASGI app
+                    response = await client.request(
+                        method=method, url=str_url, json=json_data, content=data, headers=kwargs.get("headers", {})
+                    )
+
+                    # Convert httpx response to aiohttp-like response
+                    mock_response = AsyncMock()
+                    mock_response.status = response.status_code
+                    mock_response.reason = response.reason_phrase
+                    mock_response.headers = dict(response.headers)
+                    mock_response.text = AsyncMock(return_value=response.text)
+                    mock_response.json = AsyncMock(return_value=response.json() if response.content else {})
+                    mock_response.read = AsyncMock(return_value=response.content)
+                    mock_response.__aenter__ = AsyncMock(return_value=mock_response)
+                    mock_response.__aexit__ = AsyncMock(return_value=None)
+
+                    return mock_response
+            else:
+                # Generic mock for external URLs (e.g., Microsoft auth endpoints)
+                mock_response = AsyncMock()
+                mock_response.status = 200
+                mock_response.reason = "OK"
+                mock_response.headers = {}
+                mock_response.text = AsyncMock(return_value="{}")
+                mock_response.json = AsyncMock(return_value={})
+                mock_response.read = AsyncMock(return_value=b"{}")
+                mock_response.__aenter__ = AsyncMock(return_value=mock_response)
+                mock_response.__aexit__ = AsyncMock(return_value=None)
+                return mock_response
+
+        # Patch the _request method
+        monkeypatch.setattr(aiohttp.ClientSession, "_request", routing_request)
+    except ImportError:
+        # If aiohttp isn't installed, skip this fixture
+        pass
+    yield
+
+
 @pytest.fixture(scope="function")
 def mongodb_direct_connection():
     """Direct MongoDB connection for basic tests"""
@@ -182,7 +258,7 @@ async def test_conversation_tracker_explicitly_deleted_vs_expired(mongodb_direct
 
 @pytest.mark.asyncio(loop_scope="module")
 async def test_conversation_ttl_with_bot(
-    test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter
+    test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_aiohttp_routing
 ):
     """Test creation of a conversation via the bot and verify TTL tracking"""
     # Load the user message template
