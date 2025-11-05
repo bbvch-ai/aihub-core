@@ -7,7 +7,7 @@ import asyncio
 
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
-from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig, LLMParameter
 from aihub_lib.generative_ai.resources.models.llm.RerankingModelConfig import RerankingModelConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
@@ -41,7 +41,8 @@ async def main():
                 fr="Ceci est l'agent RAG par défaut",
                 it="Questo è l'agente RAG predefinito",
             ),
-            llm=LLMConfig(model_name="local/qwen-2.5-multimodal-small"),
+            # when using nano temp needs to be 1.0 and nothing else
+            llm=LLMConfig(model_name="text-generation/nano", default_parameter=LLMParameter(temperature=1.0)),
             check_context_sufficiency=False,
             number_of_input_tokens=16384,
             system_prompt=LocaleString(
@@ -138,7 +139,7 @@ async def main():
                 """,
             ),
             retrieve_step_config=RetrieveStepConfig(
-                embed_model=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
+                embed_model=EmbeddingModelConfig(model_name="embedding/large"),
                 index_namespaces=["simple"],
                 retrieve_k=20,
                 query_mode=VectorStoreQueryMode.HYBRID,
@@ -158,7 +159,7 @@ async def main():
             ),
             reranking_config=RerankingConfig(
                 enabled=True,
-                reranking_model=RerankingModelConfig(model_name="local/reranker", top_n=5),
+                reranking_model=RerankingModelConfig(model_name="reranker", top_n=5),
             ),
         ),
         redis_url=RedisSettings().URL,

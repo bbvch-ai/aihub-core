@@ -100,9 +100,9 @@ def azure_agent_config():
     """
     Return a RAGAgentConfig that uses Azure OpenAI for both the LLM and embeddings.
     """
-    llm_config = LLMConfig(model_name="azure/gpt-4o-mini")
+    llm_config = LLMConfig(model_name="text-generation/large")
     reranking_config = RerankingModelConfig(model_name="")
-    embedding_config = EmbeddingModelConfig(model_name="azure/text-embedding-3-large")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
     vector_store: AzureAISearchVectorStoreConfig = AzureAISearchVectorStoreConfig(
         # needed for embedding field
         vector_store_name="development",
@@ -125,7 +125,7 @@ def test_collection(event_loop):
     """
     asyncio.set_event_loop(event_loop)
 
-    embedding_config = EmbeddingModelConfig(model_name="local/qwen-embedding")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/small")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="development",
@@ -149,9 +149,9 @@ def self_hosted_agent_config(test_collection):
     """
     Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
     """
-    llm_config = LLMConfig(model_name="local/qwen-2.5-multimodal-small")
-    reranking_config = RerankingModelConfig(model_name="local/reranker-cpu")
-    embedding_config = EmbeddingModelConfig(model_name="local/qwen-embedding")
+    llm_config = LLMConfig(model_name="text-generation/mini")
+    reranking_config = RerankingModelConfig(model_name="reranker")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/small")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="development",
@@ -375,7 +375,7 @@ def _(agent_runner: AgentTestRunner, expected_prompt: str):
 @given(parsers.parse('with reranking enabled and top_n of "{top_n:d}"'))
 def _(agent_runner: AgentTestRunner, top_n: int):
     agent_runner.default_agent_config.reranking_config = RerankingConfig(
-        enabled=True, reranking_model=RerankingModelConfig(model_name="local/reranker", top_n=top_n)
+        enabled=True, reranking_model=RerankingModelConfig(model_name="reranker", top_n=top_n)
     )
     return agent_runner
 

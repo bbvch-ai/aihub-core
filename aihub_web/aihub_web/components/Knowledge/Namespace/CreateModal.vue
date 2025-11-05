@@ -164,9 +164,9 @@ const handleCreate = async () => {
   isCreating.value = true
   error.value = ''
 
-  const requestBody: CreateNamespaceRequest = {
-    database_name: selectedDatabase.value,
-    namespace_name: name.value,
+  const requestBody: CreateNamespaceRequest & { database: string, namespace: string } = {
+    database: selectedDatabase.value,
+    namespace: name.value,
     folder_name: name.value,
     display_name: displayName.value,
     description: description.value,

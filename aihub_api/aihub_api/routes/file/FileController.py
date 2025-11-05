@@ -4,15 +4,9 @@ from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings import AnonymousFileAccessSettings
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, Query, Security
-from nats.aio.client import Client as NATS
+from fastapi import Query, Security
 
-from aihub_api.routes.file.dto.FileUploadRequest import FileUploadRequest
-from aihub_api.routes.file.dto.FileUploadResponse import FileUploadResponse
-from aihub_api.routes.file.dto.FileUploadValidationRequest import FileUploadValidationRequest
-from aihub_api.routes.file.dto.FileUploadValidationResponse import FileUploadValidationResponse
 from aihub_api.routes.file.dto.SignedUrlDto import SignedUrlDto
 from aihub_api.routes.file.FileService import FileService
 
@@ -93,49 +87,5 @@ class FileController(Controller):
             Provides access to a file via a temporary URL and redirects the user to it.
             """
             return FileService.get_anonymous_file_redirect(container, file_path, expires, signature)
-
-        return self
-
-    def initiate_file_upload(self, route: str = "/upload/initiate") -> "FileController":
-        @self.router.post(route, tags=self.tags)
-        async def initiate_file_upload(
-            request: FileUploadRequest,
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
-        ) -> FileUploadResponse:
-            """
-            Initiates file upload by generating a presigned S3/MinIO URL.
-
-            This endpoint validates the upload request and returns a presigned URL
-            that allows the client to upload the file directly to S3/MinIO storage.
-            """
-            return await FileService.initiate_file_upload(request)
-
-        return self
-
-    def validate_file_upload(self, route: str = "/upload/validate") -> "FileController":
-        @self.router.post(route, tags=self.tags)
-        async def validate_file_upload(
-            request: FileUploadValidationRequest,
-            nc: Annotated[NATS, Depends(use_nats)],
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
-        ) -> FileUploadValidationResponse:
-            """
-            Validates whether a file was successfully uploaded to the datalake.
-
-            This endpoint checks if a file exists in the configured datalake storage
-            (S3/MinIO or Azure Blob Storage) after a presigned URL upload.
-            """
-            return await FileService.validate_file_upload(nc, request)
-
-        return self
-
-    def get_supported_file_types(self, route: str = "/upload/supported-types") -> "FileController":
-        @self.router.get(route, tags=self.tags, summary="Get supported file types")
-        async def get_supported_file_types() -> list[str]:
-            """
-            Returns a list of supported file extensions (e.g., [".pdf", ".docx"])
-            that can be used for client-side validation.
-            """
-            return FileService.get_supported_file_types()
 
         return self

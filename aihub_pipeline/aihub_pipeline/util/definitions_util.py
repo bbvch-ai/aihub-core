@@ -71,8 +71,9 @@ def asset_definition_with_code_link(
 
 def default_definitions(
     datalake_container_name: str,
-    embedding_model_name: str = "local/qwen-embedding",
-    llm_model_name: str = "local/gemma-3-multimodal-small",
+    embedding_model_name: str = "embedding/small",
+    llm_model_name: str = "text-generation/mini",
+    figures_directory_name: str = "__figures__",
     with_summary_nodes: bool = True,
     observe_job_hour: int = 2,
     observe_job_minute: int = 0,
