@@ -2,12 +2,15 @@ from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import Em
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
 
+from aihub_lib.nats.topics.pipeline.PipelineTopic import PipelineTopic
+
 # Import AI-Hub pipeline factories
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
     observable_data_lake_factory,
 )
+from aihub_pipeline.const.pipeline_names import INTERNAL_DATALAKE, INTERNAL_KNOWLEDGE_DB
 from aihub_pipeline.jobs.factory import observe_source_job
 
 # Import AI-Hub resources and utilities
@@ -23,6 +26,7 @@ from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
 from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
+from aihub_pipeline.sensors.nats.nats_document_uploaded_sensor import nats_document_uploaded_sensor
 from aihub_pipeline.util.bucket_utils import get_db_name_from_bucket_name
 
 # Pipeline configuration
@@ -68,7 +72,9 @@ defs = Definitions(
             store_name=get_db_name_from_bucket_name(bucket_name=CONTAINER_NAME, auto_sync=False),
         ),
         # Data lake resources for file management
-        **s3_data_lake_resources(container_name=CONTAINER_NAME),
+        **s3_data_lake_resources(
+            container_name=CONTAINER_NAME,
+        ),
         # AI models for embeddings and summaries
         "embedding_model": EmbeddingModelResource(
             embedding_config=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
@@ -79,6 +85,17 @@ defs = Definitions(
     jobs=[observe_job],
     # Add scheduling - observe daily at midnight
     schedules=[daily_schedule_at(observe_job, hour=0, minute=0)],
-    # Add sensors for automation
-    sensors=[default_automation_sensor(assets)],
+    # Add sensors for automation and nats observation
+    sensors=[
+        default_automation_sensor(assets),
+        nats_document_uploaded_sensor(
+            job=observe_job,
+            pipeline_topic=PipelineTopic(
+                source_type=INTERNAL_DATALAKE,
+                source_id=CONTAINER_NAME,
+                target_type=INTERNAL_KNOWLEDGE_DB,
+                target_id=CONTAINER_NAME,
+            ),
+        ),
+    ],
 )

@@ -15,6 +15,7 @@ from dagster import (
     with_source_code_references,
 )
 
+from aihub_lib.nats.topics.pipeline.PipelineTopic import PipelineTopic
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
@@ -33,6 +34,7 @@ from aihub_pipeline.assets.factories.share_point_to_data_lake.removed_data_lake_
 from aihub_pipeline.assets.factories.share_point_to_data_lake.sharepoint_files_to_data_lake_files_factory import (
     share_point_files_to_data_lake_files_factory,
 )
+from aihub_pipeline.const.pipeline_names import INTERNAL_DATALAKE, INTERNAL_KNOWLEDGE_DB
 from aihub_pipeline.executors.factory import default_process_executor
 from aihub_pipeline.io.SharePointIOManager import SharePointIoManager
 from aihub_pipeline.jobs.factory import materialize_asset_job, observe_source_job
@@ -49,6 +51,7 @@ from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import Recur
 from aihub_pipeline.resources.share_point.SharePointResource import SharePointResource
 from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
+from aihub_pipeline.sensors.nats.nats_document_uploaded_sensor import nats_document_uploaded_sensor
 from aihub_pipeline.util.bucket_utils import get_db_name_from_bucket_name
 
 
@@ -138,7 +141,18 @@ def default_definitions(
             ),
             "language_model": LanguageModelResource(llm_config=llm_config),
         },
-        sensors=[default_automation_sensor(assets)],
+        sensors=[
+            default_automation_sensor(assets),
+            nats_document_uploaded_sensor(
+                job=job,
+                pipeline_topic=PipelineTopic(
+                    source_type=INTERNAL_DATALAKE,
+                    source_id=datalake_container_name,
+                    target_type=INTERNAL_KNOWLEDGE_DB,
+                    target_id=datalake_container_name,
+                ),
+            ),
+        ],
         executor=default_process_executor(),
         jobs=[job, remove_job],
         schedules=[

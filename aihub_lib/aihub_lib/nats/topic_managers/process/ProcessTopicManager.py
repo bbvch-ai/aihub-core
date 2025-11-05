@@ -1,13 +1,13 @@
-from typing import Annotated
+from typing import Annotated, ClassVar
 
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 
 
 class ProcessTopicManager(TopicManager):
-    PROCESS_TOPIC = "process"
+    PROCESS_TOPIC: ClassVar[str] = "process"
 
-    WORK_REQUEST_EVENT = "work_request"
-    WORK_EVENT = "work"
+    WORK_REQUEST_EVENT: ClassVar[str] = "work_request"
+    WORK_EVENT: ClassVar[str] = "work"
 
     def get_process_instance_discovery_subject_request(
         self,
@@ -16,7 +16,14 @@ class ProcessTopicManager(TopicManager):
         process_id: Annotated[str, "Process ID filter or or '*'"] = "*",
     ) -> str:
         """Returns a subject for requesting process discovery information."""
-        return f"{self.INSTANCE_DISCOVERY_TOPIC}.{self.PROCESS_TOPIC}.{process_class}.{process_id}.request.{call_id}"
+        return (
+            f"{self.INSTANCE_DISCOVERY_TOPIC}."
+            f"{self.PROCESS_TOPIC}."
+            f"{process_class}."
+            f"{process_id}."
+            f"request."
+            f"{call_id}"
+        )
 
     def get_process_class_discovery_subject_request(
         self,
@@ -24,7 +31,9 @@ class ProcessTopicManager(TopicManager):
         process_class: Annotated[str, "Process class filter or '*'"] = "*",
     ) -> str:
         """Returns a subject for requesting process discovery information for a specific process class."""
-        return f"{self.CLASS_DISCOVERY_TOPIC}.{self.PROCESS_TOPIC}.{process_class}.*.request.{call_id}"
+        return (
+            f"{self.CLASS_DISCOVERY_TOPIC}." f"{self.PROCESS_TOPIC}." f"{process_class}." f"*." f"request." f"{call_id}"
+        )
 
     def get_process_instance_discovery_subject_response(
         self,
@@ -33,7 +42,14 @@ class ProcessTopicManager(TopicManager):
         process_id: Annotated[str, "Process ID filter or or '*'"] = "*",
     ) -> str:
         """Returns a subject for receiving process discovery information."""
-        return f"{self.INSTANCE_DISCOVERY_TOPIC}.{self.PROCESS_TOPIC}.{process_class}.{process_id}.response.{call_id}"
+        return (
+            f"{self.INSTANCE_DISCOVERY_TOPIC}."
+            f"{self.PROCESS_TOPIC}."
+            f"{process_class}."
+            f"{process_id}."
+            f"response."
+            f"{call_id}"
+        )
 
     def get_process_class_discovery_subject_response(
         self,
@@ -41,7 +57,14 @@ class ProcessTopicManager(TopicManager):
         process_class: Annotated[str, "Process class filter or '*'"] = "*",
     ) -> str:
         """Returns a subject for receiving process discovery information for a specific process class."""
-        return f"{self.CLASS_DISCOVERY_TOPIC}.{self.PROCESS_TOPIC}.{process_class}.*.response.{call_id}"
+        return (
+            f"{self.CLASS_DISCOVERY_TOPIC}."
+            f"{self.PROCESS_TOPIC}."
+            f"{process_class}."
+            f"*."
+            f"response."
+            f"{call_id}"
+        )
 
     def get_subject_for_specific_event_in_process(
         self,
@@ -54,8 +77,13 @@ class ProcessTopicManager(TopicManager):
     ) -> str:
         """Returns a subject pinpointing a specific event in a given process run."""
         return (
-            f"{self.PROCESS_TOPIC}.{process_class}.{process_id}."
-            f"{process_walkthrough_id}.{event_type}.{event_name}.{event_id}"
+            f"{self.PROCESS_TOPIC}."
+            f"{process_class}."
+            f"{process_id}."
+            f"{process_walkthrough_id}."
+            f"{event_type}."
+            f"{event_name}."
+            f"{event_id}"
         )
 
     def get_subject_for_all_events_in_process(self) -> str:

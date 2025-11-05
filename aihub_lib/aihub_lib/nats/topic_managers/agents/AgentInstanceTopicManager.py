@@ -1,5 +1,7 @@
 from typing import Annotated, override
 
+from pydantic import Field
+
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 
 
@@ -29,13 +31,7 @@ class AgentInstanceTopicManager(AgentClassTopicManager):
       or receive responses only from a known agent instance.
     """
 
-    def __init__(
-        self,
-        agent_class: Annotated[str, "Agent class identifier"],
-        agent_id: Annotated[str, "Unique agent instance ID"],
-    ):
-        super().__init__(agent_class=agent_class)
-        self.agent_id = agent_id
+    agent_class: Annotated[str, Field(description="Unique agent instance ID")]
 
     def get_agent_instance_discovery_subject_request(
         self,
