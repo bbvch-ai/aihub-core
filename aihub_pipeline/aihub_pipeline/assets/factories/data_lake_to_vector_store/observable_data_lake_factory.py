@@ -37,7 +37,6 @@ def observable_data_lake_factory(key: AssetKey, partitions: DynamicPartitionsDef
     ) -> DataVersionsByPartition:
         data_lake_files: list[DataLakeFile] = fetch_all_files_in_data_lake_no_op(
             data_lake_client=data_lake_client,
-            data_lake_resource=data_lake_resource,
         )
         return data_version_by_partition_for_data_lake_files_no_op(
             context=context,
