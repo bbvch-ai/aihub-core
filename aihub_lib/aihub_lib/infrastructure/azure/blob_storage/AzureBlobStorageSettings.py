@@ -9,10 +9,21 @@ class AzureBlobStorageSettings(EnvironmentSettings):
     """
     Configuration for connecting to Azure Blob Storage.
     Reads settings from environment variables or a .env file.
+
+    Authentication priority:
+    1. CONNECTION_STRING - if provided, uses explicit connection string authentication
+    2. ENDPOINT + (implicit DefaultAzureCredential - DEPRECATED, will be removed)
     """
 
     model_config = EnvironmentSettings.create_settings_config("AZURE_BLOB_STORAGE_")
 
+    CONNECTION_STRING: Annotated[
+        SecretStr | None,
+        Field(
+            description="Azure Blob Storage connection string for explicit authentication. "
+            "Recommended over implicit authentication."
+        ),
+    ] = None
     NAME: Annotated[str | None, Field(description="The name of the Azure Blob Storage account.")] = None
     ENDPOINT: Annotated[str | None, Field(description="The Blob service endpoint for the storage account.")] = None
 
