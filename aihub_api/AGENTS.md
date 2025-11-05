@@ -2,6 +2,8 @@
 
 **Purpose**: Main user-facing REST API (FastAPI) + WebSocket gateway. Connects frontend to AI-Hub services.
 
+**Tech Stack & Paradigms**: FastAPI REST API with async support. OAuth2/OpenID Connect authentication (Azure AD integration). Controller-Service-DTO architectural pattern. WebSocket support via Socket.IO. NATS pub-sub for agent communication. Pydantic models for request/response validation. TTLCache for in-memory caching. Hierarchical permission system (aihub.user.resource.action). OpenAPI/Swagger auto-generated docs. Dependency injection with FastAPI Depends. PageNumber/PageSize types for pagination. ApiRunner and ApiTestRunner for testing.
+
 ## Scope Responsibility
 
 HTTP endpoints, real-time WebSocket communication, agent/process discovery, thread management, authentication enforcement. NOT business logic (delegate to services).

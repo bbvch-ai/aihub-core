@@ -2,6 +2,8 @@
 
 **Purpose**: Shared infrastructure library used by ALL AI-Hub services. Code belongs here if used by 2+ services.
 
+**Tech Stack & Paradigms**: NATS pub-sub event system with typed Pydantic events. Hierarchical event model: Control events (workflow) vs Display events (observability). MongoEngine ODM for MongoDB (FerretDB) persistence. OAuth2/OpenID Connect authentication with Azure AD. Hierarchical permission system (aihub.user.resource.action notation). i18n with gettext for multi-language support. BaseContext abstraction for Valkey (Redis) state storage. BaseRunner pattern for execution environments. Pydantic BaseSettings for configuration. OpenTelemetry instrumentation helpers. Reusable across all aihub packages via Git dependency.
+
 ## Scope Responsibility
 
 Foundation for event-driven architecture, authentication/authorization, internationalization, and testing utilities. NOT for service-specific business logic.

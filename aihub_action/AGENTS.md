@@ -2,6 +2,8 @@
 
 **Purpose**: Modular GitHub Actions for CI/CD workflows. Standardize build, lint, test, coverage, review across customer repos.
 
+**Tech Stack & Paradigms**: GitHub Actions composite actions. YAML workflow definitions. Reusable workflows pattern. Poetry for Python dependency management. Black formatter with reviewdog for PR comments. Docker buildx for multi-platform images. pytest with coverage reporting. SonarCloud integration for code quality. Stateless, parameterized, version-tagged actions.
+
 ## Scope Responsibility
 
 Reusable CI/CD automation. NOT repository-specific workflows (those consume these actions).

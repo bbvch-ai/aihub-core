@@ -2,6 +2,8 @@
 
 **Purpose**: Dagster-based pipelines for document ingestion, parsing, embedding generation, and vector storage. Prepares data for RAG agents.
 
+**Tech Stack & Paradigms**: Dagster asset-based orchestration. Observable assets with materialization tracking. I/O managers for asset storage (local filesystem, cloud storage). Dynamic partitioning for time-series data. Sensors for event-driven triggers. Schedules for recurring jobs. Multi-asset definitions for batch processing. Resource management (LLMs, databases, APIs). Dagster UI for monitoring and debugging (localhost:3002). SeaweedFS for artifact storage. Milvus vector database integration for embeddings. Structured metadata for lineage tracking.
+
 ## Scope Responsibility
 
 Observable data processing workflows. Document lifecycle: ingestion → parsing → chunking → embedding → vector storage. NOT agent logic (pipelines produce data for agents).

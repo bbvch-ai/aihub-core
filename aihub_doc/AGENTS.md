@@ -2,6 +2,8 @@
 
 **Purpose**: VitePress-based documentation site with automated translation and deployment. Human-readable docs for platform users and developers.
 
+**Tech Stack & Paradigms**: VitePress static site generator. Automated EN→DE translation using LLM (gemini-2.5-flash via llm CLI). SHA-256 hash-based change detection for incremental translation. index.en.md files as source of truth, index.de.md auto-generated. pnpm for package management. Numbered folder structure for sidebar ordering. Mermaid diagrams with vitepress-plugin-mermaid. LLM export buttons via vitepress-plugin-llms. Auto-sidebar generation from folder structure. GitHub Pages deployment via GitHub Actions. sync-docs.sh syncs README files from monorepo. Arc42 ADRs for architectural decisions.
+
 ## Scope Responsibility
 
 User-facing documentation with automated English→German translation. NOT for AI agents (use `AGENTS.md` files) or internal notes.

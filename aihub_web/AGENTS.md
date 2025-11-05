@@ -2,6 +2,8 @@
 
 **Purpose**: Nuxt 3 web application. User interface for AI-Hub (agents, processes, threads, admin).
 
+**Tech Stack & Paradigms**: Nuxt 3 framework with Vue 3 Composition API. TypeScript for type safety. Pinia-Colada for reactive data fetching with query invalidation. PrimeVue component library. Tailwind CSS for styling. Auto-generated SDK from OpenAPI spec (openapi-typescript-codegen). i18n with vue-i18n. OAuth2 authentication flow. WebSocket (Socket.IO) for real-time updates. File uploads with multipart/form-data. Pagination with reusable composables. ESLint + Prettier for code quality. Vite for fast HMR. SSR (server-side rendering) disabled for client-only app.
+
 ## Scope Responsibility
 
 Frontend UI, API consumption, real-time updates, state management. NOT backend logic (consume `aihub_api`).

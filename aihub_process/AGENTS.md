@@ -2,6 +2,8 @@
 
 **Purpose**: High-level business process orchestration. Collaborative workflows between agents, humans, and programs.
 
+**Tech Stack & Paradigms**: Delegation pattern for agent/human orchestration. pytest-bdd for BDD testing with Gherkin feature files. NATS event consumption (StopEvent from agents) and production (StartEvent to next agent). Form-based human interaction via HumanInTheLoopEvent. ProcessRunner for local execution. Multi-participant coordination (agents → humans → agents). Pydantic process configs. Observable process flows with explicit state transitions. Minimal process logic (delegates to specialized agents).
+
 ## Scope Responsibility
 
 Process-level coordination (NOT task execution). Transforms entity outputs into entity inputs. Delegates work, waits for results, routes to next entity.

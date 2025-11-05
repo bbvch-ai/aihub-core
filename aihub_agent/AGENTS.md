@@ -2,6 +2,8 @@
 
 **Purpose**: Agent logic and workflow definitions. Autonomous AI components designed for proactive process automation.
 
+**Tech Stack & Paradigms**: LlamaIndex workflow engine with custom @step decorator. Event-driven architecture consuming/producing typed events over NATS. Valkey (Redis-compatible) for RunContext (ephemeral) and ThreadContext (persistent) state storage. DispatchableWorkflow base class for all agents. OpenTelemetry instrumentation for distributed tracing. pytest-bdd for BDD testing with Gherkin feature files. Transparent, auditable workflows (not black-box LLMs). Pydantic configs with strict validation. AgentRunner and AgentTestRunner for execution.
+
 ## Scope Responsibility
 
 Implements transparent, workflow-based agents (NOT black boxes). Agents are dispatchable workflows with explicit steps, traceable execution, and integration with processes.

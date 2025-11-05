@@ -4,6 +4,8 @@
 
 **Swiss AI-Hub**: Enterprise-grade, sovereign AI platform for integrating AI into business processes. Not a library—a complete production-ready ecosystem with batteries included (database, API, UI, pipelines, Docker deployment).
 
+**Tech Stack & Paradigms**: Python 3.13 monorepo with Poetry. Event-driven architecture over NATS. FastAPI REST APIs with OAuth2/OpenID Connect. LlamaIndex-based transparent agents. Dagster data pipelines. Nuxt 3 frontend with TypeScript. Docker Compose for all environments. VitePress documentation with automated translation. Valkey (Redis-compatible) for state, FerretDB (MongoDB-compatible) for persistence, Milvus for vector search. OpenTelemetry distributed tracing. Pydantic validation everywhere. Strict type checking with MyPy. BDD testing with pytest-bdd.
+
 **Core Philosophy**: Privacy-first, Swiss data sovereignty, security by design, radical transparency through workflow-based agents (not black boxes).
 
 **Three-Tier Architecture**:

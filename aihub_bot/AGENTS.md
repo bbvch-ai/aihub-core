@@ -2,6 +2,8 @@
 
 **Purpose**: Chatbot logic for MS Teams, Slack, web chat. Connects users to AI-Hub agents via conversational interfaces.
 
+**Tech Stack & Paradigms**: Azure Bot Framework for MS Teams/Slack integration. Bot-in-the-loop pattern for human input in agent workflows. MongoDB (FerretDB) with 30-day TTL for ConversationEntity persistence. Streaming responses with incremental message updates. NATS pub-sub for agent communication. FastAPI endpoints for bot webhooks. BaseChatBot with AgentChatBot and OpenaiChatBot specializations. CompletionHandler abstraction for response generation. Channel-specific formatting (Markdown for Teams, Slack syntax). Azure DevTunnel for local development. BotRunner and BotTestRunner for testing.
+
 ## Scope Responsibility
 
 Bot Framework integration, conversation management, streaming responses, channel-specific handling. NOT agent logic (delegate to agents via NATS).
