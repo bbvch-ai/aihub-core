@@ -49,14 +49,17 @@ echo "  - Port: ${S3_PORT}"
 echo "  - Filer: ${S3_FILER}"
 echo "  - User: ${SEAWEEDFS_S3_USER}"
 
-S3_CMD="weed s3 \
-  -filer=${S3_FILER} \
-  -port=${S3_PORT} \
-  -ip.bind=${S3_BIND_IP} \
-  -config=/tmp/s3.json \
-  -allowEmptyFolder=${S3_ALLOW_EMPTY_FOLDER}"
+# Build command without quotes around the asterisk
+CMD_ARGS=""
+CMD_ARGS="${CMD_ARGS} -filer=${S3_FILER}"
+CMD_ARGS="${CMD_ARGS} -port=${S3_PORT}"
+CMD_ARGS="${CMD_ARGS} -ip.bind=${S3_BIND_IP}"
+CMD_ARGS="${CMD_ARGS} -config=/tmp/s3.json"
+CMD_ARGS="${CMD_ARGS} -allowEmptyFolder=${S3_ALLOW_EMPTY_FOLDER}"
+CMD_ARGS="${CMD_ARGS} -allowedOrigins=*"
 
-[ -n "${S3_DOMAIN_NAME}" ] && S3_CMD="${S3_CMD} -domainName=${S3_DOMAIN_NAME}"
-[ -n "${S3_DATACENTER}" ] && S3_CMD="${S3_CMD} -dataCenter=${S3_DATACENTER}"
+[ -n "${S3_DOMAIN_NAME}" ] && CMD_ARGS="${CMD_ARGS} -domainName=${S3_DOMAIN_NAME}"
+[ -n "${S3_DATACENTER}" ] && CMD_ARGS="${CMD_ARGS} -dataCenter=${S3_DATACENTER}"
 
-exec ${S3_CMD} "$@"
+echo "Executing: weed s3 ${CMD_ARGS}"
+exec weed s3 ${CMD_ARGS}

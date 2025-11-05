@@ -1,8 +1,8 @@
 import {
-  initiateFileUpload,
-  validateFileUpload,
-  type FileUploadRequest,
-  type FileUploadValidationRequest,
+  initiateDocumentUpload,
+  validateDocumentUpload,
+  type DocumentUploadRequest,
+  type DocumentUploadValidationRequest,
 } from '@core/sdk/client'
 
 export interface UploadFileOptions {
@@ -37,17 +37,19 @@ export const useFileUpload = defineMutation(() => {
 
       const contentType = getMimeType(file)
 
-      const initiateRequest: FileUploadRequest = {
+      const initiateRequest: DocumentUploadRequest = {
         filename,
         content_type: contentType,
         content_length: file.size,
-        namespace_name: namespace,
-        database_name: database,
       }
 
-      const initiateResponse = await initiateFileUpload({
+      const initiateResponse = await initiateDocumentUpload({
         composable: '$fetch',
         body: initiateRequest,
+        path: {
+          database,
+          namespace,
+        },
       })
 
       await fetch(initiateResponse.upload_url, {
@@ -58,14 +60,17 @@ export const useFileUpload = defineMutation(() => {
         },
       })
 
-      const validationRequest: FileUploadValidationRequest = {
-        container: initiateResponse.container,
+      const validationRequest: DocumentUploadValidationRequest = {
         file_path: initiateResponse.object_key,
       }
 
-      await validateFileUpload({
+      await validateDocumentUpload({
         composable: '$fetch',
         body: validationRequest,
+        path: {
+          database,
+          namespace,
+        },
       })
 
       return initiateResponse.upload_id

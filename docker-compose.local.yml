@@ -225,14 +225,14 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/etcd-data:/etcd
     command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     healthcheck:
-      test: ["CMD", "etcdctl", "endpoint", "health"]
+      test: [ "CMD", "etcdctl", "endpoint", "health" ]
     logging: *default-logging
 
   milvus-standalone:
     image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.5.15
     container_name: milvus
     <<: *restart-policy
-    command: ["milvus", "run", "standalone"]
+    command: [ "milvus", "run", "standalone" ]
     security_opt:
       - seccomp:unconfined
     environment:
@@ -244,7 +244,7 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/milvus-data:/var/lib/milvus
       - ./configs/milvus/milvus.nightly.yaml:/milvus/configs/milvus.yaml
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
       start_period: 90s
     depends_on:
       etcd:
@@ -336,7 +336,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/ferretdb-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -371,7 +371,7 @@ services:
     logging: *default-logging
 
   litellm:
-    image: ghcr.io/bbvch-ai/aihub-core/litellm:main-v1.74.8-nightly
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.77.7-stable
     container_name: litellm
     <<: *restart-policy
     environment:
@@ -382,6 +382,7 @@ services:
       AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY}
       AZURE_OPENAI_KEY_IMAGE: ${AZURE_OPENAI_KEY_IMAGE}
       AZURE_OPENAI_KEY_AUDIO: ${AZURE_OPENAI_KEY_AUDIO}
+      AZURE_OPENAI_KEY_NANO: ${AZURE_OPENAI_KEY_NANO}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       PRESIDIO_ANALYZER_API_BASE: "http://presidio-analyzer:3000"
       PRESIDIO_ANONYMIZER_API_BASE: "http://presidio-anonymizer:3000"
@@ -500,8 +501,8 @@ services:
       IMAGES_OPENAI_API_BASE_URL: "http://api:8000/api/v1"
       IMAGES_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       MODELS_CACHE_TTL: 60
-      TASK_MODEL: 'azure/gpt-4o-mini'
-      TASK_MODEL_EXTERNAL: 'azure/gpt-4o-mini'
+      TASK_MODEL: 'text-generation/mini'
+      TASK_MODEL_EXTERNAL: 'text-generation/mini'
 
       # AI-Hub Connection
       AIHUB_BASE_URL: http://api:8000
@@ -583,14 +584,14 @@ services:
       FILE_IMAGE_COMPRESSION_HEIGHT: 796
 
       # Image Generation
-      IMAGE_GENERATION_MODEL: 'azure/dall-e-3'
+      IMAGE_GENERATION_MODEL: 'image-generation'
       IMAGE_SIZE: '1024x1024'
 
       # Audio
       AUDIO_STT_ENGINE: 'openai'
       AUDIO_TTS_ENGINE: 'openai'
-      AUDIO_STT_MODEL: 'azure/gpt-4o-mini-transcribe'
-      AUDIO_TTS_MODEL: 'azure/gpt-4o-mini-tts'
+      AUDIO_STT_MODEL: 'transcription'
+      AUDIO_TTS_MODEL: 'speech'
       AUDIO_TTS_VOICE: 'alloy'
 
       # User Permissions
@@ -756,7 +757,7 @@ services:
     build:
       context: .
       dockerfile: ./aihub_pipeline/Dockerfile
-    container_name:  dagster-webserver
+    container_name: dagster-webserver
     <<: *restart-policy
     entrypoint:
       - dagster-webserver
