@@ -99,7 +99,7 @@ def parse_document(context, file: DataLakeFile) -> RefDoc:
 **Types**:
 - **DocumentParser**: Docling, PDF, Markdown parsers
 - **LLM/Embedding**: Azure OpenAI, OpenAI, Hugging Face
-- **Storage**: Milvus, Azure AI Search, MongoDB, Data Lake
+- **Storage**: Milvus (primary vector store), MongoDB, Data Lake
 
 **Pattern**: `ConfigurableResource` subclass.
 
@@ -109,7 +109,7 @@ def parse_document(context, file: DataLakeFile) -> RefDoc:
 
 **Examples**:
 - `DocStoreIOManager`: MongoDB (RefDocs)
-- `VectorStoreIOManager`: Milvus/Azure AI Search (embeddings)
+- `VectorStoreIOManager`: Milvus (embeddings)
 - `AzureDataLakeIOManager`: ADLS (raw files)
 
 **Custom I/O Manager**:
