@@ -53,10 +53,7 @@ def setup_test_credentials():
 
     # Create test credentials
     test_credentials = Credentials(
-        APP_TYPE="MultiTenant",
-        APP_ID="test_app_id",
-        APP_PASSWORD="test_app_password",
-        APP_TENANTID="test_tenant_id"
+        APP_TYPE="MultiTenant", APP_ID="test_app_id", APP_PASSWORD="test_app_password", APP_TENANTID="test_tenant_id"
     )
 
     # Create PathEntity record

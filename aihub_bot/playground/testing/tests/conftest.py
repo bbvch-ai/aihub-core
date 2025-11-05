@@ -1,18 +1,19 @@
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 from aiohttp import ClientResponse
 
 
 @pytest.fixture(autouse=True)
 def mock_msal_auth(monkeypatch):
     """Mock MSAL authentication to prevent actual HTTP calls to Azure AD."""
+
     # Mock the MsalAuth.get_access_token method to return a fake token
     async def mock_get_access_token(self, *args, **kwargs):
         return "mock_token_12345"
 
     monkeypatch.setattr(
-        "microsoft_agents.authentication.msal.msal_auth.MsalAuth.get_access_token",
-        mock_get_access_token
+        "microsoft_agents.authentication.msal.msal_auth.MsalAuth.get_access_token", mock_get_access_token
     )
 
     yield
@@ -56,22 +57,23 @@ def mock_aiohttp_requests(monkeypatch, captured_responses):
 
         async def __aenter__(self):
             # Capture the request for test assertions (skip typing indicators)
-            if 'json' in self.kwargs:
-                payload = self.kwargs['json']
+            if "json" in self.kwargs:
+                payload = self.kwargs["json"]
                 # Only capture message activities, not typing indicators
-                if payload.get('type') == 'message':
+                if payload.get("type") == "message":
                     # Extract path from URL
-                    from urllib.parse import urlparse
                     from collections import namedtuple
+                    from urllib.parse import urlparse
+
                     parsed = urlparse(str(self.url))
                     path = parsed.path
 
                     # Ensure path has leading slash
-                    if path and not path.startswith('/'):
-                        path = '/' + path
+                    if path and not path.startswith("/"):
+                        path = "/" + path
 
                     # Store the response info
-                    MockedResponse = namedtuple('MockedResponse', ['path', 'payload'])
+                    MockedResponse = namedtuple("MockedResponse", ["path", "payload"])
                     response_info = MockedResponse(path=path, payload=payload)
                     captured_responses.append(response_info)
 
@@ -90,8 +92,8 @@ def mock_aiohttp_requests(monkeypatch, captured_responses):
     def mock_put(self, url, *args, **kwargs):
         return MockAsyncContextManager(url, **kwargs)
 
-    monkeypatch.setattr('aiohttp.ClientSession.post', mock_post)
-    monkeypatch.setattr('aiohttp.ClientSession.get', mock_get)
-    monkeypatch.setattr('aiohttp.ClientSession.put', mock_put)
+    monkeypatch.setattr("aiohttp.ClientSession.post", mock_post)
+    monkeypatch.setattr("aiohttp.ClientSession.get", mock_get)
+    monkeypatch.setattr("aiohttp.ClientSession.put", mock_put)
 
     yield

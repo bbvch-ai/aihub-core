@@ -61,10 +61,7 @@ def setup_test_credentials():
 
     # Create test credentials
     test_credentials = Credentials(
-        APP_TYPE="MultiTenant",
-        APP_ID="test_app_id",
-        APP_PASSWORD="test_app_password",
-        APP_TENANTID="test_tenant_id"
+        APP_TYPE="MultiTenant", APP_ID="test_app_id", APP_PASSWORD="test_app_password", APP_TENANTID="test_tenant_id"
     )
 
     # Create PathEntity records for both endpoints
@@ -100,6 +97,7 @@ def patch_requests_adapter(monkeypatch, test_runner):
 
     monkeypatch.setattr(requests, "Session", session_factory)
     yield
+
 
 @pytest.fixture(autouse=True)
 def cleanup_conversation():
@@ -139,7 +137,9 @@ async def client(test_runner: SimulatedAgentBotTestRunner):
 
 
 @pytest.mark.asyncio
-async def test_send_message(test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter, setup_test_credentials):
+async def test_send_message(
+    test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter, setup_test_credentials
+):
     with open(Path(__file__).parent / "user_message.json") as file:
         payload: dict = json.loads(file.read())
 
@@ -165,7 +165,9 @@ async def test_send_message(test_runner: SimulatedAgentBotTestRunner, client: As
 
 
 @pytest.mark.asyncio
-async def test_stream_response(test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter, setup_test_credentials):
+async def test_stream_response(
+    test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter, setup_test_credentials
+):
     with open(Path(__file__).parent / "user_message.json") as file:
         payload: dict = json.loads(file.read())
 
@@ -201,7 +203,8 @@ async def test_stream_response(test_runner: SimulatedAgentBotTestRunner, client:
                 break
         await asyncio.sleep(1)
     else:
-        pytest.fail(f"Chunks not received in time. Got {len(test_runner.responses)} responses. Last: {test_runner.responses[-1].payload if test_runner.responses else 'NONE'}")
+        last_response = test_runner.responses[-1].payload if test_runner.responses else "NONE"
+        pytest.fail(f"Chunks not received in time. Got {len(test_runner.responses)} responses. Last: {last_response}")
 
     assert test_runner.responses[-2].path == f"/v3/conversations/{CONVERSATION_ID}/activities/{ACTIVITY_ID}"
     assert test_runner.responses[-2].payload["type"] == "message"

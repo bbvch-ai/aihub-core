@@ -1,7 +1,5 @@
 from typing import Annotated
 
-from microsoft_agents.activity import Activity
-
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
@@ -11,6 +9,7 @@ from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributo
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.Controller import Controller
 from fastapi import Body, Depends, Request, Response
+from microsoft_agents.activity import Activity
 from microsoft_agents.hosting.aiohttp import CloudAdapter
 from nats.aio.client import Client as NATS
 
