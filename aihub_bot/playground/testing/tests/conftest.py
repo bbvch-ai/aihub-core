@@ -8,7 +8,7 @@ particularly Microsoft authentication services and HTTP calls.
 import pytest
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def mock_aiohttp_requests(monkeypatch):
     """
     Mock aiohttp HTTP requests to prevent real network calls.
@@ -24,7 +24,11 @@ def mock_aiohttp_requests(monkeypatch):
 
     ### How
     - Mocks ClientSession._request to return a successful mock response
-    - Applied automatically to all tests via autouse=True
+    - NOT applied automatically (autouse=False) - use explicit fixture for routing tests
+
+    ### Note
+    - For tests that need to capture bot responses, use patch_aiohttp_routing instead
+    - This fixture is for simple tests that just need to prevent network calls
     """
     try:
         import aiohttp
