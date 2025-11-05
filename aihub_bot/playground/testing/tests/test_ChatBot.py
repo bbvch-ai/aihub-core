@@ -11,12 +11,17 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
 from aihub_lib.testing.route_adapter.ASGIAdapter import ASGIAdapter
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
+from mongoengine import connect, disconnect
 
+from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity
+from aihub_bot.persistence.entities.PathEntity import Credentials, PathEntity
 from aihub_bot.routes.agent.AgentChatController import AgentChatController
 from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
 
@@ -37,6 +42,51 @@ USER_ID = "test_user_id"
 ACTIVITY_ID = "test_activity_id"
 
 
+@pytest.fixture(scope="module")
+def setup_test_credentials():
+    """Set up PathEntity credentials for test endpoints"""
+    # Connect to MongoDB
+    connect(
+        db=AIHubSettings().MONGO_MAIN_DB_NAME,
+        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
+    )
+
+    # Create credentials for JSON endpoint
+    json_path = f"/api/v1/agent/chat/completions/{AGENT_CLASS}/{AGENT_ID}/json"
+    stream_path = f"/api/v1/agent/chat/completions/{AGENT_CLASS}/{AGENT_ID}/stream"
+
+    # Clean up any existing test credentials
+    PathEntity.objects(path=json_path).delete()
+    PathEntity.objects(path=stream_path).delete()
+
+    # Create test credentials
+    test_credentials = Credentials(
+        APP_TYPE="MultiTenant",
+        APP_ID="test_app_id",
+        APP_PASSWORD="test_app_password",
+        APP_TENANTID="test_tenant_id"
+    )
+
+    # Create PathEntity records for both endpoints
+    PathEntity(path=json_path, credentials=test_credentials, system_message="Test system message").save()
+    PathEntity(path=stream_path, credentials=test_credentials, system_message="Test system message").save()
+
+    yield
+
+    # Clean up test data
+    try:
+        PathEntity.objects(path=json_path).delete()
+        PathEntity.objects(path=stream_path).delete()
+    except Exception:
+        # Connection may already be closed, ignore cleanup errors
+        pass
+    finally:
+        try:
+            disconnect()
+        except Exception:
+            pass
+
+
 @pytest.fixture
 def patch_requests_adapter(monkeypatch, test_runner):
     """Patch the request.Session to forward all calls made to the test domain to our fastapi application"""
@@ -51,11 +101,27 @@ def patch_requests_adapter(monkeypatch, test_runner):
     monkeypatch.setattr(requests, "Session", session_factory)
     yield
 
+@pytest.fixture(autouse=True)
+def cleanup_conversation():
+    """Clean up conversation state before each test"""
+    # Clean up before test (connection may not exist yet)
+    try:
+        ConversationEntity.objects(conversation_id=CONVERSATION_ID).delete()
+    except Exception:
+        pass
+    yield
+    # Clean up after test (connection may be closed)
+    try:
+        ConversationEntity.objects(conversation_id=CONVERSATION_ID).delete()
+    except Exception:
+        pass
 
-@pytest_asyncio.fixture(scope="module", loop_scope="module")
-async def test_runner():
+
+@pytest_asyncio.fixture(scope="function")
+async def test_runner(captured_responses):
     runner = SimulatedAgentBotTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID)
     runner.with_simple_chunk_events()
+    runner.responses = captured_responses  # Wire captured responses to test_runner
     auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     runner.mount(
         HealthController(auth=auth).get_health(), AgentChatController(auth=auth).completions_json().completions_stream()
@@ -64,7 +130,7 @@ async def test_runner():
     return runner
 
 
-@pytest_asyncio.fixture(scope="module", loop_scope="module")
+@pytest_asyncio.fixture(scope="function")
 async def client(test_runner: SimulatedAgentBotTestRunner):
     app = test_runner.create_app()
     async with LifespanManager(app) as lifespan:
@@ -72,8 +138,8 @@ async def client(test_runner: SimulatedAgentBotTestRunner):
             yield client
 
 
-@pytest.mark.asyncio(loop_scope="module")
-async def test_send_message(test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter):
+@pytest.mark.asyncio
+async def test_send_message(test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter, setup_test_credentials):
     with open(Path(__file__).parent / "user_message.json") as file:
         payload: dict = json.loads(file.read())
 
@@ -82,6 +148,7 @@ async def test_send_message(test_runner: SimulatedAgentBotTestRunner, client: As
     payload["from"]["id"] = USER_ID
     payload["recipient"]["id"] = BOT_ID
     payload["id"] = ACTIVITY_ID
+    payload["channelId"] = "emulator"  # Required by Bot Framework
 
     response = await client.post(
         url=JSON_ENDPOINT,
@@ -97,8 +164,8 @@ async def test_send_message(test_runner: SimulatedAgentBotTestRunner, client: As
     assert test_runner.responses[-1].payload["text"] == "First chunk.\nSecond chunk."
 
 
-@pytest.mark.asyncio(loop_scope="module")
-async def test_stream_response(test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter):
+@pytest.mark.asyncio
+async def test_stream_response(test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter, setup_test_credentials):
     with open(Path(__file__).parent / "user_message.json") as file:
         payload: dict = json.loads(file.read())
 
@@ -107,6 +174,7 @@ async def test_stream_response(test_runner: SimulatedAgentBotTestRunner, client:
     payload["from"]["id"] = USER_ID
     payload["recipient"]["id"] = BOT_ID
     payload["id"] = ACTIVITY_ID
+    payload["channelId"] = "emulator"  # Required by Bot Framework
 
     response = await client.post(
         url=STREAM_ENDPOINT,
@@ -115,15 +183,25 @@ async def test_stream_response(test_runner: SimulatedAgentBotTestRunner, client:
 
     assert response.status_code == 200
 
-    for _ in range(30):
-        if (
-            test_runner.responses[-1].payload["text"] == "First chunk.\nSecond chunk."
-            and test_runner.responses[-2].payload["text"] == "First chunk.\n"
-        ):
-            break
+    # Wait a bit for streaming to complete
+    await asyncio.sleep(2)
+
+    # Debug: Show what we captured
+    print(f"\n\nCaptured {len(test_runner.responses)} responses:")
+    for i, resp in enumerate(test_runner.responses):
+        print(f"  Response {i}: path={resp.path}, text={resp.payload.get('text', 'N/A')}")
+
+    # Check for the expected chunks (reduced wait time for debugging)
+    for _ in range(5):
+        if len(test_runner.responses) >= 2:
+            if (
+                test_runner.responses[-1].payload["text"] == "First chunk.\nSecond chunk."
+                and test_runner.responses[-2].payload["text"] == "First chunk.\n"
+            ):
+                break
         await asyncio.sleep(1)
     else:
-        pytest.fail(f"Chunks not received in time. Last chunk: {test_runner.responses[-1].payload}")
+        pytest.fail(f"Chunks not received in time. Got {len(test_runner.responses)} responses. Last: {test_runner.responses[-1].payload if test_runner.responses else 'NONE'}")
 
     assert test_runner.responses[-2].path == f"/v3/conversations/{CONVERSATION_ID}/activities/{ACTIVITY_ID}"
     assert test_runner.responses[-2].payload["type"] == "message"
