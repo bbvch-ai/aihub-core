@@ -552,7 +552,7 @@ services:
       # Vector DB
       VECTOR_DB: 'milvus'
       MILVUS_DB: 'default'
-      MILVUS_URI: 'http://milvus:19530'
+      MILVUS_URI: 'http://milvus-standalone:19530'
       MILVUS_INDEX_TYPE: 'HNSW'
       MILVUS_METRIC_TYPE: 'COSINE'
       MILVUS_HNSW_M: '16'
