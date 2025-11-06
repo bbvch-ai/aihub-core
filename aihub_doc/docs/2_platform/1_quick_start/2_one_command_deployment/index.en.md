@@ -67,10 +67,10 @@ Copy this template into your `.env` file and replace placeholder values:
 
 LOG_LEVEL="WARNING"                    # Options: CRITICAL, ERROR, WARNING, INFO, DEBUG
 ENV="prod"                             # Options: dev, test, prod
-DOMAIN="aihub.your-company.com"        # Domain for the platform (e.g., ai-hub.your-company.com)
+DOMAIN="REPLACE_WITH_YOUR_DOMAIN"
 
 # Traefik Configuration
-ACME_EMAIL="admin@your-company.com"    # Replace with admin email
+ACME_EMAIL="admin@your-company.com"
 ADMIN_PASSWORD_HASH=""                 # Generate with: htpasswd -nb admin yourpassword
 
 # =============================================================================
@@ -97,14 +97,14 @@ OAUTH_COOKIE_SECRET="REPLACE_WITH_16_HEX_CHARS"
 # Superuser Configuration
 SUPERUSER_ENABLED="True"
 SUPERUSER_NAME="AI-Hub Superuser"
-SUPERUSER_EMAIL="admin@your-company.com"              # Replace with admin email
+SUPERUSER_EMAIL="admin@your-company.com"
 SUPERUSER_OID="REPLACE_WITH_RANDOM_STRING"
 SUPERUSER_ROLE="AIHubSuperuser"
 SUPERUSER_TOKEN="REPLACE_WITH_RANDOM_STRING"
 
 # Platform Settings
 AIHUB_API_VERSION="dev"
-AIHUB_FRONTEND_ORIGIN="https://aihub.your-company.com" # Replace with your URL
+AIHUB_FRONTEND_ORIGIN="https://REPLACE_WITH_YOUR_DOMAIN"
 AIHUB_CREATE_DEFAULT_ROLES="True"
 
 # =============================================================================
