@@ -424,6 +424,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      milvus-standalone:
+        condition: service_healthy
       seaweedfs-s3:
         condition: service_healthy
       litellm:
