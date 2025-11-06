@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.249.4] - 2025-11-06 - Refined Document Metadata for Clearer Source Tracking
+
+### Added
+
+- ✨ **Introduced `source_origin` field:** Documents and nodes now include a new `source_origin` field to explicitly
+  store the original external URI (e.g., SharePoint URL) distinct from the data lake URI.
+
+### Changed
+
+- 🔄 **Clarified `source` field definition:** The `source` metadata field for ingested documents and nodes is now
+  explicitly defined as the data lake URI.
+- 🚀 **Improved document ingestion:** Pipelines for ingesting documents (e.g., from SharePoint, data lake) have been
+  updated to correctly capture and differentiate between the data lake URI (now `source`) and the new `source_origin`.
+
+### Removed
+
+- 🗑️ **Deprecated `DATA_LAKE_URI` metadata field:** The `DATA_LAKE_URI` field has been removed to streamline and
+  simplify document metadata, with its functionality now handled by the `source` field.
+
+---
+
 ## [v0.249.3] - 2025-11-05 - Streamlined LiteLLM API Parameter Handling
 
 ### Changed

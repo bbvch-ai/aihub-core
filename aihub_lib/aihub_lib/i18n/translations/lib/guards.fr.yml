@@ -99,18 +99,18 @@ context_sufficient_guard:
     
     5. Chaque requête successive doit représenter un changement conceptuel plus important que les précédentes.
 
-Question:
-  <Question>
-  { user_query }
-  </Question>
-Contexte:
-  <Context>
-  { context }
-  </Context>
-Requêtes précédentes:
-  <Previous_Queries>
-  { prev_queries }
-  <\Previous_Queries>
+    Question:
+      <Question>
+      { user_query }
+      </Question>
+    Contexte:
+      <Context>
+      { context }
+      </Context>
+    Requêtes précédentes:
+    <Previous_Queries>
+    { prev_queries }
+    <\Previous_Queries>
   reason_no_hops: |
     Raisonnement expliquant pourquoi le contexte est ou n'est pas suffisant (aucun saut supplémentaire disponible).
   success_no_hops: |
