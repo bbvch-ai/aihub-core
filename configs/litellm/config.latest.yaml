@@ -3,7 +3,7 @@ model_list:
     litellm_params:
       model: azure/gpt-5-nano
       api_base: https://aihub-dev-openai-swe-whisper.openai.azure.com/
-      api_key: os.environ/AZURE_OPENAI_KEY_NANO
+      api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-01-01-preview"
       drop_params: true
     model_info:
@@ -41,7 +41,7 @@ model_list:
     litellm_params:
       model: azure/dall-e-3
       api_base: https://joelb-mdotxdzc-australiaeast.cognitiveservices.azure.com/
-      api_key: os.environ/AZURE_OPENAI_KEY_IMAGE
+      api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2024-02-01"
     model_info:
       mode: image_generation
@@ -51,7 +51,7 @@ model_list:
     litellm_params:
       model: azure/gpt-4o-mini-transcribe
       api_base: https://joelb-mdpmzqib-eastus2.cognitiveservices.azure.com/
-      api_key: os.environ/AZURE_OPENAI_KEY_AUDIO
+      api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-03-01-preview"
     model_info:
       mode: audio_transcription
@@ -61,7 +61,7 @@ model_list:
     litellm_params:
       model: azure/gpt-4o-mini-tts
       api_base: https://joelb-mdpmzqib-eastus2.cognitiveservices.azure.com/
-      api_key: os.environ/AZURE_OPENAI_KEY_AUDIO
+      api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-03-01-preview"
     model_info:
       mode: audio_speech

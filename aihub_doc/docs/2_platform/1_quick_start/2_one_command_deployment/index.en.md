@@ -107,9 +107,8 @@ AIHUB_CREATE_DEFAULT_ROLES="True"
 # =============================================================================
 
 # Azure OpenAI (Recommended)
+AZURE_OPENAI_BASE_URL="REPLACE_WITH_AZURE_OPENAI_BASE_URL"
 AZURE_OPENAI_KEY="REPLACE_WITH_AZURE_OPENAI_KEY"
-AZURE_OPENAI_KEY_IMAGE="REPLACE_WITH_AZURE_OPENAI_KEY"
-AZURE_OPENAI_KEY_AUDIO="REPLACE_WITH_AZURE_OPENAI_KEY"
 
 # Google Gemini (Alternative)
 GEMINI_API_KEY="REPLACE_WITH_GEMINI_KEY"
@@ -150,6 +149,7 @@ SEAWEEDFS_ROOT_PASSWORD="REPLACE_WITH_RANDOM_STRING"
 S3_STORAGE_ENDPOINT="http://seaweedfs:8333"
 S3_STORAGE_ACCESS_KEY="admin"                         # Must match SEAWEEDFS_ROOT_USER
 S3_STORAGE_SECRET_KEY="REPLACE_WITH_SAME_SEAWEEDFS_PASSWORD"
+S3_STORAGE_URL_SIGNING_SECRET="REPLACE_WITH_RANDOM_STRING"
 
 # =============================================================================
 # SERVICE ENDPOINTS (Internal - Don't Change)
@@ -185,6 +185,7 @@ MILVUS_DIMENSION="3072"
 
 2. **AI Model Access** (configure at least one):
 
+   - `REPLACE_WITH_AZURE_OPENAI_BASE_URL` → Your Azure OpenAI endpoint URL
    - `REPLACE_WITH_AZURE_OPENAI_KEY` → Your Azure OpenAI API key
    - `REPLACE_WITH_GEMINI_KEY` → Your Google Gemini API key
 
