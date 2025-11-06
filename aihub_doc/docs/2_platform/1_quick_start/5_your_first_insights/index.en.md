@@ -7,23 +7,19 @@ index: 5
 
 # Your First Insights
 
-By now you have hopefully realised how easy it is to gain access to powerful agents using the Swiss AI-Hub Platform and
-it only gets better. Lets delve deeper into what insights can be gained from the interactions with agents.
+The Swiss AI-Hub Platform provides access to agents that can answer questions and retrieve information. Let's look at
+what insights you can gain from interactions with these agents.
 
 ## Traceability
 
-Once you have started a conversation with any agent it is now possible to look at all the events this simple interaction
-has generated in the process.
+After starting a conversation with any agent, you can review all the events generated during the interaction.
 
-For this we turn our eyes to the tracing service, which shows us all interactions between an agent and us. We can look
-into any of them and see exactly what the agent did and how the answer was generated. It is also possible to open this
-view directly from the chat interface by selecting the tracing icon underneath the agents answer. This brings in a
-window from
-the right which gives you the same view as the service page, but without needing to leave the chat. This makes it
-easier to analyze an interaction and once done continue the conversation.
+The tracing service shows all interactions between agents and users. You can examine any interaction to see exactly what
+the agent did and how it generated the answer. You can also open this view directly from the chat interface by selecting
+the tracing icon underneath the agent's answer. This opens a window from the right with the same view as the service
+page, allowing you to analyze an interaction without leaving the chat.
 
 ## Document Retrieval
 
-The same can be done for documents retrieved by a RAG agent. It is possible to view the document parts that were used to
-answer your question directly from the chat interface. Making it effortless to fact-check the agents answer against the
-document contents.
+You can view the document parts a RAG agent used to answer your question directly from the chat interface. This allows
+you to fact-check the agent's answer against the document contents.

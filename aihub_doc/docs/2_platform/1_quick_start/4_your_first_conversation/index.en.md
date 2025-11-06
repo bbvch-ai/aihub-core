@@ -10,27 +10,25 @@ index: 4
 There are two ways to begin your first conversation with an agent.
 
 The first way is through the chat interface located under OpenAI in the services selection menu in the top left, this is
-the
-main way of communicating with agents.
+the main way of communicating with agents.
 
 The second way is through the agent itself, located under agents in the services selection menu.
 
-Both ways are possible but the chat interface is the main intended way for most users.
+Both approaches work, but most users will use the chat interface.
 
 ## Chat Interface
 
 As a chat interface we use [Open WebUI](https://github.com/open-webui/open-webui) an open source and feature rich
-interface. After logging
-in with Azure, begin your first conversation by typing your message and hitting enter. Switching the model or agent is
-as easy as selecting them in the top left of your chat. You can even set one as your default. Here it is also possible
-to set up a temporary chat by selecting the toggle at the bottom of the models list.
+interface. After logging in with Azure, begin your first conversation by typing your message and hitting enter.
+Switching the model or agent is as easy as selecting them in the top left of your chat. You can even set one as your
+default. Here it is also possible to set up a temporary chat by selecting the toggle at the bottom of the models list.
 
 Here is a quick video showing you how to get to the chat:
 
 <video controls="controls" src="../../../../media/platform/your_first_conversation/RAG_Agent-Frontend.webm" type="video/webm" />
 
-Now you are all set, use the chat as you would any other. A more detailed overview of all features in the chat can be
-found [here](../../5_feature_overview/chat_interface/).
+Use the chat as you would any other. A detailed overview of all chat features can be found
+[here](../../5_feature_overview/chat_interface/).
 
 ## Agent
 
@@ -46,4 +44,4 @@ See it in action here:
 
 ---
 
-Now that we have seen how to chat with agents lets see what we can learn from those interactions.
+Next, let's explore what you can learn from these interactions.
