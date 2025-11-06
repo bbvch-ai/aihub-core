@@ -66,10 +66,15 @@ Copy this template into your `.env` file and replace placeholder values:
 # =============================================================================
 
 LOG_LEVEL="WARNING"                    # Options: CRITICAL, ERROR, WARNING, INFO, DEBUG
-ENV="prod"                            # Options: dev, test, prod
+ENV="prod"                             # Options: dev, test, prod
+DOMAIN="aihub.your-company.com"        # Domain for the platform (e.g., ai-hub.your-company.com)
+
+# Traefik Configuration
+ACME_EMAIL="admin@your-company.com"    # Replace with admin email
+ADMIN_PASSWORD_HASH=""                 # Generate with: htpasswd -nb admin yourpassword
 
 # =============================================================================
-# AUTHENTICATION CONFIGURATION  
+# AUTHENTICATION CONFIGURATION
 # =============================================================================
 
 # General Authentication Settings
@@ -91,7 +96,7 @@ OAUTH_COOKIE_SECRET="REPLACE_WITH_16_HEX_CHARS"
 
 # Superuser Configuration
 SUPERUSER_ENABLED="True"
-SUPERUSER_NAME="AI-Hub Administrator"
+SUPERUSER_NAME="AI-Hub Superuser"
 SUPERUSER_EMAIL="admin@your-company.com"              # Replace with admin email
 SUPERUSER_OID="REPLACE_WITH_RANDOM_STRING"
 SUPERUSER_ROLE="AIHubSuperuser"
@@ -99,7 +104,7 @@ SUPERUSER_TOKEN="REPLACE_WITH_RANDOM_STRING"
 
 # Platform Settings
 AIHUB_API_VERSION="dev"
-AIHUB_FRONTEND_ORIGIN="https://127.0.0.1.nip.io"     # Change for production domain
+AIHUB_FRONTEND_ORIGIN="https://aihub.your-company.com" # Replace with your URL
 AIHUB_CREATE_DEFAULT_ROLES="True"
 
 # =============================================================================
@@ -165,11 +170,25 @@ JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING"
 MILVUS_DIMENSION="3072"
 
 # =============================================================================
+# BOT DEVELOPMENT CONFIGURATION
+# =============================================================================
+
+BOT_AUTH_FAKE_NAME="Bot"
+BOT_AUTH_FAKE_EMAIL="bot@bot.com"
+BOT_AUTH_FAKE_OID="00000000-0000-0000-0000-000000000000"
+BOT_AUTH_FAKE_ROLES="AIHubBot"
+
+# =============================================================================
 # OPTIONAL INTEGRATIONS
 # =============================================================================
 
 # Jina AI Search (Optional)
-# JINA_API_KEY="your_jina_api_key"
+JINA_API_KEY=""
+
+# Signoz Telemetry (Optional)
+SIGNOZ_INGESTION_CLOUD_ENDPOINT=""
+SIGNOZ_INGESTION_KEY=""
+
 ```
 
 ### Configuration Guidelines
@@ -198,7 +217,7 @@ MILVUS_DIMENSION="3072"
 **Domain Configuration:**
 
 - For local testing: Keep `AIHUB_FRONTEND_ORIGIN="https://127.0.0.1.nip.io"`
-- For production: Change to your actual domain (e.g., `https://ai-hub.your-company.com`)
+- For production: Change to your actual domain (e.g., `https://aihub.your-company.com`)
 
 ::: tip Generate Random Strings
 Use these commands to generate secure random strings:
