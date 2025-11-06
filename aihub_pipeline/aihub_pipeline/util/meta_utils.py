@@ -28,6 +28,7 @@ from dagster import MetadataValue, TableColumn, TableRecord, TableSchema
 from llama_index.core.schema import TextNode
 
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
+from aihub_pipeline.types.LocalFile import MinimalLocalFile
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
 from aihub_pipeline.types.SharePointFile import MinimalSharePointFile
 
@@ -204,5 +205,57 @@ def share_point_metadata_table(share_point_files: list[MinimalSharePointFile]):
         TableColumn("content_type", "string"),
     ]
     records = [TableRecord(share_point_file_table_row(share_point_file)) for share_point_file in share_point_files]
+    table_schema = TableSchema(columns=columns)
+    return MetadataValue.table(records=records, schema=table_schema)
+
+
+def local_file_table_row(file: MinimalLocalFile) -> dict:
+    """Convert MinimalLocalFile to table row dict."""
+    return {
+        "source_folder": file.source_folder,
+        "subfolder": file.subfolder or "",
+        "name": file.name,
+        "modified": file.modified_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "size": readable_size(file.size),
+        "path": file.path,
+    }
+
+
+def local_file_metadata_table(files: list[MinimalLocalFile]) -> MetadataValue:
+    """
+    Create a Dagster metadata table from local file metadata.
+
+    Displays file system files in a structured table format for monitoring and debugging.
+    Limits display to first 100 files to avoid overwhelming the UI.
+    """
+    columns = [
+        TableColumn("source_folder", "string"),
+        TableColumn("subfolder", "string"),
+        TableColumn("name", "string"),
+        TableColumn("modified", "string"),
+        TableColumn("size", "string"),
+        TableColumn("path", "string"),
+    ]
+
+    sorted_files = sorted(files, key=lambda f: (f.source_folder, f.path))
+
+    display_files = sorted_files[:100]
+
+    records = [TableRecord(local_file_table_row(file)) for file in display_files]
+
+    if len(sorted_files) > 100:
+        records.append(
+            TableRecord(
+                {
+                    "source_folder": "...",
+                    "subfolder": "...",
+                    "name": f"({len(sorted_files) - 100} more files)",
+                    "modified": "...",
+                    "size": "...",
+                    "path": "...",
+                }
+            )
+        )
+
     table_schema = TableSchema(columns=columns)
     return MetadataValue.table(records=records, schema=table_schema)

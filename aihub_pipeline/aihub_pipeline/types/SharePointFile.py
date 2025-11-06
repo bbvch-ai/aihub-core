@@ -3,8 +3,10 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
+from aihub_pipeline.types.SourceFile import MinimalSourceFile, SourceFile
 
-class MinimalSharePointFile(BaseModel):
+
+class MinimalSharePointFile(BaseModel, MinimalSourceFile):
     path: Annotated[str, Field(description="Relative path to the file in SharePoint")]
     etag: Annotated[str, Field(description="ETag for change detection")]
     name: Annotated[str, Field(description="File name")]
@@ -14,7 +16,15 @@ class MinimalSharePointFile(BaseModel):
     content_type: Annotated[str | None, Field(description="MIME type of the file")] = None
 
 
-class SharePointFile(BaseModel):
+class SharePointFile(BaseModel, SourceFile):
+    """
+    SharePoint file implementation of the SourceFile interface.
+
+    Represents a file retrieved from Microsoft SharePoint via the Graph API,
+    including content, metadata, and SharePoint-specific attributes like ETags
+    and download URLs.
+    """
+
     path: Annotated[str, Field(description="Relative path to the file in SharePoint")]
     content: Annotated[bytes, Field(description="File content as bytes")]
     name: Annotated[str, Field(description="File name")]
@@ -32,3 +42,8 @@ class SharePointFile(BaseModel):
     @property
     def created_datetime(self) -> datetime:
         return datetime.fromisoformat(self.created.replace("Z", "+00:00"))
+
+    @property
+    def source_url(self) -> str:
+        """Returns the full SharePoint URL as the source URL."""
+        return self.full_url

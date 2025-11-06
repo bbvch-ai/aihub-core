@@ -3,20 +3,28 @@ from dagster import OpExecutionContext, ResourceParam, op
 from aihub_pipeline.resources.data_lake.base.AbstractDataLakeClient import AbstractDataLakeClient
 from aihub_pipeline.resources.data_lake.DataLakeResource import DataLakeResource
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
-from aihub_pipeline.types.SharePointFile import MinimalSharePointFile
+from aihub_pipeline.types.SourceFile import MinimalSourceFile
 
 
 @op(code_version="v1")
 def fetch_data_lake_files_to_remove(
     context: OpExecutionContext,
-    share_point_files: list[MinimalSharePointFile],
+    source_files: list[MinimalSourceFile],
     data_lake_resource: DataLakeResource,
     data_lake_client: ResourceParam[AbstractDataLakeClient],
 ) -> list[DataLakeFile]:
-    """Fetches all DataLakeFiles that are in the DataLake but no longer in SharePoint."""
+    """
+    Fetch data lake files that should be removed because they no longer exist in the source.
+
+    This generic operation works with any source file type (SharePoint, local file system, etc.)
+    that implements the MinimalSourceFile interface. It compares files in the data lake with
+    files from the source system and identifies files that have been deleted from the source
+    and should be removed from the data lake.
+
+    """
     uris_to_exclude = [
         f"{data_lake_resource.container_name}/{data_lake_resource.directory_name}/{file.path.lstrip('/')}"
-        for file in share_point_files
+        for file in source_files
     ]
 
     context.log.info(f"Excluding {len(uris_to_exclude)} URIs from removal")
