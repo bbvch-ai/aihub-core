@@ -769,7 +769,8 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
-      - ./configs/dagster/dagster.latest.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/dagster.local.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.local.yaml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -790,7 +791,8 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
-      - ./configs/dagster/dagster.latest.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/dagster.local.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.local.yaml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -1016,6 +1018,8 @@ services:
       COSMOS_DOCSTORE_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017"
       VECTOR_STORE_URI: http://milvus-standalone:19530
       DOCLING_API_ENDPOINT: http://docling:5001/v1/convert/source
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${AIHUB_FRONTEND_ORIGIN}
   # </editor-fold>
 
   # <editor-fold desc="Common Pipelines">
