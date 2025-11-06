@@ -503,16 +503,16 @@ services:
       S3_ENDPOINT_URL: 'http://seaweedfs-s3:9000'
 
       # Model config
-      OPENAI_API_BASE_URL: ""
-      OPENAI_API_KEY: ""
-      RAG_OPENAI_API_BASE_URL: "http://api:8000/api/v1"
+      OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
+      OPENAI_API_KEY: ${SUPERUSER_TOKEN}
+      RAG_OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
       RAG_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
-      AUDIO_STT_OPENAI_API_BASE_URL: "http://api:8000/api/v1"
+      AUDIO_STT_OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
       AUDIO_STT_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
-      AUDIO_TTS_OPENAI_API_BASE_URL: "http://api:8000/api/v1"
+      AUDIO_TTS_OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
       AUDIO_TTS_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       ENABLE_IMAGE_GENERATION: True
-      IMAGES_OPENAI_API_BASE_URL: "http://api:8000/api/v1"
+      IMAGES_OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
       IMAGES_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       MODELS_CACHE_TTL: 60
       TASK_MODEL: 'text-generation/mini'
@@ -843,7 +843,7 @@ services:
       OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
       AIHUB_API_VERSION: ${AIHUB_API_VERSION}
       AIHUB_FRONTEND_ORIGIN: "${DOMAIN}"
-      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000/v1"
+      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000/"
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
       AUTH_OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
       SUPERUSER_NAME: ${SUPERUSER_NAME}

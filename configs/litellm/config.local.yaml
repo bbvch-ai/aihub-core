@@ -2,7 +2,7 @@ model_list:
   - model_name: text-generation/nano
     litellm_params:
       model: azure/gpt-5-nano
-      api_base: https://aihub-dev-openai-swe-whisper.openai.azure.com/
+      api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-01-01-preview"
       drop_params: true
@@ -11,7 +11,7 @@ model_list:
   - model_name: text-generation/mini
     litellm_params:
       model: azure/gpt-5-mini
-      api_base: https://aihub-dev-openai-che.openai.azure.com/
+      api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-04-01-preview"
       drop_params: true
@@ -21,7 +21,7 @@ model_list:
   - model_name: text-generation/large
     litellm_params:
       model: azure/gpt-5
-      api_base: https://aihub-dev-openai-che.openai.azure.com/
+      api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-01-01-preview"
       drop_params: true
@@ -31,7 +31,7 @@ model_list:
   - model_name: embedding/large
     litellm_params:
       model: azure/text-embedding-3-large
-      api_base: https://aihub-dev-openai-che.openai.azure.com/
+      api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2024-02-01"
     model_info:
@@ -40,7 +40,7 @@ model_list:
   - model_name: image-generation
     litellm_params:
       model: azure/dall-e-3
-      api_base: https://joelb-mdotxdzc-australiaeast.cognitiveservices.azure.com/
+      api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2024-02-01"
     model_info:
@@ -50,7 +50,7 @@ model_list:
   - model_name: transcription
     litellm_params:
       model: azure/gpt-4o-mini-transcribe
-      api_base: https://joelb-mdpmzqib-eastus2.cognitiveservices.azure.com/
+      api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-03-01-preview"
     model_info:
@@ -60,7 +60,7 @@ model_list:
   - model_name: speech
     litellm_params:
       model: azure/gpt-4o-mini-tts
-      api_base: https://joelb-mdpmzqib-eastus2.cognitiveservices.azure.com/
+      api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-03-01-preview"
     model_info:
