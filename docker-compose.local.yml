@@ -263,6 +263,16 @@ services:
     healthcheck:
       test: [ "NONE" ]
     logging: *default-logging
+    labels:
+      - "traefik.enable=true"
+
+      # --- attu Subdomain (priority 4000 - Admin interfaces) ---
+      - "traefik.http.routers.attu.rule=Host(`attu.${DOMAIN}`)"
+      - "traefik.http.routers.attu.priority=4000"
+      - "traefik.http.routers.attu.entrypoints=websecure"
+      - "traefik.http.routers.attu.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.attu.middlewares=security-headers@file"
+      - "traefik.http.services.attu.loadbalancer.server.port=3000"
   # </editor-fold>
 
   # === Postgres Stack ===

@@ -46,16 +46,17 @@ The platform runs multiple services simultaneously (databases, vector stores, LL
 
 ### DNS configuration
 
-For production deployments, configure DNS records for your domain. The platform requires **six subdomains** pointing to your server's public IP:
+For production deployments, configure DNS records for your domain. The platform requires **seven subdomains** pointing to your server's public IP:
 
 - `aihub.example.com` - main web interface
 - `openwebui.aihub.example.com` - chat UI
 - `dagster.aihub.example.com` - pipeline orchestration
 - `datalake.aihub.example.com` - data lake console
 - `datalake-api.aihub.example.com` - S3 API
+- `attu.aihub.example.com` - Milvus vector database UI
 - `traefik.aihub.example.com` - reverse proxy dashboard
 
-Replace `aihub.example.com` with your actual domain. Create A records or CNAMEs for all six subdomains pointing to your server's IP address.
+Replace `aihub.example.com` with your actual domain. Create A records or CNAMEs for all seven subdomains pointing to your server's IP address.
 
 ::: tip Local Development
 For local testing, use `127.0.0.1.nip.io` as the domain. The `.nip.io` service automatically resolves to localhost without requiring DNS configuration.
