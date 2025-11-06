@@ -828,6 +828,11 @@ services:
       AIHUB_FRONTEND_ORIGIN: "${DOMAIN}"
       LITE_LLM_PROXY_BASE_URL: "http://litellm:4000/v1"
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+      AUTH_OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
+      SUPERUSER_NAME: ${SUPERUSER_NAME}
+      SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
+      SUPERUSER_OID: ${SUPERUSER_OID}
+      SUPERUSER_TOKEN: ${SUPERUSER_TOKEN}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
     logging: *default-logging
