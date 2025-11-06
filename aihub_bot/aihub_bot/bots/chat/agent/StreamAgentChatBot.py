@@ -1,7 +1,7 @@
 from typing import override
 
-from botbuilder.core import TurnContext
-from botframework.connector import Channels
+from microsoft_agents.activity import Channels
+from microsoft_agents.hosting.core import TurnContext
 
 from aihub_bot.bots.chat.agent.AgentChatBot import AgentChatBot
 

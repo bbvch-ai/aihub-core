@@ -6,9 +6,8 @@ from collections.abc import AsyncGenerator
 from typing import Any
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from botbuilder.core import TurnContext
-from botbuilder.schema import Activity, ActivityTypes, Entity, ErrorResponseException
-from botbuilder.schema.teams import TeamsChannelData
+from microsoft_agents.activity import Activity, ActivityTypes, Entity
+from microsoft_agents.hosting.core import TurnContext
 
 from aihub_bot.bots.chat.ContentExtractor import ContentExtractor
 from aihub_bot.persistence.entities.ConversationEntity import Content, ConversationEntity, Message
@@ -64,38 +63,24 @@ class CompletionHandler:
 
     @staticmethod
     def handle_teams_message(turn_context: TurnContext) -> TurnContext | None:
-        is_channel_message: bool = CompletionHandler._is_teams_channel_message(turn_context)
-        is_mentioned: bool = CompletionHandler._is_bot_mentioned(turn_context)
-        is_bot_thread: bool = CompletionHandler._is_mentioned_in_conversation(turn_context)
-
-        if is_channel_message and is_mentioned:
-            CompletionHandler._mark_conversation_as_mentioned(turn_context)
-        if is_channel_message and not is_mentioned and not is_bot_thread:
-            return None
-
-        return turn_context
+        is_direct_message: bool = CompletionHandler._is_teams_direct_message(turn_context)
+        return CompletionHandler._handle_message(turn_context, is_direct_message)
 
     @staticmethod
-    def _is_teams_channel_message(turn_context: TurnContext) -> bool:
-        channel_data_dict: dict[str, Any] = turn_context.activity.channel_data
-        channel_data: TeamsChannelData = TeamsChannelData(**channel_data_dict)
-        return channel_data.channel is not None
+    def _is_teams_direct_message(turn_context: TurnContext) -> bool:
+        channel_data: dict[str, Any] = turn_context.activity.channel_data
+        # Teams channel messages have a 'channel' property in channel_data
+        return channel_data is None or channel_data.get("channel") is None
 
     @staticmethod
     def handle_slack_message(turn_context: TurnContext) -> TurnContext | None:
-        is_direct_message = CompletionHandler._is_slack_direct_message(turn_context)
         is_channel_message = CompletionHandler._is_slack_channel_message(turn_context)
-        is_mentioned = CompletionHandler._is_bot_mentioned(turn_context)
-        is_bot_thread = CompletionHandler._is_mentioned_in_conversation(turn_context)
 
         if is_channel_message:
             turn_context = CompletionHandler._update_slack_turn_context(turn_context)
-            if is_mentioned:
-                CompletionHandler._mark_conversation_as_mentioned(turn_context)
-        if not is_direct_message and not is_mentioned and not is_bot_thread:
-            return None
 
-        return turn_context
+        is_direct_message = CompletionHandler._is_slack_direct_message(turn_context)
+        return CompletionHandler._handle_message(turn_context, is_direct_message)
 
     @staticmethod
     def _is_slack_channel_message(turn_context: TurnContext) -> bool:
@@ -108,6 +93,16 @@ class CompletionHandler:
         conversation_id: str = turn_context.activity.conversation.id
         dm_id_regex = re.compile(r"^B[0-9A-Z]+:T[0-9A-Z]+:D[0-9A-Z]+:\d+[.]\d+$")
         return dm_id_regex.match(conversation_id) is not None
+
+    @staticmethod
+    def _handle_message(turn_context: TurnContext, is_direct_message: bool) -> TurnContext | None:
+        is_mentioned: bool = CompletionHandler._is_bot_mentioned(turn_context)
+        is_bot_thread: bool = CompletionHandler._is_mentioned_in_conversation(turn_context)
+        if not is_direct_message and is_mentioned:
+            CompletionHandler._mark_conversation_as_mentioned(turn_context)
+        if not is_direct_message and not is_mentioned and not is_bot_thread:
+            return None
+        return turn_context
 
     @staticmethod
     def _is_bot_mentioned(turn_context: TurnContext) -> bool:
@@ -129,27 +124,35 @@ class CompletionHandler:
         2. The Bot should have all channel messages to understand the conversation context.
         """
         channel_conversation_id: str = turn_context.activity.conversation.id
+        bot_id: str = turn_context.activity.recipient.id
         channel_data = turn_context.activity.channel_data
         ts: str = channel_data["SlackMessage"]["event"]["ts"]
         turn_context.activity.conversation.id = channel_conversation_id + f":{ts}"
-        parent_messages: list[Message] = CompletionHandler.get_messages_by_conversation_id(channel_conversation_id)
+        parent_messages: list[Message] = CompletionHandler.get_messages_by_conversation_id(
+            channel_conversation_id, bot_id
+        )
         CompletionHandler._add_messages_to_conversation(turn_context, parent_messages)
         return turn_context
 
     @staticmethod
     def _mark_conversation_as_mentioned(turn_context: TurnContext):
         conversation_id: str = turn_context.activity.conversation.id
-        ConversationEntity.set_conversation_is_mentioned(conversation_id=conversation_id, is_mentioned=True)
+        bot_id: str = turn_context.activity.recipient.id
+        ConversationEntity.set_conversation_is_mentioned(
+            conversation_id=conversation_id, bot_id=bot_id, is_mentioned=True
+        )
 
     @staticmethod
     def _is_mentioned_in_conversation(turn_context: TurnContext) -> bool:
         conversation_id: str = turn_context.activity.conversation.id
-        return ConversationEntity.get_conversation_is_mentioned(conversation_id)
+        bot_id: str = turn_context.activity.recipient.id
+        return ConversationEntity.get_conversation_is_mentioned(conversation_id, bot_id)
 
     @staticmethod
     def delete_conversation_if_exists(turn_context: TurnContext):
         conversation_id: str = turn_context.activity.conversation.id
-        ConversationEntity.delete_conversation_if_exists(conversation_id)
+        bot_id: str = turn_context.activity.recipient.id
+        ConversationEntity.delete_conversation_if_exists(conversation_id, bot_id)
 
     @staticmethod
     def add_user_message_to_conversation(path: str, turn_context: TurnContext) -> ConversationEntity:
@@ -183,7 +186,9 @@ class CompletionHandler:
         """
         bot_message = Message(
             user_id=turn_context.activity.recipient.id,
-            content=ContentExtractor.extract_content_from_activity(path=path, activity=Activity(text=message)),
+            content=ContentExtractor.extract_content_from_activity(
+                path=path, activity=Activity(text=message, type=ActivityTypes.message)
+            ),
             role=turn_context.activity.recipient.role or "bot",
             name=turn_context.activity.recipient.name,
         )
@@ -203,15 +208,18 @@ class CompletionHandler:
         using from the Bot Framework.
         """
         conversation_id = turn_context.activity.conversation.id
+        bot_id = turn_context.activity.recipient.id
         messages = messages if isinstance(messages, list) else [messages]
         return ConversationEntity.add_messages_to_conversation(
             conversation_id=conversation_id,
+            bot_id=bot_id,
             messages=messages,
         )
 
     @staticmethod
     def get_messages_by_conversation_id(
         conversation_id: str,
+        bot_id: str,
     ) -> list[Message]:
         """
         ### What
@@ -220,7 +228,7 @@ class CompletionHandler:
         ### Why
         - To add the messages to the context of the conversation.
         """
-        return list(ConversationEntity.get_messages_by_conversation_id(conversation_id) or [])
+        return list(ConversationEntity.get_messages_by_conversation_id(conversation_id, bot_id) or [])
 
     @staticmethod
     async def send_response_stream(
@@ -253,7 +261,8 @@ class CompletionHandler:
             try:
                 await _turn_context.update_activity(_activity)
                 return _activity, ""
-            except ErrorResponseException as e:
+            except Exception as e:
+                # Handle message too long error (e.g., Slack's msg_too_long error)
                 if "msg_too_long" in str(e):
                     new_text = _buffer.replace(_sent_text, "", 1)
                     _response = await _turn_context.send_activity(new_text)
