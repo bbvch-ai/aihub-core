@@ -425,7 +425,7 @@ services:
   # === OpenWebUI Stack ===
   # <editor-fold desc="OpenWebUI Stack">
   open-webui:
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.13
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.28
     container_name: open-webui
     <<: *restart-policy
     depends_on:
