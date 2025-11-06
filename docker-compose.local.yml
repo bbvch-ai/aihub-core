@@ -1015,11 +1015,11 @@ services:
       S3_REGION: "local"
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      COSMOS_DOCSTORE_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017"
       VECTOR_STORE_URI: http://milvus-standalone:19530
       DOCLING_API_ENDPOINT: http://docling:5001/v1/convert/source
       AIHUB_API_VERSION: ${AIHUB_API_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${AIHUB_FRONTEND_ORIGIN}
+      MONGO_CONNECTION_STRING: ${MONGO_CONNECTION_STRING}
   # </editor-fold>
 
   # <editor-fold desc="Common Pipelines">
