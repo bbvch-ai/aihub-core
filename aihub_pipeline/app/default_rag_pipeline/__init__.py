@@ -2,8 +2,8 @@ from aihub_pipeline.util.definitions_util import default_definitions
 
 defs = default_definitions(
     datalake_container_name="defaultknowledge",
-    embedding_model_name="local/qwen-embedding",
-    llm_model_name="local/gemma-3-multimodal-small",
+    embedding_model_name="embedding/small",
+    llm_model_name="text-generation/mini",
     figures_directory_name="__figures__",
     with_summary_nodes=True,
     observe_job_hour=0,

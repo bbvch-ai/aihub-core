@@ -15,7 +15,7 @@ def delete_figures_for_many_ref_doc(
 ) -> list[RefDocDocument]:
     """Deletes figures associated with each RefDocDocument from the data lake."""
     for ref_doc in ref_docs:
-        figures_folder = create_figures_folder_name(ref_doc.uri, data_lake_resource.figures_directory_name)
+        figures_folder = create_figures_folder_name(ref_doc.uri)
         if data_lake_client.directory_exists(figures_folder):
             paths = data_lake_client.list_directory_contents(figures_folder)
             for path in paths:

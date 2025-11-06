@@ -5,9 +5,9 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import ExceptionEvent
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
-from botbuilder.core import TurnContext
 from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage, ContentBlock, ImageBlock, MessageRole, TextBlock
+from microsoft_agents.hosting.core import TurnContext
 from nats.aio.client import Client as NATS
 
 from aihub_bot.bots.chat.CompletionHandler import CompletionHandler
@@ -125,7 +125,8 @@ class AgentCompletionHandler(CompletionHandler):
         - The context is needed to generate the completion.
         """
         persisted_messages: list[Message] = CompletionHandler.get_messages_by_conversation_id(
-            conversation_id=turn_context.activity.conversation.id
+            conversation_id=turn_context.activity.conversation.id,
+            bot_id=turn_context.activity.recipient.id,
         )
         system_message: Message = CompletionHandler.get_system_message(
             turn_context=turn_context,

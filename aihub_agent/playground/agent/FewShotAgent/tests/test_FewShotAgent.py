@@ -42,7 +42,7 @@ def self_hosted_llm_config():
     """
     Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
     """
-    return LLMConfig(model_name="local/qwen-2.5-multimodal-small")
+    return LLMConfig(model_name="text-generation/mini")
 
 
 @pytest.fixture
@@ -50,7 +50,7 @@ def azure_llm_config():
     """
     Return a RAGAgentConfig that uses Azure OpenAI for both the LLM and embeddings.
     """
-    return LLMConfig(model_name="azure/gpt-4o-mini")
+    return LLMConfig(model_name="text-generation/mini")
 
 
 @given("I have an empty agent config")

@@ -4,10 +4,13 @@ export const useUpdateNamespace = defineMutation(() => {
   const queryCache = useQueryCache()
 
   return useMutation({
-    mutation: ({ id, payload }: { id: string, payload: Ref<UpdateNamespaceRequest> }) =>
+    mutation: ({ database, namespace, payload }: { database: string, namespace: string, payload: Ref<UpdateNamespaceRequest> }) =>
       updateNamespace({
         composable: '$fetch',
-        path: { namespace_id: id },
+        path: {
+          database,
+          namespace,
+        },
         body: payload,
       }),
     onSuccess: () => {

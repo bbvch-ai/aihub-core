@@ -7,6 +7,8 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
 
+from aihub_bot.routes.agent.AgentChatController import AgentChatController
+from aihub_bot.routes.bot_in_the_loop.BotInTheLoopController import BotInTheLoopController
 from aihub_bot.routes.openai.OpenaiChatController import OpenaiChatController
 from aihub_bot.runners.BotRunner import BotRunner
 
@@ -23,6 +25,8 @@ auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmen
 runner.mount(
     HealthController(auth=auth).get_health(),
     OpenaiChatController(auth=auth).json_chat_completion().stream_chat_completion(),
+    AgentChatController(auth=auth).completions_json().completions_stream(),
+    BotInTheLoopController(auth=auth).bot_in_the_loop_response(),
 )
 
 app = runner.create_app()

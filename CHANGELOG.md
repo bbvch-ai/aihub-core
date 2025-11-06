@@ -5,6 +5,263 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.250.0] - 2025-11-06 - Next-Gen Bot Framework: Microsoft Agents SDK Integration and Multi-Bot Capabilities
+
+### Added
+
+- ✨ **New Bot-in-the-Loop Start Event:** Introduced `BotInTheLoopAgentStartEvent` to provide a more flexible and
+  validated way to initiate Bot-in-the-Loop workflows, supporting explicit Teams or Slack configurations from the agent.
+- ⚙️ **Structured Slack Configuration:** Added `SlackConfig` within `BotInTheLoopRequestEvent` to enable robust and
+  explicit configuration details when initiating Slack interactions.
+- 🧪 **Comprehensive Testing Utilities:** Introduced new testing fixtures for mocking MSAL authentication and `aiohttp`
+  requests, significantly enhancing test isolation and reliability for `aihub_bot` components.
+
+### Changed
+
+- 🚀 **Upgraded Bot Framework SDK:** Migrated `aihub_bot` components from the legacy `botbuilder` library to the new
+  `microsoft-agents` SDK. This fundamental upgrade impacts bot hosting, authentication, activity handling, and overall
+  integration with Microsoft Bot Framework channels.
+- 🤝 **Enhanced Multi-Bot Conversation Management:** Conversation tracking and persistence (in `ConversationEntity` and
+  `ConversationTracker`) now explicitly incorporate `bot_id`. This ensures robust data isolation and prevents collisions
+  when multiple bot instances operate across various channels or environments.
+- 👤 **Improved Teams User Identity Handling:** Enhanced the process of extracting user identity for Teams interactions,
+  leading to more accurate retrieval of `aad_object_id`, email, and roles.
+- 🤖 **Refined Bot-in-the-Loop Logic:** Updated the core logic for the `BotInTheLoopAgent` and its handler to seamlessly
+  support multi-channel configurations (Teams and Slack) and streamline the sending of proactive messages using the new
+  SDK.
+- 📄 **Documentation Updates:** Minor updates to documentation `source_sha` values.
+
+### Fixed
+
+- 🐛 **NATS BaseEvent Serialization:** Corrected an issue in `BaseEvent` serialization to ensure all model fields are
+  properly dumped during the process.
+
+### Refactor
+
+- 🧹 **Streamlined Bot Activity Models:** Removed the custom `ActivityModel` as the new `microsoft-agents` SDK provides
+  direct, improved activity handling, simplifying controller definitions.
+- 🔄 **Centralized Bot Message Handling:** Refactored common bot message processing logic into a shared `_handle_message`
+  method, simplifying the distinction between direct and channel interactions for Teams and Slack.
+
+---
+
+## [v0.249.4] - 2025-11-06 - Refined Document Metadata for Clearer Source Tracking
+
+### Added
+
+- ✨ **Introduced `source_origin` field:** Documents and nodes now include a new `source_origin` field to explicitly
+  store the original external URI (e.g., SharePoint URL) distinct from the data lake URI.
+
+### Changed
+
+- 🔄 **Clarified `source` field definition:** The `source` metadata field for ingested documents and nodes is now
+  explicitly defined as the data lake URI.
+- 🚀 **Improved document ingestion:** Pipelines for ingesting documents (e.g., from SharePoint, data lake) have been
+  updated to correctly capture and differentiate between the data lake URI (now `source`) and the new `source_origin`.
+
+### Removed
+
+- 🗑️ **Deprecated `DATA_LAKE_URI` metadata field:** The `DATA_LAKE_URI` field has been removed to streamline and
+  simplify document metadata, with its functionality now handled by the `source` field.
+
+---
+
+## [v0.249.3] - 2025-11-05 - Streamlined LiteLLM API Parameter Handling
+
+### Changed
+
+- 🔄 **Improved LiteLLM Model Parameter Handling:** Configured various LiteLLM models (e.g., `text-generation/mini`,
+  `text-generation/small`, `text-generation/large`) across all environments (`dev`, `latest`, `local`, `nightly`) to
+  automatically **drop extraneous parameters** from API requests, enhancing compatibility and robustness with underlying
+  services.
+
+---
+
+## [v0.249.2] - 2025-11-05 - Enhanced Model Agnosticism and New Azure GPT-5 Series Integration
+
+### Added
+
+- ✨ **New Azure OpenAI GPT-5 Nano Integration**: Introduced direct support for Azure OpenAI GPT-5 Nano via the
+  `text-generation/nano` alias, including a dedicated environment variable (`AZURE_OPENAI_KEY_NANO`) and specific
+  default temperature settings for optimal performance.
+- 🚀 **New Azure OpenAI GPT-5 Series Integration**: Expanded LLM capabilities with support for Azure OpenAI GPT-5 via the
+  `text-generation/large` alias, providing access to more powerful generative models.
+
+### Changed
+
+- ⚙️ **Updated LiteLLM Proxy**: The internal LiteLLM dependency has been updated to `v1.77.7-stable`, bringing general
+  improvements and stability fixes to the model proxy layer.
+- 🤖 **Adjusted Default Fallback and Safety LLM Configuration**: The system's default fallback LLM and the prompt
+  injection detection LLM now leverage the newly introduced `text-generation/nano` model alias.
+
+### Refactor
+
+- 🧹 **Standardized Model Aliases Across the Platform**: Implemented a consistent, provider-agnostic model naming scheme,
+  replacing previous explicit model names (e.g., `azure/gpt-4o-mini`, `local/qwen-embedding`, `local/reranker`) with
+  simplified aliases like `text-generation/mini`, `embedding/small`, `reranker`, `transcription`, `speech`, and
+  `image-generation`. This refactoring significantly simplifies model configuration and enhances platform flexibility.
+- 🔄 **Unified Model Configuration**: All agent definitions, API endpoints, infrastructure-as-code (IaC), and data
+  pipeline configurations have been updated to utilize the new standardized model aliases, ensuring consistency and ease
+  of maintenance.
+- 📈 **Enhanced LLM Parameter Configuration**: Introduced capabilities for defining default parameters within
+  `LLMConfig`, allowing for fine-grained control over model behavior for specific aliases, such as setting a default
+  temperature for `text-generation/nano`.
+
+---
+
+## [v0.249.1] - 2025-11-04 - Enhanced Authentication Service Robustness
+
+### Fixed
+
+- 🐛 **Resolved intermittent connectivity issues** with external authentication and identity services (JWKS and Azure
+  Graph API) by extending connection timeouts to better accommodate IPv6 fallback mechanisms.
+
+---
+
+## [v0.249.0] - 2025-11-04 - Streamlined Knowledge Management and Enhanced Security
+
+### Added
+
+- ✨ **Introduced Document Upload Endpoints:** Dedicated API endpoints are now available for initiating and validating
+  document uploads directly within specific knowledge base databases and namespaces.
+- 📄 **New Endpoint for Supported File Types:** A new API endpoint has been added to retrieve a list of supported file
+  types for client-side validation of knowledge base document uploads.
+- 🔑 **Granular Permissions for Knowledge Base:** Implemented fine-grained access control for knowledge base resources,
+  allowing permissions to be defined per database and namespace for enhanced security.
+- 🆔 **Added `database_id` to Namespace DTO:** The Namespace Data Transfer Object now includes a `database_id` to provide
+  clearer data relationships and context.
+
+### Changed
+
+- 🔄 **Updated Knowledge Base API Routes:** Namespace creation and update endpoints, along with document retrieval, now
+  utilize database and namespace names directly as path parameters for improved clarity and consistency.
+- 🛠️ **Refined Database Listing for Users:** The `/databases` endpoint now dynamically filters displayed databases and
+  namespaces based on the requesting user's granular access permissions, ensuring only accessible resources are shown.
+- ⚙️ **Configured CORS for SeaweedFS:** The SeaweedFS S3 gateway now automatically configures Cross-Origin Resource
+  Sharing (CORS) rules during initialization, improving compatibility for direct client-side file uploads.
+- 🌐 **Web Client Adaptation:** The web application's document management components have been updated to seamlessly
+  integrate with the new knowledge base API structure, including the revised document upload and namespace management
+  flows.
+
+### Removed
+
+- 🗑️ **Deprecated Generic File Upload Endpoints:** Removed the standalone, generic file upload and validation endpoints
+  from the `/files` API, centralizing all document-related uploads under the Knowledge Base domain for better
+  organization.
+
+### Refactor
+
+- 🧹 **Centralized Document Upload Logic:** Consolidated all document upload and validation business logic and associated
+  Data Transfer Objects (DTOs) from the generic `FileService` to the specialized `KnowledgeService`, enhancing
+  modularity and maintainability.
+- ♻️ **Renamed File Upload DTOs:** Data Transfer Objects related to file uploads (e.g., `FileUploadRequest` to
+  `DocumentUploadRequest`) were renamed to better reflect their new purpose and scope within the Knowledge Base context.
+
+---
+
+## [v0.248.1] - 2025-11-03 - Enhanced Document Processing and Data Lake Organization
+
+### Changed
+
+- 🖼️ **Knowledge Interface Clarity**: The knowledge interface now automatically **excludes generated figure files**
+  (artifacts from document processing) from display, providing a cleaner and more focused view of core documents.
+
+### Refactor
+
+- 🧹 **Centralized Figure Directory Management**: The **`__figures__` directory name** used for storing document figures
+  has been centralized as a global constant, significantly improving consistency and maintainability across the system.
+- 🔄 **Simplified Data Lake Operations**: Streamlined data lake client methods and operations by **removing the explicit
+  `figures_directory_name` parameter**, as the directory name is now consistently managed internally.
+- ⚙️ **Optimized Document Loaders**: Updated `DoclingLoader` and `DocumentIntelligenceLoader` to utilize the
+  **centralized figure directory constant**, simplifying their API and ensuring consistent figure path generation.
+- 🛠️ **Refined Resource and Pipeline Definitions**: Cleaned up various resource and pipeline definitions, including
+  `DataLakeResource` and associated factories, by **removing redundant `figures_directory_name` parameters**.
+
+### Removed
+
+- 🗑️ **SonarLint Configuration**: Deleted an obsolete SonarLint project configuration file from the codebase.
+
+---
+
+## [v0.248.0] - 2025-11-03 - Smarter Document Understanding: Advanced Table Processing
+
+### Added
+
+- ✨ **Intelligent Table Splitting**: Introduced the capability to automatically split large tables into smaller,
+  manageable chunks, ensuring better retrieval and processing of tabular data while respecting token limits.
+- 🦾 **LLM-Powered Table Header Detection**: Implemented LLM-driven analysis to accurately identify multi-row table
+  headers, improving the precision of table parsing and preserving hierarchical structures during splitting.
+- 🧱 **New Dependency `lxml`**: Added `lxml` to enhance HTML parsing and manipulation capabilities, foundational for
+  advanced table processing.
+
+### Changed
+
+- 🔄 **Advanced Table Conversion in DoclingLoader**: Modified `DoclingLoader` to now convert Markdown tables into
+  structured HTML tables, improving their representation and downstream processing.
+- ⚡️ **Optimized Document Intelligence Table Handling**: Streamlined table processing in `DocumentIntelligenceLoader` by
+  removing redundant table reformatting, leveraging the new unified table parsing logic.
+- 📄 **Improved Markdown Table Parsing**: Enhanced `MarkdownStructuralNodeParser` to intelligently process and chunk
+  tables, ensuring headers are preserved and content fits within token limits for improved Retrieval-Augmented
+  Generation (RAG) performance.
+- 🚀 **Increased Agent Test Timeout**: Extended the `delay_before_stop` parameter in Retrieval Agent tests to provide
+  more time for operations to complete, improving test stability.
+
+### Removed
+
+- 🗑️ **Deprecated `NODE_CONTENT_TYPE_TABLE`**: Removed the `NODE_CONTENT_TYPE_TABLE` metadata tag, as table content is
+  now directly represented within HTML structures, simplifying content type management.
+- 🧹 **Eliminated Redundant Table Reformatting**: The dedicated `reformat_tables` function in
+  `DocumentIntelligenceLoader` has been removed, as its functionality is now integrated and optimized within the core
+  parsing mechanisms.
+
+---
+
+## [v0.247.7] - 2025-11-03 - Enhanced RAG with Hybrid Search and Model Updates
+
+### Added
+
+- 🚀 **Introduced Hybrid Search Capability:** Enabled **Milvus vector stores** to perform hybrid search queries by
+  integrating sparse embeddings and BM25 functionality, improving retrieval relevance.
+
+### Changed
+
+- 🔄 **Default Query Mode to Hybrid:** Updated the default query mode for **RAG and Retrieval agents** to `HYBRID`,
+  leveraging the newly added hybrid search capabilities in Milvus for more comprehensive retrieval.
+- ⬆️ **Updated Default LLM Model:** Switched the default Large Language Model in **RAG pipelines** from
+  `gemma-3-multimodal-small` to `qwen-2.5-multimodal-small`, enhancing model performance and capabilities.
+
+---
+
+## [v0.247.6] - 2025-10-31 - Empowering Contributors with New Guidelines
+
+### Added
+
+- ✨ **Added a comprehensive `CONTRIBUTING.md` guide:** This new document provides clear instructions and best practices
+  for anyone looking to contribute to the Swiss AI-Hub project, covering everything from code contributions to
+  documentation, community engagement, and advocacy, fostering a more collaborative environment.
+
+---
+
+## [v0.247.5] - 2025-10-31 - Enhanced Security Measures
+
+### Security
+
+- 🔑 **Established comprehensive security policy:** Introduced a new `SECURITY.md` file, providing clear guidelines on
+  how to report security vulnerabilities, outlining supported versions, and detailing the coordinated disclosure
+  process.
+
+---
+
+## [v0.247.4] - 2025-10-31 - Community Guidelines Established
+
+### Added
+
+- 📄 **Introduced Code of Conduct**: Adopted the Contributor Covenant 3.0 to foster a welcoming, safe, and equitable
+  community by outlining expected behaviors, restricted actions, and a clear process for reporting and addressing
+  issues.
+
+---
+
 ## [v0.247.3] - 2025-10-31 - Empowering Bots with Teams Integration and Enhanced Core Functionality
 
 ### Added
