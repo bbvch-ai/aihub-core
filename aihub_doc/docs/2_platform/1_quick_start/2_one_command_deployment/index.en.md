@@ -74,16 +74,16 @@ ENV="prod"                            # Options: dev, test, prod
 
 # General Authentication Settings
 AUTH_ENABLE_API_ACCESS="True"
-AUTH_OPEN_WEBUI_SIGNING_SECRET="REPLACE_WITH_RANDOM_STRING_1"
+AUTH_OPEN_WEBUI_SIGNING_SECRET="REPLACE_WITH_RANDOM_STRING"
 AUTH_IDENTITY_PROVIDER="azure"
 
 # OAuth2 Configuration (from Prerequisites setup)
 OAUTH_CLIENT_ID="REPLACE_WITH_YOUR_CLIENT_ID"
-OAUTH_CLIENT_SECRET="REPLACE_WITH_YOUR_CLIENT_SECRET"  
+OAUTH_CLIENT_SECRET="REPLACE_WITH_YOUR_CLIENT_SECRET"
 OAUTH_AUTHORITY_URL="https://login.microsoftonline.com/REPLACE_WITH_YOUR_TENANT_ID"
 OAUTH_PROVIDER_NAME="azure"
 OAUTH_TENANT_ID="REPLACE_WITH_YOUR_TENANT_ID"
-OAUTH_COOKIE_SECRET="REPLACE_WITH_RANDOM_STRING_2"
+OAUTH_COOKIE_SECRET="REPLACE_WITH_16_HEX_CHARS"
 
 # =============================================================================
 # PLATFORM ACCESS CONFIGURATION
@@ -93,9 +93,9 @@ OAUTH_COOKIE_SECRET="REPLACE_WITH_RANDOM_STRING_2"
 SUPERUSER_ENABLED="True"
 SUPERUSER_NAME="AI-Hub Administrator"
 SUPERUSER_EMAIL="admin@your-company.com"              # Replace with admin email
-SUPERUSER_OID="REPLACE_WITH_RANDOM_STRING_3"
+SUPERUSER_OID="REPLACE_WITH_RANDOM_STRING"
 SUPERUSER_ROLE="AIHubSuperuser"
-SUPERUSER_TOKEN="REPLACE_WITH_RANDOM_STRING_4"
+SUPERUSER_TOKEN="REPLACE_WITH_RANDOM_STRING"
 
 # Platform Settings
 AIHUB_API_VERSION="dev"
@@ -119,10 +119,10 @@ GEMINI_API_KEY="REPLACE_WITH_GEMINI_KEY"
 # =============================================================================
 
 LITELLM_UI_USERNAME="admin"
-LITELLM_UI_PASSWORD="REPLACE_WITH_RANDOM_STRING_5"
-LITELLM_MASTER_KEY="REPLACE_WITH_RANDOM_STRING_6"
+LITELLM_UI_PASSWORD="REPLACE_WITH_RANDOM_STRING"
+LITELLM_MASTER_KEY="REPLACE_WITH_RANDOM_STRING"
 LITE_LLM_PROXY_BASE_URL="http://litellm:4000"
-LITE_LLM_PROXY_API_KEY="REPLACE_WITH_RANDOM_STRING_7"
+LITE_LLM_PROXY_API_KEY="REPLACE_WITH_RANDOM_STRING"
 
 # =============================================================================
 # DATABASE CONFIGURATION
@@ -130,11 +130,11 @@ LITE_LLM_PROXY_API_KEY="REPLACE_WITH_RANDOM_STRING_7"
 
 # PostgreSQL
 POSTGRES_USER="admin"
-POSTGRES_PASSWORD="REPLACE_WITH_RANDOM_STRING_8"
+POSTGRES_PASSWORD="REPLACE_WITH_RANDOM_STRING"
 
 # FerretDB (MongoDB-compatible)
 MONGO_USERNAME="admin"
-MONGO_PASSWORD="REPLACE_WITH_RANDOM_STRING_9"
+MONGO_PASSWORD="REPLACE_WITH_RANDOM_STRING"
 MONGO_CONNECTION_STRING="mongodb://admin:REPLACE_WITH_SAME_MONGO_PASSWORD@ferretdb:27017/"
 
 # Valkey (Redis-compatible)
@@ -146,7 +146,7 @@ REDIS_URL="redis://localhost:6379"
 
 # SeaweedFS S3 Storage
 SEAWEEDFS_ROOT_USER="admin"
-SEAWEEDFS_ROOT_PASSWORD="REPLACE_WITH_RANDOM_STRING_10"
+SEAWEEDFS_ROOT_PASSWORD="REPLACE_WITH_RANDOM_STRING"
 S3_STORAGE_ENDPOINT="http://seaweedfs:8333"
 S3_STORAGE_ACCESS_KEY="admin"                         # Must match SEAWEEDFS_ROOT_USER
 S3_STORAGE_SECRET_KEY="REPLACE_WITH_SAME_SEAWEEDFS_PASSWORD"
@@ -157,11 +157,11 @@ S3_STORAGE_SECRET_KEY="REPLACE_WITH_SAME_SEAWEEDFS_PASSWORD"
 
 DOCLING_API_ENDPOINT="http://docling:5001"
 DOCLING_API_TIMEOUT="600"
-PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING_11"
+PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING"
 PHOENIX_ENDPOINT="http://phoenix:6006"
 NATS_ENDPOINT="nats://localhost:4222"
 DAGSTER_HOME="~/.dagster_home"
-JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING_12"
+JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING"
 MILVUS_URL="http://localhost"
 MILVUS_DIMENSION="3072"
 
@@ -190,7 +190,8 @@ MILVUS_DIMENSION="3072"
 
 3. **Random Strings** (generate unique values):
 
-   - Replace all `REPLACE_WITH_RANDOM_STRING_X` with unique random strings
+   - Replace all `REPLACE_WITH_RANDOM_STRING` with unique random strings (use `openssl rand -hex 32`)
+   - Replace `REPLACE_WITH_16_HEX_CHARS` with a 16-byte hex string (use `openssl rand -hex 16`)
    - Use different values for each placeholder
    - Minimum 32 characters recommended for security
 
@@ -200,13 +201,17 @@ MILVUS_DIMENSION="3072"
 - For production: Change to your actual domain (e.g., `https://ai-hub.your-company.com`)
 
 ::: tip Generate Random Strings
-Use this command to generate secure random strings:
+Use these commands to generate secure random strings:
 
 ```bash
+# For most secrets (64 characters)
 openssl rand -hex 32
+
+# For OAUTH_COOKIE_SECRET (32 characters)
+openssl rand -hex 16
 ```
 
-Run it multiple times to get different values for each placeholder.
+Run the appropriate command for each placeholder.
 :::
 
 ### Environment Validation
