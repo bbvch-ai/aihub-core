@@ -6,6 +6,7 @@ from llama_index.vector_stores.milvus.utils import BM25BuiltInFunction
 from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID
 
 
+@cache
 def create_milvus_vector_store(
     uri: str,
     collection_name: str,
@@ -44,8 +45,6 @@ def create_milvus_vector_store(
         client.create_collection(
             collection_name=collection_name, schema=schema, index_params=index_params, num_partitions=num_partitions
         )
-
-        client.load_collection(collection_name=collection_name)
 
     return MilvusVectorStore(
         uri=uri,
