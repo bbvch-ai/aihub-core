@@ -1069,8 +1069,6 @@ services:
       - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:${ADMIN_PASSWORD_HASH}"
       - "traefik.http.routers.traefik.middlewares=traefik-auth"
   # </editor-fold>
-https://github:
-  com/orgs/bbvch-ai/projects/16?pane=issue&itemId=133454971&issue=bbvch-ai%7Caihub-bmd%7C7:
 
 volumes:
   api-venv:
