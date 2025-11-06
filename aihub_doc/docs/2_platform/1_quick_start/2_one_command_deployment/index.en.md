@@ -162,7 +162,6 @@ PHOENIX_ENDPOINT="http://phoenix:6006"
 NATS_ENDPOINT="nats://localhost:4222"
 DAGSTER_HOME="~/.dagster_home"
 JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING"
-MILVUS_URL="http://localhost"
 MILVUS_DIMENSION="3072"
 
 # =============================================================================
