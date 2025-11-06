@@ -20,6 +20,7 @@ DOCUMENT_TITLE: str = "document_title"
 # Document level - Metadata
 NAMESPACE: str = "namespace"
 SOURCE: str = "source"
+SOURCE_ORIGIN: str = "source_origin"
 HASH: str = "content_hash"
 TYPE: str = "type"
 LANGUAGE: str = "language"
@@ -28,7 +29,6 @@ NUMBER_OF_PAGES: str = "number_of_pages"
 CREATED_AT: str = "created_at"
 UPDATED_AT: str = "updated_at"
 INSERTED_AT: str = "inserted_at"
-DATA_LAKE_URI: str = "data_lake_uri"
 
 # Node level - Metadata
 INDEX = "index"
@@ -64,6 +64,7 @@ NODE_LANGUAGE_ITALIAN: LanguageValue = "it"
 class NodeMetadata(TypedDict, total=False):
     namespace: str
     source: str
+    source_origin: str | None
     document_title: str
     type: NodeTypeValue
     content_type: NodeContentType
@@ -89,6 +90,7 @@ class NodeMetadata(TypedDict, total=False):
 DEFAULT_METADATA: dict[str, Any] = {
     NAMESPACE: "",
     SOURCE: "",
+    SOURCE_ORIGIN: None,
     DOCUMENT_TITLE: "",
     TYPE: NODE_TYPE_CONTENT,
     NODE_CONTENT_TYPE: NODE_CONTENT_TYPE_TEXT,
@@ -117,6 +119,7 @@ DEFAULT_METADATA: dict[str, Any] = {
 DEFAULT_METADATA_FIELDS: dict[str, tuple] = {
     NAMESPACE: (NAMESPACE, MetadataIndexFieldType.STRING),
     SOURCE: (SOURCE, MetadataIndexFieldType.STRING),
+    SOURCE_ORIGIN: (SOURCE_ORIGIN, MetadataIndexFieldType.STRING),
     DOCUMENT_TITLE: (DOCUMENT_TITLE, MetadataIndexFieldType.STRING),
     TYPE: (TYPE, MetadataIndexFieldType.STRING),
     NODE_CONTENT_TYPE: (NODE_CONTENT_TYPE, MetadataIndexFieldType.STRING),

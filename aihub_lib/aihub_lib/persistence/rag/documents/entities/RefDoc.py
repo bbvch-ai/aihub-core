@@ -16,6 +16,7 @@ from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import t
 
 class Metadata(DynamicEmbeddedDocument):
     source = StringField(required=True)
+    source_origin = StringField(required=False)
     namespace = StringField(required=True)
     version = StringField(required=True)
 
