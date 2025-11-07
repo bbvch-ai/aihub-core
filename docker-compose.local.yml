@@ -769,9 +769,7 @@ services:
       - "traefik.http.services.dagster.loadbalancer.server.port=4180"
 
   dagster-webserver:
-    build:
-      context: .
-      dockerfile: ./aihub_pipeline/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/dagster:latest
     container_name: dagster-webserver
     <<: *restart-policy
     entrypoint:
@@ -796,9 +794,7 @@ services:
     logging: *default-logging
 
   dagster-daemon:
-    build:
-      context: .
-      dockerfile: ./aihub_pipeline/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/dagster:latest
     container_name: dagster-daemon
     <<: *restart-policy
     entrypoint:
@@ -827,9 +823,7 @@ services:
   # === API Stack ===
   # <editor-fold desc="API Stack">
   api:
-    build:
-      context: .
-      dockerfile: ./aihub_api/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/api:latest
     container_name: api
     <<: *restart-policy
     depends_on:
@@ -876,9 +870,7 @@ services:
   # === Bot Stack ===
   # <editor-fold desc="Bot Stack">
   bot:
-    build:
-      context: .
-      dockerfile: ./aihub_bot/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/bot:latest
     container_name: bot
     <<: *restart-policy
     depends_on:
@@ -948,9 +940,7 @@ services:
   # === SUITE UI Stack ===
   # <editor-fold desc="SUITE UI Stack">
   web:
-    build:
-      context: ./aihub_web/aihub_web
-      dockerfile: ./Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/web:latest
     container_name: web
     <<: *restart-policy
     environment:
@@ -1004,9 +994,7 @@ services:
   # === Common Agents ===
   # <editor-fold desc="Common Agents">
   llm_wrapping_agent:
-    build:
-      context: .
-      dockerfile: ./aihub_agent/app/llm_wrapping_agent/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:latest
     container_name: llm-wrapping-agent
     restart: always
     environment:
@@ -1017,9 +1005,7 @@ services:
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
   rag_agent:
-    build:
-      context: .
-      dockerfile: ./aihub_agent/app/rag_agent/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/rag_agent:latest
     container_name: rag-agent
     restart: always
     environment:
@@ -1034,9 +1020,7 @@ services:
 
   # === Common Pipelines ===
   default_rag_pipeline:
-    build:
-      context: .
-      dockerfile: ./aihub_pipeline/app/default_rag_pipeline/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:latest
     container_name: default-rag-pipeline
     restart: always
     volumes:
@@ -1071,6 +1055,8 @@ services:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       - "--providers.file.filename=/etc/traefik/middlewares.yml"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
       - "--providers.docker=true"
       - "--providers.docker.watch=true"
       - "--providers.docker.exposedbydefault=false"
@@ -1084,7 +1070,9 @@ services:
       - "443:443"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./traefik/middlewares.yml:/etc/traefik/middlewares.yml:ro"
+      - "./configs/traefik/middlewares.local.yml:/etc/traefik/middlewares.yml:ro"
+      - "./configs/traefik/tls.local.yml:/etc/traefik/dynamic/tls.yml:ro"
+      - "./configs/traefik/certs:/certs:ro"
       - "/srv/app/traefik/acme.json:/srv/app/traefik/acme.json"
     labels:
       - "traefik.enable=true"

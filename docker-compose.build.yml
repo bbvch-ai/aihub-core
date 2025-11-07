@@ -241,7 +241,7 @@ services:
       MINIO_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/milvus-data:/var/lib/milvus
-      - ./configs/milvus/milvus.nightly.yaml:/milvus/configs/milvus.yaml
+      - ./configs/milvus/milvus.local.yaml:/milvus/configs/milvus.yaml
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
       start_period: 90s
@@ -319,7 +319,7 @@ services:
     <<: *restart-policy
     command: -c /etc/nats/nats.conf
     volumes:
-      - ./configs/nats/nats.nightly.conf:/etc/nats/nats.conf
+      - ./configs/nats/nats.local.conf:/etc/nats/nats.conf
       - ${VOLUME_ROOT:-./.docker-volumes}/nats-data:/data
     healthcheck:
       test: [ "NONE" ]
@@ -401,7 +401,7 @@ services:
       PRESIDIO_ANONYMIZER_API_BASE: "http://presidio-anonymizer:3000"
       SET_VERBOSE: "false"
     volumes:
-      - ./configs/litellm/config.nightly.yaml:/app/config.yaml
+      - ./configs/litellm/config.local.yaml:/app/config.yaml
     command: --config /app/config.yaml --detailed_debug
     depends_on:
       postgres:
@@ -511,8 +511,8 @@ services:
       S3_ENDPOINT_URL: 'http://seaweedfs-s3:9000'
 
       # Model config
-      OPENAI_API_BASE_URL: ""
-      OPENAI_API_KEY: ""
+      OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
+      OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       RAG_OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
       RAG_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       AUDIO_STT_OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
@@ -769,7 +769,9 @@ services:
       - "traefik.http.services.dagster.loadbalancer.server.port=4180"
 
   dagster-webserver:
-    image: ghcr.io/bbvch-ai/aihub-core/dagster:nightly
+    build:
+      context: .
+      dockerfile: ./aihub_pipeline/Dockerfile
     container_name: dagster-webserver
     <<: *restart-policy
     entrypoint:
@@ -784,8 +786,8 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
-      - ./configs/dagster/dagster.nightly.yaml:/dagster_home/dagster.yaml:ro
-      - ./configs/dagster/workspace.nightly.yaml:/dagster_home/workspace.yaml:ro
+      - ./configs/dagster/dagster.local.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.local.yaml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -794,7 +796,9 @@ services:
     logging: *default-logging
 
   dagster-daemon:
-    image: ghcr.io/bbvch-ai/aihub-core/dagster:nightly
+    build:
+      context: .
+      dockerfile: ./aihub_pipeline/Dockerfile
     container_name: dagster-daemon
     <<: *restart-policy
     entrypoint:
@@ -804,8 +808,8 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
       - dagster-venv:/app/.venv
       - dagster-pipeline-venv:/app/aihub_pipeline/.venv
-      - ./configs/dagster/dagster.nightly.yaml:/dagster_home/dagster.yaml:ro
-      - ./configs/dagster/workspace.nightly.yaml:/dagster_home/workspace.yaml:ro
+      - ./configs/dagster/dagster.local.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.local.yaml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -823,7 +827,9 @@ services:
   # === API Stack ===
   # <editor-fold desc="API Stack">
   api:
-    image: ghcr.io/bbvch-ai/aihub-core/api:nightly
+    build:
+      context: .
+      dockerfile: ./aihub_api/Dockerfile
     container_name: api
     <<: *restart-policy
     depends_on:
@@ -845,7 +851,7 @@ services:
       OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
       AIHUB_API_VERSION: ${AIHUB_API_VERSION}
       AIHUB_FRONTEND_ORIGIN: "${DOMAIN}"
-      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000/v1"
+      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000/"
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
       AUTH_OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
       SUPERUSER_NAME: ${SUPERUSER_NAME}
@@ -870,7 +876,9 @@ services:
   # === Bot Stack ===
   # <editor-fold desc="Bot Stack">
   bot:
-    image: ghcr.io/bbvch-ai/aihub-core/bot:nightly
+    build:
+      context: .
+      dockerfile: ./aihub_bot/Dockerfile
     container_name: bot
     <<: *restart-policy
     depends_on:
@@ -940,7 +948,9 @@ services:
   # === SUITE UI Stack ===
   # <editor-fold desc="SUITE UI Stack">
   web:
-    image: ghcr.io/bbvch-ai/aihub-core/web:nightly
+    build:
+      context: ./aihub_web/aihub_web
+      dockerfile: ./Dockerfile
     container_name: web
     <<: *restart-policy
     environment:
@@ -994,7 +1004,9 @@ services:
   # === Common Agents ===
   # <editor-fold desc="Common Agents">
   llm_wrapping_agent:
-    image: ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:nightly
+    build:
+      context: .
+      dockerfile: ./aihub_agent/app/llm_wrapping_agent/Dockerfile
     container_name: llm-wrapping-agent
     restart: always
     environment:
@@ -1005,7 +1017,9 @@ services:
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
   rag_agent:
-    image: ghcr.io/bbvch-ai/aihub-core/rag_agent:nightly
+    build:
+      context: .
+      dockerfile: ./aihub_agent/app/rag_agent/Dockerfile
     container_name: rag-agent
     restart: always
     environment:
@@ -1020,7 +1034,9 @@ services:
 
   # === Common Pipelines ===
   default_rag_pipeline:
-    image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:nightly
+    build:
+      context: .
+      dockerfile: ./aihub_pipeline/app/default_rag_pipeline/Dockerfile
     container_name: default-rag-pipeline
     restart: always
     volumes:
@@ -1055,6 +1071,8 @@ services:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       - "--providers.file.filename=/etc/traefik/middlewares.yml"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
       - "--providers.docker=true"
       - "--providers.docker.watch=true"
       - "--providers.docker.exposedbydefault=false"
@@ -1068,7 +1086,9 @@ services:
       - "443:443"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./configs/traefik/middlewares.nightly.yml:/etc/traefik/middlewares.yml:ro"
+      - "./configs/traefik/middlewares.local.yml:/etc/traefik/middlewares.yml:ro"
+      - "./configs/traefik/tls.local.yml:/etc/traefik/dynamic/tls.yml:ro"
+      - "./configs/traefik/certs:/certs:ro"
       - "/srv/app/traefik/acme.json:/srv/app/traefik/acme.json"
     labels:
       - "traefik.enable=true"
@@ -1093,6 +1113,7 @@ services:
       - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:${ADMIN_PASSWORD_HASH}"
       - "traefik.http.routers.traefik.middlewares=traefik-auth"
   # </editor-fold>
+
 
 volumes:
   api-venv:
