@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator
 from typing import Annotated
 
 from nats.js import JetStreamContext
-from nats.js.api import ConsumerConfig, DeliverPolicy, AckPolicy
+from nats.js.api import AckPolicy, ConsumerConfig, DeliverPolicy
 from nats.js.errors import NotFoundError
 
 from aihub_lib.nats.events import BaseEvent
