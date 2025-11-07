@@ -9,13 +9,13 @@ from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributo
 )
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.Controller import Controller
-from botbuilder.integration.aiohttp import CloudAdapter
 from fastapi import Body, Depends, Path, Request, Response
+from microsoft_agents.activity import Activity
+from microsoft_agents.hosting.aiohttp import CloudAdapter
 from nats.aio.client import Client as NATS
 
 from aihub_bot.bots.chat.agent.AgentChatBot import AgentChatBot
 from aihub_bot.bots.chat.agent.StreamAgentChatBot import StreamAgentChatBot
-from aihub_bot.routes.activity_model import ActivityModel
 from aihub_bot.routes.RoutesService import RoutesService
 
 logger = logging.getLogger(__name__)
@@ -83,7 +83,7 @@ class AgentChatController(Controller):
         )
         async def json_chat(
             request: Request,
-            _: Annotated[ActivityModel, Body],  # openapi request body
+            _: Annotated[Activity, Body],  # openapi request body
             agent_class: Annotated[str, Path(title="Agent class")],
             agent_id: Annotated[str, Path(title="Agent ID")],
             nc: Annotated[NATS, Depends(use_nats)],
@@ -128,7 +128,7 @@ class AgentChatController(Controller):
         )
         async def stream_chat(
             request: Request,
-            _: Annotated[ActivityModel, Body],  # openapi request body
+            _: Annotated[Activity, Body],  # openapi request body
             agent_class: Annotated[str, Path(title="Agent class")],
             agent_id: Annotated[str, Path(title="Agent ID")],
             nc: Annotated[NATS, Depends(use_nats)],

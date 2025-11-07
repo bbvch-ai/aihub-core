@@ -5,6 +5,67 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.250.0] - 2025-11-06 - Next-Gen Bot Framework: Microsoft Agents SDK Integration and Multi-Bot Capabilities
+
+### Added
+
+- ✨ **New Bot-in-the-Loop Start Event:** Introduced `BotInTheLoopAgentStartEvent` to provide a more flexible and
+  validated way to initiate Bot-in-the-Loop workflows, supporting explicit Teams or Slack configurations from the agent.
+- ⚙️ **Structured Slack Configuration:** Added `SlackConfig` within `BotInTheLoopRequestEvent` to enable robust and
+  explicit configuration details when initiating Slack interactions.
+- 🧪 **Comprehensive Testing Utilities:** Introduced new testing fixtures for mocking MSAL authentication and `aiohttp`
+  requests, significantly enhancing test isolation and reliability for `aihub_bot` components.
+
+### Changed
+
+- 🚀 **Upgraded Bot Framework SDK:** Migrated `aihub_bot` components from the legacy `botbuilder` library to the new
+  `microsoft-agents` SDK. This fundamental upgrade impacts bot hosting, authentication, activity handling, and overall
+  integration with Microsoft Bot Framework channels.
+- 🤝 **Enhanced Multi-Bot Conversation Management:** Conversation tracking and persistence (in `ConversationEntity` and
+  `ConversationTracker`) now explicitly incorporate `bot_id`. This ensures robust data isolation and prevents collisions
+  when multiple bot instances operate across various channels or environments.
+- 👤 **Improved Teams User Identity Handling:** Enhanced the process of extracting user identity for Teams interactions,
+  leading to more accurate retrieval of `aad_object_id`, email, and roles.
+- 🤖 **Refined Bot-in-the-Loop Logic:** Updated the core logic for the `BotInTheLoopAgent` and its handler to seamlessly
+  support multi-channel configurations (Teams and Slack) and streamline the sending of proactive messages using the new
+  SDK.
+- 📄 **Documentation Updates:** Minor updates to documentation `source_sha` values.
+
+### Fixed
+
+- 🐛 **NATS BaseEvent Serialization:** Corrected an issue in `BaseEvent` serialization to ensure all model fields are
+  properly dumped during the process.
+
+### Refactor
+
+- 🧹 **Streamlined Bot Activity Models:** Removed the custom `ActivityModel` as the new `microsoft-agents` SDK provides
+  direct, improved activity handling, simplifying controller definitions.
+- 🔄 **Centralized Bot Message Handling:** Refactored common bot message processing logic into a shared `_handle_message`
+  method, simplifying the distinction between direct and channel interactions for Teams and Slack.
+
+---
+
+## [v0.249.4] - 2025-11-06 - Refined Document Metadata for Clearer Source Tracking
+
+### Added
+
+- ✨ **Introduced `source_origin` field:** Documents and nodes now include a new `source_origin` field to explicitly
+  store the original external URI (e.g., SharePoint URL) distinct from the data lake URI.
+
+### Changed
+
+- 🔄 **Clarified `source` field definition:** The `source` metadata field for ingested documents and nodes is now
+  explicitly defined as the data lake URI.
+- 🚀 **Improved document ingestion:** Pipelines for ingesting documents (e.g., from SharePoint, data lake) have been
+  updated to correctly capture and differentiate between the data lake URI (now `source`) and the new `source_origin`.
+
+### Removed
+
+- 🗑️ **Deprecated `DATA_LAKE_URI` metadata field:** The `DATA_LAKE_URI` field has been removed to streamline and
+  simplify document metadata, with its functionality now handled by the `source` field.
+
+---
+
 ## [v0.249.3] - 2025-11-05 - Streamlined LiteLLM API Parameter Handling
 
 ### Changed

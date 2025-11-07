@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
-    DATA_LAKE_URI,
     DOCUMENT_TITLE,
     HASH,
     INSERTED_AT,
@@ -12,6 +11,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     NODE_CONTENT_TYPE_TEXT,
     NODE_TYPE_CONTENT,
     SOURCE,
+    SOURCE_ORIGIN,
     TYPE,
     UPDATED_AT,
 )
@@ -39,7 +39,7 @@ class RefDocDocument(Document):
     @computed_field
     @property
     def uri(self) -> str:
-        return self.metadata.get(DATA_LAKE_URI, "")
+        return self.metadata.get(SOURCE, "")
 
     @computed_field
     @property
@@ -61,8 +61,8 @@ class RefDocDocument(Document):
             INSERTED_AT: int(datetime.now().timestamp()),  # Convert to current timestamp
             TYPE: NODE_TYPE_CONTENT,
             NODE_CONTENT_TYPE: NODE_CONTENT_TYPE_TEXT,
-            DATA_LAKE_URI: data_lake_file.uri,
-            SOURCE: data_lake_file.metadata.get(SOURCE, data_lake_file.uri),
+            SOURCE: data_lake_file.uri,
+            SOURCE_ORIGIN: data_lake_file.metadata.get(SOURCE_ORIGIN),
             DOCUMENT_TITLE: data_lake_file.metadata.get(DOCUMENT_TITLE, document_title),
         }
         return self

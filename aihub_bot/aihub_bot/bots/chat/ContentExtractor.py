@@ -4,8 +4,7 @@ from enum import Enum
 from typing import Annotated
 
 import httpx
-from botbuilder.schema import Activity, Attachment
-from botframework.connector import Channels
+from microsoft_agents.activity import Activity, Attachment, Channels
 from pydantic import BaseModel, Field
 
 from aihub_bot.persistence.entities.ConversationEntity import Content

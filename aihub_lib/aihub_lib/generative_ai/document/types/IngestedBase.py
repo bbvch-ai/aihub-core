@@ -14,7 +14,10 @@ class IngestedBase(BaseModel):
     must be strictly optional, but all attributes that are purely technical like source are strictly necessary.
     """
 
-    source: Annotated[str, Field(description="Source URI of original document.")]
+    source: Annotated[str, Field(description="Source URI (data lake URI).")]
+    source_origin: Annotated[
+        str | None, Field(description="Original source URI (e.g., SharePoint URL, external URL).")
+    ] = None
     namespace: Annotated[str, Field(description="The namespace of the document within its metadata.")]
     version: Annotated[int, Field(description="Document version.")] = 1
     content_hash: Annotated[
